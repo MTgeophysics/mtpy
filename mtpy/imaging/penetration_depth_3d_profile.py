@@ -37,10 +37,10 @@ from mtpy.utils.mtpylog import MtPyLog
 logger = MtPyLog().get_mtpy_logger(__name__)
 #logger = MtPyLog(path2configfile='logging.yml').get_mtpy_logger(__name__) # specific
 
-def plot_latlon_depth_profile(edi_dir, period_index, zcomponent='det'): #use the Zcompotent=[det, zxy, zyx]
+def plot_latlon_depth_profile(edi_dir, period, zcomponent='det'): #use the Zcompotent=[det, zxy, zyx]
     """ MT penetration depth profile in lat-lon coordinates with pixelsize =0.002
     :param edi_dir:
-    :param period_index:
+    :param period:
     :param zcomponent:
     :return:
     """
@@ -54,7 +54,12 @@ def plot_latlon_depth_profile(edi_dir, period_index, zcomponent='det'): #use the
 
     logger.debug("edi files: %s", edifiles)
 
-    (stations, periods, pendep, latlons) = get_penetration_depth(edifiles, period_index, whichrho=zcomponent)
+    if isinstance(period,int): # period is considered as an index
+        (stations, periods, pendep, latlons) = get_penetration_depth0(edifiles, period, whichrho=zcomponent)
+    elif (isinstance(period, float)):  # period is considered as the actual value of period in second
+        (stations, periods, pendep, latlons) = get_penetration_depth(edifiles, period, whichrho=zcomponent)
+    else:
+        raise Exception("Wrong type of the parameter period, %s"%period)
 
     if check_period_values(periods) is False:
         logger.error("The period values are NOT equal - Please check: %s", periods)
@@ -367,11 +372,11 @@ def get_index2(lat, lon, LL_lat, LL_lon, pixelsize):
 
     return (int(index_x), int(index_y))
 
-
-
-def get_penetration_depth(edi_file_list, per_index,  whichrho='det'): #whichrho=[zxy, zyx, zdeterminant]
+def get_penetration_depth0(edi_file_list, per_index,  whichrho='det'): #whichrho=[zxy, zyx, zdeterminant]
     """
-    compute the penetration depths of a list of edi files at given period/freq
+    compute the penetration depths of a list of edi files at given period/freq index number,
+    assuming all edi files have exactly the same period list.
+    files
     :param edi_file_list:
     :param per_index: the index of periods 0,1,....
     :param whichrho:
@@ -420,6 +425,76 @@ def get_penetration_depth(edi_file_list, per_index,  whichrho='det'): #whichrho=
 
     return (stations, periods, pendep, latlons)
 
+
+def get_penetration_depth(edi_file_list, period_sec,  whichrho='det'): #whichrho=[zxy, zyx, zdeterminant]
+    """
+    This is a more generic and useful function to compute the penetration depths
+    of a list of edi files at given period_sec (seconds).
+    No assumption is made about the edi files period list.
+    A tolerance of 5% is used to identify the relevant edi files which contain the period of interest.
+
+    :param edi_file_list:
+    :param period_sec: the float number value of the period in second: 0.1, ...20.0
+    :param whichrho:
+    :return: tuple of (stations, periods, penetrationdepth, lat-lons-pairs)
+    """
+    ptol=0.05
+
+    scale_param = np.sqrt(1.0 / (2.0 * np.pi * 4 * np.pi * 10 ** (-7)))
+    logger.debug("The scaling parameter=%.6f"%scale_param )
+
+    # per_index=0,1,2,....
+    periods = []
+    pendep = []
+    stations = []
+    latlons = []
+
+    for afile in edi_file_list:
+        mt_obj = mt.MT(afile)
+
+        p_index = [ff for ff, f2 in enumerate(1.0/mt_obj.Z.freq)
+                   if (f2 > period_sec * (1 - ptol)) and (f2 < period_sec * (1 + ptol))]
+
+        logger.debug("Period index found: %s", p_index)
+
+        if len(p_index)>=1: # this edi can be included
+            per_index=p_index[0]
+
+            stations.append(mt_obj.station)
+            latlons.append((mt_obj.lat, mt_obj.lon))
+
+            # the attribute Z
+            zeta = mt_obj.Z
+
+            if per_index >= len(zeta.freq):
+                logger.debug("Number of frequecies (Max per_index)= %s", len(zeta.freq))
+                raise Exception("Index out_of_range Error: period index must be less than number of periods in zeta.freq")
+
+            per = 1.0 / zeta.freq[per_index]
+            periods.append(per)
+
+            if whichrho == 'det': # the 2X2 complex Z-matrix's determinant abs value
+                det2 = np.abs(zeta.det[0][per_index])  # determinant value at the given period index
+                penetration_depth = -scale_param * np.sqrt(0.2 * per * det2 * per)
+            elif whichrho == 'zxy':
+                penetration_depth = - scale_param * np.sqrt(zeta.resistivity[per_index, 0, 1] * per)
+            elif whichrho == 'zyx':
+                penetration_depth = - scale_param * np.sqrt(zeta.resistivity[per_index, 1, 0] * per)
+
+            else:
+                logger.critical("un-supported method to compute penetration depth: %s", whichrho)
+                sys.exit(100)
+
+            pendep.append(penetration_depth)
+
+        else:
+            logger.warn('%s was not used in the 3d profile, because it has no required period.', afile)
+            pass
+
+    #check_period_values(periods)
+
+    return (stations, periods, pendep, latlons)
+
 def check_period_values(period_list):
     """
     check if all the values are equal in the input list
@@ -427,16 +502,20 @@ def check_period_values(period_list):
     :return: True/False
     """
 
+    ptol=0.05 # tolerance of periods
+
     logger.debug(period_list)
 
-    p0= period_list[0] # first value as a ref
+    p0= period_list[0] # the first value as a ref
+
     pcounter=0
+
     for per in period_list:
-        if per !=p0:
+        if (per > p0* (1 - ptol)) and (per < p0* (1 + ptol)):  # approximately equal by 5% error
+            pcounter = pcounter + 1
+        else:
             logger.warn("Period Not Equal!! p0 VS per: %s VS %s", p0, per)
             return False
-        else:
-            pcounter=pcounter+1
 
     return True
 
@@ -663,22 +742,43 @@ def create_shapefile(edi_dir, outputfile=None, zcomponent='det'):
 # Usage examples:
 # python mtpy/imaging/penetration_depth_3d_profile.py /e/Datasets/MT_Datasets/3D_MT_data_edited_fromDuanJM/ 10
 # python mtpy/imaging/penetration_depth_3d_profile.py  tests/data/edifiles/ 10
-# python mtpy/imaging/penetration_depth_3d_profile.py examples/data/edi2/ 10
+# OR
+# python mtpy/imaging/penetration_depth_3d_profile.py examples/data/edi2/ 0.5s
 # =============================================================================================
 if __name__=="__main__":
 
     if len(sys.argv)<2:
-        print("Usage: %s edi_dir"%sys.argv[0])
-        print ("python examples/penetration_depth_3d_profile.py tests/data/edifiles/ 10 ")
+        print("Usage: python %s edi_dir period_sec "%sys.argv[0])
         sys.exit(1)
     elif os.path.isdir(sys.argv[1]):
         edi_dir = sys.argv[1]
-        period_index= int(sys.argv[2])
+
+        per=sys.argv[2]
+        print ("The input parameter for period was ", per)
+
+        if per.endswith('s'):
+            # try float case
+            try:
+                period_sec = float(per[:-1])
+                print(" Using period value (second)", period_sec)
+                plot_latlon_depth_profile(edi_dir, period_sec, zcomponent='det')
+            except Exception, ex:
+                print(ex)
+        else:
+            try:
+                period_index= int(per)
+                print(" Using period index", period_index)
+                plot_latlon_depth_profile(edi_dir, period_index, zcomponent='det')
+                sys.exit(0)  # done
+            except Exception, why:
+                raise Exception("Unable to plot the integer period index, because: %s" %why)
+
+
         #plot_gridded_profile(edi_dir, period_index, zcomponent='det')   # 2D image
-        plot_latlon_depth_profile(edi_dir, period_index,zcomponent='det')
+        # plot_latlon_depth_profile(edi_dir, period_index,zcomponent='det')
         #plot_bar3d_depth(edi_dir, period_index)
         #create_csv_file(edi_dir, r"E:/tmp/my_mt_pendepth.csv")
     else:
-        print("Please provide an edi directory and period_index_list")
+        print("Please provide an edi directory and period_index_OR_value")
 
 

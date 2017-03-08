@@ -78,20 +78,25 @@ class PTShapeFile(object):
   
     """
 
-    def __init__(self, edi_list=None, **kwargs):
+    def __init__(self, edi_list, proj='WGS84', esize=0.03, **kwargs):
         self.edi_list = edi_list
-        self.projection = 'WGS84'
+        self.projection = proj
+        #self.projection = None
         self.plot_period = None
-        self.save_path = os.getcwd()
-        self.ellipse_size = 500.0
-        self._theta = np.arange(0, 2 * np.pi, np.pi / 180.)
-        self.ptol = .05
+        self.save_path = None # os.getcwd()
+        #self.ellipse_size = 500.0  # maximum ellipse major axis size in metres
+        self.ellipse_size = esize # 0.002  # maximum ellipse major axis size in metres
+        #self._theta = np.arange(0, 2 * np.pi, np.pi / 180.)
+        self._theta = np.arange(0, 2 * np.pi, np.pi / 30.)  #FZ
+        self.ptol = .05  # period value tolerance to be considered as equal
 
         self.mt_obj_list = None
         self.pt_dict = None
 
         if self.edi_list is not None:
             self.mt_obj_list = [mt.MT(edi) for edi in self.edi_list]
+        else:
+            raise Exception("EDI files List is None")
 
         for key in kwargs.keys():
             setattr(self, key, kwargs[key])
@@ -100,8 +105,11 @@ class PTShapeFile(object):
             self._get_plot_period()
             self._get_pt_array()
 
-        self._proj_dict = {'WGS84': 4326, 'NAD27': 4267}
+        self._proj_dict = {'WGS84': 4326, 'NAD27': 4267, 'GDA94':4283}
 
+        # UTM zone 50 {'init': u'epsg:32750'} UTM zone 51 32751
+        # WGS84: 'epsg:4326'  GDA94:  EPSG:4283 See  http://epsg.io/4283​
+        # http://spatialreference.org/ref/epsg/4283/
         self.utm_cs = None
         self._rotation_angle = 0.0
 
@@ -164,16 +172,22 @@ class PTShapeFile(object):
                     p_index = [ff for ff, f2 in enumerate(1. / mt_obj.Z.freq)
                                if (f2 > plot_per * (1 - self.ptol)) and
                                (f2 < plot_per * (1 + self.ptol))][0]
-                    if self.projection is None:
+                    if self.projection is None:  # unprojected coord lat lon
                         east, north, elev = (mt_obj.lon, mt_obj.lat, 0)
                         self.utm_cs = osr.SpatialReference()
                         # Set geographic coordinate system to handle lat/lon  
-                        self.utm_cs.SetWellKnownGeogCS(self.projection)
-                    else:
+                        #self.utm_cs.SetWellKnownGeogCS(self.projection)
+                        self.utm_cs.ImportFromEPSG(4326)
+                        # create the spatial reference, WGS84=4326
+                        # GDA94 = EPSG:4283 See  http://epsg.io/4283
+                    elif self.projection== 'WGS84':  #UTM zones coordinate system
+                        edi_proj='WGS84'
                         self.utm_cs, utm_point = transform_ll_to_utm(mt_obj.lon,
                                                                      mt_obj.lat,
-                                                                     self.projection)
+                                                                     edi_proj)
                         east, north, elev = utm_point
+                    else:
+                        raise Exception("%s is NOT supported"% self.projection)
 
                     pt_tuple = (mt_obj.station, east, north,
                                 mt_obj.pt.phimin[0][p_index],
@@ -255,7 +269,7 @@ class PTShapeFile(object):
 
             for isite, pt_array in enumerate(self.pt_dict[plot_per]):
 
-                if isite%every_site == 0:
+                if isite%every_site == 0:  #FZ added to control MT-sites output to shp file
                     # need to make an ellipse first using the parametric equation
                     azimuth = -np.deg2rad(pt_array['azimuth'])
                     width = self.ellipse_size * (pt_array['phimax'] / phimax)
@@ -326,6 +340,7 @@ class PTShapeFile(object):
             data_source.Destroy()
 
             print 'Wrote shape file to {0}'.format(shape_fn)
+
 
     def write_data_pt_shape_files_modem(self, modem_data_fn,
                                         rotation_angle=0.0):
@@ -1408,7 +1423,7 @@ def modem_to_shapefiles(mfndat, save_dir):
 
     return
 
-def test_edi2shp(edi_dir, save_dir, ellipse_size=500, every_site=1):
+def create_phase_tensor_shpfiles(edi_dir, save_dir, proj='WGS84', ellipse_size=0.03, every_site=1):
     """
     generate shape file for a folder of edi files, and save the shape files a dir.
     :param edi_dir:
@@ -1418,23 +1433,21 @@ def test_edi2shp(edi_dir, save_dir, ellipse_size=500, every_site=1):
     :return:
     """
 
-    #edipath = r"E:/Githubz/mtpy2/tests/data/edifiles"
     edipath=edi_dir
 
     edilst = [os.path.join(edipath, edi) for edi in os.listdir(edipath)
              if edi.find('.edi') > 0]
     # edilst.remove(os.path.join(edipath, 'mb035.edi'))
 
-    pts = PTShapeFile(edilst, save_path=save_dir)
-    #pts.projection = 'NAD27'  # default projection is WGS84
+    pts = PTShapeFile(edilst, save_path=save_dir, proj=proj )
 
-    #pts.ellipse_size = 1200 default 500
     pts.ellipse_size=ellipse_size
 
     pts.write_shape_files(every_site)
 
+def create_tipper_shpfiles(edilist, save_dir):
 
-    tipshp = TipperShapeFile(edilst, save_path=save_dir)
+    tipshp = TipperShapeFile(edilist, save_path=save_dir)
 
     #tipshp.projection = 'NAD27'
     tipshp.arrow_lw = 30
@@ -1457,7 +1470,8 @@ if __name__ == "__main__":
         print("USAGE: %s input_edifile_dir output_shape_file_dir" % sys.argv[0])
         sys.exit(1)
     else:
-        test_edi2shp(sys.argv[1],sys.argv[2], ellipse_size=3000,every_site=2)
+        create_phase_tensor_shpfiles(sys.argv[1], sys.argv[2], proj=None, ellipse_size=0.03, every_site=2) # unprojected
+        #create_phase_tensor_shpfiles(sys.argv[1], sys.argv[2], proj='WGS84', ellipse_size=3000, every_site=2) # projected into UTM coordinate
 
 # modem: provide dat filr and save_path below:
 #     mfn = r"E:/Githubz/mtpy2/examples/data/ModEM_files/VicSynthetic07/Modular_MPI_NLCG_016.dat"
