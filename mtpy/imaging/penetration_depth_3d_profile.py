@@ -157,8 +157,11 @@ def plot_latlon_depth_profile(edi_dir, period, zcomponent='det'): #use the Zcomp
     plt.gcf().set_size_inches(6, 6)
 
     ftsize=14
-    xticks=np.arange(0,zdep.shape[1],10)
-    yticks=np.arange(0,zdep.shape[0],10)
+    numticks=5  # number of ticks to draw 5,10?
+    stepx=int(zdep.shape[1]/numticks)
+    stepy=int(zdep.shape[0]/numticks)
+    xticks=np.arange(0,zdep.shape[1],stepx)  #10, 100
+    yticks=np.arange(0,zdep.shape[0],stepy)
 
     xticks_label= ['%.2f'%(bbox[0][0] + pixelsize*xtick) for xtick in xticks]  # formatted float numbers
     yticks_label= ['%.2f'%(bbox[1][0] - pixelsize*ytick) for ytick in yticks]
@@ -179,7 +182,7 @@ def plot_latlon_depth_profile(edi_dir, period, zcomponent='det'): #use the Zcomp
     # create an axes on the right side of ax. The width of cax will be 5%
     # of ax and the padding between cax and ax will be fixed at 0.05 inch.
     divider = make_axes_locatable(ax)
-    cax = divider.append_axes("right", size="5%", pad=0.2)  # pad = separation from figure to colorbar
+    cax = divider.append_axes("right", size="2%", pad=0.2)  # pad = separation from figure to colorbar
     mycb = plt.colorbar(imgplot,  cax=cax)  # cmap=my_cmap_r, does not work!!
     mycb.outline.set_linewidth(2)
     mycb.set_label(label='Penetration Depth (Meters)', size=ftsize)
