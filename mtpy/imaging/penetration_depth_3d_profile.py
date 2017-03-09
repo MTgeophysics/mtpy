@@ -62,17 +62,24 @@ def plot_latlon_depth_profile(edi_dir, period, zcomponent='det'): #use the Zcomp
         raise Exception("Wrong type of the parameter period, %s"%period)
 
     if check_period_values(periods) is False:
-        logger.error("The period values are NOT equal - Please check: %s", periods)
-        raise Exception("Period values Not Equal across MT stations EDI files. Please check")
-    else:
-        Period0 = periods[0]
+        logger.error("The period values are NOT equal - Please check!!! %s", periods)
+        plt.plot(periods,"-^")
+        plt.title("Periods are NOT equal !!!", )
+        plt.show()
+        # should stop the script running further, raise exception below.
+        raise Exception("Period values NOT equal across the EDI files. Please check!!!")
+    else: # good case continue
+        pass
+
+    Period0 = periods[0]
 
     if Period0<1.0:
         period_fmt= str(mtpy.utils.calculator.roundsf(Period0, 4) ) # 4 signifiant digits means 4 nonzero number
     else: #period>1s keep 2 decimal digits (after dot)
         period_fmt='%.2f' % Period0
 
-    bbox=get_bounding_box(latlons)
+    #bbox=get_bounding_box(latlons)
+    bbox=get_bounding_box(stations)
 
     logger.debug("Bounding Box %s", bbox)
 
@@ -137,11 +144,13 @@ def plot_latlon_depth_profile(edi_dir, period, zcomponent='det'): #use the Zcomp
 
     #grid_z0 = griddata(points, values, (grid_x, grid_y), method='nearest')
     #grid_z1 = griddata(points, values, (grid_x, grid_y), method='linear')
-    grid_z = griddata(points, values, (grid_x, grid_y), method='linear')  #cubic may cause negative interp values
+    grid_z = griddata(points, values, (grid_x, grid_y), method='linear')
+
+    grid_z[grid_z < 0] = np.nan # method='cubic' may cause negative interp values; set them nan to make empty
 
     # set the axix limit to avoid over extended
-    plt.xlim(0, zdep.shape[1])      # horizontal axis 0-> the second index (i,j) of the matrix
-    plt.ylim(zdep.shape[0], 0)     # vertical axis origin at upper corner, not the lower corner.
+    # plt.xlim(0, zdep.shape[1])      # horizontal axis 0-> the second index (i,j) of the matrix
+    # plt.ylim(zdep.shape[0], 0)     # vertical axis origin at upper corner, not the lower corner.
 
     # use reverse color map in imshow and the colorbar
     my_cmap = mpl.cm.jet
@@ -150,8 +159,14 @@ def plot_latlon_depth_profile(edi_dir, period, zcomponent='det'): #use the Zcomp
     # plt.imshow(grid_z)
     imgplot=plt.imshow(grid_z, origin='upper',cmap=my_cmap_r)
 
-    # The stations
-    plt.plot(points[:, 1], points[:, 0], 'kv', markersize=6) #the stations sample point 1-lon-j, 0-lat-i
+    # plot the stations positions and names?
+    station_points = np.zeros((len(stations), 2))
+    for iter, pair in enumerate(stations):
+        (i, j) = get_index(pair[0], pair[1], minlat, minlon, pixelsize)
+        station_points[iter, 0] = zdep.shape[0] - j -1
+        station_points[iter, 1] = i
+
+    plt.plot(station_points[:, 1],station_points[:, 0], 'kv', markersize=6) #the stations sample point 1-lon-j, 0-lat-i
 
     ax = plt.gca()
     plt.gcf().set_size_inches(6, 6)
@@ -164,7 +179,10 @@ def plot_latlon_depth_profile(edi_dir, period, zcomponent='det'): #use the Zcomp
     yticks=np.arange(0,zdep.shape[0],stepy)
 
     xticks_label= ['%.2f'%(bbox[0][0] + pixelsize*xtick) for xtick in xticks]  # formatted float numbers
-    yticks_label= ['%.2f'%(bbox[1][0] - pixelsize*ytick) for ytick in yticks]
+    yticks_label= ['%.2f'%(bbox[1][0] + pixelsize*ytick) for ytick in yticks]
+
+    print yticks_label
+    yticks_label.reverse() # make sure the altitudes are correctly labeled.
 
     plt.xticks(xticks, xticks_label, rotation='0', fontsize=ftsize)
     plt.yticks(yticks, yticks_label,rotation='horizontal', fontsize=ftsize)
@@ -228,7 +246,8 @@ def reverse_colourmap(cmap, name = 'my_cmap_r'):
 
 
 # version-1 not mapped to lat-lon units
-def plot_gridded_profile(edi_dir, period_index, zcomponent='det'): #use the Zcompotent=[det, zxy, zyx]
+def plot_gridded_profile_deprecated(edi_dir, period_index, zcomponent='det'): #use the Zcompotent=[det, zxy, zyx]
+    # replaced by the method: plot_lat_lon_depth_profile()
     """
     plot a  gridded profile of the pene depth projected into 2D matrix image
     :param edi_dir:
@@ -397,7 +416,9 @@ def get_penetration_depth0(edi_file_list, per_index,  whichrho='det'): #whichrho
 
     for afile in edi_file_list:
         mt_obj = mt.MT(afile)
-        stations.append(mt_obj.station)
+        # all stations positions included
+        stations.append((mt_obj.lat, mt_obj.lon))
+        #names stations.append(mt_obj.station)
         latlons.append((mt_obj.lat, mt_obj.lon))
 
         # the attribute Z
@@ -424,7 +445,7 @@ def get_penetration_depth0(edi_file_list, per_index,  whichrho='det'): #whichrho
 
         pendep.append(penetration_depth)
 
-    check_period_values(periods)
+    # check_period_values(periods)
 
     return (stations, periods, pendep, latlons)
 
@@ -455,6 +476,9 @@ def get_penetration_depth(edi_file_list, period_sec,  whichrho='det'): #whichrho
     for afile in edi_file_list:
         mt_obj = mt.MT(afile)
 
+        # all stations positions included
+        stations.append((mt_obj.lat, mt_obj.lon))
+
         p_index = [ff for ff, f2 in enumerate(1.0/mt_obj.Z.freq)
                    if (f2 > period_sec * (1 - ptol)) and (f2 < period_sec * (1 + ptol))]
 
@@ -463,7 +487,7 @@ def get_penetration_depth(edi_file_list, period_sec,  whichrho='det'): #whichrho
         if len(p_index)>=1: # this edi can be included
             per_index=p_index[0]
 
-            stations.append(mt_obj.station)
+            # stations.append(mt_obj.station)
             latlons.append((mt_obj.lat, mt_obj.lon))
 
             # the attribute Z
@@ -494,30 +518,29 @@ def get_penetration_depth(edi_file_list, period_sec,  whichrho='det'): #whichrho
             logger.warn('%s was not used in the 3d profile, because it has no required period.', afile)
             pass
 
-    #check_period_values(periods)
+    # check_period_values(periods)
 
     return (stations, periods, pendep, latlons)
 
-def check_period_values(period_list):
+def check_period_values(period_list, ptol=0.05):
     """
     check if all the values are equal in the input list
     :param period_list: a list of period
+    :param ptol=0.05 # 5% percentage tolerance of period values considered as equal
     :return: True/False
     """
 
-    ptol=0.05 # tolerance of periods
-
-    logger.debug(period_list)
+    logger.debug("The Periods List to be checked : %s", period_list)
 
     p0= period_list[0] # the first value as a ref
 
     pcounter=0
 
     for per in period_list:
-        if (per > p0* (1 - ptol)) and (per < p0* (1 + ptol)):  # approximately equal by 5% error
+        if (per > p0* (1 - ptol)) and (per < p0* (1 + ptol)):  # approximately equal by <5% error
             pcounter = pcounter + 1
         else:
-            logger.warn("Period Not Equal!! p0 VS per: %s VS %s", p0, per)
+            logger.warn("Periods NOT Equal!!!  %s != %s", p0, per)
             return False
 
     return True
