@@ -103,7 +103,7 @@ def plot_latlon_depth_profile(edi_dir, period, zcomponent='det'): #use the Zcomp
     print(nx, ny)
 
     # make the image slightly bigger than the (nx, ny) to contain all points, avoid index out of bound
-    pad=1   # pad=1,2 affect the top and right of the plot
+    pad=1   # pad=1 affect the top and right of the plot. It is linked to get_index offset?
     nx2 = nx + pad
     ny2 = ny + pad
 
@@ -118,7 +118,7 @@ def plot_latlon_depth_profile(edi_dir, period, zcomponent='det'): #use the Zcomp
     logger.debug("zdep shape %s", zdep.shape)
 
     for iter, pair in enumerate(latlons):
-        print pair
+        logger.debug( pair )
         (xi, yi) = get_index(pair[0], pair[1], minlat, minlon, pixelsize)
         zdep[zdep.shape[0] - yi-1, xi] = np.abs(pendep[iter])
 
@@ -139,7 +139,7 @@ def plot_latlon_depth_profile(edi_dir, period, zcomponent='det'): #use the Zcomp
     values = np.zeros(len(latlons))
 
     for iter, pair in enumerate(latlons):
-        #     print pair
+        #  print pair
         (i, j) = get_index(pair[0], pair[1], minlat, minlon, pixelsize)
         points[iter, 0] = zdep.shape[0] - j -1
         points[iter, 1] = i
@@ -194,8 +194,9 @@ def plot_latlon_depth_profile(edi_dir, period, zcomponent='det'): #use the Zcomp
     xticks_label= ['%.2f'%(bbox[0][0] + pixelsize*xtick) for xtick in xticks]  # formatted float numbers
     yticks_label= ['%.2f'%(bbox[1][0] + pixelsize*ytick) for ytick in yticks]
 
-    print yticks_label
-    yticks_label.reverse() # make sure the altitudes are correctly labeled.
+    logger.debug("xticks_labels= %s", xticks_label)
+    logger.debug("yticks_labels= %s", yticks_label)
+    yticks_label.reverse() # make sure the latitude y-axis is correctly labeled.
 
     plt.xticks(xticks, xticks_label, rotation='0', fontsize=ftsize)
     plt.yticks(yticks, yticks_label,rotation='horizontal', fontsize=ftsize)
@@ -357,12 +358,12 @@ def get_bounding_box(latlons):
     minlat = min(lats)
     maxlat = max(lats)
 
-    print(minlat, maxlat)
+    print("Latitude Range:",minlat, maxlat)
 
     minlon = min(lons)
     maxlon = max(lons)
 
-    print(minlon, maxlon)
+    print("Longitude Range:", minlon, maxlon)
 
     return ((minlon, maxlon), (minlat, maxlat))
 
@@ -785,10 +786,10 @@ def create_shapefile(edi_dir, outputfile=None, zcomponent='det'):
     return outputfile
 
 # =============================================================================================
-# Usage examples:
-# python mtpy/imaging/penetration_depth_3d_profile.py /e/Datasets/MT_Datasets/GA_UA_edited_10s-10000s 16s [10s, 40s 341s]
+# Usage examples for small, med, large images
 # python mtpy/imaging/penetration_depth_3d_profile.py tests/data/edifiles/ 2.857s
 # python mtpy/imaging/penetration_depth_3d_profile.py /e/Datasets/MT_Datasets/3D_MT_data_edited_fromDuanJM/ 0.58s
+# python mtpy/imaging/penetration_depth_3d_profile.py /e/Datasets/MT_Datasets/GA_UA_edited_10s-10000s 16s [10s, 40s 341s]
 #   OR  period index integer
 # python mtpy/imaging/penetration_depth_3d_profile.py /e/Datasets/MT_Datasets/3D_MT_data_edited_fromDuanJM/ 30
 # python mtpy/imaging/penetration_depth_3d_profile.py  tests/data/edifiles/ 10
