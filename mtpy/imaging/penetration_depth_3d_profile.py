@@ -37,8 +37,11 @@ from mtpy.utils.mtpylog import MtPyLog
 logger = MtPyLog().get_mtpy_logger(__name__)
 #logger = MtPyLog(path2configfile='logging.yml').get_mtpy_logger(__name__) # specific
 
+
+# This is the major function to be maintained!!!
 def plot_latlon_depth_profile(edi_dir, period, zcomponent='det'): #use the Zcompotent=[det, zxy, zyx]
-    """ MT penetration depth profile in lat-lon coordinates with pixelsize =0.002
+    """
+    MT penetration depth profile in lat-lon coordinates with pixelsize =0.002
     :param edi_dir:
     :param period:
     :param zcomponent:
@@ -100,9 +103,13 @@ def plot_latlon_depth_profile(edi_dir, period, zcomponent='det'): #use the Zcomp
     print(nx, ny)
 
     # make an image bigger than the (nx, ny)
-    pad = 2  # this number creates a margin in the top and the right of the plot
-    nx2 = nx + pad
-    ny2 = ny + pad
+    padx = int(nx*0.01)  # pad param creates a margin in top and right of the plot
+    pady = int(ny*0.01)
+    if padx<2: padx=4
+    if pady<2: pady=4
+
+    nx2 = nx + padx
+    ny2 = ny + pady
 
     # Z = 0.0* np.random.random((nx2,ny2))   # Test data
     # Z=  np.ones((nx2,ny2))
@@ -148,9 +155,6 @@ def plot_latlon_depth_profile(edi_dir, period, zcomponent='det'): #use the Zcomp
 
     grid_z[grid_z < 0] = np.nan # method='cubic' may cause negative interp values; set them nan to make empty
 
-    # set the axix limit to avoid over extended
-    # plt.xlim(0, zdep.shape[1])      # horizontal axis 0-> the second index (i,j) of the matrix
-    # plt.ylim(zdep.shape[0], 0)     # vertical axis origin at upper corner, not the lower corner.
 
     # use reverse color map in imshow and the colorbar
     my_cmap = mpl.cm.jet
@@ -167,6 +171,18 @@ def plot_latlon_depth_profile(edi_dir, period, zcomponent='det'): #use the Zcomp
         station_points[iter, 1] = i
 
     plt.plot(station_points[:, 1],station_points[:, 0], 'kv', markersize=6) #the stations sample point 1-lon-j, 0-lat-i
+
+    # set the axix limit to avoid over extended
+    margin=max(padx,pady)  # adjusted if necessay, the number of grids extended out of the sample points area
+    plt.xlim(-margin,grid_z.shape[1]+margin)      # horizontal axis 0-> the second index (i,j) of the matrix
+    plt.ylim(grid_z.shape[0]+margin, -margin)     # vertical axis origin at upper corner, not the lower corner.
+
+    print ("**** station_points shape *****", station_points.shape)
+    print ("**** grid_z shape *****", grid_z.shape)
+    print(-margin, grid_z.shape[1]+margin)
+    print (grid_z.shape[0]-margin, -margin)
+   # plt.xlim([-margin, zdep.shape[1]+margin])      # horizontal axis 0-> the second index (i,j) of the matrix
+   # plt.ylim([zdep.shape[0]-margin, margin])     # vertical axis origin at upper corner, not the lower corner.
 
     ax = plt.gca()
     plt.gcf().set_size_inches(6, 6)
@@ -210,23 +226,10 @@ def plot_latlon_depth_profile(edi_dir, period, zcomponent='det'): #use the Zcomp
 
 def reverse_colourmap(cmap, name = 'my_cmap_r'):
     """
-    In:
-    cmap, name
-    Out:
-    my_cmap_r
+    In: cmap, name
+    Out: my_cmap_r
 
-    Explanation:
-    t[0] goes from 0 to 1
-    row i:   x  y0  y1 -> t[0] t[1] t[2]
-                   /
-                  /
-    row i+1: x  y0  y1 -> t[n] t[1] t[2]
-
-    so the inverse should do the same:
-    row i+1: x  y1  y0 -> 1-t[0] t[2] t[1]
-                   /
-                  /
-    row i:   x  y1  y0 -> 1-t[n] t[2] t[1]
+    Explanation: http://stackoverflow.com/questions/3279560/invert-colormap-in-matplotlib
     """
     reverse = []
     k = []
@@ -245,7 +248,7 @@ def reverse_colourmap(cmap, name = 'my_cmap_r'):
     return my_cmap_r
 
 
-# version-1 not mapped to lat-lon units
+# version-1 not mapped to lat-lon units. Will be removed in the future
 def plot_gridded_profile_deprecated(edi_dir, period_index, zcomponent='det'): #use the Zcompotent=[det, zxy, zyx]
     # replaced by the method: plot_lat_lon_depth_profile()
     """
@@ -473,8 +476,12 @@ def get_penetration_depth(edi_file_list, period_sec,  whichrho='det'): #whichrho
     stations = []
     latlons = []
 
+    all_freqs=[] # gather all freqs
+
     for afile in edi_file_list:
         mt_obj = mt.MT(afile)
+
+        all_freqs.extend(list(mt_obj.Z.freq))
 
         # all stations positions included
         stations.append((mt_obj.lat, mt_obj.lon))
@@ -518,7 +525,10 @@ def get_penetration_depth(edi_file_list, period_sec,  whichrho='det'): #whichrho
             logger.warn('%s was not used in the 3d profile, because it has no required period.', afile)
             pass
 
-    # check_period_values(periods)
+    # sort all frequencies so that they are in descending order,
+    # use set to remove repeats and make an array.
+    ALL_PERIODS = 1.0/np.array(sorted(list(set(all_freqs)), reverse=True))
+    print("Here is a list of ALL the periods in your edi files:\t ", ALL_PERIODS)
 
     return (stations, periods, pendep, latlons)
 
@@ -531,6 +541,9 @@ def check_period_values(period_list, ptol=0.05):
     """
 
     logger.debug("The Periods List to be checked : %s", period_list)
+
+    if len(period_list)<1:
+        logger.error("The MT periods list is empty - No relevant data found in the EDI files.")
 
     p0= period_list[0] # the first value as a ref
 
