@@ -102,14 +102,10 @@ def plot_latlon_depth_profile(edi_dir, period, zcomponent='det'): #use the Zcomp
 
     print(nx, ny)
 
-    # make an image bigger than the (nx, ny)
-    padx = int(nx*0.01)  # pad param creates a margin in top and right of the plot
-    pady = int(ny*0.01)
-    if padx<2: padx=4
-    if pady<2: pady=4
-
-    nx2 = nx + padx
-    ny2 = ny + pady
+    # make the image slightly bigger than the (nx, ny) to contain all points, avoid index out of bound
+    pad=1   # pad=1,2 affect the top and right of the plot
+    nx2 = nx + pad
+    ny2 = ny + pad
 
     # Z = 0.0* np.random.random((nx2,ny2))   # Test data
     # Z=  np.ones((nx2,ny2))
@@ -172,17 +168,18 @@ def plot_latlon_depth_profile(edi_dir, period, zcomponent='det'): #use the Zcomp
 
     plt.plot(station_points[:, 1],station_points[:, 0], 'kv', markersize=6) #the stations sample point 1-lon-j, 0-lat-i
 
-    # set the axix limit to avoid over extended
-    margin=max(padx,pady)  # adjusted if necessay, the number of grids extended out of the sample points area
-    plt.xlim(-margin,grid_z.shape[1]+margin)      # horizontal axis 0-> the second index (i,j) of the matrix
-    plt.ylim(grid_z.shape[0]+margin, -margin)     # vertical axis origin at upper corner, not the lower corner.
+    # set the axix limit to control white margins
+    padx = int(nx*0.01)
+    pady = int(ny*0.01)
+    min_margin=4
 
+    margin=max(padx,pady, min_margin)  # adjusted if necessay, the number of grids extended out of the sample points area
     print ("**** station_points shape *****", station_points.shape)
     print ("**** grid_z shape *****", grid_z.shape)
-    print(-margin, grid_z.shape[1]+margin)
-    print (grid_z.shape[0]-margin, -margin)
-   # plt.xlim([-margin, zdep.shape[1]+margin])      # horizontal axis 0-> the second index (i,j) of the matrix
-   # plt.ylim([zdep.shape[0]-margin, margin])     # vertical axis origin at upper corner, not the lower corner.
+    print("margin = %s"% margin)
+
+    plt.xlim(-margin,grid_z.shape[1]+margin)      # horizontal axis 0-> the second index (i,j) of the matrix
+    plt.ylim(grid_z.shape[0]+margin, -margin)     # vertical axis origin at upper corner, not the lower corner.
 
     ax = plt.gca()
     plt.gcf().set_size_inches(6, 6)
@@ -204,7 +201,7 @@ def plot_latlon_depth_profile(edi_dir, period, zcomponent='det'): #use the Zcomp
     plt.yticks(yticks, yticks_label,rotation='horizontal', fontsize=ftsize)
     ax.set_ylabel('Latitude(degree)', fontsize=ftsize)
     ax.set_xlabel('Longitude(degree)',fontsize=ftsize)
-    ax.tick_params(axis='both', which='major', width=3, length=10, labelsize=ftsize)
+    ax.tick_params(axis='both', which='major', width=3, length=6, labelsize=ftsize)
     #plt.title('Penetration Depth at the Period=%.6f (Cubic Interpolation)\n' % period_fmt)  # Cubic
     plt.title('Penetration Depth at the Period=%s seconds \n' % period_fmt)  # Cubic
 
@@ -370,14 +367,24 @@ def get_bounding_box(latlons):
     return ((minlon, maxlon), (minlat, maxlat))
 
 
-def get_index(lat, lon, minlat, minlon, pixelsize, offset=1):
+def get_index(lat, lon, minlat, minlon, pixelsize, offset=0):
+    """
+    compute the grid index from the lat lon float value
+    :param lat: float lat
+    :param lon: float lon
+    :param minlat: min lat at low left corner
+    :param minlon: min long at left
+    :param pixelsize: pixel size in lat long degree
+    :param offset: a shift of grid index. should be =0.
+    :return: a paire of integer
+    """
     index_x = (lon - minlon) / pixelsize
     index_y = (lat - minlat) / pixelsize
 
     ix = int(round(index_x))
     iy = int(round(index_y))
 
-    print (ix, iy)
+    logger.debug("Grid index: (%s, %s)", ix, iy)  # any negative values, out-of-bound?
 
     return (ix + offset, iy + offset)
 
@@ -624,9 +631,9 @@ def plot_bar3d_depth(edifiles, per_index, whichrho='det'):
     maxlon = max(lons)
 
     pixelsize = 0.002  # degree 0.001 = 100meters
-    offset = 3
-    LL_lat = minlat - offset * pixelsize
-    LL_lon = minlon - offset * pixelsize
+    shift = 3
+    LL_lat = minlat - shift * pixelsize
+    LL_lon = minlon - shift * pixelsize
 
     xgrids = maxlon - minlon
     ygrids = maxlat - minlat
@@ -779,15 +786,19 @@ def create_shapefile(edi_dir, outputfile=None, zcomponent='det'):
 
 # =============================================================================================
 # Usage examples:
-# python mtpy/imaging/penetration_depth_3d_profile.py /e/Datasets/MT_Datasets/3D_MT_data_edited_fromDuanJM/ 10
+# python mtpy/imaging/penetration_depth_3d_profile.py /e/Datasets/MT_Datasets/GA_UA_edited_10s-10000s 16s [10s, 40s 341s]
+# python mtpy/imaging/penetration_depth_3d_profile.py tests/data/edifiles/ 2.857s
+# python mtpy/imaging/penetration_depth_3d_profile.py /e/Datasets/MT_Datasets/3D_MT_data_edited_fromDuanJM/ 0.58s
+#   OR  period index integer
+# python mtpy/imaging/penetration_depth_3d_profile.py /e/Datasets/MT_Datasets/3D_MT_data_edited_fromDuanJM/ 30
 # python mtpy/imaging/penetration_depth_3d_profile.py  tests/data/edifiles/ 10
-# OR
-# python mtpy/imaging/penetration_depth_3d_profile.py examples/data/edi2/ 0.5s
 # =============================================================================================
 if __name__=="__main__":
 
     if len(sys.argv)<2:
         print("Usage: python %s edi_dir period_sec "%sys.argv[0])
+        print("usage example: python mtpy/imaging/penetration_depth_3d_profile.py  tests/data/edifiles/ 10")
+        print("usage example: python mtpy/imaging/penetration_depth_3d_profile.py  tests/data/edifiles/ 2.857s")
         sys.exit(1)
     elif os.path.isdir(sys.argv[1]):
         edi_dir = sys.argv[1]
