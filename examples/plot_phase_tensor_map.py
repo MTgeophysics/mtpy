@@ -25,10 +25,14 @@ def main(edi_path, save_path=None):
 
     # frequency to plot
     # plot_freq = 9.4
-    plot_freq = 10.0  # check the freq range in your input edi files: 10 for georgina tests/data/edifiles
+    freq = 10.0  # check the freq range in your input edi files: 10 for georgina tests/data/edifiles
+
+    freq=0.0625  #10.0
+    if len(sys.argv)>2:
+        freq=float(sys.argv[2])
 
     # parameters describing ellipses, differ for different map scales: deg, m, km
-    ellipse_dict = {'size': 0.01, 'colorby': 'phimin', 'range': (0, 90, 1), 'cmap': 'mt_bl2gr2rd'}
+    ellipse_dict = {'size': 0.1, 'colorby': 'phimin', 'range': (0, 90, 1), 'cmap': 'mt_bl2gr2rd'}
 
     # parameters describing the induction vector arrows
     arrow_dict = {'size': 0.05,
@@ -45,13 +49,13 @@ def main(edi_path, save_path=None):
                          'yborderpad': 0.015}
 
     m = pptmaps.PlotPhaseTensorMaps(fn_list=elst,
-                                    plot_freq=plot_freq,
+                                    plot_freq=freq,
                                     # arrow_legend_dict=arrow_legend_dict,
                                     ftol=0.2,
                                     # xpad=0.02,  # change according to mapscale
                                     plot_tipper='yri',
                                     arrow_dict=arrow_dict,
-                                    # ellipse_dict=ellipse_dict,
+                                    ellipse_dict=ellipse_dict,
                                     fig_size=(4, 4),
                                     mapscale='deg',  # deg or m, or km
                                     save_fn=save_path)
