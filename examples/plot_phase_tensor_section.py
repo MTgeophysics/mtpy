@@ -25,13 +25,14 @@ def main(edi_path):
 
     ptp.PlotPhaseTensorPseudoSection(fn_list=elst,
                                      tscale='period',
-                                     ylim=(1e-1, 1e3),  # period range to plot
+                                     #ylim=(1e-1, 1e3),  # orig period range to plot
+                                     ylim=(0, 10000),  # period range to plot
                                      # xlim = (0,10000),
-                                     stretch=(400, 20),  # determines (x,y) aspect ratio of plot
+                                     stretch=(2000, 20),  # determines (x,y) aspect ratio of plot
                                      station_id=(0, 10),  # indices for showing station names
                                      ellipse_dict={'size': 3},
-                                     plot_tipper='yr',
-                                     arrow_dict={'size': 3, 'head_length': 0.1,
+                                     plot_tipper='yri',
+                                     arrow_dict={'size': 5, 'head_length': 0.2,
                                                  'head_width': 0.1, 'lw': 0.5},
                                      # arrow parameters, adjust as necessary. lw = linewidth
                                      font_size=4,

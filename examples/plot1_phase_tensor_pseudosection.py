@@ -1,5 +1,5 @@
 """
-extension from the mtpy1/mtpy/imaging/phase_tensor_pseudo_section_plot.py
+ mtpy.imaging.plotptpseudosection (mtpy1/mtpy/imaging/phase_tensor_pseudo_section_plot.py)
 
 """
 import os, sys
@@ -7,9 +7,9 @@ import glob
 
 import mtpy.imaging.mtplot as mtplot
 from mtpy.imaging.mtplottools import MTArrows, MTEllipse
-from mtpy.tests.common import MTPY_DEVELOPMENT_TEST_DATA
 
-from mtpy.imaging.phase_tensor_pseudo_section_plot import PlotPhaseTensorPseudoSection
+# from mtpy1_mtpy.imaging.phase_tensor_pseudo_section_plot import PlotPhaseTensorPseudoSection
+from mtpy.imaging.plotptpseudosection import PlotPhaseTensorPseudoSection
 import matplotlib.pyplot as plt
 
 
@@ -23,12 +23,10 @@ def test_plot1(edi_file_list):
     """ from  mtpy1/mtpy/imaging/phase_tensor_pseudo_section_plot.py
     """
 
-    pt1 = PlotPhaseTensorPseudoSection(
-        edi_file_list,
+    pt1 = PlotPhaseTensorPseudoSection(fn_list=edi_file_list,
         data_type='z',
         ellipse=ellipse,
-        arrow=arrow,
-        fn_list=edi_file_list,
+        arrow=arrow,  # arrow is not taken into constructor.
         tscale='frequency',
         ellipse_freq=1,  # plot an ellipse at every frequency value
         plot_tipper='yri',
@@ -39,21 +37,18 @@ def test_plot1(edi_file_list):
     plt.rcdefaults()
 
 # Why the plot below becomes smaller?
-    pt1.plot_tipper = 'yri'
+    #pt1.plot_tipper = 'yri'
+    #  pt1.arrow.arrow_size = 100 AttributeError: 'PlotPhaseTensorPseudoSection' object has no attribute 'arrow'
+
     pt1.ellipse_freq = 2  # plot ellipse at every second frequency
-    pt1.arrow.arrow_size = 200
+    pt1.arrow_size = 200
     pt1.redraw_plot()
 
-    # plt.show()
 
-    pt1.arrow.arrow_size = 100
-    edi_file_list = glob.glob(os.path.join(MTPY_DEVELOPMENT_TEST_DATA, '*.edi'))
     pt1 = PlotPhaseTensorPseudoSection(
-        edi_file_list,
+        fn_list=edi_file_list,
         data_type='z',
         ellipse=ellipse,
-        arrow=arrow,
-        fn_list=edi_file_list,
         tscale='frequency',
         ellipse_freq=3,  # plot every 3rd ellipse
         plot_tipper='yri',
@@ -75,11 +70,10 @@ def test_plot2(edi_file_list):
 
     # Plot the phase tensor pseudo section
     pt1 = PlotPhaseTensorPseudoSection(
-        edi_file_list,
+        fn_list=edi_file_list,
         data_type='z',
         ellipse=ellipse,
         arrow=arrow,
-        fn_list=edi_file_list,
         tscale='frequency',
         ellipse_freq=1,  # plot an ellipse at every frequency value
         plot_tipper='yri',
@@ -91,7 +85,7 @@ def test_plot2(edi_file_list):
 
     # Change some properties and replot.  But why the figure window become smaller?
     pt1.ellipse_freq = 2  # plot ellipse at every second frequency
-    pt1.arrow.arrow_size = 50  # change arrow size to 50
+    #pt1.arrow.arrow_size = 50  # change arrow size to 50
     pt1.fig_size=[10, 12]
     pt1.font_size=14
     pt1.redraw_plot()
@@ -107,11 +101,10 @@ def test_plot3(edi_file_list):
 
     # plot every 3rd ellipse
     pt1 = PlotPhaseTensorPseudoSection(
-        edi_file_list,
+        fn_list=edi_file_list,
         data_type='z',
         ellipse=ellipse,
         arrow=arrow,
-        fn_list=edi_file_list,
         tscale='frequency',
         ellipse_freq=5,  #=3 plot every 3rd ellipse
         plot_tipper='yri', # plot real and imaginary tipper arrows
@@ -132,11 +125,10 @@ def test_plot4(edi_file_list):
     arrow.arrow_size = 50
     # plot every 3rd ellipse
     pt1 = PlotPhaseTensorPseudoSection(
-        edi_file_list,
+        fn_list=edi_file_list,
         data_type='z',
         ellipse=ellipse,
         arrow=arrow,
-        fn_list=edi_file_list,
         tscale='frequency',
         ellipse_freq=3,  # plot every 3rd ellipse
         plot_tipper='yri', # plot real and imaginary tipper arrows
@@ -153,11 +145,10 @@ def test_plot4(edi_file_list):
     arrow.arrow_size = 40
     # plot every 4th ellipse
     pt1 = PlotPhaseTensorPseudoSection(
-        edi_file_list,
+        fn_list=edi_file_list,
         data_type='z',
         ellipse=ellipse,
         arrow=arrow,
-        fn_list=edi_file_list,
         tscale='frequency',
         ellipse_freq=4,  # plot every 4th ellipse
         plot_tipper='yri', # plot real and imaginary tipper arrows
@@ -173,11 +164,10 @@ def test_plot4(edi_file_list):
 
     # plot every 4th ellipse
     pt1 = PlotPhaseTensorPseudoSection(
-        edi_file_list,
+        fn_list=edi_file_list,
         data_type='z',
         ellipse=ellipse,
         arrow=arrow,
-        fn_list=edi_file_list,
         tscale='frequency',
         ellipse_freq=4,  # plot every 4th ellipse
         plot_tipper='yri', # plot real and imaginary tipper arrows
@@ -196,8 +186,7 @@ def test_plot4(edi_file_list):
 #2) do the following two statements. Then it will all works fine.
 # sys.path.insert(0,'/Softlab/Githubz/mtpy1')
 # os.environ['MTPYPATH']='/Softlab/Githubz/mtpy1'
-# 
-# python testz/test_plot_phase_tensor_pseudosection.py MTPy_development/test_data/
+#
 # python testz/test_plot_phase_tensor_pseudosection.py examples/data/edi_files/
 # python testz/test_plot_phase_tensor_pseudosection.py examples/data/edi_files/georgina
 #
@@ -207,8 +196,6 @@ def test_plot4(edi_file_list):
 if __name__ == '__main__':
     """the script commandline run entry point.
     """
-
-    #edi_file_list = glob.glob(os.path.join(MTPY_DEVELOPMENT_TEST_DATA, '*.edi'))
     
     edi_path = sys.argv[1]
 
@@ -217,10 +204,10 @@ if __name__ == '__main__':
     print(edi_file_list)
 
     print("test_plot1.................")
-    test_plot1(edi_file_list)
+    #test_plot1(edi_file_list)
 
     print("test_plot2.................")
-    test_plot2(edi_file_list)
+    #test_plot2(edi_file_list)
 
     print("test_plot3.................")
     test_plot3(edi_file_list)
