@@ -104,6 +104,8 @@ disable=import-star-module-level,old-octal-literal,oct-method,print-statement,un
 # mypackage.mymodule.MyReporterClass.
 output-format=text
 
+msg-template="{path}:{line}:{column} - {msg_id}: ({symbol}): {msg}" 
+
 # Put messages in a separate file for each module / package specified on the
 # command line instead of printing them on stdout. Reports (if any) will be
 # written in a file name "pylint_global.[txt|html]". This option is deprecated

@@ -146,8 +146,8 @@ def plot_latlon_depth_profile(edi_dir, period, zcomponent='det'): #use the Zcomp
         values[iter] = np.abs(pendep[iter])
 
     #grid_z0 = griddata(points, values, (grid_x, grid_y), method='nearest')
-    #grid_z1 = griddata(points, values, (grid_x, grid_y), method='linear')
-    grid_z = griddata(points, values, (grid_x, grid_y), method='linear')
+    #grid_z = griddata(points, values, (grid_x, grid_y), method='linear')
+    grid_z = griddata(points, values, (grid_x, grid_y), method='cubic')
 
     grid_z[grid_z < 0] = np.nan # method='cubic' may cause negative interp values; set them nan to make empty
 
