@@ -242,6 +242,7 @@ def main():
 ##########################################################################################
 # Usage example:
 # python mtpy/imaging/plot_stationmap_from_edis.py tests/data/edifiles/ 12 2.0 12 true
+# python mtpy/imaging/plot_stationmap_from_edis.py  /e/Datasets/MT_Datasets/GA_UA_edited_10s-10000s 12 2.0 12 true
 #---------------------------------------------------------------------------------
 if __name__ == '__main__':
     main()
