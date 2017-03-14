@@ -410,10 +410,10 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
         self._arrow_dict = kwargs.pop('arrow_dict', {})
         self._read_arrow_dict()
 
-        # --> plot if desired
-        self.plot_yn = kwargs.pop('plot_yn', 'y')
-        if self.plot_yn == 'y':
-            self.plot()
+        # This is a constructor of object. It's better not to call plot method here!!
+        # self.plot_yn = kwargs.pop('plot_yn', 'y')
+        # if self.plot_yn == 'y':
+        #     self.plot()
 
             # ---need to rotate data on setting rotz
 
@@ -1261,7 +1261,7 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
 
         return "Plots pseudo section of phase tensor ellipses"
 
-    def save_figure(self, save_fn, file_format='pdf', orientation='portrait',
+    def save_figure(self, save_fn, file_format='png', orientation='portrait',
                     fig_dpi=None, close_plot='y'):
         """
         save_plot will save the figure to save_fn.

@@ -575,7 +575,7 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
         self.save_fn = kwargs.pop('save_fn', "/c/tmp")
         if self.plot_yn == 'y':
             self.plot()
-            # self.save_figure(self.save_fn, file_format='png')
+            self.save_figure(self.save_fn, file_format='png', fig_dpi=None)
 
     # ---need to rotate data on setting rotz
     def _set_rot_z(self, rot_z):
@@ -1132,7 +1132,7 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
 
         plt.show()
 
-    def save_figure(self, save_fn, file_format='pdf',
+    def save_figure(self, save_fn, file_format='jpg',
                     orientation='portrait', fig_dpi=None, close_plot='y'):
         """
         save_plot will save the figure to save_fn.
@@ -1193,13 +1193,13 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
         else:
             if not os.path.exists(save_fn):
                 os.mkdir(save_fn)
-            if not os.path.exists(os.path.join(save_fn, 'PTMaps')):
-                os.mkdir(os.path.join(save_fn, 'PTMaps'))
-                save_fn = os.path.join(save_fn, 'PTMaps')
+            # if not os.path.exists(os.path.join(save_fn, 'PTMaps')):
+            #     os.mkdir(os.path.join(save_fn, 'PTMaps'))
+            #     save_fn = os.path.join(save_fn, 'PTMaps')
 
-            save_fn = os.path.join(save_fn, 'PTmap_' + self.ellipse_colorby + sf +
-                                   'Hz.' + file_format)
-            self.fig.savefig(save_fn, dpi=fig_dpi, format=file_format,
+            fname="PTmap_DPI%s_%s_%sHz.%s"%(str(self.fig_dpi), self.ellipse_colorby,sf,file_format )
+            path2savefile = os.path.join(save_fn, fname)
+            self.fig.savefig(path2savefile, dpi=fig_dpi, format=file_format,
                              orientation=orientation, bbox_inches='tight')
 
         if close_plot == 'y':
@@ -1209,7 +1209,7 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
         else:
             pass
 
-        self.fig_fn = save_fn
+        self.fig_fn = path2savefile
         print 'Saved figure to: ' + self.fig_fn
 
     def update_plot(self):

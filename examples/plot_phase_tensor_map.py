@@ -13,7 +13,7 @@ import sys
 import mtpy.imaging.plotptmaps as pptmaps
 
 
-def main(edi_path, save_path=None):
+def main(edi_path, freq, save_path=None):
     """Plot Phase Tensor Map
     Args:
         edi_path: path to edi files
@@ -22,14 +22,6 @@ def main(edi_path, save_path=None):
     """
     # gets edi file names as a list
     elst = glob.glob(os.path.join(edi_path, "*.edi"))
-
-    # frequency to plot
-    # plot_freq = 9.4
-    freq = 10.0  # check the freq range in your input edi files: 10 for georgina tests/data/edifiles
-
-    freq=0.0625  #10.0
-    if len(sys.argv)>2:
-        freq=float(sys.argv[2])
 
     # parameters describing ellipses, differ for different map scales: deg, m, km
     ellipse_dict = {'size': 0.1, 'colorby': 'phimin', 'range': (0, 90, 1), 'cmap': 'mt_bl2gr2rd'}
@@ -58,7 +50,8 @@ def main(edi_path, save_path=None):
                                     ellipse_dict=ellipse_dict,
                                     fig_size=(4, 4),
                                     mapscale='deg',  # deg or m, or km
-                                    save_fn=save_path)
+                                    save_fn=save_path,
+                                    fig_dpi=400)
 
     # m.redraw_plot()
 
@@ -72,17 +65,24 @@ def main(edi_path, save_path=None):
 # How to Run:
 # cd /path2/mtpy2
 # export PYTHONPATH=/path2/mtpy2
-# python examples/plot_phase_tensor_map.py ./examples/data/edi_files/georgina ./localdir/mtpy_map
-# python examples/plot_phase_tensor_map.py ./examples/data/edi_files ./localdir/mtpy_map
-# python examples/plot_phase_tensor_map.py tests/data/edifiles/ ./localdir/mtpy_map
+# python examples/plot_phase_tensor_map.py ./examples/data/edi_files/georgina 10 /e/MTPY2_Outputs/
+# python examples/plot_phase_tensor_map.py ./examples/data/edi_files 10 /e/MTPY2_Outputs/
+# python examples/plot_phase_tensor_map.py tests/data/edifiles/ 10 /e/MTPY2_Outputs/
 ###################################################################################################
 if __name__ == '__main__':
 
+    # the MT edi dir
     edi_path = sys.argv[1]
 
-    if len(sys.argv) > 2:
-        save_file = sys.argv[2]
+    # the MT frequency
+    # check the freq range in your input edi files: 10 for georgina tests/data/edifiles
+    freq=0.0625
+    if len(sys.argv)>2:
+        freq=float(sys.argv[2])
+
+    if len(sys.argv) > 3:
+        save_file = sys.argv[3]
     else:
         save_file = None
 
-    main(edi_path, save_path=save_file)
+    main(edi_path, freq, save_path=save_file)
