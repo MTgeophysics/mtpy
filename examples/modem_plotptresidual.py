@@ -8,7 +8,7 @@ Created on Tue Oct 04 13:13:29 2016
 # import mtpy.modeling.modem_new as mtmn
 import os.path as op
 
-from mtpy.imaging.plot_phase_tensor_map import PlotPTMaps
+from mtpy.imaging.modem_phase_tensor_maps import PlotPTMaps
 
 workdir = r'/Softlab/Githubz/mtpy2/examples/data/ModEM_files'
 workdir = r'/g/data/ha3/fxz547/Githubz/mtpy2/examples/data/ModEM_files'

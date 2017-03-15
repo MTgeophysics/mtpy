@@ -421,8 +421,10 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
                                            'head_width': .005,
                                            'lw': .75})
 
-            self.xpad = kwargs.pop('xpad', .02)
-            self.ypad = kwargs.pop('xpad', .02)
+            # self.xpad = kwargs.pop('xpad', .02)
+            # self.ypad = kwargs.pop('xpad', .02)
+            self.xpad = kwargs.pop('xpad', 0.5)
+            self.ypad = kwargs.pop('xpad', 1)
         elif self.mapscale == 'm':
             self._ellipse_dict = kwargs.pop('ellipse_dict', {'size': 500})
             self._arrow_dict = kwargs.pop('arrow_dict',
@@ -439,8 +441,8 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
                                            'head_length': .05,
                                            'head_width': .05,
                                            'lw': .75})
-            self.xpad = kwargs.pop('xpad', .5)
-            self.ypad = kwargs.pop('xpad', .5)
+            self.xpad = kwargs.pop('xpad', 50)
+            self.ypad = kwargs.pop('xpad', 50)
         self._read_ellipse_dict()
         self._read_arrow_dict()
 
@@ -570,12 +572,12 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
                 self.station_font_dict = {'size': self.font_size,
                                           'weight': 'bold'}
 
-        # --> plot if desired ------------------------
-        self.plot_yn = kwargs.pop('plot_yn', 'y')
-        self.save_fn = kwargs.pop('save_fn', "/c/tmp")
-        if self.plot_yn == 'y':
-            self.plot()
-            self.save_figure(self.save_fn, file_format='png', fig_dpi=None)
+        # This is a constructor. It's better not to call plot method here!!
+        # self.plot_yn = kwargs.pop('plot_yn', 'y')
+        # self.save_fn = kwargs.pop('save_fn', "/c/tmp/")
+        # if self.plot_yn == 'y':
+        #     self.plot()
+        #     self.save_figure(self.save_fn, file_format='png', fig_dpi=None)
 
     # ---need to rotate data on setting rotz
     def _set_rot_z(self, rot_z):
@@ -1112,23 +1114,26 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
 
         # --> add reference ellipse:  (legend of ellipse size=1)
         # FZ: remove the following section if no show of Phi
-        ref_ellip = patches.Ellipse((0, .0),
-                                    width=es,
-                                    height=es,
-                                    angle=0)
-        ref_ellip.set_facecolor((0, 0, 0))
-        ref_ax_loc = list(self.ax2.get_position().bounds)
-        ref_ax_loc[0] *= .95
-        ref_ax_loc[1] -= .17
-        ref_ax_loc[2] = .1
-        ref_ax_loc[3] = .1
-        self.ref_ax = self.fig.add_axes(ref_ax_loc, aspect='equal')
-        self.ref_ax.add_artist(ref_ellip)
-        self.ref_ax.set_xlim(-es / 2. * 1.05, es / 2. * 1.05)
-        self.ref_ax.set_ylim(-es / 2. * 1.05, es / 2. * 1.05)
-        plt.setp(self.ref_ax.xaxis.get_ticklabels(), visible=False)
-        plt.setp(self.ref_ax.yaxis.get_ticklabels(), visible=False)
-        self.ref_ax.set_title(r'$\Phi$ = 1')
+
+        show_phi=False # JingMingDuan does not want to show the black circle - it's not scaling
+        if show_phi is True:
+            ref_ellip = patches.Ellipse((0, .0),
+                                        width=es,
+                                        height=es,
+                                        angle=0)
+            ref_ellip.set_facecolor((0, 0, 0))
+            ref_ax_loc = list(self.ax2.get_position().bounds)
+            ref_ax_loc[0] *= .95
+            ref_ax_loc[1] -= .17
+            ref_ax_loc[2] = .1
+            ref_ax_loc[3] = .1
+            self.ref_ax = self.fig.add_axes(ref_ax_loc, aspect='equal')
+            self.ref_ax.add_artist(ref_ellip)
+            self.ref_ax.set_xlim(-es / 2. * 1.05, es / 2. * 1.05)
+            self.ref_ax.set_ylim(-es / 2. * 1.05, es / 2. * 1.05)
+            plt.setp(self.ref_ax.xaxis.get_ticklabels(), visible=False)
+            plt.setp(self.ref_ax.yaxis.get_ticklabels(), visible=False)
+            self.ref_ax.set_title(r'$\Phi$ = 1')
 
         plt.show()
 
@@ -1182,30 +1187,31 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
         if fig_dpi == None:
             fig_dpi = self.fig_dpi
 
-        # FZ: TODO: the following logic is wrong, need to be fixed
-        if not os.path.isdir(save_fn):  # FZ: assume save-fn is a file= "path2/afile.fmt"
-            file_format = save_fn[-3:]
-            self.fig.savefig(save_fn, dpi=fig_dpi, format=file_format,
-                             orientation=orientation, bbox_inches='tight')
-            plt.clf()
-            plt.close(self.fig)
-
-        else:
+        # FZ: fixed the following logic
+        if os.path.isdir(save_fn):  # FZ: assume save-fn is a directory
             if not os.path.exists(save_fn):
                 os.mkdir(save_fn)
-            # if not os.path.exists(os.path.join(save_fn, 'PTMaps')):
-            #     os.mkdir(os.path.join(save_fn, 'PTMaps'))
-            #     save_fn = os.path.join(save_fn, 'PTMaps')
 
-            fname="PTmap_DPI%s_%s_%sHz.%s"%(str(self.fig_dpi), self.ellipse_colorby,sf,file_format )
+            # make a file name
+            fname = "PTmap_DPI%s_%s_%sHz.%s" % (str(self.fig_dpi), self.ellipse_colorby, sf, file_format)
             path2savefile = os.path.join(save_fn, fname)
             self.fig.savefig(path2savefile, dpi=fig_dpi, format=file_format,
                              orientation=orientation, bbox_inches='tight')
+        else: # FZ: assume save-fn is a path2file= "path2/afile.fmt"
+            file_format = save_fn.split('.')[-1]
+            if file_format is None or file_format not in ['png','jpg']:
+                print ("Error: output file name is not correctly provided:", save_fn)
+                raise Exception("output file name is not correctly provided!!!")
+
+            path2savefile=save_fn
+            self.fig.savefig(path2savefile, dpi=fig_dpi, format=file_format,
+                             orientation=orientation)#, bbox_inches='tight')
+            plt.clf()
+            plt.close(self.fig)
 
         if close_plot == 'y':
             plt.clf()
             plt.close(self.fig)
-
         else:
             pass
 

@@ -11,7 +11,7 @@ Created on Tue Oct 04 13:13:29 2016
 import os.path as op
 
 from mtpy.imaging.plot_depth_slice import PlotDepthSlice
-from mtpy.imaging.plot_phase_tensor_map import PlotPTMaps
+from mtpy.imaging.modem_phase_tensor_maps import PlotPTMaps
 from mtpy.imaging.plot_response import PlotResponse
 from mtpy.imaging.plot_rms_map import PlotRMSMaps
 
