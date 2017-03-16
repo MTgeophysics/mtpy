@@ -1,4 +1,4 @@
-MTpy: A Python Toolkit for Magnetotelluric (MT) Data Processing, Analysis,Modelling and Visualization
+MTpy: A Python Toolbox for Magnetotelluric (MT) Data Processing, Analysis, Modelling and Visualization
 ==================================
 
 |Build Status| |Coverage Status| |Documentation Status|
@@ -8,6 +8,10 @@ Overview
 
 This repository was forked (2016-11-16) from https://github.com/geophysics/mtpy/tree/ak.
 
+Contact Us
+========
+
+If you want to contribute, or have any questions please contact fei.zhang@ga.gov.au
 
 Documentation
 =============
