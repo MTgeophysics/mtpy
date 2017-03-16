@@ -156,7 +156,7 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
                    easting/northing put it the respective units. 
                    *default* is 0.2
                    
-        **pad** : float
+        **ypad** : float
                    padding in the north-south direction of plot boundaries.  
                    Note this is by default set to lat and long units, so if you
                    use easting/northing put it the respective units.
@@ -421,10 +421,10 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
                                            'head_width': .005,
                                            'lw': .75})
 
-            # self.xpad = kwargs.pop('xpad', .02)
+            # self.xpad = kwargs.pop('xpad', .02) # 0.02degree may not be enough
             # self.ypad = kwargs.pop('xpad', .02)
             self.xpad = kwargs.pop('xpad', 0.5)
-            self.ypad = kwargs.pop('xpad', 1)
+            self.ypad = kwargs.pop('ypad', 0.5)
         elif self.mapscale == 'm':
             self._ellipse_dict = kwargs.pop('ellipse_dict', {'size': 500})
             self._arrow_dict = kwargs.pop('arrow_dict',
@@ -433,7 +433,7 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
                                            'head_width': 50,
                                            'lw': .75})
             self.xpad = kwargs.pop('xpad', 500)
-            self.ypad = kwargs.pop('xpad', 500)
+            self.ypad = kwargs.pop('ypad', 500)
         elif self.mapscale == 'km':
             self._ellipse_dict = kwargs.pop('ellipse_dict', {'size': .5})
             self._arrow_dict = kwargs.pop('arrow_dict',
@@ -442,7 +442,7 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
                                            'head_width': .05,
                                            'lw': .75})
             self.xpad = kwargs.pop('xpad', 50)
-            self.ypad = kwargs.pop('xpad', 50)
+            self.ypad = kwargs.pop('ypad', 50)
         self._read_ellipse_dict()
         self._read_arrow_dict()
 
@@ -608,7 +608,7 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
     rot_z = property(fget=_get_rot_z, fset=_set_rot_z,
                      doc="""rotation angle(s)""")
 
-    def plot(self):
+    def plot(self, save_path=None, show=True):
         """
         Plots the phase tensor map
         """
@@ -638,9 +638,6 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
 
         # make an axes instance
         self.ax = self.fig.add_subplot(1, 1, 1, aspect='equal')
-
-        # plt.locator_params(axis='x', nbins=3)  # control number of ticks in axis (nbins ticks)
-        plt.xticks(rotation='vertical')  # FZ: control tick rotation=30 not that good
         #
         # --> plot the background image if desired-----------------------
         try:
@@ -675,7 +672,8 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
 
             # set tick parameters depending on the mapscale
         if self.mapscale == 'deg':
-            self.tickstrfmt = '%.2f'
+            #self.tickstrfmt = '%.2f'
+            self.tickstrfmt = '%.1f'
 
         elif self.mapscale == 'm' or self.mapscale == 'km':
             self.tickstrfmt = '%.0f'
@@ -684,8 +682,10 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
         elliplist = []
         latlist = np.zeros(len(self.mt_list))
         lonlist = np.zeros(len(self.mt_list))
-        self.plot_xarr = np.zeros(len(self.mt_list))
-        self.plot_yarr = np.zeros(len(self.mt_list))
+        # self.plot_xarr = np.zeros(len(self.mt_list))
+        # self.plot_yarr = np.zeros(len(self.mt_list))
+        self.plot_xarr = []
+        self.plot_yarr = []
 
         for ii, mt in enumerate(self.mt_list):
             # try to find the freq in the freq list of each file
@@ -776,8 +776,8 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
                     raise NameError('mapscale not recognized')
 
                 # put the location of each ellipse into an array in x and y
-                self.plot_xarr[ii] = plotx
-                self.plot_yarr[ii] = ploty
+                self.plot_xarr.append(plotx)
+                self.plot_yarr.append(ploty)
 
                 # --> set local variables
                 phimin = np.nan_to_num(pt.phimin[0][jj])
@@ -931,31 +931,47 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
 
         elif self.mapscale == 'm':
             self.ax.set_xlabel('Easting (m)',
-                               fontsize=self.font_size + 2,
+                               fontsize=self.font_size ,
                                fontweight='bold')
             self.ax.set_ylabel('Northing (m)',
-                               fontsize=self.font_size + 2,
+                               fontsize=self.font_size ,
                                fontweight='bold')
 
         elif self.mapscale == 'km':
             self.ax.set_xlabel('Easting (km)',
-                               fontsize=self.font_size + 2,
+                               fontsize=self.font_size ,
                                fontweight='bold')
             self.ax.set_ylabel('Northing (km)',
-                               fontsize=self.font_size + 2,
+                               fontsize=self.font_size ,
                                fontweight='bold')
 
         # --> set plot limits
         #    need to exclude zero values from the calculation of min/max!!!!
-        self.ax.set_xlim(self.plot_xarr[self.plot_xarr != 0.].min() - self.xpad,
-                         self.plot_xarr[self.plot_xarr != 0.].max() + self.xpad)
-        self.ax.set_ylim(self.plot_yarr[self.plot_yarr != 0.].min() - self.xpad,
-                         self.plot_yarr[self.plot_xarr != 0.].max() + self.xpad)
+        print("**********", self.plot_xarr)
+        print("**********", self.plot_yarr)
+        self.plot_xarr.sort()
+        self.plot_yarr.sort()
 
+        print("**********",self.plot_xarr[0], self.plot_xarr[-1])
+        print("**********",self.plot_yarr[0], self.plot_yarr[-1])
+        # print("**********",self.plot_xarr)
+        # self.ax.set_xlim(self.plot_xarr[self.plot_xarr != 0.].min() - self.xpad,
+        #                  self.plot_xarr[self.plot_xarr != 0.].max() + self.xpad)
+        # self.ax.set_ylim(self.plot_yarr[self.plot_yarr != 0.].min() - self.ypad,
+        #                  self.plot_yarr[self.plot_yarr != 0.].max() + self.ypad)
+        self.ax.set_xlim(self.plot_xarr[0] - self.xpad,
+                         self.plot_xarr[-1] + self.xpad)
+        self.ax.set_ylim(self.plot_yarr[0] - self.ypad,
+                         self.plot_yarr[-1] + self.ypad)
         # --> set tick label format
+
         self.ax.xaxis.set_major_formatter(FormatStrFormatter(self.tickstrfmt))
         self.ax.yaxis.set_major_formatter(FormatStrFormatter(self.tickstrfmt))
-        # self.ax.set_xticklabels(np.round(self.plot_xarr, decimals=2),rotation=45)
+        #self.ax.set_xticklabels(self.plot_xarr,rotation=0)
+
+        plt.locator_params(axis='x', nbins=5)  # control number of ticks in axis (nbins ticks)
+        #plt.xticks(rotation='vertical')  # FZ: control tick rotation=30 not that good
+        plt.xticks(rotation=0)  # FZ: control tick rotation=0 horiz
 
         # --> set title in period or freq
         if self.tscale == 'period':
@@ -965,10 +981,10 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
 
         if not self.plot_title:
             self.ax.set_title('Phase Tensor Map for ' + titlefreq,
-                              fontsize=self.font_size + 2, fontweight='bold')
+                              fontsize=self.font_size , fontweight='bold')
         else:
             self.ax.set_title(self.plot_title + titlefreq,
-                              fontsize=self.font_size + 2, fontweight='bold')
+                              fontsize=self.font_size, fontweight='bold')
 
         # --> plot induction arrow scale bar -----------------------------------
         if self.plot_tipper.find('y') == 0:
@@ -1055,14 +1071,14 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
         if self.cb_position is None:
             self.ax2, kw = mcb.make_axes(self.ax,
                                          orientation=self.cb_orientation,
-                                         shrink=.35)
+                                         shrink=.50)
             # FZ: try to fix colorbar h-position
             # from mpl_toolkits.axes_grid1 import make_axes_locatable
-            #
-            # # create an axes on the right side of ax. The width of cax will be 5%
-            # # of ax and the padding between cax and ax will be fixed at 0.05 inch.
+            # #
+            # # # create an axes on the right side of ax. The width of cax will be 5%
+            # # # of ax and the padding between cax and ax will be fixed at 0.05 inch.
             # divider = make_axes_locatable(self.ax)
-            # self.ax2 = divider.append_axes("right", size="5%", pad=0.05)
+            # self.ax2 = divider.append_axes("right", size="5%", pad=0.1)
 
         else:
             self.ax2 = self.fig.add_axes(self.cb_position)
@@ -1108,14 +1124,14 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
 
         elif self.cb_orientation == 'vertical':
             self.cb.ax.yaxis.set_label_position('right')
-            self.cb.ax.yaxis.set_label_coords(1.25, .5)
+            self.cb.ax.yaxis.set_label_coords(1.5, .5)
             self.cb.ax.yaxis.tick_left()
             self.cb.ax.tick_params(axis='y', direction='in')
 
         # --> add reference ellipse:  (legend of ellipse size=1)
         # FZ: remove the following section if no show of Phi
 
-        show_phi=False # JingMingDuan does not want to show the black circle - it's not scaling
+        show_phi=False # JingMingDuan does not want to show the black circle - it's not useful
         if show_phi is True:
             ref_ellip = patches.Ellipse((0, .0),
                                         width=es,
@@ -1135,7 +1151,11 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
             plt.setp(self.ref_ax.yaxis.get_ticklabels(), visible=False)
             self.ref_ax.set_title(r'$\Phi$ = 1')
 
-        plt.show()
+        if show is True:  # always show, and adjust the figure before saving it below. It makes a different!!
+            plt.show()
+
+        if save_path is not None:
+            self.save_figure(save_path )#, fig_dpi=300)
 
     def save_figure(self, save_fn, file_format='jpg',
                     orientation='portrait', fig_dpi=None, close_plot='y'):

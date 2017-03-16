@@ -20,7 +20,7 @@ def plot_pt(edi_file_list, freq, save_path=None):
     """
 
     # parameters describing ellipses, differ for different map scales: deg, m, km
-    ellipse_dict = {'size': 0.3, 'colorby': 'phimin', 'range': (0, 90, 1), 'cmap': 'mt_bl2gr2rd'}
+    ellipse_dict = {'size': 0.03, 'colorby': 'phimin', 'range': (0, 90, 1), 'cmap': 'mt_bl2gr2rd'}
 
     # parameters describing the induction vector arrows
     arrow_dict = {'size': 0.05,
@@ -40,18 +40,20 @@ def plot_pt(edi_file_list, freq, save_path=None):
                                     plot_freq=freq,
                                     # arrow_legend_dict=arrow_legend_dict,
                                     ftol=0.2,
-                                    # xpad=0.02,  # change according to mapscale
+                                    xpad=0.06,  # plot margin; change according to lat-lon of your dataset
+                                    ypad=0.06,
                                     plot_tipper='yri',
                                     arrow_dict=arrow_dict,
                                     ellipse_dict=ellipse_dict,
-                                    fig_size=(4, 4),
+                                    #fig_size=(6, 5),
                                     mapscale='deg',  # deg or m, or km
                                     save_fn=save_path)  #fig_dpi=300 OK)
 
-    ptObj.plot()
+    # do the plot and save figure is save_path provided
+    ptObj.plot(save_path=save_path)
 
-    if save_path is not None:
-        ptObj.save_figure(save_path, fig_dpi=300)
+    # if save_path is not None:
+    #     ptObj.save_figure(save_path, fig_dpi=300)
 
     return
 
@@ -71,9 +73,11 @@ def plot_pt_utm(edi_file_list, freq, save_path=None):
         fn_list=edi_file_list,
         plot_freq=freq,
         save_fn=save_path,
-        #plot_tipper='yri',
+        xpad=20,  # plot margin; change according to your dataset and mapscale km/m
+        ypad=20,
         mapscale='km',   #mapscale='m' can cause big numbers in ticks labels
         ellipse_dict=ellipse_dict,
+        # plot_tipper='yri',
         #plot_title='??Customisable Title?? '
     )
 
@@ -114,6 +118,9 @@ if __name__ == '__main__':
     else:
         save_file = None
 
-    plot_pt(edifiles, freq, save_path=save_file)
-    #plot_pt_utm(edifiles, freq, save_path=save_file)
+
+    #plot_pt(edifiles, freq, save_path=save_file)
+
+    # KM map scale may have bugs which make the MT stations too close: E:/Datasets/MT_Datasets/GA_UA_edited_10s-10000s 0.0625
+    plot_pt_utm(edifiles, freq, save_path=save_file)
 
