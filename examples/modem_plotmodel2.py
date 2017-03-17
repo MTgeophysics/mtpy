@@ -32,31 +32,41 @@ def main(data_dir, plot_type='PTMap', di=20, periodin=0):
     di = di
 
     # plot phase tensor map with residuals:
-    # this will NOT work, an empty figure. plt.savefig(op.join(wd,'ptmaps.png'),dpi=300,ellipse_size=40)
+    # this will NOT work, an empty figure.
+    # plt.savefig(op.join(wd,'ptmaps.png'),dpi=300,ellipse_size=40)
     if plot_type == 'PTMap':
         ptmObj = PlotPTMaps(data_fn=op.join(wd, 'ModEM_Data_noise10inv.dat'),
                             resp_fn=op.join(wd, 'Modular_MPI_NLCG_019.dat'),
                             ellipse_size=30)
 
-        outfn=op.join(wd,'ptmaps.png')
+        outfn = op.join(wd, 'ptmaps.png')
         ptmObj.plot(period=periodin, save2file=outfn)
 
-
     # plot map of RMS values
-    # python examples/modem_plotmodel2.py examples/data/ModEM_files/VicSynthetic07 RMSMap
+    # python examples/modem_plotmodel2.py
+    # examples/data/ModEM_files/VicSynthetic07 RMSMap
     if plot_type == 'RMSMap':
-        resfile=op.join(wd, 'Modular_MPI_NLCG_019.res')
-        prmsObj = PlotRMSMaps(residual_fn=resfile,xminorticks=50000, yminorticks=50000)
-                   # ,depth_index=di, save_plots='y') # these are not in func args
+        resfile = op.join(wd, 'Modular_MPI_NLCG_019.res')
+        prmsObj = PlotRMSMaps(
+            residual_fn=resfile,
+            xminorticks=50000,
+            yminorticks=50000)
+        # ,depth_index=di, save_plots='y') # these are not in func args
 
-#        prmsObj.plot_loop(fig_format="png" )    #plot all periods and save figure
+# prmsObj.plot_loop(fig_format="png" )    #plot all periods and save
+# figure
 
     # plot responses at a station
-    #FZ: how to determine this param plot_type=['VIC029']
-    #Change for consistency to the save_plots='y'  instead of the implemented: plt.savefig(op.join(wd,'response.png'),dpi=300)
+    # FZ: how to determine this param plot_type=['VIC029']
+    # Change for consistency to the save_plots='y'  instead of the
+    # implemented: plt.savefig(op.join(wd,'response.png'),dpi=300)
     if plot_type == 'Response':
-        outfn=op.join(wd,'response.png')
-        pltObj = PlotResponse(data_fn=op.join(wd, 'ModEM_Data_noise10inv.dat'), plot_type=['VIC099']) #, save_plots='y')
+        outfn = op.join(wd, 'response.png')
+        pltObj = PlotResponse(
+            data_fn=op.join(
+                wd,
+                'ModEM_Data_noise10inv.dat'),
+            plot_type=['VIC099'])  # , save_plots='y')
         pltObj.plot(outfn)
 
     # plot depth slice
@@ -66,7 +76,10 @@ def main(data_dir, plot_type='PTMap', di=20, periodin=0):
         print(modrho)
 
         #pltObj= PlotDepthSlice(model_fn=modrho, xminorticks=100000, yminorticks=100000, depth_index=di, save_plots='y')
-        pltObj = PlotDepthSlice(model_fn=modrho, save_plots='y', depth_index=20)
+        pltObj = PlotDepthSlice(
+            model_fn=modrho,
+            save_plots='y',
+            depth_index=20)
 
         pltObj.plot()
 
@@ -85,22 +98,25 @@ if __name__ == '__main__':
 
     if len(sys.argv) <= 2:
         print("USAGE example:")
-        print("python %s examples/data/ModEM_files/VicSynthetic07 [PTMap|RMSMap|Response|DepthSlice]" % (sys.argv[0]))
+        print(
+            "python %s examples/data/ModEM_files/VicSynthetic07 [PTMap|RMSMap|Response|DepthSlice]" %
+            (sys.argv[0]))
     elif len(sys.argv) == 3:
         data_dir = sys.argv[1]
         plot_type = sys.argv[2]
 
-        if(plot_type not in ['PTMap','RMSMap', 'Response', 'DepthSlice']):
-            print("Input Parameter plot type must be in:", ['PTMap','RMSMap', 'Response', 'DepthSlice'])
+        if(plot_type not in ['PTMap', 'RMSMap', 'Response', 'DepthSlice']):
+            print("Input Parameter plot type must be in:", [
+                  'PTMap', 'RMSMap', 'Response', 'DepthSlice'])
 
         main(data_dir, plot_type=plot_type)
     else:
         data_dir = sys.argv[1]
         plot_type = sys.argv[2]
-        period_index =int(sys.argv[3])
+        period_index = int(sys.argv[3])
 
         if (plot_type not in ['PTMap', 'RMSMap', 'Response', 'DepthSlice']):
-            print("Input Parameter plot type must be in:", ['PTMap', 'RMSMap', 'Response', 'DepthSlice'])
+            print("Input Parameter plot type must be in:", [
+                  'PTMap', 'RMSMap', 'Response', 'DepthSlice'])
 
         main(data_dir, plot_type=plot_type, periodin=period_index)
-

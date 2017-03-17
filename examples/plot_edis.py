@@ -17,9 +17,13 @@ import matplotlib.pyplot as plt
 import mtpy.imaging.plot_mt_response as mtpr
 from mtpy.utils.mtpylog import MtPyLog
 
-# get a logger object for this module, using the utility class MtPyLog to config the logger
+# get a logger object for this module, using the utility class MtPyLog to
+# config the logger
 logger = MtPyLog().get_mtpy_logger(__name__)
-#logger = MtPyLog(path2configfile='logging.yml').get_mtpy_logger(__name__) # specific
+# logger =
+# MtPyLog(path2configfile='logging.yml').get_mtpy_logger(__name__) #
+# specific
+
 
 def plot_edi_dir(edi_path):
     """ plot edi files from the input directory edi_path
@@ -54,7 +58,10 @@ def plot_edi_file(edi_file):
 
     logger.info("Plotting the edi file %s", edi_file)
 
-    pr = mtpr.PlotMTResponse(fn=edi_file, plot_num=2, res_limits=(1, 10000), phase_limits=(0, 90))
+    pr = mtpr.PlotMTResponse(
+        fn=edi_file, plot_num=2, res_limits=(
+            1, 10000), phase_limits=(
+            0, 90))
     pr.plot()
 
     return pr
@@ -70,7 +77,9 @@ def plot_edi_file(edi_file):
 if __name__ == '__main__':
 
     if len(sys.argv) < 2:
-        print ("\n please provide path to edi files\n USAGE:  %s path2edifile" % sys.argv[0])
+        print (
+            "\n please provide path to edi files\n USAGE:  %s path2edifile" %
+            sys.argv[0])
         sys.exit(1)
     else:
         edi_path = sys.argv[1]

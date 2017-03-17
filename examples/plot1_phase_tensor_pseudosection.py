@@ -2,7 +2,8 @@
  mtpy.imaging.plotptpseudosection (mtpy1/mtpy/imaging/phase_tensor_pseudo_section_plot.py)
 
 """
-import os, sys
+import os
+import sys
 import glob
 
 import mtpy.imaging.mtplot as mtplot
@@ -19,31 +20,33 @@ ellipse_dict = {'range': (20, 70), 'cmap': 'mt_bl2gr2rd',
 ellipse = MTEllipse(ellipse_dict=ellipse_dict)
 arrow = MTArrows({'size': 60, 'head_length': 4})
 
+
 def test_plot1(edi_file_list):
     """ from  mtpy1/mtpy/imaging/phase_tensor_pseudo_section_plot.py
     """
 
     pt1 = PlotPhaseTensorPseudoSection(fn_list=edi_file_list,
-        data_type='z',
-        ellipse=ellipse,
-        arrow=arrow,  # arrow is not taken into constructor.
-        tscale='frequency',
-        ellipse_freq=1,  # plot an ellipse at every frequency value
-        plot_tipper='yri',
-        stretch=(1500, 35),
-        scale_arrow=False
-        )
+                                       data_type='z',
+                                       ellipse=ellipse,
+                                       arrow=arrow,
+                                       # arrow is not taken into constructor.
+                                       tscale='frequency',
+                                       ellipse_freq=1,  # plot an ellipse at every frequency value
+                                       plot_tipper='yri',
+                                       stretch=(1500, 35),
+                                       scale_arrow=False
+                                       )
 
     plt.rcdefaults()
 
 # Why the plot below becomes smaller?
     #pt1.plot_tipper = 'yri'
-    #  pt1.arrow.arrow_size = 100 AttributeError: 'PlotPhaseTensorPseudoSection' object has no attribute 'arrow'
+    # pt1.arrow.arrow_size = 100 AttributeError:
+    # 'PlotPhaseTensorPseudoSection' object has no attribute 'arrow'
 
     pt1.ellipse_freq = 2  # plot ellipse at every second frequency
     pt1.arrow_size = 200
     pt1.redraw_plot()
-
 
     pt1 = PlotPhaseTensorPseudoSection(
         fn_list=edi_file_list,
@@ -54,9 +57,10 @@ def test_plot1(edi_file_list):
         plot_tipper='yri',
         stretch=(1500, 35),
         scale_arrow=False
-        )
+    )
 
     return pt1
+
 
 def test_plot2(edi_file_list):
     """Adapted from demo_scripts/imaging/phase_tensor_pseudo_section_plot.ipynb
@@ -80,17 +84,18 @@ def test_plot2(edi_file_list):
         stretch=(1500, 35),
         scale_arrow=False,
         fig_size=[10, 12]
-        )
+    )
 
-
-    # Change some properties and replot.  But why the figure window become smaller?
+    # Change some properties and replot.  But why the figure window become
+    # smaller?
     pt1.ellipse_freq = 2  # plot ellipse at every second frequency
-    #pt1.arrow.arrow_size = 50  # change arrow size to 50
-    pt1.fig_size=[10, 12]
-    pt1.font_size=14
+    # pt1.arrow.arrow_size = 50  # change arrow size to 50
+    pt1.fig_size = [10, 12]
+    pt1.font_size = 14
     pt1.redraw_plot()
 
     return pt1
+
 
 def test_plot3(edi_file_list):
     """Adapted from demo_scripts/imaging/phase_tensor_pseudo_section_plot.ipynb
@@ -106,15 +111,16 @@ def test_plot3(edi_file_list):
         ellipse=ellipse,
         arrow=arrow,
         tscale='frequency',
-        ellipse_freq=5,  #=3 plot every 3rd ellipse
-        plot_tipper='yri', # plot real and imaginary tipper arrows
+        ellipse_freq=5,  # =3 plot every 3rd ellipse
+        plot_tipper='yri',  # plot real and imaginary tipper arrows
         stretch=(1500, 35),
         scale_arrow=False,
         fig_size=[10, 12],
-        #font_size=14,
-        )
+        # font_size=14,
+    )
 
     return pt1
+
 
 def test_plot4(edi_file_list):
     """ colorby different
@@ -131,13 +137,12 @@ def test_plot4(edi_file_list):
         arrow=arrow,
         tscale='frequency',
         ellipse_freq=3,  # plot every 3rd ellipse
-        plot_tipper='yri', # plot real and imaginary tipper arrows
+        plot_tipper='yri',  # plot real and imaginary tipper arrows
         stretch=(1500, 35),
         scale_arrow=False,
         fig_size=[10, 12],
-        #font_size=14   # too big?
-       )
-
+        # font_size=14   # too big?
+    )
 
     # Colorby 'normalized_skew'
     ellipse.ellipse_colorby = 'normalized_skew'
@@ -151,13 +156,12 @@ def test_plot4(edi_file_list):
         arrow=arrow,
         tscale='frequency',
         ellipse_freq=4,  # plot every 4th ellipse
-        plot_tipper='yri', # plot real and imaginary tipper arrows
+        plot_tipper='yri',  # plot real and imaginary tipper arrows
         stretch=(1500, 35),
         scale_arrow=False,
         fig_size=[10, 12],
-        #font_size=14
-        )
-
+        # font_size=14
+    )
 
     # Colorby 'ellipticity'
     ellipse.ellipse_colorby = 'ellipticity'
@@ -170,20 +174,20 @@ def test_plot4(edi_file_list):
         arrow=arrow,
         tscale='frequency',
         ellipse_freq=4,  # plot every 4th ellipse
-        plot_tipper='yri', # plot real and imaginary tipper arrows
+        plot_tipper='yri',  # plot real and imaginary tipper arrows
         stretch=(1500, 35),
         scale_arrow=False,
         fig_size=[10, 12],
-        #font_size=14
-        )
+        # font_size=14
+    )
 
     return pt1
 
 
 ###################################################
-#1) set env variables PYTHONPATH and MTPYPATH before starting jupyther notebook,
+# 1) set env variables PYTHONPATH and MTPYPATH before starting jupyther notebook,
 # OR alternatively
-#2) do the following two statements. Then it will all works fine.
+# 2) do the following two statements. Then it will all works fine.
 # sys.path.insert(0,'/Softlab/Githubz/mtpy1')
 # os.environ['MTPYPATH']='/Softlab/Githubz/mtpy1'
 #
@@ -196,7 +200,7 @@ def test_plot4(edi_file_list):
 if __name__ == '__main__':
     """the script commandline run entry point.
     """
-    
+
     edi_path = sys.argv[1]
 
     edi_file_list = glob.glob(os.path.join(edi_path, '*.edi'))
@@ -204,13 +208,13 @@ if __name__ == '__main__':
     print(edi_file_list)
 
     print("test_plot1.................")
-    #test_plot1(edi_file_list)
+    # test_plot1(edi_file_list)
 
     print("test_plot2.................")
-    #test_plot2(edi_file_list)
+    # test_plot2(edi_file_list)
 
     print("test_plot3.................")
     test_plot3(edi_file_list)
 
     print("test_plot4.................")
-    test_plot4(edi_file_list)    
+    test_plot4(edi_file_list)
