@@ -1047,12 +1047,12 @@ class PlotResPhasePseudoSection(object):
             fid.write(''.join(header_list))
             for ii, per in enumerate(self.plot_period):
                 if key[0] == 'r':
-                    line = [mtpl._make_value_str(per, **t1_kwargs)] + \
-                           [mtpl._make_value_str(rr, **tr_kwargs)
+                    line = [mtpl.make_value_str(per, **t1_kwargs)] + \
+                           [mtpl.make_value_str(rr, **tr_kwargs)
                             for rr in fn_dict[key][ii]] + ['\n']
                 elif key[0] == 'p':
-                    line = [mtpl._make_value_str(per, **t1_kwargs)] + \
-                           [mtpl._make_value_str(rr, **tp_kwargs)
+                    line = [mtpl.make_value_str(per, **t1_kwargs)] + \
+                           [mtpl.make_value_str(rr, **tp_kwargs)
                             for rr in fn_dict[key][ii]] + ['\n']
                 fid.write(''.join(line))
             fid.close()

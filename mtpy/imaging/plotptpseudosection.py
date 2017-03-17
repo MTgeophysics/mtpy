@@ -1125,45 +1125,45 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
                     tpiazline += tiplistiaz[tt, ss]
             else:
                 # get period or frequency
-                skline = mtpl._make_value_str(float(sklist[tt, 0]),
-                                              **t1_kwargs)
-                pminline = mtpl._make_value_str(float(phiminlist[tt, 0]),
-                                                **t1_kwargs)
-                pmaxline = mtpl._make_value_str(float(phimaxlist[tt, 0]),
-                                                **t1_kwargs)
-                elliline = mtpl._make_value_str(float(elliplist[tt, 0]),
-                                                **t1_kwargs)
-                azline = mtpl._make_value_str(float(azimlist[tt, 0]),
-                                              **t1_kwargs)
-                tprline = mtpl._make_value_str(float(tiplistr[tt, 0]),
+                skline = mtpl.make_value_str(float(sklist[tt, 0]),
+                                             **t1_kwargs)
+                pminline = mtpl.make_value_str(float(phiminlist[tt, 0]),
                                                **t1_kwargs)
-                tprazline = mtpl._make_value_str(float(tiplistraz[tt, 0]),
-                                                 **t1_kwargs)
-                tpiline = mtpl._make_value_str(float(tiplisti[tt, 0]),
+                pmaxline = mtpl.make_value_str(float(phimaxlist[tt, 0]),
                                                **t1_kwargs)
-                tpiazline = mtpl._make_value_str(float(tiplistiaz[tt, 0]),
-                                                 **t1_kwargs)
+                elliline = mtpl.make_value_str(float(elliplist[tt, 0]),
+                                               **t1_kwargs)
+                azline = mtpl.make_value_str(float(azimlist[tt, 0]),
+                                             **t1_kwargs)
+                tprline = mtpl.make_value_str(float(tiplistr[tt, 0]),
+                                              **t1_kwargs)
+                tprazline = mtpl.make_value_str(float(tiplistraz[tt, 0]),
+                                                **t1_kwargs)
+                tpiline = mtpl.make_value_str(float(tiplisti[tt, 0]),
+                                              **t1_kwargs)
+                tpiazline = mtpl.make_value_str(float(tiplistiaz[tt, 0]),
+                                                **t1_kwargs)
 
                 # get parameter values
                 for ss in range(1, ns):
-                    skline += mtpl._make_value_str(float(sklist[tt, ss]),
-                                                   **t2_kwargs)
-                    pminline += mtpl._make_value_str(float(phiminlist[tt, ss]),
-                                                     **t2_kwargs)
-                    pmaxline += mtpl._make_value_str(float(phimaxlist[tt, ss]),
-                                                     **t2_kwargs)
-                    elliline += mtpl._make_value_str(float(elliplist[tt, ss]),
-                                                     **t2_kwargs)
-                    azline += mtpl._make_value_str(float(azimlist[tt, ss]),
-                                                   **t2_kwargs)
-                    tprline += mtpl._make_value_str(float(tiplistr[tt, ss]),
+                    skline += mtpl.make_value_str(float(sklist[tt, ss]),
+                                                  **t2_kwargs)
+                    pminline += mtpl.make_value_str(float(phiminlist[tt, ss]),
                                                     **t2_kwargs)
-                    tprazline += mtpl._make_value_str(float(tiplistraz[tt, ss]),
-                                                      **t2_kwargs)
-                    tpiline += mtpl._make_value_str(float(tiplisti[tt, ss]),
+                    pmaxline += mtpl.make_value_str(float(phimaxlist[tt, ss]),
                                                     **t2_kwargs)
-                    tpiazline += mtpl._make_value_str(float(tiplistiaz[tt, ss]),
-                                                      **t2_kwargs)
+                    elliline += mtpl.make_value_str(float(elliplist[tt, ss]),
+                                                    **t2_kwargs)
+                    azline += mtpl.make_value_str(float(azimlist[tt, ss]),
+                                                  **t2_kwargs)
+                    tprline += mtpl.make_value_str(float(tiplistr[tt, ss]),
+                                                   **t2_kwargs)
+                    tprazline += mtpl.make_value_str(float(tiplistraz[tt, ss]),
+                                                     **t2_kwargs)
+                    tpiline += mtpl.make_value_str(float(tiplisti[tt, ss]),
+                                                   **t2_kwargs)
+                    tpiazline += mtpl.make_value_str(float(tiplistiaz[tt, ss]),
+                                                     **t2_kwargs)
 
             # be sure to end the line after each period
             sklines.append(skline + '\n')
