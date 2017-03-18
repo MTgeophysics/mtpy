@@ -1,6 +1,6 @@
 #! /usr/bin/env bash
 #######################################
- commandline for test-runing all plots
+# commandline for test-runing all plots
 #######################################
 #WinPC: python examples/plot_phase_tensor_map.py  E:/Datasets/MT_Datasets/GA_UA_edited_10s-10000s 0.0625 E:/MTPY2_Outputs/
 
