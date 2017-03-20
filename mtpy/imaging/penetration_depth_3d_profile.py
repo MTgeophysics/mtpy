@@ -164,6 +164,7 @@ def plot_latlon_depth_profile(edi_dir, period, zcomponent='det'):
     # method='cubic' may cause negative interp values; set them nan to make
     # empty
     grid_z[grid_z < 0] = np.nan
+    grid_z = grid_z/1000.0
 
     # use reverse color map in imshow and the colorbar
     my_cmap = mpl.cm.jet
@@ -247,7 +248,7 @@ def plot_latlon_depth_profile(edi_dir, period, zcomponent='det'):
     cax = divider.append_axes("right", size="2%", pad=0.2)
     mycb = plt.colorbar(imgplot, cax=cax)  # cmap=my_cmap_r, does not work!!
     mycb.outline.set_linewidth(2)
-    mycb.set_label(label='Penetration Depth (Meters)', size=ftsize)
+    mycb.set_label(label='Penetration Depth (Km)', size=ftsize)
     mycb.set_cmap(my_cmap_r)
 
     plt.show()
