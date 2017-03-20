@@ -70,7 +70,7 @@ section and strike angle.
     >>> pts = mtplot.plot_pt_pseudosection(fn_lst=edilst, 
     >>> ...                                plot_tipper='yr')
     >>> #--> write out the phase tensor parameter values to files
-    >>> pts.writeTextFiles()
+    >>> pts.export_pt_params_to_file()
     >>> #--> change coloring scheme to color by skew and a segmented colormap
     >>> pts.ellipse_colorby = 'skew_seg'
     >>> pts.ellipse_cmap = 'mt_seg_bl2wh2rd'

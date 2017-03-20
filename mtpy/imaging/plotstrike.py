@@ -158,7 +158,7 @@ class PlotStrike(object):
         -redraw_plot          on call redraws the plot from scratch
         -save_figure          saves figure to a file of given format
         -update_plot          updates the plot while still active
-        -writeTextFiles       writes parameters of the phase tensor and tipper
+        -export_pt_params_to_file       writes parameters of the phase tensor and tipper
                               to text files.
                             
     """

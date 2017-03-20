@@ -62,7 +62,7 @@ generating PNGs for web pages and the like.
 
 import matplotlib
 print "using MPL version:", matplotlib.__version__
-matplotlib.use("WXAgg") # do this before pylab so you don't get the default back end.
+#matplotlib.use("WXAgg") # do this before pylab so you don't get the default back end.
 #sudo apt-get install python-wxgtk3.0
 
 import pylab
@@ -105,5 +105,7 @@ size3 = F.get_size_inches()
 #pylab.show(1)
 
 print "Size in Inches back to default", size3
-F.savefig("test3.jpg", dpi = (200)) # change the dpi
+F.savefig("test3.jpg", dpi = 400) # change the dpi
 # this also results in a 1595x1132 image, but the fonts are larger.
+
+pylab.show()

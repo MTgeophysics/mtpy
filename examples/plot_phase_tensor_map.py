@@ -33,11 +33,11 @@ def plot_pt(edi_file_list, freq, save_path=None):
             1),
         'cmap': 'mt_bl2gr2rd'}
 
-    # parameters describing the induction vector arrows
-    arrow_dict = {'size': 0.05,
-                  'lw': 0.005,
-                  'head_width': 0.002,
-                  'head_length': 0.002,
+    # adjust to suitable size: parameters describing the induction vector arrows
+    arrow_dict = {'size': 0.5,
+                  'lw': 0.2,
+                  'head_width': 0.04,
+                  'head_length': 0.04,
                   'threshold': 0.8,
                   'direction': 0}
 
@@ -55,10 +55,10 @@ def plot_pt(edi_file_list, freq, save_path=None):
                                  xpad=0.4,  # plot margin; change according to lat-lon in edifiles
                                  ypad=0.4,  # ~ 2* ellipse size
                                  ellipse_dict=ellipse_dict,
-                                 plot_tipper='yri',
+                                 plot_tipper='yr',
                                  arrow_dict=arrow_dict,
                                  # arrow_legend_dict=arrow_legend_dict,
-                                 # fig_size=(6, 5),
+                                 # fig_spython examples/plot_phase_tensor_map.py tests/data/edifiles/ 10 /e/MTPY2_Outputs/ptmap3deg.pngize=(6, 5),
                                  # fig_dpi=300, the default is OK. Higher dpi
                                  # may distort figure
                                  save_fn=save_path)

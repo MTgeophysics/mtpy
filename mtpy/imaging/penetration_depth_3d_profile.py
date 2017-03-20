@@ -136,7 +136,7 @@ def plot_latlon_depth_profile(edi_dir, period, zcomponent='det'):
     # plt.show() # without this show(), the 2 figure will be plotted in one
     # canvas, overlay and compare
 
-    plt.figure()  # a new figure canvas
+    fig=plt.figure()  # a new figure canvas
 
     # griddata interpolation of the zdep sample MT points.
     print(zdep.shape[0], zdep.shape[1])
@@ -252,7 +252,11 @@ def plot_latlon_depth_profile(edi_dir, period, zcomponent='det'):
     mycb.set_cmap(my_cmap_r)
 
     plt.show()
-
+    path2savefile='E:/tmp/pendepth.jpg'
+    fig.savefig(path2savefile, dpi=200, bbox_inches='tight')
+    plt.clf()
+    plt.close()
+    return
 
 def reverse_colourmap(cmap, name='my_cmap_r'):
     """

@@ -4,7 +4,7 @@ Plot phase tensor map in Lat-Lon Coordinate System
 
 Revision History:
     Created by @author: jpeacock-pr on Thu May 30 18:20:04 2013
-    Modified by Fei.Zhang@ga.gov.au 2017-03:
+    Modified by Fei.Zhang@ga.gov.au 2017-03
 
 """
 
@@ -249,7 +249,7 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
 
         **font_size** : float
                         size of the font that labels the plot, 2 will be added
-                        to this number for the axis labels.
+                        to this number for the axis labels?
 
 
         **station_dict** : dictionary
@@ -358,7 +358,7 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
         -redraw_plot          on call redraws the plot from scratch
         -save_figure          saves figure to a file of given format
         -update_plot          updates the plot while still active
-        -writeTextFiles       writes parameters of the phase tensor and tipper
+        -export_pt_params_to_file       writes parameters of the phase tensor and tipper
                               to text files.
 
     """
@@ -665,6 +665,7 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
         self.plot_yarr = []
 
         for ii, mt in enumerate(self.mt_list):
+
             # try to find the freq in the freq list of each file
             freqfind = [ff for ff, f2 in enumerate(mt.freq)
                         if (f2 > self.plot_freq * (1 - self.ftol)) and
@@ -760,6 +761,9 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
                 phimin = np.nan_to_num(pt.phimin[0][jj])
                 phimax = np.nan_to_num(pt.phimax[0][jj])
                 eangle = np.nan_to_num(pt.azimuth[0][jj])
+
+                # output to csv file:
+                print('OUTCSV', mt.station, plotx, ploty, phimin, phimax, eangle)
 
                 if cmap == 'mt_seg_bl2wh2rd':
                     bounds = np.arange(ckmin, ckmax + ckstep, ckstep)
@@ -1142,6 +1146,8 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
         else:
             figfile = None
 
+        #self.export_pt_params_to_file('E:/tmp')
+
         return figfile
 
     def save_figure(self, save_fn, file_format='jpg',
@@ -1249,7 +1255,7 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
         plt.close(self.fig)
         self.plot()
 
-    def writeTextFiles(self, save_path=None):
+    def export_pt_params_to_file(self, save_path=None):
         """
         This will write text files for all the phase tensor parameters.
 
