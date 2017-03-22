@@ -66,6 +66,8 @@ def plot_pt(edi_file_list, freq, save_path=None):
     # 3) do the plot and save figure - if the param save_path provided
     path2figure = pt_obj.plot(save_path=save_path)
 
+    pt_obj.export_pt_params_to_file(save_path=save_path)
+
     print ("Please check your output figure: %s" % path2figure)
 
     return

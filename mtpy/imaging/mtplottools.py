@@ -2019,7 +2019,7 @@ def get_pt_arrays(mt_list, plot_period, sort_by='line', line_direction='ew',
 # function for writing values to file
 # ==============================================================================
 def make_value_str(value, value_list=None, spacing='{0:^8}',
-                   value_format='{0: .2f}', append=False, add=False):
+                   value_format='{0: .4f}', append=False, add=False):
     """
     helper function for writing values to a file, takes in a value and either
     appends or adds value to value_list according to the spacing and format of 

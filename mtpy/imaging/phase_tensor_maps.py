@@ -659,8 +659,8 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
         elliplist = []
         latlist = np.zeros(len(self.mt_list))
         lonlist = np.zeros(len(self.mt_list))
-        # self.plot_xarr = np.zeros(len(self.mt_list))
-        # self.plot_yarr = np.zeros(len(self.mt_list))
+        self.plot_x = np.zeros(len(self.mt_list))
+        self.plot_y = np.zeros(len(self.mt_list))
         self.plot_xarr = []
         self.plot_yarr = []
 
@@ -754,6 +754,9 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
                     raise NameError('mapscale not recognized')
 
                 # put the location of each ellipse into an array in x and y
+                self.plot_x[ii] = plotx
+                self.plot_y[ii] = ploty
+
                 self.plot_xarr.append(plotx)
                 self.plot_yarr.append(ploty)
 
@@ -1146,7 +1149,7 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
         else:
             figfile = None
 
-        #self.export_pt_params_to_file('E:/tmp')
+        # self.export_pt_params_to_file('E:/tmp')
 
         return figfile
 
@@ -1257,17 +1260,10 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
 
     def export_pt_params_to_file(self, save_path=None):
         """
-        This will write text files for all the phase tensor parameters.
-
-        Arguments:
-        ----------
-            **save_path** : string
-                            path to save files to.  Files are saved as:
-                                save_path/Map_freq.parameter
-
-        Returns:
-        --------
-            **files for:**
+        write text files for all the phase tensor parameters.
+        :param save_path: string path to save files into.
+        File naming pattern is like save_path/Map_freq.parameter.
+        **Files Content **
                 *phi_min
                 *phi_max
                 *skew
@@ -1279,10 +1275,10 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
                 *tipper_ang_imag
                 *station
 
-            These files are in condensed map view to follow the plot.  There
-            is also a file that is in table format, which might be easier
-            to read.  This file has extenstion .table
-
+        These files are in condensed map view to follow the plot. There
+        is also a file that is in table format, which might be easier
+        to read.  This file has extenstion .table
+        :return:
         """
 
         # create a save path
@@ -1301,22 +1297,22 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
 
         # make sure the attributes are there if not get them
         try:
-            self.plot_xarr
+            self.plot_x
         except AttributeError:
             self.plot()
 
         # sort the x and y in ascending order to get placement in the file
         # right
-        xlist = np.sort(abs(self.plot_xarr))
-        ylist = np.sort(abs(self.plot_yarr))
+        xlist = np.sort(abs(self.plot_x))
+        ylist = np.sort(abs(self.plot_y))
 
         # get the indicies of where the values should go in map view of the
         # text file
-        nx = self.plot_xarr.shape[0]
+        nx = self.plot_x.shape[0]
         xyloc = np.zeros((nx, 2))
-        for jj, xx in enumerate(self.plot_xarr):
+        for jj, xx in enumerate(self.plot_x):
             xyloc[jj, 0] = np.where(xlist == abs(xx))[0][0]
-            xyloc[jj, 1] = np.where(ylist == abs(self.plot_yarr[jj]))[0][0]
+            xyloc[jj, 1] = np.where(ylist == abs(self.plot_y[jj]))[0][0]
 
         # create arrays that simulate map view in a text file
         phiminmap = np.zeros((xlist.shape[0], ylist.shape[0]))
@@ -1331,6 +1327,7 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
         stationmap = np.zeros((xlist.shape[0], ylist.shape[0]),
                               dtype='|S8')
 
+        station_location={} # a dict to store all MT stations (lon lat)
         # put the information into the zeroed arrays
         for ii in range(nx):
             mt1 = self.mt_list[ii]
@@ -1363,109 +1360,137 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
                         mt1.station[self.station_id[0]:self.station_id[1]]
                 except AttributeError:
                     stationmap[xyloc[ii, 0], xyloc[ii, 1]] = mt1.station
+
+                station_location[stationmap[xyloc[ii, 0], xyloc[ii, 1]] ]= (mt1.lon, mt1.lat)
+
             except IndexError:
-                print 'Did not find {0:.5g} Hz for station {1}'.format(
-                    self.plot_freq, mt1.station)
+                logger.warn('Did not find {0:.5g} Hz for station {1}'.format(self.plot_freq, mt1.station))
 
         # ----------------------write files------------------------------------
-        svfn = 'Map_{0:.6g}Hz'.format(self.plot_freq)
-        ptminfid = file(os.path.join(svpath, svfn + '.phimin'), 'w')
-        ptmaxfid = file(os.path.join(svpath, svfn + '.phimax'), 'w')
-        ptazmfid = file(os.path.join(svpath, svfn + '.azimuth'), 'w')
-        ptskwfid = file(os.path.join(svpath, svfn + '.skew'), 'w')
-        ptellfid = file(os.path.join(svpath, svfn + '.ellipticity'), 'w')
-        tprmgfid = file(os.path.join(svpath, svfn + '.tipper_mag_real'), 'w')
-        tprazfid = file(os.path.join(svpath, svfn + '.tipper_ang_real'), 'w')
-        tpimgfid = file(os.path.join(svpath, svfn + '.tipper_mag_imag'), 'w')
-        tpiazfid = file(os.path.join(svpath, svfn + '.tipper_ang_imag'), 'w')
-        statnfid = file(os.path.join(svpath, svfn + '.station'), 'w')
-        tablefid = file(os.path.join(svpath, svfn + '.table'), 'w')
+        svfn = 'PhaseTensorTipper_Params_{0:.6g}Hz'.format(self.plot_freq)
 
-        for ly in range(ylist.shape[0]):
-            for lx in range(xlist.shape[0]):
-                # if there is nothing there write some spaces
-                if phiminmap[lx, ly] == 0.0:
-                    ptminfid.write('{0:^8}'.format(' '))
-                    ptmaxfid.write('{0:^8}'.format(' '))
-                    ptazmfid.write('{0:^8}'.format(' '))
-                    ptskwfid.write('{0:^8}'.format(' '))
-                    ptellfid.write('{0:^8}'.format(' '))
-                    tprmgfid.write('{0:^8}'.format(' '))
-                    tprazfid.write('{0:^8}'.format(' '))
-                    tpimgfid.write('{0:^8}'.format(' '))
-                    tpiazfid.write('{0:^8}'.format(' '))
-                    statnfid.write('{0:^8}'.format(' '))
+        # ptminfid = file(os.path.join(svpath, svfn + '.phimin'), 'w')
+        # ptmaxfid = file(os.path.join(svpath, svfn + '.phimax'), 'w')
+        # ptazmfid = file(os.path.join(svpath, svfn + '.azimuth'), 'w')
+        # ptskwfid = file(os.path.join(svpath, svfn + '.skew'), 'w')
+        # ptellfid = file(os.path.join(svpath, svfn + '.ellipticity'), 'w')
+        # tprmgfid = file(os.path.join(svpath, svfn + '.tipper_mag_real'), 'w')
+        # tprazfid = file(os.path.join(svpath, svfn + '.tipper_ang_real'), 'w')
+        # tpimgfid = file(os.path.join(svpath, svfn + '.tipper_mag_imag'), 'w')
+        # tpiazfid = file(os.path.join(svpath, svfn + '.tipper_ang_imag'), 'w')
+        # statnfid = file(os.path.join(svpath, svfn + '.station'), 'w')
 
-                else:
-                    ptminfid.write(mtpl.make_value_str(phiminmap[lx, ly]))
-                    ptmaxfid.write(mtpl.make_value_str(phimaxmap[lx, ly]))
-                    ptazmfid.write(mtpl.make_value_str(azimuthmap[lx, ly]))
-                    ptskwfid.write(mtpl.make_value_str(betamap[lx, ly]))
-                    ptellfid.write(mtpl.make_value_str(ellipmap[lx, ly]))
-                    tprmgfid.write(mtpl.make_value_str(trmap[lx, ly]))
-                    tprazfid.write(mtpl.make_value_str(trazmap[lx, ly]))
-                    tpimgfid.write(mtpl.make_value_str(timap[lx, ly]))
-                    tpiazfid.write(mtpl.make_value_str(tiazmap[lx, ly]))
-                    statnfid.write('{0:^8}'.format(stationmap[lx, ly]))
-
-            # make sure there is an end of line
-            ptminfid.write('\n')
-            ptmaxfid.write('\n')
-            ptazmfid.write('\n')
-            ptskwfid.write('\n')
-            ptellfid.write('\n')
-            tprmgfid.write('\n')
-            tprazfid.write('\n')
-            tpimgfid.write('\n')
-            tpiazfid.write('\n')
-            statnfid.write('\n')
+        # for ly in range(ylist.shape[0]):
+        #     for lx in range(xlist.shape[0]):
+        #         # if there is nothing there write some spaces
+        #         if phiminmap[lx, ly] == 0.0:
+        #             ptminfid.write('{0:^8}'.format(' '))
+        #             ptmaxfid.write('{0:^8}'.format(' '))
+        #             ptazmfid.write('{0:^8}'.format(' '))
+        #             ptskwfid.write('{0:^8}'.format(' '))
+        #             ptellfid.write('{0:^8}'.format(' '))
+        #             tprmgfid.write('{0:^8}'.format(' '))
+        #             tprazfid.write('{0:^8}'.format(' '))
+        #             tpimgfid.write('{0:^8}'.format(' '))
+        #             tpiazfid.write('{0:^8}'.format(' '))
+        #             statnfid.write('{0:^8}'.format(' '))
+        #
+        #         else:
+        #             ptminfid.write(mtpl.make_value_str(phiminmap[lx, ly]))
+        #             ptmaxfid.write(mtpl.make_value_str(phimaxmap[lx, ly]))
+        #             ptazmfid.write(mtpl.make_value_str(azimuthmap[lx, ly]))
+        #             ptskwfid.write(mtpl.make_value_str(betamap[lx, ly]))
+        #             ptellfid.write(mtpl.make_value_str(ellipmap[lx, ly]))
+        #             tprmgfid.write(mtpl.make_value_str(trmap[lx, ly]))
+        #             tprazfid.write(mtpl.make_value_str(trazmap[lx, ly]))
+        #             tpimgfid.write(mtpl.make_value_str(timap[lx, ly]))
+        #             tpiazfid.write(mtpl.make_value_str(tiazmap[lx, ly]))
+        #             statnfid.write('{0:^8}'.format(stationmap[lx, ly]))
+        #
+        #     # make sure there is an end of line
+        #     ptminfid.write('\n')
+        #     ptmaxfid.write('\n')
+        #     ptazmfid.write('\n')
+        #     ptskwfid.write('\n')
+        #     ptellfid.write('\n')
+        #     tprmgfid.write('\n')
+        #     tprazfid.write('\n')
+        #     tpimgfid.write('\n')
+        #     tpiazfid.write('\n')
+        #     statnfid.write('\n')
 
         # close the files
-        ptminfid.close()
-        ptmaxfid.close()
-        ptazmfid.close()
-        ptskwfid.close()
-        ptellfid.close()
-        tprmgfid.close()
-        tprazfid.close()
-        tpimgfid.close()
-        tpiazfid.close()
-        statnfid.close()
+        # ptminfid.close()
+        # ptmaxfid.close()
+        # ptazmfid.close()
+        # ptskwfid.close()
+        # ptellfid.close()
+        # tprmgfid.close()
+        # tprazfid.close()
+        # tpimgfid.close()
+        # tpiazfid.close()
+        # statnfid.close()
 
-        # --> write the table file
+        # --> write the table and csv file
+        logger.debug( station_location )
+
+        tablefid = file(os.path.join(svpath, svfn + '.table'), 'w')
+        csvfid = file(os.path.join(svpath, svfn + '.csv'), 'w')
+
         # write header
-        for ss in ['station', 'phi_min', 'phi_max', 'skew', 'ellipticity',
-                   'azimuth', 'tip_mag_re', 'tip_ang_re', 'tip_mag_im',
-                   'tip_ang_im']:
+        header=['station', 'lon', 'lat', 'phi_min', 'phi_max', 'skew', 'ellipticity',
+                   'azimuth', 'tip_mag_re', 'tip_ang_re', 'tip_mag_im','tip_ang_im']
+        for ss in header:
             tablefid.write('{0:^12}'.format(ss))
         tablefid.write('\n')
 
+        csvfid.write(','.join(header))
+        csvfid.write('\n')
+
         for ii in range(nx):
             xx, yy = xyloc[ii, 0], xyloc[ii, 1]
-            tablefid.write('{0:^12}'.format(stationmap[xx, yy]))
-            tablefid.write(mtpl.make_value_str(phiminmap[xx, yy],
-                                               spacing='{0:^12}'))
-            tablefid.write(mtpl.make_value_str(phimaxmap[xx, yy],
-                                               spacing='{0:^12}'))
-            tablefid.write(mtpl.make_value_str(betamap[xx, yy],
-                                               spacing='{0:^12}'))
-            tablefid.write(mtpl.make_value_str(ellipmap[xx, yy],
-                                               spacing='{0:^12}'))
-            tablefid.write(mtpl.make_value_str(azimuthmap[xx, yy],
-                                               spacing='{0:^12}'))
-            tablefid.write(mtpl.make_value_str(trmap[xx, yy],
-                                               spacing='{0:^12}'))
-            tablefid.write(mtpl.make_value_str(trazmap[xx, yy],
-                                               spacing='{0:^12}'))
-            tablefid.write(mtpl.make_value_str(timap[xx, yy],
-                                               spacing='{0:^12}'))
-            tablefid.write(mtpl.make_value_str(tiazmap[xx, yy],
-                                               spacing='{0:^12}'))
-            tablefid.write('\n')
+            if stationmap[xx, yy] is None or len(stationmap[xx, yy])<1:
+                pass   # station not having the freq
+            else: # only those stations with the given freq
+
+                station='{0:^12}'.format(stationmap[xx, yy])
+                stationx=mtpl.make_value_str(station_location[stationmap[xx, yy]][0], spacing='{0:^12}')
+                stationy=mtpl.make_value_str(station_location[stationmap[xx, yy]][1], spacing='{0:^12}')
+                phimin=mtpl.make_value_str(phiminmap[xx, yy],spacing='{0:^12}')
+                phimax=mtpl.make_value_str(phimaxmap[xx, yy],spacing='{0:^12}')
+                beta_skew=mtpl.make_value_str(betamap[xx, yy],spacing='{0:^12}')
+                ellip=mtpl.make_value_str(ellipmap[xx, yy], spacing='{0:^12}')
+                azimuth=mtpl.make_value_str(azimuthmap[xx, yy],spacing='{0:^12}')
+                tiprmag=mtpl.make_value_str(trmap[xx, yy], spacing='{0:^12}')
+                tiprang=mtpl.make_value_str(trazmap[xx, yy],spacing='{0:^12}')
+                tipimag=mtpl.make_value_str(timap[xx, yy], spacing='{0:^12}')
+                tipiang=mtpl.make_value_str(tiazmap[xx, yy],spacing='{0:^12}')
+
+                #csv file
+                row=[station, stationx,stationy,phimin,phimax,beta_skew,ellip, azimuth,tiprmag,tiprang, tipimag,tipiang]
+                csvfid.write(','.join(row))
+                csvfid.write('\n')
+
+                # .table file
+                tablefid.write(station)
+                tablefid.write(stationx) # write long, lat
+                tablefid.write(stationy)
+                tablefid.write(phimin)
+                tablefid.write(phimax)
+                tablefid.write(beta_skew)
+                tablefid.write(ellip)
+                tablefid.write(azimuth)
+                tablefid.write(tiprmag)
+                tablefid.write(tiprang)
+                tablefid.write(tipimag)
+                tablefid.write(tipiang)
+                tablefid.write('\n')
 
         tablefid.write('\n')
 
-        print 'Wrote files to {}'.format(svpath)
+        logger.info('Wrote files to {}'.format(svpath))
+
+        return svpath
 
     def __str__(self):
         """
@@ -1473,3 +1498,9 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
         """
 
         return "Plots phase tensor maps for one freq"
+
+# if __name__ =="__main__":
+#
+#     ptm_obj=PlotPhaseTensorMaps(fn_list=edi_file_list,
+#         plot_freq=freq,
+#         save_fn=save_path,)

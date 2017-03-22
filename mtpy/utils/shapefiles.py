@@ -194,7 +194,9 @@ class PTShapeFile(object):
                                 mt_obj.pt.phimax[0][p_index],
                                 mt_obj.pt.azimuth[0][p_index],
                                 mt_obj.pt.beta[0][p_index],
-                                2 * mt_obj.pt.beta[0][p_index])
+                                2 * mt_obj.pt.beta[0][p_index],
+                                mt_obj.pt.ellipticity[0][p_index]) #FZ: get ellipticity begin here
+
                     self.pt_dict[plot_per].append(pt_tuple)
                 except IndexError:
                     pass
@@ -207,7 +209,8 @@ class PTShapeFile(object):
                                                      ('phimax', np.float),
                                                      ('azimuth', np.float),
                                                      ('skew', np.float),
-                                                     ('n_skew', np.float)])
+                                                     ('n_skew', np.float),
+                                                     ('ellipticity', np.float)])
 
     def write_shape_files(self, every_site=1):
         """
@@ -264,6 +267,10 @@ class PTShapeFile(object):
             field_azimuth = ogr.FieldDefn('azimuth', ogr.OFTReal)
             layer.CreateField(field_azimuth)
 
+            field_ellipticity = ogr.FieldDefn('ellipt', ogr.OFTReal)
+            #FZ: note osgeo gdal does not like name 'ellipticity'
+            layer.CreateField(field_ellipticity)
+
             poly_list = []
             phimax = self.pt_dict[plot_per]['phimax'].max()
 
@@ -317,6 +324,8 @@ class PTShapeFile(object):
                     new_feature.SetField("n_skew", pt_array['n_skew'])
 
                     new_feature.SetField("azimuth", pt_array['azimuth'])  # FZ added
+                    new_feature.SetField("ellipt", pt_array['ellipticity'])  # FZ added
+                    #new_feature.SetField("ellipticity", pt_array['azimuth'])  # FZ added
 
                     # add the new feature to the layer.
                     layer.SetFeature(new_feature)
@@ -341,7 +350,7 @@ class PTShapeFile(object):
 
             print 'Wrote shape file to {0}'.format(shape_fn)
 
-
+##===========================
     def write_data_pt_shape_files_modem(self, modem_data_fn,
                                         rotation_angle=0.0):
         """
@@ -1445,7 +1454,17 @@ def create_phase_tensor_shpfiles(edi_dir, save_dir, proj='WGS84', ellipse_size=0
 
     pts.write_shape_files(every_site)
 
-def create_tipper_shpfiles(edilist, save_dir):
+def create_tipper_shpfiles(edipath, save_dir):
+    """
+    Create Tipper (induction arrows real and imaginary) shape files
+    :param edipath:
+    :param save_dir:
+    :return:
+    """
+
+
+    edilist = [os.path.join(edipath, edi) for edi in os.listdir(edipath)
+              if edi.find('.edi') > 0]
 
     tipshp = TipperShapeFile(edilist, save_path=save_dir)
 
@@ -1470,8 +1489,10 @@ if __name__ == "__main__":
         print("USAGE: %s input_edifile_dir output_shape_file_dir" % sys.argv[0])
         sys.exit(1)
     else:
-        create_phase_tensor_shpfiles(sys.argv[1], sys.argv[2], proj=None, ellipse_size=0.03, every_site=2) # unprojected
+        create_phase_tensor_shpfiles(sys.argv[1], sys.argv[2], proj=None, ellipse_size=0.10, every_site=1) # unprojected
         #create_phase_tensor_shpfiles(sys.argv[1], sys.argv[2], proj='WGS84', ellipse_size=3000, every_site=2) # projected into UTM coordinate
+
+        #create_tipper_shpfiles(sys.argv[1],sys.argv[2])
 
 # modem: provide dat filr and save_path below:
 #     mfn = r"E:/Githubz/mtpy2/examples/data/ModEM_files/VicSynthetic07/Modular_MPI_NLCG_016.dat"

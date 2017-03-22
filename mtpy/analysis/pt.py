@@ -952,7 +952,7 @@ class ResidualPhaseTensor():
 
             else:
                 self.rpt = np.zeros((1, 2, 2))
-                try:  #FZ: what is idx below?
+                try:  # FZ: what is idx below?
                     self.rpt[idx] = np.eye(2) - np.dot(np.matrix(pt1).I,
                                                        np.matrix(pt2))
                 except np.linalg.LinAlgError:
@@ -1091,7 +1091,7 @@ class ResidualPhaseTensor():
         """
         if (self.rpt is not None) and (self.rpt.shape != rpt_array.shape):
             print 'Error - shape of "ResPT" array does not match shape of existing rpt array: %s ; %s' % (
-            str(rpt_array.shape), str(self.rpt.shape))
+                str(rpt_array.shape), str(self.rpt.shape))
             return
 
         self.rpt = rpt_array
@@ -1113,7 +1113,7 @@ class ResidualPhaseTensor():
         """
         if (self.rpterr is not None) and (self.rpterr.shape != rpterr_array.shape):
             print 'Error - shape of "ResPT-error" array does not match shape of existing rpterr array: %s ; %s' % (
-            str(rpterr_array.shape), str(self.rpterr.shape))
+                str(rpterr_array.shape), str(self.rpterr.shape))
             return
 
         self.rpterr = rpterr_array
@@ -1151,7 +1151,7 @@ def z2pt(z_array, z_err_array=None):
                 raise
         except:
             raise MTex.MTpyError_PT('Error - incorrect z array: %s;%s instead of (N,2,2);complex' % (
-            str(z_array.shape), str(z_array.dtype)))
+                str(z_array.shape), str(z_array.dtype)))
 
     if z_err_array is not None:
         try:
@@ -1163,11 +1163,11 @@ def z2pt(z_array, z_err_array=None):
                 raise
         except:
             raise MTex.MTpyError_PT('Error - incorrect z-err-array: %s;%s instead of (N,2,2);real' % (
-            str(z_err_array.shape), str(z_err_array.dtype)))
+                str(z_err_array.shape), str(z_err_array.dtype)))
 
         if not z_array.shape == z_err_array.shape:
             raise MTex.MTpyError_PT('Error - z-array and z-err-array have different shape: %s;%s' % (
-            str(z_array.shape), str(z_err_array.shape)))
+                str(z_array.shape), str(z_err_array.shape)))
 
     # for a single matrix as input:
     if len(z_array.shape) == 2:
@@ -1289,18 +1289,18 @@ def z2pt(z_array, z_err_array=None):
             realz[0, 1] * z_err_array[1, 1]))
 
         pterr_array[idx_f, 1, 0] = 1 / detreal * (
-        np.abs((imagz[1, 0] - pt_array[idx_f, 1, 0] * realz[1, 1]) * z_err_array[0, 0]) + \
-        np.abs(pt_array[idx_f, 1, 0] * realz[1, 0] * z_err_array[0, 1]) + \
-        np.abs((-imagz[0, 0] + pt_array[idx_f, 1, 0] * realz[0, 1]) * z_err_array[1, 0]) + \
-        np.abs(-pt_array[idx_f, 1, 0] * realz[0, 0] * z_err_array[1, 1]) + \
-        np.abs(realz[0, 0] * z_err_array[1, 0]) + np.abs(-realz[1, 0] * z_err_array[0, 0]))
+            np.abs((imagz[1, 0] - pt_array[idx_f, 1, 0] * realz[1, 1]) * z_err_array[0, 0]) + \
+            np.abs(pt_array[idx_f, 1, 0] * realz[1, 0] * z_err_array[0, 1]) + \
+            np.abs((-imagz[0, 0] + pt_array[idx_f, 1, 0] * realz[0, 1]) * z_err_array[1, 0]) + \
+            np.abs(-pt_array[idx_f, 1, 0] * realz[0, 0] * z_err_array[1, 1]) + \
+            np.abs(realz[0, 0] * z_err_array[1, 0]) + np.abs(-realz[1, 0] * z_err_array[0, 0]))
 
         pterr_array[idx_f, 1, 1] = 1 / detreal * (
-        np.abs((imagz[1, 1] - pt_array[idx_f, 1, 1] * realz[1, 1]) * z_err_array[0, 0]) + \
-        np.abs(pt_array[idx_f, 1, 1] * realz[1, 0] * z_err_array[0, 1]) + \
-        np.abs((-imagz[0, 1] + pt_array[idx_f, 1, 1] * realz[0, 1]) * z_err_array[1, 0]) + \
-        np.abs(-pt_array[idx_f, 1, 1] * realz[0, 0] * z_err_array[1, 1]) + \
-        np.abs(realz[0, 0] * z_err_array[1, 1]) + np.abs(-realz[1, 0] * z_err_array[0, 1]))
+            np.abs((imagz[1, 1] - pt_array[idx_f, 1, 1] * realz[1, 1]) * z_err_array[0, 0]) + \
+            np.abs(pt_array[idx_f, 1, 1] * realz[1, 0] * z_err_array[0, 1]) + \
+            np.abs((-imagz[0, 1] + pt_array[idx_f, 1, 1] * realz[0, 1]) * z_err_array[1, 0]) + \
+            np.abs(-pt_array[idx_f, 1, 1] * realz[0, 0] * z_err_array[1, 1]) + \
+            np.abs(realz[0, 0] * z_err_array[1, 1]) + np.abs(-realz[1, 0] * z_err_array[0, 1]))
 
     return pt_array, pterr_array
 
