@@ -9,14 +9,13 @@ Revision History:
 """
 
 import os
-import sys
-import numpy as np
+
 import matplotlib.colorbar as mcb
 import matplotlib.colors as colors
 import matplotlib.patches as patches
 import matplotlib.pyplot as plt
+import numpy as np
 from matplotlib.ticker import FormatStrFormatter
-import matplotlib
 
 import mtpy.imaging.mtcolors as mtcl
 import mtpy.imaging.mtplottools as mtpl
@@ -31,8 +30,7 @@ logger = MtPyLog().get_mtpy_logger(__name__)
 # ==============================================================================
 class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
     """
-    Plots phase tensor ellipses in map view from a list of edifiles with full
-    path.
+    Plots phase tensor ellipses in map view from a list of edi files
 
     Arguments:
     -------------
@@ -280,13 +278,6 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
                               everything else is referenced to this point
 
 
-    :Example: ::
-
-        >>> #change the axis label and grid color
-        >>> ptmap.ax.set_xlabel('Latitude (deg)')
-        >>> ptmap.ax.grid(which='major', color=(.5,1,0))
-        >>> ptmap.update_plot()
-
     Attributes:
     --------------
 
@@ -359,12 +350,15 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
         -redraw_plot          on call redraws the plot from scratch
         -save_figure          saves figure to a file of given format
         -update_plot          updates the plot while still active
-        -export_pt_params_to_file       writes parameters of the phase tensor and tipper
-                              to text files.
+        -export_params_to_file  writes parameters of the phase tensor and tipper to text files.
 
     """
 
     def __init__(self, **kwargs):
+        """
+        Initialise the object
+        :param kwargs: keyword-value pairs
+        """
 
         fn_list = kwargs.pop('fn_list', None)
         z_object_list = kwargs.pop('z_object_list', None)
@@ -373,11 +367,8 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
         res_object_list = kwargs.pop('res_object_list', None)
 
         # ----set attributes for the class-------------------------
-        self.mt_list = mtpl.get_mtlist(fn_list=fn_list,
-                                       res_object_list=res_object_list,
-                                       z_object_list=z_object_list,
-                                       tipper_object_list=tipper_object_list,
-                                       mt_object_list=mt_object_list)
+        self.mt_list = mtpl.get_mtlist(fn_list=fn_list, res_object_list=res_object_list, z_object_list=z_object_list,
+                                       tipper_object_list=tipper_object_list, mt_object_list=mt_object_list)
 
         # set the freq to plot
         self.plot_freq = kwargs.pop('plot_freq', 1.0)
@@ -390,11 +381,8 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
         # set default size to 2
         if self.mapscale == 'deg':
             self._ellipse_dict = kwargs.pop('ellipse_dict', {'size': .01})
-            self._arrow_dict = kwargs.pop('arrow_dict',
-                                          {'size': .05,
-                                           'head_length': .005,
-                                           'head_width': .005,
-                                           'lw': .75})
+            self._arrow_dict = kwargs.pop(
+                'arrow_dict', {'size': .05, 'head_length': .005, 'head_width': .005, 'lw': .75})
 
             # self.xpad = kwargs.pop('xpad', .02) # 0.02degree may not be enough
             # self.ypad = kwargs.pop('xpad', .02)
@@ -402,20 +390,14 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
             self.ypad = kwargs.pop('ypad', 0.5)
         elif self.mapscale == 'm':
             self._ellipse_dict = kwargs.pop('ellipse_dict', {'size': 500})
-            self._arrow_dict = kwargs.pop('arrow_dict',
-                                          {'size': 500,
-                                           'head_length': 50,
-                                           'head_width': 50,
-                                           'lw': .75})
+            self._arrow_dict = kwargs.pop(
+                'arrow_dict', {'size': 500, 'head_length': 50, 'head_width': 50, 'lw': .75})
             self.xpad = kwargs.pop('xpad', 500)
             self.ypad = kwargs.pop('ypad', 500)
         elif self.mapscale == 'km':
             self._ellipse_dict = kwargs.pop('ellipse_dict', {'size': .5})
-            self._arrow_dict = kwargs.pop('arrow_dict',
-                                          {'size': .5,
-                                           'head_length': .05,
-                                           'head_width': .05,
-                                           'lw': .75})
+            self._arrow_dict = kwargs.pop(
+                'arrow_dict', {'size': .5, 'head_length': .05, 'head_width': .05, 'lw': .75})
             self.xpad = kwargs.pop('xpad', 50)
             self.ypad = kwargs.pop('ypad', 50)
         self._read_ellipse_dict()
@@ -497,8 +479,8 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
         try:
             self.arrow_legend_fontdict = arrow_legend_dict['fontdict']
         except KeyError:
-            self.arrow_legend_fontdict = {'size': self.font_size,
-                                          'weight': 'bold'}
+            self.arrow_legend_fontdict = {
+                'size': self.font_size, 'weight': 'bold'}
 
         # --> set background image properties
         self.image_extent = None
@@ -519,8 +501,8 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
             try:
                 self.image_extent = image_dict['extent']
             except KeyError:
-                raise NameError('Need to include the extent of the image as ' +
-                                '(left, right, bottom, top)')
+                raise NameError(
+                    'Need to include the extent of the image as ' + '(left, right, bottom, top)')
             self.image_origin = image_dict.pop('origin', 'lower')
 
         # --> set a central reference point
@@ -544,8 +526,8 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
             try:
                 self.station_font_size = station_dict['font_dict']
             except KeyError:
-                self.station_font_dict = {'size': self.font_size,
-                                          'weight': 'bold'}
+                self.station_font_dict = {
+                    'size': self.font_size, 'weight': 'bold'}
 
                 # This is a constructor. It's better not to call plot method here!!
                 # self.plot_yn = kwargs.pop('plot_yn', 'y')
@@ -593,7 +575,7 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
 
         # set position properties for the plot
         plt.rcParams['font.size'] = self.font_size
-        #matplotlib.rcParams['figure.figsize'] = [20, 10]
+        # matplotlib.rcParams['figure.figsize'] = [20, 10]
 
         plt.rcParams['figure.subplot.left'] = .1
         plt.rcParams['figure.subplot.right'] = .98
@@ -613,7 +595,7 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
 
         # make figure instanc
         self.fig = plt.figure(self.fig_num, self.fig_size, dpi=self.fig_dpi)
-        #self.fig = plt.figure(self.fig_num, dpi=self.fig_dpi)
+        # self.fig = plt.figure(self.fig_num, dpi=self.fig_dpi)
 
         # clear the figure if there is already one up
         plt.clf()
@@ -625,8 +607,7 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
         try:
             im = plt.imread(self.image_file)
             self.ax.imshow(im, origin=self.image_origin,
-                           extent=self.image_extent,
-                           aspect='equal')
+                           extent=self.image_extent, aspect='equal')
         except (AttributeError, TypeError):
             print 'Could not plot image'
 
@@ -654,11 +635,11 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
 
             # set tick parameters depending on the mapscale
         if self.mapscale == 'deg':
-            # self.tickstrfmt = '%.2f'
-            self.tickstrfmt = '%.1f'
+            # tickstrfmt = '%.2f'
+            tickstrfmt = '%.1f'
 
         elif self.mapscale == 'm' or self.mapscale == 'km':
-            self.tickstrfmt = '%.0f'
+            tickstrfmt = '%.0f'
 
         # make some empty arrays
         elliplist = []
@@ -672,13 +653,11 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
         for ii, mt in enumerate(self.mt_list):
 
             # try to find the freq in the freq list of each file
-            freqfind = [ff for ff, f2 in enumerate(mt.freq)
-                        if (f2 > self.plot_freq * (1 - self.ftol)) and
-                        (f2 < self.plot_freq * (1 + self.ftol))]
+            freqfind = [ff for ff, f2 in enumerate(mt.freq) if
+                        (f2 > self.plot_freq * (1 - self.ftol)) and (f2 < self.plot_freq * (1 + self.ftol))]
 
             try:
-                self.jj = freqfind[0]
-                jj = self.jj
+                jj = freqfind[0]
 
                 # get phase tensor
                 pt = mt.get_PhaseTensor()
@@ -771,22 +750,14 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
                 eangle = np.nan_to_num(pt.azimuth[0][jj])
 
                 # output to csv file:
-                print(
-                    'OUTCSV',
-                    mt.station,
-                    plotx,
-                    ploty,
-                    phimin,
-                    phimax,
-                    eangle)
+                # print('OUTCSV', mt.station, plotx, ploty, phimin, phimax, eangle)
 
                 if cmap == 'mt_seg_bl2wh2rd':
                     bounds = np.arange(ckmin, ckmax + ckstep, ckstep)
                     nseg = float((ckmax - ckmin) / (2 * ckstep))
 
                 # get the properties to color the ellipses by
-                if self.ellipse_colorby == 'phiminang' or \
-                        self.ellipse_colorby == 'phimin':
+                if self.ellipse_colorby == 'phiminang' or self.ellipse_colorby == 'phimin':
                     colorarray = pt.phimin[0][jj]
 
                 elif self.ellipse_colorby == 'phimax':
@@ -795,12 +766,10 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
                 elif self.ellipse_colorby == 'phidet':
                     colorarray = np.sqrt(abs(pt.det[0][jj])) * (180 / np.pi)
 
-                elif self.ellipse_colorby == 'skew' or \
-                        self.ellipse_colorby == 'skew_seg':
+                elif self.ellipse_colorby == 'skew' or self.ellipse_colorby == 'skew_seg':
                     colorarray = pt.beta[0][jj]
 
-                elif self.ellipse_colorby == 'normalized_skew' or \
-                        self.ellipse_colorby == 'normalized_skew_seg':
+                elif self.ellipse_colorby == 'normalized_skew' or self.ellipse_colorby == 'normalized_skew_seg':
                     colorarray = 2 * pt.beta[0][jj]
 
                 elif self.ellipse_colorby == 'ellipticity':
@@ -821,25 +790,16 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
                     ewidth = phimax * scaling
 
                 # make an ellipse
-                ellipd = patches.Ellipse((plotx, ploty),
-                                         width=ewidth,
-                                         height=eheight,
-                                         angle=90 - eangle)
+                ellipd = patches.Ellipse(
+                    (plotx, ploty), width=ewidth, height=eheight, angle=90 - eangle)
 
                 # get ellipse color
                 if cmap.find('seg') > 0:
-                    ellipd.set_facecolor(mtcl.get_plot_color(colorarray,
-                                                             self.ellipse_colorby,
-                                                             cmap,
-                                                             ckmin,
-                                                             ckmax,
-                                                             bounds=bounds))
+                    ellipd.set_facecolor(
+                        mtcl.get_plot_color(colorarray, self.ellipse_colorby, cmap, ckmin, ckmax, bounds=bounds))
                 else:
-                    ellipd.set_facecolor(mtcl.get_plot_color(colorarray,
-                                                             self.ellipse_colorby,
-                                                             cmap,
-                                                             ckmin,
-                                                             ckmax))
+                    ellipd.set_facecolor(mtcl.get_plot_color(
+                        colorarray, self.ellipse_colorby, cmap, ckmin, ckmax))
 
                 # ==> add ellipse to the plot
                 elliplist.append(ellipd)
@@ -851,8 +811,8 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
                     # get tipper
                     tip = mt.get_Tipper()
                     if tip._Tipper.tipper is None:
-                        tip._Tipper.tipper = np.zeros((len(mt.period), 1, 2),
-                                                      dtype='complex')
+                        tip._Tipper.tipper = np.zeros(
+                            (len(mt.period), 1, 2), dtype='complex')
                         tip.compute_components()
 
                     # make some local parameters for easier typing
@@ -862,84 +822,59 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
                     # plot real tipper
                     if self.plot_tipper == 'yri' or self.plot_tipper == 'yr':
                         if tip.mag_real[jj] <= self.arrow_threshold:
-                            txr = tip.mag_real[jj] * ascale * \
-                                np.sin((tip.ang_real[jj]) * np.pi / 180 + adir)
-                            tyr = tip.mag_real[jj] * ascale * \
-                                np.cos((tip.ang_real[jj]) * np.pi / 180 + adir)
+                            txr = tip.mag_real[
+                                jj] * ascale * np.sin((tip.ang_real[jj]) * np.pi / 180 + adir)
+                            tyr = tip.mag_real[
+                                jj] * ascale * np.cos((tip.ang_real[jj]) * np.pi / 180 + adir)
 
-                            self.ax.arrow(plotx,
-                                          ploty,
-                                          txr,
-                                          tyr,
-                                          lw=self.arrow_lw,
-                                          facecolor=self.arrow_color_real,
-                                          edgecolor=self.arrow_color_real,
-                                          length_includes_head=False,
-                                          head_width=self.arrow_head_width,
-                                          head_length=self.arrow_head_length)
+                            self.ax.arrow(plotx, ploty, txr, tyr, lw=self.arrow_lw, facecolor=self.arrow_color_real,
+                                          edgecolor=self.arrow_color_real, length_includes_head=False,
+                                          head_width=self.arrow_head_width, head_length=self.arrow_head_length)
                         else:
                             pass
 
                     # plot imaginary tipper
                     if self.plot_tipper == 'yri' or self.plot_tipper == 'yi':
                         if tip.mag_imag[jj] <= self.arrow_threshold:
-                            txi = tip.mag_imag[jj] * ascale * \
-                                np.sin((tip.ang_imag[jj]) * np.pi / 180 + adir)
-                            tyi = tip.mag_imag[jj] * ascale * \
-                                np.cos((tip.ang_imag[jj]) * np.pi / 180 + adir)
+                            txi = tip.mag_imag[
+                                jj] * ascale * np.sin((tip.ang_imag[jj]) * np.pi / 180 + adir)
+                            tyi = tip.mag_imag[
+                                jj] * ascale * np.cos((tip.ang_imag[jj]) * np.pi / 180 + adir)
 
-                            self.ax.arrow(plotx,
-                                          ploty,
-                                          txi,
-                                          tyi,
-                                          lw=self.arrow_lw,
-                                          facecolor=self.arrow_color_imag,
-                                          edgecolor=self.arrow_color_imag,
-                                          length_includes_head=False,
-                                          head_width=self.arrow_head_width,
-                                          head_length=self.arrow_head_length)
+                            self.ax.arrow(plotx, ploty, txi, tyi, lw=self.arrow_lw, facecolor=self.arrow_color_imag,
+                                          edgecolor=self.arrow_color_imag, length_includes_head=False,
+                                          head_width=self.arrow_head_width, head_length=self.arrow_head_length)
 
                 # ------------Plot station name------------------------------
                 try:
-                    self.ax.text(plotx,
-                                 ploty + self.station_pad,
-                                 mt.station[
-                                     self.station_id[0]:self.station_id[1]],
-                                 horizontalalignment='center',
-                                 verticalalignment='baseline',
+                    self.ax.text(plotx, ploty + self.station_pad, mt.station[self.station_id[0]:self.station_id[1]],
+                                 horizontalalignment='center', verticalalignment='baseline',
                                  fontdict=self.station_font_dict)
                 except AttributeError:
                     pass
 
             # ==> print a message if couldn't find the freq
             except IndexError:
-                print 'Did not find {0:.5g} Hz for station {1}'.format(
-                    self.plot_freq, mt.station)
+                print 'Did not find {0:.5g} Hz for station {1}'.format(self.plot_freq, mt.station)
 
         # --> set axes properties depending on map scale-----------------------
         if self.mapscale == 'deg':
-            self.ax.set_xlabel('Longitude',
-                               fontsize=self.font_size,  # +2,
+            self.ax.set_xlabel('Longitude', fontsize=self.font_size,  # +2,
                                fontweight='bold')
-            self.ax.set_ylabel('Latitude',
-                               fontsize=self.font_size,  # +2,
+            self.ax.set_ylabel('Latitude', fontsize=self.font_size,  # +2,
                                fontweight='bold')
 
         elif self.mapscale == 'm':
-            self.ax.set_xlabel('Easting (m)',
-                               fontsize=self.font_size,
-                               fontweight='bold')
-            self.ax.set_ylabel('Northing (m)',
-                               fontsize=self.font_size,
-                               fontweight='bold')
+            self.ax.set_xlabel(
+                'Easting (m)', fontsize=self.font_size, fontweight='bold')
+            self.ax.set_ylabel(
+                'Northing (m)', fontsize=self.font_size, fontweight='bold')
 
         elif self.mapscale == 'km':
-            self.ax.set_xlabel('Easting (km)',
-                               fontsize=self.font_size,
-                               fontweight='bold')
-            self.ax.set_ylabel('Northing (km)',
-                               fontsize=self.font_size,
-                               fontweight='bold')
+            self.ax.set_xlabel(
+                'Easting (km)', fontsize=self.font_size, fontweight='bold')
+            self.ax.set_ylabel(
+                'Northing (km)', fontsize=self.font_size, fontweight='bold')
 
         # --> set plot limits
         #    need to exclude zero values from the calculation of min/max!!!!
@@ -955,14 +890,14 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
         #                  self.plot_xarr[self.plot_xarr != 0.].max() + self.xpad)
         # self.ax.set_ylim(self.plot_yarr[self.plot_yarr != 0.].min() - self.ypad,
         # self.plot_yarr[self.plot_yarr != 0.].max() + self.ypad)
-        self.ax.set_xlim(self.plot_xarr[0] - self.xpad,
-                         self.plot_xarr[-1] + self.xpad)
-        self.ax.set_ylim(self.plot_yarr[0] - self.ypad,
-                         self.plot_yarr[-1] + self.ypad)
+        self.ax.set_xlim(
+            self.plot_xarr[0] - self.xpad, self.plot_xarr[-1] + self.xpad)
+        self.ax.set_ylim(
+            self.plot_yarr[0] - self.ypad, self.plot_yarr[-1] + self.ypad)
         # --> set tick label format
 
-        self.ax.xaxis.set_major_formatter(FormatStrFormatter(self.tickstrfmt))
-        self.ax.yaxis.set_major_formatter(FormatStrFormatter(self.tickstrfmt))
+        self.ax.xaxis.set_major_formatter(FormatStrFormatter(tickstrfmt))
+        self.ax.yaxis.set_major_formatter(FormatStrFormatter(tickstrfmt))
         # self.ax.set_xticklabels(self.plot_xarr,rotation=0)
 
         # control number of ticks in axis (nbins ticks)
@@ -985,8 +920,8 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
                               fontsize=self.font_size, fontweight='bold')
 
         # BEGIN: plot induction arrow scale bar -------------------------------
-        if self.plot_tipper.find(
-                'yes') == 0:  # fail this test to omit the arrow scale bar/legend
+        # fail this test to omit the arrow scale bar/legend
+        if self.plot_tipper.find('yes') == 0:
             parrx = self.ax.get_xlim()
             parry = self.ax.get_ylim()
             try:
@@ -999,60 +934,53 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
             except AttributeError:
                 aypad = self.ypad
 
-            try:
-                txtpad = self.arrow_legend_fontpad
-            except AttributeError:
-                txtpad = .25 * es
+            # try:
+            #     txtpad = self.arrow_legend_fontpad
+            # except AttributeError:
+            #     txtpad = .25 * es
 
             # make arrow legend postion and arrows coordinates
             if self.arrow_legend_position == 'lower right':
                 pax = parrx[1] - axpad
                 pay = parry[0] + aypad
-                ptx = self.arrow_size
-                pty = 0
-                txa = parrx[1] - axpad + self.arrow_size / 2.
-                txy = pay + txtpad
+                # ptx = self.arrow_size
+                # pty = 0
+                # txa = parrx[1] - axpad + self.arrow_size / 2.
+                # txy = pay + txtpad
 
             elif self.arrow_legend_position == 'upper right':
                 pax = parrx[1] - axpad
                 pay = parry[1] - aypad
                 # ptx = self.arrow_size
                 # pty = 0
-                txa = parrx[1] - axpad + self.arrow_size / 2.
+                # txa = parrx[1] - axpad + self.arrow_size / 2.
                 # txy = pay+txtpad
 
             elif self.arrow_legend_position == 'lower left':
                 pax = parrx[0] + axpad
                 pay = parry[0] + aypad
                 ptx = self.arrow_size
-                pty = 0
-                txa = parrx[0] + axpad + self.arrow_size / 2.
-                txy = pay + txtpad
+                # pty = 0
+                # txa = parrx[0] + axpad + self.arrow_size / 2.
+                # txy = pay + txtpad
 
             elif self.arrow_legend_position == 'upper left':
                 pax = parrx[0] + axpad
                 pay = parry[1] - aypad
-                ptx = self.arrow_size
-                pty = 0
-                txa = parrx[0] + axpad + self.arrow_size / 2.
-                txy = pay + txtpad
+                # ptx = self.arrow_size
+                # pty = 0
+                # txa = parrx[0] + axpad + self.arrow_size / 2.
+                # txy = pay + txtpad
             else:
                 pass  # raise NameError('arrowlegend not supported.')
 
             # FZ: Sudpip?
             ptx = self.arrow_size
             pty = 0
-            txy = pay + txtpad
+            # txy = pay + txtpad
 
-            self.ax.arrow(pax,
-                          pay,
-                          ptx,
-                          pty,
-                          lw=self.arrow_lw,
-                          facecolor=self.arrow_color_real,
-                          edgecolor=self.arrow_color_real,
-                          length_includes_head=False,
-                          head_width=self.arrow_head_width,
+            self.ax.arrow(pax, pay, ptx, pty, lw=self.arrow_lw, facecolor=self.arrow_color_real,
+                          edgecolor=self.arrow_color_real, length_includes_head=False, head_width=self.arrow_head_width,
                           head_length=self.arrow_head_length)
 
             # FZ: '|T|=1'? and the horizontal line?
@@ -1070,9 +998,8 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
 
         # ==> make a colorbar with appropriate colors
         if self.cb_position is None:
-            self.ax2, kw = mcb.make_axes(self.ax,
-                                         orientation=self.cb_orientation,
-                                         shrink=.50)
+            self.ax2, kw = mcb.make_axes(
+                self.ax, orientation=self.cb_orientation, shrink=.50)
             # FZ: try to fix colorbar h-position
             # from mpl_toolkits.axes_grid1 import make_axes_locatable
             # #
@@ -1086,10 +1013,9 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
 
         if cmap == 'mt_seg_bl2wh2rd':
             # make a color list
-            self.clist = [(cc, cc, 1)
-                          for cc in np.arange(0, 1 + 1. / (nseg), 1. / (nseg))] + \
-                         [(1, cc, cc)
-                          for cc in np.arange(1, -1. / (nseg), -1. / (nseg))]
+            self.clist = [(cc, cc, 1) for cc in np.arange(0, 1 + 1. / (nseg), 1. / (nseg))] + [(1, cc, cc) for cc in
+                                                                                               np.arange(1, -1. / (nseg),
+                                                                                                         -1. / (nseg))]
 
             # make segmented colormap
             mt_seg_bl2wh2rd = colors.ListedColormap(self.clist)
@@ -1101,41 +1027,32 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
             norms = colors.BoundaryNorm(bounds, mt_seg_bl2wh2rd.N)
 
             # make the colorbar
-            self.cb = mcb.ColorbarBase(self.ax2,
-                                       cmap=mt_seg_bl2wh2rd,
-                                       norm=norms,
-                                       orientation=self.cb_orientation,
-                                       ticks=bounds[1:-1])
+            colbar = mcb.ColorbarBase(self.ax2, cmap=mt_seg_bl2wh2rd, norm=norms, orientation=self.cb_orientation,
+                                      ticks=bounds[1:-1])
         else:
-            self.cb = mcb.ColorbarBase(self.ax2,
-                                       cmap=mtcl.cmapdict[cmap],
-                                       norm=colors.Normalize(vmin=ckmin,
-                                                             vmax=ckmax),
-                                       orientation=self.cb_orientation)
+            colbar = mcb.ColorbarBase(self.ax2, cmap=mtcl.cmapdict[cmap], norm=colors.Normalize(vmin=ckmin, vmax=ckmax),
+                                      orientation=self.cb_orientation)
 
         # label the color bar accordingly
-        self.cb.set_label(mtpl.ckdict[ck],
-                          fontdict={'size': self.font_size, 'weight': 'bold'})
+        colbar.set_label(mtpl.ckdict[ck], fontdict={
+                         'size': self.font_size, 'weight': 'bold'})
 
         # place the label in the correct location
         if self.cb_orientation == 'horizontal':
-            self.cb.ax.xaxis.set_label_position('top')
-            self.cb.ax.xaxis.set_label_coords(.5, 1.3)
+            colbar.ax.xaxis.set_label_position('top')
+            colbar.ax.xaxis.set_label_coords(.5, 1.3)
 
         elif self.cb_orientation == 'vertical':
-            self.cb.ax.yaxis.set_label_position('right')
-            self.cb.ax.yaxis.set_label_coords(1.5, .5)
-            self.cb.ax.yaxis.tick_left()
-            self.cb.ax.tick_params(axis='y', direction='in')
+            colbar.ax.yaxis.set_label_position('right')
+            colbar.ax.yaxis.set_label_coords(1.5, .5)
+            colbar.ax.yaxis.tick_left()
+            colbar.ax.tick_params(axis='y', direction='in')
 
         # --> add reference ellipse:  (legend of ellipse size=1)
         # FZ: remove the following section if no show of Phi
         show_phi = False  # JingMingDuan does not want to show the black circle - it's not useful
         if show_phi is True:
-            ref_ellip = patches.Ellipse((0, .0),
-                                        width=es,
-                                        height=es,
-                                        angle=0)
+            ref_ellip = patches.Ellipse((0, .0), width=es, height=es, angle=0)
             ref_ellip.set_facecolor((0, 0, 0))
             ref_ax_loc = list(self.ax2.get_position().bounds)
             ref_ax_loc[0] *= .95
@@ -1162,12 +1079,11 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
         else:
             figfile = None
 
-        # self.export_pt_params_to_file('E:/tmp')
+        # self.export_params_to_file('E:/tmp')
 
         return figfile
 
-    def save_figure(self, save_fn, file_format='jpg',
-                    orientation='portrait', fig_dpi=None, close_plot='y'):
+    def save_figure(self, save_fn, file_format='jpg', orientation='portrait', fig_dpi=None, close_plot='y'):
         """
         save_plot will save the figure to save_fn.
 
@@ -1184,7 +1100,7 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
                             path.  If you use this option then the format
                             will be assumed to be provided by the path
 
-            **file_format** : [ pdf | eps | jpg | png | svg ]
+            **file_format** : [ jpg | png | pdf | eps | svg ]
                               file type of saved figure pdf,svg,eps...
 
             **orientation** : [ landscape | portrait ]
@@ -1200,18 +1116,9 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
             **close_plot** : [ y | n ]
                              * 'y' will close the plot after saving.
                              * 'n' will leave plot open
-
-        :Example: ::
-
-            >>> # to save plot as jpg
-            >>> import mtpy.imaging.mtplottools as mtplot
-            >>> p1 = mtplot.PlotPhaseTensorMaps(edilist,freqspot=10)
-            >>> p1.save_plot(r'/home/MT', file_format='jpg')
-            'Figure saved to /home/MT/PTMaps/PTmap_phimin_10Hz.jpg'
-
         """
 
-        sf = '_{0:.6g}'.format(self.plot_freq)
+        sf = '{0:.6g}'.format(self.plot_freq)
 
         if fig_dpi is None:
             fig_dpi = self.fig_dpi
@@ -1222,17 +1129,15 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
                 os.mkdir(save_fn)
 
             # make a file name
-            fname = "PTmap_DPI%s_%s_%sHz.%s" % (
+            fname = 'PTmap_DPI%s_%s_%sHz.%s' % (
                 str(self.fig_dpi), self.ellipse_colorby, sf, file_format)
             path2savefile = os.path.join(save_fn, fname)
-            self.fig.savefig(path2savefile, dpi=fig_dpi, format=file_format,
-                             orientation=orientation, bbox_inches='tight')
+            self.fig.savefig(path2savefile, dpi=fig_dpi, format=file_format, orientation=orientation,
+                             bbox_inches='tight')
         else:  # FZ: assume save-fn is a path2file= "path2/afile.fmt"
             file_format = save_fn.split('.')[-1]
             if file_format is None or file_format not in ['png', 'jpg']:
-                print (
-                    "Error: output file name is not correctly provided:",
-                    save_fn)
+                print ("Error: output file name is not correctly provided:", save_fn)
                 raise Exception(
                     "output file name is not correctly provided!!!")
 
@@ -1271,12 +1176,15 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
         plt.close(self.fig)
         self.plot()
 
-    def export_pt_params_to_file(self, save_path=None):
+    def export_params_to_file(self, save_path=None):
         """
         write text files for all the phase tensor parameters.
         :param save_path: string path to save files into.
-        File naming pattern is like save_path/Map_freq.parameter.
+        File naming pattern is like save_path/PhaseTensorTipper_Params_freq.csv/table
         **Files Content **
+                *station
+                *lon
+                *lat
                 *phi_min
                 *phi_max
                 *skew
@@ -1286,21 +1194,19 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
                 *tipper_ang_real
                 *tipper_mag_imag
                 *tipper_ang_imag
-                *station
 
-        These files are in condensed map view to follow the plot. There
-        is also a file that is in table format, which might be easier
-        to read.  This file has extenstion .table
-        :return:
+        :return: path2savedfile
         """
 
-        # create a save path
+        # create a save path for files
         if save_path is None:
-            try:
-                svpath = os.path.join(os.path.dirname(self.mt_list[0].fn),
-                                      'PTMaps')
-            except TypeError:
-                raise IOError('Need to input save_path, could not find path')
+            logger.info("No save_path provided. Skipping export")
+            return None
+            # try:
+            #     svpath = os.path.join(os.path.dirname(self.mt_list[0].fn),
+            #                           'PTMaps')
+            # except TypeError:
+            #     raise IOError('Need to input save_path, could not find path')
         else:
             svpath = save_path
 
@@ -1322,7 +1228,7 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
         # get the indicies of where the values should go in map view of the
         # text file
         nx = self.plot_x.shape[0]
-        xyloc = np.zeros((nx, 2))
+        xyloc = np.zeros((nx, 2), np.uint)
         for jj, xx in enumerate(self.plot_x):
             xyloc[jj, 0] = np.where(xlist == abs(xx))[0][0]
             xyloc[jj, 1] = np.where(ylist == abs(self.plot_y[jj]))[0][0]
@@ -1337,8 +1243,7 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
         trazmap = np.zeros((xlist.shape[0], ylist.shape[0]))
         timap = np.zeros((xlist.shape[0], ylist.shape[0]))
         tiazmap = np.zeros((xlist.shape[0], ylist.shape[0]))
-        stationmap = np.zeros((xlist.shape[0], ylist.shape[0]),
-                              dtype='|S8')
+        stationmap = np.zeros((xlist.shape[0], ylist.shape[0]), dtype='|S8')
 
         station_location = {}  # a dict to store all MT stations (lon lat)
         # put the information into the zeroed arrays
@@ -1346,61 +1251,39 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
             mt1 = self.mt_list[ii]
 
             # try to find the freq in the freq list of each file
-            freqfind = [ff for ff, f2 in enumerate(mt1.freq)
-                        if f2 > self.plot_freq * (1 - self.ftol) and
-                        f2 < self.plot_freq * (1 + self.ftol)]
+            freqfind = [ff for ff, f2 in enumerate(mt1.freq) if
+                        f2 > self.plot_freq * (1 - self.ftol) and f2 < self.plot_freq * (1 + self.ftol)]
             try:
-                self.jj = freqfind[0]
-                jj = self.jj
+                j2 = freqfind[0]
 
                 pt = mt1.get_PhaseTensor()
                 tp = mt1.get_Tipper()
 
                 if pt.phimin[0] is not None:
-                    phiminmap[
-                        xyloc[
-                            ii, 0], xyloc[
-                            ii, 1]] = pt.phimin[0][
-                        self.jj]
-                    phimaxmap[
-                        xyloc[
-                            ii, 0], xyloc[
-                            ii, 1]] = pt.phimax[0][
-                        self.jj]
-                    azimuthmap[
-                        xyloc[
-                            ii, 0], xyloc[
-                            ii, 1]] = pt.azimuth[0][
-                        self.jj]
-                    ellipmap[
-                        xyloc[
-                            ii, 0], xyloc[
-                            ii, 1]] = pt.ellipticity[0][
-                        self.jj]
-                    betamap[xyloc[ii, 0], xyloc[ii, 1]] = pt.beta[0][self.jj]
+                    phiminmap[xyloc[ii, 0], xyloc[ii, 1]] = pt.phimin[0][j2]
+                    phimaxmap[xyloc[ii, 0], xyloc[ii, 1]] = pt.phimax[0][j2]
+                    azimuthmap[xyloc[ii, 0], xyloc[ii, 1]] = pt.azimuth[0][j2]
+                    ellipmap[xyloc[ii, 0], xyloc[
+                        ii, 1]] = pt.ellipticity[0][j2]
+                    betamap[xyloc[ii, 0], xyloc[ii, 1]] = pt.beta[0][j2]
 
                 if tp.mag_real is not None:
-                    trmap[xyloc[ii, 0], xyloc[ii, 1]] = tp.mag_real[self.jj]
-                    trazmap[xyloc[ii, 0], xyloc[ii, 1]] = tp.ang_real[self.jj]
-                    timap[xyloc[ii, 0], xyloc[ii, 1]] = tp.mag_imag[self.jj]
-                    tiazmap[xyloc[ii, 0], xyloc[ii, 1]] = tp.ang_imag[self.jj]
+                    trmap[xyloc[ii, 0], xyloc[ii, 1]] = tp.mag_real[j2]
+                    trazmap[xyloc[ii, 0], xyloc[ii, 1]] = tp.ang_real[j2]
+                    timap[xyloc[ii, 0], xyloc[ii, 1]] = tp.mag_imag[j2]
+                    tiazmap[xyloc[ii, 0], xyloc[ii, 1]] = tp.ang_imag[j2]
                 try:
-                    stationmap[xyloc[ii, 0], xyloc[ii, 1]] = \
-                        mt1.station[self.station_id[0]:self.station_id[1]]
+                    stationmap[xyloc[ii, 0], xyloc[ii, 1]] = mt1.station[
+                        self.station_id[0]:self.station_id[1]]
                 except AttributeError:
                     stationmap[xyloc[ii, 0], xyloc[ii, 1]] = mt1.station
 
-                station_location[
-                    stationmap[
-                        xyloc[
-                            ii, 0], xyloc[
-                            ii, 1]]] = (
+                station_location[stationmap[xyloc[ii, 0], xyloc[ii, 1]]] = (
                     mt1.lon, mt1.lat)
 
             except IndexError:
-                logger.warn(
-                    'Did not find {0:.5g} Hz for station {1}'.format(
-                        self.plot_freq, mt1.station))
+                logger.warn('Did not find {0:.5g} Hz for station {1}'.format(
+                    self.plot_freq, mt1.station))
 
         # ----------------------write files------------------------------------
         svfn = 'PhaseTensorTipper_Params_{0:.6g}Hz'.format(self.plot_freq)
@@ -1470,12 +1353,12 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
         # --> write the table and csv file
         logger.debug(station_location)
 
-        tablefid = file(os.path.join(svpath, svfn + '.table'), 'w')
+        tablefid = file(os.path.join(svpath, svfn + '.tab'), 'w')
         csvfid = file(os.path.join(svpath, svfn + '.csv'), 'w')
 
         # write header
-        header = ['station', 'lon', 'lat', 'phi_min', 'phi_max', 'skew', 'ellipticity',
-                  'azimuth', 'tip_mag_re', 'tip_ang_re', 'tip_mag_im', 'tip_ang_im']
+        header = ['station', 'lon', 'lat', 'phi_min', 'phi_max', 'skew', 'ellipticity', 'azimuth', 'tip_mag_re',
+                  'tip_ang_re', 'tip_mag_im', 'tip_ang_im']
         for ss in header:
             tablefid.write('{0:^12}'.format(ss))
         tablefid.write('\n')
@@ -1486,22 +1369,14 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
         for ii in range(nx):
             xx, yy = xyloc[ii, 0], xyloc[ii, 1]
             if stationmap[xx, yy] is None or len(stationmap[xx, yy]) < 1:
-                pass   # station not having the freq
+                pass  # station not having the freq
             else:  # only those stations with the given freq
 
                 station = '{0:^12}'.format(stationmap[xx, yy])
                 stationx = mtpl.make_value_str(
-                    station_location[
-                        stationmap[
-                            xx,
-                            yy]][0],
-                    spacing='{0:^12}')
+                    station_location[stationmap[xx, yy]][0], spacing='{0:^12}')
                 stationy = mtpl.make_value_str(
-                    station_location[
-                        stationmap[
-                            xx,
-                            yy]][1],
-                    spacing='{0:^12}')
+                    station_location[stationmap[xx, yy]][1], spacing='{0:^12}')
                 phimin = mtpl.make_value_str(
                     phiminmap[xx, yy], spacing='{0:^12}')
                 phimax = mtpl.make_value_str(
@@ -1520,19 +1395,8 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
                     tiazmap[xx, yy], spacing='{0:^12}')
 
                 # csv file
-                row = [
-                    station,
-                    stationx,
-                    stationy,
-                    phimin,
-                    phimax,
-                    beta_skew,
-                    ellip,
-                    azimuth,
-                    tiprmag,
-                    tiprang,
-                    tipimag,
-                    tipiang]
+                row = [station, stationx, stationy, phimin, phimax, beta_skew, ellip, azimuth, tiprmag, tiprang, tipimag,
+                       tipiang]
                 csvfid.write(','.join(row))
                 csvfid.write('\n')
 
@@ -1564,8 +1428,20 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
 
         return "Plots phase tensor maps for one freq"
 
-# if __name__ =="__main__":
-#
-#     ptm_obj=PlotPhaseTensorMaps(fn_list=edi_file_list,
-#         plot_freq=freq,
-#         save_fn=save_path,)
+
+# ================================================================
+if __name__ == "__main__":
+    import sys
+    import glob
+
+    edidir = sys.argv[1]
+    freq = float(sys.argv[2])
+    savedir = sys.argv[3]
+    edi_file_list = glob.glob(edidir + '/*.edi')
+
+    print edi_file_list
+
+    ptm_obj = PlotPhaseTensorMaps(
+        fn_list=edi_file_list, plot_freq=freq, save_fn=savedir)
+
+    ptm_obj.export_params_to_file(save_path=savedir)
