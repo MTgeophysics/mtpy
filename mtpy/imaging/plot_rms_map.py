@@ -112,9 +112,12 @@ class PlotRMSMaps(object):
     def __init__(self, residual_fn, **kwargs):
         self.residual_fn = residual_fn
         self.residual = None
-        self.save_path = kwargs.pop('save_path', os.path.dirname(self.residual_fn))
+        self.save_path = kwargs.pop(
+            'save_path', os.path.dirname(
+                self.residual_fn))
 
-        self.period_index = kwargs.pop('period_index', 0)  # where is depth_index?
+        self.period_index = kwargs.pop(
+            'period_index', 0)  # where is depth_index?
 
         self.subplot_left = kwargs.pop('subplot_left', .1)
         self.subplot_right = kwargs.pop('subplot_right', .9)
@@ -159,10 +162,14 @@ class PlotRMSMaps(object):
                                                        256)
 
         self.plot_z_list = [{'label': r'$Z_{xx}$', 'index': (0, 0), 'plot_num': 1},
-                            {'label': r'$Z_{xy}$', 'index': (0, 1), 'plot_num': 2},
-                            {'label': r'$Z_{yx}$', 'index': (1, 0), 'plot_num': 3},
-                            {'label': r'$Z_{yy}$', 'index': (1, 1), 'plot_num': 4},
-                            {'label': r'$T_{x}$', 'index': (0, 0), 'plot_num': 5},
+                            {'label': r'$Z_{xy}$', 'index': (
+                                0, 1), 'plot_num': 2},
+                            {'label': r'$Z_{yx}$', 'index': (
+                                1, 0), 'plot_num': 3},
+                            {'label': r'$Z_{yy}$', 'index': (
+                                1, 1), 'plot_num': 4},
+                            {'label': r'$T_{x}$', 'index': (
+                                0, 0), 'plot_num': 5},
                             {'label': r'$T_{y}$', 'index': (0, 1), 'plot_num': 6}]
 
         if self.plot_yn == 'y':
@@ -221,11 +228,11 @@ class PlotRMSMaps(object):
                 # calulate the rms self.residual/error
                 if p_dict['plot_num'] < 5:
                     rms = r_arr['z'][self.period_index, ii, jj].__abs__() / \
-                          (r_arr['z_err'][self.period_index, ii, jj].real)
+                        (r_arr['z_err'][self.period_index, ii, jj].real)
 
                 else:
                     rms = r_arr['tip'][self.period_index, ii, jj].__abs__() / \
-                          (r_arr['tip_err'][self.period_index, ii, jj].real)
+                        (r_arr['tip_err'][self.period_index, ii, jj].real)
 
                 # color appropriately
                 if np.nan_to_num(rms) == 0.0:
@@ -330,7 +337,8 @@ class PlotRMSMaps(object):
             pass
         else:
             save_fn_basename = '{0:02}_RMS_{1:.5g}_s.{2}'.format(self.period_index,
-                                                                 self.residual.period_list[self.period_index],
+                                                                 self.residual.period_list[
+                                                                     self.period_index],
                                                                  fig_format)
         save_fn = os.path.join(self.save_path, save_fn_basename)
 

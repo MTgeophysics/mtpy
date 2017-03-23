@@ -164,7 +164,8 @@ class PlotDepthSlice(object):
 
         self.cb_shrink = kwargs.pop('cb_shrink', .8)
         self.cb_pad = kwargs.pop('cb_pad', .01)
-        self.cb_orientation = kwargs.pop('cb_orientation', 'horizontal')  # 'vertical')
+        self.cb_orientation = kwargs.pop(
+            'cb_orientation', 'horizontal')  # 'vertical')
         self.cb_location = kwargs.pop('cb_location', None)
 
         self.subplot_right = .99
@@ -217,8 +218,10 @@ class PlotDepthSlice(object):
             if os.path.isfile(self.data_fn) == True:
                 md_data = Data()
                 md_data.read_data_file(self.data_fn)
-                self.station_east = md_data.station_locations['rel_east'] / self.dscale
-                self.station_north = md_data.station_locations['rel_north'] / self.dscale
+                self.station_east = md_data.station_locations[
+                    'rel_east'] / self.dscale
+                self.station_north = md_data.station_locations[
+                    'rel_north'] / self.dscale
                 self.station_names = md_data.station_locations['station']
             else:
                 print 'Could not find data file {0}'.format(self.data_fn)
@@ -238,18 +241,18 @@ class PlotDepthSlice(object):
 
         # create an list of depth slices to plot
         print self.grid_z  # FZ:
-        if self.depth_index == None:
+        if self.depth_index is None:
             zrange = range(self.grid_z.shape[0])
-        elif type(self.depth_index) is int:
+        elif isinstance(self.depth_index, int):
             zrange = [self.depth_index]
-        elif type(self.depth_index) is list or \
-                        type(self.depth_index) is np.ndarray:
+        elif isinstance(self.depth_index, list) or \
+                isinstance(self.depth_index, np.ndarray):
             zrange = self.depth_index
 
         print (zrange)
 
         # set the limits of the plot
-        if self.ew_limits == None:
+        if self.ew_limits is None:
             if self.station_east is not None:
                 xlimits = (np.floor(self.station_east.min()),
                            np.ceil(self.station_east.max()))
@@ -258,7 +261,7 @@ class PlotDepthSlice(object):
         else:
             xlimits = self.ew_limits
 
-        if self.ns_limits == None:
+        if self.ns_limits is None:
             if self.station_north is not None:
                 ylimits = (np.floor(self.station_north.min()),
                            np.ceil(self.station_north.max()))
@@ -304,8 +307,14 @@ class PlotDepthSlice(object):
             # set axis properties
             ax1.set_xlim(xlimits)
             ax1.set_ylim(ylimits)
-            ax1.xaxis.set_minor_locator(MultipleLocator(self.xminorticks / self.dscale))
-            ax1.yaxis.set_minor_locator(MultipleLocator(self.yminorticks / self.dscale))
+            ax1.xaxis.set_minor_locator(
+                MultipleLocator(
+                    self.xminorticks /
+                    self.dscale))
+            ax1.yaxis.set_minor_locator(
+                MultipleLocator(
+                    self.yminorticks /
+                    self.dscale))
             ax1.set_ylabel('Northing (' + self.map_scale + ')', fontdict=fdict)
             ax1.set_xlabel('Easting (' + self.map_scale + ')', fontdict=fdict)
             ax1.set_title('Depth = {0}'.format(depth), fontdict=fdict)
@@ -343,14 +352,19 @@ class PlotDepthSlice(object):
             ax = plt.gca()
 
             # create an axes on the right side of ax. The width of cax will be 5%
-            # of ax and the padding between cax and ax will be fixed at 0.05 inch.
+            # of ax and the padding between cax and ax will be fixed at 0.05
+            # inch.
             divider = make_axes_locatable(ax)
             cax = divider.append_axes("right", size="5%", pad=0.05)
 
-            mycb = plt.colorbar(mesh_plot, cax=cax, label='Resistivity ($\Omega \cdot$m)')
+            mycb = plt.colorbar(
+                mesh_plot,
+                cax=cax,
+                label='Resistivity ($\Omega \cdot$m)')
 
             # below orginal not good
-            # cax.set_label('Resistivity ($\Omega \cdot$m)') #,fontdict={'size': self.font_size + 1})
+            # cax.set_label('Resistivity ($\Omega \cdot$m)')
+            # #,fontdict={'size': self.font_size + 1})
 
             # # plot the colorbar - Original
             # if self.cb_location is None:
@@ -388,7 +402,7 @@ class PlotDepthSlice(object):
             #                    for cc in np.arange(self.climits[0],
             #                                        self.climits[1] + 1)])
             # plot the colorbar - Original-End
-            ###FZ:  fig_list not work?
+            # FZ:  fig_list not work?
             self.fig_list.append(fig)
 
             # Figure Objects
@@ -396,9 +410,13 @@ class PlotDepthSlice(object):
 
             # --> save plots to a common folder
             if self.save_plots == 'y':
-                out_file_name = "Depth_{}_{:.4f}.png".format(ii, self.grid_z[ii])
+                out_file_name = "Depth_{}_{:.4f}.png".format(
+                    ii, self.grid_z[ii])
                 path2outfile = os.path.join(self.save_path, out_file_name)
-                fig.savefig(path2outfile, dpi=self.fig_dpi, bbox_inches='tight')
+                fig.savefig(
+                    path2outfile,
+                    dpi=self.fig_dpi,
+                    bbox_inches='tight')
             else:
                 pass
 

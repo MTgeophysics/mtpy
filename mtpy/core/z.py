@@ -224,7 +224,7 @@ class Z(object):
                 print ('provided Z array does not have correct dimensions'
                        '- Z unchanged')
 
-        if type(self.rotation_angle) is float:
+        if isinstance(self.rotation_angle, float):
             self.rotation_angle = np.repeat(self.rotation_angle,
                                             len(self._z))
 
@@ -1282,14 +1282,16 @@ class Tipper(object):
         """
         # make sure the array is of required shape
         try:
-            if len(tipper_array.shape) == 3 and tipper_array.shape[1:3] == (1, 2):
+            if len(tipper_array.shape) == 3 and tipper_array.shape[
+                    1:3] == (1, 2):
                 if tipper_array.dtype in ['complex', 'float', 'int']:
                     self._tipper = tipper_array
         except IndexError:
             pass
 
         # check to see if the new tipper array is the same shape as the old
-        if (self._tipper != None) and (self._tipper.shape != tipper_array.shape):
+        if (self._tipper is not None) and (
+                self._tipper.shape != tipper_array.shape):
             print 'Error - shape of "tipper" array does not match shape of ' + \
                   'tipper-array: %s ; %s' % (str(tipper_array.shape),
                                              str(self.tipper.shape))
@@ -1346,7 +1348,7 @@ class Tipper(object):
         except TypeError:
             pass
 
-        if (self.tipper_err != None) and \
+        if (self.tipper_err is not None) and \
                 (self._tipper_err.shape != tipper_err_array.shape):
             print 'Error - shape of "tipper_err" array does not match shape ' + \
                   'of tipper_err array: %s ; %s' % (str(tipper_err_array.shape),
@@ -1394,7 +1396,8 @@ class Tipper(object):
 
         """
 
-        if (self.tipper is not None) and (self.tipper.shape != real_array.shape):
+        if (self.tipper is not None) and (
+                self.tipper.shape != real_array.shape):
             print 'shape of "real" array does not match shape of tipper ' + \
                   'array: %s ; %s' % (str(real_array.shape),
                                       str(self.tipper.shape))
@@ -1448,7 +1451,8 @@ class Tipper(object):
 
         """
 
-        if (self.tipper is not None) and (self.tipper.shape != imag_array.shape):
+        if (self.tipper is not None) and (
+                self.tipper.shape != imag_array.shape):
             print 'shape of "real" array does not match shape of tipper ' + \
                   'array: %s ; %s' % (str(imag_array.shape),
                                       str(self.tipper.shape))

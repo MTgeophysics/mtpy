@@ -26,7 +26,7 @@ def padzeros(f, npad=None, pad_pattern=None):
 
     Arguments:
     ----------
-        **f** :  np.ndarray(m, n) 
+        **f** :  np.ndarray(m, n)
                  array to pad
 
         **npad** : int
@@ -35,7 +35,7 @@ def padzeros(f, npad=None, pad_pattern=None):
 
         **pad_pattern** : int or float
                           pattern to pad with
-                          if None set zeros 
+                          if None set zeros
 
     Returns:
     --------
@@ -58,7 +58,7 @@ def padzeros(f, npad=None, pad_pattern=None):
     except ValueError:
         n = f.shape[0]
         m = 0
-    if npad == None:
+    if npad is None:
         power = np.log2(n)
         fpow = np.floor(power)
         if power != fpow:
@@ -71,12 +71,12 @@ def padzeros(f, npad=None, pad_pattern=None):
     if m != 0:
         fpad = np.zeros((npad, m), dtype=type(f[0, 0]))
         fpad[0:n, m - 1] = f[0:n, m - 1]
-        if pad_pattern != None:
+        if pad_pattern is not None:
             fpad[n:npad, m - 1] = pad_pattern
     else:
         fpad = np.zeros(npad, dtype=type(f[0]))
         fpad[0:n] = f[0:n]
-        if pad_pattern != None:
+        if pad_pattern is not None:
             fpad[n:npad] = pad_pattern
 
     return fpad
@@ -185,7 +185,7 @@ def normalize_L2(f):
 
 def decimate(f, m, window_function='hanning'):
     """
-    resamples the data at the interval m so that the returned array is 
+    resamples the data at the interval m so that the returned array is
     len(f)/m samples long
 
     Arguments:
@@ -196,7 +196,7 @@ def decimate(f, m, window_function='hanning'):
         **m** : int
                 decimation factor
 
-        **window_function** : windowing function to apply to the data 
+        **window_function** : windowing function to apply to the data
                               to make sure the is no Gibbs ringing or aliasing
                               see scipy.signal.window for all the options
 
@@ -214,7 +214,7 @@ def decimate(f, m, window_function='hanning'):
 
 def dwindow(window):
     """
-    Calculates the derivative of the given window. Used for reassignment 
+    Calculates the derivative of the given window. Used for reassignment
     methods
 
     Arguments:
@@ -255,7 +255,7 @@ def gausswin(window_len, alpha=2.5):
                         length of desired window
         **alpha** : float
                    1/standard deviation of window,
-                   ie full width half max of window 
+                   ie full width half max of window
 
     Returns:
     --------
@@ -272,8 +272,8 @@ def gausswin(window_len, alpha=2.5):
 
 def wvd_analytic_signal(fx):
     """
-    Computes the analytic signal for WVVD as defined by 
-    J. M. O' Toole, M. Mesbah, and B. Boashash, (2008), 
+    Computes the analytic signal for WVVD as defined by
+    J. M. O' Toole, M. Mesbah, and B. Boashash, (2008),
     "A New Discrete Analytic Signal for Reducing Aliasing in the
      Discrete Wigner-Ville Distribution", IEEE Trans.  on Signal Processing,
 
@@ -309,7 +309,7 @@ def wvd_analytic_signal(fx):
 def stft(fx, nh=2 ** 8, tstep=2 ** 7, ng=1, df=1.0, nfbins=2 ** 10):
     """
     calculate the spectrogam of the given function by calculating the fft of
-    a window of length nh at each time instance with an interval of tstep. 
+    a window of length nh at each time instance with an interval of tstep.
     The frequency resolution is nfbins.
 
     Can compute the cross STFT by inputting fx as [fx1, fx2]
@@ -324,7 +324,7 @@ def stft(fx, nh=2 ** 8, tstep=2 ** 7, ng=1, df=1.0, nfbins=2 ** 10):
                  window length for each time step
                  *default* is 2**8 = 256
 
-        **tstep** : int 
+        **tstep** : int
                     number of sample between short windows
                     *default* is 2**7 = 128
 
@@ -332,7 +332,7 @@ def stft(fx, nh=2 ** 8, tstep=2 ** 7, ng=1, df=1.0, nfbins=2 ** 10):
                  length of smoothing window along frequency plane
 
         **df** : float
-                 sampling frequency 
+                 sampling frequency
 
         **nfbins** : int (should be power of 2 and equal or larger than nh)
                      number of frequency bins
@@ -351,7 +351,7 @@ def stft(fx, nh=2 ** 8, tstep=2 ** 7, ng=1, df=1.0, nfbins=2 ** 10):
        """
 
     # get length of input time series if there is two columns
-    if type(fx) is list:
+    if isinstance(fx, list):
         fx = np.array(fx)
     try:
         fn, fm = fx.shape
@@ -417,9 +417,9 @@ def stft(fx, nh=2 ** 8, tstep=2 ** 7, ng=1, df=1.0, nfbins=2 ** 10):
 
 def reassigned_stft(fx, nh=2 ** 6 - 1, tstep=2 ** 5, nfbins=2 ** 10, df=1.0, alpha=4,
                     threshold=None):
-    """ 
-    Computes the reassigned spectrogram by estimating the center of gravity of 
-    the signal and condensing dispersed energy back to that location.  Works 
+    """
+    Computes the reassigned spectrogram by estimating the center of gravity of
+    the signal and condensing dispersed energy back to that location.  Works
     well for data with minimal noise and strong spectral structure.
 
     Arguments:
@@ -437,7 +437,7 @@ def reassigned_stft(fx, nh=2 ** 6 - 1, tstep=2 ** 5, nfbins=2 ** 10, df=1.0, alp
                     *default* is 64
 
         **nfbins** : int (should be a power of 2 and larger or equal to nh
-                     number of frequency bins to calculate, note result will be 
+                     number of frequency bins to calculate, note result will be
                      length nfbins/2
                      *default* is 1024
 
@@ -465,7 +465,7 @@ def reassigned_stft(fx, nh=2 ** 6 - 1, tstep=2 ** 5, nfbins=2 ** 10, df=1.0, alp
                    the Fourier coeffients were calculated
 
         **stft** : np.ndarray(nfbins/2, len(fx)/tstep)
-                   standard spectrogram calculated from stft 
+                   standard spectrogram calculated from stft
                    in units of amplitude
     """
 
@@ -538,7 +538,7 @@ def reassigned_stft(fx, nh=2 ** 6 - 1, tstep=2 ** 5, nfbins=2 ** 10, df=1.0, alp
     # compute reassignment
     rtfarray = np.zeros_like(spec)
 
-    if threshold == None:
+    if threshold is None:
         threshold = 1.E-4 * np.mean(fx[tlst])
 
     for nn in range(nt):
@@ -563,9 +563,9 @@ def reassigned_stft(fx, nh=2 ** 6 - 1, tstep=2 ** 5, nfbins=2 ** 10, df=1.0, alp
 
 def wvd(fx, nh=2 ** 8 - 1, tstep=2 ** 5, nfbins=2 ** 10, df=1.0):
     """
-    calculates the Wigner-Ville distribution of f. 
+    calculates the Wigner-Ville distribution of f.
 
-    Can compute the cross spectra by inputting fx as [fx1,fx2] 
+    Can compute the cross spectra by inputting fx as [fx1,fx2]
 
     Arguments:
     ----------
@@ -577,12 +577,12 @@ def wvd(fx, nh=2 ** 8 - 1, tstep=2 ** 5, nfbins=2 ** 10, df=1.0):
                  window length for each time step
                  *default* is 2**8-1 = 255
 
-        **tstep** : int 
+        **tstep** : int
                     number of sample between short windows
                     *default* is 2**7 = 128
 
         **df** : float
-                 sampling frequency 
+                 sampling frequency
 
         **nfbins** : int (should be power of 2 and equal or larger than nh)
                      number of frequency bins
@@ -601,7 +601,7 @@ def wvd(fx, nh=2 ** 8 - 1, tstep=2 ** 5, nfbins=2 ** 10, df=1.0):
 
     """
     # check to see if computing auto or cross-spectra
-    if type(fx) is list:
+    if isinstance(fx, list):
         fx = np.array(fx)
     try:
         fn, fm = fx.shape
@@ -679,7 +679,7 @@ def spwvd(fx, tstep=2 ** 5, nfbins=2 ** 10, df=1.0, nh=None, ng=None, sigmat=Non
                  window length for each time step
                  *default* is None and window is calculated automatically
 
-        **tstep** : int 
+        **tstep** : int
                     number of sample between short windows
                     *default* is 2**7 = 128
 
@@ -687,7 +687,7 @@ def spwvd(fx, tstep=2 ** 5, nfbins=2 ** 10, df=1.0, nh=None, ng=None, sigmat=Non
                  length of smoothing window along frequency plane
 
         **df** : float
-                 sampling frequency 
+                 sampling frequency
 
         **nfbins** : int (should be power of 2 and equal or larger than nh)
                      number of frequency bins
@@ -713,7 +713,7 @@ def spwvd(fx, tstep=2 ** 5, nfbins=2 ** 10, df=1.0, nh=None, ng=None, sigmat=Non
                    the Fourier coeffients were calculated
     """
     # check to see if calculating the auto or cross spectra
-    if type(fx) is list:
+    if isinstance(fx, list):
         fx = np.array(fx)
 
     try:
@@ -742,23 +742,23 @@ def spwvd(fx, tstep=2 ** 5, nfbins=2 ** 10, df=1.0, nh=None, ng=None, sigmat=Non
 
     # create normalize windows in time (g) and frequency (h)
     # note window length should be odd so that h,g[0]=1,nh>ng
-    if nh == None:
+    if nh is None:
         nh = np.floor(fn / 2.)
     # make sure the window length is odd
     if np.remainder(nh, 2) == 0:
         nh += 1
     # calculate length for time smoothing window
-    if ng == None:
+    if ng is None:
         ng = np.floor(fn / 5.)
     if np.remainder(ng, 2) == 0:
         ng += 1
     # calculate standard deviations for gaussian windows
-    if sigmat == None:
+    if sigmat is None:
         sigmah = nh / (6 * np.sqrt(2 * np.log(2)))
     else:
         sigmah = sigmat
 
-    if sigmaf == None:
+    if sigmaf is None:
         sigmag = ng / (6 * np.sqrt(2 * np.log(2)))
     else:
         sigmag = sigmaf
@@ -834,8 +834,8 @@ def spwvd(fx, tstep=2 ** 5, nfbins=2 ** 10, df=1.0, nh=None, ng=None, sigmat=Non
 def robust_wvd(fx, nh=2 ** 7 - 1, ng=2 ** 4 - 1, tstep=2 ** 4, nfbins=2 ** 8, df=1.0,
                sigmat=None, sigmaf=None):
     """
-    Calculate the robust Wigner-Ville distribution for an array 
-    fx. Smoothed with Gaussians windows to get best localization. 
+    Calculate the robust Wigner-Ville distribution for an array
+    fx. Smoothed with Gaussians windows to get best localization.
 
     Arguments:
     -----------
@@ -847,7 +847,7 @@ def robust_wvd(fx, nh=2 ** 7 - 1, ng=2 ** 4 - 1, tstep=2 ** 4, nfbins=2 ** 8, df
                  window length for each time step
                  *default* is 2**8 = 256
 
-        **tstep** : int 
+        **tstep** : int
                     number of sample between short windows
                     *default* is 2**7 = 128
 
@@ -856,7 +856,7 @@ def robust_wvd(fx, nh=2 ** 7 - 1, ng=2 ** 4 - 1, tstep=2 ** 4, nfbins=2 ** 8, df
                  *default* is 2**4-1 = 15
 
         **df** : float
-                 sampling frequency 
+                 sampling frequency
 
         **nfbins** : int (should be power of 2 and equal or larger than nh)
                      number of frequency bins
@@ -882,7 +882,7 @@ def robust_wvd(fx, nh=2 ** 7 - 1, ng=2 ** 4 - 1, tstep=2 ** 4, nfbins=2 ** 8, df
                    the Fourier coeffients were calculated
     """
     # check to see if computing the auto or cross spectra
-    if type(fx) is list:
+    if isinstance(fx, list):
         fx = np.array(fx)
 
     try:
@@ -906,13 +906,13 @@ def robust_wvd(fx, nh=2 ** 7 - 1, ng=2 ** 4 - 1, tstep=2 ** 4, nfbins=2 ** 8, df
         print 'Computed Analytic signal'
 
         # make sure window length is odd
-    if nh == None:
+    if nh is None:
         nh = np.floor(fn / 2.)
     # make sure the window length is odd
     if np.remainder(nh, 2) == 0:
         nh += 1
     # calculate length for time smoothing window
-    if ng == None:
+    if ng is None:
         ng = np.floor(fn / 5.)
     if np.remainder(ng, 2) == 0:
         ng += 1
@@ -927,13 +927,13 @@ def robust_wvd(fx, nh=2 ** 7 - 1, ng=2 ** 4 - 1, tstep=2 ** 4, nfbins=2 ** 8, df
     nfx = len(fa)
 
     # make frequency smoothing window
-    if sigmat == None:
+    if sigmat is None:
         sigmat = nh / (5 * np.sqrt(2 * np.log(2)))
     h = sps.gaussian(nh, sigmat)
     h /= sum(h)
 
     # make a time smoothing window
-    if sigmaf == None:
+    if sigmaf is None:
         sigmaf = ng / (5 * np.sqrt(2 * np.log(2)))
     g = sps.gaussian(ng, sigmaf)
     g /= sum(g)
@@ -978,7 +978,7 @@ def specwv(fx, tstep=2 ** 5, nfbins=2 ** 10, nhs=2 ** 8, nhwv=2 ** 9 - 1, ngwv=2
         **fx** : list or np.ndarray
                  the function to have a spectrogram computed for
 
-       **tstep** : int 
+       **tstep** : int
                     number of sample between short windows
                     *default* is 2**7 = 128
 
@@ -988,15 +988,15 @@ def specwv(fx, tstep=2 ** 5, nfbins=2 ** 10, nhs=2 ** 8, nhwv=2 ** 9 - 1, ngwv=2
 
 
         **nhwv** : int (should be odd)
-                 length of smoothing window for each time step to calculate 
+                 length of smoothing window for each time step to calculate
                  WVD. *default* is 2**9-1 = 511
 
         **ngwv** : int (should be odd)
-                 length of frequency smoothing window for each time step to 
+                 length of frequency smoothing window for each time step to
                  calculate WVD. *default* is 2**3-1 = 7
 
         **df** : float
-                 sampling frequency 
+                 sampling frequency
 
         **nfbins** : int (should be power of 2 and equal or larger than nh)
                      number of frequency bins
@@ -1031,10 +1031,11 @@ def specwv(fx, tstep=2 ** 5, nfbins=2 ** 10, nhs=2 ** 8, nhwv=2 ** 9 - 1, ngwv=2
     return tfarray, tlst, flst
 
 
-def modifiedb(fx, tstep=2 ** 5, nfbins=2 ** 10, df=1.0, nh=2 ** 8 - 1, beta=.2):
+def modifiedb(fx, tstep=2 ** 5, nfbins=2 ** 10,
+              df=1.0, nh=2 ** 8 - 1, beta=.2):
     """
-    Calculates the modified b distribution as defined by cosh(n)^-2 beta 
-    for an array fx.  Supposed to remove cross terms in the WVD. 
+    Calculates the modified b distribution as defined by cosh(n)^-2 beta
+    for an array fx.  Supposed to remove cross terms in the WVD.
 
     Arguments:
     -----------
@@ -1046,12 +1047,12 @@ def modifiedb(fx, tstep=2 ** 5, nfbins=2 ** 10, df=1.0, nh=2 ** 8 - 1, beta=.2):
                  window length for each time step
                  *default* is None and window is calculated automatically
 
-        **tstep** : int 
+        **tstep** : int
                     number of sample between short windows
                     *default* is 2**5 = 32
 
         **df** : float
-                 sampling frequency 
+                 sampling frequency
 
         **nfbins** : int (should be power of 2 and equal or larger than nh)
                      number of frequency bins
@@ -1071,7 +1072,7 @@ def modifiedb(fx, tstep=2 ** 5, nfbins=2 ** 10, df=1.0, nh=2 ** 8 - 1, beta=.2):
                    the Fourier coeffients were calculated
     """
     # check to see if calculating the auto or cross spectra
-    if type(fx) is list:
+    if isinstance(fx, list):
         fx = np.array(fx)
     try:
         fn, fm = fx.shape
@@ -1147,12 +1148,12 @@ def robust_stft_median(fx, nh=2 ** 8, tstep=2 ** 5, df=1.0, nfbins=2 ** 10):
                  window length for each time step
                  *default* is 2**8 = 256
 
-        **tstep** : int 
+        **tstep** : int
                     number of sample between short windows
                     *default* is 2**7 = 128
 
         **df** : float
-                 sampling frequency (Hz) 
+                 sampling frequency (Hz)
 
         **nfbins** : int (should be power of 2 and equal or larger than nh)
                      number of frequency bins
@@ -1219,9 +1220,10 @@ def robust_stft_median(fx, nh=2 ** 8, tstep=2 ** 5, df=1.0, nfbins=2 ** 10):
     return tfarray, tlst, flstp
 
 
-def robust_stft_L(fx, alpha=.325, nh=2 ** 8, tstep=2 ** 5, df=1.0, nfbins=2 ** 10):
+def robust_stft_L(fx, alpha=.325, nh=2 ** 8, tstep=2 **
+                  5, df=1.0, nfbins=2 ** 10):
     """
-    Calculates the robust spectrogram by estimating the vector median and 
+    Calculates the robust spectrogram by estimating the vector median and
     summing terms estimated by alpha coefficients.
 
     Arguments:
@@ -1239,12 +1241,12 @@ def robust_stft_L(fx, alpha=.325, nh=2 ** 8, tstep=2 ** 5, df=1.0, nfbins=2 ** 1
                  window length for each time step
                  *default* is 2**8 = 256
 
-        **tstep** : int 
+        **tstep** : int
                     number of sample between short windows
                     *default* is 2**7 = 128
 
         **df** : float
-                 sampling frequency 
+                 sampling frequency
 
         **nfbins** : int (should be power of 2 and equal or larger than nh)
                      number of frequency bins
@@ -1322,7 +1324,7 @@ def smethod(fx, L=11, nh=2 ** 8, tstep=2 ** 7, ng=1, df=1.0, nfbins=2 ** 10,
             sigmaL=None):
     """
     Calculates the smethod by estimating the STFT first and computing the WV
-    of window length L in the frequency domain. 
+    of window length L in the frequency domain.
 
     For larger L more of WV estimation, if L=0 get back STFT
 
@@ -1333,7 +1335,7 @@ def smethod(fx, L=11, nh=2 ** 8, tstep=2 ** 7, ng=1, df=1.0, nfbins=2 ** 10,
                  for cross-correlation input as [fx1, fx2]
 
         **L** : int (should be odd)
-                length of window for S-method calculation, higher numbers tend 
+                length of window for S-method calculation, higher numbers tend
                 toward WVD
 
         **nh** : int (should be power of 2)
@@ -1343,12 +1345,12 @@ def smethod(fx, L=11, nh=2 ** 8, tstep=2 ** 7, ng=1, df=1.0, nfbins=2 ** 10,
         **ng** : int (should be odd)
                  length of smoothing window along frequency plane
 
-        **tstep** : int 
+        **tstep** : int
                     number of sample between short windows
                     *default* is 2**7 = 128
 
         **df** : float
-                 sampling frequency 
+                 sampling frequency
 
         **nfbins** : int (should be power of 2 and equal or larger than nh)
                      number of frequency bins
@@ -1366,14 +1368,14 @@ def smethod(fx, L=11, nh=2 ** 8, tstep=2 ** 7, ng=1, df=1.0, nfbins=2 ** 10,
                    the Fourier coeffients were calculated
 
         **pxx** : np.ndarray(nfbins/2, len(fx)/tstep)
-                  STFT spectrogram in units of amplitude 
+                  STFT spectrogram in units of amplitude
 
     """
 
     df = float(df)
 
     # check to see if computing auto or cross spectra
-    if type(fx) is list:
+    if isinstance(fx, list):
         fx = np.array(fx)
     try:
         fn, fm = fx.shape
@@ -1412,7 +1414,7 @@ def smethod(fx, L=11, nh=2 ** 8, tstep=2 ** 7, ng=1, df=1.0, nfbins=2 ** 10,
     # create a list of frequency shifts
     Llst = np.arange(start=-L / 2 + 1, stop=L / 2 + 1, step=1, dtype='int')
     # create a frequency gaussian window
-    if sigmaL == None:
+    if sigmaL is None:
         sigmaL = L / (1 * np.sqrt(2 * np.log(2)))
     p = sps.gaussian(L, sigmaL)
     # make a matrix of windows
@@ -1442,8 +1444,8 @@ def robust_smethod(fx, L=5, nh=2 ** 7, tstep=2 ** 5, nfbins=2 ** 10, df=1.0,
                  for cross-correlation input as [fx1, fx2]
 
         **L** : int (should be odd)
-                length of window for S-method calculation, higher numbers tend 
-                toward WVD 
+                length of window for S-method calculation, higher numbers tend
+                toward WVD
 
         **nh** : int (should be power of 2)
                  window length for each time step
@@ -1452,12 +1454,12 @@ def robust_smethod(fx, L=5, nh=2 ** 7, tstep=2 ** 5, nfbins=2 ** 10, df=1.0,
         **ng** : int (should be odd)
                  length of smoothing window along frequency plane
 
-        **tstep** : int 
+        **tstep** : int
                     number of sample between short windows
                     *default* is 2**7 = 128
 
         **df** : float
-                 sampling frequency 
+                 sampling frequency
 
         **nfbins** : int (should be power of 2 and equal or larger than nh)
                      number of frequency bins
@@ -1481,10 +1483,10 @@ def robust_smethod(fx, L=5, nh=2 ** 7, tstep=2 ** 5, nfbins=2 ** 10, df=1.0,
                    the Fourier coeffients were calculated
 
         **pxx** : np.ndarray(nfbins/2, len(fx)/tstep)
-                  STFT spectrogram in units of amplitude 
+                  STFT spectrogram in units of amplitude
     """
     # check to see if computing auto or cross spectra
-    if type(fx) is list:
+    if isinstance(fx, list):
         fx = np.array(fx)
     try:
         fn, fm = fx.shape
@@ -1526,7 +1528,7 @@ def robust_smethod(fx, L=5, nh=2 ** 7, tstep=2 ** 5, nfbins=2 ** 10, df=1.0,
     Llst = np.arange(start=-L / 2 + 1, stop=L / 2 + 1, step=1, dtype='int')
 
     # compute the frequency window of length L
-    if sigmaL == None:
+    if sigmaL is None:
         sigmaL = L / 3 * (np.sqrt(2 * np.log(2)))
     lwin = gausswin(L, sigmaL)
     lwin /= sum(lwin)
@@ -1549,8 +1551,8 @@ def robust_smethod(fx, L=5, nh=2 ** 7, tstep=2 ** 5, nfbins=2 ** 10, df=1.0,
 
 def reassigned_smethod(fx, nh=2 ** 7 - 1, tstep=2 ** 4, nfbins=2 ** 9, df=1.0, alpha=4,
                        thresh=.01, L=5):
-    """ 
-    Calulates the reassigned S-method as described by Djurovic[1999] by 
+    """
+    Calulates the reassigned S-method as described by Djurovic[1999] by
     using the spectrogram to estimate the reassignment.
 
         Arguments:
@@ -1560,27 +1562,27 @@ def reassigned_smethod(fx, nh=2 ** 7 - 1, tstep=2 ** 4, nfbins=2 ** 9, df=1.0, a
                  for cross-correlation input as [fx1, fx2]
 
         **L** : int (should be odd)
-                length of window for S-method calculation, higher numbers tend 
-                toward WVD 
+                length of window for S-method calculation, higher numbers tend
+                toward WVD
 
         **nh** : int (should be power of 2)
                  window length for each time step
                  *default* is 2**8 = 256
 
         **alpha** : float
-                    inverse of full-width half max of gaussian window, smaller 
+                    inverse of full-width half max of gaussian window, smaller
                     numbers mean broader windows.
 
         **thresh** : float
                      threshold for reassignment, lower numbers more points
                      reassigned, higer numbers less points reassigned
 
-        **tstep** : int 
+        **tstep** : int
                     number of sample between short windows
                     *default* is 2**7 = 128
 
         **df** : float
-                 sampling frequency 
+                 sampling frequency
 
         **nfbins** : int (should be power of 2 and equal or larger than nh)
                      number of frequency bins
@@ -1598,11 +1600,11 @@ def reassigned_smethod(fx, nh=2 ** 7 - 1, tstep=2 ** 4, nfbins=2 ** 9, df=1.0, a
                    the Fourier coeffients were calculated
 
         **sm** : np.ndarray(nfbins/2, len(fx)/tstep)
-                  S-method spectrogram in units of amplitude 
+                  S-method spectrogram in units of amplitude
 
     """
     # check to see if computing auto or cross spectra
-    if type(fx) is list:
+    if isinstance(fx, list):
         fx = np.array(fx)
     try:
         fn, fm = fx.shape
@@ -1739,10 +1741,10 @@ def stfbss(X, nsources=5, ng=2 ** 5 - 1, nh=2 ** 9 - 1, tstep=2 ** 6 - 1, df=1.0
            tftol=1.E-8, L=7, normalize=True, tftype='spwvd', alpha=.38):
     """
     btfssX,nsources=5,ng=2**5-1,nh=2**9-1,tstep=2**6-1,df=1.0,nfbins=2**10,
-          tftol=1.E-8,normalize=True) 
-    estimates sources using a blind source algorithm based on spatial 
-    time-frequency distributions.  At the moment this algorithm uses the SPWVD 
-    to estimate TF distributions.  
+          tftol=1.E-8,normalize=True)
+    estimates sources using a blind source algorithm based on spatial
+    time-frequency distributions.  At the moment this algorithm uses the SPWVD
+    to estimate TF distributions.
 
     Arguments
         X = m x n array of time series, where m is number of time series and n
@@ -1753,10 +1755,10 @@ def stfbss(X, nsources=5, ng=2 ** 5 - 1, nh=2 ** 9 - 1, tstep=2 ** 6 - 1, df=1.0
         tstep = time step increment
         df = sampling frequency (Hz)
         nfbins = number of frequencies
-        tftol = tolerance for a time-frequency point to be estimated as a cross 
+        tftol = tolerance for a time-frequency point to be estimated as a cross
                 term or as an auto term, the higher the number the more auto
                 terms.
-        normalization = True or False, True to normalize, False if already 
+        normalization = True or False, True to normalize, False if already
                         normalized
 
     Returns:

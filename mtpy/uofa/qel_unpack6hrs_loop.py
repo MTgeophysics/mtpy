@@ -1,5 +1,6 @@
 import qel_prepare_birrp_data3 as ppb
-import os,sys
+import os
+import sys
 import os.path as op
 import time
 
@@ -29,50 +30,53 @@ dates = ['2014-01-30-at-13-00-00']
 # '2014-03-14-at-13-00-00','2014-03-15-at-13-00-00']
 
 
-channels = [(0,1)]
+channels = [(0, 1)]
 # channels = [(0,1),(0,1),(0,1),(0,1),(0,1),(0,1),(0,1),(0,1),(0,1),(0,1),(0,1),(0,1),(0,1),(0,1),(0,1),(0,1),(0,1),(0,1),(0,1),(0,1),
 # (0,1),(0,1),(0,1),(0,1),(0,1),(0,1)]
 
 
 outputbase = '/stash/elogger/L101_30_Jan_Test/400000_detrend_removed'
 
-channelsB = (0,1)
+channelsB = (0, 1)
 
 dataDirB = '/media/Elements/KEXRR_32gig/RRB/'
 
-channelsC = (0,1)
+channelsC = (0, 1)
 
 dataDirC = '/media/Elements2/KEX01_32gig/L125_Blogger/'
 
-prefix = 'L1' 	
+prefix = 'L1'
 
-subfolder_addon='_RR_B125'
+subfolder_addon = '_RR_B125'
 
 for idx_s, station in enumerate(station_names):
 
+    dataDirA = op.join(lo_subfolders[0], prefix + station)
 
-	dataDirA = op.join(lo_subfolders[0],prefix+station)
+    subfoldername = '{0}{1}{2}'.format(prefix, station, subfolder_addon)
 
-	subfoldername = '{0}{1}{2}'.format(prefix,station,subfolder_addon)
+    subfolder = op.join(outputbase, subfoldername)
+    if not op.isdir(subfolder):
+        os.makedirs(subfolder)
 
-	subfolder = op.join(outputbase,subfoldername)
-	if not op.isdir(subfolder):
-		os.makedirs(subfolder)
+    channelsA = channels[idx_s]
 
-	channelsA = channels[idx_s]
+    print dataDirA, dataDirB, dataDirC
+    print channelsA, channelsB, channelsC
 
-	print dataDirA,dataDirB,dataDirC
-	print channelsA,channelsB,channelsC
-
-	for idx_date,date in enumerate(dates):
-		timestamp = time.strptime(date, "%Y-%m-%d-at-%H-%M-%S")
-		try:
-			#print 	date,subfolder
-			ppb.run(dataDirA,dataDirB,dataDirC,channelsA,channelsB,  channelsC,timestamp,subfolder)
-			#sys.exit()
-		except:
-			continue
-
-
-
-
+    for idx_date, date in enumerate(dates):
+        timestamp = time.strptime(date, "%Y-%m-%d-at-%H-%M-%S")
+        try:
+            # print 	date,subfolder
+            ppb.run(
+                dataDirA,
+                dataDirB,
+                dataDirC,
+                channelsA,
+                channelsB,
+                channelsC,
+                timestamp,
+                subfolder)
+            # sys.exit()
+        except:
+            continue

@@ -36,12 +36,11 @@ def main():
     csvutm(csv_txt, out_file, delimiter=args.delimiter,
            f=args.from_coords, fx=args.fx, fy=args.fy,
            t=args.to, tx=args.tx, ty=args.ty)
-    
+
 
 def csvutm(csvtxt, out_file, delimiter=',',
            f='28353', fx='easting', fy='northing',
            t='4326', tx='lon', ty='lon'):
-
     """
     ...
 
@@ -76,26 +75,42 @@ def csvutm(csvtxt, out_file, delimiter=',',
         row[ty] = tys[i]
         w.writerow(row)
 
-            
+
 def get_parser():
     """
     ...
 
     """
     parser = argparse.ArgumentParser(description=__doc__.split('\n')[0],
-            epilog=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--fx', default='lon', help='column header for x coord of 1st (from) coord system')
-    parser.add_argument('--fy', default='lat', help='column header for y coord of 1st (from) coord system')
-    parser.add_argument('--tx', default='easting', help='column header for x coord of 2nd (to) coord system')
-    parser.add_argument('--ty', default='northing', help='column header for y coord of 2nd (to) coord system')
+                                     epilog=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument(
+        '--fx',
+        default='lon',
+        help='column header for x coord of 1st (from) coord system')
+    parser.add_argument(
+        '--fy',
+        default='lat',
+        help='column header for y coord of 1st (from) coord system')
+    parser.add_argument(
+        '--tx',
+        default='easting',
+        help='column header for x coord of 2nd (to) coord system')
+    parser.add_argument(
+        '--ty',
+        default='northing',
+        help='column header for y coord of 2nd (to) coord system')
     parser.add_argument('-f', '--from', help='EPSG code for coordinate system to convert from.\n'
                                              'See http://spatialreference.org/ref/epsg/', default='4326', dest='from_coords')
-    parser.add_argument('-t', '--to', help='EPSG code for coordinate system to convert into.', default='28353')
+    parser.add_argument(
+        '-t',
+        '--to',
+        help='EPSG code for coordinate system to convert into.',
+        default='28353')
     parser.add_argument('-d', '--delimiter', default=',')
     parser.add_argument('in_csv_filename', nargs=1)
     parser.add_argument('out_csv_filename', nargs=1)
     return parser
-    
-    
+
+
 if __name__ == '__main__':
     main()

@@ -17,12 +17,13 @@ mtpy/imaging/plotquality.py
 
 import numpy as np
 import re
-import sys, os
+import sys
+import os
 import os.path as op
 
 import copy
 
 import mtpy.processing.quality as MTq
-import  mtpy.utils.exceptions as MTexceptions
+import mtpy.utils.exceptions as MTexceptions
 
 #=================================================================

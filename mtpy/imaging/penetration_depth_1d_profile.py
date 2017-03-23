@@ -24,12 +24,16 @@ import mtpy.core.mt as mt
 import mtpy.imaging.plot_mt_response as mtpr
 from mtpy.utils.mtpylog import MtPyLog
 
-# get a logger object for this module, using the utility class MtPyLog to config the logger
+# get a logger object for this module, using the utility class MtPyLog to
+# config the logger
 logger = MtPyLog().get_mtpy_logger(__name__)
 
-# logger = MtPyLog(path2configfile='logging.yml').get_mtpy_logger(__name__) # specific
+# logger =
+# MtPyLog(path2configfile='logging.yml').get_mtpy_logger(__name__) #
+# specific
 
-def plot_edi_dir(edi_path,rholist=['zxy','zyx','det']):
+
+def plot_edi_dir(edi_path, rholist=['zxy', 'zyx', 'det']):
     """ plot edi files from the input directory edi_path
     """
 
@@ -41,12 +45,12 @@ def plot_edi_dir(edi_path,rholist=['zxy','zyx','det']):
         # for efile in edi_files[:2]:
         logger.debug("plotting %s", efile)
         # eo = mtedi.Edi(filename=efile)
-        plot_edi_file(efile,rholist=rholist)
+        plot_edi_file(efile, rholist=rholist)
 
     return
 
 
-def plot_edi_file(edifile, rholist=['zxy','zyx','det'], savefile=None):
+def plot_edi_file(edifile, rholist=['zxy', 'zyx', 'det'], savefile=None):
     """
     Plot the input edi_file
     Args:
@@ -68,21 +72,24 @@ def plot_edi_file(edifile, rholist=['zxy','zyx','det'], savefile=None):
 
     scale_param = np.sqrt(1.0 / (2.0 * np.pi * 4 * np.pi * 10 ** (-7)))
 
-    logger.debug("scale parameter= %s",scale_param)
+    logger.debug("scale parameter= %s", scale_param)
 
     # The periods array
 
     periods = 1.0 / freqs
 
-    legendh=[]
+    legendh = []
 
     if 'zxy' in rholist:
         # One of the 4-components: XY
-        penetration_depth = scale_param * np.sqrt(zeta.resistivity[:, 0, 1] * periods)
+        penetration_depth = scale_param * \
+            np.sqrt(zeta.resistivity[:, 0, 1] * periods)
 
         #pen_zxy, = plt.semilogx(periods, -penetration_depth, '-*',label='Zxy')
-        pen_zxy, = plt.semilogx(periods, -penetration_depth, color='#000000', marker='*', label='Zxy')
-        #See http://matplotlib.org/1.3.1/examples/pylab_examples/line_styles.html
+        pen_zxy, = plt.semilogx(
+            periods, -penetration_depth, color='#000000', marker='*', label='Zxy')
+        # See
+        # http://matplotlib.org/1.3.1/examples/pylab_examples/line_styles.html
 
         legendh.append(pen_zxy)
 
@@ -91,28 +98,38 @@ def plot_edi_file(edifile, rholist=['zxy','zyx','det'], savefile=None):
         # plt.ylabel("Depth Meters")
 
     if 'zyx' in rholist:
-        penetration_depth = scale_param * np.sqrt(zeta.resistivity[:, 1, 0] * periods)
+        penetration_depth = scale_param * \
+            np.sqrt(zeta.resistivity[:, 1, 0] * periods)
 
-        pen_zyx, = plt.semilogx(periods, -penetration_depth, color='g', marker='o', label='Zyx')
+        pen_zyx, = plt.semilogx(
+            periods, -penetration_depth, color='g', marker='o', label='Zyx')
         legendh.append(pen_zyx)
 
     if 'det' in rholist:
         # determinant
         det2 = np.abs(zeta.det[0])
-        det_penetration_depth = scale_param * np.sqrt(0.2 * periods * det2 * periods)
+        det_penetration_depth = scale_param * \
+            np.sqrt(0.2 * periods * det2 * periods)
 
         #pen_det, = plt.semilogx(periods, -det_penetration_depth, '-^', label='Determinant')
-        pen_det, = plt.semilogx(periods, -det_penetration_depth, color='b', marker='^', label='Determinant')
+        pen_det, = plt.semilogx(
+            periods, -det_penetration_depth, color='b', marker='^', label='Determinant')
         legendh.append(pen_det)
 
+    plt.legend(
+        handles=legendh,
+        bbox_to_anchor=(
+            0.1,
+            0.5),
+        loc=3,
+        ncol=1,
+        borderaxespad=0.)
 
-    plt.legend(handles=legendh, bbox_to_anchor=(0.1,0.5), loc=3, ncol=1, borderaxespad=0.)
+    plt.title("Penetration Depth for file %s" % edifile)
 
-    plt.title("Penetration Depth for file %s"% edifile)
+    plt.xlabel("Log Period (seconds)", fontsize=16)
 
-    plt.xlabel("Log Period (seconds)",fontsize=16)
-
-    plt.ylabel("Penetration Depth (meters)",fontsize=16)
+    plt.ylabel("Penetration Depth (meters)", fontsize=16)
 
     if savefile is not None:
         plt.savefig(savefile, dpi=800)
@@ -127,21 +144,24 @@ def plot_edi_file(edifile, rholist=['zxy','zyx','det'], savefile=None):
 # How to Run:
 #    export PYTHONPATH=/Softlab/Githubz/mtpy2:$PYTHONPATH
 #    python  mtpy/imaging/penetration_depth_1d_profile.py data/edi_files/
-#    python  mtpy/imaging/penetration_depth_1d_profile.py tests/data/edifiles/15125A.edi
+# python  mtpy/imaging/penetration_depth_1d_profile.py
+# tests/data/edifiles/15125A.edi
 
 if __name__ == '__main__':
 
     if len(sys.argv) < 2:
-        print ("\n please provide path to edi files\n USAGE:  %s path2edifile" % sys.argv[0])
+        print (
+            "\n please provide path to edi files\n USAGE:  %s path2edifile" %
+            sys.argv[0])
         sys.exit(1)
     else:
         edi_path = sys.argv[1]
 
         if os.path.isfile(edi_path):
-            plot_edi_file(edi_path , savefile='C:/temp/pen_depth.jpg')
+            plot_edi_file(edi_path, savefile='C:/temp/pen_depth.jpg')
             # rholist can be any of ['zxy','zyx','det'], default all of them
         elif os.path.isdir(edi_path):  # choose a suitable function below at run
             #plot_edi_dir(edi_path )
-            plot_edi_dir(edi_path, rholist=['det'] )
+            plot_edi_dir(edi_path, rholist=['det'])
         else:
             logger.error("Usage %s %s", sys.argv[0], "path2edi")

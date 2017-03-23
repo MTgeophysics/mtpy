@@ -13,10 +13,13 @@ import logging
 import logging.config
 import inspect
 
-logging.getLogger().setLevel(logging.DEBUG)     # DEBUG is good for debug and development
+# DEBUG is good for debug and development
+logging.getLogger().setLevel(logging.DEBUG)
+
 
 class MtPyLog():
     # def __init__(self, path2configfile=None):
+
     def __init__(self, path2configfile='logging.yml'):
         """
         configure/setup the logging according to the input configfile
@@ -35,7 +38,9 @@ class MtPyLog():
 
             logging.info("module file: %s", this_module_file_path)
 
-            yaml_path = os.path.join(os.path.dirname(this_module_file_path), path2configfile)
+            yaml_path = os.path.join(
+                os.path.dirname(this_module_file_path),
+                path2configfile)
             logging.info('Effective yaml configuration file %s', yaml_path)
 
             if os.path.exists(yaml_path):
@@ -43,15 +48,20 @@ class MtPyLog():
                     config = yaml.safe_load(f.read())
                 logging.config.dictConfig(config)
             else:
-                logging.exception("the config yaml file %s does not exist?", yaml_path)
+                logging.exception(
+                    "the config yaml file %s does not exist?", yaml_path)
 
         elif self.configfile.endswith('.conf') or self.configfile.endswith('.ini'):
-            logging.config.fileConfig(self.configfile, disable_existing_loggers=False)
-            # must change the default disable_existing_loggers=True to False to make this behave 100% OK
+            logging.config.fileConfig(
+                self.configfile, disable_existing_loggers=False)
+            # must change the default disable_existing_loggers=True to False to
+            # make this behave 100% OK
         elif self.configfile.endswith('.json'):
             pass
         else:
-            raise Exception("logging configuration file %s is not supported" % self.configfile)
+            raise Exception(
+                "logging configuration file %s is not supported" %
+                self.configfile)
 
     def get_mtpy_logger(self, loggername=''):
         """
@@ -60,7 +70,8 @@ class MtPyLog():
         :return:
         """
 
-        logger = logging.getLogger(loggername)  # configured explicitely specifically in logging.conf
+        # configured explicitely specifically in logging.conf
+        logger = logging.getLogger(loggername)
 
         return logger
 
@@ -75,7 +86,8 @@ def test_none_configfile():
     myobj = MtPyLog(UsersOwnConfigFile)
     # 3 create a named-logger object
     # logger = myobj.get_mtpy_logger('simpleExample')
-    # logger = myobj.get_mtpy_logger('simpleExample2') # not configured, use the root's
+    # logger = myobj.get_mtpy_logger('simpleExample2') # not configured, use
+    # the root's
     logger = myobj.get_mtpy_logger(__name__)  # __main__  # = root config
     # logger = myobj.get_mtpy_logger()  # root
 
@@ -101,10 +113,12 @@ def test_yaml_configfile(yamlfile='logging.yml'):
     myobj = MtPyLog(UsersOwnConfigFile)
     # 3 create a named-logger object
     # logger = myobj.get_mtpy_logger('simpleExample')
-    # logger = myobj.get_mtpy_logger('simpleExample2') # not configured, use the default or root's??
+    # logger = myobj.get_mtpy_logger('simpleExample2') # not configured, use
+    # the default or root's??
     logger = myobj.get_mtpy_logger(__name__)  # __main__  # named logger
     # logger = myobj.get_mtpy_logger()  # root
-    # logger = myobj.get_mtpy_logger('')  # not good, considered as rootLogger; use the above
+    # logger = myobj.get_mtpy_logger('')  # not good, considered as
+    # rootLogger; use the above
 
     # logger.setLevel(logging.DEBUG)
     print(logger, id(logger), logger.name, logger.level, logger.handlers)
@@ -136,10 +150,12 @@ def test_ini_configfile(UsersOwnConfigFile='logging.conf'):
     myobj = MtPyLog(UsersOwnConfigFile)
     # 3 create a named-logger object
     # logger = myobj.get_mtpy_logger('simpleExample')
-    # logger = myobj.get_mtpy_logger('simpleExample2') # not configured, use the default or root's??
+    # logger = myobj.get_mtpy_logger('simpleExample2') # not configured, use
+    # the default or root's??
     logger = myobj.get_mtpy_logger(__name__)  # __main__  # named logger
     # logger = myobj.get_mtpy_logger()  # root
-    # logger = myobj.get_mtpy_logger('')  # not good, considered as rootLogger; use the above
+    # logger = myobj.get_mtpy_logger('')  # not good, considered as
+    # rootLogger; use the above
 
     # logger.setLevel(logging.DEBUG)
     print(logger, id(logger), logger.name, logger.level, logger.handlers)
@@ -172,7 +188,8 @@ def test_json_configfile():
 if __name__ == "__main__":
     # before any configuration of logging, behavior different than the end.
     logging.debug("Start: how about the old logging format?")
-    logging.warn("Start: how about the old logging format?")  # warn is default logging level
+    # warn is default logging level
+    logging.warn("Start: how about the old logging format?")
 
     # test_none_configfile()
     #
@@ -186,7 +203,8 @@ if __name__ == "__main__":
     myobj = MtPyLog(UsersOwnConfigFile)
     # 3 create a named-logger object
     # logger = myobj.get_mtpy_logger('simpleExample')
-    # logger = myobj.get_mtpy_logger('simpleExample2') # not configured, use the root's
+    # logger = myobj.get_mtpy_logger('simpleExample2') # not configured, use
+    # the root's
     logger = myobj.get_mtpy_logger(__name__)  # __main__  # = root config
     # logger = myobj.get_mtpy_logger()  # root
     # logger = myobj.get_mtpy_logger('')  # root

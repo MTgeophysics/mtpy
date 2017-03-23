@@ -4,7 +4,7 @@
 MT
 ===============
 
-    * Basic MT-object containing the very basic and necessary information for a 
+    * Basic MT-object containing the very basic and necessary information for a
       single MT station
 
 Created on Tue Jan 07 12:42:34 2014
@@ -63,20 +63,20 @@ class MT(object):
     Tipper                mtpy.core.z.Tipper object for tipper
     date                  date collected
     east                  station location in UTM coordinates assuming WGS-84
-    north                 station location in UTM coordinates assuming WGS-84 
+    north                 station location in UTM coordinates assuming WGS-84
     utm_zone              zone of UTM coordinates assuming WGS-84
     ===================== =====================================================
 
-    .. note:: 
-        * can change the utm grid by changing _utm_ellipsoid.  See 
-          mtpy.utils.latlongutmconversion for details on reference 
+    .. note::
+        * can change the utm grid by changing _utm_ellipsoid.  See
+          mtpy.utils.latlongutmconversion for details on reference
           ellipsoids
 
         * currently the information is assumed to come from an edi file
           but can be extended later to .j files or something else or can
           be input by hand
 
-        * if you set the coordinates east, north or utm_zone, be sure to 
+        * if you set the coordinates east, north or utm_zone, be sure to
           run _get_ll() to recalculate the latitude and longitude.
 
         * can input the following key words to fill values in Z and Tipper:
@@ -85,11 +85,11 @@ class MT(object):
             - z_err_array      --> np.ndarray(n_freq, 2, 2)
             - freq            --> np.ndarray(n_freq)
             - resistivity     --> np.ndarray(n_freq, 2, 2) (linear scale)
-            - resistivity_err --> np.ndarray(n_freq, 2, 2) 
-            - phase           --> np.ndarray(n_freq, 2, 2)           
-            - phase_err       --> np.ndarray(n_freq, 2, 2) 
+            - resistivity_err --> np.ndarray(n_freq, 2, 2)
+            - phase           --> np.ndarray(n_freq, 2, 2)
+            - phase_err       --> np.ndarray(n_freq, 2, 2)
             - tipper_object   --> mtpy.core.z.Tipper object
-            - tipper          --> np.ndarray(n_freq, 1, 2, dtype='complex') 
+            - tipper          --> np.ndarray(n_freq, 1, 2, dtype='complex')
             - tipper_err       --> np.ndarray(n_freq, 1, 2)
 
     Methods
@@ -98,7 +98,7 @@ class MT(object):
     Methods               Description
     ===================== =====================================================
     write_edi_file        write an edi_file from the MT data
-    remove_distortion     remove distortion from the data following 
+    remove_distortion     remove distortion from the data following
                           Bibby et al. [2005]
     remove_static_shift   Shifts apparent resistivity curves up or down
     interpolate           interpolates the impedance tensor and induction
@@ -520,7 +520,7 @@ class MT(object):
         """
         Remove static shift from the apparent resistivity
 
-        Assume the original observed tensor Z is built by a static shift S 
+        Assume the original observed tensor Z is built by a static shift S
         and an unperturbated "correct" Z0 :
 
              * Z = S * Z0
@@ -576,7 +576,7 @@ class MT(object):
         Arguments
         ------------
 
-            *new_freq_array* : np.ndarray 
+            *new_freq_array* : np.ndarray
                                a 1-d array of frequencies to interpolate on
                                to.  Must be with in the bounds of the existing
                                frequency range, anything outside and an error
@@ -616,7 +616,7 @@ class MT(object):
             return
 
         # make sure the input is a numpy array
-        if type(new_freq_array) != np.ndarray:
+        if not isinstance(new_freq_array, np.ndarray):
             new_freq_array = np.array(new_freq_array)
 
         # check the bounds of the new frequency array
@@ -679,12 +679,14 @@ class MT(object):
             t_func_err = spi.interp1d(np.log10(self.Z.freq[ind]),
                                       self.Tipper.tipper_err[ind][:, 0, jj],
                                       kind='slinear')
-            new_Tipper.tipper_err[:, 0, jj] = t_func_err(np.log10(new_freq_array))
+            new_Tipper.tipper_err[
+                :, 0, jj] = t_func_err(
+                np.log10(new_freq_array))
 
         return new_Z, new_Tipper
 
     def plot_mt_response(self, **kwargs):
-        """ 
+        """
         Returns a mtpy.imaging.plot_mt_response.PlotMTResponse object
 
         Examples
@@ -693,7 +695,7 @@ class MT(object):
 
             >>> mt_obj = mt.MT(edi_file)
             >>> pr = mt.plot_mt_response()
-            >>> # if you need more infor on plot_mt_response 
+            >>> # if you need more infor on plot_mt_response
             >>> help(pr)
 
         """

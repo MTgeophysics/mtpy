@@ -41,54 +41,54 @@ labeldict = dict([(ii, '$10^{' + str(ii) + '}$') for ii in range(-20, 21)])
 
 
 # ==============================================================================
-# Arrows properties for induction vectors               
+# Arrows properties for induction vectors
 # ==============================================================================
 class MTArrows(object):
     """
     Helper class to read a dictionary of arrow properties
-    
+
     Arguments:
     -----------
         **arrow_dict** : dictionary for arrow properties
                         * 'size' : float
                                   multiplier to scale the arrow. *default* is 5
                         * 'head_length' : float
-                                         length of the arrow head *default* is 
+                                         length of the arrow head *default* is
                                          1.5
                         * 'head_width' : float
-                                        width of the arrow head *default* is 
+                                        width of the arrow head *default* is
                                         1.5
                         * 'lw' : float
                                 line width of the arrow *default* is .5
-                                
+
                         * 'color' : tuple (real, imaginary)
                                    color of the arrows for real and imaginary
-                                   
+
                         * 'threshold': float
                                       threshold of which any arrow larger than
-                                      this number will not be plotted, helps 
-                                      clean up if the data is not good. 
-                                      *default* is 1, note this is before 
+                                      this number will not be plotted, helps
+                                      clean up if the data is not good.
+                                      *default* is 1, note this is before
                                       scaling by 'size'
-                                      
+
                         * 'direction : [ 0 | 1 ]
                                      - 0 for arrows to point toward a conductor
                                      - 1 for arrow to point away from conductor
-    
+
     Attributes:
     -----------
-    
+
         -arrow_color_imag     color of imaginary induction arrow
         -arrow_color_real     color of real induction arrow
-        -arrow_direction      convention of arrows pointing to or away from 
+        -arrow_direction      convention of arrows pointing to or away from
                               conductors, see above.
         -arrow_head_length    length of arrow head in relative points
         -arrow_head_width     width of arrow head in relative points
         -arrow_lw             line width of arrows
         -arrow_size           scaling factor to multiple arrows by to be visible
-        -arrow_threshold      threshold for plotting arrows, anything above 
+        -arrow_threshold      threshold for plotting arrows, anything above
                               this number will not be plotted.
-                              
+
     """
 
     def __init__(self, arrow_dict):
@@ -146,53 +146,53 @@ class MTArrows(object):
 
 
 # ==============================================================================
-#  ellipse properties           
+#  ellipse properties
 # ==============================================================================
 class MTEllipse(object):
     """
     helper class for getting ellipse properties from an input dictionary
-    
+
     Arguments:
     -------------
         **ellipse_dict** : dictionary
-                          dictionary of parameters for the phase tensor 
+                          dictionary of parameters for the phase tensor
                           ellipses with keys:
-                              
-                          * 'size' -> size of ellipse in points 
+
+                          * 'size' -> size of ellipse in points
                                      *default* is .25
-                          
-                          * 'colorby' : [ 'phimin' | 'phimax' | 'beta' | 
+
+                          * 'colorby' : [ 'phimin' | 'phimax' | 'beta' |
                                     'skew_seg' | 'phidet' | 'ellipticity' ]
-                                    
+
                                     - 'phimin' -> colors by minimum phase
                                     - 'phimax' -> colors by maximum phase
                                     - 'skew' -> colors by skew
-                                    - 'skew_seg' -> colors by skew in 
-                                                   discrete segments 
+                                    - 'skew_seg' -> colors by skew in
+                                                   discrete segments
                                                    defined by the range
-                                    - 'normalized_skew' -> colors by 
+                                    - 'normalized_skew' -> colors by
                                                     normalized_skew
                                                     see Booker, 2014
-                                    - 'normalized_skew_seg' -> colors by 
+                                    - 'normalized_skew_seg' -> colors by
                                                    normalized_skew
-                                                   discrete segments 
+                                                   discrete segments
                                                    defined by the range
                                     - 'phidet' -> colors by determinant of
                                                  the phase tensor
                                     - 'ellipticity' -> colors by ellipticity
                                     *default* is 'phimin'
-                            
+
                           * 'range' : tuple (min, max, step)
                                      Need to input at least the min and max
                                      and if using 'skew_seg' to plot
                                      discrete values input step as well
                                      *default* depends on 'colorby'
-                                     
-                          * 'cmap' : [ 'mt_yl2rd' | 'mt_bl2yl2rd' | 
-                                       'mt_wh2bl' | 'mt_rd2bl' | 
-                                       'mt_bl2wh2rd' | 'mt_seg_bl2wh2rd' | 
+
+                          * 'cmap' : [ 'mt_yl2rd' | 'mt_bl2yl2rd' |
+                                       'mt_wh2bl' | 'mt_rd2bl' |
+                                       'mt_bl2wh2rd' | 'mt_seg_bl2wh2rd' |
                                        'mt_rd2gr2bl']
-                                      
+
                                    - 'mt_yl2rd'       --> yellow to red
                                    - 'mt_bl2yl2rd'    --> blue to yellow to red
                                    - 'mt_wh2bl'       --> white to blue
@@ -200,18 +200,18 @@ class MTEllipse(object):
                                    - 'mt_bl2wh2rd'    --> blue to white to red
                                    - 'mt_bl2gr2rd'    --> blue to green to red
                                    - 'mt_rd2gr2bl'    --> red to green to blue
-                                   - 'mt_seg_bl2wh2rd' --> discrete blue to 
+                                   - 'mt_seg_bl2wh2rd' --> discrete blue to
                                                            white to red
-    
+
     Attributes:
     ------------
-    
+
         -ellipse_cmap         ellipse color map, see above for options
         -ellipse_colorby      parameter to color ellipse by
         -ellipse_range        (min, max, step) values to color ellipses
         -ellipse_size         scaling factor to make ellipses visible
-                                                           
-                                                           
+
+
     """
 
     def __init__(self, ellipse_dict):
@@ -241,9 +241,9 @@ class MTEllipse(object):
             self.ellipse_range = self._ellipse_dict['range']
         except KeyError:
             if self.ellipse_colorby == 'skew' or \
-                            self.ellipse_colorby == 'skew_seg' or \
-                            self.ellipse_colorby == 'normalized_skew' or \
-                            self.ellipse_colorby == 'normalized_skew_seg':
+                    self.ellipse_colorby == 'skew_seg' or \
+                    self.ellipse_colorby == 'normalized_skew' or \
+                    self.ellipse_colorby == 'normalized_skew_seg':
 
                 self.ellipse_range = (-9, 9, 3)
 
@@ -265,11 +265,11 @@ class MTEllipse(object):
             self.ellipse_cmap = self._ellipse_dict['cmap']
         except KeyError:
             if self.ellipse_colorby == 'skew' or \
-                            self.ellipse_colorby == 'normalized_skew':
+                    self.ellipse_colorby == 'normalized_skew':
                 self.ellipse_cmap = 'mt_bl2wh2rd'
 
             elif self.ellipse_colorby == 'skew_seg' or \
-                            self.ellipse_colorby == 'normalized_skew_seg':
+                    self.ellipse_colorby == 'normalized_skew_seg':
                 self.ellipse_cmap = 'mt_seg_bl2wh2rd'
 
             else:
@@ -277,52 +277,52 @@ class MTEllipse(object):
 
 
 # ==============================================================================
-# object for computing resistivity and phase  
+# object for computing resistivity and phase
 # ==============================================================================
 class ResPhase(object):
     """
     Helper class to create a data type for just the resistivity and phase
-    
+
     Arguments:
     ----------
         **z_object** : class mtpy.core.z.Z
                       object of mtpy.core.z.  If this is input be sure the
                       attribute z.freq is filled.  *default* is None
-                      
+
         **res_array** : np.ndarray((nf,2,2))
-                        Array of resistivity values on a linear scale with 
+                        Array of resistivity values on a linear scale with
                         the shape being [[rho_xx, rho_xy],[rho_yx, rho_yy]]
                         *default* is None
-                        
+
         **res_err_array** : np.ndarray((nf,2,2))
-                        Array of resistivity error values on a linear scale,  
+                        Array of resistivity error values on a linear scale,
                         the shape being [[rho_xx, rho_xy],[rho_yx, rho_yy]]
                         *default* is None
-                        
+
         **phase_array** : np.ndarray((nf,2,2))
-                        Array of resistivity values on a linear scale with 
+                        Array of resistivity values on a linear scale with
                         the shape being [[phi_xx, phi_xy],[phi_yx, phi_yy]]
                         *default* is None
-                        
+
         **phase_err_array** : np.ndarray((nf,2,2))
-                        Array of resistivity error values on a linear scale,  
+                        Array of resistivity error values on a linear scale,
                         the shape being [[phi_xx, phi_xy],[phi_yx, phi_yy]]
                         *default* is None
-                        
+
         **rot_z** : float
                     angle to rotate data by assuming North is 0 and measured
                     clockwise positive
-                    
+
         **period** : np.ndarray(nf)
-                     period array same length as res_array.  Needs to be input 
+                     period array same length as res_array.  Needs to be input
                      if inputing res and phase.
-                        
-    
+
+
     Attributes:
     ------------
-    
+
         -period       array of periods corresponding to elements in res/phase
-        
+
         -phase         phase array of shape (nf, 2, 2)
         -phase_err     phase error array of shape (nf, 2, 2)
         -phasedet      determinant of phase with shape (nf)
@@ -335,11 +335,11 @@ class ResPhase(object):
         -phaseyx_err   yx component of phase error with shape (nf)
         -phaseyy       yy component of phase with shape (nf)
         -phaseyy_err   yy component of phase error with shape (nf)
-        
-        -phase_quadrant [ 1 | 3 ] 
-                        * 1 for both phases to be in 0 to 90, 
-                        * 3 for xy to be in 0-90 and yx to be in -180 to 270            
-        
+
+        -phase_quadrant [ 1 | 3 ]
+                        * 1 for both phases to be in 0 to 90,
+                        * 3 for xy to be in 0-90 and yx to be in -180 to 270
+
         -res           res array of shape (nf, 2, 2)
         -res_err       res error array of shape (nf, 2, 2)
         -resdet        determinant of res with shape (nf)
@@ -352,13 +352,13 @@ class ResPhase(object):
         -resyx_err     yx component of res error with shape (nf)
         -resyy         yy component of res with shape (nf)
         -resyy_err     yy component of res error with shape (nf)
-        
+
     Methods:
     ---------
-    
+
         -compute_res_phase   computes the above attributes on call
         -rotate              rotates the data
-     
+
     """
 
     def __init__(self, z_object=None, res_array=None, res_err_array=None,
@@ -374,9 +374,9 @@ class ResPhase(object):
         self.phase_quadrant = phase_quadrant
 
         # check to make sure they are the same size
-        if self.res != None or self.phase != None:
+        if self.res is not None or self.phase is not None:
             if self.res.shape != self.phase.shape:
-                raise mtex.MTpyError_Z('res_array and phase_array ' + \
+                raise mtex.MTpyError_Z('res_array and phase_array ' +
                                        'are not the same shape')
 
             if self._Z is None:
@@ -385,11 +385,11 @@ class ResPhase(object):
                                       res_err_array=res_err_array,
                                       phase_err_array=phase_err_array)
                 if self.period is None:
-                    raise mtex.MTpyError_Z('Need to input period to ' + \
+                    raise mtex.MTpyError_Z('Need to input period to ' +
                                            'compute z.')
                 self._Z.freq = 1. / period
 
-        if self._Z.freq == None:
+        if self._Z.freq is None:
             if period is not None:
                 self._Z.freq = 1. / period
             else:
@@ -405,7 +405,7 @@ class ResPhase(object):
 
     def compute_res_phase(self):
         """
-        computes the resistivity and phase and sets each component as an 
+        computes the resistivity and phase and sets each component as an
         attribute
         """
 
@@ -424,7 +424,7 @@ class ResPhase(object):
             # check to see if res and res_err are the same shape
             if self.res.shape != self.res_err.shape:
                 mtex.MTpyError_inputarguments
-                raise mtex.MTpyError_inputarguments('res_array and res_err_array ' + \
+                raise mtex.MTpyError_inputarguments('res_array and res_err_array ' +
                                                     'are not the same shape')
 
         # check to see if a phase_err_array was input, if not set to zeros
@@ -434,7 +434,7 @@ class ResPhase(object):
         else:
             # check to see if res and res_err are the same shape
             if self.phase.shape != self.phase_err.shape:
-                raise mtex.MTpyError_inputarguments('phase_array and ' + \
+                raise mtex.MTpyError_inputarguments('phase_array and ' +
                                                     'phase_err_array are not the same shape')
 
         # --> set the attributes of the class to the components of each
@@ -467,14 +467,15 @@ class ResPhase(object):
         # calculate determinant values
         zdet = np.array([np.linalg.det(zz) ** .5 for zz in self._Z.z])
         if self._Z.z_err is not None:
-            zdetvar = np.array([np.linalg.det(zzv) ** .5 for zzv in self._Z.z_err])
+            zdetvar = np.array(
+                [np.linalg.det(zzv) ** .5 for zzv in self._Z.z_err])
         else:
             zdetvar = np.ones_like(zdet)
 
         # apparent resistivity
         self.resdet = 0.2 * (1. / self._Z.freq) * abs(zdet) ** 2
         self.resdet_err = 0.2 * (1. / self._Z.freq) * \
-                          np.abs(zdet + zdetvar) ** 2 - self.resdet
+            np.abs(zdet + zdetvar) ** 2 - self.resdet
 
         # phase
         self.phasedet = np.arctan2(zdet.imag, zdet.real) * (180 / np.pi)
@@ -482,7 +483,7 @@ class ResPhase(object):
 
     def rotate(self, rot_z):
         """
-        rotate the impedance tensor by the angle rot_z (deg) assuming 
+        rotate the impedance tensor by the angle rot_z (deg) assuming
         0 is North and angle is positve clockwise.
         """
 
@@ -498,7 +499,7 @@ class ResPhase(object):
             self._Z.rotate(self.rot_z)
 
         else:
-            raise mtex.MTpyError_Z('Cannot rotate just resistivity and ' + \
+            raise mtex.MTpyError_Z('Cannot rotate just resistivity and ' +
                                    'phase data, need to input z')
 
         self.compute_res_phase()
@@ -510,32 +511,32 @@ class ResPhase(object):
 class Tipper(object):
     """
     Helper class to put tipper data into a usable format
-    
+
     Arguments:
     ----------
         **tipper_object** : class mtpy.core.z.Tipper
-    
+
         **tipper_array** : np.ndarray((nf, 1, 2))
                            array of the complex tipper as [tx, ty]
         **tipper_err_array** : np.ndarray((nf, 1, 2))
                                array of the tipper error as [tx, ty]
-   
+
    Attributes:
     -----------
-    
+
         -mag_real   magnitude of real induction arrow
         -mag_imag   magnitude of imaginary induction arrow
-        -ang_real   angle of real induction arrow assuming 0 is North positive 
+        -ang_real   angle of real induction arrow assuming 0 is North positive
                     clockwise
-        _ang_imag   angle of imaginary induction arrow assuming 0 is North 
+        _ang_imag   angle of imaginary induction arrow assuming 0 is North
                     positive clockwise
-        
+
     Methods:
     --------
-    
+
         -compute_components   computes above attributes on call
-        -rotate     rotates the data assuming 0 is North positive 
-                    clockwise  
+        -rotate     rotates the data assuming 0 is North positive
+                    clockwise
     """
 
     def __init__(self, tipper_object=None, tipper_array=None,
@@ -578,133 +579,133 @@ class Tipper(object):
 
 
 # ==============================================================================
-#  make an MT object that has all the important information and methods               
+#  make an MT object that has all the important information and methods
 # ==============================================================================
 
 class MTplot(object):
     """
     This class will be able to read in the imporant information from either
-    an .edi file or information input by had and can be extended to other 
-    file types in the future.  This is a helper class to get all the 
+    an .edi file or information input by had and can be extended to other
+    file types in the future.  This is a helper class to get all the
     information needed in one place.
-    
+
     The normal usage is to input an edi file from which all the information
     is read in.  However, it would seem that not everyone uses the .edi format
     so an option is to write you're own class for that particular file type, or
-    give it to us to deal with.  Or write enough code to get it into one of 
+    give it to us to deal with.  Or write enough code to get it into one of
     the suppported forms as arrays of z or resistivity and phase, or put those
-    into a z_object or tipper_object.  
-    
-    
+    into a z_object or tipper_object.
+
+
     Arguments:
     ----------
-    
+
         **fn** : string
                        full path to file to be read in.  At the moment only
                        .edi type files are supported. *default* is None
-        
+
         **z** : np.array((nf, 2, 2), dtype='complex')
                 impedance tensor with length of nf -> the number of freq
                 *default* is None
-                
+
         **z_err** : np.array((nf, 2, 2), dtype='real')
                     impedance tensor error estimates, same shape as z.
                     *default* is None
-                    
+
         **res_array** : np.array((nf, 2, 2))
                         array of resistivity values in linear scale.
                         *default* is None
-                        
+
         **res_err_array** : np.array((nf, 2, 2))
-                            array of resistivity error estimates, same shape 
+                            array of resistivity error estimates, same shape
                             as res_array. *default* is None
-                            
+
         **phase_array** : np.array((nf, 2, 2))
-                          array of phase values in degrees, same shape as 
+                          array of phase values in degrees, same shape as
                           res_array. *default* is None
-                          
+
         **phase_err_array** : np.array((nf, 2, 2))
-                              array of phase error estimates, same shape as 
+                              array of phase error estimates, same shape as
                               phase_array. *default* is None
-                              
+
         **tipper_array** : np.array((nf, 1, 2), dtype='complex')
                            array of tipper values for tx, ty. *default* is None
-                           
+
         **tipper_err_array** : np.array((nf, 1, 2))
                                array of tipper error estimates, same shape as
                                tipper_array. *default* is None
-        
+
         **station** : string
                       name of the station to be plotted. *default* is None
-                      
+
         **period** : np.array(nf)
                      array of periods that coorespond to the components of z
                      *default* is None
-                      
+
         **lat** : float
                  latitude of the station to be plotted in decimal degrees.
                  *default* is None
-                 
+
         **lon** : float
                  longitude of the station to be plotted in decimal degrees.
                  *default* is None
-                 
+
         **elev** : float
                    elevation of the station to be plotted in meters.
                    *default* is None
-                              
+
         **rot_z** : float or np.array(nf)
-                    angle (deg) to rotate the data assuming North is 0 and 
+                    angle (deg) to rotate the data assuming North is 0 and
                     angle is positive clockwise.  Can be input as an array to
-                    rotate different periods by different angles. 
+                    rotate different periods by different angles.
                     *default* is 0
-                    
+
         **z_object** : class mtpy.core.z.Z
                       object of mtpy.core.z.  If this is input be sure the
                       attribute z.freq is filled.  *default* is None
-                      
+
         **tipper_object** : class mtpy.core.z.Tipper
                             object of mtpy.core.z. If this is input be sure the
-                            attribute z.freq is filled.  
-                            *default* is None 
+                            attribute z.freq is filled.
+                            *default* is None
     Attributes:
     -----------
         -z             impedance tensor as an np.array((nf, 2, 2))
-            
+
         -z_err         estimates of impedance tensor error same shape as z
-        
+
         -tipper        tipper elements in an np.array((nf, 1, 2))
-        
+
         -tipper_err    estimates of tipper error, same shape as tipper
-        
+
         -station       station name
-        
+
         -period        period as an np.array(nf)
-        
+
         -lat           latitude in decimal degrees
-        
+
         -lon           longitude in decimal degrees
-        
+
         -elev          elevation in meters
-        
+
         -fn            filename read from
-        
-     
-     These can be get/set by simple dot syntax.  
-        
+
+
+     These can be get/set by simple dot syntax.
+
     :Example: ::
-        
+
         >>> mt1 = mtplot.MTplot(fn=r'/home/mt/edifiles/mt01.edi')
         >>> mt1.station
         >>> 'mt01'
         >>> mt1.station = 'pb075'
         >>> mt1.station
         >>> 'pb075'
-        
+
     **Note:** that the format of z and tipper are:
-        
+
         ::
-            
+
           z[ii, :, :] = np.array([[z_xx, Z_xy], [Z_yx, Z_yy]])
           z[ii, 0, 0] = z_xx
           z[ii, 0, 1] = z_xy
@@ -713,24 +714,24 @@ class MTplot(object):
           tipper[ii, :, :] = np.array([[tx],[ty]])
           tipper[ii, 0, 0] = tx
           tipper[ii, 0, 1] = ty
-        
+
     Methods:
     --------
         -get_ResPhase        returns a ResPhase object
         -get_PhaseTensor     returns a PhaseTensor object
         -get_Tipper          returns a Tipper object
         -get_Zinvariants     returns a Zinvariants object
-        
+
     :Example: ::
-        
+
         >>> import mtpy.imaging.mtplot as mtplot
         >>> mt1 = mtplot.MTplot(fn=r'/home/mt/edifiles/mt01.edi')
         >>> # if you don't have an .edi file but res and phase
-        >>> mt1 = mtplot.MTplot(res_array=res, phase_array=phase, 
+        >>> mt1 = mtplot.MTplot(res_array=res, phase_array=phase,
         >>> ...                 period=period, station='mt01')
-        
-        
-        
+
+
+
     """
 
     def __init__(self, fn=None, z=None, z_err=None, res_array=None,
@@ -750,16 +751,16 @@ class MTplot(object):
         # if a z_object is input make it the attribute _Z
         if z_object is not None:
             self._Z = z_object
-            if z_object.freq == None:
-                raise mtex.MTpyError_Z('Need to set Z.freq to an' + \
+            if z_object.freq is None:
+                raise mtex.MTpyError_Z('Need to set Z.freq to an' +
                                        ' array that cooresponds to Z.z')
             self.period = 1. / z_object.freq
 
         # if z_array is input
         elif z is not None:
             # make sure period is input for plotting
-            if self.period == None:
-                raise mtex.MTpyError_Z('Need to input period array to ' + \
+            if self.period is None:
+                raise mtex.MTpyError_Z('Need to input period array to ' +
                                        'compute Resistivity')
 
             self._Z = mtz.Z(z_array=z, z_err_array=z_err)
@@ -780,21 +781,21 @@ class MTplot(object):
                 self._read_edi()
             else:
                 not_fn = self._fn[os.path.basename(self._fn).find['.']:]
-                raise mtex.MTpyError_file_handling('File ' + \
+                raise mtex.MTpyError_file_handling('File ' +
                                                    'type {0} not supported yet.'.format(not_fn))
 
         # --> if resistivity and phase are given set the z_array, z_err_array
-        if res_array != None and phase_array != None:
+        if res_array is not None and phase_array is not None:
             if period is None and freq is None:
-                raise mtex.MTpyError_Z('Need to input period array for ' + \
+                raise mtex.MTpyError_Z('Need to input period array for ' +
                                        'plotting')
 
             if not res_array.shape == phase_array.shape:
-                raise mtex.MTpyError_inputarguments('res_array and phase array ' + \
+                raise mtex.MTpyError_inputarguments('res_array and phase array ' +
                                                     'do not have the same shape')
 
             if not res_array.shape[0] == period.shape[0]:
-                raise mtex.MTpyError_inputarguments('res_array and period array ' + \
+                raise mtex.MTpyError_inputarguments('res_array and period array ' +
                                                     'do not have the same shape')
 
             self._Z = mtz.Z()
@@ -817,7 +818,7 @@ class MTplot(object):
         self._Z = edi_obj.Z
 
         # tipper and error
-        if edi_obj.Tipper.tipper == None:
+        if edi_obj.Tipper.tipper is None:
             self._set_tipper(np.zeros((self._Z.z.shape[0], 1, 2),
                                       dtype='complex'))
             self._set_tipper_err(np.zeros((self._Z.z.shape[0], 1, 2)))
@@ -844,7 +845,7 @@ class MTplot(object):
 
     # don't really like this way of programming but I'll do it anyway
     # ==========================================================================
-    #  make set methods for each of the attributes    
+    #  make set methods for each of the attributes
     # ==========================================================================
     def _set_z(self, z):
         self._Z.z = z
@@ -880,7 +881,7 @@ class MTplot(object):
             self._read_edi()
         else:
             not_fn = self._fn[os.path.basename(self._fn).find['.']:]
-            raise mtex.MTpyError_file_handling('File ' + \
+            raise mtex.MTpyError_file_handling('File ' +
                                                'type {0} not supported yet.'.format(not_fn))
 
     def _set_rot_z(self, rot_z):
@@ -918,7 +919,8 @@ class MTplot(object):
                 try:
                     if self._Tipper.tipper is not None:
                         self._Tipper.tipper = self._Tipper.tipper.copy()[::-1]
-                        self._Tipper.tipper_err = self._Tipper.tipper_err.copy()[::-1]
+                        self._Tipper.tipper_err = self._Tipper.tipper_err.copy()[
+                            ::-1]
                         self._Tipper.freq = self._freq.copy()
                 except AttributeError:
                     pass
@@ -966,19 +968,19 @@ class MTplot(object):
     # use the property built-in to make these get/set useable behind the scenes
     # ==========================================================================
     z = property(_get_z, _set_z,
-                 doc="Impedance tensor in the shape (nz,2,2) complex " + \
+                 doc="Impedance tensor in the shape (nz,2,2) complex " +
                      "numpy.array")
 
     z_err = property(_get_z_err, _set_z_err,
-                     doc="Impedance tensor error same shape as MT.z real " + \
+                     doc="Impedance tensor error same shape as MT.z real " +
                          "numpy.array")
 
     tipper = property(_get_tipper, _set_tipper,
-                      doc="Tipper array in the shape (nz, 2) complex " + \
+                      doc="Tipper array in the shape (nz, 2) complex " +
                           "numpy.array")
 
     tipper_err = property(_get_tipper_err, _set_tipper_err,
-                          doc="Tipper error array same shape as MT.tipper" + \
+                          doc="Tipper error array same shape as MT.tipper" +
                               "real numpy.array")
 
     station = property(_get_station, _set_station,
@@ -997,11 +999,11 @@ class MTplot(object):
                     doc="Elevation of the station in meters")
 
     fn = property(_get_fn, _set_fn,
-                  doc="full path to the file of the station " + \
+                  doc="full path to the file of the station " +
                       "being plotted")
 
     rot_z = property(_get_rot_z, _set_rot_z,
-                     doc="Rotation angle positive clockwise assuming North " + \
+                     doc="Rotation angle positive clockwise assuming North " +
                          "is 0, can be an array with same shape at z")
 
     freq = property(_get_freq, _set_freq,
@@ -1010,14 +1012,14 @@ class MTplot(object):
     # ==========================================================================
     # define methods to get resphase, phasetensor, invariants
     #
-    # --> used uppercase in the function names to signify that it is getting a 
+    # --> used uppercase in the function names to signify that it is getting a
     #     class object
     # ==========================================================================
 
     def get_ResPhase(self, **kwargs):
         """
         returns a ResPhase object from z_object
-        
+
         """
         rp = ResPhase(self._Z, **kwargs)
         return rp
@@ -1025,7 +1027,7 @@ class MTplot(object):
     def get_PhaseTensor(self):
         """
         returns a mtpy.analysis.pt.PhaseTensor object from z_object
-        
+
         """
         pt = mtpt.PhaseTensor(z_object=self._Z)
         pt.freq = 1. / self.period
@@ -1044,7 +1046,7 @@ class MTplot(object):
     def get_Tipper(self):
         """
         returns Tipper class
-        
+
         """
 
         tp = Tipper(tipper_object=self._Tipper)
@@ -1058,7 +1060,7 @@ class MTplot(object):
 class MTplot_list(object):
     """
     manipulates a list of MTplot objects
-    
+
     """
 
     def __init__(self, fn_list=None, res_object_list=None, z_object_list=None,
@@ -1079,7 +1081,7 @@ class MTplot_list(object):
     def sort_by_offsets_profile(self, line_direction='ew'):
         """
         get list of offsets to sort the mt list
-        
+
         """
 
         mm = sort_by_offsets(self.mt_list, line_direction=line_direction)
@@ -1092,30 +1094,30 @@ class MTplot_list(object):
         """
         creates a dictionary where the keys are the stations and the values
         are the index in the plot_mesh grid for the station location.
-        
-        *Note*: the handling of zone changes in UTM coordinates is rough and 
+
+        *Note*: the handling of zone changes in UTM coordinates is rough and
         needs to be changed.  If there are zone changes in your survey, stick
         to latlon.
-        
+
         Arguments:
         ----------
             **map_scale**: [ 'latlon' | 'eastnorth' | 'eastnorthkm' ]
-            
+
             **ref_point**: (map_scale_x, map_scale_y)
                            reference point to center the map on, needs to be in
                            map_scale coordinates.
-                           
+
         Returns:
         --------
             **map_dict**: dictionary
                           where keys are station names, and the values are the
                           index values (x, y) for the plot_meshgrid
-                          
+
             **map_xarr**: np.ndarray(num_stations)
-                          east-west values to of station to plot. 
-                          
+                          east-west values to of station to plot.
+
             **map_yarr**: np.ndarray(num_stations)
-                          north-south values to of station to plot.  
+                          north-south values to of station to plot.
         """
 
         mm = get_station_locations(self.mt_list, map_scale=map_scale,
@@ -1128,43 +1130,43 @@ class MTplot_list(object):
     def get_rp_arrays(self, plot_period, sort_by='line', line_direction='ew',
                       map_scale='latlon', ref_point=(0, 0), ftol=.1):
         """
-        get resistivity and phase values in the correct order according to 
+        get resistivity and phase values in the correct order according to
         offsets and periods for either map view or pseudosection.
-    
+
         Attributes:
         -----------
             **sort_by**: [ 'line' | 'map' ]
-                         * 'line' --> sort the station distances into a line 
+                         * 'line' --> sort the station distances into a line
                                       according to line_direction
-                         * 'map' --> sort the station distances into map 
+                         * 'map' --> sort the station distances into map
                                      coordinates
-            
+
             **line_direction**: [ 'ew' | 'ns' ]
-            
+
             **map_scale**: [ 'latlon' | 'eastnorth' | 'eastnorthkm' ]
-            
+
             **ref_point**: (x, y)
-                           reference point to center the plot on, this point 
+                           reference point to center the plot on, this point
                            needs to be in map coordinates
-                           
+
             **ftol**: float
                       tolerance to match periods in mt_list with plot_period
-                      
+
             **plot_period**: np.ndarray(nt)
                              array of periods in seconds to get data for.
-                             
+
         Returns:
         --------
-            Returns the individual components of resisitivity (in log scale) 
-            and phase (deg) with a shape according to sort_by.  
-            
-            * If sort_by == 'line', the returned shape is (num_periods, 
+            Returns the individual components of resisitivity (in log scale)
+            and phase (deg) with a shape according to sort_by.
+
+            * If sort_by == 'line', the returned shape is (num_periods,
                                                            num_stations)
-            * If sort_by == 'map', the returned shape is (num_periods, 
-                                                          num_stations, 
+            * If sort_by == 'map', the returned shape is (num_periods,
+                                                          num_stations,
                                                           num_stations)
-                                                           
-        
+
+
             **resxx**: np.ndarray(nt, ns) or np.ndarray(nt, ns, ns)
                        apparent resistivity (log 10 scale) for xx component
             **resxy**: np.ndarray(nt, ns) or np.ndarray(nt, ns, ns)
@@ -1173,7 +1175,7 @@ class MTplot_list(object):
                        apparent resistivity (log 10 scale) for yx component
             **resyy**: np.ndarray(nt, ns) or np.ndarray(nt, ns, ns)
                        apparent resistivity (log 10 scale) for yy component
-                       
+
             **phasexx**: np.ndarray(nt, ns) or np.ndarray(nt, ns, ns)
                        phase (deg) for xx component
             **phasexy**: np.ndarray(nt, ns) or np.ndarray(nt, ns, ns)
@@ -1182,7 +1184,7 @@ class MTplot_list(object):
                        phase (deg) for yx component
             **phaseyy**: np.ndarray(nt, ns) or np.ndarray(nt, ns, ns)
                        phase (deg) for yy component
-        
+
         """
 
         mm = get_rp_arrays(self.mt_list, sort_by=sort_by,
@@ -1223,58 +1225,58 @@ class MTplot_list(object):
     def get_pt_arrays(self, plot_period, sort_by='line', line_direction='ew',
                       map_scale='latlon', ref_point=(0, 0), ftol=.1):
         """
-        get resistivity and phase values in the correct order according to 
+        get resistivity and phase values in the correct order according to
         offsets and periods for either map view or pseudosection.
-    
+
         Attributes:
         -----------
             **sort_by**: [ 'line' | 'map' ]
-                         * 'line' --> sort the station distances into a line 
+                         * 'line' --> sort the station distances into a line
                                       according to line_direction
-                         * 'map' --> sort the station distances into map 
+                         * 'map' --> sort the station distances into map
                                      coordinates
-            
+
             **line_direction**: [ 'ew' | 'ns' ]
-            
+
             **map_scale**: [ 'latlon' | 'eastnorth' | 'eastnorthkm' ]
-            
+
             **ref_point**: (x, y)
                            reference point to center the plot on, this point needs
                            to be in map coordinates
-                           
+
             **ftol**: float
                       tolerance to match periods in mt_list with plot_period
-                      
+
             **plot_period**: np.ndarray(nt)
                              array of periods in seconds to get data for.
-                             
+
         Returns:
         --------
             Returns the individual parameters of the phase tensor (deg)
-            
-            * If sort_by == 'line', the returned shape is (num_periods, 
+
+            * If sort_by == 'line', the returned shape is (num_periods,
                                                            num_stations)
-            * If sort_by == 'map', the returned shape is (num_periods, 
-                                                          num_stations, 
+            * If sort_by == 'map', the returned shape is (num_periods,
+                                                          num_stations,
                                                           num_stations)
-                                                           
-        
+
+
             **phimin**: np.ndarray(nt, ns) or np.ndarray(nt, ns, ns)
                        minimum phase or 2nd principal component of phase tensor
-                       
+
             **phimax**: np.ndarray(nt, ns) or np.ndarray(nt, ns, ns)
                         maximum phase or 1st principal component of phase tensor
-                       
+
             **skew**: np.ndarray(nt, ns) or np.ndarray(nt, ns, ns)
                       skew angle of phase tensor
-                       
+
             **azimuth**: np.ndarray(nt, ns) or np.ndarray(nt, ns, ns)
                          regional strike direction estimated from phase tensor,
                          with a 90 degree ambiguity
-                       
+
             **ellipticity**: np.ndarray(nt, ns) or np.ndarray(nt, ns, ns)
                              ratio of phimin to phimax suggesting dimensionality.
-        
+
         """
 
         mm = get_pt_arrays(self.mt_list,
@@ -1307,32 +1309,32 @@ class MTplot_list(object):
 
 
 # ==============================================================================
-# get list of mt objects     
+# get list of mt objects
 # ==============================================================================
 def get_mtlist(fn_list=None, res_object_list=None, z_object_list=None,
                tipper_object_list=None, mt_object_list=None):
     """
-    gets a list of mt objects from the inputs  
+    gets a list of mt objects from the inputs
 
-    Arguments:     
+    Arguments:
     -----------
         **fn_list** : list of strings
                           full paths to .edi files to plot
-                          
+
         **res_object_list** : list of mtplot.ResPhase objects
                              *default* is none
-                          
+
         **z_object_list** : list of class mtpy.core.z.Z
                            object of mtpy.core.z.  If this is input be sure the
                            attribute z.freq is filled.  *default* is None
-                      
+
         **mt_object_list** : list of class mtpy.imaging.mtplot.MTplot
                             object of mtpy.imaging.mtplot.MTplot
                             *default* is None
-                            
+
     Returns:
     ---------
-    
+
         **mt_list** : list of MTplot instances
     """
 
@@ -1353,8 +1355,8 @@ def get_mtlist(fn_list=None, res_object_list=None, z_object_list=None,
         try:
             nt = len(tipper_object_list)
             if nt != ns:
-                raise mtex.MTpyError_inputarguments('length ' + \
-                                                    ' of z_list is not equal to tip_list' + \
+                raise mtex.MTpyError_inputarguments('length ' +
+                                                    ' of z_list is not equal to tip_list' +
                                                     '; nz={0}, nt={1}'.format(ns, nt))
             for mt, tip_obj in zip(mt_list, tipper_object_list):
                 mt._Tipper = tip_obj
@@ -1365,10 +1367,10 @@ def get_mtlist(fn_list=None, res_object_list=None, z_object_list=None,
 
 
 # elif tipper_object_list is not None:
-#        
+#
 #    elif type(fn_list[0]) is MTplot:
 #        return mt_list
-#        
+#
 #    else:
 #        try:
 #            ns = len(fn_list)
@@ -1378,7 +1380,7 @@ def get_mtlist(fn_list=None, res_object_list=None, z_object_list=None,
 #        except TypeError:
 #            try:
 #                ns = len(res_object_list)
-#                mt_list = [MTplot(res_phase_object=res_obj) 
+#                mt_list = [MTplot(res_phase_object=res_obj)
 #                            for res_obj in res_object_list]
 #                try:
 #                    nt = len(tipper_object_list)
@@ -1387,13 +1389,13 @@ def get_mtlist(fn_list=None, res_object_list=None, z_object_list=None,
 #                              ' of z_list is not equal to tip_list'+\
 #                              '; nz={0}, nt={1}'.format(ns, nt))
 #                    for mt,tip_obj in zip(mt_list,tipper_object_list):
-#                        mt._Tipper = tip_obj 
+#                        mt._Tipper = tip_obj
 #                except TypeError:
 #                    pass
 #                print 'Reading {0} stations'.format(ns)
 #                return mt_list
 #            except TypeError:
-#                try: 
+#                try:
 #                    ns = len(z_object_list)
 #                    mt_list = [MTplot(z_object=z_obj) for z_obj in z_object_list]
 #                    try:
@@ -1403,12 +1405,12 @@ def get_mtlist(fn_list=None, res_object_list=None, z_object_list=None,
 #                                  ' of z_list is not equal to tip_list'+\
 #                                  '; nz={0}, nt={1}'.format(ns, nt))
 #                        for mt,tip_obj in zip(mt_list,tipper_object_list):
-#                            mt._Tipper = tip_obj 
+#                            mt._Tipper = tip_obj
 #                    except TypeError:
 #                        pass
 #                    print 'Reading {0} stations'.format(ns)
 #                    return mt_list
-#                    
+#
 #                except TypeError:
 #                    try:
 #                        ns = len(mt_object_list)
@@ -1418,28 +1420,28 @@ def get_mtlist(fn_list=None, res_object_list=None, z_object_list=None,
 #                        raise IOError('Need to input an iteratable list')
 
 # ==============================================================================
-# sort an mt_list by offset values in a particular direction                  
+# sort an mt_list by offset values in a particular direction
 # ==============================================================================
 def sort_by_offsets(mt_list, line_direction='ew'):
     """
     get list of offsets for the given line_direction.
-    
+
     Arguments:
     ----------
         **mt_list**: list
                     list of MTplot objects
-        
+
         **line_direction**: [ 'ew' | 'ns' ]
-        
+
     Returns:
     --------
         **sort_mt_list**: list
                          list of MTplot objects sorted by offset in the
                          line_direction
-                         
+
         **station_list**: list
                          list of stations sorted by offset
-        
+
         **offset_list**: np.ndarray(num_stations)
                         array of sorted offset values corresponding to station
                         in station_list
@@ -1460,17 +1462,21 @@ def sort_by_offsets(mt_list, line_direction='ew'):
             # if line is predominantly e-w
             if line_direction == 'ew':
                 if east0 < east:
-                    offset = np.sqrt((east0 - east) ** 2 + (north0 - north) ** 2)
+                    offset = np.sqrt((east0 - east) ** 2 +
+                                     (north0 - north) ** 2)
                 elif east0 > east:
-                    offset = -1 * np.sqrt((east0 - east) ** 2 + (north0 - north) ** 2)
+                    offset = -1 * np.sqrt((east0 - east)
+                                          ** 2 + (north0 - north) ** 2)
                 else:
                     offset = 0
             # if line is predominantly n-s
             elif line_direction == 'ns':
                 if north0 < north:
-                    offset = np.sqrt((east0 - east) ** 2 + (north0 - north) ** 2)
+                    offset = np.sqrt((east0 - east) ** 2 +
+                                     (north0 - north) ** 2)
                 elif north0 > north:
-                    offset = -1 * np.sqrt((east0 - east) ** 2 + (north0 - north) ** 2)
+                    offset = -1 * np.sqrt((east0 - east)
+                                          ** 2 + (north0 - north) ** 2)
                 else:
                     offset = 0
         # append values to list for sorting
@@ -1504,29 +1510,29 @@ def get_station_locations(mt_list, map_scale='latlon', ref_point=(0, 0)):
     """
     creates a dictionary where the keys are the stations and the values
     are the index in the plot_mesh grid for the station location.
-    
-    *Note*: the handling of zone changes in UTM coordinates is rough and 
+
+    *Note*: the handling of zone changes in UTM coordinates is rough and
     needs to be changed.  If there are zone changes in your survey, stick
     to latlon.
-    
+
     Arguments:
     ----------
         **map_scale**: [ 'latlon' | 'eastnorth' | 'eastnorthkm' ]
-        
+
         **ref_point**: (map_scale_x, map_scale_y)
                        reference point to center the map on, needs to be in
                        map_scale coordinates.
- 
-                       
+
+
     Returns:
     --------
         **map_dict**: dictionary
                       where keys are station names, and the values are the
                       index values (x, y) for the plot_meshgrid
-                      
+
         **plot_meshgrid**: np.ndarray(num_stations, num_stations)
-                           a meshgrid (x, y) for plotting map view in 
-                           map_scale coordinates.  
+                           a meshgrid (x, y) for plotting map view in
+                           map_scale coordinates.
     """
 
     # make some empty arrays
@@ -1602,36 +1608,36 @@ def get_station_locations(mt_list, map_scale='latlon', ref_point=(0, 0)):
 def grid_data(data_array, x, y, nx=None, ny=None):
     """
     Project data onto a regular grid for plotting.
-    
-    
+
+
     Arguments:
     -----------
         **data_array**: np.ndarray (len(x), len(y))
                         array of data values to be gridded
-                        
+
         **x**: np.ndarray(len(x))
-               array of values that coorespond  
-    
+               array of values that coorespond
+
         **nx**: int
-                number of cells in the x-direction.  If none, 2 times the 
+                number of cells in the x-direction.  If none, 2 times the
                 number of x components
-                
+
         **ny**: int
-                number of cells in the x-direction.  If none, 2 times the 
+                number of cells in the x-direction.  If none, 2 times the
                 number of y components
-                
+
     Returns:
     ---------
         **grid_array**: np.ndarray(nx, ny)
                         array of data set on a regular grid
-        
+
         **xg**: np.ndarray(nx, ny)
                 array of x-grid values
-                
+
         **yg**: np.ndarray(nx, ny)
                 array of y-grid values
-                
-        
+
+
     """
 
     if nx is None:
@@ -1657,43 +1663,43 @@ def grid_data(data_array, x, y, nx=None, ny=None):
 def get_rp_arrays(mt_list, plot_period, sort_by='line', line_direction='ew',
                   map_scale='latlon', ref_point=(0, 0), ftol=.1):
     """
-    get resistivity and phase values in the correct order according to 
+    get resistivity and phase values in the correct order according to
     offsets and periods for either map view or pseudosection.
 
     Attributes:
     -----------
         **sort_by**: [ 'line' | 'map' ]
-                     * 'line' --> sort the station distances into a line 
+                     * 'line' --> sort the station distances into a line
                                   according to line_direction
-                     * 'map' --> sort the station distances into map 
+                     * 'map' --> sort the station distances into map
                                  coordinates
-        
+
         **line_direction**: [ 'ew' | 'ns' ]
-        
+
         **map_scale**: [ 'latlon' | 'eastnorth' | 'eastnorthkm' ]
-        
+
         **ref_point**: (x, y)
                        reference point to center the plot on, this point needs
                        to be in map coordinates
-                       
+
         **ftol**: float
                   tolerance to match periods in mt_list with plot_period
-                  
+
         **plot_period**: np.ndarray(nt)
                          array of periods in seconds to get data for.
-                         
+
     Returns:
     --------
-        Returns the individual components of resisitivity (in log scale) and 
-        phase (deg) with a shape according to sort_by.  
-        
-        * If sort_by == 'line', the returned shape is (num_periods, 
+        Returns the individual components of resisitivity (in log scale) and
+        phase (deg) with a shape according to sort_by.
+
+        * If sort_by == 'line', the returned shape is (num_periods,
                                                        num_stations)
-        * If sort_by == 'map', the returned shape is (num_periods, 
-                                                      num_stations, 
+        * If sort_by == 'map', the returned shape is (num_periods,
+                                                      num_stations,
                                                       num_stations)
-                                                       
-    
+
+
         **resxx**: np.ndarray(nt, ns) or np.ndarray(nt, ns, ns)
                    apparent resistivity (log 10 scale) for xx component
         **resxy**: np.ndarray(nt, ns) or np.ndarray(nt, ns, ns)
@@ -1702,7 +1708,7 @@ def get_rp_arrays(mt_list, plot_period, sort_by='line', line_direction='ew',
                    apparent resistivity (log 10 scale) for yx component
         **resyy**: np.ndarray(nt, ns) or np.ndarray(nt, ns, ns)
                    apparent resistivity (log 10 scale) for yy component
-                   
+
         **phasexx**: np.ndarray(nt, ns) or np.ndarray(nt, ns, ns)
                    phase (deg) for xx component
         **phasexy**: np.ndarray(nt, ns) or np.ndarray(nt, ns, ns)
@@ -1711,10 +1717,10 @@ def get_rp_arrays(mt_list, plot_period, sort_by='line', line_direction='ew',
                    phase (deg) for yx component
         **phaseyy**: np.ndarray(nt, ns) or np.ndarray(nt, ns, ns)
                    phase (deg) for yy component
-    
+
     """
     if plot_period is None:
-        raise mtex.MTpyError_inputarguments('Need to input an array of ' + \
+        raise mtex.MTpyError_inputarguments('Need to input an array of ' +
                                             'periods')
 
     ns = len(mt_list)
@@ -1763,7 +1769,7 @@ def get_rp_arrays(mt_list, plot_period, sort_by='line', line_direction='ew',
                         break
 
                     elif rper * (1 - ftol) <= iper and \
-                                    iper <= rper * (1 + ftol):
+                            iper <= rper * (1 + ftol):
                         jj = period_dict[rper]
                         resxx[jj, ii] = np.log10(rp.resxx[kk])
                         resxy[jj, ii] = np.log10(rp.resxy[kk])
@@ -1783,7 +1789,7 @@ def get_rp_arrays(mt_list, plot_period, sort_by='line', line_direction='ew',
                     print 'did not find period {0:.6g} (s) for {1}'.format(
                         rper, mt.station)
         return resxx, resxy, resyx, resyy, phasexx, phasexy, phaseyx, phaseyy, \
-               station_list, offset_list
+            station_list, offset_list
 
     elif sort_by == 'map':
         map_dict, x, y = get_station_locations(mt_list,
@@ -1823,7 +1829,7 @@ def get_rp_arrays(mt_list, plot_period, sort_by='line', line_direction='ew',
                         break
 
                     elif rper * (1 - ftol) <= iper and \
-                                    iper <= rper * (1 + ftol):
+                            iper <= rper * (1 + ftol):
                         jj = period_dict[rper]
 
                         resxx[jj, ii] = np.log10(rp.resxx[kk])
@@ -1853,61 +1859,61 @@ def get_rp_arrays(mt_list, plot_period, sort_by='line', line_direction='ew',
 def get_pt_arrays(mt_list, plot_period, sort_by='line', line_direction='ew',
                   map_scale='latlon', ref_point=(0, 0), ftol=.1):
     """
-    get resistivity and phase values in the correct order according to 
+    get resistivity and phase values in the correct order according to
     offsets and periods for either map view or pseudosection.
 
     Attributes:
     -----------
         **sort_by**: [ 'line' | 'map' ]
-                     * 'line' --> sort the station distances into a line 
+                     * 'line' --> sort the station distances into a line
                                   according to line_direction
-                     * 'map' --> sort the station distances into map 
+                     * 'map' --> sort the station distances into map
                                  coordinates
-        
+
         **line_direction**: [ 'ew' | 'ns' ]
-        
+
         **map_scale**: [ 'latlon' | 'eastnorth' | 'eastnorthkm' ]
-        
+
         **ref_point**: (x, y)
                        reference point to center the plot on, this point needs
                        to be in map coordinates
-                       
+
         **ftol**: float
                   tolerance to match periods in mt_list with plot_period
-                  
+
         **plot_period**: np.ndarray(nt)
                          array of periods in seconds to get data for.
-                         
+
     Returns:
     --------
         Returns the individual parameters of the phase tensor (deg)
-        
-        * If sort_by == 'line', the returned shape is (num_periods, 
+
+        * If sort_by == 'line', the returned shape is (num_periods,
                                                        num_stations)
-        * If sort_by == 'map', the returned shape is (num_periods, 
-                                                      num_stations, 
+        * If sort_by == 'map', the returned shape is (num_periods,
+                                                      num_stations,
                                                       num_stations)
-                                                       
-    
+
+
         **phimin**: np.ndarray(nt, ns) or np.ndarray(nt, ns, ns)
                    minimum phase or 2nd principal component of phase tensor
-                   
+
         **phimax**: np.ndarray(nt, ns) or np.ndarray(nt, ns, ns)
                     maximum phase or 1st principal component of phase tensor
-                   
+
         **skew**: np.ndarray(nt, ns) or np.ndarray(nt, ns, ns)
                   skew angle of phase tensor
-                   
+
         **azimuth**: np.ndarray(nt, ns) or np.ndarray(nt, ns, ns)
                      regional strike direction estimated from phase tensor,
                      with a 90 degree ambiguity
-                   
+
         **ellipticity**: np.ndarray(nt, ns) or np.ndarray(nt, ns, ns)
                          ratio of phimin to phimax suggesting dimensionality.
-    
+
     """
     if plot_period is None:
-        raise mtex.MTpyError_inputarguments('Need to input an array of ' + \
+        raise mtex.MTpyError_inputarguments('Need to input an array of ' +
                                             'periods')
 
     ns = len(mt_list)
@@ -1925,7 +1931,6 @@ def get_pt_arrays(mt_list, plot_period, sort_by='line', line_direction='ew',
 
         # create empty arrays to put data into need to reset to zero in case
         # something has changed
-
 
         phimin = np.zeros((nt, ns))
         phimax = np.zeros((nt, ns))
@@ -1951,7 +1956,7 @@ def get_pt_arrays(mt_list, plot_period, sort_by='line', line_direction='ew',
                         break
 
                     elif rper * (1 - ftol) <= iper and \
-                                    iper <= rper * (1 + ftol):
+                            iper <= rper * (1 + ftol):
                         jj = period_dict[rper]
                         phimin[jj, ii] = pt.phimin[kk]
                         phimax[jj, ii] = pt.phimax[kk]
@@ -2022,34 +2027,34 @@ def make_value_str(value, value_list=None, spacing='{0:^8}',
                    value_format='{0: .4f}', append=False, add=False):
     """
     helper function for writing values to a file, takes in a value and either
-    appends or adds value to value_list according to the spacing and format of 
+    appends or adds value to value_list according to the spacing and format of
     the string.
-    
+
     Arguments:
     ----------
         **value** : float
-        
+
         **value_list** : list of values converted to strings
-        
+
         **spacing** : spacing of the string that the value will be converted
                       to.
-                      
-        **value_format** : format of the string that the value is being 
+
+        **value_format** : format of the string that the value is being
                             coverted to.
-        
+
         **append** : [ True | False]
                      if True then appends the value to value list
-        
+
         **add** : [ True | False ]
                   if True adds value string to the other value strings in
                   value_list
-    
+
     Returns:
     --------
-        **value_list** : the input value_list with the new value either 
+        **value_list** : the input value_list with the new value either
                         added or appended.
         or
-        
+
         **value_str** : value string if add and append are false
     """
 
@@ -2069,60 +2074,60 @@ def make_value_str(value, value_list=None, spacing='{0:^8}',
 
 
 # ==============================================================================
-# function for error bar plots 
+# function for error bar plots
 # ==============================================================================
 def plot_errorbar(ax, x_array, y_array, y_error=None, x_error=None,
                   color='k', marker='x', ms=2, ls=':', lw=1, e_capsize=2,
                   e_capthick=.5, picker=None):
     """
     convinience function to make an error bar instance
-    
+
     Arguments:
     ------------
-        **ax** : matplotlib.axes instance 
+        **ax** : matplotlib.axes instance
                  axes to put error bar plot on
-    
+
         **x_array** : np.ndarray(nx)
                       array of x values to plot
-                      
+
         **y_array** : np.ndarray(nx)
                       array of y values to plot
-                      
+
         **y_error** : np.ndarray(nx)
                       array of errors in y-direction to plot
-        
+
         **x_error** : np.ndarray(ns)
                       array of error in x-direction to plot
-                      
+
         **color** : string or (r, g, b)
                     color of marker, line and error bar
-                    
+
         **marker** : string
                      marker type to plot data as
-                     
+
         **ms** : float
                  size of marker
-                 
+
         **ls** : string
                  line style between markers
-                 
+
         **lw** : float
                  width of line between markers
-        
+
         **e_capsize** : float
                         size of error bar cap
-        
+
         **e_capthick** : float
                          thickness of error bar cap
-        
+
         **picker** : float
-                     radius in points to be able to pick a point. 
-        
-        
+                     radius in points to be able to pick a point.
+
+
     Returns:
     ---------
-        **errorbar_object** : matplotlib.Axes.errorbar 
-                              error bar object containing line data, 
+        **errorbar_object** : matplotlib.Axes.errorbar
+                              error bar object containing line data,
                               errorbars, etc.
     """
     # this is to make sure error bars plot in full and not just a dashed line

@@ -8,13 +8,13 @@ Class and functions for the imaging of Mohr's circle(s).
 
 
 Class:
-    MohrCircle - generated from (set of) Z/Edi element(s) 
+    MohrCircle - generated from (set of) Z/Edi element(s)
 
 
 Functions:
-    
+
     Batch processing of different sites
-    
+
 
 
 @UofA, 2013

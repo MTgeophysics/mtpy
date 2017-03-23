@@ -26,7 +26,7 @@ ogr.UseExceptions()
 class PTShapeFile(object):
     """
     write shape file for GIS plotting programs
-    
+
     ======================== ==================================================
     key words/attributes      Description
     ======================== ==================================================
@@ -37,7 +37,7 @@ class PTShapeFile(object):
                              *default* is None, filled if edi_list is given
     plot_period              list or value of period to convert to shape file
                              *default* is None, which will write a file for
-                             every period in the edi files 
+                             every period in the edi files
     ptol                     tolerance to look for given periods
                              *default* is .05
     pt_dict                  dictionary with keys of plot_period.  Each
@@ -48,15 +48,15 @@ class PTShapeFile(object):
     save_path                path to save files to
                              *default* is current working directory.
     ======================== ==================================================
-    
-    
+
+
     ======================== ==================================================
     Methods                   Description
     ======================== ==================================================
     _get_plot_period         get a list of all frequencies possible from
                              input files
     _get_pt_array            get phase tensors from input files and put the
-                             information into a structured array 
+                             information into a structured array
     write_shape_files        write shape files based on attributes of class
     ======================== ==================================================
 
@@ -68,14 +68,14 @@ class PTShapeFile(object):
                       if edi.find('.edi')>0]
         >>> pts = PTShapeFile(edilist, save_path=r"/home/gis")
         >>> pts.write_shape_files()
-        
+
     * To project into another datum, set the projection attribute
     :Example: ::
         >>> pts = PTShapeFile(edilist, save_path=r"/home/gis")
         >>> pts.projection = 'NAD27'
         >>> pts.write_shape_files()
-        
-  
+
+
     """
 
     def __init__(self, edi_list, proj='WGS84', esize=0.03, **kwargs):
@@ -83,11 +83,12 @@ class PTShapeFile(object):
         self.projection = proj
         #self.projection = None
         self.plot_period = None
-        self.save_path = None # os.getcwd()
-        #self.ellipse_size = 500.0  # maximum ellipse major axis size in metres
-        self.ellipse_size = esize # 0.002  # maximum ellipse major axis size in metres
+        self.save_path = None  # os.getcwd()
+        # self.ellipse_size = 500.0  # maximum ellipse major axis size in
+        # metres
+        self.ellipse_size = esize  # 0.002  # maximum ellipse major axis size in metres
         #self._theta = np.arange(0, 2 * np.pi, np.pi / 180.)
-        self._theta = np.arange(0, 2 * np.pi, np.pi / 30.)  #FZ
+        self._theta = np.arange(0, 2 * np.pi, np.pi / 30.)  # FZ
         self.ptol = .05  # period value tolerance to be considered as equal
 
         self.mt_obj_list = None
@@ -105,7 +106,7 @@ class PTShapeFile(object):
             self._get_plot_period()
             self._get_pt_array()
 
-        self._proj_dict = {'WGS84': 4326, 'NAD27': 4267, 'GDA94':4283}
+        self._proj_dict = {'WGS84': 4326, 'NAD27': 4267, 'GDA94': 4283}
 
         # UTM zone 50 {'init': u'epsg:32750'} UTM zone 51 32751
         # WGS84: 'epsg:4326'  GDA94:  EPSG:4283 See  http://epsg.io/4283​
@@ -131,9 +132,9 @@ class PTShapeFile(object):
 
     def _get_plot_period(self):
         """
-        from the list of edi's get a frequency list from all possible 
+        from the list of edi's get a frequency list from all possible
         frequencies.
-        
+
         """
 
         if self.plot_period is None:
@@ -147,16 +148,17 @@ class PTShapeFile(object):
             self.plot_period = 1. / np.array(sorted(list(set(all_freqs)),
                                                     reverse=True))
         else:
-            if type(self.plot_period) is list:
+            if isinstance(self.plot_period, list):
                 pass
-            if type(self.plot_period) is int or type(self.plot_period) is float:
+            if isinstance(self.plot_period, int) or isinstance(
+                    self.plot_period, float):
                 self.plot_period = [self.plot_period]
 
     def _get_pt_array(self):
         """
         get the phase tensor information into a form that is more structured
         to manipulate easier later.
-        
+
         make a dictionary with keys being the plot period values and each
         key has a structured array that contains all the important information
         collected from each station.
@@ -175,19 +177,21 @@ class PTShapeFile(object):
                     if self.projection is None:  # unprojected coord lat lon
                         east, north, elev = (mt_obj.lon, mt_obj.lat, 0)
                         self.utm_cs = osr.SpatialReference()
-                        # Set geographic coordinate system to handle lat/lon  
-                        #self.utm_cs.SetWellKnownGeogCS(self.projection)
+                        # Set geographic coordinate system to handle lat/lon
+                        # self.utm_cs.SetWellKnownGeogCS(self.projection)
                         self.utm_cs.ImportFromEPSG(4326)
                         # create the spatial reference, WGS84=4326
                         # GDA94 = EPSG:4283 See  http://epsg.io/4283
-                    elif self.projection== 'WGS84':  #UTM zones coordinate system
-                        edi_proj='WGS84'
+                    elif self.projection == 'WGS84':  # UTM zones coordinate system
+                        edi_proj = 'WGS84'
                         self.utm_cs, utm_point = transform_ll_to_utm(mt_obj.lon,
                                                                      mt_obj.lat,
                                                                      edi_proj)
                         east, north, elev = utm_point
                     else:
-                        raise Exception("%s is NOT supported"% self.projection)
+                        raise Exception(
+                            "%s is NOT supported" %
+                            self.projection)
 
                     pt_tuple = (mt_obj.station, east, north,
                                 mt_obj.pt.phimin[0][p_index],
@@ -195,7 +199,7 @@ class PTShapeFile(object):
                                 mt_obj.pt.azimuth[0][p_index],
                                 mt_obj.pt.beta[0][p_index],
                                 2 * mt_obj.pt.beta[0][p_index],
-                                mt_obj.pt.ellipticity[0][p_index]) #FZ: get ellipticity begin here
+                                mt_obj.pt.ellipticity[0][p_index])  # FZ: get ellipticity begin here
 
                     self.pt_dict[plot_per].append(pt_tuple)
                 except IndexError:
@@ -226,7 +230,8 @@ class PTShapeFile(object):
                                     'PT_{0:.5g}s_{1}.shp'.format(plot_per,
                                                                  self.projection))
 
-            # remove the shape file if it already exists, has trouble over writing
+            # remove the shape file if it already exists, has trouble over
+            # writing
             if os.path.isfile(shape_fn) == True:
                 os.remove(shape_fn)
 
@@ -244,7 +249,7 @@ class PTShapeFile(object):
             #            #this puts it in the wsg84 reference frame.
             #            spatial_ref.ImportFromEPSG(self._proj_dict[self.projection])
 
-            ##create a layer to put the ellipses onto
+            # create a layer to put the ellipses onto
             layer = data_source.CreateLayer('PT', self.utm_cs, ogr.wkbPolygon)
 
             # make field names
@@ -263,12 +268,12 @@ class PTShapeFile(object):
             field_normalized_skew = ogr.FieldDefn('n_skew', ogr.OFTReal)
             layer.CreateField(field_normalized_skew)
 
-            #FZ added azimuth
+            # FZ added azimuth
             field_azimuth = ogr.FieldDefn('azimuth', ogr.OFTReal)
             layer.CreateField(field_azimuth)
 
             field_ellipticity = ogr.FieldDefn('ellipt', ogr.OFTReal)
-            #FZ: note osgeo gdal does not like name 'ellipticity'
+            # FZ: note osgeo gdal does not like name 'ellipticity'
             layer.CreateField(field_ellipticity)
 
             poly_list = []
@@ -276,8 +281,9 @@ class PTShapeFile(object):
 
             for isite, pt_array in enumerate(self.pt_dict[plot_per]):
 
-                if isite%every_site == 0:  #FZ added to control MT-sites output to shp file
-                    # need to make an ellipse first using the parametric equation
+                if isite % every_site == 0:  # FZ added to control MT-sites output to shp file
+                    # need to make an ellipse first using the parametric
+                    # equation
                     azimuth = -np.deg2rad(pt_array['azimuth'])
                     width = self.ellipse_size * (pt_array['phimax'] / phimax)
                     height = self.ellipse_size * (pt_array['phimin'] / phimax)
@@ -303,8 +309,8 @@ class PTShapeFile(object):
 
                     poly_list.append(poly)
 
-                    ##4) this part is confusing but we need to create a feature that has the
-                    ##   same definition as the layer that we created.
+                    # 4) this part is confusing but we need to create a feature that has the
+                    # same definition as the layer that we created.
                     # get the layer definition
                     feature_def = layer.GetLayerDefn()
 
@@ -316,16 +322,19 @@ class PTShapeFile(object):
                     layer.CreateFeature(new_feature)
 
                     #
-                    ###5) create a field to color by
+                    # 5) create a field to color by
                     new_feature.SetField("Name", pt_array['station'])
                     new_feature.SetField("phi_min", pt_array['phimin'])
                     new_feature.SetField("phi_max", pt_array['phimax'])
                     new_feature.SetField("skew", pt_array['skew'])
                     new_feature.SetField("n_skew", pt_array['n_skew'])
 
-                    new_feature.SetField("azimuth", pt_array['azimuth'])  # FZ added
-                    new_feature.SetField("ellipt", pt_array['ellipticity'])  # FZ added
-                    #new_feature.SetField("ellipticity", pt_array['azimuth'])  # FZ added
+                    new_feature.SetField(
+                        "azimuth", pt_array['azimuth'])  # FZ added
+                    new_feature.SetField(
+                        "ellipt", pt_array['ellipticity'])  # FZ added
+                    # new_feature.SetField("ellipticity", pt_array['azimuth'])
+                    # # FZ added
 
                     # add the new feature to the layer.
                     layer.SetFeature(new_feature)
@@ -335,7 +344,7 @@ class PTShapeFile(object):
                 else:
                     print("Skipping this site's phase tensor: ", isite)
 
-            # Need to be sure that all the new info is saved to 
+            # Need to be sure that all the new info is saved to
             data_source.SyncToDisk()
 
             # write a projection file
@@ -350,12 +359,12 @@ class PTShapeFile(object):
 
             print 'Wrote shape file to {0}'.format(shape_fn)
 
-##===========================
+# ===========================
     def write_data_pt_shape_files_modem(self, modem_data_fn,
                                         rotation_angle=0.0):
         """
         write pt files from a modem data file.
-        
+
         """
 
         modem_obj = modem.Data()
@@ -374,7 +383,7 @@ class PTShapeFile(object):
         """
         write pt files from a modem response file where ellipses are normalized
         by the data file.
-        
+
         """
 
         # first get the data and response and place them in array for later use
@@ -393,7 +402,8 @@ class PTShapeFile(object):
 
         # rotate model response
         for r_key in modem_resp_obj.mt_dict.keys():
-            modem_resp_obj.mt_dict[r_key].rotation_angle = float(rotation_angle)
+            modem_resp_obj.mt_dict[
+                r_key].rotation_angle = float(rotation_angle)
 
         resp_pt_dict = {}
         for p_index, plot_per in enumerate(self.plot_period):
@@ -403,7 +413,7 @@ class PTShapeFile(object):
                 if self.projection is None:
                     east, north, elev = (mt_obj.lon, mt_obj.lat, 0)
                     self.utm_cs = osr.SpatialReference()
-                    # Set geographic coordinate system to handle lat/lon  
+                    # Set geographic coordinate system to handle lat/lon
                     self.utm_cs.SetWellKnownGeogCS(self.projection)
                 else:
                     self.utm_cs, utm_point = transform_ll_to_utm(mt_obj.lon,
@@ -448,7 +458,8 @@ class PTShapeFile(object):
                                     'Resp_PT_{0:.5g}s_{1}.shp'.format(plot_per,
                                                                       self.projection))
 
-            # remove the shape file if it already exists, has trouble over writing
+            # remove the shape file if it already exists, has trouble over
+            # writing
             if os.path.isfile(shape_fn) == True:
                 os.remove(shape_fn)
 
@@ -461,7 +472,7 @@ class PTShapeFile(object):
             # create shape file
             data_source = driver.CreateDataSource(shape_fn)
 
-            ##create a layer to put the ellipses onto
+            # create a layer to put the ellipses onto
             layer = data_source.CreateLayer('RPT', self.utm_cs, ogr.wkbPolygon)
 
             # make field names
@@ -510,8 +521,8 @@ class PTShapeFile(object):
 
                 poly_list.append(poly)
 
-                ##4) this part is confusing but we need to create a feature that has the
-                ##   same definition as the layer that we created.
+                # 4) this part is confusing but we need to create a feature that has the
+                # same definition as the layer that we created.
                 # get the layer definition
                 feature_def = layer.GetLayerDefn()
 
@@ -523,7 +534,7 @@ class PTShapeFile(object):
                 layer.CreateFeature(new_feature)
 
                 #
-                ###5) create a field to color by
+                # 5) create a field to color by
                 new_feature.SetField("Name", pt_array['station'])
                 new_feature.SetField("phi_min", pt_array['phimin'])
                 new_feature.SetField("phi_max", pt_array['phimax'])
@@ -536,7 +547,7 @@ class PTShapeFile(object):
                 # apparently need to destroy the feature
                 new_feature.Destroy()
 
-            # Need to be sure that all the new info is saved to 
+            # Need to be sure that all the new info is saved to
             data_source.SyncToDisk()
 
             # write a projection file
@@ -553,13 +564,13 @@ class PTShapeFile(object):
                                             rotation_angle=0.0, normalize='1'):
         """
         write residual pt shape files from ModEM output
-        
+
         normalize [ '1' | 'all' ]
-                   * '1' to normalize the ellipse by itself, all ellipses are 
-                         normalized to phimax, thus one axis is of length 
+                   * '1' to normalize the ellipse by itself, all ellipses are
+                         normalized to phimax, thus one axis is of length
                          1*ellipse_size
                    * 'all' to normalize each period by the largest phimax
-        
+
         """
 
         # first get the data and response and place them in array for later use
@@ -578,7 +589,8 @@ class PTShapeFile(object):
 
         # rotate model response
         for r_key in modem_resp_obj.mt_dict.keys():
-            modem_resp_obj.mt_dict[r_key].rotation_angle = float(rotation_angle)
+            modem_resp_obj.mt_dict[
+                r_key].rotation_angle = float(rotation_angle)
 
         residual_pt_dict = {}
         for p_index, plot_per in enumerate(self.plot_period):
@@ -588,7 +600,7 @@ class PTShapeFile(object):
                 if self.projection is None:
                     east, north, elev = (mt_obj.lon, mt_obj.lat, 0)
                     self.utm_cs = osr.SpatialReference()
-                    # Set geographic coordinate system to handle lat/lon  
+                    # Set geographic coordinate system to handle lat/lon
                     self.utm_cs.SetWellKnownGeogCS(self.projection)
                 else:
                     self.utm_cs, utm_point = transform_ll_to_utm(mt_obj.lon,
@@ -609,7 +621,7 @@ class PTShapeFile(object):
                     #                    rpt_mean = .25*np.sqrt(abs(rpt.pt[p_index, 0, 0])**2+
                     #                                          abs(rpt.pt[p_index, 0, 1])**2+
                     #                                          abs(rpt.pt[p_index, 1, 0])**2+
-                    #                                          abs(rpt.pt[p_index, 1, 1])**2)
+                    # abs(rpt.pt[p_index, 1, 1])**2)
                     pt_tuple = (mt_obj.station, east, north,
                                 rpt.phimin[0][p_index],
                                 rpt.phimax[0][p_index],
@@ -646,7 +658,8 @@ class PTShapeFile(object):
                                     'ResidualPT_{0:.5g}s_{1}.shp'.format(plot_per,
                                                                          self.projection))
 
-            # remove the shape file if it already exists, has trouble over writing
+            # remove the shape file if it already exists, has trouble over
+            # writing
             if os.path.isfile(shape_fn) == True:
                 os.remove(shape_fn)
 
@@ -659,7 +672,7 @@ class PTShapeFile(object):
             # create shape file
             data_source = driver.CreateDataSource(shape_fn)
 
-            ##create a layer to put the ellipses onto
+            # create a layer to put the ellipses onto
             layer = data_source.CreateLayer('RPT', self.utm_cs, ogr.wkbPolygon)
 
             # make field names
@@ -684,8 +697,10 @@ class PTShapeFile(object):
                 # need to make an ellipse first using the parametric equation
                 azimuth = -np.deg2rad(pt_array['azimuth'])
                 if normalize == '1':
-                    width = self.ellipse_size * (pt_array['phimax'] / pt_array['phimax'])
-                    height = self.ellipse_size * (pt_array['phimin'] / pt_array['phimax'])
+                    width = self.ellipse_size * \
+                        (pt_array['phimax'] / pt_array['phimax'])
+                    height = self.ellipse_size * \
+                        (pt_array['phimin'] / pt_array['phimax'])
                 elif normalize == 'all':
                     width = self.ellipse_size * (pt_array['phimax'] / phimax)
                     height = self.ellipse_size * (pt_array['phimin'] / phimax)
@@ -711,8 +726,8 @@ class PTShapeFile(object):
 
                 poly_list.append(poly)
 
-                ##4) this part is confusing but we need to create a feature that has the
-                ##   same definition as the layer that we created.
+                # 4) this part is confusing but we need to create a feature that has the
+                # same definition as the layer that we created.
                 # get the layer definition
                 feature_def = layer.GetLayerDefn()
 
@@ -724,7 +739,7 @@ class PTShapeFile(object):
                 layer.CreateFeature(new_feature)
 
                 #
-                ###5) create a field to color by
+                # 5) create a field to color by
                 new_feature.SetField('Name', pt_array['station'])
                 new_feature.SetField('phi_min', pt_array['phimin'])
                 new_feature.SetField('phi_max', pt_array['phimax'])
@@ -737,7 +752,7 @@ class PTShapeFile(object):
                 # apparently need to destroy the feature
                 new_feature.Destroy()
 
-            # Need to be sure that all the new info is saved to 
+            # Need to be sure that all the new info is saved to
             data_source.SyncToDisk()
 
             # write a projection file
@@ -757,14 +772,14 @@ class PTShapeFile(object):
 class TipperShapeFile(object):
     """
     write shape file for GIS plotting programs.
-    
+
     currently only writes the real induction vectors.
-    
+
     ======================== ==================================================
     key words/attributes      Description
     ======================== ==================================================
-    arrow_direction          [ 1 | -1 ] 1 for Weise convention --> point 
-                             toward conductors. *default* is 1 
+    arrow_direction          [ 1 | -1 ] 1 for Weise convention --> point
+                             toward conductors. *default* is 1
                              (-1 is not supported yet)
     arrow_head_height        height of arrow head in map units
                              *default* is .002
@@ -772,37 +787,37 @@ class TipperShapeFile(object):
                              *default* is .001
     arrow_lw                 width of arrow in map units
                              *default* is .0005
-                        
+
     arrow_size               size of normalized arrow length in map units
                              *default* is .01
-                             
+
     edi_list                 list of edi files, full paths
     mt_obj_list              list of mt.MT objects
                              *default* is None, filled if edi_list is given
     plot_period              list or value of period to convert to shape file
                              *default* is None, which will write a file for
-                             every period in the edi files 
+                             every period in the edi files
     ptol                     tolerance to look for given periods
                              *default* is .05
     pt_dict                  dictionary with keys of plot_period.  Each
                              dictionary key is a structured array containing
                              the important information for the phase tensor.
     projection               projection of coordinates see EPSG for all options
-                             *default* is WSG84 
+                             *default* is WSG84
     save_path                path to save files to
                              *default* is current working directory.
     ======================== ==================================================
-    
+
     ======================== ==================================================
     Methods                   Description
     ======================== ==================================================
     _get_plot_period         get a list of all possible frequencies from data
-    _get_tip_array           get Tipper information from data and put into 
+    _get_tip_array           get Tipper information from data and put into
                              a structured array for easy manipulation
     write_real_shape_files   write real induction arrow shape files
     write_imag_shape_files   write imaginary induction arrow shape files
     ======================== ==================================================
-                
+
     :Example: ::
         >>> edipath = r"/home/edi_files_rotated_to_geographic_north"
         >>> edilist = [os.path.join(edipath, edi) \
@@ -813,7 +828,7 @@ class TipperShapeFile(object):
         >>> tipshp.arrow_lw = .0001
         >>> tipshp.arrow_size = .05
         >>> tipshp.write_shape_files()
-        
+
     """
 
     def __init__(self, edi_list=None, **kwargs):
@@ -864,7 +879,7 @@ class TipperShapeFile(object):
     def _get_plot_period(self):
         """
         from the list of edi's get a frequency list to invert for.
-        
+
         """
 
         if self.plot_period is None:
@@ -878,16 +893,17 @@ class TipperShapeFile(object):
             self.plot_period = 1. / np.array(sorted(list(set(all_freqs)),
                                                     reverse=True))
         else:
-            if type(self.plot_period) is list:
+            if isinstance(self.plot_period, list):
                 pass
-            if type(self.plot_period) is int or type(self.plot_period) is float:
+            if isinstance(self.plot_period, int) or isinstance(
+                    self.plot_period, float):
                 self.plot_period = [self.plot_period]
 
     def _get_tip_array(self):
         """
         get the phase tensor information into a form that is more structured
         to manipulate easier later.
-        
+
         make a dictionary with keys being the plot period values and each
         key has a structured array that contains all the important information
         collected from each station.
@@ -904,7 +920,7 @@ class TipperShapeFile(object):
                     if self.projection is None:
                         east, north, elev = (mt_obj.lon, mt_obj.lat, 0)
                         self.utm_cs = osr.SpatialReference()
-                        # Set geographic coordinate system to handle lat/lon  
+                        # Set geographic coordinate system to handle lat/lon
                         self.utm_cs.SetWellKnownGeogCS(self.projection)
                     else:
                         self.utm_cs, utm_point = transform_ll_to_utm(mt_obj.lon,
@@ -958,7 +974,8 @@ class TipperShapeFile(object):
                                     'Tip_{0:.5g}s_{1}_real.shp'.format(plot_per,
                                                                        self.projection))
 
-            # remove the shape file if it already exists, has trouble over writing
+            # remove the shape file if it already exists, has trouble over
+            # writing
             if os.path.isfile(shape_fn) == True:
                 os.remove(shape_fn)
 
@@ -971,12 +988,12 @@ class TipperShapeFile(object):
             # create shape file
             data_source = driver.CreateDataSource(shape_fn)
 
-            ##if you read from a raster get the georeference point otherwise create one
+            # if you read from a raster get the georeference point otherwise create one
             # spatial_ref = osr.SpatialReference()
             # this puts it in the wsg84 reference frame.
             # spatial_ref.ImportFromEPSG(self._proj_dict[self.projection])
 
-            ##create a layer to put the ellipses onto
+            # create a layer to put the ellipses onto
             layer = data_source.CreateLayer('TIPPER', self.utm_cs,
                                             ogr.wkbPolygon)
 
@@ -997,9 +1014,9 @@ class TipperShapeFile(object):
                 txr = 0
                 tyr = tp_arr['mag_real'] * self.arrow_size
 
-                # make an arrow by drawing an outline.  have the arrow point 
-                # north to start and then rotate later with the rotation 
-                # matrix to properly orient it. 
+                # make an arrow by drawing an outline.  have the arrow point
+                # north to start and then rotate later with the rotation
+                # matrix to properly orient it.
                 x0 = 0
                 y0 = 0
 
@@ -1046,9 +1063,9 @@ class TipperShapeFile(object):
 
                 poly = ogr.Geometry(ogr.wkbPolygon)
                 poly.AddGeometry(arrow)
-                ##4) this part is confusing but we need to create a 
-                ##   feature that has the
-                ##   same definition as the layer that we created.
+                # 4) this part is confusing but we need to create a
+                # feature that has the
+                # same definition as the layer that we created.
                 #    get the layer definition
                 feature_def = layer.GetLayerDefn()
 
@@ -1060,7 +1077,7 @@ class TipperShapeFile(object):
                 layer.CreateFeature(new_feature)
 
                 #
-                ###5) create a field to color by
+                # 5) create a field to color by
                 new_feature.SetField("Name", tp_arr['station'])
                 new_feature.SetField("mag_real", tp_arr['mag_real'])
                 new_feature.SetField("ang_real", tp_arr['ang_real'])
@@ -1071,7 +1088,7 @@ class TipperShapeFile(object):
                 # apparently need to destroy the feature
                 new_feature.Destroy()
 
-            # Need to be sure that all the new info is saved to 
+            # Need to be sure that all the new info is saved to
             data_source.SyncToDisk()
 
             # write a projection file
@@ -1098,7 +1115,8 @@ class TipperShapeFile(object):
                                     'Tip_{0:.5g}s_{1}_imag.shp'.format(plot_per,
                                                                        self.projection))
 
-            # remove the shape file if it already exists, has trouble over writing
+            # remove the shape file if it already exists, has trouble over
+            # writing
             if os.path.isfile(shape_fn) == True:
                 os.remove(shape_fn)
 
@@ -1111,12 +1129,12 @@ class TipperShapeFile(object):
             # create shape file
             data_source = driver.CreateDataSource(shape_fn)
 
-            ##if you read from a raster get the georeference point otherwise create one
+            # if you read from a raster get the georeference point otherwise create one
             # spatial_ref = osr.SpatialReference()
             # this puts it in the wsg84 reference frame.
             # spatial_ref.ImportFromEPSG(self._proj_dict[self.projection])
 
-            ##create a layer to put the ellipses onto
+            # create a layer to put the ellipses onto
             layer = data_source.CreateLayer('TIPPER', self.utm_cs,
                                             ogr.wkbPolygon)
 
@@ -1137,8 +1155,8 @@ class TipperShapeFile(object):
                 txr = 0
                 tyr = tp_arr['mag_imag'] * self.arrow_size
 
-                # make an arrow by drawing an outline.  have the arrow point 
-                # north to start and then rotate later with the rotation 
+                # make an arrow by drawing an outline.  have the arrow point
+                # north to start and then rotate later with the rotation
                 # matrix to properly orient it.
                 x0 = 0
                 y0 = 0
@@ -1186,9 +1204,9 @@ class TipperShapeFile(object):
 
                 poly = ogr.Geometry(ogr.wkbPolygon)
                 poly.AddGeometry(arrow)
-                ##4) this part is confusing but we need to create a 
-                ##   feature that has the
-                ##   same definition as the layer that we created.
+                # 4) this part is confusing but we need to create a
+                # feature that has the
+                # same definition as the layer that we created.
                 #    get the layer definition
                 feature_def = layer.GetLayerDefn()
 
@@ -1200,7 +1218,7 @@ class TipperShapeFile(object):
                 layer.CreateFeature(new_feature)
 
                 #
-                ###5) create a field to color by
+                # 5) create a field to color by
                 new_feature.SetField("Name", tp_arr['station'])
                 new_feature.SetField("mag_imag", tp_arr['mag_imag'])
                 new_feature.SetField("ang_imag", tp_arr['ang_imag'])
@@ -1211,7 +1229,7 @@ class TipperShapeFile(object):
                 # apparently need to destroy the feature
                 new_feature.Destroy()
 
-            # Need to be sure that all the new info is saved to 
+            # Need to be sure that all the new info is saved to
             data_source.SyncToDisk()
 
             # write a projection file
@@ -1228,7 +1246,7 @@ class TipperShapeFile(object):
     def write_tip_shape_files_modem(self, modem_data_fn, rotation_angle=0.0):
         """
         write tip files from a modem data file.
-        
+
         """
 
         modem_obj = modem.Data()
@@ -1248,7 +1266,7 @@ class TipperShapeFile(object):
                                              rotation_angle):
         """
         write residual tipper files for modem
-        
+
         """
         modem_data_obj = modem.Data()
         modem_data_obj.read_data_file(modem_data_fn)
@@ -1277,7 +1295,7 @@ class TipperShapeFile(object):
 def reproject_layer(in_shape_file, out_shape_file=None, out_proj='WGS84'):
     """
     reproject coordinates into a different coordinate system
-    
+
     """
 
     driver = ogr.GetDriverByName('ESRI Shapefile')
@@ -1302,7 +1320,8 @@ def reproject_layer(in_shape_file, out_shape_file=None, out_proj='WGS84'):
     if os.path.exists(outputShapefile):
         driver.DeleteDataSource(outputShapefile)
     outDataSet = driver.CreateDataSource(outputShapefile)
-    outLayer = outDataSet.CreateLayer("basemap_4326", geom_type=ogr.wkbMultiPolygon)
+    outLayer = outDataSet.CreateLayer(
+        "basemap_4326", geom_type=ogr.wkbMultiPolygon)
 
     # add fields
     inLayerDefn = inLayer.GetLayerDefn()
@@ -1325,7 +1344,9 @@ def reproject_layer(in_shape_file, out_shape_file=None, out_proj='WGS84'):
         # set the geometry and attribute
         outFeature.SetGeometry(geom)
         for i in range(0, outLayerDefn.GetFieldCount()):
-            outFeature.SetField(outLayerDefn.GetFieldDefn(i).GetNameRef(), inFeature.GetField(i))
+            outFeature.SetField(
+                outLayerDefn.GetFieldDefn(i).GetNameRef(),
+                inFeature.GetField(i))
         # add the feature to the shapefile
         outLayer.CreateFeature(outFeature)
         # destroy the features and get the next input feature
@@ -1339,7 +1360,7 @@ def reproject_layer(in_shape_file, out_shape_file=None, out_proj='WGS84'):
 
 
 # ==============================================================================
-# create a raster from an array     
+# create a raster from an array
 # ==============================================================================
 
 def array2raster(newRasterfn, rasterOrigin, pixelWidth, pixelHeight, array):
@@ -1350,7 +1371,8 @@ def array2raster(newRasterfn, rasterOrigin, pixelWidth, pixelHeight, array):
 
     driver = gdal.GetDriverByName('GTiff')
     outRaster = driver.Create(newRasterfn, cols, rows, 1, gdal.GDT_Byte)
-    outRaster.SetGeoTransform((originX, pixelWidth, 0, originY, 0, pixelHeight))
+    outRaster.SetGeoTransform(
+        (originX, pixelWidth, 0, originY, 0, pixelHeight))
     outband = outRaster.GetRasterBand(1)
     outband.WriteArray(array)
     outRasterSRS = osr.SpatialReference()
@@ -1360,7 +1382,7 @@ def array2raster(newRasterfn, rasterOrigin, pixelWidth, pixelHeight, array):
 
 
 # ==============================================================================
-#     
+#
 # ==============================================================================
 def transform_utm_to_ll(easting, northing, zone,
                         reference_ellipsoid='WGS84'):
@@ -1370,7 +1392,7 @@ def transform_utm_to_ll(easting, northing, zone,
     is_northern = northing > 0
     utm_coordinate_system.SetUTM(zone, is_northern)
 
-    # Clone ONLY the geographic coordinate system 
+    # Clone ONLY the geographic coordinate system
     ll_coordinate_system = utm_coordinate_system.CloneGeogCS()
 
     # create transform component
@@ -1394,11 +1416,11 @@ def transform_ll_to_utm(lon, lat, reference_ellipsoid='WGS84'):
             return 1
 
     utm_coordinate_system = osr.SpatialReference()
-    # Set geographic coordinate system to handle lat/lon  
+    # Set geographic coordinate system to handle lat/lon
     utm_coordinate_system.SetWellKnownGeogCS(reference_ellipsoid)
     utm_coordinate_system.SetUTM(get_utm_zone(lon), is_northern(lat))
 
-    # Clone ONLY the geographic coordinate system 
+    # Clone ONLY the geographic coordinate system
     ll_coordinate_system = utm_coordinate_system.CloneGeogCS()
     # create transform component
     ll_to_utm_geo_transform = osr.CoordinateTransformation(ll_coordinate_system,
@@ -1406,7 +1428,7 @@ def transform_ll_to_utm(lon, lat, reference_ellipsoid='WGS84'):
 
     utm_point = ll_to_utm_geo_transform.TransformPoint(lon, lat, 0)
 
-    # returns easting, northing, altitude  
+    # returns easting, northing, altitude
     return utm_coordinate_system, utm_point
 
 
@@ -1432,7 +1454,9 @@ def modem_to_shapefiles(mfndat, save_dir):
 
     return
 
-def create_phase_tensor_shpfiles(edi_dir, save_dir, proj='WGS84', ellipse_size=0.03, every_site=1):
+
+def create_phase_tensor_shpfiles(
+        edi_dir, save_dir, proj='WGS84', ellipse_size=0.03, every_site=1):
     """
     generate shape file for a folder of edi files, and save the shape files a dir.
     :param edi_dir:
@@ -1442,17 +1466,18 @@ def create_phase_tensor_shpfiles(edi_dir, save_dir, proj='WGS84', ellipse_size=0
     :return:
     """
 
-    edipath=edi_dir
+    edipath = edi_dir
 
     edilst = [os.path.join(edipath, edi) for edi in os.listdir(edipath)
-             if edi.find('.edi') > 0]
+              if edi.find('.edi') > 0]
     # edilst.remove(os.path.join(edipath, 'mb035.edi'))
 
-    pts = PTShapeFile(edilst, save_path=save_dir, proj=proj )
+    pts = PTShapeFile(edilst, save_path=save_dir, proj=proj)
 
-    pts.ellipse_size=ellipse_size
+    pts.ellipse_size = ellipse_size
 
     pts.write_shape_files(every_site)
+
 
 def create_tipper_shpfiles(edipath, save_dir):
     """
@@ -1462,9 +1487,8 @@ def create_tipper_shpfiles(edipath, save_dir):
     :return:
     """
 
-
     edilist = [os.path.join(edipath, edi) for edi in os.listdir(edipath)
-              if edi.find('.edi') > 0]
+               if edi.find('.edi') > 0]
 
     tipshp = TipperShapeFile(edilist, save_path=save_dir)
 
@@ -1485,17 +1509,24 @@ def create_tipper_shpfiles(edipath, save_dir):
 
 if __name__ == "__main__":
     import sys
-    if len(sys.argv)<3:
-        print("USAGE: %s input_edifile_dir output_shape_file_dir" % sys.argv[0])
+    if len(sys.argv) < 3:
+        print(
+            "USAGE: %s input_edifile_dir output_shape_file_dir" %
+            sys.argv[0])
         sys.exit(1)
     else:
-        create_phase_tensor_shpfiles(sys.argv[1], sys.argv[2], proj=None, ellipse_size=0.10, every_site=1) # unprojected
-        #create_phase_tensor_shpfiles(sys.argv[1], sys.argv[2], proj='WGS84', ellipse_size=3000, every_site=2) # projected into UTM coordinate
+        create_phase_tensor_shpfiles(
+            sys.argv[1],
+            sys.argv[2],
+            proj=None,
+            ellipse_size=0.10,
+            every_site=1)  # unprojected
+        # create_phase_tensor_shpfiles(sys.argv[1], sys.argv[2], proj='WGS84',
+        # ellipse_size=3000, every_site=2) # projected into UTM coordinate
 
-        #create_tipper_shpfiles(sys.argv[1],sys.argv[2])
+        # create_tipper_shpfiles(sys.argv[1],sys.argv[2])
 
 # modem: provide dat filr and save_path below:
 #     mfn = r"E:/Githubz/mtpy2/examples/data/ModEM_files/VicSynthetic07/Modular_MPI_NLCG_016.dat"
 #     save_path = r"E:\MT_modem_shape_files"
 #     modem_to_shapefiles(mfn, save_path)
-

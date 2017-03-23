@@ -3,7 +3,7 @@
 """
 mtpy/processing/general.py
 
-Helper functions for standard time series processing. 
+Helper functions for standard time series processing.
 
 
 @UofA, 2013
@@ -16,11 +16,10 @@ Helper functions for standard time series processing.
 
 import numpy as np
 
-import math, cmath
+import math
+import cmath
 
 import mtpy.utils.exceptions as MTex
 
 
 #=================================================================
-
-

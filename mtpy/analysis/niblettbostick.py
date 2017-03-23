@@ -7,8 +7,8 @@ Contains functions for the calculation of the Niblett-Bostick transformation of
 impedance tensors.
 
 The methods follow
-- Niblett 
-- Bostick  
+- Niblett
+- Bostick
 - Jones
 - J. RODRIGUEZ, F.J. ESPARZA, E. GOMEZ-TREVINO
 
@@ -123,8 +123,14 @@ def calculate_znb(z_object=None, z_array=None, periods=None):
 
     for i, per in enumerate(periods):
 
-        te_rho, te_depth = rhophi2rhodepth(app_res[i][0, 1], phase[i][0, 1], per)
-        tm_rho, tm_depth = rhophi2rhodepth(app_res[i][1, 0], phase[i][1, 0], per)
+        te_rho, te_depth = rhophi2rhodepth(
+            app_res[i][
+                0, 1], phase[i][
+                0, 1], per)
+        tm_rho, tm_depth = rhophi2rhodepth(
+            app_res[i][
+                1, 0], phase[i][
+                1, 0], per)
 
         if te_rho > tm_rho:
             lo_nb_max.append([te_depth, te_rho])
@@ -138,50 +144,50 @@ def calculate_znb(z_object=None, z_array=None, periods=None):
 
 def calculate_depth_nb(z_object=None, z_array=None, periods=None):
     """
-    Determine an array of Z_nb (depth dependent Niblett-Bostick transformed Z) 
-    from the 1D and 2D parts of an impedance tensor array Z. 
-    
+    Determine an array of Z_nb (depth dependent Niblett-Bostick transformed Z)
+    from the 1D and 2D parts of an impedance tensor array Z.
+
     The calculation of the Z_nb needs 6 steps:
 
-	1) Determine the dimensionality of the Z(T), discard all 3D parts
-	2) Rotate all Z(T) to TE/TM setup (T_parallel/T_ortho)
-	3) Transform every component individually by Niblett-Bostick
-	4) collect the respective 2 components each for equal/similar depths
-	5) interprete them as TE_nb/TM_nb
-	6) set up Z_nb(depth)
+        1) Determine the dimensionality of the Z(T), discard all 3D parts
+        2) Rotate all Z(T) to TE/TM setup (T_parallel/T_ortho)
+        3) Transform every component individually by Niblett-Bostick
+        4) collect the respective 2 components each for equal/similar depths
+        5) interprete them as TE_nb/TM_nb
+        6) set up Z_nb(depth)
 
     If 1D layers occur inbetween 2D layers, the strike angle is undefined therein.
-    We take an - arbitrarily chosen - linear interpolation of strike angle for 
-    these layers, with the values varying between the angles of the bounding 
-    upper and lower 2D layers (linearly w.r.t. the periods).   
+    We take an - arbitrarily chosen - linear interpolation of strike angle for
+    these layers, with the values varying between the angles of the bounding
+    upper and lower 2D layers (linearly w.r.t. the periods).
 
-    Use the output for instance for the determination of 
+    Use the output for instance for the determination of
     NB-transformed phase tensors.
 
     Note:
         No propagation of errors implemented yet!
-	
+
     Arguments
     -------------
         *z_object* : mtpy.core.z object
-                    
+
         *z_array* : np.ndarray [num_periods, 2, 2]
-        
+
         *periods* : np.ndarray(num_periods)
                    only input if input z_array, otherwise periods are extracted
                    from z_object.freq
 
     Returns
     ------------------
-        *depth_array* : np.ndarray(num_periods, 
+        *depth_array* : np.ndarray(num_periods,
                                    dtype=['period', 'depth_min', 'depth_max',
                                           'rho_min', 'rho_max'])
                         numpy structured array with keywords.
                             - period    --> period in s
-                            - depth_min --> minimum depth estimated (m) 
-                            - depth_max --> maximum depth estimated (m) 
-                            - rho_min --> minimum resistivity estimated (Ohm-m) 
-                            - rho_max --> maximum resistivity estimated (Ohm-m) 
+                            - depth_min --> minimum depth estimated (m)
+                            - depth_max --> maximum depth estimated (m)
+                            - rho_min --> minimum resistivity estimated (Ohm-m)
+                            - rho_max --> maximum resistivity estimated (Ohm-m)
 
     Example
     ------------
@@ -261,7 +267,7 @@ def calculate_depth_nb(z_object=None, z_array=None, periods=None):
 #        if te_rho > tm_rho:
 #            lo_nb_max.append([te_depth, te_rho])
 #            lo_nb_min.append([tm_depth, tm_rho])
-#            
+#
 #        else:
 #            lo_nb_min.append([te_depth, te_rho])
 #            lo_nb_max.append([tm_depth, tm_rho])

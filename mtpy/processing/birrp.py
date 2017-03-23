@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 """
-This module contains functions for handling BIRRP software. 
- 
+This module contains functions for handling BIRRP software.
+
 - validate_data -- validation of BIRRP input data files
 - run -- call the external function BIRRP as system process
 - sortoutput -- sort output functions
@@ -49,26 +49,26 @@ def runbirrp_Nin2out_simple(birrp_exe, stationname, ts_directory,
                             output_channels=2, output_dir=None,
                             starttime=None, endtime=None):
     """
-    Call BIRRP for N input and 2 output channels with the simplemost setup. 
+    Call BIRRP for N input and 2 output channels with the simplemost setup.
 
-    Provide stationname and directory containing the data folders. Data must 
-    be in 1-column ascii format, including one header line for identification 
-    of station, channel and sampling rate. For this function, the files must 
+    Provide stationname and directory containing the data folders. Data must
+    be in 1-column ascii format, including one header line for identification
+    of station, channel and sampling rate. For this function, the files must
     have aligned time series!
 
-    All parameters are automatically determined, the threshold for coherence 
+    All parameters are automatically determined, the threshold for coherence
     is set to 0.5 by default.
 
-    If no output directory is specified, output files are put into a subfolder 
+    If no output directory is specified, output files are put into a subfolder
     of the source directory, named 'birrp_processed'.
 
     Optionally, starttime and endtime can be given (in epoch seconds). If that
-    yields an interval which is smaller than the provided data, only that 
+    yields an interval which is smaller than the provided data, only that
     section is used.
 
-    Additionally, a configuration file is created. It contains information 
-    about the processing paramters for the station. Keys are generic for the 
-    common parameters and named after BIRRP input keywords for the processing 
+    Additionally, a configuration file is created. It contains information
+    about the processing paramters for the station. Keys are generic for the
+    common parameters and named after BIRRP input keywords for the processing
     parameters.
 
     """
@@ -87,7 +87,7 @@ def runbirrp_Nin2out_simple(birrp_exe, stationname, ts_directory,
     if rr_station is not None:
         wd = op.abspath(op.realpath(op.join(current_dir, 'birrp_wd_rr')))
 
-    if output_dir != None:
+    if output_dir is not None:
         output_dir = op.abspath(op.join(current_dir, output_dir))
         if not op.isdir(output_dir):
             try:
@@ -241,23 +241,23 @@ def set_birrp_input_file_simple(stationname, rr_station, ts_directory,
                                 output_channels=2, w_directory='.',
                                 starttime=None, endtime=None):
     """
-    File handling: collect longest possible input for BIRRP from different files 
+    File handling: collect longest possible input for BIRRP from different files
     for the given station name. Cut out section, if start and/or end times are given.
-    Generate a new input file in the working directory and return the name of 
-    this file, as well as time series and processing properties in form of a 
-    dictionary. 
+    Generate a new input file in the working directory and return the name of
+    this file, as well as time series and processing properties in form of a
+    dictionary.
 
-    Scan all files in the directory by their headers: if the stationname matches, 
-    add the data file to the list. Additionally read out channels and start-/end 
+    Scan all files in the directory by their headers: if the stationname matches,
+    add the data file to the list. Additionally read out channels and start-/end
     times. Find longest consecutive time available on all channels.
     Include remote reference station data, if rr_station is given.
-    Then generate n x 4/5 array for n consecutive time steps. Array in order 
+    Then generate n x 4/5 array for n consecutive time steps. Array in order
     Ex, Ey, Bx, By (,Bz) saved into file 'birrp_data.txt'
 
-    If remote reference is include, generate n x 6/7 array in order 
+    If remote reference is include, generate n x 6/7 array in order
     Ex, Ey, Bx, By (,Bz), remoteBx, remoteBy
 
-    Output_channels determine the number of output channels: 
+    Output_channels determine the number of output channels:
     "2" for Ex, Ey - "3" for additional Bz
 
     Output:
@@ -395,8 +395,8 @@ def set_birrp_input_file_simple(stationname, rr_station, ts_directory,
             if not ch == ch_read:
                 continue
 
-            if tmp_starttime != None:
-                if (tmp_endtime != None) and (
+            if tmp_starttime is not None:
+                if (tmp_endtime is not None) and (
                         np.abs(lo_station_starttimes[sst] - tmp_endtime) > 0.5 * 1. / sampling_rate):
                     tmp_timewindows_list_per_channel.append(
                         (tmp_starttime, tmp_endtime))
@@ -405,7 +405,7 @@ def set_birrp_input_file_simple(stationname, rr_station, ts_directory,
             else:
                 tmp_starttime = lo_station_starttimes[sst]
             tmp_endtime = lo_station_endtimes[sst]
-        if tmp_starttime != None:
+        if tmp_starttime is not None:
             tmp_timewindows_list_per_channel.append(
                 (tmp_starttime, tmp_endtime))
 
@@ -424,8 +424,8 @@ def set_birrp_input_file_simple(stationname, rr_station, ts_directory,
                 if not ch == ch_read:
                     continue
 
-                if tmp_starttime != None:
-                    if (tmp_endtime != None) and (
+                if tmp_starttime is not None:
+                    if (tmp_endtime is not None) and (
                             np.abs(lo_rr_starttimes[rst] - tmp_endtime) > 0.5 * 1. / sampling_rate):
                         tmp_timewindows_list_per_channel.append(
                             (tmp_starttime, tmp_endtime))
@@ -434,7 +434,7 @@ def set_birrp_input_file_simple(stationname, rr_station, ts_directory,
                 else:
                     tmp_starttime = lo_rr_starttimes[rst]
                 tmp_endtime = lo_rr_endtimes[rst]
-            if tmp_starttime != None:
+            if tmp_starttime is not None:
                 tmp_timewindows_list_per_channel.append(
                     (tmp_starttime, tmp_endtime))
 
@@ -515,7 +515,8 @@ def set_birrp_input_file_simple(stationname, rr_station, ts_directory,
     # before the end time
     if (t_end - sampling_interval) < ta_full_dataset[idx_end]:
         # check, if variation is outside numerical uncertainty
-        if np.abs((t_end - sampling_interval) - ta_full_dataset[idx_end]) > epsilon:
+        if np.abs((t_end - sampling_interval) -
+                  ta_full_dataset[idx_end]) > epsilon:
             # if so, reduce index one more to be safely inside the given
             # interval
             idx_end -= 1
@@ -693,7 +694,8 @@ def set_birrp_input_file_simple(stationname, rr_station, ts_directory,
 
     gc.collect()
 
-    return op.abspath(outfn), birrp_stationdict['n_samples'], sampling_rate, birrp_stationdict
+    return op.abspath(outfn), birrp_stationdict[
+        'n_samples'], sampling_rate, birrp_stationdict
 
 
 def get_optimal_window_bisection(length, sampling_rate):
@@ -728,27 +730,27 @@ def get_optimal_window_bisection(length, sampling_rate):
 
 def write_script_file(processing_dict, save_path=None):
     """
-    writeScriptfile(processingdict will write a script file for BIRRP using 
+    writeScriptfile(processingdict will write a script file for BIRRP using
     info in processingdict which is a dictionary with keys:
 
     ================== ========================================================
     parameter          description
-    ================== ======================================================== 
+    ================== ========================================================
     station            station name
-    fn_list             list of file names to be processed, this must be in 
+    fn_list             list of file names to be processed, this must be in
                        the correct order [EX, EY, HZ, HX, HY] and if multiple
-                       sections are to be processed at the same time then 
-                       must be input as a nested loop 
-                       [[EX1, EY1, HZ1, HX1, HY1], 
+                       sections are to be processed at the same time then
+                       must be input as a nested loop
+                       [[EX1, EY1, HZ1, HX1, HY1],
                        [EX2, EY2, HZ2, HX2, HY2], ...]
-    rrfn_list           list of remote reference file names, similar to the 
+    rrfn_list           list of remote reference file names, similar to the
                        fn_list [[HX1, HY1], [HX2, HY2], ...]
-    ilev               processing mode 0 for basic and 1 for advanced RR-2 
+    ilev               processing mode 0 for basic and 1 for advanced RR-2
                        stage
     nout               Number of Output time series (2 or 3-> for BZ)
-    ninp               Number of input time series for E-field (1,2,3) 
+    ninp               Number of input time series for E-field (1,2,3)
     nref               Number of reference channels (2 for MT)
-    nrr                bounded remote reference (0) or 2 stage bounded 
+    nrr                bounded remote reference (0) or 2 stage bounded
                        influence (1)
     tbw                Time bandwidth for Sepian sequence
     deltat             Sampling rate (+) for (s), (-) for (Hz)
@@ -756,7 +758,7 @@ def write_script_file(processing_dict, save_path=None):
     nsctinc            section increment divisor (2 to divide by half)
     nsctmax            Number of windows used in FFT
     nf1                1st frequency to extract from FFT window (>=3)
-    nfinc              frequency extraction increment 
+    nfinc              frequency extraction increment
     nfsect             number of frequencies to extract
     mfft               AR filter factor, window divisor (2 for half)
     uin                Quantile factor determination
@@ -764,8 +766,8 @@ def write_script_file(processing_dict, save_path=None):
     ainuin             Residual rejection factor high end (.95-.99)
     c2threshb          Coherence threshold for magnetics (0 if undesired)
     c2threshe          Coherence threshold for electrics (0 if undesired)
-    nz                 Threshold for Bz (0=separate from E, 1=E threshold, 
-                                         2=E and B) 
+    nz                 Threshold for Bz (0=separate from E, 1=E threshold,
+                                         2=E and B)
                        Input if 3 B components else None
     c2thresh1          Squared coherence for Bz, input if NZ=0, Nout=3
     perlo              longest period to apply coherence threshold over
@@ -775,40 +777,40 @@ def write_script_file(processing_dict, save_path=None):
     nlev               Output files (0=Z; 1=Z,qq; 2=Z,qq,w; 3=Z,qq,w,d)
     nprej              number of frequencies to reject
     prej               frequencies to reject (+) for period, (-) for frequency
-    npcs               Number of independent data to be processed (1 for one 
+    npcs               Number of independent data to be processed (1 for one
                        segement)
     nar                Prewhitening Filter (3< >15) or 0 if not desired',
-    imode              Output file mode (0=ascii; 1=binary; 2=headerless ascii; 
+    imode              Output file mode (0=ascii; 1=binary; 2=headerless ascii;
                        3=ascii in TS mode',
-    jmode              input file mode (0=user defined; 1=sconvert2tart time 
+    jmode              input file mode (0=user defined; 1=sconvert2tart time
                                         YYYY-MM-DD HH:MM:SS)',
-    nread              Number of points to be read for each data set  
+    nread              Number of points to be read for each data set
                        (if segments>1 -> npts1,npts2...)',
-    nfil               Filter parameters (0=none; >0=input parameters; 
+    nfil               Filter parameters (0=none; >0=input parameters;
                                           <0=filename)
-    nskip              Skip number of points in time series (0) if no skip, 
+    nskip              Skip number of points in time series (0) if no skip,
                         (if segements >1 -> input1,input2...)',
     nskipr             Number of points to skip over (0) if none,
                        (if segements >1 -> input1,input2...)',
-    thetae             Rotation angles for electrics (relative to geomagnetic 
+    thetae             Rotation angles for electrics (relative to geomagnetic
                        North)(N,E,rot)',
-    thetab             Rotation angles for magnetics (relative to geomagnetic 
+    thetab             Rotation angles for magnetics (relative to geomagnetic
                        North)(N,E,rot)',
-    thetar             Rotation angles for calculation (relative to geomagnetic 
+    thetar             Rotation angles for calculation (relative to geomagnetic
                        North)(N,E,rot)'
-    hx_cal             full path to calibration file for hx 
-    hy_cal             full path to calibration file for hy 
-    hz_cal             full path to calibration file for hz 
-    rrhx_cal           full path to calibration file for remote reference hx 
-    rrhy_cal           full path to calibration file for remote reference hy 
+    hx_cal             full path to calibration file for hx
+    hy_cal             full path to calibration file for hy
+    hz_cal             full path to calibration file for hz
+    rrhx_cal           full path to calibration file for remote reference hx
+    rrhy_cal           full path to calibration file for remote reference hy
                        Note that BIRRP assumes the calibrations are the same
                        as in the first segment, so the remote reference must
                        be the same for all segments, or at least the same
-                       instruments have to be used so the calibration is 
+                       instruments have to be used so the calibration is
                        the same.
-    ================== ========================================================              
+    ================== ========================================================
 
-    .. see also::                
+    .. see also::
 
         => see BIRRP Manual for more details on the parameters
         => see A. D. Chave and D. J. Thomson [1989,2003,2004] for more
@@ -946,7 +948,7 @@ def write_script_file(processing_dict, save_path=None):
         # Advanced
         try:
             prej = pdict['prej'].split(',')
-            if type(prej) is list:
+            if isinstance(prej, list):
                 prej = [float(ff) for ff in prej]
             if nprej != len(prej):
                 nprej = len(prej)
@@ -1017,13 +1019,13 @@ def write_script_file(processing_dict, save_path=None):
     if jmode == 0:
         # number of points to read
         nread = pdict.pop('nread', 1440000)
-        if type(nread) is not list and type(nread) is not np.ndarray:
+        if not isinstance(nread, list) and not isinstance(nread, np.ndarray):
             nread = int(nread)
         # number of points to skip in time series
         try:
             nskip = pdict['nskip']
-            if nds != 0 and type(nskip) is not list and \
-                    type(nskip) is not np.ndarray:
+            if nds != 0 and not isinstance(nskip, list) and \
+                    not isinstance(nskip, np.ndarray):
                 nskip = [nskip for ii in range(nds)]
         except KeyError:
             if nds != 0:
@@ -1034,8 +1036,8 @@ def write_script_file(processing_dict, save_path=None):
         # number of point to skip from remote reference time series
         try:
             nskipr = pdict['nskipr']
-            if nds != 0 and type(nskipr) is not list and \
-                    type(nskipr) is not np.ndarray:
+            if nds != 0 and not isinstance(nskipr, list) and \
+                    not isinstance(nskipr, np.ndarray):
                 nskipr = [nskipr for ii in range(nds)]
         except KeyError:
             if nds == 0:
@@ -1133,7 +1135,7 @@ def write_script_file(processing_dict, save_path=None):
             fid.write('{0:d} \n'.format(nlev))
             fid.write('{0:d} \n'.format(nprej))
             if nprej != 0:
-                if type(prej) is not list:
+                if not isinstance(prej, list):
                     prej = [prej]
                 fid.writelines(['{0:.5g} \n'.format(nn) for nn in prej])
         # if 2 stage processing
@@ -1160,7 +1162,7 @@ def write_script_file(processing_dict, save_path=None):
             fid.write('{0:d} \n'.format(nlev))
             fid.write('{0:d} \n'.format(nprej))
             if nprej != 0:
-                if type(prej) is not list:
+                if not isinstance(prej, list):
                     prej = [prej]
                 fid.writelines(['{0:.5g} \n'.format(nn) for nn in prej])
 
@@ -1297,7 +1299,7 @@ def write_script_file(processing_dict, save_path=None):
                     fid.write(wetim + '\n')
     else:
         if jmode == 0:
-            if type(nread) is list:
+            if isinstance(nread, list):
                 fid.write(str(nread[0]) + '\n')
             else:
                 fid.write(str(nread) + '\n')
@@ -1325,7 +1327,7 @@ def write_script_file(processing_dict, save_path=None):
                     else:
                         fid.write(str(nfil) + '\n')
                     fid.write(tfile + '\n')
-                    if type(nskip) is list:
+                    if isinstance(nskip, list):
                         fid.write(str(nskip[0]) + '\n')
                     else:
                         fid.write(str(nskip) + '\n')
@@ -1343,7 +1345,7 @@ def write_script_file(processing_dict, save_path=None):
                         else:
                             fid.write(str(nfil) + '\n')
                     fid.write(rfile + '\n')
-                    if type(nskipr) is list:
+                    if isinstance(nskipr, list):
                         fid.write(str(nskipr[0]) + '\n')
                     else:
                         fid.write(str(nskipr) + '\n')
@@ -1351,14 +1353,14 @@ def write_script_file(processing_dict, save_path=None):
                 for tfile in pdict['fn_list'][0]:
                     fid.write(str(nfil) + '\n')
                     fid.write(tfile + '\n')
-                    if type(nskip) is list:
+                    if isinstance(nskip, list):
                         fid.write(str(nskip[0]) + '\n')
                     else:
                         fid.write(str(nskip) + '\n')
                 for rfile in pdict['rrfn_list'][0]:
                     fid.write(str(nfil) + '\n')
                     fid.write(rfile + '\n')
-                    if type(nskipr) is list:
+                    if isinstance(nskipr, list):
                         fid.write(str(nskipr[0]) + '\n')
                     else:
                         fid.write(str(nskipr) + '\n')
@@ -1616,15 +1618,15 @@ def convert2edi(stationname, in_dir, survey_configfile, birrp_configfile,
     """
     Convert BIRRP output files into EDI file.
 
-    The list of BIRRP output files is searched for in the in_dir directory 
-    for the given stationname (base part of filenames). Meta-data must be 
-    provided in two config files.  If MTpy standard processing has been 
+    The list of BIRRP output files is searched for in the in_dir directory
+    for the given stationname (base part of filenames). Meta-data must be
+    provided in two config files.  If MTpy standard processing has been
     applied, the first one is the same file as used from the beginning of
-    the processing. If this survey-config-file is missing, a temporary 
-    config file must been created from the header information of the time 
+    the processing. If this survey-config-file is missing, a temporary
+    config file must been created from the header information of the time
     series files that have been used as BIRRP input.
 
-    A second config file contains information about the BIRRP processing 
+    A second config file contains information about the BIRRP processing
     parameters. It's generated when BIRRP is called with MTpy.
 
     The outputfile 'stationname.edi' and is stored in the out_dir directory.
@@ -1634,7 +1636,7 @@ def convert2edi(stationname, in_dir, survey_configfile, birrp_configfile,
     - name of the station
     - directory, which contains the BIRRP output files
     - configuration file of the survey, containing all station setup information
-    - configuration file for the processing of the station, containing all 
+    - configuration file for the processing of the station, containing all
       BIRRP and other processing parameters
     [- location to store the EDI file]
     """
@@ -1646,7 +1648,7 @@ def convert2edi(stationname, in_dir, survey_configfile, birrp_configfile,
         raise MTex.MTpyError_inputarguments(
             'Directory not existing:%s' % (input_dir))
 
-    if out_dir == None:
+    if out_dir is None:
         output_dir = input_dir
     else:
         output_dir = op.abspath(op.realpath(op.join(os.getcwd(), out_dir)))
@@ -1772,7 +1774,7 @@ def convert2edi_incl_instrument_correction(stationname, in_dir,
         raise MTex.MTpyError_inputarguments(
             'Directory not existing:%s' % (input_dir))
 
-    if out_dir == None:
+    if out_dir is None:
         output_dir = input_dir
     else:
         output_dir = op.abspath(op.realpath(out_dir))
@@ -1863,7 +1865,8 @@ def convert2edi_incl_instrument_correction(stationname, in_dir,
 
     frequencies = 1. / periods
 
-    def correct_z_for_instrument_response(Z_array, instr_resp, frequencies, instr_type):
+    def correct_z_for_instrument_response(
+            Z_array, instr_resp, frequencies, instr_type):
 
         for idx_f, freq in enumerate(frequencies):
             if not (instr_resp[0, 0] <= np.abs(freq) <= instr_resp[-1, 0]):
@@ -1985,7 +1988,7 @@ def _set_edi_data(lo_periods, Z_array, tipper_array):
             datastring += '>%s%s ROT=ZROT // %i\n' % (
                 compstrings[T_comp], T_entries[entry], len(periods))
             for i, period in enumerate(periods):
-                if tipper_array != None:
+                if tipper_array is not None:
                     data = tipper_array[i, entry, T_comp]
                 else:
                     data = 0.
@@ -2059,10 +2062,10 @@ def _set_edi_head(station_config_dict, birrp_config_dict):
     else:
         headstring += '\tdataid={0}\n'.format(station_config_dict['station'])
 
-    if station_config_dict.has_key('company'):
-        acqby = station_config_dict.has_key('company')
-    elif station_config_dict.has_key('acqby'):
-        acqby = station_config_dict.has_key('acqby')
+    if 'company' in station_config_dict:
+        acqby = 'company' in station_config_dict
+    elif 'acqby' in station_config_dict:
+        acqby = 'acqby' in station_config_dict
     else:
         acqby = ''
 
@@ -2098,7 +2101,7 @@ def _set_edi_head(station_config_dict, birrp_config_dict):
             headstring += '\tenddate=%s \n' % (acq_end)
         except KeyError:
             try:
-                acq_start = station_config_dict.has_key('acq_date')
+                acq_start = 'acq_date' in station_config_dict
                 headstring += '\tacqdate={0} \n'.format(acq_start)
             except KeyError:
                 headstring += '\tacqdate={0} \n'.format(
@@ -2108,13 +2111,13 @@ def _set_edi_head(station_config_dict, birrp_config_dict):
     headstring += '\tfiledate="%s"\n' % (todaystring)
 
     network = ''
-    if station_config_dict.has_key('network'):
-        location = station_config_dict.has_key('network')
+    if 'network' in station_config_dict:
+        location = 'network' in station_config_dict
     headstring += '\tprospect="%s"\n' % (network)
 
     location = ''
-    if station_config_dict.has_key('location'):
-        location = station_config_dict.has_key('location')
+    if 'location' in station_config_dict:
+        location = 'location' in station_config_dict
     headstring += '\tloc="%s"\n' % (location)
 
     # headstring += '\tlat=%.5f\n'%float(station_config_dict['latitude'])
@@ -2240,7 +2243,7 @@ def read_j_file(fn):
 
     Z = np.zeros((n_periods, 3, 4))
     periods = np.zeros((n_periods, 4))
-    if not tipper_start_row == None:
+    if not tipper_start_row is None:
         tipper = np.zeros((n_periods, 3, 2))
         periods = np.zeros((n_periods, 6))
 
@@ -2270,7 +2273,7 @@ def read_j_file(fn):
 
                 Z[idx_per, idx_z_entry, idx_comp] = value
 
-    if tipper != None:
+    if tipper is not None:
         for idx_comp in range(2):
             starting_row = tipper_start_row + 2 + ((n_periods + 2) * idx_comp)
             for idx_per in range(n_periods):
@@ -2377,14 +2380,14 @@ def parse_jfile_header(j_lines):
 
 
 def _check_j_file_content(periods_array, Z_array, tipper_array):
-    """ 
+    """
     Check the content of j file.
 
-    If 'nan' appears at any part for some period, the respective period must be 
+    If 'nan' appears at any part for some period, the respective period must be
     deleted together with all respective entries of the Z_array and tipper_array.
-    Additionally, check the entries of the period array. This should have fully 
-    redundant entries. If this is not the case for at least one period for at 
-    least one component, the period and all respective entries of the arrays 
+    Additionally, check the entries of the period array. This should have fully
+    redundant entries. If this is not the case for at least one period for at
+    least one component, the period and all respective entries of the arrays
     have to be deleted.
     """
     period_epsilon = 1E-7

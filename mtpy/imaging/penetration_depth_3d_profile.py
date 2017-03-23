@@ -136,7 +136,7 @@ def plot_latlon_depth_profile(edi_dir, period, zcomponent='det'):
     # plt.show() # without this show(), the 2 figure will be plotted in one
     # canvas, overlay and compare
 
-    fig=plt.figure()  # a new figure canvas
+    fig = plt.figure()  # a new figure canvas
 
     # griddata interpolation of the zdep sample MT points.
     print(zdep.shape[0], zdep.shape[1])
@@ -164,7 +164,7 @@ def plot_latlon_depth_profile(edi_dir, period, zcomponent='det'):
     # method='cubic' may cause negative interp values; set them nan to make
     # empty
     grid_z[grid_z < 0] = np.nan
-    grid_z = grid_z/1000.0
+    grid_z = grid_z / 1000.0
 
     # use reverse color map in imshow and the colorbar
     my_cmap = mpl.cm.jet
@@ -252,11 +252,12 @@ def plot_latlon_depth_profile(edi_dir, period, zcomponent='det'):
     mycb.set_cmap(my_cmap_r)
 
     plt.show()
-    path2savefile='E:/tmp/pendepth.jpg'
+    path2savefile = 'E:/tmp/pendepth.jpg'
     fig.savefig(path2savefile, dpi=200, bbox_inches='tight')
     plt.clf()
     plt.close()
     return
+
 
 def reverse_colourmap(cmap, name='my_cmap_r'):
     """
@@ -386,10 +387,10 @@ def get_penetration_depth0(edi_file_list, per_index, whichrho='det'):
             penetration_depth = -scale_param * np.sqrt(0.2 * per * det2 * per)
         elif whichrho == 'zxy':
             penetration_depth = - scale_param * \
-                                np.sqrt(zeta.resistivity[per_index, 0, 1] * per)
+                np.sqrt(zeta.resistivity[per_index, 0, 1] * per)
         elif whichrho == 'zyx':
             penetration_depth = - scale_param * \
-                                np.sqrt(zeta.resistivity[per_index, 1, 0] * per)
+                np.sqrt(zeta.resistivity[per_index, 1, 0] * per)
 
         else:
             logger.critical(
@@ -466,13 +467,13 @@ def get_penetration_depth(edi_file_list, period_sec, whichrho='det'):
                 # determinant value at the given period index
                 det2 = np.abs(zeta.det[0][per_index])
                 penetration_depth = -scale_param * \
-                                    np.sqrt(0.2 * per * det2 * per)
+                    np.sqrt(0.2 * per * det2 * per)
             elif whichrho == 'zxy':
                 penetration_depth = - scale_param * \
-                                    np.sqrt(zeta.resistivity[per_index, 0, 1] * per)
+                    np.sqrt(zeta.resistivity[per_index, 0, 1] * per)
             elif whichrho == 'zyx':
                 penetration_depth = - scale_param * \
-                                    np.sqrt(zeta.resistivity[per_index, 1, 0] * per)
+                    np.sqrt(zeta.resistivity[per_index, 1, 0] * per)
 
             else:
                 logger.critical(
@@ -515,7 +516,7 @@ def check_period_values(period_list, ptol=0.05):
 
     for per in period_list:
         if (per > p0 * (1 - ptol)) and (per < p0 *
-            (1 + ptol)):  # approximately equal by <5% error
+                                        (1 + ptol)):  # approximately equal by <5% error
             pcounter = pcounter + 1
         else:
             logger.warn("Periods NOT Equal!!!  %s != %s", p0, per)
@@ -580,10 +581,10 @@ def plot_bar3d_depth(edifiles, per_index, whichrho='det'):
             penetration_depth = -scale_param * np.sqrt(0.2 * per * det2 * per)
         elif whichrho == 'zxy':
             penetration_depth = - scale_param * \
-                                np.sqrt(zeta.resistivity[per_index, 0, 1] * per)
+                np.sqrt(zeta.resistivity[per_index, 0, 1] * per)
         elif whichrho == 'zyx':
             penetration_depth = - scale_param * \
-                                np.sqrt(zeta.resistivity[per_index, 1, 0] * per)
+                np.sqrt(zeta.resistivity[per_index, 1, 0] * per)
 
         pen_depth.append(penetration_depth)
 
@@ -619,8 +620,20 @@ def plot_bar3d_depth(edifiles, per_index, whichrho='det'):
     ypos = []  # a seq [2,3,4,5,1,6,2,1,7,2]
     dz = []
     for iter, pair in enumerate(latlons):
-        xpos.append(get_index(pair[0], pair[1], ref_lat, ref_lon, pixelsize)[0])
-        ypos.append(get_index(pair[0], pair[1], ref_lat, ref_lon, pixelsize)[1])
+        xpos.append(
+            get_index(
+                pair[0],
+                pair[1],
+                ref_lat,
+                ref_lon,
+                pixelsize)[0])
+        ypos.append(
+            get_index(
+                pair[0],
+                pair[1],
+                ref_lat,
+                ref_lon,
+                pixelsize)[1])
         dz.append(np.abs(pen_depth[iter]))
         # dz.append(-np.abs(pen_depth[iter]))
 
@@ -681,17 +694,17 @@ def get_penetration_depths_from_edi_file(edifile, rholist=['det']):
     if 'zxy' in rholist:
         # One of the 4-components: XY
         penetration_depth = scale_param * \
-                            np.sqrt(zeta.resistivity[:, 0, 1] * periods)
+            np.sqrt(zeta.resistivity[:, 0, 1] * periods)
 
     if 'zyx' in rholist:
         penetration_depth = scale_param * \
-                            np.sqrt(zeta.resistivity[:, 1, 0] * periods)
+            np.sqrt(zeta.resistivity[:, 1, 0] * periods)
 
     if 'det' in rholist:
         # determinant
         det2 = np.abs(zeta.det[0])
         penetration_depth = scale_param * \
-                            np.sqrt(0.2 * periods * det2 * periods)
+            np.sqrt(0.2 * periods * det2 * periods)
 
     latlong_d = (mt_obj.lat, mt_obj.lon, periods, penetration_depth)
     return latlong_d
@@ -711,7 +724,8 @@ def create_csv_file(edi_dir, outputcsv=None, zcomponent='det'):
 
     logger.debug(edi_files)
 
-    periods_list0 = None  # the first period list as a reference for checking other stations period
+    # the first period list as a reference for checking other stations period
+    periods_list0 = None
     latlon_dep = []  # CSV to be returned
     for afile in edi_files:
         # for efile in edi_files[:2]:
@@ -727,7 +741,10 @@ def create_csv_file(edi_dir, outputcsv=None, zcomponent='det'):
             depth_string = ','.join(['%.2f' % num for num in depths])
             latlon_dep.append((lat, lon, depth_string))
         else:
-            logger.error("MT Periods Not Equal !! %s VS %s", per, periods_list0)
+            logger.error(
+                "MT Periods Not Equal !! %s VS %s",
+                per,
+                periods_list0)
             # raise Exception ("MTPy Exception: Periods Not Equal")
             # pass this edi, let's continue
 

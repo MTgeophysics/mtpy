@@ -195,7 +195,8 @@ mtcmapdict3 = {'red': ((0.0, 0.2, 0.2),
                         (0.75, 0.0, 0.0),
                         (1.0, 0.0, 0.0))}
 
-mt_rd2wh2bl_r = colors.LinearSegmentedColormap('mt_rd2wh2bl_r', mtcmapdict3, 256)
+mt_rd2wh2bl_r = colors.LinearSegmentedColormap(
+    'mt_rd2wh2bl_r', mtcmapdict3, 256)
 
 cmapdict = {'mt_yl2rd': mt_yl2rd,
             'mt_bl2yl2rd': mt_bl2yl2rd,
@@ -217,7 +218,7 @@ cmapdict = {'mt_yl2rd': mt_yl2rd,
 def get_color(cvar, cmap):
     """
     gets the color to plot for the given color map
-    
+
     """
     if cmap == 'mt_yl2rd':
         plot_color = get_mt_yl2rd(cvar)
@@ -262,7 +263,7 @@ def get_color(cvar, cmap):
 def get_mt_yl2rd(cvar):
     """
     gets color for the color map that goes from yellow to red
-    
+
     """
 
     if cvar >= 1:
@@ -278,7 +279,7 @@ def get_mt_yl2rd(cvar):
 def get_mt_wh2bl(cvar):
     """
     gets color for the color map that goes from white to blue
-    
+
     """
 
     if cvar >= 1:
@@ -294,7 +295,7 @@ def get_mt_wh2bl(cvar):
 def get_mt_wh2or(cvar):
     """
     gets color for the color map that goes from white to orange
-    
+
     """
 
     if cvar >= 1:
@@ -310,7 +311,7 @@ def get_mt_wh2or(cvar):
 def get_mt_bl2wh2rd(cvar):
     """
     gets color for the color map that goes from blue to white to red
-    
+
     """
 
     if cvar < 0 and cvar > -1:
@@ -328,7 +329,7 @@ def get_mt_bl2wh2rd(cvar):
 def get_mt_bl2yl2rd(cvar):
     """
     gets color for the color map that goes from blue to yellow to red
-    
+
     """
 
     if cvar < 0 and cvar > -1:
@@ -346,7 +347,7 @@ def get_mt_bl2yl2rd(cvar):
 def get_mt_bl2gr2rd(cvar):
     """
     gets color for the color map that goes from blue to greenish to red
-    
+
     """
 
     if cvar < 0 and cvar > -1:
@@ -364,7 +365,7 @@ def get_mt_bl2gr2rd(cvar):
 def get_mt_rd2gr2bl(cvar):
     """
     gets color for the color map that goes red to greenish to blue
-    
+
     """
 
     if cvar < 0 and cvar > -1:
@@ -382,7 +383,7 @@ def get_mt_rd2gr2bl(cvar):
 def get_mt_rd2wh2bl(cvar):
     """
     gets color for the color map that goes red to white to blue
-    
+
     """
 
     if cvar < 0 and cvar > -1:
@@ -400,7 +401,7 @@ def get_mt_rd2wh2bl(cvar):
 def get_mt_rd2wh2bl_r(cvar):
     """
     gets color for the color map that goes red to white to blue
-    
+
     """
     # blue
     if cvar < -.5 and cvar > -1:
@@ -427,14 +428,14 @@ def get_plot_color(colorx, comp, cmap, ckmin=None, ckmax=None, bounds=None):
 
     # get face color info
     if comp == 'phimin' or comp == 'phimax' or comp == 'phidet' or \
-                    comp == 'ellipticity' or comp == 'geometric_mean':
+            comp == 'ellipticity' or comp == 'geometric_mean':
         if ckmin is None or ckmax is None:
             raise IOError('Need to input min and max values for plotting')
 
         cvar = (colorx - ckmin) / (ckmax - ckmin)
         if cmap == 'mt_bl2wh2rd' or cmap == 'mt_bl2yl2rd' or \
-                        cmap == 'mt_bl2gr2rd' or cmap == 'mt_rd2gr2bl' or \
-                        cmap == 'mt_rd2wh2bl' or cmap == 'mt_rd2wh2bl_r':
+                cmap == 'mt_bl2gr2rd' or cmap == 'mt_rd2gr2bl' or \
+                cmap == 'mt_rd2wh2bl' or cmap == 'mt_rd2wh2bl_r':
             cvar = 2 * cvar - 1
 
         return get_color(cvar, cmap)
@@ -443,7 +444,6 @@ def get_plot_color(colorx, comp, cmap, ckmin=None, ckmax=None, bounds=None):
         cvar = 2 * colorx / (ckmax - ckmin)
 
         return get_color(cvar, cmap)
-
 
     elif comp == 'skew_seg' or comp == 'normalized_skew_seg':
         if bounds is None:
@@ -470,10 +470,10 @@ def get_plot_color(colorx, comp, cmap, ckmin=None, ckmax=None, bounds=None):
 
 def cmap_discretize(cmap, N):
     """Return a discrete colormap from the continuous colormap cmap.
-      
-         cmap: colormap instance, eg. cm.jet. 
+
+         cmap: colormap instance, eg. cm.jet.
          N: number of colors.
-     
+
      Example
          x = resize(arange(100), (5,100))
          djet = cmap_discretize(cm.jet, 5)

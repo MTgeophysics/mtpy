@@ -771,7 +771,14 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
                 eangle = np.nan_to_num(pt.azimuth[0][jj])
 
                 # output to csv file:
-                print('OUTCSV', mt.station, plotx, ploty, phimin, phimax, eangle)
+                print(
+                    'OUTCSV',
+                    mt.station,
+                    plotx,
+                    ploty,
+                    phimin,
+                    phimax,
+                    eangle)
 
                 if cmap == 'mt_seg_bl2wh2rd':
                     bounds = np.arange(ckmin, ckmax + ckstep, ckstep)
@@ -779,7 +786,7 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
 
                 # get the properties to color the ellipses by
                 if self.ellipse_colorby == 'phiminang' or \
-                                self.ellipse_colorby == 'phimin':
+                        self.ellipse_colorby == 'phimin':
                     colorarray = pt.phimin[0][jj]
 
                 elif self.ellipse_colorby == 'phimax':
@@ -789,11 +796,11 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
                     colorarray = np.sqrt(abs(pt.det[0][jj])) * (180 / np.pi)
 
                 elif self.ellipse_colorby == 'skew' or \
-                                self.ellipse_colorby == 'skew_seg':
+                        self.ellipse_colorby == 'skew_seg':
                     colorarray = pt.beta[0][jj]
 
                 elif self.ellipse_colorby == 'normalized_skew' or \
-                                self.ellipse_colorby == 'normalized_skew_seg':
+                        self.ellipse_colorby == 'normalized_skew_seg':
                     colorarray = 2 * pt.beta[0][jj]
 
                 elif self.ellipse_colorby == 'ellipticity':
@@ -856,9 +863,9 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
                     if self.plot_tipper == 'yri' or self.plot_tipper == 'yr':
                         if tip.mag_real[jj] <= self.arrow_threshold:
                             txr = tip.mag_real[jj] * ascale * \
-                                  np.sin((tip.ang_real[jj]) * np.pi / 180 + adir)
+                                np.sin((tip.ang_real[jj]) * np.pi / 180 + adir)
                             tyr = tip.mag_real[jj] * ascale * \
-                                  np.cos((tip.ang_real[jj]) * np.pi / 180 + adir)
+                                np.cos((tip.ang_real[jj]) * np.pi / 180 + adir)
 
                             self.ax.arrow(plotx,
                                           ploty,
@@ -877,9 +884,9 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
                     if self.plot_tipper == 'yri' or self.plot_tipper == 'yi':
                         if tip.mag_imag[jj] <= self.arrow_threshold:
                             txi = tip.mag_imag[jj] * ascale * \
-                                  np.sin((tip.ang_imag[jj]) * np.pi / 180 + adir)
+                                np.sin((tip.ang_imag[jj]) * np.pi / 180 + adir)
                             tyi = tip.mag_imag[jj] * ascale * \
-                                  np.cos((tip.ang_imag[jj]) * np.pi / 180 + adir)
+                                np.cos((tip.ang_imag[jj]) * np.pi / 180 + adir)
 
                             self.ax.arrow(plotx,
                                           ploty,
@@ -897,7 +904,7 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
                     self.ax.text(plotx,
                                  ploty + self.station_pad,
                                  mt.station[
-                                 self.station_id[0]:self.station_id[1]],
+                                     self.station_id[0]:self.station_id[1]],
                                  horizontalalignment='center',
                                  verticalalignment='baseline',
                                  fontdict=self.station_font_dict)
@@ -977,8 +984,9 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
             self.ax.set_title(self.plot_title + titlefreq,
                               fontsize=self.font_size, fontweight='bold')
 
-        # BEGIN: plot induction arrow scale bar ------------------------------------
-        if self.plot_tipper.find('yes') == 0:  # fail this test to omit the arrow scale bar/legend
+        # BEGIN: plot induction arrow scale bar -------------------------------
+        if self.plot_tipper.find(
+                'yes') == 0:  # fail this test to omit the arrow scale bar/legend
             parrx = self.ax.get_xlim()
             parry = self.ax.get_ylim()
             try:
@@ -1054,7 +1062,7 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
             #              horizontalalignment='center',
             #              verticalalignment='baseline',
             #              fontdict={'size':self.font_size,'weight':'bold'})
-        # END: if self.plot_tipper.find('yes') == 0 --------------------------------
+        # END: if self.plot_tipper.find('yes') == 0 ---------------------------
 
         # make a grid with color lines
         self.ax.grid(True, alpha=.3, which='both', color=(0.5, 0.5, 0.5))
@@ -1332,7 +1340,7 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
         stationmap = np.zeros((xlist.shape[0], ylist.shape[0]),
                               dtype='|S8')
 
-        station_location={} # a dict to store all MT stations (lon lat)
+        station_location = {}  # a dict to store all MT stations (lon lat)
         # put the information into the zeroed arrays
         for ii in range(nx):
             mt1 = self.mt_list[ii]
@@ -1349,10 +1357,26 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
                 tp = mt1.get_Tipper()
 
                 if pt.phimin[0] is not None:
-                    phiminmap[xyloc[ii, 0], xyloc[ii, 1]] = pt.phimin[0][self.jj]
-                    phimaxmap[xyloc[ii, 0], xyloc[ii, 1]] = pt.phimax[0][self.jj]
-                    azimuthmap[xyloc[ii, 0], xyloc[ii, 1]] = pt.azimuth[0][self.jj]
-                    ellipmap[xyloc[ii, 0], xyloc[ii, 1]] = pt.ellipticity[0][self.jj]
+                    phiminmap[
+                        xyloc[
+                            ii, 0], xyloc[
+                            ii, 1]] = pt.phimin[0][
+                        self.jj]
+                    phimaxmap[
+                        xyloc[
+                            ii, 0], xyloc[
+                            ii, 1]] = pt.phimax[0][
+                        self.jj]
+                    azimuthmap[
+                        xyloc[
+                            ii, 0], xyloc[
+                            ii, 1]] = pt.azimuth[0][
+                        self.jj]
+                    ellipmap[
+                        xyloc[
+                            ii, 0], xyloc[
+                            ii, 1]] = pt.ellipticity[0][
+                        self.jj]
                     betamap[xyloc[ii, 0], xyloc[ii, 1]] = pt.beta[0][self.jj]
 
                 if tp.mag_real is not None:
@@ -1366,10 +1390,17 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
                 except AttributeError:
                     stationmap[xyloc[ii, 0], xyloc[ii, 1]] = mt1.station
 
-                station_location[stationmap[xyloc[ii, 0], xyloc[ii, 1]] ]= (mt1.lon, mt1.lat)
+                station_location[
+                    stationmap[
+                        xyloc[
+                            ii, 0], xyloc[
+                            ii, 1]]] = (
+                    mt1.lon, mt1.lat)
 
             except IndexError:
-                logger.warn('Did not find {0:.5g} Hz for station {1}'.format(self.plot_freq, mt1.station))
+                logger.warn(
+                    'Did not find {0:.5g} Hz for station {1}'.format(
+                        self.plot_freq, mt1.station))
 
         # ----------------------write files------------------------------------
         svfn = 'PhaseTensorTipper_Params_{0:.6g}Hz'.format(self.plot_freq)
@@ -1437,14 +1468,14 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
         # statnfid.close()
 
         # --> write the table and csv file
-        logger.debug( station_location )
+        logger.debug(station_location)
 
         tablefid = file(os.path.join(svpath, svfn + '.table'), 'w')
         csvfid = file(os.path.join(svpath, svfn + '.csv'), 'w')
 
         # write header
-        header=['station', 'lon', 'lat', 'phi_min', 'phi_max', 'skew', 'ellipticity',
-                   'azimuth', 'tip_mag_re', 'tip_ang_re', 'tip_mag_im','tip_ang_im']
+        header = ['station', 'lon', 'lat', 'phi_min', 'phi_max', 'skew', 'ellipticity',
+                  'azimuth', 'tip_mag_re', 'tip_ang_re', 'tip_mag_im', 'tip_ang_im']
         for ss in header:
             tablefid.write('{0:^12}'.format(ss))
         tablefid.write('\n')
@@ -1454,31 +1485,60 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
 
         for ii in range(nx):
             xx, yy = xyloc[ii, 0], xyloc[ii, 1]
-            if stationmap[xx, yy] is None or len(stationmap[xx, yy])<1:
+            if stationmap[xx, yy] is None or len(stationmap[xx, yy]) < 1:
                 pass   # station not having the freq
-            else: # only those stations with the given freq
+            else:  # only those stations with the given freq
 
-                station='{0:^12}'.format(stationmap[xx, yy])
-                stationx=mtpl.make_value_str(station_location[stationmap[xx, yy]][0], spacing='{0:^12}')
-                stationy=mtpl.make_value_str(station_location[stationmap[xx, yy]][1], spacing='{0:^12}')
-                phimin=mtpl.make_value_str(phiminmap[xx, yy],spacing='{0:^12}')
-                phimax=mtpl.make_value_str(phimaxmap[xx, yy],spacing='{0:^12}')
-                beta_skew=mtpl.make_value_str(betamap[xx, yy],spacing='{0:^12}')
-                ellip=mtpl.make_value_str(ellipmap[xx, yy], spacing='{0:^12}')
-                azimuth=mtpl.make_value_str(azimuthmap[xx, yy],spacing='{0:^12}')
-                tiprmag=mtpl.make_value_str(trmap[xx, yy], spacing='{0:^12}')
-                tiprang=mtpl.make_value_str(trazmap[xx, yy],spacing='{0:^12}')
-                tipimag=mtpl.make_value_str(timap[xx, yy], spacing='{0:^12}')
-                tipiang=mtpl.make_value_str(tiazmap[xx, yy],spacing='{0:^12}')
+                station = '{0:^12}'.format(stationmap[xx, yy])
+                stationx = mtpl.make_value_str(
+                    station_location[
+                        stationmap[
+                            xx,
+                            yy]][0],
+                    spacing='{0:^12}')
+                stationy = mtpl.make_value_str(
+                    station_location[
+                        stationmap[
+                            xx,
+                            yy]][1],
+                    spacing='{0:^12}')
+                phimin = mtpl.make_value_str(
+                    phiminmap[xx, yy], spacing='{0:^12}')
+                phimax = mtpl.make_value_str(
+                    phimaxmap[xx, yy], spacing='{0:^12}')
+                beta_skew = mtpl.make_value_str(
+                    betamap[xx, yy], spacing='{0:^12}')
+                ellip = mtpl.make_value_str(
+                    ellipmap[xx, yy], spacing='{0:^12}')
+                azimuth = mtpl.make_value_str(
+                    azimuthmap[xx, yy], spacing='{0:^12}')
+                tiprmag = mtpl.make_value_str(trmap[xx, yy], spacing='{0:^12}')
+                tiprang = mtpl.make_value_str(
+                    trazmap[xx, yy], spacing='{0:^12}')
+                tipimag = mtpl.make_value_str(timap[xx, yy], spacing='{0:^12}')
+                tipiang = mtpl.make_value_str(
+                    tiazmap[xx, yy], spacing='{0:^12}')
 
-                #csv file
-                row=[station, stationx,stationy,phimin,phimax,beta_skew,ellip, azimuth,tiprmag,tiprang, tipimag,tipiang]
+                # csv file
+                row = [
+                    station,
+                    stationx,
+                    stationy,
+                    phimin,
+                    phimax,
+                    beta_skew,
+                    ellip,
+                    azimuth,
+                    tiprmag,
+                    tiprang,
+                    tipimag,
+                    tipiang]
                 csvfid.write(','.join(row))
                 csvfid.write('\n')
 
                 # .table file
                 tablefid.write(station)
-                tablefid.write(stationx) # write long, lat
+                tablefid.write(stationx)  # write long, lat
                 tablefid.write(stationy)
                 tablefid.write(phimin)
                 tablefid.write(phimax)

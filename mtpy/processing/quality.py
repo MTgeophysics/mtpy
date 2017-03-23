@@ -18,11 +18,12 @@ Output can be visualised with the help of mtpy/imaging/plotquality.py
 
 import numpy as np
 import re
-import sys, os
+import sys
+import os
 import os.path as op
 
 import copy
 
 
-import  mtpy.utils.exceptions as MTex
+import mtpy.utils.exceptions as MTex
 #=================================================================

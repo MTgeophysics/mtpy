@@ -25,7 +25,8 @@ _eccentricitySquared = 3
 
 _ellipsoid = [
     #  id, Ellipsoid name, Equatorial Radius, square of eccentricity
-    # first once is a placeholder only, To allow array indices to match id numbers
+    # first once is a placeholder only, To allow array indices to match id
+    # numbers
     [-1, "Placeholder", 0, 0],
     [1, "Airy", 6377563, 0.00667054],
     [2, "Australian National", 6378160, 0.006694542],
@@ -82,7 +83,8 @@ def LLtoUTM(ReferenceEllipsoid, Lat, Long):
     k0 = 0.9996
 
     # Make sure the longitude is between -180.00 .. 179.9
-    LongTemp = (Long + 180) - int((Long + 180) / 360) * 360 - 180  # -180.00 .. 179.9
+    LongTemp = (Long + 180) - int((Long + 180) / 360) * \
+        360 - 180  # -180.00 .. 179.9
 
     LatRad = Lat * _deg2rad
     LongRad = LongTemp * _deg2rad
@@ -103,7 +105,8 @@ def LLtoUTM(ReferenceEllipsoid, Lat, Long):
         elif LongTemp >= 33.0 and LongTemp < 42.0:
             ZoneNumber = 37
 
-    LongOrigin = (ZoneNumber - 1) * 6 - 180 + 3  # +3 puts origin in middle of zone
+    # +3 puts origin in middle of zone
+    LongOrigin = (ZoneNumber - 1) * 6 - 180 + 3
     LongOriginRad = LongOrigin * _deg2rad
 
     # compute the UTM Zone from the latitude and longitude
@@ -122,7 +125,8 @@ def LLtoUTM(ReferenceEllipsoid, Lat, Long):
              - (3 * eccSquared / 8
                 + 3 * eccSquared * eccSquared / 32
                 + 45 * eccSquared * eccSquared * eccSquared / 1024) * sin(2 * LatRad)
-             + (15 * eccSquared * eccSquared / 256 + 45 * eccSquared * eccSquared * eccSquared / 1024) * sin(4 * LatRad)
+             + (15 * eccSquared * eccSquared / 256 + 45 * eccSquared *
+                eccSquared * eccSquared / 1024) * sin(4 * LatRad)
              - (35 * eccSquared * eccSquared * eccSquared / 3072) * sin(6 * LatRad))
 
     UTMEasting = (k0 * N * (A + (1 - T + C) * A * A * A / 6
@@ -137,7 +141,8 @@ def LLtoUTM(ReferenceEllipsoid, Lat, Long):
                                                    - 330 * eccPrimeSquared) * A * A * A * A * A * A / 720)))
 
     if Lat < 0:
-        UTMNorthing = UTMNorthing + 10000000.0;  # 10000000 meter offset for southern hemisphere
+        # 10000000 meter offset for southern hemisphere
+        UTMNorthing = UTMNorthing + 10000000.0
     return (UTMZone, UTMEasting, UTMNorthing)
 
 
@@ -223,7 +228,8 @@ def UTMtoLL(ReferenceEllipsoid, northing, easting, zone):
         NorthernHemisphere = 0  # point is in southern hemisphere
         y -= 10000000.0  # remove 10,000,000 meter offset used for southern hemisphere
 
-    LongOrigin = (ZoneNumber - 1) * 6 - 180 + 3  # +3 puts origin in middle of zone
+    # +3 puts origin in middle of zone
+    LongOrigin = (ZoneNumber - 1) * 6 - 180 + 3
 
     eccPrimeSquared = (eccSquared) / (1 - eccSquared)
 
@@ -234,35 +240,37 @@ def UTMtoLL(ReferenceEllipsoid, northing, easting, zone):
     phi1Rad = (mu + (3 * e1 / 2 - 27 * e1 * e1 * e1 / 32) * sin(2 * mu)
                + (21 * e1 * e1 / 16 - 55 * e1 * e1 * e1 * e1 / 32) * sin(4 * mu)
                + (151 * e1 * e1 * e1 / 96) * sin(6 * mu))
-    phi1 = phi1Rad * _rad2deg;
+    phi1 = phi1Rad * _rad2deg
 
     N1 = a / sqrt(1 - eccSquared * sin(phi1Rad) * sin(phi1Rad))
     T1 = tan(phi1Rad) * tan(phi1Rad)
     C1 = eccPrimeSquared * cos(phi1Rad) * cos(phi1Rad)
-    R1 = a * (1 - eccSquared) / pow(1 - eccSquared * sin(phi1Rad) * sin(phi1Rad), 1.5)
+    R1 = a * (1 - eccSquared) / pow(1 - eccSquared *
+                                    sin(phi1Rad) * sin(phi1Rad), 1.5)
     D = x / (N1 * k0)
 
     Lat = phi1Rad - (N1 * tan(phi1Rad) / R1) * (
-        D * D / 2 - (5 + 3 * T1 + 10 * C1 - 4 * C1 * C1 - 9 * eccPrimeSquared) * D * D * D * D / 24 \
+        D * D / 2 - (5 + 3 * T1 + 10 * C1 - 4 * C1 * C1 -
+                     9 * eccPrimeSquared) * D * D * D * D / 24
         + (61 + 90 * T1 + 298 * C1 + 45 * T1 * T1 - 252 * eccPrimeSquared - 3 * C1 * C1) * D * D * D * D * D * D / 720)
     Lat = Lat * _rad2deg
 
     Long = (D - (1 + 2 * T1 + C1) * D * D * D / 6 + (
         5 - 2 * C1 + 28 * T1 - 3 * C1 * C1 + 8 * eccPrimeSquared + 24 * T1 * T1)
-            * D * D * D * D * D / 120) / cos(phi1Rad)
+        * D * D * D * D * D / 120) / cos(phi1Rad)
     Long = LongOrigin + Long * _rad2deg
     return (Lat, Long)
 
 # =============================================================================
-epsg_dict = {28350:['+proj=utm +zone=50 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs',50],
-             28351:['+proj=utm +zone=51 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs',51],
-             28352:['+proj=utm +zone=52 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs',52],
-             28353:['+proj=utm +zone=53 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs',53],
-             28354:['+proj=utm +zone=54 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs',54],
-             28355:['+proj=utm +zone=55 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs',55],
-             28356:['+proj=utm +zone=56 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs',56],
-             3112:['+proj=lcc +lat_1=-18 +lat_2=-36 +lat_0=0 +lon_0=134 +x_0=0 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs',0],
-             4326:['+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs',0]}
+epsg_dict = {28350: ['+proj=utm +zone=50 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs', 50],
+             28351: ['+proj=utm +zone=51 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs', 51],
+             28352: ['+proj=utm +zone=52 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs', 52],
+             28353: ['+proj=utm +zone=53 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs', 53],
+             28354: ['+proj=utm +zone=54 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs', 54],
+             28355: ['+proj=utm +zone=55 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs', 55],
+             28356: ['+proj=utm +zone=56 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs', 56],
+             3112: ['+proj=lcc +lat_1=-18 +lat_2=-36 +lat_0=0 +lon_0=134 +x_0=0 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs', 0],
+             4326: ['+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs', 0]}
 
 
 ##############################################

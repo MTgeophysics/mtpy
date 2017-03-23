@@ -18,7 +18,7 @@ from mpl_toolkits.basemap import Basemap
 # If use anaconda python, you can install basemap packages
 #     conda install basemap
 #     conda install -c conda-forge basemap-data-hires
-#     OR 
+#     OR
 #     sudo pip install https://github.com/matplotlib/basemap/archive/master.zip
 
 
@@ -26,7 +26,8 @@ import mtpy.core.edi as EDI
 import mtpy.utils.filehandling as MTfh
 
 from mtpy.utils.mtpylog import MtPyLog
-# get a logger object for this module, using the utility class MtPyLog to config the logger
+# get a logger object for this module, using the utility class MtPyLog to
+# config the logger
 logger = MtPyLog().get_mtpy_logger(__name__)
 
 
@@ -35,7 +36,12 @@ def makemap(edilist, mapstretchfactor, symbolsize, labelsize, showlabel):
     this_fun_name = inspect.getframeinfo(inspect.currentframe())[2]
     logger.debug("starting %s", this_fun_name)
     logger.debug("mapstretchfactor, symbolsize, labelsize, showlabel")
-    logger.debug("%s %s %s %s", mapstretchfactor, symbolsize, labelsize, showlabel)
+    logger.debug(
+        "%s %s %s %s",
+        mapstretchfactor,
+        symbolsize,
+        labelsize,
+        showlabel)
 
     lats = []
     lons = []
@@ -69,7 +75,13 @@ def makemap(edilist, mapstretchfactor, symbolsize, labelsize, showlabel):
     plt.close('all')
 
     fig = plt.figure()  # figsize=(5.7,4.3))
-    plt.subplots_adjust(left=0.2, right=0.9, top=0.90, bottom=0.1, wspace=0.15, hspace=0.05)
+    plt.subplots_adjust(
+        left=0.2,
+        right=0.9,
+        top=0.90,
+        bottom=0.1,
+        wspace=0.15,
+        hspace=0.05)
     ax = plt.subplot(111)
 
     stretch = float(mapstretchfactor)
@@ -88,15 +100,15 @@ def makemap(edilist, mapstretchfactor, symbolsize, labelsize, showlabel):
     lonlat_stretch = total_lonrange / total_latrange
     if int(lonlat_stretch) > 2:
         # significantly more long than lat
-        #could be 0 factor = int(int(lonlat_stretch) / 2.)
-        factor = lonlat_stretch/2.
+        # could be 0 factor = int(int(lonlat_stretch) / 2.)
+        factor = lonlat_stretch / 2.
         logger.debug("factor=%s", factor)
         latnum = int(maximumlabels / factor) + 1
         lonnum = maximumlabels
     elif int(lonlat_stretch) < 0.5:
         # significantly more long than lat
         #factor = int(int(1. / lonlat_stretch) / 2.)
-        factor = (1./ lonlat_stretch) / 2.
+        factor = (1. / lonlat_stretch) / 2.
         logger.debug("factor=%s", factor)
         lonnum = int(maximumlabels / factor) + 1
         latnum = maximumlabels
@@ -125,12 +137,14 @@ def makemap(edilist, mapstretchfactor, symbolsize, labelsize, showlabel):
     m.drawmapboundary(fill_color='aqua', ax=ax)
 
     m.drawparallels(
-        [round(i, 3) for i in np.linspace(total_latmin, total_latmax, latnum + 1, False)][1:],
+        [round(i, 3) for i in np.linspace(
+            total_latmin, total_latmax, latnum + 1, False)][1:],
         labels=[1, 0, 0, 0],
         fmt='%.1f'
     )
     m.drawmeridians(
-        [round(i, 3) for i in np.linspace(total_lonmin, total_lonmax, lonnum + 1, False)][1:],
+        [round(i, 3) for i in np.linspace(
+            total_lonmin, total_lonmax, lonnum + 1, False)][1:],
         labels=[0, 0, 0, 1],
         fmt='%.1f'
     )
@@ -167,7 +181,9 @@ def makemap(edilist, mapstretchfactor, symbolsize, labelsize, showlabel):
 
     return os.path.abspath(f1), os.path.abspath(f2)
 
-#################################################################################
+##########################################################################
+
+
 def main():
     if len(sys.argv) < 2:
         logger.debug( """\n\tusage: \n
@@ -200,49 +216,54 @@ def main():
     try:
         # if not op.isdir(edifolder):
         #     raise
-        logger.debug( edifolder)
+        logger.debug(edifolder)
         edifiles = os.listdir(edifolder)
-        logger.debug( edifiles )
+        logger.debug(edifiles)
         edilist = fnmatch.filter(os.listdir(edifolder), '*.[Ee][Dd][Ii]')
-        edilist = [os.path.abspath(os.path.join(edifolder, i)) for i in edilist]
+        edilist = [
+            os.path.abspath(
+                os.path.join(
+                    edifolder,
+                    i)) for i in edilist]
         if len(edilist) == 0:
             raise
     except:
-        logger.debug( 'No EDI files in folder %s',  edifolder)
+        logger.debug('No EDI files in folder %s', edifolder)
         return
 
     try:
         symbolsize = int(float(sys.argv[2]))
     except:
-        logger.debug( 'cannot read symbolsize value - using default')
+        logger.debug('cannot read symbolsize value - using default')
         symbolsize = 24
 
     try:
         mapstretchfactor = float(sys.argv[3])
     except:
-        logger.debug( 'cannot read mapstretchfactor value - using default')
+        logger.debug('cannot read mapstretchfactor value - using default')
         mapstretchfactor = 1
 
     try:
         labelsize = int(float(sys.argv[4]))
     except:
-        logger.debug( 'cannot read labelsize value - using default')
+        logger.debug('cannot read labelsize value - using default')
         labelsize = 14
 
     showlabel = sys.argv[5]
     if showlabel.lower() == 'true':
         showlabel = True
     else:
-        showlabel=False
+        showlabel = False
 
-    f1, f2 = makemap(edilist, mapstretchfactor, symbolsize, labelsize, showlabel)
+    f1, f2 = makemap(edilist, mapstretchfactor,
+                     symbolsize, labelsize, showlabel)
 
-    logger.info('wrote map files\n\t %s \n and\n\t %s\n', f1,f2)
+    logger.info('wrote map files\n\t %s \n and\n\t %s\n', f1, f2)
 
-##########################################################################################
+##########################################################################
 # Usage example:
 # python mtpy/imaging/plot_stationmap_from_edis.py tests/data/edifiles/ 12 2.0 12 true
 # python mtpy/imaging/plot_stationmap_from_edis.py  /e/Datasets/MT_Datasets/GA_UA_edited_10s-10000s 12 2.0 12 true
-#---------------------------------------------------------------------------------
+#-------------------------------------------------------------------------
 if __name__ == '__main__':
     main()

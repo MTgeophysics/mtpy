@@ -3,19 +3,19 @@
 """
 mtpy/processing/calibration.py
 
-This modules contains functions for the calibration of raw time series. 
+This modules contains functions for the calibration of raw time series.
 
-The various functions deal with the calibration of data from 
-fluxgates, coil, dipoles,... The calibration depends on  the instrument 
-as well as on the respective data logger. 
+The various functions deal with the calibration of data from
+fluxgates, coil, dipoles,... The calibration depends on  the instrument
+as well as on the respective data logger.
 
 All information needed for the calibration must be provided by a configuration
-file. This has to contain station names as section headers. Each section 
-must contain a set of mandatory keywords. The keyword list is defined in the 
+file. This has to contain station names as section headers. Each section
+must contain a set of mandatory keywords. The keyword list is defined in the
 function mtpy.processing.filehandling.read_survey_configfile()
 
 For the calibration of one or more station data, use the appropriate
-scripts from the mtpy.utils subpackage. 
+scripts from the mtpy.utils subpackage.
 
 @UofA, 2013 (LK)
 
@@ -39,17 +39,21 @@ import mtpy.utils.exceptions as MTex
 list_of_channels = ['ex', 'ey', 'bx', 'by', 'bz']
 
 list_of_bfield_loggers = MTcf.dict_of_allowed_values_bfield['B_logger_type']
-list_of_bfield_instruments = MTcf.dict_of_allowed_values_bfield['B_instrument_type']
+list_of_bfield_instruments = MTcf.dict_of_allowed_values_bfield[
+    'B_instrument_type']
 list_of_efield_loggers = MTcf.dict_of_allowed_values_efield['E_logger_type']
-list_of_efield_instruments = MTcf.dict_of_allowed_values_efield['E_instrument_type']
+list_of_efield_instruments = MTcf.dict_of_allowed_values_efield[
+    'E_instrument_type']
 
 list_of_loggers = list(set(list_of_bfield_loggers + list_of_efield_loggers))
-list_of_instruments = list(set(list_of_bfield_instruments + list_of_efield_instruments))
+list_of_instruments = list(
+    set(list_of_bfield_instruments + list_of_efield_instruments))
 
 # section for amplification and scaling factors:
 
 
-dict_of_calibration_factors_volt2nanotesla = {'fluxgate': 70000 / 0.1, 'coil': 1.}
+dict_of_calibration_factors_volt2nanotesla = {
+    'fluxgate': 70000 / 0.1, 'coil': 1.}
 
 # ...dict_of_instrument_amplification = {'electrodes' :10. , 'fluxgate' = 1., 'coil': 1.}
 # dict_of_channel_amplification = {'ex':1, 'ey':1.,'bx':1. ,'by':1., 'bz': 0.5}
@@ -69,11 +73,11 @@ list_of_elogger_gain_factors = [11., 1]
 def calibrate(raw_data, field, instrument, logger, dipole_length=1.,
               calibration_factor=1., amplification=1., gain=1., offset=0.):
     """
-    Convert a given time series from raw data (voltage) 
-    into field strength amplitude values. 
+    Convert a given time series from raw data (voltage)
+    into field strength amplitude values.
     The dipole length factor must be set to 1 for the calibration of B-field data.
 
-    The output is a time series of field strength values in basic units: 
+    The output is a time series of field strength values in basic units:
     Tesla for the B-field and V/m for the E-field.
 
     input:
@@ -99,7 +103,7 @@ def calibrate(raw_data, field, instrument, logger, dipole_length=1.,
     _data_instrument_consistency_check(raw_data, field, dipole_length,
                                        instrument, amplification, logger, gain)
 
-    # converting counts into units, including  
+    # converting counts into units, including
     # - transistion from voltage to field
     # - correcting for instrument amplification
     # - correcting for logger amplification (gain)
@@ -117,7 +121,7 @@ def EDL_e_field(data, edl_gain, dipole, instrument_amplification):
 
     input:
     - time series of field values in microvolt (standard EDL output)
-    - gain factor set at the EDL 
+    - gain factor set at the EDL
     - dipole length in meters
     - instrument amplification
 
@@ -126,7 +130,8 @@ def EDL_e_field(data, edl_gain, dipole, instrument_amplification):
 
     """
 
-    # Since the conversion is straight from volt into V/m, no further calibration factor is needed
+    # Since the conversion is straight from volt into V/m, no further
+    # calibration factor is needed
     e_field = calibrate(data, 'e', 'electrodes', 'edl', dipole_length=dipole,
                         calibration_factor=1.,
                         amplification=instrument_amplification,
@@ -143,7 +148,7 @@ def EDL_b_field(data, edl_gain, instrument, instrument_amplification):
 
     input:
     - time series of field values in microvolt (standard EDL output)
-    - gain factor set at the EDL 
+    - gain factor set at the EDL
     - type of instrument
     - instrument amplification
 
@@ -173,7 +178,7 @@ def elogger_e_field(data, elogger_gain, dipole, instrument_amplification):
 
     input:
     - time series of field values in microvolt (standard EDL output)
-    - gain factor set at the elogger 
+    - gain factor set at the elogger
     - dipole length in meters
     - instrument amplification
 
@@ -181,7 +186,8 @@ def elogger_e_field(data, elogger_gain, dipole, instrument_amplification):
     - time series of E field values in microvolt/meter
 
     """
-    # Since the conversion is straight from volt into V/m, no further calibration factor is needed
+    # Since the conversion is straight from volt into V/m, no further
+    # calibration factor is needed
     e_field = calibrate(data, 'e', 'electrodes', 'elogger', dipole_length=dipole,
                         calibration_factor=1.,
                         amplification=instrument_amplification,
@@ -200,7 +206,7 @@ def calibrate_file(filename, outdir, instrument, instrument_amplification,
     If the channel is not given explicitly, it's taken from the filename suffix.
 
     E field values will be present in microvolt/meter
-    B fields are given in nanotesla 
+    B fields are given in nanotesla
 
     input:
     - data file name
@@ -210,7 +216,7 @@ def calibrate_file(filename, outdir, instrument, instrument_amplification,
     - data logger type
     - logger gain factor
     - station name
-    - channel  
+    - channel
 
     """
     time_axis = None
@@ -240,7 +246,8 @@ def calibrate_file(filename, outdir, instrument, instrument_amplification,
 
     if np.size(data_in.shape) > 1:
         if data_in.shape[1] > 1:
-            # at least 2 columns - assume, first is time, second data - ignore, if there are more
+            # at least 2 columns - assume, first is time, second data - ignore,
+            # if there are more
             time_axis = data_in[:, 0]
             data_in = data_in[:, 1]
 
@@ -251,7 +258,7 @@ def calibrate_file(filename, outdir, instrument, instrument_amplification,
             raise MTex.MTpyError_inputarguments('output directory is not '
                                                 'existing and cannot be generated')
 
-    if channel == None:
+    if channel is None:
         channel = filename[-2:].lower()
 
     if not channel in list_of_channels:
@@ -298,7 +305,7 @@ def calibrate_file(filename, outdir, instrument, instrument_amplification,
 
             # instrument_amplification = dict_of_efield_amplification[logger]
 
-            if type(gain) == str:
+            if isinstance(gain, str):
                 EDLgain = dict_of_EDL_gain_factors[gain]
             else:
                 EDLgain = float(gain)
@@ -325,20 +332,20 @@ def calibrate_file(filename, outdir, instrument, instrument_amplification,
 
         # calibration_factor = dict_of_calibration_factors_volt2nanotesla[instrument]
 
-
         if logger == 'edl':
 
             if not type(gain) in [float, int, str]:
                 raise MTex.MTpyError_inputarguments('invalid gain: '
                                                     '{0}'.format(gain))
 
-            if type(gain) == str:
+            if isinstance(gain, str):
                 EDLgain = dict_of_EDL_gain_factors[gain]
             else:
                 EDLgain = float(gain)
 
             if instrument == 'fluxgate' and channel == 'bz':
-                instrument_amplification *= dict_of_bz_instrument_amplification[logger]
+                instrument_amplification *= dict_of_bz_instrument_amplification[
+                    logger]
 
             outfile_data = EDL_b_field(data_in, EDLgain, instrument,
                                        instrument_amplification)
@@ -361,7 +368,7 @@ def calibrate_file(filename, outdir, instrument, instrument_amplification,
         newfirstline = '# {0} {1} {2}'.format(stationname, channel,
                                               additional_header_info)
 
-    if time_axis != None:
+    if time_axis is not None:
         data_out[:, 1] = outfile_data
     else:
         data_out = outfile_data
@@ -394,7 +401,8 @@ def _data_instrument_consistency_check(data, field, dipole_length, instrument,
     #        raise MTpyError_inputarguments( 'Dipole length must be positive' )
 
     if float(amplification) <= 0:
-        raise MTex.MTpyError_inputarguments('Amplification factor must be positive')
+        raise MTex.MTpyError_inputarguments(
+            'Amplification factor must be positive')
 
     if float(gain) <= 0:
         raise MTex.MTpyError_inputarguments('Instrument gain must be positive')
@@ -436,7 +444,8 @@ def convertfiles(dirpath, folder, infodict, fmt='%.6g'):
     for dayfolder in os.listdir(os.path.join(dirpath, folder)):
         if dayfolder.find('.') == -1:
             clines.append('---' + dayfolder + '---' + '\n')
-            for filename in os.listdir(os.path.join(dirpath, folder, dayfolder)):
+            for filename in os.listdir(
+                    os.path.join(dirpath, folder, dayfolder)):
                 if filename.find('.') >= 0:
                     if fnmatch.fnmatch(filename, '*.MTex'):
                         exfid = file(os.path.join(dirpath, folder, dayfolder,
@@ -455,7 +464,11 @@ def convertfiles(dirpath, folder, infodict, fmt='%.6g'):
                                               infodict['egain'],
                                               infodict['ex'])
                             exfid.close()
-                            exconvlst = [fmt % exconv[ii] + '\n' for ii in range(len(exconv))]
+                            exconvlst = [
+                                fmt %
+                                exconv[ii] +
+                                '\n' for ii in range(
+                                    len(exconv))]
                             exfidn = file(os.path.join(dirpath, folder, dayfolder,
                                                        filename), 'w')
                             exfidn.writelines(exconvlst)
@@ -467,7 +480,7 @@ def convertfiles(dirpath, folder, infodict, fmt='%.6g'):
                         eylines = eyfid.readlines()
                         if len(eylines) == 0:
                             #                            os.remove(os.path.join(dirpath,folder,dayfolder,
-                            #                                                   filename))
+                            # filename))
                             clines.append(filename + delemptyfile)
                         elif eylines[0].find('.') >= 0:
                             eyfid.close()
@@ -478,7 +491,11 @@ def convertfiles(dirpath, folder, infodict, fmt='%.6g'):
                                               infodict['egain'],
                                               infodict['ey'])
                             eyfid.close()
-                            eyconvlst = [fmt % eyconv[ii] + '\n' for ii in range(len(eyconv))]
+                            eyconvlst = [
+                                fmt %
+                                eyconv[ii] +
+                                '\n' for ii in range(
+                                    len(eyconv))]
                             eyfidn = file(os.path.join(dirpath, folder, dayfolder,
                                                        filename), 'w')
                             eyfidn.writelines(eyconvlst)
@@ -489,7 +506,8 @@ def convertfiles(dirpath, folder, infodict, fmt='%.6g'):
             if infodict['magtype'] == 'lp':
                 magoristr = infodict['magori'].replace('"', '')
                 magorilst = magoristr.split(',')
-                for filename in os.listdir(os.path.join(dirpath, folder, dayfolder)):
+                for filename in os.listdir(
+                        os.path.join(dirpath, folder, dayfolder)):
                     if filename.find('.') >= 0:
                         if fnmatch.fnmatch(filename, '*.' + magorilst[0]):
                             bxfid = file(os.path.join(dirpath, folder, dayfolder,
@@ -497,15 +515,20 @@ def convertfiles(dirpath, folder, infodict, fmt='%.6g'):
                             bxlines = bxfid.readlines()
                             if len(bxlines) == 0:
                                 #                                os.remove(os.path.join(dirpath,folder,dayfolder,
-                                #                                                       filename))
+                                # filename))
                                 clines.append(filename + delemptyfile)
                             elif bxlines[0].find('.') >= 0:
                                 bxfid.close()
                                 clines.append(filename + aconvstr)
                             else:
-                                bxconv = convertlpB(bxlines, infodict['dlgain'])
+                                bxconv = convertlpB(
+                                    bxlines, infodict['dlgain'])
                                 bxfid.close()
-                                bxconvlst = [fmt % bxconv[ii] + '\n' for ii in range(len(bxconv))]
+                                bxconvlst = [
+                                    fmt %
+                                    bxconv[ii] +
+                                    '\n' for ii in range(
+                                        len(bxconv))]
                                 bxfidn = file(os.path.join(dirpath, folder,
                                                            dayfolder, filename), 'w')
                                 bxfidn.writelines(bxconvlst)
@@ -518,7 +541,7 @@ def convertfiles(dirpath, folder, infodict, fmt='%.6g'):
 
                             if len(bylines) == 0:
                                 #                                os.remove(os.path.join(dirpath,folder,dayfolder,
-                                #                                                       filename))
+                                # filename))
                                 clines.append(filename + delemptyfile)
                             elif bylines[0].find('.') >= 0:
                                 byfid.close()
@@ -528,7 +551,11 @@ def convertfiles(dirpath, folder, infodict, fmt='%.6g'):
                                 byconv = convertlpB(bylines,
                                                     infodict['dlgain'])
                                 byfid.close()
-                                byconvlst = [fmt % byconv[ii] + '\n' for ii in range(len(byconv))]
+                                byconvlst = [
+                                    fmt %
+                                    byconv[ii] +
+                                    '\n' for ii in range(
+                                        len(byconv))]
                                 byfidn = file(os.path.join(dirpath, folder,
                                                            dayfolder, filename), 'w')
                                 byfidn.writelines(byconvlst)
@@ -541,7 +568,7 @@ def convertfiles(dirpath, folder, infodict, fmt='%.6g'):
 
                             if len(bzlines) == 0:
                                 #                                os.remove(os.path.join(dirpath,folder,dayfolder,
-                                #                                                       filename))
+                                # filename))
                                 clines.append(filename + delemptyfile)
                             elif bzlines[0].find('.') >= 0:
                                 bzfid.close()
@@ -552,7 +579,11 @@ def convertfiles(dirpath, folder, infodict, fmt='%.6g'):
                                                     infodict['dlgain'],
                                                     zadj=infodict['lpbzcor'])
                                 bzfid.close()
-                                bzconvlst = [fmt % bzconv[ii] + '\n' for ii in range(len(bzconv))]
+                                bzconvlst = [
+                                    fmt %
+                                    bzconv[ii] +
+                                    '\n' for ii in range(
+                                        len(bzconv))]
                                 bzfidn = file(os.path.join(dirpath, folder,
                                                            dayfolder, filename), 'w')
                                 bzfidn.writelines(bzconvlst)
@@ -570,16 +601,17 @@ def convertlpB(bfield, dlgain=1, zadj=1):
     Convert the magnetic field from counts to units of microV/nT.
     bfield is a list of numbers. dlain is amount of gain applied
     by data logger(verylow=2.5,low=1, high=.1)
-    
+
     Inputs:
         bfield = 1D array of long period data
         dlgain = data logger gain (very low= 2.5,low = 1, high = .1)
         zadj = Bz adjustment if using corrected Bartingtons
-    
+
     Outputs:
         bfieldc = scaled bfield 1D array
     """
-    bfieldc = np.array(bfield, dtype='float') / 10.E7 * 70000. * float(dlgain) * float(zadj)
+    bfieldc = np.array(bfield, dtype='float') / 10.E7 * \
+        70000. * float(dlgain) * float(zadj)
 
     return bfieldc
 
@@ -596,11 +628,11 @@ def convertE(efield, dlgain, egain, dlength):
         dlgain = data logger gain (very low= 2.5,low = 1, high = .1)
         egain = gain from interface box
         dlength = length of dipole in (m)
-    
+
     Outputs:
         efieldc = scaled electric field 1D array
     """
-    efieldc = np.array(efield, dtype='float') * float(dlgain) / (float(dlength) * \
+    efieldc = np.array(efield, dtype='float') * float(dlgain) / (float(dlength) *
                                                                  float(egain))
 
     return efieldc
@@ -610,7 +642,7 @@ def convertCounts2Units(filenames, eyn='n', lpyn='n', egain=1.0, dlgain=1.0,
                         exlen=100., eylen=100., magtype='lp', zadj=2):
     """
     convertCounts2Units(filenames,eyn='n',lpyn='n',egain=1.0,dlgain=1.0,
-    exlen=100.,eylen=100., magtype='lp',zadj=2) 
+    exlen=100.,eylen=100., magtype='lp',zadj=2)
     will convert a set of files given by filenames with parameters defined:
 
     filenames,
@@ -637,14 +669,16 @@ def convertCounts2Units(filenames, eyn='n', lpyn='n', egain=1.0, dlgain=1.0,
                     else:
                         exconv = convertE(exlines, dlgain, egain, exlen)
                         exfid.close()
-                        exconvlst = [str(exconv[ii]) + '\n' for ii in range(len(exconv))]
+                        exconvlst = [str(exconv[ii]) +
+                                     '\n' for ii in range(len(exconv))]
                         exfidn = file(filenames[ii], 'w')
                         exfidn.writelines(exconvlst)
                         exfidn.close()
                 else:
                     exconv = convertE(exlines, dlgain, egain, exlen)
                     exfid.close()
-                    exconvlst = [str(exconv[ii]) + '\n' for ii in range(len(exconv))]
+                    exconvlst = [str(exconv[ii]) +
+                                 '\n' for ii in range(len(exconv))]
                     exfidn = file(filenames[ii], 'w')
                     exfidn.writelines(exconvlst)
                     exfidn.close()
@@ -659,14 +693,16 @@ def convertCounts2Units(filenames, eyn='n', lpyn='n', egain=1.0, dlgain=1.0,
                     else:
                         eyconv = convertE(eylines, dlgain, egain, eylen)
                         eyfid.close()
-                        eyconvlst = [str(eyconv[ii]) + '\n' for ii in range(len(eyconv))]
+                        eyconvlst = [str(eyconv[ii]) +
+                                     '\n' for ii in range(len(eyconv))]
                         eyfidn = file(filenames[ii], 'w')
                         eyfidn.writelines(eyconvlst)
                         eyfidn.close()
                 else:
                     eyconv = convertE(eylines, dlgain, egain, eylen)
                     eyfid.close()
-                    eyconvlst = [str(eyconv[ii]) + '\n' for ii in range(len(eyconv))]
+                    eyconvlst = [str(eyconv[ii]) +
+                                 '\n' for ii in range(len(eyconv))]
                     eyfidn = file(filenames[ii], 'w')
                     eyfidn.writelines(eyconvlst)
                     eyfidn.close()
@@ -687,7 +723,8 @@ def convertCounts2Units(filenames, eyn='n', lpyn='n', egain=1.0, dlgain=1.0,
                     else:
                         bxconv = convertlpB(bxlines, dlgain)
                         bxfid.close()
-                        bxconvlst = [str(bxconv[ii]) + '\n' for ii in range(len(bxconv))]
+                        bxconvlst = [str(bxconv[ii]) +
+                                     '\n' for ii in range(len(bxconv))]
                         bxfidn = file(filenames[ii], 'w')
                         bxfidn.writelines(bxconvlst)
                         bxfidn.close()
@@ -703,14 +740,16 @@ def convertCounts2Units(filenames, eyn='n', lpyn='n', egain=1.0, dlgain=1.0,
                     else:
                         byconv = convertlpB(bylines, dlgain)
                         byfid.close()
-                        byconvlst = [str(byconv[ii]) + '\n' for ii in range(len(byconv))]
+                        byconvlst = [str(byconv[ii]) +
+                                     '\n' for ii in range(len(byconv))]
                         byfidn = file(filenames[ii], 'w')
                         byfidn.writelines(byconvlst)
                         byfidn.close()
                 else:
                     byconv = convertlpB(bylines, dlgain)
                     byfid.close()
-                    byconvlst = [str(byconv[ii]) + '\n' for ii in range(len(byconv))]
+                    byconvlst = [str(byconv[ii]) +
+                                 '\n' for ii in range(len(byconv))]
                     byfidn = file(filenames[ii], 'w')
                     byfidn.writelines(byconvlst)
                     byfidn.close()
@@ -726,14 +765,16 @@ def convertCounts2Units(filenames, eyn='n', lpyn='n', egain=1.0, dlgain=1.0,
                     else:
                         bzconv = convertlpB(bzlines, dlgain, zadj=zadj)
                         bzfid.close()
-                        bzconvlst = [str(bzconv[ii]) + '\n' for ii in range(len(bzconv))]
+                        bzconvlst = [str(bzconv[ii]) +
+                                     '\n' for ii in range(len(bzconv))]
                         bzfidn = file(filenames[ii], 'w')
                         bzfidn.writelines(bzconvlst)
                         bzfidn.close()
                 else:
                     bzconv = convertlpB(bzlines, dlgain, zadj=zadj)
                     bzfid.close()
-                    bzconvlst = [str(bzconv[ii]) + '\n' for ii in range(len(bzconv))]
+                    bzconvlst = [str(bzconv[ii]) +
+                                 '\n' for ii in range(len(bzconv))]
                     bzfidn = file(filenames[ii], 'w')
                     bzfidn.writelines(bzconvlst)
                     bzfidn.close()

@@ -5,7 +5,7 @@ EDI Class
 ===========
 
 The Edi class can read and write an .edi file, the 'standard format' of
-magnetotellurics.  Each section of the .edi file is given its own class, 
+magnetotellurics.  Each section of the .edi file is given its own class,
 so the elements of each section are attributes for easy access.
 
 
@@ -35,16 +35,17 @@ except ImportError:
 
 tab = " " * 4
 
-# get a logger object for this module, using the utility class MtPyLog to config the logger
+# get a logger object for this module, using the utility class MtPyLog to
+# config the logger
 logger = MtPyLog().get_mtpy_logger(__name__)
 
 
 class Edi(object):
     """
     This class is for .edi files, mainly reading and writing.  Has been tested
-    on Winglink and Phoenix output .edi's, which are meant to follow the 
+    on Winglink and Phoenix output .edi's, which are meant to follow the
     archaic EDI format put forward by SEG. Can read impedance, Tipper and/or
-    spectra data.  
+    spectra data.
 
     The Edi class contains a class for each major section of the .edi file.
 
@@ -52,28 +53,28 @@ class Edi(object):
     ---------------
 
         **edi_fn** : string
-                     full path to .edi file to be read in. 
-                     *default* is None. If an .edi file is input, it is 
+                     full path to .edi file to be read in.
+                     *default* is None. If an .edi file is input, it is
                      automatically read in and attributes of Edi are filled
 
 
     Methods
     ---------------
     ===================== =====================================================
-    Methods               Description  
+    Methods               Description
     ===================== =====================================================
     read_edi_file         Reads in an edi file and populates the associated
-                          classes and attributes. 
+                          classes and attributes.
     write_edi_file        Writes an .edi file following the EDI format given
                           the apporpriate attributes are filled.  Writes out
                           in impedance and Tipper format.
-    _read_data            Reads in the impedance and Tipper blocks, if the 
+    _read_data            Reads in the impedance and Tipper blocks, if the
                           .edi file is in 'spectra' format, read_data converts
                           the data to impedance and Tipper.
     _read_mt              Reads impedance and tipper data from the appropriate
                           blocks of the .edi file.
-    _read_spectra         Reads in spectra data and converts it to impedance 
-                          and Tipper data.                     
+    _read_spectra         Reads in spectra data and converts it to impedance
+                          and Tipper data.
     ===================== =====================================================
 
     Attributes
@@ -81,31 +82,31 @@ class Edi(object):
 
     ===================== ========================================== ==========
     Attributes            Description                                default
-    ===================== ========================================== ==========    
+    ===================== ========================================== ==========
     Data_sect             DataSection class, contains basic
                           information on the data collected and in
-                          whether the data is in impedance or 
+                          whether the data is in impedance or
                           spectra.
-    Define_measurement    DefineMeasurement class, contains 
-                          information on how the data was 
+    Define_measurement    DefineMeasurement class, contains
+                          information on how the data was
                           collected.
     edi_fn                full path to edi file read in              None
-    Header                Header class, contains metadata on 
+    Header                Header class, contains metadata on
                           where, when, and who collected the data
-    Info                  Information class, contains information 
+    Info                  Information class, contains information
                           on how the data was processed and how the
                           transfer functions where estimated.
     Tipper                mtpy.core.z.Tipper class, contains the
                           tipper data
     Z                     mtpy.core.z.Z class, contains the
                           impedance data
-    _block_len            number of data in one line.                6  
+    _block_len            number of data in one line.                6
     _data_header_str      header string for each of the data         '!****{0}****!'
-                          section   
+                          section
     _num_format           string format of data.                     ' 15.6e'
-    _t_labels             labels for tipper blocks                 
+    _t_labels             labels for tipper blocks
     _z_labels             labels for impedance blocks
-    ===================== ========================================== ========== 
+    ===================== ========================================== ==========
 
     Examples
     ---------------------
@@ -147,8 +148,8 @@ class Edi(object):
 
     def read_edi_file(self, edi_fn=None):
         """
-        Read in an edi file and fill attributes of each section's classes. 
-        Including: 
+        Read in an edi file and fill attributes of each section's classes.
+        Including:
             * Header
             * Info
             * Define_measurement
@@ -204,15 +205,23 @@ class Edi(object):
 
         if self.Header.lat is None:
             self.Header.lat = self.Define_measurement.reflat
-            logger.info('Got latitude from reflat for {0}'.format(self.Header.dataid))
+            logger.info(
+                'Got latitude from reflat for {0}'.format(
+                    self.Header.dataid))
         if self.Header.lon is None:
             self.Header.lon = self.Define_measurement.reflon
-            logger.info('Got longitude from reflon for {0}'.format(self.Header.dataid))
+            logger.info(
+                'Got longitude from reflon for {0}'.format(
+                    self.Header.dataid))
         if self.Header.elev is None:
             self.Header.elev = self.Define_measurement.refelev
-            logger.info('Got elevation from refelev for {0}'.format(self.Header.dataid))
+            logger.info(
+                'Got elevation from refelev for {0}'.format(
+                    self.Header.dataid))
 
-        logger.info("Read in edi file for station {0}".format(self.Header.dataid))
+        logger.info(
+            "Read in edi file for station {0}".format(
+                self.Header.dataid))
 
     def _read_data(self):
         """
@@ -275,13 +284,13 @@ class Edi(object):
 
         # fill impedance tensor
         z_arr[:, 0, 0] = np.array(data_dict['zxxr']) + \
-                         np.array(data_dict['zxxi']) * 1j
+            np.array(data_dict['zxxi']) * 1j
         z_arr[:, 0, 1] = np.array(data_dict['zxyr']) + \
-                         np.array(data_dict['zxyi']) * 1j
+            np.array(data_dict['zxyi']) * 1j
         z_arr[:, 1, 0] = np.array(data_dict['zyxr']) + \
-                         np.array(data_dict['zyxi']) * 1j
+            np.array(data_dict['zyxi']) * 1j
         z_arr[:, 1, 1] = np.array(data_dict['zyyr']) + \
-                         np.array(data_dict['zyyi']) * 1j
+            np.array(data_dict['zyyi']) * 1j
 
         z_err_arr[:, 0, 0] = np.array(data_dict['zxx.var'])
         z_err_arr[:, 0, 1] = np.array(data_dict['zxy.var'])
@@ -290,7 +299,8 @@ class Edi(object):
 
         # check for order of frequency, we want high to low
         if freq_arr[0] < freq_arr[1]:
-            logger.info('Ordered arrays to be arranged from high to low frequency')
+            logger.info(
+                'Ordered arrays to be arranged from high to low frequency')
             freq_arr = freq_arr[::-1]
             z_arr = z_arr[::-1]
             z_err_arr = z_err_arr[::-1]
@@ -324,9 +334,9 @@ class Edi(object):
 
         if 'txr.exp' in data_dict.keys():
             tipper_arr[:, 0, 0] = np.array(data_dict['txr.exp']) + \
-                                  np.array(data_dict['txi.exp']) * 1j
+                np.array(data_dict['txi.exp']) * 1j
             tipper_arr[:, 0, 1] = np.array(data_dict['tyr.exp']) + \
-                                  np.array(data_dict['tyi.exp']) * 1j
+                np.array(data_dict['tyi.exp']) * 1j
 
             tipper_err_arr[:, 0, 0] = np.array(data_dict['txvar.exp'])
             tipper_err_arr[:, 0, 1] = np.array(data_dict['tyvar.exp'])
@@ -370,7 +380,7 @@ class Edi(object):
                     logger.info('did not find frequency key')
 
             elif data_find == True and line.find('>') == -1 and \
-                            line.find('!') == -1:
+                    line.find('!') == -1:
                 data_dict[key] += [float(ll) for ll in line.strip().split()]
 
             elif line.find('>spectra') == -1:
@@ -417,13 +427,13 @@ class Edi(object):
             # .....
 
             z_arr[kk, 0, 0] = s_arr[cc.ex, cc.rhx] * s_arr[cc.hy, cc.rhy] - \
-                              s_arr[cc.ex, cc.rhy] * s_arr[cc.hy, cc.rhx]
+                s_arr[cc.ex, cc.rhy] * s_arr[cc.hy, cc.rhx]
             z_arr[kk, 0, 1] = s_arr[cc.ex, cc.rhy] * s_arr[cc.hx, cc.rhx] - \
-                              s_arr[cc.ex, cc.rhx] * s_arr[cc.hx, cc.rhy]
+                s_arr[cc.ex, cc.rhx] * s_arr[cc.hx, cc.rhy]
             z_arr[kk, 1, 0] = s_arr[cc.ey, cc.rhx] * s_arr[cc.hy, cc.rhy] - \
-                              s_arr[cc.ey, cc.rhy] * s_arr[cc.hy, cc.rhx]
+                s_arr[cc.ey, cc.rhy] * s_arr[cc.hy, cc.rhx]
             z_arr[kk, 1, 1] = s_arr[cc.ey, cc.rhy] * s_arr[cc.hx, cc.rhx] - \
-                              s_arr[cc.ey, cc.rhx] * s_arr[cc.hx, cc.rhy]
+                s_arr[cc.ey, cc.rhx] * s_arr[cc.hx, cc.rhy]
 
             z_arr[kk] /= (s_arr[cc.hx, cc.rhx] * s_arr[cc.hy, cc.rhy] -
                           s_arr[cc.hx, cc.rhy] * s_arr[cc.hy, cc.rhx])
@@ -449,7 +459,7 @@ class Edi(object):
                 epsilon_squared = 1. - psi_squared
 
                 scaling = sigma_quantil * 4 / (avgt_dict[key] - 4.) * \
-                          epsilon_squared / z_det * s_arr[cc.ex, cc.ex].real
+                    epsilon_squared / z_det * s_arr[cc.ex, cc.ex].real
                 z_err_arr[kk, 0, 0] = np.sqrt(
                     scaling * s_arr[cc.hy, cc.hy].real)
                 z_err_arr[kk, 0, 1] = np.sqrt(
@@ -468,7 +478,7 @@ class Edi(object):
                 epsilon_squared = 1. - psi_squared
 
                 scaling = sigma_quantil * 4 / (avgt_dict[key] - 4.) * \
-                          epsilon_squared / z_det * s_arr[cc.ey, cc.ey].real
+                    epsilon_squared / z_det * s_arr[cc.ey, cc.ey].real
                 z_err_arr[kk, 1, 0] = np.sqrt(
                     scaling * s_arr[cc.hy, cc.hy].real)
                 z_err_arr[kk, 1, 1] = np.sqrt(
@@ -477,9 +487,9 @@ class Edi(object):
             # if HZ information is present:
             if len(comp_list) > 5:
                 t_arr[kk, 0, 0] = s_arr[cc.hz, cc.rhx] * s_arr[cc.hy, cc.rhy] - \
-                                  s_arr[cc.hz, cc.rhy] * s_arr[cc.hy, cc.rhx]
+                    s_arr[cc.hz, cc.rhy] * s_arr[cc.hy, cc.rhx]
                 t_arr[kk, 0, 1] = s_arr[cc.hz, cc.rhy] * s_arr[cc.hx, cc.rhx] - \
-                                  s_arr[cc.hz, cc.rhx] * s_arr[cc.hx, cc.rhy]
+                    s_arr[cc.hz, cc.rhx] * s_arr[cc.hx, cc.rhy]
 
                 t_arr[kk] /= (s_arr[cc.hx, cc.rhx] * s_arr[cc.hy, cc.rhy] -
                               s_arr[cc.hx, cc.rhy] * s_arr[cc.hy, cc.rhx])
@@ -497,7 +507,7 @@ class Edi(object):
                     epsilon_squared = 1. - psi_squared
 
                     scaling = sigma_quantil * 4 / (avgt_dict[key] - 4.) * \
-                              epsilon_squared / z_det * s_arr[cc.hz, cc.hz].real
+                        epsilon_squared / z_det * s_arr[cc.hz, cc.hz].real
                     t_err_arr[kk, 0, 0] = np.sqrt(
                         scaling * s_arr[cc.hy, cc.hy].real)
                     t_err_arr[kk, 0, 1] = np.sqrt(
@@ -546,7 +556,7 @@ class Edi(object):
             >>> import mtpy.core.edi as mtedi
             >>> edi_obj = mtedi.Edi(edi_fn=r"/home/mt/mt01/edi")
             >>> edi_obj.Header.dataid = 'mt01_rr'
-            >>> edi_obj.write_edi_file() 
+            >>> edi_obj.write_edi_file()
         """
 
         if new_edi_fn is None:
@@ -590,7 +600,8 @@ class Edi(object):
                 z_data_lines += z_lines_imag
                 z_data_lines += z_lines_var
 
-        if self.Tipper.tipper is not None and np.all(self.Tipper.tipper == 0) == True:
+        if self.Tipper.tipper is not None and np.all(
+                self.Tipper.tipper == 0) == True:
             trot_lines = ['']
             t_data_lines = ['']
         else:
@@ -598,7 +609,7 @@ class Edi(object):
                 # write out rotation angles
                 trot_lines = [self._data_header_str.format(
                     'tipper rotation angles'.upper())]
-                if type(self.Tipper.rotation_angle) is float:
+                if isinstance(self.Tipper.rotation_angle, float):
                     trot = np.repeat(self.Tipper.rotation_angle,
                                      self.Tipper.freq.size)
                 else:
@@ -623,14 +634,14 @@ class Edi(object):
                 t_data_lines = ['']
 
         edi_lines = header_lines + \
-                    info_lines + \
-                    define_lines + \
-                    dsect_lines + \
-                    freq_lines + \
-                    zrot_lines + \
-                    z_data_lines + \
-                    trot_lines + \
-                    t_data_lines + ['>END']
+            info_lines + \
+            define_lines + \
+            dsect_lines + \
+            freq_lines + \
+            zrot_lines + \
+            z_data_lines + \
+            trot_lines + \
+            t_data_lines + ['>END']
 
         with open(new_edi_fn, 'w') as fid:
             fid.write(''.join(edi_lines))
@@ -640,16 +651,16 @@ class Edi(object):
 
     def _write_data_block(self, data_comp_arr, data_key):
         """
-        write a data block 
+        write a data block
 
         return a list of strings
         """
         if data_key.lower().find('z') >= 0 and \
-                        data_key.lower() not in ['zrot', 'trot']:
+                data_key.lower() not in ['zrot', 'trot']:
             block_lines = ['>{0} ROT=ZROT // {1:.0f}\n'.format(data_key.upper(),
                                                                data_comp_arr.size)]
         elif data_key.lower().find('t') >= 0 and \
-                        data_key.lower() not in ['zrot', 'trot']:
+                data_key.lower() not in ['zrot', 'trot']:
             block_lines = ['>{0} ROT=TROT // {1:.0f}\n'.format(data_key.upper(),
                                                                data_comp_arr.size)]
         elif data_key.lower() == 'freq':
@@ -730,7 +741,7 @@ class Edi(object):
         return self.Header.dataid
 
     def _set_station(self, new_station):
-        if type(new_station) is not str:
+        if not isinstance(new_station, str):
             new_station = '{0}'.format(new_station)
         self.Header.dataid = new_station
         self.Data_sect.sectid = new_station
@@ -743,6 +754,7 @@ class Edi(object):
 # Index finder
 # ==============================================================================
 class index_locator(object):
+
     def __init__(self, component_list):
         for ii, comp in enumerate(component_list):
             setattr(self, comp, ii)
@@ -775,8 +787,8 @@ class Header(object):
     -------------
 
         **edi_fn** : string
-                     full path to .edi file to be read in. 
-                     *default* is None. If an .edi file is input, it is 
+                     full path to .edi file to be read in.
+                     *default* is None. If an .edi file is input, it is
                      automatically read in and attributes of Header are filled
 
     Attributes
@@ -786,7 +798,7 @@ class Header(object):
     a yes for 'In .edi'
 
     ============== ======================================= ======== ===========
-    Attributes     Description                             Default  In .edi     
+    Attributes     Description                             Default  In .edi
     ============== ======================================= ======== ===========
     acqby          Acquired by                             None     yes
     acqdate        Acquired date (YYYY-MM-DD)              None     yes
@@ -794,28 +806,28 @@ class Header(object):
     edi_fn         Full path to .edi file                  None     no
     elev           Elevation of station (m)                None     yes
     empty          Value for missing data                  1e32     yes
-    fileby         File written by                         None     yes   
+    fileby         File written by                         None     yes
     filedate       Date the file is written (YYYY-MM-DD)   None     yes
-    header_list    List of header lines                    None     no 
+    header_list    List of header lines                    None     no
     lat            Latitude of station [1]_                None     yes
-    loc            Location name where station was         None     yes 
+    loc            Location name where station was         None     yes
                    collected
     lon            Longitude of station [1]_               None     yes
     phoenix_edi    [ True | False ] if phoenix .edi format False    no
     progdate       Date of program version to write .edi   None     yes
-    progvers       Version of program writing .edi         None     yes  
+    progvers       Version of program writing .edi         None     yes
     stdvers        Standard version                        None     yes
     units          Units of distance                       m        yes
-    _header_keys   list of metadata input into .edi        [2]_ 
+    _header_keys   list of metadata input into .edi        [2]_
                    header block.                                    no
     ============== ======================================= ======== ===========
 
     .. rubric:: footnotes
     .. [1] Internally everything is converted to decimal degrees.  Output is
-          written as HH:MM:SS.ss so Winglink can read them in. 
+          written as HH:MM:SS.ss so Winglink can read them in.
     .. [2] If you want to change what metadata is written into the .edi file
            change the items in _header_keys.  Default attributes are:
-               * acqby 
+               * acqby
                * acqdate
                * dataid
                * elev
@@ -841,7 +853,7 @@ class Header(object):
 
 
     Examples
-    --------------    
+    --------------
 
     :Read Header: ::
 
@@ -896,7 +908,7 @@ class Header(object):
         where each item is a line in the header section.
         """
 
-        if self.edi_fn == None and self.edi_lines == None:
+        if self.edi_fn is None and self.edi_lines is None:
             logger.info('No edi file to read.')
             return
 
@@ -906,7 +918,9 @@ class Header(object):
         # read in file line by line
         if self.edi_fn is not None:
             if os.path.isfile(self.edi_fn) == False:
-                logger.info('Could not find {0}, check path'.format(self.edi_fn))
+                logger.info(
+                    'Could not find {0}, check path'.format(
+                        self.edi_fn))
             with open(self.edi_fn, 'r') as fid:
                 self.edi_lines = fid.readlines()
 
@@ -962,7 +976,7 @@ class Header(object):
             self.header_list = self._validate_header_list(header_list)
 
         if self.header_list is None and self.edi_fn is None and \
-                        self.edi_lines is None:
+                self.edi_lines is None:
             logger.info('Nothing to read. header_list and edi_fn are None')
 
         elif self.edi_fn is not None or self.edi_lines is not None:
@@ -1026,7 +1040,7 @@ class Header(object):
                                will be of the form
                                ['>HEAD\n',
                                 '    key_01=value_01\n']
-                                if None is input then reads from input .edi 
+                                if None is input then reads from input .edi
                                 file or uses attribute information to write
                                 metadata.
         """
@@ -1121,7 +1135,9 @@ class Information(object):
 
         if self.edi_fn is not None:
             if os.path.isfile(self.edi_fn) is False:
-                logger.info('Could not find {0}, check path'.format(self.edi_fn))
+                logger.info(
+                    'Could not find {0}, check path'.format(
+                        self.edi_fn))
                 return
 
             with open(self.edi_fn, 'r') as fid:
@@ -1181,7 +1197,7 @@ class Information(object):
     def _validate_info_list(self, info_list):
         """
         check to make sure the info list input is valid, really just checking
-        for Phoenix format where they put two columns in the file and remove 
+        for Phoenix format where they put two columns in the file and remove
         any blank lines and the >info line
         """
 
@@ -1203,9 +1219,9 @@ class Information(object):
 # ==============================================================================
 class DefineMeasurement(object):
     """
-    DefineMeasurement class holds information about the measurement.  This 
-    includes how each channel was setup.  The main block contains information 
-    on the reference location for the station.  This is a bit of an archaic 
+    DefineMeasurement class holds information about the measurement.  This
+    includes how each channel was setup.  The main block contains information
+    on the reference location for the station.  This is a bit of an archaic
     part and was meant for a multiple station .edi file.  This section is also
     important if you did any forward modeling with Winglink cause it only gives
     the station location in this section.  The other parts are how each channel
@@ -1222,13 +1238,13 @@ class DefineMeasurement(object):
             REFLONG=139:47:50.87
             REFELEV=0
 
-        >HMEAS ID=1001.001 CHTYPE=HX X=0.0 Y=0.0 Z=0.0 AZM=0.0 
-        >HMEAS ID=1002.001 CHTYPE=HY X=0.0 Y=0.0 Z=0.0 AZM=90.0 
-        >HMEAS ID=1003.001 CHTYPE=HZ X=0.0 Y=0.0 Z=0.0 AZM=0.0 
-        >EMEAS ID=1004.001 CHTYPE=EX X=0.0 Y=0.0 Z=0.0 X2=0.0 Y2=0.0 
-        >EMEAS ID=1005.001 CHTYPE=EY X=0.0 Y=0.0 Z=0.0 X2=0.0 Y2=0.0 
-        >HMEAS ID=1006.001 CHTYPE=HX X=0.0 Y=0.0 Z=0.0 AZM=0.0 
-        >HMEAS ID=1007.001 CHTYPE=HY X=0.0 Y=0.0 Z=0.0 AZM=90.0 
+        >HMEAS ID=1001.001 CHTYPE=HX X=0.0 Y=0.0 Z=0.0 AZM=0.0
+        >HMEAS ID=1002.001 CHTYPE=HY X=0.0 Y=0.0 Z=0.0 AZM=90.0
+        >HMEAS ID=1003.001 CHTYPE=HZ X=0.0 Y=0.0 Z=0.0 AZM=0.0
+        >EMEAS ID=1004.001 CHTYPE=EX X=0.0 Y=0.0 Z=0.0 X2=0.0 Y2=0.0
+        >EMEAS ID=1005.001 CHTYPE=EY X=0.0 Y=0.0 Z=0.0 X2=0.0 Y2=0.0
+        >HMEAS ID=1006.001 CHTYPE=HX X=0.0 Y=0.0 Z=0.0 AZM=0.0
+        >HMEAS ID=1007.001 CHTYPE=HY X=0.0 Y=0.0 Z=0.0 AZM=90.0
 
     Arguments
     -------------
@@ -1240,30 +1256,30 @@ class DefineMeasurement(object):
     -------------
 
     ================= ==================================== ======== ===========
-    Attributes        Description                          Default  In .edi     
+    Attributes        Description                          Default  In .edi
     ================= ==================================== ======== ===========
     edi_fn            Full path to edi file read in        None     no
-    maxchan           Maximum number of channels measured  None     yes 
+    maxchan           Maximum number of channels measured  None     yes
     maxmeas           Maximum number of measurements       9999     yes
     maxrun            Maximum number of measurement runs   999      yes
     meas_####         HMeasurement or EMEasurment object   None     yes
                       defining the measurement made [1]_
-    refelev           Reference elevation (m)              None     yes  
-    reflat            Reference latitude [2]_              None     yes  
+    refelev           Reference elevation (m)              None     yes
+    reflat            Reference latitude [2]_              None     yes
     refloc            Reference location                   None     yes
-    reflon            Reference longituted [2]_            None     yes  
+    reflon            Reference longituted [2]_            None     yes
     reftype           Reference coordinate system          'cart'   yes
-    units             Units of length                      m        yes 
+    units             Units of length                      m        yes
     _define_meas_keys Keys to include in define_measurment [3]_     no
-                      section.          
-    ================= ==================================== ======== ===========                
+                      section.
+    ================= ==================================== ======== ===========
 
     .. rubric:: footnotes
     .. [1] Each channel with have its own define measurement and depending on
-           whether it is an E or H channel the metadata will be different.  
+           whether it is an E or H channel the metadata will be different.
            the #### correspond to the channel number.
     .. [2] Internally everything is converted to decimal degrees.  Output is
-          written as HH:MM:SS.ss so Winglink can read them in. 
+          written as HH:MM:SS.ss so Winglink can read them in.
     .. [3] If you want to change what metadata is written into the .edi file
            change the items in _header_keys.  Default attributes are:
                * maxchan
@@ -1316,7 +1332,9 @@ class DefineMeasurement(object):
 
         if self.edi_fn is not None:
             if os.path.isfile(self.edi_fn) is False:
-                logger.info('Could not find {0}, check path'.format(self.edi_fn))
+                logger.info(
+                    'Could not find {0}, check path'.format(
+                        self.edi_fn))
                 return
 
             with open(self.edi_fn, 'r') as fid:
@@ -1352,7 +1370,7 @@ class DefineMeasurement(object):
         read the define measurment section of the edi file
 
         should be a list with lines for:
-            - maxchan 
+            - maxchan
             - maxmeas
             - maxrun
             - refelev
@@ -1377,11 +1395,12 @@ class DefineMeasurement(object):
             self.get_measurement_lists()
 
         if self.measurement_list is None:
-            logger.info('Nothing to read, check edi_fn or measurement_list attributes')
+            logger.info(
+                'Nothing to read, check edi_fn or measurement_list attributes')
             return
 
         for line in self.measurement_list:
-            if type(line) is str:
+            if isinstance(line, str):
                 line_list = line.split('=')
                 key = line_list[0].lower()
                 value = line_list[1].strip()
@@ -1414,7 +1433,7 @@ class DefineMeasurement(object):
                         value = 0
                 setattr(self, key, value)
 
-            elif type(line) is dict:
+            elif isinstance(line, dict):
                 key = 'meas_{0}'.format(line['chtype'].lower())
                 if key[4:].find('h') >= 0:
                     value = HMeasurement(**line)
@@ -1501,7 +1520,7 @@ class HMeasurement(object):
     id                     Channel number
     chtype                 [ HX | HY | HZ | RHX | RHY ]
     x                      x (m) north from reference point (station)
-    y                      y (m) east from reference point (station)  
+    y                      y (m) east from reference point (station)
     azm                    angle of sensor relative to north = 0
     acqchan                name of the channel acquired usually same as chtype
     ====================== ====================================================
@@ -1546,13 +1565,13 @@ class EMeasurement(object):
     ====================== ====================================================
     id                     Channel number
     chtype                 [ EX | EY ]
-    x                      x (m) north from reference point (station) of one 
+    x                      x (m) north from reference point (station) of one
                            electrode of the dipole
-    y                      y (m) east from reference point (station) of one 
+    y                      y (m) east from reference point (station) of one
                            electrode of the dipole
-    x2                     x (m) north from reference point (station) of the 
+    x2                     x (m) north from reference point (station) of the
                            other electrode of the dipole
-    y2                     y (m) north from reference point (station) of the 
+    y2                     y (m) north from reference point (station) of the
                            other electrode of the dipole
     acqchan                name of the channel acquired usually same as chtype
     ====================== ====================================================
@@ -1612,23 +1631,23 @@ class DataSection(object):
     -------------
 
     ================= ==================================== ======== ===========
-    Attributes        Description                          Default  In .edi     
+    Attributes        Description                          Default  In .edi
     ================= ==================================== ======== ===========
-    ex                ex channel id number                 None     yes  
+    ex                ex channel id number                 None     yes
     ey                ey channel id number                 None     yes
     hx                hx channel id number                 None     yes
     hy                hy channel id number                 None     yes
     hz                hz channel id number                 None     yes
     nfreq             number of frequencies                None     yes
     sectid            section id, should be the same
-                      as the station name -> Header.dataid None     yes 
+                      as the station name -> Header.dataid None     yes
     maxblks           maximum number of data blocks        None     yes
     nchan             number of channels                   None     yes
-    _kw_list          list of key words to put in metadata [1]_     no 
+    _kw_list          list of key words to put in metadata [1]_     no
     ================= ==================================== ======== ===========
 
     .. rubric:: Footnotes
-    .. [1] Changes these values to change what is written to edi file    
+    .. [1] Changes these values to change what is written to edi file
     """
 
     def __init__(self, edi_fn=None, edi_lines=None):
@@ -1657,7 +1676,7 @@ class DataSection(object):
 
     def get_data_sect(self):
         """
-        read in the data of the file, will detect if reading spectra or 
+        read in the data of the file, will detect if reading spectra or
         impedance.
         """
 
@@ -1748,7 +1767,7 @@ class DataSection(object):
 def _validate_str_with_equals(input_string):
     """
     make sure an input string is of the format {0}={1} {2}={3} {4}={5} ...
-    Some software programs put spaces after the equals sign and that's not 
+    Some software programs put spaces after the equals sign and that's not
     cool.  So we make the string into a readable format
     """
     input_string = input_string.strip()
@@ -1772,7 +1791,8 @@ def _validate_str_with_equals(input_string):
 
     # probably not a good return
     if len(str_list) % 2 != 0:
-        logger.info('The number of entries in {0} is not even'.format(str_list))
+        logger.info(
+            'The number of entries in {0} is not even'.format(str_list))
         return str_list
 
     line_list = ['{0}={1}'.format(str_list[ii], str_list[ii + 1]) for ii in

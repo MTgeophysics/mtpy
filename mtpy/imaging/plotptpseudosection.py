@@ -23,68 +23,68 @@ import mtpy.imaging.mtplottools as mtpl
 
 class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
     """
-    PlotPhaseTensorPseudoSection will plot the phase tensor ellipses in a 
-    pseudo section format 
-    
-    
+    PlotPhaseTensorPseudoSection will plot the phase tensor ellipses in a
+    pseudo section format
+
+
     Arguments:
     ------------
-    
+
         **fn_list** : list of strings
                           full paths to .edi files to plot
-                          
+
         **z_object** : class mtpy.core.z.Z
                       object of mtpy.core.z.  If this is input be sure the
                       attribute z.frequency is filled.  *default* is None
-                      
+
         **mt_object** : class mtpy.imaging.mtplot.MTplot
                         object of mtpy.imaging.mtplot.MTplot
                         *default* is None
-                        
+
         **pt_object** : class mtpy.analysis.pt
                         phase tensor object of mtpy.analysis.pt.  If this is
                         input then the ._mt attribute is set to None cause
                         at the moment cannot tranform the phase tensor to z
                         *default* is None
-        
+
         **ellipse_dict** : dictionary
-                          dictionary of parameters for the phase tensor 
+                          dictionary of parameters for the phase tensor
                           ellipses with keys:
-                              * 'size' -> size of ellipse in points 
+                              * 'size' -> size of ellipse in points
                                          *default* is 2
-                              
-                              * 'colorby' : [ 'phimin' | 'phimax' | 'skew' | 
-                                              'skew_seg' | 'phidet' | 
+
+                              * 'colorby' : [ 'phimin' | 'phimax' | 'skew' |
+                                              'skew_seg' | 'phidet' |
                                               'ellipticity' ]
-                                        
+
                                         - 'phimin' -> colors by minimum phase
                                         - 'phimax' -> colors by maximum phase
                                         - 'skew' -> colors by skew
-                                        - 'skew_seg' -> colors by skew in 
-                                                       discrete segments 
+                                        - 'skew_seg' -> colors by skew in
+                                                       discrete segments
                                                        defined by the range
                                         - 'normalized_skew' -> colors by skew
                                                 see [Booker, 2014]
-                                        - 'normalized_skew_seg' -> colors by 
-                                                       normalized skew in 
-                                                       discrete segments 
+                                        - 'normalized_skew_seg' -> colors by
+                                                       normalized skew in
+                                                       discrete segments
                                                        defined by the range
                                         - 'phidet' -> colors by determinant of
                                                      the phase tensor
                                         - 'ellipticity' -> colors by ellipticity
                                         *default* is 'phimin'
-                                
+
                                * 'range' : tuple (min, max, step)
                                      Need to input at least the min and max
                                      and if using 'skew_seg' to plot
                                      discrete values input step as well
                                      *default* depends on 'colorby'
-                                     
-                          * 'cmap' : [ 'mt_yl2rd' | 'mt_bl2yl2rd' | 
-                                      'mt_wh2bl' | 'mt_rd2bl' | 
+
+                          * 'cmap' : [ 'mt_yl2rd' | 'mt_bl2yl2rd' |
+                                      'mt_wh2bl' | 'mt_rd2bl' |
                                       'mt_bl2wh2rd' | 'mt_seg_bl2wh2rd' |
                                       'mt_rd2gr2bl' ]
-                                      
+
                                    - 'mt_yl2rd' -> yellow to red
                                    - 'mt_bl2yl2rd' -> blue to yellow to red
                                    - 'mt_wh2bl' -> white to blue
@@ -92,229 +92,229 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
                                    - 'mt_bl2wh2rd' -> blue to white to red
                                    - 'mt_bl2gr2rd' -> blue to green to red
                                    - 'mt_rd2gr2bl' -> red to green to blue
-                                   - 'mt_seg_bl2wh2rd' -> discrete blue to 
+                                   - 'mt_seg_bl2wh2rd' -> discrete blue to
                                                          white to red
-        
-                                         
-        
+
+
+
         **stretch** : float or tuple (xstretch, ystretch)
-                        is a factor that scales the distance from one 
+                        is a factor that scales the distance from one
                         station to the next to make the plot readable.
                         *Default* is 200
-                        
+
         **linedir** : [ 'ns' | 'ew' ]
                       predominant direction of profile line
                       * 'ns' -> North-South Line
                       * 'ew' -> East-West line
                       *Default* is 'ns'
-        
-        **station_id** : tuple or list 
-                        start and stop of station name indicies.  
+
+        **station_id** : tuple or list
+                        start and stop of station name indicies.
                         ex: for MT01dr station_id=(0,4) will be MT01
-        
+
         **rotz** : float or np.ndarray
                    angle in degrees to rotate the data clockwise positive.
                    Can be an array of angle to individually rotate stations or
-                   periods or both. 
+                   periods or both.
                        - If rotating each station by a constant
-                         angle the array needs to have a shape of 
+                         angle the array needs to have a shape of
                          (# of stations)
-                        - If rotating by period needs to have shape 
+                        - If rotating by period needs to have shape
                            # of periods
                         - If rotating both individually shape=(ns, nf)
                   *Default* is 0
-        
+
         **title** : string
                     figure title
-                    
-        **dpi** : int 
+
+        **dpi** : int
                   dots per inch of the resolution. *default* is 300
-                    
-                       
+
+
         **fignum** : int
                      figure number.  *Default* is 1
-        
+
         **plot_tipper** : [ 'yri' | 'yr' | 'yi' | 'n' ]
-                        * 'yri' to plot induction both real and imaginary 
-                           induction arrows 
-                           
+                        * 'yri' to plot induction both real and imaginary
+                           induction arrows
+
                         * 'yr' to plot just the real induction arrows
-                        
+
                         * 'yi' to plot the imaginary induction arrows
-                        
+
                         * 'n' to not plot them
-                        
-                        *Default* is 'n' 
-                        
+
+                        *Default* is 'n'
+
                         **Note: convention is to point towards a conductor but
                         can be changed in arrow_dict['direction']**
-                         
+
         **arrow_dict** : dictionary for arrow properties
                         * 'size' : float
                                   multiplier to scale the arrow. *default* is 5
                         * 'head_length' : float
-                                         length of the arrow head *default* is 
+                                         length of the arrow head *default* is
                                          1.5
                         * 'head_width' : float
-                                        width of the arrow head *default* is 
+                                        width of the arrow head *default* is
                                         1.5
                         * 'lw' : float
                                 line width of the arrow *default* is .5
-                                
+
                         * 'color' : tuple (real, imaginary)
                                    color of the arrows for real and imaginary
-                                   
+
                         * 'threshold': float
                                       threshold of which any arrow larger than
-                                      this number will not be plotted, helps 
-                                      clean up if the data is not good. 
-                                      *default* is 1, note this is before 
+                                      this number will not be plotted, helps
+                                      clean up if the data is not good.
+                                      *default* is 1, note this is before
                                       scaling by 'size'
-                                      
+
                         * 'direction : [ 0 | 1 ]
                                      -0 for arrows to point toward a conductor
                                      -1 for arrow to point away from conductor
-    
+
         **tscale** : [ 'period' | 'frequency' ]
-        
+
                      * 'period'    -> plot vertical scale in period
-                     
+
                      * 'frequency' -> plot vertical scale in frequency
-                     
+
         **cb_dict** : dictionary to control the color bar
-        
+
                       * 'orientation' : [ 'vertical' | 'horizontal' ]
-                                       orientation of the color bar 
+                                       orientation of the color bar
                                        *default* is vertical
-                                       
+
                       * 'position' : tuple (x,y,dx,dy)
-                                    - x -> lateral position of left hand corner 
-                                          of the color bar in figure between 
+                                    - x -> lateral position of left hand corner
+                                          of the color bar in figure between
                                           [0,1], 0 is left side
-                                          
-                                    - y -> vertical position of the bottom of 
-                                          the color bar in figure between 
+
+                                    - y -> vertical position of the bottom of
+                                          the color bar in figure between
                                           [0,1], 0 is bottom side.
-                                          
+
                                     - dx -> width of the color bar [0,1]
-                                    
+
                                     - dy -> height of the color bar [0,1]
         **font_size** : float
                         size of the font that labels the plot, 2 will be added
                         to this number for the axis labels.
-                        
+
         **plot_yn** : [ 'y' | 'n' ]
                       * 'y' to plot on creating an instance
-                      
+
                       * 'n' to not plot on creating an instance
-                      
+
         **xlim** : tuple(xmin, xmax)
                    min and max along the x-axis in relative distance of degrees
                    and multiplied by xstretch
-                   
+
         **ylim** : tuple(ymin, ymax)
                    min and max period to plot, note that the scaling will be
                    done in the code.  So if you want to plot from (.1s, 100s)
                    input ylim=(.1,100)
-    
+
     To get a list of .edi files that you want to plot -->
     :Example: ::
-        
+
         >>> import mtpy.imaging.mtplot as mtplot
         >>> import os
         >>> edipath = r"/home/EDIfiles"
         >>> edilist = [os.path.join(edipath,edi) for edi in os.listdir(edipath)
         >>> ...       if edi.find('.edi')>0]
-    
+
     * If you want to plot minimum phase colored from blue to red in a range of
-     20 to 70 degrees you can do it one of two ways--> 
-    
-    1)          
+     20 to 70 degrees you can do it one of two ways-->
+
+    1)
     :Example: ::
-        
+
         >>> edict = {'range':(20,70), 'cmap':'mt_bl2gr2rd','colorby':'phimin'}
         >>> pt1 = mtplot.plot_pt_pseudosection(fn_list=edilist,
                                                ellipse_dict=edict)
-     
+
     2)
     :Example: ::
-        
+
         >>> pt1 = mtplot.plot_pt_pseudosection(fn_list=edilist, plot_yn='n')
         >>> pt1.ellipse_colorby = 'phimin'
         >>> pt1.ellipse_cmap = 'mt_bl2gr2rd'
         >>> pt1.ellipse_range = (20,70)
         >>> pt1.plot()
-        
+
     * If you want to add real induction arrows that are scaled by 10 and point
-     away from a conductor --> 
+     away from a conductor -->
     :Example: ::
-        
+
         >>> pt1.plot_tipper = 'yr'
         >>> pt1.arrow_size = 10
         >>> pt1.arrow_direction = -1
         >>> pt1.redraw_plot()
-    
+
     * If you want to save the plot as a pdf with a generic name -->
     :Example: ::
         >>> pt1.save_figure(r"/home/PTFigures", file_format='pdf', dpi=300)
         File saved to '/home/PTFigures/PTPseudoSection.pdf'
-        
+
     Attributes:
     -------------
         -arrow_color_imag     color of imaginary induction arrow
         -arrow_color_real     color of real induction arrow
-        -arrow_direction      convention of arrows pointing to or away from 
+        -arrow_direction      convention of arrows pointing to or away from
                               conductors, see above.
         -arrow_head_length    length of arrow head in relative points
         -arrow_head_width     width of arrow head in relative points
         -arrow_lw             line width of arrows
         -arrow_size           scaling factor to multiple arrows by to be visible
-        -arrow_threshold      threshold for plotting arrows, anything above 
+        -arrow_threshold      threshold for plotting arrows, anything above
                               this number will not be plotted.
-        
+
         -ax                   matplotlib.axes instance for the main plot
         -ax2                  matplotlib.axes instance for the color bar
         -cb                   matplotlib.colors.ColorBar instance for color bar
         -cb_orientation       color bar orientation ('vertical' | 'horizontal')
         -cb_position          color bar position (x, y, dx, dy)
-        
+
         -dpi                  dots-per-inch resolution
-        
+
         -ellipse_cmap         ellipse color map, see above for options
         -ellipse_colorby      parameter to color ellipse by
         -ellipse_range        (min, max, step) values to color ellipses
         -ellipse_size         scaling factor to make ellipses visible
-        
-        -fig                  matplotlib.figure instance for the figure 
+
+        -fig                  matplotlib.figure instance for the figure
         -fignum               number of figure being plotted
         -figsize              size of figure in inches
         -font_size            font size of axes tick label, axes labels will be
                               font_size + 2
-        
-        -linedir              prominent direction of profile being plotted 
-             
+
+        -linedir              prominent direction of profile being plotted
+
         -mt_list               list of mtplot.MTplot instances containing all
                               the important information for each station
         -offsetlist            array of relative offsets of each station
-        
+
         -plot_tipper          string to inform program to plot induction arrows
         -plot_yn              plot the pseudo section on instance creation
-        
+
         -rot_z                rotates the data by this angle assuming North is
                               0 and angle measures clockwise
-                              
+
         -station_id            index [min, max] to reaad station name
         -stationlist           list of stations plotted
         -title                title of figure
         -tscale               temporal scale of y-axis ('frequency' | 'period')
-        
+
         -xlimits              limits on x-axis (xmin, xmax)
         -xstretch             scaling factor to stretch x offsets
-        
+
         -ylimits              limits on y-axis (ymin, ymax)
         -ystep                step to set major ticks on y-axis
         -ystretch             scaling factor to strech axes in y direction
-        
+
     Methods:
     ----------
 
@@ -362,7 +362,7 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
 
         # set the stretching in each direction
         stretch = kwargs.pop('stretch', (200, 25))
-        if type(stretch) == float or type(stretch) == int:
+        if isinstance(stretch, float) or isinstance(stretch, int):
             self.xstretch = stretch
             self.ystretch = stretch
         else:
@@ -392,12 +392,12 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
             self.scale_arrow_dict['text_offset_y'] = 0.
 
         self._rot_z = kwargs.pop('rot_z', 0)
-        if type(self._rot_z) is float or type(self._rot_z) is int:
+        if isinstance(self._rot_z, float) or isinstance(self._rot_z, int):
             self._rot_z = np.array([self._rot_z] * len(self.mt_list))
 
         # if the rotation angle is an array for rotation of different
         # freq than repeat that rotation array to the len(mt_list)
-        elif type(self._rot_z) is np.ndarray:
+        elif isinstance(self._rot_z, np.ndarray):
             if self._rot_z.shape[0] != len(self.mt_list):
                 self._rot_z = np.repeat(self._rot_z, len(self.mt_list))
 
@@ -415,7 +415,7 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
         # if self.plot_yn == 'y':
         #     self.plot()
 
-            # ---need to rotate data on setting rotz
+        # ---need to rotate data on setting rotz
 
     def _set_rot_z(self, rot_z):
         """
@@ -424,12 +424,12 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
 
         # if rotation angle is an int or float make an array the length of
         # mt_list for plotting purposes
-        if type(rot_z) is float or type(rot_z) is int:
+        if isinstance(rot_z, float) or isinstance(rot_z, int):
             self._rot_z = np.array([rot_z] * len(self.mt_list))
 
         # if the rotation angle is an array for rotation of different
         # freq than repeat that rotation array to the len(mt_list)
-        elif type(rot_z) is np.ndarray:
+        elif isinstance(rot_z, np.ndarray):
             if rot_z.shape[0] != len(self.mt_list):
                 self._rot_z = np.repeat(rot_z, len(self.mt_list))
 
@@ -447,7 +447,7 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
 
     def plot(self):
         """
-        plots the phase tensor pseudo section.  See class doc string for 
+        plots the phase tensor pseudo section.  See class doc string for
         more details.
         """
 
@@ -463,7 +463,8 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
         self.fig = plt.figure(self.fig_num, self.fig_size, dpi=self.fig_dpi)
         self.ax = self.fig.add_subplot(1, 1, 1, aspect='equal')
 
-        plt.xticks(rotation='vertical')  # FZ: control tick rotation=30 not that good
+        # FZ: control tick rotation=30 not that good
+        plt.xticks(rotation='vertical')
 
         # create empty lists to put things into
         self.stationlist = []
@@ -503,16 +504,22 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
                 north = mt.lat
                 if self.linedir == 'ew':
                     if east0 < east:
-                        offset = np.sqrt((east0 - east) ** 2 + (north0 - north) ** 2)
+                        offset = np.sqrt((east0 - east) **
+                                         2 + (north0 - north) ** 2)
                     elif east0 > east:
-                        offset = -1 * np.sqrt((east0 - east) ** 2 + (north0 - north) ** 2)
+                        offset = -1 * \
+                            np.sqrt((east0 - east) ** 2 +
+                                    (north0 - north) ** 2)
                     else:
                         offset = 0
                 elif self.linedir == 'ns':
                     if north0 < north:
-                        offset = np.sqrt((east0 - east) ** 2 + (north0 - north) ** 2)
+                        offset = np.sqrt((east0 - east) **
+                                         2 + (north0 - north) ** 2)
                     elif north0 > north:
-                        offset = -1 * np.sqrt((east0 - east) ** 2 + (north0 - north) ** 2)
+                        offset = -1 * \
+                            np.sqrt((east0 - east) ** 2 +
+                                    (north0 - north) ** 2)
                     else:
                         offset = 0
 
@@ -556,11 +563,11 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
                 colorarray = np.sqrt(abs(pt.det[::-1])) * (180 / np.pi)
 
             elif self.ellipse_colorby == 'skew' or \
-                            self.ellipse_colorby == 'skew_seg':
+                    self.ellipse_colorby == 'skew_seg':
                 colorarray = pt.beta[0][::-1]
 
             elif self.ellipse_colorby == 'normalized_skew' or \
-                            self.ellipse_colorby == 'normalized_skew_seg':
+                    self.ellipse_colorby == 'normalized_skew_seg':
                 colorarray = 2 * pt.beta[0][::-1]
 
             elif self.ellipse_colorby == 'ellipticity':
@@ -615,19 +622,19 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
                 # == =add the ellipse to the plot == ========
                 self.ax.add_artist(ellipd)
 
-                # --------- Add induction arrows if desired --------------------
+                # --------- Add induction arrows if desired -------------------
                 if self.plot_tipper.find('y') == 0:
 
                     # --> plot real tipper
                     if self.plot_tipper == 'yri' or self.plot_tipper == 'yr':
-                        txr = tmr[jj] * np.sin(tar[jj] * np.pi / 180 + \
+                        txr = tmr[jj] * np.sin(tar[jj] * np.pi / 180 +
                                                np.pi * self.arrow_direction) * \
-                              self.arrow_size
-                        tyr = -tmr[jj] * np.cos(tar[jj] * np.pi / 180 + \
+                            self.arrow_size
+                        tyr = -tmr[jj] * np.cos(tar[jj] * np.pi / 180 +
                                                 np.pi * self.arrow_direction) * \
-                              self.arrow_size
+                            self.arrow_size
 
-                        maxlength = np.sqrt((txr / self.arrow_size) ** 2 + \
+                        maxlength = np.sqrt((txr / self.arrow_size) ** 2 +
                                             (tyr / self.arrow_size) ** 2)
 
                         if maxlength > self.arrow_threshold:
@@ -646,14 +653,14 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
 
                     # --> plot imaginary tipper
                     if self.plot_tipper == 'yri' or self.plot_tipper == 'yi':
-                        txi = tmi[jj] * np.sin(tai[jj] * np.pi / 180 + \
+                        txi = tmi[jj] * np.sin(tai[jj] * np.pi / 180 +
                                                np.pi * self.arrow_direction) * \
-                              self.arrow_size
-                        tyi = -tmi[jj] * np.cos(tai[jj] * np.pi / 180 + \
+                            self.arrow_size
+                        tyi = -tmi[jj] * np.cos(tai[jj] * np.pi / 180 +
                                                 np.pi * self.arrow_direction) * \
-                              self.arrow_size
+                            self.arrow_size
 
-                        maxlength = np.sqrt((txi / self.arrow_size) ** 2 + \
+                        maxlength = np.sqrt((txi / self.arrow_size) ** 2 +
                                             (tyi / self.arrow_size) ** 2)
                         if maxlength > self.arrow_threshold:
                             pass
@@ -695,7 +702,8 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
 
         # set y-ticklabels
         if self.tscale == 'period':
-            yticklabels = [mtpl.labeldict[ii] for ii in range(pmin, pmax + 1, 1)]
+            yticklabels = [mtpl.labeldict[ii]
+                           for ii in range(pmin, pmax + 1, 1)]
             #            yticklabels = ['{0:>4}'.format('{0: .1e}'.format(plot_period_list[ll]))
             #                            for ll in np.arange(0, n, self.ystep)]+\
             #                        ['{0:>4}'.format('{0: .1e}'.format(plot_period_list[-1]))]
@@ -709,7 +717,8 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
             #                            for ll in np.arange(0, n, self.ystep)]+\
             #                            ['{0:>4}'.format('{0: .1e}'.format(1./plot_period_list[-1]))]
             #
-            yticklabels = [mtpl.labeldict[-ii] for ii in range(pmin, pmax + 1, 1)]
+            yticklabels = [mtpl.labeldict[-ii]
+                           for ii in range(pmin, pmax + 1, 1)]
             self.ax.set_ylabel('Frequency (Hz)',
                                fontsize=self.font_size + 2,
                                fontweight='bold')
@@ -745,14 +754,14 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
         self.ax.set_xticklabels(xticklabels)
 
         # --> set x-limits
-        if self.xlimits == None:
+        if self.xlimits is None:
             self.ax.set_xlim(self.offsetlist.min() * self.xstretch - es * 2,
                              self.offsetlist.max() * self.xstretch + es * 2)
         else:
             self.ax.set_xlim(self.xlimits)
 
         # --> set y-limits
-        if self.ylimits == None:
+        if self.ylimits is None:
             #            self.ax.set_ylim(pmax+es*2, pmin-es*2)
             self.ax.set_ylim(pmax * self.ystretch, pmin * self.ystretch)
         else:
@@ -762,7 +771,7 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
         #            self.ax.set_ylim(pmax, pmin)
 
         # --> set title of the plot
-        if self.plot_title == None:
+        if self.plot_title is None:
             pass
         else:
             self.ax.set_title(self.plot_title, fontsize=self.font_size + 2)
@@ -779,11 +788,13 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
                 self.ax.legend([treal[0], timag[0]],
                                ['Tipper_real', 'Tipper_imag'],
                                loc='lower right',
-                               prop={'size': self.font_size - 1, 'weight': 'bold'},
-                               ncol=2,
-                               markerscale=.5,
-                               borderaxespad=.005,
-                               borderpad=.25)
+                               prop={
+                    'size': self.font_size - 1,
+                    'weight': 'bold'},
+                    ncol=2,
+                    markerscale=.5,
+                    borderaxespad=.005,
+                    borderpad=.25)
 
             elif self.plot_tipper == 'yr':
                 treal = self.ax.plot(np.arange(10) * .000005,
@@ -792,11 +803,13 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
                 self.ax.legend([treal[0]],
                                ['Tipper_real'],
                                loc='lower right',
-                               prop={'size': self.font_size - 1, 'weight': 'bold'},
-                               ncol=2,
-                               markerscale=.5,
-                               borderaxespad=.005,
-                               borderpad=.25)
+                               prop={
+                    'size': self.font_size - 1,
+                    'weight': 'bold'},
+                    ncol=2,
+                    markerscale=.5,
+                    borderaxespad=.005,
+                    borderpad=.25)
 
             elif self.plot_tipper == 'yi':
                 timag = self.ax.plot(np.arange(10) * .000005,
@@ -805,15 +818,19 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
                 self.ax.legend([timag[0]],
                                ['Tipper_imag'],
                                loc='lower right',
-                               prop={'size': self.font_size - 1, 'weight': 'bold'},
-                               ncol=2,
-                               markerscale=.5,
-                               borderaxespad=.005,
-                               borderpad=.25)
+                               prop={
+                    'size': self.font_size - 1,
+                    'weight': 'bold'},
+                    ncol=2,
+                    markerscale=.5,
+                    borderaxespad=.005,
+                    borderpad=.25)
 
             # make a scale arrow
             if self.scale_arrow:
-                print (np.log10(self.ylimits[1] - self.scale_arrow_dict['text_offset_y'])) * self.ystretch
+                print (
+                    np.log10(
+                        self.ylimits[1] - self.scale_arrow_dict['text_offset_y'])) * self.ystretch
                 txrl = self.scale_arrow_dict['size']
                 self.ax.arrow(min(self.offsetlist) * self.xstretch,
                               np.log10(self.ylimits[1]) * self.ystretch,
@@ -826,7 +843,8 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
                               head_width=awidth,
                               head_length=aheight)
                 self.ax.text(min(self.offsetlist) * self.xstretch,
-                             (np.log10(self.ylimits[1] - self.scale_arrow_dict['text_offset_y'])) * self.ystretch,
+                             (np.log10(self.ylimits[
+                              1] - self.scale_arrow_dict['text_offset_y'])) * self.ystretch,
                              '|T| = %3.1f' % txrl)
 
         # put a grid on the plot
@@ -839,7 +857,7 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
         print '-' * 25
 
         # ==> make a colorbar with appropriate colors
-        if self.cb_position == None:
+        if self.cb_position is None:
             self.ax2, kw = mcb.make_axes(self.ax,
                                          orientation=self.cb_orientation,
                                          shrink=.35)
@@ -884,7 +902,6 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
             self.cb.ax.xaxis.set_label_position('top')
             self.cb.ax.xaxis.set_label_coords(.5, 1.3)
 
-
         elif self.cb_orientation == 'vertical':
             self.cb.ax.yaxis.set_label_position('right')
             self.cb.ax.yaxis.set_label_coords(1.5, .5)
@@ -910,7 +927,7 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
         plt.setp(self.ref_ax.yaxis.get_ticklabels(), visible=False)
         self.ref_ax.set_title(r'$\Phi$ = 1')
 
-        # put the grid lines behind 
+        # put the grid lines behind
         #        [line.set_zorder(10000) for line in self.ax.lines]
         self.ax.set_axisbelow(True)
 
@@ -921,7 +938,7 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
         This will write text files for all the phase tensor parameters
         """
 
-        if save_path == None:
+        if save_path is None:
             try:
                 svpath = os.path.dirname(self.mt_list[0].fn)
             except TypeError:
@@ -996,8 +1013,8 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
                 tlist = mt.frequency
 
             try:
-                stationstr = '{0:^8}'.format(mt.station[self.station_id[0]: \
-                    self.station_id[1]])
+                stationstr = '{0:^8}'.format(mt.station[self.station_id[0]:
+                                                        self.station_id[1]])
             except AttributeError:
                 stationstr = '{0:^8}'.format(mt.station)
 
@@ -1012,7 +1029,7 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
             tiplisti[0, kk] = stationstr
             tiplistiaz[0, kk] = stationstr
 
-            # If the all periods match for the station and the plotting period         
+            # If the all periods match for the station and the plotting period
             if tlist.all() == plist.all():
                 if pt.pt is not None:
                     sklist[1:, kk] = pt.beta[0]
@@ -1061,7 +1078,8 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
                                     sklist[mm + 1, kk] = pt.beta[0][ff]
                                     phiminlist[mm + 1, kk] = pt.phimin[0][ff]
                                     phimaxlist[mm + 1, kk] = pt.phimax[0][ff]
-                                    elliplist[mm + 1, kk] = pt.ellipticity[0][ff]
+                                    elliplist[
+                                        mm + 1, kk] = pt.ellipticity[0][ff]
                                     azimlist[mm + 1, kk] = pt.azimuth[0][ff]
 
                                 # add on the value to the present row
@@ -1223,16 +1241,16 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
     def update_plot(self):
         """
         update any parameters that where changed using the built-in draw from
-        canvas.  
-        
+        canvas.
+
         Use this if you change an of the .fig or axes properties
-        
+
         :Example: ::
-            
-            >>> # to change the grid lines to be on the major ticks and gray 
+
+            >>> # to change the grid lines to be on the major ticks and gray
             >>> pt1.ax.grid(True, which='major', color=(.5,.5,.5))
             >>> pt1.update_plot()
-        
+
         """
 
         self.fig.canvas.draw()
@@ -1240,10 +1258,10 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
     def redraw_plot(self):
         """
         use this function if you updated some attributes and want to re-plot.
-        
+
         :Example: ::
-            
-            >>> # change ellipse size and color map to be segmented for skew 
+
+            >>> # change ellipse size and color map to be segmented for skew
             >>> pt1.ellipse_size = 5
             >>> pt1.ellipse_colorby = 'beta_seg'
             >>> pt1.ellipse_cmap = 'mt_seg_bl2wh2rd'
@@ -1265,44 +1283,44 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
                     fig_dpi=None, close_plot='y'):
         """
         save_plot will save the figure to save_fn.
-        
+
         Arguments:
         -----------
-        
+
             **save_fn** : string
                           full path to save figure to, can be input as
                           * directory path -> the directory path to save to
-                            in which the file will be saved as 
+                            in which the file will be saved as
                             save_fn/station_name_PTPseudoSection.file_format
-                            
-                          * full path -> file will be save to the given 
+
+                          * full path -> file will be save to the given
                             path.  If you use this option then the format
                             will be assumed to be provided by the path
-                            
+
             **file_format** : [ pdf | eps | jpg | png | svg ]
-                              file type of saved figure pdf,svg,eps... 
-                              
+                              file type of saved figure pdf,svg,eps...
+
             **orientation** : [ landscape | portrait ]
                               orientation in which the file will be saved
                               *default* is portrait
-                              
+
             **fig_dpi** : int
                           The resolution in dots-per-inch the file will be
-                          saved.  If None then the dpi will be that at 
-                          which the figure was made.  I don't think that 
+                          saved.  If None then the dpi will be that at
+                          which the figure was made.  I don't think that
                           it can be larger than dpi of the figure.
-                          
+
             **close_plot** : [ y | n ]
                              * 'y' will close the plot after saving.
                              * 'n' will leave plot open
-                          
+
         :Example: ::
             >>> # save plot as a jpg
             >>> pt1.save_plot(r'/home/MT/figures', file_format='jpg')
-            
+
         """
 
-        if fig_dpi == None:
+        if fig_dpi is None:
             fig_dpi = self.fig_dpi
 
         if os.path.isdir(save_fn) == False:

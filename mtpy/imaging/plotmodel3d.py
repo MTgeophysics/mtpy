@@ -11,9 +11,9 @@ Class:
     Model3d()
 
 Functions:
-    Batch processing 
+    Batch processing
     plot setup
-    
+
 
 Output to be sent to mayavi or paraview
 

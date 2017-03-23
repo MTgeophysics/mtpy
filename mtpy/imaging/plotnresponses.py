@@ -27,255 +27,255 @@ reload(mtpl)
 
 class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
     """
-    plots multiple MT responses simultaneously either in single plots or in 
+    plots multiple MT responses simultaneously either in single plots or in
     one plot of sub-figures or in a single plot with subfigures for each
     component.
-    
+
     expecting only one type of input --> can be:
         **fn_list** : list of filenames to plot
-           
+
          **z_object_list** : list of mtpy.core.z.Z objects
-         
+
          **res_object_list** : list of mtpy.imaging.mtplot.ResPhase objects
-         
+
          **tipper_object_list** : list of mtpy.imaging.mtplot.Tipper objects
-         
+
          **mt_object_list** : list of mtpy.imaging.mtplot.MTplot objects
-         
-        
+
+
     Arguments:
     ----------
         **fn_list** : list of filenames to plot
                      ie. [fn_1, fn_2, ...], *default* is None
-           
+
          **z_object_list** : list of mtpy.core.z.Z objects
                             *default* is None
-         
+
          **res_object_list** : list of mtpy.imaging.mtplot.ResPhase objects
                               *default* is None
-         
+
          **tipper_object_list** : list of mtpy.imaging.mtplot.Tipper objects
                                  *default* is None
-         
+
          **mt_object_list** : list of mtpy.imaging.mtplot.MTplot objects
                              *default* is None
-                      
+
         **fig_num** : int
                      figure number
                      *default* is 1
         **fig_size** : [width, height] of figure size in inches
-        
+
         **rot_z** : float or np.ndarray
-                   rotation angle of impedance tensor (deg or radians), 
+                   rotation angle of impedance tensor (deg or radians),
                    *Note* : rotaion is clockwise positive
                    *default* is 0
                    Can input so each station is rotated at a constant angle or
                    each period is rotated differently, or both.
-        
+
         **plot_num** : [ 1 | 2 | 3 ]
                         * 1 for just Ex/By and Ey/Bx *default*
                         * 2 for all 4 components
                         * 3 for off diagonal plus the determinant
-                        
+
         **plot_style** : [ '1' | 'all' | 'compare' ]
                         determines the plotting style:
-                            * '1' for plotting each station in a different 
+                            * '1' for plotting each station in a different
                                   figure. *default*
-                                  
+
                             * 'all' for plotting each station in a subplot
                                     all in the same figure
-                            
-                            * 'compare' for comparing the responses all in 
-                                        one plot.  Here the responses are 
-                                        colored from dark to light.  This 
+
+                            * 'compare' for comparing the responses all in
+                                        one plot.  Here the responses are
+                                        colored from dark to light.  This
                                         plot can get messy if too many stations
-                                        are plotted.  
-                                    
-    
+                                        are plotted.
+
+
         **plot_title** : string
                     title of plot
                     *default* is station name
-                    
+
         **plot_tipper** : [ 'yri' | 'yr' | 'yi' | 'n' ]
                           Plots the tipper in a bottom pannel
                           * 'yri'  --> plots the real and imaginar parts
                           * 'yr'   --> plots just the real part
                           * 'yi'   --> plots just the imaginary part
-                          
-                          **Note:** the convention is to point towards a 
+
+                          **Note:** the convention is to point towards a
                           conductor.  Can change this by setting the
                           parameter arrow_direction = 1.
-                          
+
         **plot_strike** : [ 'y' | 1 | 2 | 3 | 'n' ]
                           Plots the strike angle from different parameters:
-                              * 'y'  --> plots strike angle determined from 
+                              * 'y'  --> plots strike angle determined from
                                          the invariants of Weaver et al. [2000]
                                          and the phase tensor of
-                                         Caldwell et al. [2004], if Tipper is 
+                                         Caldwell et al. [2004], if Tipper is
                                          plotted the strike of the tipper is
                                          also plotted.
-                                         
-                               * 1  --> plots strike angle determined from 
+
+                               * 1  --> plots strike angle determined from
                                         the invariants of Weaver et al. [2000]
-                               * 2  --> plots strike angle determined from 
-                                        the phase tensor of 
+                               * 2  --> plots strike angle determined from
+                                        the phase tensor of
                                         Caldwell et al. [2004]
-                               * 3  --> plots strike angle determined from 
+                               * 3  --> plots strike angle determined from
                                         the tipper
                                * 'n' --> doesn't plot the strike, *default*
-                               
+
         **plot_skew** : [ 'y' | 'n' ]
-                       string for plotting skew angle.  This is plotted in 
-                       the same plot as strike angle at the moment.  
+                       string for plotting skew angle.  This is plotted in
+                       the same plot as strike angle at the moment.
                            * 'y' for plotting the skew
                            * 'n' for not plotting skew *default*
-                          
+
         **fig_dpi** : int
                  dots-per-inch resolution, *default* is 300
-                    
-                        
+
+
         :Example: ::
-            
+
             >>> import mtpy.imaging.mtplottools as mtplot
             >>> import os
             >>> edipath = r"/home/Edifiles"
-            >>> edilist = [os.path.join(edipath,edi) 
+            >>> edilist = [os.path.join(edipath,edi)
             >>> ...       for edi in os.listdir(edipath)
             >>> ...       if edi.find('.edi')>0]
             >>> plot each station in a subplot all in one figure with tipper
             >>> rp1 = mtplot.PlotMultipleResPhase(fn_list=edilist, plotnum=1,
             >>>                             plot_tipper='yr',plot_style='all')
 
-            
+
     Attributes:
     -----------
-        -mt_list         list of mtplot.MTplot objects made from inputs 
+        -mt_list         list of mtplot.MTplot objects made from inputs
         -fignum         figure number for plotting
         -fig_size       figure size in inches [width, height]
-        -plotnum        plot type, see arguments for details 
+        -plotnum        plot type, see arguments for details
         -title          title of the plot, *default* is station name
         -dpi            Dots-per-inch resolution of plot, *default* is 300
         -rotz           Rotate impedance tensor by this angle (deg) assuming
                         that North is 0 and angle is positive clockwise
-                        
-        -plot_tipper    string to tell the program to plot tipper arrows or 
+
+        -plot_tipper    string to tell the program to plot tipper arrows or
                         not, see accepted values above in arguments
-        
-        -plot_strike    string or integer telling the program to plot the 
+
+        -plot_strike    string or integer telling the program to plot the
                         strike angle, see values above in arguments
-        
+
         -plot_skew      string to tell the program to plot skew angle.
                         The skew is plotted in the same subplot as the strike
                         angle at the moment
-                        
-                
+
+
         -period          period array cooresponding to the impedance tensor
-        -font_size       size of font for the axis ticklabels, note that the 
+        -font_size       size of font for the axis ticklabels, note that the
                          axis labels will be font_size+2
-        
-        -axr             matplotlib.axes object for the xy,yx resistivity plot.  
+
+        -axr             matplotlib.axes object for the xy,yx resistivity plot.
         -axp             matplotlib.axes object for the xy,yx phase plot
         -axt             matplotlib.axes object for the tipper plot
         -ax2r            matplotlib.axes object for the xx,yy resistivity plot
         -ax2p            matplotlib.axes object for the xx,yy phase plot
         -axs             matplotlib.axes object for the strike plot
         -axs2            matplotlib.axes object for the skew plot
-        
+
         ..
-        
+
              **Note:** that from these axes object you have control of the
-             plot.  You can do this by changing any parameter in the 
+             plot.  You can do this by changing any parameter in the
              axes object and then calling update_plot()
-        
-        -erxyr          class matplotlib.container.ErrorbarContainer for 
+
+        -erxyr          class matplotlib.container.ErrorbarContainer for
                         xy apparent resistivity.
-        -erxyp          class matplotlib.container.ErrorbarContainer for 
+        -erxyp          class matplotlib.container.ErrorbarContainer for
                         xy.
-        -eryxr          class matplotlib.container.ErrorbarContainer for 
+        -eryxr          class matplotlib.container.ErrorbarContainer for
                         yx apparent resistivity.
-        -eryxp          class matplotlib.container.ErrorbarContainer for 
+        -eryxp          class matplotlib.container.ErrorbarContainer for
                         yx phase.
-        
+
         ..
-        
-            **Note:** that from these line objects you can manipulate the 
+
+            **Note:** that from these line objects you can manipulate the
             error bar properties and then call update_plot()
-                     
-        -xy_ls           line style for xy and xx components, *default* is None       
-        -yx_ls           line style for yx and yy components, *default* is None        
+
+        -xy_ls           line style for xy and xx components, *default* is None
+        -yx_ls           line style for yx and yy components, *default* is None
         -det_ls          line style for determinant, *default* is None
-        
+
         -xy_marker       marker for xy and xx, *default* is squares
         -yx_marker       marker for yx and yy, *default* is circles
         -det_marker      marker for determinant, *default* is diamonds
-        
+
         -xy_color        marker color for xy and xx, *default* is blue
         -yx_color        marker color for yx and yy, *default* is red
         -det_color       marker color for determinant, *default* is green
-        
-        -xy_mfc          marker face color for xy and xx, *default* is None 
+
+        -xy_mfc          marker face color for xy and xx, *default* is None
         -yx_mfc          marker face color for yx and yy, *default* is None
         -det_mfc         marker face color for determinant, *default* is None
-        
+
         -skew_marker     marker for skew angle, *default* is 'd'
         -skew_color      color for skew angle, *default* is 'orange'
-        
+
         -strike_inv_marker  marker for strike angle determined by invariants
                             *default* is '^'
-        -strike_inv_color   color for strike angle determined by invaraiants 
+        -strike_inv_color   color for strike angle determined by invaraiants
                             *default* is (.2, .2, .7)
-        -strike_pt_marker  marker for strike angle determined by pt, 
+        -strike_pt_marker  marker for strike angle determined by pt,
                            *default* is'v'
         -strike_pt_color   color for strike angle determined by pt
                            *default* is (.7, .2, .2)
-        
+
         -strike_tip_marker  marker for strike angle determined by tipper
                             *default* is '>'
         -strike_tip_color   color for strike angle determined by tipper
                             *default* is (.2, .7, .2)
-        
+
         -marker_size     size of marker in relative dimenstions, *default* is 2
-        -marker_lw       line width of marker, *default* is 100./dpi 
+        -marker_lw       line width of marker, *default* is 100./dpi
         ..
-        
+
          *For more on line and marker styles see matplotlib.lines.Line2D*
-        
+
         -arrow_lw          line width of the arrow, *default* is 0.75
         -arrow_head_width  head width of the arrow, *default* is 0 for no arrow
                            head.  Haven't found a good way to scale the arrow
                            heads in a log scale.
-                         
+
         -arrow_head_height  head width of the arrow, *default* is 0 for no arrow
                             head.  Haven't found a good way to scale the arrow
                             heads in a log scale.
-                          
+
         -arrow_color_real  color of the real arrows, *default* is black
         -arrow_color_imag  color of the imaginary arrows, *default* is blue
-        
-        -arrow_direction   0 for pointing towards a conductor and -1 for 
+
+        -arrow_direction   0 for pointing towards a conductor and -1 for
                            pointing away from a conductor.
-                          
+
 
         -xlimits        limits on the x-limits (period), *default* is None
-                        which will estimate the min and max from the data, 
+                        which will estimate the min and max from the data,
                         setting the min as the floor(min(period)) and the max
                         as ceil(max(period)).  Input in linear scale if you
                         want to change the period limits, ie. (.1,1000)
-                        
-        -res_limits     limits on the resistivity, *default* is None, which 
+
+        -res_limits     limits on the resistivity, *default* is None, which
                         will estimate the min and max from the data, rounding
                         to the lowest and highest increments to the power of 10
-                        Input in linear scale if you want to change them, 
-                        ie. (1,10000). Note this only sets the xy and yx 
+                        Input in linear scale if you want to change them,
+                        ie. (1,10000). Note this only sets the xy and yx
                         components, not the xx and yy.
-                        
-        -phase_limits   limits on the phase, *default* is (0,90) but will 
+
+        -phase_limits   limits on the phase, *default* is (0,90) but will
                         adapt to the data if there is phase above 90 or below
                         0.  Input in degrees.  Note this only changes the xy
                         and yx components.
-                        
+
         -tipper_limits  limits of the y-axis, *default* is (-1,1)
-    
+
     """
 
     def __init__(self, **kwargs):
@@ -306,12 +306,12 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
         # if rotation angle is an int or float make an array the length of
         # mt_list for plotting purposes
         self._rot_z = kwargs.pop('rot_z', 0)
-        if type(self._rot_z) is float or type(self._rot_z) is int:
+        if isinstance(self._rot_z, float) or isinstance(self._rot_z, int):
             self._rot_z = np.array([self._rot_z] * len(self.mt_list))
 
         # if the rotation angle is an array for rotation of different
         # freq than repeat that rotation array to the len(mt_list)
-        elif type(self._rot_z) is np.ndarray:
+        elif isinstance(self._rot_z, np.ndarray):
             if self._rot_z.shape[0] != len(self.mt_list):
                 self._rot_z = np.repeat(self._rot_z, len(self.mt_list))
 
@@ -433,12 +433,12 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
 
         # if rotation angle is an int or float make an array the length of
         # mt_list for plotting purposes
-        if type(rot_z) is float or type(rot_z) is int:
+        if isinstance(rot_z, float) or isinstance(rot_z, int):
             self._rot_z += np.array([rot_z] * len(self.mt_list))
 
         # if the rotation angle is an array for rotation of different
         # freq than repeat that rotation array to the len(mt_list)
-        elif type(rot_z) is np.ndarray:
+        elif isinstance(rot_z, np.ndarray):
             if rot_z.shape[0] != len(self.mt_list):
                 self._rot_z += np.repeat(rot_z, len(self.mt_list))
 
@@ -646,7 +646,10 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                     self.fig_size = [ns * 8, 6]
 
             # make a figure instance
-            self.fig = plt.figure(self.fig_num, self.fig_size, dpi=self.fig_dpi)
+            self.fig = plt.figure(
+                self.fig_num,
+                self.fig_size,
+                dpi=self.fig_dpi)
 
             # make subplots as columns for all stations that need to be plotted
             gs0 = gridspec.GridSpec(1, ns)
@@ -661,23 +664,23 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                 rp = mt.get_ResPhase()
 
                 # set x-axis limits from short period to long period
-                if self.xlimits == None:
+                if self.xlimits is None:
                     self.xlimits = (10 ** (np.floor(np.log10(mt.period[0]))),
                                     10 ** (np.ceil(np.log10((mt.period[-1])))))
-                if self.phase_limits == None:
+                if self.phase_limits is None:
                     pass
 
-                if self.res_limits == None:
+                if self.res_limits is None:
                     self.res_limits = (10 ** (np.floor(
                         np.log10(min([rp.resxy.min(),
                                       rp.resyx.min()])))),
-                                       10 ** (np.ceil(
-                                           np.log10(max([rp.resxy.max(),
-                                                         rp.resyx.max()])))))
+                        10 ** (np.ceil(
+                            np.log10(max([rp.resxy.max(),
+                                          rp.resyx.max()])))))
 
-                # create a grid to place the figures into, set to have 2 rows 
+                # create a grid to place the figures into, set to have 2 rows
                 # and 2 columns to put any of the 4 components.  Make the phase
-                # plot slightly shorter than the apparent resistivity plot and 
+                # plot slightly shorter than the apparent resistivity plot and
                 # have the two close to eachother vertically.
                 gs = gridspec.GridSpecFromSubplotSpec(nrows, 1,
                                                       subplot_spec=gs0[ii],
@@ -691,8 +694,6 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
 
                     # phase axis that shares period axis with resistivity
                     axp = self.fig.add_subplot(gs[1, :], sharex=axr)
-
-
 
                 # --> make figure for all 4 components
                 elif self.plot_num == 2:
@@ -822,7 +823,7 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                                      elinewidth=self.marker_lw)
 
                 # check the phase to see if any point are outside of [0:90]
-                if self.phase_limits == None:
+                if self.phase_limits is None:
                     if min(rp.phasexy) < 0 or min(rp.phaseyx) < 0:
                         pymin = min([min(rp.phasexy),
                                      min(rp.phaseyx)])
@@ -848,7 +849,7 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                     plt.setp(axp.get_yticklabels(), visible=False)
 
                 if self.plot_tipper == 'n' and self.plot_skew == 'n' and \
-                                self.plot_strike == 'n':
+                        self.plot_strike == 'n':
                     axp.set_xlabel('Period (s)', fontdict)
 
                 axp.set_xscale('log')
@@ -878,14 +879,14 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
 
                     tp = mt.get_Tipper()
 
-                    txr = tp.mag_real * np.sin(tp.ang_real * np.pi / 180 + \
+                    txr = tp.mag_real * np.sin(tp.ang_real * np.pi / 180 +
                                                np.pi * self.arrow_direction)
-                    tyr = tp.mag_real * np.cos(tp.ang_real * np.pi / 180 + \
+                    tyr = tp.mag_real * np.cos(tp.ang_real * np.pi / 180 +
                                                np.pi * self.arrow_direction)
 
-                    txi = tp.mag_imag * np.sin(tp.ang_imag * np.pi / 180 + \
+                    txi = tp.mag_imag * np.sin(tp.ang_imag * np.pi / 180 +
                                                np.pi * self.arrow_direction)
-                    tyi = tp.mag_imag * np.cos(tp.ang_imag * np.pi / 180 + \
+                    tyi = tp.mag_imag * np.cos(tp.ang_imag * np.pi / 180 +
                                                np.pi * self.arrow_direction)
 
                     nt = len(txr)
@@ -987,7 +988,7 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                     axt.set_xlim(np.log10(self.xlimits[0]),
                                  np.log10(self.xlimits[1]))
 
-                # ------plot strike angles----------------------------------------------
+                # ------plot strike angles-------------------------------------
                 if self._plot_strike.find('y') == 0:
 
                     stlist = []
@@ -1126,7 +1127,7 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                     if pdict['strike'] != nrows - 1:
                         plt.setp(axst.xaxis.get_ticklabels(), visible=False)
 
-                # ------plot skew angle---------------------------------------------
+                # ------plot skew angle----------------------------------------
                 if self._plot_skew == 'y':
                     # strike from phase tensor
                     pt = mt.get_PhaseTensor()
@@ -1160,7 +1161,7 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                     if pdict['strike'] != nrows - 1:
                         plt.setp(axst.xaxis.get_ticklabels(), visible=False)
 
-                # ----plot phase tensor ellipse---------------------------------------
+                # ----plot phase tensor ellipse--------------------------------
                 if self._plot_pt == 'y':
                     # get phase tensor instance
                     pt = mt.get_PhaseTensor()
@@ -1179,37 +1180,36 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
 
                     # get the properties to color the ellipses by
                     if self.ellipse_colorby == 'phiminang' or \
-                                    self.ellipse_colorby == 'phimin':
+                            self.ellipse_colorby == 'phimin':
                         colorarray = pt.phimin[0]
-
 
                     elif self.ellipse_colorby == 'phidet':
                         colorarray = np.sqrt(abs(pt.det[0])) * (180 / np.pi)
 
-
                     elif self.ellipse_colorby == 'skew' or \
-                                    self.ellipse_colorby == 'skew_seg':
+                            self.ellipse_colorby == 'skew_seg':
                         colorarray = pt.beta[0]
 
                     elif self.ellipse_colorby == 'ellipticity':
                         colorarray = pt.ellipticity[0]
 
                     else:
-                        raise NameError(self.ellipse_colorby + ' is not supported')
+                        raise NameError(
+                            self.ellipse_colorby + ' is not supported')
 
-                    # -------------plot ellipses-----------------------------------
+                    # -------------plot ellipses-------------------------------
                     for kk, ff in enumerate(mt.period):
                         # make sure the ellipses will be visable
                         eheight = pt.phimin[0][kk] / pt.phimax[0][kk] * \
-                                  self.ellipse_size
+                            self.ellipse_size
                         ewidth = pt.phimax[0][kk] / pt.phimax[0][kk] * \
-                                 self.ellipse_size
+                            self.ellipse_size
 
                         # create an ellipse scaled by phimin and phimax and
                         # oriented along the azimuth which is calculated as
                         # clockwise but needs to be plotted counter-clockwise
                         # hence the negative sign.
-                        ellipd = patches.Ellipse((np.log10(ff) * \
+                        ellipd = patches.Ellipse((np.log10(ff) *
                                                   self.ellipse_spacing,
                                                   0),
                                                  width=ewidth,
@@ -1235,7 +1235,7 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                                 ckmin,
                                 ckmax))
 
-                    # ----set axes properties-----------------------------------------------
+                    # ----set axes properties----------------------------------
                     # --> set tick labels and limits
                     axpt.set_xlim(np.floor(np.log10(self.xlimits[0])),
                                   np.ceil(np.log10(self.xlimits[1])))
@@ -1309,7 +1309,8 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                                                     orientation='vertical')
                         cbpt.set_ticks([ckmin, (ckmax - ckmin) / 2, ckmax])
                         cbpt.set_ticklabels(['{0:.0f}'.format(ckmin),
-                                             '{0:.0f}'.format((ckmax - ckmin) / 2),
+                                             '{0:.0f}'.format(
+                                                 (ckmax - ckmin) / 2),
                                              '{0:.0f}'.format(ckmax)])
                         cbpt.ax.yaxis.set_label_position('left')
                         cbpt.ax.yaxis.set_label_coords(-1.05, .5)
@@ -1318,9 +1319,9 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                         cbpt.set_label(mtpl.ckdict[self.ellipse_colorby],
                                        fontdict={'size': self.font_size})
 
-                    # ==  == Plot the Z_xx, Z_yy components if desired ==  
+                    # ==  == Plot the Z_xx, Z_yy components if desired ==
                     if self.plot_num == 2:
-                        # ---------plot the apparent resistivity----------------
+                        # ---------plot the apparent resistivity---------------
                         axr2 = self.fig.add_subplot(gs[0, 1], sharex=axr)
                         axr2.yaxis.set_label_coords(-.1, 0.5)
 
@@ -1373,7 +1374,7 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                                         handletextpad=.2,
                                         borderpad=.02)
 
-                        # -----Plot the phase-----------------------------------
+                        # -----Plot the phase----------------------------------
                         axp2 = self.fig.add_subplot(gs[1, 1], sharex=axr)
                         axp2.yaxis.set_label_coords(-.1, 0.5)
 
@@ -1418,7 +1419,6 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                                   which='both',
                                   color=(.25, .25, .25),
                                   lw=.25)
-
 
                         # == =Plot the Determinant if desired ==  ==  ==  ==
                 if self.plot_num == 3:
@@ -1504,11 +1504,14 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
             ns = len(self.mt_list)
 
             # make color lists for the plots going light to dark
-            cxy = [(0, 0 + float(cc) / ns, 1 - float(cc) / ns) for cc in range(ns)]
+            cxy = [(0, 0 + float(cc) / ns, 1 - float(cc) / ns)
+                   for cc in range(ns)]
             cyx = [(1, float(cc) / ns, 0) for cc in range(ns)]
             cdet = [(0, 1 - float(cc) / ns, 0) for cc in range(ns)]
-            ctipr = [(.75 * cc / ns, .75 * cc / ns, .75 * cc / ns) for cc in range(ns)]
-            ctipi = [(float(cc) / ns, 1 - float(cc) / ns, .25) for cc in range(ns)]
+            ctipr = [(.75 * cc / ns, .75 * cc / ns, .75 * cc / ns)
+                     for cc in range(ns)]
+            ctipi = [(float(cc) / ns, 1 - float(cc) / ns, .25)
+                     for cc in range(ns)]
             cst = [(.5 * cc / ns, 0, .5 * cc / ns) for cc in range(ns)]
 
             # make marker lists for the different components
@@ -1625,17 +1628,17 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                 rp = mt.get_ResPhase()
 
                 # set x-axis limits from short period to long period
-                if self.xlimits == None:
+                if self.xlimits is None:
                     self.xlimits = (10 ** (np.floor(np.log10(mt.period[0]))),
                                     10 ** (np.ceil(np.log10((mt.period[-1])))))
-                if self.phase_limits == None:
+                if self.phase_limits is None:
                     self.phase_limits = (0, 89.9)
 
                 stationlist.append(mt.station)
 
                 # ==  ==  ==  == =Plot Z_xy and Z_yx ==
                 if self.plot_num == 1 or self.plot_num == 2:
-                    # ---------plot the apparent resistivity--------------------
+                    # ---------plot the apparent resistivity-------------------
                     # --> plot as error bars and just as points xy-blue, yx-red
                     # res_xy
                     ebxyr = self.axrxy.errorbar(mt.period,
@@ -1665,7 +1668,7 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                                                 capsize=self.marker_size,
                                                 elinewidth=self.marker_lw)
 
-                    # -----Plot the phase---------------------------------------
+                    # -----Plot the phase--------------------------------------
                     # phase_xy
                     self.axpxy.errorbar(mt.period,
                                         rp.phasexy,
@@ -1698,9 +1701,9 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                     legendlistxy.append(ebxyr)
                     legendlistyx.append(ebyxr)
 
-                    # ==== Plot the Z_xx, Z_yy components if desired ==               
+                    # ==== Plot the Z_xx, Z_yy components if desired ==
                     if self.plot_num == 2:
-                        # ---------plot the apparent resistivity----------------
+                        # ---------plot the apparent resistivity---------------
                         self.axr2xx = self.fig.add_subplot(gs[2, 0],
                                                            sharex=self.axrxy)
                         self.axr2xx.yaxis.set_label_coords(-.095, 0.5)
@@ -1735,7 +1738,7 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                                                      capsize=self.marker_size,
                                                      elinewidth=self.marker_lw)
 
-                        # -----Plot the phase-----------------------------------
+                        # -----Plot the phase----------------------------------
                         self.axp2xx = self.fig.add_subplot(gs[2, 0],
                                                            sharex=self.axrxy)
                         self.axp2xx.yaxis.set_label_coords(-.095, 0.5)
@@ -1802,19 +1805,19 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
 
                     legendlistxy.append(ebdetr)
 
-                # -----plot tipper----------------------------------------------
+                # -----plot tipper---------------------------------------------
                 if self._plot_tipper.find('y') == 0:
 
                     tp = mt.get_Tipper()
 
-                    txr = tp.mag_real * np.sin(tp.ang_real * np.pi / 180 + \
+                    txr = tp.mag_real * np.sin(tp.ang_real * np.pi / 180 +
                                                np.pi * self.arrow_direction)
-                    tyr = tp.mag_real * np.cos(tp.ang_real * np.pi / 180 + \
+                    tyr = tp.mag_real * np.cos(tp.ang_real * np.pi / 180 +
                                                np.pi * self.arrow_direction)
 
-                    txi = tp.mag_imag * np.sin(tp.ang_imag * np.pi / 180 + \
+                    txi = tp.mag_imag * np.sin(tp.ang_imag * np.pi / 180 +
                                                np.pi * self.arrow_direction)
-                    tyi = tp.mag_imag * np.cos(tp.ang_imag * np.pi / 180 + \
+                    tyi = tp.mag_imag * np.cos(tp.ang_imag * np.pi / 180 +
                                                np.pi * self.arrow_direction)
 
                     nt = len(txr)
@@ -1850,7 +1853,7 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                     lt = self.axt.plot(0, 0, lw=1, color=ctipr[ii])
                     tiplist.append(lt[0])
 
-                # ------plot strike angles----------------------------------------------
+                # ------plot strike angles-------------------------------------
                 if self._plot_strike.find('y') == 0:
 
                     if self._plot_strike.find('i') > 0:
@@ -1928,7 +1931,7 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
 
                         stlist.append(ps3[0])
 
-                # ------plot skew angle---------------------------------------------
+                # ------plot skew angle----------------------------------------
                 if self._plot_skew == 'y':
                     # strike from phase tensor
                     pt = mt.get_PhaseTensor()
@@ -1948,7 +1951,7 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                                              elinewidth=self.marker_lw)
                     stlist.append(ps4[0])
 
-                # ----plot phase tensor ellipse---------------------------------------
+                # ----plot phase tensor ellipse--------------------------------
                 if self._plot_pt == 'y':
                     # get phase tensor instance
                     pt = mt.get_PhaseTensor()
@@ -1967,35 +1970,35 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
 
                     # get the properties to color the ellipses by
                     if self.ellipse_colorby == 'phiminang' or \
-                                    self.ellipse_colorby == 'phimin':
+                            self.ellipse_colorby == 'phimin':
                         colorarray = pt.phimin[0]
-
 
                     elif self.ellipse_colorby == 'phidet':
                         colorarray = np.sqrt(abs(pt.det[0])) * (180 / np.pi)
 
-
                     elif self.ellipse_colorby == 'skew' or \
-                                    self.ellipse_colorby == 'skew_seg':
+                            self.ellipse_colorby == 'skew_seg':
                         colorarray = pt.beta[0]
 
                     elif self.ellipse_colorby == 'ellipticity':
                         colorarray = pt.ellipticity[0]
 
                     else:
-                        raise NameError(self.ellipse_colorby + ' is not supported')
+                        raise NameError(
+                            self.ellipse_colorby + ' is not supported')
 
-                    # -------------plot ellipses-----------------------------------
+                    # -------------plot ellipses-------------------------------
                     for kk, ff in enumerate(mt.period):
                         # make sure the ellipses will be visable
                         eheight = pt.phimin[0][kk] / pt.phimax[0][kk] * \
-                                  self.ellipse_size
+                            self.ellipse_size
                         ewidth = pt.phimax[0][kk] / pt.phimax[0][kk] * \
-                                 self.ellipse_size
+                            self.ellipse_size
 
                         # create an ellipse scaled by phimin and phimax and oriented
                         # along the azimuth which is calculated as clockwise but needs
-                        # to be plotted counter-clockwise hence the negative sign.
+                        # to be plotted counter-clockwise hence the negative
+                        # sign.
                         ellipd = patches.Ellipse((np.log10(ff) * self.ellipse_spacing,
                                                   ii * self.ellipse_size * 1.5),
                                                  width=ewidth,
@@ -2020,7 +2023,7 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                                                                      ckmax))
                         ellipd.set_edgecolor(cxy[ii])
 
-            # -------set axis properties----------------------------------------
+            # -------set axis properties---------------------------------------
             self.axrxy.set_yscale('log')
             self.axrxy.set_xscale('log')
             self.axrxy.set_ylim(self.res_limits)
@@ -2075,7 +2078,7 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
             plt.setp(self.axryx.get_yticklabels(), visible=False)
 
             # check the phase to see if any point are outside of [0:90]
-            if self.phase_limits == None:
+            if self.phase_limits is None:
                 self.phase_limits = (0, 89.99)
 
             # --> set axes properties
@@ -2279,10 +2282,10 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                 #                stationlist,
                 #                loc=3,
                 #                ncol=2,
-                #                markerscale=1, 
+                #                markerscale=1,
                 #                borderaxespad=.01,
-                #                labelspacing=.07, 
-                #                handletextpad=.2, 
+                #                labelspacing=.07,
+                #                handletextpad=.2,
                 #                borderpad=.02)
                 if pdict['strike'] != nrows - 1:
                     plt.setp(self.axst.xaxis.get_ticklabels(), visible=False)
@@ -2306,26 +2309,28 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                 #                 stationlist,
                 #                 loc=4,
                 #                 ncol=2,
-                #                 markerscale=1, 
+                #                 markerscale=1,
                 #                 borderaxespad=.01,
-                #                 labelspacing=.07, 
-                #                 handletextpad=.2, 
+                #                 labelspacing=.07,
+                #                 handletextpad=.2,
                 #                 borderpad=.02)
                 if pdict['skew'] != nrows - 1:
                     plt.setp(self.axsk.xaxis.get_ticklabels(), visible=False)
                     self.ask.set_xlabel(' ')
             # ----set axes properties for pt-----------------------------------
             if self._plot_pt == 'y':
-                self.axpt.set_xlim(np.floor(np.log10(self.xlimits[0])) * \
+                self.axpt.set_xlim(np.floor(np.log10(self.xlimits[0])) *
                                    self.ellipse_spacing,
-                                   np.ceil(np.log10(self.xlimits[1])) * \
+                                   np.ceil(np.log10(self.xlimits[1])) *
                                    self.ellipse_spacing)
 
                 tklabels = []
                 xticks = []
                 for tk in self.axpt.get_xticks():
                     try:
-                        tklabels.append(mtpl.labeldict[tk / self.ellipse_spacing])
+                        tklabels.append(
+                            mtpl.labeldict[
+                                tk / self.ellipse_spacing])
                         xticks.append(tk)
                     except KeyError:
                         pass
@@ -2364,7 +2369,8 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                     mt_seg_bl2wh2rd = colors.ListedColormap(clist)
 
                     # make bounds so that the middle is white
-                    bounds = np.arange(ckmin - ckstep, ckmax + 2 * ckstep, ckstep)
+                    bounds = np.arange(
+                        ckmin - ckstep, ckmax + 2 * ckstep, ckstep)
 
                     # normalize the colors
                     norms = colors.BoundaryNorm(bounds, mt_seg_bl2wh2rd.N)
@@ -2383,7 +2389,8 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                                                  orientation='vertical')
                 self.cbpt.set_ticks([ckmin, (ckmax - ckmin) / 2, ckmax])
                 self.cbpt.set_ticklabels(['{0:.0f}'.format(ckmin),
-                                          '{0:.0f}'.format((ckmax - ckmin) / 2),
+                                          '{0:.0f}'.format(
+                                              (ckmax - ckmin) / 2),
                                           '{0:.0f}'.format(ckmax)])
                 self.cbpt.ax.yaxis.set_label_position('left')
                 self.cbpt.ax.yaxis.set_label_coords(-1.05, .5)
@@ -2401,18 +2408,18 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
     def update_plot(self):
         """
         update any parameters that where changed using the built-in draw from
-        canvas.  
-        
+        canvas.
+
         Use this if you change an of the .fig or axes properties
-        
+
         :Example: ::
-            
+
             >>> # to change the grid lines to only be on the major ticks
             >>> import mtpy.imaging.mtplottools as mtplot
             >>> p1 = mtplot.PlotResPhase(r'/home/MT/mt01.edi')
             >>> [ax.grid(True, which='major') for ax in [p1.axr,p1.axp]]
             >>> p1.update_plot()
-        
+
         """
 
         self.fig.canvas.draw()
@@ -2420,9 +2427,9 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
     def redraw_plot(self):
         """
         use this function if you updated some attributes and want to re-plot.
-        
+
         :Example: ::
-            
+
             >>> # change the color and marker of the xy components
             >>> import mtpy.imaging.mtplottools as mtplot
             >>> p1 = mtplot.PlotResPhase(r'/home/MT/mt01.edi')

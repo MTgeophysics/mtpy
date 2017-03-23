@@ -1,7 +1,7 @@
 """
 mtpy/utils/metadata.py
 
-Helper functions for the handling of meta data. 
+Helper functions for the handling of meta data.
 
 E.g. converting field book xls-sheet information into a config-style configuration file, or check entries for consistency.
 
@@ -18,7 +18,8 @@ E.g. converting field book xls-sheet information into a config-style configurati
 import numpy as np
 import ConfigParser
 
-import math, cmath
+import math
+import cmath
 
 import mtpy.utils.exceptions as MTex
 

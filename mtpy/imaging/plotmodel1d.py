@@ -11,9 +11,9 @@ Class:
     Model1d()
 
 Functions:
-    Batch processing 
+    Batch processing
     plot setup
-    
+
 
 Output via matplotlib
 

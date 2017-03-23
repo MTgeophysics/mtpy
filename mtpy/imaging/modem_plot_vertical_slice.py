@@ -21,6 +21,7 @@ from mtpy.modeling.modem import Model
 
 
 class ModemPlotVerticalSlice():
+
     def __init__(self, filedat, filerho, plot_orient='ew', **kwargs):
         """Constructor
         :param filedat: path2file.dat
@@ -30,11 +31,13 @@ class ModemPlotVerticalSlice():
         self.datfile = filedat
         self.rhofile = filerho
 
-        # plot orientation ('ns' (north-south),'ew' (east-west) or 'z' (horizontal slice))
+        # plot orientation ('ns' (north-south),'ew' (east-west) or 'z'
+        # (horizontal slice))
         self.plot_orientation = plot_orient
 
         # plotdir = 'z' #'ns' #'ew'
-        # slice location, in local grid coordinates (if it is a z slice, this is slice depth)
+        # slice location, in local grid coordinates (if it is a z slice, this
+        # is slice depth)
         self.slice_location = kwargs.pop('slice_location', 10000)
         # maximum distance in metres from vertical slice location and station
         self.station_dist = kwargs.pop('station_dist', 50000)
@@ -81,14 +84,15 @@ class ModemPlotVerticalSlice():
         self.plot_orientation = orient
 
     def make_plot(self):
-        """ create a plot based on the input data and parameters       
-        :return: 
+        """ create a plot based on the input data and parameters
+        :return:
         """
 
         fdict = {'size': self.font_size, 'weight': 'bold'}
 
         # get grid centres
-        gcz = np.mean([self.modObj.grid_z[:-1], self.modObj.grid_z[1:]], axis=0)
+        gcz = np.mean([self.modObj.grid_z[:-1],
+                       self.modObj.grid_z[1:]], axis=0)
         gceast, gcnorth = [np.mean([arr[:-1], arr[1:]], axis=0) for arr in
                            [self.modObj.grid_east, self.modObj.grid_north]]
 
@@ -105,28 +109,41 @@ class ModemPlotVerticalSlice():
 
         # get data for plotting
         if self.plot_orientation == 'ew':
-            X, Y, res = self.modObj.grid_east, self.modObj.grid_z, np.log10(self.modObj.res_model[sno, :, :].T)
+            X, Y, res = self.modObj.grid_east, self.modObj.grid_z, np.log10(
+                self.modObj.res_model[sno, :, :].T)
             ss = np.where(np.abs(self.datObj.station_locations['rel_north'] - np.median(gcnorth)) < self.station_dist)[
                 0]
 
-            sX, sY = self.datObj.station_locations['rel_east'][ss], self.datObj.station_locations['elev'][ss]
-            xlim = (self.modObj.grid_east[self.modObj.pad_east], self.modObj.grid_east[-self.modObj.pad_east - 1])
+            sX, sY = self.datObj.station_locations['rel_east'][
+                ss], self.datObj.station_locations['elev'][ss]
+            xlim = (self.modObj.grid_east[
+                    self.modObj.pad_east], self.modObj.grid_east[-self.modObj.pad_east - 1])
             ylim = self.zlim
             title = 'East-west slice at {} meters north'.format(gcnorth[sno])
         elif self.plot_orientation == 'ns':
-            X, Y, res = self.modObj.grid_north, self.modObj.grid_z, np.log10(self.modObj.res_model[:, sno, :].T)
+            X, Y, res = self.modObj.grid_north, self.modObj.grid_z, np.log10(
+                self.modObj.res_model[:, sno, :].T)
             # indices for selecting stations close to profile
-            ss = np.where(np.abs(self.datObj.station_locations['rel_east'] - np.median(gceast)) < self.station_dist)[0]
+            ss = np.where(
+                np.abs(
+                    self.datObj.station_locations['rel_east'] -
+                    np.median(gceast)) < self.station_dist)[0]
 
-            sX, sY = self.datObj.station_locations['rel_north'][ss], self.datObj.station_locations['elev'][ss]
-            xlim = (self.modObj.grid_north[self.modObj.pad_north], self.modObj.grid_north[-self.modObj.pad_north - 1])
+            sX, sY = self.datObj.station_locations['rel_north'][
+                ss], self.datObj.station_locations['elev'][ss]
+            xlim = (self.modObj.grid_north[
+                    self.modObj.pad_north], self.modObj.grid_north[-self.modObj.pad_north - 1])
             ylim = self.zlim
             title = 'North-south slice at {} meters east'.format(gceast[sno])
         elif self.plot_orientation == 'z':
-            X, Y, res = self.modObj.grid_east, self.modObj.grid_north, np.log10(self.modObj.res_model[:, :, sno])
-            sX, sY = self.datObj.station_locations['rel_east'], self.datObj.station_locations['rel_north']
-            xlim = (self.modObj.grid_east[self.modObj.pad_east], self.modObj.grid_east[-self.modObj.pad_east - 1])
-            ylim = (self.modObj.grid_north[self.modObj.pad_north], self.modObj.grid_north[-self.modObj.pad_north - 1])
+            X, Y, res = self.modObj.grid_east, self.modObj.grid_north, np.log10(
+                self.modObj.res_model[:, :, sno])
+            sX, sY = self.datObj.station_locations[
+                'rel_east'], self.datObj.station_locations['rel_north']
+            xlim = (self.modObj.grid_east[
+                    self.modObj.pad_east], self.modObj.grid_east[-self.modObj.pad_east - 1])
+            ylim = (self.modObj.grid_north[
+                    self.modObj.pad_north], self.modObj.grid_north[-self.modObj.pad_north - 1])
             title = 'Horizontal Slice at Depth {} meters'.format(gcz[sno])
 
         # make the plot
@@ -154,10 +171,19 @@ class ModemPlotVerticalSlice():
 
         # FZ: fix miss-placed colorbar
         ax = plt.gca()
-        ax.xaxis.set_minor_locator(MultipleLocator(self.xminorticks))  # /self.dscale
-        ax.yaxis.set_minor_locator(MultipleLocator(self.yminorticks))  # /self.dscale
+        ax.xaxis.set_minor_locator(
+            MultipleLocator(
+                self.xminorticks))  # /self.dscale
+        ax.yaxis.set_minor_locator(
+            MultipleLocator(
+                self.yminorticks))  # /self.dscale
         ax.tick_params(axis='both', which='minor', width=2, length=5)
-        ax.tick_params(axis='both', which='major', width=3, length=15, labelsize=20)
+        ax.tick_params(
+            axis='both',
+            which='major',
+            width=3,
+            length=15,
+            labelsize=20)
         for axis in ['top', 'bottom', 'left', 'right']:
             ax.spines[axis].set_linewidth(self.border_linewidth)
         # ax.tick_params(axis='both', which='major', labelsize=20)
@@ -172,9 +198,13 @@ class ModemPlotVerticalSlice():
         # create an axes on the right side of ax. The width of cax will be 5%
         # of ax and the padding between cax and ax will be fixed at 0.05 inch.
         divider = make_axes_locatable(ax)
-        cax = divider.append_axes("right", size="5%", pad=0.2)  # pad = separation from figure to colorbar
+        # pad = separation from figure to colorbar
+        cax = divider.append_axes("right", size="5%", pad=0.2)
 
-        mycb = plt.colorbar(mesh_plot, cax=cax, label='Resistivity ($\Omega \cdot$m)')
+        mycb = plt.colorbar(
+            mesh_plot,
+            cax=cax,
+            label='Resistivity ($\Omega \cdot$m)')
         mycb.outline.set_linewidth(self.border_linewidth)
 
         if self.plot_orientation == 'z':
@@ -229,7 +259,8 @@ if __name__ == "__main__":
             print ("No rho files found in the dir %s", modeldir)
             sys.exit(1)
         else:
-            rhof = sorted(rhofiles)[-1]  # the file with highest numbers in the last 3 numbers before *.rho
+            # the file with highest numbers in the last 3 numbers before *.rho
+            rhof = sorted(rhofiles)[-1]
 
         print("Effective Files Used in Plot: ", datf, rhof)
 

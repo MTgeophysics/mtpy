@@ -1,15 +1,15 @@
 #!/usr/bin/env python
 
 #-----------------------------------------------------------------------
-#	decimates 650Hz data to 1Hz.			                
+#	decimates 650Hz data to 1Hz.
 #	need to change outdirname, indir_base
 #	in main() need to change profile_prefix, station_idx,stationname
 #-----------------------------------------------------------------------
 
 
-
 import re
-import os,sys
+import os
+import sys
 import os.path as op
 import shutil
 import calendar
@@ -29,62 +29,58 @@ starting_station = 0
 number_of_stations = 10
 
 
-
 def main():
 
-
-    # if len(sys.argv) < 3: 
+    # if len(sys.argv) < 3:
     #     sys.exit('\n\tERROR - need 2 arguments as input: '\
     #         '<stationname> <station data location> \n')
 
     # stationname = sys.argv[1].upper()
     # stationdatafolder = sys.argv[2]
 
-    #indir =   stationdatafolder     
-    print 
+    #indir =   stationdatafolder
+    print
     profile = 1
 
     #profile_prefix = '{0:02d}'.format(profile)
     #profile_prefix = 'RRB'
-	
+
     for i in range(number_of_stations):
 
-        station_idx = i+starting_station
+        station_idx = i + starting_station
         stationname = '{0:02d}'.format(station_idx)
         #stationname = 'RRB'
-        indir = op.abspath(op.join(indir_base,stationname))
+        indir = op.abspath(op.join(indir_base, stationname))
 
         if not op.isdir(indir):
             print 'WARNING - no folder found for station {0} ({1})\n'.format(
-                                        stationname,indir)
+                stationname, indir)
             continue
 
-
         #outdir = op.abspath(op.join(outdirname,'{0}'.format(profile_prefix+'_'+stationname)))
-        outdir = op.abspath(op.join(outdirname,'{0}'.format(stationname)))
-
+        outdir = op.abspath(op.join(outdirname, '{0}'.format(stationname)))
 
         if not op.isdir(outdir):
             os.makedirs(outdir)
 
-        try:        
-            unpack1station(stationname,indir,outdir)
+        try:
+            unpack1station(stationname, indir, outdir)
         except:
             continue
 
         print
 
 
-def unpack1station(stationname, indir,outdir):
-
+def unpack1station(stationname, indir, outdir):
 
     cwd = op.abspath(os.curdir)
 
-    #print 
+    # print
     all_subdirs = os.listdir(indir)
-    all_subdirs = sorted([op.abspath(op.join(indir,i)) for i in all_subdirs if op.isdir(op.join(indir,i))])
+    all_subdirs = sorted([op.abspath(op.join(indir, i))
+                          for i in all_subdirs if op.isdir(op.join(indir, i))])
 
-    #print all_subdirs
+    # print all_subdirs
     print '\t=====================\n\tUnpacking station {0}:\n\t====================='.format(stationname)
     counter6hrblocks = 0
     for subdir in all_subdirs:
@@ -94,7 +90,8 @@ def unpack1station(stationname, indir,outdir):
             print '\n...switched to folder {0}...'.format(op.abspath(os.curdir))
 
             lo_unpackables = os.listdir('.')
-            lo_unpackables = [i for i in lo_unpackables if i.lower().endswith('.bz2')]
+            lo_unpackables = [
+                i for i in lo_unpackables if i.lower().endswith('.bz2')]
             if len(lo_unpackables) > 0:
                 print '...unpacking...'
                 for bz2 in lo_unpackables:
@@ -114,26 +111,25 @@ def unpack1station(stationname, indir,outdir):
                 continue
 
             counter6hrblocks += 1
-            new_filename = 'sta{0}_decimated_{1:03d}'.format(stationname,counter6hrblocks)
-            shutil.copy2(temp_out_fn,new_filename)
+            new_filename = 'sta{0}_decimated_{1:03d}'.format(
+                stationname, counter6hrblocks)
+            shutil.copy2(temp_out_fn, new_filename)
             print '...remove unpacked data...'
             os.system('rm -f *.pak')
-     
+
             try:
                 print '...moving data to {0}...'.format(outdir)
-                shutil.copy2(new_filename,outdir)
+                shutil.copy2(new_filename, outdir)
             except:
                 print "couldn't move data"
 
-        
-            print   '...remove all the rest of temporary files...\n'
+            print '...remove all the rest of temporary files...\n'
             os.system('rm -f Pak2Asc-*')
             os.system('rm -f {0}'.format(new_filename))
         except:
             continue
-    
-    os.chdir(cwd)
 
+    os.chdir(cwd)
 
     print '\n\t {0} blocks done for station {1}!\n'.format(counter6hrblocks, stationname)
     print 'Finished station {0}!\n====================='.format(stationname)
@@ -143,16 +139,3 @@ def unpack1station(stationname, indir,outdir):
 
 if __name__ == '__main__':
     main()
-
-
-
-
-
-
-
-
-
-
-
-
-
