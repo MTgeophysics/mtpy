@@ -9,13 +9,14 @@ Revision History:
 """
 
 import os
-
+import sys
+import numpy as np
 import matplotlib.colorbar as mcb
 import matplotlib.colors as colors
 import matplotlib.patches as patches
 import matplotlib.pyplot as plt
-import numpy as np
 from matplotlib.ticker import FormatStrFormatter
+import matplotlib
 
 import mtpy.imaging.mtcolors as mtcl
 import mtpy.imaging.mtplottools as mtpl
@@ -443,7 +444,7 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
         self.fig_dpi = kwargs.pop('fig_dpi', 300)
 
         self.tscale = kwargs.pop('tscale', 'period')
-        self.fig_size = kwargs.pop('fig_size', [5, 8])
+        self.fig_size = kwargs.pop('fig_size', (6, 4))
 
         self.font_size = kwargs.pop('font_size', 7)
 
@@ -592,12 +593,15 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
 
         # set position properties for the plot
         plt.rcParams['font.size'] = self.font_size
+        #matplotlib.rcParams['figure.figsize'] = [20, 10]
+
         plt.rcParams['figure.subplot.left'] = .1
         plt.rcParams['figure.subplot.right'] = .98
         plt.rcParams['figure.subplot.bottom'] = .1
         plt.rcParams['figure.subplot.top'] = .93
         plt.rcParams['figure.subplot.wspace'] = .55
         plt.rcParams['figure.subplot.hspace'] = .70
+
         # FZ: tweaks to make plot positioned better
         # plt.rcParams['font.size']=self.font_size
         # plt.rcParams['figure.subplot.left']=.1
@@ -609,6 +613,7 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
 
         # make figure instanc
         self.fig = plt.figure(self.fig_num, self.fig_size, dpi=self.fig_dpi)
+        #self.fig = plt.figure(self.fig_num, dpi=self.fig_dpi)
 
         # clear the figure if there is already one up
         plt.clf()

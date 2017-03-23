@@ -27,8 +27,8 @@ def main(edi_path, save_file=None):
                                           # period range to plot
                                           ylim=(0, 10000),
                                           # xlim = (0,10000),
-                                          stretch=(
-                                              2000, 40),  # determines (x,y) aspect ratio of plot
+                                          stretch=(2000, 40),
+                                          # determines (x,y) aspect ratio of plot
                                           station_id=(
                                               0, 10),  # indices for showing station names
                                           ellipse_dict={'size': 6},

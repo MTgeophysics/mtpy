@@ -46,11 +46,17 @@ python examples/plot_phase_tensor_map.py  /e/Data/MT_Datasets/GA_UA_edited_10s-1
 #python examples/plot_phase_tensor_map.py examples/data/edi2 10 /e/MTPY2_Outputs/ptmap2.jpg
 #python examples/plot_phase_tensor_map.py tests/data/edifiles 20
 #python examples/plot_phase_tensor_map.py tests/data/edifiles/ 10 /e/MTPY2_Outputs/ptmap3deg.png
-#
-#
+
 
 # phase tensor pseudo sections
+python examples/plot_phase_tensor_section.py tests/data/edifiles/
+python examples/plot_phase_tensor_section.py examples/data/edi2
+python examples/plot_phase_tensor_section.py examples/data/edi_files/
+python examples/plot_phase_tensor_section.py /e/Data/MT_Datasets/3D_MT_data_edited_fromDuanJM/
+python examples/plot_phase_tensor_section.py /e/Data/MT_Datasets/GA_UA_edited_10s-10000s  #change to stretch=(20, 40), y more
 
 
-# shape files generation
+# shape files generation: fine-tune the __main__ section about calling params
+python mtpy/utils/shapefiles.py /e/Data/MT_Datasets/GA_UA_edited_10s-10000s/ /e/Data/MT_Datasets/GA_UA_edited_10s-10000s_SHP/
+python mtpy/utils/shapefiles.py /e/Data/MT_Datasets/3D_MT_data_edited_fromDuanJM /e/Data/MT_Datasets/3D_MT_data_edited_fromDuanJM_SHP/
 
