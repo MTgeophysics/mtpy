@@ -315,7 +315,7 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
         -font_size            font size of axes tick label, axes labels will be
                               font_size + 2
 
-        -ftol                 tolerance to look for matching freq
+        -ftol                 tolerance to look for matching freq 10% default
         -jj                   index of plot freq
 
         -mapscale             scale of map
@@ -372,7 +372,7 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
 
         # set the freq to plot
         self.plot_freq = kwargs.pop('plot_freq', 1.0)
-        self.ftol = kwargs.pop('ftol', .1)
+        self.ftol = kwargs.pop('ftol', 0.1)
 
         # read in map scale
         self.mapscale = kwargs.pop('mapscale', 'deg')
@@ -1429,7 +1429,10 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
         return "Plots phase tensor maps for one freq"
 
 
-# ================================================================
+# ====================================================================
+# How2Run:
+# python mtpy/imaging/phase_tensor_maps.py  /e/Data/MT_Datasets/3D_MT_data_edited_fromDuanJM/ 10 /e/MTPY2_Outputs
+#=======================================================================
 if __name__ == "__main__":
     import sys
     import glob

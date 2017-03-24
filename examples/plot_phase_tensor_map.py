@@ -50,7 +50,7 @@ def plot_pt(edi_file_list, freq, save_path=None):
     # 2) Construct plotting object
     pt_obj = PlotPhaseTensorMaps(fn_list=edi_file_list,
                                  plot_freq=freq,
-                                 ftol=0.2,  # fre tolerance considered as equal
+                                 ftol=0.10,  # freq tolerance,which will decide how many data points included
                                  mapscale='deg',  # deg or m, or km
                                  xpad=0.4,  # plot margin; change according to lat-lon in edifiles
                                  ypad=0.4,  # ~ 2* ellipse size

@@ -1,8 +1,9 @@
 """
 Description:
     For a batch of MT_stations,  plot the Penetration Depth vs the station_location,
-    for a given period-index (1/freq)-
-    Note that the values of periods should be checked if equal across all stations.
+    for a given period value or index (1/freq)-
+    Note that the values of periods within10% tolerance (ptol=0.1) are considered as equal.
+    Setting a smaller value for ptol(=0.05)may result less MT sites data included.
 
 Usage:
     python mtpy/imaging/penetration_depth_3d_profile.py /path2/edi_files_dir/  period_index
@@ -411,14 +412,14 @@ def get_penetration_depth(edi_file_list, period_sec, whichrho='det'):
     This is a more generic and useful function to compute the penetration depths
     of a list of edi files at given period_sec (seconds).
     No assumption is made about the edi files period list.
-    A tolerance of 5% is used to identify the relevant edi files which contain the period of interest.
+    A tolerance of 10% is used to identify the relevant edi files which contain the period of interest.
 
     :param edi_file_list:
     :param period_sec: the float number value of the period in second: 0.1, ...20.0
     :param whichrho:
     :return: tuple of (stations, periods, penetrationdepth, lat-lons-pairs)
     """
-    ptol = 0.05
+    ptol = 0.1  # 10% freq error, need to be consistent with phase_tensor_map.py
 
     scale_param = np.sqrt(1.0 / (2.0 * np.pi * 4 * np.pi * 10 ** (-7)))
     logger.debug("The scaling parameter=%.6f" % scale_param)
@@ -496,11 +497,11 @@ def get_penetration_depth(edi_file_list, period_sec, whichrho='det'):
     return (stations, periods, pendep, latlons)
 
 
-def check_period_values(period_list, ptol=0.05):
+def check_period_values(period_list, ptol=0.1):
     """
     check if all the values are equal in the input list
     :param period_list: a list of period
-    :param ptol=0.05 # 5% percentage tolerance of period values considered as equal
+    :param ptol=0.1 # 1% percentage tolerance of period values considered as equal
     :return: True/False
     """
 
