@@ -922,22 +922,22 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
             norms = colors.BoundaryNorm(bounds, mt_seg_bl2wh2rd.N)
             
             #make the colorbar
-            cbd = mcb.ColorbarBase(cbaxd,
+            cb_pt = mcb.ColorbarBase(cbaxd,
                                    cmap=mt_seg_bl2wh2rd,
                                    norm=norms,
                                    orientation='horizontal',
                                    ticks=bounds[1:-1])
         else:
             
-            cbd = mcb.ColorbarBase(cbaxd, 
+            cb_pt = mcb.ColorbarBase(cbaxd, 
                                    cmap=mtcl.cmapdict[self.ellipse_cmap],
                                    norm=Normalize(vmin=ckmin,
                                                   vmax=ckmax),
                                    orientation='horizontal')
-        cbd.ax.xaxis.set_label_position('top')
-        cbd.ax.xaxis.set_label_coords(.5, 1.75)
-        cbd.set_label(mtplottools.ckdict[self.ellipse_colorby])
-        cbd.set_ticks([ckmin, (ckmax-ckmin)/2, ckmax])
+        cb_pt.ax.xaxis.set_label_position('top')
+        cb_pt.ax.xaxis.set_label_coords(.5, 1.75)
+        cb_pt.set_label(mtplottools.ckdict[self.ellipse_colorby])
+        cb_pt.set_ticks([ckmin, (ckmax-ckmin)/2, ckmax])
                                 
         axd.text(self.ew_limits[0]*.95,
                  self.ns_limits[1]*.95,
@@ -980,21 +980,21 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
                         norms = colors.BoundaryNorm(bounds, mt_seg_bl2wh2rd.N)
                         
                         #make the colorbar
-                        cbd = mcb.ColorbarBase(cbaxd,
+                        cb_ptr = mcb.ColorbarBase(cbax,
                                                cmap=mt_seg_bl2wh2rd,
                                                norm=norms,
                                                orientation='horizontal',
                                                ticks=bounds[1:-1])
                     else:
-                        cb = mcb.ColorbarBase(cbax, 
+                        cb_ptr = mcb.ColorbarBase(cbax, 
                                               cmap=mtcl.cmapdict[self.ellipse_cmap],
                                               norm=Normalize(vmin=ckmin,
                                                              vmax=ckmax),
                                                orientation='horizontal')
-                    cb.ax.xaxis.set_label_position('top')
-                    cb.ax.xaxis.set_label_coords(.5, 1.75)
-                    cb.set_label(mtplottools.ckdict[self.ellipse_colorby])
-                    cb.set_ticks(np.arange(ckmin, ckmax+self.cb_tick_step, 
+                    cb_ptr.ax.xaxis.set_label_position('top')
+                    cb_ptr.ax.xaxis.set_label_coords(.5, 1.75)
+                    cb_ptr.set_label(mtplottools.ckdict[self.ellipse_colorby])
+                    cb_ptr.set_ticks(np.arange(ckmin, ckmax+self.cb_tick_step, 
                                 self.cb_tick_step))
                     ax.text(self.ew_limits[0]*.95,
                             self.ns_limits[1]*.95,
@@ -1004,16 +1004,15 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
                             bbox={'facecolor':'white'},
                              fontdict={'size':self.font_size+1})
                 else:
-                    cb = mcb.ColorbarBase(cbax, 
+                    cb_ptr = mcb.ColorbarBase(cbax, 
                                           cmap=mtcl.cmapdict[self.residual_cmap],
                                            norm=Normalize(vmin=rcmin,
                                                           vmax=rcmax),
                                            orientation='horizontal')
-                    cb.ax.xaxis.set_label_position('top')
-                    cb.ax.xaxis.set_label_coords(.5, 1.75)
-                    cb.set_label(r"$\sqrt{\Phi_{min} \Phi_{max}}$")
-                    cb_ticks = [rcmin, (rcmax-rcmin)/2, rcmax]
-                    cb.set_ticks(cb_ticks)
+                    cb_ptr.ax.xaxis.set_label_position('top')
+                    cb_ptr.ax.xaxis.set_label_coords(.5, 1.75)
+                    cb_ptr.set_label(r"$\sqrt{\Phi_{min} \Phi_{max}}$")
+                    cb_ptr.set_ticks([rcmin, (rcmax-rcmin)/2, rcmax])
                     ax.text(self.ew_limits[0]*.95,
                             self.ns_limits[1]*.95,
                             'Residual',
@@ -1031,18 +1030,18 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
                 cb_position = (3.0*bb[2]/5+bb[0], 
                                y1*self.cb_res_pad, .35*bb[2], .02)
                 cbax = self.figure.add_axes(cb_position)
-                cb = mcb.ColorbarBase(cbax, 
+                cb_res = mcb.ColorbarBase(cbax, 
                                       cmap=self.res_cmap,
                                       norm=Normalize(vmin=self.res_limits[0],
                                                      vmax=self.res_limits[1]),
                                       orientation='horizontal')
-                cb.ax.xaxis.set_label_position('top')
-                cb.ax.xaxis.set_label_coords(.5, 1.5)
-                cb.set_label('Resistivity ($\Omega \cdot$m)')
+                cb_res.ax.xaxis.set_label_position('top')
+                cb_res.ax.xaxis.set_label_coords(.5, 1.5)
+                cb_res.set_label('Resistivity ($\Omega \cdot$m)')
                 cb_ticks = np.arange(np.floor(self.res_limits[0]), 
                                      np.ceil(self.res_limits[1]+1), 1)
-                cb.set_ticks(cb_ticks)
-                cb.set_ticklabels([mtplottools.labeldict[ctk] for ctk in cb_ticks])
+                cb_res.set_ticks(cb_ticks)
+                cb_res.set_ticklabels([mtplottools.labeldict[ctk] for ctk in cb_ticks])
 
         if self.plot_stations == True:
             for ax in ax_list:
