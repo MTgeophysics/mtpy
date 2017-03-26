@@ -655,6 +655,8 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
             # try to find the freq in the freq list of each file
             freqfind = [ff for ff, f2 in enumerate(mt.freq) if
                         (f2 > self.plot_freq * (1 - self.ftol)) and (f2 < self.plot_freq * (1 + self.ftol))]
+            if len(freqfind) > 1:
+                logger.warn ("More than 1 MT-frequency found: ", freqfind)
 
             try:
                 jj = freqfind[0]
@@ -1253,8 +1255,9 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
             # try to find the freq index in the freq list of each EDI file
             freqfind = [ff for ff, f2 in enumerate(mt1.freq) if
                         f2 > self.plot_freq * (1 - self.ftol) and f2 < self.plot_freq * (1 + self.ftol)]
+            if len(freqfind) > 1:
+                logger.warn ("More than 1 MT-frequency found: ", freqfind)
 
-            print ("How Many: ", freqfind)
             try:
                 j2 = freqfind[0]  
                 freq0 = mt1.freq[j2]  # should use the closest freq from this list found within the tolerance range
