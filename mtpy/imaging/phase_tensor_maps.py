@@ -1250,11 +1250,14 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
         for ii in range(nx):
             mt1 = self.mt_list[ii]
 
-            # try to find the freq in the freq list of each file
+            # try to find the freq index in the freq list of each EDI file
             freqfind = [ff for ff, f2 in enumerate(mt1.freq) if
                         f2 > self.plot_freq * (1 - self.ftol) and f2 < self.plot_freq * (1 + self.ftol)]
+
+            print ("How Many: ", freqfind)
             try:
-                j2 = freqfind[0]
+                j2 = freqfind[0]  
+                freq0 = mt1.freq[j2]  # should use the closest freq from this list found within the tolerance range
 
                 pt = mt1.get_PhaseTensor()
                 tp = mt1.get_Tipper()
@@ -1279,7 +1282,7 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
                     stationmap[xyloc[ii, 0], xyloc[ii, 1]] = mt1.station
 
                 station_location[stationmap[xyloc[ii, 0], xyloc[ii, 1]]] = (
-                    mt1.lon, mt1.lat)
+                    mt1.lon, mt1.lat,freq0)
 
             except IndexError:
                 logger.warn('Did not find {0:.5g} Hz for station {1}'.format(
@@ -1358,7 +1361,7 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
 
         # write header
         header = ['station', 'lon', 'lat', 'phi_min', 'phi_max', 'skew', 'ellipticity', 'azimuth', 'tip_mag_re',
-                  'tip_ang_re', 'tip_mag_im', 'tip_ang_im']
+                  'tip_ang_re', 'tip_mag_im', 'tip_ang_im', 'frequency']
         for ss in header:
             tablefid.write('{0:^12}'.format(ss))
         tablefid.write('\n')
@@ -1373,30 +1376,24 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
             else:  # only those stations with the given freq
 
                 station = '{0:^12}'.format(stationmap[xx, yy])
-                stationx = mtpl.make_value_str(
-                    station_location[stationmap[xx, yy]][0], spacing='{0:^12}')
-                stationy = mtpl.make_value_str(
-                    station_location[stationmap[xx, yy]][1], spacing='{0:^12}')
-                phimin = mtpl.make_value_str(
-                    phiminmap[xx, yy], spacing='{0:^12}')
-                phimax = mtpl.make_value_str(
-                    phimaxmap[xx, yy], spacing='{0:^12}')
-                beta_skew = mtpl.make_value_str(
-                    betamap[xx, yy], spacing='{0:^12}')
-                ellip = mtpl.make_value_str(
-                    ellipmap[xx, yy], spacing='{0:^12}')
-                azimuth = mtpl.make_value_str(
-                    azimuthmap[xx, yy], spacing='{0:^12}')
+                stationx = mtpl.make_value_str( station_location[stationmap[xx, yy]][0], spacing='{0:^12}')
+                stationy = mtpl.make_value_str( station_location[stationmap[xx, yy]][1], spacing='{0:^12}')
+
+                phimin = mtpl.make_value_str(phiminmap[xx, yy], spacing='{0:^12}')
+                phimax = mtpl.make_value_str(phimaxmap[xx, yy], spacing='{0:^12}')
+                beta_skew = mtpl.make_value_str( betamap[xx, yy], spacing='{0:^12}')
+                ellip = mtpl.make_value_str(ellipmap[xx, yy], spacing='{0:^12}')
+                azimuth = mtpl.make_value_str(azimuthmap[xx, yy], spacing='{0:^12}')
+
                 tiprmag = mtpl.make_value_str(trmap[xx, yy], spacing='{0:^12}')
-                tiprang = mtpl.make_value_str(
-                    trazmap[xx, yy], spacing='{0:^12}')
+                tiprang = mtpl.make_value_str( trazmap[xx, yy], spacing='{0:^12}' )
                 tipimag = mtpl.make_value_str(timap[xx, yy], spacing='{0:^12}')
-                tipiang = mtpl.make_value_str(
-                    tiazmap[xx, yy], spacing='{0:^12}')
+                tipiang = mtpl.make_value_str(tiazmap[xx, yy], spacing='{0:^12}')
+                frequency = mtpl.make_value_str( station_location[stationmap[xx, yy]][2], spacing='{0:^12}')
 
                 # csv file
                 row = [station, stationx, stationy, phimin, phimax, beta_skew, ellip, azimuth, tiprmag, tiprang, tipimag,
-                       tipiang]
+                       tipiang, frequency]
                 csvfid.write(','.join(row))
                 csvfid.write('\n')
 
@@ -1413,6 +1410,7 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
                 tablefid.write(tiprang)
                 tablefid.write(tipimag)
                 tablefid.write(tipiang)
+                tablefid.write(frequency)
                 tablefid.write('\n')
 
         tablefid.write('\n')
@@ -1420,6 +1418,8 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
         logger.info('Wrote files to {}'.format(svpath))
 
         return svpath
+
+
 
     def __str__(self):
         """
