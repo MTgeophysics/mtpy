@@ -1323,7 +1323,7 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
         if fig_dpi is None:
             fig_dpi = self.fig_dpi
 
-        if os.path.isdir(save_fn) == False:
+        if os.path.isdir(save_fn) is False:
             file_format = save_fn[-3:]
             self.fig.savefig(save_fn, dpi=fig_dpi, format=file_format,
                              orientation=orientation, bbox_inches='tight')
@@ -1343,3 +1343,75 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
 
         self.fig_fn = save_fn
         print 'Saved figure to: ' + self.fig_fn
+
+    def save_figure2(self, save_fn, file_format='jpg', orientation='portrait', fig_dpi=None, close_plot='y'):
+        """
+        save_plot will save the figure to save_fn.
+
+        Arguments:
+        -----------
+
+            **save_fn** : string
+                          full path to save figure to, can be input as
+                          * directory path -> the directory path to save to
+                            in which the file will be saved as
+                            save_fn/station_name_ResPhase.file_format
+
+                          * full path -> file will be save to the given
+                            path.  If you use this option then the format
+                            will be assumed to be provided by the path
+
+            **file_format** : [ jpg | png | pdf | eps | svg ]
+                              file type of saved figure pdf,svg,eps...
+
+            **orientation** : [ landscape | portrait ]
+                              orientation in which the file will be saved
+                              *default* is portrait
+
+            **fig_dpi** : int
+                          The resolution in dots-per-inch the file will be
+                          saved.  If None then the dpi will be that at
+                          which the figure was made.  I don't think that
+                          it can be larger than dpi of the figure.
+
+            **close_plot** : [ y | n ]
+                             * 'y' will close the plot after saving.
+                             * 'n' will leave plot open
+        """
+
+        if fig_dpi is None:
+            fig_dpi=self.fig_dpi
+
+        # FZ: fixed the following logic
+        if os.path.isdir(save_fn):  # FZ: assume save-fn is a directory
+            if not os.path.exists(save_fn):
+                os.mkdir(save_fn)
+
+            # make a file name
+            fname='PT_Pseudo_Section_DPI%s_%s.%s' % (str(self.fig_dpi), self.ellipse_colorby,  file_format)
+            path2savefile=os.path.join(save_fn, fname)
+            self.fig.savefig(path2savefile, dpi=fig_dpi, format=file_format, orientation=orientation,
+                             bbox_inches='tight')
+        else:  # FZ: assume save-fn is a path2file= "path2/afile.fmt"
+            file_format=save_fn.split('.')[-1]
+            if file_format is None or file_format not in ['png', 'jpg']:
+                print ("Error: output file name is not correctly provided:", save_fn)
+                raise Exception("output file name is not correctly provided!!!")
+
+            path2savefile=save_fn
+            self.fig.savefig(path2savefile, dpi=fig_dpi, format=file_format,
+                             orientation=orientation, bbox_inches='tight')
+            plt.clf()
+            plt.close(self.fig)
+
+        if close_plot == 'y':
+            plt.clf()
+            plt.close(self.fig)
+        else:
+            pass
+
+        self.fig_fn=path2savefile
+        #logger.debug('Saved figure to: %s', self.fig_fn)
+        print ('Saved figure to: ', self.fig_fn)
+
+        return self.fig_fn

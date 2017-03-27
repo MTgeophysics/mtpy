@@ -42,6 +42,8 @@ def main(edi_path, save_file=None):
 
     ptpObj.plot()
 
+    ptpObj.save_figure2(save_fn=save_file)
+
     return
 
 
@@ -55,4 +57,9 @@ def main(edi_path, save_file=None):
 ##########################################################################
 if __name__ == '__main__':
     edi_path = sys.argv[1]
-    main(edi_path)
+    if len(sys.argv) >= 3:
+        savef= sys.argv[2]
+    else:
+        savef=None
+
+    main(edi_path, save_file=savef)

@@ -1145,7 +1145,7 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
 
             path2savefile = save_fn
             self.fig.savefig(path2savefile, dpi=fig_dpi, format=file_format,
-                             orientation=orientation)  # , bbox_inches='tight')
+                             orientation=orientation, bbox_inches='tight')
             plt.clf()
             plt.close(self.fig)
 

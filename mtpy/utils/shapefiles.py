@@ -88,7 +88,7 @@ class PTShapeFile(object):
         # metres
         self.ellipse_size = esize  # 0.002  # maximum ellipse major axis size in metres
         #self._theta = np.arange(0, 2 * np.pi, np.pi / 180.)
-        self._theta = np.arange(0, 2 * np.pi, np.pi / 30.)  # FZ
+        self._theta = np.arange(0, 2 * np.pi, np.pi / 30.)  # FZ: adjusted number of points in array
         self.ptol = .05  # period value tolerance to be considered as equal
 
         self.mt_obj_list = None
@@ -290,6 +290,7 @@ class PTShapeFile(object):
                     x0 = pt_array['east']
                     y0 = pt_array['north']
 
+                    # apply formula to generate ellipses
                     x = x0 + height * np.cos(self._theta) * np.cos(azimuth) - \
                         width * np.sin(self._theta) * np.sin(azimuth)
                     y = y0 + height * np.cos(self._theta) * np.sin(azimuth) + \
