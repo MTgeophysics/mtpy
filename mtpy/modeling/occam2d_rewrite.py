@@ -64,19 +64,19 @@ class Mesh():
     the forward operator that at the edges the structure is 1D.  Stations are
     place on the horizontal nodes as required by Wannamaker's forward 
     operator.
-    
+
     Mesh has the ability to create a mesh that incorporates topography given
     a elevation profile.  It adds more cells to the mesh with thickness 
     z1_layer.  It then sets the values of the triangular elements according to 
     the elevation value at that location.  If the elevation covers less than 
     50% of the triangular cell, then the cell value is set to that of air
-              
+
     .. note:: Mesh is inhereted by Regularization, so the mesh can also be 
               be built from there, same as the example below.
-              
+
     Arguments:
     -----------
-    
+
     ======================= ===================================================
     Key Words/Attributes    Description    
     ======================= ===================================================
@@ -141,10 +141,10 @@ class Mesh():
                             appropriate attributes.
     write_mesh_file         writes a mesh file to save_path
     ======================= ===================================================
-    
-    
+
+
     :Example: ::
-        
+
         >>> import mtpy.modeling.occam2d as occcam2d
         >>> edipath = r"/home/mt/edi_files"
         >>> slist = ['mt{0:03}'.format(ss) for ss in range(20)]
@@ -162,7 +162,7 @@ class Mesh():
         >>> ocm.plot_mesh()
         >>> ocm.save_path = ocd.save_path
         >>> ocm.write_mesh_file()
-    
+
     """
 
     def __init__(self, station_locations=None, **kwargs):
@@ -201,10 +201,10 @@ class Mesh():
         If the spacing between stations is smaller than 
         cell_width, a horizontal node is placed between the stations to be 
         sure the model has room to change between the station.
-        
+
         If elevation_profile is given, add_elevation is called to add 
         topography into the mesh.
-        
+
         Populates attributes:
             * mesh_values
             * rel_station_locations
@@ -212,7 +212,7 @@ class Mesh():
             * x_nodes
             * z_grid
             * z_nodes
-        
+
         :Example: ::
             >>> import mtpy.modeling.occam2d as occcam2d
             >>> edipath = r"/home/mt/edi_files"
@@ -243,11 +243,11 @@ class Mesh():
         self.rel_station_locations -= self.rel_station_locations.mean()
 
         # 1) make horizontal nodes at station locations and fill in the cells
-        #   around that area with cell width. This will put the station 
+        #   around that area with cell width. This will put the station
         #   in the center of the regularization block as prescribed for occam
         # the first cell of the station area will be outside of the furthest
         # right hand station to reduce the effect of a large neighboring cell.
-        self.x_grid = np.array([self.rel_station_locations[0] - self.cell_width * \
+        self.x_grid = np.array([self.rel_station_locations[0] - self.cell_width *
                                 self.x_pad_multiplier])
 
         for ii, offset in enumerate(self.rel_station_locations[:-1]):
@@ -276,10 +276,10 @@ class Mesh():
                     pass
 
         self.x_grid = np.append(self.x_grid, self.rel_station_locations[-1])
-        # add a cell on the right hand side of the station area to reduce 
-        # effect of a large cell next to it       
+        # add a cell on the right hand side of the station area to reduce
+        # effect of a large cell next to it
         self.x_grid = np.append(self.x_grid,
-                                self.rel_station_locations[-1] + self.cell_width * \
+                                self.rel_station_locations[-1] + self.cell_width *
                                 self.x_pad_multiplier)
 
         # --> pad the mesh with exponentially increasing horizontal cells
@@ -305,7 +305,7 @@ class Mesh():
         # 2) make vertical nodes so that they increase with depth
         # --> make depth grid
         log_z = np.logspace(np.log10(self.z1_layer),
-                            np.log10(self.z_target_depth - \
+                            np.log10(self.z_target_depth -
                                      np.logspace(np.log10(self.z1_layer),
                                                  np.log10(self.z_target_depth),
                                                  num=self.n_layers)[-2]),
@@ -317,7 +317,7 @@ class Mesh():
 
         # --> create padding cells past target depth
         log_zpad = np.logspace(np.log10(self.z_target_depth),
-                               np.log10(self.z_bottom - \
+                               np.log10(self.z_bottom -
                                         np.logspace(np.log10(self.z_target_depth),
                                                     np.log10(self.z_bottom),
                                                     num=self.num_z_pad_cells)[-2]),
@@ -357,29 +357,29 @@ class Mesh():
         numpy.ndarray(2, num_elevation_points) where the first column is
         the horizontal location and the second column is the elevation at 
         that location.
-        
+
         If you have a elevation model use Profile to project the elevation
         information onto the profile line
-    
+
         To build the elevation I'm going to add the elevation to the top 
         of the model which will add cells to the mesh. there might be a better
         way to do this, but this is the first attempt. So I'm going to assume
         that the first layer of the mesh without elevation is the minimum
         elevation and blocks will be added to max elevation at an increment
         according to z1_layer
-        
+
         .. note:: the elevation model should be symmetrical ie, starting 
                   at the first station and ending on the last station, so for
                   now any elevation outside the station area will be ignored 
                   and set to the elevation of the station at the extremities.
                   This is not ideal but works for now.
-                  
+
         Arguments:
         -----------
             **elevation_profile** : np.ndarray(2, num_elev_points)
                                     - 1st row is for profile location
                                     - 2nd row is for elevation values
-                                    
+
         Computes:
         ---------
             **mesh_values** : mesh values, setting anything above topography
@@ -392,11 +392,13 @@ class Mesh():
             raise OccamInputError('Need to input an elevation profile to '
                                   'add elevation into the mesh.')
 
-        elev_diff = abs(elevation_profile[1].max() - elevation_profile[1].min())
+        elev_diff = abs(elevation_profile[
+                        1].max() - elevation_profile[1].min())
         num_elev_layers = int(elev_diff / self.z1_layer)
 
         # add vertical nodes and values to mesh_values
-        self.z_nodes = np.append([self.z1_layer] * num_elev_layers, self.z_nodes)
+        self.z_nodes = np.append(
+            [self.z1_layer] * num_elev_layers, self.z_nodes)
         self.z_grid = np.array([self.z_nodes[:ii + 1].sum()
                                 for ii in range(self.z_nodes.shape[0])])
         # this assumes that mesh_values have not been changed yet and are all ?
@@ -428,7 +430,8 @@ class Mesh():
                 zlayer = elev.max() - self.z_grid[zz]
                 try:
                     xtop = xg + (self.x_grid[ii + 1] - xg) / 2
-                    ytop = zlayer + 3 * (self.z_grid[zz] - self.z_grid[zz - 1]) / 4
+                    ytop = zlayer + 3 * \
+                        (self.z_grid[zz] - self.z_grid[zz - 1]) / 4
                     elev_top = func_elev(xtop)
                     # print xg, xtop, ytop, elev_top, zz
                     if elev_top > ytop:
@@ -441,7 +444,8 @@ class Mesh():
                 # left triangle
                 try:
                     xleft = xg + (self.x_grid[ii + 1] - xg) / 4.
-                    yleft = zlayer + (self.z_grid[zz] - self.z_grid[zz - 1]) / 2.
+                    yleft = zlayer + \
+                        (self.z_grid[zz] - self.z_grid[zz - 1]) / 2.
                     elev_left = func_elev(xleft)
                     # print xg, xleft, yleft, elev_left, zz
                     if elev_left > yleft:
@@ -452,7 +456,8 @@ class Mesh():
                 # bottom triangle
                 try:
                     xbottom = xg + (self.x_grid[ii + 1] - xg) / 2
-                    ybottom = zlayer + (self.z_grid[zz] - self.z_grid[zz - 1]) / 4
+                    ybottom = zlayer + \
+                        (self.z_grid[zz] - self.z_grid[zz - 1]) / 4
                     elev_bottom = func_elev(xbottom)
                     # print xg, xbottom, ybottom, elev_bottom, zz
                     if elev_bottom > ybottom:
@@ -463,7 +468,8 @@ class Mesh():
                 # right triangle
                 try:
                     xright = xg + 3 * (self.x_grid[ii + 1] - xg) / 4
-                    yright = zlayer + (self.z_grid[zz] - self.z_grid[zz - 1]) / 2
+                    yright = zlayer + \
+                        (self.z_grid[zz] - self.z_grid[zz - 1]) / 2
                     elev_right = func_elev(xright)
                     if elev_right > yright * .95:
                         self.mesh_values[ii, 0:zz, 3] = self.air_key
@@ -474,14 +480,15 @@ class Mesh():
         for ii in range(xpad):
             self.mesh_values[ii, :, :] = self.mesh_values[xpad + 1, :, :]
         for ii in range(xpad + 1):
-            self.mesh_values[-(ii + 1), :, :] = self.mesh_values[-xpad - 2, :, :]
+            self.mesh_values[-(ii + 1), :,
+                             :] = self.mesh_values[-xpad - 2, :, :]
 
         print '{0:^55}'.format('--- Added Elevation to Mesh --')
 
     def plot_mesh(self, **kwargs):
         """
         Plot built mesh with station locations.
-        
+
         =================== ===================================================
         Key Words           Description        
         =================== ===================================================
@@ -503,7 +510,7 @@ class Mesh():
         plot_triangles      [ 'y' | 'n' ] to plot mesh triangles.
                             *default* is 'n'
         =================== ===================================================
-        
+
         """
         fig_num = kwargs.pop('fig_num', 'Mesh')
         fig_size = kwargs.pop('fig_size', [5, 5])
@@ -641,23 +648,23 @@ class Mesh():
     def write_mesh_file(self, save_path=None, basename='Occam2DMesh'):
         """
         Write a finite element mesh file.
-        
+
         Calls build_mesh if it already has not been called.        
-        
+
         Arguments:
         -----------
             **save_path** : string
                             directory path or full path to save file
-            
+
             **basename** : string
                            basename of mesh file. *default* is 'Occam2DMesh' 
         Returns:
         ----------
             **mesh_fn** : string
                           full path to mesh file
-                          
+
         :example: ::
-        
+
             >>> import mtpy.modeling.occam2d as occam2d
             >>> edi_path = r"/home/mt/edi_files"
             >>> profile = occam2d.Profile(edi_path)
@@ -724,32 +731,32 @@ class Mesh():
     def read_mesh_file(self, mesh_fn):
         """
         reads an occam2d 2D mesh file
-        
+
         Arguments:
         ----------
             **mesh_fn** : string 
                           full path to mesh file
-    
+
         Populates:
         -----------
             **x_grid** : array of horizontal locations of nodes (m)
-            
+
             **x_nodes**: array of horizontal node relative distances 
                         (column locations (m))
-                        
+
             **z_grid** : array of vertical node locations (m)
-                                    
+
             **z_nodes** : array of vertical nodes 
                           (row locations(m))
-                                      
+
             **mesh_values** : np.array of free parameters
-            
+
         To do:
         ------
             incorporate fixed values
-            
+
         :Example: ::
-            
+
             >>> import mtpy.modeling.occam2d as occam2d 
             >>> mg = occam2d.Mesh()
             >>> mg.mesh_fn = r"/home/mt/occam/line1/Occam2Dmesh"
@@ -786,7 +793,6 @@ class Mesh():
             line_count += 1
             if h_index == nh - 1:
                 break
-
 
                 # --> fill vertical nodes
         for mline in mlines[line_count:]:
@@ -850,16 +856,16 @@ class Profile():
     Takes data from .edi files to create a profile line for 2D modeling.
     Can project the stations onto a profile that is perpendicular to strike
     or a given profile direction.
-    
+
     If _rotate_to_strike is True, the impedance tensor and tipper are rotated
     to align with the geoelectric strike angle.
-    
+
     If _rotate_to_strike is True and geoelectric_strike is not given, 
     then it is calculated using the phase tensor.  First, 2D sections are
     estimated from the impedance tensor then the strike is estimated from the
     phase tensor azimuth + skew.  This angle is then used to project the 
     stations perpendicular to the strike angle.
-    
+
     If you want to project onto an angle not perpendicular to strike, give
     profile_angle and set _rotate_to_strike to False.  This will project
     the impedance tensor and tipper to be perpendicular with the 
@@ -867,10 +873,10 @@ class Profile():
 
     Arguments:
     -----------
-    
+
         **edi_path** : string
                        full path to edi files
-                       
+
         **station_list** : list of stations to create profile for if None is
                            given all .edi files in edi_path will be used.
                            .. note:: that algorithm assumes .edi files are 
@@ -879,18 +885,18 @@ class Profile():
                                      it does not match exactly, so if you have
                                      .edi files with similar names there
                                      might be some problems.
-                                     
+
         **geoelectric_strike** : float
                                  geoelectric strike direction in degrees 
                                  assuming 0 is North and East is 90
-                                 
+
         **profile_angle** : float
                             angle to project the stations onto a profile line
                             .. note:: the geoelectric strike angle and 
                                       profile angle should be orthogonal for
                                       best results from 2D modeling.
-                                      
-    
+
+
     ======================= ===================================================
     **Attributes**          Description    
     ======================= ===================================================
@@ -910,11 +916,11 @@ class Profile():
                             a line that is perpendicular to geoelectric strike
                             also Z and Tipper are rotated to strike direction.
     ======================= ===================================================
- 
+
     .. note:: change _rotate_to_strike to False if you want to project the 
               stations onto a given profile direction.  This will rotate
               Z and Tipper to be orthogonal to this direction
-   
+
     ======================= ===================================================
     Methods                 Description
     ======================= ===================================================
@@ -922,9 +928,9 @@ class Profile():
     plot_profile            plots the profile line along with original station
                             locations to compare.  
     ======================= ===================================================
-    
+
     :Example: ::
-        
+
         >>> import mtpy.modeling.occam2d as occam
         >>> edi_path = r"/home/mt/edi_files"
         >>> station_list = ['mt{0:03}'.format(ss) for ss in range(0, 15)]
@@ -935,7 +941,7 @@ class Profile():
         >>> prof_line.generate_profile()
         >>> prof_line.plot_profile()
 
-        
+
     """
 
     def __init__(self, edi_path=None, **kwargs):
@@ -957,7 +963,7 @@ class Profile():
     def _get_edi_list(self):
         """
         get a list of edi files that coorespond to the station list
-        
+
         each element of the list is a mtpy.core.mt.MT object
         """
 
@@ -989,7 +995,7 @@ class Profile():
         estimated strike direction.  If _rotate_to_strike is True, the 
         impedance tensor and Tipper data are rotated to align with strike.
         Else, data is not rotated to strike.
-        
+
         To project stations onto a given line, set profile_angle and 
         _rotate_to_strike to False.  This will project the stations onto 
         profile_angle and rotate the impedance tensor and tipper to be 
@@ -1005,13 +1011,15 @@ class Profile():
         utm_zones = np.zeros(self.num_edi)
 
         for ii, edi in enumerate(self.edi_list):
-            # find strike angles for each station if a strike angle is not given
+            # find strike angles for each station if a strike angle is not
+            # given
             if self.geoelectric_strike is None:
                 try:
                     # check dimensionality to be sure strike is estimate for 2D
                     dim = MTgy.dimensionality(z_object=edi.Z)
                     # get strike for only those periods
-                    gstrike = MTgy.strike_angle(edi.Z.z[np.where(dim == 2)])[:, 0]
+                    gstrike = MTgy.strike_angle(
+                        edi.Z.z[np.where(dim == 2)])[:, 0]
                     strike_angles[ii] = np.median(gstrike)
                 except:
                     pass
@@ -1021,12 +1029,14 @@ class Profile():
             utm_zones[ii] = int(edi.utm_zone[:-1])
 
         if len(self.edi_list) == 0:
-            raise IOError('Could not find and .edi file in {0}'.format(self.edi_path))
+            raise IOError(
+                'Could not find and .edi file in {0}'.format(self.edi_path))
 
         if self.geoelectric_strike is None:
             try:
                 # might try mode here instead of mean
-                self.geoelectric_strike = np.median(strike_angles[np.nonzero(strike_angles)])
+                self.geoelectric_strike = np.median(
+                    strike_angles[np.nonzero(strike_angles)])
             except:
                 # empty list or so....
                 # can happen, if everyhing is just 1D
@@ -1039,7 +1049,7 @@ class Profile():
             if zone == main_utmzone:
                 continue
             else:
-                print ('station {0} is out of main utm zone'.format(self.edi_list[ii].station) + \
+                print ('station {0} is out of main utm zone'.format(self.edi_list[ii].station) +
                        ' will not be included in profile')
 
         # check regression for 2 profile orientations:
@@ -1055,7 +1065,8 @@ class Profile():
         self.profile_line = profile_line
         # profile_line = sp.polyfit(lo_easts, lo_norths, 1)
         if self.profile_angle is None:
-            self.profile_angle = (90 - (np.arctan(profile_line[0]) * 180 / np.pi)) % 180
+            self.profile_angle = (
+                90 - (np.arctan(profile_line[0]) * 180 / np.pi)) % 180
         # rotate Z according to strike angle,
 
         # if strike was explicitely given, use that value!
@@ -1105,7 +1116,8 @@ class Profile():
             print '=' * 72
         else:
             for edi in self.edi_list:
-                edi.Z.rotate((self.profile_angle - 90) % 180 - edi.Z.rotation_angle)
+                edi.Z.rotate((self.profile_angle - 90) %
+                             180 - edi.Z.rotation_angle)
                 # rotate tipper to profile azimuth, not strike.
                 try:
                     edi.Tipper.rotate((self.profile_angle - 90) % 180 -
@@ -1131,13 +1143,15 @@ class Profile():
         profile_vector /= np.linalg.norm(profile_vector)
 
         for ii, edi in enumerate(self.edi_list):
-            station_vector = np.array([easts[ii], norths[ii] - self.profile_line[1]])
+            station_vector = np.array(
+                [easts[ii], norths[ii] - self.profile_line[1]])
             position = np.dot(profile_vector, station_vector) * profile_vector
             self.station_locations[ii] = np.linalg.norm(position)
             edi.offset = np.linalg.norm(position)
             edi.projected_east = position[0]
             edi.projected_north = position[1] + self.profile_line[1]
-            projected_stations[ii] = [position[0], position[1] + self.profile_line[1]]
+            projected_stations[ii] = [position[0],
+                                      position[1] + self.profile_line[1]]
 
         # set the first station to 0
         for edi in self.edi_list:
@@ -1163,14 +1177,14 @@ class Profile():
     def project_elevation(self, elevation_model=None):
         """
         projects elevation data into the profile
-        
+
         Arguments:
         -------------
             **elevation_model** : np.ndarray(3, num_elevation_points)
                                   (east, north, elevation)
                                   for now needs to be in utm coordinates
                                   if None then elevation is taken from edi_list
-                                  
+
         Returns:
         ----------
             **elevation_profile** : 
@@ -1187,7 +1201,8 @@ class Profile():
 
         # --> project known elevations onto the profile line
         else:
-            self.elevation_profile = np.zeros((2, self.elevation_model.shape[1]))
+            self.elevation_profile = np.zeros(
+                (2, self.elevation_model.shape[1]))
             # create profile vector
             profile_vector = np.array([1, self.profile_line[0]])
             # be sure the amplitude is 1 for a unit vector
@@ -1205,7 +1220,7 @@ class Profile():
         """
         Plot the projected profile line along with original station locations
         to make sure the line projected is correct.
-        
+
         ===================== =================================================
         Key Words             Description          
         ===================== =================================================
@@ -1232,7 +1247,7 @@ class Profile():
         station_id            [min, max] index values for station labels
                               *default* is None
         ===================== =================================================
-        
+
         :Example: ::
             >>> edipath = r"/home/mt/edi_files"
             >>> pr = occam2d.Profile(edi_path=edipath)
@@ -1240,7 +1255,7 @@ class Profile():
             >>> # set station labels to only be from 1st to 4th index 
             >>> # of station name
             >>> pr.plot_profile(station_id=[0,4])
-        
+
         """
 
         fig_num = kwargs.pop('fig_num', 'Projected Profile')
@@ -1311,7 +1326,7 @@ class Regularization(Mesh):
     Creates a regularization grid based on Mesh.  Note that Mesh is inherited
     by Regularization, therefore the intended use is to build a mesh with 
     the Regularization class.
-    
+
     The regularization grid is what Occam calculates the inverse model on.
     Setup is tricky and can be painful, as you can see it is not quite fully
     functional yet, as it cannot incorporate topography yet.  It seems like 
@@ -1320,13 +1335,13 @@ class Regularization(Mesh):
     sufficiently small to resolve resistivity structure at that depth.  
     Finally, you want the regularization to go to a half space at the bottom, 
     basically one giant block.
-    
+
     Arguments:
     -----------
         **station_locations** : np.ndarray(n_stations)
                                 array of station locations along a profile
                                 line in meters.
-                                
+
     ======================= ===================================================
     Key Words/Attributes    Description    
     ======================= ===================================================
@@ -1351,7 +1366,7 @@ class Regularization(Mesh):
     model_columns
     model_name
     model_rows
-    
+
     min_block_width         [ float ] minimum model block width in meters, 
                             *default* is 2*cell_width
     n_layers                number of vertical layers in mesh
@@ -1403,10 +1418,10 @@ class Regularization(Mesh):
     z_target_depth          depth to deepest target of interest.  Below this
                             depth cells will be padded to z_bottom
     ======================= ===================================================
-        
+
     .. note:: regularization does not work with topography yet.  Having 
               problems calculating the number of free parameters.
-    
+
     ========================= =================================================
     Methods                   Description
     ========================= =================================================
@@ -1428,7 +1443,7 @@ class Regularization(Mesh):
     write_mesh_file           writes a mesh file to save_path
     write_regularization_file writes a regularization file
     ======================= ===================================================
-    
+
     :Example: ::
 
         >>> edipath = r"/home/mt/edi_files"
@@ -1439,11 +1454,11 @@ class Regularization(Mesh):
         >>> reg.build_regularization()
         >>> reg.save_path = r"/home/occam2d/Line1/Inv1"
         >>> reg.write_regularization_file()
-    
+
     """
 
     def __init__(self, station_locations=None, **kwargs):
-        # Be sure to initialize Mesh        
+        # Be sure to initialize Mesh
         Mesh.__init__(self, station_locations, **kwargs)
 
         self.min_block_width = kwargs.pop('min_block_width',
@@ -1471,10 +1486,10 @@ class Regularization(Mesh):
         """
         Builds larger boxes around existing mesh blocks for the regularization.
         As the model deepens the regularization boxes get larger.  
-        
+
         The regularization boxes are merged mesh cells as prescribed by the
         Occam method.
-    
+
         """
         # list of the mesh columns to combine
         self.model_columns = []
@@ -1483,8 +1498,10 @@ class Regularization(Mesh):
 
         # At the top of the mesh model blocks will be 2 combined mesh blocks
         # Note that the padding cells are combined into one model block
-        station_col = [2] * ((self.x_nodes.shape[0] - 2 * self.num_x_pad_cells + 1) / 2)
-        model_cols = [self.num_x_pad_cells] + station_col + [self.num_x_pad_cells]
+        station_col = [2] * ((self.x_nodes.shape[0] - 2 *
+                              self.num_x_pad_cells + 1) / 2)
+        model_cols = [self.num_x_pad_cells] + \
+            station_col + [self.num_x_pad_cells]
         station_widths = [self.x_nodes[ii] + self.x_nodes[ii + 1] for ii in
                           range(self.num_x_pad_cells,
                                 self.x_nodes.shape[0] - self.num_x_pad_cells, 2)]
@@ -1495,7 +1512,7 @@ class Regularization(Mesh):
 
         model_thickness = np.hstack([self.z_nodes[:2].sum(),
                                      self.z_nodes[2:self.z_nodes.shape[0] -
-                                                    self.num_z_pad_cells],
+                                                  self.num_z_pad_cells],
                                      self.z_nodes[-self.num_z_pad_cells:].sum()])
 
         self.num_param = 0
@@ -1504,7 +1521,7 @@ class Regularization(Mesh):
         widths = list(model_widths)
         for zz, thickness in enumerate(model_thickness):
             # index for model column blocks from first_row, start at 1 because
-            # 0 is for padding cells            
+            # 0 is for padding cells
             block_index = 1
             num_rows = 1
             if zz == 0:
@@ -1514,8 +1531,8 @@ class Regularization(Mesh):
             while block_index + 1 < num_cols - 1:
                 # check to see if horizontally merged mesh cells are not larger
                 # than the thickness times trigger
-                if thickness < self.trigger * (widths[block_index] + \
-                                                       widths[block_index + 1]):
+                if thickness < self.trigger * (widths[block_index] +
+                                               widths[block_index + 1]):
                     block_index += 1
                     continue
                 # merge 2 neighboring cells to avoid vertical exaggerations
@@ -1536,7 +1553,7 @@ class Regularization(Mesh):
         # model block to the furthest left station which is half the distance
         # from the center of the mesh grid.
         self.binding_offset = self.x_grid[self.num_x_pad_cells + 1] + \
-                              self.station_locations.mean()
+            self.station_locations.mean()
 
         self.get_num_free_params()
 
@@ -1552,11 +1569,11 @@ class Regularization(Mesh):
     def get_num_free_params(self):
         """
         estimate the number of free parameters in model mesh.
-        
+
         I'm assuming that if there are any fixed parameters in the block, then
         that model block is assumed to be fixed. Not sure if this is right
         cause there is no documentation.
-        
+
         **DOES NOT WORK YET**
         """
 
@@ -1571,7 +1588,7 @@ class Regularization(Mesh):
                 # make a model block from the index values of the regularization
                 # grid
                 model_block = self.mesh_values[row_count:row_count + rr,
-                              col_count:col_count + cc, :]
+                                               col_count:col_count + cc, :]
 
                 # find all the free triangular blocks within that model block
                 find_free = np.where(model_block == '?')
@@ -1591,32 +1608,32 @@ class Regularization(Mesh):
                                   save_path=None):
         """
         Write a regularization file for input into occam.
-        
+
         Calls build_regularization if build_regularization has not already
         been called.
-        
+
         if reg_fn is None, then file is written to save_path/reg_basename
-        
+
         Arguments:
         ----------
             **reg_fn** : string
                          full path to regularization file. *default* is None
                          and file will be written to save_path/reg_basename
-                         
+
             **reg_basename** : string
                                basename of regularization file
-            
+
             **statics_fn** : string
                              full path to static shift file
                              .. note:: static shift does not always work in
                                        occam2d.exe
             **prejudice_fn** : string
                                full path to prejudice file
-            
+
             **save_path** : string
                             path to save regularization file.
                             *default* is current working directory
-                                
+
         """
         if save_path is not None:
             self.save_path = save_path
@@ -1670,8 +1687,10 @@ class Regularization(Mesh):
 
         # --> write rows and columns of regularization grid
         for row, col in zip(self.model_rows, self.model_columns):
-            reg_lines.append(''.join([' {0:>5}'.format(rr) for rr in row]) + '\n')
-            reg_lines.append(''.join(['{0:>5}'.format(cc) for cc in col]) + '\n')
+            reg_lines.append(
+                ''.join([' {0:>5}'.format(rr) for rr in row]) + '\n')
+            reg_lines.append(
+                ''.join(['{0:>5}'.format(cc) for cc in col]) + '\n')
 
         reg_lines.append('{0:<18}{1}\n'.format('NO. EXCEPTIONS:', '0'))
         rfid = file(self.reg_fn, 'w')
@@ -1689,7 +1708,7 @@ class Regularization(Mesh):
             * model_rows
             * prejudice_fn
             * statics_fn
-        
+
         """
         self.reg_fn = reg_fn
         self.save_path = os.path.dirname(reg_fn)
@@ -1746,10 +1765,10 @@ class Regularization(Mesh):
 class Startup(object):
     """
     Reads and writes the startup file for Occam2D.
-    
+
     .. note:: Be sure to look at the Occam 2D documentation for description
               of all parameters
-    
+
     ========================= =================================================
     Key Words/Attributes      Description
     ========================= =================================================
@@ -1797,9 +1816,9 @@ class Startup(object):
     target_misfit             target misfit value.
                               *default* is 1.
     ========================= =================================================
-    
+
     :Example: ::
-    
+
         >>> startup = occam2d.Startup()
         >>> startup.data_fn = ocd.data_fn
         >>> startup.model_fn = profile.reg_fn
@@ -1809,7 +1828,8 @@ class Startup(object):
 
     def __init__(self, **kwargs):
         self.save_path = kwargs.pop('save_path', None)
-        self.startup_basename = kwargs.pop('startup_basename', 'Occam2DStartup')
+        self.startup_basename = kwargs.pop(
+            'startup_basename', 'Occam2DStartup')
         self.startup_fn = kwargs.pop('startup_fn', None)
         self.model_fn = kwargs.pop('model_fn', None)
         self.data_fn = kwargs.pop('data_fn', None)
@@ -1838,18 +1858,18 @@ class Startup(object):
         """
         Write a startup file based on the parameters of startup class.  
         Default file name is save_path/startup_basename
-        
+
         Arguments:
         -----------
             **startup_fn** : string
                              full path to startup file. *default* is None
-            
+
             **save_path** : string
                             directory to save startup file. *default* is None
-                            
+
             **startup_basename** : string
                                    basename of starup file. *default* is None
-        
+
         """
         if save_path is not None:
             self.save_path = save_path
@@ -1868,7 +1888,8 @@ class Startup(object):
             raise OccamInputError('Need to input data file name')
 
         if self.model_fn is None:
-            raise OccamInputError('Need to input model/regularization file name')
+            raise OccamInputError(
+                'Need to input model/regularization file name')
 
         if self.param_count is None:
             raise OccamInputError('Need to input number of model parameters')
@@ -1914,7 +1935,8 @@ class Startup(object):
                                             self.lagrange_value))
         slines.append('{0:<20}{1}\n'.format('Roughness Value:',
                                             self.roughness_value))
-        slines.append('{0:<20}{1}\n'.format('Misfit Value:', self.misfit_value))
+        slines.append('{0:<20}{1}\n'.format(
+            'Misfit Value:', self.misfit_value))
         slines.append('{0:<20}{1}\n'.format('Misfit Reached:',
                                             self.misfit_reached))
         slines.append('{0:<20}{1}\n'.format('Param Count:', self.param_count))
@@ -1927,7 +1949,7 @@ class Startup(object):
         if self.model_values.shape[0] != self.param_count:
             raise OccamInputError('length of model vaues array is not equal '
                                   'to param count {0} != {1}'.format(
-                self.model_values.shape[0], self.param_count))
+                                      self.model_values.shape[0], self.param_count))
 
         # write out starting resistivity values
         sline = []
@@ -1950,10 +1972,10 @@ class Startup(object):
 class Data(Profile):
     """
     Reads and writes data files and more.  
-    
+
     Inherets Profile, so the intended use is to use Data to project stations 
     onto a profile, then write the data file.  
-    
+
     ===================== =====================================================
     Model Modes           Description                     
     ===================== =====================================================
@@ -1971,8 +1993,8 @@ class Data(Profile):
     12 or tm              TM mode
     13 or tip             Only Tipper
     ===================== =====================================================
-    
-    
+
+
     **data** : is a list of dictioinaries containing the data for each station.
                keys include:
                    * 'station' -- name of station
@@ -1983,11 +2005,11 @@ class Data(Profile):
                    * 'tm_phase' --  TM phase in degrees in first quadrant
                    * 're_tip' -- real part of tipper along profile
                    * 'im_tip' -- imaginary part of tipper along profile
-                   
+
                each key is a np.ndarray(2, num_freq)
                index 0 is for data
                index 1 is for error
-    
+
     ===================== =====================================================
     Key Words/Attributes  Desctription
     ===================== =====================================================
@@ -2038,7 +2060,7 @@ class Data(Profile):
     tipper_err            percent error in tipper. *default* is 5
     title                 title in data file.  
     ===================== =====================================================
-    
+
     =========================== ===============================================
     Methods                     Description
     =========================== ===============================================
@@ -2056,7 +2078,7 @@ class Data(Profile):
                                 attributes.
     write_data_file             write a data file according to Data attributes
     =========================== ===============================================
-    
+
     :Example Write Data File: ::
         >>> import mtpy.modeling.occam2d as occam2d
         >>> edipath = r"/home/mt/edi_files"
@@ -2149,19 +2171,19 @@ class Data(Profile):
             * freq
             * station_list
             * station_locations
-            
+
         Arguments:
         -----------
             **data_fn** : string
                           full path to data file
                           *default* is None and set to save_path/fn_basename
-                
+
         :Example: ::
-            
+
             >>> import mtpy.modeling.occam2d as occam2d
             >>> ocd = occam2d.Data()
             >>> ocd.read_data_file(r"/home/Occam2D/Line1/Inv1/Data.dat")
-            
+
         """
 
         if data_fn is not None:
@@ -2230,7 +2252,8 @@ class Data(Profile):
         self.period = 1. / self.freq
 
         # -----------get data-------------------
-        # set zero array size the first row will be the data and second the error
+        # set zero array size the first row will be the data and second the
+        # error
         asize = (2, self.freq.shape[0])
 
         # make a list of dictionaries for each station.
@@ -2272,17 +2295,17 @@ class Data(Profile):
     def _get_frequencies(self):
         """
         from the list of edi's get a frequency list to invert for.
-        
+
         Uses Attributes:
         ------------
             **freq_min** : float (Hz)
                            minimum frequency to invert for.
                            *default* is None and will use the data to find min
-            
+
             **freq_max** : float (Hz)
                            maximum frequency to invert for
                            *default* is None and will use the data to find max
-                           
+
             **freq_num** : int
                            number of frequencies to invert for
                            *default* is None and will use the data to find num
@@ -2304,12 +2327,12 @@ class Data(Profile):
         all_freqs = np.array(sorted(list(set(lo_all_freqs)), reverse=True))
 
         # --> get min and max values if none are given
-        if ((self.freq_min is None) or (self.freq_min < all_freqs.min()) or \
-                    (self.freq_min > all_freqs.max())):
+        if ((self.freq_min is None) or (self.freq_min < all_freqs.min()) or
+                (self.freq_min > all_freqs.max())):
             self.freq_min = all_freqs.min()
 
-        if ((self.freq_max is None) or (self.freq_max > all_freqs.max()) or \
-                    (self.freq_max < all_freqs.min())):
+        if ((self.freq_max is None) or (self.freq_max > all_freqs.max()) or
+                (self.freq_max < all_freqs.min())):
             self.freq_max = all_freqs.max()
 
         # --> get all frequencies within the given range
@@ -2334,7 +2357,8 @@ class Data(Profile):
                     stepsize = (self.freq.shape[0] - 1) / self.freq_num
                     offset = stepsize / 2.
                 indices = np.array(np.around(np.linspace(offset,
-                                                         self.freq.shape[0] - 1 - offset,
+                                                         self.freq.shape[
+                                                             0] - 1 - offset,
                                                          self.freq_num), 0), dtype='int')
                 if indices[0] > (self.freq.shape[0] - 1 - indices[-1]):
                     indices -= 1
@@ -2361,7 +2385,8 @@ class Data(Profile):
         # --> get frequencies to invert for
         self._get_frequencies()
 
-        # set zero array size the first row will be the data and second the error
+        # set zero array size the first row will be the data and second the
+        # error
         asize = (2, self.freq.shape[0])
 
         # make a list of dictionaries for each station.
@@ -2397,7 +2422,8 @@ class Data(Profile):
                 else:
                     tipper = None
                     tipper_err = None
-                # update station freq, as we've now interpolated new z values for the station
+                # update station freq, as we've now interpolated new z values
+                # for the station
                 station_freq = self.freq[np.where((self.freq >= station_freq.min()) &
                                                   (self.freq <= station_freq.max()))]
             else:
@@ -2420,7 +2446,8 @@ class Data(Profile):
                     except IndexError:
                         f_index = None
                 else:
-                    # skip, if the listed frequency is not available for the station
+                    # skip, if the listed frequency is not available for the
+                    # station
                     if (frequency in station_freq):
                         # find the respective frequency index for the station
                         f_index = np.abs(station_freq - frequency).argmin()
@@ -2441,7 +2468,8 @@ class Data(Profile):
                             error_val = rho[f_index, 0, 1]
                             # set error floor if desired
                         if self.error_type == 'floor':
-                            error_val = max(error_val, rho[f_index, 0, 1] * self.res_te_err / 100.)
+                            error_val = max(
+                                error_val, rho[f_index, 0, 1] * self.res_te_err / 100.)
 
                         self.data[s_index]['te_res'][1, freq_num] = error_val
                         # --> set generic error
@@ -2459,7 +2487,8 @@ class Data(Profile):
                         if error_val > rho[f_index, 1, 0]:
                             error_val = rho[f_index, 1, 0]
                         if self.error_type == 'floor':
-                            error_val = max(error_val, rho[f_index, 1, 0] * self.res_tm_err / 100.)
+                            error_val = max(
+                                error_val, rho[f_index, 1, 0] * self.res_tm_err / 100.)
                         self.data[s_index]['tm_res'][1, freq_num] = error_val
                     # --> set generic error
                     else:
@@ -2478,9 +2507,11 @@ class Data(Profile):
                 # if phi[f_index, 0, 1] != 0.0:
                 # --> get error from data
                 if ((self.phase_te_err is None) or (self.error_type == 'floor')):
-                    error_val = np.degrees(np.arcsin(min(.5 * rho_err[f_index, 0, 1] / rho[f_index, 0, 1], 1.)))
+                    error_val = np.degrees(
+                        np.arcsin(min(.5 * rho_err[f_index, 0, 1] / rho[f_index, 0, 1], 1.)))
                     if self.error_type == 'floor':
-                        error_val = max(error_val, (self.phase_te_err / 100.) * 57. / 2.)
+                        error_val = max(
+                            error_val, (self.phase_te_err / 100.) * 57. / 2.)
                     self.data[s_index]['te_phase'][1, freq_num] = error_val
                 # --> set generic error floor
                 else:
@@ -2498,9 +2529,11 @@ class Data(Profile):
                 # if phi[f_index, 1, 0] != 0.0:
                 # --> get error from data
                 if ((self.phase_tm_err is None) or (self.error_type == 'floor')):
-                    error_val = np.degrees(np.arcsin(min(.5 * rho_err[f_index, 1, 0] / rho[f_index, 1, 0], 1.)))
+                    error_val = np.degrees(
+                        np.arcsin(min(.5 * rho_err[f_index, 1, 0] / rho[f_index, 1, 0], 1.)))
                     if self.error_type == 'floor':
-                        error_val = max(error_val, (self.phase_tm_err / 100.) * 57. / 2.)
+                        error_val = max(
+                            error_val, (self.phase_tm_err / 100.) * 57. / 2.)
                     self.data[s_index]['tm_phase'][1, freq_num] = error_val
                 # --> set generic error floor
                 else:
@@ -2518,19 +2551,22 @@ class Data(Profile):
                     if ((self.tipper_err is not None) or (self.error_type == 'floor')):
                         error_val = self.tipper_err / 100.
                         if self.error_type == 'floor':
-                            error_val = max(error_val, tipper_err[f_index, 0, 1])
+                            error_val = max(
+                                error_val, tipper_err[f_index, 0, 1])
                         self.data[s_index]['re_tip'][1, freq_num] = error_val
                         self.data[s_index]['im_tip'][1, freq_num] = error_val
                     else:
                         self.data[s_index]['re_tip'][1, freq_num] = \
-                            tipper[f_index, 0, 1].real / tipper_err[f_index, 0, 1]
+                            tipper[f_index, 0, 1].real / \
+                            tipper_err[f_index, 0, 1]
                         self.data[s_index]['im_tip'][1, freq_num] = \
-                            tipper[f_index, 0, 1].imag / tipper_err[f_index, 0, 1]
+                            tipper[f_index, 0, 1].imag / \
+                            tipper_err[f_index, 0, 1]
 
     def _get_data_list(self):
         """
         Get all the data needed to write a data file.
-        
+
         """
 
         self.data_list = []
@@ -2541,7 +2577,8 @@ class Data(Profile):
                     if mmode == 1:
                         if sdict['te_res'][0, ff] != 0.0:
                             dvalue = np.log10(sdict['te_res'][0, ff])
-                            derror = (sdict['te_res'][1, ff] / sdict['te_res'][0, ff]) / np.log(10.)
+                            derror = (sdict['te_res'][1, ff] /
+                                      sdict['te_res'][0, ff]) / np.log(10.)
                             dstr = '{0:.4f}'.format(dvalue)
                             derrstr = '{0:.4f}'.format(derror)
                             line = self._data_string.format(ss, ff + 1, mmode,
@@ -2574,7 +2611,8 @@ class Data(Profile):
                     if mmode == 5:
                         if sdict['tm_res'][0, ff] != 0.0:
                             dvalue = np.log10(sdict['tm_res'][0, ff])
-                            (sdict['tm_res'][1, ff] / sdict['tm_res'][0, ff]) / np.log(10)
+                            (sdict['tm_res'][1, ff] /
+                             sdict['tm_res'][0, ff]) / np.log(10)
                             dstr = '{0:.4f}'.format(dvalue)
                             derrstr = '{0:.4f}'.format(derror)
                             line = self._data_string.format(ss, ff + 1, mmode,
@@ -2630,11 +2668,12 @@ class Data(Profile):
         reads a separate data file and applies mask from this data file.
         mask_datafn needs to have exactly the same frequencies, and station names 
         must match exactly.
-        
+
         """
         ocdm = Data()
         ocdm.read_data_file(mask_datafn)
-        # list of stations, in order, for the mask_datafn and the input data file
+        # list of stations, in order, for the mask_datafn and the input data
+        # file
         ocdm_stlist = [ocdm.data[i]['station'] for i in range(len(ocdm.data))]
         ocd_stlist = [self.data[i]['station'] for i in range(len(self.data))]
 
@@ -2645,31 +2684,32 @@ class Data(Profile):
                 for i in range(len(self.freq)):
                     if self.data[i_ocdm][dmode][0][i] == 0:
                         self.data[i_ocd][dmode][0][i] = 0.
-        self.fn_basename = self.fn_basename[:-4] + 'Masked' + self.fn_basename[-4:]
+        self.fn_basename = self.fn_basename[
+            :-4] + 'Masked' + self.fn_basename[-4:]
         self.write_data_file()
 
     def write_data_file(self, data_fn=None):
         """
         Write a data file.
-        
+
         Arguments:
         -----------
             **data_fn** : string
                           full path to data file. 
                           *default* is save_path/fn_basename
-                          
+
         If there data is None, then _fill_data is called to create a profile, 
         rotate data and get all the necessary data.  This way you can use 
         write_data_file directly without going through the steps of projecting
         the stations, etc.
-        
+
         :Example: ::
             >>> edipath = r"/home/mt/edi_files"
             >>> slst = ['mt{0:03}'.format(ss) for ss in range(1, 20)]
             >>> ocd = occam2d.Data(edi_path=edipath, station_list=slst)
             >>> ocd.save_path = r"/home/occam/line1/inv1"
             >>> ocd.write_data_file()
-        
+
         """
 
         if self.data is None:
@@ -2732,9 +2772,9 @@ class Data(Profile):
     def get_profile_origin(self):
         """
         get the origin of the profile in real world coordinates
-        
+
         Author: Alison Kirkby (2013)
-        
+
         NEED TO ADAPT THIS TO THE CURRENT SETUP.
         """
 
@@ -2749,14 +2789,14 @@ class Data(Profile):
         """
         plot data and model responses as apparent resistivity, phase and
         tipper.  See PlotResponse for key words.
-        
+
         Returns:
         ---------
             **pr_obj** : PlotResponse object 
-            
+
         :Example: ::
             >>> pr_obj = ocd.plot_response()
-        
+
         """
 
         pr_obj = PlotResponse(self.data_fn, **kwargs)
@@ -2767,31 +2807,31 @@ class Data(Profile):
                          phase_err_inc=.05):
         """
         An interactive plotting tool to mask points an add errorbars
-        
+
         Arguments:
         ----------
             **res_err_inc** : float
                             amount to increase the error bars. Input as a 
                             decimal percentage.  0.3 for 30 percent
                             *Default* is 0.2 (20 percent)
-                            
+
             **phase_err_inc** : float
                               amount to increase the error bars. Input as a 
                               decimal percentage.  0.3 for 30 percent
                               *Default* is 0.05 (5 percent)
-                            
+
             **marker** : string
                          marker that the masked points will be
                          *Default* is 'h' for hexagon
-                           
-        
+
+
         :Example: ::
 
             >>> import mtpy.modeling.occam2d as occam2d
             >>> ocd = occam2d.Data()
             >>> ocd.data_fn = r"/home/Occam2D/Line1/Inv1/Data.dat"
             >>> ocd.plot_mask_points()                   
-            
+
         """
 
         if data_fn is not None:
@@ -2799,7 +2839,8 @@ class Data(Profile):
 
         pr_obj = self.plot_response(**kwargs)
 
-        # make points an attribute of self which is a data type OccamPointPicker
+        # make points an attribute of self which is a data type
+        # OccamPointPicker
         self.masked_data = OccamPointPicker(pr_obj.ax_list,
                                             pr_obj.line_list,
                                             pr_obj.err_list,
@@ -2810,7 +2851,7 @@ class Data(Profile):
     def mask_points(self, maskpoints_obj):
         """
         mask points and rewrite the data file
-        
+
         NEED TO REDO THIS TO FIT THE CURRENT SETUP
         """
 
@@ -2852,7 +2893,8 @@ class Data(Profile):
                             if dat[ss][floc] == 0.0:
                                 rerr = 0.0
                             else:
-                                rerr = derror[ss][floc] / dat[ss][floc] / np.log(10)
+                                rerr = derror[ss][floc] / \
+                                    dat[ss][floc] / np.log(10)
                             if m_data[rploc[str(dd)]][skey][1][ff] != rerr:
                                 m_data[rploc[str(dd)]][skey][1][ff] = rerr
 
@@ -2881,36 +2923,36 @@ class Data(Profile):
 class Response(object):
     """
     Reads .resp file output by Occam.  Similar structure to Data.data.
-    
+
     If resp_fn is given in the initialization of Response, read_response_file
     is called.
-    
+
     Arguments:
     ------------
         **resp_fn** : string
                       full path to .resp file
-                      
+
     Attributes:
     -------------
         **resp** : is a list of dictioinaries containing the data for each
                    station.  keys include:
-                   
+
                    * 'te_res' -- TE resisitivity in linear scale
                    * 'tm_res' -- TM resistivity in linear scale
                    * 'te_phase' -- TE phase in degrees
                    * 'tm_phase' --  TM phase in degrees in first quadrant
                    * 're_tip' -- real part of tipper along profile
                    * 'im_tip' -- imaginary part of tipper along profile
-                   
+
                each key is a np.ndarray(2, num_freq)
                index 0 is for model response
                index 1 is for normalized misfit
-               
+
     :Example: ::
         >>> resp_obj = occam2d.Response(r"/home/occam/line1/inv1/test_01.resp")
-        
-    
-    
+
+
+
     """
 
     def __init__(self, resp_fn=None, **kwargs):
@@ -2939,7 +2981,8 @@ class Response(object):
             self.resp_fn = resp_fn
 
         if self.resp_fn is None:
-            raise OccamInputError('resp_fn is None, please input response file')
+            raise OccamInputError(
+                'resp_fn is None, please input response file')
 
         if os.path.isfile(self.resp_fn) == False:
             raise OccamInputError('Could not find {0}'.format(self.resp_fn))
@@ -2955,7 +2998,8 @@ class Response(object):
         num_stat = r_arr['station'].max()
         num_freq = r_arr['freq'].max()
 
-        # set zero array size the first row will be the data and second the error
+        # set zero array size the first row will be the data and second the
+        # error
         asize = (2, num_freq)
 
         # make a list of dictionaries for each station.
@@ -2993,26 +3037,26 @@ class Model(Startup):
     model is an array(x_nodes, z_nodes) set on a regular grid, and the values 
     of the model response are filled in according to the regularization grid.
     This allows for faster plotting.  
-    
+
     Inherets Startup because they are basically the same object.
-    
+
     Argument:
     ----------
         **iter_fn** : string
                       full path to .iter file to read. *default* is None.
-                      
+
         **model_fn** : string
                        full path to regularization file. *default* is None
                        and found directly from the .iter file.  Only input
                        if the regularization is different from the file that
                        is in the .iter file.
-                      
+
         **mesh_fn** : string
                       full path to mesh file. *default* is None
                       Found directly from the model_fn file.  Only input
                       if the mesh is different from the file that
                       is in the model file.
-                      
+
     ===================== =====================================================
     Key Words/Attributes  Description    
     ===================== =====================================================
@@ -3027,8 +3071,8 @@ class Model(Startup):
     res_model             np.ndarray(x_nodes, z_nodes) resistivity model 
                           values in linear scale
     ===================== =====================================================
-    
-    
+
+
     ===================== =====================================================
     Methods               Description     
     ===================== =====================================================
@@ -3039,11 +3083,11 @@ class Model(Startup):
     write_iter_file       write an .iter file incase you want to set it as the
                           starting model or a priori model
     ===================== =====================================================
-         
+
     :Example: ::
         >>> model = occam2D.Model(r"/home/occam/line1/inv1/test_01.iter")
         >>> model.build_model()
-                 
+
     """
 
     def __init__(self, iter_fn=None, model_fn=None, mesh_fn=None, **kwargs):
@@ -3062,7 +3106,7 @@ class Model(Startup):
     def read_iter_file(self, iter_fn=None):
         """
         Read an iteration file.
-        
+
         Arguments:
         ----------
             **iter_fn** : string
@@ -3072,14 +3116,14 @@ class Model(Startup):
 
         Returns:
         --------
-        
+
         :Example: ::
-            
+
             >>> import mtpy.modeling.occam2d as occam2d
             >>> itfn = r"/home/Occam2D/Line1/Inv1/Test_15.iter"
             >>> ocm = occam2d.Model(itfn)
             >>> ocm.read_iter_file()
-            
+
         """
 
         if iter_fn is not None:
@@ -3105,7 +3149,8 @@ class Model(Startup):
             iline = ilines[ii].strip().split(':')
             key = iline[0].strip().lower()
             if key.find('!') != 0:
-                key = key.replace(' ', '_').replace('file', 'fn').replace('/', '_')
+                key = key.replace(' ', '_').replace(
+                    'file', 'fn').replace('/', '_')
                 value = iline[1].strip()
                 try:
                     setattr(self, key, float(value))
@@ -3151,7 +3196,7 @@ class Model(Startup):
     def build_model(self):
         """
         build the model from the mesh, regularization grid and model file
-        
+
         """
 
         # first read in the iteration file
@@ -3223,21 +3268,21 @@ class Model(Startup):
 
 
 # ==============================================================================
-# plot the MT and model responses            
+# plot the MT and model responses
 # ==============================================================================
 class PlotResponse():
     """
     Helper class to deal with plotting the MT response and occam2d model.
-    
+
     Arguments:
     -------------
         **data_fn** : string
                       full path to data file
-                      
+
         **resp_fn** : string or list
                       full path(s) to response file(s)   
-                    
-                     
+
+
     ==================== ======================================================
     Attributes/key words            description
     ==================== ======================================================
@@ -3263,7 +3308,7 @@ class PlotResponse():
                          axrtm --> matplotlib.axes instance for TM app.res
                          axpte --> matplotlib.axes instance for TE phase
                          axptm --> matplotlib.axes instance for TM phase
-             
+
     fig_num              starting number of figure
     fig_size             size of figure in inches (width, height)
     font_size            size of axes ticklabel font in points
@@ -3301,7 +3346,7 @@ class PlotResponse():
     subplot_wspace       horizontal spacing between subplots
     wl_fn                Winglink file name (full path)
     ==================== ======================================================
-    
+
     =================== =======================================================
     Methods             Description
     =================== =======================================================
@@ -3319,7 +3364,7 @@ class PlotResponse():
         >>> resp_list = [r"/home/occam/line1/inv1/test_{0:02}".format(ii) 
                          for ii in range(2, 8, 2)]
         >>> pr_obj = occam2d.PlotResponse(data_fn, resp_list, plot_tipper='y')
-        
+
     """
 
     def __init__(self, data_fn, resp_fn=None, **kwargs):
@@ -3426,7 +3471,7 @@ class PlotResponse():
     def plot(self):
         """
         plot the data and model response, if given, in individual plots.
-         
+
         """
 
         data_obj = Data()
@@ -3453,7 +3498,7 @@ class PlotResponse():
         # set a local parameter period for less typing
         period = data_obj.period
 
-        # ---------------plot each respones in a different figure---------------
+        # ---------------plot each respones in a different figure--------------
         if self.plot_type == '1':
             pstation_list = range(len(self.station_list))
 
@@ -3532,7 +3577,7 @@ class PlotResponse():
             # --> TE mode Data
             if len(rxy) > 0:
                 rte_err = rp_list[jj]['te_res'][1, rxy] * \
-                          rp_list[jj]['te_res'][0, rxy]
+                    rp_list[jj]['te_res'][0, rxy]
                 rte = plot_errorbar(axrte,
                                     period[rxy],
                                     rp_list[jj]['te_res'][0, rxy],
@@ -3553,7 +3598,7 @@ class PlotResponse():
                 # --> TM mode data
             if len(ryx) > 0:
                 rtm_err = rp_list[jj]['tm_res'][1, ryx] * \
-                          rp_list[jj]['tm_res'][0, ryx]
+                    rp_list[jj]['tm_res'][0, ryx]
                 rtm = plot_errorbar(axrtm,
                                     period[ryx],
                                     rp_list[jj]['tm_res'][0, ryx],
@@ -3619,7 +3664,7 @@ class PlotResponse():
                                   [pte[1][0], pte[1][1], pte[2][0]],
                                   [ptm[1][0], ptm[1][1], ptm[2][0]]])
 
-            # ---------------------plot tipper----------------------------------
+            # ---------------------plot tipper---------------------------------
             if self.plot_tipper == 'y':
                 t_list = []
                 t_label = []
@@ -3713,7 +3758,7 @@ class PlotResponse():
                 else:
                     pass
 
-            # ------------------- plot model response --------------------------
+            # ------------------- plot model response -------------------------
             if self.resp_fn is not None:
                 num_resp = len(self.resp_fn)
                 for rr, rfn in enumerate(self.resp_fn):
@@ -3730,8 +3775,10 @@ class PlotResponse():
                                .13,
                                .63 - float(rr) / (4 * num_resp))
                     elif self.color_mode == 'bw':
-                        cxy = (1 - 1.25 / (rr + 2.), 1 - 1.25 / (rr + 2.), 1 - 1.25 / (rr + 2.))
-                        cyx = (1 - 1.25 / (rr + 2.), 1 - 1.25 / (rr + 2.), 1 - 1.25 / (rr + 2.))
+                        cxy = (1 - 1.25 / (rr + 2.), 1 - 1.25 /
+                               (rr + 2.), 1 - 1.25 / (rr + 2.))
+                        cyx = (1 - 1.25 / (rr + 2.), 1 - 1.25 /
+                               (rr + 2.), 1 - 1.25 / (rr + 2.))
 
                     # calculate rms's
                     rmslistte = np.hstack((rp[jj]['te_res'][1],
@@ -3743,7 +3790,7 @@ class PlotResponse():
                     rmstm = np.sqrt(np.sum([rms ** 2 for rms in rmslisttm]) /
                                     len(rmslisttm))
 
-                    # ------------Plot Resistivity------------------------------
+                    # ------------Plot Resistivity-----------------------------
                     # cut out missing data points first
                     # --> response
                     mrxy = np.where(rp[jj]['te_res'][0] != 0)[0]
@@ -3786,7 +3833,7 @@ class PlotResponse():
                     else:
                         pass
 
-                    # --------------------plot phase--------------------------------
+                    # --------------------plot phase---------------------------
                     # cut out missing data points first
                     # --> reponse
                     mpxy = np.where(rp[jj]['te_phase'][0] != 0)[0]
@@ -3824,7 +3871,7 @@ class PlotResponse():
                     else:
                         pass
 
-                    # ---------------------plot tipper--------------------------
+                    # ---------------------plot tipper-------------------------
                     if self.plot_tipper == 'y':
                         txy = np.where(rp[jj]['re_tip'][0] != 0)[0]
                         tyx = np.where(rp[jj]['im_tip'][0] != 0)[0]
@@ -4132,11 +4179,11 @@ class PlotResponse():
     def redraw_plot(self):
         """
         redraw plot if parameters were changed
-        
+
         use this function if you updated some attributes and want to re-plot.
-        
+
         :Example: ::
-            
+
             >>> # change the color and marker of the xy components
             >>> import mtpy.modeling.occam2d as occam2d
             >>> ocd = occam2d.Occam2DData(r"/home/occam2d/Data.dat")
@@ -4153,9 +4200,9 @@ class PlotResponse():
                      close_fig='y'):
         """
         save all the figure that are in self.fig_list
-        
+
         :Example: ::
-            
+
             >>> # change the color and marker of the xy components
             >>> import mtpy.modeling.occam2d as occam2d
             >>> ocd = occam2d.Occam2DData(r"/home/occam2d/Data.dat")
@@ -4175,7 +4222,6 @@ class PlotResponse():
 
             print "saved figure to {0}".format(os.path.join(save_path, svfn))
 
-
             # ==============================================================================
 
 
@@ -4185,10 +4231,10 @@ class PlotModel(Model):
     """
     plot the 2D model found by Occam2D.  The model is displayed as a meshgrid
     instead of model bricks.  This speeds things up considerably.  
-    
+
     Inherets the Model class to take advantage of the attributes and methods
     already coded.
-    
+
     Arguments:
     -----------
         **iter_fn** : string
@@ -4196,8 +4242,8 @@ class PlotModel(Model):
                       necessary files can be found assuming they are in the 
                       same directory.  If they are not then need to input
                       manually.
-    
-    
+
+
     ======================= ===============================================
     keywords                description
     ======================= ===============================================
@@ -4257,7 +4303,7 @@ class PlotModel(Model):
     yscale                  [ 'km' | 'm' ] scale of plot, if 'm' everything
                             will be scaled accordingly.
     ======================= ===============================================
-    
+
     =================== =======================================================
     Methods             Description
     =================== =======================================================
@@ -4267,7 +4313,7 @@ class PlotModel(Model):
     save_figure         saves the matplotlib.figure instance to desired 
                         location and format
     =================== ====================================================
-    
+
     :Example: 
     ---------------
         >>> import mtpy.modeling.occam2d as occam2d
@@ -4278,8 +4324,8 @@ class PlotModel(Model):
         >>> #change len of station name
         >>> model_plot.station_id = [2, 5]
         >>> model_plot.redraw_plot()
-        
-    
+
+
     """
 
     def __init__(self, iter_fn=None, data_fn=None, **kwargs):
@@ -4349,10 +4395,10 @@ class PlotModel(Model):
     def plot(self):
         """
         plotModel will plot the model output by occam2d in the iteration file.
-        
-        
+
+
         :Example: ::
-            
+
             >>> import mtpy.modeling.occam2d as occam2d
             >>> itfn = r"/home/Occam2D/Line1/Inv1/Test_15.iter"
             >>> model_plot = occam2d.PlotModel(itfn)
@@ -4365,7 +4411,7 @@ class PlotModel(Model):
             >>> model_plot.climits = (0,2.5)
             >>> model_plot.aspect = 'equal'
             >>> model_plot.redraw_plot()
-            
+
         """
         # --> read in iteration file and build the model
         self.read_iter_file()
@@ -4464,7 +4510,8 @@ class PlotModel(Model):
                         verticalalignment='baseline',
                         fontdict=fdict)
 
-        # set the initial limits of the plot to be square about the profile line
+        # set the initial limits of the plot to be square about the profile
+        # line
         if self.ylimits == None:
             ax.set_ylim(abs(self.station_locations.max() -
                             self.station_locations.min()) / df,
@@ -4636,7 +4683,7 @@ class PlotModel(Model):
                     except IndexError:
                         pass
 
-        ##plot the mesh block numbers
+        # plot the mesh block numbers
         if self.meshnum == 'on':
             kk = 1
             for yy in self.plot_z[::-1] / df:
@@ -4645,7 +4692,7 @@ class PlotModel(Model):
                             fontdict={'size': self.meshnum_font_size})
                     kk += 1
 
-        ##plot regularization block numbers
+        # plot regularization block numbers
         if self.blocknum == 'on':
             kk = 1
             for ii in range(len(self.model_rows)):
@@ -4670,7 +4717,7 @@ class PlotModel(Model):
                         yy = self.plot_z[-ny1] - (self.plot_z[-ny1] -
                                                   self.plot_z[-ny2]) / 2
                         xx = self.plot_x[nx1] - \
-                             (self.plot_x[nx1] - self.plot_x[nx2]) / 2
+                            (self.plot_x[nx1] - self.plot_x[nx2]) / 2
                         # put the number
                         ax.text(xx / df, yy / df, '{0}'.format(kk),
                                 fontdict={'size': self.block_font_size},
@@ -4689,11 +4736,11 @@ class PlotModel(Model):
     def redraw_plot(self):
         """
         redraw plot if parameters were changed
-        
+
         use this function if you updated some attributes and want to re-plot.
-        
+
         :Example: ::
-            
+
             >>> # change the color and marker of the xy components
             >>> import mtpy.modeling.occam2d as occam2d
             >>> ocd = occam2d.Occam2DData(r"/home/occam2d/Data.dat")
@@ -4710,43 +4757,43 @@ class PlotModel(Model):
                     fig_dpi=None, close_fig='y'):
         """
         save_plot will save the figure to save_fn.
-        
+
         Arguments:
         -----------
-        
+
             **save_fn** : string
                           full path to save figure to, can be input as
                           * directory path -> the directory path to save to
                             in which the file will be saved as 
                             save_fn/station_name_PhaseTensor.file_format
-                            
+
                           * full path -> file will be save to the given 
                             path.  If you use this option then the format
                             will be assumed to be provided by the path
-                            
+
             **file_format** : [ pdf | eps | jpg | png | svg ]
                               file type of saved figure pdf,svg,eps... 
-                              
+
             **orientation** : [ landscape | portrait ]
                               orientation in which the file will be saved
                               *default* is portrait
-                              
+
             **fig_dpi** : int
                           The resolution in dots-per-inch the file will be
                           saved.  If None then the dpi will be that at 
                           which the figure was made.  I don't think that 
                           it can be larger than dpi of the figure.
-                          
+
             **close_plot** : [ y | n ]
                              * 'y' will close the plot after saving.
                              * 'n' will leave plot open
-                          
+
         :Example: ::
-            
+
             >>> # to save plot as jpg
             >>> model_plot.save_figure(r"/home/occam/figures", 
                                        file_format='jpg')
-            
+
         """
 
         if fig_dpi == None:
@@ -4777,11 +4824,11 @@ class PlotModel(Model):
         """
         update any parameters that where changed using the built-in draw from
         canvas.  
-        
+
         Use this if you change an of the .fig or axes properties
-        
+
         :Example: ::
-            
+
             >>> # to change the grid lines to only be on the major ticks
             >>> import mtpy.modeling.occam2d as occam2d
             >>> dfn = r"/home/occam2d/Inv1/data.dat"
@@ -4789,7 +4836,7 @@ class PlotModel(Model):
             >>> ps1 = ocd.plotAllResponses()
             >>> [ax.grid(True, which='major') for ax in [ps1.axrte,ps1.axtep]]
             >>> ps1.update_plot()
-        
+
         """
 
         self.fig.canvas.draw()
@@ -4808,15 +4855,15 @@ class PlotModel(Model):
 class PlotL2():
     """
     Plot L2 curve of iteration vs rms and rms vs roughness.
-    
+
     Need to only input an .iter file, will read all similar .iter files
     to get the rms, iteration number and roughness of all similar .iter files.
-    
+
     Arguments:
     ----------
         **iter_fn** : string
                       full path to an iteration file output by Occam2D.
-                      
+
     ======================= ===================================================
     Keywords/attributes     Description
     ======================= ===================================================
@@ -4848,7 +4895,7 @@ class PlotL2():
     subplot_right           subplot spacing from right
     subplot_top             subplot spacing from top
     ======================= ===================================================
-   
+
     =================== =======================================================
     Methods             Description
     =================== =======================================================
@@ -4858,7 +4905,7 @@ class PlotL2():
     save_figure         saves the matplotlib.figure instance to desired 
                         location and format
     =================== ======================================================
-     
+
     """
 
     def __init__(self, iter_fn, **kwargs):
@@ -4898,7 +4945,7 @@ class PlotL2():
     def _get_iterfn_list(self):
         """
         get all iteration files for a given inversion
-        
+
         """
 
         self.iter_fn_list = [os.path.join(self.iter_path, fn)
@@ -5046,11 +5093,11 @@ class PlotL2():
     def redraw_plot(self):
         """
         redraw plot if parameters were changed
-        
+
         use this function if you updated some attributes and want to re-plot.
-        
+
         :Example: ::
-            
+
             >>> # change the color and marker of the xy components
             >>> import mtpy.modeling.occam2d as occam2d
             >>> ocd = occam2d.Occam2DData(r"/home/occam2d/Data.dat")
@@ -5067,46 +5114,46 @@ class PlotL2():
                     fig_dpi=None, close_fig='y'):
         """
         save_plot will save the figure to save_fn.
-        
+
         Arguments:
         -----------
-        
+
             **save_fn** : string
                           full path to save figure to, can be input as
                           * directory path -> the directory path to save to
                             in which the file will be saved as 
                             save_fn/station_name_PhaseTensor.file_format
-                            
+
                           * full path -> file will be save to the given 
                             path.  If you use this option then the format
                             will be assumed to be provided by the path
-                            
+
             **file_format** : [ pdf | eps | jpg | png | svg ]
                               file type of saved figure pdf,svg,eps... 
-                              
+
             **orientation** : [ landscape | portrait ]
                               orientation in which the file will be saved
                               *default* is portrait
-                              
+
             **fig_dpi** : int
                           The resolution in dots-per-inch the file will be
                           saved.  If None then the dpi will be that at 
                           which the figure was made.  I don't think that 
                           it can be larger than dpi of the figure.
-                          
+
             **close_plot** : [ y | n ]
                              * 'y' will close the plot after saving.
                              * 'n' will leave plot open
-                          
+
         :Example: ::
-            
+
             >>> # to save plot as jpg
             >>> import mtpy.modeling.occam2d as occam2d
             >>> dfn = r"/home/occam2d/Inv1/data.dat"
             >>> ocd = occam2d.Occam2DData(dfn)
             >>> ps1 = ocd.plotPseudoSection()
             >>> ps1.save_plot(r'/home/MT/figures', file_format='jpg')
-            
+
         """
 
         if fig_dpi == None:
@@ -5137,11 +5184,11 @@ class PlotL2():
         """
         update any parameters that where changed using the built-in draw from
         canvas.  
-        
+
         Use this if you change an of the .fig or axes properties
-        
+
         :Example: ::
-            
+
             >>> # to change the grid lines to only be on the major ticks
             >>> import mtpy.modeling.occam2d as occam2d
             >>> dfn = r"/home/occam2d/Inv1/data.dat"
@@ -5149,7 +5196,7 @@ class PlotL2():
             >>> ps1 = ocd.plotAllResponses()
             >>> [ax.grid(True, which='major') for ax in [ps1.axrte,ps1.axtep]]
             >>> ps1.update_plot()
-        
+
         """
 
         self.fig.canvas.draw()
@@ -5163,21 +5210,21 @@ class PlotL2():
 
 
 # ==============================================================================
-# plot pseudo section of data and model response                
+# plot pseudo section of data and model response
 # ==============================================================================
 class PlotPseudoSection(object):
     """
     plot a pseudo section of the data and response if given
-    
-        
+
+
     Arguments:
     -------------
         **data_fn** : string
                       full path to data file.
-        
+
         **resp_fn** : string
                       full path to response file.
-    
+
     ==================== ======================================================
     key words            description
     ==================== ======================================================
@@ -5219,7 +5266,7 @@ class PlotPseudoSection(object):
     subplot_top          subplot spacing from top
     subplot_wspace       horizontal spacing between subplots
     ==================== ======================================================
-    
+
     =================== =======================================================
     Methods             Description
     =================== =======================================================
@@ -5231,14 +5278,14 @@ class PlotPseudoSection(object):
     save_figure         saves the matplotlib.figure instance to desired 
                         location and format
     =================== =======================================================
-                    
+
    :Example: ::
-        
+
         >>> import mtpy.modeling.occam2d as occam2d
         >>> r_fn = r"/home/Occam2D/Line1/Inv1/Test_15.resp"
         >>> d_fn = r"/home/Occam2D/Line1/Inv1/DataRW.dat"
         >>> ps_plot = occam2d.PlotPseudoSection(d_fn, r_fn) 
-    
+
     """
 
     def __init__(self, data_fn, resp_fn=None, **kwargs):
@@ -5320,7 +5367,7 @@ class PlotPseudoSection(object):
     def plot(self):
         """
         plot pseudo section of data and response if given
-        
+
         """
         if self.plot_resp == 'y':
             nr = 2
@@ -5804,11 +5851,11 @@ class PlotPseudoSection(object):
     def redraw_plot(self):
         """
         redraw plot if parameters were changed
-        
+
         use this function if you updated some attributes and want to re-plot.
-        
+
         :Example: ::
-            
+
             >>> # change the color and marker of the xy components
             >>> import mtpy.modeling.occam2d as occam2d
             >>> ocd = occam2d.Occam2DData(r"/home/occam2d/Data.dat")
@@ -5825,46 +5872,46 @@ class PlotPseudoSection(object):
                     fig_dpi=None, close_plot='y'):
         """
         save_plot will save the figure to save_fn.
-        
+
         Arguments:
         -----------
-        
+
             **save_fn** : string
                           full path to save figure to, can be input as
                           * directory path -> the directory path to save to
                             in which the file will be saved as 
                             save_fn/station_name_PhaseTensor.file_format
-                            
+
                           * full path -> file will be save to the given 
                             path.  If you use this option then the format
                             will be assumed to be provided by the path
-                            
+
             **file_format** : [ pdf | eps | jpg | png | svg ]
                               file type of saved figure pdf,svg,eps... 
-                              
+
             **orientation** : [ landscape | portrait ]
                               orientation in which the file will be saved
                               *default* is portrait
-                              
+
             **fig_dpi** : int
                           The resolution in dots-per-inch the file will be
                           saved.  If None then the dpi will be that at 
                           which the figure was made.  I don't think that 
                           it can be larger than dpi of the figure.
-                          
+
             **close_plot** : [ y | n ]
                              * 'y' will close the plot after saving.
                              * 'n' will leave plot open
-                          
+
         :Example: ::
-            
+
             >>> # to save plot as jpg
             >>> import mtpy.modeling.occam2d as occam2d
             >>> dfn = r"/home/occam2d/Inv1/data.dat"
             >>> ocd = occam2d.Occam2DData(dfn)
             >>> ps1 = ocd.plotPseudoSection()
             >>> ps1.save_plot(r'/home/MT/figures', file_format='jpg')
-            
+
         """
 
         if fig_dpi == None:
@@ -5895,11 +5942,11 @@ class PlotPseudoSection(object):
         """
         update any parameters that where changed using the built-in draw from
         canvas.  
-        
+
         Use this if you change an of the .fig or axes properties
-        
+
         :Example: ::
-            
+
             >>> # to change the grid lines to only be on the major ticks
             >>> import mtpy.modeling.occam2d as occam2d
             >>> dfn = r"/home/occam2d/Inv1/data.dat"
@@ -5907,7 +5954,7 @@ class PlotPseudoSection(object):
             >>> ps1 = ocd.plotPseudoSection()
             >>> [ax.grid(True, which='major') for ax in [ps1.axrte,ps1.axtep]]
             >>> ps1.update_plot()
-        
+
         """
 
         self.fig.canvas.draw()
@@ -5928,44 +5975,44 @@ class PlotPseudoSection(object):
 class PlotMisfitPseudoSection(object):
     """
     plot a pseudo section of the data and response if given
-    
-        
+
+
     Arguments:
     -------------
         **rp_list** : list of dictionaries for each station with keywords:
-                
+
                 * *station* : string
                              station name
-                
+
                 * *offset* : float
                              relative offset
-                
+
                 * *resxy* : np.array(nf,4)
                             TE resistivity and error as row 0 and 1 respectively
-                
+
                 * *resyx* : np.array(fn,4)
                             TM resistivity and error as row 0 and 1 respectively
-                
+
                 * *phasexy* : np.array(nf,4)
                               TE phase and error as row 0 and 1 respectively
-                
+
                 * *phaseyx* : np.array(nf,4)
                               Tm phase and error as row 0 and 1 respectively
-                
+
                 * *realtip* : np.array(nf,4)
                               Real Tipper and error as row 0 and 1 respectively
-                
+
                 * *imagtip* : np.array(nf,4)
                               Imaginary Tipper and error as row 0 and 1 
                               respectively
-                
+
                 Note: that the resistivity will be in log10 space.  Also, there
                 are 2 extra rows in the data arrays, this is to put the 
                 response from the inversion.  
-        
+
         **period** : np.array of periods to plot that correspond to the index
                      values of each rp_list entry ie. resxy.
-    
+
     ==================== ==================================================
     key words            description
     ==================== ==================================================
@@ -6007,7 +6054,7 @@ class PlotMisfitPseudoSection(object):
     subplot_top          subplot spacing from top
     subplot_wspace       horizontal spacing between subplots
     ==================== ==================================================
-    
+
     =================== =======================================================
     Methods             Description
     =================== =======================================================
@@ -6019,15 +6066,15 @@ class PlotMisfitPseudoSection(object):
     save_figure         saves the matplotlib.figure instance to desired 
                         location and format
     =================== =======================================================
-                    
+
    :Example: ::
-        
+
         >>> import mtpy.modeling.occam2d as occam2d
         >>> ocd = occam2d.Occam2DData()
         >>> rfile = r"/home/Occam2D/Line1/Inv1/Test_15.resp"
         >>> ocd.data_fn = r"/home/Occam2D/Line1/Inv1/DataRW.dat"
         >>> ps1 = ocd.plot2PseudoSection(resp_fn=rfile) 
-    
+
     """
 
     def __init__(self, data_fn, resp_fn, **kwargs):
@@ -6094,7 +6141,7 @@ class PlotMisfitPseudoSection(object):
     def get_misfit(self):
         """
         compute misfit of MT response found from the model and the data.
-        
+
         Need to normalize correctly
         """
         data_obj = Data()
@@ -6132,7 +6179,7 @@ class PlotMisfitPseudoSection(object):
     def plot(self):
         """
         plot pseudo section of data and response if given
-        
+
         """
 
         self.get_misfit()
@@ -6311,11 +6358,11 @@ class PlotMisfitPseudoSection(object):
     def redraw_plot(self):
         """
         redraw plot if parameters were changed
-        
+
         use this function if you updated some attributes and want to re-plot.
-        
+
         :Example: ::
-            
+
             >>> # change the color and marker of the xy components
             >>> import mtpy.modeling.occam2d as occam2d
             >>> ocd = occam2d.Occam2DData(r"/home/occam2d/Data.dat")
@@ -6332,46 +6379,46 @@ class PlotMisfitPseudoSection(object):
                     fig_dpi=None, close_plot='y'):
         """
         save_plot will save the figure to save_fn.
-        
+
         Arguments:
         -----------
-        
+
             **save_fn** : string
                           full path to save figure to, can be input as
                           * directory path -> the directory path to save to
                             in which the file will be saved as 
                             save_fn/station_name_PhaseTensor.file_format
-                            
+
                           * full path -> file will be save to the given 
                             path.  If you use this option then the format
                             will be assumed to be provided by the path
-                            
+
             **file_format** : [ pdf | eps | jpg | png | svg ]
                               file type of saved figure pdf,svg,eps... 
-                              
+
             **orientation** : [ landscape | portrait ]
                               orientation in which the file will be saved
                               *default* is portrait
-                              
+
             **fig_dpi** : int
                           The resolution in dots-per-inch the file will be
                           saved.  If None then the dpi will be that at 
                           which the figure was made.  I don't think that 
                           it can be larger than dpi of the figure.
-                          
+
             **close_plot** : [ y | n ]
                              * 'y' will close the plot after saving.
                              * 'n' will leave plot open
-                          
+
         :Example: ::
-            
+
             >>> # to save plot as jpg
             >>> import mtpy.modeling.occam2d as occam2d
             >>> dfn = r"/home/occam2d/Inv1/data.dat"
             >>> ocd = occam2d.Occam2DData(dfn)
             >>> ps1 = ocd.plotPseudoSection()
             >>> ps1.save_plot(r'/home/MT/figures', file_format='jpg')
-            
+
         """
 
         if fig_dpi == None:
@@ -6402,11 +6449,11 @@ class PlotMisfitPseudoSection(object):
         """
         update any parameters that where changed using the built-in draw from
         canvas.  
-        
+
         Use this if you change an of the .fig or axes properties
-        
+
         :Example: ::
-            
+
             >>> # to change the grid lines to only be on the major ticks
             >>> import mtpy.modeling.occam2d as occam2d
             >>> dfn = r"/home/occam2d/Inv1/data.dat"
@@ -6414,7 +6461,7 @@ class PlotMisfitPseudoSection(object):
             >>> ps1 = ocd.plotPseudoSection()
             >>> [ax.grid(True, which='major') for ax in [ps1.axrte,ps1.axtep]]
             >>> ps1.update_plot()
-        
+
         """
 
         self.fig.canvas.draw()
@@ -6432,80 +6479,80 @@ class OccamPointPicker(object):
     """
     This class helps the user interactively pick points to mask and add 
     error bars. 
-    
+
     Useage:
     -------
     To mask just a single point right click over the point and a gray point 
     will appear indicating it has been masked
-    
+
     To mask both the apparent resistivity and phase left click over the point.
     Gray points will appear over both the apparent resistivity and phase.  
     Sometimes the points don't exactly matchup, haven't quite worked that bug
     out yet, but not to worry it picks out the correct points
-    
+
     To add error bars to a point click the middle or scroll bar button.  This
     only adds error bars to the point and does not reduce them so start out
     with reasonable errorbars.  You can change the increment that the error
     bars are increased with res_err_inc and phase_err_inc.
-    
+
     .. note:: There is a bug when only plotting TE or TM that you cannot mask
               points in the phase.  I'm not sure where it comes from, but
               works with all modes.  So my suggestion is to make a data file 
               with all modes, mask data points and then rewrite that data file
               if you want to use just one of the modes.  That's the work 
               around for the moment.
-    
-    
-    
+
+
+
     Arguments:
     ----------
         **ax_list** : list of the resistivity and phase axis that have been 
                     plotted as [axr_te,axr_tm,axp_te,axp_tm]
-        
+
         **line_list** : list of lines used to plot the responses, not the error 
                       bars as [res_te,res_tm,phase_te,phase_tm]
-        
+
         **err_list** : list of the errorcaps and errorbar lines as 
                    [[cap1,cap2,bar],...]
-                 
+
         **res_err_inc** : increment to increase the errorbars for resistivity.
                         put .20 for 20 percent change. *Default* is .05
-        
+
         **phase_err_inc** : increment to increase the errorbars for the phase
                           put .10 for 10 percent change. *Defualt* is .02 
-                    
+
         **marker** : marker type for masked points.  See matplotlib.pyplot.plot
                     for options of markers.  *Default* is h for hexagon.
-                   
+
     Attributes:
     -----------
-    
+
         **ax_list** : axes list used to plot the data
-        
+
         **line_list** : line list used to plot the data
-        
+
         **err_list** : error list used to plot the data
-        
+
         **data** : list of data points that were not masked for each plot.
-        
+
         **fdict** : dictionary of frequency arrays for each plot and data set.
-        
+
         **fndict** : dictionary of figure numbers to corresponed with data.
-        
+
         **cid_list** : list of event ids.
-        
+
         **res_err_inc** : increment to increase resistivity error bars
-        
+
         **phase_inc** : increment to increase phase error bars
-        
+
         **marker** : marker of masked points
-        
+
         **fig_num** : figure numbers
-        
+
         **data_list** : list of lines to write into the occam2d data file.
-        
+
     :Example: ::
-        
+
         >>> ocd = occam2d.Occam2DData()
         >>> ocd.data_fn = r"/home/Occam2D/Line1/Inv1/Data.dat"
         >>> ocd.plotMaskPoints()
@@ -6595,20 +6642,20 @@ class OccamPointPicker(object):
         picking points to mask or change error bars.  The axes is redrawn with
         a gray marker to indicate a masked point and/or increased size in 
         errorbars.
-        
+
         Arguments:
         ----------
             **event** : type mouse_click_event
-                
+
         Useage:
         -------
-        
+
             **Left mouse button** will mask both resistivity and phase point
-        
+
             **Right mouse button** will mask just the point selected
-        
+
             **Middle mouse button** will increase the error bars
-        
+
             **q** will close the figure.
         """
         self.event = event
@@ -6637,7 +6684,8 @@ class OccamPointPicker(object):
             # redraw the canvas
             self.ax.figure.canvas.draw()
 
-        # if the left button is clicked change both resistivity and phase points
+        # if the left button is clicked change both resistivity and phase
+        # points
         elif event.mouseevent.button == 1:
             # get the point that was clicked on
             ii = event.ind
@@ -6714,7 +6762,7 @@ class OccamPointPicker(object):
                 ecapu = ecapu + ecapu * self.phase_err_inc
 
             # put the new error into the error array
-            self.error[self.fig_num][jj][ll] = abs(nebu - \
+            self.error[self.fig_num][jj][ll] = abs(nebu -
                                                    self.data[self.fig_num][jj][ll])
 
             # set the new error bar values
@@ -6739,18 +6787,18 @@ class OccamPointPicker(object):
     def inAxes(self, event):
         """
         gets the axes that the mouse is currently in.
-        
+
         Arguments:
         ---------
             **event**: is a type axes_enter_event
-                
+
         Returns:
         --------
-        
+
             **OccamPointPicker.jj** : index of resistivity axes for ax_list
-            
+
             **OccamPointPicker.kk** : index of phase axes for ax_list
-        
+
         """
 
         self.event2 = event
@@ -6765,17 +6813,17 @@ class OccamPointPicker(object):
     def inFigure(self, event):
         """
         gets the figure number that the mouse is in
-        
+
         Arguments:
         ----------
             **event** : figure_enter_event
-            
+
         Returns:
         --------
             **OccamPointPicker.fig_num** : figure number that corresponds to the
                                           index in the ax_list, datalist, errorlist
                                           and line_list.
-                        
+
         """
         self.event3 = event
         self.fig_num = self.fndict['{0}'.format(event.canvas.figure.number)]
@@ -6784,11 +6832,11 @@ class OccamPointPicker(object):
     def on_close(self, event):
         """
         close the figure with a 'q' key event and disconnect the event ids
-        
+
         Arguments:
         ----------
             **event** : key_press_event
-               
+
         Returns:
         --------
             print statement saying the figure is closed
@@ -6824,7 +6872,8 @@ class OccamInputError(Exception):
 if __name__ == "__main__":
 
     if len(sys.argv) < 2:
-        print ("\n please provide path to edi files\n USAGE:  %s path2edifiles" % sys.argv[0])
+        print (
+            "\n please provide path to edi files\n USAGE:  %s path2edifiles" % sys.argv[0])
         sys.exit(1)
     else:
         edi_dir = sys.argv[1]
@@ -6832,7 +6881,8 @@ if __name__ == "__main__":
     #stations = ['151{0:02}A'.format(s) for s in xrange(24, 31)]
     #print (stations)
     #pr = Profile(edi_path=edi_dir, station_list=stations)
-    #OR pr = Profile(edi_path=edi_dir, station_list=['16125A','16124A','16123A','16127A','16126A', '16122A'])
+    # OR pr = Profile(edi_path=edi_dir,
+    # station_list=['16125A','16124A','16123A','16127A','16126A', '16122A'])
 
     pr = Profile(edi_path=edi_dir)
 
@@ -6842,4 +6892,5 @@ if __name__ == "__main__":
 
     print (pr.profile_angle)
 
-    pr.plot_profile(station_id=[0, 4])  # set station labels to only be from 1st to 4th index of station name
+    # set station labels to only be from 1st to 4th index of station name
+    pr.plot_profile(station_id=[0, 4])
