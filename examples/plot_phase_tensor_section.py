@@ -7,7 +7,7 @@ import os
 import sys
 import glob
 
-from mtpy.imaging.plotptpseudosection import PlotPhaseTensorPseudoSection
+from mtpy.imaging.phase_tensor_pseudosection import PlotPhaseTensorPseudoSection
 
 
 def main(edi_path, save_file=None):

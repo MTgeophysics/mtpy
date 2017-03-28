@@ -1404,6 +1404,14 @@ def transform_utm_to_ll(easting, northing, zone,
 
 
 def transform_ll_to_utm(lon, lat, reference_ellipsoid='WGS84'):
+    """
+    transform a (lon,lat) to  a UTM coordinate.
+    The UTM zone number will be determined by longitude. South-North will be determined by Lat.
+    :param lon: degree
+    :param lat: degree
+    :param reference_ellipsoid:
+    :return: utm_coordinate_system, utm_point
+    """
     def get_utm_zone(longitude):
         return (int(1 + (longitude + 180.0) / 6.0))
 

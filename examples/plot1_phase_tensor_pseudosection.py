@@ -10,7 +10,7 @@ import mtpy.imaging.mtplot as mtplot
 from mtpy.imaging.mtplottools import MTArrows, MTEllipse
 
 # from mtpy1_mtpy.imaging.phase_tensor_pseudo_section_plot import PlotPhaseTensorPseudoSection
-from mtpy.imaging.plotptpseudosection import PlotPhaseTensorPseudoSection
+from mtpy.imaging.phase_tensor_pseudosection import PlotPhaseTensorPseudoSection
 import matplotlib.pyplot as plt
 
 

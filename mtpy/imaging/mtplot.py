@@ -91,7 +91,7 @@ import mtpy.imaging.plotnresponses as plotnresponses
 import mtpy.imaging.plotpseudosection as plotrpps
 import mtpy.imaging.plotpt as plotpt
 import mtpy.imaging.phase_tensor_maps as plotptmaps
-import mtpy.imaging.plotptpseudosection as plotptps
+import mtpy.imaging.phase_tensor_pseudosection as plotptps
 import mtpy.imaging.plotresidualptmaps as plotresidualptmaps
 import mtpy.imaging.plotresidualptps as plotresidualptps
 import mtpy.imaging.plot_mt_response as plotresponse
