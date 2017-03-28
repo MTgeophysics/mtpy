@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from exp.tests import say_hello
+from examples.sandpit import say_hello
 
 __author__ = 'fzhang'
 
