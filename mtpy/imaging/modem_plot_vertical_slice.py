@@ -2,8 +2,7 @@
 """
 Visualize Vertical Slices of the ModEM Model
 
-Created on Tue 2016-12-05
-by
+Created on Tue 2016-12-05 by
 fei.zhang@ga.gov.au
 """
 
