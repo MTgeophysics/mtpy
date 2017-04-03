@@ -63,4 +63,20 @@ python examples/plot_phase_tensor_section.py /e/Data/MT_Datasets/GA_UA_edited_10
 python mtpy/utils/shapefiles.py /e/Data/MT_Datasets/GA_UA_edited_10s-10000s/ /e/Data/MT_Datasets/GA_UA_edited_10s-10000s_SHP/
 python mtpy/utils/shapefiles.py /e/Data/MT_Datasets/3D_MT_data_edited_fromDuanJM /e/Data/MT_Datasets/3D_MT_data_edited_fromDuanJM_SHP/
 
+# prepare input for ModEM inversion code:
 # python examples/Modem_buildinputfiles.py
+
+
+# visualize ModEM output python examples/modem_plotmodel2.py
+python examples/modem_plotmodel2.py ./examples/data/ModEM_files/VicSynthetic07
+python examples/modem_plotmodel2.py ./examples/data/ModEM_files/VicSynthetic07 RMSMap
+python examples/modem_plotmodel2.py ./examples/data/ModEM_files/VicSynthetic07 PTMap
+python examples/modem_plotmodel2.py ./examples/data/ModEM_files/VicSynthetic07 Response
+python examples/modem_plotmodel2.py ./examples/data/ModEM_files/VicSynthetic07 DepthSlice
+
+python examples/modem_plotmodel2.py /e/Data/Modeling/Isa/100hs_flat_BB/
+python examples/modem_plotmodel2.py /e/Data/Modeling/Isa/100hs_flat_BB/ Response
+python examples/modem_plotmodel2.py /e/Data/Modeling/Isa/100hs_flat_BB/ DepthSlice
+
+python mtpy/imaging/modem_plot_vertical_slice.py /e/Data/Modeling/Isa/100hs_flat_BB/Isa_run3_NLCG_049.dat /e/Data/Modeling/Isa/100hs_flat_BB/Isa_run3_NLCG_049.rho
+

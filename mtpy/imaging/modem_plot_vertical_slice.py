@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Visualize Vertical Slices of the ModEM Model
+Visualize Horizontal and Vertical Slices of the ModEM's output Model: *.dat and *.rho files
 
 Created on Tue 2016-12-05 by
 fei.zhang@ga.gov.au
@@ -37,18 +37,18 @@ class ModemPlotVerticalSlice():
         # plotdir = 'z' #'ns' #'ew'
         # slice location, in local grid coordinates (if it is a z slice, this
         # is slice depth)
-        self.slice_location = kwargs.pop('slice_location', 10000)
+        self.slice_location = kwargs.pop('slice_location', 8000)
         # maximum distance in metres from vertical slice location and station
         self.station_dist = kwargs.pop('station_dist', 50000)
         # z limits (positive down so order is reversed)
-        self.zlim = kwargs.pop('zlim', (1e5, -5e3))
+        self.zlim = kwargs.pop('zlim', (20000, -1000))
         # colour limits
         self.clim = kwargs.pop('clim', [0.3, 3.7])
         self.fig_size = kwargs.pop('fig_size', [16, 12])
         self.font_size = kwargs.pop('font_size', 16)
         self.border_linewidth = 3
 
-        self.map_scale = kwargs.pop('map_scale', 'km')
+        self.map_scale = kwargs.pop('map_scale', 'm')
         # make map scale
         if self.map_scale == 'km':
             self.dscale = 1000.
@@ -57,8 +57,8 @@ class ModemPlotVerticalSlice():
         else:
             print("Unknown map scale:", self.map_scale)
 
-        self.xminorticks = kwargs.pop('xminorticks', 10000)
-        self.yminorticks = kwargs.pop('yminorticks', 10000)
+        self.xminorticks = kwargs.pop('xminorticks', 2000)
+        self.yminorticks = kwargs.pop('yminorticks', 2000)
 
         # read in the model data
         self._read_data()
@@ -162,8 +162,8 @@ class ModemPlotVerticalSlice():
         # set title
         plt.title(title, fontdict=fdict)
 
-        if self.plot_orientation == 'z':
-            plt.gca().set_aspect('equal')
+        #if self.plot_orientation == 'z':
+        plt.gca().set_aspect('equal', 'datalim')
 
         plt.clim(*self.clim)
         # plt.colorbar()
@@ -228,7 +228,12 @@ class ModemPlotVerticalSlice():
 # OR preferred
 #   python mtpy/imaging/modem_plot_vertical_slice.py examples/data/ModEM_files/VicSynthetic07/
 # OR
-#   python mtpy/imaging/modem_plot_vertical_slice.py  path2datfile path2rhofile plot_orient
+#   python mtpy/imaging/modem_plot_vertical_slice.py  path2datfile path2rhofile [plot_orient]
+
+# Example:
+# python mtpy/imaging/modem_plot_vertical_slice.py \
+#       /e/Data/Modeling/Isa/100hs_flat_BB/Isa_run3_NLCG_049.dat
+#       /e/Data/Modeling/Isa/100hs_flat_BB/Isa_run3_NLCG_049.rho
 # -----------------------------------------------------------------------
 if __name__ == "__main__":
     # INPUTS #
