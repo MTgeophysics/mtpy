@@ -12,25 +12,26 @@ topography.
 
 """
 
-import mtpy.modeling.modem_new as mtmn
+#OK import mtpy.modeling.modem_new as mtmn
+import mtpy.modeling.modem as mtmn
 import mtpy.core.edi as mtedi
 import os.path as op
 import os
 
 # path to save to
-workdir = r'V:\Software\mtpy\template_scripts\ModEM_example_build'
+#workdir = r'V:\Software\mtpy\template_scripts\ModEM_example_build'
 workdir = r'E:/ModEM_example_build'
 
 # path where topography is located, if using
 #sdir= r'V:\Software\mtpy\template_scripts\example_topo'
-sdir = r'E:\Githubz\mtpy2\examples\etop1.xyz'
+sdir = r'E:\Githubz\mtpy2\examples'
 
 if not op.exists(workdir):
     os.mkdir(workdir)
 
 # epsg to project to. Google epsg 'your projection'
 epsg = 28354
-edipath = r'E:/Datasets/MT_Datasets/GA_UA_edited_10s-10000s/'
+edipath = r'E:/Data/MT_Datasets/GA_UA_edited_10s-10000s/'
 
 # list of edi files, this line searches for all files in edipath ending
 # with '.edi'

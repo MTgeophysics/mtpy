@@ -1751,7 +1751,16 @@ class Model(object):
         self._utm_grid_size_east = 640000.0
         self._utm_cross = False
         self._utm_ellipsoid = 23
-        #        self.epsg = kwargs.pop('epsg',None)
+
+        self.epsg=kwargs.pop('epsg', None)
+        self.center_position_EN=kwargs.pop('center_position_EN', None)
+
+        # if data object is provided, get epsg and center position from them
+        if self.Data is not None:
+            for att in ('epsg', 'center_position_EN'):
+                attvalue=getattr(self.Data, att)
+                if attvalue is not None:
+                    setattr(self, att, attvalue)
 
         # resistivity model
         self.res_model = kwargs.pop('res_model', None)
@@ -1770,111 +1779,8 @@ class Model(object):
         self.title = 'Model File written by MTpy.modeling.modem'
         self.res_scale = kwargs.pop('res_scale', 'loge')
 
-    #    def get_station_locations(self):
-    #        """
-    #        get the station locations from lats and lons
-    #        """
-    #
-    #        #if station locations are not input read from the edi files
-    #        if self.station_locations is None:
-    #            if self.edi_list is None:
-    #                raise AttributeError('edi_list is None, need to input a list of '
-    #                                     'edi files to read in.')
-    #
-    #            n_stations = len(self.edi_list)
-    #
-    #            if n_stations == 0:
-    #                raise ModEMError('No .edi files in edi_list, please check '
-    #                                 'file locations.')
-    #
-    #            #make a structured array to put station location information into
-    #            self.station_locations = np.zeros(n_stations,
-    #                                              dtype=[('station','|S10'),
-    #                                                     ('lat', np.float),
-    #                                                     ('lon', np.float),
-    #                                                     ('east', np.float),
-    #                                                     ('north', np.float),
-    #                                                     ('zone', '|S4'),
-    #                                                     ('rel_east', np.float),
-    #                                                     ('rel_north', np.float),
-    #                                                     ('elev', np.float)])
-    #            #get station locations in meters
-    #            for ii, edi in enumerate(self.edi_list):
-    #                mt_obj = mt.MT(edi)
-    #                self.station_locations[ii]['lat'] = mt_obj.lat
-    #                self.station_locations[ii]['lon'] = mt_obj.lon
-    #                self.station_locations[ii]['station'] = mt_obj.station
-    #                self.station_locations[ii]['east'] = mt_obj.east
-    #                self.station_locations[ii]['north'] = mt_obj.north
-    #                self.station_locations[ii]['elev'] = mt_obj.elev
-    #                self.station_locations[ii]['zone'] = mt_obj.utm_zone
-    #
-    #
-    #            # try to use pyproj if desired, if not then have to use inbuilt
-    #            # projection module but may give bad results if crossing more than one zone
-    #            if self.epsg is not None:
-    #                use_pyproj=True
-    #            else:
-    #                use_pyproj=False
-    #
-    #            if use_pyproj:
-    #                try:
-    #                    project_sites2(self,self.station_locations)
-    #                except ImportError:
-    #                    use_pyproj=False
-    #                    errormessage = "Error loading pyproj"
-    #                if self.epsg is None:
-    #                    use_pyproj=False
-    #                    errormessage = "Couldn't find epsg, please define manually"
-    #                # warning message
-    #                if not use_pyproj:
-    #                    print errormessage
-    #
-    #
-    #
-    #            if not use_pyproj:
-    #                project_sites(self,self.station_locations)
-    #
-    #
-    #
-    #        #remove the average distance to get coordinates in a relative space
-    #        self.station_locations['rel_east'] = self.station_locations['east']-\
-    #                                             self.station_locations['east'].mean()
-    #        self.station_locations['rel_north'] = self.station_locations['north']-\
-    #                                              self.station_locations['north'].mean()
-    #
-    #        #--> rotate grid if necessary
-    #        #to do this rotate the station locations because ModEM assumes the
-    #        #input mesh is a lateral grid.
-    #        #needs to be 90 - because North is assumed to be 0 but the rotation
-    #        #matrix assumes that E is 0.
-    #        if self.mesh_rotation_angle != 0:
-    #            cos_ang = np.cos(np.deg2rad(self.mesh_rotation_angle))
-    #            sin_ang = np.sin(np.deg2rad(self.mesh_rotation_angle))
-    #            rot_matrix = np.matrix(np.array([[cos_ang, sin_ang],
-    #                                             [-sin_ang, cos_ang]]))
-    #
-    #            coords = np.array([self.station_locations['rel_east'],
-    #                               self.station_locations['rel_north']])
-    #
-    #            #rotate the relative station locations
-    #            new_coords = np.array(np.dot(rot_matrix, coords))
-    #
-    #            self.station_locations['rel_east'][:] = new_coords[0, :]
-    #            self.station_locations['rel_north'][:] = new_coords[1, :]
-    #
-    #            print 'Rotated stations by {0:.1f} deg clockwise from N'.format(
-    #                                                    self.mesh_rotation_angle)
-    #
-    #        #translate the stations so they are relative to 0,0
-    #        east_center = (self.station_locations['rel_east'].max()-
-    #                        np.abs(self.station_locations['rel_east'].min()))/2
-    #        north_center = (self.station_locations['rel_north'].max()-
-    #                        np.abs(self.station_locations['rel_north'].min()))/2
-    #
-    #        #remove the average distance to get coordinates in a relative space
-    #        self.station_locations['rel_east'] -= east_center
-    #        self.station_locations['rel_north'] -= north_center
+# removed in geoph-AK-branch 2017-Feb-10
+#    def get_station_locations(self):
 
     def _reset_defaults_for_reading(self):
         """
@@ -2002,7 +1908,7 @@ class Model(object):
         log_z = np.logspace(np.log10(self.z1_layer),
                             np.log10(self.z_target_depth),
                             num=self.n_layers - self.pad_z - self.n_airlayers + 1)
-        #        log_z = log_z[1:] - log_z[:-1]
+        log_z = log_z[1:] - log_z[:-1]
         z_nodes = np.array([zz - zz % 10 ** np.floor(np.log10(zz)) for zz in
                             log_z])
         # index of top of padding
@@ -2051,7 +1957,7 @@ class Model(object):
                                                                  self.Data.center_position_EN[1])
             except:
                 pass
-            self.Data.write_data_file(compute_error=False, fill=False)
+            self.Data.write_data_file(fill=False)
 
         # --> print out useful information
         print '-' * 15
