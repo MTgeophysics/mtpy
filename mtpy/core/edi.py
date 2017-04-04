@@ -14,14 +14,15 @@ Created on Tue Dec 22 16:03:31 2015
 @author: jpeacock
 """
 
-import os
-import numpy as np
 import datetime
+import os
 
-import mtpy.utils.format as MTft
+import numpy as np
+
+import mtpy.core.z as MTz
 import mtpy.utils.exceptions as MTex
 import mtpy.utils.filehandling as MTfh
-import mtpy.core.z as MTz
+import mtpy.utils.format as MTft
 from mtpy.utils.mtpylog import MtPyLog
 
 try:

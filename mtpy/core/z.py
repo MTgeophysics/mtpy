@@ -15,10 +15,11 @@ LK, JP 2013
 """
 
 # =================================================================
-import numpy as np
-import math
 import cmath
 import copy
+import math
+
+import numpy as np
 
 import mtpy.utils.calculator as MTcc
 import mtpy.utils.exceptions as MTex
