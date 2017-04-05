@@ -13,4 +13,4 @@ export  PYTHONPATH=/e/Githubz/mtpy2  #  path to mtpy2 (github repo) dir
 
 # start a python notebook server in background
 
-jupyter notebook &> localdir/jupyter.log &
+jupyter notebook &> ./_jupyter.log &
