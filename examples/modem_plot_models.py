@@ -15,19 +15,23 @@ from mtpy.imaging.plot_depth_slice import PlotDepthSlice
 from mtpy.imaging.plot_response import PlotResponse
 from mtpy.imaging.plot_rms_map import PlotRMSMaps
 
-
-# plot depth slice
-# distance from slice to grid centre locations
-
-# datfn='ModEM_Data_noise10inv.dat'
+# original test case:
+# datfn='ModEM_Data_noise10inv.dat'  # what is this noiseinv.dat?
 # NLCG_datfn='Modular_MPI_NLCG_019.dat'
 # resfn='Modular_MPI_NLCG_019.res'
 # rhofn='Modular_MPI_NLCG_019.rho'
 
-datfn='Isa_run3_NLCG_049.dat' #'ModEM_Data_noise10inv.dat'
-NLCG_datfn='Isa_run3_NLCG_049.dat'
-resfn='Isa_run3_NLCG_049.res'
-rhofn='Isa_run3_NLCG_049.rho'
+#FZ: below works fine
+# datfn='Isa_run3_NLCG_049.dat' #'ModEM_Data_noise10inv.dat'
+# NLCG_datfn='Isa_run3_NLCG_049.dat'
+# resfn='Isa_run3_NLCG_049.res'
+# rhofn='Isa_run3_NLCG_049.rho'
+
+# rename/copy the final MODEM results to these filenames:
+datfn='NLCG.dat' #'ModEM_Data_noise10inv.dat'
+NLCG_datfn='NLCG.dat'
+resfn='NLCG.res'
+rhofn='NLCG.rho'
 
 def main(data_dir, plot_type='PTMap', di=20, periodin=0):
     # Alison wd = r'V:\Software\mtpy\development\modem_plotting\VicSynthetic07'

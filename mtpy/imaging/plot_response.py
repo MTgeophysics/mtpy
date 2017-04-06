@@ -1717,8 +1717,9 @@ class PlotResponse(object):
         plt.show()
 
         if save2file is not None:
-            fig.savefig(save2file, dpi=self.fig_dpi, bbox_inches='tight')
-            # self.save_figure(save2file)
+            #fig.savefig(save2file, dpi=self.fig_dpi, bbox_inches='tight')
+            self.save_figure(save2file)
+
         return plt
 
     def redraw_plot(self):
