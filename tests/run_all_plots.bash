@@ -63,9 +63,8 @@ python examples/plot_phase_tensor_section.py /e/Data/MT_Datasets/GA_UA_edited_10
 python mtpy/utils/shapefiles.py /e/Data/MT_Datasets/GA_UA_edited_10s-10000s/ /e/Data/MT_Datasets/GA_UA_edited_10s-10000s_SHP/
 python mtpy/utils/shapefiles.py /e/Data/MT_Datasets/3D_MT_data_edited_fromDuanJM /e/Data/MT_Datasets/3D_MT_data_edited_fromDuanJM_SHP/
 
-# prepare input for ModEM inversion code:
-# python examples/Modem_buildinputfiles.py
-
+# prepare input for ModEM input files: examples/create_modem_input.py
+python examples/create_modem_input.py tests/data/edifiles/ examples/etopo1.asc /e/tmp/modem_inputs/
 
 # visualize ModEM output python examples/modem_plotmodel2.py
 python examples/modem_plotmodel2.py ./examples/data/ModEM_files/VicSynthetic07
