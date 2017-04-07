@@ -975,7 +975,7 @@ class WSMesh(object):
         self.res_model_int = None
         
         #rotation angle
-        self.rotation_angle = kwargs.pop('rotation_angle', None)
+        self.rotation_angle = kwargs.pop('rotation_angle', 0.0)
         
         #inital file stuff
         self.initial_fn = None
