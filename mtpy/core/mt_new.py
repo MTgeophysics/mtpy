@@ -147,17 +147,22 @@ class MT(object):
     
     def __init__(self, fn=None, **kwargs):
         
-        self._fn = fn
-        self.station = kwargs.pop('station', None)
-        self._lat = kwargs.pop('lat', None)
-        self._lon = kwargs.pop('lon', None)
-        self._elev = kwargs.pop('elev', None)
+        self._fn = self._set_fn(fn)
+        
+        # important information held in objects
+        self.Site = Site()
+                
+        
+        self.station = None
+        self._lat = None
+        self._lon = None
+        self._elev = None
         self._Z = kwargs.pop('Z', MTz.Z())
         self._Tipper = kwargs.pop('Tipper', MTz.Tipper())
-        self._utm_zone = kwargs.pop('utm_zone', None)
-        self._east = kwargs.pop('east', None)
-        self._north = kwargs.pop('north', None)
-        self._rotation_angle = kwargs.pop('rotation_angle', 0)
+        self._utm_zone = None
+        self._east = None
+        self._north = None
+        self._rotation_angle = 0
         
         self.edi_object = MTedi.Edi()
         self.pt = None
@@ -167,13 +172,7 @@ class MT(object):
         #provide key words to fill values if an edi file does not exist
         for key in kwargs.keys():
             setattr(self, key, kwargs[key])
-        
-        #--> read in the file name given
-        if self._fn is not None:
-            self._set_fn(fn)
 
-        
-    
     #==========================================================================
     # set functions                        
     #==========================================================================
@@ -243,6 +242,9 @@ class MT(object):
         """
         
         self._fn = filename
+        if self._fn is None:
+            return 
+            
         if self._fn.lower().endswith('.edi'):
             self._read_edi_file()
         else:
@@ -713,7 +715,28 @@ class MT(object):
 #==============================================================================
 class Site(object):
     """
-    site information
+    Holds the following information:
+    
+    ================= =========== =============================================
+    Attributes         Type        Explanation    
+    ================= =========== =============================================
+    aqcuired_by       string       name of company or person whom aqcuired the
+                                   data.
+    id                string       station name
+    location          object       Holds location information, lat, lon, elev
+                      Location     datum, easting, northing  
+    start_date        string       YYYY-MM-DD start date of measurement
+    end_date          string       YYYY-MM-DD end date of measurement
+    year_collected    string       year data collected
+    survey            string       survey name
+    project           string       project name
+    run_list          string       list of measurment runs ex. [mt01a, mt01b]
+    ================= =========== =============================================
+
+    More attributes can be added by inputing a key word dictionary
+    
+    >>> Site(**{'state':'Nevada', 'Operator':'MTExperts'})
+
     """
     
     def __init__(self, **kwargs):

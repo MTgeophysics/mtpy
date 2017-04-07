@@ -392,6 +392,79 @@ class XML_Config(object):
             else:
                 self._read_cfg_line(line)
                     
+
+    def _read_cfg_line(self, line):
+        """
+        read a configuration file line to make the appropriate attribute
+        have the correct values and attributes.
+        
+        porbably should think of a better name for XML_element objects that are
+        attributes of self.
+        """
+        
+        # split the line by the last =
+        line_list = self._split_cfg_line(line)
+        # split the keys by . to get the different attributes
+        key_list = line_list[0].strip().split('.')
+        value = line_list[1].strip()
+        if value in ['none', 'None']:
+            value = None
+        
+        # loop over the keys to set them appropriately 
+        for ii, key in enumerate(key_list):
+            # get the name of the key and any attributes it might have
+            name, attr = self._read_cfg_key(key)
+            
+            # if its the first key, see if its been made an attribute yet
+            if ii == 0: 
+                if not hasattr(self, name):
+                    setattr(self, name, XML_element(name, None, None))
+                # for looping purposes we need to get the current XML_element object
+                cfg_attr = getattr(self, name)
+                # be sure to set any attributes, need to do this here because
+                # the test for hasattr will only make a new one if there
+                # isn't one already, but since most things in the cfg file
+                # are already attributes of self, they already exist.
+                cfg_attr._attr = attr
+            else:
+                if not hasattr(cfg_attr, name):
+                    setattr(cfg_attr, name, XML_element(name, None, None))
+                cfg_attr = getattr(cfg_attr, name) 
+                cfg_attr._attr = attr
+        
+        # set the value of the current XML_element object
+        cfg_attr._value = value
+
+    def _split_cfg_line(self, line):
+        """
+        split a cfg line by the last =, otherwise you get strings that are
+        split in the wrong place.  For instance k.l(a=b) = None will be split
+        at ['k.l(a', 'b)', None] but we want [k.l(a=b), None]
+        """
+        
+        equal_find = -(line[::-1].find('='))
+        line_list = [line[0:equal_find-1],
+                     line[equal_find+1:]]
+                     
+        return line_list
+        
+            
+    def _read_cfg_key(self, key):
+        """
+        read a key from a cfg file and check to see if has any attributes
+        in the form of:
+            parent.name(attribute=0)(attribute=2) = value
+        """
+        attr = {}
+        if '(' and ')' in key:
+            key_list = key.split('(')
+            key = key_list[0]
+            for key_attr in key_list[1:]:
+                k_list = key_attr.replace(')', '').split('=')
+                attr[k_list[0].strip()] = k_list[1].strip()
+                
+        return key, attr
+        
     def write_cfg_file(self, cfg_fn=None):
         """
         Write out configuration file in the style of:
@@ -473,77 +546,6 @@ class XML_Config(object):
         print '    Wrote xml configuration file to {0}'.format(self.cfg_fn)
         print '-'*50
         
-    def _read_cfg_line(self, line):
-        """
-        read a configuration file line to make the appropriate attribute
-        have the correct values and attributes.
-        
-        porbably should think of a better name for XML_element objects that are
-        attributes of self.
-        """
-        
-        # split the line by the last =
-        line_list = self._split_cfg_line(line)
-        # split the keys by . to get the different attributes
-        key_list = line_list[0].strip().split('.')
-        value = line_list[1].strip()
-        if value in ['none', 'None']:
-            value = None
-        
-        # loop over the keys to set them appropriately 
-        for ii, key in enumerate(key_list):
-            # get the name of the key and any attributes it might have
-            name, attr = self._read_cfg_key(key)
-            
-            # if its the first key, see if its been made an attribute yet
-            if ii == 0: 
-                if not hasattr(self, name):
-                    setattr(self, name, XML_element(name, None, None))
-                # for looping purposes we need to get the current XML_element object
-                cfg_attr = getattr(self, name)
-                # be sure to set any attributes, need to do this here because
-                # the test for hasattr will only make a new one if there
-                # isn't one already, but since most things in the cfg file
-                # are already attributes of self, they already exist.
-                cfg_attr._attr = attr
-            else:
-                if not hasattr(cfg_attr, name):
-                    setattr(cfg_attr, name, XML_element(name, None, None))
-                cfg_attr = getattr(cfg_attr, name) 
-                cfg_attr._attr = attr
-        
-        # set the value of the current XML_element object
-        cfg_attr._value = value
-
-    def _split_cfg_line(self, line):
-        """
-        split a cfg line by the last =, otherwise you get strings that are
-        split in the wrong place.  For instance k.l(a=b) = None will be split
-        at ['k.l(a', 'b)', None] but we want [k.l(a=b), None]
-        """
-        
-        equal_find = -(line[::-1].find('='))
-        line_list = [line[0:equal_find-1],
-                     line[equal_find+1:]]
-                     
-        return line_list
-        
-            
-    def _read_cfg_key(self, key):
-        """
-        read a key from a cfg file and check to see if has any attributes
-        in the form of:
-            parent.name(attribute=0)(attribute=2) = value
-        """
-        attr = {}
-        if '(' and ')' in key:
-            key_list = key.split('(')
-            key = key_list[0]
-            for key_attr in key_list[1:]:
-                k_list = key_attr.replace(')', '').split('=')
-                attr[k_list[0].strip()] = k_list[1].strip()
-                
-        return key, attr
         
 
     def _write_cfg_line(self, XML_element_obj, parent=None):
