@@ -6,22 +6,22 @@ Created on Sun Nov 02 13:47:10 2014
 """
 
 from PyQt4 import QtCore, QtGui
-import mtpy.modeling.modem_new as modem
+import mtpy.modeling.modem as modem
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
+from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure
 import matplotlib.gridspec as gridspec
 import numpy as np
 import matplotlib.pyplot as plt
 import os
-import mtpy.analysis.pt as mtpt
-import mtpy.utils.exceptions as mtex
-from matplotlib.colors import Normalize
-import matplotlib.colorbar as mcb
-import mtpy.imaging.mtcolors as mtcl
-from mtpy.gui.get_edi_files import Get_EDI_Files
+#import mtpy.analysis.pt as mtpt
+#import mtpy.utils.exceptions as mtex
+#from matplotlib.colors import Normalize
+#import matplotlib.colorbar as mcb
+#import mtpy.imaging.mtcolors as mtcl
+#from mtpy.gui.get_edi_files import Get_EDI_Files
 import sys
-import copy
+#import copy
 
 
 class MyStream(QtCore.QObject):
@@ -503,21 +503,8 @@ class MeshWidget(QtGui.QWidget):
         self.model_obj.write_model_file(save_path=sv_path,
                                         model_fn_basename=sv_basename)
                                         
-                #--> print out useful information                    
-        print '-'*15
-        print '   Number of stations = {0}'.format(len(self.model_obj.station_locations))
-        print '   Dimensions: '
-        print '      e-w = {0}'.format(self.model_obj.grid_east.shape[0])
-        print '      n-s = {0}'.format(self.model_obj.grid_north.shape[0])
-        print '       z  = {0} (without 7 air layers)'.format(self.model_obj.grid_z.shape[0])
-        print '   Extensions: '
-        print '      e-w = {0:.1f} (m)'.format(self.model_obj.nodes_east.__abs__().sum())
-        print '      n-s = {0:.1f} (m)'.format(self.model_obj.nodes_north.__abs__().sum())
-        print '      0-z = {0:.1f} (m)'.format(self.model_obj.nodes_z.__abs__().sum())
-        
-        print '  Stations rotated by: {0:.1f} deg clockwise positive from N'.format(self.model_obj.mesh_rotation_angle)
-        print ''
-                                        
+        self.model_obj.get_mesh_params()
+                      
     def set_rho(self):
         if self.model_obj.res_model is None:
             self.model_obj.res_model = np.zeros((self.model_obj.grid_north.shape[0],
