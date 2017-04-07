@@ -6,6 +6,9 @@ Created on Tue Oct 04 13:13:29 2016
 
 @author:    Alison.Kirkby@ga.gov.au
 @author:    Fei.zhang@ga.gov.au
+
+Test Run:
+python examples/modem_plot_models.py ./examples/data/ModEM_files/VicSynthetic07
 """
 import os
 import sys
