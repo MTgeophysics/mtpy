@@ -6,7 +6,6 @@
 
 export PYTHONPATH=/e/Githubz/mtpy2
 
-
 python examples/plot_edis.py tests/data/edifiles/15125A.edi
 
 
@@ -66,16 +65,16 @@ python mtpy/utils/shapefiles.py /e/Data/MT_Datasets/3D_MT_data_edited_fromDuanJM
 # prepare input for ModEM input files: examples/create_modem_input.py
 python examples/create_modem_input.py tests/data/edifiles/ examples/etopo1.asc /e/tmp/modem_inputs/
 
-# visualize ModEM output python examples/modem_plotmodel2.py
-python examples/modem_plotmodel2.py ./examples/data/ModEM_files/VicSynthetic07
-python examples/modem_plotmodel2.py ./examples/data/ModEM_files/VicSynthetic07 RMSMap
-python examples/modem_plotmodel2.py ./examples/data/ModEM_files/VicSynthetic07 PTMap
-python examples/modem_plotmodel2.py ./examples/data/ModEM_files/VicSynthetic07 Response
-python examples/modem_plotmodel2.py ./examples/data/ModEM_files/VicSynthetic07 DepthSlice
+# visualize ModEM output python examples/modem_plot_models.py
+python examples/modem_plot_models.py ./examples/data/ModEM_files/VicSynthetic07
+python examples/modem_plot_models.py ./examples/data/ModEM_files/VicSynthetic07 RMSMap
+python examples/modem_plot_models.py ./examples/data/ModEM_files/VicSynthetic07 PTMap
+python examples/modem_plot_models.py ./examples/data/ModEM_files/VicSynthetic07 Response
+python examples/modem_plot_models.py ./examples/data/ModEM_files/VicSynthetic07 DepthSlice
 
-python examples/modem_plotmodel2.py /e/Data/Modeling/Isa/100hs_flat_BB/
-python examples/modem_plotmodel2.py /e/Data/Modeling/Isa/100hs_flat_BB/ Response
-python examples/modem_plotmodel2.py /e/Data/Modeling/Isa/100hs_flat_BB/ DepthSlice
+python examples/modem_plot_models.py /e/Data/Modeling/Isa/100hs_flat_BB/
+python examples/modem_plot_models.py /e/Data/Modeling/Isa/100hs_flat_BB/ Response
+python examples/modem_plot_models.py /e/Data/Modeling/Isa/100hs_flat_BB/ DepthSlice
 
 python mtpy/imaging/modem_plot_vertical_slice.py /e/Data/Modeling/Isa/100hs_flat_BB/Isa_run3_NLCG_049.dat /e/Data/Modeling/Isa/100hs_flat_BB/Isa_run3_NLCG_049.rho
 

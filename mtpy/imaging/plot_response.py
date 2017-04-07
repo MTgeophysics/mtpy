@@ -1713,14 +1713,23 @@ class PlotResponse(object):
                                   borderpad=self.legend_border_pad,
                                   prop={'size': max([self.font_size / (nr + 1), 5])})
 
-        # --> BE SURE TO SHOW THE PLOT
-        plt.show()
 
         if save2file is not None:
-            #fig.savefig(save2file, dpi=self.fig_dpi, bbox_inches='tight')
-            self.save_figure(save2file)
+            plt.savefig(save2file)
+        else:
+            pass
 
-        return plt
+        plt.show()   # --> BE SURE TO SHOW THE PLOT
+
+       # the figure need to be closed (X) then the following code save it to a
+        # file.
+        # if save2file is not None:
+        #     # fig.savefig(save2file, dpi=self.fig_dpi, bbox_inches='tight')
+        #     #figfile = self.save_figure0(save2file)
+        #     plt.savefig(save2file)
+        #
+        #
+        # return save2file
 
     def redraw_plot(self):
         """
@@ -1742,7 +1751,7 @@ class PlotResponse(object):
             plt.close(fig)
         self.plot()
 
-    def save_figure(self, save_fn, file_format='png', orientation='portrait',
+    def save_figure_not_work(self, save_fn, file_format='png', orientation='portrait',
                     fig_dpi=None, close_fig='y'):
         """
         save_plot will save the figure to save_fn.
@@ -1777,31 +1786,12 @@ class PlotResponse(object):
                              * 'y' will close the plot after saving.
                              * 'n' will leave plot open
 
-        :Example: ::
-
-            >>> # to save plot as jpg
-            >>> import mtpy.modeling.occam2d as occam2d
-            >>> dfn = r"/home/occam2d/Inv1/data.dat"
-            >>> ocd = occam2d.Occam2DData(dfn)
-            >>> ps1 = ocd.plotPseudoSection()
-            >>> ps1.save_plot(r'/home/MT/figures', file_format='jpg')
-
         """
 
         fig = plt.gcf()
-        if fig_dpi is None:
-            fig_dpi = self.fig_dpi
 
-        if os.path.isdir(save_fn) == False:
-            file_format = save_fn[-3:]
-            fig.savefig(save_fn, dpi=fig_dpi, format=file_format,
-                        orientation=orientation, bbox_inches='tight')
-
-        else:
-            save_fn = os.path.join(save_fn, '_L2.' +
-                                   file_format)
-            fig.savefig(save_fn, dpi=fig_dpi, format=file_format,
-                        orientation=orientation, bbox_inches='tight')
+        fig.savefig(save_fn)
+        #, dpi=fig_dpi, format=file_format, orientation=orientation, bbox_inches='tight')
 
         if close_fig == 'y':
             plt.clf()
