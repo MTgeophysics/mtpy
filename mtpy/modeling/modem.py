@@ -1887,24 +1887,7 @@ class Model(object):
         self.grid_z = z_grid
             
         #--> print out useful information                    
-        print '-'*15
-        print '   Number of stations = {0}'.format(len(self.station_locations))
-        print '   Dimensions: '
-        print '      e-w = {0}'.format(east_grid.shape[0])
-        print '      n-s = {0}'.format(north_grid.shape[0])
-        print '       z  = {0} (without 7 air layers)'.format(z_grid.shape[0])
-        print '   Extensions: '
-        print '      e-w = {0:.1f} (m)'.format(east_nodes.__abs__().sum())
-        print '      n-s = {0:.1f} (m)'.format(north_nodes.__abs__().sum())
-        print '      0-z = {0:.1f} (m)'.format(self.nodes_z.__abs__().sum())
-        
-        print '  Stations rotated by: {0:.1f} deg clockwise positive from N'.format(self.mesh_rotation_angle)
-        print ''        
-        print ' ** Note ModEM does not accommodate mesh rotations, it assumes'
-        print '    all coordinates are aligned to geographic N, E'
-        print '    therefore rotating the stations will have a similar effect'
-        print '    as rotating the mesh.'
-        print '-'*15
+        self.get_mesh_params()
         
         if self._utm_cross is True:
             print '{0} {1} {2}'.format('-'*25, 'NOTE', '-'*25)
@@ -1917,6 +1900,27 @@ class Model(object):
             print ' >>> modem_model.make_mesh()'
             print ''
             print '-'*56
+            
+    def get_mesh_params(self):
+        #--> print out useful information                    
+        print '-'*15
+        print '   Number of stations = {0}'.format(len(self.station_locations))
+        print '   Dimensions: '
+        print '      e-w = {0}'.format(self.grid_east.shape[0])
+        print '      n-s = {0}'.format(self.grid_north.shape[0])
+        print '       z  = {0} (without 7 air layers)'.format(self.grid_z.shape[0])
+        print '   Extensions: '
+        print '      e-w = {0:.1f} (m)'.format(self.nodes_east.__abs__().sum())
+        print '      n-s = {0:.1f} (m)'.format(self.nodes_north.__abs__().sum())
+        print '      0-z = {0:.1f} (m)'.format(self.nodes_z.__abs__().sum())
+        
+        print '  Stations rotated by: {0:.1f} deg clockwise positive from N'.format(self.mesh_rotation_angle)
+        print ''        
+        print ' ** Note ModEM does not accommodate mesh rotations, it assumes'
+        print '    all coordinates are aligned to geographic N, E'
+        print '    therefore rotating the stations will have a similar effect'
+        print '    as rotating the mesh.'
+        print '-'*15
 
     def plot_mesh(self, east_limits=None, north_limits=None, z_limits=None,
                   **kwargs):
