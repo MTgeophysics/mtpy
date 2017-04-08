@@ -151,6 +151,7 @@ class MT(object):
         
         # important information held in objects
         self.Site = Site()
+        self.FieldNotes = FieldNotes()
                 
         
         self.station = None
@@ -715,6 +716,8 @@ class MT(object):
 #==============================================================================
 class Site(object):
     """
+    Information on the site, including location, id, etc.
+    
     Holds the following information:
     
     ================= =========== =============================================
@@ -754,6 +757,9 @@ class Site(object):
         for key in kwargs.keys():
             setattr(self, key, kwargs[key])
             
+#==============================================================================
+# Location class, be sure to put locations in decimal degrees, and note datum            
+#==============================================================================
 class Location(object):
     """
     location details
@@ -797,10 +803,29 @@ class Location(object):
     latitude = property(fget=_get_elevation, 
                         fset=_set_elevation,
                         doc="""Elevation in floating point""") 
-    
+ 
+#==============================================================================
+# Field Notes    
+#==============================================================================
 class FieldNotes(object):
     """
-    field notes
+    Field note information.
+    
+    
+    Holds the following information:
+    
+    ================= =========== =============================================
+    Attributes         Type        Explanation    
+    ================= =========== =============================================
+    data_quality      DataQuality notes on data quality
+    electrode         Instrument      type of electrode used
+    data_logger       Instrument      type of data logger
+    magnetometer      Instrument      type of magnetotmeter
+    ================= =========== =============================================
+
+    More attributes can be added by inputing a key word dictionary
+    
+    >>> FieldNotes(**{'electrode_ex':'Ag-AgCl 213', 'magnetometer_hx':'102'})
     """
     
     def __init__(self, **kwargs):
@@ -813,9 +838,27 @@ class FieldNotes(object):
         for key in kwargs.keys():
             setattr(self, key, kwargs[key])
             
+
+#==============================================================================
+# Instrument            
+#==============================================================================
 class Instrument(object):
     """
-    instrument information
+    Information on an instrument that was used.
+    
+    Holds the following information:
+    
+    ================= =========== =============================================
+    Attributes         Type        Explanation    
+    ================= =========== =============================================
+    id                string      serial number or id number of data logger
+    manufacturer      string      company whom makes the instrument
+    type              string      Broadband, long period, something else 
+    ================= =========== =============================================
+
+    More attributes can be added by inputing a key word dictionary
+    
+    >>> Instrument(**{'ports':'5', 'gps':'time_stamped'})
     """
     
     def __init__(self, **kwargs):
@@ -825,10 +868,30 @@ class Instrument(object):
         
         for key in kwargs.keys():
             setattr(self, key, kwargs[key])
-            
+
+#==============================================================================
+# Data Quality            
+#==============================================================================
 class DataQuality(object):
     """
-    data quality
+    Information on data quality.
+    
+    Holds the following information:
+    
+    ================= =========== =============================================
+    Attributes         Type        Explanation    
+    ================= =========== =============================================
+    comments          string      comments on data quality
+    good_from_period  float       minimum period data are good 
+    good_to_period    float       maximum period data are good
+    rating            int         [1-5]; 1 = poor, 5 = excellent
+    warrning_comments string      any comments on warnings in the data
+    warnings_flag     int         [0-#of warnings]       
+    ================= =========== =============================================
+
+    More attributes can be added by inputing a key word dictionary
+    
+    >>>DataQuality(**{'time_series_comments':'Periodic Noise'})
     """
     
     def __init__(self, **kwargs):
@@ -841,10 +904,30 @@ class DataQuality(object):
         
         for key in kwargs.keys():
             setattr(self, key, kwargs[key])
-        
+            
+
+#==============================================================================
+# Citation        
+#==============================================================================
 class Citation(object):
     """
-    citation
+    Information for a citation.
+    
+    Holds the following information:
+    
+    ================= =========== =============================================
+    Attributes         Type        Explanation    
+    ================= =========== =============================================
+    author            string      Author names
+    title             string      Title of article, or publication
+    journal           string      Name of journal
+    doi               string      DOI number (doi:10.110/sf454)
+    year              int         year published
+    ================= =========== =============================================
+
+    More attributes can be added by inputing a key word dictionary
+    
+    >>> Citation(**{'volume':56, 'pages':'234--214'})
     """
     
     def __init__(self, **kwargs):
@@ -858,9 +941,28 @@ class Citation(object):
         for key in kwargs.keys():
             setattr(self, key, kwargs[key])
             
+
+#==============================================================================
+# Copyright            
+#==============================================================================
 class Copyright(object):
     """
-    copyright information
+    Information of copyright, mainly about how someone else can use these 
+    data. Be sure to read over the conditions_of_use.
+    
+    Holds the following information:
+    
+    ================= =========== =============================================
+    Attributes         Type        Explanation    
+    ================= =========== =============================================
+    citation          Citation    citation of published work using these data
+    conditions_of_use string      conditions of use of these data
+    release_status    string      release status [ open | public | proprietary]
+    ================= =========== =============================================
+
+    More attributes can be added by inputing a key word dictionary
+    
+    >>> Copyright(**{'owner':'University of MT', 'contact':'Cagniard'})
     """
     
     def __init__(self, **kwargs):
@@ -884,10 +986,28 @@ class Copyright(object):
         for key in kwargs.keys():
             setattr(self, key, kwargs[key])
             
-        
+#==============================================================================
+# Provenance        
+#==============================================================================
 class Provenance(object):
     """
-    the history of the data 
+    Information of the file history, how it was made
+    
+    Holds the following information:
+    
+    ====================== =========== ========================================
+    Attributes             Type        Explanation    
+    ====================== =========== ========================================
+    creation_time          string      creation time of file YYYY-MM-DD,hh:mm:ss
+    creating_application   string      name of program creating the file
+    creator                Person      person whom created the file
+    submitter              Person      person whom is submitting file for 
+                                       archiving 
+    ====================== =========== ========================================
+
+    More attributes can be added by inputing a key word dictionary
+    
+    >>> Provenance(**{'archive':'IRIS', 'reprocessed_by':'grad_student'}) 
     """
     
     def __init__(self, **kwargs):
@@ -899,10 +1019,28 @@ class Provenance(object):
         
         for key in kwargs.keys():
             setattr(self, key, kwargs[key])
-        
+ 
+#==============================================================================
+# Person
+#==============================================================================
 class Person(object):
     """
+    Information for a person
     
+    Holds the following information:
+    
+    ================= =========== =============================================
+    Attributes         Type        Explanation    
+    ================= =========== =============================================
+    email             string      email of person 
+    name              string      name of person
+    organization      string      name of person's organization
+    organization_url  string      organizations web address
+    ================= =========== =============================================
+
+    More attributes can be added by inputing a key word dictionary
+    
+    >>> Person(**{'phone':'650-888-6666'})
     """    
     
     def __init__(self, **kwargs):
