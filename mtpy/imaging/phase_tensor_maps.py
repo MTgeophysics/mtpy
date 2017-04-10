@@ -656,7 +656,7 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
             freqfind = [ff for ff, f2 in enumerate(mt.freq) if
                         (f2 > self.plot_freq * (1 - self.ftol)) and (f2 < self.plot_freq * (1 + self.ftol))]
             if len(freqfind) > 1:
-                logger.warn ("More than 1 MT-frequency found: ", freqfind)
+                logger.warn ("More than 1 MT-frequency found: %s", freqfind)
 
             try:
                 jj = freqfind[0]
@@ -1202,7 +1202,7 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
 
         # create a save path for files
         if save_path is None:
-            logger.info("No save_path provided. Skipping export")
+            logger.info("No save_path provided. ")
             return None
             # try:
             #     svpath = os.path.join(os.path.dirname(self.mt_list[0].fn),
@@ -1220,7 +1220,7 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
         try:
             self.plot_x
         except AttributeError:
-            self.plot()
+            self.plot(show=False)
 
         # sort the x and y in ascending order to get placement in the file
         # right
@@ -1256,7 +1256,8 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
             freqfind = [ff for ff, f2 in enumerate(mt1.freq) if
                         f2 > self.plot_freq * (1 - self.ftol) and f2 < self.plot_freq * (1 + self.ftol)]
             if len(freqfind) > 1:
-                logger.warn ("More than 1 MT-frequency found: ", freqfind)
+                logger.warn ("More than 1 MT-frequency found: %s", freqfind)
+                print (mt1.station)
 
             try:
                 j2 = freqfind[0]  
@@ -1292,6 +1293,7 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
                     self.plot_freq, mt1.station))
 
         # ----------------------write files------------------------------------
+        # output csv file naming
         svfn = 'PhaseTensorTipper_Params_{0:.6g}Hz'.format(self.plot_freq)
 
         # ptminfid = file(os.path.join(svpath, svfn + '.phimin'), 'w')
