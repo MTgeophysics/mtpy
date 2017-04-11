@@ -79,6 +79,80 @@ class ShapeFilesCreator:
 
         pass
 
+    # http://toblerity.org/shapely/manual.html#polygons
+    # https://geohackweek.github.io/vector/04-geopandas-intro/
+
+import os, sys,glob
+import numpy as np
+import pandas as pd
+import geopandas as gpd
+from shapely.geometry import Point, Polygon, LineString, LinearRing
+import matplotlib.pyplot as plt
+
+#
+# import folium
+# from IPython.display import display
+#
+# from shapely.geometry import mapping
+
+def create_phase_tensor_ellipse_shp(csvfile, esize=0.03):
+    """ create phase tensor ellipse
+    esize is ellipse size, defaut 0.03 is about 3KM in the max ellipse rad
+    """
+
+    pdf=pd.read_csv(csvfile)
+    mt_locations=[Point(xy) for xy in zip(pdf.lon, pdf.lat)]
+    # OR pdf['geometry'] = pdf.apply(lambda z: Point(z.lon, z.lat), axis=1)
+    # if you want to df = df.drop(['Lon', 'Lat'], axis=1)
+    crs={'init': 'epsg:4326'}  #initial crs WGS84
+
+    pdf=gpd.GeoDataFrame(pdf, crs=crs, geometry=mt_locations)
+
+    # make  pt_ellispes using polygons
+    PHIMAX=pdf['phi_max'].max()  # the max of this group of ellipse
+
+    print PHIMAX
+
+    theta=np.arange(0, 2 * np.pi, np.pi / 30.)  # points to trace out the polygon-ellipse
+
+    azimuth=-np.deg2rad(pdf['azimuth'])
+    width=esize * (pdf['phi_max'] / PHIMAX)
+    height=esize * (pdf['phi_min'] / PHIMAX)
+    x0=pdf['lon']
+    y0=pdf['lat']
+
+    # apply formula to generate ellipses
+
+    ellipse_list=[]
+    for i in xrange(0, len(azimuth)):
+        x=x0[i] + height[i] * np.cos(theta) * np.cos(azimuth[i]) - width[i] * np.sin(theta) * np.sin(azimuth[i])
+        y=y0[i] + height[i] * np.cos(theta) * np.sin(azimuth[i]) + width[i] * np.sin(theta) * np.cos(azimuth[i])
+
+        polyg=Polygon(LinearRing([xy for xy in zip(x, y)]))
+
+        # print polyg  # an ellispe
+
+        ellipse_list.append(polyg)
+
+
+        #     for xi, yi in zip(x, y):
+        #         polyg.(np.round(xi, 6), np.round(yi, 6))
+
+
+        #                     # 1) make a geometry shape of the ellipse
+        #                     ellipse = ogr.Geometry(ogr.wkbLinearRing)
+        #                     ellipse.CloseRings()
+
+        #                     # 2) make a polygon
+        #                     poly = ogr.Geometry(ogr.wkbPolygon)
+        #                     poly.AddGeometry(ellipse)
+
+        #                     poly_list.append(poly)
+
+    pdf=gpd.GeoDataFrame(pdf, crs=crs, geometry=ellipse_list)
+
+    return pdf
+
 
 # ==================================================================
 if __name__ == "__main__":
@@ -91,6 +165,20 @@ if __name__ == "__main__":
 
     shp_maker = ShapeFilesCreator(edifiles, path2out)
 
-    shp_maker.create_csv()
+    #shp_maker.create_csv()
 
     #shp_maker.create_MTsites_shp()
+
+    # process all *.csv files in a dir
+    CSVDIR='E:/Data/MT_Datasets/WenPingJiang_SHP/'
+    csvfiles=glob.glob(CSVDIR + '/*.csv')
+
+    print (len(csvfiles))
+
+    for acsv in csvfiles:
+        p=create_phase_tensor_ellipse_shp(acsv)
+
+        p.plot()
+        plt.show()
+        # shp_fname=acsv.replace('.csv', '.shp')
+        # p.to_file(shp_fname, driver='ESRI Shapefile')
