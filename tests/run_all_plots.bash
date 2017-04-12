@@ -78,3 +78,5 @@ python examples/modem_plot_models.py /e/Data/Modeling/Isa/100hs_flat_BB/ DepthSl
 
 python mtpy/imaging/modem_plot_vertical_slice.py /e/Data/Modeling/Isa/100hs_flat_BB/Isa_run3_NLCG_049.dat /e/Data/Modeling/Isa/100hs_flat_BB/Isa_run3_NLCG_049.rho
 
+# create csv and shape files
+python mtpy/utils/shapefiles_creator.py /e/Data/MT_Datasets/WenPingJiang_EDI /e/Data/MT_Datasets/WenPingJiang_SHP
