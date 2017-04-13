@@ -308,10 +308,11 @@ if __name__ == "__main__":
     # shp_maker.create_mt_sites_shp()
 
     # create csv files
-    #ptdic = shp_maker.create_csv_files() # dest_dir=path2out)
+    ptdic = shp_maker.create_csv_files() # dest_dir=path2out)
 
     # print ptdic
     # print ptdic[ptdic.keys()[0]]
 
     # create shapefiles and plots
     process_csv_folder(path2out) # , target_epsg_code=32754)
+    process_csv_folder(path2out, target_epsg_code=32754)
