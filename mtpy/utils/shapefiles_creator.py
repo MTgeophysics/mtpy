@@ -203,14 +203,16 @@ class ShapeFilesCreator(object):
 
         pass
 
-        # http://toblerity.org/shapely/manual.html#polygons
-        # https://geohackweek.github.io/vector/04-geopandas-intro/
-
-
-def get_geopdf_from_csv(csvfile, esize=0.03):
-    """ create phase tensor ellipse
-    esize is ellipse size, defaut 0.03 is about 3KM in the max ellipse rad
+# http://toblerity.org/shapely/manual.html#polygons
+# https://geohackweek.github.io/vector/04-geopandas-intro/
+def get_geopdf_from_csv(csvfile, esize=0.01):
     """
+    create phase tensor ellipse geometry from a csv file
+    :param csvfile: a csvfile with full path
+    :param esize: ellipse size, defaut 0.03 is about 3KM in the max ellipse rad
+    :return: a geopandas dataframe
+    """
+
 
     pdf = pd.read_csv(csvfile)
     mt_locations = [Point(xy) for xy in zip(pdf['lon'], pdf['lat'])]
@@ -295,6 +297,7 @@ def process_csv_folder(csv_folder, target_epsg_code=None):
 
 # ==================================================================
 if __name__ == "__main__":
+
     edidir = sys.argv[1]
 
     edifiles = glob.glob(os.path.join(edidir, "*.edi"))
@@ -304,15 +307,16 @@ if __name__ == "__main__":
     else:
         path2out=None
 
-    shp_maker = ShapeFilesCreator(edifiles, path2out)
-    # shp_maker.create_mt_sites_shp()
-
+    #shp_maker = ShapeFilesCreator(edifiles, path2out)
     # create csv files
-    ptdic = shp_maker.create_csv_files() # dest_dir=path2out)
+    #ptdic = shp_maker.create_csv_files() # dest_dir=path2out)
 
     # print ptdic
     # print ptdic[ptdic.keys()[0]]
 
+    # shp_maker.create_mt_sites_shp()
+
     # create shapefiles and plots
-    process_csv_folder(path2out) # , target_epsg_code=32754)
-    process_csv_folder(path2out, target_epsg_code=32754)
+    # process_csv_folder(path2out) # , target_epsg_code=32754)
+    # process_csv_folder(path2out, target_epsg_code=32754)
+    process_csv_folder(path2out, target_epsg_code=3112)
