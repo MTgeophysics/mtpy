@@ -282,9 +282,23 @@ def process_csv_folder(csv_folder, target_epsg_code=None):
             # world.to_crs(epsg=3395) would also work
 
         # plot and save
-        p.plot()
-        fig = plt.gcf()
         jpg_fname = acsv.replace('.csv', '_epsg%s.jpg' % target_epsg_code)
+        
+
+        if int(target_epsg_code) == 4326:
+            myax = p.plot(figsize=[20,10], linewidth=2.0, column='phi_max', colormap='jet') # , vmin=vmin, vmax=vmax)
+
+            myax.set_xlim([140.2,141.2])
+            myax.set_ylim([-20.8,-19.9])
+
+            myax.set_xlabel('Longitude')
+            myax.set_ylabel('Latitude')
+            myax.set_title(jpg_fname )
+        else:
+            p.plot() # simple plot need to have details added
+
+
+        fig = plt.gcf()
 
         print (jpg_fname)
         fig.savefig(jpg_fname, dpi=300)
@@ -317,6 +331,6 @@ if __name__ == "__main__":
     # shp_maker.create_mt_sites_shp()
 
     # create shapefiles and plots
-    # process_csv_folder(path2out) # , target_epsg_code=32754)
+    process_csv_folder(path2out) # , target_epsg_code will be default 4326?
     # process_csv_folder(path2out, target_epsg_code=32754)
-    process_csv_folder(path2out, target_epsg_code=3112)
+    #process_csv_folder(path2out, target_epsg_code=3112)
