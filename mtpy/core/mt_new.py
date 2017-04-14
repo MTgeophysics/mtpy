@@ -146,23 +146,15 @@ class MT(object):
     """
     
     def __init__(self, fn=None, **kwargs):
-        
         self._fn = self._set_fn(fn)
         
         # important information held in objects
         self.Site = Site()
         self.FieldNotes = FieldNotes()
-                
-        
-        self.station = None
-        self._lat = None
-        self._lon = None
-        self._elev = None
+        self.Provenance = Provenance()
+
         self._Z = kwargs.pop('Z', MTz.Z())
         self._Tipper = kwargs.pop('Tipper', MTz.Tipper())
-        self._utm_zone = None
-        self._east = None
-        self._north = None
         self._rotation_angle = 0
         
         self.edi_object = MTedi.Edi()
@@ -184,10 +176,8 @@ class MT(object):
         upon setting utm coordinates are recalculated
         """
         
-        self._lat = MTformat._assert_position_format('lat', latitude)
-        
-        if self._lon is not None and self._lat is not None:
-            self._get_utm()
+        self.Site.location.latitude = MTformat._assert_position_format('lat',
+                                                                       latitude)
         
     def _set_lon(self, longitude):
         """
@@ -766,13 +756,17 @@ class Location(object):
     """
     
     def __init__(self, **kwargs):
-        self.datum = None
+        self.datum = 'WGS84'
         self.declination = None
         self.declination_epoch = None
         
         self._elevation = None
         self._latitude = None
         self._longitude = None
+        
+        self.north = None
+        self.east = None
+        self.utm_zone = None
         
         for key in kwargs.keys():
             setattr(self, key, kwargs[key])
@@ -803,6 +797,18 @@ class Location(object):
     latitude = property(fget=_get_elevation, 
                         fset=_set_elevation,
                         doc="""Elevation in floating point""") 
+    
+    def project_location(self, reference_ellipsoid=23):
+        """
+        project location coordinates into meters given the reference ellipsoid,
+        for now that is constrained to WGS84
+        
+        Returns East, North, Zone
+        """
+        
+        self.utm_zone, self.east, self.north = MTutm.LLtoUTM(reference_ellipsoid, 
+                                                             self._latitude,
+                                                             self._longitude)
  
 #==============================================================================
 # Field Notes    
@@ -1051,6 +1057,48 @@ class Person(object):
         
         for key in kwargs.keys():
             setattr(self, key, kwargs[key])
-        
-        
+            
+#==============================================================================
+# Processing
+#==============================================================================
+class Processing(object):
+    """
+    Information for a processing
     
+    Holds the following information:
+    
+    ================= =========== =============================================
+    Attributes         Type        Explanation    
+    ================= =========== =============================================
+    email             string      email of person 
+    name              string      name of person
+    organization      string      name of person's organization
+    organization_url  string      organizations web address
+    ================= =========== =============================================
+
+    More attributes can be added by inputing a key word dictionary
+    
+    >>> Person(**{'phone':'650-888-6666'})
+    """    
+    
+    def __init__(self, **kwargs):
+        self.software = Software
+        self. = None
+        self.organization = None
+        self.organization_url = None
+        
+        for key in kwargs.keys():
+            setattr(self, key, kwargs[key])
+        
+class Software(object):
+    """
+    software
+    """        
+    
+    def __init__(self, **kwargs):
+        self.name = None
+        self.version = None
+        
+        for key in kwargs:
+            setattr(self, key, kwargs[key])
+        
