@@ -6,6 +6,7 @@ fei.zhang@ga.gov.au
 2017-03-06
 """
 from __future__ import print_function
+
 import csv
 import glob
 import logging
@@ -15,13 +16,14 @@ import sys
 import geopandas as gpd
 import matplotlib as mpl
 import matplotlib.pyplot as plt
+import mtpy.core.mt as mt
 import numpy as np
 import pandas as pd
-from shapely.geometry import Point, Polygon, LinearRing
-
-import mtpy.core.mt as mt
 from mtpy.imaging.phase_tensor_maps import PlotPhaseTensorMaps
 from mtpy.utils.mtpylog import MtPyLog
+from shapely.geometry import Point, Polygon, LinearRing
+
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 mpl.rcParams['lines.linewidth'] = 2
 # mpl.rcParams['lines.color'] = 'r'
@@ -68,7 +70,7 @@ class ShapeFilesCreator(object):
         from the list of edi files get a list of all possible frequencies.
 
         """
-        if self.all_frequencies is not None: # already initialized
+        if self.all_frequencies is not None:  # already initialized
             return
 
         # get all frequencies from all edi files
@@ -103,10 +105,10 @@ class ShapeFilesCreator(object):
         :return:
         """
         if dest_dir is None:
-            dest_dir=self.outputdir
+            dest_dir = self.outputdir
 
         # summary csv file
-        csvfname=os.path.join(dest_dir, "phase_tensor_tipper.csv")
+        csvfname = os.path.join(dest_dir, "phase_tensor_tipper.csv")
 
         pt_dict = {}
 
@@ -130,7 +132,7 @@ class ShapeFilesCreator(object):
                 if len(f_index_list) >= 1:
                     p_index = f_index_list[0]
                     # geographic coord lat long and elevation
-                    #long, lat, elev = (mt_obj.lon, mt_obj.lat, 0)
+                    # long, lat, elev = (mt_obj.lon, mt_obj.lat, 0)
                     station, lon, lat = (mt_obj.station, mt_obj.lon, mt_obj.lat)
 
                     pt_stat = [station, freq, lon, lat,
@@ -203,16 +205,16 @@ class ShapeFilesCreator(object):
 
         pass
 
+
 # http://toblerity.org/shapely/manual.html#polygons
 # https://geohackweek.github.io/vector/04-geopandas-intro/
-def get_geopdf_from_csv(csvfile, esize=0.01):
+def get_geopdf_from_csv(csvfile, esize=0.03):
     """
     create phase tensor ellipse geometry from a csv file
     :param csvfile: a csvfile with full path
     :param esize: ellipse size, defaut 0.03 is about 3KM in the max ellipse rad
     :return: a geopandas dataframe
     """
-
 
     pdf = pd.read_csv(csvfile)
     mt_locations = [Point(xy) for xy in zip(pdf['lon'], pdf['lat'])]
@@ -225,7 +227,7 @@ def get_geopdf_from_csv(csvfile, esize=0.01):
     # make  pt_ellispes using polygons
     phi_max_v = pdf['phi_max'].max()  # the max of this group of ellipse
 
-    print (phi_max_v)
+    print(phi_max_v)
 
     # points to trace out the polygon-ellipse
     theta = np.arange(0, 2 * np.pi, np.pi / 30.)
@@ -266,13 +268,14 @@ def process_csv_folder(csv_folder, target_epsg_code=None):
     if csv_folder is None:
         logger.critical("Must provide a csv folder")
 
-    csvfiles = glob.glob(csv_folder + '/*Hz.csv') #  phase_tensor_tipper_0.004578Hz.csv
+    csvfiles = glob.glob(csv_folder + '/*Hz.csv')  # phase_tensor_tipper_0.004578Hz.csv
 
-    print (len(csvfiles))
+    print(len(csvfiles))
 
-    # for acsv in csvfiles[:2]:
+    #for acsv in csvfiles[:2]:
     for acsv in csvfiles:
-        p0 = get_geopdf_from_csv(acsv)
+        p0 = get_geopdf_from_csv(acsv, esize=0.1)
+
         if target_epsg_code is None:
             p = p0
             target_epsg_code = '4326'  # EDI orginal lat/lon epsg 4326 or GDA94
@@ -281,32 +284,81 @@ def process_csv_folder(csv_folder, target_epsg_code=None):
             # world = world.to_crs({'init': 'epsg:3395'})
             # world.to_crs(epsg=3395) would also work
 
+        bounds = p.total_bounds  # lat-lon bounds for this csv/pdf
         # plot and save
         jpg_fname = acsv.replace('.csv', '_epsg%s.jpg' % target_epsg_code)
-        
+        fig_title=os.path.basename(jpg_fname)
+        logger.info('saving figure to file %s',jpg_fname)
 
         if int(target_epsg_code) == 4326:
-            myax = p.plot(figsize=[20,10], linewidth=2.0, column='phi_max', colormap='jet') # , vmin=vmin, vmax=vmax)
 
-            myax.set_xlim([140.2,141.2])
-            myax.set_ylim([-20.8,-19.9])
+            colorby = 'phi_min'
+            my_cmap_r = 'jet'
+
+            myax = p.plot(figsize=[10, 10], linewidth=2.0, column=colorby, cmap=my_cmap_r) #, marker='o', markersize=10)
+
+            # add colorbar
+            divider = make_axes_locatable(myax)
+            # pad = separation from figure to colorbar
+            cax = divider.append_axes("right", size="3%", pad=0.2)
+
+            fig = myax.get_figure()
+
+            sm = plt.cm.ScalarMappable(cmap=my_cmap_r)  # , norm=plt.Normalize(vmin=vmin, vmax=vmax))
+            # fake up the array of the scalar mappable. Urgh...
+            sm._A = p[colorby]  # [1,2,3]
+
+            cb = fig.colorbar(sm, cax=cax, orientation='vertical')
+            cb.set_label(colorby, fontdict={'size': 15, 'weight': 'bold'})
+            # myax = p.plot(figsize=[10, 8], linewidth=2.0, column='phi_max', cmap='jet')  # , vmin=vmin, vmax=vmax)
+
+            # calculate and set xy limit:
+            # myax.set_xlim([140.2, 141.2])
+            # myax.set_ylim([-20.8, -19.9])
+
+            # margin = 0.0
+            #
+            # xmin = (1-margin) * bounds[0]
+            # xmax = (1+margin) * bounds[2]
+            # ymin = (1-margin) * bounds[1]
+            # ymax = (1+margin) * bounds[3]
+            # myax.set_xlim([xmin, xmax])
+            # myax.set_ylim([ymin, ymax])
+
+
+            myax.set_xlim([140, 150])
+            myax.set_ylim([-39, -34])
 
             myax.set_xlabel('Longitude')
             myax.set_ylabel('Latitude')
-            myax.set_title(jpg_fname )
+            myax.set_title(fig_title)
         else:
-            p.plot() # simple plot need to have details added
+            myax = p.plot(figsize=[10, 8], linewidth=2.0, column='phi_max', cmap='jet')  # simple plot need to have details added
+            myax.set_xlabel('East-West (KM)')
+            myax.set_ylabel('North-South (KM)')
+            myax.set_title(fig_title)
+            myax.set_xlim([400000, 1300000])
+            myax.set_ylim([5700000, 6200000])
 
+            xticks = myax.get_xticks() / 1000
+            myax.set_xticklabels(xticks)
+            yticks = myax.get_yticks() / 1000
+            myax.set_yticklabels(yticks)
 
         fig = plt.gcf()
+        fig.savefig(jpg_fname, dpi=400)
+        #plt.show()
 
-        print (jpg_fname)
-        fig.savefig(jpg_fname, dpi=300)
-        # plt.show()
+        plt.close() # this will make prog faster and no too many plot obj kept.
 
         # to shape file
         shp_fname = acsv.replace('.csv', '_epsg%s.shp' % target_epsg_code)
         p.to_file(shp_fname, driver='ESRI Shapefile')
+
+        # cleanup memory now
+        del(p)
+        del(p0)
+        del(fig)
 
 
 # ==================================================================
@@ -316,14 +368,14 @@ if __name__ == "__main__":
 
     edifiles = glob.glob(os.path.join(edidir, "*.edi"))
 
-    if len(sys.argv)>2:
+    if len(sys.argv) > 2:
         path2out = sys.argv[2]
     else:
-        path2out=None
+        path2out = None
 
-    #shp_maker = ShapeFilesCreator(edifiles, path2out)
-    # create csv files
-    #ptdic = shp_maker.create_csv_files() # dest_dir=path2out)
+    # shp_maker = ShapeFilesCreator(edifiles, path2out)
+    # # create csv files
+    # ptdic = shp_maker.create_csv_files()  # dest_dir=path2out)
 
     # print ptdic
     # print ptdic[ptdic.keys()[0]]
@@ -331,6 +383,10 @@ if __name__ == "__main__":
     # shp_maker.create_mt_sites_shp()
 
     # create shapefiles and plots
-    process_csv_folder(path2out) # , target_epsg_code will be default 4326?
-    # process_csv_folder(path2out, target_epsg_code=32754)
-    #process_csv_folder(path2out, target_epsg_code=3112)
+    # epsg projection 4283 - gda94
+    process_csv_folder(path2out)  # , target_epsg_code will be default 4326?
+
+    # epsg projection 28354 - gda94 / mga zone 54
+    # epsg projection 32754 - wgs84 / utm zone 54s
+    #process_csv_folder(path2out, target_epsg_code=32754)
+    # process_csv_folder(path2out, target_epsg_code=3112)
