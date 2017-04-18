@@ -274,7 +274,7 @@ def process_csv_folder(csv_folder, target_epsg_code=None):
 
     #for acsv in csvfiles[:2]:
     for acsv in csvfiles:
-        p0 = get_geopdf_from_csv(acsv, esize=0.1)
+        p0 = get_geopdf_from_csv(acsv, esize=0.025)
 
         if target_epsg_code is None:
             p = p0
@@ -313,7 +313,7 @@ def process_csv_folder(csv_folder, target_epsg_code=None):
             # myax = p.plot(figsize=[10, 8], linewidth=2.0, column='phi_max', cmap='jet')  # , vmin=vmin, vmax=vmax)
 
             # calculate and set xy limit:
-            # myax.set_xlim([140.2, 141.2])
+            # myax.set_xlim([140.2, 141.2])  #LieJunWang
             # myax.set_ylim([-20.8, -19.9])
 
             # margin = 0.0
@@ -326,8 +326,11 @@ def process_csv_folder(csv_folder, target_epsg_code=None):
             # myax.set_ylim([ymin, ymax])
 
 
-            myax.set_xlim([140, 150])
+            myax.set_xlim([140, 150]) # Vic
             myax.set_ylim([-39, -34])
+
+            myax.set_xlim([136.7, 137.0])  # 3D_MT_data_
+            myax.set_ylim([-20.65, -20.35])
 
             myax.set_xlabel('Longitude')
             myax.set_ylabel('Latitude')
@@ -388,5 +391,5 @@ if __name__ == "__main__":
 
     # epsg projection 28354 - gda94 / mga zone 54
     # epsg projection 32754 - wgs84 / utm zone 54s
-    #process_csv_folder(path2out, target_epsg_code=32754)
+    # process_csv_folder(path2out, target_epsg_code=32753)
     # process_csv_folder(path2out, target_epsg_code=3112)
