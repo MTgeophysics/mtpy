@@ -270,11 +270,12 @@ def process_csv_folder(csv_folder, target_epsg_code=None):
 
     csvfiles = glob.glob(csv_folder + '/*Hz.csv')  # phase_tensor_tipper_0.004578Hz.csv
 
+    # filter the csv files if you do not want to plot all of them
     print(len(csvfiles))
 
     #for acsv in csvfiles[:2]:
     for acsv in csvfiles:
-        p0 = get_geopdf_from_csv(acsv, esize=0.025)
+        p0 = get_geopdf_from_csv(acsv, esize=0.03)
 
         if target_epsg_code is None:
             p = p0
@@ -289,11 +290,10 @@ def process_csv_folder(csv_folder, target_epsg_code=None):
         jpg_fname = acsv.replace('.csv', '_epsg%s.jpg' % target_epsg_code)
         fig_title=os.path.basename(jpg_fname)
         logger.info('saving figure to file %s',jpg_fname)
+        colorby = 'phi_min'
+        my_cmap_r = 'jet'
 
         if int(target_epsg_code) == 4326:
-
-            colorby = 'phi_min'
-            my_cmap_r = 'jet'
 
             myax = p.plot(figsize=[10, 10], linewidth=2.0, column=colorby, cmap=my_cmap_r) #, marker='o', markersize=10)
 
@@ -326,27 +326,48 @@ def process_csv_folder(csv_folder, target_epsg_code=None):
             # myax.set_ylim([ymin, ymax])
 
 
-            myax.set_xlim([140, 150]) # Vic
+            myax.set_xlim([140, 150]) # GA-Vic
             myax.set_ylim([-39, -34])
 
             myax.set_xlim([136.7, 137.0])  # 3D_MT_data_
             myax.set_ylim([-20.65, -20.35])
 
+            myax.set_xlim([140.0, 144.5])  # WPJ
+            myax.set_ylim([-23.5, -19.0])
+
             myax.set_xlabel('Longitude')
             myax.set_ylabel('Latitude')
             myax.set_title(fig_title)
         else:
-            myax = p.plot(figsize=[10, 8], linewidth=2.0, column='phi_max', cmap='jet')  # simple plot need to have details added
+            myax = p.plot(figsize=[10, 8], linewidth=2.0, column=colorby, cmap=my_cmap_r)  # simple plot need to have details added
+
             myax.set_xlabel('East-West (KM)')
             myax.set_ylabel('North-South (KM)')
             myax.set_title(fig_title)
             myax.set_xlim([400000, 1300000])
             myax.set_ylim([5700000, 6200000])
 
+            myax.set_xlim([400000, 900000])
+            myax.set_ylim([7400000, 7900000])
+
             xticks = myax.get_xticks() / 1000
             myax.set_xticklabels(xticks)
             yticks = myax.get_yticks() / 1000
             myax.set_yticklabels(yticks)
+
+            # add colorbar
+            divider = make_axes_locatable(myax)
+            # pad = separation from figure to colorbar
+            cax = divider.append_axes("right", size="3%", pad=0.2)
+
+            fig = myax.get_figure()
+
+            sm = plt.cm.ScalarMappable(cmap=my_cmap_r)  # , norm=plt.Normalize(vmin=vmin, vmax=vmax))
+            # fake up the array of the scalar mappable. Urgh...
+            sm._A = p[colorby]  # [1,2,3]
+
+            cb = fig.colorbar(sm, cax=cax, orientation='vertical')
+            cb.set_label(colorby, fontdict={'size': 15, 'weight': 'bold'})
 
         fig = plt.gcf()
         fig.savefig(jpg_fname, dpi=400)
@@ -376,7 +397,9 @@ if __name__ == "__main__":
     else:
         path2out = None
 
-    # shp_maker = ShapeFilesCreator(edifiles, path2out)
+    # filter the edi files here if desired, to get a subset:
+    # edifiles2 = edifiles[0:-1:2]
+    # shp_maker = ShapeFilesCreator(edifiles2, path2out)
     # # create csv files
     # ptdic = shp_maker.create_csv_files()  # dest_dir=path2out)
 
@@ -387,9 +410,9 @@ if __name__ == "__main__":
 
     # create shapefiles and plots
     # epsg projection 4283 - gda94
-    process_csv_folder(path2out)  # , target_epsg_code will be default 4326?
+    # process_csv_folder(path2out)  # , target_epsg_code will be default 4326?
 
     # epsg projection 28354 - gda94 / mga zone 54
     # epsg projection 32754 - wgs84 / utm zone 54s
-    # process_csv_folder(path2out, target_epsg_code=32753)
+    process_csv_folder(path2out, target_epsg_code=32754)
     # process_csv_folder(path2out, target_epsg_code=3112)

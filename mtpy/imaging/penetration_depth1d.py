@@ -143,8 +143,8 @@ def plot_edi_file(edifile, rholist=['zxy', 'zyx', 'det'], savefile=None):
 # plot one-by-one edi files in a given dirpath
 # How to Run:
 #    export PYTHONPATH=/Softlab/Githubz/mtpy2:$PYTHONPATH
-#    python  mtpy/imaging/penetration_depth_1d_profile.py data/edi_files/
-# python  mtpy/imaging/penetration_depth_1d_profile.py
+#    python  mtpy/imaging/penetration_depth1d.py data/edi_files/
+# python  mtpy/imaging/penetration_depth1d.py
 # tests/data/edifiles/15125A.edi
 
 if __name__ == '__main__':

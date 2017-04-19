@@ -6,7 +6,7 @@ Description:
     Setting a smaller value for ptol(=0.05)may result less MT sites data included.
 
 Usage:
-    python mtpy/imaging/penetration_depth_3d_profile.py /path2/edi_files_dir/  period_index
+    python mtpy/imaging/penetration_depth3d.py /path2/edi_files_dir/  period_index
 
 Author: fei.zhang@ga.gov.au
 Date:   2017-01-23
@@ -778,19 +778,19 @@ def create_shapefile(edi_dir, outputfile=None, zcomponent='det'):
 
 # =============================================================================================
 # Usage examples for small, med, large images
-# python mtpy/imaging/penetration_depth_3d_profile.py tests/data/edifiles/ 2.857s
-# python mtpy/imaging/penetration_depth_3d_profile.py /e/Datasets/MT_Datasets/3D_MT_data_edited_fromDuanJM/ 0.58s
-# python mtpy/imaging/penetration_depth_3d_profile.py /e/Datasets/MT_Datasets/GA_UA_edited_10s-10000s 16s [10s, 40s 341s]
+# python mtpy/imaging/penetration_depth3d.py tests/data/edifiles/ 2.857s
+# python mtpy/imaging/penetration_depth3d.py /e/Datasets/MT_Datasets/3D_MT_data_edited_fromDuanJM/ 0.58s
+# python mtpy/imaging/penetration_depth3d.py /e/Datasets/MT_Datasets/GA_UA_edited_10s-10000s 16s [10s, 40s 341s]
 #   OR  period index integer
-# python mtpy/imaging/penetration_depth_3d_profile.py /e/Datasets/MT_Datasets/3D_MT_data_edited_fromDuanJM/ 30
-# python mtpy/imaging/penetration_depth_3d_profile.py  tests/data/edifiles/ 10
+# python mtpy/imaging/penetration_depth3d.py /e/Datasets/MT_Datasets/3D_MT_data_edited_fromDuanJM/ 30
+# python mtpy/imaging/penetration_depth3d.py  tests/data/edifiles/ 10
 # =============================================================================================
 if __name__ == "__main__":
 
     if len(sys.argv) < 2:
         print("Usage: python %s edi_dir period_sec " % sys.argv[0])
-        print("usage example: python mtpy/imaging/penetration_depth_3d_profile.py  tests/data/edifiles/ 10")
-        print("usage example: python mtpy/imaging/penetration_depth_3d_profile.py  tests/data/edifiles/ 2.857s")
+        print("usage example: python mtpy/imaging/penetration_depth3d.py  tests/data/edifiles/ 10")
+        print("usage example: python mtpy/imaging/penetration_depth3d.py  tests/data/edifiles/ 2.857s")
         sys.exit(1)
     elif os.path.isdir(sys.argv[1]):
         edi_dir = sys.argv[1]

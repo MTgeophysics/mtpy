@@ -7,7 +7,7 @@
 
 # Test:
 #   cd /e/Githubz/mtpy2
-#   python mtpy/imaging/penetration_depth_3d_profile.py tests/data/edifiles/ 50
+#   python mtpy/imaging/penetration_depth3d.py tests/data/edifiles/ 50
 
 # start a python notebook server in background
 #	jupyter notebook &> localdir/jupyter.log &

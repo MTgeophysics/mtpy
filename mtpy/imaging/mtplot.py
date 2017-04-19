@@ -98,8 +98,8 @@ import mtpy.imaging.plot_mt_response as plotresponse
 import mtpy.imaging.plotstations as plotstations
 import mtpy.imaging.plotstrike as plotstrike
 
-reload(plotpt)
-reload(plotptmaps)
+# reload(plotpt)
+# reload(plotptmaps)
 
 # ==============================================================================
 

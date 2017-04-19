@@ -5,8 +5,8 @@ Description:
     then plot the Penetration Depth profile at the given periods vs the stations locations.
 
 Usage:
-    python mtpy/imaging/penetration_depth_2d_profile.py /path2/edi_files_dir/   period_index_list
-    python mtpy/imaging/penetration_depth_2d_profile.py examples/data/edi2/ 0 1 10 20 30 40
+    python mtpy/imaging/penetration_depth2d.py /path2/edi_files_dir/   period_index_list
+    python mtpy/imaging/penetration_depth2d.py.py examples/data/edi2/ 0 1 10 20 30 40
 
 Author: fei.zhang@ga.gov.au
 Date:   2017-01-23
@@ -246,15 +246,15 @@ def barplot_multi_station_penentration_depth(
 
 # =============================================================================================
 # Example Usage:
-# python mtpy/imaging/penetration_depth_2d_profile.py examples/data/edi_files/ 1 10 20 30
-# python mtpy/imaging/penetration_depth_2d_profile.py tests/data/edifiles/ 0 1 10 20 30 40 50 59
-# python mtpy/imaging/penetration_depth_2d_profile.py examples/data/edi2/ 0 1 10 20 30 40
+# python mtpy/imaging/penetration_depth2d.py examples/data/edi_files/ 1 10 20 30
+# python mtpy/imaging/penetration_depth2d.py tests/data/edifiles/ 0 1 10 20 30 40 50 59
+# python mtpy/imaging/penetration_depth2d.py examples/data/edi2/ 0 1 10 20 30 40
 # =============================================================================================
 if __name__ == "__main__":
 
     if len(sys.argv) < 2:
         print("Usage: %s edi_dir" % sys.argv[0])
-        print ("python examples/penetration_depth_2d_profile.py tests/data/edifiles/ 0 1 10 20 30 40 50 59")
+        print ("python examples/penetration_depth2d.py tests/data/edifiles/ 0 1 10 20 30 40 50 59")
         sys.exit(1)
     elif os.path.isdir(sys.argv[1]):
         edi_dir = sys.argv[1]  # the first argument is path2_edi_dir
