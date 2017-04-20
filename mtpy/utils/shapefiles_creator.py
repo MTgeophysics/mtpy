@@ -19,9 +19,10 @@ import matplotlib.pyplot as plt
 import mtpy.core.mt as mt
 import numpy as np
 import pandas as pd
-from mtpy.imaging.phase_tensor_maps import PlotPhaseTensorMaps
+
 from mtpy.utils.mtpylog import MtPyLog
-from shapely.geometry import Point, Polygon, LinearRing
+
+from shapely.geometry import Point, Polygon, LineString, LinearRing
 
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
@@ -173,6 +174,7 @@ class ShapeFilesCreator(object):
         Only for comparison. This method is more expensive because it will create plot object first.
         :return:
         """
+        from mtpy.imaging.phase_tensor_maps import PlotPhaseTensorMaps
 
         for freq in self.all_frequencies:
             ptm = PlotPhaseTensorMaps(fn_list=self.edifiles, plot_freq=freq)
@@ -208,7 +210,7 @@ class ShapeFilesCreator(object):
 
 # http://toblerity.org/shapely/manual.html#polygons
 # https://geohackweek.github.io/vector/04-geopandas-intro/
-def get_geopdf_from_csv(csvfile, esize=0.03):
+def create_ellipse_shp(csvfile, esize=0.03, target_epsg_code=None):
     """
     create phase tensor ellipse geometry from a csv file
     :param csvfile: a csvfile with full path
@@ -255,6 +257,204 @@ def get_geopdf_from_csv(csvfile, esize=0.03):
 
     pdf = gpd.GeoDataFrame(pdf, crs=crs, geometry=ellipse_list)
 
+    if target_epsg_code is None:
+        target_epsg_code = '4326'  # EDI original lat/lon epsg 4326 or GDA94
+    else:
+        pdf.to_crs(epsg=target_epsg_code,inplace=True)
+        # world = world.to_crs({'init': 'epsg:3395'})
+        # world.to_crs(epsg=3395) would also work
+
+    # to shape file
+    shp_fname = csvfile.replace('.csv', '_ellip_epsg%s.shp' % target_epsg_code)
+    pdf.to_file(shp_fname, driver='ESRI Shapefile')
+
+    return pdf
+
+
+def plot_geopdf(pdf, acsv, target_epsg_code, showfig=False):
+
+    if target_epsg_code is None:
+        p = pdf
+        target_epsg_code = '4326'  # EDI orginal lat/lon epsg 4326 or GDA94
+    else:
+        p = pdf.to_crs(epsg=target_epsg_code)
+        # world = world.to_crs({'init': 'epsg:3395'})
+        # world.to_crs(epsg=3395) would also work
+
+    bounds = p.total_bounds  # lat-lon bounds for this csv/pdf
+    # plot and save
+    jpg_fname = acsv.replace('.csv', '_epsg%s.jpg' % target_epsg_code)
+    fig_title=os.path.basename(jpg_fname)
+    logger.info('saving figure to file %s',jpg_fname)
+
+    colorby = 'phi_min'
+    my_cmap_r = 'jet'
+
+    if int(target_epsg_code) == 4326:
+
+        myax = p.plot(figsize=[10, 10], linewidth=2.0, column=colorby, cmap=my_cmap_r) #, marker='o', markersize=10)
+
+        # add colorbar
+        divider = make_axes_locatable(myax)
+        # pad = separation from figure to colorbar
+        cax = divider.append_axes("right", size="3%", pad=0.2)
+
+        fig = myax.get_figure()
+
+        sm = plt.cm.ScalarMappable(cmap=my_cmap_r)  # , norm=plt.Normalize(vmin=vmin, vmax=vmax))
+        # fake up the array of the scalar mappable. Urgh...
+        sm._A = p[colorby]  # [1,2,3]
+
+        cb = fig.colorbar(sm, cax=cax, orientation='vertical')
+        cb.set_label(colorby, fontdict={'size': 15, 'weight': 'bold'})
+        # myax = p.plot(figsize=[10, 8], linewidth=2.0, column='phi_max', cmap='jet')  # , vmin=vmin, vmax=vmax)
+
+        # calculate and set xy limit:
+        # myax.set_xlim([140.2, 141.2])  #LieJunWang
+        # myax.set_ylim([-20.8, -19.9])
+
+        # margin = 0.0
+        #
+        # xmin = (1-margin) * bounds[0]
+        # xmax = (1+margin) * bounds[2]
+        # ymin = (1-margin) * bounds[1]
+        # ymax = (1+margin) * bounds[3]
+        # myax.set_xlim([xmin, xmax])
+        # myax.set_ylim([ymin, ymax])
+
+
+        myax.set_xlim([140, 150]) # GA-Vic
+        myax.set_ylim([-39, -34])
+
+        myax.set_xlim([136.7, 137.0])  # 3D_MT_data_
+        myax.set_ylim([-20.65, -20.35])
+
+        myax.set_xlim([140.0, 144.5])  # WPJ
+        myax.set_ylim([-23.5, -19.0])
+
+        myax.set_xlabel('Longitude')
+        myax.set_ylabel('Latitude')
+        myax.set_title(fig_title)
+    else:
+        myax = p.plot(figsize=[10, 8], linewidth=2.0, column=colorby, cmap=my_cmap_r)  # simple plot need to have details added
+
+        myax.set_xlabel('East-West (KM)')
+        myax.set_ylabel('North-South (KM)')
+        myax.set_title(fig_title)
+        myax.set_xlim([400000, 1300000])
+        myax.set_ylim([5700000, 6200000])
+
+        myax.set_xlim([400000, 900000])
+        myax.set_ylim([7400000, 7900000])
+
+        xticks = myax.get_xticks() / 1000
+        myax.set_xticklabels(xticks)
+        yticks = myax.get_yticks() / 1000
+        myax.set_yticklabels(yticks)
+
+        # add colorbar
+        divider = make_axes_locatable(myax)
+        # pad = separation from figure to colorbar
+        cax = divider.append_axes("right", size="3%", pad=0.2)
+
+        fig = myax.get_figure()
+
+        sm = plt.cm.ScalarMappable(cmap=my_cmap_r)  # , norm=plt.Normalize(vmin=vmin, vmax=vmax))
+        # fake up the array of the scalar mappable. Urgh...
+        sm._A = p[colorby]  # [1,2,3]
+
+        cb = fig.colorbar(sm, cax=cax, orientation='vertical')
+        cb.set_label(colorby, fontdict={'size': 15, 'weight': 'bold'})
+
+    fig = plt.gcf()
+    fig.savefig(jpg_fname, dpi=400)
+
+    if showfig is True:
+        plt.show()
+
+    # cleanup memory now
+    plt.close() # this will make prog faster and not too many plot obj kept.
+    del(p)
+    del(pdf)
+    del(fig)
+
+
+def create_tipper_real_shp(csvfile, arr_size=0.03, target_epsg_code=None):
+    """ create tipper lines shape from a csv file
+    The shape is a line without arrow.
+    Must use a GIS software such as ArcGIS to display and add an arrow at each line's end
+    arr_size=4  how long will be the line (arrow)
+    return: a geopandas dataframe object for further processing.
+    """
+
+    pdf = pd.read_csv(csvfile)
+    # mt_locations = [Point(xy) for xy in zip(pdf.lon, pdf.lat)]
+    # OR pdf['geometry'] = pdf.apply(lambda z: Point(z.lon, z.lat), axis=1)
+    # if you want to df = df.drop(['Lon', 'Lat'], axis=1)
+
+    crs = {'init': 'epsg:4326'}  # WGS84
+
+    # geo_df = gpd.GeoDataFrame(pdf, crs=crs, geometry=mt_locations)
+
+    pdf['tip_re'] = pdf.apply(lambda x:
+                              LineString([(float(x.lon), float(x.lat)),
+                                          (float(x.lon) + arr_size * x.tip_mag_re * np.cos(
+                                              -np.deg2rad(x.tip_ang_re)),
+                                           float(x.lat) + arr_size * x.tip_mag_re * np.sin(
+                                               -np.deg2rad(x.tip_ang_re)))]), axis=1)
+
+    pdf = gpd.GeoDataFrame(pdf, crs=crs, geometry='tip_re')
+
+    if target_epsg_code is None:
+        target_epsg_code = '4326'  # EDI original lat/lon epsg 4326 or GDA94
+    else:
+        pdf.to_crs(epsg=target_epsg_code,inplace=True)
+        # world = world.to_crs({'init': 'epsg:3395'})
+        # world.to_crs(epsg=3395) would also work
+
+    # to shape file
+    shp_fname = csvfile.replace('.csv', '_real_epsg%s.shp' % target_epsg_code)
+    pdf.to_file(shp_fname, driver='ESRI Shapefile')
+
+    return pdf
+
+def create_tipper_imag_shp(csvfile, arr_size=0.03, target_epsg_code=None):
+    """ create imagery tipper lines shape from a csv file
+    The shape is a line without arrow.
+    Must use a GIS software such as ArcGIS to display and add an arrow at each line's end
+    arr_size=4  how long will be the line (arrow)
+    return: a geopandas dataframe object for further processing.
+    """
+
+    pdf = pd.read_csv(csvfile)
+    # mt_locations = [Point(xy) for xy in zip(pdf.lon, pdf.lat)]
+    # OR pdf['geometry'] = pdf.apply(lambda z: Point(z.lon, z.lat), axis=1)
+    # if you want to df = df.drop(['Lon', 'Lat'], axis=1)
+
+    crs = {'init': 'epsg:4326'}  # WGS84
+
+    # geo_df = gpd.GeoDataFrame(pdf, crs=crs, geometry=mt_locations)
+
+    pdf['tip_im'] = pdf.apply(lambda x:
+                              LineString([(float(x.lon), float(x.lat)),
+                                          (float(x.lon) + arr_size * x.tip_mag_im * np.cos(
+                                              -np.deg2rad(x.tip_ang_im)),
+                                           float(x.lat) + arr_size * x.tip_mag_im * np.sin(
+                                               -np.deg2rad(x.tip_ang_im)))]), axis=1)
+
+    pdf = gpd.GeoDataFrame(pdf, crs=crs, geometry='tip_im')
+
+    if target_epsg_code is None:
+        target_epsg_code = '4326'  # EDI original lat/lon epsg 4326 or GDA94
+    else:
+        pdf.to_crs(epsg=target_epsg_code,inplace=True)
+        # world = world.to_crs({'init': 'epsg:3395'})
+        # world.to_crs(epsg=3395) would also work
+
+    # to shape file
+    shp_fname = csvfile.replace('.csv', '_imag_epsg%s.shp' % target_epsg_code)
+    pdf.to_file(shp_fname, driver='ESRI Shapefile')
+
     return pdf
 
 
@@ -275,116 +475,20 @@ def process_csv_folder(csv_folder, target_epsg_code=None):
 
     #for acsv in csvfiles[:2]:
     for acsv in csvfiles:
-        p0 = get_geopdf_from_csv(acsv, esize=0.03)
 
-        if target_epsg_code is None:
-            p = p0
-            target_epsg_code = '4326'  # EDI orginal lat/lon epsg 4326 or GDA94
-        else:
-            p = p0.to_crs(epsg=target_epsg_code)
-            # world = world.to_crs({'init': 'epsg:3395'})
-            # world.to_crs(epsg=3395) would also work
+        #tip_re_gdf = create_tipper_real_shp(acsv, target_epsg_code=target_epsg_code)
 
-        bounds = p.total_bounds  # lat-lon bounds for this csv/pdf
-        # plot and save
-        jpg_fname = acsv.replace('.csv', '_epsg%s.jpg' % target_epsg_code)
-        fig_title=os.path.basename(jpg_fname)
-        logger.info('saving figure to file %s',jpg_fname)
-        colorby = 'phi_min'
-        my_cmap_r = 'jet'
+        tip_im_gdf = create_tipper_imag_shp(acsv, target_epsg_code=target_epsg_code)
 
-        if int(target_epsg_code) == 4326:
+        #ellip_gdf = create_ellipse_shp(acsv, esize=0.003,target_epsg_code=target_epsg_code)
 
-            myax = p.plot(figsize=[10, 10], linewidth=2.0, column=colorby, cmap=my_cmap_r) #, marker='o', markersize=10)
+        # visualize and make image file output of the above 3 geopandas df.
 
-            # add colorbar
-            divider = make_axes_locatable(myax)
-            # pad = separation from figure to colorbar
-            cax = divider.append_axes("right", size="3%", pad=0.2)
+        #plot_geopdf(ellip_gdf, acsv, target_epsg_code)
 
-            fig = myax.get_figure()
-
-            sm = plt.cm.ScalarMappable(cmap=my_cmap_r)  # , norm=plt.Normalize(vmin=vmin, vmax=vmax))
-            # fake up the array of the scalar mappable. Urgh...
-            sm._A = p[colorby]  # [1,2,3]
-
-            cb = fig.colorbar(sm, cax=cax, orientation='vertical')
-            cb.set_label(colorby, fontdict={'size': 15, 'weight': 'bold'})
-            # myax = p.plot(figsize=[10, 8], linewidth=2.0, column='phi_max', cmap='jet')  # , vmin=vmin, vmax=vmax)
-
-            # calculate and set xy limit:
-            # myax.set_xlim([140.2, 141.2])  #LieJunWang
-            # myax.set_ylim([-20.8, -19.9])
-
-            # margin = 0.0
-            #
-            # xmin = (1-margin) * bounds[0]
-            # xmax = (1+margin) * bounds[2]
-            # ymin = (1-margin) * bounds[1]
-            # ymax = (1+margin) * bounds[3]
-            # myax.set_xlim([xmin, xmax])
-            # myax.set_ylim([ymin, ymax])
-
-
-            myax.set_xlim([140, 150]) # GA-Vic
-            myax.set_ylim([-39, -34])
-
-            myax.set_xlim([136.7, 137.0])  # 3D_MT_data_
-            myax.set_ylim([-20.65, -20.35])
-
-            myax.set_xlim([140.0, 144.5])  # WPJ
-            myax.set_ylim([-23.5, -19.0])
-
-            myax.set_xlabel('Longitude')
-            myax.set_ylabel('Latitude')
-            myax.set_title(fig_title)
-        else:
-            myax = p.plot(figsize=[10, 8], linewidth=2.0, column=colorby, cmap=my_cmap_r)  # simple plot need to have details added
-
-            myax.set_xlabel('East-West (KM)')
-            myax.set_ylabel('North-South (KM)')
-            myax.set_title(fig_title)
-            myax.set_xlim([400000, 1300000])
-            myax.set_ylim([5700000, 6200000])
-
-            myax.set_xlim([400000, 900000])
-            myax.set_ylim([7400000, 7900000])
-
-            xticks = myax.get_xticks() / 1000
-            myax.set_xticklabels(xticks)
-            yticks = myax.get_yticks() / 1000
-            myax.set_yticklabels(yticks)
-
-            # add colorbar
-            divider = make_axes_locatable(myax)
-            # pad = separation from figure to colorbar
-            cax = divider.append_axes("right", size="3%", pad=0.2)
-
-            fig = myax.get_figure()
-
-            sm = plt.cm.ScalarMappable(cmap=my_cmap_r)  # , norm=plt.Normalize(vmin=vmin, vmax=vmax))
-            # fake up the array of the scalar mappable. Urgh...
-            sm._A = p[colorby]  # [1,2,3]
-
-            cb = fig.colorbar(sm, cax=cax, orientation='vertical')
-            cb.set_label(colorby, fontdict={'size': 15, 'weight': 'bold'})
-
-        fig = plt.gcf()
-        fig.savefig(jpg_fname, dpi=400)
-        #plt.show()
-
-        plt.close() # this will make prog faster and no too many plot obj kept.
-
-        # to shape file
-        shp_fname = acsv.replace('.csv', '_epsg%s.shp' % target_epsg_code)
-        p.to_file(shp_fname, driver='ESRI Shapefile')
-
-        # cleanup memory now
-        del(p)
-        del(p0)
-        del(fig)
-
-
+    return
+# ==================================================================
+# python mtpy/utils/shapefiles_creator.py tests/data/edifiles /e/tmp
 # ==================================================================
 if __name__ == "__main__":
 
@@ -399,7 +503,7 @@ if __name__ == "__main__":
 
     # filter the edi files here if desired, to get a subset:
     # edifiles2 = edifiles[0:-1:2]
-    # shp_maker = ShapeFilesCreator(edifiles2, path2out)
+    # shp_maker = ShapeFilesCreator(edifiles, path2out)
     # # create csv files
     # ptdic = shp_maker.create_csv_files()  # dest_dir=path2out)
 
@@ -410,9 +514,9 @@ if __name__ == "__main__":
 
     # create shapefiles and plots
     # epsg projection 4283 - gda94
-    # process_csv_folder(path2out)  # , target_epsg_code will be default 4326?
+    process_csv_folder(path2out)  # , target_epsg_code will be default 4326?
 
     # epsg projection 28354 - gda94 / mga zone 54
     # epsg projection 32754 - wgs84 / utm zone 54s
     process_csv_folder(path2out, target_epsg_code=32754)
-    # process_csv_folder(path2out, target_epsg_code=3112)
+    # process_csv_folder(path2out, target_epsg_code=3112) # GDA94/GALCC =3112
