@@ -15,11 +15,13 @@ Date:   2017-01-23
 import glob
 import os
 import sys
+
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from scipy.interpolate import griddata
+
 import mtpy.core.mt as mt
 import mtpy.utils.calculator
 from mtpy.utils.mtpylog import MtPyLog
@@ -28,7 +30,6 @@ mpl.rcParams['lines.linewidth'] = 2
 # mpl.rcParams['lines.color'] = 'r'
 
 mpl.rcParams['figure.figsize'] = [20, 10]
-
 
 # get a logger object for this module, using the utility class MtPyLog to
 # config the logger
@@ -42,9 +43,9 @@ logger = MtPyLog().get_mtpy_logger(__name__)
 
 # This is the major function to be maintained!!!
 # use the Zcompotent=[det, zxy, zyx]
-def plot_latlon_depth_profile(edi_dir, period, zcomponent='det'):
+def plot_latlon_depth_profile(edi_dir, period, zcomponent='det', showfig=True):
     """
-    MT penetration depth profile in lat-lon coordinates with pixelsize =0.002
+    MT penetration depth profile in lat-lon coordinates with pixelsize = 0.002
     :param edi_dir:
     :param period:
     :param zcomponent:
@@ -160,7 +161,7 @@ def plot_latlon_depth_profile(edi_dir, period, zcomponent='det'):
 
     # grid_z0 = griddata(points, values, (grid_x, grid_y), method='nearest')
     grid_z = griddata(points, values, (grid_x, grid_y), method='linear')
-    #grid_z = griddata(points, values, (grid_x, grid_y), method='cubic')
+    # grid_z = griddata(points, values, (grid_x, grid_y), method='cubic')
 
     # method='cubic' may cause negative interp values; set them nan to make
     # empty
@@ -228,8 +229,8 @@ def plot_latlon_depth_profile(edi_dir, period, zcomponent='det'):
     ax.tick_params(
         axis='both',
         which='major',
-        width=3,
-        length=6,
+        width=2,
+        length=5,
         labelsize=ftsize)
     # plt.title('Penetration Depth at the Period=%.6f (Cubic Interpolation)\n'
     # % period_fmt)  # Cubic
@@ -246,14 +247,17 @@ def plot_latlon_depth_profile(edi_dir, period, zcomponent='det'):
     # of ax and the padding between cax and ax will be fixed at 0.05 inch.
     divider = make_axes_locatable(ax)
     # pad = separation from figure to colorbar
-    cax = divider.append_axes("right", size="2%", pad=0.2)
+    cax = divider.append_axes("right", size="3%", pad=0.2)
     mycb = plt.colorbar(imgplot, cax=cax)  # cmap=my_cmap_r, does not work!!
     mycb.outline.set_linewidth(2)
     mycb.set_label(label='Penetration Depth (Km)', size=ftsize)
     mycb.set_cmap(my_cmap_r)
 
-    plt.show()
-    path2savefile = 'E:/tmp/pendepth.jpg'
+    if showfig is True: plt.show()
+
+    savedir = 'E:/tmp'
+    savefn = 'P3Depth_Period%s.jpg' % (period_fmt)
+    path2savefile = os.path.join(savedir, savefn)
     fig.savefig(path2savefile, dpi=200, bbox_inches='tight')
     plt.clf()
     plt.close()
@@ -388,10 +392,10 @@ def get_penetration_depth0(edi_file_list, per_index, whichrho='det'):
             penetration_depth = -scale_param * np.sqrt(0.2 * per * det2 * per)
         elif whichrho == 'zxy':
             penetration_depth = - scale_param * \
-                np.sqrt(zeta.resistivity[per_index, 0, 1] * per)
+                                np.sqrt(zeta.resistivity[per_index, 0, 1] * per)
         elif whichrho == 'zyx':
             penetration_depth = - scale_param * \
-                np.sqrt(zeta.resistivity[per_index, 1, 0] * per)
+                                np.sqrt(zeta.resistivity[per_index, 1, 0] * per)
 
         else:
             logger.critical(
@@ -468,13 +472,13 @@ def get_penetration_depth(edi_file_list, period_sec, whichrho='det'):
                 # determinant value at the given period index
                 det2 = np.abs(zeta.det[0][per_index])
                 penetration_depth = -scale_param * \
-                    np.sqrt(0.2 * per * det2 * per)
+                                    np.sqrt(0.2 * per * det2 * per)
             elif whichrho == 'zxy':
                 penetration_depth = - scale_param * \
-                    np.sqrt(zeta.resistivity[per_index, 0, 1] * per)
+                                    np.sqrt(zeta.resistivity[per_index, 0, 1] * per)
             elif whichrho == 'zyx':
                 penetration_depth = - scale_param * \
-                    np.sqrt(zeta.resistivity[per_index, 1, 0] * per)
+                                    np.sqrt(zeta.resistivity[per_index, 1, 0] * per)
 
             else:
                 logger.critical(
@@ -517,7 +521,7 @@ def check_period_values(period_list, ptol=0.1):
 
     for per in period_list:
         if (per > p0 * (1 - ptol)) and (per < p0 *
-                                        (1 + ptol)):  # approximately equal by <5% error
+            (1 + ptol)):  # approximately equal by <5% error
             pcounter = pcounter + 1
         else:
             logger.warn("Periods NOT Equal!!!  %s != %s", p0, per)
@@ -582,10 +586,10 @@ def plot_bar3d_depth(edifiles, per_index, whichrho='det'):
             penetration_depth = -scale_param * np.sqrt(0.2 * per * det2 * per)
         elif whichrho == 'zxy':
             penetration_depth = - scale_param * \
-                np.sqrt(zeta.resistivity[per_index, 0, 1] * per)
+                                np.sqrt(zeta.resistivity[per_index, 0, 1] * per)
         elif whichrho == 'zyx':
             penetration_depth = - scale_param * \
-                np.sqrt(zeta.resistivity[per_index, 1, 0] * per)
+                                np.sqrt(zeta.resistivity[per_index, 1, 0] * per)
 
         pen_depth.append(penetration_depth)
 
@@ -695,17 +699,17 @@ def get_penetration_depths_from_edi_file(edifile, rholist=['det']):
     if 'zxy' in rholist:
         # One of the 4-components: XY
         penetration_depth = scale_param * \
-            np.sqrt(zeta.resistivity[:, 0, 1] * periods)
+                            np.sqrt(zeta.resistivity[:, 0, 1] * periods)
 
     if 'zyx' in rholist:
         penetration_depth = scale_param * \
-            np.sqrt(zeta.resistivity[:, 1, 0] * periods)
+                            np.sqrt(zeta.resistivity[:, 1, 0] * periods)
 
     if 'det' in rholist:
         # determinant
         det2 = np.abs(zeta.det[0])
         penetration_depth = scale_param * \
-            np.sqrt(0.2 * periods * det2 * periods)
+                            np.sqrt(0.2 * periods * det2 * periods)
 
     latlong_d = (mt_obj.lat, mt_obj.lon, periods, penetration_depth)
     return latlong_d
@@ -776,6 +780,21 @@ def create_shapefile(edi_dir, outputfile=None, zcomponent='det'):
     return outputfile
 
 
+def plot4all_periods(edidir):
+    from mtpy.core.edi_collection import EdiCollection
+
+    edilist = glob.glob(os.path.join(edidir, '*.edi'))
+
+    ediset = EdiCollection(edilist)
+    for period_sec in ediset.all_periods:
+        try:
+            # This will enable the loop continue even though for some freq,
+            #  cannot interpolate due to not enough data points
+            plot_latlon_depth_profile(edidir, period_sec, zcomponent='det', showfig=False)
+        except Exception, exwhy:
+            print(exwhy.message)
+
+
 # =============================================================================================
 # Usage examples for small, med, large images
 # python mtpy/imaging/penetration_depth3d.py tests/data/edifiles/ 2.857s
@@ -784,6 +803,8 @@ def create_shapefile(edi_dir, outputfile=None, zcomponent='det'):
 #   OR  period index integer
 # python mtpy/imaging/penetration_depth3d.py /e/Datasets/MT_Datasets/3D_MT_data_edited_fromDuanJM/ 30
 # python mtpy/imaging/penetration_depth3d.py  tests/data/edifiles/ 10
+#   OR  go through every period and produce jpg images in E:/tmp
+# python mtpy/imaging/penetration_depth3d.py  tests/data/edifiles/
 # =============================================================================================
 if __name__ == "__main__":
 
@@ -792,7 +813,11 @@ if __name__ == "__main__":
         print("usage example: python mtpy/imaging/penetration_depth3d.py  tests/data/edifiles/ 10")
         print("usage example: python mtpy/imaging/penetration_depth3d.py  tests/data/edifiles/ 2.857s")
         sys.exit(1)
-    elif os.path.isdir(sys.argv[1]):
+    elif len(sys.argv) == 2:
+        # do all periods
+        plot4all_periods(sys.argv[1])
+
+    elif len(sys.argv) > 2 and os.path.isdir(sys.argv[1]):
         edi_dir = sys.argv[1]
 
         per = sys.argv[2]
