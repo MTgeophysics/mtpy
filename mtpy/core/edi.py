@@ -851,7 +851,10 @@ class Header(object):
         self.empty = 1E32
         self.progvers = None
         self.progdate = None
+        self.project = None
+        self.survey = None
         self.coordinate_system = 'Geomagnetic North'
+        self.datum = 'WGS84'
         self.phoenix_edi = False
         
         self.header_list = None
@@ -868,7 +871,10 @@ class Header(object):
                              'empty',
                              'progdate',
                              'progvers',
-                             'coordinate_system']
+                             'coordinate_system',
+                             'datum',
+                             'project',
+                             'survey']
         
         for key in kwargs.keys():
             setattr(self, key, kwargs[key])

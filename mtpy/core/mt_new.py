@@ -146,7 +146,6 @@ class MT(object):
     """
     
     def __init__(self, fn=None, **kwargs):
-        self._fn = self._set_fn(fn)
         
         # important information held in objects
         self.Site = Site()
@@ -157,10 +156,10 @@ class MT(object):
         self._Tipper = kwargs.pop('Tipper', MTz.Tipper())
         self._rotation_angle = 0
         
-        self.edi_object = MTedi.Edi()
+        self._fn = self._set_fn(fn)
+        
         self.pt = None
         self.zinv = None
-        self._utm_ellipsoid = 23
         
         #provide key words to fill values if an edi file does not exist
         for key in kwargs.keys():
@@ -175,9 +174,8 @@ class MT(object):
         
         upon setting utm coordinates are recalculated
         """
-        
-        self.Site.location.latitude = MTformat._assert_position_format('lat',
-                                                                       latitude)
+        self.Site.location.latitude = latitude
+        self.Site.location.project_location2utm()
         
     def _set_lon(self, longitude):
         """
@@ -185,19 +183,16 @@ class MT(object):
         
         upon setting utm coordinates are recalculated
         """
-        
-        self._lon = MTformat._assert_position_format('lon', longitude)
-        
-        if self._lon is not None and self._lat is not None:
-            self._get_utm()
+        self.Site.location.longitude = longitude
+        self.Site.location.project_location2utm()
         
         
     def _set_elev(self, elevation):
         """
         set elevation, should be input as meters
         """
-        
-        self._elev = elevation
+        self._elev = self.Site.location.elevation = elevation
+
         
     def _set_east(self, easting):
         """
@@ -205,8 +200,8 @@ class MT(object):
         
         upon setting lat and lon are recalculated
         """
-        
-        self._east = easting
+        self.Site.location.easting = easting
+        self.Site.location.project_location2ll()
         
     def _set_north(self, northing):
         """
@@ -214,8 +209,8 @@ class MT(object):
         
         upon setting lat and lon are recalculated
         """
-        
-        self._north = northing
+        self.Site.location.northing = northing
+        self.Site.location.project_location2ll()
     
         
     def _set_utm_zone(self, utm_zone):
@@ -224,8 +219,8 @@ class MT(object):
         
         upon setting lat and lon are recalculated
         """
-        
-        self._utm_zone = utm_zone
+        self.Site.location.utm_zone = utm_zone
+        self.Site.location.project_location2ll()
         
     def _set_fn(self, filename):
         """
@@ -289,27 +284,33 @@ class MT(object):
         if self._Tipper is not None:
             self._Tipper._compute_amp_phase()
             self._Tipper._compute_mag_direction()
+            
+    def _set_station(self, station_name):
+        """
+        set station name
+        """
+        self.Site.id = station_name
         
     #==========================================================================
     # get functions                         
     #==========================================================================    
     def _get_lat(self):
-        return self._lat
+        return self.Site.location.latitude
 
     def _get_lon(self):
-        return self._lon
+        return self.Site.location.longitude
         
     def _get_elev(self):
-        return self._elev
+        return self.Site.location.elevation
         
     def _get_east(self):
-        return self._east
+        return self.Site.location.easting
         
     def _get_north(self):
-        return self._north
+        return self.Site.location.northing
     
     def _get_utm_zone(self):
-        return self._utm_zone
+        return self.Site.location.utm_zone
     
     def _get_fn(self):
         return self._fn
@@ -322,6 +323,9 @@ class MT(object):
         
     def _get_Tipper(self):
         return self._Tipper
+        
+    def _get_station(self):
+        return self.Site.id
     #==========================================================================
     # set properties                          
     #==========================================================================
@@ -352,44 +356,34 @@ class MT(object):
     
     Tipper = property(_get_Tipper, _set_Tipper, doc="Tipper object")
     
-    #--> conversion between utm and ll
-    def _get_utm(self):
-        """
-        get utm coordinates from lat and lon
-        """
-        
-        self.utm_zone, self.east, self.north = MTutm.LLtoUTM(self._utm_ellipsoid,
-                                                             self.lat, self.lon)
-                                                         
-    def _get_ll(self):
-        """
-        get lat and long from utm
-        """
-        
-        self.lat, self.lon = MTutm.UTMtoLL(self._utm_ellipsoid, 
-                                           self.north, 
-                                           self.east, 
-                                           self.utm_zone)
-                                           
-                                           
-                                           
+    station = property(_get_station, _set_station, doc="Station name")
+                                       
+    #==========================================================================
+    #  read in files   
+    #==========================================================================
     #--> read in edi file                                                    
     def _read_edi_file(self):
         """
         read in edi file and set attributes accordingly
         
-        """
+        """        
+        edi_obj = MTedi.Edi(edi_fn=self.fn)
+
+        # read in site information from the header
+        self.lat = edi_obj.lat
+        self.lon = edi_obj.lon
+        self.elev = edi_obj.elev
         
-        self.edi_object = MTedi.Edi(edi_fn=self.fn)
-        self._lat = self.edi_object.lat
-        self._lon = self.edi_object.lon
-        self._elev = self.edi_object.elev
-        self._Z = self.edi_object.Z
-        self._Tipper = self.edi_object.Tipper
-        self.station = self.edi_object.station
+        self.Site.acquired_by = edi_obj.Header.acqby
+        self.Site.location = edi_obj.Header.loc
+        self.Site.start_date = edi_obj.Header.acqdate
+        self.Site.location.datum = edi_obj.Header.datum
+        self.Site.project = edi_obj.Header.project
+        self.Site.survey = edi_obj.Header.survey
         
-        #--> get utm coordinates from lat and lon        
-        self._get_utm()
+        self._Z = self.edi_obj.Z
+        self._Tipper = self.edi_obj.Tipper
+        self.station = self.edi_obj.station
         
         #--> make sure things are ordered from high frequency to low
         self._check_freq_order()
@@ -1101,7 +1095,7 @@ class Processing(object):
     
     def __init__(self, **kwargs):
         self.software = Software
-        self. = None
+        self.author = None
         self.organization = None
         self.organization_url = None
         
