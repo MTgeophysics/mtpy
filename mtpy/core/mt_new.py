@@ -17,7 +17,7 @@ import mtpy.core.edi as MTedi
 import mtpy.core.z as MTz
 import mtpy.utils.latlongutmconversion as MTutm
 import mtpy.utils.exceptions as MTex
-import mtpy.utils.format as MTformat
+import mtpy.utils.gis_tools as gis_tools
 import mtpy.analysis.pt as MTpt
 import mtpy.analysis.zinvariants as MTinv
 import mtpy.analysis.distortion as MTdistortion
@@ -764,8 +764,8 @@ class Location(object):
         self._latitude = None
         self._longitude = None
         
-        self.north = None
-        self.east = None
+        self.northing = None
+        self.easting = None
         self.utm_zone = None
         
         for key in kwargs.keys():
@@ -774,7 +774,7 @@ class Location(object):
     def _get_latitude(self):
         return self._latitude
     def _set_latitude(self, lat):
-        self._latitude = MTformat._assert_position_format('lat', lat)
+        self._latitude = gis_tools.assert_lat_value(lat)
         
     latitude = property(fget=_get_latitude, 
                         fset=_set_latitude,
@@ -783,7 +783,7 @@ class Location(object):
     def _get_longitude(self):
         return self._longitude
     def _set_longitude(self, lon):
-        self._latitude = MTformat._assert_position_format('lon', lon)
+        self._latitude = gis_tools.assert_lon_value( lon)
         
     longitude = property(fget=_get_longitude, 
                         fset=_set_longitude,
@@ -792,23 +792,41 @@ class Location(object):
     def _get_elevation(self):
         return self._elevation
     def _set_elevation(self, elev):
-        self._elevation = MTformat._assert_position_format('elev', elev)
+        self._elevation = gis_tools.assert_elevation_value(elev)
         
-    latitude = property(fget=_get_elevation, 
+    elevation = property(fget=_get_elevation, 
                         fset=_set_elevation,
                         doc="""Elevation in floating point""") 
     
-    def project_location(self, reference_ellipsoid=23):
+    def project_location2utm(self):
         """
         project location coordinates into meters given the reference ellipsoid,
         for now that is constrained to WGS84
         
         Returns East, North, Zone
         """
+        utm_point = gis_tools.project_point_ll2utm(self._latitude, 
+                                                   self._longitude,
+                                                   datum=self.datum)
         
-        self.utm_zone, self.east, self.north = MTutm.LLtoUTM(reference_ellipsoid, 
-                                                             self._latitude,
-                                                             self._longitude)
+        self.easting = utm_point[0]
+        self.northing = utm_point[1]
+        self.utm_zone = utm_point[2]
+        
+    def project_location2ll(self):
+        """
+        project location coordinates into meters given the reference ellipsoid,
+        for now that is constrained to WGS84
+        
+        Returns East, North, Zone
+        """
+        ll_point = gis_tools.project_point_utm2ll(self.easting, 
+                                                   self.northing,
+                                                   self.utm_zone,
+                                                   datum=self.datum)
+        
+        self.latitude = ll_point[0]
+        self.longitude = ll_point[1]
  
 #==============================================================================
 # Field Notes    

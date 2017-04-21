@@ -90,6 +90,19 @@ def assert_lon_value(longitude):
             raise ValueError('|Longitude| > 180, unacceptable!')
             
     return lon_value
+    
+def assert_elevation_value(elevation):
+    """
+    make sure elevation is a floating point number
+    """
+    
+    try:
+        elev_value = float(elevation)
+    except ValueError:
+        elev_value = 0.0
+        print 'WARNING -- {0} is not a number, setting elevation to 0'.format(elevation)
+        
+    return elev_value
 
 def convert_position_float2str(position):
     """
@@ -130,7 +143,6 @@ def convert_position_float2str(position):
 #==============================================================================
 # Project a point
 #==============================================================================
-
 def get_utm_zone(latitude, longitude):
     """
     Get utm zone from a given latitude and longitude
@@ -143,20 +155,23 @@ def get_utm_zone(latitude, longitude):
         is_northern = 1
         n_str = 'N'
     
-    return zone_number, is_northern, '{0:.0f}{1}'.format(zone_number, n_str) 
+    return zone_number, is_northern, '{0:02.0f}{1}'.format(zone_number, n_str) 
 
-def project_point_ll2utm(point, datum='WGS84'):
+def project_point_ll2utm(lat, lon, datum='WGS84'):
     """
     Project a point that is in Lat, Lon (will be converted to decimal degrees)
     into UTM coordinates.
     
     Arguments:
     ---------------
-        **point** : tuple (lat, lon)
-                    latitude and longitude of point to be projected.
+        **lat** : float or string (DD:MM:SS.ms)
+                  latitude of point
+                  
+        **lon** : float or string (DD:MM:SS.ms)
+                  longitude of point
         
         **datum** : string
-                    well known datum ex. WGS84, NAD27, etc.
+                    well known datum ex. WGS84, NAD27, NAD83, etc.
                     
     Returns:
     --------------
@@ -165,8 +180,8 @@ def project_point_ll2utm(point, datum='WGS84'):
                     
     """
     # make sure the lat and lon are in decimal degrees
-    lat = assert_lat_value(point[0])
-    lon = assert_lon_value(point[1])
+    lat = assert_lat_value(lat)
+    lon = assert_lon_value(lon)
     
     # get zone number, north and zone name
     zone_number, is_northern, utm_zone = get_utm_zone(lat, lon)
@@ -177,23 +192,79 @@ def project_point_ll2utm(point, datum='WGS84'):
     utm_cs.SetUTM(zone_number, is_northern);
        
     ## set lat, lon coordinate system
-    wgs84_cs = utm_cs.CloneGeogCS()
-    wgs84_cs.ExportToPrettyWkt()
+    ll_cs = utm_cs.CloneGeogCS()
+    ll_cs.ExportToPrettyWkt()
        
     ## set the transform wgs84_to_utm and do the transform
-    ll2utm = osr.CoordinateTransformation(wgs84_cs, utm_cs)
+    ll2utm = osr.CoordinateTransformation(ll_cs, utm_cs)
     easting, northing, elev = list(ll2utm.TransformPoint(lon, lat))
     projected_point = (easting, northing, utm_zone)    
 
     return projected_point
-       
     
-p = (40.0, -118.0)
-new_p = project_point_ll2utm(p)
+def project_point_utm2ll(easting, northing, utm_zone, datum='WGS84'):
+    """
+    Project a point that is in Lat, Lon (will be converted to decimal degrees)
+    into UTM coordinates.
+    
+    Arguments:
+    ---------------
+        **easting** : float
+                    easting coordinate in meters
+                    
+        **northing** : float
+                    northing coordinate in meters
+        
+        **utm_zone** : string (##N or ##S)
+                      utm zone in the form of number and North or South
+                      hemisphere, 10S or 03N
+        
+        **datum** : string
+                    well known datum ex. WGS84, NAD27, etc.
+                    
+    Returns:
+    --------------
+        **proj_point**: tuple(lat, lon)
+                        projected point in lat and lon in Datum, as decimal
+                        degrees.
+                    
+    """
+    assert type(easting) is float, 'Easting is not a float'
+    assert type(northing) is float, 'Northing is not a float'
+    
+    assert len(utm_zone) == 3, 'UTM zone should be imput as ##N or ##S'
+    
+    try:
+        zone_number = int(utm_zone[0:2])
+    except ValueError:
+        raise ValueError('Zone number {0} is not a number'.format(utm_zone[0:2]))
+        
+    is_northern = 1
+    if 's' in utm_zone.lower():
+        is_northern = 0
+    
+    ## set utm coordinate system
+    utm_cs = osr.SpatialReference()
+    utm_cs.SetWellKnownGeogCS(datum)
+    utm_cs.SetUTM(zone_number, is_northern);
+       
+    ## set lat, lon coordinate system
+    ll_cs = utm_cs.CloneGeogCS()
+    ll_cs.ExportToPrettyWkt()
+       
+    ## set the transform utm to lat lon
+    transform_utm2ll = osr.CoordinateTransformation(utm_cs, ll_cs)
+    ll_point = list(transform_utm2ll.TransformPoint(easting, northing)) 
+    
+    # be sure to round out the numbers to remove computing with floats
+    return (round(ll_point[1], 6), round(ll_point[0], 6))
+
+new_p = project_point_ll2utm(10.0, -150.0)
 
 print new_p
-#    ## set the transform utm_to_wgs84 and do the transform
-#    transform_UTM_To_WGS84 = osr.CoordinateTransformation(utm_cs,wgs84_cs)
-#    latlon_points = list(transform_UTM_To_WGS84.TransformPoint(utm_points[0],
-#                                                               utm_points[1]))
+
+ll_p = project_point_utm2ll(new_p[0], new_p[1], new_p[2])
+
+print ll_p
+#    
 
