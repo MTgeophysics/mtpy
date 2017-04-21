@@ -81,3 +81,23 @@ python mtpy/imaging/modem_plot_vertical_slice.py /e/Data/Modeling/Isa/100hs_flat
 # create csv and shape files
 python mtpy/utils/shapefiles_creator.py /e/Data/MT_Datasets/WenPingJiang_EDI /e/Data/MT_Datasets/WenPingJiang_SHP
 python mtpy/utils/shapefiles_creator.py /e/Data/GA_Works/E_Data_MT_Datasets/GA_UA_edited_10s-10000s /e/Data/GA_Works/E_Data_MT_Datasets/GA_UA_edited_10s-10000s_SHP
+
+
+# EDI collection (surveys) properties
+python mtpy/core/edi_collection.py tests/data/edifiles/
+python mtpy/core/edi_collection.py examples/data/edi2/
+python mtpy/core/edi_collection.py examples/data/edi_files
+
+python mtpy/core/edi_collection.py /e/Data/MT_Datasets/WenPingJiang_EDI/
+python mtpy/core/edi_collection.py /e/Data/MT_Datasets/GA_UA_edited_10s-10000s
+python mtpy/core/edi_collection.py /e/Data/MT_Datasets/728889/EDI_files/
+python mtpy/core/edi_collection.py /e/Data/MT_Datasets/75098/EDI_files/
+python mtpy/core/edi_collection.py /e/Data/MT_Datasets/75099_Youanmi/EDI_Files_edited/BB_edi_edited/
+python mtpy/core/edi_collection.py /e/Data/MT_Datasets/75099_Youanmi/EDI_Files_edited/BB_edi_edited/YM1/
+python mtpy/core/edi_collection.py /e/Data/MT_Datasets/75099_Youanmi/EDI_Files_edited/BB_edi_edited/YM2
+python mtpy/core/edi_collection.py /e/Data/MT_Datasets/75099_Youanmi/EDI_Files_edited/LP_edi_edited/YML123/
+
+
+# the below datasets spit out a lot of messages like "Need to input frequency list", for unknow reasons
+python mtpy/core/edi_collection.py /e/Data/MT_Datasets/3D_MT_data_edited_fromDuanJM
+python mtpy/core/edi_collection.py /e/Data/MT_Datasets/E_Data_Modelling_Isa/EDI_edited_10Hz_1000s

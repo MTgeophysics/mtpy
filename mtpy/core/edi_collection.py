@@ -11,10 +11,16 @@ from __future__ import print_function
 import sys
 import os, glob
 import logging
-
+import csv
 import numpy as np
-
+import pandas as pd
+import geopandas as gpd
+from shapely.geometry import Point, Polygon, LineString, LinearRing
+import matplotlib as mpl
+import matplotlib.pyplot as plt
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 import mtpy.core.mt as mt
+
 from mtpy.utils.mtpylog import MtPyLog
 
 logger = MtPyLog().get_mtpy_logger(__name__)
@@ -51,10 +57,13 @@ class EdiCollection(object):
         self.all_frequencies = None
         self.all_periods = self._get_all_periods()
 
+
+        self.geopdf = self.create_mt_station_gdf()
+
+        self.bound_box_dict = self.get_bounding_box()  # in orginal projection
+
         return
 
-        self.all_periods = self._get_all_periods()
-        self.bounding_box = self._get_bounding_box()
 
     def _get_all_periods(self):
         """
@@ -82,12 +91,185 @@ class EdiCollection(object):
 
         return all_periods
 
-    def _get_bounding_box(self, epsgcode=4326):
+
+    def create_mt_station_gdf(self, outshpfile=None):
+        """
+        create station location geopandas dataframe, and output to shape file outshpfile
+        :return: gdf
+        """
+
+        mt_stations =[ ]
+
+        for mtobj in self.mt_obj_list:
+            mt_stations.append([mtobj.station, mtobj.lon, mtobj.lat, mtobj.elev, mtobj.utm_zone])
+
+        pdf=pd.DataFrame(mt_stations, columns= ['StationId', 'Lon','Lat', 'Elev', 'UtmZone'])
+
+        #print (pdf.head())
+
+        mt_points = [Point(xy) for xy in zip(pdf.Lon, pdf.Lat)]
+        # OR pdf['geometry'] = pdf.apply(lambda z: Point(z.Lon, z.Lat), axis=1)
+        # if you want to df = df.drop(['Lon', 'Lat'], axis=1)
+        #crs0 = {'init': 'epsg:4326'}  # WGS84
+        crs0 = {'init': 'epsg:4283'}  # GDA94
+        gdf = gpd.GeoDataFrame(pdf, crs=crs0, geometry=mt_points)
+
+        if outshpfile is not None:
+            gdf.to_file(outshpfile, driver='ESRI Shapefile')
+
+        return gdf
+
+
+    def plot_stations(self, savefile=None, showfig=True):
+        """
+        visualise the geopandas df of MT stations
+        :return:
+        """
+
+        gdf=self.geopdf
+        gdf.plot(figsize=(10, 6),  marker='o', color='blue', markersize=5)
+
+        if savefile is not None:
+            fig = plt.gcf()
+            fig.savefig(savefile, dpi=300)
+
+        if showfig is True:
+            plt.show()
+
+        return savefile
+
+    def display_on_basemap(self):
+
+        world = gpd.read_file(gpd.datasets.get_path('naturalearth_lowres'))
+
+        logger.debug(world.shape)
+
+        myax = world.plot(alpha=0.5)
+        # myax.set_xlim([149,150])
+        # myax.set_xlim([110, 155])
+        # myax.set_ylim([-40, -10])
+
+        myax.set_xlim((self.bound_box_dict['MinLon'],self.bound_box_dict['MaxLon']))
+        myax.set_ylim((self.bound_box_dict['MinLat'],self.bound_box_dict['MaxLat']))
+
+        myax2 = self.geopdf.plot(ax=myax, figsize=(10, 6), marker='o', color='blue', markersize=8)
+
+        plt.show()
+
+        return myax2
+
+
+    def display_folium(self):
+        # http://localhost:8888/notebooks/examples/notebooks/geopandas_MT_survey_sites.ipynb#Mapping-with-Folium
+        # conda/pip install folium geojson
+        # http://stackoverflow.com/questions/36969991/folium-map-not-displaying
+       # https://github.com/python-visualization/folium
+
+
+        import folium
+
+        mapa = folium.Map([-30.0, 149.0], zoom_start=4, tiles='cartodbpositron')
+        myshpf = self.geopdf
+        myshp2json = myshpf.geometry.to_json()
+
+        points = folium.features.GeoJson(myshp2json)
+        mapa.add_children(points)
+
+        mapa
+
+        return
+
+
+    def create_csv_files(self, dest_dir=None):
+        """
+        create csv from the shapefiles.py method
+        :return:
+        """
+        if dest_dir is None:
+            dest_dir = self.outputdir
+
+        # summary csv file
+        csvfname = os.path.join(dest_dir, "phase_tensor_tipper.csv")
+
+        pt_dict = {}
+
+        csv_header = ['station', 'freq', 'lon', 'lat', 'phi_min', 'phi_max', 'azimuth', 'skew', 'n_skew', 'elliptic',
+                      'tip_mag_re', 'tip_mag_im', 'tip_ang_re', 'tip_ang_im']
+
+        with open(csvfname, "wb") as csvf:
+            writer = csv.writer(csvf)
+            writer.writerow(csv_header)
+
+        for freq in self.all_frequencies:
+            ptlist = []
+            for mt_obj in self.mt_obj_list:
+
+                f_index_list = [ff for ff, f2 in enumerate(mt_obj.Z.freq)
+                                if (f2 > freq * (1 - self.ptol)) and
+                                (f2 < freq * (1 + self.ptol))]
+                if len(f_index_list) > 1:
+                    logger.warn("more than one fre found %s", f_index_list)
+
+                if len(f_index_list) >= 1:
+                    p_index = f_index_list[0]
+                    # geographic coord lat long and elevation
+                    # long, lat, elev = (mt_obj.lon, mt_obj.lat, 0)
+                    station, lon, lat = (mt_obj.station, mt_obj.lon, mt_obj.lat)
+
+                    pt_stat = [station, freq, lon, lat,
+                               mt_obj.pt.phimin[0][p_index],
+                               mt_obj.pt.phimax[0][p_index],
+                               mt_obj.pt.azimuth[0][p_index],
+                               mt_obj.pt.beta[0][p_index],
+                               2 * mt_obj.pt.beta[0][p_index],
+                               mt_obj.pt.ellipticity[0][p_index],  # FZ: get ellipticity begin here
+                               mt_obj.Tipper.mag_real[p_index],
+                               mt_obj.Tipper.mag_imag[p_index],
+                               mt_obj.Tipper.angle_real[p_index],
+                               mt_obj.Tipper.angle_imag[p_index]]
+
+                    ptlist.append(pt_stat)
+                else:
+                    logger.warn('Freq %s NOT found for this station %s', freq, mt_obj.station)
+
+            with open(csvfname, "ab") as csvf:  # summary csv for all freqs
+                writer = csv.writer(csvf)
+                writer.writerows(ptlist)
+
+            csvfile2 = csvfname.replace('.csv', '_%sHz.csv' % str(freq))
+
+            with open(csvfile2, "wb") as csvf:  # individual csvfile for each freq
+                writer = csv.writer(csvf)
+
+                writer.writerow(csv_header)
+                writer.writerows(ptlist)
+
+            pt_dict[freq] = ptlist
+
+        return pt_dict
+
+
+    def get_bounding_box(self, epsgcode=None):
         """
 
         :return: bounding box in given proj coord system
         """
-        bdict={"MinLat" : -30,"MaxLat" : -20, "MinLon": 140.1, "MaxLon" : 145.5}
+
+        if epsgcode is None:
+            new_gdf = self.geopdf
+        else: # reproj
+            new_gdf = self.geopdf.to_crs(epsg=epsgcode)
+
+
+        tup = new_gdf.total_bounds
+
+        bdict={"MinLon" : tup[0],
+               "MinLat" : tup[1],
+               "MaxLon" : tup[2],
+               "MaxLat" : tup[3]
+               }
+
+        logger.debug(bdict)
 
         return bdict
 
@@ -99,7 +281,26 @@ class EdiCollection(object):
         print (len(self.all_periods), 'unique periods (s)', self.all_periods)
         print (len(self.all_frequencies), 'unique frequencies (Hz)', self.all_frequencies)
 
+        print (self.bound_box_dict)
+
+        self.plot_stations(savefile='/e/tmp/edi_collection_test.jpg')
+
+        self.display_on_basemap()
+
+        #self.display_folium()
+
         return
+
+
+
+    def create_phase_tensor_csv(self):
+        """
+        create phase tensor ellipse and tipper properties.
+        :return:
+        """
+        return
+
+
 
 if __name__ == "__main__":
 
@@ -117,3 +318,24 @@ if __name__ == "__main__":
             pass
 
         obj.show_prop()
+
+        print(obj.get_bounding_box(epsgcode=28353))
+
+
+        obj.create_mt_station_gdf(outshpfile='/e/tmp/edi_collection_test.shp')
+
+        #########################################################################################
+        # how to quick check the shape file created
+        # fio info /e/tmp/edi_collection_test.shp
+        #
+        # {"count": 25, "crs": "+ellps=GRS80 +no_defs +proj=longlat", "name": "edi_collection_test",
+        #  "driver": "ESRI Shapefile",
+        #  "bounds": [136.77222222222224, -20.593694444444445, 136.93077777777776, -20.41086111111111],
+        #  "crs_wkt": "GEOGCS[\"GDA94\",DATUM[\"Geocentric_Datum_of_Australia_1994\",
+        #  SPHEROID[\"GRS_1980\",6378137,298.257222101]],PRIMEM[\"Greenwich\",0],
+        #  UNIT[\"Degree\",0.017453292519943295]]",
+        #  "schema": {"geometry": "Point",
+        #             "properties": {"StationId": "str:80", "Lon": "float:24.15", "Lat": "float:24.15",
+        #                  "Elev": "float:24.15", "UtmZone": "str:80"}}}
+        #########################################################################################
+
