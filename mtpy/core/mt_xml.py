@@ -224,7 +224,7 @@ class XML_Config(object):
                                    
         
         self.Provenance = XML_element('Provenance', None, None,
-                                **{'CreatTime':XML_element('CreationTime', None, 
+                                **{'CreationTime':XML_element('CreationTime', None, 
                                                      datetime.datetime.strftime(
                                                      datetime.datetime.utcnow(), 
                                                      dt_fmt)),

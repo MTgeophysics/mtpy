@@ -174,8 +174,8 @@ class MT(object):
         
         upon setting utm coordinates are recalculated
         """
-        self.Site.location.latitude = latitude
-        self.Site.location.project_location2utm()
+        self.Site.Location.latitude = latitude
+        self.Site.Location.project_location2utm()
         
     def _set_lon(self, longitude):
         """
@@ -183,15 +183,15 @@ class MT(object):
         
         upon setting utm coordinates are recalculated
         """
-        self.Site.location.longitude = longitude
-        self.Site.location.project_location2utm()
+        self.Site.Location.longitude = longitude
+        self.Site.Location.project_location2utm()
         
         
     def _set_elev(self, elevation):
         """
         set elevation, should be input as meters
         """
-        self._elev = self.Site.location.elevation = elevation
+        self._elev = self.Site.Location.elevation = elevation
 
         
     def _set_east(self, easting):
@@ -200,8 +200,8 @@ class MT(object):
         
         upon setting lat and lon are recalculated
         """
-        self.Site.location.easting = easting
-        self.Site.location.project_location2ll()
+        self.Site.Location.easting = easting
+        self.Site.Location.project_location2ll()
         
     def _set_north(self, northing):
         """
@@ -209,8 +209,8 @@ class MT(object):
         
         upon setting lat and lon are recalculated
         """
-        self.Site.location.northing = northing
-        self.Site.location.project_location2ll()
+        self.Site.Location.northing = northing
+        self.Site.Location.project_location2ll()
     
         
     def _set_utm_zone(self, utm_zone):
@@ -219,8 +219,8 @@ class MT(object):
         
         upon setting lat and lon are recalculated
         """
-        self.Site.location.utm_zone = utm_zone
-        self.Site.location.project_location2ll()
+        self.Site.Location.utm_zone = utm_zone
+        self.Site.Location.project_location2ll()
         
     def _set_fn(self, filename):
         """
@@ -295,22 +295,22 @@ class MT(object):
     # get functions                         
     #==========================================================================    
     def _get_lat(self):
-        return self.Site.location.latitude
+        return self.Site.Location.latitude
 
     def _get_lon(self):
-        return self.Site.location.longitude
+        return self.Site.Location.longitude
         
     def _get_elev(self):
-        return self.Site.location.elevation
+        return self.Site.Location.elevation
         
     def _get_east(self):
-        return self.Site.location.easting
+        return self.Site.Location.easting
         
     def _get_north(self):
-        return self.Site.location.northing
+        return self.Site.Location.northing
     
     def _get_utm_zone(self):
-        return self.Site.location.utm_zone
+        return self.Site.Location.utm_zone
     
     def _get_fn(self):
         return self._fn
@@ -373,13 +373,50 @@ class MT(object):
         self.lat = edi_obj.lat
         self.lon = edi_obj.lon
         self.elev = edi_obj.elev
-        
-        
         self.Site.acquired_by = edi_obj.Header.acqby
         self.Site.survey = edi_obj.Header.loc
         self.Site.start_date = edi_obj.Header.acqdate
-        self.Site.location.datum = edi_obj.Header.datum
         self.Site.project = edi_obj.Header.project
+        self.Site.Location.datum = edi_obj.Header.datum
+        self.Site.Location.elev_units = edi_obj.Define_measurement.units
+        
+        # get information about different sensors
+        try:
+            for key in edi_obj.Define_measurement.meas_hx.__dict__.keys():
+                setattr(self.FieldNotes.magnetometer_hx,
+                        key, 
+                        edi_obj.Define_measurement.meas_hx.__dict__[key])
+        except AttributeError:
+            pass
+        try:
+            for key in edi_obj.Define_measurement.meas_hy.__dict__.keys():
+                setattr(self.FieldNotes.magnetometer_hy,
+                        key, 
+                        edi_obj.Define_measurement.meas_hy.__dict__[key])
+        except AttributeError:
+            pass
+        try:
+            for key in edi_obj.Define_measurement.meas_hz.__dict__.keys():
+                setattr(self.FieldNotes.magnetometer_hz,
+                        key, 
+                        edi_obj.Define_measurement.meas_hz.__dict__[key])
+        except AttributeError:
+            pass
+        try:
+            for key in edi_obj.Define_measurement.meas_ex.__dict__.keys():
+                setattr(self.FieldNotes.electrode_ex,
+                        key, 
+                        edi_obj.Define_measurement.meas_ex.__dict__[key])
+        except AttributeError:
+            pass
+        try:
+            for key in edi_obj.Define_measurement.meas_ey.__dict__.keys():
+                setattr(self.FieldNotes.electrode_ey,
+                        key, 
+                        edi_obj.Define_measurement.meas_ey.__dict__[key])
+        except AttributeError:
+            pass
+        
         
         self._Z = edi_obj.Z
         self._Tipper = edi_obj.Tipper
@@ -731,7 +768,7 @@ class Site(object):
         self.acquired_by = None
         self.end_date = None
         self.id = None
-        self.location = Location()
+        self.Location = Location()
         self.project = None
         self.run_list = None
         self.start_date = None
@@ -761,6 +798,8 @@ class Location(object):
         self.northing = None
         self.easting = None
         self.utm_zone = None
+        self.elev_units = 'm'
+        
         
         for key in kwargs.keys():
             setattr(self, key, kwargs[key])
@@ -847,12 +886,17 @@ class FieldNotes(object):
     """
     
     def __init__(self, **kwargs):
-        self.data_quality = DataQuality()
-        self.electrode = Instrument()
-        self.data_logger = Instrument()
-        self.magnetometer = Instrument()
-
+        null_emeas = MTedi.EMeasurement()
+        null_hmeas = MTedi.HMeasurement()
         
+        self.data_quality = DataQuality()
+        self.data_logger = Instrument()
+        self.electrode_ex = Instrument(**null_emeas.__dict__)
+        self.electrode_ey = Instrument(**null_emeas.__dict__)
+        self.magnetometer_hx = Instrument(**null_hmeas.__dict__)
+        self.magnetometer_hy = Instrument(**null_hmeas.__dict__)
+        self.magnetometer_hz = Instrument(**null_hmeas.__dict__)
+
         for key in kwargs.keys():
             setattr(self, key, kwargs[key])
             
