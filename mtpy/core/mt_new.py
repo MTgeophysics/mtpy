@@ -151,12 +151,15 @@ class MT(object):
         self.Site = Site()
         self.FieldNotes = FieldNotes()
         self.Provenance = Provenance()
+        self.Notes = MTedi.Information()
 
         self._Z = kwargs.pop('Z', MTz.Z())
         self._Tipper = kwargs.pop('Tipper', MTz.Tipper())
         self._rotation_angle = 0
+        self._fn = None
+        self._edi_obj = MTedi.Edi()
         
-        self._fn = self._set_fn(fn)
+        self.fn = fn
         
         self.pt = None
         self.zinv = None
@@ -237,6 +240,7 @@ class MT(object):
             not_fn = self._fn[os.path.basename(self._fn).find['.']:]
             raise MTex.MTpyError_file_handling('File '+\
                               'type {0} not supported yet.'.format(not_fn))
+            
     
     def _set_rotation_angle(self, theta_r):
         """
@@ -417,6 +421,8 @@ class MT(object):
         except AttributeError:
             pass
         
+        self.Notes = edi_obj.Info
+        
         
         self._Z = edi_obj.Z
         self._Tipper = edi_obj.Tipper
@@ -424,12 +430,14 @@ class MT(object):
         
         #--> make sure things are ordered from high frequency to low
         self._check_freq_order()
+#        
+#        #--> compute phase tensor
+#        self.pt = MTpt.PhaseTensor(z_object=self.Z)
+#        
+#        #--> compute invariants 
+#        self.zinv = MTinv.Zinvariants(z_object=self.Z)
         
-        #--> compute phase tensor
-        self.pt = MTpt.PhaseTensor(z_object=self.Z, freq=self.Z.freq)
-        
-        #--> compute invariants 
-        self.zinv = MTinv.Zinvariants(z_object=self.Z)
+        self._edi_obj = edi_obj
         
     #--> write edi file 
     def write_edi_file(self, new_fn=None, new_Z=None, new_Tipper=None):
@@ -454,24 +462,24 @@ class MT(object):
         """
         
         if new_Z is not None:
-            self.edi_object.Z = new_Z
+            self._edi_object.Z = new_Z
         else:
-            self.edi_object.Z = self._Z
+            self._edi_object.Z = self._Z
        
         if new_Tipper is not None:
-            self.edi_object.Tipper = new_Tipper
+            self._edi_object.Tipper = new_Tipper
         else:
-            self.edi_object.Tipper = self._Tipper
+            self._edi_object.Tipper = self._Tipper
             
-        self.edi_object.lat = self._lat
-        self.edi_object.lon = self._lon
-        self.edi_object.station = self.station
-        self.edi_object.zrot = self.rotation_angle
+        self._edi_object.lat = self._lat
+        self._edi_object.lon = self._lon
+        self._edi_object.station = self.station
+        self._edi_object.zrot = self.rotation_angle
         
         if new_fn is None:
             new_fn = self.fn[:-4]+'_RW'+'.edi'
             
-        self.edi_object.write_edi_file(new_edi_fn=new_fn)
+        self._edi_object.write_edi_file(new_edi_fn=new_fn)
         
         
     #--> check the order of frequencies
@@ -494,6 +502,18 @@ class MT(object):
                 self.Tipper.tipper = self.Tipper.tipper.copy()[::-1]
                 self.Tipper.tipper_err = self.Tipper.tipper_err.copy()[::-1]
                 self.Tipper.freq = self.Tipper.freq.copy()[::-1]
+                
+    def compute_phase_tensor(self):
+        """
+        Compute phase tensor components follwing Caldwell [2004].
+        
+        Returns
+        ------------
+            **pt_obj** : PhaseTensor object
+        """
+        
+        return MTpt.PhaseTensor(z_object=self.Z)
+        
                 
     def remove_distortion(self, num_freq=None):
         """
