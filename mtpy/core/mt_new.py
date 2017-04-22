@@ -374,16 +374,16 @@ class MT(object):
         self.lon = edi_obj.lon
         self.elev = edi_obj.elev
         
+        
         self.Site.acquired_by = edi_obj.Header.acqby
-        self.Site.location = edi_obj.Header.loc
+        self.Site.survey = edi_obj.Header.loc
         self.Site.start_date = edi_obj.Header.acqdate
         self.Site.location.datum = edi_obj.Header.datum
         self.Site.project = edi_obj.Header.project
-        self.Site.survey = edi_obj.Header.survey
         
-        self._Z = self.edi_obj.Z
-        self._Tipper = self.edi_obj.Tipper
-        self.station = self.edi_obj.station
+        self._Z = edi_obj.Z
+        self._Tipper = edi_obj.Tipper
+        self.station = edi_obj.station
         
         #--> make sure things are ordered from high frequency to low
         self._check_freq_order()
@@ -777,7 +777,7 @@ class Location(object):
     def _get_longitude(self):
         return self._longitude
     def _set_longitude(self, lon):
-        self._latitude = gis_tools.assert_lon_value( lon)
+        self._longitude = gis_tools.assert_lon_value( lon)
         
     longitude = property(fget=_get_longitude, 
                         fset=_set_longitude,

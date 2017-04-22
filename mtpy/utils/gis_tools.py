@@ -69,8 +69,7 @@ def assert_lat_value(latitude):
         lat_value = float(latitude)
         
     except TypeError:
-        print 'Latitude is None'
-        return 
+        return None
         
     except ValueError:
         lat_value = convert_position_str2float(latitude)
@@ -88,8 +87,7 @@ def assert_lon_value(longitude):
         lon_value = float(longitude)
         
     except TypeError:
-        print 'Longitude is None'
-        return 
+        return None
         
     except ValueError:
         lon_value = convert_position_str2float(longitude)
@@ -192,7 +190,7 @@ def project_point_ll2utm(lat, lon, datum='WGS84'):
     lon = assert_lon_value(lon)
     
     if lat is None or lon is None:
-        return
+        return None, None, None
     
     # get zone number, north and zone name
     zone_number, is_northern, utm_zone = get_utm_zone(lat, lon)
