@@ -158,6 +158,25 @@ class EdiCollection(object):
 
         return myax2
 
+    def display_on_image(self):
+        """
+        display/overlay the MT properties on a background geo-referenced map image
+        :return:
+        """
+        import examples.sandpit.plot_geotiff_imshow as plotegoimg
+
+        myax = plotegoimg.plot_geotiff(geofile='tests/data/PM_Gravity.tif', show=False)
+
+        margin= 0.02  # degree
+        myax.set_xlim((self.bound_box_dict['MinLon'] -margin, self.bound_box_dict['MaxLon']+margin))
+        myax.set_ylim((self.bound_box_dict['MinLat'] -margin, self.bound_box_dict['MaxLat'] + margin))
+
+        myax2 = self.geopdf.plot(ax=myax, figsize=(10, 6), marker='o', color='r', markersize=10)
+
+        plt.show()
+
+        return myax2
+
 
     def display_folium(self):
         # http://localhost:8888/notebooks/examples/notebooks/geopandas_MT_survey_sites.ipynb#Mapping-with-Folium
@@ -285,7 +304,9 @@ class EdiCollection(object):
 
         self.plot_stations(savefile='/e/tmp/edi_collection_test.jpg')
 
-        self.display_on_basemap()
+        #self.display_on_basemap()
+
+        self.display_on_image()
 
         #self.display_folium()
 
