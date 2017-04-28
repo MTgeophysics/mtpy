@@ -17,6 +17,7 @@ import geopandas as gpd
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import mtpy.core.mt as mt
+import mtpy.core.edi_collection 
 import numpy as np
 import pandas as pd
 
@@ -271,7 +272,7 @@ def create_ellipse_shp(csvfile, esize=0.03, target_epsg_code=None):
     return pdf
 
 
-def plot_geopdf(pdf, acsv, target_epsg_code, showfig=False):
+def plot_geopdf(pdf, bbox, acsv, target_epsg_code, showfig=False):
 
     if target_epsg_code is None:
         p = pdf
@@ -281,7 +282,8 @@ def plot_geopdf(pdf, acsv, target_epsg_code, showfig=False):
         # world = world.to_crs({'init': 'epsg:3395'})
         # world.to_crs(epsg=3395) would also work
 
-    bounds = p.total_bounds  # lat-lon bounds for this csv/pdf
+    # bounds = p.total_bounds  # lat-lon bounds for this csv dataframe
+    
     # plot and save
     jpg_fname = acsv.replace('.csv', '_epsg%s.jpg' % target_epsg_code)
     fig_title=os.path.basename(jpg_fname)
@@ -313,24 +315,19 @@ def plot_geopdf(pdf, acsv, target_epsg_code, showfig=False):
         # myax.set_xlim([140.2, 141.2])  #LieJunWang
         # myax.set_ylim([-20.8, -19.9])
 
-        # margin = 0.0
+        # myax.set_xlim([140, 150]) # GA-Vic
+        # myax.set_ylim([-39, -34])
         #
-        # xmin = (1-margin) * bounds[0]
-        # xmax = (1+margin) * bounds[2]
-        # ymin = (1-margin) * bounds[1]
-        # ymax = (1+margin) * bounds[3]
-        # myax.set_xlim([xmin, xmax])
-        # myax.set_ylim([ymin, ymax])
+        # myax.set_xlim([136.7, 137.0])  # 3D_MT_data_
+        # myax.set_ylim([-20.65, -20.35])
+        #
+        # myax.set_xlim([140.0, 144.5])  # WPJ
+        # myax.set_ylim([-23.5, -19.0])
 
-
-        myax.set_xlim([140, 150]) # GA-Vic
-        myax.set_ylim([-39, -34])
-
-        myax.set_xlim([136.7, 137.0])  # 3D_MT_data_
-        myax.set_ylim([-20.65, -20.35])
-
-        myax.set_xlim([140.0, 144.5])  # WPJ
-        myax.set_ylim([-23.5, -19.0])
+        # automatically adjust plot xy-scope
+        margin = 0.02  # degree
+        myax.set_xlim((bbox['MinLon'] - margin, bbox['MaxLon'] + margin))
+        myax.set_ylim((bbox['MinLat'] - margin, bbox['MaxLat'] + margin))
 
         myax.set_xlabel('Longitude')
         myax.set_ylabel('Latitude')
@@ -341,11 +338,17 @@ def plot_geopdf(pdf, acsv, target_epsg_code, showfig=False):
         myax.set_xlabel('East-West (KM)')
         myax.set_ylabel('North-South (KM)')
         myax.set_title(fig_title)
-        myax.set_xlim([400000, 1300000])
-        myax.set_ylim([5700000, 6200000])
 
-        myax.set_xlim([400000, 900000])
-        myax.set_ylim([7400000, 7900000])
+        # myax.set_xlim([400000, 1300000])
+        # myax.set_ylim([5700000, 6200000])
+        #
+        # myax.set_xlim([400000, 900000])
+        # myax.set_ylim([7400000, 7900000])
+
+        # automatically adjust plot xy-scope
+        margin = 2000  # meters
+        myax.set_xlim((bbox['MinLon'] - margin, bbox['MaxLon'] + margin))
+        myax.set_ylim((bbox['MinLat'] - margin, bbox['MaxLat'] + margin))
 
         xticks = myax.get_xticks() / 1000
         myax.set_xticklabels(xticks)
@@ -458,7 +461,7 @@ def create_tipper_imag_shp(csvfile, arr_size=0.03, target_epsg_code=None):
     return pdf
 
 
-def process_csv_folder(csv_folder, target_epsg_code=None):
+def process_csv_folder(csv_folder, bbox_dict, target_epsg_code=None):
     """
     process all *.csv files in a dir
     :param csv_folder:
@@ -478,13 +481,12 @@ def process_csv_folder(csv_folder, target_epsg_code=None):
 
         #tip_re_gdf = create_tipper_real_shp(acsv, target_epsg_code=target_epsg_code)
 
-        tip_im_gdf = create_tipper_imag_shp(acsv, target_epsg_code=target_epsg_code)
+        #tip_im_gdf = create_tipper_imag_shp(acsv, target_epsg_code=target_epsg_code)
 
-        #ellip_gdf = create_ellipse_shp(acsv, esize=0.003,target_epsg_code=target_epsg_code)
-
+        ellip_gdf = create_ellipse_shp(acsv, esize=0.003,target_epsg_code=target_epsg_code)
         # visualize and make image file output of the above 3 geopandas df.
 
-        #plot_geopdf(ellip_gdf, acsv, target_epsg_code)
+        plot_geopdf(ellip_gdf, bbox_dict, acsv, target_epsg_code)
 
     return
 # ==================================================================
@@ -503,20 +505,25 @@ if __name__ == "__main__":
 
     # filter the edi files here if desired, to get a subset:
     # edifiles2 = edifiles[0:-1:2]
-    # shp_maker = ShapeFilesCreator(edifiles, path2out)
-    # # create csv files
-    # ptdic = shp_maker.create_csv_files()  # dest_dir=path2out)
+    shp_maker = ShapeFilesCreator(edifiles, path2out)
+    ptdic = shp_maker.create_csv_files()  # dest_dir=path2out)    #  create csv files
 
     # print ptdic
     # print ptdic[ptdic.keys()[0]]
 
+    edisobj = mtpy.core.edi_collection.EdiCollection(edifiles)
+    bbox_dict = edisobj.bound_box_dict
+    print (bbox_dict)
     # shp_maker.create_mt_sites_shp()
 
     # create shapefiles and plots
     # epsg projection 4283 - gda94
-    process_csv_folder(path2out)  # , target_epsg_code will be default 4326?
+    process_csv_folder(path2out, bbox_dict)  # , target_epsg_code will be default 4326?
 
     # epsg projection 28354 - gda94 / mga zone 54
     # epsg projection 32754 - wgs84 / utm zone 54s
-    process_csv_folder(path2out, target_epsg_code=32754)
-    # process_csv_folder(path2out, target_epsg_code=3112) # GDA94/GALCC =3112
+
+    my_epsgcode = 32755 # GDA94/GALCC =3112
+    bbox_dict=edisobj.get_bounding_box(epsgcode=my_epsgcode)
+    print(bbox_dict)
+    process_csv_folder(path2out, bbox_dict, target_epsg_code=my_epsgcode)
