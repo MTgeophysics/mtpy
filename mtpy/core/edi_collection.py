@@ -1,6 +1,6 @@
 """
 Description:
-    To compute anc encaptutlate the properties of EDI file collection
+    To compute and encapsulate the properties of a set of EDI files
 
 Author: fei.zhang@ga.gov.au
 

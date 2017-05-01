@@ -272,7 +272,7 @@ def create_ellipse_shp(csvfile, esize=0.03, target_epsg_code=None):
     return pdf
 
 
-def plot_geopdf(pdf, bbox, acsv, target_epsg_code, showfig=False):
+def plot_geopdf(pdf, bbox, out_file_name, target_epsg_code, showfig=False):
 
     if target_epsg_code is None:
         p = pdf
@@ -285,7 +285,7 @@ def plot_geopdf(pdf, bbox, acsv, target_epsg_code, showfig=False):
     # bounds = p.total_bounds  # lat-lon bounds for this csv dataframe
     
     # plot and save
-    jpg_fname = acsv.replace('.csv', '_epsg%s.jpg' % target_epsg_code)
+    jpg_fname = out_file_name.replace('.csv', '_epsg%s.jpg' % target_epsg_code)
     fig_title=os.path.basename(jpg_fname)
     logger.info('saving figure to file %s',jpg_fname)
 
@@ -481,12 +481,13 @@ def process_csv_folder(csv_folder, bbox_dict, target_epsg_code=None):
 
         #tip_re_gdf = create_tipper_real_shp(acsv, target_epsg_code=target_epsg_code)
 
-        #tip_im_gdf = create_tipper_imag_shp(acsv, target_epsg_code=target_epsg_code)
+        tip_im_gdf = create_tipper_imag_shp(acsv, target_epsg_code=target_epsg_code)
 
-        ellip_gdf = create_ellipse_shp(acsv, esize=0.003,target_epsg_code=target_epsg_code)
+        #ellip_gdf = create_ellipse_shp(acsv, esize=0.003,target_epsg_code=target_epsg_code)
+
         # visualize and make image file output of the above 3 geopandas df.
-
-        plot_geopdf(ellip_gdf, bbox_dict, acsv, target_epsg_code)
+        my_gdf = tip_im_gdf
+        plot_geopdf(my_gdf, bbox_dict, acsv, target_epsg_code)
 
     return
 # ==================================================================
