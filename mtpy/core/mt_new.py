@@ -545,7 +545,7 @@ class MT(object):
         
         info_list = []
         # write previous information first
-        for key in self.Notes.__dict__.keys():
+        for key in sorted(self.Notes.__dict__.keys()):
             if key.lower() not in ['edi_lines', 'info_list', 'edi_fn']:
                 l_key = key.lower()
                 l_value = getattr(self.Notes, key)
@@ -586,6 +586,7 @@ class MT(object):
         """       
         
         define_meas = MTedi.DefineMeasurement()
+        define_meas.maxchan = 7
         define_meas.refelev = self.elev
         define_meas.reflat = self.lat
         define_meas.reflon = self.lon
