@@ -185,7 +185,6 @@ class ModEMPlotResponse(QtWidgets.QMainWindow):
         fn = str(fn_dialog.getOpenFileName(caption='Choose ModEM data file',
                                            filter='(*.dat);; (*.data)')[0])
         
-        print fn
                                        
         self.plot_response.data_fn = os.path.abspath(fn)
         self.dir_path = os.path.dirname(fn)

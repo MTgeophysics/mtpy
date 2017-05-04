@@ -251,13 +251,16 @@ class PlotResponses(QtGui.QWidget):
     
     def __init__(self, data_fn=None, resp_fn=None):
         super(PlotResponses, self).__init__()
-        self._data_fn = data_fn
-        self._resp_fn = resp_fn
+        
+        self.file_watcher = QtCore.QFileSystemWatcher()
+        self.file_watcher.fileChanged.connect(self.file_changed)        
         
         self.modem_data = None
         self.modem_resp = None
         
         self._modem_data_copy = None
+        
+        self.station = None
         
         self._plot_z = False
         self.plot_settings = PlotSettings()
@@ -269,7 +272,9 @@ class PlotResponses(QtGui.QWidget):
         self.ax_list = None
         
         self.setup_ui()
-    
+        
+        self._data_fn = data_fn
+        self._resp_fn = resp_fn
     #------------------------------------------------
     # make the data_fn and resp_fn properties so that if they are reset
     # they will read in the data to a new modem.Data object
@@ -285,6 +290,7 @@ class PlotResponses(QtGui.QWidget):
     @data_fn.setter
     def data_fn(self, data_fn):
         self._data_fn = data_fn
+        self.file_watcher.addPath(self._data_fn)
         
         # create new modem data object
         self.modem_data = modem.Data()
@@ -302,8 +308,11 @@ class PlotResponses(QtGui.QWidget):
         for station in station_list:
             self.list_widget.addItem(station)
             
-        self.station = station_list[0]
+        if self.station is None:
+            self.station = station_list[0]
+            
         self.plot()
+            
         
     @property
     def resp_fn(self):
@@ -400,6 +409,14 @@ class PlotResponses(QtGui.QWidget):
         """
         self.station = str(widget_item.text()) 
         self.plot()
+        
+    def file_changed(self):
+        """
+        data file changed outside the program reload it
+        """
+        
+        print '{0} changed'.format(self.data_fn)
+        self.data_fn = self._data_fn
         
     def save_edits(self):
         """
