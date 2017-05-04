@@ -135,6 +135,12 @@ class SiteTab(QtWidgets.QWidget):
         self.elev_units_combo.addItems(['km', 'm', 'ft', 'miles'])
         self.elev_units_combo.activated[str].connect(self.set_elev_units)
         
+        self.coord_label = QtWidgets.QLabel('Z and T Coordinate System')
+        self.coord_label.setFont(label_font)
+        self.coord_combo = QtWidgets.QComboBox()
+        self.coord_combo.addItems(['Geographic North', 'Geomagnetic North'])
+        self.coord_combo.activated[str].connect(self.set_coord)
+        
         self.dec_label = QtWidgets.QLabel('Geomagnetic Declination (deg)')
         self.dec_label.setFont(label_font)
         self.dec_edit = QtWidgets.QLineEdit()
@@ -161,6 +167,7 @@ class SiteTab(QtWidgets.QWidget):
         layout.addRow(self.lat_label, self.lat_edit)
         layout.addRow(self.lon_label, self.lon_edit)
         layout.addRow(self.datum_label, self.datum_combo)
+        layout.addRow(self.coord_label, self.coord_combo)
         layout.addRow(self.elev_label, self.elev_edit)
         layout.addRow(self.elev_units_label, self.elev_units_combo)
         layout.addRow(self.acq_by_label, self.acq_by_edit)
@@ -203,6 +210,16 @@ class SiteTab(QtWidgets.QWidget):
     def set_datum(self, text):
         self.Site.Location.datum = text
         
+    def set_dec(self):
+        try:
+            self.Site.Location.declination = float(self.dec_edit.text())
+            self.dec_edit.setText('{0:.3f}'.format(self.Site.Location.declination))
+        except ValueError:
+            self.Site.Location.declination = 0.0
+            self.dec_edit.setText('{0:.3f}'.format(self.Site.Location.declination))
+        
+    def set_coord(self, text):
+        self.Site.Location.coordinate_system = text
         
         
         
