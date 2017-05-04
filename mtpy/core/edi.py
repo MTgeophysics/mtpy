@@ -1152,6 +1152,20 @@ class Information(object):
         elif self.edi_fn is not None or self.edi_lines is not None:
             self.get_info_list()
             
+        # make info items attributes of Information
+        for ll in self.info_list:
+            l_list = [None, '']
+            if ll.find(':') > 0:
+                l_list = ll.split(':')
+            elif ll.find('=') > 0:
+                l_list = ll.split('=')
+            else:
+                l_list[0] = ll
+            if l_list[0] is not None:
+                l_key = l_list[0].replace('.', '_')
+                l_value = l_list[1].strip()
+                setattr(self, l_key, l_value)
+            
         if self.info_list is None:
             print "Could not read information"
             return
@@ -1163,7 +1177,6 @@ class Information(object):
         
         if info_list is not None:
             self.info_list = self._validate_info_list(info_list)
-        
             
         info_lines = ['>INFO\n\n']
         for line in self.info_list:

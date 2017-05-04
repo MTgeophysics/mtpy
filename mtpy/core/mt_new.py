@@ -152,6 +152,7 @@ class MT(object):
         self.FieldNotes = FieldNotes()
         self.Provenance = Provenance()
         self.Notes = MTedi.Information()
+        self.Processing = Processing()
 
         self._Z = kwargs.pop('Z', MTz.Z())
         self._Tipper = kwargs.pop('Tipper', MTz.Tipper())
@@ -160,9 +161,6 @@ class MT(object):
         self._edi_obj = MTedi.Edi()
         
         self.fn = fn
-        
-        self.pt = None
-        self.zinv = None
         
         #provide key words to fill values if an edi file does not exist
         for key in kwargs.keys():
@@ -235,7 +233,7 @@ class MT(object):
             return 
             
         if self._fn.lower().endswith('.edi'):
-            self._read_edi_file()
+            self.read_edi_file()
         else:
             not_fn = self._fn[os.path.basename(self._fn).find['.']:]
             raise MTex.MTpyError_file_handling('File '+\
@@ -270,12 +268,6 @@ class MT(object):
         
         self._Z = z_object
         self._Z._compute_res_phase()
-        
-        #--> compute phase tensor
-        self.pt = MTpt.PhaseTensor(z_object=self._Z, freq=self._Z.freq)
-        
-        #--> compute invariants 
-        self.zinv = MTinv.Zinvariants(z_object=self._Z) 
         
     def _set_Tipper(self, t_object):
         """
@@ -330,6 +322,9 @@ class MT(object):
         
     def _get_station(self):
         return self.Site.id
+    
+    def _get_pt(self):
+        return MTpt.PhaseTensor(z_object=self.Z)
     #==========================================================================
     # set properties                          
     #==========================================================================
@@ -361,12 +356,14 @@ class MT(object):
     Tipper = property(_get_Tipper, _set_Tipper, doc="Tipper object")
     
     station = property(_get_station, _set_station, doc="Station name")
+    
+    pt = property(_get_pt, doc="""Phase Tensor, can only get, not set""")
                                        
     #==========================================================================
     #  read in files   
     #==========================================================================
     #--> read in edi file                                                    
-    def _read_edi_file(self):
+    def read_edi_file(self):
         """
         read in edi file and set attributes accordingly
         
@@ -383,6 +380,7 @@ class MT(object):
         self.Site.project = edi_obj.Header.project
         self.Site.Location.datum = edi_obj.Header.datum
         self.Site.Location.elev_units = edi_obj.Define_measurement.units
+        self.Site.Location.coordinate_system = edi_obj.Header.coordinate_system
         
         # get information about different sensors
         try:
@@ -421,21 +419,46 @@ class MT(object):
         except AttributeError:
             pass
         
+        # get info 
         self.Notes = edi_obj.Info
+        try: 
+            self.FieldNotes.magnetometer_hx.id = self.Notes.hx
+        except AttributeError:
+            pass
+        try: 
+            self.FieldNotes.magnetometer_hy.id = self.Notes.hy
+        except AttributeError:
+            pass
+        try: 
+            self.FieldNotes.magnetometer_hz.id = self.Notes.hz
+        except AttributeError:
+            pass
         
+        try:
+            self.FieldNotes.magnetometer_hx.type = self.Notes.b_instrument_type
+            self.FieldNotes.magnetometer_hy.type = self.Notes.b_instrument_type
+            self.FieldNotes.magnetometer_hz.type = self.Notes.b_instrument_type
+        except AttributeError:
+            pass
         
-        self._Z = edi_obj.Z
-        self._Tipper = edi_obj.Tipper
+        try:
+            self.FieldNotes.electrode_ex.type = self.Notes.e_instrument_type
+            self.FieldNotes.electrode_ey.type = self.Notes.e_instrument_type
+        except AttributeError:
+            pass
+        
+        try:
+            self.FieldNotes.data_logger = self.Notes.b_logger_type
+        except AttributeError:
+            pass
+                
+        
+        self.Z = edi_obj.Z
+        self.Tipper = edi_obj.Tipper
         self.station = edi_obj.station
         
         #--> make sure things are ordered from high frequency to low
         self._check_freq_order()
-#        
-#        #--> compute phase tensor
-#        self.pt = MTpt.PhaseTensor(z_object=self.Z)
-#        
-#        #--> compute invariants 
-#        self.zinv = MTinv.Zinvariants(z_object=self.Z)
         
         self._edi_obj = edi_obj
         
@@ -461,26 +484,170 @@ class MT(object):
                            a new Tipper object to be written
         """
         
+        # get header information, mostly from site
+        self._edi_obj = MTedi.Edi()
+        self._edi_obj.Header = self._get_edi_header()
+        
+        # get information 
+        self._edi_obj.Info = MTedi.Information()
+        self._edi_obj.Info.info_list = self._get_edi_info_list()
+        
+        # get define measurement
+        self._edi_obj.Define_measurement = self._get_edi_define_measurement()
+        
+        # get mtsec
+        self._edi_obj.Data_sect = self._get_edi_data_sect()
+        
         if new_Z is not None:
-            self._edi_object.Z = new_Z
+            self._edi_obj.Z = new_Z
         else:
-            self._edi_object.Z = self._Z
+            self._edi_obj.Z = self._Z
        
         if new_Tipper is not None:
-            self._edi_object.Tipper = new_Tipper
+            self._edi_obj.Tipper = new_Tipper
         else:
-            self._edi_object.Tipper = self._Tipper
+            self._edi_obj.Tipper = self._Tipper
             
-        self._edi_object.lat = self._lat
-        self._edi_object.lon = self._lon
-        self._edi_object.station = self.station
-        self._edi_object.zrot = self.rotation_angle
+        self._edi_obj.zrot = self.rotation_angle
         
         if new_fn is None:
             new_fn = self.fn[:-4]+'_RW'+'.edi'
             
-        self._edi_object.write_edi_file(new_edi_fn=new_fn)
+        self._edi_obj.write_edi_file(new_edi_fn=new_fn)
         
+    def _get_edi_header(self):
+        """
+        make an edi header class
+        """
+        
+        header = MTedi.Header()
+        header.acqby = self.Site.acquired_by
+        header.acqdate = self.Site.start_date
+        header.coordinate_system = self.Site.Location.coordinate_system
+        header.dataid = self.Site.id
+        header.datum = self.Site.Location.datum
+        header.elev = self.elev
+        header.fileby = self.Site.acquired_by
+        header.lat = self.lat
+        header.loc = self.Site.project
+        header.lon = self.lon
+        header.project = self.Site.project
+        header.survey = self.Site.survey
+        header.units = self.Site.Location.elev_units
+        
+        return header
+        
+    #--> get information list for edi
+    def _get_edi_info_list(self):
+        """
+        get the information for an edi file
+        """
+        
+        info_list = []
+        # write previous information first
+        for key in self.Notes.__dict__.keys():
+            if key.lower() not in ['edi_lines', 'info_list', 'edi_fn']:
+                l_key = key.lower()
+                l_value = getattr(self.Notes, key)
+                info_list.append('{0} = {1}'.format(l_key, l_value))
+        
+        # get instrument information
+        for key in ['ex', 'ey', 'hx', 'hy', 'hz']:
+            if 'e' in key:
+                key = 'electrode_{0}'.format(key)
+            elif 'h' in key:
+                key = 'magnetometer_{0}'.format(key)
+                
+            instrument_obj = getattr(self.FieldNotes, key) 
+            for mkey in ['manufacturer', 'id', 'type']:
+                l_key = '{0}.{1}'.format(key, mkey)
+                line = '{0} = {1}'.format(l_key.lower(), 
+                                          getattr(instrument_obj, mkey))
+                info_list.append(line)
+                
+        # get processing information  
+        for p_key in self.Processing.__dict__.keys():
+            if p_key.lower() == 'software':
+                for s_key in self.Processing.Software.__dict__.keys():
+                    l_key = 'processing.software.{0}'.format(s_key)
+                    l_value = getattr(self.Processing.Software, s_key)
+                    info_list.append('{0} = {1}'.format(l_key.lower(), l_value))
+            else:
+                l_key = 'processing.{0}'.format(p_key)
+                l_value = getattr(self.Processing, p_key)
+                info_list.append('{0} = {1}'.format(l_key, l_value))
+            
+        return info_list
+    
+    # get edi define measurement
+    def _get_edi_define_measurement(self):
+        """
+        get define measurement block for an edi file
+        """       
+        
+        define_meas = MTedi.DefineMeasurement()
+        define_meas.refelev = self.elev
+        define_meas.reflat = self.lat
+        define_meas.reflon = self.lon
+        define_meas.reftype = self.Site.Location.coordinate_system
+        define_meas.units = self.Site.Location.elev_units
+        
+        define_meas.meas_ex = MTedi.EMeasurement()
+        for key in define_meas.meas_ex._kw_list:
+            setattr(define_meas.meas_ex,
+                    key, 
+                    getattr(self.FieldNotes.electrode_ex, key))
+        
+        define_meas.meas_ey = MTedi.EMeasurement()
+        for key in define_meas.meas_ey._kw_list:
+            setattr(define_meas.meas_ey,
+                    key, 
+                    getattr(self.FieldNotes.electrode_ey, key))
+            
+        define_meas.meas_hx = MTedi.HMeasurement()
+        for key in define_meas.meas_hx._kw_list:
+            setattr(define_meas.meas_hx,
+                    key, 
+                    getattr(self.FieldNotes.magnetometer_hx, key))
+ 
+        define_meas.meas_hy = MTedi.HMeasurement()
+        for key in define_meas.meas_hy._kw_list:
+            setattr(define_meas.meas_hy,
+                    key, 
+                    getattr(self.FieldNotes.magnetometer_hy, key)) 
+            
+        if np.all(self.Tipper.tipper == 0) == False:    
+            define_meas.meas_hz = MTedi.HMeasurement()
+            for key in define_meas.meas_hz._kw_list:
+                setattr(define_meas.meas_hz,
+                        key, 
+                        getattr(self.FieldNotes.magnetometer_hz, key))
+            
+        return define_meas
+    
+    def _get_edi_data_sect(self):
+        """
+        get mt data section for edi file
+        """
+        
+        sect = MTedi.DataSection()
+        sect.data_type = 'MT'
+        sect.nfreq = self.Z.z.shape[0]
+        sect.sectid = self.station
+        nchan = 5
+        if np.all(self.Tipper.tipper == 0) == True:
+            nchan = 4
+        sect.nchan = nchan
+        sect.maxblks = 999
+        sect.ex = self.FieldNotes.electrode_ex.id
+        sect.ey = self.FieldNotes.electrode_ey.id
+        sect.hx = self.FieldNotes.magnetometer_hx.id
+        sect.hy = self.FieldNotes.magnetometer_hy.id
+        if np.all(self.Tipper.tipper == 0) == False:
+            sect.hz = self.FieldNotes.magnetometer_hz.id
+            
+        return sect
+            
         
     #--> check the order of frequencies
     def _check_freq_order(self):
@@ -502,19 +669,7 @@ class MT(object):
                 self.Tipper.tipper = self.Tipper.tipper.copy()[::-1]
                 self.Tipper.tipper_err = self.Tipper.tipper_err.copy()[::-1]
                 self.Tipper.freq = self.Tipper.freq.copy()[::-1]
-                
-    def compute_phase_tensor(self):
-        """
-        Compute phase tensor components follwing Caldwell [2004].
         
-        Returns
-        ------------
-            **pt_obj** : PhaseTensor object
-        """
-        
-        return MTpt.PhaseTensor(z_object=self.Z)
-        
-                
     def remove_distortion(self, num_freq=None):
         """
         remove distortion following Bibby et al. [2005].
@@ -767,8 +922,8 @@ class Site(object):
     aqcuired_by       string       name of company or person whom aqcuired the
                                    data.
     id                string       station name
-    location          object       Holds location information, lat, lon, elev
-                      Location     datum, easting, northing  
+    Location          object       Holds location information, lat, lon, elev
+                      Location     datum, easting, northing see Location class  
     start_date        string       YYYY-MM-DD start date of measurement
     end_date          string       YYYY-MM-DD end date of measurement
     year_collected    string       year data collected
@@ -819,6 +974,7 @@ class Location(object):
         self.easting = None
         self.utm_zone = None
         self.elev_units = 'm'
+        self.coordinate_system = 'Geographic North'
         
         
         for key in kwargs.keys():
@@ -1158,7 +1314,7 @@ class Processing(object):
     """    
     
     def __init__(self, **kwargs):
-        self.software = Software
+        self.Software = Software()
         self.author = None
         self.organization = None
         self.organization_url = None
