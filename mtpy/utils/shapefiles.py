@@ -1527,10 +1527,10 @@ if __name__ == "__main__":
         create_phase_tensor_shpfiles(
             sys.argv[1],
             sys.argv[2],
-            proj=None,
-            ellipse_size=0.10,
+            proj='WGS84', #proj=None,
+            ellipse_size=6000,   # degree of metres. 1deg=100KM
             every_site=1)  # unprojected
-        # create_phase_tensor_shpfiles(sys.argv[1], sys.argv[2], proj='WGS84',
+        # create_phase_tensor_shpfiles(sys.argv[1], sys.argv[2], ,
         # ellipse_size=3000, every_site=2) # projected into UTM coordinate
 
         # create_tipper_shpfiles(sys.argv[1],sys.argv[2])

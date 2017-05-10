@@ -110,7 +110,7 @@ class ShapeFilesCreator(object):
             dest_dir = self.outputdir
 
         # summary csv file
-        csvfname = os.path.join(dest_dir, "phase_tensor_tipper.csv")
+        csvfname = os.path.join(dest_dir, "phase_tensor.csv")
 
         pt_dict = {}
 
@@ -481,12 +481,12 @@ def process_csv_folder(csv_folder, bbox_dict, target_epsg_code=None):
 
         #tip_re_gdf = create_tipper_real_shp(acsv, target_epsg_code=target_epsg_code)
 
-        tip_im_gdf = create_tipper_imag_shp(acsv, target_epsg_code=target_epsg_code)
+        #tip_im_gdf = create_tipper_imag_shp(acsv, target_epsg_code=target_epsg_code)
 
-        #ellip_gdf = create_ellipse_shp(acsv, esize=0.003,target_epsg_code=target_epsg_code)
+        ellip_gdf = create_ellipse_shp(acsv, esize=0.06,target_epsg_code=target_epsg_code)
 
         # visualize and make image file output of the above 3 geopandas df.
-        my_gdf = tip_im_gdf
+        my_gdf = ellip_gdf
         plot_geopdf(my_gdf, bbox_dict, acsv, target_epsg_code)
 
     return
@@ -524,7 +524,8 @@ if __name__ == "__main__":
     # epsg projection 28354 - gda94 / mga zone 54
     # epsg projection 32754 - wgs84 / utm zone 54s
 
-    my_epsgcode = 32755 # GDA94/GALCC =3112
-    bbox_dict=edisobj.get_bounding_box(epsgcode=my_epsgcode)
-    print(bbox_dict)
-    process_csv_folder(path2out, bbox_dict, target_epsg_code=my_epsgcode)
+    for my_epsgcode in [32754,]:  #[3112, 32755]:   # 32754, 28355]:
+        #my_epsgcode = 32755 # GDA94/GALCC =3112
+        bbox_dict=edisobj.get_bounding_box(epsgcode=my_epsgcode)
+        print(bbox_dict)
+        process_csv_folder(path2out, bbox_dict, target_epsg_code=my_epsgcode)
