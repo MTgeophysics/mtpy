@@ -82,7 +82,6 @@ python mtpy/imaging/modem_plot_vertical_slice.py /e/Data/Modeling/Isa/100hs_flat
 python mtpy/utils/shapefiles_creator.py /e/Data/MT_Datasets/WenPingJiang_EDI /e/Data/MT_Datasets/WenPingJiang_SHP
 python mtpy/utils/shapefiles_creator.py /e/Data/GA_Works/E_Data_MT_Datasets/GA_UA_edited_10s-10000s /e/Data/GA_Works/E_Data_MT_Datasets/GA_UA_edited_10s-10000s_SHP
 
-
 # EDI collection (surveys) properties
 python mtpy/core/edi_collection.py tests/data/edifiles/
 python mtpy/core/edi_collection.py examples/data/edi2/

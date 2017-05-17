@@ -571,6 +571,7 @@ class MT(object):
         return new_z_obj
 
     def interpolate(self, new_freq_array, bounds_error=True):
+    #def interpolate(self, new_freq_array, bounds_error=False):
         """
         Interpolate the impedance tensor onto different frequencies
 
@@ -624,6 +625,8 @@ class MT(object):
         # check the bounds of the new frequency array
         if bounds_error:
             if self.Z.freq.min() > new_freq_array.min():
+                print self.Z.freq.min()
+                print new_freq_array.min()
                 raise ValueError('New frequency minimum of {0:.5g}'.format(new_freq_array.min()) +
                                  ' is smaller than old frequency minimum of {0:.5g}'.format(self.Z.freq.min()) +
                                  '.  The new frequency range needs to be within the ' +

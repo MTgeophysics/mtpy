@@ -26,6 +26,23 @@ from mtpy.utils.mtpylog import MtPyLog
 logger = MtPyLog().get_mtpy_logger(__name__)
 logger.setLevel(logging.DEBUG)
 
+def is_it_in(anum, aseq):
+    """
+    check if anum is in asequence by a small tolerance
+    :param anum:
+    :param aseq:
+    :return:
+    """
+
+    tolerance = 0.00001
+
+    for an_number in aseq:
+        if abs(anum-an_number)< tolerance:
+            return True
+        else:
+            pass
+
+    return False
 
 class EdiCollection(object):
     """
@@ -45,6 +62,9 @@ class EdiCollection(object):
         logger.info("number of edi files in this collection: %s",
                     len(self.edifiles))
         assert len(self.edifiles) > 0
+
+        self.num_of_edifiles = len(self.edifiles)  # number of stations
+        print ("number of stations/edifiles = %s" % self.num_of_edifiles )
 
         self.ptol = ptol
 
@@ -85,11 +105,30 @@ class EdiCollection(object):
 
         all_periods = 1.0 / np.array(sorted(self.all_frequencies, reverse=True))
 
-        logger.debug("Type of all_periods %s", type(all_periods))
+        #logger.debug("Type of the all_periods %s", type(all_periods))
         logger.info("Number of MT Periods: %s", len(all_periods))
         logger.debug(all_periods)
 
         return all_periods
+
+    def get_period_stats(self):
+        """
+        check the presence of each period in all edi files
+        :return:
+        """
+        adict={}
+        for aper  in self.all_periods:
+            afreq = 1.0/aper
+            acount=0
+            for mt_obj in self.mt_obj_list:
+                #if afreq in mt_obj.Z.freq:
+                if is_it_in(afreq, mt_obj.Z.freq):
+                    acount= acount+1
+            adict.update({aper:acount})
+            #print (aper, acount)
+
+        return adict
+
 
 
     def create_mt_station_gdf(self, outshpfile=None):
@@ -183,7 +222,6 @@ class EdiCollection(object):
         # conda/pip install folium geojson
         # http://stackoverflow.com/questions/36969991/folium-map-not-displaying
        # https://github.com/python-visualization/folium
-
 
         import folium
 
@@ -299,6 +337,13 @@ class EdiCollection(object):
         """
         print (len(self.all_periods), 'unique periods (s)', self.all_periods)
         print (len(self.all_frequencies), 'unique frequencies (Hz)', self.all_frequencies)
+
+        mydict = self.get_period_stats()
+
+        mydict_ordered = sorted(mydict.items(), key=lambda value: value[1], reverse=True)
+        for apair in mydict_ordered:
+            print (apair)
+
 
         print (self.bound_box_dict)
 

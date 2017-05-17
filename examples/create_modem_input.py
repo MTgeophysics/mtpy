@@ -9,6 +9,10 @@ topography.
 USAGE example:
     python examples/create_modem_input.py tests/data/edifiles/ examples/etopo1.asc /e/tmp/modem_inputs/
 
+    python examples/create_modem_input.py /e/Data/MT_Datasets/WenPingJiang_EDI
+    /e/Data/MT_Datasets/concurry_edi_topo/AussieContinent_etopo1.asc /e/tmp/WenPingJiang
+
+
 Developed by
     Alison.Kirkby@ga.gov.au
     Fei.Zhang@ga.gov.au
@@ -21,6 +25,7 @@ import sys
 import glob
 import mtpy.core.edi as mtedi
 import mtpy.modeling.modem as mtmn
+from mtpy.core.edi_collection import EdiCollection
 
 if __name__=='__main__':
 
@@ -37,6 +42,7 @@ if __name__=='__main__':
 
     # epsg to project to. Google epsg 'your projection'
     epsg_code = 28354
+    epsg_code = 3112
 
     edi_list = glob.glob(edipath+'/*.edi')
 
@@ -46,9 +52,13 @@ if __name__=='__main__':
 
     # period list (can take periods from one of the edi files, or just specify
     # periods directly using the logspace function (commented out))
-    eo = mtedi.Edi(edi_list[0])  # this may miss some periods?
-    period_list = 1. / eo.Z.freq
-    #period_list = np.logspace(-3,3)
+
+    edisObj = EdiCollection(edi_list)
+
+    period_list=edisObj.all_periods  #filtered list of periods ?
+    #[:-23]  # slice ?
+    # eo = mtedi.Edi(edi_list[0])  # this may miss some periods?
+    # period_list = 1. / eo.Z.freq # period_list = np.logspace(-3,3)
 
     datob = mtmn.Data(edi_list=edi_list,
                    inv_mode='2',
