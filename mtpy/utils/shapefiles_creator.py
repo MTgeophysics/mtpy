@@ -103,7 +103,7 @@ class ShapeFilesCreator(object):
 
     def create_csv_files(self, dest_dir=None):
         """
-        create csv from the shapefiles.py method
+        create csv file
         :return:
         """
         if dest_dir is None:

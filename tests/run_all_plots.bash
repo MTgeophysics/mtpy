@@ -74,7 +74,7 @@ python examples/modem_plot_models.py ./examples/data/ModEM_files/VicSynthetic07 
 
 python examples/modem_plot_models.py /e/Data/Modeling/Isa/100hs_flat_BB/
 python examples/modem_plot_models.py /e/Data/Modeling/Isa/100hs_flat_BB/ Response
-python examples/modem_plot_models.py /e/Data/Modeling/Isa/100hs_flat_BB/ DepthSlice
+python exot_models.py /e/Data/Modeling/Isa/100hs_flat_BB/ DepthSlice
 
 python mtpy/imaging/modem_plot_vertical_slice.py /e/Data/Modeling/Isa/100hs_flat_BB/Isa_run3_NLCG_049.dat /e/Data/Modeling/Isa/100hs_flat_BB/Isa_run3_NLCG_049.rho
 
@@ -97,6 +97,15 @@ python mtpy/core/edi_collection.py /e/Data/MT_Datasets/75099_Youanmi/EDI_Files_e
 python mtpy/core/edi_collection.py /e/Data/MT_Datasets/75099_Youanmi/EDI_Files_edited/LP_edi_edited/YML123/
 
 
-# the below datasets spit out a lot of messages like "Need to input frequency list", for unknow reasons
-python mtpy/core/edi_collection.py /e/Data/MT_Datasets/3D_MT_data_edited_fromDuanJM
-python mtpy/core/edi_collection.py /e/Data/MT_Datasets/E_Data_Modelling_Isa/EDI_edited_10Hz_1000s
+# the below datasets spit out a lot of messages like "Need to input frequency list", for unknown reasons
+#python mtpy/core/edi_collection.py /e/Data/MT_Datasets/3D_MT_data_edited_fromDuanJM
+#python mtpy/core/edi_collection.py /e/Data/MT_Datasets/E_Data_Modelling_Isa/EDI_edited_10Hz_1000s
+
+# create csv files
+python mtpy/core/edi_collection.py /k/MTPY_TEST/3D_MT_data_edited_fromDuanJM/ /k/tmp_mtpy_output/
+python mtpy/core/edi_collection.py /k/MTPY_TEST/GA_UA_edited_10s-10000s/ /k/tmp_mtpy_output/
+
+# generate inputs for MODEM
+python examples/create_modem_input.py /k/MTPY_TEST/GA_UA_edited_10s-10000s/ /k/MTPY_TEST/AussieContinent_etopo1.asc /k/tmp_mtpy_output/GA_UA_edited_10s-10000s
+python examples/create_modem_input.py /k/MTPY_TEST/3D_MT_data_edited_fromDuanJM/ /k/MTPY_TEST/AussieContinent_etopo1.asc /k/tmp_mtpy_output/3D_MT_data_edited_fromDuanJM/
+

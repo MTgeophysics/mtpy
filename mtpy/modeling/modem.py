@@ -807,9 +807,12 @@ class Data(object):
 
             # interpolate each station onto the period list
             # check bounds of period list
+
             interp_periods = self.period_list[np.where(
                 (self.period_list >= 1. / mt_obj.Z.freq.max()) &
                 (self.period_list <= 1. / mt_obj.Z.freq.min()))]
+
+            print(mt_obj.station, interp_periods)
 
             # if specified, apply a buffer so that interpolation doesn't
             # stretch too far over periods

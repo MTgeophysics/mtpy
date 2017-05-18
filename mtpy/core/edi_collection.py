@@ -1,10 +1,10 @@
 """
 Description:
-    To compute and encapsulate the properties of a set of EDI files
+To compute and encapsulate the properties of a set of EDI files
 
 Author: fei.zhang@ga.gov.au
 
-Date: 2017-04-20
+InitDate: 2017-04-20
 """
 
 from __future__ import print_function
@@ -111,10 +111,10 @@ class EdiCollection(object):
 
         return all_periods
 
-    def get_period_stats(self):
+    def get_periods_by_stats(self, percentage=50.0):
         """
-        check the presence of each period in all edi files
-        :return:
+        check the presence of each period in all edi files, keep a list of periods which are at least percentage present
+        :return: a list of periods which are present in at least percentage edi files
         """
         adict={}
         for aper  in self.all_periods:
@@ -124,10 +124,19 @@ class EdiCollection(object):
                 #if afreq in mt_obj.Z.freq:
                 if is_it_in(afreq, mt_obj.Z.freq):
                     acount= acount+1
-            adict.update({aper:acount})
-            #print (aper, acount)
 
-        return adict
+            if (100.0*acount)/self.num_of_edifiles >= percentage:
+                adict.update({aper:acount})
+                #print (aper, acount)
+            else:
+                logger.info("Period %s is ignored", aper)
+
+        mydict_ordered = sorted(adict.items(), key=lambda value: value[1], reverse=True)
+        # for apair in mydict_ordered:
+        #     print (apair)
+
+        selected_periods = [pc[0] for pc in mydict_ordered]
+        return selected_periods
 
 
 
@@ -217,29 +226,9 @@ class EdiCollection(object):
         return myax2
 
 
-    def display_folium(self):
-        # http://localhost:8888/notebooks/examples/notebooks/geopandas_MT_survey_sites.ipynb#Mapping-with-Folium
-        # conda/pip install folium geojson
-        # http://stackoverflow.com/questions/36969991/folium-map-not-displaying
-       # https://github.com/python-visualization/folium
-
-        import folium
-
-        mapa = folium.Map([-30.0, 149.0], zoom_start=4, tiles='cartodbpositron')
-        myshpf = self.geopdf
-        myshp2json = myshpf.geometry.to_json()
-
-        points = folium.features.GeoJson(myshp2json)
-        mapa.add_children(points)
-
-        mapa
-
-        return
-
-
-    def create_csv_files(self, dest_dir=None):
+    def create_csv_files_moved(self, dest_dir=None):
         """
-        create csv from the shapefiles.py method
+        create csv moved/copied to shapefiles_creator.py
         :return:
         """
         if dest_dir is None:
@@ -338,13 +327,6 @@ class EdiCollection(object):
         print (len(self.all_periods), 'unique periods (s)', self.all_periods)
         print (len(self.all_frequencies), 'unique frequencies (Hz)', self.all_frequencies)
 
-        mydict = self.get_period_stats()
-
-        mydict_ordered = sorted(mydict.items(), key=lambda value: value[1], reverse=True)
-        for apair in mydict_ordered:
-            print (apair)
-
-
         print (self.bound_box_dict)
 
         self.plot_stations(savefile='/e/tmp/edi_collection_test.jpg')
@@ -377,18 +359,19 @@ if __name__ == "__main__":
         argv1 = sys.argv[1]
         if os.path.isdir(argv1):
             edilist = glob.glob(argv1+'/*.edi')
+            assert(len(edilist) > 0 ) # must has edi files
             obj=EdiCollection(edilist)
+
         elif os.path.isfile(argv1) and argv1.endswith('.edi'):
             obj=EdiCollection(sys.argv[1:])  # assume input is a list of EDI files
         else:
             pass
 
-        obj.show_prop()
-
-        print(obj.get_bounding_box(epsgcode=28353))
-
-
-        obj.create_mt_station_gdf(outshpfile='/e/tmp/edi_collection_test.shp')
+        # obj.show_prop()
+        #
+        # print(obj.get_bounding_box(epsgcode=28353))
+        #
+        # obj.create_mt_station_gdf(outshpfile='/e/tmp/edi_collection_test.shp')
 
         #########################################################################################
         # how to quick check the shape file created
@@ -405,3 +388,9 @@ if __name__ == "__main__":
         #                  "Elev": "float:24.15", "UtmZone": "str:80"}}}
         #########################################################################################
 
+        obj.create_csv_files_moved(dest_dir=sys.argv[2])
+
+        myper = obj.get_periods_by_stats(percentage=10)
+
+        print ("selected periods:")
+        print(myper)

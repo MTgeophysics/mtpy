@@ -23,6 +23,7 @@ Date: 2017-02-01
 import os
 import sys
 import glob
+import numpy as np
 import mtpy.core.edi as mtedi
 import mtpy.modeling.modem as mtmn
 from mtpy.core.edi_collection import EdiCollection
@@ -56,9 +57,14 @@ if __name__=='__main__':
     edisObj = EdiCollection(edi_list)
 
     period_list=edisObj.all_periods  #filtered list of periods ?
+    print(type(period_list))
+
     #[:-23]  # slice ?
     # eo = mtedi.Edi(edi_list[0])  # this may miss some periods?
     # period_list = 1. / eo.Z.freq # period_list = np.logspace(-3,3)
+
+    period_list = np.array( edisObj.get_periods_by_stats(percentage=10))
+    print(type(period_list))
 
     datob = mtmn.Data(edi_list=edi_list,
                    inv_mode='2',
