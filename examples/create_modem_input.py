@@ -67,7 +67,7 @@ if __name__=='__main__':
     print(type(period_list))
 
     datob = mtmn.Data(edi_list=edi_list,
-                   inv_mode='2',
+                   inv_mode='1',
                    period_list=period_list,
                    epsg=epsg_code
                    )
