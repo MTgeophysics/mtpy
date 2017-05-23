@@ -106,6 +106,8 @@ python mtpy/core/edi_collection.py /k/MTPY_TEST/3D_MT_data_edited_fromDuanJM/ /k
 python mtpy/core/edi_collection.py /k/MTPY_TEST/GA_UA_edited_10s-10000s/ /k/tmp_mtpy_output/
 
 # generate inputs for MODEM
-python examples/create_modem_input.py /k/MTPY_TEST/GA_UA_edited_10s-10000s/ /k/MTPY_TEST/AussieContinent_etopo1.asc /k/tmp_mtpy_output/GA_UA_edited_10s-10000s
-python examples/create_modem_input.py /k/MTPY_TEST/3D_MT_data_edited_fromDuanJM/ /k/MTPY_TEST/AussieContinent_etopo1.asc /k/tmp_mtpy_output/3D_MT_data_edited_fromDuanJM/
-
+python examples/create_modem_input.py  /e/Data/MT_Datasets/concurry_EDI_files/ /e/Data/MT_Datasets/concurry_topo/AussieContinent_etopo1.asc /e/tmp/
+python examples/create_modem_input.py  /e/Data/MT_Datasets/GA_UA_edited_10s-10000s /e/Data/MT_Datasets/concurry_topo/AussieContinent_etopo1.asc /e/tmp/GA_UA_edited_10s-10000s_B/
+python examples/create_modem_input.py  /e/Data/MT_Datasets/3D_MT_data_edited_fromDuanJM /e/Data/MT_Datasets/concurry_topo/AussieContinent_etopo1.asc /e/tmp/3D_MT_data_modemin/
+python examples/create_modem_input.py  /e/Data/MT_Datasets/Isa_EDI_edited_10Hz_1000s/ /e/Data/MT_Datasets/concurry_topo/AussieContinent_etopo1.asc /e/tmp/Isa_EDI_edited_10Hz_1000s
+python examples/create_modem_input.py  /e/Data/MT_Datasets/WenPingJiang_EDI /e/Data/MT_Datasets/concurry_topo/AussieContinent_etopo1.asc /e/tmp/WenPingJiang_EDI_modemin

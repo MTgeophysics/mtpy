@@ -16,7 +16,7 @@ Created on Tue Jan 07 12:42:34 2014
 import os
 
 import numpy as np
-
+import mtpy
 import mtpy.analysis.distortion as MTdistortion
 import mtpy.analysis.pt as MTpt
 import mtpy.analysis.zinvariants as MTinv
@@ -44,6 +44,11 @@ except ImportError:
           'check installation you can get scipy from scipy.org.')
     interp_import = False
 
+import logging
+from mtpy.utils.mtpylog import MtPyLog
+
+logger = MtPyLog().get_mtpy_logger(__name__)
+logger.setLevel(logging.DEBUG)
 
 # ==============================================================================
 
@@ -622,11 +627,20 @@ class MT(object):
         if not isinstance(new_freq_array, np.ndarray):
             new_freq_array = np.array(new_freq_array)
 
+        floater= 0.0000001
+        logger.info("massage the new_freq_array's min and max to avoid out-of-bound interp")
+        minindex = np.argmin(new_freq_array)
+        maxindex = np.argmax(new_freq_array)
+        new_freq_array[minindex] = new_freq_array[minindex] + floater
+        new_freq_array[maxindex] = new_freq_array[maxindex] - floater
+
+        #logger.debug("new freq array %s", new_freq_array)
+
         # check the bounds of the new frequency array
         if bounds_error:
             if self.Z.freq.min() > new_freq_array.min():
-                print self.Z.freq.min()
-                print new_freq_array.min()
+                print (self.Z.freq.min(), self.Z.freq.max())
+                print (new_freq_array.min(),new_freq_array.max())
                 raise ValueError('New frequency minimum of {0:.5g}'.format(new_freq_array.min()) +
                                  ' is smaller than old frequency minimum of {0:.5g}'.format(self.Z.freq.min()) +
                                  '.  The new frequency range needs to be within the ' +
@@ -650,20 +664,22 @@ class MT(object):
             freq=new_freq_array)
 
         # interpolate the impedance tensor
+        #kinds = ('nearest', 'zero', 'linear', 'slinear', 'quadratic', 'cubic')
+        interpkind='cubic' #'slinera'
         for ii in range(2):
             for jj in range(2):
                 # need to sort array for old version of interp1d otherwise
-                # frequencies fall out of bounds
+                # frequencies fall out of bounds ???
                 ind = np.argsort(self.Z.freq)
                 z_func_real = spi.interp1d(np.log10(self.Z.freq[ind]), self.Z.z[ind][:, ii, jj].real,
-                                           kind='slinear', bounds_error=False, fill_value=0.)
+                                           kind=interpkind, bounds_error=False, fill_value=0.)
                 z_func_imag = spi.interp1d(np.log10(self.Z.freq[ind]), self.Z.z[ind][:, ii, jj].imag,
-                                           kind='slinear', bounds_error=False, fill_value=0.)
+                                           kind=interpkind, bounds_error=False, fill_value=0.)
                 new_Z.z[:, ii, jj] = z_func_real(np.log10(new_freq_array)) + \
                     1j * z_func_imag(np.log10(new_freq_array))
 
                 z_func_err = spi.interp1d(np.log10(self.Z.freq[ind]), self.Z.z_err[ind][:, ii, jj],
-                                          kind='slinear')
+                                          kind=interpkind)
                 new_Z.z_err[:, ii, jj] = z_func_err(np.log10(new_freq_array))
 
         # if there is not tipper than skip
@@ -674,16 +690,16 @@ class MT(object):
         for jj in range(2):
             t_func_real = spi.interp1d(np.log10(self.Z.freq[ind]),
                                        self.Tipper.tipper[ind][:, 0, jj].real,
-                                       kind='slinear', bounds_error=False, fill_value=0.)
+                                       kind=interpkind, bounds_error=False, fill_value=0.)
             t_func_imag = spi.interp1d(np.log10(self.Z.freq[ind]),
                                        self.Tipper.tipper[ind][:, 0, jj].imag,
-                                       kind='slinear', bounds_error=False, fill_value=0.)
+                                       kind=interpkind, bounds_error=False, fill_value=0.)
             new_Tipper.tipper[:, 0, jj] = t_func_real(np.log10(new_freq_array)) + \
                 1j * t_func_imag(np.log10(new_freq_array))
 
             t_func_err = spi.interp1d(np.log10(self.Z.freq[ind]),
                                       self.Tipper.tipper_err[ind][:, 0, jj],
-                                      kind='slinear')
+                                      kind=interpkind)
             new_Tipper.tipper_err[
                 :, 0, jj] = t_func_err(
                 np.log10(new_freq_array))

@@ -69,8 +69,8 @@ if __name__=='__main__':
     datob = mtmn.Data(edi_list=edi_list,
                    inv_mode='1',
                    period_list=period_list,
-                   epsg=epsg_code
-                   )
+                   epsg=epsg_code)
+                #period_buffer=0.000001)
 
     datob.write_data_file(save_path=outputdir)
 

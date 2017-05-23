@@ -624,12 +624,13 @@ class Data(object):
 
         if self.period_list is not None:
             print '-' * 50
-            print 'Inverting for periods:'
+            print ('Inverting for these periods:', len(self.period_list))
             for per in self.period_list:
                 print '     {0:<12.6f}'.format(per)
             print '-' * 50
-            return
+            return  # finished
 
+        # why here ? log space interpolation?
         data_period_list = []
         for s_key in sorted(self.mt_dict.keys()):
             mt_obj = self.mt_dict[s_key]
@@ -659,7 +660,7 @@ class Data(object):
                 pmin, pmax, num=self.max_num_periods)
 
             print '-' * 50
-            print 'Inverting for periods:'
+            print ('Inverting for periods:', len(self.period_list))
             for per in self.period_list:
                 print '     {0:<12.6f}'.format(per)
             print '-' * 50
@@ -812,7 +813,8 @@ class Data(object):
                 (self.period_list >= 1. / mt_obj.Z.freq.max()) &
                 (self.period_list <= 1. / mt_obj.Z.freq.min()))]
 
-            print(mt_obj.station, interp_periods)
+            print("station_name and number of period", mt_obj.station, len(interp_periods))
+            #print(interp_periods[0], interp_periods[-1])
 
             # if specified, apply a buffer so that interpolation doesn't
             # stretch too far over periods
@@ -828,7 +830,7 @@ class Data(object):
                         interp_periods_new.append(iperiod)
                 interp_periods = np.array(interp_periods_new)
 
-            interp_z, interp_t = mt_obj.interpolate(1. / interp_periods)
+            interp_z, interp_t = mt_obj.interpolate(1. / interp_periods) #,bounds_error=False)
             for kk, ff in enumerate(interp_periods):
                 jj = np.where(self.period_list == ff)[0][0]
                 self.data_array[ii]['z'][jj] = interp_z.z[kk, :, :]
