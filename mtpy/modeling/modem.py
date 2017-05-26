@@ -330,10 +330,8 @@ class Data(object):
 
         self.inv_mode_dict = {'1': ['Full_Impedance', 'Full_Vertical_Components'],
                               '2': ['Full_Impedance'],
-                              '3': ['Off_Diagonal_Impedance',
-                                    'Full_Vertical_Components'],
-                              '4/g/data/ha3/fxz547/Githubz/mtpy2/examples/data/ModEM_files/VicSynthetic07/Modular_MPI_NLCG_019.rho': [
-                                  'Off_Diagonal_Impedance'],
+                              '3': ['Off_Diagonal_Impedance','Full_Vertical_Components'],
+                              '4': ['Off_Diagonal_Impedance'],
                               '5': ['Full_Vertical_Components'],
                               '6': ['Full_Interstation_TF'],
                               '7': ['Off_Diagonal_Rho_Phase']}
@@ -776,7 +774,10 @@ class Data(object):
 
         rel_distance = True
         for ii, s_key in enumerate(sorted(self.mt_dict.keys())):
+            print("mt_dict key:", s_key)
+
             mt_obj = self.mt_dict[s_key]
+
             if d_array is True:
                 try:
                     d_index = np.where(d_arr_copy['station'] == s_key)[0][0]
@@ -830,6 +831,8 @@ class Data(object):
                         interp_periods_new.append(iperiod)
                 interp_periods = np.array(interp_periods_new)
 
+            #FZ: sort in order
+            interp_periods = np.sort(interp_periods)
             interp_z, interp_t = mt_obj.interpolate(1. / interp_periods) #,bounds_error=False)
             for kk, ff in enumerate(interp_periods):
                 jj = np.where(self.period_list == ff)[0][0]
@@ -841,8 +844,14 @@ class Data(object):
                     self.data_array[ii]['tip_err'][jj] = \
                         interp_t.tipper_err[kk, :, :]
 
+            # FZ: try to output a new edi files. have to compare with original Same?
+            mt_obj.write_edi_file(new_fn='E:/tmpedifiles/'+ mt_obj.station + '.edi',
+                                  new_Z=interp_z, new_Tipper=interp_t)
+
         if rel_distance is False:
             self.get_relative_station_locations()
+
+        return
 
     def _set_station_locations(self, station_locations):
         """

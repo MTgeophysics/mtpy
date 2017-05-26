@@ -627,7 +627,7 @@ class MT(object):
         if not isinstance(new_freq_array, np.ndarray):
             new_freq_array = np.array(new_freq_array)
 
-        floater= 0.0000001
+        floater= 0.00000001
         logger.info("massage the new_freq_array's min and max to avoid out-of-bound interp")
         minindex = np.argmin(new_freq_array)
         maxindex = np.argmax(new_freq_array)

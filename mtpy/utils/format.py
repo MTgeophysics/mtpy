@@ -159,7 +159,8 @@ def convert_dms_tuple2string(dmstuple):
 
     d = dmstuple[0]
     m = dmstuple[1]
-    s = int(round(dmstuple[2], 5))
+    #FZ:wrong s = int(round(dmstuple[2], 5))
+    s = round(dmstuple[2], 5)
     try:
         dms_string = "%i:%02i:%02i" % (d, m, int(s))
         remainder = s - int(s)
@@ -229,7 +230,7 @@ def convert_degrees2dms_tuple(degrees):
     """
 
     deg = float(degrees)
-    dms_triple = np.zeros((3))
+    dms_triple = np.zeros(3)
 
     if deg == 0:
         return dms_triple
@@ -245,12 +246,13 @@ def convert_degrees2dms_tuple(degrees):
 
     m = int(minutes)
 
-    seconds = 60. * (minutes - m)
+    seconds = 60.0 * (minutes - m)
 
     dms_triple[0] = sign * d
     dms_triple[1] = m
     dms_triple[2] = seconds
 
+    print("seconds=",dms_triple[2])
     return dms_triple
 
 

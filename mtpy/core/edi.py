@@ -34,7 +34,8 @@ except ImportError:
     print 'Could not find scipy.stats.distributions, check distribution'
     ssd_test = False
 
-tab = " " * 4
+#tab = " " * 4
+tab = ""
 
 # get a logger object for this module, using the utility class MtPyLog to
 # config the logger
@@ -209,8 +210,8 @@ class Edi(object):
             logger.info(
                 'Got latitude from reflat for {0}'.format(
                     self.Header.dataid))
-        if self.Header.lon is None:
-            self.Header.lon = self.Define_measurement.reflon
+        if self.Header.long is None:
+            self.Header.long = self.Define_measurement.reflon
             logger.info(
                 'Got longitude from reflon for {0}'.format(
                     self.Header.dataid))
@@ -717,7 +718,7 @@ class Edi(object):
 
     # --> Longitude
     def _get_lon(self):
-        return self.Header.lon
+        return self.Header.long
 
     def _set_lon(self, input_lon):
         self.Header.lon = MTft._assert_position_format('lon', input_lon)
@@ -870,13 +871,14 @@ class Header(object):
         self.acqby = None
         self.fileby = None
         self.acqdate = None
-        self.units = None
+        # self.units = None
         self.filedate = datetime.datetime.utcnow().strftime(
             '%Y/%m/%d %H:%M:%S UTC')
         self.loc = None
         self.lat = None
-        self.lon = None
+        self.long = None
         self.elev = None
+        self.units='M'
         self.empty = 1E32
         self.progvers = None
         self.progdate = None
@@ -884,18 +886,21 @@ class Header(object):
 
         self.header_list = None
 
-        self._header_keys = ['acqby',
-                             'acqdate',
-                             'dataid',
-                             'elev',
+        self._header_keys = ['dataid',
+                             'acqby',
                              'fileby',
-                             'lat',
+                             'acqdate',
                              'loc',
-                             'lon',
+                             'lat',
+                             'long',
+                             'elev',
+                             'units',
                              'filedate',
-                             'empty',
+                             'progvers',
                              'progdate',
-                             'progvers']
+                             'maxsect', # error if the edi file does not have this key, concurry
+                             'empty'
+                             ]
 
         for key in kwargs.keys():
             setattr(self, key, kwargs[key])
@@ -993,7 +998,7 @@ class Header(object):
                 value = MTft._assert_position_format(key, value)
 
             elif key in 'longitude':
-                key = 'lon'
+                key = 'long'
                 value = MTft._assert_position_format(key, value)
 
             elif key in 'elevation':
@@ -1004,13 +1009,14 @@ class Header(object):
                     value = 0.0
                     logger.info('No elevation data')
 
-            elif key in ['country', 'state', 'loc', 'location', 'prospect']:
-                key = 'loc'
-                try:
-                    if getattr(self, key) is not None:
-                        value = '{0}, {1}'.format(getattr(self, key), value)
-                except KeyError:
-                    pass
+            #FZ: this elif condensed several key into loc.
+            # elif key in ['country', 'state', 'loc', 'location', 'prospect']:
+            #     key = 'loc'
+            #     try:
+            #         if getattr(self, key) is not None:
+            #             value = '{0}, {1}'.format(getattr(self, key), value)
+            #     except KeyError:
+            #        pass
             # test if its a phoenix formated .edi file
             elif key in ['progvers']:
                 if value.lower().find('mt-editor') != -1:
@@ -1052,13 +1058,18 @@ class Header(object):
         if self.header_list is None and self.edi_fn is not None:
             self.get_header_list()
 
-        header_lines = ['>HEAD\n\n']
-        for key in sorted(self._header_keys):
-            value = getattr(self, key)
+        header_lines = ['>HEAD\n']
+        #for key in sorted(self._header_keys):
+        for key in self._header_keys:  #FZ: NOT sorting
+            try:
+                value = getattr(self, key)
+            except Exception, ex:
+                print("key value", key,value, ex)
+                value=None
             if key in ['progdate', 'progvers']:
                 if value is None:
                     value = 'mtpy'
-            elif key in ['lat', 'lon']:
+            elif key in ['lat', 'lon', 'long']:
                 value = MTft.convert_dms_tuple2string(
                     MTft.convert_degrees2dms_tuple(value))
             if key in ['elev']:
@@ -1189,7 +1200,7 @@ class Information(object):
         if info_list is not None:
             self.info_list = self._validate_info_list(info_list)
 
-        info_lines = ['>INFO\n\n']
+        info_lines = ['>INFO\n']
         for line in self.info_list:
             info_lines.append('{0}{1}\n'.format(tab, line))
 
@@ -1450,7 +1461,7 @@ class DefineMeasurement(object):
         if measurement_list is not None:
             self.read_define_measurement(measurement_list=measurement_list)
 
-        measurement_lines = ['\n>=DEFINEMEAS\n\n']
+        measurement_lines = ['\n>=DEFINEMEAS\n']
         for key in self._define_meas_keys:
             value = getattr(self, key)
             if key == 'reflat' or key == 'reflon':
@@ -1659,8 +1670,8 @@ class DataSection(object):
         self.line_num = 0
         self.data_sect_list = None
 
-        self._kw_list = ['nfreq',
-                         'sectid',
+        self._kw_list = ['sectid',
+                         'nfreq',
                          'nchan',
                          'maxblks',
                          'ex',

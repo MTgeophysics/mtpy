@@ -63,7 +63,7 @@ if __name__=='__main__':
     # eo = mtedi.Edi(edi_list[0])  # this may miss some periods?
     # period_list = 1. / eo.Z.freq # period_list = np.logspace(-3,3)
 
-    period_list = np.array( edisObj.get_periods_by_stats(percentage=10))
+    period_list = np.array( edisObj.get_periods_by_stats(percentage=10.0))
     print(type(period_list))
 
     datob = mtmn.Data(edi_list=edi_list,
