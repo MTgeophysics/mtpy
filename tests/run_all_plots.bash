@@ -83,18 +83,18 @@ python mtpy/utils/shapefiles_creator.py /e/Data/MT_Datasets/WenPingJiang_EDI /e/
 python mtpy/utils/shapefiles_creator.py /e/Data/GA_Works/E_Data_MT_Datasets/GA_UA_edited_10s-10000s /e/Data/GA_Works/E_Data_MT_Datasets/GA_UA_edited_10s-10000s_SHP
 
 # EDI collection (surveys) properties
-python mtpy/core/edi_collection.py tests/data/edifiles/
-python mtpy/core/edi_collection.py examples/data/edi2/
-python mtpy/core/edi_collection.py examples/data/edi_files
+python mtpy/core/edi_collection.py tests/data/edifiles/ /e/tmp0
+python mtpy/core/edi_collection.py examples/data/edi2/ /e/tmp0
+python mtpy/core/edi_collection.py examples/data/edi_files /e/tmp0
 
-python mtpy/core/edi_collection.py /e/Data/MT_Datasets/WenPingJiang_EDI/
-python mtpy/core/edi_collection.py /e/Data/MT_Datasets/GA_UA_edited_10s-10000s
-python mtpy/core/edi_collection.py /e/Data/MT_Datasets/728889/EDI_files/
-python mtpy/core/edi_collection.py /e/Data/MT_Datasets/75098/EDI_files/
-python mtpy/core/edi_collection.py /e/Data/MT_Datasets/75099_Youanmi/EDI_Files_edited/BB_edi_edited/
-python mtpy/core/edi_collection.py /e/Data/MT_Datasets/75099_Youanmi/EDI_Files_edited/BB_edi_edited/YM1/
-python mtpy/core/edi_collection.py /e/Data/MT_Datasets/75099_Youanmi/EDI_Files_edited/BB_edi_edited/YM2
-python mtpy/core/edi_collection.py /e/Data/MT_Datasets/75099_Youanmi/EDI_Files_edited/LP_edi_edited/YML123/
+python mtpy/core/edi_collection.py /e/Data/MT_Datasets/WenPingJiang_EDI/ /e/tmp0
+python mtpy/core/edi_collection.py /e/Data/MT_Datasets/GA_UA_edited_10s-10000s/ /e/tmp0
+python mtpy/core/edi_collection.py /e/Data/MT_Datasets/728889/EDI_files/ /e/tmp0
+python mtpy/core/edi_collection.py /e/Data/MT_Datasets/75098/EDI_files/ /e/tmp0
+python mtpy/core/edi_collection.py /e/Data/MT_Datasets/75099_Youanmi/EDI_Files_edited/BB_edi_edited/ /e/tmp0
+python mtpy/core/edi_collection.py /e/Data/MT_Datasets/75099_Youanmi/EDI_Files_edited/BB_edi_edited/YM1/ /e/tmp0
+python mtpy/core/edi_collection.py /e/Data/MT_Datasets/75099_Youanmi/EDI_Files_edited/BB_edi_edited/YM2 /e/tmp0
+python mtpy/core/edi_collection.py /e/Data/MT_Datasets/75099_Youanmi/EDI_Files_edited/LP_edi_edited/YML123/ /e/tmp0
 
 
 # the below datasets spit out a lot of messages like "Need to input frequency list", for unknown reasons
@@ -102,8 +102,8 @@ python mtpy/core/edi_collection.py /e/Data/MT_Datasets/75099_Youanmi/EDI_Files_e
 #python mtpy/core/edi_collection.py /e/Data/MT_Datasets/E_Data_Modelling_Isa/EDI_edited_10Hz_1000s
 
 # create csv files
-python mtpy/core/edi_collection.py /k/MTPY_TEST/3D_MT_data_edited_fromDuanJM/ /k/tmp_mtpy_output/
-python mtpy/core/edi_collection.py /k/MTPY_TEST/GA_UA_edited_10s-10000s/ /k/tmp_mtpy_output/
+#python mtpy/core/edi_collection.py /k/MTPY_TEST/3D_MT_data_edited_fromDuanJM/ /k/tmp_mtpy_output/
+#python mtpy/core/edi_collection.py /k/MTPY_TEST/GA_UA_edited_10s-10000s/ /k/tmp_mtpy_output/
 
 # generate inputs for MODEM
 python examples/create_modem_input.py  /e/Data/MT_Datasets/concurry_EDI_files/ /e/Data/MT_Datasets/concurry_topo/AussieContinent_etopo1.asc /e/tmp/

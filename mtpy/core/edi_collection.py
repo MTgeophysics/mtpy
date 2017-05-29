@@ -228,7 +228,7 @@ class EdiCollection(object):
 
     def create_csv_files_moved(self, dest_dir=None):
         """
-        create csv moved/copied to shapefiles_creator.py
+        create csv file. It is moved/copied to shapefiles_creator.py
         :return:
         """
         if dest_dir is None:
@@ -366,6 +366,7 @@ if __name__ == "__main__":
             obj=EdiCollection(sys.argv[1:])  # assume input is a list of EDI files
         else:
             pass
+            sys.exit(2)
 
         # obj.show_prop()
         #

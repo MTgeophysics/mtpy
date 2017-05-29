@@ -280,7 +280,7 @@ class Data(object):
         self.edi_list = edi_list
 
         self.error_type = kwargs.pop('error_type', 'egbert')
-        self.error_floor = kwargs.pop('error_floor', 5.0)
+        self.error_floor = kwargs.pop('error_floor', 10.0)
         self.error_value = kwargs.pop('error_value', 5.0)
         self.error_egbert = kwargs.pop('error_egbert', 3.0)
         self.error_tipper = kwargs.pop('error_tipper', .05)

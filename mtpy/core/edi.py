@@ -1315,7 +1315,7 @@ class DefineMeasurement(object):
         self.maxrun = 999
         self.refelev = None
         self.reflat = None
-        self.reflon = None
+        self.reflong = None
         self.reftype = 'cartesian'
         self.units = 'm'
 
@@ -1323,7 +1323,7 @@ class DefineMeasurement(object):
                                   'maxrun',
                                   'maxmeas',
                                   'reflat',
-                                  'reflon',
+                                  'reflong',
                                   'refelev',
                                   'reftype',
                                   'units']
@@ -1420,7 +1420,7 @@ class DefineMeasurement(object):
                     key = 'reflat'
                     value = MTft._assert_position_format('lat', value)
                 elif key in 'reflongitude':
-                    key = 'reflon'
+                    key = 'reflong'
                     value = MTft._assert_position_format('lon', value)
                 elif key in 'refelevation':
                     key = 'refelev'
@@ -1464,7 +1464,7 @@ class DefineMeasurement(object):
         measurement_lines = ['\n>=DEFINEMEAS\n']
         for key in self._define_meas_keys:
             value = getattr(self, key)
-            if key == 'reflat' or key == 'reflon':
+            if key == 'reflat' or key == 'reflong':
                 value = MTft.convert_dms_tuple2string(
                     MTft.convert_degrees2dms_tuple(value))
             elif key == 'refelev':
