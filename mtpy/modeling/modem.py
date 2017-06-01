@@ -752,7 +752,7 @@ class Data(object):
 
         self.get_relative_station_locations()
 
-    def _fill_data_array(self):
+    def _fill_data_array(self, new_edi_dir=None):
         """
         fill the data array from mt_dict
 
@@ -794,17 +794,19 @@ class Data(object):
                 except IndexError:
                     print 'Could not find {0} in data_array'.format(s_key)
             else:
+                print("d_array is False code block!!!!!!!!!!", s_key)
                 self.data_array[ii]['station'] = mt_obj.station
                 self.data_array[ii]['lat'] = mt_obj.lat
                 self.data_array[ii]['lon'] = mt_obj.lon
                 self.data_array[ii]['east'] = mt_obj.east
                 self.data_array[ii]['north'] = mt_obj.north
                 self.data_array[ii]['elev'] = mt_obj.elev
-                try:
+                try:  # this block not used! see get_relative_station_locations()
                     self.data_array[ii]['rel_east'] = mt_obj.grid_east
                     self.data_array[ii]['rel_north'] = mt_obj.grid_north
                     rel_distance = False
                 except AttributeError:
+                    print("AttributeError!!!!")
                     pass
 
             # interpolate each station onto the period list
@@ -845,8 +847,9 @@ class Data(object):
                         interp_t.tipper_err[kk, :, :]
 
             # FZ: try to output a new edi files. have to compare with original Same?
-            mt_obj.write_edi_file(new_fn='E:/tmpedifiles/'+ mt_obj.station + '.edi',
-                                  new_Z=interp_z, new_Tipper=interp_t)
+            if new_edi_dir is not None:
+                new_edifile = os.path.join(new_edi_dir, mt_obj.station + '.edi')
+                mt_obj.write_edi_file(new_fn= new_edifile,  new_Z=interp_z, new_Tipper=interp_t)
 
         if rel_distance is False:
             self.get_relative_station_locations()
@@ -952,7 +955,9 @@ class Data(object):
 
         # be sure to fill in data array
         if fill is True:
-            self._fill_data_array()
+            new_edi_dir = os.path.join(save_path, 'new_edis')
+            os.mkdir(new_edi_dir)
+            self._fill_data_array( new_edi_dir=new_edi_dir)
             # get relative station locations in grid coordinates
             self.get_relative_station_locations()
 
@@ -2191,6 +2196,7 @@ class Model(object):
         # read the surface data in from ascii if surface not provided
         if surface is None:
             surface = read_surface_ascii(surfacefile)
+
         x, y, elev = surface
 
         # if lat/lon provided as a 1D list, convert to a 2d grid of points

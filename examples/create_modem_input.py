@@ -67,9 +67,11 @@ if __name__=='__main__':
     print(type(period_list))
 
     datob = mtmn.Data(edi_list=edi_list,
-                   inv_mode='1',
-                   period_list=period_list,
-                   epsg=epsg_code)
+                      inv_mode='1',
+                      period_list=period_list,
+                      epsg=epsg_code,
+                      error_type='floor',
+                      error_floor=10)
                 #period_buffer=0.000001)
 
     datob.write_data_file(save_path=outputdir)
@@ -98,7 +100,7 @@ if __name__=='__main__':
     model.write_model_file(save_path=outputdir)
 
     # add topography to res model
-    model.add_topography(topofile, interp_method='nearest')
+    #model.add_topography(topofile, interp_method='nearest')
 
 
     # make covariance file
