@@ -150,7 +150,7 @@ class MT(object):
     :Interpolate: ::
 
         >>> new_freq = np.logspace(-3, 3, num=24)
-        >>> new_z_obj, new_tipper_obj = mt_obj.interpolate(new_freq)
+        >>> new_z_obj, new_tipper_obj = mt_obj.interpolate_impedance_tensor(new_freq)
         >>> mt_obj.write_edi_file(new_Z=new_z_obj, new_Tipper=new_tipper_obj)
         >>> wrote file to: /home/edi_files/s01_RW.edi
     """
@@ -575,8 +575,8 @@ class MT(object):
 
         return new_z_obj
 
-    def interpolate(self, new_freq_array, bounds_error=True):
-    #def interpolate(self, new_freq_array, bounds_error=False):
+    # def interpolate(self, new_freq_array, bounds_error=False):
+    def interpolate_impedance_tensor(self, new_freq_array, bounds_error=True):
         """
         Interpolate the impedance tensor onto different frequencies
 
@@ -584,7 +584,7 @@ class MT(object):
         Arguments
         ------------
 
-            *new_freq_array* : np.ndarray
+            *new_freq_array* : np.ndarray, assume not empty
                                a 1-d array of frequencies to interpolate on
                                to.  Must be with in the bounds of the existing
                                frequency range, anything outside and an error
@@ -612,13 +612,13 @@ class MT(object):
             >>> mt_obj = mt.MT(edi_fn)
             >>> # create a new frequency range to interpolate onto
             >>> new_freq = np.logspace(-3, 3, 24)
-            >>> new_z_object, new_tipper_obj = mt_obj.interpolate(new_freq)
+            >>> new_z_object, new_tipper_obj = mt_obj.interpolate_impedance_tensor(new_freq)
             >>> mt_obj.write_edi_file(new_fn=r"/home/edi_files/mt_01_interp.edi",
             >>> ...                   new_Z=new_z_object,
             >>> ...                   new_Tipper=new_tipper_object)
 
         """
-        # if the interpolation module has not been loaded return
+            # if the interpolation module has not been loaded return
         if interp_import is False:
             print('could not interpolate, need to install scipy')
             return
@@ -627,7 +627,7 @@ class MT(object):
         if not isinstance(new_freq_array, np.ndarray):
             new_freq_array = np.array(new_freq_array)
 
-        floater= 0.00000001
+        floater= 0.00000001  #FZ: a small offset to avoid out-of-bound error in spi interpolation module.
         logger.info("massage the new_freq_array's min and max to avoid out-of-bound interp")
         minindex = np.argmin(new_freq_array)
         maxindex = np.argmax(new_freq_array)
@@ -665,7 +665,7 @@ class MT(object):
 
         # interpolate the impedance tensor
         #kinds = ('nearest', 'zero', 'linear', 'slinear', 'quadratic', 'cubic')
-        interpkind='cubic' #'slinera'
+        interpkind='linear'
         for ii in range(2):
             for jj in range(2):
                 # need to sort array for old version of interp1d otherwise

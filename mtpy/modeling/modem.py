@@ -752,7 +752,7 @@ class Data(object):
 
         self.get_relative_station_locations()
 
-    def _fill_data_array(self, new_edi_dir=None):
+    def _fill_data_array(self, new_edi_dir=None, use_original_freq=True):
         """
         fill the data array from mt_dict
 
@@ -816,9 +816,6 @@ class Data(object):
                 (self.period_list >= 1. / mt_obj.Z.freq.max()) &
                 (self.period_list <= 1. / mt_obj.Z.freq.min()))]
 
-            print("station_name and number of period", mt_obj.station, len(interp_periods))
-            #print(interp_periods[0], interp_periods[-1])
-
             # if specified, apply a buffer so that interpolation doesn't
             # stretch too far over periods
             if type(self.period_buffer) in [float, int]:
@@ -835,26 +832,59 @@ class Data(object):
 
             #FZ: sort in order
             interp_periods = np.sort(interp_periods)
-            interp_z, interp_t = mt_obj.interpolate(1. / interp_periods) #,bounds_error=False)
-            for kk, ff in enumerate(interp_periods):
-                jj = np.where(self.period_list == ff)[0][0]
-                self.data_array[ii]['z'][jj] = interp_z.z[kk, :, :]
-                self.data_array[ii]['z_err'][jj] = interp_z.z_err[kk, :, :]
+            print("station_name and its period", mt_obj.station, len(mt_obj.Z.freq), 1.0 / mt_obj.Z.freq)
+            print("station_name and interpolation period", mt_obj.station, len(interp_periods), interp_periods)
 
-                if mt_obj.Tipper.tipper is not None:
-                    self.data_array[ii]['tip'][jj] = interp_t.tipper[kk, :, :]
-                    self.data_array[ii]['tip_err'][jj] = \
-                        interp_t.tipper_err[kk, :, :]
+            # default: use_original_freq = True, each MT station edi file will use it's own frequency-filtered.
+            # no new freq in the output .dat file. select those freq of mt_obj according to interp_periods
+            if use_original_freq:
+                interp_periods = self.filter_periods( mt_obj, interp_periods)
+                print("station_name and selected/filtered periods", mt_obj.station, len(interp_periods), interp_periods)
+                # in this case the interpolate_impedance_tensor will be dummy, degenerate into a same-freq set.
 
-            # FZ: try to output a new edi files. have to compare with original Same?
-            if new_edi_dir is not None:
-                new_edifile = os.path.join(new_edi_dir, mt_obj.station + '.edi')
-                mt_obj.write_edi_file(new_fn= new_edifile,  new_Z=interp_z, new_Tipper=interp_t)
+            if len(interp_periods) > 0:   # not empty
+                interp_z, interp_t = mt_obj.interpolate_impedance_tensor(1. / interp_periods) #,bounds_error=False)
+                for kk, ff in enumerate(interp_periods):
+                    jj = np.where(self.period_list == ff)[0][0]
+                    self.data_array[ii]['z'][jj] = interp_z.z[kk, :, :]
+                    self.data_array[ii]['z_err'][jj] = interp_z.z_err[kk, :, :]
+
+                    if mt_obj.Tipper.tipper is not None:
+                        self.data_array[ii]['tip'][jj] = interp_t.tipper[kk, :, :]
+                        self.data_array[ii]['tip_err'][jj] = \
+                            interp_t.tipper_err[kk, :, :]
+
+                # FZ: try to output a new edi files. have to compare with original Same?
+                if new_edi_dir is not None:
+                    new_edifile = os.path.join(new_edi_dir, mt_obj.station + '.edi')
+                    mt_obj.write_edi_file(new_fn= new_edifile,  new_Z=interp_z, new_Tipper=interp_t)
+            else:
+                pass
 
         if rel_distance is False:
             self.get_relative_station_locations()
 
         return
+
+    def filter_periods(self, mt_obj, per_array):
+        """Select mt_obj's periods in per_array
+
+        :param mt_obj:
+        :param per_array:
+        :return: array of selected periods (subset) of the mt_obj
+        """
+
+        new_per=[]
+
+        mt_per = 1.0 / mt_obj.Z.freq
+        for p in mt_per:
+            for p2 in per_array:
+                if abs(p - p2) < 0.00000001:  # Be aware of floating error if use ==
+                    new_per.append(p)
+
+        return np.array(new_per)
+
+
 
     def _set_station_locations(self, station_locations):
         """
@@ -956,7 +986,8 @@ class Data(object):
         # be sure to fill in data array
         if fill is True:
             new_edi_dir = os.path.join(save_path, 'new_edis')
-            os.mkdir(new_edi_dir)
+            if not os.path.exists(new_edi_dir):
+                os.mkdir(new_edi_dir)
             self._fill_data_array( new_edi_dir=new_edi_dir)
             # get relative station locations in grid coordinates
             self.get_relative_station_locations()
@@ -1017,7 +1048,7 @@ class Data(object):
                                 nor = '{0:> 12.3f}'.format(
                                     self.data_array[ss]['rel_north'])
                                 ele = '{0:> 12.3f}'.format(
-                                    self.data_array[ss]['elev'])
+                                    -self.data_array[ss]['elev'])
                                 com = '{0:>4}'.format(comp.upper())
                                 if self.units == 'ohm':
                                     rea = '{0:> 14.6e}'.format(zz.real / 796.)
@@ -1039,7 +1070,7 @@ class Data(object):
                                 nor = '{0:> 15.3f}'.format(
                                     self.data_array[ss]['rel_north'])
                                 ele = '{0:> 10.3f}'.format(
-                                    self.data_array[ss]['elev'])
+                                    -self.data_array[ss]['elev'])
                                 com = '{0:>12}'.format(comp.upper())
                                 if self.units == 'ohm':
                                     rea = '{0:> 17.6e}'.format(zz.real / 796.)
@@ -2051,7 +2082,7 @@ class Model(object):
         print '   Dimensions: '
         print '      e-w = {0}'.format(east_gridr.shape[0])
         print '      n-s = {0}'.format(north_gridr.shape[0])
-        print '       z  = {0} (including 7 air layers)'.format(z_grid.shape[0])
+        print '       z  = {0} (including air layers: {1})'.format(z_grid.shape[0], self.n_airlayers)
         print '   Extensions: '
         print '      e-w = {0:.1f} (m)'.format(east_nodes.__abs__().sum())
         print '      n-s = {0:.1f} (m)'.format(north_nodes.__abs__().sum())
@@ -2113,7 +2144,7 @@ class Model(object):
             self.assign_resistivity_from_surfacedata(
                 'topography', air_resistivity, where='above')
         else:
-            print "Cannot add topography, no air layers provided. Proceeding to add bathymetry"
+            print "Cannot add topography, no air layers provided. Proceeding to add bathymetry!!!"
 
         # assign sea water
         # first make a mask array, this array can be passed through to

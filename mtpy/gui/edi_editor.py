@@ -829,12 +829,12 @@ class PlotWidget(QtGui.QWidget):
 
         if self._edited_dist == True or self._edited_mask == True or \
            self._edited_rot == True or self._edited_ss == True:
-            new_z, new_tip = self.mt_obj.interpolate(interp_freq)
+            new_z, new_tip = self.mt_obj.interpolate_impedance_tensor(interp_freq)
             self.mt_obj.Z = new_z
             self.mt_obj.Tipper = new_tip
 
         else:
-            new_z, new_tip = self._mt_obj.interpolate(interp_freq)
+            new_z, new_tip = self._mt_obj.interpolate_impedance_tensor(interp_freq)
             self.mt_obj.Z = new_z
             self.mt_obj.Tipper = new_tip
 

@@ -103,7 +103,7 @@ class Edi(object):
     Z                     mtpy.core.z.Z class, contains the
                           impedance data
     _block_len            number of data in one line.                6
-    _data_header_str      header string for each of the data         '!****{0}****!'
+    _data_header_str      header string for each of the data         '>!****{0}****!'
                           section
     _num_format           string format of data.                     ' 15.6e'
     _t_labels             labels for tipper blocks
@@ -140,7 +140,7 @@ class Edi(object):
         self._t_labels = [['txr.exp', 'txi.exp', 'txvar.exp'],
                           ['tyr.exp', 'tyi.exp', 'tyvar.exp']]
 
-        self._data_header_str = '!****{0}****!\n'
+        self._data_header_str = '>!****{0}****!\n'
 
         self._num_format = ' 15.6e'
         self._block_len = 6
@@ -576,7 +576,7 @@ class Edi(object):
         header_lines = self.Header.write_header()
         info_lines = self.Info.write_info()
         define_lines = self.Define_measurement.write_define_measurement()
-        dsect_lines = self.Data_sect.write_data_sect()
+        dsect_lines = self.Data_sect.write_data_sect(over_dict={'nfreq': len(self.Z.freq)})
 
         # write out frequencies
         freq_lines = [self._data_header_str.format('frequencies'.upper())]
@@ -1064,7 +1064,7 @@ class Header(object):
             try:
                 value = getattr(self, key)
             except Exception, ex:
-                print("key value", key,value, ex)
+                logger.debug("key value: %s %s %s", key,value, ex)
                 value=None
             if key in ['progdate', 'progvers']:
                 if value is None:
@@ -1663,6 +1663,11 @@ class DataSection(object):
     """
 
     def __init__(self, edi_fn=None, edi_lines=None):
+        """
+        writing the EDI files MTSECT
+        :param edi_fn:
+        :param edi_lines:
+        """
         self.edi_fn = edi_fn
         self.edi_lines = edi_lines
 
@@ -1685,6 +1690,8 @@ class DataSection(object):
 
         if self.edi_fn is not None or self.edi_lines is not None:
             self.read_data_sect()
+
+        return
 
     def get_data_sect(self):
         """
@@ -1743,10 +1750,15 @@ class DataSection(object):
 
                 setattr(self, key, value)
 
-    def write_data_sect(self, data_sect_list=None):
+    def write_data_sect(self, data_sect_list=None, over_dict=None):
         """
         write a data section
         """
+
+        # FZ: need to modify the nfreq (number of freqs), when re-writing effective EDI files)
+        if over_dict is not None:
+            for akey in over_dict.keys():
+                self.__setattr__(akey, over_dict[akey])
 
         if data_sect_list is not None:
             self.read_data_sect(data_sect_list)

@@ -334,7 +334,7 @@ class WSData(object):
                 (self.period_list <= 1. / mt_obj.Z.freq.min()))]
 
             # interpolate over those periods
-            interp_z, interp_t = mt_obj.interpolate(1. / interp_periods)
+            interp_z, interp_t = mt_obj.interpolate_impedance_tensor(1. / interp_periods)
 
             for kk, ff in enumerate(interp_periods):
                 jj = np.where(self.period_list == ff)[0][0]

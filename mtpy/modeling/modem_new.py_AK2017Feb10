@@ -831,7 +831,7 @@ class Data(object):
                         interp_periods_new.append(iperiod)
                 interp_periods = np.array(interp_periods_new)
             
-            interp_z, interp_t = mt_obj.interpolate(1./interp_periods)
+            interp_z, interp_t = mt_obj.interpolate_impedance_tensor(1. / interp_periods)
             for kk, ff in enumerate(interp_periods):
                 jj = np.where(self.period_list == ff)[0][0]
                 self.data_array[ii]['z'][jj] = interp_z.z[kk, :, :]

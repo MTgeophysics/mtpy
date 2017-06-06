@@ -110,7 +110,7 @@ def estimate_static_spatial_median(edi_fn, radius=1000., num_freq=20,
                               (interp_freq <= mt_obj_kk.Z.freq.max()))
 
         interp_freq_kk = interp_freq[interp_idx]
-        Z_interp, Tip_interp = mt_obj_kk.interpolate(interp_freq_kk)
+        Z_interp, Tip_interp = mt_obj_kk.interpolate_impedance_tensor(interp_freq_kk)
         Z_interp._compute_res_phase()
         res_array[
             kk,
