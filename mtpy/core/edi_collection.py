@@ -9,22 +9,24 @@ InitDate: 2017-04-20
 
 from __future__ import print_function
 import sys
-import os, glob
+import os
+import glob
 import logging
 import csv
 import numpy as np
 import pandas as pd
 import geopandas as gpd
-from shapely.geometry import Point, Polygon, LineString, LinearRing
-import matplotlib as mpl
 import matplotlib.pyplot as plt
-from mpl_toolkits.axes_grid1 import make_axes_locatable
+from shapely.geometry import Point #, Polygon, LineString, LinearRing
+# import matplotlib as mpl
+# from mpl_toolkits.axes_grid1 import make_axes_locatable
 import mtpy.core.mt as mt
 
 from mtpy.utils.mtpylog import MtPyLog
 
 logger = MtPyLog().get_mtpy_logger(__name__)
 logger.setLevel(logging.DEBUG)
+
 
 def is_it_in(anum, aseq):
     """
@@ -37,12 +39,13 @@ def is_it_in(anum, aseq):
     tolerance = 0.00001
 
     for an_number in aseq:
-        if abs(anum-an_number)< tolerance:
+        if abs(anum - an_number) < tolerance:
             return True
         else:
             pass
 
     return False
+
 
 class EdiCollection(object):
     """
@@ -50,21 +53,21 @@ class EdiCollection(object):
     """
 
     def __init__(self, edilist, ptol=0.05):
-        """
-        constructor
+        """ constructor
         :param edilist: a list of edifiles with full path, for read-only
-        :param ptol: period tolerance considered as equal, default 0.05 means 5%
+        :param ptol: period tolerance considered as equal, default 0.05 means 5 percent
         this param controls what freqs/periods are grouped together:
-        10% may result more double counting of freq/period data than 5%.
-        eg: E:\Data\MT_Datasets\WenPingJiang_EDI 18528 rows vs 14654 rows
+        10pct may result more double counting of freq/period data than 5pct.
+        eg: E:/Data/MT_Datasets/WenPingJiang_EDI 18528 rows vs 14654 rows
         """
+
         self.edifiles = edilist
         logger.info("number of edi files in this collection: %s",
                     len(self.edifiles))
         assert len(self.edifiles) > 0
 
         self.num_of_edifiles = len(self.edifiles)  # number of stations
-        print ("number of stations/edifiles = %s" % self.num_of_edifiles )
+        print ("number of stations/edifiles = %s" % self.num_of_edifiles)
 
         self.ptol = ptol
 
@@ -77,13 +80,11 @@ class EdiCollection(object):
         self.all_frequencies = None
         self.all_periods = self._get_all_periods()
 
-
         self.geopdf = self.create_mt_station_gdf()
 
         self.bound_box_dict = self.get_bounding_box()  # in orginal projection
 
         return
-
 
     def _get_all_periods(self):
         """
@@ -103,7 +104,8 @@ class EdiCollection(object):
 
         logger.info("Number of MT Frequencies: %s", len(self.all_frequencies))
 
-        all_periods = 1.0 / np.array(sorted(self.all_frequencies, reverse=True))
+        all_periods = 1.0 / \
+            np.array(sorted(self.all_frequencies, reverse=True))
 
         #logger.debug("Type of the all_periods %s", type(all_periods))
         logger.info("Number of MT Periods: %s", len(all_periods))
@@ -116,29 +118,28 @@ class EdiCollection(object):
         check the presence of each period in all edi files, keep a list of periods which are at least percentage present
         :return: a list of periods which are present in at least percentage edi files
         """
-        adict={}
-        for aper  in self.all_periods:
-            afreq = 1.0/aper
-            acount=0
+        adict = {}
+        for aper in self.all_periods:
+            afreq = 1.0 / aper
+            acount = 0
             for mt_obj in self.mt_obj_list:
-                #if afreq in mt_obj.Z.freq:
+                # if afreq in mt_obj.Z.freq:
                 if is_it_in(afreq, mt_obj.Z.freq):
-                    acount= acount+1
+                    acount = acount + 1
 
-            if (100.0*acount)/self.num_of_edifiles >= percentage:
-                adict.update({aper:acount})
+            if (100.0 * acount) / self.num_of_edifiles >= percentage:
+                adict.update({aper: acount})
                 #print (aper, acount)
             else:
                 logger.info("Period %s is ignored", aper)
 
-        mydict_ordered = sorted(adict.items(), key=lambda value: value[1], reverse=True)
+        mydict_ordered = sorted(
+            adict.items(), key=lambda value: value[1], reverse=True)
         # for apair in mydict_ordered:
         #     print (apair)
 
         selected_periods = [pc[0] for pc in mydict_ordered]
         return selected_periods
-
-
 
     def create_mt_station_gdf(self, outshpfile=None):
         """
@@ -146,19 +147,20 @@ class EdiCollection(object):
         :return: gdf
         """
 
-        mt_stations =[ ]
+        mt_stations = []
 
         for mtobj in self.mt_obj_list:
-            mt_stations.append([mtobj.station, mtobj.lon, mtobj.lat, mtobj.elev, mtobj.utm_zone])
+            mt_stations.append(
+                [mtobj.station, mtobj.lon, mtobj.lat, mtobj.elev, mtobj.utm_zone])
 
-        pdf=pd.DataFrame(mt_stations, columns= ['StationId', 'Lon','Lat', 'Elev', 'UtmZone'])
+        pdf = pd.DataFrame(mt_stations, columns=['StationId', 'Lon', 'Lat', 'Elev', 'UtmZone'])
 
         #print (pdf.head())
 
         mt_points = [Point(xy) for xy in zip(pdf.Lon, pdf.Lat)]
         # OR pdf['geometry'] = pdf.apply(lambda z: Point(z.Lon, z.Lat), axis=1)
         # if you want to df = df.drop(['Lon', 'Lat'], axis=1)
-        #crs0 = {'init': 'epsg:4326'}  # WGS84
+        # crs0 = {'init': 'epsg:4326'}  # WGS84
         crs0 = {'init': 'epsg:4283'}  # GDA94
         gdf = gpd.GeoDataFrame(pdf, crs=crs0, geometry=mt_points)
 
@@ -167,15 +169,14 @@ class EdiCollection(object):
 
         return gdf
 
-
     def plot_stations(self, savefile=None, showfig=True):
         """
         visualise the geopandas df of MT stations
         :return:
         """
 
-        gdf=self.geopdf
-        gdf.plot(figsize=(10, 6),  marker='o', color='blue', markersize=5)
+        gdf = self.geopdf
+        gdf.plot(figsize=(10, 6), marker='o', color='blue', markersize=5)
 
         if savefile is not None:
             fig = plt.gcf()
@@ -187,6 +188,10 @@ class EdiCollection(object):
         return savefile
 
     def display_on_basemap(self):
+        """
+
+        :return:
+        """
 
         world = gpd.read_file(gpd.datasets.get_path('naturalearth_lowres'))
 
@@ -197,10 +202,13 @@ class EdiCollection(object):
         # myax.set_xlim([110, 155])
         # myax.set_ylim([-40, -10])
 
-        myax.set_xlim((self.bound_box_dict['MinLon'],self.bound_box_dict['MaxLon']))
-        myax.set_ylim((self.bound_box_dict['MinLat'],self.bound_box_dict['MaxLat']))
+        myax.set_xlim(
+            (self.bound_box_dict['MinLon'], self.bound_box_dict['MaxLon']))
+        myax.set_ylim(
+            (self.bound_box_dict['MinLat'], self.bound_box_dict['MaxLat']))
 
-        myax2 = self.geopdf.plot(ax=myax, figsize=(10, 6), marker='o', color='blue', markersize=8)
+        myax2 = self.geopdf.plot(ax=myax, figsize=(
+            10, 6), marker='o', color='blue', markersize=8)
 
         plt.show()
 
@@ -213,18 +221,21 @@ class EdiCollection(object):
         """
         import examples.sandpit.plot_geotiff_imshow as plotegoimg
 
-        myax = plotegoimg.plot_geotiff(geofile='tests/data/PM_Gravity.tif', show=False)
+        myax = plotegoimg.plot_geotiff(
+            geofile='tests/data/PM_Gravity.tif', show=False)
 
-        margin= 0.02  # degree
-        myax.set_xlim((self.bound_box_dict['MinLon'] -margin, self.bound_box_dict['MaxLon']+margin))
-        myax.set_ylim((self.bound_box_dict['MinLat'] -margin, self.bound_box_dict['MaxLat'] + margin))
+        margin = 0.02  # degree
+        myax.set_xlim(
+            (self.bound_box_dict['MinLon'] - margin, self.bound_box_dict['MaxLon'] + margin))
+        myax.set_ylim(
+            (self.bound_box_dict['MinLat'] - margin, self.bound_box_dict['MaxLat'] + margin))
 
-        myax2 = self.geopdf.plot(ax=myax, figsize=(10, 6), marker='o', color='r', markersize=10)
+        myax2 = self.geopdf.plot(ax=myax, figsize=(
+            10, 6), marker='o', color='r', markersize=10)
 
         plt.show()
 
         return myax2
-
 
     def create_csv_files_moved(self, dest_dir=None):
         """
@@ -232,7 +243,7 @@ class EdiCollection(object):
         :return:
         """
         if dest_dir is None:
-            dest_dir = self.outputdir
+            raise Exception("output dir was not provided")
 
         # summary csv file
         csvfname = os.path.join(dest_dir, "phase_tensor_tipper.csv")
@@ -260,7 +271,8 @@ class EdiCollection(object):
                     p_index = f_index_list[0]
                     # geographic coord lat long and elevation
                     # long, lat, elev = (mt_obj.lon, mt_obj.lat, 0)
-                    station, lon, lat = (mt_obj.station, mt_obj.lon, mt_obj.lat)
+                    station, lon, lat = (
+                        mt_obj.station, mt_obj.lon, mt_obj.lat)
 
                     pt_stat = [station, freq, lon, lat,
                                mt_obj.pt.phimin[0][p_index],
@@ -268,7 +280,8 @@ class EdiCollection(object):
                                mt_obj.pt.azimuth[0][p_index],
                                mt_obj.pt.beta[0][p_index],
                                2 * mt_obj.pt.beta[0][p_index],
-                               mt_obj.pt.ellipticity[0][p_index],  # FZ: get ellipticity begin here
+                               # FZ: get ellipticity begin here
+                               mt_obj.pt.ellipticity[0][p_index],
                                mt_obj.Tipper.mag_real[p_index],
                                mt_obj.Tipper.mag_imag[p_index],
                                mt_obj.Tipper.angle_real[p_index],
@@ -276,7 +289,8 @@ class EdiCollection(object):
 
                     ptlist.append(pt_stat)
                 else:
-                    logger.warn('Freq %s NOT found for this station %s', freq, mt_obj.station)
+                    logger.warn(
+                        'Freq %s NOT found for this station %s', freq, mt_obj.station)
 
             with open(csvfname, "ab") as csvf:  # summary csv for all freqs
                 writer = csv.writer(csvf)
@@ -294,26 +308,22 @@ class EdiCollection(object):
 
         return pt_dict
 
-
     def get_bounding_box(self, epsgcode=None):
-        """
-
+        """ compute bounding box
         :return: bounding box in given proj coord system
         """
 
         if epsgcode is None:
             new_gdf = self.geopdf
-        else: # reproj
+        else:  # reproj
             new_gdf = self.geopdf.to_crs(epsg=epsgcode)
-
 
         tup = new_gdf.total_bounds
 
-        bdict={"MinLon" : tup[0],
-               "MinLat" : tup[1],
-               "MaxLon" : tup[2],
-               "MaxLat" : tup[3]
-               }
+        bdict = {"MinLon": tup[0],
+                 "MinLat": tup[1],
+                 "MaxLon": tup[2],
+                 "MaxLat": tup[3]}
 
         logger.debug(bdict)
 
@@ -325,21 +335,20 @@ class EdiCollection(object):
         :return:
         """
         print (len(self.all_periods), 'unique periods (s)', self.all_periods)
-        print (len(self.all_frequencies), 'unique frequencies (Hz)', self.all_frequencies)
+        print (len(self.all_frequencies),
+               'unique frequencies (Hz)', self.all_frequencies)
 
         print (self.bound_box_dict)
 
         self.plot_stations(savefile='/e/tmp/edi_collection_test.jpg')
 
-        #self.display_on_basemap()
+        # self.display_on_basemap()
 
         self.display_on_image()
 
-        #self.display_folium()
+        # self.display_folium()
 
         return
-
-
 
     def create_phase_tensor_csv(self):
         """
@@ -349,23 +358,22 @@ class EdiCollection(object):
         return
 
 
-
 if __name__ == "__main__":
 
-    if len(sys.argv)<2:
+    if len(sys.argv) < 2:
         print ("USAGE: %s edi_dir OR edi_list " % sys.argv[0])
         sys.exit(1)
     else:
         argv1 = sys.argv[1]
         if os.path.isdir(argv1):
-            edilist = glob.glob(argv1+'/*.edi')
-            assert(len(edilist) > 0 ) # must has edi files
-            obj=EdiCollection(edilist)
+            edis = glob.glob(argv1 + '/*.edi')
+            assert len(edis) > 0  # must has edi files
+            obj = EdiCollection(edis)
 
         elif os.path.isfile(argv1) and argv1.endswith('.edi'):
-            obj=EdiCollection(sys.argv[1:])  # assume input is a list of EDI files
+            # assume input is a list of EDI files
+            obj = EdiCollection(sys.argv[1:])
         else:
-            pass
             sys.exit(2)
 
         # obj.show_prop()
@@ -374,7 +382,7 @@ if __name__ == "__main__":
         #
         # obj.create_mt_station_gdf(outshpfile='/e/tmp/edi_collection_test.shp')
 
-        #########################################################################################
+        #######################################################################
         # how to quick check the shape file created
         # fio info /e/tmp/edi_collection_test.shp
         #
@@ -387,7 +395,7 @@ if __name__ == "__main__":
         #  "schema": {"geometry": "Point",
         #             "properties": {"StationId": "str:80", "Lon": "float:24.15", "Lat": "float:24.15",
         #                  "Elev": "float:24.15", "UtmZone": "str:80"}}}
-        #########################################################################################
+        #######################################################################
 
         obj.create_csv_files_moved(dest_dir=sys.argv[2])
 
