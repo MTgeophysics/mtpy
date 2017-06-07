@@ -105,7 +105,7 @@ python mtpy/core/edi_collection.py /e/Data/MT_Datasets/75099_Youanmi/EDI_Files_e
 #python mtpy/core/edi_collection.py /k/MTPY_TEST/3D_MT_data_edited_fromDuanJM/ /k/tmp_mtpy_output/
 #python mtpy/core/edi_collection.py /k/MTPY_TEST/GA_UA_edited_10s-10000s/ /k/tmp_mtpy_output/
 
-# generate inputs for MODEM
+# generate inputs for MODEM, and output effective new_edi/ files inside the result folder.
 python examples/create_modem_input.py  /e/Data/MT_Datasets/concurry_EDI_files/ /e/Data/MT_Datasets/concurry_topo/AussieContinent_etopo1.asc /e/tmp/
 python examples/create_modem_input.py  /e/Data/MT_Datasets/GA_UA_edited_10s-10000s /e/Data/MT_Datasets/concurry_topo/AussieContinent_etopo1.asc /e/tmp/GA_UA_edited_10s-10000s_B/
 python examples/create_modem_input.py  /e/Data/MT_Datasets/3D_MT_data_edited_fromDuanJM /e/Data/MT_Datasets/concurry_topo/AussieContinent_etopo1.asc /e/tmp/3D_MT_data_modemin/

@@ -100,7 +100,7 @@ if __name__=='__main__':
     model.write_model_file(save_path=outputdir)
 
     # add topography to res model
-    #model.add_topography(topofile, interp_method='nearest')
+    model.add_topography(topofile, interp_method='nearest')
 
 
     # make covariance file
