@@ -786,7 +786,7 @@ def plot4all_periods(edidir):
     edilist = glob.glob(os.path.join(edidir, '*.edi'))
 
     ediset = EdiCollection(edilist)
-    for period_sec in ediset.all_periods:
+    for period_sec in ediset.all_unique_periods:
         try:
             # This will enable the loop continue even though for some freq,
             #  cannot interpolate due to not enough data points

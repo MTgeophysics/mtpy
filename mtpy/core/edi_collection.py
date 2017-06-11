@@ -78,7 +78,8 @@ class EdiCollection(object):
 
         # get all frequencies from all edi files
         self.all_frequencies = None
-        self.all_periods = self._get_all_periods()
+        self.mt_periods=None
+        self.all_unique_periods = self._get_all_periods()
 
         self.geopdf = self.create_mt_station_gdf()
 
@@ -88,7 +89,7 @@ class EdiCollection(object):
 
     def _get_all_periods(self):
         """
-        from the list of edi files get a list of all unique frequencies.
+        from the list of edi files get a list of all unique periods from the frequencies.
         """
         if self.all_frequencies is not None:  # already initialized
             return
@@ -97,6 +98,8 @@ class EdiCollection(object):
         all_freqs = []
         for mt_obj in self.mt_obj_list:
             all_freqs.extend(list(mt_obj.Z.freq))
+
+        self.mt_periods = 1.0/np.array(all_freqs)
 
         # sort all frequencies so that they are in ascending order,
         # use set to remove repeats and make an array
@@ -119,7 +122,7 @@ class EdiCollection(object):
         :return: a list of periods which are present in at least percentage edi files
         """
         adict = {}
-        for aper in self.all_periods:
+        for aper in self.all_unique_periods:
             afreq = 1.0 / aper
             acount = 0
             for mt_obj in self.mt_obj_list:
@@ -131,7 +134,7 @@ class EdiCollection(object):
                 adict.update({aper: acount})
                 #print (aper, acount)
             else:
-                logger.info("Period %s is ignored", aper)
+                logger.info("Period %s is excluded ", aper)
 
         mydict_ordered = sorted(
             adict.items(), key=lambda value: value[1], reverse=True)
@@ -139,6 +142,8 @@ class EdiCollection(object):
         #     print (apair)
 
         selected_periods = [pc[0] for pc in mydict_ordered]
+
+        print("Selected periods %s out of the total %s:" % (len(selected_periods), len(self.all_unique_periods)))
         return selected_periods
 
     def create_mt_station_gdf(self, outshpfile=None):
@@ -334,7 +339,7 @@ class EdiCollection(object):
         show all properties
         :return:
         """
-        print (len(self.all_periods), 'unique periods (s)', self.all_periods)
+        print (len(self.all_unique_periods), 'unique periods (s)', self.all_unique_periods)
         print (len(self.all_frequencies),
                'unique frequencies (Hz)', self.all_frequencies)
 
@@ -397,9 +402,8 @@ if __name__ == "__main__":
         #                  "Elev": "float:24.15", "UtmZone": "str:80"}}}
         #######################################################################
 
-        obj.create_csv_files_moved(dest_dir=sys.argv[2])
+        #obj.create_csv_files_moved(dest_dir=sys.argv[2])
 
         myper = obj.get_periods_by_stats(percentage=10)
 
-        print ("selected periods:")
         print(myper)

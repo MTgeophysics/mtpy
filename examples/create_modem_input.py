@@ -6,12 +6,10 @@ set number of air layers to zero (recommended) or comment out add_topography
 line. Note: setting number of air layers to zero will add bathymetry but not
 topography.
 
-USAGE example:
-    python examples/create_modem_input.py tests/data/edifiles/ examples/etopo1.asc /e/tmp/modem_inputs/
-
-    python examples/create_modem_input.py /e/Data/MT_Datasets/WenPingJiang_EDI
-    /e/Data/MT_Datasets/concurry_edi_topo/AussieContinent_etopo1.asc /e/tmp/WenPingJiang
-
+USAGE examples:
+python examples/create_modem_input.py tests/data/edifiles/ examples/etopo1.asc /e/tmp/modem_test
+python examples/create_modem_input.py /e/Data/MT_Datasets/WenPingJiang_EDI /e/Data/MT_Datasets/concurry_topo/AussieContinent_etopo1.asc
+       /e/tmp/WenPingTest
 
 Developed by
     Alison.Kirkby@ga.gov.au
@@ -60,7 +58,7 @@ if __name__ == '__main__':
     # FZ: Use edi_collection to analyse the whole set of EDI files
     edis_obj = EdiCollection(edi_list)
 
-    period_list = edis_obj.all_periods  # filtered list of periods ?
+    period_list = edis_obj.all_unique_periods  # filtered list of periods ?
     print(type(period_list))
 
     # select commonly occured frequencies from all stations.
@@ -97,6 +95,9 @@ if __name__ == '__main__':
                        z_target_depth=120000)
 
     model.make_mesh()
+
+    model.plot_mesh()
+
     # write a model file to initialise a resistivity model
     model.write_model_file(save_path=outputdir)
 
