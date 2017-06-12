@@ -1134,6 +1134,10 @@ class Data(object):
                                              com, rea, ima, abs_err, '\n'])
                             dlines.append(dline)
 
+        if os.path.exists(self.data_fn):
+            data_fn1=self.data_fn+"_1"
+            os.rename(self.data_fn, data_fn1)
+
         dfid = file(self.data_fn, 'w')
         dfid.writelines(dlines)
         dfid.close()
@@ -2111,6 +2115,8 @@ class Model(object):
     def add_topography(self, topographyfile=None, topographyarray=None, interp_method='nearest',
                        air_resistivity=1e17, sea_resistivity=0.3):
         """
+        read topograph file in to make a surface model.
+        Call project_stations_on_topography in the end.
         """
         # first, get surface data
         if topographyfile is not None:
@@ -2313,6 +2319,12 @@ class Model(object):
                 self.res_model[j, i, ii] = resistivity_value
 
     def project_stations_on_topography(self, air_resistivity=1e17):
+        """
+        This method is used in add_topography().
+        It will Re-write the data file to change the elevation column.
+        :param air_resistivity:
+        :return:
+        """
 
         sx = self.station_locations['rel_east']
         sy = self.station_locations['rel_north']
@@ -2346,11 +2358,15 @@ class Model(object):
             self.Data.data_array['elev'][ss] = topoval + 1.
         self.Data.station_locations = self.station_locations
 
-        self.Data.write_data_file(fill=False)
+        print ("Re-write data file after adding topo")
+        self.Data.write_data_file(fill=False) # same file overridden
+
+        #debug self.Data.write_data_file(save_path='/e/tmp', fill=False)
+        return
 
     def plot_mesh(self, east_limits=None, north_limits=None, z_limits=None,
                   **kwargs):
-        """
+        """Plot the mesh to show model grid
 
         Arguments:
         ----------
