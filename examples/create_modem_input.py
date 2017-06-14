@@ -25,6 +25,38 @@ import numpy as np
 import mtpy.modeling.modem as mtmn
 from mtpy.core.edi_collection import EdiCollection
 
+
+def select_periods(edifiles_list):
+    """
+    FZ: Use edi_collection to analyse the whole set of EDI files
+    :param edifiles:
+    :return:
+    """
+    import matplotlib.pyplot as plt
+
+    edis_obj = EdiCollection(edifiles_list)
+
+    uniq_period_list = edis_obj.all_unique_periods  # filtered list of periods ?
+    print("Unique periods",len(uniq_period_list))
+
+    plt.hist(edis_obj.mt_periods, bins=uniq_period_list)
+    #plt.hist(edis_obj.mt_periods, bins=1000)
+    plt.title("Histogram with uniq_periods bins")
+    plt.xlabel("Periods")
+    plt.ylabel("Occurance in number of MT stations")
+    plt.show()
+
+    #1 ASK user to input a Pmin and Pmax
+
+    #2 percetage stats
+    # select commonly occured frequencies from all stations.
+    # This could miss some slightly varied frquencies in the middle range.
+    select_period_list = np.array(edis_obj.get_periods_by_stats(percentage=10.0))
+    print("Selected periods ", len(select_period_list))
+
+    return select_period_list
+
+
 if __name__ == '__main__':
 
     if len(sys.argv) < 4:
@@ -55,16 +87,7 @@ if __name__ == '__main__':
     # eo = mtedi.Edi(edi_list[0])  # this may miss some periods?
     # period_list = 1. / eo.Z.freq # period_list = np.logspace(-3,3)
 
-    # FZ: Use edi_collection to analyse the whole set of EDI files
-    edis_obj = EdiCollection(edi_list)
-
-    period_list = edis_obj.all_unique_periods  # filtered list of periods ?
-    print(type(period_list))
-
-    # select commonly occured frequencies from all stations.
-    # This could miss some slightly varied frquencies in the middle range.
-    period_list = np.array(edis_obj.get_periods_by_stats(percentage=10.0))
-    print(type(period_list))
+    period_list = select_periods(edi_list)
 
     datob = mtmn.Data(edi_list=edi_list,
                       inv_mode='1',

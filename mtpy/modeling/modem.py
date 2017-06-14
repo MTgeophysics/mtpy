@@ -34,6 +34,7 @@ import mtpy.modeling.ws3dinv as ws
 import mtpy.utils.exceptions as mtex
 import mtpy.utils.gocad as mtgocad
 import mtpy.utils.latlon_utm_conversion as utm2ll
+import mtpy.utils.filehandling as MTfh
 
 try:
     from evtk.hl import gridToVTK, pointsToVTK
@@ -149,7 +150,7 @@ class Data(object):
     fn_basename            basename of data file. *default* is 'ModEM_Data.dat'
     header_strings         strings for header of data file following the format
                            outlined in the ModEM documentation
-    inv_comp_dict          dictionary of inversion componets
+    inv_comp_dict          dictionary of inversion components
     inv_mode               inversion mode, options are: *default* is '1'
                                * '1' --> for 'Full_Impedance' and
                                              'Full_Vertical_Components'
@@ -343,7 +344,7 @@ class Data(object):
                                 'zyy': (1, 1), 'tx': (0, 0), 'ty': (0, 1)}
 
         self.header_strings = \
-            ['# Created using MTpy error {0} of {1:.0f}%, data rotated {2:.1f} deg clockwise from N\n'.format(
+            ['# Created using MTpy error type {0} of {1:.0f}%, data rotated {2:.1f} deg clockwise from N\n'.format(
                 self.error_type, self.error_floor, self._rotation_angle),
                 '# Period(s) Code GG_Lat GG_Lon X(m) Y(m) Z(m) Component Real Imag Error\n']
 
@@ -380,7 +381,7 @@ class Data(object):
         reset the header sring for file
         """
 
-        h_str = '# Created using MTpy error {0} of {1:.0f}%, data rotated {2:.1f}_deg clockwise from N\n'
+        h_str = '# Created using MTpy error type {0} of {1:.0f}%, data rotated {2:.1f} deg clockwise from N\n'
         if self.error_type == 'egbert':
             self.header_strings[0] = h_str.format(self.error_type,
                                                   self.error_egbert,
@@ -417,7 +418,6 @@ class Data(object):
         function to project sites from lat/long to eastings/northing.
         no dependency on external projection modules (e.g. pyproj) but
         limited flexibility for projection.
-
         """
 
         utm_zones_dict = {'M': 9, 'L': 8, 'K': 7, 'J': 6, 'H': 5, 'G': 4, 'F': 3,
@@ -558,13 +558,12 @@ class Data(object):
                  as grid distances and overlaps change over the globe.
 
         """
-        #        # get center position of the stations in lat and lon
-        #        self.center_position = 0.5*np.array([self.data_array['lon'].min() + self.data_array['lon'].max(),
+        # get center position of the stations in lat and lon
+        # self.center_position = 0.5*np.array([self.data_array['lon'].min() + self.data_array['lon'].max(),
         # self.data_array['lat'].min() + self.data_array['lat'].max()])
 
         # try to use pyproj if desired, if not then have to use inbuilt
-        # projection module but may give bad results if crossing more than one
-        # zone
+        # projection module but may give bad results if crossing more than one zone
 
         if self.epsg is not None:
             use_pyproj = True
@@ -620,15 +619,19 @@ class Data(object):
         if self.mt_dict is None:
             self.get_mt_dict()
 
-        if self.period_list is not None:
+        if self.period_list is None:
+            raise ModEMError('Need to input period_min, period_max, '
+                             'max_num_periods or a period_list')
+        else:
             print '-' * 50
             print ('Inverting for these periods:', len(self.period_list))
             for per in self.period_list:
                 print '     {0:<12.6f}'.format(per)
             print '-' * 50
+
             return  # finished
 
-        # why here ? log space interpolation?
+        #FZ: why here ? log space interpolation???
         data_period_list = []
         for s_key in sorted(self.mt_dict.keys()):
             mt_obj = self.mt_dict[s_key]
@@ -663,9 +666,7 @@ class Data(object):
                 print '     {0:<12.6f}'.format(per)
             print '-' * 50
 
-        if self.period_list is None:
-            raise ModEMError('Need to input period_min, period_max, '
-                             'max_num_periods or a period_list')
+
 
     def _set_rotation_angle(self, rotation_angle):
         """
@@ -867,7 +868,8 @@ class Data(object):
         return
 
     def filter_periods(self, mt_obj, per_array):
-        """Select mt_obj's periods in per_array
+        """Select the periods of the mt_obj that are in per_array.
+        used to do original freq inversion.
 
         :param mt_obj:
         :param per_array:
@@ -883,7 +885,6 @@ class Data(object):
                     new_per.append(p)
 
         return np.array(new_per)
-
 
 
     def _set_station_locations(self, station_locations):
@@ -1134,11 +1135,14 @@ class Data(object):
                                              com, rea, ima, abs_err, '\n'])
                             dlines.append(dline)
 
-        if os.path.exists(self.data_fn):
-            data_fn1=self.data_fn+"_1"
-            os.rename(self.data_fn, data_fn1)
+        new_data_fn = MTfh.make_unique_filename(self.data_fn)
+        # if os.path.exists(self.data_fn):
+        #     data_fn1= self.data_fn[:-3]+"OLD"
+        #     os.rename(self.data_fn, data_fn1)
 
-        dfid = file(self.data_fn, 'w')
+
+        #dfid = file(self.data_fn, 'w')
+        dfid = file(new_data_fn, 'w')
         dfid.writelines(dlines)
         dfid.close()
 
@@ -1148,7 +1152,7 @@ class Data(object):
         np.savetxt(op.join(self.save_path, 'epsg'),
                    np.array([self.epsg]), fmt='%1i')
 
-        print 'Wrote ModEM data file to {0}'.format(self.data_fn)
+        print 'Wrote ModEM data file to {0}'.format(new_data_fn)
 
     def convert_ws3dinv_data_file(self, ws_data_fn, station_fn=None,
                                   save_path=None, fn_basename=None):
@@ -1480,7 +1484,7 @@ class Data(object):
 
         print 'Wrote file to {0}'.format(vtk_fn)
 
-
+# ===================================================================================
 class Residual():
     """
     class to contain residuals for each data point, and rms values for each
@@ -2078,6 +2082,8 @@ class Model(object):
                                                                  self.Data.center_position_EN[1])
             except:
                 pass
+
+            print("make_mesh(): writing data file")
             self.Data.write_data_file(fill=False)
 
         # --> print out useful information
@@ -2179,6 +2185,8 @@ class Model(object):
 
         self.covariance_mask = self.covariance_mask[::-1]
         self.project_stations_on_topography()
+
+        return
 
     def project_surface(self, surfacefile=None, surface=None, surfacename=None,
                         surface_epsg=4326, method='nearest'):

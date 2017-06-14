@@ -36,7 +36,7 @@ def is_it_in(anum, aseq):
     :return:
     """
 
-    tolerance = 0.00001
+    tolerance = 0.0000001
 
     for an_number in aseq:
         if abs(anum - an_number) < tolerance:
@@ -105,7 +105,7 @@ class EdiCollection(object):
         # use set to remove repeats and make an array
         self.all_frequencies = sorted(list(set(all_freqs)))
 
-        logger.info("Number of MT Frequencies: %s", len(self.all_frequencies))
+        logger.debug("Number of MT Frequencies: %s", len(self.all_frequencies))
 
         all_periods = 1.0 / \
             np.array(sorted(self.all_frequencies, reverse=True))
@@ -116,7 +116,7 @@ class EdiCollection(object):
 
         return all_periods
 
-    def get_periods_by_stats(self, percentage=50.0):
+    def get_periods_by_stats(self, percentage=10.0):
         """
         check the presence of each period in all edi files, keep a list of periods which are at least percentage present
         :return: a list of periods which are present in at least percentage edi files
