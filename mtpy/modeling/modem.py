@@ -1731,8 +1731,7 @@ class Model(object):
         >>> md = modem.Data(edi_list)
         >>> md.write_data_file(save_path=r"/home/modem/Inv1")
         >>> #3) make a grid from the stations themselves with 200m cell spacing
-        >>> mmesh = modem.Model(Data=md, cell_size_east=200, 
-                                cell_size_north=200)
+        >>> mmesh = modem.Model(Data=md, cell_size_east=200, cell_size_north=200)
         >>> mmesh.make_mesh()
         >>> # check to see if the mesh is what you think it should be
         >>> msmesh.plot_mesh()
@@ -2470,22 +2469,26 @@ class Model(object):
                  lw=line_width,
                  color=line_color)
 
-        if east_limits == None:
-            ax1.set_xlim(plot_east.min() - 10 * self.cell_size_east,
-                         plot_east.max() + 10 * self.cell_size_east)
-        else:
-            ax1.set_xlim(east_limits)
+        # if east_limits == None:
+        #     ax1.set_xlim(plot_east.min() - 50 * self.cell_size_east,
+        #                  plot_east.max() + 50 * self.cell_size_east)
+        # else:
+        #     ax1.set_xlim(east_limits)
+        #
+        # if north_limits == None:
+        #     ax1.set_ylim(plot_north.min() - 50 * self.cell_size_north,
+        #                  plot_north.max() + 50 * self.cell_size_north)
+        # else:
+        #     ax1.set_ylim(north_limits)
 
-        if north_limits == None:
-            ax1.set_ylim(plot_north.min() - 10 * self.cell_size_north,
-                         plot_north.max() + 10 * self.cell_size_east)
-        else:
-            ax1.set_ylim(north_limits)
+        ax1.set_xlim(east_min, east_max)
+        ax1.set_ylim(north_min, north_max )
 
         ax1.set_ylabel('Northing (m)', fontdict={'size': 9, 'weight': 'bold'})
         ax1.set_xlabel('Easting (m)', fontdict={'size': 9, 'weight': 'bold'})
 
-        # ----plot depth view
+        #---------------------------------------
+        # plot depth view
         ax2 = fig.add_subplot(1, 2, 2, aspect='auto', sharex=ax1)
 
         # plot the grid
@@ -2526,12 +2529,12 @@ class Model(object):
             ax2.set_ylim(self.z_target_depth, -200)
         else:
             ax2.set_ylim(z_limits)
-
-        if east_limits == None:
-            ax1.set_xlim(plot_east.min() - 10 * self.cell_size_east,
-                         plot_east.max() + 10 * self.cell_size_east)
-        else:
-            ax1.set_xlim(east_limits)
+        #
+        # if east_limits == None:
+        #     ax2.set_xlim(plot_east.min() - 50 * self.cell_size_east,
+        #                  plot_east.max() + 50 * self.cell_size_east)
+        # else:
+        #     ax2.set_xlim(east_limits)
 
         ax2.set_ylabel('Depth (m)', fontdict={'size': 9, 'weight': 'bold'})
         ax2.set_xlabel('Easting (m)', fontdict={'size': 9, 'weight': 'bold'})

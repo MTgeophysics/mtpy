@@ -101,21 +101,21 @@ if __name__ == '__main__':
 
     # create model file
     model = mtmn.Model(Data=datob,
-                       cell_size_east=2000,
-                       cell_size_north=2000,
-                       pad_north=7,  # number of padding cells in each of the north and south directions
-                       pad_east=7,  # number of east and west padding cells
-                       pad_z=6,  # number of vertical padding cells
+                       #cell_size_east=2000, cell_size_north=2000,
+                       cell_size_east=10000,cell_size_north=10000,
+                       pad_north=10,  # number of padding cells in each of the north and south directions
+                       pad_east=10,  # number of east and west padding cells
+                       pad_z=10,  # number of vertical padding cells
                        pad_stretch_v=3,
                        # factor to increase by in padding cells (vertical)
                        pad_stretch_h=3,
                        # factor to increase by in padding cells (vertical)
                        n_airlayers=10,  # number of air layers
                        res_model=100,  # halfspace resistivity value for reference model
-                       n_layers=80,  # total number of z layers, including air
-                       z1_layer=100,  # first layer thickness
+                       n_layers=40,  # total number of z layers, including air
+                       z1_layer=1000,  # first layer thickness
                        epsg=epsg_code,  # epsg
-                       z_target_depth=120000)
+                       z_target_depth=200000)
 
     model.make_mesh()
 
