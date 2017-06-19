@@ -1,5 +1,5 @@
 """
-Test the classes of the moduel modem.py
+Test the classes of the module modem.py
 """
 import glob
 import os
@@ -48,17 +48,18 @@ class TestModem(TestCase):
         epsg_code = 3112
 
         self.inputdir = '../examples/data/edi2'
-        self.inputdir = '/e/Data/MT_Datasets/3D_MT_data_edited_fromDuanJM'
-        self.inputdir = '/e/Data/MT_Datasets/GA_UA_edited_10s-10000s'
+        self.inputdir = 'E:/Data/MT_Datasets/3D_MT_data_edited_fromDuanJM'
+        self.inputdir = 'E:/Data/MT_Datasets/GA_UA_edited_10s-10000s'
 
-
-        self.topofile = '/e/Data/MT_Datasets/aussie_etopo1_bedrock.asc'
+        self.topofile = 'E:/Data/MT_Datasets/aussie_etopo1_bedrock.asc'
         # self.topofile = '../examples/etopo1.asc'
 
-        self.outputdir = os.path.join(tempfile.gettempdir(),'test_out') # '/tmp/test_out/'
+        tempdir='E:/temp'  # tempfile.gettempdir()
+        self.outputdir = os.path.join(tempdir,'test_out') # '/tmp/test_out/'
 
         #clean-up the output dir then creat a new one (empty)
-        shutil.rmtree(self.outputdir)
+        if os.path.exists(self.outputdir):
+            shutil.rmtree(self.outputdir)
         os.mkdir(self.outputdir)
 
         edi_list = glob.glob(self.inputdir + '/*.edi')

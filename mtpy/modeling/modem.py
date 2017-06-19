@@ -614,7 +614,6 @@ class Data(object):
     def get_period_list(self):
         """
         make a period list to invert for
-
         """
         if self.mt_dict is None:
             self.get_mt_dict()
@@ -2121,7 +2120,7 @@ class Model(object):
                        air_resistivity=1e17, sea_resistivity=0.3):
         """
         read topograph file in to make a surface model.
-        Call project_stations_on_topography in the end.
+        Call project_stations_on_topography in the end, which will change the .dat file
         """
         # first, get surface data
         if topographyfile is not None:
@@ -2268,6 +2267,8 @@ class Model(object):
         # elevation on the centre of the grid nodes
         elev_mg = spi.griddata(
             points, values, xi, method=method).reshape(len(yg), len(xg))
+
+        print("Elevation data ", len(yg), len(xg), elev_mg.shape)
 
         # get a name for surface
         if surfacename is None:
@@ -3503,11 +3504,11 @@ def read_surface_ascii(ascii_fn):
     unlike original function, returns list of lat, long and elevation (no projections)
 
     The ascii format is assumed to be:
-    ncols         3601
-    nrows         3601
-    xllcorner     -119.00013888889 (latitude of lower left)
-    yllcorner     36.999861111111  (latitude of lower left)
-    cellsize      0.00027777777777778
+    ncols        2743
+    nrows        2019
+    xllcorner    111.791666666667 (lon of lower left)
+    yllcorner    -45.341666666667 (lat of lower left)
+    cellsize     0.016666666667
     NODATA_value  -9999
     elevation data W --> E
     N
@@ -3545,7 +3546,9 @@ def read_surface_ascii(ascii_fn):
     lon = np.linspace(x0, x0 + cs * (nx - 1), nx)
     lat = np.linspace(y0, y0 + cs * (ny - 1), ny)
 
+
     return lon, lat, elevation
+    #return lat, lon, elevation # FZ: switch lat-lon to match with MT's coordinate definition
 
 
 # --> read in ascii dem file
@@ -5268,3 +5271,16 @@ class PlotSlices(object):
 # ==============================================================================
 class ModEMError(Exception):
     pass
+
+if __name__ == "__main__":
+    import sys
+    ascfile = sys.argv[1]
+
+    lon, lat, elev = read_surface_ascii(ascfile)
+
+    # print(lon)
+    # print(lat)
+    # print(elev)
+
+    print(lon.shape, lat.shape, elev.shape)
+
