@@ -20,9 +20,21 @@ class ImagingBase:
     def plot(self, **kwargs):
         pass
 
+    def show(self):
+        """
+        display the image
+        :return:
+        """
+        if self._fig == None:
+            self.plot()
+        self._fig.show()
+
+
     @abstractmethod
-    def export_image(self, fn):
-        pass
+    def export_image(self, fn, dpi=800):
+        if self.fig == None:
+            self.plot()
+        self._fig.savefile(fn, dpi)
 
     @abstractmethod
     def set_edi(self, edis):
@@ -38,5 +50,4 @@ class ImagingBase:
         else:
             # todo raise an exception
             pass
-
 
