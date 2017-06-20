@@ -1,10 +1,4 @@
 """
-    Description:
-        todo: write description
-
-    Usage:
-        todo: write usage
-
     Author: YingzhiGou
     Date: 20/06/2017
 """
@@ -14,6 +8,11 @@ import mtpy.core.mt as mt
 
 
 class ImagingBase:
+    """
+    Description:
+        This is the base class for all the imaging classes, with standardized API (as abstract methods)
+        Also some common functionality should be implemented here.
+    """
     __metaclass__ = abc.ABCMeta
 
     @abc.abstractmethod
@@ -33,6 +32,9 @@ class ImagingBase:
         else:
             self._fig.show()
 
+    # @abc.abstractmethod
+    # def set_param(self, **kwargs):
+    #     pass
 
     def export_image(self, fn, **kwargs):
         if self._fig == None:
