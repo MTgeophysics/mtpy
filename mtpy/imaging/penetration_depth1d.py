@@ -8,21 +8,15 @@ Author: fei.zhang@ga.gov.au
 Date:   2017-01-23
 """
 
-import glob
 import os
 import sys
-import numpy as np
 
 import matplotlib as mpl
+from mtpy.utils.mtpylog import MtPyLog
+from penetration import Depth1D
+
 mpl.rcParams['lines.linewidth'] = 2
 mpl.rcParams['lines.color'] = 'r'
-
-import matplotlib.pyplot as plt
-
-import mtpy.core.mt as mt
-
-import mtpy.imaging.plot_mt_response as mtpr
-from mtpy.utils.mtpylog import MtPyLog
 
 # get a logger object for this module, using the utility class MtPyLog to
 # config the logger
@@ -143,7 +137,6 @@ logger = MtPyLog().get_mtpy_logger(__name__)
 # updated by Yingzhi
 # all ploting function are moved to class Depth1D in penetration
 
-from penetration import Depth1D
 
 def plot_edi_dir(edi_path, rholist=['zxy', 'zyx', 'det']):
     """ plot edi files from the input directory edi_path
@@ -180,6 +173,7 @@ def plot_edi_file(edifile, rholist=['zxy', 'zyx', 'det'], savefile=None):
         image.export_image(savefile)
     image.show()
 
+
 # End of update
 ########################################################################
 
@@ -206,7 +200,7 @@ if __name__ == '__main__':
             plot_edi_file(edi_path, savefile='C:/temp/pen_depth.jpg')
             # rholist can be any of ['zxy','zyx','det'], default all of them
         elif os.path.isdir(edi_path):  # choose a suitable function below at run
-            #plot_edi_dir(edi_path )
+            # plot_edi_dir(edi_path )
             plot_edi_dir(edi_path, rholist=['det'])
         else:
             logger.error("Usage %s %s", sys.argv[0], "path2edi")
