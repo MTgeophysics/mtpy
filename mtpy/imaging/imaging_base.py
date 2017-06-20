@@ -34,10 +34,10 @@ class ImagingBase:
             self._fig.show()
 
 
-    def export_image(self, fn, dpi=800):
+    def export_image(self, fn, **kwargs):
         if self._fig == None:
             self.plot()
-        self._fig.savefile(fn, dpi)
+        self._fig.savefig(fn, **kwargs)
 
     @abc.abstractmethod
     def set_data(self, data):
