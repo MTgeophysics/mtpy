@@ -77,7 +77,6 @@ class ImagingBase:
             # todo raise an exception
             pass
 
-
     def clear(self):
         """
         clear the figure
