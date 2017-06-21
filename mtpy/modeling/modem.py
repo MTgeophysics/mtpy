@@ -2052,6 +2052,7 @@ class Model(object):
 
         # z_grid point at zero level
         self.sea_level = z_grid[self.n_airlayers]
+        print("FZ:***1 sea_level = ", self.sea_level)
 
         # ---Need to make an array of the individual cell dimensions for
         #   modem
@@ -2149,6 +2150,7 @@ class Model(object):
 
             # adjust sea level
             self.sea_level = self.grid_z[self.n_airlayers]
+            print("FZ:***2 sea_level = ", self.sea_level)
 
             # assign topography
             self.assign_resistivity_from_surfacedata(
@@ -2360,6 +2362,8 @@ class Model(object):
             # otherwise place station at the top of the model
             else:
                 szi = 0
+
+            print("FZ:*** szi=", szi)
             # assign topography value
             topoval = self.grid_z[szi]
             self.station_locations['elev'][ss] = topoval + 1.
@@ -2370,6 +2374,8 @@ class Model(object):
         self.Data.write_data_file(fill=False) # same file overridden
 
         #debug self.Data.write_data_file(save_path='/e/tmp', fill=False)
+        print("FZ:*** what is self.grid_z=", self.grid_z.shape, self.grid_z)
+
         return
 
     def plot_mesh(self, east_limits=None, north_limits=None, z_limits=None,
@@ -3009,6 +3015,8 @@ class Model(object):
 
         # sea level in grid_z coordinates, calculate and adjust centre
         self.sea_level = self.grid_z[self.n_airlayers]
+
+        print("FZ:***3 sea_level = ", self.sea_level)
 
         # get relative grid locations
         if calculate_centre:

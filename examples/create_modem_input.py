@@ -110,7 +110,7 @@ if __name__ == '__main__':
                        # factor to increase by in padding cells (vertical)
                        pad_stretch_h=3,
                        # factor to increase by in padding cells (vertical)
-                       n_airlayers=10,  # number of air layers
+                       n_airlayers=0,  # number of air layers
                        res_model=100,  # halfspace resistivity value for reference model
                        n_layers=40,  # total number of z layers, including air
                        z1_layer=1000,  # first layer thickness
