@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-Visualize Horizontal and Vertical Slices of the ModEM's output Model: *.dat and *.rho files
+Visualize Horizontal and Vertical Slices of the ModEM's output Model: *.dat and *.rho (same as *.ws) files
+at a given distance from the centre.
 
 Created on Tue 2016-12-05 by
 fei.zhang@ga.gov.au
@@ -18,7 +19,6 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 from mtpy.modeling.modem import Data
 from mtpy.modeling.modem import Model
 
-
 class ModemPlotVerticalSlice():
 
     def __init__(self, filedat, filerho, plot_orient='ew', **kwargs):
@@ -30,14 +30,14 @@ class ModemPlotVerticalSlice():
         self.datfile = filedat
         self.rhofile = filerho
 
-        # plot orientation ('ns' (north-south),'ew' (east-west) or 'z'
-        # (horizontal slice))
+        # plot orientation 'ns' (north-south),'ew' (east-west) or
+        # 'z' (horizontal slice))
         self.plot_orientation = plot_orient
 
         # plotdir = 'z' #'ns' #'ew'
         # slice location, in local grid coordinates (if it is a z slice, this
         # is slice depth)
-        self.slice_location = kwargs.pop('slice_location', 8000)
+        self.slice_location = kwargs.pop('slice_location', 1000)
         # maximum distance in metres from vertical slice location and station
         self.station_dist = kwargs.pop('station_dist', 50000)
         # z limits (positive down so order is reversed)
@@ -82,10 +82,12 @@ class ModemPlotVerticalSlice():
         """
         self.plot_orientation = orient
 
-    def make_plot(self):
+    def make_plot(self,slice_location=1000):
         """ create a plot based on the input data and parameters
         :return:
         """
+
+        self.slice_location = slice_location
 
         fdict = {'size': self.font_size, 'weight': 'bold'}
 
@@ -223,17 +225,17 @@ class ModemPlotVerticalSlice():
 # Example code how to use the class and in-situ testing of the class
 # Usage Guide:
 #   export PYTHONPATH="E:/Githubz/mtpy2"
-#   export PATH="/c/Anaconda2":$PATH
-#   python  mtpy/imaging/modem_plot_vertical_slice.py  # assume harded-coded input data path is correct
+#   python  mtpy/imaging/modem_plot_slices.py  # assume harded-coded input data path is correct
 # OR preferred
-#   python mtpy/imaging/modem_plot_vertical_slice.py examples/data/ModEM_files/VicSynthetic07/
+#   python mtpy/imaging/modem_plot_slices.py examples/data/ModEM_files/VicSynthetic07/
 # OR
-#   python mtpy/imaging/modem_plot_vertical_slice.py  path2datfile path2rhofile [plot_orient]
+#   python mtpy/imaging/modem_plot_slices.py  path2datfile path2rhofile [slice_locations]
 
 # Example:
-# python mtpy/imaging/modem_plot_vertical_slice.py \
-#       /e/Data/Modeling/Isa/100hs_flat_BB/Isa_run3_NLCG_049.dat
-#       /e/Data/Modeling/Isa/100hs_flat_BB/Isa_run3_NLCG_049.rho
+# python mtpy/imaging/modem_plot_slices.py \
+#     /e/Data/Modeling/Isa/100hs_flat_BB/Isa_run3_NLCG_048.dat /e/Data/Modeling/Isa/100hs_flat_BB/Isa_run3_NLCG_048.rho 2000 5000
+# python mtpy/imaging/modem_plot_slices.py
+#     /e/tmp/GA_UA_edited_10s-10000s_20/ModEM_Data.dat /e/tmp/GA_UA_edited_10s-10000s_20/ModEM_Model.ws
 # -----------------------------------------------------------------------
 if __name__ == "__main__":
     # INPUTS #
@@ -274,19 +276,24 @@ if __name__ == "__main__":
         rhof = sys.argv[2]
 
     if len(sys.argv) >= 4:
-        plot_or = sys.argv[3]
+        slice_locs = sys.argv[3:]
+    else:
+        slice_locs=[1000,2000,8000]
 
     # construct plot object
-    myObj = ModemPlotVerticalSlice(datf, rhof)  # ,map_scale='m')
+    myObj = ModemPlotVerticalSlice(datf, rhof )  # ,map_scale='m')
 
-    #  plot 3-slices
-    myObj.set_plot_orientation('ew')
-    myObj.make_plot()
+    for dist in slice_locs:
+        sdist=int(dist)
 
-    myObj.set_plot_orientation('ns')
-    myObj.make_plot()
+        #  plot slices in three orientations at a given slice_location=sdist
+        myObj.set_plot_orientation('ew')
+        myObj.make_plot( slice_location=sdist)
 
-    myObj.set_plot_orientation('z')
-    myObj.make_plot()
+        myObj.set_plot_orientation('ns')
+        myObj.make_plot(slice_location=sdist)
 
-    plt.show()
+        myObj.set_plot_orientation('z')
+        myObj.make_plot(slice_location=sdist)
+
+        plt.show()

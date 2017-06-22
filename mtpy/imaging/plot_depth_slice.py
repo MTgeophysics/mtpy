@@ -226,10 +226,13 @@ class PlotDepthSlice(object):
             else:
                 print 'Could not find data file {0}'.format(self.data_fn)
 
-    def plot(self):
+    def plot(self, ind):
         """
         plot depth slices
         """
+
+        self.depth_index=ind
+
         # --> get information from files
         self.read_files()
 
@@ -412,7 +415,10 @@ class PlotDepthSlice(object):
             if self.save_plots == 'y':
                 out_file_name = "Depth_{}_{:.4f}.png".format(
                     ii, self.grid_z[ii])
-                path2outfile = os.path.join(self.save_path, out_file_name)
+                outdir = os.path.join(self.save_path, 'SliceImages')
+                if not os.path.exists(outdir):
+                    os.mkdir(outdir)
+                path2outfile = os.path.join(outdir, out_file_name)
                 fig.savefig(
                     path2outfile,
                     dpi=self.fig_dpi,
@@ -473,4 +479,32 @@ class PlotDepthSlice(object):
         rewrite the string builtin to give a useful message
         """
 
-        return ("Plots depth slices of model from WS3DINV")
+        return ("Plots depth slices of model from INVERSION")
+#-------------------------------------------------------------------------
+if __name__ == '__main__':
+    """
+    plot depth slices
+    """
+    import sys
+    if len(sys.argv)<2:
+        print("Usage: %s file.rho depth_index" % sys.argv[0])
+        sys.exit(1)
+
+    depth_ind = -1
+
+    if len(sys.argv)>=2:
+        modrho=sys.argv[1]
+    if len(sys.argv)>=3:
+        depth_ind = int(sys.argv[2])
+    # pltObj= PlotDepthSlice(model_fn=modrho, xminorticks=100000, yminorticks=100000, depth_index=di, save_plots='y')
+
+    pltObj=PlotDepthSlice( model_fn=modrho, save_plots='y', depth_index=1)
+
+    print (depth_ind)
+    if depth_ind >0:
+        pltObj.plot(depth_ind)
+    else:
+        # loop to plot multi slices:
+        max_slices = 10
+        for index in xrange(1, max_slices):
+            pltObj.plot(index)

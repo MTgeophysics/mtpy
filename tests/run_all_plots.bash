@@ -62,8 +62,8 @@ python examples/plot_phase_tensor_section.py /e/Data/MT_Datasets/GA_UA_edited_10
 python mtpy/utils/shapefiles.py /e/Data/MT_Datasets/GA_UA_edited_10s-10000s/ /e/Data/MT_Datasets/GA_UA_edited_10s-10000s_SHP/
 python mtpy/utils/shapefiles.py /e/Data/MT_Datasets/3D_MT_data_edited_fromDuanJM /e/Data/MT_Datasets/3D_MT_data_edited_fromDuanJM_SHP/
 
-# prepare input for ModEM input files: examples/create_modem_input.py
-python examples/create_modem_input.py tests/data/edifiles/ examples/etopo1.asc /e/tmp/modem_inputs/
+# view horizontal slice of a rho file
+python mtpy/imaging/plot_depth_slice.py /e/Data/Modeling/Isa/100hs_flat_BB/Isa_run3_NLCG_048.rho 20
 
 # visualize ModEM output python examples/modem_plot_models.py
 python examples/modem_plot_models.py ./examples/data/ModEM_files/VicSynthetic07
@@ -106,6 +106,9 @@ python mtpy/core/edi_collection.py /e/Data/MT_Datasets/75099_Youanmi/EDI_Files_e
 #python mtpy/core/edi_collection.py /k/MTPY_TEST/GA_UA_edited_10s-10000s/ /k/tmp_mtpy_output/
 
 # generate inputs for MODEM, and output effective new_edi/ files inside the result folder.
+# prepare input for ModEM input files: examples/create_modem_input.py
+python examples/create_modem_input.py tests/data/edifiles/ examples/etopo1.asc /e/tmp/modem_inputs/
+
 python examples/create_modem_input.py  /e/Data/MT_Datasets/concurry_EDI_files/ /e/Data/MT_Datasets/concurry_topo/AussieContinent_etopo1.asc /e/tmp/
 python examples/create_modem_input.py  /e/Data/MT_Datasets/GA_UA_edited_10s-10000s /e/Data/MT_Datasets/concurry_topo/AussieContinent_etopo1.asc /e/tmp/GA_UA_edited_10s-10000s_B/
 python examples/create_modem_input.py  /e/Data/MT_Datasets/3D_MT_data_edited_fromDuanJM /e/Data/MT_Datasets/concurry_topo/AussieContinent_etopo1.asc /e/tmp/3D_MT_data_modemin/
@@ -113,3 +116,4 @@ python examples/create_modem_input.py  /e/Data/MT_Datasets/Isa_EDI_edited_10Hz_1
 python examples/create_modem_input.py  /e/Data/MT_Datasets/WenPingJiang_EDI /e/Data/MT_Datasets/concurry_topo/AussieContinent_etopo1.asc /e/tmp/WenPingJiang_EDI_modemin
 
 python examples/create_modem_input.py  /e/Data/MT_Datasets/GA_UA_edited_10s-10000s /e/Data/MT_Datasets/concurry_topo/AussieContinent_etopo1.asc /e/tmp/GA_UA_edited_10s-10000s_16
+
