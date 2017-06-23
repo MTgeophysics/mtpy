@@ -1,14 +1,17 @@
 """
-Description:
-    what does this script module do? How to do it.
+Description
+    view a model mesh (x y z) cell sizes.
+    Input files format .ws, .rho, .prm
+
+How to run
+    python examples/view_modem_model.py /e/Data/Modeling/Isa/100hs_flat_BB/Isa_run3_NLCG_048.rho
 
 Author: fei.zhang@ga.gov.au
-
-Date:
+Date: 2017-06-21
 """
 import sys
 import glob
-
+import numpy as np
 import matplotlib.pyplot as plt
 
 
@@ -36,24 +39,9 @@ def plot_model_mesh(modelfile, east_limits=None, north_limits=None, z_limits=Non
     :return:
     """
 
-    fig_size = kwargs.pop('fig_size', [6, 4])
-    fig_dpi = kwargs.pop('fig_dpi', 300)
-    fig_num = kwargs.pop('fig_num', 1)
-
-    station_marker = kwargs.pop('station_marker', 'v')
-    marker_color = kwargs.pop('station_color', 'b')
-    marker_size = kwargs.pop('marker_size', 2)
-
     line_color = kwargs.pop('line_color', 'k')
     line_width = kwargs.pop('line_width', .5)
 
-    plt.rcParams['figure.subplot.hspace'] = .3
-    plt.rcParams['figure.subplot.wspace'] = .3
-    plt.rcParams['figure.subplot.left'] = .12
-    plt.rcParams['font.size'] = 7
-
-    fig = plt.figure(fig_num, figsize=fig_size, dpi=fig_dpi)
-    plt.clf()
 
     # make a rotation matrix to rotate data
     # cos_ang = np.cos(np.deg2rad(self.mesh_rotation_angle))
@@ -64,39 +52,11 @@ def plot_model_mesh(modelfile, east_limits=None, north_limits=None, z_limits=Non
     cos_ang = 1
     sin_ang = 0
 
-    # --->plot map view
-    ax1 = fig.add_subplot(1, 2, 1, aspect='equal')
 
-    # 1. plot station locations
-    # plot_east = station_locations['rel_east']
-    # plot_north = station_locations['rel_north']
-    #
-    # ax1.scatter(plot_east,
-    #             plot_north,
-    #             marker=station_marker,
-    #             c=marker_color,
-    #             s=marker_size)
-
-    # 2. plot east lines and north lines
-    east_line_xlist = [-10,-6, -4, -2,0,2,4,6,10, None, -10,-6, -4, -2,0,2,4,6,10 ]
-    east_line_ylist = [1,1,1,1,1,1,1,1,1, None, 20,20,20,20,20,20,20,20,20]
-
-
-    ax1.scatter(east_line_xlist,
-             east_line_ylist,
-             lw=line_width,
-             color=line_color)
-
-    #
-    # if east_limits == None:
-    #     ax2.set_xlim(plot_east.min() - 50 * self.cell_size_east,
-    #                  plot_east.max() + 50 * self.cell_size_east)
-    # else:
-    #     ax2.set_xlim(east_limits)
-
-    # ax2.set_ylabel('Depth (m)', fontdict={'size': 9, 'weight': 'bold'})
-    # ax2.set_xlabel('Easting (m)', fontdict={'size': 9, 'weight': 'bold'})
-    plt.show()
+    # east_line_xlist = [-10,-6, -4, -2,0,2,4,6,10, None, -10,-6, -4, -2,0,2,4,6,10 ]
+    # east_line_ylist = [1,1,1,1,1,1,1,1,1, None, 20,20,20,20,20,20,20,20,20]
+    # ax1.scatter(east_line_xlist, east_line_ylist, lw=line_width, color=line_color)
+    # plt.show()
 
 
     if modelfile is not None:
@@ -106,20 +66,30 @@ def plot_model_mesh(modelfile, east_limits=None, north_limits=None, z_limits=Non
         print("How many lines in %s ?== %s "%(modelfile, len(lines)))
 
         for aline in lines[:5]:
+            aline = aline.strip() # remove leading and trailing white spaces and invisible chars \n
             if aline.startswith('#'):
                 print ("Header line skipped: ", aline)
-            elif aline.endswith('LOGE\n'):
+            elif aline.endswith('LOGE'):
                 (ew, ns, depth)= aline.split()[:3]
-                print(ew, ns, depth)
+                print("cells = ", ew, ns, depth)
             else:  # cell sizes
                 values = aline.split()
-                print(len(values))
-                print(values)
+                print("cells: ",len(values))
+                print('Cell sizes: ', values)
 
-                plt.plot(values, 'o',  lw=line_width, color=line_color)
+                nvalues= np.array(values).astype('float')
+                plt.plot(nvalues, 'o',  lw=line_width, color=line_color)
                 plt.show()
 
+                # Check the changes in the cell sizes?
+                diffval = np.diff(nvalues)
+                print (diffval)
+                plt.plot(diffval, '*',  lw=line_width, color=line_color)
+                plt.show()
 
+# ----------------------------------------------------------------------------
+# view a model mesh (x y z) cell sizes
+# python examples/view_modem_model.py /e/Data/Modeling/Isa/100hs_flat_BB/Isa_run3_NLCG_048.rho
 if __name__ == "__main__":
 
     if len(sys.argv)>1:
