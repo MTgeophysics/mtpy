@@ -1927,7 +1927,7 @@ class Model(object):
         cell_size_east and cell_size_north to the extremeties of the station 
         area.  Padding cells are then added to extend the model to reduce 
         edge effects.  The number of cells are pad_east and pad_north and the
-        increase in size is by pad_root_east and pad_root_north.  The station
+        increase in size is by pad_stretch_h (pad_root_).  The station
         locations are then computed as the center of the nearest cell as 
         required by the code.
 
@@ -1938,10 +1938,7 @@ class Model(object):
         padded with pad_z number of cells to extend the depth of the model.
 
         padding = np.round(cell_size_east*pad_root_east**np.arange(start=.5,
-                           stop=3, step=3./pad_east))+west 
-
-
-
+                           stop=3, step=3./pad_east))+west
 
         """
 
@@ -1956,10 +1953,10 @@ class Model(object):
             'rel_north'].max() + self.cell_size_north * 3 / 2.
 
         # round end nodes
-        westr = np.round(west, -2)
-        eastr = np.round(east, -2)
-        southr = np.round(south, -2)
-        northr = np.round(north, -2)
+        westr = np.round(west) # , -2)
+        eastr = np.round(east) #, -2)
+        southr = np.round(south) # , -2)
+        northr = np.round(north) # , -2)
         #        # adjust center position (centre may be moved by rounding)
         #        self.Data.center_position_EN[0] += (westr + eastr - west - east)/2.
         #        self.Data.center_position_EN[1] += (southr + northr - south - north)/2.
@@ -2074,6 +2071,8 @@ class Model(object):
         self.grid_north = north_gridr
         self.grid_z = z_grid
 
+        print ('self.nodes_z', self.nodes_z)  #FZ: cell sizes
+        print ('self.grid_z', self.grid_z)  #FZ: grid location
         # if desired, update the data center position (need to first project
         # east/north back to lat/lon) and rewrite to file
         if update_data_center:
