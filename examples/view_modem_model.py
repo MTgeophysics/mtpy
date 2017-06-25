@@ -96,6 +96,8 @@ if __name__ == "__main__":
         modelfile= sys.argv[1]
     else:
         modelfile = None
+        print ("USAGE: python %s path2_model_file.ws|.mod|.rho" % sys.argv[0])
+        sys.exit(1)
 
     plot_model_mesh(modelfile)
 

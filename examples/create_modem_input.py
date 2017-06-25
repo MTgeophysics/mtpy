@@ -106,11 +106,9 @@ if __name__ == '__main__':
                        pad_north=10,  # number of padding cells in each of the north and south directions
                        pad_east=10,  # number of east and west padding cells
                        pad_z=10,  # number of vertical padding cells
-                       pad_stretch_v=3,
-                       # factor to increase by in padding cells (vertical)
-                       pad_stretch_h=3,
-                       # factor to increase by in padding cells (vertical)
-                       n_airlayers=0,  # number of air layers
+                       pad_stretch_v=1.2, # factor to increase by in padding cells (vertical)
+                       pad_stretch_h=1.5, # factor to increase by in padding cells (horizontal)
+                       n_airlayers=0,  # number of air layers 0, 10
                        res_model=100,  # halfspace resistivity value for reference model
                        n_layers=40,  # total number of z layers, including air
                        z1_layer=1000,  # first layer thickness
