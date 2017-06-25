@@ -1976,8 +1976,8 @@ class Model(object):
         for ii in range(1, self.pad_east + 1):
             east_0 = float(east_gridr[-1])
             west_0 = float(east_gridr[0])
-            add_size = np.round(self.cell_size_east *
-                                self.pad_stretch_h * ii, -2)
+            # add_size = np.round(self.cell_size_east * self.pad_stretch_h * ii, -2) # -2 round to decimal left
+            add_size = np.round(self.cell_size_east * self.pad_stretch_h ** ii, 2)
             pad_w = west_0 - add_size
             pad_e = east_0 + add_size
             east_gridr = np.insert(east_gridr, 0, pad_w)
@@ -2007,8 +2007,8 @@ class Model(object):
         for ii in range(1, self.pad_north + 1):
             south_0 = float(north_gridr[0])
             north_0 = float(north_gridr[-1])
-            add_size = np.round(self.cell_size_north *
-                                self.pad_stretch_h * ii, -2)
+            # add_size = np.round(self.cell_size_north *self.pad_stretch_h * ii, -2)
+            add_size = np.round(self.cell_size_north *self.pad_stretch_h ** ii, 2)
             pad_s = south_0 - add_size
             pad_n = north_0 + add_size
             north_gridr = np.insert(north_gridr, 0, pad_s)
@@ -2039,7 +2039,8 @@ class Model(object):
         # padding cells in the vertical direction
         for ii in range(1, self.pad_z + 1):
             z_0 = np.float(z_nodes[itp])
-            pad_d = np.round(z_0 * self.pad_stretch_v * ii, -2)
+            # pad_d = np.round(z_0 * self.pad_stretch_v * ii, -2)
+            pad_d = np.round(z_0 * self.pad_stretch_v ** ii, 2)
             z_nodes = np.append(z_nodes, pad_d)
 
             # add air layers and define ground surface level.
