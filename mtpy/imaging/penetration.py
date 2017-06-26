@@ -41,8 +41,8 @@ class Depth1D(ImagingBase):
 
         if rholist.difference(DEFAULT_RHOLIST):
             # there are unsupported values
-            # todo: raise an exception
-            raise NotImplemented
+            # previous behaviour: ignore
+            pass
 
         self._rholist = rholist
 
