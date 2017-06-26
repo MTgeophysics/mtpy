@@ -167,7 +167,9 @@ class Depth2D(ImagingBase):
 
         # plt.tight_layout()
         plt.gca().xaxis.tick_top()
-        plt.title("MT Penetration Depth Profile by %s" % self._rho)
+        self._fig.canvas.set_window_title("MT Penetration Depth Profile by %s" % self._rho)
+        plt.legend(loc="best")
+
 
     def set_data(self, data):
         # this plot require multiple edi files
