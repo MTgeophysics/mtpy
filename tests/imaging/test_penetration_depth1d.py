@@ -5,7 +5,7 @@ import os.path
 # configure matplotlib for testing
 import matplotlib
 
-matplotlib.use('Agg')  # remove this line if you want to see the plots
+matplotlib.use('Agg')  # comment out this line if you want to see the plots
 import matplotlib.pyplot as plt
 # plt.ioff()
 
