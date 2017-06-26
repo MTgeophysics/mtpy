@@ -3,7 +3,7 @@ import os.path
 
 # configure matplotlib for testing
 import matplotlib
-# matplotlib.use('Agg')  # comment out this line if you want to see the plots
+matplotlib.use('Agg')  # comment out this line if you want to see the plots
 
 
 from mtpy.imaging.penetration_depth2d import plot2Dprofile
