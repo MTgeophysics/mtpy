@@ -8,13 +8,14 @@ import matplotlib
 
 from mtpy.imaging.penetration_depth2d import plot2Dprofile
 
+
 class TestPenetration_depth2d(TestCase):
     def setUp(self):
         self._temp_dir = "tests/temp"
         if not os.path.isdir(self._temp_dir):
             os.mkdir(self._temp_dir)
         self._edifiles = "tests/data/edifiles"
-        self._period_index_list = ['0','1','10','20','30','40','50','59']
+        self._period_index_list = [0, 1, 10, 20, 30, 40, 50, 59]
 
     def test_plot2Dprofile_no_period_index_list(self):
         """
@@ -41,4 +42,3 @@ class TestPenetration_depth2d(TestCase):
             plot2Dprofile(self._edifiles, self._period_index_list, 'dat')
         except Exception:
             pass
-
