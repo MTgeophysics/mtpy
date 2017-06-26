@@ -5,7 +5,7 @@ import os.path
 # configure matplotlib for testing
 import matplotlib
 
-matplotlib.use('Agg')  # remove this line if you want to see the plots
+matplotlib.use('Agg')  # comment out this line if you want to see the plots
 import matplotlib.pyplot as plt
 # plt.ioff()
 
@@ -22,37 +22,81 @@ class TestPenetration_depth1d(TestCase):
 
     def test_plot_edi_dir(self):
         """
-        testing ploting all edi files in a given dir
+        testing plotting all edi files in a given dir
         :return:
         """
         # all plots
         plot_edi_dir("tests/data/edifiles")
         # plt.close()
 
-    def test_plot_edi_file(self):
+    def test_plot_edi_file_all(self):
         """
-        testing ploting a single edi file
+        testing plotting a single edi file
         :return:
         """
         plot_edi_file("tests/data/edifiles/15125A.edi")
-        #['zxy', 'zyx', 'det']
-        # zxy
+
+    def test_plot_edi_file_zxy(self):
+        """
+        testing ploting zxy of a single edi file
+        :return:
+        """
         plot_edi_file("tests/data/edifiles/15125A.edi", ['zxy'])
-        # zyx
+
+    def test_plot_edi_file_zyx(self):
+        """
+        testing plotting zyx of a single edi file
+        :return:
+        """
         plot_edi_file("tests/data/edifiles/15125A.edi", ['zyx'])
-        # det
+
+    def test_plot_edi_file_det(self):
+        """
+        testing plotting det of a single edi file
+        :return:
+        """
         plot_edi_file("tests/data/edifiles/15125A.edi", ['det'])
-        # zxy & zyx
+
+    def test_plot_edi_file_zxy_zyx(self):
+        """
+        testing plotting zxy & zyx of a single edi file
+        :return:
+        """
         plot_edi_file("tests/data/edifiles/15125A.edi", ['zxy', 'zyx'])
-        # zxy & det
+
+    def test_plot_edi_file_zxy_det(self):
+        """
+        testing plotting zxy & det of a single edi file
+        :return:
+        """
         plot_edi_file("tests/data/edifiles/15125A.edi", ['zxy', 'det'])
-        # zyx & det
+
+    def test_plot_edi_file_zyx_det(self):
+        """
+        testing plotting zyx & det of a single edi file
+        :return:
+        """
         plot_edi_file("tests/data/edifiles/15125A.edi", ['zyx', 'det'])
-        # plot unknown type
+
+    def test_plot_edi_file_unknown_type(self):
+        """
+        testing plotting zyx and an unknown of a single edi file
+        :return:
+        """
         plot_edi_file("tests/data/edifiles/15125A.edi", ['zyx', 'dat'])
-        # plot empty set of tpyes
+
+    def test_plot_edi_file_empty_rholist(self):
+        """
+        testing plotting an empty rholist of a single edi file
+        :return:
+        """
         plot_edi_file("tests/data/edifiles/15125A.edi", [])
-        # save image
+
+    def test_plot_edi_file_save_inage(self):
+        """
+        testing saving plot of a single edi file
+        :return:
+        """
         fname = os.path.join(self._temp_dir,"TestPenetration_depth1d.jpg")
         if os.path.isfile(fname):
             os.remove(fname)    # remove test file if already exist

@@ -81,8 +81,8 @@ def plot2Dprofile(edi_dir, period_index_list=None, zcomponent='det'):
             pen,
             "--",
             marker='o',
-            markersize="12",
-            linewidth="2",
+            markersize=12,
+            linewidth=2,
             label=line_label)
         plt.legend()
 
@@ -160,7 +160,8 @@ def get_penetration_depth(mt_obj_list, per_index, whichrho='det'):
             logger.critical(
                 "unsupported method to compute penetratoin depth: %s",
                 whichrho)
-            sys.exit(100)
+            #sys.exit(100)
+            raise Exception("unsupported method to compute penetratoin depth: %s" % whichrho)
 
         pen_depth.append(penetration_depth)
 
