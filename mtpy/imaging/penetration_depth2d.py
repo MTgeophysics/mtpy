@@ -160,7 +160,8 @@ def get_penetration_depth(mt_obj_list, per_index, whichrho='det'):
             logger.critical(
                 "unsupported method to compute penetratoin depth: %s",
                 whichrho)
-            sys.exit(100)
+            #sys.exit(100)
+            raise Exception("unsupported method to compute penetratoin depth: %s" % whichrho)
 
         pen_depth.append(penetration_depth)
 
