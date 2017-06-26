@@ -85,7 +85,7 @@ def barplot_multi_station_penentration_depth(
 
     mt_obj_list = [mt.MT(afile) for afile in edifiles_dir]
 
-    (stations, depths, periods) = get_penetration_depth(
+    (stations, periods, depths, _) = get_penetration_depth(
         mt_obj_list, int(per_index), whichrho=zcomponent)
 
     # the attribute Z

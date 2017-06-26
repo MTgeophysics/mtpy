@@ -131,7 +131,7 @@ class Depth2D(ImagingBase):
             self._fig = plt.figure()
             for period_index in self._period_indexes:
                 self._logger.debug("doing period index %s", period_index)
-                (stations, pen, periods) = get_penetration_depth(pr.edi_list, int(period_index), whichrho=self._rho)
+                (stations, periods, pen, _) = get_penetration_depth(pr.edi_list, int(period_index), whichrho=self._rho)
                 line_label = "Period=%s" % periods[0]
 
                 plt.plot(
@@ -167,8 +167,7 @@ class Depth2D(ImagingBase):
 
         # plt.tight_layout()
         plt.gca().xaxis.tick_top()
-
-        plt.show()
+        plt.title("MT Penetration Depth Profile by %s" % self._rho)
 
     def set_data(self, data):
         # this plot require multiple edi files
@@ -195,13 +194,39 @@ class Depth2D(ImagingBase):
             self._logger.error("Please provide a period index list like [1,2,3,4]")
 
 
+class Depth3D(ImagingBase):
+    def __init__(self, data=None, period=None, rho='det'):
+        super(Depth3D, self).__init__()
+        self.set_rho(rho)
+        self.set_period(period)
+
+    def plot(self, **kwargs):
+        pass
+
+    def set_data(self, data):
+        # this plot need a list of edi files
+        self._set_edis(data)
+
+    def set_rho(self, rho):
+        if rho is None or rho in DEFAULT_RHOLIST:
+            self._rho = rho
+            self._reset_fig()
+        else:
+            self._logger.critical("unsupported method to compute penetratoin depth: %s", rho)
+            # raise Exception("unsupported method to compute penetratoin depth: %s" % rho)
+
+    def set_period(self, period):
+        pass
+
+
+
 # Utility functions (may need to move to utility module
 
 def get_penetration_depth(mt_obj_list, per_index, whichrho='det'):
     """
     compute the penetration depth of mt_obj at the given period_index, and using whichrho option
-    :param per_index:
-    :param mt_obj_list:
+    :param per_index: the index of periods 0, 1, ...
+    :param mt_obj_list: list of edi file paths or mt objects
     :param whichrho: det, zxy, or zyx
     :return:
     """
@@ -210,18 +235,23 @@ def get_penetration_depth(mt_obj_list, per_index, whichrho='det'):
 
     # per_index=0,1,2,....
     periods = []
-
     pen_depth = []
-
     stations = []
-
+    latlons = []
     for mt_obj in mt_obj_list:
-
+        if isinstance(mt_obj, str) and os.path.isfile(mt_obj):
+            mt_obj = mt.MT(mt_obj)
+        # station id
+        stations.append(mt_obj.station)
+        # latlons
+        latlons.append((mt_obj.lat, mt_obj.lon))
         # the attribute Z
         zeta = mt_obj.Z
 
         if per_index >= len(zeta.freq):
-            logger.debug("number of frequecies= %s", len(zeta.freq))
+            logger.debug(
+                "Number of frequecies (Max per_index)= %s", len(
+                    zeta.freq))
             raise Exception(
                 "Index out_of_range Error: period index must be less than number of periods in zeta.freq")
 
@@ -234,23 +264,21 @@ def get_penetration_depth(mt_obj_list, per_index, whichrho='det'):
         elif whichrho == 'zyx':
             penetration_depth = - scale_param * \
                                 np.sqrt(zeta.resistivity[per_index, 1, 0] * per)
-        elif whichrho == 'det':
-            # determinant
+        elif whichrho == 'det':   # the 2X2 complex Z-matrix's determinant abs value
             # determinant value at the given period index
             det2 = np.abs(zeta.det[0][per_index])
             penetration_depth = -scale_param * np.sqrt(0.2 * per * det2 * per)
         else:
             logger.critical(
-                "unsupported method to compute penetratoin depth: %s",
+                "unsupported method to compute penetration depth: %s",
                 whichrho)
             # sys.exit(100)
             raise Exception("unsupported method to compute penetratoin depth: %s" % whichrho)
 
         pen_depth.append(penetration_depth)
 
-        stations.append(mt_obj.station)
 
-    return stations, pen_depth, periods
+    return stations, periods, pen_depth, latlons
 
 
 def load_edi_files(edi_path):
