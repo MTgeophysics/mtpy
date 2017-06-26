@@ -5,7 +5,9 @@
 
 import abc
 import mtpy.core.mt as mt
-
+# get a logger object for this module, using the utility class MtPyLog to
+# config the logger
+from mtpy.utils.mtpylog import MtPyLog
 
 class ImagingBase:
     """
@@ -14,6 +16,11 @@ class ImagingBase:
         Also some common functionality should be implemented here.
     """
     __metaclass__ = abc.ABCMeta
+
+    def __init__(self):
+        self._logger = MtPyLog().get_mtpy_logger(__name__)
+        self._data = None
+        self._fig = None
 
     @abc.abstractmethod
     def plot(self, **kwargs):
@@ -71,8 +78,8 @@ class ImagingBase:
         :return:
         """
         if isinstance(edi, mt.MT):
-            # if its a single mt object, put it in an list
             self._data = edi
+            self._reset_fig()
         else:
             # todo raise an exception
             pass
@@ -84,3 +91,8 @@ class ImagingBase:
         """
         # todo decide if this is necessory
         raise NotImplemented
+
+    def _reset_fig(self):
+        if self._fig is not None:
+            self._fig.clf()
+            self._fig = None
