@@ -81,8 +81,8 @@ def plot2Dprofile(edi_dir, period_index_list=None, zcomponent='det'):
             pen,
             "--",
             marker='o',
-            markersize="12",
-            linewidth="2",
+            markersize=12,
+            linewidth=2,
             label=line_label)
         plt.legend()
 
