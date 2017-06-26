@@ -1942,21 +1942,18 @@ class Model(object):
 
         """
 
-        # find the edges of the grid
-        west = self.station_locations[
-            'rel_east'].min() - self.cell_size_east * 3 / 2.
-        east = self.station_locations[
-            'rel_east'].max() + self.cell_size_east * 3 / 2.
-        south = self.station_locations[
-            'rel_north'].min() - self.cell_size_north * 3 / 2.
-        north = self.station_locations[
-            'rel_north'].max() + self.cell_size_north * 3 / 2.
+        # find the edges of the grid: bounding box of the survey area.
+        nc_extra=2
+        west = self.station_locations['rel_east'].min() - self.cell_size_east * nc_extra
+        east = self.station_locations['rel_east'].max() + self.cell_size_east * nc_extra
+        south = self.station_locations['rel_north'].min() - self.cell_size_north * nc_extra
+        north = self.station_locations['rel_north'].max() + self.cell_size_north * nc_extra
 
-        # round end nodes
-        westr = np.round(west) # , -2)
-        eastr = np.round(east) #, -2)
-        southr = np.round(south) # , -2)
-        northr = np.round(north) # , -2)
+        # rounding appropriately.
+        westr = np.round(west , -2)
+        eastr = np.round(east, -2)
+        southr = np.round(south , -2)
+        northr = np.round(north , -2)
         #        # adjust center position (centre may be moved by rounding)
         #        self.Data.center_position_EN[0] += (westr + eastr - west - east)/2.
         #        self.Data.center_position_EN[1] += (southr + northr - south - north)/2.
@@ -1965,10 +1962,15 @@ class Model(object):
         # cells within station area
         east_gridr = np.arange(start=westr, stop=eastr + self.cell_size_east,
                                step=self.cell_size_east)
+        print ("FZ: type of east_gridr = ", type(east_gridr))
+        print ("FZ: east_gridr_1 = ", east_gridr)
+        mean_egrid = np.mean(east_gridr)
+        print("mean_egrid =", mean_egrid)
         if self.Data.rotation_angle == 0:
-            self.Data.center_position_EN[0] -= np.mean(east_gridr)
-            self.station_locations['rel_east'] += np.mean(east_gridr)
-        east_gridr -= np.mean(east_gridr)
+            self.Data.center_position_EN[0] -= mean_egrid
+            self.station_locations['rel_east'] += mean_egrid
+        east_gridr -= mean_egrid
+        print ("FZ: east_gridr_2 = ", east_gridr)
         # padding cells in the east-west direction
         for ii in range(1, self.pad_east + 1):
             east_0 = float(east_gridr[-1])
@@ -1981,14 +1983,16 @@ class Model(object):
             east_gridr = np.append(east_gridr, pad_e)
 
         # --> need to make sure none of the stations lie on the nodes
+        # this section would make the cell-sizes become different by 2%
+        shift_station = 0.0 # originally = 0.02
         for s_east in sorted(self.station_locations['rel_east']):
             try:
                 node_index = np.where(abs(s_east - east_gridr) <
-                                      .02 * self.cell_size_east)[0][0]
+                                      shift_station * self.cell_size_east)[0][0]
                 if s_east - east_gridr[node_index] > 0:
-                    east_gridr[node_index] -= .02 * self.cell_size_east
+                    east_gridr[node_index] -= shift_station * self.cell_size_east
                 elif s_east - east_gridr[node_index] < 0:
-                    east_gridr[node_index] += .02 * self.cell_size_east
+                    east_gridr[node_index] += shift_station * self.cell_size_east
             except IndexError:
                 continue
 
@@ -2015,23 +2019,31 @@ class Model(object):
         for s_north in sorted(self.station_locations['rel_north']):
             try:
                 node_index = np.where(abs(s_north - north_gridr) <
-                                      .02 * self.cell_size_north)[0][0]
+                                      shift_station * self.cell_size_north)[0][0]
                 if s_north - north_gridr[node_index] > 0:
-                    north_gridr[node_index] -= .02 * self.cell_size_north
+                    north_gridr[node_index] -= shift_station * self.cell_size_north
                 elif s_north - north_gridr[node_index] < 0:
-                    north_gridr[node_index] += .02 * self.cell_size_north
+                    north_gridr[node_index] += shift_station * self.cell_size_north
             except IndexError:
                 continue
 
-        # --> make depth grid
+        # --> make depth grid z
         log_z = np.logspace(np.log10(self.z1_layer),
                             np.log10(self.z_target_depth),
                             num=self.n_layers - self.pad_z - self.n_airlayers + 1)
+
+        print("log_z logspace:", log_z)
+
         log_z = log_z[1:] - log_z[:-1]
-        z_nodes = np.array([zz - zz % 10 ** np.floor(np.log10(zz)) for zz in
-                            log_z])
+        z_nodes = np.array([zz - zz % 10 ** np.floor(np.log10(zz)) for zz in log_z])  #why this
+
+        print("cell_sizes log_z = ", log_z)
+        print("vs z_nodes = ", z_nodes)
+
         # index of top of padding
         itp = len(z_nodes) - 1
+
+        print("index of top of padding itp=", itp)
 
         # padding cells in the vertical direction
         for ii in range(1, self.pad_z + 1):
@@ -2646,7 +2658,7 @@ class Model(object):
             else:
                 res_model[:, :, :] = self.res_model
 
-            self.res_model = res_model
+            self.res_model = res_model # initial resistivity value
 
         if not hasattr(self, 'covariance_mask'):
             self.covariance_mask = np.ones_like(self.res_model)
@@ -2655,10 +2667,8 @@ class Model(object):
         ifid = file(self.model_fn, 'w')
         ifid.write('# {0}\n'.format(self.title.upper()))
         ifid.write('{0:>5}{1:>5}{2:>5}{3:>5} {4}\n'.format(self.nodes_north.shape[0],
-                                                           self.nodes_east.shape[
-                                                               0],
-                                                           self.nodes_z.shape[
-                                                               0],
+                                                           self.nodes_east.shape[0],
+                                                           self.nodes_z.shape[0],
                                                            0,
                                                            self.res_scale.upper()))
 
@@ -2703,6 +2713,7 @@ class Model(object):
             center_z = 0
             self.grid_center = np.array([center_north, center_east, center_z])
 
+        #Finally, write grid center coordinate and mesh rotation angle
         ifid.write('\n{0:>16.3f}{1:>16.3f}{2:>16.3f}\n'.format(self.grid_center[0],
                                                                self.grid_center[1], self.grid_center[2]))
 
