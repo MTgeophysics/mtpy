@@ -944,13 +944,13 @@ class Profile():
 
     """
 
-    def __init__(self, edi_path=None, **kwargs):
+    def __init__(self, edi_path=None, edi_list = [], **kwargs):
 
         self.edi_path = edi_path
         self.station_list = kwargs.pop('station_list', None)
         self.geoelectric_strike = kwargs.pop('geoelectric_strike', None)
         self.profile_angle = kwargs.pop('profile_angle', None)
-        self.edi_list = []
+        self.edi_list = edi_list
         self._rotate_to_strike = True
         self.num_edi = 0
         self._profile_generated = False
@@ -966,18 +966,28 @@ class Profile():
 
         each element of the list is a mtpy.core.mt.MT object
         """
-
-        if self.station_list is not None:
-            for station in self.station_list:
-                for edi in os.listdir(self.edi_path):
-                    if edi.find(station) == 0 and edi[-3:] == 'edi':
-                        self.edi_list.append(mt.MT(os.path.join(self.edi_path,
-                                                                edi)))
-                        break
-        else:
-            self.edi_list = [mt.MT(os.path.join(self.edi_path, edi)) for
-                             edi in os.listdir(self.edi_path)
-                             if edi[-3:] == 'edi']
+        if self.edi_path is not None:
+            self.edi_list = []
+            if self.station_list is not None:
+                for station in self.station_list:
+                    for edi in os.listdir(self.edi_path):
+                        if edi.find(station) == 0 and edi[-3:] == 'edi':
+                            self.edi_list.append(mt.MT(os.path.join(self.edi_path,
+                                                                    edi)))
+                            break
+            else:
+                self.edi_list = [mt.MT(os.path.join(self.edi_path, edi)) for
+                                 edi in os.listdir(self.edi_path)
+                                 if edi[-3:] == 'edi']
+        elif self.edi_list is not None and not self.edi_list:
+            # use existing edi list
+            if self.station_list is not None:
+                # filter edi list by station
+                filtered_edi_list = []
+                for edi in self.edi_list:
+                    if edi.station in self.station_list:
+                        filtered_edi_list.append(edi)
+                self.edi_list = filtered_edi_list
 
         self.num_edi = len(self.edi_list)
 
@@ -1031,6 +1041,8 @@ class Profile():
         if len(self.edi_list) == 0:
             raise IOError(
                 'Could not find and .edi file in {0}'.format(self.edi_path))
+
+
 
         if self.geoelectric_strike is None:
             try:
