@@ -46,6 +46,8 @@ logger = MtPyLog().get_mtpy_logger(__name__)
 def plot_latlon_depth_profile(edi_dir, period, zcomponent='det', showfig=True, savefig=True):
     """
     MT penetration depth profile in lat-lon coordinates with pixelsize = 0.002
+    :param savefig:
+    :param showfig:
     :param edi_dir:
     :param period:
     :param zcomponent:
@@ -66,11 +68,10 @@ def plot_latlon_depth_profile(edi_dir, period, zcomponent='det', showfig=True, s
     image = Depth3D(edis, period, zcomponent)
     if isinstance(period, int):  # period is considered as an index
         image.plot(period_by_index=True)
-    elif (isinstance(period, float)):  # period is considered as the actual value of period in second
+    elif isinstance(period, float):  # period is considered as the actual value of period in second
         image.plot()
     else:
         raise Exception("Wrong type of the parameter period, %s" % period)
-
 
     if showfig is True:
         image.show()
@@ -125,7 +126,7 @@ def get_index2(lat, lon, ref_lat, ref_lon, pixelsize):
     index_x = (lon - ref_lon) / pixelsize
     index_y = (lat - ref_lat) / pixelsize
 
-    return (int(index_x), int(index_y))
+    return int(index_x), int(index_y)
 
 
 #########################################################
@@ -139,6 +140,7 @@ def plot_bar3d_depth(edifiles, per_index, whichrho='det'):
     the geo-bounding box calculated, and the mapping from stations to grids
     is constructed and plotted.
 
+    :param whichrho: z component either 'det', 'zxy' or 'zyx'
     :param edifiles: an edi_dir or list of edi_files
     :param per_index: period index number 0,1,2
 
