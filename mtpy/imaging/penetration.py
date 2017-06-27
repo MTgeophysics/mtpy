@@ -12,7 +12,8 @@
 import os
 import sys
 
-from imaging_base import ImagingBase, ParameterError
+import mtpy
+from imaging_base import ImagingBase, ParameterError, ImagingError
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -232,6 +233,28 @@ class Depth3D(ImagingBase):
             (stations, periods, pendep, latlons) = get_penetration_depth_generic(self._data,
                                                                                  self._period,
                                                                                  whichrho=self._rho)
+
+        # create figure
+        self._fig = plt.figure()
+
+        if check_period_values(periods) is False:
+            logger.error("The period values are NOT equal - Please check!!! %s", periods)
+            plt.plot(periods, "-^")
+            title = "ERROR: Periods are NOT equal !!!"
+            plt.title(title, )
+            self._fig.canvas.set_window_title(title)
+            raise ImagingError("Period values NOT equal across the EDI files. Please check!!!")
+        else:
+            # good case
+            period0 = periods[0]
+
+            if period0 < 1.0:
+                # kept 4 signifiant digits - nonzero digits
+                period_fmt = str(mtpy.utils.calculator.roundsf(period0, 4))
+            else:
+                period_fmt = "%.2f" % period0
+
+
 
 
     def set_data(self, data):

@@ -115,11 +115,11 @@ class ImagingBase:
     fig = property(None, get_figure, doc="matplotlib fig object")
 
 
-class ImagingException(Exception):
+class ImagingError(Exception):
     def __init__(self, *args, **kwargs):
         Exception.__init__(self, *args, **kwargs)
 
 
-class ParameterError(ImagingException):
+class ParameterError(ImagingError):
     def __init__(self, *args, **kwargs):
-        ImagingException.__init__(self, *args, **kwargs)
+        ImagingError.__init__(self, *args, **kwargs)
