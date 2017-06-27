@@ -25,8 +25,10 @@ from scipy.interpolate import griddata
 import mtpy.core.mt as mt
 import mtpy.utils.calculator
 from mtpy.imaging.penetration import get_penetration_depth, get_penetration_depth_generic, check_period_values, \
-    get_bounding_box
+    get_bounding_box, get_index
 from mtpy.utils.mtpylog import MtPyLog
+
+from mtpy.utils.decorator import deprecated
 
 mpl.rcParams['lines.linewidth'] = 2
 # mpl.rcParams['lines.color'] = 'r'
@@ -267,6 +269,7 @@ def plot_latlon_depth_profile(edi_dir, period, zcomponent='det', showfig=True, s
     return
 
 
+@deprecated("this function is redundant as matplotlib.cm as the inverted version of color maps")
 def reverse_colourmap(cmap, name='my_cmap_r'):
     """
     In: cmap, name
@@ -291,29 +294,7 @@ def reverse_colourmap(cmap, name='my_cmap_r'):
     return my_cmap_r
 
 
-def get_index(lat, lon, minlat, minlon, pixelsize, offset=0):
-    """
-    compute the grid index from the lat lon float value
-    :param lat: float lat
-    :param lon: float lon
-    :param minlat: min lat at low left corner
-    :param minlon: min long at left
-    :param pixelsize: pixel size in lat long degree
-    :param offset: a shift of grid index. should be =0.
-    :return: a paire of integer
-    """
-    index_x = (lon - minlon) / pixelsize
-    index_y = (lat - minlat) / pixelsize
-
-    ix = int(round(index_x))
-    iy = int(round(index_y))
-
-    # any negative values, out-of-bound?
-    logger.debug("Grid index: (%s, %s)", ix, iy)
-
-    return (ix + offset, iy + offset)
-
-
+@deprecated("please use get_index() in mtpy.imaging.penetration instead")
 def get_index2(lat, lon, ref_lat, ref_lon, pixelsize):
     """ Mapping of lat lon to a grid
     :param lat:

@@ -11,12 +11,14 @@
 
 import os
 import sys
+import numpy as np
+import matplotlib
+import matplotlib.pyplot as plt
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+from scipy.interpolate import griddata
 
 import mtpy
 from imaging_base import ImagingBase, ParameterError, ImagingError
-import numpy as np
-import matplotlib.pyplot as plt
-
 import mtpy.modeling.occam2d_rewrite as occam2d
 from mtpy.core import mt as mt
 from mtpy.utils.mtpylog import MtPyLog
@@ -238,7 +240,7 @@ class Depth3D(ImagingBase):
         self._fig = plt.figure()
 
         if check_period_values(periods) is False:
-            logger.error("The period values are NOT equal - Please check!!! %s", periods)
+            self._logger.error("The period values are NOT equal - Please check!!! %s", periods)
             plt.plot(periods, "-^")
             title = "ERROR: Periods are NOT equal !!!"
             plt.title(title, )
@@ -255,12 +257,12 @@ class Depth3D(ImagingBase):
                 period_fmt = "%.2f" % period0
             bbox = get_bounding_box(latlons)
 
-            logger.debug("Bounding Box %s", bbox)
+            self._logger.debug("Bounding Box %s", bbox)
 
             xgrids = bbox[0][1] - bbox[0][0]
             ygrids = bbox[1][1] - bbox[1][0]
 
-            logger.debug("xy grids: %s %s", xgrids, ygrids)
+            self._logger.debug("xy grids: %s %s", xgrids, ygrids)
 
             minlat = bbox[1][0]
             minlon = bbox[0][0]
@@ -271,7 +273,7 @@ class Depth3D(ImagingBase):
             nx = int(np.ceil(xgrids/pixelsize))
             ny = int(np.ceil(ygrids/pixelsize))
 
-            logger.debug("number of grids xy: %s %s", nx, ny)
+            self._logger.debug("number of grids xy: %s %s", nx, ny)
 
             # make the image slightly bigger than the (nx, ny) to contain all points
             # avoid index out of bound
@@ -284,11 +286,131 @@ class Depth3D(ImagingBase):
             zdep = np.empty((ny2, nx2))
             zdep.fill(np.nan)  # initialize all pixel value as np.nan
 
-            logger.debug("zdep shape %s", zdep.shape)
+            self._logger.debug("zdep shape %s", zdep.shape)
 
-            for iter, pair in enumerate(latlons):
-                # logger.debug(iter, pair)
-                pass
+            for iter, (lat, lon) in enumerate(latlons):
+                # self._logger.debug(iter, pair)
+                (xi, yi) = get_index(lat, lon, minlat, minlon, pixelsize)
+                zdep[zdep.shape[0] - yi - 1, xi] = np.abs(pendep[iter])
+
+            # plt.imshow(zdep, interpolation='none') #OR plt.imshow(zdep,  interpolation='spline36')
+            # plt.colorbar()
+            # plt.show() # without this show(), the 2 figure will be plotted in one
+            # canvas, overlay and compare
+
+            # griddata interpolation of the zdep sample MT points.
+            self._logger.debug(zdep.shape)
+
+            # grid_x, grid_y = np.mgrid[0:95:96j, 0:83:84j]  # this syntax with
+            # complex step 96j has different meaning
+            # this is more straight forward.
+            grid_x, grid_y = np.mgrid[0:zdep.shape[0]:1, 0:zdep.shape[1]:1]
+
+            # self._logger.debug(grid_x, grid_y)
+            points = np.zeros((len(latlons), 2))
+            values = np.zeros(len(latlons))
+
+            for iter, (lat, lon) in enumerate(latlons):
+                # print pair
+                (i, j) = get_index(lat, lon, minlat, minlon, pixelsize)
+                points[iter, 0] = zdep.shape[0] - j - i
+                points[iter, 1] = i
+                values[iter] = np.abs(pendep[iter])
+
+            # grid_z0 = griddata(points, values, (grid_x, grid_y), method='nearest')
+            grid_z = griddata(points, values, (grid_x, grid_y), method='linear')
+            # grid_z = griddata(points, values, (grid_x, grid_y), method='cubic')
+
+            # method='cubic' may cause negative interp values; set them nan to make
+            # empty
+            grid_z[grid_z < 0] = np.nan
+            grid_z = grid_z / 1000.0
+
+            # use reverse color map in imshow and the colorbar
+            my_cmap = matplotlib.cm.jet_r
+            # my_cmap_r = reverse_colourmap(my_cmap)
+
+            imgplot = plt.imshow(grid_z, origin='upper', cmap=my_cmap)
+
+            # plot the stations positions and names?
+            station_points = np.zeros((len(latlons), 2))
+            for iter, (lat, lon) in enumerate(latlons):
+                (i, j) = get_index(lat, lon, minlat, minlon, pixelsize)
+                station_points[iter, 0] = zdep.shape[0] - j - 1
+                station_points[iter, 1] = i
+
+            # the stations sample point 1-lon-j, 0-lat-i
+            plt.plot(station_points[:, 1], station_points[:, 0], 'kv', markersizez=6, )
+            # add station id
+            # plt.annotate(stations, x=station_points[:, 1], y=station_points[:, 1])
+
+            # set the axix limit to control white margins
+            padx = int(nx * 0.01)
+            pady = int(ny * 0.01)
+            min_margin = 4
+
+            # adjusted if necessary, the number of grids extended out of the sample points area
+            margin = max(padx, pady, min_margin)
+            self._logger.debug("**** station_points shape *****", station_points.shape)
+            self._logger.debug("**** grid_z shape *****", grid_z.shape)
+            self._logger.debug("margin = %s" % margin)
+
+            # horizontal axis 0-> the second index (i,j) of the matrix
+            plt.xlim(-margin, grid_z.shape[1] + margin)
+            # vertical axis origin at upper corner, not the lower corner.
+            plt.ylim(grid_z.shape[0] + margin, -margin)
+
+            ax = plt.gca()
+            plt.gcf().set_size_inches(6, 6)
+
+            ftsize = 14
+            numticks = 5  # number of ticks to draw 5,10?
+            stepx = int(zdep.shape[1] / numticks)
+            stepy = int(zdep.shape[0] / numticks)
+            xticks = np.arange(0, zdep.shape[1], stepx)  # 10, 100
+            yticks = np.arange(0, zdep.shape[0], stepy)
+
+            xticks_label = ['%.2f' % (bbox[0][0] + pixelsize * xtick)
+                            for xtick in xticks]  # formatted float numbers
+            yticks_label = ['%.2f' % (bbox[1][0] + pixelsize * ytick)
+                            for ytick in yticks]
+
+            self._logger.debug("xticks_labels= %s", xticks_label)
+            self._logger.debug("yticks_labels= %s", yticks_label)
+            # make sure the latitude y-axis is correctly labeled.
+            yticks_label.reverse()
+
+            plt.xticks(xticks, xticks_label, rotation='0', fontsize=ftsize)
+            plt.yticks(yticks, yticks_label, rotation='horizontal', fontsize=ftsize)
+            ax.set_ylabel('Latitude(degree)', fontsize=ftsize)
+            ax.set_xlabel('Longitude(degree)', fontsize=ftsize)
+            ax.tick_params(
+                axis='both',
+                which='major',
+                width=2,
+                length=5,
+                labelsize=ftsize)
+            # plt.title('Penetration Depth at the Period=%.6f (Cubic Interpolation)\n'
+            # % period_fmt)  # Cubic
+            title = "Penetration Depth at the Period=%s seconds \n" %  period_fmt # todo is \n necessory?
+            plt.title(title)  # Cubic
+            self._fig.canvas.set_window_title(title)
+
+            # method-1. this is the simplest colorbar, but cannot take cmap_r
+            # plt.colorbar(cmap=my_cmap_r).set_label(label='Penetration Depth
+            # (Meters)', size=ftsize)  # ,weight='bold')
+
+            # method-2 A more controlled colorbar:
+            # create an axes on the right side of ax. The width of cax will be 5%
+            # of ax and the padding between cax and ax will be fixed at 0.05 inch.
+            divider = make_axes_locatable(ax)
+            # pad = separation from figure to colorbar
+            cax = divider.append_axes("right", size="3%", pad=0.2)
+            mycb = plt.colorbar(imgplot, cax=cax)  # cmap=my_cmap_r, does not work!!
+            mycb.outline.set_linewidth(2)
+            mycb.set_label(label='Penetration Depth (Km)', size=ftsize)
+            mycb.set_cmap(my_cmap)
+            
 
     def set_data(self, data):
         # this plot need a list of edi files
@@ -541,3 +663,26 @@ def get_bounding_box(latlons):
     # print("Longitude Range:", minlon, maxlon)
 
     return (minlon, maxlon), (minlat, maxlat)
+
+
+def get_index(lat, lon, minlat, minlon, pixelsize, offset=0):
+    """
+    compute the grid index from the lat lon float value
+    :param lat: float lat
+    :param lon: float lon
+    :param minlat: min lat at low left corner
+    :param minlon: min long at left
+    :param pixelsize: pixel size in lat long degree
+    :param offset: a shift of grid index. should be =0.
+    :return: a paire of integer
+    """
+    index_x = (lon - minlon) / pixelsize
+    index_y = (lat - minlat) / pixelsize
+
+    ix = int(round(index_x))
+    iy = int(round(index_y))
+
+    # any negative values, out-of-bound?
+    logger.debug("Grid index: (%s, %s)", ix, iy)
+
+    return ix + offset, iy + offset
