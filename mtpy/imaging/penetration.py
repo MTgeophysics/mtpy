@@ -227,6 +227,7 @@ class Depth3D(ImagingBase):
             return
 
         period_by_index = kwargs.pop("period_by_index", False)  # search periods by its index in the data file
+        plot_station_id = kwargs.pop("plot_station_id", False)  # plot the id of each station on the image
         if period_by_index:  # self._period is considered as an index
             if not isinstance(self._period, int):
                 self._logger.warning("period value is not integer but used as an index.")
@@ -281,19 +282,30 @@ class Depth3D(ImagingBase):
             # avoid index out of bound
             pad = 1  # pad = 1 affect the top and right of the plot. it is linked to get_index offset?
             # todo change this part to use xy bound offset? (0.5 gride on each side?)
-            nx2 = nx + pad
-            ny2 = ny + pad
+            nx_padded = nx + pad
+            ny_padded = ny + pad
 
             # fast initialization
-            zdep = np.empty((ny2, nx2))
+            zdep = np.empty((ny_padded, nx_padded))
             zdep.fill(np.nan)  # initialize all pixel value as np.nan
+
+            points = np.zeros((len(latlons), 2))
+            values = np.zeros(len(latlons))
+
+            station_points = np.zeros((len(latlons), 2))
 
             self._logger.debug("zdep shape %s", zdep.shape)
 
             for iter, (lat, lon) in enumerate(latlons):
                 # self._logger.debug(iter, pair)
                 (xi, yi) = get_index(lat, lon, minlat, minlon, pixelsize)
-                zdep[zdep.shape[0] - yi - 1, xi] = np.abs(pendep[iter])
+                zdep[ny_padded - yi - 1, xi] = np.abs(pendep[iter])
+                # print pair
+                points[iter, 0] = ny_padded - yi - 1
+                points[iter, 1] = xi
+                values[iter] = np.abs(pendep[iter])
+                station_points[iter, 0] = ny_padded - yi - 1
+                station_points[iter, 1] = xi
 
             # plt.imshow(zdep, interpolation='none') #OR plt.imshow(zdep,  interpolation='spline36')
             # plt.colorbar()
@@ -306,18 +318,7 @@ class Depth3D(ImagingBase):
             # grid_x, grid_y = np.mgrid[0:95:96j, 0:83:84j]  # this syntax with
             # complex step 96j has different meaning
             # this is more straight forward.
-            grid_x, grid_y = np.mgrid[0:zdep.shape[0]:1, 0:zdep.shape[1]:1]
-
-            # self._logger.debug(grid_x, grid_y)
-            points = np.zeros((len(latlons), 2))
-            values = np.zeros(len(latlons))
-
-            for iter, (lat, lon) in enumerate(latlons):
-                # print pair
-                (i, j) = get_index(lat, lon, minlat, minlon, pixelsize)
-                points[iter, 0] = zdep.shape[0] - j - 1
-                points[iter, 1] = i
-                values[iter] = np.abs(pendep[iter])
+            grid_x, grid_y = np.mgrid[0:ny_padded:1, 0:nx_padded:1]
 
             # grid_z0 = griddata(points, values, (grid_x, grid_y), method='nearest')
             grid_z = griddata(points, values, (grid_x, grid_y), method='linear')
@@ -336,17 +337,12 @@ class Depth3D(ImagingBase):
 
             imgplot = plt.imshow(grid_z, origin='upper', cmap=my_cmap)
 
-            # plot the stations positions and names?
-            station_points = np.zeros((len(latlons), 2))
-            for iter, (lat, lon) in enumerate(latlons):
-                (i, j) = get_index(lat, lon, minlat, minlon, pixelsize)
-                station_points[iter, 0] = zdep.shape[0] - j - 1
-                station_points[iter, 1] = i
-
             # the stations sample point 1-lon-j, 0-lat-i
             plt.plot(station_points[:, 1], station_points[:, 0], 'kv', markersize=6, )
             # add station id
-            # plt.annotate(stations, x=station_points[:, 1], y=station_points[:, 1])
+            if plot_station_id:
+                for label, x, y in zip(stations, station_points[:, 1], station_points[:, 0]):
+                    plt.annotate(label, xy=(x, y), fontsize=9)
 
             # set the axix limit to control white margins
             padx = int(nx * 0.01)

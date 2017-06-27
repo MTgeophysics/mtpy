@@ -45,7 +45,7 @@ class ImagingBase:
     #     pass
 
     def export_image(self, fn, **kwargs):
-        if self._fig == None:
+        if self._fig is None:
             self.plot()
         self._fig.savefig(fn, **kwargs)
 
