@@ -19,13 +19,9 @@ import sys
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
-from mpl_toolkits.axes_grid1 import make_axes_locatable
-from scipy.interpolate import griddata
 
 import mtpy.core.mt as mt
-import mtpy.utils.calculator
-from mtpy.imaging.penetration import get_penetration_depth, get_penetration_depth_generic, check_period_values, \
-    get_bounding_box, get_index
+from mtpy.imaging.penetration import get_index, load_edi_files, Depth3D
 from mtpy.utils.mtpylog import MtPyLog
 
 from mtpy.utils.decorator import deprecated
@@ -61,209 +57,30 @@ def plot_latlon_depth_profile(edi_dir, period, zcomponent='det', showfig=True, s
     # edi_dir=r"E:\Githubz\mtpy2\examples\data/edi2"
 
     # 1 get a list of edi files, which are suppose to be in a profile.
-    edifiles = glob.glob(os.path.join(edi_dir, '*.edi'))
+    # edifiles = glob.glob(os.path.join(edi_dir, '*.edi'))
 
-    logger.debug("edi files: %s", edifiles)
+    # logger.debug("edi files: %s", edifiles)
 
+    edis = load_edi_files(edi_dir)
+
+    image = Depth3D(edis, period, zcomponent)
     if isinstance(period, int):  # period is considered as an index
-        (stations, periods, pendep, latlons) = get_penetration_depth(
-            edifiles, period, whichrho=zcomponent)
+        image.plot(period_by_index=True)
     elif (isinstance(period, float)):  # period is considered as the actual value of period in second
-        (stations, periods, pendep, latlons) = get_penetration_depth_generic(
-            edifiles, period, whichrho=zcomponent)
+        image.plot()
     else:
         raise Exception("Wrong type of the parameter period, %s" % period)
 
-    if check_period_values(periods) is False:
-        logger.error(
-            "The period values are NOT equal - Please check!!! %s",
-            periods)
-        plt.plot(periods, "-^")
-        plt.title("Periods are NOT equal !!!", )
-        plt.show()
-        # should stop the script running further, raise exception below.
-        raise Exception(
-            "Period values NOT equal across the EDI files. Please check!!!")
-    else:  # good case continue
-        pass
 
-    Period0 = periods[0]
-
-    if Period0 < 1.0:
-        # 4 signifiant digits means 4 nonzero number
-        period_fmt = str(mtpy.utils.calculator.roundsf(Period0, 4))
-    else:  # period>1s keep 2 decimal digits (after dot)
-        period_fmt = '%.2f' % Period0
-
-    bbox = get_bounding_box(latlons)
-    # bbox = get_bounding_box(stations)
-
-    logger.debug("Bounding Box %s", bbox)
-
-    xgrids = bbox[0][1] - bbox[0][0]
-    ygrids = bbox[1][1] - bbox[1][0]
-
-    logger.debug("xy grids %s %s", xgrids, ygrids)
-
-    minlat = bbox[1][0]
-    minlon = bbox[0][0]
-
-    # Pixel size in Degree:  0.001=100meters, 0.01=1KM 1deg=100KM
-    pixelsize = 0.002  # Degree 0.002=200meters, 0.01=1KM 1deg=100KM
-
-    nx = int(np.ceil(xgrids / pixelsize))
-    ny = int(np.ceil(ygrids / pixelsize))
-
-    print(nx, ny)
-
-    # make the image slightly bigger than the (nx, ny) to contain all points,
-    # avoid index out of bound
-    pad = 1  # pad=1 affect the top and right of the plot. It is linked to get_index offset?
-    nx2 = nx + pad
-    ny2 = ny + pad
-
-    # Z = 0.0* np.random.random((nx2,ny2))   # Test data
-    # Z=  np.ones((nx2,ny2))
-    zdep = np.zeros((ny2, nx2))
-    # Z[10, 10]=12
-    # Z[11, 20]=20
-
-    zdep[:, :] = np.nan  # initialize all pixel value as np.nan
-
-    logger.debug("zdep shape %s", zdep.shape)
-
-    for iter, pair in enumerate(latlons):
-        logger.debug(pair)
-        (xi, yi) = get_index(pair[0], pair[1], minlat, minlon, pixelsize)
-        zdep[zdep.shape[0] - yi - 1, xi] = np.abs(pendep[iter])
-
-    # plt.imshow(zdep, interpolation='none') #OR plt.imshow(zdep,  interpolation='spline36')
-    # plt.colorbar()
-    # plt.show() # without this show(), the 2 figure will be plotted in one
-    # canvas, overlay and compare
-
-    fig = plt.figure()  # a new figure canvas
-
-    # griddata interpolation of the zdep sample MT points.
-    print(zdep.shape[0], zdep.shape[1])
-
-    # grid_x, grid_y = np.mgrid[0:95:96j, 0:83:84j]  # this syntax with
-    # complex step 96j has different meaning
-    # this is more straight forward.
-    grid_x, grid_y = np.mgrid[0:zdep.shape[0]:1, 0:zdep.shape[1]:1]
-
-    # print (grid_x, grid_y)
-    points = np.zeros((len(latlons), 2))
-    values = np.zeros(len(latlons))
-
-    for iter, pair in enumerate(latlons):
-        #  print pair
-        (i, j) = get_index(pair[0], pair[1], minlat, minlon, pixelsize)
-        points[iter, 0] = zdep.shape[0] - j - 1
-        points[iter, 1] = i
-        values[iter] = np.abs(pendep[iter])
-
-    # grid_z0 = griddata(points, values, (grid_x, grid_y), method='nearest')
-    grid_z = griddata(points, values, (grid_x, grid_y), method='linear')
-    # grid_z = griddata(points, values, (grid_x, grid_y), method='cubic')
-
-    # method='cubic' may cause negative interp values; set them nan to make
-    # empty
-    grid_z[grid_z < 0] = np.nan
-    grid_z = grid_z / 1000.0
-
-    # use reverse color map in imshow and the colorbar
-    my_cmap = mpl.cm.jet
-    my_cmap_r = reverse_colourmap(my_cmap)
-
-    # plt.imshow(grid_z)
-    imgplot = plt.imshow(grid_z, origin='upper', cmap=my_cmap_r)
-
-    # plot the stations positions and names?
-    station_points = np.zeros((len(latlons), 2))
-    for iter, pair in enumerate(latlons):
-        (i, j) = get_index(pair[0], pair[1], minlat, minlon, pixelsize)
-        station_points[iter, 0] = zdep.shape[0] - j - 1
-        station_points[iter, 1] = i
-
-    # the stations sample point 1-lon-j, 0-lat-i
-    plt.plot(station_points[:, 1], station_points[:, 0], 'kv', markersize=6)
-
-    # set the axix limit to control white margins
-    padx = int(nx * 0.01)
-    pady = int(ny * 0.01)
-    min_margin = 4
-
-    # adjusted if necessay, the number of grids extended out of the sample
-    # points area
-    margin = max(padx, pady, min_margin)
-    print ("**** station_points shape *****", station_points.shape)
-    print ("**** grid_z shape *****", grid_z.shape)
-    print("margin = %s" % margin)
-
-    # horizontal axis 0-> the second index (i,j) of the matrix
-    plt.xlim(-margin, grid_z.shape[1] + margin)
-    # vertical axis origin at upper corner, not the lower corner.
-    plt.ylim(grid_z.shape[0] + margin, -margin)
-
-    ax = plt.gca()
-    plt.gcf().set_size_inches(6, 6)
-
-    ftsize = 14
-    numticks = 5  # number of ticks to draw 5,10?
-    stepx = int(zdep.shape[1] / numticks)
-    stepy = int(zdep.shape[0] / numticks)
-    xticks = np.arange(0, zdep.shape[1], stepx)  # 10, 100
-    yticks = np.arange(0, zdep.shape[0], stepy)
-
-    xticks_label = ['%.2f' % (bbox[0][0] + pixelsize * xtick)
-                    for xtick in xticks]  # formatted float numbers
-    yticks_label = ['%.2f' % (bbox[1][0] + pixelsize * ytick)
-                    for ytick in yticks]
-
-    logger.debug("xticks_labels= %s", xticks_label)
-    logger.debug("yticks_labels= %s", yticks_label)
-    # make sure the latitude y-axis is correctly labeled.
-    yticks_label.reverse()
-
-    plt.xticks(xticks, xticks_label, rotation='0', fontsize=ftsize)
-    plt.yticks(yticks, yticks_label, rotation='horizontal', fontsize=ftsize)
-    ax.set_ylabel('Latitude(degree)', fontsize=ftsize)
-    ax.set_xlabel('Longitude(degree)', fontsize=ftsize)
-    ax.tick_params(
-        axis='both',
-        which='major',
-        width=2,
-        length=5,
-        labelsize=ftsize)
-    # plt.title('Penetration Depth at the Period=%.6f (Cubic Interpolation)\n'
-    # % period_fmt)  # Cubic
-    plt.title(
-        'Penetration Depth at the Period=%s seconds \n' %
-        period_fmt)  # Cubic
-
-    # method-1. this is the simplest colorbar, but cannot take cmap_r
-    # plt.colorbar(cmap=my_cmap_r).set_label(label='Penetration Depth
-    # (Meters)', size=ftsize)  # ,weight='bold')
-
-    # method-2 A more controlled colorbar:
-    # create an axes on the right side of ax. The width of cax will be 5%
-    # of ax and the padding between cax and ax will be fixed at 0.05 inch.
-    divider = make_axes_locatable(ax)
-    # pad = separation from figure to colorbar
-    cax = divider.append_axes("right", size="3%", pad=0.2)
-    mycb = plt.colorbar(imgplot, cax=cax)  # cmap=my_cmap_r, does not work!!
-    mycb.outline.set_linewidth(2)
-    mycb.set_label(label='Penetration Depth (Km)', size=ftsize)
-    mycb.set_cmap(my_cmap_r)
-
-    if showfig is True: plt.show()
+    if showfig is True:
+        image.show()
 
     if savefig:
         savedir = 'E:/tmp'
-        savefn = 'P3Depth_Period%s.jpg' % (period_fmt)
+        savefn = 'P3Depth_Period%s.jpg' % image.get_period_fmt()
         path2savefile = os.path.join(savedir, savefn)
-        fig.savefig(path2savefile, dpi=200, bbox_inches='tight')
+        image.export_image(path2savefile, dpi=200, bbox_inches='tight')
+
     plt.clf()
     plt.close()
     return
