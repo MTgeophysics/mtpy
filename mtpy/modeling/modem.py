@@ -2027,15 +2027,17 @@ class Model(object):
             except IndexError:
                 continue
 
-        # --> make depth grid z
+        # --> make depth grid z, target the depth to z_target_depth
         log_z = np.logspace(np.log10(self.z1_layer),
                             np.log10(self.z_target_depth),
                             num=self.n_layers - self.pad_z - self.n_airlayers + 1)
 
         print("log_z logspace:", log_z)
 
-        log_z = log_z[1:] - log_z[:-1]
-        z_nodes = np.array([zz - zz % 10 ** np.floor(np.log10(zz)) for zz in log_z])  #why this
+        # deriv the z_cell size (vertical layers thickness)
+        log_z = log_z[1:] - log_z[:-1]  # the first layer thickness will not be equal to the intended z1_layer !!
+        #z_nodes = np.array([zz - zz % 10 ** np.floor(np.log10(zz)) for zz in log_z])  #why this? make round numbers?
+        z_nodes = log_z  # FZ: try not using the dubious code above.
 
         print("cell_sizes log_z = ", log_z)
         print("vs z_nodes = ", z_nodes)
@@ -2045,16 +2047,18 @@ class Model(object):
 
         print("index of top of padding itp=", itp)
 
-        # padding cells in the vertical direction
+        # padding cells in the end of the vertical direction
         for ii in range(1, self.pad_z + 1):
             z_0 = np.float(z_nodes[itp])
             # pad_d = np.round(z_0 * self.pad_stretch_v * ii, -2)
             pad_d = np.round(z_0 * self.pad_stretch_v ** ii, 2)
             z_nodes = np.append(z_nodes, pad_d)
 
-            # add air layers and define ground surface level.
+        # JingMing said there should be no air layer in the mesh.
+        # add air layers and define ground surface level.
         # initial layer thickness is same as z1_layer
-        z_nodes = np.hstack([[self.z1_layer] * self.n_airlayers, z_nodes])
+        n_air =0 # self.n_airlayers
+        z_nodes = np.hstack([[self.z1_layer] * n_air , z_nodes])
 
         # make an array of absolute values
         z_grid = np.array([z_nodes[:ii].sum()
