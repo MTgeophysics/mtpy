@@ -22,6 +22,7 @@ from imaging_base import ImagingBase, ParameterError, ImagingError
 import mtpy.modeling.occam2d_rewrite as occam2d
 from mtpy.core import mt as mt
 from mtpy.utils.mtpylog import MtPyLog
+from mtpy.utils.decorator import deprecated
 
 # get a logger object for this module, using the utility class MtPyLog to
 # config the logger
@@ -211,6 +212,7 @@ class Depth3D(ImagingBase):
         super(Depth3D, self).__init__()
         self._rho = None
         self._period = None
+        self._period_fmt = None
         self.set_data(data)
         self.set_rho(rho)
         self.set_period(period)
@@ -252,9 +254,9 @@ class Depth3D(ImagingBase):
 
             if period0 < 1.0:
                 # kept 4 signifiant digits - nonzero digits
-                period_fmt = str(mtpy.utils.calculator.roundsf(period0, 4))
+                self._period_fmt = str(mtpy.utils.calculator.roundsf(period0, 4))
             else:
-                period_fmt = "%.2f" % period0
+                self._period_fmt = "%.2f" % period0
             bbox = get_bounding_box(latlons)
 
             self._logger.debug("Bounding Box %s", bbox)
@@ -270,8 +272,8 @@ class Depth3D(ImagingBase):
             # Pixel size in Degree:  0.001=100meters, 0.01=1KM 1deg=100KM
             pixelsize = 0.002  # Degree 0.002=200meters, 0.01=1KM 1deg=100KM
 
-            nx = int(np.ceil(xgrids/pixelsize))
-            ny = int(np.ceil(ygrids/pixelsize))
+            nx = int(np.ceil(xgrids / pixelsize))
+            ny = int(np.ceil(ygrids / pixelsize))
 
             self._logger.debug("number of grids xy: %s %s", nx, ny)
 
@@ -299,7 +301,7 @@ class Depth3D(ImagingBase):
             # canvas, overlay and compare
 
             # griddata interpolation of the zdep sample MT points.
-            self._logger.debug(zdep.shape)
+            # self._logger.debug(zdep.shape)
 
             # grid_x, grid_y = np.mgrid[0:95:96j, 0:83:84j]  # this syntax with
             # complex step 96j has different meaning
@@ -313,7 +315,7 @@ class Depth3D(ImagingBase):
             for iter, (lat, lon) in enumerate(latlons):
                 # print pair
                 (i, j) = get_index(lat, lon, minlat, minlon, pixelsize)
-                points[iter, 0] = zdep.shape[0] - j - i
+                points[iter, 0] = zdep.shape[0] - j - 1
                 points[iter, 1] = i
                 values[iter] = np.abs(pendep[iter])
 
@@ -328,7 +330,9 @@ class Depth3D(ImagingBase):
 
             # use reverse color map in imshow and the colorbar
             my_cmap = matplotlib.cm.jet_r
-            # my_cmap_r = reverse_colourmap(my_cmap)
+            # my_cmap = matplotlib.cm.jet
+            # from mtpy.imaging.penetration_depth3d import reverse_colourmap
+            # my_cmap = reverse_colourmap(my_cmap)
 
             imgplot = plt.imshow(grid_z, origin='upper', cmap=my_cmap)
 
@@ -340,7 +344,7 @@ class Depth3D(ImagingBase):
                 station_points[iter, 1] = i
 
             # the stations sample point 1-lon-j, 0-lat-i
-            plt.plot(station_points[:, 1], station_points[:, 0], 'kv', markersizez=6, )
+            plt.plot(station_points[:, 1], station_points[:, 0], 'kv', markersize=6, )
             # add station id
             # plt.annotate(stations, x=station_points[:, 1], y=station_points[:, 1])
 
@@ -351,8 +355,8 @@ class Depth3D(ImagingBase):
 
             # adjusted if necessary, the number of grids extended out of the sample points area
             margin = max(padx, pady, min_margin)
-            self._logger.debug("**** station_points shape *****", station_points.shape)
-            self._logger.debug("**** grid_z shape *****", grid_z.shape)
+            self._logger.debug("**** station_points shape ***** %s", station_points.shape)
+            self._logger.debug("**** grid_z shape ***** %s", grid_z.shape)
             self._logger.debug("margin = %s" % margin)
 
             # horizontal axis 0-> the second index (i,j) of the matrix
@@ -392,7 +396,7 @@ class Depth3D(ImagingBase):
                 labelsize=ftsize)
             # plt.title('Penetration Depth at the Period=%.6f (Cubic Interpolation)\n'
             # % period_fmt)  # Cubic
-            title = "Penetration Depth at the Period=%s seconds \n" %  period_fmt # todo is \n necessory?
+            title = "Penetration Depth at the Period=%s seconds \n" % self._period_fmt  # todo is \n necessory?
             plt.title(title)  # Cubic
             self._fig.canvas.set_window_title(title)
 
@@ -410,7 +414,6 @@ class Depth3D(ImagingBase):
             mycb.outline.set_linewidth(2)
             mycb.set_label(label='Penetration Depth (Km)', size=ftsize)
             mycb.set_cmap(my_cmap)
-            
 
     def set_data(self, data):
         # this plot need a list of edi files
@@ -428,6 +431,13 @@ class Depth3D(ImagingBase):
         if period is not None:
             self._period = period
             self._reset_fig()
+
+    @deprecated("this function is added only to compatible with the old script penetration_depth3d.py")
+    def get_period_fmt(self):
+        if self._fig is not None:
+            return self._period_fmt
+        else:
+            return None
 
 
 # Utility functions (may need to move to utility module
@@ -616,23 +626,23 @@ def check_period_values(period_list, ptol=0.1):
 
     p0 = period_list[0]  # the first value as a ref
 
-    upper_bound = p0 * (1+ptol)
-    lower_bound = p0 * (1-ptol)
+    upper_bound = p0 * (1 + ptol)
+    lower_bound = p0 * (1 - ptol)
     if all((per > lower_bound and (per < upper_bound)) for per in period_list[1:]):
         return True
     else:
         return False
 
-    # pcounter = 0
-    #
-    # for per in period_list:
-    #     if (per > p0 * (1 - ptol)) and (per < p0 * (1 + ptol)):  # approximately equal by <5% error
-    #         pcounter = pcounter + 1
-    #     else:
-    #         logger.warn("Periods NOT Equal!!!  %s != %s", p0, per)
-    #         return False
-    #
-    # return True
+        # pcounter = 0
+        #
+        # for per in period_list:
+        #     if (per > p0 * (1 - ptol)) and (per < p0 * (1 + ptol)):  # approximately equal by <5% error
+        #         pcounter = pcounter + 1
+        #     else:
+        #         logger.warn("Periods NOT Equal!!!  %s != %s", p0, per)
+        #         return False
+        #
+        # return True
 
 
 def get_bounding_box(latlons):

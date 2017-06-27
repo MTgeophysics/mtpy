@@ -87,13 +87,12 @@ class ImagingBase:
             # todo raise an exception
             pass
 
-    def clear(self):
+    def close(self):
         """
-        clear the figure
+        close the figure
         :return:
         """
-        # todo decide if this is necessory
-        raise NotImplemented
+        self._reset_fig()
 
     def _reset_fig(self):
         if self._fig is not None:
