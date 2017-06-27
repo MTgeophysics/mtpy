@@ -253,9 +253,42 @@ class Depth3D(ImagingBase):
                 period_fmt = str(mtpy.utils.calculator.roundsf(period0, 4))
             else:
                 period_fmt = "%.2f" % period0
+            bbox = get_bounding_box(latlons)
 
+            logger.debug("Bounding Box %s", bbox)
 
+            xgrids = bbox[0][1] - bbox[0][0]
+            ygrids = bbox[1][1] - bbox[1][0]
 
+            logger.debug("xy grids: %s %s", xgrids, ygrids)
+
+            minlat = bbox[1][0]
+            minlon = bbox[0][0]
+
+            # Pixel size in Degree:  0.001=100meters, 0.01=1KM 1deg=100KM
+            pixelsize = 0.002  # Degree 0.002=200meters, 0.01=1KM 1deg=100KM
+
+            nx = int(np.ceil(xgrids/pixelsize))
+            ny = int(np.ceil(ygrids/pixelsize))
+
+            logger.debug("number of grids xy: %s %s", nx, ny)
+
+            # make the image slightly bigger than the (nx, ny) to contain all points
+            # avoid index out of bound
+            pad = 1  # pad = 1 affect the top and right of the plot. it is linked to get_index offset?
+            # todo change this part to use xy bound offset? (0.5 gride on each side?)
+            nx2 = nx + pad
+            ny2 = ny + pad
+
+            # fast initialization
+            zdep = np.empty((ny2, nx2))
+            zdep.fill(np.nan)  # initialize all pixel value as np.nan
+
+            logger.debug("zdep shape %s", zdep.shape)
+
+            for iter, pair in enumerate(latlons):
+                # logger.debug(iter, pair)
+                pass
 
     def set_data(self, data):
         # this plot need a list of edi files
