@@ -9,6 +9,7 @@ import mtpy.core.mt as mt
 # config the logger
 from mtpy.utils.mtpylog import MtPyLog
 
+
 class ImagingBase:
     """
     Description:
@@ -98,3 +99,27 @@ class ImagingBase:
         if self._fig is not None:
             self._fig.clf()
             self._fig = None
+
+    def get_figure(self):
+        if self._fig is None:
+            self.plot()
+        return self._fig
+
+    def get_data(self):
+        return self._data
+
+    # ========================================
+    # set properties
+    # ========================================
+    data = property(set_data, get_data, doc="the data (mt objects) that are to be plotted")
+    fig = property(None, get_figure, doc="matplotlib fig object")
+
+
+class ImagingException(Exception):
+    def __init__(self, *args, **kwargs):
+        Exception.__init__(self, *args, **kwargs)
+
+
+class ParameterError(ImagingException):
+    def __init__(self, *args, **kwargs):
+        ImagingException.__init__(self, *args, **kwargs)
