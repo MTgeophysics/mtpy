@@ -1,4 +1,6 @@
 """
+    this file contains the base class of all imaging classes, where the few common routines are defined as well as
+    some abstract member functions such as plot() and set_data()
     Author: YingzhiGou
     Date: 20/06/2017
 """

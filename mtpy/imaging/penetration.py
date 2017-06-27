@@ -1,9 +1,11 @@
 """
     Description:
-        todo: write description
+        This file defines imaging functions for penetration.
+        The plotting function are extracted and implemented in plot() of each class from penetration_depth1D.py,
+        penetration_depth2D.py and penetration_depth3D.py
 
     Usage:
-        todo: write usage
+        see descriptions of each clases
 
     Author: YingzhiGou
     Date: 20/06/2017
@@ -32,6 +34,10 @@ DEFAULT_RHOLIST = {'zxy', 'zyx', 'det'}
 
 
 class Depth1D(ImagingBase):
+    """
+        Description:
+        For a given input MT object, plot the Penetration Depth vs all the periods (1/freq).
+    """
     def set_data(self, data):
         # this plot only use one edi each time
         self._set_edi(data)
@@ -126,6 +132,11 @@ class Depth1D(ImagingBase):
 
 
 class Depth2D(ImagingBase):
+    """
+    With a list of MT object and a list of period index,
+    generate a profile using occam2d module,
+    then plot the Penetration Depth profile at the given periods vs the stations locations.
+    """
     def plot(self, **kwargs):
         if self._rho is None:
             raise ZComponentError
@@ -208,6 +219,13 @@ class Depth2D(ImagingBase):
 
 
 class Depth3D(ImagingBase):
+    """
+    For a batch of MT_stations (input as a list of MT objects),
+    plot the Penetration Depth vs the station_location,
+    for a given period value or index (1/freq)-
+    Note that the values of periods within10% tolerance (ptol=0.1) are considered as equal.
+    Setting a smaller value for ptol(=0.05)may result less MT sites data included.
+    """
     def __init__(self, data=None, period=None, rho='det'):
         super(Depth3D, self).__init__()
         self._rho = None
