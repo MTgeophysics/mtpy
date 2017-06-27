@@ -24,7 +24,8 @@ from scipy.interpolate import griddata
 
 import mtpy.core.mt as mt
 import mtpy.utils.calculator
-from mtpy.imaging.penetration import get_penetration_depth, get_penetration_depth_generic, check_period_values
+from mtpy.imaging.penetration import get_penetration_depth, get_penetration_depth_generic, check_period_values, \
+    get_bounding_box
 from mtpy.utils.mtpylog import MtPyLog
 
 mpl.rcParams['lines.linewidth'] = 2
@@ -288,24 +289,6 @@ def reverse_colourmap(cmap, name='my_cmap_r'):
     linear_l = dict(zip(k, reverse))
     my_cmap_r = mpl.colors.LinearSegmentedColormap(name, linear_l)
     return my_cmap_r
-
-
-def get_bounding_box(latlons):
-    """ get min max lat lon from the list of lat-lon-pairs points"""
-    lats = [tup[0] for tup in latlons]
-    lons = [tup[1] for tup in latlons]
-
-    minlat = min(lats)
-    maxlat = max(lats)
-
-    print("Latitude Range:", minlat, maxlat)
-
-    minlon = min(lons)
-    maxlon = max(lons)
-
-    print("Longitude Range:", minlon, maxlon)
-
-    return ((minlon, maxlon), (minlat, maxlat))
 
 
 def get_index(lat, lon, minlat, minlon, pixelsize, offset=0):

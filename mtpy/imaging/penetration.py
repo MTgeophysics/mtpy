@@ -478,3 +478,33 @@ def check_period_values(period_list, ptol=0.1):
     #         return False
     #
     # return True
+
+
+def get_bounding_box(latlons):
+    """ get min max lat lon from the list of lat-lon-pairs points"""
+    minlat = minlon = float("inf")
+    maxlat = maxlon = float("-inf")
+
+    for (lat, lon) in latlons:
+        minlat = min(minlat, lat)
+        maxlat = max(maxlat, lat)
+        minlon = min(minlon, lon)
+        maxlon = max(maxlon, lon)
+
+    logger.debug("Latitude Range:", minlat, maxlat)
+    logger.debug("Longitude Range:", minlon, maxlon)
+
+    # lats = [tup[0] for tup in latlons]
+    # lons = [tup[1] for tup in latlons]
+    #
+    # minlat = min(lats)
+    # maxlat = max(lats)
+    #
+    # print("Latitude Range:", minlat, maxlat)
+    #
+    # minlon = min(lons)
+    # maxlon = max(lons)
+    #
+    # print("Longitude Range:", minlon, maxlon)
+
+    return (minlon, maxlon), (minlat, maxlat)
