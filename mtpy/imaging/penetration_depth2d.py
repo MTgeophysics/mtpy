@@ -12,15 +12,15 @@ Author: fei.zhang@ga.gov.au
 Date:   2017-01-23
 """
 
-import sys
-import os
 import glob
+import os
+import sys
+
+import matplotlib as mpl
+import matplotlib.pyplot as plt
 import numpy as np
 
-
-import matplotlib.pyplot as plt
-import matplotlib as mpl
-
+from mtpy.imaging.penetration import get_penetration_depth, load_edi_files, Depth2D
 
 mpl.rcParams['lines.linewidth'] = 2
 # mpl.rcParams['lines.color'] = 'r'
@@ -50,123 +50,10 @@ def plot2Dprofile(edi_dir, period_index_list=None, zcomponent='det'):
 
     logger.debug("edi files: %s", edifiles)
 
-    # stations = ['151{0:02}A'.format(s) for s in range(24, 31)]
-    # pr = occam2d_new.Profile(edi_path=edi_dir, station_list=stations)
-
-    pr = occam2d_new.Profile(edi_path=edi_dir)
-
-    pr.generate_profile()
-
-    pr.plot_profile(station_id=[0, 4])
-
-    # 2 get the period_index list
-
-    if period_index_list is None or len(period_index_list) == 0:
-        logger.error("Please provide a period index list like [1,2,3,4]")
-        raise Exception("Period index list is empty")
-
-    #  set station labels to only be from 1st to 4th index of station name
-    plt.figure()
-    for period_index in period_index_list:  # [0,10,20,30]:
-
-        logger.debug("doing period index %s", period_index)
-
-        (stations, pen, periods) = get_penetration_depth(
-            pr.edi_list, int(period_index), whichrho=zcomponent)
-
-        line_label = "Period=%s" % periods[0]
-
-        plt.plot(
-            pr.station_locations,
-            pen,
-            "--",
-            marker='o',
-            markersize="12",
-            linewidth="2",
-            label=line_label)
-        plt.legend()
-
-    plt.ylabel(
-        'Penetration Depth (Metres) Computed by %s' %
-        zcomponent, fontsize=16)
-    plt.yticks(fontsize=16)
-
-    plt.xlabel('MT Penetration Depth Profile Over Stations.', fontsize=16)
-    logger.debug("stations= %s", stations)
-    logger.debug("station locations: %s", pr.station_locations)
-    if (pr.station_list is not None):
-        plt.xticks(
-            pr.station_locations,
-            pr.station_list,
-            rotation='horizontal',
-            fontsize=16)
-    else:  # Are the stations in the same order as the profile generated pr.station_list????
-        plt.xticks(
-            pr.station_locations,
-            stations,
-            rotation='horizontal',
-            fontsize=16)
-
-    # plt.tight_layout()
-    plt.gca().xaxis.tick_top()
-
-    plt.show()
-
-
-# whichrho=[det, zxy, zyx]
-def get_penetration_depth(mt_obj_list, per_index, whichrho='det'):
-    """
-    compute the penetration depth of mt_obj at the given period_index, and using whichrho option
-    :param per_index:
-    :param mt_obj_list:
-    :param whichrho:
-    :return:
-    """
-
-    scale_param = np.sqrt(1.0 / (2.0 * np.pi * 4 * np.pi * 10 ** (-7)))
-
-    # per_index=0,1,2,....
-    periods = []
-
-    pen_depth = []
-
-    stations = []
-
-    for mt_obj in mt_obj_list:
-
-        # the attribute Z
-        zeta = mt_obj.Z
-
-        if per_index >= len(zeta.freq):
-            logger.debug("number of frequecies= %s", len(zeta.freq))
-            raise Exception(
-                "Index out_of_range Error: period index must be less than number of periods in zeta.freq")
-
-        per = 1.0 / zeta.freq[per_index]
-        periods.append(per)
-
-        if whichrho == 'zxy':
-            penetration_depth = - scale_param * \
-                np.sqrt(zeta.resistivity[per_index, 0, 1] * per)
-        elif whichrho == 'zyx':
-            penetration_depth = - scale_param * \
-                np.sqrt(zeta.resistivity[per_index, 1, 0] * per)
-        elif whichrho == 'det':
-            # determinant
-            # determinant value at the given period index
-            det2 = np.abs(zeta.det[0][per_index])
-            penetration_depth = -scale_param * np.sqrt(0.2 * per * det2 * per)
-        else:
-            logger.critical(
-                "unsupported method to compute penetratoin depth: %s",
-                whichrho)
-            sys.exit(100)
-
-        pen_depth.append(penetration_depth)
-
-        stations.append(mt_obj.station)
-
-    return(stations, pen_depth, periods)
+    edis = load_edi_files(edi_dir)
+    plot = Depth2D(edis, period_index_list, zcomponent)
+    plot.plot()
+    plot.show()
 
 
 def barplot_multi_station_penentration_depth(
