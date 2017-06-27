@@ -24,7 +24,7 @@ from scipy.interpolate import griddata
 
 import mtpy.core.mt as mt
 import mtpy.utils.calculator
-from mtpy.imaging.penetration import get_penetration_depth, get_penetration_depth_generic
+from mtpy.imaging.penetration import get_penetration_depth, get_penetration_depth_generic, check_period_values
 from mtpy.utils.mtpylog import MtPyLog
 
 mpl.rcParams['lines.linewidth'] = 2
@@ -345,35 +345,6 @@ def get_index2(lat, lon, ref_lat, ref_lon, pixelsize):
     index_y = (lat - ref_lat) / pixelsize
 
     return (int(index_x), int(index_y))
-
-
-def check_period_values(period_list, ptol=0.1):
-    """
-    check if all the values are equal in the input list
-    :param period_list: a list of period
-    :param ptol=0.1 # 1% percentage tolerance of period values considered as equal
-    :return: True/False
-    """
-
-    logger.debug("The Periods List to be checked : %s", period_list)
-
-    if len(period_list) < 1:
-        logger.error(
-            "The MT periods list is empty - No relevant data found in the EDI files.")
-
-    p0 = period_list[0]  # the first value as a ref
-
-    pcounter = 0
-
-    for per in period_list:
-        if (per > p0 * (1 - ptol)) and (per < p0 *
-            (1 + ptol)):  # approximately equal by <5% error
-            pcounter = pcounter + 1
-        else:
-            logger.warn("Periods NOT Equal!!!  %s != %s", p0, per)
-            return False
-
-    return True
 
 
 #########################################################

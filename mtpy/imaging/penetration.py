@@ -232,7 +232,7 @@ class Depth3D(ImagingBase):
             (stations, periods, pendep, latlons) = get_penetration_depth_generic(self._data,
                                                                                  self._period,
                                                                                  whichrho=self._rho)
-        
+
 
     def set_data(self, data):
         # this plot need a list of edi files
@@ -420,3 +420,38 @@ class ZComponentError(ParameterError):
             ParameterError.__init__("please set zcomponent (rho) to either \"zxy\", \"zyx\" or \"det\"", **kwargs)
         else:
             ParameterError.__init__(*args, **kwargs)
+
+
+def check_period_values(period_list, ptol=0.1):
+    """
+    check if all the values are equal in the input list
+    :param period_list: a list of period
+    :param ptol=0.1 # 1% percentage tolerance of period values considered as equal
+    :return: True/False
+    """
+
+    logger.debug("The Periods List to be checked : %s", period_list)
+
+    if not period_list:
+        logger.error("The MT periods list is empty - No relevant data found in the EDI files.")
+        return False  # what is the sensible default value for this ?
+
+    p0 = period_list[0]  # the first value as a ref
+
+    upper_bound = p0 * (1+ptol)
+    lower_bound = p0 * (1-ptol)
+    if all((per > lower_bound and (per < upper_bound)) for per in period_list[1:]):
+        return True
+    else:
+        return False
+
+    # pcounter = 0
+    #
+    # for per in period_list:
+    #     if (per > p0 * (1 - ptol)) and (per < p0 * (1 + ptol)):  # approximately equal by <5% error
+    #         pcounter = pcounter + 1
+    #     else:
+    #         logger.warn("Periods NOT Equal!!!  %s != %s", p0, per)
+    #         return False
+    #
+    # return True
