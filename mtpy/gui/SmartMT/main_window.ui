@@ -40,7 +40,47 @@
      <number>0</number>
     </property>
     <item>
-     <widget class="QMdiArea" name="mdiArea"/>
+     <widget class="QMdiArea" name="mdiArea">
+      <property name="enabled">
+       <bool>true</bool>
+      </property>
+      <property name="verticalScrollBarPolicy">
+       <enum>Qt::ScrollBarAsNeeded</enum>
+      </property>
+      <property name="horizontalScrollBarPolicy">
+       <enum>Qt::ScrollBarAsNeeded</enum>
+      </property>
+      <widget class="QWidget" name="subwindow_station_viewer">
+       <property name="windowTitle">
+        <string>Subwindow</string>
+       </property>
+       <widget class="QTreeWidget" name="treeWidget_stations">
+        <property name="geometry">
+         <rect>
+          <x>0</x>
+          <y>0</y>
+          <width>371</width>
+          <height>331</height>
+         </rect>
+        </property>
+        <column>
+         <property name="text">
+          <string>Group</string>
+         </property>
+        </column>
+        <column>
+         <property name="text">
+          <string>New Column</string>
+         </property>
+        </column>
+        <column>
+         <property name="text">
+          <string>File</string>
+         </property>
+        </column>
+       </widget>
+      </widget>
+     </widget>
     </item>
    </layout>
   </widget>

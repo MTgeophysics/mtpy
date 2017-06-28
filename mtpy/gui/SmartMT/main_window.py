@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'main_window.ui'
+# Form implementation generated from reading ui file 'C:\Users\u64132\Documents\mtpy2\mtpy\gui\SmartMT\main_window.ui'
 #
 # Created by: PyQt4 UI code generator 4.11.4
 #
@@ -38,7 +38,15 @@ class Ui_SmartMT_MainWindow(object):
         self.horizontalLayout.setMargin(0)
         self.horizontalLayout.setObjectName(_fromUtf8("horizontalLayout"))
         self.mdiArea = QtGui.QMdiArea(self.centralwidget)
+        self.mdiArea.setEnabled(True)
+        self.mdiArea.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAsNeeded)
+        self.mdiArea.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAsNeeded)
         self.mdiArea.setObjectName(_fromUtf8("mdiArea"))
+        self.subwindow_station_viewer = QtGui.QWidget()
+        self.subwindow_station_viewer.setObjectName(_fromUtf8("subwindow_station_viewer"))
+        self.treeWidget_stations = QtGui.QTreeWidget(self.subwindow_station_viewer)
+        self.treeWidget_stations.setGeometry(QtCore.QRect(0, 0, 371, 331))
+        self.treeWidget_stations.setObjectName(_fromUtf8("treeWidget_stations"))
         self.horizontalLayout.addWidget(self.mdiArea)
         SmartMT_MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtGui.QMenuBar(SmartMT_MainWindow)
@@ -127,6 +135,10 @@ class Ui_SmartMT_MainWindow(object):
 
     def retranslateUi(self, SmartMT_MainWindow):
         SmartMT_MainWindow.setWindowTitle(_translate("SmartMT_MainWindow", "SmartMT", None))
+        self.subwindow_station_viewer.setWindowTitle(_translate("SmartMT_MainWindow", "Subwindow", None))
+        self.treeWidget_stations.headerItem().setText(0, _translate("SmartMT_MainWindow", "Group", None))
+        self.treeWidget_stations.headerItem().setText(1, _translate("SmartMT_MainWindow", "New Column", None))
+        self.treeWidget_stations.headerItem().setText(2, _translate("SmartMT_MainWindow", "File", None))
         self.menuFile.setTitle(_translate("SmartMT_MainWindow", "File", None))
         self.menuEdit.setTitle(_translate("SmartMT_MainWindow", "Edit", None))
         self.menuView.setTitle(_translate("SmartMT_MainWindow", "View", None))

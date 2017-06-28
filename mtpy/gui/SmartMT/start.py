@@ -10,24 +10,30 @@
     Date: 20/06/2017
 """
 
-
-
 import os
 import sys
+
 from PyQt4 import QtCore, QtGui
 
-from main_window import Ui_SmartMT_MainWindow
+from main_window import Ui_SmartMT_MainWindow, _fromUtf8, _translate
+from file_handler import FileHandler, FileHandlingException
+from station_viewer import Ui_StationViewer
 
 from mtpy.utils.decorator import deprecated
+from mtpy.utils.mtpylog import MtPyLog
 
 
 class StartQt4(QtGui.QMainWindow):
     def __init__(self, parent=None):
         QtGui.QWidget.__init__(self, parent)
+        self._logger = MtPyLog().get_mtpy_logger(__name__)
         self._is_file_dialog_opened = False
         self.ui = Ui_SmartMT_MainWindow()
         self.ui.setupUi(self)
         self.setup_menu()
+        self._file_handler = FileHandler()
+        self._station_viewer = None
+        self._subwindows = {}
 
     def setup_menu(self):
         # connect exit menu
@@ -58,8 +64,17 @@ class StartQt4(QtGui.QMainWindow):
         dialog.setFileMode(QtGui.QFileDialog.ExistingFiles)
         if dialog.exec_() == QtGui.QDialog.Accepted:
             file_list = dialog.selectedFiles()
-            # todo load in files
-            print(" ".join([str(file_name) for file_name in file_list]))
+            self._add_files(file_list)
+            self._update_tree_view()
+
+    def _add_files(self, file_list):
+        for file_ref in file_list:
+            try:
+                self._file_handler.add_file(str(file_ref), group_id='Default Group')
+            except FileHandlingException as exp:
+                self._logger.warning(exp.message)
+            except Exception as exp:
+                self._logger.critical(exp.message)
 
     def folder_dialog(self, *args, **kwargs):
         dialog = QtGui.QFileDialog(self)
@@ -77,27 +92,60 @@ class StartQt4(QtGui.QMainWindow):
                 file_list = [os.path.join(dir_name, edi) for edi in os.listdir(dir_name) if edi.endswith("edi")]
                 if not file_list:
                     # empty list
-                    QtGui.QMessageBox.information(self, "NOTE", "Directory does not contain any .edi file, please select again.")
-                    dir_name = None   # will read again
+                    QtGui.QMessageBox.information(self, "NOTE",
+                                                  "Directory does not contain any .edi file, please select again.")
+                    dir_name = None  # will read again
                 else:
-                    # todo load in files
-                    for edi in file_list:
-                        print edi
+                    self._add_files(dir_name)
+                    self._update_tree_view()
             else:
                 break
-        # dir_name = QtGui.QFileDialog.getExistingDirectory(self, "Open .edi Directory",
-        #                                                   '',
-        #                                                   QtGui.QFileDialog.DontUseNativeDialog | QtGui.QFileDialog.ShowDirsOnly)
 
+    def _update_tree_view(self):
+        if not self._station_viewer:
+            widget = QtGui.QWidget()
+            self._station_viewer = Ui_StationViewer()
+            self._station_viewer.setupUi(widget)
+            self.create_subwindow(widget, "Stations Stats")
+        for group in self._file_handler.get_groups():
+            node = QtGui.QTreeWidgetItem(self._station_viewer.treeWidget_stations)
+            node.setText(0, group)
+            for ref in self._file_handler.get_group_members(group):
+                mt_obj = self._file_handler.get_MT_obj(ref)
+                child_node = QtGui.QTreeWidgetItem(node)
+                child_node.setText(1, mt_obj.station)
+                child_node.setText(2, ref)
 
+    def create_subwindow(self, widget, title):
+        if title not in self._subwindows:
+            subwindow = QtGui.QMdiSubWindow()
+            subwindow.setWindowTitle(title)
+            subwindow.setWidget(widget)
+            # todo connect subwindow close event to remove menu item
+            self.ui.mdiArea.addSubWindow(subwindow)
+
+            # create menu action
+            new_window_action = QtGui.QAction(self)
+            new_window_action.setObjectName(_fromUtf8("actionSubwindow%d" % (len(self._subwindows) + 1)))
+            new_window_action.setText(_translate("SmartMT_MainWindow", title, None))
+            new_window_action.triggered.connect(subwindow.setFocus)
+
+            # add to window menu
+            self.ui.menuWindow.addAction(new_window_action)
+
+            # add all references to self._subwindow
+            self._subwindows[title]=(subwindow, widget, new_window_action)
+
+            subwindow.show()
 
     @deprecated(
-        "This is an dommany action that should be unsed only when the required function hasn't been implemented")
+        "This is an dummy action that should be unsed only when the required function hasn't been implemented")
     def dummy_action(self, *args, **kwargs):
         pass
 
 
 if __name__ == "__main__":
+
     app = QtGui.QApplication(sys.argv)
     smartMT = StartQt4()
     smartMT.show()
