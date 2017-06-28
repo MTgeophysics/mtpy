@@ -1,12 +1,18 @@
+"""
+Run these unit test at commandline.
+$   cd u25656@PC /e/Githubz/mtpy2 (develop)
+$   nosetests tests/imaging/
+"""
 from unittest import TestCase
 
 import os.path
 
 # configure matplotlib for testing
 import matplotlib
+# use non-interactive backend 'Agg', so that you do not have to see figure pop-out.
+matplotlib.use('Agg')  # comment out this line if you want to see the plots 1-by-1 on screen.
 
-matplotlib.use('Agg')  # comment out this line if you want to see the plots
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 # plt.ioff()
 
 from mtpy.imaging.penetration_depth1d import plot_edi_dir
@@ -29,7 +35,7 @@ class TestPenetration_depth1d(TestCase):
         plot_edi_dir("tests/data/edifiles")
         # plt.close()
 
-    def test_plot_edi_file_all(self):
+    def test_plot_edi_file(self):
         """
         testing plotting a single edi file
         :return:
