@@ -1,8 +1,22 @@
+# -*- coding: utf-8 -*-
+"""
+    Description:
+        This is the main driver of the SmartMT gui
+
+    Usage:
+        python start.py
+
+    Author: YingzhiGou
+    Date: 20/06/2017
+"""
+
+
+
 import os
 import sys
 from PyQt4 import QtCore, QtGui
 
-from main_window import Ui_MainWindow
+from main_window import Ui_SmartMT_MainWindow
 
 from mtpy.utils.decorator import deprecated
 
@@ -10,7 +24,8 @@ from mtpy.utils.decorator import deprecated
 class StartQt4(QtGui.QMainWindow):
     def __init__(self, parent=None):
         QtGui.QWidget.__init__(self, parent)
-        self.ui = Ui_MainWindow()
+        self._is_file_dialog_opened = False
+        self.ui = Ui_SmartMT_MainWindow()
         self.ui.setupUi(self)
         self.setup_menu()
 
@@ -34,6 +49,10 @@ class StartQt4(QtGui.QMainWindow):
 
     def file_dialog(self, *args, **kwargs):
         dialog = QtGui.QFileDialog(self)
+        if not self._is_file_dialog_opened:
+            # set the initial directory to HOME
+            dialog.setDirectory(os.path.expanduser("~"))
+            self._is_file_dialog_opened = True
         dialog.setWindowTitle('Open .edi Files...')
         dialog.setNameFilter('.edi files (*.edi)')
         dialog.setFileMode(QtGui.QFileDialog.ExistingFiles)
@@ -43,8 +62,12 @@ class StartQt4(QtGui.QMainWindow):
             print(" ".join([str(file_name) for file_name in file_list]))
 
     def folder_dialog(self, *args, **kwargs):
-        dir_name = None
         dialog = QtGui.QFileDialog(self)
+        if not self._is_file_dialog_opened:
+            # set the initial directory to HOME
+            dialog.setDirectory(os.path.expanduser("~"))
+            self._is_file_dialog_opened = True
+        dir_name = None
         dialog.setWindowTitle("Open .edi Directory...")
         dialog.setFileMode(QtGui.QFileDialog.DirectoryOnly)
         while dir_name is None:
