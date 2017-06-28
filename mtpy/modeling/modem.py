@@ -787,10 +787,8 @@ class Data(object):
                     self.data_array[ii]['east'] = d_arr_copy[d_index]['east']
                     self.data_array[ii]['north'] = d_arr_copy[d_index]['north']
                     self.data_array[ii]['elev'] = d_arr_copy[d_index]['elev']
-                    self.data_array[ii]['rel_east'] = d_arr_copy[
-                        d_index]['rel_east']
-                    self.data_array[ii]['rel_north'] = d_arr_copy[
-                        d_index]['rel_north']
+                    self.data_array[ii]['rel_east'] = d_arr_copy[d_index]['rel_east']
+                    self.data_array[ii]['rel_north'] = d_arr_copy[d_index]['rel_north']
                 except IndexError:
                     print 'Could not find {0} in data_array'.format(s_key)
             else:
@@ -2027,17 +2025,30 @@ class Model(object):
             except IndexError:
                 continue
 
-        # --> make depth grid z, target the depth to z_target_depth
-        log_z = np.logspace(np.log10(self.z1_layer),
-                            np.log10(self.z_target_depth),
-                            num=self.n_layers - self.pad_z - self.n_airlayers + 1)
-
-        print("log_z logspace:", log_z)
+        # --> make depth gridz using logspace, target the depth to z_target_depth
+        # log_z = np.logspace(np.log10(self.z1_layer),
+        #                     np.log10(self.z_target_depth),
+        #                     num=self.n_layers - self.pad_z - self.n_airlayers + 1)
 
         # deriv the z_cell size (vertical layers thickness)
-        log_z = log_z[1:] - log_z[:-1]  # the first layer thickness will not be equal to the intended z1_layer !!
-        #z_nodes = np.array([zz - zz % 10 ** np.floor(np.log10(zz)) for zz in log_z])  #why this? make round numbers?
-        z_nodes = log_z  # FZ: try not using the dubious code above.
+        # log_z = log_z[1:] - log_z[:-1]  # the first layer thickness will not be equal to the intended z1_layer !!
+        # #z_nodes = np.array([zz - zz % 10 ** np.floor(np.log10(zz)) for zz in log_z])  # why this to make round numbers?
+        # z_nodes = log_z  # FZ: try not using the dubious code above.
+
+        #FZ: use simple formula
+        p=self.pad_stretch_v
+        nzf=np.log10((p-1)*self.z_target_depth/self.z1_layer)/np.log10(p) -1
+        nz=int(nzf)
+        if (nz > self.n_layers):
+            self.n_layers = nz  # adjust z layers to prevent too big numbers.
+
+        numz= self.n_layers - self.pad_z + 1
+        factorz=1.2
+        exp_list = [self.z1_layer*(factorz**nz) for nz in xrange(0,numz)]
+        log_z = np.array(exp_list)
+        z_nodes =log_z
+
+        print("log_z logspace:", log_z)
 
         print("cell_sizes log_z = ", log_z)
         print("vs z_nodes = ", z_nodes)
@@ -2050,22 +2061,22 @@ class Model(object):
         # padding cells in the end of the vertical direction
         for ii in range(1, self.pad_z + 1):
             z_0 = np.float(z_nodes[itp])
-            # pad_d = np.round(z_0 * self.pad_stretch_v * ii, -2)
+            # wrong: pad_d = np.round(z_0 * self.pad_stretch_v * ii, -2)
             pad_d = np.round(z_0 * self.pad_stretch_v ** ii, 2)
             z_nodes = np.append(z_nodes, pad_d)
 
         # JingMing said there should be no air layer in the mesh.
         # add air layers and define ground surface level.
         # initial layer thickness is same as z1_layer
-        n_air =0 # self.n_airlayers
-        z_nodes = np.hstack([[self.z1_layer] * n_air , z_nodes])
+        add_air =0 # self.n_airlayers
+        z_nodes = np.hstack([[self.z1_layer] * add_air , z_nodes])
 
-        # make an array of absolute values
+        # make an array of sum values as coordinates of the horizontal lines
         z_grid = np.array([z_nodes[:ii].sum()
                            for ii in range(z_nodes.shape[0] + 1)])
 
         # z_grid point at zero level
-        self.sea_level = z_grid[self.n_airlayers]
+        # wrong: self.sea_level = z_grid[self.n_airlayers]
         print("FZ:***1 sea_level = ", self.sea_level)
 
         # ---Need to make an array of the individual cell dimensions for
@@ -2137,7 +2148,7 @@ class Model(object):
                        air_resistivity=1e17, sea_resistivity=0.3):
         """
         read topograph file in to make a surface model.
-        Call project_stations_on_topography in the end, which will change the .dat file
+        Call project_stations_on_topography in the end, which will re-write the .dat file
         """
         # first, get surface data
         if topographyfile is not None:
@@ -2165,7 +2176,7 @@ class Model(object):
             self.nodes_z = self.grid_z[1:] - self.grid_z[:-1]
 
             # adjust sea level
-            self.sea_level = self.grid_z[self.n_airlayers]
+            #wrong self.sea_level = self.grid_z[self.n_airlayers]
             print("FZ:***2 sea_level = ", self.sea_level)
 
             # assign topography
@@ -2286,7 +2297,7 @@ class Model(object):
         elev_mg = spi.griddata(
             points, values, xi, method=method).reshape(len(yg), len(xg))
 
-        print("Elevation data ", len(yg), len(xg), elev_mg.shape)
+        print(" Elevation data *** ", len(yg), len(xg), elev_mg.shape)
 
         # get a name for surface
         if surfacename is None:
@@ -2348,6 +2359,7 @@ class Model(object):
         """
         This method is used in add_topography().
         It will Re-write the data file to change the elevation column.
+        And update covariance mask
         :param air_resistivity:
         :return:
         """
@@ -2359,8 +2371,8 @@ class Model(object):
         for sname in self.station_locations['station']:
             ss = np.where(self.station_locations['station'] == sname)[0][0]
             # relative locations of stations
-            sx, sy = self.station_locations['rel_east'][
-                ss], self.station_locations['rel_north'][ss]
+            sx, sy = self.station_locations['rel_east'][ss], \
+                     self.station_locations['rel_north'][ss]
             # indices of stations on model grid
             sxi = np.where((sx <= self.grid_east[1:]) & (
                 sx > self.grid_east[:-1]))[0][0]
@@ -2379,12 +2391,14 @@ class Model(object):
             else:
                 szi = 0
 
-            print("FZ:*** szi=", szi)
+            # print("FZ:*** szi=", szi)
             # assign topography value
-            topoval = self.grid_z[szi]
-            self.station_locations['elev'][ss] = topoval + 1.
-            self.Data.data_array['elev'][ss] = topoval + 1.
-        self.Data.station_locations = self.station_locations
+
+            # topoval = self.grid_z[szi]
+            # self.station_locations['elev'][ss] = topoval # + 1.  # why +1 in elev ???
+            # self.Data.data_array['elev'][ss] = topoval # + 1.
+
+        #self.Data.station_locations = self.station_locations # shift stations' location
 
         print ("Re-write data file after adding topo")
         self.Data.write_data_file(fill=False) # same file overridden
