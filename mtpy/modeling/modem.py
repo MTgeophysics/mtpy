@@ -5307,6 +5307,7 @@ class PlotSlices(object):
 # Exceptions
 # ==============================================================================
 class ModEMError(Exception):
+    """Raise for ModeEM specific kind of exception"""
     pass
 
 if __name__ == "__main__":

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Crreate modem input files:
+Create modem input files:
 This script includes topography in the model. To not include topography,
 set number of air layers to zero (recommended) or comment out add_topography
 line. Note: setting number of air layers to zero will add bathymetry but not
@@ -95,11 +95,11 @@ if __name__ == '__main__':
                       epsg=epsg_code,
                       error_type='floor',
                       error_floor=10)
-    # period_buffer=0.000001)
+                     # period_buffer=0.000001)
 
     datob.write_data_file(save_path=outputdir)
 
-    # create model file
+    # create model object
     model = mtmn.Model(Data=datob,
                        epsg=epsg_code,  # epsg
                        #cell_size_east=500, cell_size_north=500,  # concurry
@@ -115,14 +115,14 @@ if __name__ == '__main__':
                        z1_layer=100,  # first layer thickness
                        z_target_depth=500000)
 
-    model.make_mesh()
+    model.make_mesh()   # the data file will be re-write in this method.
 
     model.plot_mesh()
 
     # write a model file to initialise a resistivity model
     model.write_model_file(save_path=outputdir)
 
-    # add topography to res model
+    # add topography to res model, then re-write data file
     model.add_topography(topofile, interp_method='nearest')
 
     # make covariance file

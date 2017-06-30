@@ -130,10 +130,6 @@ class TestModem(TestCase):
         print ("please check %s" % self.outputdir)
 
 
-    # def test_something(self):
-    #     # self.assertEqual(True, False)
-    #     self.assertEqual(True, 1) # 0=False 1=True
-
     def test_topo_ascii(self):
         """
 
