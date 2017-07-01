@@ -5,9 +5,11 @@ import glob
 import os
 import shutil
 import tempfile
-
+import numpy as np
 import unittest
 from unittest import TestCase
+
+from mtpy.core.edi_collection import EdiCollection
 from mtpy.modeling.modem_data import Data
 from mtpy.modeling.modem_model import Model
 from mtpy.modeling.modem_covariance import Covariance
@@ -16,9 +18,6 @@ from mtpy.modeling.modem_covariance import Covariance
 # from mtpy.modeling.modem import Model
 # from mtpy.modeling.modem import Covariance
 
-from mtpy.core.edi_collection import EdiCollection
-
-import numpy as np
 
 def select_periods(edifiles_list):
     """
@@ -57,9 +56,9 @@ class TestModem(TestCase):
 
         self.inputdir = 'tests/data/edifiles'   #'../examples/data/edi2'
         # self.inputdir = 'E:/Data/MT_Datasets/3D_MT_data_edited_fromDuanJM'
-        # self.inputdir = 'E:/Data/MT_Datasets/GA_UA_edited_10s-10000s'
+        self.inputdir = '/e/Data/MT_Datasets/GA_UA_edited_10s-10000s'
 
-        self.topofile = 'E:/Data/MT_Datasets/aussie_etopo1_bedrock.asc'
+        self.topofile = '/e/Data/MT_Datasets/concurry_topo/aussie_etopo1_bedrock.asc'
         # self.topofile = '../examples/etopo1.asc'
 
         tempdir='temp'  # tempfile.gettempdir()
