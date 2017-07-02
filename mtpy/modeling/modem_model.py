@@ -709,7 +709,7 @@ class Model(object):
                 szi = 0
 
                 # print("FZ:*** szi=", szi)
-                # assign topography value
+                # FZ: debug here to assign topography value for .dat file.
 
                 # topoval = self.grid_z[szi]
                 # self.station_locations['elev'][ss] = topoval # + 1.  # why +1 in elev ???
@@ -719,7 +719,7 @@ class Model(object):
         self.Data.station_locations = self.station_locations
 
         print ("Re-write data file after adding topo")
-        self.Data.write_data_file(fill=False)  # same file overridden
+        self.Data.write_data_file(fill=False)  # changed (Xi, Yi, Zi) of each station i.
 
         # debug self.Data.write_data_file(save_path='/e/tmp', fill=False)
         print("FZ:*** what is self.grid_z=", self.grid_z.shape, self.grid_z)
