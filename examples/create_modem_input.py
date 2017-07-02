@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Crreate modem input files:
+Create modem input files:
 This script includes topography in the model. To not include topography,
 set number of air layers to zero (recommended) or comment out add_topography
 line. Note: setting number of air layers to zero will add bathymetry but not
@@ -18,12 +18,16 @@ Developed by
 Create Date: 2017-02-01
 """
 from __future__ import print_function
+
+import glob
 import os
 import sys
-import glob
+
 import numpy as np
-import mtpy.modeling.modem as mtmn
 from mtpy.core.edi_collection import EdiCollection
+from mtpy.modeling.modem_covariance import Covariance
+from mtpy.modeling.modem_data import Data
+from mtpy.modeling.modem_model import Model
 
 
 def select_periods(edifiles_list):
@@ -37,18 +41,18 @@ def select_periods(edifiles_list):
     edis_obj = EdiCollection(edifiles_list)
 
     uniq_period_list = edis_obj.all_unique_periods  # filtered list of periods ?
-    print("Unique periods",len(uniq_period_list))
+    print("Unique periods", len(uniq_period_list))
 
     plt.hist(edis_obj.mt_periods, bins=uniq_period_list)
-    #plt.hist(edis_obj.mt_periods, bins=1000)
+    # plt.hist(edis_obj.mt_periods, bins=1000)
     plt.title("Histogram with uniq_periods bins")
     plt.xlabel("Periods")
     plt.ylabel("Occurance in number of MT stations")
     plt.show()
 
-    #1 ASK user to input a Pmin and Pmax
+    # 1 ASK user to input a Pmin and Pmax
 
-    #2 percetage stats
+    # 2 percetage stats
     # select commonly occured frequencies from all stations.
     # This could miss some slightly varied frquencies in the middle range.
     select_period_list = np.array(edis_obj.get_periods_by_stats(percentage=10.0))
@@ -60,8 +64,8 @@ def select_periods(edifiles_list):
 if __name__ == '__main__':
 
     if len(sys.argv) < 4:
-        print ("USAGE: %s  path2edifiles path2topo.asc path2outdir" %
-               sys.argv[0])
+        print("USAGE: %s  path2edifiles path2topo.asc path2outdir" %
+              sys.argv[0])
         sys.exit(1)
     else:
         edipath = sys.argv[1]  # edi files to be inversioned
@@ -78,7 +82,7 @@ if __name__ == '__main__':
     edi_list = glob.glob(edipath + '/*.edi')
 
     if edi_list is None or (edi_list) < 1:
-        print ("Error: No edi files found in the dir %s" % edipath)
+        print("Error: No edi files found in the dir %s" % edipath)
         sys.exit(2)
 
     # period list (can take periods from one of the edi files, or just specify
@@ -89,47 +93,47 @@ if __name__ == '__main__':
 
     period_list = select_periods(edi_list)
 
-    datob = mtmn.Data(edi_list=edi_list,
-                      inv_mode='1',
-                      period_list=period_list,
-                      epsg=epsg_code,
-                      error_type='floor',
-                      error_floor=10)
+    datob = Data(edi_list=edi_list,
+                 inv_mode='1',
+                 period_list=period_list,
+                 epsg=epsg_code,
+                 error_type='floor',
+                 error_floor=10)
     # period_buffer=0.000001)
 
     datob.write_data_file(save_path=outputdir)
 
-    # create model file
-    model = mtmn.Model(Data=datob,
-                       #cell_size_east=2000, cell_size_north=2000,
-                       cell_size_east=10000,cell_size_north=10000,
-                       pad_north=0,  # number of padding cells in each of the north and south directions
-                       pad_east=0,  # number of east and west padding cells
-                       pad_z=0,  # number of vertical padding cells
-                       pad_stretch_v=1.2, # factor to increase by in padding cells (vertical)
-                       pad_stretch_h=1.5, # factor to increase by in padding cells (horizontal)
-                       n_airlayers=10,  # number of air layers 0, 10
-                       res_model=100,  # halfspace resistivity value for reference model
-                       n_layers=40,  # total number of z layers, including air
-                       z1_layer=1000,  # first layer thickness
-                       epsg=epsg_code,  # epsg
-                       z_target_depth=200000)
+    # create model object
+    model = Model(Data=datob,
+                  epsg=epsg_code,  # epsg
+                  # cell_size_east=500, cell_size_north=500,  # concurry
+                  cell_size_east=10000, cell_size_north=10000,
+                  pad_north=6,  # number of padding cells in each of the north and south directions
+                  pad_east=6,  # number of east and west padding cells
+                  pad_z=6,  # number of vertical padding cells
+                  pad_stretch_v=1.5,  # factor to increase by in padding cells (vertical)
+                  pad_stretch_h=1.5,  # factor to increase by in padding cells (horizontal)
+                  n_airlayers=10,  # number of air layers 0, 10
+                  res_model=200,  # halfspace resistivity value for initial reference model
+                  n_layers=40,  # total number of z layers, including air and pad_z
+                  z1_layer=100,  # first layer thickness
+                  z_target_depth=500000)
 
-    model.make_mesh()
+    model.make_mesh()  # the data file will be re-write in this method.
 
     model.plot_mesh()
 
     # write a model file to initialise a resistivity model
     model.write_model_file(save_path=outputdir)
 
-    # add topography to res model
+    # add topography to res model, then re-write data file
     model.add_topography(topofile, interp_method='nearest')
 
     # make covariance file
-    cov = mtmn.Covariance(mask_arr=model.covariance_mask,
-                          save_path=outputdir,
-                          smoothing_east=0.3,
-                          smoothing_north=0.3,
-                          smoothing_z=0.3)
+    cov = Covariance(mask_arr=model.covariance_mask,
+                     save_path=outputdir,
+                     smoothing_east=0.3,
+                     smoothing_north=0.3,
+                     smoothing_z=0.3)
 
     cov.write_covariance_file(model_fn=model.model_fn)

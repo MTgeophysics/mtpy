@@ -116,4 +116,4 @@ python examples/create_modem_input.py  /e/Data/MT_Datasets/Isa_EDI_edited_10Hz_1
 python examples/create_modem_input.py  /e/Data/MT_Datasets/WenPingJiang_EDI /e/Data/MT_Datasets/concurry_topo/AussieContinent_etopo1.asc /e/tmp/WenPingJiang_EDI_modemin
 
 python examples/create_modem_input.py  /e/Data/MT_Datasets/GA_UA_edited_10s-10000s /e/Data/MT_Datasets/concurry_topo/AussieContinent_etopo1.asc /e/tmp/GA_UA_edited_10s-10000s_16
-
+python examples/create_modem_input.py /e/Data/MT_Datasets/concurry_EDI_files/ /e/Data/MT_Datasets/concurry_topo/AussieContinent_etopo1.asc /e/tmp/concurry_modem

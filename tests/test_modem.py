@@ -5,16 +5,19 @@ import glob
 import os
 import shutil
 import tempfile
-
+import numpy as np
 import unittest
 from unittest import TestCase
-from mtpy.modeling.modem import Data
-from mtpy.modeling.modem import Model
-from mtpy.modeling.modem import Covariance
 
 from mtpy.core.edi_collection import EdiCollection
+from mtpy.modeling.modem_data import Data
+from mtpy.modeling.modem_model import Model
+from mtpy.modeling.modem_covariance import Covariance
 
-import numpy as np
+# from mtpy.modeling.modem import Data
+# from mtpy.modeling.modem import Model
+# from mtpy.modeling.modem import Covariance
+
 
 def select_periods(edifiles_list):
     """
@@ -42,25 +45,35 @@ def select_periods(edifiles_list):
 class TestModem(TestCase):
 
     def setUp(self):
+        """
+        Set up test environment.
+        :return:
+        """
 
         print ("Calling setUp")
 
-        epsg_code = 3112
+        self.epsg_code = 3112
 
-        self.inputdir = '../examples/data/edi2'
-        self.inputdir = 'E:/Data/MT_Datasets/3D_MT_data_edited_fromDuanJM'
-        self.inputdir = 'E:/Data/MT_Datasets/GA_UA_edited_10s-10000s'
+        self.inputdir = 'tests/data/edifiles'   #'../examples/data/edi2'
+        # self.inputdir = 'E:/Data/MT_Datasets/3D_MT_data_edited_fromDuanJM'
+        #self.inputdir = '/e/Data/MT_Datasets/GA_UA_edited_10s-10000s'
 
-        self.topofile = 'E:/Data/MT_Datasets/aussie_etopo1_bedrock.asc'
+        self.topofile = '/e/Data/MT_Datasets/concurry_topo/aussie_etopo1_bedrock.asc'
         # self.topofile = '../examples/etopo1.asc'
 
-        tempdir='E:/temp'  # tempfile.gettempdir()
+        tempdir='temp'  # tempfile.gettempdir()
         self.outputdir = os.path.join(tempdir,'test_out') # '/tmp/test_out/'
 
         #clean-up the output dir then creat a new one (empty)
         if os.path.exists(self.outputdir):
             shutil.rmtree(self.outputdir)
         os.mkdir(self.outputdir)
+        print ("please check %s" % self.outputdir)
+
+    # def tearDown(self):
+    #     print ("Calling tearDown -- to clean up the results/objects of this test run")
+
+    def test_data(self):
 
         edi_list = glob.glob(self.inputdir + '/*.edi')
 
@@ -77,7 +90,7 @@ class TestModem(TestCase):
         self.datob = Data(edi_list=edi_list,
                   inv_mode='1',
                   period_list=period_list,
-                  epsg=epsg_code,
+                  epsg=self.epsg_code,
                   error_type='floor',
                   error_floor=10)
         # period_buffer=0.000001)
@@ -91,15 +104,15 @@ class TestModem(TestCase):
                pad_north=10,  # number of padding cells in each of the north and south directions
                pad_east=10,  # number of east and west padding cells
                pad_z=10,  # number of vertical padding cells
-               pad_stretch_v=3,
+               pad_stretch_v=1.5,
                # factor to increase by in padding cells (vertical)
-               pad_stretch_h=3,
+               pad_stretch_h=1.2,
                # factor to increase by in padding cells (vertical)
                n_airlayers=10,  # number of air layers
                res_model=100,  # halfspace resistivity value for reference model
                n_layers=40,  # total number of z layers, including air
-               z1_layer=1000,  # first layer thickness
-               epsg=epsg_code,  # epsg
+               z1_layer=100,  # first layer thickness
+               epsg=self.epsg_code,  # epsg
                z_target_depth=200000)
 
         self.model.make_mesh()
@@ -121,31 +134,25 @@ class TestModem(TestCase):
 
         self.cov.write_covariance_file(model_fn=self.model.model_fn)
 
-    def tearDown(self):
-        print ("Calling tearDown -- to clean up the results/objects of this test run")
-        del self.model
-        del self.datob
-        del self.cov
-
-        print ("please check %s" % self.outputdir)
-
-
-    # def test_something(self):
-    #     # self.assertEqual(True, False)
-    #     self.assertEqual(True, 1) # 0=False 1=True
-
-    def test_topo_ascii(self):
-        """
-
-        :return:
-        """
-        print ("testing topo file reading...")
-
-        # check results
-
         return True
 
 
+    # def test_topo_ascii(self):
+    #     """
+    #
+    #     :return:
+    #     """
+    #     print ("testing topo file reading...")
+    #
+    #     # check results
+    #
+    #     return True
+
+
 if __name__ == '__main__':
+    """
+    nosetests tests/test_modem.py
+    python tests/test_modem.py
+    """
 
     unittest.main()

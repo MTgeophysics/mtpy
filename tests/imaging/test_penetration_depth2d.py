@@ -3,9 +3,7 @@ import os.path
 
 # configure matplotlib for testing
 import matplotlib
-# matplotlib.use('Agg')  # comment out this line if you want to see the plots
-
-
+matplotlib.use('Agg')  # comment out this line if you want to see the plots
 from mtpy.imaging.penetration_depth2d import plot2Dprofile
 
 
@@ -19,7 +17,7 @@ class TestPenetration_depth2d(TestCase):
 
     def test_plot2Dprofile_no_period_index_list(self):
         """
-        testing plot2Dprofile without perido index list
+        testing plot2Dprofile without period index list
         exception should be raised
         :return:
         """
