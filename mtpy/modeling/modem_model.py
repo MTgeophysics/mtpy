@@ -1,17 +1,19 @@
 #!/usr/bin/env python
 """
 Description:
-   This module is refactored from modem.py which is too big to manage and edit
-    Define the Model class
+    Define the Model class.
+    This module is refactored from modem.py which had over 5000 lines too big to manage and edit
+
 
 Author: fei.zhang@ga.gov.au
 
-Date: 2017-06-05
+Date:   2017-06-05
 """
 
 __author__ = 'fei.zhang@ga.gov.au'
 
 # from __future__ import print_function
+
 import os
 
 import matplotlib.pyplot as plt
@@ -55,32 +57,6 @@ class Model(object):
         z == + down
 
     All dimensions are in meters.
-
-
-    :Example 1 --> create data file first then model file: ::
-
-        >>> import mtpy.modeling.modem as modem
-        >>> import os
-        >>> #1) make a list of all .edi files that will be inverted for 
-        >>> edi_path = r"/home/EDI_Files"
-        >>> edi_list = [os.path.join(edi_path, edi) 
-                        for edi in os.listdir(edi_path) 
-        >>> ...         if edi.find('.edi') > 0]
-        >>> #2) create data file
-        >>> md = modem.Data(edi_list)
-        >>> md.write_data_file(save_path=r"/home/modem/Inv1")
-        >>> #3) make a grid from the stations themselves with 200m cell spacing
-        >>> mmesh = modem.Model(Data=md, cell_size_east=200, cell_size_north=200)
-        >>> mmesh.make_mesh()
-        >>> # check to see if the mesh is what you think it should be
-        >>> msmesh.plot_mesh()
-        >>> # all is good write the mesh file
-        >>> msmesh.write_model_file(save_path=r"/home/modem/Inv1")
-
-    :Example 2 --> Rotate Mesh: ::
-
-        >>> mmesh.mesh_rotation_angle = 60
-        >>> mmesh.make_mesh()
 
     ..note:: ModEM assumes all coordinates are relative to North and East, and
              does not accommodate mesh rotations, therefore, here the rotation
@@ -145,8 +121,6 @@ class Model(object):
     plot_mesh            plots mesh to make sure everything is good
     write_initial_file   writes an initial model file that includes the mesh
     ==================== ======================================================
-
-
     """
 
     def __init__(self, **kwargs):  # edi_list=None,
@@ -213,10 +187,11 @@ class Model(object):
 
         # if data object is provided, get epsg and center position from them
         if self.Data is not None:
-            for att in ('epsg', 'center_position_EN'):
-                attvalue = getattr(self.Data, att)
-                if attvalue is not None:
-                    setattr(self, att, attvalue)
+            self.epsg = self.Data.epsg
+            #for att in ('epsg', 'center_position_EN'):  # center_position_EN is not initially created in Data
+                # attvalue = getattr(self.Data, att)
+                # if attvalue is not None:
+                #     setattr(self, att, attvalue)
 
         # resistivity model
         self.res_model = kwargs.pop('res_model', None)
@@ -921,6 +896,8 @@ class Model(object):
 
         plt.show()
 
+        return
+
     def write_model_file(self, **kwargs):
         """
         will write an initial file for ModEM.  
@@ -1595,3 +1572,5 @@ class Model(object):
                               fill=False)
 
         return new_dfn
+
+#####################################################################################

@@ -1458,6 +1458,9 @@ def select_periods(edifiles_list, percent=10.0):
     return select_period_list
 
 
+
+####################################################################################
+
 if __name__ == '__main__':
     """
     USAGE examples:

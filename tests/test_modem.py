@@ -56,7 +56,7 @@ class TestModem(TestCase):
 
         self.inputdir = 'tests/data/edifiles'   #'../examples/data/edi2'
         # self.inputdir = 'E:/Data/MT_Datasets/3D_MT_data_edited_fromDuanJM'
-        self.inputdir = '/e/Data/MT_Datasets/GA_UA_edited_10s-10000s'
+        #self.inputdir = '/e/Data/MT_Datasets/GA_UA_edited_10s-10000s'
 
         self.topofile = '/e/Data/MT_Datasets/concurry_topo/aussie_etopo1_bedrock.asc'
         # self.topofile = '../examples/etopo1.asc'
@@ -152,6 +152,7 @@ class TestModem(TestCase):
 if __name__ == '__main__':
     """
     nosetests tests/test_modem.py
+    python tests/test_modem.py
     """
 
     unittest.main()
