@@ -13,6 +13,7 @@ from PyQt4 import QtGui, QtCore
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from itertools import cycle
 
 from matplotlib_imabedding import MPLCanvas
 from station_viewer import Ui_StationViewer, _translate, _fromUtf8
@@ -21,6 +22,8 @@ WINDOW_TITLE = _translate("StationViewer", "Stations Stats", None)
 MAP_DISABLE_TEXT = _translate("StationViewer", "Show Map", None)
 MAP_ENABLE_TEXT = _translate("StationViewer", "Hide Map", None)
 
+MARKERS = ['*', 'D', 'H', '^']
+COLORS = ['g', 'r', 'c', 'm', 'y', 'k', 'b']
 
 class StationViewer(QtGui.QWidget):
     def __init__(self, parent, file_handler):
@@ -78,12 +81,12 @@ class StationViewer(QtGui.QWidget):
                     self.file_handler.unload(ref)
                 self.update_view()
 
-
     def add_selected_to_group(self, *args, **kwargs):
         selected = self.ui.treeWidget_stations.selectedItems()
         if selected:
             groups = self.file_handler.get_groups()
-            group_id, ok = QtGui.QInputDialog.getItem(self, "Add Selected Items to Group", "Please select one group:", groups, 0, False)
+            group_id, ok = QtGui.QInputDialog.getItem(self, "Add Selected Items to Group", "Please select one group:",
+                                                      groups, 0, False)
             if ok and group_id:
                 group_id = str(group_id)
                 for item in selected:
@@ -204,13 +207,19 @@ class StationViewer(QtGui.QWidget):
                     lon.append(mt_obj.lon)
                     stations.append(mt_obj.station)
             df = pd.DataFrame(dict(x=lon, y=lat, group=groups, station=stations))
+            df.station.astype(str)
             groups = df.groupby("group")
-
             # plot
             # self.axes = plt.subplots()
             self.axes.margins(0.05)  # 5% padding
-            for name, group in groups:
-                self.axes.plot(group.x, group.y, marker='^', linestyle='', ms=10, alpha=.8, label=name)
+            annotated_stations = set()
+            for (name, group), marker, color in zip(list(groups), cycle(MARKERS), cycle(COLORS)):
+                self.axes.plot(group.x, group.y, marker=marker, linestyle='', ms=10, alpha=.5, label=name,
+                               picker=3)  # picker = 5 3 point tolerance
+                for index, row in df.iterrows():
+                    if row['station'] not in annotated_stations:
+                        self.axes.annotate(row['station'], xy=(row['x'], row['y']), size=10)
+                        annotated_stations.add(row['station'])
             self.axes.legend(numpoints=1, loc="best")
             self.axes.grid()
 
