@@ -45,6 +45,13 @@
      </column>
     </widget>
    </item>
+   <item>
+    <widget class="QPushButton" name="pushButton_showMap">
+     <property name="text">
+      <string>Show Map</string>
+     </property>
+    </widget>
+   </item>
   </layout>
  </widget>
  <resources/>

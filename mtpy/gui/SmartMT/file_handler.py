@@ -46,7 +46,7 @@ class FileHandler:
                     self._logger.warning("File %s already loaded." % file_name)
                 else:
                     file_ref = file_name
-                    self._logger.info("loading %s" % file)
+                    self._logger.info("loading %s" % file_name)
                     mt_obj = mt.MT(file_name)
         elif isinstance(file_name, mt.MT):
             mt_obj = file_name
@@ -58,15 +58,14 @@ class FileHandler:
         self._logger.info("referencing %s to %s" % (file_ref, mt_obj.station))
         self._file_dict[file_ref] = mt_obj
         # add file to group
-        self.add_to_group(group_id, file_ref)
-        return True
+        return self.add_to_group(group_id, file_ref)
 
     def add_files(self, file_list, group_id=None):
         for file_name in file_list:
             self.add_file(file_name, group_id)
         return True
 
-    def add_to_group(self, group_id, file_ref):
+    def add_to_group(self, group_ids, file_ref):
         """
         add a file ref to a group
         :param group_id:
@@ -75,23 +74,25 @@ class FileHandler:
         :type file_ref str
         :return: True
         """
-        if not group_id or isinstance(group_id, str):
-            group_id = [DEFAULT_GROUP]
-        for id in group_id:
+        if not group_ids:
+            group_ids = [DEFAULT_GROUP]
+        elif isinstance(group_ids, str):
+            group_ids = [group_ids]
+        for id in group_ids:
             if isinstance(id, str):
                 if id not in self._group_dict:
                     self._group_dict[id] = set()
                 if file_ref in self._file_dict:
                     self._logger.info("adding %s to group \"%s\"" % (self._file_dict[file_ref].station, id))
                     self._group_dict[id].add(file_ref)
-                    return True
                 else:
                     self._logger.error("File %s has not yet been loaded." % file_ref)
+                    return False
             else:
                 self._logger.warning("Unsupported group ID \"%s\", add file %s to \"%s\"" % (
                     type(id), file_ref, DEFAULT_GROUP))
                 return self.add_to_group(DEFAULT_GROUP, file_ref)
-        return False
+        return True
 
     def remove_file_from_group(self, group_id, file_ref):
         """
@@ -127,6 +128,9 @@ class FileHandler:
         else:
             self._logger.error("File \"%s\" is not loaded" % ref)
             return None
+
+    def get_file_refs(self):
+        return self._file_dict.keys()
 
 
 class FileHandlingException(Exception):
