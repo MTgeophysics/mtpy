@@ -25,11 +25,15 @@ except AttributeError:
 class Ui_StationViewer(object):
     def setupUi(self, StationViewer):
         StationViewer.setObjectName(_fromUtf8("StationViewer"))
-        StationViewer.resize(400, 300)
+        StationViewer.resize(300, 400)
         self.verticalLayout = QtGui.QVBoxLayout(StationViewer)
         self.verticalLayout.setMargin(0)
         self.verticalLayout.setObjectName(_fromUtf8("verticalLayout"))
         self.treeWidget_stations = QtGui.QTreeWidget(StationViewer)
+        self.treeWidget_stations.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.treeWidget_stations.setSelectionMode(QtGui.QAbstractItemView.ExtendedSelection)
+        self.treeWidget_stations.setAnimated(False)
+        self.treeWidget_stations.setHeaderHidden(True)
         self.treeWidget_stations.setObjectName(_fromUtf8("treeWidget_stations"))
         self.verticalLayout.addWidget(self.treeWidget_stations)
         self.pushButton_showMap = QtGui.QPushButton(StationViewer)
@@ -41,8 +45,7 @@ class Ui_StationViewer(object):
 
     def retranslateUi(self, StationViewer):
         StationViewer.setWindowTitle(_translate("StationViewer", "Form", None))
-        self.treeWidget_stations.headerItem().setText(0, _translate("StationViewer", "Group", None))
-        self.treeWidget_stations.headerItem().setText(1, _translate("StationViewer", "Station", None))
-        self.treeWidget_stations.headerItem().setText(2, _translate("StationViewer", "File", None))
+        self.treeWidget_stations.headerItem().setText(0, _translate("StationViewer", "Station", None))
+        self.treeWidget_stations.headerItem().setText(1, _translate("StationViewer", "File", None))
         self.pushButton_showMap.setText(_translate("StationViewer", "Show Map", None))
 

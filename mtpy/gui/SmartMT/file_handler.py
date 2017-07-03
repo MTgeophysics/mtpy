@@ -29,6 +29,7 @@ class FileHandler:
         self._logger = MtPyLog().get_mtpy_logger(__name__)
         self._file_dict = dict()
         self._group_dict = dict()
+        self._file_to_groups = dict()
         pass
 
     def add_file(self, file_name, group_id=None):
@@ -36,7 +37,8 @@ class FileHandler:
 
         :param file_name:
         :param group_id:
-        :type not_no
+        :type file_name: str
+        :type group_id: str
         :return:
         """
         file_ref = mt_obj = None
@@ -44,6 +46,8 @@ class FileHandler:
             if os.path.isfile(file_name):
                 if file_name in self._file_dict and self._file_dict[file_name] is not None:
                     self._logger.warning("File %s already loaded." % file_name)
+                    file_ref = file_name
+                    mt_obj = self.get_MT_obj(file_name)
                 else:
                     file_ref = file_name
                     self._logger.info("loading %s" % file_name)
@@ -56,7 +60,9 @@ class FileHandler:
 
         # add file in to container
         self._logger.info("referencing %s to %s" % (file_ref, mt_obj.station))
-        self._file_dict[file_ref] = mt_obj
+        if file_ref not in self._file_dict:
+            self._file_dict[file_ref] = mt_obj
+            self._file_to_groups[file_ref] = set()
         # add file to group
         return self.add_to_group(group_id, file_ref)
 
@@ -78,19 +84,21 @@ class FileHandler:
             group_ids = [DEFAULT_GROUP]
         elif isinstance(group_ids, str):
             group_ids = [group_ids]
-        for id in group_ids:
-            if isinstance(id, str):
-                if id not in self._group_dict:
-                    self._group_dict[id] = set()
+        for group_id in group_ids:
+            if isinstance(group_id, str):
+                if group_id not in self._group_dict:
+                    self._group_dict[group_id] = set()
                 if file_ref in self._file_dict:
-                    self._logger.info("adding %s to group \"%s\"" % (self._file_dict[file_ref].station, id))
-                    self._group_dict[id].add(file_ref)
+                    self._logger.info("adding %s to group \"%s\"" % (self._file_dict[file_ref].station, group_id))
+                    self._group_dict[group_id].add(file_ref)
+                    self._file_to_groups[file_ref].add(group_id)
+                    self._logger.info("%s now in group %s" % (self._file_dict[file_ref].station, ", ".join(self._file_to_groups[file_ref])))
                 else:
                     self._logger.error("File %s has not yet been loaded." % file_ref)
                     return False
             else:
                 self._logger.warning("Unsupported group ID \"%s\", add file %s to \"%s\"" % (
-                    type(id), file_ref, DEFAULT_GROUP))
+                    type(group_id), file_ref, DEFAULT_GROUP))
                 return self.add_to_group(DEFAULT_GROUP, file_ref)
         return True
 
@@ -103,13 +111,35 @@ class FileHandler:
         :type file_ref str
         :return:
         """
+        self._logger.info("Remove %s from group %s" % (self.get_MT_obj(file_ref).station, group_id))
         if group_id in self._group_dict:
             try:
                 self._group_dict[group_id].remove(file_ref)
+                self._file_to_groups[file_ref].remove(group_id)
+                if not self._file_to_groups[file_ref]:
+                    self.add_to_group(DEFAULT_GROUP, file_ref)
                 return True
             except KeyError:
                 return False
         return False
+
+    def unload(self, file_ref):
+        self._logger.info("unload %s" % file_ref)
+        for group in self._file_to_groups[file_ref]:
+            self._group_dict[group].remove(file_ref)
+        del self._file_to_groups[file_ref]
+        del self._file_dict[file_ref]
+
+
+    def remove_group(self, group_id):
+        self._logger.info("Remove group %s" % group_id)
+        members = self.get_group_members(group_id)
+        if members is not None:
+            for ref in members:
+                self._file_to_groups[ref].remove(group_id)
+                if not self._file_to_groups[ref]:
+                    self.add_to_group(DEFAULT_GROUP, ref)
+            del self._group_dict[group_id]
 
     def get_groups(self):
         return self._group_dict.keys()
@@ -131,6 +161,14 @@ class FileHandler:
 
     def get_file_refs(self):
         return self._file_dict.keys()
+
+    def create_group(self, group_id):
+        if group_id not in self._group_dict:
+            self._group_dict[group_id] = set()
+            return True
+        else:
+            self._logger.warning("Group %s exists!" % group_id)
+            return False
 
 
 class FileHandlingException(Exception):

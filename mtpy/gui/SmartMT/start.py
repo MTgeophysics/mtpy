@@ -71,7 +71,7 @@ class StartQt4(QtGui.QMainWindow):
     def _add_files(self, file_list, group_id=DEFAULT_GROUP_NAME):
         for file_ref in file_list:
             try:
-                self._file_handler.add_file(str(file_ref), group_id=group_id)
+                self._file_handler.add_file(os.path.abspath(str(file_ref)), group_id=group_id)
             except FileHandlingException as exp:
                 self._logger.warning(exp.message)
             except Exception as exp:
@@ -103,9 +103,8 @@ class StartQt4(QtGui.QMainWindow):
                 break
 
     def toggle_tree_view(self):
-        window_title = "Stations Stats"
-        if window_title in self.subwindows:
-            subwindow = self.subwindows[window_title][0]
+        if WINDOW_TITLE in self.subwindows:
+            subwindow = self.subwindows[WINDOW_TITLE][0]
             if self.ui.actionShow_Data_Collection.isEnabled():
                 if self.ui.actionShow_Data_Collection.isChecked():
                     subwindow.show()

@@ -40,50 +40,11 @@
      <number>0</number>
     </property>
     <item>
-     <widget class="QMdiArea" name="mdiArea">
-      <property name="enabled">
-       <bool>true</bool>
-      </property>
-      <property name="verticalScrollBarPolicy">
-       <enum>Qt::ScrollBarAsNeeded</enum>
-      </property>
-      <property name="horizontalScrollBarPolicy">
-       <enum>Qt::ScrollBarAsNeeded</enum>
-      </property>
-      <widget class="QWidget" name="subwindow_station_viewer">
-       <property name="windowTitle">
-        <string>Subwindow</string>
-       </property>
-       <widget class="QTreeWidget" name="treeWidget_stations">
-        <property name="geometry">
-         <rect>
-          <x>0</x>
-          <y>0</y>
-          <width>371</width>
-          <height>331</height>
-         </rect>
-        </property>
-        <column>
-         <property name="text">
-          <string>Group</string>
-         </property>
-        </column>
-        <column>
-         <property name="text">
-          <string>New Column</string>
-         </property>
-        </column>
-        <column>
-         <property name="text">
-          <string>File</string>
-         </property>
-        </column>
-       </widget>
-      </widget>
-     </widget>
+     <widget class="QMdiArea" name="mdiArea"/>
     </item>
    </layout>
   </widget>
+  <widget class="QStatusBar" name="statusbar"/>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
     <rect>
@@ -139,6 +100,8 @@
     <property name="title">
      <string>Tools</string>
     </property>
+    <addaction name="actionPlot"/>
+    <addaction name="separator"/>
     <addaction name="actionOptions"/>
    </widget>
    <addaction name="menuFile"/>
@@ -148,7 +111,6 @@
    <addaction name="menuTools"/>
    <addaction name="menuHelp"/>
   </widget>
-  <widget class="QStatusBar" name="statusbar"/>
   <action name="actionNew_Project">
    <property name="text">
     <string>New Project...</string>
@@ -250,6 +212,11 @@
    </property>
    <property name="menuRole">
     <enum>QAction::PreferencesRole</enum>
+   </property>
+  </action>
+  <action name="actionPlot">
+   <property name="text">
+    <string>Plot...</string>
    </property>
   </action>
  </widget>

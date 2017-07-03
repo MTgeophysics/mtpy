@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>400</width>
-    <height>300</height>
+    <width>300</width>
+    <height>400</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -28,11 +28,18 @@
    </property>
    <item>
     <widget class="QTreeWidget" name="treeWidget_stations">
-     <column>
-      <property name="text">
-       <string>Group</string>
-      </property>
-     </column>
+     <property name="contextMenuPolicy">
+      <enum>Qt::CustomContextMenu</enum>
+     </property>
+     <property name="selectionMode">
+      <enum>QAbstractItemView::ExtendedSelection</enum>
+     </property>
+     <property name="animated">
+      <bool>false</bool>
+     </property>
+     <property name="headerHidden">
+      <bool>true</bool>
+     </property>
      <column>
       <property name="text">
        <string>Station</string>
