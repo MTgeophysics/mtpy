@@ -297,7 +297,7 @@ class Model(object):
             east_gridr = np.insert(east_gridr, 0, pad_w)
             east_gridr = np.append(east_gridr, pad_e)
 
-        # --> need to make sure none of the stations lie on the nodes
+        # --> For some inversion code, need to make sure none of the stations lie on the nodes
         # this section would make the cell-sizes become different by 2%
         shift_station = 0.0  # originally = 0.02
         for s_east in sorted(self.station_locations['rel_east']):
@@ -382,7 +382,7 @@ class Model(object):
             pad_d = np.round(z_0 * self.pad_stretch_v ** ii, 2)
             z_nodes = np.append(z_nodes, pad_d)
 
-        # JingMing said there should be no air layer in the mesh.
+        # JM said there should be no air layer in the mesh.
         # add air layers and define ground surface level.
         # initial layer thickness is same as z1_layer
         add_air = 0  # self.n_airlayers
@@ -394,6 +394,7 @@ class Model(object):
 
         # z_grid point at zero level
         # wrong: self.sea_level = z_grid[self.n_airlayers]
+        self.sea_level = z_grid[self.n_airlayers]
         print("FZ:***1 sea_level = ", self.sea_level)
 
         # ---Need to make an array of the individual cell dimensions for
@@ -715,11 +716,11 @@ class Model(object):
                 # self.station_locations['elev'][ss] = topoval # + 1.  # why +1 in elev ???
                 # self.Data.data_array['elev'][ss] = topoval # + 1.
 
-        # This will shift stations' location to be relative to the defined mesh grid centre
+        # This will shift stations' location to be relative to the defined mesh-grid centre
         self.Data.station_locations = self.station_locations
 
         print ("Re-write data file after adding topo")
-        self.Data.write_data_file(fill=False)  # changed (Xi, Yi, Zi) of each station i.
+        self.Data.write_data_file(fill=False)  # (Xi, Yi, Zi) of each station i may be shifted
 
         # debug self.Data.write_data_file(save_path='/e/tmp', fill=False)
         print("FZ:*** what is self.grid_z=", self.grid_z.shape, self.grid_z)
@@ -1115,7 +1116,7 @@ class Model(object):
         if self.model_fn is None:
             raise ModelError('model_fn is None, input a model file name')
 
-        if os.path.isfile(self.model_fn) is None:
+        if not os.path.isfile(self.model_fn):
             raise ModelError(
                 'Cannot find {0}, check path'.format(self.model_fn))
 

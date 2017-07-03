@@ -91,7 +91,8 @@ class Covariance(object):
         if model_fn is not None:
             mod_obj = Model()
             mod_obj.read_model_file(model_fn)
-            print 'Reading {0}'.format(model_fn)
+            print 'Done Reading {0}'.format(model_fn)
+
             self.grid_dimensions = mod_obj.res_model.shape
             if self.mask_arr is None:
                 self.mask_arr = np.ones_like(mod_obj.res_model)
