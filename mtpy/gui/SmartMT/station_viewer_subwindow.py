@@ -35,14 +35,13 @@ class StationViewer(QtGui.QWidget):
         :param file_handler
         :type file_handler.FileHandler
         """
-        self._ignore_selection_change = False  # guard that used to ignore the selection change processing
         QtGui.QWidget.__init__(self, parent)
+        self._ignore_selection_change = False  # guard that used to ignore the selection change processing
         self.file_handler = file_handler
         self.ui = Ui_StationViewer()
         self.ui.setupUi(self)
-        self.subwindow = parent.create_subwindow(self, self.windowTitle())
+        self.subwindow, _ = parent.create_subwindow(self, self.windowTitle())
         # make station_viewer never been deleted
-        self.subwindow = parent.subwindows[self.windowTitle()][0]
         self.subwindow.setAttribute(QtCore.Qt.WA_DeleteOnClose, False)
         # handle selection changed event
         self.ui.treeWidget_stations.selectionModel().selectionChanged.connect(self.item_selection_changed)

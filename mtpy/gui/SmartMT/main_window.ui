@@ -81,6 +81,7 @@
      <string>View</string>
     </property>
     <addaction name="actionShow_Data_Collection"/>
+    <addaction name="actionShow_Station_Summary"/>
    </widget>
    <widget class="QMenu" name="menuWindow">
     <property name="title">
@@ -217,6 +218,20 @@
   <action name="actionPlot">
    <property name="text">
     <string>Plot...</string>
+   </property>
+  </action>
+  <action name="actionShow_Station_Summary">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Show Station Summary</string>
    </property>
   </action>
  </widget>

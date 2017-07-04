@@ -17,6 +17,7 @@ from PyQt4 import QtCore, QtGui
 
 from main_window import Ui_SmartMT_MainWindow, _fromUtf8, _translate
 from file_handler import FileHandler, FileHandlingException
+from station_summary_subwindow import StationSummary
 from station_viewer_subwindow import StationViewer
 
 from mtpy.utils.decorator import deprecated
@@ -35,6 +36,7 @@ class StartQt4(QtGui.QMainWindow):
         self.setup_menu()
         self._file_handler = FileHandler()
         self._station_viewer = None
+        self._station_summary = None
         self.subwindows = {}
 
     def setup_menu(self):
@@ -43,6 +45,7 @@ class StartQt4(QtGui.QMainWindow):
         self.ui.actionOpen_edi_File.triggered.connect(self.file_dialog)
         self.ui.actionOpen_edi_Folder.triggered.connect(self.folder_dialog)
         self.ui.actionShow_Data_Collection.triggered.connect(self._toggle_tree_view)
+        self.ui.actionShow_Station_Summary.triggered.connect(self._toggle_station_summary)
         # not yet impleneted
         self.ui.actionAbout.triggered.connect(self.dummy_action)
         self.ui.actionClose_Project.triggered.connect(self.dummy_action)
@@ -105,9 +108,18 @@ class StartQt4(QtGui.QMainWindow):
 
     def _toggle_tree_view(self):
         if self._station_viewer:
-            subwindow = self.subwindows[self.trUtf8("Stations")][0]
+            subwindow = self.subwindows[self._station_viewer.windowTitle()][0]
             if self.ui.actionShow_Data_Collection.isEnabled():
                 if self.ui.actionShow_Data_Collection.isChecked():
+                    subwindow.show()
+                else:
+                    subwindow.hide()
+
+    def _toggle_station_summary(self):
+        if self._station_summary:
+            subwindow = self.subwindows[self._station_summary.windowTitle()][0]
+            if self.ui.actionShow_Station_Summary.isEnabled():
+                if self.ui.actionShow_Station_Summary.isChecked():
                     subwindow.show()
                 else:
                     subwindow.hide()
@@ -116,9 +128,13 @@ class StartQt4(QtGui.QMainWindow):
         if not self._station_viewer:
             self._station_viewer = StationViewer(self, self._file_handler)
             self.ui.actionShow_Data_Collection.setEnabled(True)
+        if not self._station_summary:
+            self._station_summary = StationSummary(self, self._file_handler)
+            self.ui.actionShow_Station_Summary.setEnabled(True)
         self._station_viewer.update_view()
 
     def create_subwindow(self, widget, title):
+        subwindow = None
         if title not in self.subwindows:
             subwindow = StartQt4.MDISubWindow(self)
             subwindow.setWindowTitle(title)
@@ -136,6 +152,9 @@ class StartQt4(QtGui.QMainWindow):
             # add all references to self._subwindow
             self.subwindows[title] = (subwindow, new_window_action)
             subwindow.show()
+        else:
+            subwindow, new_window_action = self.subwindows[title]
+        return subwindow, new_window_action
 
     class MDISubWindow(QtGui.QMdiSubWindow):
         def __init__(self, main_ui, parent=None, flags=0):
