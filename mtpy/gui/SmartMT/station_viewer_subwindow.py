@@ -70,12 +70,12 @@ class StationViewer(QtGui.QWidget):
         # print event.mouseevent.key, event.mouseevent.button
         if event.artist in self.fig_canvas.artists:
             if not event.mouseevent.key or event.mouseevent.key != 'control':
-                self.fig_canvas.selected_station.clear()
+                self.fig_canvas.selected_stations.clear()
 
             stations = self.fig_canvas.artists[event.artist]
             if len(event.ind) != 0:
                 for subplotnum, dataind in enumerate(event.ind):
-                    self.fig_canvas.selected_station.add(stations[dataind])
+                    self.fig_canvas.selected_stations.add(stations[dataind])
                 # update tree view accordingly
                 root = self.ui.treeWidget_stations.invisibleRootItem()
                 for i in range(root.childCount()):
@@ -83,8 +83,10 @@ class StationViewer(QtGui.QWidget):
                     for j in range(item.childCount()):
                         child = item.child(j)
                         # print(str(child.text(0)))
-                        if str(child.text(0)) in self.fig_canvas.selected_station:
+                        if str(child.text(0)) in self.fig_canvas.selected_stations:
                             child.setSelected(True)
+                        else:
+                            child.setSelected(False)
                 self.ui.treeWidget_stations.updateGeometry()
             self.fig_canvas.update_figure()
         else:
@@ -93,54 +95,62 @@ class StationViewer(QtGui.QWidget):
 
     def remove_stations(self, *args, **kwargs):
         selected = self.ui.treeWidget_stations.selectedItems()
-        selected_stations = set()
-        for item in selected:
-            if not item.parent():
-                # selected a group
-                selected_group_id = str(item.text(0))
-                members = self.file_handler.get_group_members(selected_group_id)
-                if members:
-                    for member in members:
-                        selected_stations.add((self.file_handler.get_MT_obj(member), member))
-            else:
-                ref = str(item.text(1))
-                selected_stations.add((self.file_handler.get_MT_obj(ref), ref))
+        # selected_stations = set()
+        # for item in selected:
+        #     if not item.parent():
+        #         # selected a group
+        #         selected_group_id = str(item.text(0))
+        #         members = self.file_handler.get_group_members(selected_group_id)
+        #         if members:
+        #             for member in members:
+        #                 selected_stations.add((self.file_handler.get_MT_obj(member), member))
+        #     else:
+        #         ref = str(item.text(1))
+        #         selected_stations.add((self.file_handler.get_MT_obj(ref), ref))
+        # just use the container from the figure
+        selected_stations = self.fig_canvas.selected_stations
         if selected_stations:
             reply = QtGui.QMessageBox.question(self, "Unload Selected Stations",
                                                "Are you sure you want to unload/remove the selected stations?\n(You can always load them back again.)",
                                                QtGui.QMessageBox.Yes, QtGui.QMessageBox.No)
             if reply == QtGui.QMessageBox.Yes:
-                for station, ref in selected_stations:
-                    self.file_handler.unload(ref)
+                # for station, ref in selected_stations:
+                #     self.file_handler.unload(ref)
+                for station in selected_stations:
+                    self.file_handler.unload(self.file_handler.station2ref(station))
+                self.fig_canvas.selected_stations.clear()
                 self.update_view()
 
     def add_selected_to_group(self, *args, **kwargs):
-        selected = self.ui.treeWidget_stations.selectedItems()
-        if selected:
+        # selected = self.ui.treeWidget_stations.selectedItems()
+        # if selected:
+        if self.fig_canvas.selected_stations:
             groups = self.file_handler.get_groups()
             group_id, ok = QtGui.QInputDialog.getItem(self, "Add Selected Items to Group", "Please select one group:",
                                                       groups, 0, False)
             if ok and group_id:
                 group_id = str(group_id)
-                for item in selected:
-                    if not item.parent():
+                # for item in selected:
+                for station in self.fig_canvas.selected_stations:
+                    # if not item.parent():
                         # selected a group
-                        selected_group_id = str(item.text(0))
-                        members = self.file_handler.get_group_members(selected_group_id)
-                        if members:
-                            for member in members:
-                                self.file_handler.add_to_group(group_id, member)
-                    else:
+                        # selected_group_id = str(item.text(0))
+                        # members = self.file_handler.get_group_members(selected_group_id)
+                        # if members:
+                        #     for member in members:
+                        #         self.file_handler.add_to_group(group_id, member)
+                    # else:
                         # selected an item
-                        ref = str(item.text(1))
-                        self.file_handler.add_to_group(group_id, ref)
+                        # ref = str(item.text(1))
+                        # self.file_handler.add_to_group(group_id, ref)
+                    self.file_handler.add_to_group(group_id, self.file_handler.station2ref(station))
                 self.update_view()
 
     def item_selection_changed(self, *args):
         # print "selection changed"
         selected = self.ui.treeWidget_stations.selectedItems()
         if selected:
-            self.fig_canvas.selected_station.clear()
+            self.fig_canvas.selected_stations.clear()
             for item in selected:
                 if not item.parent():
                     # selected a group
@@ -148,9 +158,9 @@ class StationViewer(QtGui.QWidget):
                     members = self.file_handler.get_group_members(selected_group_id)
                     if members:
                         for member in members:
-                            self.fig_canvas.selected_station.add(self.file_handler.get_MT_obj(member).station)
+                            self.fig_canvas.selected_stations.add(self.file_handler.get_MT_obj(member).station)
                 else:
-                    self.fig_canvas.selected_station.add(str(item.text(0)))
+                    self.fig_canvas.selected_stations.add(str(item.text(0)))
             if not self.fig_canvas.isHidden():
                 self.fig_canvas.update_figure()
 
@@ -232,12 +242,12 @@ class StationViewer(QtGui.QWidget):
             """
             self.file_handler = file_handler
             self.artists = dict()
-            self.selected_station = set()
+            self.selected_stations = set()
             MPLCanvas.__init__(self, parent, width, hight, dpi)
 
         def compute_initial_figure(self):
             # clear figure
-            self.axes.cla()
+            self._axes.cla()
             # prepare data
             groups = []
             lat = []
@@ -255,20 +265,22 @@ class StationViewer(QtGui.QWidget):
             groups = df.groupby("group")
             # plot
             # self.axes = plt.subplots()
-            self.axes.margins(0.05)  # 5% padding
+            self._axes.tick_params(axis='both', which='major', labelsize=10)
+            self._axes.tick_params(axis='both', which='minor', labelsize=8)
+            self._axes.margins(0.05)  # 5% padding
             annotated_stations = set()
             self.artists.clear()
             for (name, group), marker, color in zip(list(groups), cycle(MARKERS), cycle(COLORS)):
-                artist, = self.axes.plot(group.x, group.y, marker=marker, linestyle='', ms=10, alpha=.5, label=name,
-                                        picker=5)  # picker = 5  point tolerance
+                artist, = self._axes.plot(group.x, group.y, marker=marker, linestyle='', ms=10, alpha=.5, label=name,
+                                          picker=5)  # picker = 5  point tolerance
                 self.artists[artist] = group.station
                 for index, row in df.iterrows():
                     station = row['station']
                     if station not in annotated_stations:
-                        self.axes.annotate(station, xy=(row['x'], row['y']), size=10, picker=3, color='red' if station in self.selected_station else 'black')
+                        self._axes.annotate(station, xy=(row['x'], row['y']), size=8, picker=3, color='red' if station in self.selected_stations else 'black')
                         annotated_stations.add(station)
-            self.axes.legend(numpoints=1, loc="best")
-            self.axes.grid()
+            self._axes.legend(numpoints=1, loc="best", fontsize=8)
+            self._axes.grid()
 
         def update_figure(self):
             self.compute_initial_figure()

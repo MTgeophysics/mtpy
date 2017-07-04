@@ -27,12 +27,12 @@ class MPLCanvas(FigureCanvas):
     """
 
     def __init__(self, parent=None, width=5, hight=4, dpi=100):
-        fig = Figure(figsize=(width, hight), dpi=dpi)
-        self.axes = fig.add_subplot(111)
+        self._fig = Figure(figsize=(width, hight), dpi=dpi)
+        self._axes = self._fig.add_subplot(111)
 
         self.compute_initial_figure()
 
-        FigureCanvas.__init__(self, fig)
+        FigureCanvas.__init__(self, self._fig)
         self.setParent(parent)
 
         FigureCanvas.setSizePolicy(self, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)

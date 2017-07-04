@@ -26,11 +26,11 @@ class FileHandler:
     """
 
     def __init__(self):
+        self._station_dict = dict()
         self._logger = MtPyLog().get_mtpy_logger(__name__)
         self._file_dict = dict()
         self._group_dict = dict()
         self._file_to_groups = dict()
-        pass
 
     def add_file(self, file_name, group_id=None):
         """
@@ -62,6 +62,7 @@ class FileHandler:
         self._logger.info("referencing %s to %s" % (file_ref, mt_obj.station))
         if file_ref not in self._file_dict:
             self._file_dict[file_ref] = mt_obj
+            self._station_dict[mt_obj.station] = file_ref
             self._file_to_groups[file_ref] = set()
         # add file to group
         return self.add_to_group(group_id, file_ref)
@@ -70,6 +71,9 @@ class FileHandler:
         for file_name in file_list:
             self.add_file(file_name, group_id)
         return True
+
+    def station2ref(self, station):
+        return self._station_dict[station]
 
     def add_to_group(self, group_ids, file_ref):
         """
@@ -127,6 +131,8 @@ class FileHandler:
         self._logger.info("unload %s" % file_ref)
         for group in self._file_to_groups[file_ref]:
             self._group_dict[group].remove(file_ref)
+        station = self.get_MT_obj(file_ref).station
+        del self._station_dict[station]
         del self._file_to_groups[file_ref]
         del self._file_dict[file_ref]
 
