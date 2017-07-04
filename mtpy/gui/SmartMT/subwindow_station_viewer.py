@@ -9,14 +9,13 @@
     Author: YingzhiGou
     Date: 20/06/2017
 """
-from PyQt4 import QtGui, QtCore
-import matplotlib.pyplot as plt
-import numpy as np
-import pandas as pd
 from itertools import cycle
 
+import pandas as pd
+
+from PyQt4 import QtGui, QtCore
 from matplotlib_imabedding import MPLCanvas
-from station_viewer import Ui_StationViewer, _translate, _fromUtf8
+from mtpy.gui.SmartMT.PyQt4.station_viewer import Ui_StationViewer, _translate, _fromUtf8
 
 # WINDOW_TITLE = _translate("StationViewer", "Stations Stats", None)
 MAP_DISABLE_TEXT = _translate("StationViewer", "Show Map", None)

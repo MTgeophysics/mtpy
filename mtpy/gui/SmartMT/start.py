@@ -14,14 +14,12 @@ import os
 import sys
 
 from PyQt4 import QtCore, QtGui
-
-from main_window import Ui_SmartMT_MainWindow, _fromUtf8, _translate
 from file_handler import FileHandler, FileHandlingException
-from station_summary_subwindow import StationSummary
-from station_viewer_subwindow import StationViewer
-
+from mtpy.gui.SmartMT.PyQt4.main_window import Ui_SmartMT_MainWindow, _fromUtf8, _translate
 from mtpy.utils.decorator import deprecated
 from mtpy.utils.mtpylog import MtPyLog
+from subwindow_station_summary import StationSummary
+from subwindow_station_viewer import StationViewer
 
 DEFAULT_GROUP_NAME = str(_translate("SmartMT_MainWindow", "Default Group", None))
 
