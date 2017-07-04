@@ -18,12 +18,13 @@ from itertools import cycle
 from matplotlib_imabedding import MPLCanvas
 from station_viewer import Ui_StationViewer, _translate, _fromUtf8
 
-WINDOW_TITLE = _translate("StationViewer", "Stations Stats", None)
+# WINDOW_TITLE = _translate("StationViewer", "Stations Stats", None)
 MAP_DISABLE_TEXT = _translate("StationViewer", "Show Map", None)
 MAP_ENABLE_TEXT = _translate("StationViewer", "Hide Map", None)
 
 MARKERS = ['*', 'D', 'H', '^']
 COLORS = ['g', 'r', 'c', 'm', 'y', 'k', 'b']
+
 
 class StationViewer(QtGui.QWidget):
     def __init__(self, parent, file_handler):
@@ -38,12 +39,12 @@ class StationViewer(QtGui.QWidget):
         self.file_handler = file_handler
         self.ui = Ui_StationViewer()
         self.ui.setupUi(self)
-        self.subwindow = parent.create_subwindow(self, WINDOW_TITLE)
+        self.subwindow = parent.create_subwindow(self, self.windowTitle())
         # make station_viewer never been deleted
-        self.subwindow = parent.subwindows[WINDOW_TITLE][0]
+        self.subwindow = parent.subwindows[self.windowTitle()][0]
         self.subwindow.setAttribute(QtCore.Qt.WA_DeleteOnClose, False)
         # handle selection changed event
-        self.ui.treeWidget_stations.connect(self, QtCore.SIGNAL("itemSelectionChanged()"), self.item_selection_changed)
+        self.ui.treeWidget_stations.selectionModel().selectionChanged.connect(self.item_selection_changed)
         # add context menu for tree view
         self.tree_menu = StationViewer.TreeViewMenu()
         self.tree_menu.actionCreate_New_Group.triggered.connect(self.create_new_group)
@@ -56,7 +57,39 @@ class StationViewer(QtGui.QWidget):
         # add map area and hide by default
         self.fig_canvas = StationViewer.StationMap(self, self.file_handler)
         self.fig_canvas.setHidden(True)
+        self.fig_canvas.setFocusPolicy(QtCore.Qt.StrongFocus)
+        self.fig_canvas.mpl_connect('pick_event', self.map_pick)
         self.ui.verticalLayout.addWidget(self.fig_canvas)
+
+    def map_pick(self, event):
+        """
+        handles the pick event on the station map
+        :param event:
+        :return:
+        """
+        # print event.mouseevent.key, event.mouseevent.button
+        if event.artist in self.fig_canvas.artists:
+            if not event.mouseevent.key or event.mouseevent.key != 'control':
+                self.fig_canvas.selected_station.clear()
+
+            stations = self.fig_canvas.artists[event.artist]
+            if len(event.ind) != 0:
+                for subplotnum, dataind in enumerate(event.ind):
+                    self.fig_canvas.selected_station.add(stations[dataind])
+                # update tree view accordingly
+                root = self.ui.treeWidget_stations.invisibleRootItem()
+                for i in range(root.childCount()):
+                    item = root.child(i)
+                    for j in range(item.childCount()):
+                        child = item.child(j)
+                        # print(str(child.text(0)))
+                        if str(child.text(0)) in self.fig_canvas.selected_station:
+                            child.setSelected(True)
+                self.ui.treeWidget_stations.updateGeometry()
+            self.fig_canvas.update_figure()
+        else:
+            pass
+        return True
 
     def remove_stations(self, *args, **kwargs):
         selected = self.ui.treeWidget_stations.selectedItems()
@@ -104,13 +137,22 @@ class StationViewer(QtGui.QWidget):
                 self.update_view()
 
     def item_selection_changed(self, *args):
-        # todo handle selection change
+        # print "selection changed"
         selected = self.ui.treeWidget_stations.selectedItems()
         if selected:
+            self.fig_canvas.selected_station.clear()
             for item in selected:
-                pass
-        print "selection changed!!"
-        pass
+                if not item.parent():
+                    # selected a group
+                    selected_group_id = str(item.text(0))
+                    members = self.file_handler.get_group_members(selected_group_id)
+                    if members:
+                        for member in members:
+                            self.fig_canvas.selected_station.add(self.file_handler.get_MT_obj(member).station)
+                else:
+                    self.fig_canvas.selected_station.add(str(item.text(0)))
+            if not self.fig_canvas.isHidden():
+                self.fig_canvas.update_figure()
 
     def toggle_map(self, *args, **kwargs):
         if self.ui.pushButton_showMap.text() == MAP_DISABLE_TEXT:
@@ -189,6 +231,8 @@ class StationViewer(QtGui.QWidget):
             :param dpi:
             """
             self.file_handler = file_handler
+            self.artists = dict()
+            self.selected_station = set()
             MPLCanvas.__init__(self, parent, width, hight, dpi)
 
         def compute_initial_figure(self):
@@ -213,13 +257,16 @@ class StationViewer(QtGui.QWidget):
             # self.axes = plt.subplots()
             self.axes.margins(0.05)  # 5% padding
             annotated_stations = set()
+            self.artists.clear()
             for (name, group), marker, color in zip(list(groups), cycle(MARKERS), cycle(COLORS)):
-                self.axes.plot(group.x, group.y, marker=marker, linestyle='', ms=10, alpha=.5, label=name,
-                               picker=3)  # picker = 5 3 point tolerance
+                artist, = self.axes.plot(group.x, group.y, marker=marker, linestyle='', ms=10, alpha=.5, label=name,
+                                        picker=5)  # picker = 5  point tolerance
+                self.artists[artist] = group.station
                 for index, row in df.iterrows():
-                    if row['station'] not in annotated_stations:
-                        self.axes.annotate(row['station'], xy=(row['x'], row['y']), size=10)
-                        annotated_stations.add(row['station'])
+                    station = row['station']
+                    if station not in annotated_stations:
+                        self.axes.annotate(station, xy=(row['x'], row['y']), size=10, picker=3, color='red' if station in self.selected_station else 'black')
+                        annotated_stations.add(station)
             self.axes.legend(numpoints=1, loc="best")
             self.axes.grid()
 

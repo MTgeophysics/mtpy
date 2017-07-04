@@ -26,6 +26,7 @@ class Ui_StationViewer(object):
     def setupUi(self, StationViewer):
         StationViewer.setObjectName(_fromUtf8("StationViewer"))
         StationViewer.resize(300, 400)
+        StationViewer.setFocusPolicy(QtCore.Qt.NoFocus)
         self.verticalLayout = QtGui.QVBoxLayout(StationViewer)
         self.verticalLayout.setMargin(0)
         self.verticalLayout.setObjectName(_fromUtf8("verticalLayout"))
@@ -44,7 +45,7 @@ class Ui_StationViewer(object):
         QtCore.QMetaObject.connectSlotsByName(StationViewer)
 
     def retranslateUi(self, StationViewer):
-        StationViewer.setWindowTitle(_translate("StationViewer", "Form", None))
+        StationViewer.setWindowTitle(_translate("StationViewer", "Stations", None))
         self.treeWidget_stations.headerItem().setText(0, _translate("StationViewer", "Station", None))
         self.treeWidget_stations.headerItem().setText(1, _translate("StationViewer", "File", None))
         self.pushButton_showMap.setText(_translate("StationViewer", "Show Map", None))

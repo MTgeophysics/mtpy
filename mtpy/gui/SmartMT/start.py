@@ -17,12 +17,13 @@ from PyQt4 import QtCore, QtGui
 
 from main_window import Ui_SmartMT_MainWindow, _fromUtf8, _translate
 from file_handler import FileHandler, FileHandlingException
-from station_viewer_subwindow import StationViewer, WINDOW_TITLE
+from station_viewer_subwindow import StationViewer
 
 from mtpy.utils.decorator import deprecated
 from mtpy.utils.mtpylog import MtPyLog
 
 DEFAULT_GROUP_NAME = str(_translate("SmartMT_MainWindow", "Default Group", None))
+
 
 class StartQt4(QtGui.QMainWindow):
     def __init__(self, parent=None):
@@ -41,7 +42,7 @@ class StartQt4(QtGui.QMainWindow):
         self.ui.actionExit.triggered.connect(QtGui.qApp.quit)
         self.ui.actionOpen_edi_File.triggered.connect(self.file_dialog)
         self.ui.actionOpen_edi_Folder.triggered.connect(self.folder_dialog)
-        self.ui.actionShow_Data_Collection.triggered.connect(self.toggle_tree_view)
+        self.ui.actionShow_Data_Collection.triggered.connect(self._toggle_tree_view)
         # not yet impleneted
         self.ui.actionAbout.triggered.connect(self.dummy_action)
         self.ui.actionClose_Project.triggered.connect(self.dummy_action)
@@ -102,9 +103,9 @@ class StartQt4(QtGui.QMainWindow):
             else:
                 break
 
-    def toggle_tree_view(self):
-        if WINDOW_TITLE in self.subwindows:
-            subwindow = self.subwindows[WINDOW_TITLE][0]
+    def _toggle_tree_view(self):
+        if self._station_viewer:
+            subwindow = self.subwindows[self.trUtf8("Stations")][0]
             if self.ui.actionShow_Data_Collection.isEnabled():
                 if self.ui.actionShow_Data_Collection.isChecked():
                     subwindow.show()
@@ -112,11 +113,10 @@ class StartQt4(QtGui.QMainWindow):
                     subwindow.hide()
 
     def _update_tree_view(self):
-        if WINDOW_TITLE not in self.subwindows:
+        if not self._station_viewer:
             self._station_viewer = StationViewer(self, self._file_handler)
             self.ui.actionShow_Data_Collection.setEnabled(True)
         self._station_viewer.update_view()
-
 
     def create_subwindow(self, widget, title):
         if title not in self.subwindows:
@@ -164,11 +164,6 @@ class StartQt4(QtGui.QMainWindow):
                     # remove the window
                     del self._main_ui.subwindows[title]
 
-
-
-
-
-
     @deprecated(
         "This is an dummy action that should be used only when the required function hasn't been implemented")
     def dummy_action(self, *args, **kwargs):
@@ -176,7 +171,6 @@ class StartQt4(QtGui.QMainWindow):
 
 
 if __name__ == "__main__":
-
     app = QtGui.QApplication(sys.argv)
     smartMT = StartQt4()
     smartMT.show()
