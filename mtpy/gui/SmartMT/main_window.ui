@@ -40,7 +40,17 @@
      <number>0</number>
     </property>
     <item>
-     <widget class="QMdiArea" name="mdiArea"/>
+     <widget class="QMdiArea" name="mdiArea">
+      <property name="viewMode">
+       <enum>QMdiArea::SubWindowView</enum>
+      </property>
+      <property name="tabsClosable">
+       <bool>true</bool>
+      </property>
+      <property name="tabsMovable">
+       <bool>true</bool>
+      </property>
+     </widget>
     </item>
    </layout>
   </widget>
@@ -87,6 +97,12 @@
     <property name="title">
      <string>Window</string>
     </property>
+    <addaction name="actionWindowed_View"/>
+    <addaction name="actionTabbed_View"/>
+    <addaction name="separator"/>
+    <addaction name="actionTile_Windows"/>
+    <addaction name="actionCascade_Windows"/>
+    <addaction name="separator"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="title">
@@ -232,6 +248,38 @@
    </property>
    <property name="text">
     <string>Show Station Summary</string>
+   </property>
+  </action>
+  <action name="actionCascade_Windows">
+   <property name="text">
+    <string>Cascade Windows</string>
+   </property>
+  </action>
+  <action name="actionTile_Windows">
+   <property name="text">
+    <string>Tile Windows</string>
+   </property>
+  </action>
+  <action name="actionWindowed_View">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Windowed View</string>
+   </property>
+  </action>
+  <action name="actionTabbed_View">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Tabbed View</string>
    </property>
   </action>
  </widget>

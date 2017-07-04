@@ -46,6 +46,10 @@ class StartQt4(QtGui.QMainWindow):
         self.ui.actionOpen_edi_Folder.triggered.connect(self.folder_dialog)
         self.ui.actionShow_Data_Collection.triggered.connect(self._toggle_tree_view)
         self.ui.actionShow_Station_Summary.triggered.connect(self._toggle_station_summary)
+        self.ui.actionWindowed_View.triggered.connect(self._toggle_windowed_tabbed_view)
+        self.ui.actionTabbed_View.triggered.connect(self._toggle_windowed_tabbed_view)
+        self.ui.actionTile_Windows.triggered.connect(self._tile_windows)
+        self.ui.actionCascade_Windows.triggered.connect(self._cascade_windows)
         # not yet impleneted
         self.ui.actionAbout.triggered.connect(self.dummy_action)
         self.ui.actionClose_Project.triggered.connect(self.dummy_action)
@@ -57,6 +61,28 @@ class StartQt4(QtGui.QMainWindow):
         self.ui.actionOptions.triggered.connect(self.dummy_action)
         self.ui.actionSave_as_Project.triggered.connect(self.dummy_action)
         self.ui.actionSave_Project.triggered.connect(self.dummy_action)
+
+    def _tile_windows(self, *args, **kwargs):
+        self.ui.mdiArea.tileSubWindows()
+
+    def _cascade_windows(self, *args, **kwargs):
+        self.ui.mdiArea.cascadeSubWindows()
+
+    def _toggle_windowed_tabbed_view(self, *args, **kwargs):
+        if self.ui.actionTabbed_View.isEnabled() and self.ui.actionTabbed_View.isChecked():
+            self.ui.actionTabbed_View.setEnabled(False)
+            self.ui.actionWindowed_View.setEnabled(True)
+            self.ui.actionWindowed_View.setChecked(False)
+            self.ui.actionTile_Windows.setEnabled(False)
+            self.ui.actionCascade_Windows.setEnabled(False)
+            self.ui.mdiArea.setViewMode(QtGui.QMdiArea.TabbedView)
+        elif self.ui.actionWindowed_View.isEnabled() and self.ui.actionWindowed_View.isChecked():
+            self.ui.actionWindowed_View.setEnabled(False)
+            self.ui.actionTabbed_View.setEnabled(True)
+            self.ui.actionTabbed_View.setChecked(False)
+            self.ui.actionTile_Windows.setEnabled(True)
+            self.ui.actionCascade_Windows.setEnabled(True)
+            self.ui.mdiArea.setViewMode(QtGui.QMdiArea.SubWindowView)
 
     def file_dialog(self, *args, **kwargs):
         dialog = QtGui.QFileDialog(self)
@@ -131,6 +157,7 @@ class StartQt4(QtGui.QMainWindow):
         if not self._station_summary:
             self._station_summary = StationSummary(self, self._file_handler)
             self.ui.actionShow_Station_Summary.setEnabled(True)
+            self._station_viewer.setFocus()
         self._station_viewer.update_view()
 
     def create_subwindow(self, widget, title):
@@ -145,7 +172,7 @@ class StartQt4(QtGui.QMainWindow):
             new_window_action = QtGui.QAction(self)
             new_window_action.setObjectName(_fromUtf8("actionSubwindow%d" % (len(self.subwindows) + 1)))
             new_window_action.setText(_translate("SmartMT_MainWindow", title, None))
-            new_window_action.triggered.connect(subwindow.setFocus)
+            new_window_action.triggered.connect(subwindow.show_and_focus)
 
             # add to window menu
             self.ui.menuWindow.addAction(new_window_action)
@@ -168,6 +195,10 @@ class StartQt4(QtGui.QMainWindow):
             super(QtGui.QMdiSubWindow, self).__init__(parent)
             self._main_ui = main_ui
 
+        def show_and_focus(self):
+            self.show()
+            self.setFocus()
+
         def closeEvent(self, QCloseEvent):
             """
             override the close event to remove the window menu action
@@ -177,11 +208,14 @@ class StartQt4(QtGui.QMainWindow):
             if self._main_ui.subwindows:
                 title = str(self.windowTitle())
                 if title in self._main_ui.subwindows:
-                    (_, window_action) = self._main_ui.subwindows[title]
-                    # remove menu action
-                    self._main_ui.ui.menuWindow.removeAction(window_action)
-                    # remove the window
-                    del self._main_ui.subwindows[title]
+                    (subwindow, window_action) = self._main_ui.subwindows[title]
+                    if subwindow.testOption(QtCore.Qt.WA_DeleteOnClose):
+                        # remove menu action
+                        self._main_ui.ui.menuWindow.removeAction(window_action)
+                        # remove the window
+                        del self._main_ui.subwindows[title]
+                    else:
+                        subwindow.hide()
 
     @deprecated(
         "This is an dummy action that should be used only when the required function hasn't been implemented")
