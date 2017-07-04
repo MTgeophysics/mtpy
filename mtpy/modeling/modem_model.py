@@ -298,7 +298,7 @@ class Model(object):
             east_gridr = np.append(east_gridr, pad_e)
 
         # --> For some inversion code, need to make sure none of the stations lie on the nodes
-        # this section would make the cell-sizes become different by 2%
+        # this section would make the cell-sizes become unequal
         shift_station = 0.0  # originally = 0.02
         for s_east in sorted(self.station_locations['rel_east']):
             try:
@@ -342,6 +342,7 @@ class Model(object):
             except IndexError:
                 continue
 
+        # keep the following section. may want to use later.
         # --> make depth gridz using logspace, target the depth to z_target_depth
         # log_z = np.logspace(np.log10(self.z1_layer),
         #                     np.log10(self.z_target_depth),
@@ -352,15 +353,15 @@ class Model(object):
         # #z_nodes = np.array([zz - zz % 10 ** np.floor(np.log10(zz)) for zz in log_z])  # why this to make round numbers?
         # z_nodes = log_z  # FZ: try not using the dubious code above.
 
-        # FZ: use simple formula
+        # FZ: use simple formula. relation between first z1_layer, stretch_v and target depth:
         p = self.pad_stretch_v
         nzf = np.log10((p - 1) * self.z_target_depth / self.z1_layer) / np.log10(p) - 1
         nz = int(nzf)
         if (nz > self.n_layers):
             self.n_layers = nz  # adjust z layers to prevent too big numbers.
 
-        numz = self.n_layers - self.pad_z + 1
-        factorz = 1.2
+        numz = self.n_layers - self.pad_z + 1  # - self.n_airlayers
+        factorz = 1.2  # first few layers excluding the air_layers.
         exp_list = [self.z1_layer * (factorz ** nz) for nz in xrange(0, numz)]
         log_z = np.array(exp_list)
         z_nodes = log_z
@@ -382,7 +383,7 @@ class Model(object):
             pad_d = np.round(z_0 * self.pad_stretch_v ** ii, 2)
             z_nodes = np.append(z_nodes, pad_d)
 
-        # JM said there should be no air layer in the mesh.
+        # JM said there should be no air layer in the mesh model ???
         # add air layers and define ground surface level.
         # initial layer thickness is same as z1_layer
         add_air = 0  # self.n_airlayers
@@ -462,6 +463,9 @@ class Model(object):
             print ''
             print '-' * 56
 
+        return
+
+
     def add_topography(self, topographyfile=None, topographyarray=None, interp_method='nearest',
                        air_resistivity=1e17, sea_resistivity=0.3):
         """
@@ -494,7 +498,8 @@ class Model(object):
             self.nodes_z = self.grid_z[1:] - self.grid_z[:-1]
 
             # adjust sea level
-            # wrong self.sea_level = self.grid_z[self.n_airlayers]
+            # wrong? self.sea_level = self.grid_z[self.n_airlayers]
+            self.sea_level = self.grid_z[self.n_airlayers]
             print("FZ:***2 sea_level = ", self.sea_level)
 
             # assign topography
@@ -615,7 +620,12 @@ class Model(object):
         elev_mg = spi.griddata(
             points, values, xi, method=method).reshape(len(yg), len(xg))
 
-        print(" Elevation data *** ", len(yg), len(xg), elev_mg.shape)
+        print(" Elevation data over the meshgrid *** ",type(elev_mg), len(yg), len(xg), elev_mg.shape)
+
+        np.savetxt('E:/tmp/elev_mg.txt', elev_mg, fmt='%10.5f')
+
+        plt.imshow(elev_mg)
+        plt.show()
 
         # get a name for surface
         if surfacename is None:
@@ -630,6 +640,8 @@ class Model(object):
 
         # add surface to a dictionary of surface elevation data
         self.surface_dict[surfacename] = elev_mg
+
+        return
 
     def assign_resistivity_from_surfacedata(self, surfacename, resistivity_value, where='above'):
         """
@@ -677,7 +689,7 @@ class Model(object):
         """
         This method is used in add_topography().
         It will Re-write the data file to change the elevation column.
-        And update covariance mask
+        And update covariance mask according topo elevation model.
         :param air_resistivity:
         :return:
         """
@@ -685,7 +697,7 @@ class Model(object):
         sx = self.station_locations['rel_east']
         sy = self.station_locations['rel_north']
 
-        # find index of station on grid
+        # find index of each station on grid
         for sname in self.station_locations['station']:
             ss = np.where(self.station_locations['station'] == sname)[0][0]
             # relative locations of stations
@@ -709,12 +721,20 @@ class Model(object):
             else:
                 szi = 0
 
-                # print("FZ:*** szi=", szi)
-                # FZ: debug here to assign topography value for .dat file.
+            # print("FZ:*** szi=", szi)
+            # FZ: debug here to assign topography value for .dat file.
 
-                # topoval = self.grid_z[szi]
-                # self.station_locations['elev'][ss] = topoval # + 1.  # why +1 in elev ???
-                # self.Data.data_array['elev'][ss] = topoval # + 1.
+            # topoval = self.grid_z[szi]
+            # self.station_locations['elev'][ss] = topoval # + 1.  # why +1 in elev ???
+            # self.Data.data_array['elev'][ss] = topoval # + 1.
+
+            # use topo elevation directly
+            print(sname, ss, sxi, syi, szi)
+            topoval = self.surface_dict['topography'][syi,sxi] #-self.surface_dict['topography'][sxi-1,syi-1]
+            print(sname,ss, sxi, syi, szi, topoval)
+
+            self.station_locations['elev'][ss] = topoval # + 1.  # why +1 in elev ???
+            self.Data.data_array['elev'][ss] = topoval # + 1.
 
         # This will shift stations' location to be relative to the defined mesh-grid centre
         self.Data.station_locations = self.station_locations

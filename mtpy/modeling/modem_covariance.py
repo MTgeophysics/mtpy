@@ -158,6 +158,8 @@ class Covariance(object):
         clines.append('\n')
         clines.append('\n')
         # --> mask array
+        # self.mask_arr was constructed in the Model.add_topography()
+        # and passed to there through constructor param mask_arr=model.covariance_mask
         for zz in range(self.mask_arr.shape[2]):
             clines.append(' {0:<8.0f}{0:<8.0f}\n'.format(zz + 1))
 
