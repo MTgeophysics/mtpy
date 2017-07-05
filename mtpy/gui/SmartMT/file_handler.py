@@ -62,8 +62,13 @@ class FileHandler:
         self._logger.info("referencing %s to %s" % (file_ref, mt_obj.station))
         if file_ref not in self._file_dict:
             self._file_dict[file_ref] = mt_obj
-            self._station_dict[mt_obj.station] = file_ref
-            self._file_to_groups[file_ref] = set()
+            if mt_obj.station in self._station_dict:
+                self._logger.warning("Station %s already loaded from %s, you could try to unload this first" %
+                                     (mt_obj.station, self.station2ref(mt_obj.station)))
+                return False
+            else:
+                self._station_dict[mt_obj.station] = (file_ref)
+                self._file_to_groups[file_ref] = set()
         # add file to group
         return self.add_to_group(group_id, file_ref)
 
@@ -73,7 +78,10 @@ class FileHandler:
         return True
 
     def station2ref(self, station):
-        return self._station_dict[station]
+        if station in self._station_dict:
+            return self._station_dict[station]
+        else:
+            return None
 
     def add_to_group(self, group_ids, file_ref):
         """

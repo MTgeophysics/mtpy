@@ -25,7 +25,7 @@ except AttributeError:
 class Ui_StationViewer(object):
     def setupUi(self, StationViewer):
         StationViewer.setObjectName(_fromUtf8("StationViewer"))
-        StationViewer.resize(300, 400)
+        StationViewer.resize(400, 600)
         StationViewer.setFocusPolicy(QtCore.Qt.NoFocus)
         self.verticalLayout = QtGui.QVBoxLayout(StationViewer)
         self.verticalLayout.setMargin(0)

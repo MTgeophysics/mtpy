@@ -25,7 +25,7 @@ except AttributeError:
 class Ui_SmartMT_MainWindow(object):
     def setupUi(self, SmartMT_MainWindow):
         SmartMT_MainWindow.setObjectName(_fromUtf8("SmartMT_MainWindow"))
-        SmartMT_MainWindow.resize(800, 600)
+        SmartMT_MainWindow.resize(1024, 768)
         SmartMT_MainWindow.setMinimumSize(QtCore.QSize(800, 600))
         self.centralwidget = QtGui.QWidget(SmartMT_MainWindow)
         sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
@@ -48,7 +48,7 @@ class Ui_SmartMT_MainWindow(object):
         self.statusbar.setObjectName(_fromUtf8("statusbar"))
         SmartMT_MainWindow.setStatusBar(self.statusbar)
         self.menubar = QtGui.QMenuBar(SmartMT_MainWindow)
-        self.menubar.setGeometry(QtCore.QRect(0, 0, 800, 20))
+        self.menubar.setGeometry(QtCore.QRect(0, 0, 1024, 21))
         self.menubar.setObjectName(_fromUtf8("menubar"))
         self.menuFile = QtGui.QMenu(self.menubar)
         self.menuFile.setObjectName(_fromUtf8("menuFile"))

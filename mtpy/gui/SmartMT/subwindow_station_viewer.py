@@ -91,6 +91,8 @@ class StationViewer(QtGui.QWidget):
                             child.setSelected(False)
                 self.ui.treeWidget_stations.updateGeometry()
                 self._ignore_selection_change = False
+                # emit selection changed signal
+                self.ui.treeWidget_stations.emit(QtCore.SIGNAL("selectionChanged()"))
             self.fig_canvas.update_figure()
         else:
             pass
@@ -123,6 +125,10 @@ class StationViewer(QtGui.QWidget):
                     self.file_handler.unload(self.file_handler.station2ref(station))
                 self.fig_canvas.selected_stations.clear()
                 self.update_view()
+
+                # hack update station summary/status
+                # todo to be improved
+                self.ui.treeWidget_stations.emit(QtCore.SIGNAL("selectionChanged()"))
 
     def add_selected_to_group(self, *args, **kwargs):
         # selected = self.ui.treeWidget_stations.selectedItems()

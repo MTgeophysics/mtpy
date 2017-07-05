@@ -153,10 +153,13 @@ class StartQt4(QtGui.QMainWindow):
             self._station_viewer = StationViewer(self, self._file_handler)
             self.ui.actionShow_Data_Collection.setEnabled(True)
         if not self._station_summary:
-            self._station_summary = StationSummary(self, self._file_handler)
+            self._station_summary = StationSummary(self, self._file_handler, self._station_viewer.fig_canvas.selected_stations)
             self.ui.actionShow_Station_Summary.setEnabled(True)
+            # connect to tree view to update summary
+            self._station_viewer.ui.treeWidget_stations.selectionModel().selectionChanged.connect(self._station_summary.update_view)
             self._station_viewer.setFocus()
         self._station_viewer.update_view()
+        self._station_summary.update_view()
 
     def create_subwindow(self, widget, title):
         subwindow = None
@@ -164,6 +167,7 @@ class StartQt4(QtGui.QMainWindow):
             subwindow = StartQt4.MDISubWindow(self)
             subwindow.setWindowTitle(title)
             subwindow.setWidget(widget)
+            subwindow.resize(widget.size())
             self.ui.mdiArea.addSubWindow(subwindow)
 
             # create menu action
