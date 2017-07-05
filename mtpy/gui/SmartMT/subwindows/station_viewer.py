@@ -12,10 +12,10 @@
 from itertools import cycle
 
 import pandas as pd
-
 from PyQt4 import QtGui, QtCore
-from matplotlib_imabedding import MPLCanvas
-from ui_asset.station_viewer import Ui_StationViewer, _translate, _fromUtf8
+
+from mtpy.gui.SmartMT.visualization.matplotlib_imabedding import MPLCanvas
+from mtpy.gui.SmartMT.ui_asset.station_viewer import Ui_StationViewer, _translate, _fromUtf8
 
 # WINDOW_TITLE = _translate("StationViewer", "Stations Stats", None)
 MAP_DISABLE_TEXT = _translate("StationViewer", "Show Map", None)
@@ -50,6 +50,7 @@ class StationViewer(QtGui.QWidget):
         self.tree_menu.actionDismiss_Group.triggered.connect(self.dismiss_group)
         self.tree_menu.actionAdd_To_Group.triggered.connect(self.add_selected_to_group)
         self.tree_menu.actionRemove_Station.triggered.connect(self.remove_stations)
+        self.tree_menu.actionPlot.triggered.connect(parent.plot_selected_station)
         self.ui.treeWidget_stations.customContextMenuRequested.connect(self.open_menu_in_tree_view)
         # connect map button
         QtCore.QObject.connect(self.ui.pushButton_showMap, QtCore.SIGNAL("clicked()"), self.toggle_map)
@@ -263,6 +264,7 @@ class StationViewer(QtGui.QWidget):
         if items:
             self.tree_menu.actionAdd_To_Group.setEnabled(True)
             self.tree_menu.actionRemove_Station.setEnabled(True)
+            self.tree_menu.actionPlot.setEnabled(True)
             # if selected only a group
             if len(items) == 1 and not items[0].parent() and items[0].text(0) != "Default Group":
                 # selected only one group
@@ -272,6 +274,7 @@ class StationViewer(QtGui.QWidget):
         else:
             self.tree_menu.actionAdd_To_Group.setEnabled(False)
             self.tree_menu.actionRemove_Station.setEnabled(False)
+            self.tree_menu.actionPlot.setEnabled(False)
 
     def open_menu_in_map_view(self, position):
         self._update_menu_context()

@@ -63,9 +63,8 @@ class FileHandler:
         if file_ref not in self._file_dict:
             self._file_dict[file_ref] = mt_obj
             if mt_obj.station in self._station_dict:
-                self._logger.warning("Station %s already loaded from %s, you could try to unload this first" %
-                                     (mt_obj.station, self.station2ref(mt_obj.station)))
-                return False
+                raise FileHandlingException("Station %s already loaded from %s, you could try to unload this first" %
+                                            (mt_obj.station, self.station2ref(mt_obj.station)))
             else:
                 self._station_dict[mt_obj.station] = (file_ref)
                 self._file_to_groups[file_ref] = set()

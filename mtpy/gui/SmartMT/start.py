@@ -14,12 +14,13 @@ import os
 import sys
 
 from PyQt4 import QtCore, QtGui
-from file_handler import FileHandler, FileHandlingException
-from ui_asset.main_window import Ui_SmartMT_MainWindow, _fromUtf8, _translate
+
+from mtpy.gui.SmartMT.subwindows.station_summary import StationSummary
+from mtpy.gui.SmartMT.subwindows.station_viewer import StationViewer
+from mtpy.gui.SmartMT.utils.file_handler import FileHandler, FileHandlingException
 from mtpy.utils.decorator import deprecated
 from mtpy.utils.mtpylog import MtPyLog
-from subwindow_station_summary import StationSummary
-from subwindow_station_viewer import StationViewer
+from ui_asset.main_window import Ui_SmartMT_MainWindow, _fromUtf8, _translate
 
 DEFAULT_GROUP_NAME = str(_translate("SmartMT_MainWindow", "Default Group", None))
 
@@ -48,6 +49,7 @@ class StartQt4(QtGui.QMainWindow):
         self.ui.actionTabbed_View.triggered.connect(self._toggle_windowed_tabbed_view)
         self.ui.actionTile_Windows.triggered.connect(self._tile_windows)
         self.ui.actionCascade_Windows.triggered.connect(self._cascade_windows)
+        self.ui.actionPlot.triggered.connect(self.plot_selected_station)
         # not yet impleneted
         self.ui.actionAbout.triggered.connect(self.dummy_action)
         self.ui.actionClose_Project.triggered.connect(self.dummy_action)
@@ -104,6 +106,10 @@ class StartQt4(QtGui.QMainWindow):
                 self._logger.warning(exp.message)
             except Exception as exp:
                 self._logger.critical(exp.message)
+
+    def plot_selected_station(self, *args, **kwargs):
+        raise NotImplemented
+        pass
 
     def folder_dialog(self, *args, **kwargs):
         dialog = QtGui.QFileDialog(self)
