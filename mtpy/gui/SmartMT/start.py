@@ -15,7 +15,7 @@ import sys
 
 from PyQt4 import QtCore, QtGui
 from file_handler import FileHandler, FileHandlingException
-from mtpy.gui.SmartMT.PyQt4.main_window import Ui_SmartMT_MainWindow, _fromUtf8, _translate
+from ui_asset.main_window import Ui_SmartMT_MainWindow, _fromUtf8, _translate
 from mtpy.utils.decorator import deprecated
 from mtpy.utils.mtpylog import MtPyLog
 from subwindow_station_summary import StationSummary

@@ -15,7 +15,7 @@ import pandas as pd
 
 from PyQt4 import QtGui, QtCore
 from matplotlib_imabedding import MPLCanvas
-from mtpy.gui.SmartMT.PyQt4.station_viewer import Ui_StationViewer, _translate, _fromUtf8
+from ui_asset.station_viewer import Ui_StationViewer, _translate, _fromUtf8
 
 # WINDOW_TITLE = _translate("StationViewer", "Stations Stats", None)
 MAP_DISABLE_TEXT = _translate("StationViewer", "Show Map", None)

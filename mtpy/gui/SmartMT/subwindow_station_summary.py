@@ -11,7 +11,7 @@
 """
 from PyQt4 import QtGui, QtCore
 
-from mtpy.gui.SmartMT.PyQt4.station_status import Ui_StationStatus
+from ui_asset.station_status import Ui_StationStatus
 
 
 class StationSummary(QtGui.QWidget):
