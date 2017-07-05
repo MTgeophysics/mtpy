@@ -59,7 +59,7 @@ class StationViewer(QtGui.QWidget):
         self.fig_canvas.setFocusPolicy(QtCore.Qt.StrongFocus)
         self.fig_canvas.mpl_connect('pick_event', self.map_pick)
         self.fig_canvas.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
-        self.fig_canvas.customContextMenuRequested.connect(self.open_menu_in_tree_view)
+        self.fig_canvas.customContextMenuRequested.connect(self.open_menu_in_map_view)
         self.ui.verticalLayout.addWidget(self.fig_canvas)
 
     def map_pick(self, event):
