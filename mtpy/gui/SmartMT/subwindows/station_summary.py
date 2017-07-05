@@ -13,14 +13,14 @@ from PyQt4 import QtGui, QtCore
 
 from mtpy.gui.SmartMT.ui_asset.station_status import Ui_StationStatus
 
-
 class StationSummary(QtGui.QWidget):
     def __init__(self, parent, file_handler, selected_files):
         """
 
         :param parent:
+        :type parent: StartQt4
         :param file_handler:
-        :type file_handler: file_handler.FileHandler
+        :type file_handler: FileHandler
         :param selected_files:
         :type selected_files: set
         """

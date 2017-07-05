@@ -22,14 +22,26 @@ except AttributeError:
     def _translate(context, text, disambig):
         return QtGui.QApplication.translate(context, text, disambig)
 
-class Ui_Form(object):
-    def setupUi(self, Form):
-        Form.setObjectName(_fromUtf8("Form"))
-        Form.resize(400, 300)
+class Ui_PlotOption(object):
+    def setupUi(self, PlotOption):
+        PlotOption.setObjectName(_fromUtf8("PlotOption"))
+        PlotOption.setWindowModality(QtCore.Qt.WindowModal)
+        PlotOption.resize(400, 300)
+        self.verticalLayout = QtGui.QVBoxLayout(PlotOption)
+        self.verticalLayout.setObjectName(_fromUtf8("verticalLayout"))
+        self.groupBox = QtGui.QGroupBox(PlotOption)
+        self.groupBox.setObjectName(_fromUtf8("groupBox"))
+        self.verticalLayout_2 = QtGui.QVBoxLayout(self.groupBox)
+        self.verticalLayout_2.setObjectName(_fromUtf8("verticalLayout_2"))
+        self.comboBoxSelect_Plot = QtGui.QComboBox(self.groupBox)
+        self.comboBoxSelect_Plot.setObjectName(_fromUtf8("comboBoxSelect_Plot"))
+        self.verticalLayout_2.addWidget(self.comboBoxSelect_Plot)
+        self.verticalLayout.addWidget(self.groupBox)
 
-        self.retranslateUi(Form)
-        QtCore.QMetaObject.connectSlotsByName(Form)
+        self.retranslateUi(PlotOption)
+        QtCore.QMetaObject.connectSlotsByName(PlotOption)
 
-    def retranslateUi(self, Form):
-        Form.setWindowTitle(_translate("Form", "Form", None))
+    def retranslateUi(self, PlotOption):
+        PlotOption.setWindowTitle(_translate("PlotOption", "Plot Option", None))
+        self.groupBox.setTitle(_translate("PlotOption", "Plot Type", None))
 

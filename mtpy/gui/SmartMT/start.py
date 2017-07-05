@@ -15,6 +15,7 @@ import sys
 
 from PyQt4 import QtCore, QtGui
 
+from mtpy.gui.SmartMT.subwindows.plot_option import PlotOption
 from mtpy.gui.SmartMT.subwindows.station_summary import StationSummary
 from mtpy.gui.SmartMT.subwindows.station_viewer import StationViewer
 from mtpy.gui.SmartMT.utils.file_handler import FileHandler, FileHandlingException
@@ -36,6 +37,7 @@ class StartQt4(QtGui.QMainWindow):
         self._file_handler = FileHandler()
         self._station_viewer = None
         self._station_summary = None
+        self._plot_option = None
         self.subwindows = {}
 
     def setup_menu(self):
@@ -108,8 +110,12 @@ class StartQt4(QtGui.QMainWindow):
                 self._logger.critical(exp.message)
 
     def plot_selected_station(self, *args, **kwargs):
-        raise NotImplemented
-        pass
+        if self._station_viewer and self._station_viewer.fig_canvas.selected_stations:
+            if not self._plot_option:
+                self._plot_option = PlotOption(self, self._file_handler, self._station_viewer.fig_canvas.selected_stations)
+            subwindow, _ = self.create_subwindow(self._plot_option, self._plot_option.windowTitle())
+        else:
+            self._logger.info("nothing to plot")
 
     def folder_dialog(self, *args, **kwargs):
         dialog = QtGui.QFileDialog(self)
