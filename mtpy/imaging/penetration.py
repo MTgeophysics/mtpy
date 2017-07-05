@@ -65,7 +65,7 @@ class Depth1D(ImagingBase):
         if self._data is None or not self._data:
             # todo: raise an exception
             raise NotImplemented
-        elif self._rholist is None or self._rholist:
+        elif self._rholist is None or not self._rholist:
             raise ZComponentError
         elif self._fig is not None:
             # nothing to plot
@@ -123,7 +123,7 @@ class Depth1D(ImagingBase):
             ncol=1,
             borderaxespad=0.)
 
-        title = "Penetration Depth for file %s" % self._data.fn()
+        title = "Penetration Depth for file %s" % self._data.fn
         plt.title(title)
         plt.xlabel("Log Period (seconds)", fontsize=16)
         plt.ylabel("Penetration Depth (meters)", fontsize=16)
@@ -619,9 +619,9 @@ def get_penetration_depth_generic(edi_file_list, period_sec, whichrho='det'):
 class ZComponentError(ParameterError):
     def __init__(self, *args, **kwargs):
         if args is None:
-            ParameterError.__init__("please set zcomponent (rho) to either \"zxy\", \"zyx\" or \"det\"", **kwargs)
+            ParameterError.__init__(self, "please set zcomponent (rho) to either \"zxy\", \"zyx\" or \"det\"", **kwargs)
         else:
-            ParameterError.__init__(*args, **kwargs)
+            ParameterError.__init__(self, *args, **kwargs)
 
 
 def check_period_values(period_list, ptol=0.1):
