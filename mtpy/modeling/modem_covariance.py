@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 """
 Description:
+   Define the Covariance class.
    This module is refactored from modem.py which is too big to manage and edit
-    Define the Covariance class
 
 Author: fei.zhang@ga.gov.au
 
@@ -42,9 +42,7 @@ class MTException(Exception):
 # covariance
 # ==============================================================================
 class Covariance(object):
-    """
-    read and write covariance files
-
+    """ Read and write covariance files
     """
 
     def __init__(self, grid_dimensions=None, **kwargs):
@@ -174,3 +172,22 @@ class Covariance(object):
         cfid.close()
 
         print 'Wrote covariance file to {0}'.format(self.cov_fn)
+
+        return self.cov_fn
+
+# ======================================
+# example usage
+# ======================================
+if __name__ == "__name__":
+
+    # make covariance file
+
+    model=None  # define modem_model
+
+    cov = Covariance(mask_arr=model.covariance_mask,
+                     save_path="/outputdir",
+                     smoothing_east=0.3,
+                     smoothing_north=0.4,
+                     smoothing_z=0.5)
+
+    cov.write_covariance_file(model_fn=model.model_fn)

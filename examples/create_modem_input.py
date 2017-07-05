@@ -54,7 +54,7 @@ def select_periods(edifiles_list):
 
     # 2 percetage stats
     # select commonly occured frequencies from all stations.
-    # This could miss some slightly varied frquencies in the middle range.
+    # This could miss some slightly varied frequencies in the middle range.
     select_period_list = np.array(edis_obj.get_periods_by_stats(percentage=10.0))
     print("Selected periods ", len(select_period_list))
 
@@ -103,7 +103,7 @@ if __name__ == '__main__':
 
     datob.write_data_file(save_path=outputdir)
 
-    # create model object
+    # create mesh grid model object
     model = Model(Data=datob,
                   epsg=epsg_code,  # epsg
                   # cell_size_east=500, cell_size_north=500,  # concurry
@@ -119,14 +119,22 @@ if __name__ == '__main__':
                   z1_layer=100,  # first layer thickness
                   z_target_depth=500000)
 
-    model.make_mesh()  # the data file will be re-write in this method.
+    model.make_mesh()  # the data file will be re-write in this method. No topo elev file used yet
 
     model.plot_mesh()
 
-    # write a model file to initialise a resistivity model
+    # write a model file and initialise a resistivity model
     model.write_model_file(save_path=outputdir)
 
-    # add topography to res model, then re-write data file
+
+#=========== add topo data, with air layers?
+    # 1) the data file will be changed in 3 columns sxi, syi and szi meters
+    # 2) The covariance file will be written.
+    # 3) the model file not changed?? No air layers can be seen in the .ws file.
+
+    # add topography, define an initial resistivity model, modify and re-write the data file, define covariance mask
+    # dat file will be changed and rewritten,
+    # grid centre is used as the new origin of coordinate system, topo data used in the elev column.
     model.add_topography(topofile, interp_method='nearest')
 
     # make covariance file
