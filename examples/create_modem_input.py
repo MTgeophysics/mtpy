@@ -10,6 +10,8 @@ USAGE examples:
 python examples/create_modem_input.py tests/data/edifiles/ examples/etopo1.asc /e/tmp/modem_test
 python examples/create_modem_input.py /e/Data/MT_Datasets/WenPingJiang_EDI /e/Data/MT_Datasets/concurry_topo/AussieContinent_etopo1.asc
        /e/tmp/WenPingTest
+$ python examples/create_modem_input.py /e/Data/MT_Datasets/concurry_EDI_files/ /e/Data/MT_Datasets/concurry_topo/AussieContinent_etopo1.asc
+    /e/tmp/Concurry
 
 Developed by
     Alison.Kirkby@ga.gov.au
@@ -22,6 +24,7 @@ from __future__ import print_function
 import glob
 import os
 import sys
+import matplotlib.pyplot as plt
 
 import numpy as np
 from mtpy.core.edi_collection import EdiCollection
@@ -107,13 +110,14 @@ if __name__ == '__main__':
     model = Model(Data=datob,
                   epsg=epsg_code,  # epsg
                   # cell_size_east=500, cell_size_north=500,  # concurry
-                  cell_size_east=10000, cell_size_north=10000, #GA_VIC
+                  #cell_size_east=10000, cell_size_north=10000, #GA_VIC
+                  cell_size_east=1000, cell_size_north=1000, # Concurry
                   pad_north=6,  # number of padding cells in each of the north and south directions
                   pad_east=6,  # number of east and west padding cells
                   pad_z=6,  # number of vertical padding cells
                   pad_stretch_v=1.5,  # factor to increase by in padding cells (vertical)
                   pad_stretch_h=1.5,  # factor to increase by in padding cells (horizontal)
-                  n_airlayers=10,  # number of air layers 0, 10
+                  n_airlayers=0,  # number of air layers 0, 10
                   res_model=200,  # halfspace resistivity value for initial reference model
                   n_layers=40,  # total number of z layers, including air and pad_z
                   z1_layer=100,  # first layer thickness
@@ -136,6 +140,8 @@ if __name__ == '__main__':
     # dat file will be changed and rewritten,
     # grid centre is used as the new origin of coordinate system, topo data used in the elev column.
     model.add_topography(topofile, interp_method='nearest')
+
+    model.plot_topograph()
 
     # make covariance file
     cov = Covariance(mask_arr=model.covariance_mask,

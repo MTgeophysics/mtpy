@@ -17,6 +17,7 @@ __author__ = 'fei.zhang@ga.gov.au'
 import os
 
 import matplotlib.pyplot as plt
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 import numpy as np
 import scipy.interpolate as spi
 
@@ -537,7 +538,8 @@ class Model(object):
                     self.res_model[j, i, ii[0]] = sea_resistivity
 
         self.covariance_mask = self.covariance_mask[::-1]
-        self.project_stations_on_topography()
+
+        self.station_grid_index=self.project_stations_on_topography()
 
         print ("FZ: write model file after air layers added ***** ")
         self.write_model_file(save_path=self.save_path)
@@ -630,9 +632,6 @@ class Model(object):
 
         np.savetxt('E:/tmp/elev_mg.txt', elev_mg, fmt='%10.5f')
 
-        plt.imshow(elev_mg)
-        plt.imshow(elev_mg[::-1])  # water shadow flip the image
-        plt.show()
 
         # get a name for surface
         if surfacename is None:
@@ -705,6 +704,8 @@ class Model(object):
         sy = self.station_locations['rel_north']
 
         # find index of each station on grid
+        station_index_x=[]
+        station_index_y=[]
         for sname in self.station_locations['station']:
             ss = np.where(self.station_locations['station'] == sname)[0][0]
             # relative locations of stations
@@ -735,6 +736,8 @@ class Model(object):
             # self.station_locations['elev'][ss] = topoval # + 1.  # why +1 in elev ???
             # self.Data.data_array['elev'][ss] = topoval # + 1.
 
+            station_index_x.append(sxi)
+            station_index_y.append(syi)
             # use topo elevation directly
             print(sname, ss, sxi, syi, szi)
             topoval = self.surface_dict['topography'][syi,sxi]
@@ -752,7 +755,7 @@ class Model(object):
         # debug self.Data.write_data_file(save_path='/e/tmp', fill=False)
         print("FZ:*** what is self.grid_z=", self.grid_z.shape, self.grid_z)
 
-        return
+        return (station_index_x, station_index_y)
 
     def plot_mesh(self, east_limits=None, north_limits=None, z_limits=None,
                   **kwargs):
@@ -925,6 +928,65 @@ class Model(object):
         plt.show()
 
         return
+
+    def plot_topograph(self):
+        """
+        display topography elevation data together with station locations.
+        :return:
+        """
+        # fig_size = kwargs.pop('fig_size', [6, 6])
+        # fig_dpi = kwargs.pop('fig_dpi', 300)
+        # fig_num = kwargs.pop('fig_num', 1)
+        #
+        # station_marker = kwargs.pop('station_marker', 'v')
+        # marker_color = kwargs.pop('station_color', 'b')
+        # marker_size = kwargs.pop('marker_size', 2)
+        #
+        # line_color = kwargs.pop('line_color', 'k')
+        # line_width = kwargs.pop('line_width', .5)
+        #
+        # plt.rcParams['figure.subplot.hspace'] = .3
+        # plt.rcParams['figure.subplot.wspace'] = .3
+        # plt.rcParams['figure.subplot.left'] = .12
+        # plt.rcParams['font.size'] = 7
+
+        fig = plt.figure(3, figsize=[4,5], dpi=200)
+        plt.clf()
+        ax = plt.gca()
+
+        # topography data image
+        # plt.imshow(elev_mg) # this upside down
+        # plt.imshow(elev_mg[::-1])  # this will be correct - water shadow flip of the image
+        imgplot=plt.imshow(self.surface_dict['topography'], origin='lower') # the orgin is in the lower left corner.
+        divider = make_axes_locatable(ax)
+        # pad = separation from figure to colorbar
+        cax = divider.append_axes("right", size="3%", pad=0.2)
+        mycb = plt.colorbar(imgplot, cax=cax)  # cmap=my_cmap_r, does not work!!
+        mycb.outline.set_linewidth(2)
+        mycb.set_label(label='Elevation (metre)', size=12)
+        # make a rotation matrix to rotate data
+        # cos_ang = np.cos(np.deg2rad(self.mesh_rotation_angle))
+        # sin_ang = np.sin(np.deg2rad(self.mesh_rotation_angle))
+
+        # turns out ModEM has not accomodated rotation of the grid, so for
+        # now we will not rotate anything.
+        # cos_ang = 1
+        # sin_ang = 0
+
+        # --->plot map view
+        # ax1 = fig.add_subplot(1, 2, 1, aspect='equal')
+
+        # plot station locations in grid
+
+        sgindex_x = self.station_grid_index[0]
+        sgindex_y = self.station_grid_index[1]
+        print (sgindex_x, sgindex_y)
+        ax.scatter( sgindex_x,sgindex_y, marker='v',  c='b', s=2)
+
+        plt.show()
+
+        return
+
 
     def write_model_file(self, **kwargs):
         """
