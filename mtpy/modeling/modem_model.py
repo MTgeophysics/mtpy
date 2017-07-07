@@ -10,9 +10,7 @@ Author: fei.zhang@ga.gov.au
 Date:   2017-06-05
 """
 
-__author__ = 'fei.zhang@ga.gov.au'
-
-# from __future__ import print_function
+from __future__ import print_function
 
 import os
 
@@ -23,6 +21,7 @@ import scipy.interpolate as spi
 
 import mtpy.modeling.ws3dinv as ws
 import mtpy.utils.gocad as mtgocad
+import mtpy.utils.filehandling as MTfh
 import mtpy.utils.latlon_utm_conversion as utm2ll
 from mtpy.modeling.modem_data import Data
 import mtpy.modeling.elevation_util as elev_util
@@ -277,15 +276,16 @@ class Model(object):
         # cells within station area
         east_gridr = np.arange(start=westr, stop=eastr + self.cell_size_east,
                                step=self.cell_size_east)
-        print ("FZ: type of east_gridr = ", type(east_gridr))
-        print ("FZ: east_gridr_1 = ", east_gridr)
+
+        logger.debug ("FZ: east_gridr = %s", east_gridr)
         mean_egrid = np.mean(east_gridr)
-        print("mean_egrid =", mean_egrid)
+        logger.info("mean_egrid = %s", mean_egrid)
         if self.Data.rotation_angle == 0:
             self.Data.center_position_EN[0] -= mean_egrid
             self.station_locations['rel_east'] += mean_egrid
         east_gridr -= mean_egrid
-        print ("FZ: east_gridr_2 = ", east_gridr)
+        logger.debug("FZ: east_gridr_2 shifted centre = %s", east_gridr)
+
         # padding cells in the east-west direction
         for ii in range(1, self.pad_east + 1):
             east_0 = float(east_gridr[-1])
@@ -366,15 +366,13 @@ class Model(object):
         log_z = np.array(exp_list)
         z_nodes = log_z
 
-        print("log_z logspace:", log_z)
-
-        print("cell_sizes log_z = ", log_z)
-        print("vs z_nodes = ", z_nodes)
+        logger.debug("cell_sizes log_z = %s", log_z)
+        logger.debug("and z_nodes = %s", z_nodes)
 
         # index of top of padding
         itp = len(z_nodes) - 1
 
-        print("index of top of padding itp=", itp)
+        logger.debug("index of top of padding itp= %s", itp)
 
         # padding cells in the end of the vertical direction
         for ii in range(1, self.pad_z + 1):
@@ -398,7 +396,7 @@ class Model(object):
         # wrong: the following line does not make any sense if no air layer was added above.
         # incorrrect: self.sea_level = z_grid[self.n_airlayers]
         self.sea_level = z_grid[add_air]
-        print("FZ:***1 sea_level = ", self.sea_level)
+        logger.debug("FZ:***1 sea_level = %s", self.sea_level)
 
         # Need to make an array of the individual cell dimensions for modem
         east_nodes = east_gridr[1:] - east_gridr[:-1]
@@ -435,36 +433,36 @@ class Model(object):
             self.Data.write_data_file(fill=False)
 
         # --> print out useful information
-        print '-' * 15
-        print '   Number of stations = {0}'.format(len(self.station_locations))
-        print '   Dimensions: '
-        print '      e-w = {0}'.format(east_gridr.shape[0])
-        print '      n-s = {0}'.format(north_gridr.shape[0])
-        print '       z  = {0} (including air layers: {1})'.format(z_grid.shape[0], self.n_airlayers)
-        print '   Extensions: '
-        print '      e-w = {0:.1f} (m)'.format(east_nodes.__abs__().sum())
-        print '      n-s = {0:.1f} (m)'.format(north_nodes.__abs__().sum())
-        print '      0-z = {0:.1f} (m)'.format(self.nodes_z.__abs__().sum())
+        print ('-' * 15)
+        print ('   Number of stations = {0}'.format(len(self.station_locations)))
+        print ('   Dimensions: ')
+        print ('      e-w = {0}'.format(east_gridr.shape[0]))
+        print ('      n-s = {0}'.format(north_gridr.shape[0]))
+        print ('       z  = {0} (including air layers: {1})'.format(z_grid.shape[0], self.n_airlayers))
+        print ('   Extensions: ')
+        print ('      e-w = {0:.1f} (m)'.format(east_nodes.__abs__().sum()))
+        print ('      n-s = {0:.1f} (m)'.format(north_nodes.__abs__().sum()))
+        print ('      0-z = {0:.1f} (m)'.format(self.nodes_z.__abs__().sum()))
 
-        print '  Stations rotated by: {0:.1f} deg clockwise positive from N'.format(self.mesh_rotation_angle)
-        print ''
-        print ' ** Note ModEM does not accommodate mesh rotations, it assumes'
-        print '    all coordinates are aligned to geographic N, E'
-        print '    therefore rotating the stations will have a similar effect'
-        print '    as rotating the mesh.'
-        print '-' * 15
+        print ('  Stations rotated by: {0:.1f} deg clockwise positive from N'.format(self.mesh_rotation_angle))
+        print ('')
+        print (' ** Note ModEM does not accommodate mesh rotations, it assumes')
+        print ('    all coordinates are aligned to geographic N, E')
+        print ('    therefore rotating the stations will have a similar effect')
+        print ('    as rotating the mesh.')
+        print ('-' * 15)
 
         if self._utm_cross is True:
-            print '{0} {1} {2}'.format('-' * 25, 'NOTE', '-' * 25)
-            print '   Survey crosses UTM zones, be sure that stations'
-            print '   are properly located, if they are not, adjust parameters'
-            print '   _utm_grid_size_east and _utm_grid_size_north.'
-            print '   these are in meters and represent the utm grid size'
-            print ' Example: '
-            print ' >>> modem_model._utm_grid_size_east = 644000'
-            print ' >>> modem_model.make_mesh()'
-            print ''
-            print '-' * 56
+            print ('{0} {1} {2}'.format('-' * 25, 'NOTE', '-' * 25))
+            print ('   Survey crosses UTM zones, be sure that stations')
+            print ('   are properly located, if they are not, adjust parameters')
+            print ('   _utm_grid_size_east and _utm_grid_size_north.')
+            print ('   these are in meters and represent the utm grid size')
+            print (' Example: ')
+            print (' >>> modem_model._utm_grid_size_east = 644000')
+            print (' >>> modem_model.make_mesh()')
+            print ('')
+            print ('-' * 56)
 
         return
 
@@ -504,14 +502,14 @@ class Model(object):
             # adjust sea level
             # wrong? self.sea_level = self.grid_z[self.n_airlayers]
             self.sea_level = self.grid_z[self.n_airlayers]
-            print("FZ:***2 sea_level = ", self.sea_level)
+            logger.debug("FZ:***2 sea_level = %s", self.sea_level)
 
             # assign topography
             self.assign_resistivity_from_surfacedata(
                 'topography', air_resistivity, where='above')
         else:
-            print "No air layers specified, so cannot add topography !!!"
-            print "Only bathymetry shall be added below !!!"
+            print ("No air layers specified, so cannot add topography !!!")
+            print ("Only bathymetry shall be added below !!!")
 
         # assign sea water
         # first make a mask for all-land =1, which will be modified later according to air, water
@@ -540,9 +538,6 @@ class Model(object):
         self.covariance_mask = self.covariance_mask[::-1]
 
         self.station_grid_index=self.project_stations_on_topography()
-
-        print ("FZ: write model file after air layers added ***** ")
-        self.write_model_file(save_path=self.save_path)
 
         return
 
@@ -749,7 +744,7 @@ class Model(object):
         # This will shift stations' location to be relative to the defined mesh-grid centre
         self.Data.station_locations = self.station_locations
 
-        print ("Re-write data file after adding topo")
+        logger.debug("Re-write data file after adding topo")
         self.Data.write_data_file(fill=False)  # (Xi, Yi, Zi) of each station-i may be shifted
 
         # debug self.Data.write_data_file(save_path='/e/tmp', fill=False)
@@ -950,7 +945,7 @@ class Model(object):
         # plt.rcParams['figure.subplot.left'] = .12
         # plt.rcParams['font.size'] = 7
 
-        fig = plt.figure(3, figsize=[4,5], dpi=200)
+        fig = plt.figure(3, dpi=200)
         plt.clf()
         ax = plt.gca()
 
@@ -980,8 +975,11 @@ class Model(object):
 
         sgindex_x = self.station_grid_index[0]
         sgindex_y = self.station_grid_index[1]
-        print (sgindex_x, sgindex_y)
-        ax.scatter( sgindex_x,sgindex_y, marker='v',  c='b', s=2)
+
+        logger.debug("station grid index x: %s", sgindex_x)
+        logger.debug("station grid index y: %s", sgindex_y)
+
+        ax.scatter(sgindex_x,sgindex_y, marker='v',  c='b', s=2)
 
         plt.show()
 
@@ -1092,7 +1090,8 @@ class Model(object):
             self.covariance_mask = np.ones_like(self.res_model)
 
         # --> write file
-        ifid = file(self.model_fn, 'w')
+        new_model_fn = MTfh.make_unique_filename(self.model_fn)
+        ifid = file(new_model_fn, 'w')
         ifid.write('# {0}\n'.format(self.title.upper()))
         ifid.write('{0:>5}{1:>5}{2:>5}{3:>5} {4}\n'.format(self.nodes_north.shape[0],
                                                            self.nodes_east.shape[0],
@@ -1151,13 +1150,15 @@ class Model(object):
             ifid.write('{0:>9.3f}\n'.format(self.mesh_rotation_angle))
         ifid.close()
 
-        print 'Wrote file to: {0}'.format(self.model_fn)
+        logger.info('Wrote file to: {0}'.format(new_model_fn))
+
+        return new_model_fn
 
     def read_model_file(self, model_fn=None):
         """
         read an initial file and return the pertinent information including
         grid positions in coordinates relative to the center point (0,0) and 
-        starting model.
+        starting model. (Used by covariance class)
 
         Note that the way the model file is output, it seems is that the 
         blocks are setup as 
@@ -1320,8 +1321,7 @@ class Model(object):
         center_z = 0
         self.grid_center = np.array([center_north, center_east, center_z])
 
-    def write_vtk_file(self, vtk_save_path=None,
-                       vtk_fn_basename='ModEM_model_res'):
+    def write_vtk_file(self, vtk_save_path=None, vtk_fn_basename='ModEM_model_res'):
         """
         write a vtk file to view in Paraview or other
 
@@ -1351,7 +1351,7 @@ class Model(object):
                   vtk_z,
                   pointData={'resistivity': self.res_model})
 
-        print 'Wrote file to {0}'.format(vtk_fn)
+        logger.info( 'Wrote file to {0}'.format(vtk_fn))
 
     def write_gocad_sgrid_file(self, fn=None, origin=[0, 0, 0], clip=0, no_data_value=-99999):
         """
@@ -1433,7 +1433,7 @@ class Model(object):
         if np.all(np.array([len(gridnorth), len(grideast), len(gridz)]) - 1 == np.array(self.res_model.shape)):
             self.grid_east, self.grid_north, self.grid_z = grideast, gridnorth, gridz
         else:
-            print "Cannot read sgrid, can't deal with non-orthogonal grids or grids not aligned N-S or E-W"
+            print ("Cannot read sgrid, can't deal with non-orthogonal grids or grids not aligned N-S or E-W")
             return
 
         # get nodes
@@ -1459,7 +1459,7 @@ class Model(object):
 
         # get relative grid locations
         if calculate_centre:
-            print "Calculating center position"
+            print ("Calculating center position")
             centre = np.zeros(3)
             centre[0] = (self.grid_east.max() + self.grid_east.min()) / 2.
             centre[1] = (self.grid_north.max() + self.grid_north.min()) / 2.
@@ -1497,7 +1497,7 @@ class Model(object):
             try:
                 origin = np.loadtxt(origin)
             except:
-                print "Please provide origin as a list, array or tuple or as a valid filename containing this info"
+                print ("Please provide origin as a list, array or tuple or as a valid filename containing this info")
                 origin = [0, 0]
 
         # reshape the data
@@ -1511,7 +1511,7 @@ class Model(object):
         # convert to lat/long if needed
         if location_type == 'LL':
             if np.any(origin) == 0:
-                print "Warning, origin coordinates provided as zero, output lat/long are likely to be incorrect"
+                print ("Warning, origin coordinates provided as zero, output lat/long are likely to be incorrect")
             x, y = utm2ll.project(x, y, model_epsg, 4326)
             # update format to accommodate lat/lon
             fmt[:2] = ['%.6f', '%.6f']

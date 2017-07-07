@@ -110,8 +110,8 @@ if __name__ == '__main__':
     model = Model(Data=datob,
                   epsg=epsg_code,  # epsg
                   # cell_size_east=500, cell_size_north=500,  # concurry
-                  #cell_size_east=10000, cell_size_north=10000, #GA_VIC
-                  cell_size_east=1000, cell_size_north=1000, # Concurry
+                  cell_size_east=10000, cell_size_north=10000, #GA_VIC
+                  #cell_size_east=1000, cell_size_north=1000, # Concurry
                   pad_north=6,  # number of padding cells in each of the north and south directions
                   pad_east=6,  # number of east and west padding cells
                   pad_z=6,  # number of vertical padding cells
@@ -141,9 +141,15 @@ if __name__ == '__main__':
     # grid centre is used as the new origin of coordinate system, topo data used in the elev column.
     model.add_topography(topofile, interp_method='nearest')
 
-    model.plot_topograph()
+    model.plot_topograph()  # plot the MT stations on topography elevation data
 
-    # make covariance file
+    print("***** Re-writing model file after topo data and air layers added - will include air sea-water resistivity")
+    model.write_model_file(save_path=model.save_path)
+    # model.write_model_file(save_path='temp/')
+
+
+
+    # make covariance (mask) file
     cov = Covariance(mask_arr=model.covariance_mask,
                      save_path=outputdir,
                      smoothing_east=0.3,

@@ -116,7 +116,7 @@ class TestModemModel(TestCase):
         # add topography to res model
         my_model.add_topography(self.topofile, interp_method='nearest')
 
-        my_model.write_vtk_file()
+        # my_model.write_vtk_file()  # the vtk file cannot be validated. error reading by paraview.
 
         # make covariance file
         my_cov = Covariance(mask_arr=my_model.covariance_mask,
