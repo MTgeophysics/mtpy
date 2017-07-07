@@ -114,9 +114,11 @@ class BIRRP_processing(birrp.BIRRP_Parameters):
         self.nskip = []
         self.nskipr = []
         self.nread = []
+        #print fn_birrp_list
         for block_arr in fn_birrp_list:
             s_list = np.zeros(len(block_arr), dtype='|S100')
             r_list = np.zeros(2, dtype='|S100')
+            #print '-'*50+'\n'+str(len(block_arr))
             if len(block_arr) == 5 or len(block_arr) == 7:
                 comp_dict = {'ex':0, 'ey':1, 'hz':2, 'hx':3, 'hy':4, 
                              'rrhx':0, 'rrhy':1}
@@ -195,7 +197,7 @@ class BIRRP_processing(birrp.BIRRP_Parameters):
                 if self.deltat == -16:
                     self.nskip.append(3+int(nskip))
                     self.nskipr.append(3+int(nskipr))
-                    self.nread.append(nread_ii-3)
+                    self.nread.append(nread_ii-6)
                 else:
                     self.nskip.append(1+int(nskip))
                     self.nskipr.append(1+int(nskipr))

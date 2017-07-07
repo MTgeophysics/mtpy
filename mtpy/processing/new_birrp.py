@@ -1212,29 +1212,91 @@ class JFile(object):
     """
     
     def __init__(self, j_fn=None):
-        self.j_fn = j_fn
+        self._j_lines = None
+        self._set_j_fn(j_fn)
+        
         self.header_dict = None
         self.metadata_dict = None
-        self._j_lines = None
         self.Z = None
         self.Tipper = None
+        
+        
+    def _set_j_fn(self, j_fn):
+        self._j_fn = j_fn
+        self._get_j_lines()
+        
+    def _get_j_fn(self):
+        return self._j_fn
+        
+    j_fn = property(_get_j_fn, _set_j_fn)
 
         
-    def _get_j_lines(self, j_fn=None):
+    def _get_j_lines(self):
         """
         read in the j_file as a list of lines, put the lines in attribute
         _j_lines
         """
-        if j_fn is not None:
-            self.j_fn = j_fn
+        if self.j_fn is None:
+            print 'j_fn is None'
+            return
             
         if os.path.isfile(os.path.abspath(self.j_fn)) is False:
             raise IOError('Could not find {0}, check path'.format(self.j_fn))
-            
+        
+        self._validate_j_file()
+        
         with open(self.j_fn, 'r') as fid:
             self._j_lines = fid.readlines()
+        print 'read in {0}'.format(self.j_fn)
         
-    def read_header(self, j_lines=None, j_fn=None):
+    def _validate_j_file(self):
+        """
+        change the lat, lon, elev lines to something machine readable,
+        if they are not.
+        """
+        
+        # need to remove any weird characters in lat, lon, elev
+        with open(self.j_fn, 'r') as fid:
+            j_str = fid.read()
+            
+        # change lat
+        j_str = self._rewrite_line('latitude', j_str)
+        
+        # change lon
+        j_str = self._rewrite_line('longitude', j_str)
+        
+        # change elev
+        j_str = self._rewrite_line('elevation', j_str)
+        
+        with open(self.j_fn, 'w') as fid:
+            fid.write(j_str)
+            
+        print 'rewrote j-file {0} to make lat, lon, elev float values'.format(self.j_fn)
+        
+    def _get_str_value(self, string):
+
+        value = string.split('=')[1].strip()
+        try:
+            value = float(value)
+        except ValueError:
+            value = 0.0
+            
+        return value
+        
+    def _rewrite_line(self, variable, file_str):
+        variable_str = '>'+variable.upper()
+        index_begin = file_str.find(variable_str)
+        index_end = index_begin+file_str[index_begin:].find('\n')
+        
+        value = self._get_str_value(file_str[index_begin:index_end])
+        print 'Changed {0} to {1}'.format(variable.upper(), value)
+       
+        new_line = '{0} = {1:<.2f}'.format(variable_str, value)
+        file_str = file_str[0:index_begin]+new_line+file_str[index_end:]        
+         
+        return file_str
+        
+    def read_header(self):
         """
         Parsing the header lines of a j-file to extract processing information.
     
@@ -1245,14 +1307,9 @@ class JFile(object):
         - Dictionary with all parameters found
 
         """
-        if j_lines is not None:
-            self._j_lines = j_lines
-            
-        if j_fn is not None:
-            self.j_fn = j_fn
             
         if self._j_lines is None:
-            self._get_j_lines()
+            print "specify a file with jfile.j_fn = path/to/j/file"
             
         header_lines = [j_line for j_line in self._j_lines if '#' in j_line]
         header_dict = {'title':header_lines[0][1:].strip()}
@@ -1313,14 +1370,8 @@ class JFile(object):
         Not really needed for a birrp output since all values are nan's
         """
         
-        if j_lines is not None:
-            self._j_lines = j_lines
-            
-        if j_fn is not None:
-            self.j_fn = j_fn
-            
         if self._j_lines is None:
-            self._get_j_lines()
+            print "specify a file with jfile.j_fn = path/to/j/file"
         
         metadata_lines = [j_line for j_line in self._j_lines if '>' in j_line]
     
@@ -1337,7 +1388,7 @@ class JFile(object):
             
         self.metadata_dict = metadata_dict
         
-    def read_j_file(self, j_lines=None, j_fn=None):
+    def read_j_file(self):
         """
         read_j_file will read in a *.j file output by BIRRP (better than reading lots of *.<k>r<l>.rf files)
     
@@ -1360,21 +1411,15 @@ class JFile(object):
         t_index_dict = {'tzx':(0, 0),
                         'tzy':(0, 1)}
                         
-        if j_lines is not None:
-            self._j_lines = j_lines
-            
-        if j_fn is not None:
-            self.j_fn = j_fn
-            
         if self._j_lines is None:
-            self._get_j_lines()
+            print "specify a file with jfile.j_fn = path/to/j/file"
             
-        self.header_dict = self.read_header()
-        self.metadata_dict = self.read_metadata()
+        self.read_header()
+        self.read_metadata()       
         
         data_lines = [j_line for j_line in self._j_lines 
                       if not '>' in j_line and not '#' in j_line][1:]
-                
+                          
         # sometimes birrp outputs some missing periods, so the best way to deal with 
         # this that I could come up with was to get things into dictionaries with 
         # key words that are the period values, then fill in Z and T from there
@@ -1411,7 +1456,7 @@ class JFile(object):
                         d_value = float(d_value)
                         # need to check for masked points represented by
                         # birrp as -999, apparently
-                        if d_value == -999:
+                        if d_value == -999 or np.isnan(d_value):
                             d_value_list[d_index] = 0.0
                         else:
                             d_value_list[d_index] = d_value

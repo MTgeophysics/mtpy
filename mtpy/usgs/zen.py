@@ -474,11 +474,8 @@ class Z3D_Metadata(object):
                     setattr(self, t_key.lower(), t_list[1])
                     for t_str in t_list[2:]:
                         t_str = t_str.replace('\x00', '').replace('|', '')
-                        try:
-                            self.board_cal.append([float(tt.strip()) 
-                                               for tt in t_str.strip().split(':')])
-                        except ValueError:
-                            print 'No Board Calibration found'
+                        self.board_cal.append([float(tt.strip()) 
+                                           for tt in t_str.strip().split(':')])
                 # some times the coil calibration does not start on its own line
                 # so need to parse the line up and I'm not sure what the calibration
                 # version is for so I have named it odd
@@ -883,6 +880,14 @@ class Zen3D(object):
         self.gps_stamps = np.zeros(len(gps_stamp_find), dtype=self._gps_dtype)
         
         for ii, gps_find in enumerate(gps_stamp_find):
+            try:
+                data[gps_find+1]
+            except IndexError:
+                print '***Failed gps stamp***'
+                print '    stamp {0} out of {1}'.format(ii+1, 
+                                                        len(gps_stamp_find))
+                break
+            
             if data[gps_find+1] == self._gps_flag_1:
                 gps_str = struct.pack('<'+'i'*self._gps_bytes,
                                       *data[gps_find:gps_find+self._gps_bytes])
@@ -5447,6 +5452,8 @@ def delete_files_from_sd(delete_date=None, delete_type=None,
             if fn[-4:].lower() == '.Z3D'.lower():
                 full_path_fn = os.path.normpath(os.path.join(dr, fn))
                 zt = Zen3D(full_path_fn)
+                zt.read_all_info()
+                zt_date = int(zt.schedule.Date.replace('-',''))
                 #zt.get_info()
                 if delete_type == 'all' or delete_date is None:
                     if delete_folder is None:
@@ -5461,7 +5468,7 @@ def delete_files_from_sd(delete_date=None, delete_type=None,
                         log_lines.append('Moved {0} '.format(full_path_fn)+
                                          'to {0}'.format(delete_folder))
                 else:
-                    zt_date = int(zt.schedule_date.replace('-',''))
+                    #zt_date = int(zt.schedule_date.replace('-',''))
                    
                     if delete_type == 'before':
                         if zt_date <= delete_date:
