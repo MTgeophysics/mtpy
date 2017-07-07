@@ -38,7 +38,11 @@ from cStringIO import StringIO
 import sys
 import mtpy.processing.filter as mtfilt
 import mtpy.core.edi as mtedi
-import win32api
+
+try:
+    import win32api
+except ImportError:
+    print "Cannot find win32api, will not be able to detect drive names"
 
 try:
     import mtpy.utils.mseed as mtmseed
