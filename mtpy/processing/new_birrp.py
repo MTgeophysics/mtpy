@@ -52,34 +52,33 @@ class BIRRP_Parameters(object):
             raise ValueError('Input level, ilev, must be 0 for basic or 1 d'+ 
                              'for advanced, not {0}'.format(self.ilev))
         
+        self.ninp = 2
+        self._nout = 3
+        self.tbw = 2.0
+        self.nfft = 2**18
+        self.nsctmax = 14
+        self.ofil = 'mt'
+        self.nlev = 0
+        self.nar = 5
+        self.imode = 0
+        self.jmode = 0
+        self.nfil = 0
+        self.thetae = [0, 90, 0]
+        self.thetab = [0, 90, 0]
+        self.thetaf = [0, 90, 0]
+        
         if self.ilev == 0:
-            self.nout = 3
-            self.ninp = 2
-            self.tbw = 2.0
-            self.nfft = 2**18
-            self.nsctmax = 14
+            
             self.uin = 0
             self.ainuin = .9999
             self.c2threshe = 0
             self.nz = 0
             self.c2threshe1 = 0
-            self.ofil = 'mt'
-            self.nlev = 0
-            self.nar = 5
-            self.imode = 0
-            self.jmode = 0
-            self.nfil = 0
-            self.thetae = [0, 90, 0]
-            self.thetab = [0, 90, 0]
-            self.thetaf = [0, 90, 0]
+           
             
         elif self.ilev == 1:
-            self.nout = 3
-            self.ninp = 2
             self.nref = 2
             self.nrr = 1
-            self.tbw = 2
-            self.nfft = 2**18
             self.nsctinc = 2
             self.nsctmax = np.floor(np.log2(self.nfft))-4
             self.nf1 = self.tbw+2
@@ -103,15 +102,7 @@ class BIRRP_Parameters(object):
             self.nprej = 0
             self.prej = None
             self.c2threshe1 = 0
-            self.ofil = 'mt'
-            self.nlev = 0
-            self.nar = 5
-            self.imode = 0
-            self.jmode = 0
-            self.nfil = 0
-            self.thetae = [0, 90, 0]
-            self.thetab = [0, 90, 0]
-            self.thetaf = [0, 90, 0]
+            
             
     def _validate_parameters(self):
         """
@@ -124,10 +115,10 @@ class BIRRP_Parameters(object):
             self.ninp = 2
             print '  --> setting ninp to {0}'.format(self.ninp)            
         
-        if self.nout not in [2, 3]:
-            print 'Number of outputs {0} not allowed.'.format(self.nout)
-            self.nout = 2
-            print '  --> setting nout to {0}'.format(self.nout)
+        if self._nout not in [2, 3]:
+            print 'Number of outputs {0} not allowed.'.format(self._nout)
+            self._nout = 2
+            print '  --> setting nout to {0}'.format(self._nout)
         
         if self.tbw < 0 or self.tbw > 4:
             print 'Total bandwidth of slepian window {0} not allowed.'.format(self.tbw)
@@ -247,9 +238,541 @@ class BIRRP_Parameters(object):
 class BIRRP_Parameter_Error(Exception):
     pass
 
+class Script_File_Error(Exception):
+    pass
+
 #==============================================================================
 # write script file
 #==============================================================================
+class ScriptFile(BIRRP_Parameters):
+    """
+    class to read and write script file
+    """
+
+    def __init__(self, fn_arr=None, rr_fn_arr=None, **kwargs):
+        super(ScriptFile, self).__init__(fn_arr=None, rr_fn_arr=None, **kwargs)
+        
+        self.fn_arr = fn_arr
+        self.rr_fn_arr = rr_fn_arr
+        
+        self._npcs = 0
+        
+        self._fn_dtype = np.dtype([('fn', 'S100'),
+                                   ('nread', np.int),
+                                   ('nskip', np.int),
+                                   ('comp', 'S2'),
+                                   ('calibration_fn', 'S100')])
+                                   
+        if self.fn_arr is not None:
+            self._validate_fn_arr()
+            
+        if self.rr_fn_arr is not None:
+            self._validate_rr_fn_arr()
+        
+    def _validate_fn_arr(self):
+        """
+        make sure fn_arr is an np.array
+        """
+            
+        if type(self.fn_arr[0]) is not np.ndarray:
+            raise Script_File_Error('Input fn_arr elements should be numpy arrays'
+                                    'with dtype {0}'.format(self._fn_dtype))
+                                    
+        if self.fn_arr[0].dtype is not self._fn_dtype:
+            raise Script_File_Error('fn_arr.dtype needs to be {0}'.format(self._fn_dtype))
+            
+    def _validate_rr_fn_arr(self):
+        """
+        make sure fn_arr is an np.array
+        """
+        
+        if type(self.rr_fn_arr) is not np.ndarray:
+            raise Script_File_Error('Input rr_fn_arr as a numpy array'
+                                    'with dtype {0}'.format(self._fn_dtype))
+        
+        if self.rr_fn_arr.dtype is not self._fn_dtype:
+            raise Script_File_Error('rr_fn_arr.dtype needs to be {0}'.format(self._fn_dtype))
+            
+        
+    @property
+    def nout(self):
+        if self.fn_arr is not None:
+            self._nout = len(self.fn_arr[0])-2
+        else:
+            print 'fn_arr is None, set nout to 0'
+            self._nout = 0
+        return self._nout
+     
+    @property
+    def npcs(self):
+        if self.fn_arr is not None:
+            self._npcs = len(self.fn_arr)
+        else:
+            print 'fn_arr is None, set npcs to 0'
+            self.npcs = 0
+        return self._npcs
+        
+        
+        
+    def write_script_file(self, ofil=None):
+        if ofil is not None:
+            self.ofil = ofil
+        
+        s_lines = []
+            
+        if self.ilev == 0: 
+            s_lines.append('{0:d}'.format(self.ilev))
+            s_lines.append('{0:d}'.format(self.nout))
+            s_lines.append('{0:d}'.format(self.ninp))
+            s_lines.append('{0:.3f}'.format(self.tbw))
+            s_lines.append('{0:.3f}'.format(self.deltat))
+            s_lines.append('{0:d},{1:d}'.format(self.nfft, self.nsctmax))
+            s_lines.append('y')
+            s_lines.append('{0:.5f},{1:.5f}'.format(self.uin, self.ainuin))
+            s_lines.append('{0:.3f}'.format(self.c2threshe))
+            #parameters for bz component if ninp=3
+            if self.nout == 3:
+                if self.c2threshe == 0:
+                    s_lines.append('{0:d}'.format(0))
+                    s_lines.append('{0:.3f}'.format(self.c2threshe1))
+                else:
+                    s_lines.append('{0:d}'.format(self.nz))
+                    s_lines.append('{0:.3f}'.format(self.c2threshe1))
+            else:
+                pass
+            s_lines.append(self.ofil)
+            s_lines.append('{0:d}'.format(self.nlev))
+        
+        elif self.ilev == 1:
+            print 'Writing Advanced mode'
+            s_lines.append('{0:d}'.format(self.ilev))
+            s_lines.append('{0:d}'.format(self.nout))
+            s_lines.append('{0:d}'.format(self.ninp))
+            s_lines.append('{0:d}'.format(self.nref))
+            if self.nref > 3:
+                self.nr3 = 0 
+                self.nr2 = len(self.rr_fn_arr[0])
+                s_lines.append('{0:d},{1:d}'.format(self.nr3, self.nr2))
+            s_lines.append('{0:d}'.format(self.nrr))
+            s_lines.append('{0:.3f}'.format(self.tbw))
+            s_lines.append('{0:.3f}'.format(self.deltat))
+            s_lines.append('{0:d},{1:.2g},{2:d}'.format(self.nfft, 
+                                                        self.nsctinc,
+                                                        self.nsctmax))
+            s_lines.append('{0:d},{1:.2g},{2:d}'.format(self.nf1, 
+                                                        self.nfinc,
+                                                        self.nfsect))
+            s_lines.append('y')
+            s_lines.append('{0:.2g}'.format(self.mfft))        
+            s_lines.append('{0:.5g},{1:.5g},{2:.5g}'.format(self.uin,
+                                                            self.ainlin,
+                                                            self.ainuin))
+            #if remote referencing
+            if int(self.nrr) == 0:
+
+                s_lines.append('{0:.3f}'.format(self.c2threshe))
+                #parameters for bz component if ninp=3
+                if self.nout == 3:
+                    if self.c2threshe != 0:
+                        s_lines.append('{0:d}'.format(self.nz))
+                        s_lines.append('{0:.3f}'.format(self.c2threshe1))
+                    else:
+                        s_lines.append('{0:d}'.format(0))
+                        s_lines.append('{0:.3f}'.format(self.c2threshe1))
+                    if self.c2threshe1 != 0.0 or self.c2threshe != 0.0:
+                        s_lines.append('{0:.6g},{1:.6g}'.format(self.perlo,
+                                                                self.perhi))
+                else:
+                    if self.c2threshe != 0.0:
+                        s_lines.append('{0:.6g},{1:.6g}'.format(self.perlo,
+                                                                self.perhi))
+            #if 2 stage processing
+            elif int(self.nrr) == 1:
+                s_lines.append('{0:.3f}'.format(self.c2threshb))        
+                s_lines.append('{0:.3f}'.format(self.c2threshe))
+                if self.nout == 3:
+                    if self.c2threshb != 0 or self.c2threshe != 0:
+                        s_lines.append('{0:d}'.format(self.nz))
+                        s_lines.append('{0:.3f}'.format(self.c2threshe1))
+                    elif self.c2threshb == 0 and self.c2threshe == 0:
+                        s_lines.append('{0:d}'.format(0))
+                        s_lines.append('{0:.3f}'.format(0))
+                if self.c2threshb != 0.0 or self.c2threshe != 0.0:
+                    s_lines.append('{0:.6g},{1:.6g}'.format(self.perlo,
+                                                            self.perhi))
+            s_lines.append(self.ofil)
+            s_lines.append('{0:d}'.format(self.nlev))
+            s_lines.append('{0:d}'.format(self.nprej))
+            if self.nprej != 0:
+                if type(self.prej) is not list:
+                    self.prej = [self.prej]
+                s_lines.appendlines(['{0:.5g}'.format(nn) for nn in self.prej])
+            
+        s_lines.append('{0:d}'.format(self.npcs))    
+        s_lines.append('{0:d}'.format(self.nar))    
+        s_lines.append('{0:d}'.format(self.imode))    
+        s_lines.append('{0:d}'.format(self.jmode)) 
+    
+        #!!!NEED TO SORT FILE NAMES SUCH THAT EX, EY, HZ, HX, HY or EX, EY, HX, HY
+        
+        #write in filenames
+        if self.jmode == 0:
+            
+        if self.npcs != 1:
+            if self.jmode == 0:
+                s_lines.append(str(nread[0]))
+                #--> write filenames to process with other information for first
+                #    time section
+                for tt, tfile in enumerate(pdict['fn_list'][0]):
+                    #write in calibration files if given
+                    if nout == 3 and tt == 2:
+                        if hz_cal is not None:
+                            s_lines.append('-2')
+                            s_lines.append(hz_cal)
+                        else:
+                            s_lines.append(str(nfil))
+                    elif nout == 3 and tt == 3:
+                        if hx_cal is not None:
+                            s_lines.append('-2')
+                            s_lines.append(hx_cal)
+                        else:
+                            s_lines.append(str(nfil))
+                    elif nout == 3 and tt == 4:
+                        if hy_cal is not None:
+                            s_lines.append('-2')
+                            s_lines.append(hy_cal)
+                        else:
+                            s_lines.append(str(nfil))
+                    elif nout == 2 and tt == 2:
+                        if hx_cal is not None:
+                            s_lines.append('-2')
+                            s_lines.append(hx_cal)
+                        else:
+                            s_lines.append(str(nfil))
+                    elif nout == 2 and tt == 3:
+                        if hy_cal is not None:
+                            s_lines.append('-2')
+                            s_lines.append(hy_cal)
+                        else:
+                            s_lines.append(str(nfil))
+                    else:
+                        s_lines.append(str(nfil))
+                    s_lines.append(tfile)
+                    s_lines.append(str(nskip[0]))
+                    
+                #--> write remote reference time series
+                for rr, rfile in enumerate(pdict['rrfn_list'][0]):
+                    if rr == 0:
+                        if rrhx_cal is not None:
+                            s_lines.append('-2')
+                            s_lines.append(rrhx_cal)
+                        else:
+                            s_lines.append(str(nfil))
+                    elif rr == 1:
+                        if rrhy_cal is not None:
+                            s_lines.append('-2')
+                            s_lines.append(rrhy_cal)
+                        else:
+                            s_lines.append(str(nfil))
+                    s_lines.append(rfile)
+                    s_lines.append(str(nskipr[0]))
+                
+                #--> write in other pieces if there are more, note calibrations 
+                #    are only given for the first time block so it is assumed
+                #    that the same remote referenc is used for all time blocks
+                for nn in range(1,npcs):
+                    s_lines.append(str(nread[nn]))            
+                    #write filenames
+                    for tfile in pdict['fn_list'][nn]:
+                        s_lines.append(tfile)
+                        s_lines.append(str(nskip[nn]))
+                    for rfile in pdict['rrfn_list'][nn]:
+                        s_lines.append(rfile)
+                        s_lines.append(str(nskipr[nn]))
+                        
+            #--> if start and end time are give write in those
+            elif jmode == 1:
+                #write filenames
+                for tt, tfile in enumerate(pdict['fn_list'][0]):
+                    #write in calibration files if given
+                    if nout == 3 and tt == 2:
+                        if hz_cal is not None:
+                            s_lines.append('-2')
+                            s_lines.append(hz_cal)
+                        else:
+                            s_lines.append(str(nfil))
+                    elif nout == 3 and tt == 3:
+                        if hx_cal is not None:
+                            s_lines.append('-2')
+                            s_lines.append(hx_cal)
+                        else:
+                            s_lines.append(str(nfil))
+                    elif nout == 3 and tt == 4:
+                        if hy_cal is not None:
+                            s_lines.append('-2')
+                            s_lines.append(hy_cal)
+                        else:
+                            s_lines.append(str(nfil))
+                    elif nout == 2 and tt == 2:
+                        if hx_cal is not None:
+                            s_lines.append('-2')
+                            s_lines.append(hx_cal)
+                        else:
+                            s_lines.append(str(nfil))
+                    elif nout == 2 and tt == 3:
+                        if hy_cal is not None:
+                            s_lines.append('-2')
+                            s_lines.append(hy_cal)
+                        else:
+                            s_lines.append(str(nfil))
+                    else:
+                        s_lines.append(str(nfil))
+                    s_lines.append(tfile)
+                    s_lines.append(dstim)
+                    s_lines.append(wstim)
+                    s_lines.append(wetim)
+                    
+                #--> write remote referenc information
+                for rr, rfile in enumerate(pdict['rrfn_list'][0]):
+                    if rr == 0:
+                        if rrhx_cal is not None:
+                            s_lines.append('-2')
+                            s_lines.append(rrhx_cal)
+                        else:
+                            s_lines.append(str(nfil))
+                    if rr == 1:
+                        if rrhy_cal is not None:
+                            s_lines.append('-2')
+                            s_lines.append(rrhy_cal)
+                        else:
+                            s_lines.append(str(nfil))
+                    s_lines.append(rfile)
+                    s_lines.append(dstim)
+                    s_lines.append(wstim)
+                    s_lines.append(wetim)
+                    
+                #--> write other time blocks
+                for nn in range(1,npcs):
+                    s_lines.append(str(nread[nn]))            
+                    #write filenames
+                    for tfile in pdict['fn_list'][nn]:
+                        s_lines.append(tfile)
+                        s_lines.append(dstim)
+                        s_lines.append(wstim)
+                        s_lines.append(wetim)
+                    for rfile in pdict['rrfn_list'][nn]:
+                        s_lines.append(rfile)
+                        s_lines.append(dstim)
+                        s_lines.append(wstim)
+                        s_lines.append(wetim)
+        else:
+            if jmode == 0:
+                if type(nread) is list:
+                    s_lines.append(str(nread[0]))
+                else:
+                    s_lines.append(str(nread))
+                #--> write filenames for first block
+                if nds==0:
+                    for tt, tfile in enumerate(pdict['fn_list']):
+                        #write in calibration files if given
+                        if nout == 3 and tt == 2:
+                            if hz_cal is not None:
+                                s_lines.append('-2')
+                                s_lines.append(hz_cal)
+                            else:
+                                s_lines.append(str(nfil))
+                        elif nout == 3 and tt == 3:
+                            if hx_cal is not None:
+                                s_lines.append('-2')
+                                s_lines.append(hx_cal)
+                            else:
+                                s_lines.append(str(nfil))
+                        elif nout == 3 and tt == 4:
+                            if hy_cal is not None:
+                                s_lines.append('-2')
+                                s_lines.append(hy_cal)
+                            else:
+                                s_lines.append(str(nfil))
+                        elif nout == 2 and tt == 2:
+                            if hx_cal is not None:
+                                s_lines.append('-2')
+                                s_lines.append(hx_cal)
+                            else:
+                                s_lines.append(str(nfil))
+                        elif nout == 2 and tt == 3:
+                            if hy_cal is not None:
+                                s_lines.append('-2')
+                                s_lines.append(hy_cal)
+                            else:
+                                s_lines.append(str(nfil))
+                        else:
+                            s_lines.append(str(nfil))
+                        s_lines.append(tfile)
+                        if type(nskip) is list:
+                            s_lines.append(str(nskip[0]))
+                        else:
+                            s_lines.append(str(nskip))
+                    for rr, rfile in enumerate(pdict['rrfn_list']):
+                        if rr == 0:
+                            if rrhx_cal is not None:
+                                s_lines.append('-2')
+                                s_lines.append(rrhx_cal)
+                            else:
+                                s_lines.append(str(nfil))
+                        if rr == 1:
+                            if rrhy_cal is not None:
+                                s_lines.append('-2')
+                                s_lines.append(rrhy_cal)
+                            else:
+                                s_lines.append(str(nfil))
+                        s_lines.append(rfile)
+                        if type(nskipr) is list:
+                            s_lines.append(str(nskipr[0]))
+                        else:
+                            s_lines.append(str(nskipr))
+                else:
+                    for tfile in pdict['fn_list'][0]:
+                        s_lines.append(str(nfil))
+                        s_lines.append(tfile)
+                        if type(nskip) is list:
+                            s_lines.append(str(nskip[0]))
+                        else:
+                            s_lines.append(str(nskip))
+                    for rfile in pdict['rrfn_list'][0]:
+                        s_lines.append(str(nfil))
+                        s_lines.append(rfile)
+                        if type(nskipr) is list:
+                            s_lines.append(str(nskipr[0]))
+                        else:
+                            s_lines.append(str(nskipr))
+                            
+            elif jmode == 1:
+                #write filenames
+                if nds==0:
+                    for tt, tfile in enumerate(pdict['fn_list']):
+                        #write in calibration files if given
+                        if nout == 3 and tt == 2:
+                            if hz_cal is not None:
+                                s_lines.append('-2')
+                                s_lines.append(hz_cal)
+                            else:
+                                s_lines.append(str(nfil))
+                        elif nout == 3 and tt == 3:
+                            if hx_cal is not None:
+                                s_lines.append('-2')
+                                s_lines.append(hx_cal)
+                            else:
+                                s_lines.append(str(nfil))
+                        elif nout == 3 and tt == 4:
+                            if hy_cal is not None:
+                                s_lines.append('-2')
+                                s_lines.append(hy_cal)
+                            else:
+                                s_lines.append(str(nfil))
+                        elif nout == 2 and tt == 2:
+                            if hx_cal is not None:
+                                s_lines.append('-2')
+                                s_lines.append(hx_cal)
+                            else:
+                                s_lines.append(str(nfil))
+                        elif nout == 2 and tt == 3:
+                            if hy_cal is not None:
+                                s_lines.append('-2')
+                                s_lines.append(hy_cal)
+                            else:
+                                s_lines.append(str(nfil))
+                        else:
+                            s_lines.append(str(nfil))
+                        s_lines.append(tfile)
+                        s_lines.append(dstim)
+                        s_lines.append(wstim)
+                        s_lines.append(wetim)
+                    for rr, rfile in enumerate(pdict['rrfn_list']):
+                        if rr == 0:
+                            if rrhx_cal is not None:
+                                s_lines.append('-2')
+                                s_lines.append(rrhx_cal)
+                            else:
+                                s_lines.append(str(nfil))
+                        if rr == 1:
+                            if rrhy_cal is not None:
+                                s_lines.append('-2')
+                                s_lines.append(rrhy_cal)
+                            else:
+                                s_lines.append(str(nfil))
+                        s_lines.append(rfile)
+                        s_lines.append(dstim)
+                        s_lines.append(wstim)
+                        s_lines.append(wetim)
+                else:
+                    for tt, tfile in enumerate(pdict['fn_list'][0]):
+                       #write in calibration files if given
+                        if nout == 3 and tt == 2:
+                            if hz_cal is not None:
+                                s_lines.append('-2')
+                                s_lines.append(hz_cal)
+                            else:
+                                s_lines.append(str(nfil))
+                        elif nout == 3 and tt == 3:
+                            if hx_cal is not None:
+                                s_lines.append('-2')
+                                s_lines.append(hx_cal)
+                            else:
+                                s_lines.append(str(nfil))
+                        elif nout == 3 and tt == 4:
+                            if hy_cal is not None:
+                                s_lines.append('-2')
+                                s_lines.append(hy_cal)
+                            else:
+                                s_lines.append(str(nfil))
+                        elif nout == 2 and tt == 2:
+                            if hx_cal is not None:
+                                s_lines.append('-2')
+                                s_lines.append(hx_cal)
+                            else:
+                                s_lines.append(str(nfil))
+                        elif nout == 2 and tt == 3:
+                            if hy_cal is not None:
+                                s_lines.append('-2')
+                                s_lines.append(hy_cal)
+                            else:
+                                s_lines.append(str(nfil))
+                    else:
+                        s_lines.append(str(nfil))
+                        s_lines.append(tfile)
+                        s_lines.append(dstim)
+                        s_lines.append(wstim)
+                        s_lines.append(wetim)
+                    for rr, rfile in enumerate(pdict['rrfn_list'][0]):
+                        if rr == 0:
+                            if rrhx_cal is not None:
+                                s_lines.append('-2')
+                                s_lines.append(rrhx_cal)
+                            else:
+                                s_lines.append(str(nfil))
+                        if rr == 1:
+                            if rrhy_cal is not None:
+                                s_lines.append('-2')
+                                s_lines.append(rrhy_cal)
+                            else:
+                                s_lines.append(str(nfil))
+                        s_lines.append(rfile)
+                        s_lines.append(dstim)
+                        s_lines.append(wstim)
+                        s_lines.append(wetim)
+                        
+        #write rotation angles
+        s_lines.append(' '.join(['{0:.0f}'.format(theta) for theta in thetae]))
+        s_lines.append(' '.join(['{0:.0f}'.format(theta) for theta in thetab]))
+        s_lines.append(' '.join(['{0:.0f}'.format(theta) for theta in thetaf]))    
+        
+        with open(script_fn, 'w') as fid:
+            fid.write('\n'.join(s_lines))
+            
+        
+            
+            
+
 def write_script_file(processing_dict, save_path=None):
     """
     writescript_fn(processingdict will write a script file for BIRRP using 
@@ -423,7 +946,7 @@ def write_script_file(processing_dict, save_path=None):
     ninp = int(pdict.pop('ninp', 2))
         
     #time bandwidth window size            
-    tbw = int(pdict.pop('tbw', 2))
+    tbw = float(pdict.pop('tbw', 2))
         
     #------------Options for Advanced mode-------------------------
     if ilev == 1:
@@ -455,7 +978,7 @@ def write_script_file(processing_dict, save_path=None):
         ainlin = float(pdict.pop('ainlin', .0001))
         
         #Advanced: coherence threshold low period
-        perlo = int(pdict.pop('perlo', 1000))
+        perlo = float(pdict.pop('perlo', 1000))
             
         #Advanced: coherenct threshold high period
         perhi = float(pdict.pop('perhi', .0001))
@@ -485,13 +1008,13 @@ def write_script_file(processing_dict, save_path=None):
     nsctmax = int(pdict.pop('nsctmax', 12))
     
     #quantile factor
-    uin = int(pdict.pop('uin', 0))            
+    uin = float(pdict.pop('uin', 0))            
     
     #upper bound of leverage point rejection
     ainuin = float(pdict.pop('ainuin', .9999))
  
     #electric channel coherence threshold
-    c2threshe = int(pdict.pop('c2threshe', 0))
+    c2threshe = float(pdict.pop('c2threshe', 0))
 
     #Bz coherency threshold mode
     try:
@@ -1167,37 +1690,45 @@ def run(birrp_exe, script_file):
 
     #change directory to directory of the script file
     os.chdir(os.path.dirname(script_file))
+    local_script_fn = os.path.basename(script_file)
+    print os.getcwd()
 
-    # get an input string for communicating with the birrp executable
-    with open(script_file, 'r') as sfid:
-        input_string = ''.join(sfid.readlines())
-
-    #correct inputstring for potential errorneous line endings due to strange
-    #operating systems:
-    temp_string = input_string.split()
-    temp_string = [i.strip() for i in temp_string]
-    input_string = '\n'.join(temp_string)
-    input_string += '\n'
+#    # get an input string for communicating with the birrp executable
+#    with open(script_file, 'r') as sfid:
+#        input_string = ''.join(sfid.readlines())
+#
+#    #correct inputstring for potential errorneous line endings due to strange
+#    #operating systems:
+#    temp_string = input_string.split()
+#    temp_string = [i.strip() for i in temp_string]
+#    input_string = '\n'.join(temp_string)
+#    input_string += '\n'
 
     #open a log file to catch process and errors of BIRRP executable
-    log_file = open('birrp_logfile.log','w')
+    #log_file = open('birrp_logfile.log','w')
 
+    print '*'*10
+    print 'Processing {0} with {1}'.format(script_file, birrp_exe)
     print 'Starting Birrp processing at {0}...'.format(time.ctime())
-
-    birrp_process = subprocess.Popen(birrp_exe, 
-                                     stdin=subprocess.PIPE, 
-                                     stdout=log_file,
-                                     stderr=log_file)
-
-    out, err = birrp_process.communicate(input_string)
+    st = time.ctime()
+     
+    birrp_process = subprocess.Popen(birrp_exe+'< {0}'.format(local_script_fn), 
+                                     stdin=subprocess.PIPE,
+                                     shell=True)
+#                                     stdout=log_file,
+#                                     stderr=log_file)
+                                     
+    birrp_process.wait()
+                                     
     
-    log_file.close()
-
-    print 'Ending Birrp processing at   {0}...'.format(time.ctime())
-    print 'Closed log file: {0}'.format(log_file.name)
- 
-    print 'Outputs: {0}'.format(out)
-    print 'Errors: {0}'.format(err)
+    #log_file.close()
+    print '_'*20
+    print 'Starting Birrp processing at {0}...'.format(st)
+    print 'Endec Birrp processing at   {0}...'.format(time.ctime())
+    #print 'Closed log file: {0}'.format(log_file.name)
+# 
+#    print 'Outputs: {0}'.format(out)
+#    print 'Errors: {0}'.format(err)
     
     #go back to initial directory
     os.chdir(current_dir)

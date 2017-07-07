@@ -1030,6 +1030,7 @@ class Z3D_to_edi(object):
                                                    hy=self.survey_config.hy,
                                                    hz=self.survey_config.hz,
                                                    **kwargs)
+                                                   
             
             #write script file using mtpy.processing.birrp    
             script_fn, birrp_dict = birrp.write_script_file(pro_dict,
