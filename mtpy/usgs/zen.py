@@ -420,6 +420,7 @@ class Z3D_Metadata(object):
         self.rx_xazimuth = None
         self.rx_xyz0 = None
         self.rx_yazimuth = None
+        self.line_name = None
         self.survey_type = None
         self.unit_length = None
         
@@ -461,8 +462,14 @@ class Z3D_Metadata(object):
                 test_str = test_str.strip().split('\n')[1] 
                 if test_str.count('|') > 1:
                     for t_str in test_str.split('|'):
-                        if t_str.find('=') == -1:
+                        if t_str.find('=') == -1 and \
+                           t_str.lower().find('line.name') == -1:
                             pass
+                        elif t_str.lower().find('line.name') >= 0:
+                            t_list = t_str.split(',')
+                            t_key = t_list[0].strip().replace('.', '_')
+                            t_value = t_list[1].strip()
+                            setattr(self, t_key.lower(), t_value)
                         else:
                             t_list = t_str.split('=')
                             t_key = t_list[0].strip().replace('.', '_')
@@ -1286,10 +1293,10 @@ class Zen3D(object):
         if self.metadata.ch_cmp.lower() == 'ex':
 #            time_series = (time_series/(ex/1e3))/#*(np.sqrt(2*np.pi))
             time_series = time_series/((ex/100)*2*np.pi)
-            print 'Using scales EX = {0} m'.format(ey)
+            print 'Using scales EX = {0} m'.format(ex)
         elif self.metadata.ch_cmp.lower() == 'ey':
 #            time_series = (time_series/(ey/1e3))#*(np.sqrt(2*np.pi))
-            time_series = time_series/((ex/100)*2*np.pi)
+            time_series = time_series/((ey/100)*2*np.pi)
             print 'Using scales EY = {0} m'.format(ey)
         
                                                    

@@ -260,10 +260,9 @@ class Data(object):
     def __init__(self, edi_list=None, **kwargs):
         self.edi_list = edi_list
 
-        self.error_type = kwargs.pop('error_type', 'egbert')
+        self.error_type = kwargs.pop('error_type', 'median')
         self.error_floor = kwargs.pop('error_floor', 5.0)
         self.error_value = kwargs.pop('error_value', 5.0)
-        self.error_egbert = kwargs.pop('error_egbert', 3.0)
         self.error_tipper = kwargs.pop('error_tipper', .05)
         
         self.wave_sign_impedance = kwargs.pop('wave_sign_impedance', '+')
@@ -935,28 +934,45 @@ class Data(object):
                                     elif self.error_type == 'value':
                                         abs_err = abs(zz)*self.error_value/100.
                                     
-                                    elif self.error_type == 'egbert':
-                                        d_zxy = self.data_array[ss]['z'][ff, 0, 1]
-                                        d_zyx = self.data_array[ss]['z'][ff, 1, 0]
+                                    elif 'egbert' in self.error_type:
+                                        d_zxy = abs(self.data_array[ss]['z'][ff, 0, 1])
+                                        d_zyx = abs(self.data_array[ss]['z'][ff, 1, 0])
+                                        if d_zxy == 0.0:
+                                            d_zxy = d_zyx
                                             
-                                        abs_err = np.sqrt(abs(d_zxy*d_zyx))*\
-                                                  self.error_egbert/100.
-                                    elif self.error_type == 'floor_egbert':
+                                        if d_zyx == 0.0:
+                                            d_zyx = d_zxy
+                                            
+                                        eg_err = np.sqrt(abs(d_zxy*d_zyx))*\
+                                                  self.error_value/100.
                                         abs_err = self.data_array[ss][c_key+'_err'][ff, z_ii, z_jj]
-                                        d_zxy = self.data_array[ss]['z'][ff, 0, 1]
-                                        d_zyx = self.data_array[ss]['z'][ff, 1, 0]
-                                        
-                                        if abs(d_zxy) == 0.0:
-                                            d_zxy = 1E3
-                                            
-                                        if abs(d_zyx) == 0.0:
-                                            d_zyx = 1e3
-                                        
-                                        eg_err = np.sqrt(abs(d_zxy*d_zyx))*self.error_egbert/100.
-                                        if abs_err < eg_err:
-                                            abs_err = np.sqrt(abs(d_zxy*d_zyx))*self.error_egbert/100.
-                                        else:
-                                            pass
+                                        if 'floor' in self.error_type:
+                                            if abs_err < eg_err:
+                                                abs_err = eg_err
+                                            else:
+                                                    pass
+                                    
+                                    elif 'median' in self.error_type:
+                                        abs_err = self.data_array[ss][c_key+'_err'][ff, z_ii, z_jj]
+                                        d = np.abs(self.data_array[ss]['z'][ff])
+                                        nzd = np.nonzero(d)
+                                        med_err = self.error_value/100.*\
+                                                  np.median(d[nzd])
+                                                  
+                                        if 'floor' in self.error_type:
+                                            if  abs_err < med_err:
+                                                abs_err = med_err
+                                    
+                                    elif 'mean' in self.error_type:
+                                        abs_err = self.data_array[ss][c_key+'_err'][ff, z_ii, z_jj]
+                                        d = np.abs(self.data_array[ss]['z'][ff])
+                                        nzd = np.nonzero(d)
+                                        med_err = self.error_value/100.*\
+                                                  np.mean(d[nzd])
+                                                  
+                                        if 'floor' in self.error_type:
+                                            if  abs_err < med_err:
+                                                abs_err = med_err
 
 
                                 if abs_err == 0.0:
