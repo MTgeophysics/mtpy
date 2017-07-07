@@ -14,7 +14,7 @@ except ImportError:
 import numpy as np
 import os
 import mtpy.core.mt as mt
-import mtpy.modeling.modem_new as modem
+import mtpy.modeling.modem as modem
 import mtpy.analysis.pt as mtpt
 
 ogr.UseExceptions()
