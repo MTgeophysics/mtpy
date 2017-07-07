@@ -630,7 +630,7 @@ class Model(object):
 
         print(" Elevation data over the meshgrid *** ",type(elev_mg), len(yg), len(xg), elev_mg.shape)
 
-        np.savetxt('E:/tmp/elev_mg.txt', elev_mg, fmt='%10.5f')
+        # np.savetxt('E:/tmp/elev_mg.txt', elev_mg, fmt='%10.5f')
 
 
         # get a name for surface
@@ -1336,7 +1336,7 @@ class Model(object):
                                   on the extension .vtr
         """
 
-        if vtk_save_path is not None:
+        if vtk_save_path is None:
             vtk_fn = os.path.join(self.save_path, vtk_fn_basename)
         else:
             vtk_fn = os.path.join(vtk_save_path, vtk_fn_basename)

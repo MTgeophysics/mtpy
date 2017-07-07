@@ -24,7 +24,7 @@ class TestModemModel(TestCase):
         # self.inputdir = 'E:/Data/MT_Datasets/3D_MT_data_edited_fromDuanJM'
         # self.inputdir = '/e/Data/MT_Datasets/GA_UA_edited_10s-10000s'
 
-        self.topofile = 'e:/Data/MT_Datasets/concurry_topo/AussieContinent_etopo1.asc'
+        self.topofile = '/g/data1/ha3/fxz547/Data/MT_Datasets/concurry_topo/AussieContinent_etopo1.asc'
         # self.topofile = '../examples/etopo1.asc'
 
         tempdir = 'temp'  # tempfile.gettempdir()
@@ -112,8 +112,11 @@ class TestModemModel(TestCase):
         # all is good write the mesh file
         my_model.write_model_file(save_path=self.outputdir)
 
+
         # add topography to res model
         my_model.add_topography(self.topofile, interp_method='nearest')
+
+        my_model.write_vtk_file()
 
         # make covariance file
         my_cov = Covariance(mask_arr=my_model.covariance_mask,
