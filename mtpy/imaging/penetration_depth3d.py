@@ -815,7 +815,7 @@ if __name__ == "__main__":
         print("usage example: python mtpy/imaging/penetration_depth3d.py  tests/data/edifiles/ 2.857s")
         sys.exit(1)
     elif len(sys.argv) == 2:
-        # do all periods
+        # do multiple periods
         plot_many_periods(sys.argv[1])
 
     elif len(sys.argv) > 2 and os.path.isdir(sys.argv[1]):

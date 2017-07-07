@@ -3,11 +3,12 @@ disable_existing_loggers: False
 formatters:
     simple:
         format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+        datefmt: "%Y-%m-%dT%H:%M:%S"
 
 handlers:
-    console:
+    console: # screen display print out
         class: logging.StreamHandler
-        level: DEBUG
+        level: DEBUG  #INFO
         formatter: simple
         stream: ext://sys.stdout
 
