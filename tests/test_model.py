@@ -19,12 +19,13 @@ class TestModemModel(TestCase):
 
         self.epsg_code = 3112
 
-        self.inputdir = 'tests/data/edifiles'  # '../examples/data/edi2'
+        #self.inputdir = 'tests/data/edifiles'  # '../examples/data/edi2'
 
         # self.inputdir = 'E:/Data/MT_Datasets/3D_MT_data_edited_fromDuanJM'
-        # self.inputdir = '/e/Data/MT_Datasets/GA_UA_edited_10s-10000s'
+        self.inputdir = '/e/Data/MT_Datasets/GA_UA_edited_10s-10000s'
 
         self.topofile = '/g/data1/ha3/fxz547/Data/MT_Datasets/concurry_topo/AussieContinent_etopo1.asc'
+        self.topofile = '/e/Data/MT_Datasets/concurry_topo/AussieContinent_etopo1.asc'
         # self.topofile = '../examples/etopo1.asc'
 
         tempdir = 'temp'  # tempfile.gettempdir()

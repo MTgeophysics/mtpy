@@ -623,8 +623,8 @@ class Model(object):
         elev_mg = spi.griddata(
             points, values, xi, method=method).reshape(len(yg), len(xg))
 
-        print(" Elevation data over the meshgrid *** ",type(elev_mg), len(yg), len(xg), elev_mg.shape)
-
+        print(" Elevation data type and shape  *** ",type(elev_mg), elev_mg.shape, len(yg), len(xg))
+        # <type 'numpy.ndarray'>  (65, 92), 65 92: it's 2D image with cell index as pixels
         # np.savetxt('E:/tmp/elev_mg.txt', elev_mg, fmt='%10.5f')
 
 
@@ -801,7 +801,7 @@ class Model(object):
         # sin_ang = np.sin(np.deg2rad(self.mesh_rotation_angle))
 
         # turns out ModEM has not accomodated rotation of the grid, so for
-        # now we will not rotate anything.
+        # now we will not rotate anything (angle=0.0)
         cos_ang = 1
         sin_ang = 0
 
@@ -869,7 +869,7 @@ class Model(object):
         ax1.set_xlabel('Easting (m)', fontdict={'size': 9, 'weight': 'bold'})
 
         # ---------------------------------------
-        # plot depth view
+        # plot depth view along the east direction
         ax2 = fig.add_subplot(1, 2, 2, aspect='auto', sharex=ax1)
 
         # plot the grid
@@ -924,9 +924,142 @@ class Model(object):
 
         return
 
+    def plot_mesh_xy(self):
+        """
+        # add mesh grid lines in xy plan north-east map
+        :return:
+        """
+        plt.figure(dpi=200)
+
+        cos_ang = 1
+        sin_ang = 0
+
+        line_color ='r'  # 'k'
+        line_width = 0.5
+
+        east_line_xlist = []
+        east_line_ylist = []
+        north_min = self.grid_north.min()
+        north_max = self.grid_north.max()
+        for xx in self.grid_east:
+            east_line_xlist.extend([xx * cos_ang + north_min * sin_ang,
+                                    xx * cos_ang + north_max * sin_ang])
+            east_line_xlist.append(None)
+            east_line_ylist.extend([-xx * sin_ang + north_min * cos_ang,
+                                    -xx * sin_ang + north_max * cos_ang])
+            east_line_ylist.append(None)
+
+        plt.plot(east_line_xlist,  east_line_ylist, lw=line_width, color=line_color)
+
+
+        north_line_xlist = []
+        north_line_ylist = []
+        east_max = self.grid_east.max()
+        east_min = self.grid_east.min()
+        for yy in self.grid_north:
+            north_line_xlist.extend([east_min * cos_ang + yy * sin_ang,
+                                     east_max * cos_ang + yy * sin_ang])
+            north_line_xlist.append(None)
+            north_line_ylist.extend([-east_min * sin_ang + yy * cos_ang,
+                                     -east_max * sin_ang + yy * cos_ang])
+            north_line_ylist.append(None)
+
+
+        plt.plot(north_line_xlist,north_line_ylist, lw=line_width,  color=line_color)
+
+        # if east_limits == None:
+        #     ax1.set_xlim(plot_east.min() - 50 * self.cell_size_east,
+        #                  plot_east.max() + 50 * self.cell_size_east)
+        # else:
+        #     ax1.set_xlim(east_limits)
+        #
+        # if north_limits == None:
+        #     ax1.set_ylim(plot_north.min() - 50 * self.cell_size_north,
+        #                  plot_north.max() + 50 * self.cell_size_north)
+        # else:
+        #     ax1.set_ylim(north_limits)
+
+        plt.xlim(east_min, east_max)
+        plt.ylim(north_min, north_max)
+
+        plt.ylabel('Northing (m)', fontdict={'size': 9, 'weight': 'bold'})
+        plt.xlabel('Easting (m)', fontdict={'size': 9, 'weight': 'bold'})
+        plt.title("Mesh grid in north-east dimension")
+
+
+        plt.show()
+
+        return
+
+    def plot_mesh_xz(self):
+        """
+        display the mesh in North-Depth aspect
+        :return:
+        """
+        station_marker = 'v'
+        marker_color = 'b'
+        marker_size = 2
+
+        line_color = 'r'
+        line_width = 0.5
+
+        fig = plt.figure(2, dpi=200)
+        plt.clf()
+        ax2 = plt.gca()
+        # ---------------------------------------
+        # plot depth view along the north direction
+        # ax2 = fig.add_subplot(1, 2, 2, aspect='auto', sharex=ax1)
+
+        # plot the grid
+        east_line_xlist = []
+        east_line_ylist = []
+        for xx in self.grid_east:
+            east_line_xlist.extend([xx, xx])
+            east_line_xlist.append(None)
+            east_line_ylist.extend([0,
+                                    self.grid_z.max()])
+            east_line_ylist.append(None)
+        ax2.plot(east_line_xlist,
+                 east_line_ylist,
+                 lw=line_width,
+                 color=line_color)
+
+        z_line_xlist = []
+        z_line_ylist = []
+        for zz in self.grid_z:
+            z_line_xlist.extend([self.grid_east.min(),
+                                 self.grid_east.max()])
+            z_line_xlist.append(None)
+            z_line_ylist.extend([zz, zz])
+            z_line_ylist.append(None)
+        ax2.plot(z_line_xlist,
+                 z_line_ylist,
+                 lw=line_width,
+                 color=line_color)
+
+        # --> plot stations
+        # ax2.scatter(plot_east, [0] * self.station_locations.shape[0],
+        #            marker=station_marker, c=marker_color,s=marker_size)
+
+
+        ax2.set_ylim(self.z_target_depth, -2000)
+
+        #
+        # if east_limits == None:
+        #     ax2.set_xlim(plot_east.min() - 50 * self.cell_size_east,
+        #                  plot_east.max() + 50 * self.cell_size_east)
+        # else:
+        #     ax2.set_xlim(east_limits)
+
+        ax2.set_ylabel('Depth (m)', fontdict={'size': 9, 'weight': 'bold'})
+        ax2.set_xlabel('Northing (m)', fontdict={'size': 9, 'weight': 'bold'})
+
+        plt.show()
+
+
     def plot_topograph(self):
         """
-        display topography elevation data together with station locations.
+        display topography elevation data together with station locations on a cell-index N-E map
         :return:
         """
         # fig_size = kwargs.pop('fig_size', [6, 6])
@@ -981,9 +1114,12 @@ class Model(object):
 
         ax.scatter(sgindex_x,sgindex_y, marker='v',  c='b', s=2)
 
-        plt.show()
 
-        return
+        ax.set_xlabel('Easting Cell Index', fontdict={'size': 9, 'weight': 'bold'})
+        ax.set_ylabel('Northing Cell Index', fontdict={'size': 9, 'weight': 'bold'})
+        ax.set_title("Elevation and Stations in N-E Map (Cells)")
+
+        plt.show()
 
 
     def write_model_file(self, **kwargs):
@@ -1090,8 +1226,8 @@ class Model(object):
             self.covariance_mask = np.ones_like(self.res_model)
 
         # --> write file
-        new_model_fn = MTfh.make_unique_filename(self.model_fn)
-        ifid = file(new_model_fn, 'w')
+        self.model_fn = MTfh.make_unique_filename(self.model_fn)
+        ifid = file(self.model_fn, 'w')
         ifid.write('# {0}\n'.format(self.title.upper()))
         ifid.write('{0:>5}{1:>5}{2:>5}{3:>5} {4}\n'.format(self.nodes_north.shape[0],
                                                            self.nodes_east.shape[0],
@@ -1150,9 +1286,9 @@ class Model(object):
             ifid.write('{0:>9.3f}\n'.format(self.mesh_rotation_angle))
         ifid.close()
 
-        logger.info('Wrote file to: {0}'.format(new_model_fn))
+        logger.info('Wrote file to: {0}'.format(self.model_fn))
 
-        return new_model_fn
+        return self.model_fn
 
     def read_model_file(self, model_fn=None):
         """
@@ -1581,7 +1717,7 @@ class Model(object):
 
         Returns:
         ---------------
-            *new_model_fn* : string
+            *self.model_fn* : string
                              full path to model file that contains topography
 
         """
