@@ -381,10 +381,10 @@ class Model(object):
             pad_d = np.round(z_0 * self.pad_stretch_v ** ii, 2)
             z_nodes = np.append(z_nodes, pad_d)
 
-        # JM said there should be no air layer in the mesh model ???
+        # JM said there should be no air layer in this mesh building stage ???
         # add air layers and define ground surface level.
         # initial layer thickness is same as z1_layer
-        # add_air = self.n_airlayers
+        # wrong: add_air = self.n_airlayers
         add_air = 0  # set this =0 will not add any air layers below.
         z_nodes = np.hstack([[self.z1_layer] * add_air, z_nodes])
 
@@ -438,7 +438,7 @@ class Model(object):
         print ('   Dimensions: ')
         print ('      e-w = {0}'.format(east_gridr.shape[0]))
         print ('      n-s = {0}'.format(north_gridr.shape[0]))
-        print ('       z  = {0} (including air layers: {1})'.format(z_grid.shape[0], self.n_airlayers))
+        print ('       z  = {0} (including/excluding air layers: {1})'.format(z_grid.shape[0], self.n_airlayers))
         print ('   Extensions: ')
         print ('      e-w = {0:.1f} (m)'.format(east_nodes.__abs__().sum()))
         print ('      n-s = {0:.1f} (m)'.format(north_nodes.__abs__().sum()))
@@ -473,7 +473,7 @@ class Model(object):
         if air_layers is non-zero, will add topo: read in topograph file, make a surface model.
         Call project_stations_on_topography in the end, which will re-write the .dat file.
 
-        If n_airlayers is zero, then canot add topo data, only bathymetry is needed.
+        If n_airlayers is zero, then cannot add topo data, only bathymetry is needed.
         """
         # first, get surface data
         if topographyfile is not None:
@@ -483,7 +483,41 @@ class Model(object):
         if topographyarray is not None:
             self.surface_dict['topography'] = topographyarray
 
-        if self.n_airlayers > 0:
+        if self.n_airlayers is None or self.n_airlayers == 0:
+            print ("No air layers specified, so cannot add topography !!!")
+            print ("Only bathymetry shall be added below !!!")
+
+        elif self.n_airlayers <0:  # FZ: new logic, add equal blocksize air layers on top of the simple flat-earth grid
+            # compute the air cell size to be added = topomax/n_airlayers, rounded to nearest 1 s.f.
+            cs = np.amax(self.surface_dict['topography']) / float(self.n_airlayers)
+            #  cs = np.ceil(0.1*cs/10.**int(np.log10(cs)))*10.**(int(np.log10(cs))+1)
+            cs = np.ceil(cs)
+
+            # add air layers
+            new_airlayers = np.linspace(-self.n_airlayers, -1, self.n_airlayers) * cs
+
+            print ("new_airlayers", new_airlayers)
+
+            print("self.grid_z[0:2]", self.grid_z[0:2])
+
+            self.grid_z = np.concatenate([new_airlayers, self.grid_z],axis=0)
+            print(" NEW self.grid_z = ", self.grid_z)
+
+
+            # adjust the nodes, which is simply the diff of adjacent grid lines
+            self.nodes_z = self.grid_z[1:] - self.grid_z[:-1]
+
+            # adjust sea level
+            # wrong? self.sea_level = self.grid_z[self.n_airlayers]
+            self.sea_level = self.grid_z[self.n_airlayers]
+            logger.debug("FZ:***2 sea_level = %s", self.sea_level)
+
+            # print (stop_here_for_debug)
+
+            # assign topography
+            self.assign_resistivity_from_surfacedata('topography', air_resistivity, where='above')
+
+        elif self.n_airlayers > 0:  # keep the old logic of re-define the first few layers! wrong
             # cell size is topomax/n_airlayers, rounded to nearest 1 s.f.
             cs = np.amax(self.surface_dict['topography'])/float(self.n_airlayers)
             #  cs = np.ceil(0.1*cs/10.**int(np.log10(cs)))*10.**(int(np.log10(cs))+1)
@@ -496,7 +530,7 @@ class Model(object):
             self.grid_z[self.n_airlayers + 1:] += add_z
             self.grid_z[:self.n_airlayers + 1] = new_airlayers
 
-            # adjust the nodes
+            # adjust the nodes, which is simply the diff of adjacent grid lines
             self.nodes_z = self.grid_z[1:] - self.grid_z[:-1]
 
             # adjust sea level
@@ -508,8 +542,7 @@ class Model(object):
             self.assign_resistivity_from_surfacedata(
                 'topography', air_resistivity, where='above')
         else:
-            print ("No air layers specified, so cannot add topography !!!")
-            print ("Only bathymetry shall be added below !!!")
+            pass
 
         # assign sea water
         # first make a mask for all-land =1, which will be modified later according to air, water
@@ -538,6 +571,8 @@ class Model(object):
         self.covariance_mask = self.covariance_mask[::-1]
 
         self.station_grid_index=self.project_stations_on_topography()
+
+        logger.debug("NEW res_model and cov_mask shapes: %s, %s", self.res_model.shape, self.covariance_mask.shape)
 
         return
 
@@ -657,6 +692,9 @@ class Model(object):
         where = 'above' or 'below' - assign resistivity above or below the 
                 surface
         """
+
+        #FZ: should ref-define the sel.res_model after topo air layer are added.
+        # the shape has chnaged.
 
         gcz = np.mean([self.grid_z[:-1], self.grid_z[1:]], axis=0)
 
@@ -1085,7 +1123,7 @@ class Model(object):
         # topography data image
         # plt.imshow(elev_mg) # this upside down
         # plt.imshow(elev_mg[::-1])  # this will be correct - water shadow flip of the image
-        imgplot=plt.imshow(self.surface_dict['topography'], origin='lower') # the orgin is in the lower left corner.
+        imgplot=plt.imshow(self.surface_dict['topography'], origin='lower') # the orgin is in the lower left corner SW.
         divider = make_axes_locatable(ax)
         # pad = separation from figure to colorbar
         cax = divider.append_axes("right", size="3%", pad=0.2)
@@ -1124,7 +1162,7 @@ class Model(object):
 
     def write_model_file(self, **kwargs):
         """
-        will write an initial file for ModEM.  
+        write a mesh model file for ModEM inversion code input
 
         Note that x is assumed to be S --> N, y is assumed to be W --> E and
         z is positive downwards.  This means that index [0, 0, 0] is the 
@@ -1153,16 +1191,16 @@ class Model(object):
 
             **nodes_z** : np.array(nz)
                         block dimensions (m) in the vertical direction.  
-                        This is positive downwards.
+                        This is positive downwards (from sea level=0)
 
             **save_path** : string
                           Path to where the initial file will be saved
-                          to savepath/model_fn_basename
+                          to save_path/model_fn_basename
 
             **model_fn_basename** : string
                                     basename to save file to
                                     *default* is ModEM_Model.ws
-                                    file is saved at savepath/model_fn_basename
+                                    file is saved at save_path/model_fn_basename
 
             **title** : string
                         Title that goes into the first line 
@@ -1195,19 +1233,11 @@ class Model(object):
                     pass
 
         if self.save_path is not None:
-            self.model_fn = os.path.join(self.save_path,
-                                         self.model_fn_basename)
-        if self.model_fn is None:
-            if self.save_path is None:
-                self.save_path = os.getcwd()
-                self.model_fn = os.path.join(self.save_path,
-                                             self.model_fn_basename)
-            elif os.path.isdir(self.save_path) == True:
-                self.model_fn = os.path.join(self.save_path,
-                                             self.model_fn_basename)
-            else:
-                self.save_path = os.path.dirname(self.save_path)
-                self.model_fn = self.save_path
+            self.model_fn = os.path.join(self.save_path, self.model_fn_basename)
+        else:
+            print("Error: Must provide a model save_path !!!")
+
+
 
         if self.res_model is None or type(self.res_model) is float or \
                         type(self.res_model) is int:
@@ -1223,10 +1253,11 @@ class Model(object):
             self.res_model = res_model  # initial resistivity values
 
         if not hasattr(self, 'covariance_mask'):
+            # cov mask has the same shape as the res_model: [nx,ny,nz]
             self.covariance_mask = np.ones_like(self.res_model)
 
         # --> write file
-        self.model_fn = MTfh.make_unique_filename(self.model_fn)
+        self.model_fn = MTfh.make_unique_filename(self.model_fn)  # keep the existing file, increment file_1, file_2...
         ifid = file(self.model_fn, 'w')
         ifid.write('# {0}\n'.format(self.title.upper()))
         ifid.write('{0:>5}{1:>5}{2:>5}{3:>5} {4}\n'.format(self.nodes_north.shape[0],
@@ -1235,18 +1266,18 @@ class Model(object):
                                                            0,
                                                            self.res_scale.upper()))
 
-        # write S --> N node block
+        # write S --> N node block (size)
         for ii, nnode in enumerate(self.nodes_north):
             ifid.write('{0:>12.3f}'.format(abs(nnode)))
 
         ifid.write('\n')
 
-        # write W --> E node block
+        # write W --> E node block (size)
         for jj, enode in enumerate(self.nodes_east):
             ifid.write('{0:>12.3f}'.format(abs(enode)))
         ifid.write('\n')
 
-        # write top --> bottom node block
+        # write top --> bottom node block (size)
         for kk, zz in enumerate(self.nodes_z):
             ifid.write('{0:>12.3f}'.format(abs(zz)))
         ifid.write('\n')
@@ -1260,7 +1291,8 @@ class Model(object):
         elif self.res_scale.lower() == 'linear':
             write_res_model = self.res_model[::-1, :, :]
 
-        # write out the layers from resmodel
+        # write out the layers from res_model
+        #FZ: this triple loop could be very slow. try to opitmize !!!
         for zz in range(self.nodes_z.shape[0]):
             ifid.write('\n')
             for ee in range(self.nodes_east.shape[0]):

@@ -145,10 +145,9 @@ if __name__ == '__main__':
 
     model.plot_topograph()  # plot the MT stations on topography elevation data
 
-    print("***** Re-writing model file after topo data and air layers added - will include air sea-water resistivity")
+    print("*** Re-writing model file after topo data and air layers are added - will include air sea-water resistivity")
     model.write_model_file(save_path=model.save_path)
     # model.write_model_file(save_path='temp/')
-
 
 
     # make covariance (mask) file
