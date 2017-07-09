@@ -31,10 +31,12 @@ def read_surface_ascii(ascii_fn):
     yllcorner    -45.341666666667 (lat of lower left)
     cellsize     0.016666666667
     NODATA_value  -9999
-    elevation data W --> E
-    N
+    elevation data origin (0,0) is NW upper left.
+    NW --------------> E
     |
-    V
+    |
+    |
+    |
     S
     """
     dfid = file(ascii_fn, 'r')
@@ -59,16 +61,19 @@ def read_surface_ascii(ascii_fn):
     ny = int(d_dict['nrows'])
     cs = d_dict['cellsize']
 
-    elevation = np.loadtxt(ascii_fn, skiprows=skiprows)[::-1]
+    elevation = np.loadtxt(ascii_fn, skiprows=skiprows)[::-1]  # ::-1 reverse an axis to put the southern line first
 
-    # create lat and lon arrays from the dem fle
+    # create lat and lon arrays from the dem file
     lon = np.arange(x0, x0 + cs * (nx), cs)
     lat = np.arange(y0, y0 + cs * (ny), cs)
     lon = np.linspace(x0, x0 + cs * (nx - 1), nx)
     lat = np.linspace(y0, y0 + cs * (ny - 1), ny)
 
-    return lon, lat, elevation
-    # return lat, lon, elevation # FZ: switch lat-lon to match with MT's coordinate definition
+
+    return lon, lat, elevation   # this appears correct
+
+    # return lat, lon, elevation  # FZ: switch lat-lon??
+    # to match with MT's coordinate definition
 
 
 # --> read in ascii dem file

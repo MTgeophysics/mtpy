@@ -471,7 +471,7 @@ class Data(object):
             self.epsg = None
 
         if self.epsg is None:
-            print "can't project, invalid (or no) epsg provided"
+            logger.debug("can't project, invalid (or no) epsg provided")
             return
 
         for c_arr in self.data_array:
@@ -731,7 +731,7 @@ class Data(object):
 
         rel_distance = True
         for ii, s_key in enumerate(sorted(self.mt_dict.keys())):
-            print("mt_dict key:", s_key)
+            logger.debug("mt_dict key: %s and ii= %s", s_key, ii)  # s_key is station name
 
             mt_obj = self.mt_dict[s_key]
 
@@ -749,19 +749,19 @@ class Data(object):
                 except IndexError:
                     print 'Could not find {0} in data_array'.format(s_key)
             else:
-                print("d_array is False code block!!!!!!!!!!", s_key)
+                logger.debug("populate d_array from edi file mt_obj of station %s !!!", s_key)
                 self.data_array[ii]['station'] = mt_obj.station
                 self.data_array[ii]['lat'] = mt_obj.lat
                 self.data_array[ii]['lon'] = mt_obj.lon
                 self.data_array[ii]['east'] = mt_obj.east
                 self.data_array[ii]['north'] = mt_obj.north
                 self.data_array[ii]['elev'] = mt_obj.elev
-                try:  # this block not used! see get_relative_station_locations()
-                    self.data_array[ii]['rel_east'] = mt_obj.grid_east
+                try:  # this block will raise exception. see get_relative_station_locations()
+                    self.data_array[ii]['rel_east'] = mt_obj.grid_east  # does not exist attribute grid.east
                     self.data_array[ii]['rel_north'] = mt_obj.grid_north
                     rel_distance = False
                 except AttributeError:
-                    print("AttributeError!!!!")
+                    logger.debug("skipping - self.data_array[ii]['rel_east'] was not assigned here !!!")
                     pass
 
             # interpolate each station onto the period list
@@ -779,23 +779,23 @@ class Data(object):
                 for iperiod in interp_periods:
                     # find nearest data period
                     difference = np.abs(iperiod - dperiods)
-                    nearestdperiod = dperiods[difference == np.amin(difference)][
-                        0]
+                    nearestdperiod = dperiods[difference == np.amin(difference)][0]
                     if max(nearestdperiod / iperiod, iperiod / nearestdperiod) < self.period_buffer:
                         interp_periods_new.append(iperiod)
+
                 interp_periods = np.array(interp_periods_new)
 
             # FZ: sort in order
             interp_periods = np.sort(interp_periods)
-            print("station_name and its period", mt_obj.station, len(mt_obj.Z.freq), 1.0 / mt_obj.Z.freq)
-            print("station_name and interpolation period", mt_obj.station, len(interp_periods), interp_periods)
+            logger.debug("station_name and its original period: %s %s %s", mt_obj.station, len(mt_obj.Z.freq), 1.0/mt_obj.Z.freq)
+            logger.debug("station_name and interpolation period: %s %s %s", mt_obj.station, len(interp_periods), interp_periods)
 
             # default: use_original_freq = True, each MT station edi file will use it's own frequency-filtered.
-            # no new freq in the output .dat file. select those freq of mt_obj according to interp_periods
+            # no new freq in the output modem.dat file. select those freq of mt_obj according to interp_periods
             if use_original_freq:
                 interp_periods = self.filter_periods(mt_obj, interp_periods)
-                print("station_name and selected/filtered periods", mt_obj.station, len(interp_periods), interp_periods)
-                # in this case the interpolate_impedance_tensor will be dummy, degenerate into a same-freq set.
+                logger.debug ("station_name and selected/filtered periods: %s, %s, %s", mt_obj.station, len(interp_periods), interp_periods)
+                # in this case the below interpolate_impedance_tensor function will degenerate into a same-freq set.
 
             if len(interp_periods) > 0:  # not empty
                 interp_z, interp_t = mt_obj.interpolate_impedance_tensor(1. / interp_periods)  # ,bounds_error=False)
@@ -809,7 +809,7 @@ class Data(object):
                         self.data_array[ii]['tip_err'][jj] = \
                             interp_t.tipper_err[kk, :, :]
 
-                # FZ: try to output a new edi files. have to compare with original Same?
+                # FZ: try to output a new edi files. Compare with original edi?
                 if new_edi_dir is not None:
                     new_edifile = os.path.join(new_edi_dir, mt_obj.station + '.edi')
                     mt_obj.write_edi_file(new_fn=new_edifile, new_Z=interp_z, new_Tipper=interp_t)
@@ -855,7 +855,7 @@ class Data(object):
                 d_index = np.where(self.data_array['station'] ==
                                    s_arr['station'])[0][0]
             except IndexError:
-                print 'Could not find {0} in data_array'.format(s_arr['station'])
+                logger.debug('Could not find {0} in data_array'.format(s_arr['station']))
                 d_index = None
 
             if d_index is not None:
@@ -1091,7 +1091,7 @@ class Data(object):
         np.savetxt(op.join(self.save_path, 'epsg.txt'),
                    np.array([self.epsg]), fmt='%1i')
 
-        print 'Wrote ModEM data file to {0}'.format(new_data_fn)
+        logger.debug('Wrote ModEM data file to %s', new_data_fn)
 
         return new_data_fn
 
@@ -1422,7 +1422,7 @@ class Data(object):
                     -self.station_locations['elev'],
                     pointData={'elevation': self.station_locations['elev']})
 
-        print 'Wrote file to {0}'.format(vtk_fn)
+        logger.debug('Wrote file to %s', vtk_fn)
 
 
 #====================================================================
@@ -1438,7 +1438,7 @@ def select_periods(edifiles_list, percent=10.0):
     edis_obj = EdiCollection(edifiles_list)
 
     uniq_period_list = edis_obj.all_unique_periods  # filtered list of periods ?
-    print("Unique periods", len(uniq_period_list))
+    logger.info("Number of Unique Periods= %s", len(uniq_period_list))
 
     plt.hist(edis_obj.mt_periods, bins=uniq_period_list)
     # plt.hist(edis_obj.mt_periods, bins=1000)
@@ -1453,16 +1453,16 @@ def select_periods(edifiles_list, percent=10.0):
     # select commonly occured frequencies from all stations.
     # This could miss some slightly varied frquencies in the middle range.
     select_period_list = np.array(edis_obj.get_periods_by_stats(percentage=percent))
-    print("Selected periods ", len(select_period_list))
+    logger.info("Number of Selected Periods= %s", len(select_period_list))
 
     return select_period_list
 
 
 
 ####################################################################################
-
 if __name__ == '__main__':
-    """
+    """ Quick test of this script for selection of inversion periods, writing a data file,
+    and output new effective edi files in the output directory. No topo file is used.
     USAGE examples:
     python mtpy/modeling/modem_data.py tests/data/edifiles/  /e/tmp/modem_data_test
     python mtpy/modeling/modem_data.py /e/Data/MT_Datasets/WenPingJiang_EDI /e/tmp/WenPingTest

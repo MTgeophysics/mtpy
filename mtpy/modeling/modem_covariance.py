@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 """
 Description:
+   Define the Covariance class.
    This module is refactored from modem.py which is too big to manage and edit
-    Define the Covariance class
 
 Author: fei.zhang@ga.gov.au
 
@@ -42,9 +42,7 @@ class MTException(Exception):
 # covariance
 # ==============================================================================
 class Covariance(object):
-    """
-    read and write covariance files
-
+    """ Read and write covariance files
     """
 
     def __init__(self, grid_dimensions=None, **kwargs):
@@ -91,7 +89,8 @@ class Covariance(object):
         if model_fn is not None:
             mod_obj = Model()
             mod_obj.read_model_file(model_fn)
-            print 'Reading {0}'.format(model_fn)
+            print 'Done Reading {0}'.format(model_fn)
+
             self.grid_dimensions = mod_obj.res_model.shape
             if self.mask_arr is None:
                 self.mask_arr = np.ones_like(mod_obj.res_model)
@@ -157,6 +156,8 @@ class Covariance(object):
         clines.append('\n')
         clines.append('\n')
         # --> mask array
+        # self.mask_arr was constructed in the Model.add_topography()
+        # and passed to there through constructor param mask_arr=model.covariance_mask
         for zz in range(self.mask_arr.shape[2]):
             clines.append(' {0:<8.0f}{0:<8.0f}\n'.format(zz + 1))
 
@@ -171,3 +172,22 @@ class Covariance(object):
         cfid.close()
 
         print 'Wrote covariance file to {0}'.format(self.cov_fn)
+
+        return self.cov_fn
+
+# ======================================
+# example usage
+# ======================================
+if __name__ == "__name__":
+
+    # make covariance file
+
+    model=None  # define modem_model
+
+    cov = Covariance(mask_arr=model.covariance_mask,
+                     save_path="/outputdir",
+                     smoothing_east=0.3,
+                     smoothing_north=0.4,
+                     smoothing_z=0.5)
+
+    cov.write_covariance_file(model_fn=model.model_fn)

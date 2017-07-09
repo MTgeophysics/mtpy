@@ -380,13 +380,13 @@ def create_shapefile(edi_dir, outputfile=None, zcomponent='det'):
     return outputfile
 
 
-def plot4all_periods(edidir):
+def plot_many_periods(edidir, n_periods=5):
     from mtpy.core.edi_collection import EdiCollection
 
     edilist = glob.glob(os.path.join(edidir, '*.edi'))
 
     ediset = EdiCollection(edilist)
-    for period_sec in ediset.all_unique_periods:
+    for period_sec in ediset.all_unique_periods[:n_periods]:
         try:
             # This will enable the loop continue even though for some freq,
             #  cannot interpolate due to not enough data points
@@ -414,8 +414,8 @@ if __name__ == "__main__":
         print("usage example: python mtpy/imaging/penetration_depth3d.py  tests/data/edifiles/ 2.857s")
         sys.exit(1)
     elif len(sys.argv) == 2:
-        # do all periods
-        plot4all_periods(sys.argv[1])
+        # do multiple periods
+        plot_many_periods(sys.argv[1])
 
     elif len(sys.argv) > 2 and os.path.isdir(sys.argv[1]):
         edi_dir = sys.argv[1]
