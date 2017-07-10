@@ -41,12 +41,6 @@ class Ui_PlotOption(object):
         self.textEditPlot_Description.setObjectName(_fromUtf8("textEditPlot_Description"))
         self.verticalLayout_2.addWidget(self.textEditPlot_Description)
         self.verticalLayout.addWidget(self.groupBoxPlot_Type)
-        self.groupBoxParameters = QtGui.QGroupBox(PlotOption)
-        self.groupBoxParameters.setEnabled(False)
-        self.groupBoxParameters.setObjectName(_fromUtf8("groupBoxParameters"))
-        self.formLayout = QtGui.QFormLayout(self.groupBoxParameters)
-        self.formLayout.setObjectName(_fromUtf8("formLayout"))
-        self.verticalLayout.addWidget(self.groupBoxParameters)
 
         self.retranslateUi(PlotOption)
         QtCore.QMetaObject.connectSlotsByName(PlotOption)
@@ -54,5 +48,4 @@ class Ui_PlotOption(object):
     def retranslateUi(self, PlotOption):
         PlotOption.setWindowTitle(_translate("PlotOption", "Plot Option", None))
         self.groupBoxPlot_Type.setTitle(_translate("PlotOption", "Plot Type", None))
-        self.groupBoxParameters.setTitle(_translate("PlotOption", "Parameters", None))
 

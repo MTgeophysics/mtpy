@@ -17,18 +17,29 @@ from PyQt4 import QtGui, QtCore
 class VisualizationBase(object):
     __metaclass__ = abc.ABCMeta
 
-    def __init__(self):
-        self._groupBoxParameters = None
+    @abc.abstractmethod
+    def __init__(self, parent):
+        self._parent = parent
+        self._mt_objs = None
 
-    def get_QGroupBox_parameters(self):
-        return self._groupBoxParameters
+    def set_data(self, mt_objs):
+        self._mt_objs = mt_objs
+        self.update_ui()
+
+    @abc.abstractmethod
+    def update_ui(self):
+        pass
+
+    @abc.abstractproperty
+    def parameter_ui(self):
+        return "should not see this"
 
     @staticmethod
     @abc.abstractmethod
-    def get_plot_name():
+    def plot_name():
         return VisualizationBase.__name__
 
     @staticmethod
     @abc.abstractmethod
-    def get_plot_description():
+    def plot_description():
         return VisualizationBase.__name__

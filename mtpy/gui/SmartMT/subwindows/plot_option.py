@@ -36,6 +36,7 @@ class PlotOption(QtGui.QWidget):
         self._logger = MtPyLog().get_mtpy_logger(__name__)
         self.file_handler = file_handler
         self.selected_stations = selected_files
+        self._current_plot = None
         self.ui = Ui_PlotOption()
         self.ui.setupUi(self)
         # populate dropdown menu
@@ -65,8 +66,26 @@ class PlotOption(QtGui.QWidget):
     def _selection_changed(self, *args, **kwargs):
         # print "selection changed"
         index = self.ui.comboBoxSelect_Plot.currentIndex()
-        description = self.plotOptions[index].plot_description()
+        plot_option = self.plotOptions[index]
+        if self._current_plot is not None:
+            self.ui.verticalLayout.removeWidget(self._current_plot.parameter_ui)
+        self._current_plot = plot_option(self)
+        description = plot_option.plot_description()
         # print description
         self.ui.textEditPlot_Description.setText(description)
         # set parameter ui
+        self.ui.verticalLayout.addWidget(self._current_plot.parameter_ui)
+        self.update_ui()
+
+    def update_ui(self):
+        if self._current_plot is not None:
+            self._current_plot.set_data(self.get_mt_objs())
+
+    def get_mt_objs(self):
+        mt_objs = []
+        for selected_station in self.selected_stations:
+            ref = self.file_handler.station2ref(selected_station)
+            mt_obj = self.file_handler.get_MT_obj(ref)
+            mt_objs.append(mt_obj)
+        return mt_objs
 
