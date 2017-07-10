@@ -6,11 +6,6 @@
     Author: YingzhiGou
     Date: 20/06/2017
 """
-import importlib
-import os
-import pkgutil
-
-import imp
 from PyQt4 import QtGui, QtCore
 
 from mtpy.gui.SmartMT.ui_asset.plot_options import Ui_PlotOption
