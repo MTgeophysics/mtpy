@@ -18,12 +18,17 @@ class VisualizationBase(object):
     __metaclass__ = abc.ABCMeta
 
     def __init__(self):
-        self._groupBox_parameters = None
+        self._groupBoxParameters = None
 
     def get_QGroupBox_parameters(self):
-        return self._groupBox_parameters
+        return self._groupBoxParameters
 
     @staticmethod
     @abc.abstractmethod
     def get_plot_name():
+        return VisualizationBase.__name__
+
+    @staticmethod
+    @abc.abstractmethod
+    def get_plot_description():
         return VisualizationBase.__name__

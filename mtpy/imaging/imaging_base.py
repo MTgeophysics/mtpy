@@ -34,7 +34,7 @@ class ImagingBase:
         display the image
         :return:
         """
-        if self._fig == None:
+        if self._fig is None:
             self.plot()
         if block:
             import matplotlib.pyplot as plt

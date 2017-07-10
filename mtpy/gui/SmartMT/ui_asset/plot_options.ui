@@ -18,7 +18,7 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
-    <widget class="QGroupBox" name="groupBox">
+    <widget class="QGroupBox" name="groupBoxPlot_Type">
      <property name="title">
       <string>Plot Type</string>
      </property>
@@ -26,7 +26,25 @@
       <item>
        <widget class="QComboBox" name="comboBoxSelect_Plot"/>
       </item>
+      <item>
+       <widget class="QTextEdit" name="textEditPlot_Description">
+        <property name="readOnly">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
      </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="groupBoxParameters">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
+     <property name="title">
+      <string>Parameters</string>
+     </property>
+     <layout class="QFormLayout" name="formLayout"/>
     </widget>
    </item>
   </layout>
