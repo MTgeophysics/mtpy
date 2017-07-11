@@ -114,6 +114,8 @@ class TestPlotPhaseTensorMaps(TestCase):
     def test_plot_04_02(self):
         """
         testing to use Z and tipper objects as input
+
+        this fails because the constructor of PlotPhaseTensorMaps only initialize the Mplot object properly when reading from files
         :return:
         """
         edi_path = edi_paths[4]
