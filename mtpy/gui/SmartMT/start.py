@@ -15,9 +15,9 @@ import sys
 
 from PyQt4 import QtCore, QtGui
 
-from mtpy.gui.SmartMT.subwindows.plot_option import PlotOption
-from mtpy.gui.SmartMT.subwindows.station_summary import StationSummary
-from mtpy.gui.SmartMT.subwindows.station_viewer import StationViewer
+from mtpy.gui.SmartMT.gui.plot_option import PlotOption
+from mtpy.gui.SmartMT.gui.station_summary import StationSummary
+from mtpy.gui.SmartMT.gui.station_viewer import StationViewer
 from mtpy.gui.SmartMT.utils.file_handler import FileHandler, FileHandlingException
 from mtpy.utils.decorator import deprecated
 from mtpy.utils.mtpylog import MtPyLog

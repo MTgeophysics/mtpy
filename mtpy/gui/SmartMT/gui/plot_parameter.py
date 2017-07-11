@@ -8,11 +8,14 @@
     Author: YingzhiGou
     Date: 20/06/2017
 """
-from PyQt4 import QtGui, QtCore
 import numpy as np
+from PyQt4 import QtGui
 
+from mtpy.gui.SmartMT.gui.matplotlib_imabedding import MPLCanvas, Cursor
+from mtpy.gui.SmartMT.ui_asset.groupbox_frequency_period_single import Ui_groupBoxFrequency_pereiod_single
+from mtpy.gui.SmartMT.ui_asset.groupbox_z_component_multiple import Ui_groupBoxZ_Component_Multiple
+from mtpy.gui.SmartMT.ui_asset.groupbox_z_component_single import Ui_groupBoxZ_Component_Single
 from mtpy.gui.SmartMT.ui_asset.plot_parameters import Ui_GroupBoxParameters
-from mtpy.gui.SmartMT.visualization.matplotlib_imabedding import MPLCanvas, Cursor
 
 
 class PlotParameter(QtGui.QGroupBox):
@@ -22,38 +25,23 @@ class PlotParameter(QtGui.QGroupBox):
 
     def __init__(self, parent):
         QtGui.QGroupBox.__init__(self, parent)
-        self._mt_objs = None
         self.ui = Ui_GroupBoxParameters()
         self.ui.setupUi(self)
-        self._period_histogram = PlotParameter.PeriodHistogram()
-        # add matplotlib canvas
-        self.ui.verticalLayoutFrequencyPeriod.addWidget(self._period_histogram)
-        self.resize(self.minimumSizeHint())
 
-        # connect components
-        # self.ui.horizontalSliderPeriod.valueChanged.connect(lambda value: self.update_period_text(value))
-        self.ui.comboBoxPeriod.currentIndexChanged.connect(self.update_period_histogram)
-        self.ui.comboBoxPeriod.editTextChanged.connect(self.update_period_histogram)
-        # self.ui.doubleSpinBoxPeriod.editingFinished.connect(self.update_period_slider)
-        self._period_histogram.mpl_connect('button_release_event', self._mouse_pick)
+
+class ZComponentMultiple(QtGui.QGroupBox):
+    def __init__(self, parent):
+        QtGui.QGroupBox.__init__(self, parent)
+        self.ui = Ui_groupBoxZ_Component_Multiple()
+        self.ui.setupUi(self)
         # z-component checkbox logic
         self.ui.checkBox_zyx.stateChanged.connect(self._multiple_zcomponent_logic)
         self.ui.checkBox_zxy.stateChanged.connect(self._multiple_zcomponent_logic)
         self.ui.checkBox_det.stateChanged.connect(self._multiple_zcomponent_logic)
 
-        self.enable_multiple_zcomponent_selection()
-
-    def enable_single_z_component_selection(self):
-        self.ui.groupBoxZ_Component_Single.setEnabled(True)
-        self.ui.groupBoxZ_Component_Single.setHidden(False)
-        self.ui.groupBoxZ_Component_Multiple.setEnabled(False)
-        self.ui.groupBoxZ_Component_Multiple.setHidden(True)
-
-    def enable_multiple_zcomponent_selection(self):
-        self.ui.groupBoxZ_Component_Multiple.setEnabled(True)
-        self.ui.groupBoxZ_Component_Multiple.setHidden(False)
-        self.ui.groupBoxZ_Component_Single.setEnabled(False)
-        self.ui.groupBoxZ_Component_Single.setHidden(True)
+    def add_parameter_groubox(self, groupbox):
+        self.ui.horizontalLayout.addWidget(groupbox)
+        self.resize(self.sizeHint())
 
     def _multiple_zcomponent_logic(self, int):
         """
@@ -74,6 +62,47 @@ class PlotParameter(QtGui.QGroupBox):
             self.ui.checkBox_zxy.setEnabled(True)
             self.ui.checkBox_zyx.setEnabled(True)
 
+    def get_selection(self):
+        zcomponent = []
+        if self.parameter_ui.ui.radioButton_det.isChecked():
+            zcomponent.append('det')
+        if self.parameter_ui.ui.radioButton_zxy.isChecked():
+            zcomponent.append('zxy')
+        if self.parameter_ui.ui.radioButton_zyx.isChecked():
+            zcomponent.append('zyx')
+        return zcomponent
+
+
+class ZComponentSingle(QtGui.QGroupBox):
+    def __init__(self, parent):
+        QtGui.QGroupBox.__init__(self, parent)
+        self.ui = Ui_groupBoxZ_Component_Single()
+        self.ui.setupUi(self)
+
+    def get_selection(self):
+        if self.parameter_ui.ui.radioButton_det.isChecked():
+            return 'det'
+        elif self.parameter_ui.ui.radioButton_zxy.isChecked():
+            return 'zxy'
+        elif self.parameter_ui.ui.radioButton_zyx.isChecked():
+            return 'zyx'
+
+
+class FrequencyPeriodSingle(QtGui.QGroupBox):
+    def __init__(self, parent):
+        QtGui.QGroupBox.__init__(self, parent)
+        self._mt_objs = None
+        self.ui = Ui_groupBoxFrequency_pereiod_single()
+        self.ui.setupUi(self)
+        self._period_histogram = PlotParameter.PeriodHistogram()
+        # add matplotlib canvas
+        self.ui.verticalLayoutFrequencyPeriod.addWidget(self._period_histogram)
+        # connect components
+        # self.ui.horizontalSliderPeriod.valueChanged.connect(lambda value: self.update_period_text(value))
+        self.ui.comboBoxPeriod.currentIndexChanged.connect(self.update_period_histogram)
+        self.ui.comboBoxPeriod.editTextChanged.connect(self.update_period_histogram)
+        # self.ui.doubleSpinBoxPeriod.editingFinished.connect(self.update_period_slider)
+        self._period_histogram.mpl_connect('button_release_event', self._mouse_pick)
 
     def _mouse_pick(self, event):
         if not event.inaxes:
@@ -81,47 +110,22 @@ class PlotParameter(QtGui.QGroupBox):
         x = event.xdata
         self.ui.comboBoxPeriod.setEditText("%.5f" % x)
 
-    def update_period_text(self, value):
-        self.ui.comboBoxPeriod.setEditText("%.5f" % ((value * self._slider_tick_size) + self._slider_min))
-
     def update_period_histogram(self):
         # value = self.ui.doubleSpinBoxPeriod.value()
         value = float(self.ui.comboBoxPeriod.currentText())
         self._period_histogram.set_current_period(value)
         # self.ui.horizontalSliderPeriod.setValue((value - self._slider_min) / self._slider_tick_size)
 
-    def update_ui(self):
-        self._update_period()
-
     def set_data(self, mt_objs):
         self._mt_objs = mt_objs
-
-    def _set_period_tick_size(self, size):
-        self._slider_tick_size = size
-
-    def _get_period_tick_size(self):
-        return self._slider_tick_size
-
-    def _set_period_min(self, mini):
-        self._slider_min = mini
-        # self.ui.label_period_min.setText("%.5f" % mini)
-
-    def _get_period_min(self):
-        return self._slider_min
-
-    def _set_period_max(self, maxi):
-        self._slider_max = maxi
-        # self.ui.label_period_max.setText("%.5f" % maxi)
-
-    def _get_period_max(self):
-        return self._slider_max
+        self._update_period()
 
     def _update_period(self):
         if self._mt_objs is not None:
             all_freqs = []
             for mt_obj in self._mt_objs:
                 all_freqs.extend(list(mt_obj.Z.freq))
-            all_periods = 1.0/np.array(all_freqs)
+            all_periods = 1.0 / np.array(all_freqs)
             # self._parameter_ui.slider_min = np.min(all_unique_periods)
             # self._parameter_ui.slider_max = np.max(all_unique_periods)
             # self._parameter_ui.slider_tick_size = (self._parameter_ui.slider_max -
@@ -134,10 +138,6 @@ class PlotParameter(QtGui.QGroupBox):
                 self.ui.comboBoxPeriod.addItem("%.5f" % period)
             self.ui.comboBoxPeriod.setCurrentIndex(0)
             self.update_period_histogram()
-
-    slider_tick_size = property(_get_period_tick_size, _set_period_tick_size, doc="tick size of period slider")
-    slider_min = property(_get_period_min, _set_period_min, doc="minimum on slider")
-    slider_max = property(_get_period_max, _set_period_max, doc="maximum on slider")
 
     class PeriodHistogram(MPLCanvas):
         def __init__(self, parent=None, width=5, hight=4, dpi=100):
