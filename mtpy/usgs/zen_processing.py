@@ -464,17 +464,19 @@ class Z3D_to_edi(object):
         self.survey_config_fn = self.survey_config.write_survey_config_file()
     
     def get_z3d_fn_blocks(self, station_dir=None, remote=False,
-                          df_list=[4096, 1024, 256], max_blocks=3):
+                          df_list=[4096, 256], max_blocks=3):
         """
         get z3d file names in an array of blocks
         """
+        if station_dir is not None:
+            self.station_dir = station_dir
 
         fn_block_dict = dict([(df, {}) for df in df_list])
         fn_count = 0
-        for fn in os.listdir(station_dir):
+        for fn in os.listdir(self.station_dir):
             if fn.lower().endswith('.z3d'):
             
-                z3d_fn = os.path.join(station_dir, fn)
+                z3d_fn = os.path.join(self.station_dir, fn)
                 z3d_obj = zen.Zen3D(z3d_fn)
                 z3d_obj.read_all_info()
                 if remote is True:
@@ -489,9 +491,9 @@ class Z3D_to_edi(object):
 
 
         if fn_count == 0:
-            raise ValueError('No Z3D files found for in {0}'.format(station_dir))
+            raise ValueError('No Z3D files found for in {0}'.format(self.station_dir))
         else:
-            print 'Found {0} Z3D files in {1}'.format(fn_count, station_dir)
+            print 'Found {0} Z3D files in {1}'.format(fn_count, self.station_dir)
         
         # check for maximum number of blocks
         for df_key in fn_block_dict.keys():
@@ -499,7 +501,7 @@ class Z3D_to_edi(object):
             dates = sorted(date_dict.keys())
             if len(dates) == 0:
                 print 'No Z3D files found for {0} in {1}'.format(str(df_key),
-                                                                station_dir)
+                                                                self.station_dir)
 
             if len(dates) > max_blocks:
                 for pop_date in dates[-(len(dates)-max_blocks):]:
