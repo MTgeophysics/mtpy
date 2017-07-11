@@ -12,7 +12,7 @@ from PyQt4 import QtGui
 import numpy as np
 
 from mtpy.gui.SmartMT.ui_asset.plot_parameters import Ui_GroupBoxParameters
-from mtpy.gui.SmartMT.visualization.matplotlib_imabedding import MPLCanvas
+from mtpy.gui.SmartMT.visualization.matplotlib_imabedding import MPLCanvas, Cursor
 
 
 class PlotParameter(QtGui.QGroupBox):
@@ -105,24 +105,28 @@ class PlotParameter(QtGui.QGroupBox):
             self._current_period = None
             MPLCanvas.__init__(self, parent, width, hight, dpi)
             self._lx = None
-            self._cursor_x = None
-            self._cursor_text = None
-            self.mpl_connect('motion_notify_event', self.mouse_move)
+            self.cursor = Cursor(self._axes, track_y=False, text_format="period=%f", useblit=True)
+            # self.cursor = Cursor(self._axes, useblit=True, color='green', linewidth=1)
+            # self._cursor_x = None
+            # self._cursor_text = None
+            # self.mpl_connect('motion_notify_event', self.mouse_move)
+
+            # self.mpl_connect('motion_notify_event', self.cursor)
             self.mpl_connect('button_release_event', self.mouse_pick)
 
-        def mouse_move(self, event):
-            if not event.inaxes:
-                return
-            x = event.xdata
-            y = event.ydata
-            if self._cursor_x is None:
-                self._cursor_x = self._axes.axvline(linewidth=1, color="green")
-            if self._cursor_text is None:
-                self._cursor_text = self._axes.text(0.0, 0.0, '', fontsize=8)
-            self._cursor_x.set_xdata(x)
-            self._cursor_text.set_text('period=%.2f' % x)
-            self._cursor_text.set_position((x, y))
-            self.draw()
+        # def mouse_move(self, event):
+        #     if not event.inaxes:
+        #         return
+        #     x = event.xdata
+        #     y = event.ydata
+        #     if self._cursor_x is None:
+        #         self._cursor_x = self._axes.axvline(linewidth=1, color="green")
+        #     if self._cursor_text is None:
+        #         self._cursor_text = self._axes.text(0.0, 0.0, '', fontsize=8)
+        #     self._cursor_x.set_xdata(x)
+        #     self._cursor_text.set_text('period=%.2f' % x)
+        #     self._cursor_text.set_position((x, y))
+        #     self.draw()
 
         def mouse_pick(self, event):
             if not event.inaxes:
