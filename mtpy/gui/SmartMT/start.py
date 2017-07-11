@@ -36,8 +36,8 @@ class StartQt4(QtGui.QMainWindow):
         self.setup_menu()
         self._file_handler = FileHandler()
         self._station_viewer = None
+        self._subwindow_counter = 0
         self._station_summary = None
-        self._plot_option = None
         self.subwindows = {}
 
     def setup_menu(self):
@@ -111,9 +111,8 @@ class StartQt4(QtGui.QMainWindow):
 
     def plot_selected_station(self, *args, **kwargs):
         if self._station_viewer and self._station_viewer.fig_canvas.selected_stations:
-            if not self._plot_option:
-                self._plot_option = PlotOption(self, self._file_handler, self._station_viewer.fig_canvas.selected_stations)
-            subwindow, _ = self.create_subwindow(self._plot_option, self._plot_option.windowTitle())
+            plot_option = PlotOption(self, self._file_handler, self._station_viewer.fig_canvas.selected_stations)
+            subwindow, _ = self.create_subwindow(plot_option, plot_option.windowTitle())
         else:
             self._logger.info("nothing to plot")
 
@@ -173,28 +172,43 @@ class StartQt4(QtGui.QMainWindow):
         self._station_viewer.update_view()
         self._station_summary.update_view()
 
-    def create_subwindow(self, widget, title):
+    def create_subwindow(self, widget, title, overide=True):
         subwindow = None
-        if title not in self.subwindows:
-            subwindow = StartQt4.MDISubWindow(self)
-            subwindow.setWindowTitle(title)
-            subwindow.setWidget(widget)
-            subwindow.resize(widget.size())
-            self.ui.mdiArea.addSubWindow(subwindow)
+        self._subwindow_counter += 1
+        if title in self.subwindows:
+            if overide:
+                subwindow, window_action = self.subwindows[title]
+                subwindow.close()
+                self.ui.menuWindow.removeAction(window_action)
+                del self.subwindows[title]
+            else:
+                # find a new window title by adding a number after the title
+                counter = 1
+                new_title = "%s %d" % (title, counter)
+                while new_title in self.subwindows:
+                    counter += 1
+                    new_title = "%s %d" % (title, counter)
+                title = new_title
 
-            # create menu action
-            new_window_action = QtGui.QAction(self)
-            new_window_action.setObjectName(_fromUtf8("actionSubwindow%d" % (len(self.subwindows) + 1)))
-            new_window_action.setText(_translate("SmartMT_MainWindow", title, None))
-            new_window_action.triggered.connect(subwindow.show_and_focus)
+        widget.setAttribute(QtCore.Qt.WA_DeleteOnClose, True)
+        subwindow = StartQt4.MDISubWindow(self)
+        subwindow.setWindowTitle(title)
+        subwindow.setWidget(widget)
+        subwindow.resize(widget.size())
+        self.ui.mdiArea.addSubWindow(subwindow)
 
-            # add to window menu
-            self.ui.menuWindow.addAction(new_window_action)
-            # add all references to self._subwindow
-            self.subwindows[title] = (subwindow, new_window_action)
-            subwindow.show()
-        else:
-            subwindow, new_window_action = self.subwindows[title]
+        # create menu action
+        new_window_action = QtGui.QAction(self)
+        new_window_action.setObjectName(_fromUtf8("actionSubwindow%d" % self._subwindow_counter))
+        new_window_action.setText(_translate("SmartMT_MainWindow", title, None))
+        new_window_action.triggered.connect(subwindow.show_and_focus)
+
+        # add to window menu
+        self.ui.menuWindow.addAction(new_window_action)
+        # add all references to self._subwindow
+        self.subwindows[title] = (subwindow, new_window_action)
+        subwindow.show()
+
         return subwindow, new_window_action
 
     class MDISubWindow(QtGui.QMdiSubWindow):
@@ -223,7 +237,7 @@ class StartQt4(QtGui.QMainWindow):
                 title = str(self.windowTitle())
                 if title in self._main_ui.subwindows:
                     (subwindow, window_action) = self._main_ui.subwindows[title]
-                    if subwindow.testOption(QtCore.Qt.WA_DeleteOnClose):
+                    if subwindow.widget().testAttribute(QtCore.Qt.WA_DeleteOnClose):
                         # remove menu action
                         self._main_ui.ui.menuWindow.removeAction(window_action)
                         # remove the window

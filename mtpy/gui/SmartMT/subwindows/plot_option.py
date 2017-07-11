@@ -28,6 +28,7 @@ class PlotOption(QtGui.QWidget):
         :type selected_files: set
         """
         QtGui.QWidget.__init__(self, parent)
+        self._parent = parent
         self._logger = MtPyLog().get_mtpy_logger(__name__)
         self.file_handler = file_handler
         self.selected_stations = selected_files

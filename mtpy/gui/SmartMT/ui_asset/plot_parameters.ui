@@ -15,13 +15,16 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
-    <widget class="QGroupBox" name="groupBoxZ_Component">
+    <widget class="QGroupBox" name="groupBoxZ_Component_Multiple">
      <property name="title">
       <string>Z-Component</string>
      </property>
      <layout class="QHBoxLayout" name="horizontalLayout">
       <item>
-       <widget class="QCheckBox" name="checkBox_zyx">
+       <widget class="QCheckBox" name="checkBox_det">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
         <property name="text">
          <string>det</string>
         </property>
@@ -38,7 +41,43 @@
        </widget>
       </item>
       <item>
-       <widget class="QCheckBox" name="checkBox_det">
+       <widget class="QCheckBox" name="checkBox_zyx">
+        <property name="text">
+         <string>zyx</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="groupBoxZ_Component_Single">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
+     <property name="title">
+      <string>Z-Component</string>
+     </property>
+     <layout class="QHBoxLayout" name="horizontalLayout_2">
+      <item>
+       <widget class="QRadioButton" name="radioButton_det">
+        <property name="text">
+         <string>det</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QRadioButton" name="radioButton_zxy">
+        <property name="text">
+         <string>zxy</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QRadioButton" name="radioButton_zyx">
         <property name="text">
          <string>zyx</string>
         </property>
@@ -61,6 +100,13 @@
        </widget>
       </item>
      </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QPushButton" name="pushButtonPlot">
+     <property name="text">
+      <string>Create Figure</string>
+     </property>
     </widget>
    </item>
   </layout>

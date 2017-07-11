@@ -41,7 +41,7 @@ class StationViewer(QtGui.QWidget):
         self.ui.setupUi(self)
         self.subwindow, _ = parent.create_subwindow(self, self.windowTitle())
         # make station_viewer never been deleted
-        self.subwindow.setAttribute(QtCore.Qt.WA_DeleteOnClose, False)
+        self.setAttribute(QtCore.Qt.WA_DeleteOnClose, False)
         # handle selection changed event
         self.ui.treeWidget_stations.selectionModel().selectionChanged.connect(self.item_selection_changed)
         # add context menu for tree view

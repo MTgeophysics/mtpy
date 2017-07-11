@@ -8,7 +8,7 @@
     Author: YingzhiGou
     Date: 20/06/2017
 """
-from PyQt4 import QtGui
+from PyQt4 import QtGui, QtCore
 import numpy as np
 
 from mtpy.gui.SmartMT.ui_asset.plot_parameters import Ui_GroupBoxParameters
@@ -26,14 +26,54 @@ class PlotParameter(QtGui.QGroupBox):
         self.ui = Ui_GroupBoxParameters()
         self.ui.setupUi(self)
         self._period_histogram = PlotParameter.PeriodHistogram()
+        # add matplotlib canvas
         self.ui.verticalLayoutFrequencyPeriod.addWidget(self._period_histogram)
         self.resize(self.minimumSizeHint())
+
         # connect components
         # self.ui.horizontalSliderPeriod.valueChanged.connect(lambda value: self.update_period_text(value))
         self.ui.comboBoxPeriod.currentIndexChanged.connect(self.update_period_histogram)
         self.ui.comboBoxPeriod.editTextChanged.connect(self.update_period_histogram)
         # self.ui.doubleSpinBoxPeriod.editingFinished.connect(self.update_period_slider)
         self._period_histogram.mpl_connect('button_release_event', self._mouse_pick)
+        # z-component checkbox logic
+        self.ui.checkBox_zyx.stateChanged.connect(self._multiple_zcomponent_logic)
+        self.ui.checkBox_zxy.stateChanged.connect(self._multiple_zcomponent_logic)
+        self.ui.checkBox_det.stateChanged.connect(self._multiple_zcomponent_logic)
+
+        self.enable_multiple_zcomponent_selection()
+
+    def enable_single_z_component_selection(self):
+        self.ui.groupBoxZ_Component_Single.setEnabled(True)
+        self.ui.groupBoxZ_Component_Single.setHidden(False)
+        self.ui.groupBoxZ_Component_Multiple.setEnabled(False)
+        self.ui.groupBoxZ_Component_Multiple.setHidden(True)
+
+    def enable_multiple_zcomponent_selection(self):
+        self.ui.groupBoxZ_Component_Multiple.setEnabled(True)
+        self.ui.groupBoxZ_Component_Multiple.setHidden(False)
+        self.ui.groupBoxZ_Component_Single.setEnabled(False)
+        self.ui.groupBoxZ_Component_Single.setHidden(True)
+
+    def _multiple_zcomponent_logic(self, int):
+        """
+        set up at least one component selected
+        :return:
+        """
+        counter = 0
+        if self.ui.checkBox_det.isChecked() + self.ui.checkBox_zxy.isChecked() + self.ui.checkBox_zyx.isChecked() == 1:
+            # only one checkbox is checked, lock the checked box
+            if self.ui.checkBox_det.isChecked():
+                self.ui.checkBox_det.setEnabled(False)
+            elif self.ui.checkBox_zxy.isChecked():
+                self.ui.checkBox_zxy.setEnabled(False)
+            else:
+                self.ui.checkBox_zyx.setEnabled(False)
+        else:
+            self.ui.checkBox_det.setEnabled(True)
+            self.ui.checkBox_zxy.setEnabled(True)
+            self.ui.checkBox_zyx.setEnabled(True)
+
 
     def _mouse_pick(self, event):
         if not event.inaxes:
@@ -139,11 +179,11 @@ class PlotParameter(QtGui.QGroupBox):
 
         def compute_initial_figure(self):
             if self._periods is not None:
-                self._axes.tick_params(axis='both', which='major', labelsize=8)
-                self._axes.tick_params(axis='both', which='minor', labelsize=6)
+                self._axes.tick_params(axis='both', which='major', labelsize=6)
+                self._axes.tick_params(axis='both', which='minor', labelsize=4)
                 self._axes.hist(self._periods, 50, normed=1)
                 self._axes.set_xlabel('Period', fontsize=8)
-                self.figure.suptitle('Period Distribution in Selected Stations', fontsize=10)
+                self.figure.suptitle('Period Distribution in Selected Stations', fontsize=8)
 
         def set_data(self, periods):
             self._periods = periods

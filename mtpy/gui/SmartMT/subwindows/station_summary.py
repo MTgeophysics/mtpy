@@ -30,7 +30,7 @@ class StationSummary(QtGui.QWidget):
         self.ui = Ui_StationStatus()
         self.ui.setupUi(self)
         self.subwindow, _ = parent.create_subwindow(self, self.windowTitle())
-        self.subwindow.setAttribute(QtCore.Qt.WA_DeleteOnClose, False)
+        self.setAttribute(QtCore.Qt.WA_DeleteOnClose, False)
 
     def update_view(self):
         mt_objs = []
