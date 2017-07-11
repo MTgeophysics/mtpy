@@ -29,6 +29,7 @@ class Ui_groupBoxFrequency_pereiod_single(object):
         self.verticalLayoutFrequencyPeriod = QtGui.QVBoxLayout(groupBoxFrequency_pereiod_single)
         self.verticalLayoutFrequencyPeriod.setObjectName(_fromUtf8("verticalLayoutFrequencyPeriod"))
         self.comboBoxPeriod = QtGui.QComboBox(groupBoxFrequency_pereiod_single)
+        self.comboBoxPeriod.setEditable(True)
         self.comboBoxPeriod.setObjectName(_fromUtf8("comboBoxPeriod"))
         self.verticalLayoutFrequencyPeriod.addWidget(self.comboBoxPeriod)
 

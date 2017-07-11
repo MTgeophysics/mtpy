@@ -28,6 +28,10 @@ class PlotParameter(QtGui.QGroupBox):
         self.ui = Ui_GroupBoxParameters()
         self.ui.setupUi(self)
 
+    def add_parameter_groubox(self, groupbox):
+        self.ui.verticalLayout.addWidget(groupbox)
+        self.resize(self.sizeHint())
+
 
 class ZComponentMultiple(QtGui.QGroupBox):
     def __init__(self, parent):
@@ -38,10 +42,6 @@ class ZComponentMultiple(QtGui.QGroupBox):
         self.ui.checkBox_zyx.stateChanged.connect(self._multiple_zcomponent_logic)
         self.ui.checkBox_zxy.stateChanged.connect(self._multiple_zcomponent_logic)
         self.ui.checkBox_det.stateChanged.connect(self._multiple_zcomponent_logic)
-
-    def add_parameter_groubox(self, groupbox):
-        self.ui.horizontalLayout.addWidget(groupbox)
-        self.resize(self.sizeHint())
 
     def _multiple_zcomponent_logic(self, int):
         """
@@ -80,11 +80,11 @@ class ZComponentSingle(QtGui.QGroupBox):
         self.ui.setupUi(self)
 
     def get_selection(self):
-        if self.parameter_ui.ui.radioButton_det.isChecked():
+        if self.ui.radioButton_det.isChecked():
             return 'det'
-        elif self.parameter_ui.ui.radioButton_zxy.isChecked():
+        elif self.ui.radioButton_zxy.isChecked():
             return 'zxy'
-        elif self.parameter_ui.ui.radioButton_zyx.isChecked():
+        elif self.ui.radioButton_zyx.isChecked():
             return 'zyx'
 
 
@@ -94,14 +94,13 @@ class FrequencyPeriodSingle(QtGui.QGroupBox):
         self._mt_objs = None
         self.ui = Ui_groupBoxFrequency_pereiod_single()
         self.ui.setupUi(self)
-        self._period_histogram = PlotParameter.PeriodHistogram()
+        self._period_histogram = FrequencyPeriodSingle.PeriodHistogram()
         # add matplotlib canvas
         self.ui.verticalLayoutFrequencyPeriod.addWidget(self._period_histogram)
         # connect components
         # self.ui.horizontalSliderPeriod.valueChanged.connect(lambda value: self.update_period_text(value))
         self.ui.comboBoxPeriod.currentIndexChanged.connect(self.update_period_histogram)
         self.ui.comboBoxPeriod.editTextChanged.connect(self.update_period_histogram)
-        # self.ui.doubleSpinBoxPeriod.editingFinished.connect(self.update_period_slider)
         self._period_histogram.mpl_connect('button_release_event', self._mouse_pick)
 
     def _mouse_pick(self, event):
@@ -110,11 +109,12 @@ class FrequencyPeriodSingle(QtGui.QGroupBox):
         x = event.xdata
         self.ui.comboBoxPeriod.setEditText("%.5f" % x)
 
+    def get_period_frequency(self):
+        return float(self.ui.comboBoxPeriod.currentText())
+
     def update_period_histogram(self):
-        # value = self.ui.doubleSpinBoxPeriod.value()
         value = float(self.ui.comboBoxPeriod.currentText())
         self._period_histogram.set_current_period(value)
-        # self.ui.horizontalSliderPeriod.setValue((value - self._slider_min) / self._slider_tick_size)
 
     def set_data(self, mt_objs):
         self._mt_objs = mt_objs
@@ -193,7 +193,12 @@ class FrequencyPeriodSingle(QtGui.QGroupBox):
             if self._lx is None:
                 self._lx = self._axes.axvline(linewidth=2, color="red")
             self._lx.set_xdata(self._current_period)
-            self.draw()
+            # if self._fig.canvas.supports_blit:
+            #     self._axes.draw_artist(self._lx)
+            #     self._fig.canvas.blit(self._axes.bbox)
+            # else:
+            #     self._fig.canvas.draw_idle()
+            self._fig.canvas.draw_idle()
 
         def update_figure(self):
             # clear figure

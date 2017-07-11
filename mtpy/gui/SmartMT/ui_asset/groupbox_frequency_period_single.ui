@@ -18,7 +18,11 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayoutFrequencyPeriod">
    <item>
-    <widget class="QComboBox" name="comboBoxPeriod"/>
+    <widget class="QComboBox" name="comboBoxPeriod">
+     <property name="editable">
+      <bool>true</bool>
+     </property>
+    </widget>
    </item>
   </layout>
  </widget>
