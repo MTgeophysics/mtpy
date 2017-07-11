@@ -70,6 +70,7 @@ class PlotOption(QtGui.QWidget):
         self.ui.textEditPlot_Description.setText(description)
         # set parameter ui
         self.ui.verticalLayout.addWidget(self._current_plot.parameter_ui)
+        # self.resize(self.minimumSizeHint())
         self.update_ui()
 
     def update_ui(self):
@@ -83,4 +84,3 @@ class PlotOption(QtGui.QWidget):
             mt_obj = self.file_handler.get_MT_obj(ref)
             mt_objs.append(mt_obj)
         return mt_objs
-

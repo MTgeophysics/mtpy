@@ -25,7 +25,7 @@ except AttributeError:
 class Ui_StationStatus(object):
     def setupUi(self, StationStatus):
         StationStatus.setObjectName(_fromUtf8("StationStatus"))
-        StationStatus.resize(311, 494)
+        StationStatus.resize(341, 500)
         self.verticalLayout = QtGui.QVBoxLayout(StationStatus)
         self.verticalLayout.setObjectName(_fromUtf8("verticalLayout"))
         self.tabWidget = QtGui.QTabWidget(StationStatus)

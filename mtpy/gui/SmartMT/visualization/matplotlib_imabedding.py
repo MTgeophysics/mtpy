@@ -30,7 +30,7 @@ class MPLCanvas(FigureCanvas):
     """
 
     def __init__(self, parent=None, width=5, hight=4, dpi=100):
-        self._fig = Figure(figsize=(width, hight), dpi=dpi)
+        self._fig = Figure(figsize=(width, hight), dpi=dpi, facecolor='none')
         self._axes = self._fig.add_subplot(111)
 
         self.compute_initial_figure()

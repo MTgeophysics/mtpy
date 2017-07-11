@@ -342,8 +342,8 @@ class StationViewer(QtGui.QWidget):
             groups = df.groupby("group")
             # plot
             # self.axes = plt.subplots()
-            self._axes.tick_params(axis='both', which='major', labelsize=10)
-            self._axes.tick_params(axis='both', which='minor', labelsize=8)
+            self._axes.tick_params(axis='both', which='major', labelsize=8)
+            self._axes.tick_params(axis='both', which='minor', labelsize=6)
             self._axes.margins(0.05)  # 5% padding
             annotated_stations = set()
             self.artists.clear()
@@ -354,7 +354,7 @@ class StationViewer(QtGui.QWidget):
                 for index, row in df.iterrows():
                     station = row['station']
                     if station not in annotated_stations:
-                        self._axes.annotate(station, xy=(row['x'], row['y']), size=8, picker=3,
+                        self._axes.annotate(station, xy=(row['x'], row['y']), size=6, picker=3,
                                             color='red' if station in self.selected_stations else 'black')
                         annotated_stations.add(station)
             self._axes.legend(numpoints=1, loc="best", fontsize=8)

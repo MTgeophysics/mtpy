@@ -27,6 +27,7 @@ class PlotParameter(QtGui.QGroupBox):
         self.ui.setupUi(self)
         self._period_histogram = PlotParameter.PeriodHistogram()
         self.ui.verticalLayoutFrequencyPeriod.addWidget(self._period_histogram)
+        self.resize(self.minimumSizeHint())
         # connect components
         # self.ui.horizontalSliderPeriod.valueChanged.connect(lambda value: self.update_period_text(value))
         self.ui.comboBoxPeriod.currentIndexChanged.connect(self.update_period_histogram)
@@ -113,6 +114,8 @@ class PlotParameter(QtGui.QGroupBox):
 
             # self.mpl_connect('motion_notify_event', self.cursor)
             self.mpl_connect('button_release_event', self.mouse_pick)
+            self.setMinimumSize(200, 50)
+            # self.resize(self.minimumSizeHint())
 
         # def mouse_move(self, event):
         #     if not event.inaxes:
@@ -136,7 +139,11 @@ class PlotParameter(QtGui.QGroupBox):
 
         def compute_initial_figure(self):
             if self._periods is not None:
+                self._axes.tick_params(axis='both', which='major', labelsize=8)
+                self._axes.tick_params(axis='both', which='minor', labelsize=6)
                 self._axes.hist(self._periods, 50, normed=1)
+                self._axes.set_xlabel('Period', fontsize=8)
+                self.figure.suptitle('Period Distribution in Selected Stations', fontsize=10)
 
         def set_data(self, periods):
             self._periods = periods
