@@ -88,20 +88,23 @@ class ZComponentSingle(QtGui.QGroupBox):
             return 'zyx'
 
 
-class FrequencyPeriodSingle(QtGui.QGroupBox):
-    def __init__(self, parent):
+class FrequencySingle(QtGui.QGroupBox):
+    def __init__(self, parent, unit="Hz", distribution='Frequency', inverse=False):
         QtGui.QGroupBox.__init__(self, parent)
         self._mt_objs = None
+        self._invert_frequency = inverse
+        self._unit = unit
+        self._distribuction = distribution
         self.ui = Ui_groupBoxFrequency_pereiod_single()
         self.ui.setupUi(self)
-        self._period_histogram = FrequencyPeriodSingle.PeriodHistogram()
+        self._histogram = FrequencySingle.FrequencyHistogram(unit=self._unit, distribution=self._distribuction)
         # add matplotlib canvas
-        self.ui.verticalLayoutFrequencyPeriod.addWidget(self._period_histogram)
+        self.ui.verticalLayoutFrequencyPeriod.addWidget(self._histogram)
         # connect components
         # self.ui.horizontalSliderPeriod.valueChanged.connect(lambda value: self.update_period_text(value))
-        self.ui.comboBoxPeriod.currentIndexChanged.connect(self.update_period_histogram)
-        self.ui.comboBoxPeriod.editTextChanged.connect(self.update_period_histogram)
-        self._period_histogram.mpl_connect('button_release_event', self._mouse_pick)
+        self.ui.comboBoxPeriod.currentIndexChanged.connect(self.update_histogram)
+        self.ui.comboBoxPeriod.editTextChanged.connect(self.update_histogram)
+        self._histogram.mpl_connect('button_release_event', self._mouse_pick)
 
     def _mouse_pick(self, event):
         if not event.inaxes:
@@ -109,44 +112,47 @@ class FrequencyPeriodSingle(QtGui.QGroupBox):
         x = event.xdata
         self.ui.comboBoxPeriod.setEditText("%.5f" % x)
 
-    def get_period_frequency(self):
+    def get_frequency(self):
         return float(self.ui.comboBoxPeriod.currentText())
 
-    def update_period_histogram(self):
+    def update_histogram(self):
         value = float(self.ui.comboBoxPeriod.currentText())
-        self._period_histogram.set_current_period(value)
+        self._histogram.set_current_frequency(value)
 
     def set_data(self, mt_objs):
         self._mt_objs = mt_objs
-        self._update_period()
+        self._update_frequency()
 
-    def _update_period(self):
+    def _update_frequency(self):
         if self._mt_objs is not None:
             all_freqs = []
             for mt_obj in self._mt_objs:
                 all_freqs.extend(list(mt_obj.Z.freq))
-            all_periods = 1.0 / np.array(all_freqs)
-            # self._parameter_ui.slider_min = np.min(all_unique_periods)
-            # self._parameter_ui.slider_max = np.max(all_unique_periods)
-            # self._parameter_ui.slider_tick_size = (self._parameter_ui.slider_max -
-            #                                        self._parameter_ui.slider_min) / 100.0  # 100 is the default ticks of the slidere
-            self._period_histogram.set_data(all_periods)
-            self._period_histogram.update_figure()
+
+            if self._invert_frequency:
+                all_periods = 1.0 / np.array(all_freqs)
+                self._histogram.set_data(all_periods)
+                all_unique = sorted(list(set(all_periods)))
+            else:
+                self._histogram.set_data(all_freqs)
+                all_unique = sorted(list(set(all_freqs)))
+            self._histogram.update_figure()
             # sort all frequencies in ascending order
-            all_unique_periods = sorted(list(set(all_periods)))
-            for period in all_unique_periods:
+            for period in all_unique:
                 self.ui.comboBoxPeriod.addItem("%.5f" % period)
             self.ui.comboBoxPeriod.setCurrentIndex(0)
-            self.update_period_histogram()
+            self.update_histogram()
 
-    class PeriodHistogram(MPLCanvas):
-        def __init__(self, parent=None, width=5, hight=4, dpi=100):
+    class FrequencyHistogram(MPLCanvas):
+        def __init__(self, parent=None, width=5, hight=3, dpi=100, unit="Hz", distribution='Frequency'):
             self.artists = dict()
-            self._periods = None
+            self._frequency = None
             self._current_period = None
             MPLCanvas.__init__(self, parent, width, hight, dpi)
             self._lx = None
-            self.cursor = Cursor(self._axes, track_y=False, text_format="period=%f", useblit=True)
+            self._unit = unit
+            self._distribution = distribution
+            self.cursor = Cursor(self._axes, track_y=False, text_format="%f "+self._unit, useblit=True)
             # self.cursor = Cursor(self._axes, useblit=True, color='green', linewidth=1)
             # self._cursor_x = None
             # self._cursor_text = None
@@ -175,21 +181,21 @@ class FrequencyPeriodSingle(QtGui.QGroupBox):
             if not event.inaxes:
                 return
             x = event.xdata
-            self.set_current_period(x)
+            self.set_current_frequency(x)
 
         def compute_initial_figure(self):
-            if self._periods is not None:
+            if self._frequency is not None:
                 self._axes.tick_params(axis='both', which='major', labelsize=6)
                 self._axes.tick_params(axis='both', which='minor', labelsize=4)
-                self._axes.hist(self._periods, 50, normed=1)
-                self._axes.set_xlabel('Period', fontsize=8)
-                self.figure.suptitle('Period Distribution in Selected Stations', fontsize=8)
+                self._axes.hist(self._frequency, 50, normed=1)
+                self._axes.set_xlabel("%s (%s)" % (self._distribution, self._unit), fontsize=8)
+                self.figure.suptitle('%s Distribution in Selected Stations' % self._distribution, fontsize=8)
 
-        def set_data(self, periods):
-            self._periods = periods
+        def set_data(self, frequency):
+            self._frequency = frequency
 
-        def set_current_period(self, period):
-            self._current_period = period
+        def set_current_frequency(self, freq):
+            self._current_period = freq
             if self._lx is None:
                 self._lx = self._axes.axvline(linewidth=2, color="red")
             self._lx.set_xdata(self._current_period)

@@ -14,7 +14,7 @@
    <string>GroupBox</string>
   </property>
   <property name="title">
-   <string>Frequency Period</string>
+   <string>Frequency</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayoutFrequencyPeriod">
    <item>

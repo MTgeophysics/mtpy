@@ -10,7 +10,7 @@
 """
 from PyQt4 import QtCore
 
-from mtpy.gui.SmartMT.gui.plot_parameter import PlotParameter, ZComponentSingle, FrequencyPeriodSingle
+from mtpy.gui.SmartMT.gui.plot_parameter import PlotParameter, ZComponentSingle, FrequencySingle
 from mtpy.gui.SmartMT.visualization.visualization_base import VisualizationBase
 from mtpy.imaging.penetration import Depth3D
 
@@ -20,7 +20,7 @@ class PenetrationDepth3D(VisualizationBase):
         # get parameters
         try:
             zcomponent = self._z_component_ui.get_selection()
-            period = self._frequency_period_ui.get_period_frequency()
+            period = self._frequency_period_ui.get_frequency()
             self._fig = Depth3D(self._mt_objs, period, zcomponent)
             self._fig.plot()
         except Exception as e:
@@ -55,7 +55,8 @@ class PenetrationDepth3D(VisualizationBase):
         self._z_component_ui = ZComponentSingle(self._parameter_ui)
         self._parameter_ui.add_parameter_groubox(self._z_component_ui)
 
-        self._frequency_period_ui = FrequencyPeriodSingle(self._parameter_ui)
+        self._frequency_period_ui = FrequencySingle(self._parameter_ui, unit="seconds", distribution="Period", inverse=True)
+        self._frequency_period_ui.setTitle("Frequency Period")
         self._parameter_ui.add_parameter_groubox(self._frequency_period_ui)
 
         self.update_ui()

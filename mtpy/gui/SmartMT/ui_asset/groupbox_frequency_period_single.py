@@ -38,5 +38,5 @@ class Ui_groupBoxFrequency_pereiod_single(object):
 
     def retranslateUi(self, groupBoxFrequency_pereiod_single):
         groupBoxFrequency_pereiod_single.setWindowTitle(_translate("groupBoxFrequency_pereiod_single", "GroupBox", None))
-        groupBoxFrequency_pereiod_single.setTitle(_translate("groupBoxFrequency_pereiod_single", "Frequency Period", None))
+        groupBoxFrequency_pereiod_single.setTitle(_translate("groupBoxFrequency_pereiod_single", "Frequency", None))
 
