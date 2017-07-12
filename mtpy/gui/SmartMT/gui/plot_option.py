@@ -75,7 +75,7 @@ class PlotOption(QtGui.QWidget):
         self._current_plot = plot_option(self)
 
         self.ui.verticalLayout.addWidget(self._current_plot.parameter_ui)
-        # self.resize(self.minimumSizeHint())
+        self.resize(self.width(), self.sizeHint().height())
         self.update_ui()
 
     def update_ui(self):

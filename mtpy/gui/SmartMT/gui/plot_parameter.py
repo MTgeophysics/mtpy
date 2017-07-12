@@ -9,10 +9,12 @@
     Date: 20/06/2017
 """
 import numpy as np
-from PyQt4 import QtGui
+from PyQt4 import QtGui, QtCore
 
 from mtpy.gui.SmartMT.gui.matplotlib_imabedding import MPLCanvas, Cursor
+from mtpy.gui.SmartMT.ui_asset.groupbox_ellipse import Ui_GroupBoxEllipse
 from mtpy.gui.SmartMT.ui_asset.groupbox_frequency_period_single import Ui_groupBoxFrequency_pereiod_single
+from mtpy.gui.SmartMT.ui_asset.groupbox_tolerance import Ui_GroupBoxTolerance
 from mtpy.gui.SmartMT.ui_asset.groupbox_z_component_multiple import Ui_groupBoxZ_Component_Multiple
 from mtpy.gui.SmartMT.ui_asset.groupbox_z_component_single import Ui_groupBoxZ_Component_Single
 from mtpy.gui.SmartMT.ui_asset.plot_parameters import Ui_GroupBoxParameters
@@ -89,6 +91,10 @@ class ZComponentSingle(QtGui.QGroupBox):
 
 
 class FrequencySingle(QtGui.QGroupBox):
+    """
+    Frequency selection (single frequency)
+    """
+
     def __init__(self, parent, unit="Hz", distribution='Frequency', inverse=False):
         QtGui.QGroupBox.__init__(self, parent)
         self._mt_objs = None
@@ -152,7 +158,7 @@ class FrequencySingle(QtGui.QGroupBox):
             self._lx = None
             self._unit = unit
             self._distribution = distribution
-            self.cursor = Cursor(self._axes, track_y=False, text_format="%f "+self._unit, useblit=True)
+            self.cursor = Cursor(self._axes, track_y=False, text_format="%f " + self._unit, useblit=True)
             # self.cursor = Cursor(self._axes, useblit=True, color='green', linewidth=1)
             # self._cursor_x = None
             # self._cursor_text = None
@@ -160,7 +166,6 @@ class FrequencySingle(QtGui.QGroupBox):
 
             # self.mpl_connect('motion_notify_event', self.cursor)
             self.mpl_connect('button_release_event', self.mouse_pick)
-            self.setMinimumSize(200, 50)
             # self.resize(self.minimumSizeHint())
 
         # def mouse_move(self, event):
@@ -211,3 +216,55 @@ class FrequencySingle(QtGui.QGroupBox):
             self._axes.cla()
             self.compute_initial_figure()
             self.draw()
+
+
+class Ellipse(QtGui.QGroupBox):
+    """
+    ellipse_dict defined for mtpy.imagining.phase_tensor_maps.PlogPhaseTensorMaps
+    """
+    _colorby = ['phimin', 'phimax', 'skew', 'skew_seg', 'phidet', 'ellipticity']
+    _cmap = ['mt_yl2rd', 'mt_bl2yl2rd', 'mt_wh2bl', 'mt_rd2bl', 'mt_bl2wh2rd', 'mt_seg_bl2wh2rd', 'mt_rd2gr2bl']
+
+    def __init__(self, parent):
+        QtGui.QGroupBox.__init__(self, parent)
+        self.ui = Ui_GroupBoxEllipse()
+        self.ui.setupUi(self)
+        # set tooltips for color by and cmap
+        for i in range(self.ui.comboBoxColor_by.count()):
+            self.ui.comboBoxColor_by.setItemData(i, self.ui.comboBoxColor_by.itemText(i), QtCore.Qt.ToolTipRole)
+        for i in range(self.ui.comboBox_cmap.count()):
+            self.ui.comboBox_cmap.setItemData(i, self.ui.comboBox_cmap.itemText(i), QtCore.Qt.ToolTipRole)
+
+        self.ui.doubleSpinBox_min.editingFinished.connect(self._increase_max)
+        self.ui.doubleSpinBox_max.editingFinished.connect(self._decrease_min)
+
+    def _increase_max(self):
+        value = self.ui.doubleSpinBox_min.value()
+        if value > self.ui.doubleSpinBox_max.value():
+            self.ui.doubleSpinBox_max.setValue(value)
+
+    def _decrease_min(self):
+        value = self.ui.doubleSpinBox_max.value()
+        if value < self.ui.doubleSpinBox_min.value():
+            self.ui.doubleSpinBox_min.setValue(value)
+
+    def get_ellipse_dict(self):
+        ellipse_dict = {
+            'size': self.ui.doubleSpinBox_size.value(),
+            'colorby': self._colorby[self.ui.comboBoxColor_by.currentIndex()],
+            'range': (
+                self.ui.doubleSpinBox_min.value(), self.ui.doubleSpinBox_max.value(),
+                self.ui.doubleSpinBox_step.value()),
+            'cmap': self._cmap[self.ui.comboBox_cmap.currentIndex()]
+        }
+        return ellipse_dict
+
+
+class FrequencyTolerance(QtGui.QGroupBox):
+    def __init__(self, parent):
+        QtGui.QGroupBox.__init__(self, parent)
+        self.ui = Ui_GroupBoxTolerance()
+        self.ui.setupUi(self)
+
+    def get_tolerance_in_float(self):
+        return self.ui.doubleSpinBox.value()/100.0

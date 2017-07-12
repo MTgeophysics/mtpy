@@ -8,7 +8,7 @@
     Author: YingzhiGou
     Date: 20/06/2017
 """
-from mtpy.gui.SmartMT.gui.plot_parameter import FrequencySingle
+from mtpy.gui.SmartMT.gui.plot_parameter import FrequencySingle, Ellipse, FrequencyTolerance
 from mtpy.gui.SmartMT.visualization.visualization_base import VisualizationBase
 
 
@@ -20,8 +20,8 @@ class PhaseTensorMap(VisualizationBase):
         """
 
     def update_ui(self):
-        pass
-    
+        self._frequency_ui.set_data(self._mt_objs)
+
     @staticmethod
     def plot_name():
         return "Phase Tensor Map"
@@ -41,5 +41,17 @@ class PhaseTensorMap(VisualizationBase):
         VisualizationBase.__init__(self, parent)
         # set up ui
         self._frequency_ui = FrequencySingle(self._parameter_ui)
+        self._frequency_ui.setTitle("Frequency (Hz)")
         self._parameter_ui.add_parameter_groubox(self._frequency_ui)
 
+        self._tolerance_ui = FrequencyTolerance(self._parameter_ui)
+        self._parameter_ui.add_parameter_groubox(self._tolerance_ui)
+
+        self._ellipse_ui = Ellipse(self._parameter_ui)
+        self._parameter_ui.add_parameter_groubox(self._ellipse_ui)
+
+        # resize
+        self._parameter_ui.resize(self._parameter_ui.width(),
+                                  self._parameter_ui.sizeHint().height())
+
+        self.update_ui()

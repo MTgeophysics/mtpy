@@ -26,7 +26,7 @@ class Ui_PlotOption(object):
     def setupUi(self, PlotOption):
         PlotOption.setObjectName(_fromUtf8("PlotOption"))
         PlotOption.setWindowModality(QtCore.Qt.WindowModal)
-        PlotOption.resize(340, 500)
+        PlotOption.resize(340, 600)
         self.verticalLayout = QtGui.QVBoxLayout(PlotOption)
         self.verticalLayout.setObjectName(_fromUtf8("verticalLayout"))
         self.groupBoxPlot_Type = QtGui.QGroupBox(PlotOption)

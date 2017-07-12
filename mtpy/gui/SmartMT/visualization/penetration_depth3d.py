@@ -52,8 +52,12 @@ class PenetrationDepth3D(VisualizationBase):
         self._parameter_ui.add_parameter_groubox(self._z_component_ui)
 
         self._frequency_period_ui = FrequencySingle(self._parameter_ui, unit="seconds", distribution="Period", inverse=True)
-        self._frequency_period_ui.setTitle("Frequency Period")
+        self._frequency_period_ui.setTitle("Frequency Period (seconds)")
         self._parameter_ui.add_parameter_groubox(self._frequency_period_ui)
+
+        # resize
+        # self._parameter_ui.resize(self._parameter_ui.width(),
+        #                           self._parameter_ui.sizeHint().height())
 
         self.update_ui()
 
