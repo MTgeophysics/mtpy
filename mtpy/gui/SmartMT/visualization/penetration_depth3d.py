@@ -21,8 +21,10 @@ class PenetrationDepth3D(VisualizationBase):
         try:
             zcomponent = self._z_component_ui.get_selection()
             period = self._frequency_period_ui.get_frequency()
-            self._fig = Depth3D(self._mt_objs, period, zcomponent)
-            self._fig.plot()
+            self._plotting_object = Depth3D(self._mt_objs, period, zcomponent)
+            self._plotting_object.plot()
+            self._fig = self._plotting_object.get_figure()
+
         except Exception as e:
             self._logger.warning(e.message)
 

@@ -9,9 +9,15 @@
    <rect>
     <x>0</x>
     <y>0</y>
+    <width>400</width>
+    <height>700</height>
+   </rect>
+  </property>
+  <property name="minimumSize">
+   <size>
     <width>340</width>
     <height>600</height>
-   </rect>
+   </size>
   </property>
   <property name="windowTitle">
    <string>Plot Option</string>
@@ -19,6 +25,24 @@
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
     <widget class="QGroupBox" name="groupBoxPlot_Type">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Expanding" vsizetype="MinimumExpanding">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="minimumSize">
+      <size>
+       <width>0</width>
+       <height>200</height>
+      </size>
+     </property>
+     <property name="maximumSize">
+      <size>
+       <width>16777215</width>
+       <height>200</height>
+      </size>
+     </property>
      <property name="title">
       <string>Plot Type</string>
      </property>

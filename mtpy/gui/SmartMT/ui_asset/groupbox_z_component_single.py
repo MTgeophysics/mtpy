@@ -25,7 +25,12 @@ except AttributeError:
 class Ui_groupBoxZ_Component_Single(object):
     def setupUi(self, groupBoxZ_Component_Single):
         groupBoxZ_Component_Single.setObjectName(_fromUtf8("groupBoxZ_Component_Single"))
-        groupBoxZ_Component_Single.resize(400, 50)
+        groupBoxZ_Component_Single.resize(300, 50)
+        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(groupBoxZ_Component_Single.sizePolicy().hasHeightForWidth())
+        groupBoxZ_Component_Single.setSizePolicy(sizePolicy)
         self.horizontalLayout = QtGui.QHBoxLayout(groupBoxZ_Component_Single)
         self.horizontalLayout.setObjectName(_fromUtf8("horizontalLayout"))
         self.radioButton_det = QtGui.QRadioButton(groupBoxZ_Component_Single)

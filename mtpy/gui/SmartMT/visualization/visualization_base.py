@@ -28,6 +28,7 @@ class VisualizationBase(object):
         self._fig = None
         self._logger = MtPyLog().get_mtpy_logger(__name__)
         self._parameter_ui = PlotParameter(self._parent)
+        self._plotting_object = None
         # connect plot button
         QtCore.QObject.connect(self._parameter_ui.ui.pushButtonPlot, QtCore.SIGNAL("clicked()"), self.show_figure)
 
@@ -73,7 +74,7 @@ class VisualizationBase(object):
             # self._fig.show()
             widget = QtGui.QWidget()
             layout = QtGui.QVBoxLayout()
-            canvas = FigureCanvas(self._fig.get_figure())
+            canvas = FigureCanvas(self._fig)
             toolbar = NavigationToolbar(canvas, widget)
             layout.addWidget(toolbar)
             layout.addWidget(canvas)

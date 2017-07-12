@@ -8,8 +8,9 @@
     Author: YingzhiGou
     Date: 20/06/2017
 """
-from mtpy.gui.SmartMT.gui.plot_parameter import FrequencySingle, Ellipse, FrequencyTolerance
+from mtpy.gui.SmartMT.gui.plot_parameter import FrequencySingle, Ellipse, FrequencyTolerance, ColorBar
 from mtpy.gui.SmartMT.visualization.visualization_base import VisualizationBase
+from mtpy.imaging.phase_tensor_maps import PlotPhaseTensorMaps
 
 
 class PhaseTensorMap(VisualizationBase):
@@ -35,7 +36,31 @@ class PhaseTensorMap(VisualizationBase):
         for mt_obj in self._mt_objs:
             file_list.append(mt_obj.fn)
 
-        raise NotImplemented()
+        params = {
+            'fn_list': file_list,
+            'plot_freq': self._frequency_ui.get_frequency(),
+            'ftol': self._tolerance_ui.get_tolerance_in_float(),
+            'ellipse_dict': self._ellipse_ui.get_ellipse_dict(),
+            'mapscale': 'deg',  # deg or m, or km
+            'xpad': 0.4,  # plot margin; change according to lat-lon in edifiles
+            'ypad': 0.4,  # ~ 2* ellipse size
+            'plot_tipper': 'yr',
+            'arrow_dict': {
+                'size': 0.5,
+                'lw': 0.2,
+                'head_width': 0.04,
+                'head_length': 0.04,
+                'threshold': 0.8,
+                'direction': 0}
+        }
+
+        cb_dict = self._colorbar_ui.get_colorbar_dict()
+        if cb_dict is not None:
+            params['cb_dict'] = cb_dict
+
+        self._plotting_object = PlotPhaseTensorMaps(**params)
+        self._plotting_object.plot(show=False)
+        self._fig = self._plotting_object.fig
 
     def __init__(self, parent):
         VisualizationBase.__init__(self, parent)
@@ -49,6 +74,9 @@ class PhaseTensorMap(VisualizationBase):
 
         self._ellipse_ui = Ellipse(self._parameter_ui)
         self._parameter_ui.add_parameter_groubox(self._ellipse_ui)
+
+        self._colorbar_ui = ColorBar(self._parameter_ui)
+        self._parameter_ui.add_parameter_groubox(self._colorbar_ui)
 
         # resize
         self._parameter_ui.resize(self._parameter_ui.width(),

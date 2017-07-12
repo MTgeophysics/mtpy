@@ -6,9 +6,15 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>400</width>
-    <height>202</height>
+    <width>300</width>
+    <height>208</height>
    </rect>
+  </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
   </property>
   <property name="windowTitle">
    <string>GroupBox</string>
@@ -107,6 +113,9 @@
     <widget class="QComboBox" name="comboBox_cmap">
      <property name="toolTip">
       <string>color map of tensor ellipses</string>
+     </property>
+     <property name="currentIndex">
+      <number>5</number>
      </property>
      <property name="sizeAdjustPolicy">
       <enum>QComboBox::AdjustToMinimumContentsLength</enum>

@@ -25,7 +25,12 @@ except AttributeError:
 class Ui_groupBoxZ_Component_Multiple(object):
     def setupUi(self, groupBoxZ_Component_Multiple):
         groupBoxZ_Component_Multiple.setObjectName(_fromUtf8("groupBoxZ_Component_Multiple"))
-        groupBoxZ_Component_Multiple.resize(400, 50)
+        groupBoxZ_Component_Multiple.resize(300, 50)
+        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(groupBoxZ_Component_Multiple.sizePolicy().hasHeightForWidth())
+        groupBoxZ_Component_Multiple.setSizePolicy(sizePolicy)
         self.horizontalLayout = QtGui.QHBoxLayout(groupBoxZ_Component_Multiple)
         self.horizontalLayout.setObjectName(_fromUtf8("horizontalLayout"))
         self.checkBox_det = QtGui.QCheckBox(groupBoxZ_Component_Multiple)

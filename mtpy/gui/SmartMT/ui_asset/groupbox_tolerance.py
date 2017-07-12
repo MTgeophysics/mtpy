@@ -25,7 +25,12 @@ except AttributeError:
 class Ui_GroupBoxTolerance(object):
     def setupUi(self, GroupBoxTolerance):
         GroupBoxTolerance.setObjectName(_fromUtf8("GroupBoxTolerance"))
-        GroupBoxTolerance.resize(400, 59)
+        GroupBoxTolerance.resize(300, 53)
+        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(GroupBoxTolerance.sizePolicy().hasHeightForWidth())
+        GroupBoxTolerance.setSizePolicy(sizePolicy)
         self.formLayout = QtGui.QFormLayout(GroupBoxTolerance)
         self.formLayout.setObjectName(_fromUtf8("formLayout"))
         self.label = QtGui.QLabel(GroupBoxTolerance)

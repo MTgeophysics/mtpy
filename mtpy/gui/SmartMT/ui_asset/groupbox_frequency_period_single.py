@@ -25,7 +25,12 @@ except AttributeError:
 class Ui_groupBoxFrequency_pereiod_single(object):
     def setupUi(self, groupBoxFrequency_pereiod_single):
         groupBoxFrequency_pereiod_single.setObjectName(_fromUtf8("groupBoxFrequency_pereiod_single"))
-        groupBoxFrequency_pereiod_single.resize(400, 53)
+        groupBoxFrequency_pereiod_single.resize(300, 53)
+        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(groupBoxFrequency_pereiod_single.sizePolicy().hasHeightForWidth())
+        groupBoxFrequency_pereiod_single.setSizePolicy(sizePolicy)
         self.verticalLayoutFrequencyPeriod = QtGui.QVBoxLayout(groupBoxFrequency_pereiod_single)
         self.verticalLayoutFrequencyPeriod.setObjectName(_fromUtf8("verticalLayoutFrequencyPeriod"))
         self.comboBoxPeriod = QtGui.QComboBox(groupBoxFrequency_pereiod_single)

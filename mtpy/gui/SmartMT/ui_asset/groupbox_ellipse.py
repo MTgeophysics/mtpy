@@ -25,7 +25,12 @@ except AttributeError:
 class Ui_GroupBoxEllipse(object):
     def setupUi(self, GroupBoxEllipse):
         GroupBoxEllipse.setObjectName(_fromUtf8("GroupBoxEllipse"))
-        GroupBoxEllipse.resize(400, 202)
+        GroupBoxEllipse.resize(300, 208)
+        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(GroupBoxEllipse.sizePolicy().hasHeightForWidth())
+        GroupBoxEllipse.setSizePolicy(sizePolicy)
         self.formLayout = QtGui.QFormLayout(GroupBoxEllipse)
         self.formLayout.setObjectName(_fromUtf8("formLayout"))
         self.doubleSpinBox_size = QtGui.QDoubleSpinBox(GroupBoxEllipse)
@@ -99,6 +104,7 @@ class Ui_GroupBoxEllipse(object):
         self.formLayout.setWidget(3, QtGui.QFormLayout.FieldRole, self.line)
 
         self.retranslateUi(GroupBoxEllipse)
+        self.comboBox_cmap.setCurrentIndex(5)
         QtCore.QMetaObject.connectSlotsByName(GroupBoxEllipse)
 
     def retranslateUi(self, GroupBoxEllipse):
