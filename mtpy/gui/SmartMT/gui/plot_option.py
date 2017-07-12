@@ -14,6 +14,7 @@ from mtpy.utils.mtpylog import MtPyLog
 # import all VisualizationBase subclasses here
 # todo may need a better way of searching sublasses from unloaded files
 from mtpy.gui.SmartMT.visualization.penetration_depth3d import PenetrationDepth3D
+from mtpy.gui.SmartMT.visualization.phase_tensor_maps import PhaseTensorMap
 
 
 class PlotOption(QtGui.QWidget):
@@ -63,13 +64,16 @@ class PlotOption(QtGui.QWidget):
         # print "selection changed"
         index = self.ui.comboBoxSelect_Plot.currentIndex()
         plot_option = self.plotOptions[index]
-        if self._current_plot is not None:
-            self.ui.verticalLayout.removeWidget(self._current_plot.parameter_ui)
-        self._current_plot = plot_option(self)
         description = plot_option.plot_description()
         # print description
         self.ui.textEditPlot_Description.setText(description)
+
         # set parameter ui
+        if self._current_plot is not None:
+            # self.ui.verticalLayout.removeWidget(self._current_plot.parameter_ui)
+            self._current_plot.parameter_ui.deleteLater()
+        self._current_plot = plot_option(self)
+
         self.ui.verticalLayout.addWidget(self._current_plot.parameter_ui)
         # self.resize(self.minimumSizeHint())
         self.update_ui()

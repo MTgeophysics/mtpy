@@ -8,6 +8,7 @@
     Author: YingzhiGou
     Date: 20/06/2017
 """
+from mtpy.gui.SmartMT.gui.plot_parameter import FrequencySingle
 from mtpy.gui.SmartMT.visualization.visualization_base import VisualizationBase
 
 
@@ -20,10 +21,7 @@ class PhaseTensorMap(VisualizationBase):
 
     def update_ui(self):
         pass
-
-    def parameter_ui(self):
-        pass
-
+    
     @staticmethod
     def plot_name():
         return "Phase Tensor Map"
@@ -42,3 +40,6 @@ class PhaseTensorMap(VisualizationBase):
     def __init__(self, parent):
         VisualizationBase.__init__(self, parent)
         # set up ui
+        self._frequency_ui = FrequencySingle(self._parameter_ui)
+        self._parameter_ui.add_parameter_groubox(self._frequency_ui)
+

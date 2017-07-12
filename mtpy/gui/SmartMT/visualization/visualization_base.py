@@ -35,13 +35,13 @@ class VisualizationBase(object):
         self._mt_objs = mt_objs
         self.update_ui()
 
+    @property
+    def parameter_ui(self):
+        return self._parameter_ui
+
     @abc.abstractmethod
     def update_ui(self):
         pass
-
-    @abc.abstractproperty
-    def parameter_ui(self):
-        return "should not see this"
 
     @staticmethod
     @abc.abstractmethod

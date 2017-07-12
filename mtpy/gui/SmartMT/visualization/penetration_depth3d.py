@@ -29,10 +29,6 @@ class PenetrationDepth3D(VisualizationBase):
     def update_ui(self):
         self._frequency_period_ui.set_data(self._mt_objs)
 
-    @property
-    def parameter_ui(self):
-        return self._parameter_ui
-
     @staticmethod
     def plot_description():
         return """
