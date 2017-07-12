@@ -16,6 +16,8 @@ from mtpy.gui.SmartMT.ui_asset.groupbox_arrow import Ui_GroupBox_Arrow
 from mtpy.gui.SmartMT.ui_asset.groupbox_color_bar import Ui_GroupBox_ColorBar
 from mtpy.gui.SmartMT.ui_asset.groupbox_ellipse import Ui_GroupBoxEllipse
 from mtpy.gui.SmartMT.ui_asset.groupbox_frequency_period_single import Ui_groupBoxFrequency_pereiod_single
+from mtpy.gui.SmartMT.ui_asset.groupbox_padding import Ui_GroupBox_Padding
+from mtpy.gui.SmartMT.ui_asset.groupbox_scale import Ui_GroupBox_Scale
 from mtpy.gui.SmartMT.ui_asset.groupbox_tolerance import Ui_GroupBoxTolerance
 from mtpy.gui.SmartMT.ui_asset.groupbox_z_component_multiple import Ui_groupBoxZ_Component_Multiple
 from mtpy.gui.SmartMT.ui_asset.groupbox_z_component_single import Ui_groupBoxZ_Component_Single
@@ -345,7 +347,7 @@ class Arrow(QtGui.QGroupBox):
     _direction = [0, 1]
 
     def get_arrow_dict(self):
-        if self.isChecked():
+        if self.ui.groupBox_advanced_options.isChecked():
             arrow_dict = {
                 'size': self.ui.doubleSpinBox_size.value(),
                 'head_length': self.ui.doubleSpinBox_head_length.value(),
@@ -360,3 +362,41 @@ class Arrow(QtGui.QGroupBox):
         else:
             return None
 
+    def get_plot_tipper(self):
+        if self.ui.checkBox_real.isChecked() and self.ui.checkBox_imaginary.isChecked():
+            return 'yri'
+        elif self.ui.checkBox_real.isChecked():
+            return 'yr'
+        elif self.ui.checkBox_imaginary.isChecked():
+            return 'ri'
+        else:
+            return 'n'
+
+
+class Padding(QtGui.QGroupBox):
+    def __init__(self, parent):
+        QtGui.QGroupBox.__init__(self, parent)
+        self.ui = Ui_GroupBox_Padding()
+        self.ui.setupUi(self)
+
+    def get_x_pad(self):
+        return self.ui.doubleSpinBox_x.value()
+
+    def get_y_pad(self):
+        return self.ui.doubleSpinBox_y.value()
+
+
+class Scale(QtGui.QGroupBox):
+    def __init__(self, parent):
+        QtGui.QGroupBox.__init__(self, parent)
+        self.ui = Ui_GroupBox_Scale()
+        self.ui.setupUi(self)
+
+    _tscale = ['period', 'freq']
+    _mapscale = ['deg', 'm', 'km']
+
+    def get_tscale(self):
+        return self._tscale[self.ui.comboBox_time.currentIndex()]
+
+    def get_mapscale(self):
+        return self._mapscale[self.ui.comboBox_map.currentIndex()]

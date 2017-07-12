@@ -12,6 +12,7 @@
 import abc
 
 from PyQt4 import QtGui, QtCore
+from PyQt4.QtGui import QApplication
 
 from mtpy.gui.SmartMT.gui.plot_parameter import PlotParameter
 from mtpy.utils.mtpylog import MtPyLog
@@ -92,13 +93,15 @@ class ProgressBar(QtGui.QWidget):
         super(ProgressBar, self).__init__(parent)
         layout = QtGui.QVBoxLayout(self)
         self.progressbar = QtGui.QProgressBar(self)
-        self.progressbar.setRange(0, 1)
+        self.progressbar.setMinimum(0)
+        self.progressbar.setMaximum(0)
+        self.progressbar.setValue(0)
+        # self.progressbar.setValue(1)
         layout.addWidget(self.progressbar)
+        self.setWindowTitle("Plotting")
 
     def onStart(self):
-        self.progressbar.setRange(0, 0)
-        self.progressbar.show()
+        self.show()
 
     def onFinished(self):
-        self.progressbar.setRange(0, 1)
-        self.progressbar.hide()
+        self.hide()
