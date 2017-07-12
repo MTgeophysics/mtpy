@@ -8,7 +8,7 @@
     Author: YingzhiGou
     Date: 20/06/2017
 """
-from mtpy.gui.SmartMT.gui.plot_parameter import FrequencySingle, Ellipse, FrequencyTolerance, ColorBar
+from mtpy.gui.SmartMT.gui.plot_parameter import FrequencySingle, Ellipse, FrequencyTolerance, ColorBar, Arrow
 from mtpy.gui.SmartMT.visualization.visualization_base import VisualizationBase
 from mtpy.imaging.phase_tensor_maps import PlotPhaseTensorMaps
 
@@ -45,18 +45,22 @@ class PhaseTensorMap(VisualizationBase):
             'xpad': 0.4,  # plot margin; change according to lat-lon in edifiles
             'ypad': 0.4,  # ~ 2* ellipse size
             'plot_tipper': 'yr',
-            'arrow_dict': {
-                'size': 0.5,
-                'lw': 0.2,
-                'head_width': 0.04,
-                'head_length': 0.04,
-                'threshold': 0.8,
-                'direction': 0}
         }
 
         cb_dict = self._colorbar_ui.get_colorbar_dict()
         if cb_dict is not None:
             params['cb_dict'] = cb_dict
+
+        # arrow_dict = {
+        #         'size': 0.5,
+        #         'lw': 0.2,
+        #         'head_width': 0.04,
+        #         'head_length': 0.04,
+        #         'threshold': 0.8,
+        #         'direction': 0}
+        arrow_dict = self._arrow_ui.get_arrow_dict()
+        if arrow_dict is not None:
+            params['arrow_dict'] = arrow_dict
 
         self._plotting_object = PlotPhaseTensorMaps(**params)
         self._plotting_object.plot(show=False)
@@ -77,6 +81,9 @@ class PhaseTensorMap(VisualizationBase):
 
         self._colorbar_ui = ColorBar(self._parameter_ui)
         self._parameter_ui.add_parameter_groubox(self._colorbar_ui)
+
+        self._arrow_ui = Arrow(self._parameter_ui)
+        self._parameter_ui.add_parameter_groubox(self._arrow_ui)
 
         # resize
         self._parameter_ui.resize(self._parameter_ui.width(),

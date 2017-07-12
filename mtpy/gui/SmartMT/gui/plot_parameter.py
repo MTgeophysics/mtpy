@@ -12,6 +12,7 @@ import numpy as np
 from PyQt4 import QtGui, QtCore
 
 from mtpy.gui.SmartMT.gui.matplotlib_imabedding import MPLCanvas, Cursor
+from mtpy.gui.SmartMT.ui_asset.groupbox_arrow import Ui_GroupBox_Arrow
 from mtpy.gui.SmartMT.ui_asset.groupbox_color_bar import Ui_GroupBox_ColorBar
 from mtpy.gui.SmartMT.ui_asset.groupbox_ellipse import Ui_GroupBoxEllipse
 from mtpy.gui.SmartMT.ui_asset.groupbox_frequency_period_single import Ui_groupBoxFrequency_pereiod_single
@@ -332,3 +333,30 @@ class ColorBar(QtGui.QGroupBox):
             return cb_dict
         else:
             return None
+
+
+class Arrow(QtGui.QGroupBox):
+    def __init__(self, parent):
+        QtGui.QGroupBox.__init__(self, parent)
+        self.ui = Ui_GroupBox_Arrow()
+        self.ui.setupUi(self)
+
+    _color = ['b', 'g', 'r', 'c', 'm', 'y', 'k', 'w']
+    _direction = [0, 1]
+
+    def get_arrow_dict(self):
+        if self.isChecked():
+            arrow_dict = {
+                'size': self.ui.doubleSpinBox_size.value(),
+                'head_length': self.ui.doubleSpinBox_head_length.value(),
+                'head_width': self.ui.doubleSpinBox_head_width.value(),
+                'lw': self.ui.doubleSpinBox_line_width.value(),
+                'color': (self._color[self.ui.comboBox_color_real.currentIndex()],
+                          self._color[self.ui.comboBox_color_imaginary.currentIndex()]),
+                'threshold': self.ui.doubleSpinBox_threshold.value(),
+                'direction': self._direction[self.ui.comboBox_direction.currentIndex()]
+            }
+            return arrow_dict
+        else:
+            return None
+

@@ -32,7 +32,7 @@ class Ui_GroupBox_ColorBar(object):
         sizePolicy.setHeightForWidth(GroupBox_ColorBar.sizePolicy().hasHeightForWidth())
         GroupBox_ColorBar.setSizePolicy(sizePolicy)
         GroupBox_ColorBar.setCheckable(True)
-        GroupBox_ColorBar.setChecked(True)
+        GroupBox_ColorBar.setChecked(False)
         self.gridLayout = QtGui.QGridLayout(GroupBox_ColorBar)
         self.gridLayout.setObjectName(_fromUtf8("gridLayout"))
         self.horizontalSlider_width = QtGui.QSlider(GroupBox_ColorBar)
