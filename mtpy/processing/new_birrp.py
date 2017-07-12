@@ -398,7 +398,9 @@ class ScriptFile(BIRRP_Parameters):
                                    ('comp', 'S2'),
                                    ('calibration_fn', 'S100'),
                                    ('rr', np.bool),
-                                   ('rr_num', np.int)])
+                                   ('rr_num', np.int),
+                                   ('start_dt', 'S19'),
+                                   ('end_dt', 'S19')])
                                    
         if self.fn_arr is not None:
             self._validate_fn_arr()
