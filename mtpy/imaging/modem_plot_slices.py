@@ -19,7 +19,7 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 from mtpy.modeling.modem import Data
 from mtpy.modeling.modem import Model
 
-class ModemPlotVerticalSlice():
+class ModemPlotSlices():
 
     def __init__(self, filedat, filerho, plot_orient='ew', **kwargs):
         """Constructor
@@ -46,7 +46,7 @@ class ModemPlotVerticalSlice():
         self.clim = kwargs.pop('clim', [0.3, 3.7])
         self.fig_size = kwargs.pop('fig_size', [16, 12])
         self.font_size = kwargs.pop('font_size', 16)
-        self.border_linewidth = 3
+        self.border_linewidth = 2
 
         self.map_scale = kwargs.pop('map_scale', 'm')
         # make map scale
@@ -57,8 +57,8 @@ class ModemPlotVerticalSlice():
         else:
             print("Unknown map scale:", self.map_scale)
 
-        self.xminorticks = kwargs.pop('xminorticks', 2000)
-        self.yminorticks = kwargs.pop('yminorticks', 2000)
+        self.xminorticks = kwargs.pop('xminorticks', 10000)
+        self.yminorticks = kwargs.pop('yminorticks', 10000)
 
         # read in the model data
         self._read_data()
@@ -150,6 +150,13 @@ class ModemPlotVerticalSlice():
         # make the plot
         plt.figure(figsize=self.fig_size)
         plt.rcParams['font.size'] = self.font_size
+
+        # plot station locations
+        # print("station locations sX:", sX)
+        # print("station locations sY:", sY)
+
+        plt.plot(sX, sY, 'kv')  # station marker:'kv'
+
         mesh_plot = plt.pcolormesh(X, Y, res, cmap='bwr_r')
 
         xlim2 = (xlim[0] / self.dscale, xlim[1] / self.dscale)
@@ -157,9 +164,6 @@ class ModemPlotVerticalSlice():
 
         plt.xlim(*xlim)
         plt.ylim(*ylim)
-
-        # plot station locations
-        plt.plot(sX, sY, 'kv')  # station marker:'kv'
 
         # set title
         plt.title(title, fontdict=fdict)
@@ -218,20 +222,19 @@ class ModemPlotVerticalSlice():
             ax.set_ylabel('Depth (' + self.map_scale + ')', fontdict=fdict)
             ax.set_xlabel('Northing (' + self.map_scale + ')', fontdict=fdict)
 
-            # plt.show()
+        plt.show()
+
+        return
 
 
 #########################################################################
-# Example code how to use the class and in-situ testing of the class
 # Usage Guide:
-#   export PYTHONPATH="E:/Githubz/mtpy2"
-#   python  mtpy/imaging/modem_plot_slices.py  # assume harded-coded input data path is correct
-# OR preferred
-#   python mtpy/imaging/modem_plot_slices.py examples/data/ModEM_files/VicSynthetic07/
+#   python mtpy/imaging/modem_plot_slices.py /e/Data/MT_Datasets/modem_examp_inputs_LieJun/JingMing_Vic/vic_all_e2040.dat
+#           /e/Data/MT_Datasets/modem_examp_inputs_LieJun/JingMing_Vic/vic_all_e2040.mod  1000
+#
+# python mtpy/imaging/modem_plot_slices.py examples/data/ModEM_files/VicSynthetic07/
 # OR
 #   python mtpy/imaging/modem_plot_slices.py  path2datfile path2rhofile [slice_locations]
-
-# Example:
 # python mtpy/imaging/modem_plot_slices.py \
 #     /e/Data/Modeling/Isa/100hs_flat_BB/Isa_run3_NLCG_048.dat /e/Data/Modeling/Isa/100hs_flat_BB/Isa_run3_NLCG_048.rho 2000 5000
 # python mtpy/imaging/modem_plot_slices.py
@@ -278,22 +281,28 @@ if __name__ == "__main__":
     if len(sys.argv) >= 4:
         slice_locs = sys.argv[3:]
     else:
-        slice_locs=[1000,2000,8000]
+        # a list of depth where h-slice to be visualized
+        slice_locs=[100, 200,400, 600,800,1000,1500,2000,2500,3000,3500,4000,4500,5000,5500,6000,7000,8000,9000,10000]
 
     # construct plot object
-    myObj = ModemPlotVerticalSlice(datf, rhof )  # ,map_scale='m')
+    myObj = ModemPlotSlices(datf, rhof)  # ,map_scale='m')
 
     for dist in slice_locs:
         sdist=int(dist)
 
-        #  plot slices in three orientations at a given slice_location=sdist
-        myObj.set_plot_orientation('ew')
-        myObj.make_plot( slice_location=sdist)
+        print("**** plotting slice at location: ****", sdist)
+        print("**** actual location will be at nearest cell centre ****")
 
-        myObj.set_plot_orientation('ns')
-        myObj.make_plot(slice_location=sdist)
+        # plot resistivity image at slices in three orientations at a given slice_location=sdist
 
+        # horizontal at a given depth
         myObj.set_plot_orientation('z')
-        myObj.make_plot(slice_location=sdist)
+        myObj.make_plot(slice_location=sdist)  # actual location will be nearest cell centre
+
+        # myObj.set_plot_orientation('ew')
+        # myObj.make_plot(slice_location=sdist)
+        #
+        # myObj.set_plot_orientation('ns')
+        # myObj.make_plot(slice_location=sdist)
 
         plt.show()
