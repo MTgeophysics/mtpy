@@ -927,65 +927,102 @@ class Z3D_to_edi(object):
                 
                 # get remote reference information if input
                 if rr_fn_arr is not None:
+                    # make an empty array to append to
                     rr_birrp_fn_arr = np.zeros(0, dtype=self._birrp_fn_dtype)
+
+                    # find elements where df is the same                    
                     df_find = np.where(rr_fn_arr['df']==df)
-                    print df_find
-                    #rr_dates = sorted(list(set(rr_fn_arr[df_find])))
+                    
+                    # make an array of just the sampling rates                     
+                    df_rr_arr = rr_fn_arr[df_find]
+
+                    # first check to see if any of the dates match
+                    dt_find = np.where(df_rr_arr['start_dt'] == sdate)
+                    
+                    # if there are dates that match, fill them into rr array
+                    rr_station_find = []
+                    if len(dt_find[0]) >= 1:
+                        dt_rr_arr = self._fill_birrp_fn_arr(df_rr_arr[dt_find],
+                                                            remote=True)
+                        rr_birrp_fn_arr = np.append(rr_birrp_fn_arr,
+                                                   dt_rr_arr)
+                        rr_station_find += [os.path.basename(dt_rr_arr[0]['fn'])[0:4]]
+
+                    # find the where dates do not match
+                    dt_not_find = np.where(df_rr_arr['start_dt'] != sdate)
+                    
                     # loop over each remote reference file to check for time
-                    for kk, rr_arr in enumerate(rr_fn_arr[df_find]):
-                        if rr_arr['start_dt'] == sdate:
-                            rr_b_arr = self._fill_birrp_fn_arr(rr_arr, 
-                                                               remote=True)
-                            print len(rr_b_arr)
-                            rr_birrp_fn_arr = np.append(rr_birrp_fn_arr,
-                                                        rr_b_arr)
-                                                        
-                            print kk, len(rr_birrp_fn_arr)
-                        # find the next closest date
-                        else:
-                            # estimate the time difference between station date
-                            # and remote reference date
-                            rr_sec = time.mktime(time.strptime(rr_arr['start_dt'], 
-                                                               datetime_fmt))
-                            s_sec = time.mktime(time.strptime(sdate, 
-                                                              datetime_fmt))
-                            # estimate time difference                            
-                            t_diff = s_sec-rr_sec
-                            
-                            if df == 256:
-                                # if the difference is more than 5 hours pass
-                                if abs(t_diff) > 5*3600:
-                                    continue
-                                else:
-                                    print 'Using remote reference time series starting on {0}'.format(rr_arr['start_dt'])
-                                    print 'For station time series starting on            {0}'.format(sdate)
-                            
-                                    rr_birrp_fn_arr = np.append(rr_birrp_fn_arr,
-                                                                self._fill_birrp_fn_arr(rr_arr,
-                                                                                        remote=True))
-                            elif df == 4096:
-                                # if the difference is more than 3 minutes
-                                if abs(t_diff) > 3*60:
-                                    continue
-                                else:
-                                    print 'Using remote reference time series starting on {0}'.format(rr_arr['start_dt'])
-                                    print 'For station time series starting on            {0}'.format(sdate)
-                            
-                                    rr_birrp_fn_arr = np.append(rr_birrp_fn_arr,
-                                                                self._fill_birrp_fn_arr(rr_arr))
-                                    
+                    # that might be close enough, but skip any that have the 
+                    # same station name
+                    for rr_arr in df_rr_arr[dt_not_find]:
+                        # check to see if this station already has been added
+                        # as a remote reference
+                        station = os.path.basename(rr_arr['fn'])[0:4]
+                        if station in rr_station_find:
+                            continue
                         
-                            elif df == 16:
-                                # if the difference is more than 3 minutes
-                                if abs(t_diff) > 5*3600:
-                                    continue
-                                else:
-                                    print 'Using remote reference time series starting on {0}'.format(rr_arr['start_dt'])
-                                    print 'For station time series starting on            {0}'.format(sdate)
-                            
-                                    rr_birrp_fn_arr = np.append(rr_birrp_fn_arr,
-                                                                self._fill_birrp_fn_arr(rr_arr,
-                                                                                        remote=True))
+                        # find the next closest date
+                        # estimate the time difference between station date
+                        # and remote reference date
+                        rr_sec = time.mktime(time.strptime(rr_arr['start_dt'], 
+                                                           datetime_fmt))
+                        s_sec = time.mktime(time.strptime(sdate, 
+                                                          datetime_fmt))
+                        # estimate time difference                            
+                        t_diff = s_sec-rr_sec
+                        
+                        # look for the correct time difference
+                        dt_arr = None
+                        if df == 256:
+                            # if the difference is more than 5 hours pass
+                            if abs(t_diff) > 5*3600:
+                                continue
+                            else:
+                                print 'Using rr {0} for TS starting on {1}'.format(station,
+                                                                                   rr_arr['start_dt'])
+                                print 'For station TS starting on      {0}'.format(sdate)
+                        
+                                dt_arr = self._fill_birrp_fn_arr(rr_arr,
+                                                                 remote=True)
+                        elif df == 4096:
+                            # if the difference is more than 3 minutes
+                            if abs(t_diff) > 4*60:
+                                continue
+                            else:
+                                print 'Using rr {0} for TS starting on {1}'.format(station,
+                                                                                   rr_arr['start_dt'])
+                                print 'For station TS starting on      {0}'.format(sdate)
+                        
+                                dt_arr = self._fill_birrp_fn_arr(rr_arr,
+                                                                 remote=True)
+                    
+                        elif df == 16:
+                            # if the difference is more than 3 minutes
+                            if abs(t_diff) > 5*3600:
+                                continue
+                            else:
+                                print 'Using rr {0} for TS starting on {1}'.format(station,
+                                                                                   rr_arr['start_dt'])
+                                print 'For station TS starting on      {0}'.format(sdate)
+                        
+                                dt_arr = self._fill_birrp_fn_arr(rr_arr,
+                                                                 remote=True)
+                        #--------------------------------------------------
+                        # add in nskip values
+                        # when t_diff is positive then skip values in 
+                        # the remote reference file
+                        if t_diff > 0 and dt_arr is not None:
+                            dt_arr['nskip'] = t_diff*df
+                        elif t_diff < 0:
+                            #need to test if nskip is already there
+                            s_fn_birrp_arr['nskip'][:] = abs(t_diff*df)
+                          
+                        # if there was a remote referenc channel found 
+                        # append it to the array
+                        if dt_arr is not None:
+                            rr_birrp_fn_arr = np.append(rr_birrp_fn_arr,
+                                                        dt_arr)
+     
                     # append the remote reference data to station data                                                                        
                     s_fn_birrp_arr = np.append(s_fn_birrp_arr, rr_birrp_fn_arr)
                 
@@ -999,9 +1036,14 @@ class Z3D_to_edi(object):
         """
         fill a birrp_fn_arr with a ts_fn_arr
         """
-        
-        self.num_comp = len(fn_arr)
-        nc = self.num_comp
+        # test whether fn_arr has just one entry
+        if fn_arr.shape == ():
+            nc = 1
+        # if there are more than 1 entry get the set
+        else:
+            nc = fn_arr.shape[0]
+            
+        print nc, len(fn_arr['fn'])
         
         # make an empty array to fill
         s_fn_birrp_arr = np.zeros(nc, dtype=self._birrp_fn_dtype)
