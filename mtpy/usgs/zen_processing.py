@@ -1015,7 +1015,13 @@ class Z3D_to_edi(object):
                             dt_arr['nskip'] = t_diff*df
                         elif t_diff < 0:
                             #need to test if nskip is already there
-                            s_fn_birrp_arr['nskip'][:] = abs(t_diff*df)
+                            if s_fn_birrp_arr['nskip'][0] != 1:
+                                if t_diff > s_fn_birrp_arr['nskip'][0]:
+                                    s_fn_birrp_arr['nskip'][:] = t_diff
+                                else:
+                                    pass
+                            else:
+                                s_fn_birrp_arr['nskip'][:] = abs(t_diff*df)
                           
                         # if there was a remote referenc channel found 
                         # append it to the array
