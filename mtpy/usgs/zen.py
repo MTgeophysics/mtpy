@@ -38,6 +38,7 @@ from cStringIO import StringIO
 import sys
 import mtpy.processing.filter as mtfilt
 import mtpy.core.edi as mtedi
+import tables
 
 try:
     import win32api

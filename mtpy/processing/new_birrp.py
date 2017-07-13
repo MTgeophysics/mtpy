@@ -435,7 +435,7 @@ class ScriptFile(BIRRP_Parameters):
             self._npcs = len(self.fn_arr)
         else:
             print 'fn_arr is None, set npcs to 0'
-            self.npcs = 0
+            self._npcs = 0
         return self._npcs
         
     @property
@@ -468,7 +468,7 @@ class ScriptFile(BIRRP_Parameters):
         else:
             for ii in range(int(self.nref/2)):
                 self._comp_list += ['rrhx_{0:02}'.format(ii+1),
-                              'rrhy_{0:02}'.format(ii+1)]
+                                    'rrhy_{0:02}'.format(ii+1)]
                 
         return self._comp_list
         
@@ -617,6 +617,8 @@ class ScriptFile(BIRRP_Parameters):
         
         with open(self.script_fn, 'w') as fid:
             fid.write('\n'.join(s_lines))
+            
+        print 'Wrote script file to {0}'.format(self.script_fn)
             
         
     def make_fn_lines_block_00(self, fn_arr):
@@ -1253,8 +1255,9 @@ class J_To_Edi(object):
         if not os.path.isfile(self.survey_config_fn):
             raise mtex.MTpyError_inputarguments('Could not find {0}, check path'.format(survey_config_fn)) 
     
-        # read in survey information        
-        self.survey_config_dict = mtcfg.read_survey_configfile(self.survey_config_fn)[self.station]
+        # read in survey information 
+        print self.survey_config_fn, self.station       
+        self.survey_config_dict = mtcfg.read_survey_configfile(self.survey_config_fn)[self.station.upper()]
     
     def get_birrp_config_fn(self):
         """

@@ -323,7 +323,7 @@ class Survey_Config(object):
     """
     def __init__(self, **kwargs):
         self.b_instrument_amplification = 1
-        self.b_instrument_type = 'coil'
+        self.b_instrument_type = 'induction coil'
         self.b_logger_gain = 1
         self.b_logger_type = 'zen'
         self.b_xaxis_azimuth = 0
@@ -342,9 +342,9 @@ class Survey_Config(object):
         self.hx = 2324
         self.hy = 2314
         self.hz = 2334
-        self.lat = 37.8861
+        self.lat = 0.0
         self.location = 'Earth'
-        self.lon = -119.05417
+        self.lon = 0.0
         self.network = 'USGS'
         self.notes = 'Generic config file'
         self.sampling_interval = 'all'
@@ -449,25 +449,23 @@ class Z3D_to_edi(object):
         self.survey_config_fn = None
         self.birrp_config_fn = None
         self.birrp_exe = r"c:\MinGW32-xy\Peacock\birrp52\birrp52_3pcs6e9pts.exe"
-        self.coil_cal_path = r"d:\Peacock\MTData\Ant_calibrations"
+        self.coil_cal_path = r"d:\Peacock\MTData\Ant_calibrations\rsp_cal"
+        self._coil_calibration_list = ['2254', '2264', '2274', '2284', '2294',
+                                       '2304', '2314', '2324', '2334', '2344',
+                                       '2844', '2854']
         self.num_comp = 5
-        
         self.df_list = [4096, 256, 16]
         self.max_blocks = 3
         
-        self._ts_fn_dtype = np.dtype([('station','|S6'), 
-                                      ('npts',np.int), 
+        # data types for different aspects of getting information
+        self._ts_fn_dtype = np.dtype([('station','S6'), 
+                                      ('npts', np.int), 
                                       ('df', np.int),
-                                      ('start_dt', '|S22'), 
-                                      ('comp','|S2'),
-                                      ('fn','|S100')])
-                                      
-        self._ts_dtype = np.dtype([('fn','|S100'),
-                                   ('npts',np.int),
-                                   ('df', np.int),
-                                   ('start_dt','|S19'),
-                                   ('end_dt','|S19'),
-                                   ('comp', '|S4')])
+                                      ('start_dt', 'S22'),
+                                      ('end_dt', 'S22'),     
+                                      ('comp', 'S2'),
+                                      ('fn', 'S100'),
+                                      ('calibration_fn', 'S100')])
                                    
         self._birrp_fn_dtype = np.dtype([('fn', 'S100'),
                                          ('nread', np.int),
@@ -476,8 +474,8 @@ class Z3D_to_edi(object):
                                          ('calibration_fn', 'S100'),
                                          ('rr', np.bool),
                                          ('rr_num', np.int),
-                                         ('start_dt', 'S19'),
-                                         ('end_dt', 'S19')])
+                                         ('start_dt', 'S22'),
+                                         ('end_dt', 'S22')])
         
         for key in kwargs.keys():
             setattr(self, key, kwargs[key])
@@ -490,14 +488,11 @@ class Z3D_to_edi(object):
         
         self.survey_config_fn = self.survey_config.write_survey_config_file()
     
-    def get_z3d_fn_blocks(self, station_dir=None, remote=False,
+    def get_z3d_fn_blocks(self, station_dir, remote=False,
                           df_list=None, max_blocks=None):
         """
         get z3d file names in an array of blocks
         """
-        
-        if station_dir is not None:
-            self.station_dir = station_dir
             
         if df_list is not None:
             self.df_list = df_list
@@ -543,10 +538,33 @@ class Z3D_to_edi(object):
         
         return fn_block_dict
         
+    def get_calibrations(self, coil_cal_path=None):
+        """
+        get coil calibrations
+        """
+        if coil_cal_path is not None:
+            self.coil_cal_path = coil_cal_path
+            
+        if self.coil_cal_path is None or not os.path.isdir(self.coil_cal_path):
+            print 'could not find calibration path {0}'.format(self.coil_cal_path)
+            self.calibration_dict = dict([(cc, '') for cc in 
+                                          self._coil_calibration_list])
+            return 
+            
+        calibration_dict = {}
+        for cal_fn in os.listdir(self.coil_cal_path):
+            for cal_num in self._coil_calibration_list:
+                if cal_num in cal_fn:
+                    calibration_dict[cal_num] = \
+                                    os.path.join(self.coil_cal_path, cal_fn)
+                    break
+                
+        self.calibration_dict = calibration_dict
+        
     def make_mtpy_ascii_files(self, station_dir=None, rr_station_dir=None, 
                               notch_dict={4096:{}, 256:None, 16:None}, 
                               df_list=None, max_blocks=None,
-                              ex=50., ey=50.,): 
+                              ex=50., ey=50., coil_cal_path=None): 
         """
         makes mtpy_mt files from .Z3D files
         
@@ -584,6 +602,12 @@ class Z3D_to_edi(object):
             
         if max_blocks is not None:
             self.max_blocks = max_blocks
+            
+        if coil_cal_path is not None:
+            self.coil_cal_path = coil_cal_path
+            
+        # get coil calibrations
+        self.get_calibrations() 
         
         #-------------------------------------------------
         # make station z3d's into mtpy ts
@@ -599,7 +623,11 @@ class Z3D_to_edi(object):
                     
         jj = 0  # index for fn_array            
         for df_key in self.df_list:
-            df_notch_dict = notch_dict[df_key]
+            try:
+                df_notch_dict = notch_dict[df_key]
+            except KeyError:
+                df_notch_dict = None
+                
             for date_key in fn_dict[df_key].keys():
                 for fn in fn_dict[df_key][date_key]:
                     fn_arr[jj] = self._convert_z3d_to_mt_ts(fn, df_notch_dict)
@@ -632,7 +660,11 @@ class Z3D_to_edi(object):
                 rr_fn_dict = self.get_z3d_fn_blocks(rr_dir, remote=True)
            
                 for df_key in self.df_list:
-                    df_notch_dict = notch_dict[df_key]
+                    try:
+                        df_notch_dict = notch_dict[df_key]
+                    except KeyError:
+                        df_notch_dict = None
+                        
                     for date_key in rr_fn_dict[df_key].keys():
                         for fn in rr_fn_dict[df_key][date_key]:
                             rr_fn_arr[rr] = self._convert_z3d_to_mt_ts(fn,
@@ -661,7 +693,8 @@ class Z3D_to_edi(object):
         self.survey_config.save_path = self.station_dir
         
         # write survey configuration file
-        self.survey_config.write_survey_config_file()
+        self.survey_config_fn = self.survey_config.write_survey_config_file()
+        
         
         log_lines = []
         for f_arr in fn_arr:
@@ -731,13 +764,25 @@ class Z3D_to_edi(object):
         return_fn_arr['start_dt'] = zd.zen_schedule
         return_fn_arr['comp'] = zd.metadata.ch_cmp.lower()
         return_fn_arr['fn'] = zd.fn_mt_ascii
+        if zd.metadata.ch_cmp.lower() in ['hx', 'hy']:
+            try:
+                h_num = zd.metadata.ch_number
+                return_fn_arr['calibration_fn'] = self.calibration_dict[h_num]
+            except KeyError:
+                print 'Could not find {0} in calibration list'.format(h_num)
         
         # add metadata to survey configuration file
-        if zd.metadata.ch_cmp.lower() == 'hx':
-            self.survey_config.hx = zd.metadata.ch_number
-        elif zd.metadata.ch_cmp.lower() == 'hy':
-            self.survey_config.hy = zd.metadata.ch_number
-        elif zd.metadata.ch_cmp.lower() == 'hz':
+        if zd.metadata.ch_cmp.lower() in ['hx', 'hy', 'hz']:
+            comp = zd.metadata.ch_cmp.lower()
+            chn_num = zd.metadata.ch_number
+            setattr(self.survey_config, comp, chn_num)
+            try:
+                cal_fn = self.calibration_dict[chn_num]
+                setattr(self.survey_config, comp+'_cal_fn', cal_fn)
+            except KeyError:
+                print 'Did not find calibration for {0}, number {1}'.format(comp, 
+                                                                            chn_num)
+
             self.survey_config.hz = zd.metadata.ch_number
         elif zd.metadata.ch_cmp.lower() == 'ex':
             self.survey_config.e_xaxis_length = zd.metadata.ch_length
@@ -751,6 +796,8 @@ class Z3D_to_edi(object):
                 self.survey_config.date = zd.schedule.Date.replace('-','/')
                 self.survey_config.box = int(zd.header.box_number)
                 self.survey_config.station = station
+                self.survey_config.location = zd.metadata.job_name
+                self.survey_config.network = zd.metadata.job_by
         else:
             if self.survey_config.rr_lat is None or self.survey_config.rr_lat == 0.0:
                 self.survey_config.rr_lat = zd.header.lat
@@ -802,7 +849,7 @@ class Z3D_to_edi(object):
             return None
             
         fn_arr = np.zeros(len(os.listdir(self.station_dir)),
-                          dtype=self._ts_dtype)
+                          dtype=self._ts_fn_dtype)
         fn_count = 0
         for fn in os.listdir(self.station_dir):
             fn = os.path.join(self.station_dir, fn)
@@ -817,7 +864,7 @@ class Z3D_to_edi(object):
         # get remote reference filenames
         if self.rr_station_dir is not None:
             n_rr = (len(fn_arr)/self.num_comp)*10*len(self.rr_station_dir)
-            rr_fn_arr = np.zeros(n_rr, dtype=self._ts_dtype) 
+            rr_fn_arr = np.zeros(n_rr, dtype=self._ts_fn_dtype) 
         
             rr_count = 0
         
@@ -836,7 +883,6 @@ class Z3D_to_edi(object):
             rr_fn_arr = None
             
         return self.get_schedules_fn(fn_arr, rr_fn_arr,
-                                     max_blocks=max_blocks,
                                      use_blocks_dict=use_blocks_dict)
 #        return (fn_arr, rr_fn_arr)
             
@@ -846,7 +892,7 @@ class Z3D_to_edi(object):
         make ts_arr entries
         """
 
-        return_fn_arr = np.zeros(1, dtype=self._ts_dtype)
+        return_fn_arr = np.zeros(1, dtype=self._ts_fn_dtype)
         
         try:
             header_dict = mtfh.read_ts_header(fn)
@@ -859,6 +905,7 @@ class Z3D_to_edi(object):
                 return_fn_arr['npts'] = header_dict['nsamples']
                 return_fn_arr['df'] = header_dict['samplingrate']
                 return_fn_arr['comp'] = header_dict['channel']
+                    
                 start_sec = header_dict['t_min']
                 num_sec = float(header_dict['nsamples'])/\
                                                    header_dict['samplingrate']
@@ -944,6 +991,7 @@ class Z3D_to_edi(object):
                     if len(dt_find[0]) >= 1:
                         dt_rr_arr = self._fill_birrp_fn_arr(df_rr_arr[dt_find],
                                                             remote=True)
+                        
                         rr_birrp_fn_arr = np.append(rr_birrp_fn_arr,
                                                    dt_rr_arr)
                         rr_station_find += [os.path.basename(dt_rr_arr[0]['fn'])[0:4]]
@@ -1028,7 +1076,22 @@ class Z3D_to_edi(object):
                         if dt_arr is not None:
                             rr_birrp_fn_arr = np.append(rr_birrp_fn_arr,
                                                         dt_arr)
-     
+                                                        
+                    # need to fill in what number remote references are
+                    rr_index = 1
+                    rr_count = 0
+                    for rr_b_arr in rr_birrp_fn_arr:
+                        # for now have a default calibration file
+                        # nearly all the calibration files are identical
+                        # this will work fine for now, till I can figure 
+                        # out how to fill it in automatically, need to 
+                        # change the format and metadate of mtpy TS
+                        rr_b_arr['calibration_fn'] = r"/mnt/hgfs/MTData/Ant_calibrations/rsp_cal/ant_2284.csv"
+                        rr_b_arr['rr_num'] = rr_index
+                        rr_count += 1
+                        if rr_count%2 == 0 and rr_count != 0:
+                            rr_index += 1
+                        
                     # append the remote reference data to station data                                                                        
                     s_fn_birrp_arr = np.append(s_fn_birrp_arr, rr_birrp_fn_arr)
                 
@@ -1048,8 +1111,6 @@ class Z3D_to_edi(object):
         # if there are more than 1 entry get the set
         else:
             nc = fn_arr.shape[0]
-            
-        print nc, len(fn_arr['fn'])
         
         # make an empty array to fill
         s_fn_birrp_arr = np.zeros(nc, dtype=self._birrp_fn_dtype)
@@ -1080,9 +1141,53 @@ class Z3D_to_edi(object):
                                         
         return s_fn_birrp_arr
         
-        
-    def write_script_files(self, fn_birrp_dict, save_path=None,
+    def write_script_files(self, birrp_arr_dict, save_path=None, 
                            birrp_params_dict={}, **kwargs):
+        """
+        write script files in the new method
+        """
+        
+        # make save path
+        if save_path is None:
+            save_path = os.path.join(self.station_dir, 'BF')
+        if not os.path.exists(save_path):
+            os.mkdir(save_path)  
+            
+        script_fn_list = []            
+        # loop through by keys, which should be sampling rates
+        df_keys = birrp_arr_dict.keys()
+        for df_key in df_keys:
+            # make a path unique to the sampling rate
+            bf_path = os.path.join(save_path, '{0:.0f}'.format(df_key))
+            if not os.path.exists(bf_path):
+                os.mkdir(bf_path)
+            
+            # get the fn_array, and make sure that it is a ndarray type
+            birrp_fn_arr = np.array(birrp_arr_dict[df_key])
+            
+            # get station name
+            ex_find = np.where(birrp_fn_arr[0]['comp']) == 'ex'
+            station = os.path.basename(birrp_fn_arr[0][ex_find]['fn'])[0:4]
+            
+            # add parameters to birrp_params_dict 
+            birrp_params_dict['deltat'] = -1*df_key
+            birrp_params_dict['ofil'] = os.path.join(bf_path, station)
+            
+            # make a script object passing on the desired birrp parameters
+            birrp_script_obj = birrp.ScriptFile(**birrp_params_dict)
+            birrp_script_obj.fn_arr = birrp_fn_arr
+            # write script file
+            birrp_script_obj.write_script_file(script_fn=os.path.join(bf_path,
+                                                                      station+'.script'))
+            # write a birrp parameter configuration file
+            birrp_script_obj.write_config_file(os.path.join(bf_path, 
+                                                            station))            
+            script_fn_list.append(birrp_script_obj.script_fn)
+        
+        return script_fn_list
+        
+    def write_script_files_old(self, fn_birrp_dict, save_path=None,
+                               birrp_params_dict={}, **kwargs):
         """
         write a script file from a generic processing dictionary
         """
@@ -1180,7 +1285,9 @@ class Z3D_to_edi(object):
         write an edi file from outputs of birrp
         """
         if self.survey_config_fn is not None:
-            self.survey_config_fn = survey_config_fn        
+            self.survey_config_fn = survey_config_fn    
+            
+        
         
         if self.survey_config_fn is None:
             ts_find = birrp_output_path.find('TS')
@@ -1189,6 +1296,8 @@ class Z3D_to_edi(object):
                 for fn in os.listdir(ts_dir):
                     if fn[-4:] == '.cfg':
                         self.survey_config_fn = os.path.join(ts_dir, fn)
+                        
+        print self.survey_config_fn
         
         j2edi_obj = birrp.J_To_Edi(station=self.survey_config.station,
                                    survey_config_fn=self.survey_config_fn,
@@ -1309,25 +1418,26 @@ class Z3D_to_edi(object):
                               full path to combined edi file                          
             
         """
+        if df_list is not None:
+            self.df_list = df_list
+            
+        if max_blocks is not None:
+            self.max_blocks = max_blocks
         
+        # get start time
         st = time.time()
         
-        if df_list is not None:
-            if type(df_list) is float or type(df_list) is int or\
-               type(df_list) is str:
-               df_list = [df_list] 
-        
-        self.df_list = df_list
+        if self.df_list is not None:
+            if type(self.df_list) is float or type(self.df_list) is int or\
+               type(self.df_list) is str:
+               self.df_list = [self.df_list] 
+
         
         # make files into mtpy files
-        z3d_fn_list, rr_fn_list, log_lines = self.make_mtpy_ascii_files(df_list=df_list,
-                                                            max_blocks=max_blocks,
-                                                            notch_dict=notch_dict)
+        z3d_fn_list, rr_fn_list, log_lines = self.make_mtpy_ascii_files(notch_dict=notch_dict)
         
         # get all information from mtpy files
-        schedule_dict = self.get_schedules_fn_from_dir(df_list=df_list,
-                                                       max_blocks=max_blocks,
-                                                       use_blocks_dict=use_blocks_dict)
+        schedule_dict = self.get_schedules_fn_from_dir(use_blocks_dict=use_blocks_dict)
             
         # write script files for birrp
         sfn_list = self.write_script_files(schedule_dict,
