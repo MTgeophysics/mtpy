@@ -420,6 +420,8 @@ class ScriptFile(BIRRP_Parameters):
         if self.fn_arr[0].dtype is not self._fn_dtype:
             raise Script_File_Error('fn_arr.dtype needs to be {0}'.format(self._fn_dtype))
         
+        print self.fn_arr
+        
     @property
     def nout(self):
         if self.fn_arr is not None:
@@ -596,9 +598,16 @@ class ScriptFile(BIRRP_Parameters):
                         rr = False
                         rr_num = 0
 
-                    fn_index = np.where((fn_arr['comp']==cc) & \
+                    try:
+                        fn_index = np.where((fn_arr['comp']==cc) & \
                                         (fn_arr['rr']==rr) & \
                                         (fn_arr['rr_num']==rr_num))[0][0]
+                    except IndexError:
+                        print 'Something a miss with remote reference'
+                        print self.comp_list
+                        print len(np.where(fn_arr['rr']==True)[0])
+                        raise ValueError('Fuck!')
+                        
                     if ff == 0:
                         fn_lines = self.make_fn_lines_block_00(fn_arr[fn_index])
                     else:

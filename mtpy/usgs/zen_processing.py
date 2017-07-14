@@ -994,7 +994,9 @@ class Z3D_to_edi(object):
                         
                         rr_birrp_fn_arr = np.append(rr_birrp_fn_arr,
                                                    dt_rr_arr)
-                        rr_station_find += [os.path.basename(dt_rr_arr[0]['fn'])[0:4]]
+                        # need to make a list of remote reference station
+                        # already found so there are no duplicates
+                        rr_station_find += list(set([os.path.basename(f['fn'])[0:4] for f in dt_rr_arr]))
 
                     # find the where dates do not match
                     dt_not_find = np.where(df_rr_arr['start_dt'] != sdate)
@@ -1005,8 +1007,8 @@ class Z3D_to_edi(object):
                     for rr_arr in df_rr_arr[dt_not_find]:
                         # check to see if this station already has been added
                         # as a remote reference
-                        station = os.path.basename(rr_arr['fn'])[0:4]
-                        if station in rr_station_find:
+                        f_station = os.path.basename(rr_arr['fn'])[0:4]
+                        if f_station in rr_station_find:
                             continue
                         
                         # find the next closest date
@@ -1026,7 +1028,7 @@ class Z3D_to_edi(object):
                             if abs(t_diff) > 5*3600:
                                 continue
                             else:
-                                print 'Using rr {0} for TS starting on {1}'.format(station,
+                                print 'Using rr {0} for TS starting on {1}'.format(f_station,
                                                                                    rr_arr['start_dt'])
                                 print 'For station TS starting on      {0}'.format(sdate)
                         
@@ -1037,7 +1039,7 @@ class Z3D_to_edi(object):
                             if abs(t_diff) > 4*60:
                                 continue
                             else:
-                                print 'Using rr {0} for TS starting on {1}'.format(station,
+                                print 'Using rr {0} for TS starting on {1}'.format(f_station,
                                                                                    rr_arr['start_dt'])
                                 print 'For station TS starting on      {0}'.format(sdate)
                         
@@ -1049,7 +1051,7 @@ class Z3D_to_edi(object):
                             if abs(t_diff) > 5*3600:
                                 continue
                             else:
-                                print 'Using rr {0} for TS starting on {1}'.format(station,
+                                print 'Using rr {0} for TS starting on {1}'.format(f_station,
                                                                                    rr_arr['start_dt'])
                                 print 'For station TS starting on      {0}'.format(sdate)
                         
@@ -1172,6 +1174,9 @@ class Z3D_to_edi(object):
             # add parameters to birrp_params_dict 
             birrp_params_dict['deltat'] = -1*df_key
             birrp_params_dict['ofil'] = os.path.join(bf_path, station)
+            if df_key == 16:
+                birrp_params_dict['nfft'] = 2**16
+                birrp_params_dict['nsctmax'] = 11
             
             # make a script object passing on the desired birrp parameters
             birrp_script_obj = birrp.ScriptFile(**birrp_params_dict)
