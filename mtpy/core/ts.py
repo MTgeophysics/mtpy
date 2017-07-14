@@ -104,7 +104,7 @@ class MT_TS(object):
         # one already does
         if os.path.exists(self.fn_hdf5) is True:
             print('{0} already exists'.format(self.fn_hdf5))
-            delete_bool = input('Delete old file (True/False)')
+            delete_bool = input('Delete old file (True/False):\n')
             if delete_bool == True:
                 os.remove(self.fn_hdf5)
             else:
@@ -129,14 +129,16 @@ class MT_TS(object):
         ts_arr.attrs.azimuth = self.azimuth
         ts_arr.attrs.units = self.units
         ts_arr.attrs.lat = self.lat
-        ts_arr.attrs.lon = self.long
+        ts_arr.attrs.lon = self.lon
         ts_arr.attrs.datum = self.datum
         ts_arr.attrs.data_logger = self.data_logger
         ts_arr.attrs.instrument_id = self.instrument_id
         ts_arr.attrs.calibration_fn = self.calibration_fn
         ts_arr.attrs.declination = self.declination
         
-        z1_h5.close()
+        hdf5_obj.close()
+        
+        print('    Wrote time series to {0}'.format(self.fn_hdf5))
         
     def read_hdf5(self, fn_hdf5):
         """
@@ -178,39 +180,68 @@ class MT_TS(object):
 #==============================================================================
 class MT_TS_Error(Exception):
     pass        
-    
+ 
+
+## TEST
+   
 z1 = zen.Zen3D(fn)
 z1.read_z3d()
 z1.station = '{0}{1}'.format(z1.metadata.line_name, z1.metadata.rx_xyz0[0:2])
 
-h5_fn = fn[0:-4]+'.h5'
-pd_h5_fn = fn[0:-4]+'_pd.h5' 
+h5_fn = fn[0:-4]+'.h5' 
 
-if not os.path.exists(h5_fn):
+test_ts = MT_TS()
 
-    z1_h5 = tables.open_file(h5_fn, mode='w', title='Test')
-    ts_arr = z1_h5.create_array('/', 'time_series', z1.convert_counts())
-    
-    ts_arr.attrs.station = z1.station
-    ts_arr.attrs.sampling_rate = int(z1.df)
-    ts_arr.attrs.start_time_epoch_sec = time.mktime(time.strptime(z1.zen_schedule, 
-                                                                  zen.datetime_fmt))
-    ts_arr.attrs.start_time_utc = z1.zen_schedule
-    ts_arr.attrs.n_samples = int(z1.time_series.size)
-    ts_arr.attrs.component = z1.metadata.ch_cmp
-    ts_arr.attrs.coordinate_system = 'geomagnetic'
-    ts_arr.attrs.dipole_length = float(z1.metadata.ch_length)
-    ts_arr.attrs.azimuth = float(z1.metadata.ch_azimuth)
-    ts_arr.attrs.units = 'mV'
-    ts_arr.attrs.lat = z1.header.lat
-    ts_arr.attrs.lon = z1.header.long
-    ts_arr.attrs.datum = 'WGS84'
-    ts_arr.attrs.data_logger = 'Zonge Zen'
-    ts_arr.attrs.instrument_num = None
-    ts_arr.attrs.calibration_fn = None
-    ts_arr.attrs.declination = 3.6
-    
-    z1_h5.close()
+test_ts.ts = z1.convert_counts()
+test_ts.station = z1.station
+test_ts.sampling_rate = int(z1.df)
+test_ts.start_time_epoch_sec = time.mktime(time.strptime(z1.zen_schedule, 
+                                                              zen.datetime_fmt))
+test_ts.start_time_utc = z1.zen_schedule
+test_ts.n_samples = int(z1.time_series.size)
+test_ts.component = z1.metadata.ch_cmp
+test_ts.coordinate_system = 'geomagnetic'
+test_ts.dipole_length = float(z1.metadata.ch_length)
+test_ts.azimuth = float(z1.metadata.ch_azimuth)
+test_ts.units = 'mV'
+test_ts.lat = z1.header.lat
+test_ts.lon = z1.header.long
+test_ts.datum = 'WGS84'
+test_ts.data_logger = 'Zonge Zen'
+test_ts.instrument_num = None
+test_ts.calibration_fn = None
+test_ts.declination = 3.6
+
+test_ts.write_hdf5(h5_fn)
+
+read_ts = MT_TS()
+read_ts.read_hdf5(h5_fn)
+
+#if not os.path.exists(h5_fn):
+#
+#    z1_h5 = tables.open_file(h5_fn, mode='w', title='Test')
+#    ts_arr = z1_h5.create_array('/', 'time_series', z1.convert_counts())
+#    
+#    ts_arr.attrs.station = z1.station
+#    ts_arr.attrs.sampling_rate = int(z1.df)
+#    ts_arr.attrs.start_time_epoch_sec = time.mktime(time.strptime(z1.zen_schedule, 
+#                                                                  zen.datetime_fmt))
+#    ts_arr.attrs.start_time_utc = z1.zen_schedule
+#    ts_arr.attrs.n_samples = int(z1.time_series.size)
+#    ts_arr.attrs.component = z1.metadata.ch_cmp
+#    ts_arr.attrs.coordinate_system = 'geomagnetic'
+#    ts_arr.attrs.dipole_length = float(z1.metadata.ch_length)
+#    ts_arr.attrs.azimuth = float(z1.metadata.ch_azimuth)
+#    ts_arr.attrs.units = 'mV'
+#    ts_arr.attrs.lat = z1.header.lat
+#    ts_arr.attrs.lon = z1.header.long
+#    ts_arr.attrs.datum = 'WGS84'
+#    ts_arr.attrs.data_logger = 'Zonge Zen'
+#    ts_arr.attrs.instrument_num = None
+#    ts_arr.attrs.calibration_fn = None
+#    ts_arr.attrs.declination = 3.6
+#    
+#    z1_h5.close()
     
 #if not os.path.exists(pd_h5_fn):
 #
