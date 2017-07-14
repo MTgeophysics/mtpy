@@ -1500,23 +1500,27 @@ class Z3D_to_edi(object):
                                    
         count = 0
         for edi_fn in edi_fn_list:
-            edi_obj = mtedi.Edi(edi_fn)
-            # get sampling rate from directory path
-            for fkey in sorted(sr_dict.keys(), reverse=True):
-                if str(fkey) in edi_fn:
-                    # locate frequency range
-                    f_index = np.where((edi_obj.Z.freq >= sr_dict[fkey][1]) & 
-                                       (edi_obj.Z.freq <= sr_dict[fkey][0]))
-                                       
-                                       
-                    data_arr['freq'][count:count+len(f_index[0])] = edi_obj.Z.freq[f_index]
-                    data_arr['z'][count:count+len(f_index[0])] = edi_obj.Z.z[f_index]
-                    data_arr['z_err'][count:count+len(f_index[0])] = edi_obj.Z.z_err[f_index]
-                    if edi_obj.Tipper.tipper is not None:                    
-                        data_arr['tipper'][count:count+len(f_index[0])] = edi_obj.Tipper.tipper[f_index]
-                        data_arr['tipper_err'][count:count+len(f_index[0])] = edi_obj.Tipper.tipper_err[f_index]
-        
-                    count += len(f_index[0])
+            try:
+                edi_obj = mtedi.Edi(edi_fn)
+                # get sampling rate from directory path
+                for fkey in sorted(sr_dict.keys(), reverse=True):
+                    if str(fkey) in edi_fn:
+                        # locate frequency range
+                        f_index = np.where((edi_obj.Z.freq >= sr_dict[fkey][1]) & 
+                                           (edi_obj.Z.freq <= sr_dict[fkey][0]))
+                                           
+                                           
+                        data_arr['freq'][count:count+len(f_index[0])] = edi_obj.Z.freq[f_index]
+                        data_arr['z'][count:count+len(f_index[0])] = edi_obj.Z.z[f_index]
+                        data_arr['z_err'][count:count+len(f_index[0])] = edi_obj.Z.z_err[f_index]
+                        if edi_obj.Tipper.tipper is not None:                    
+                            data_arr['tipper'][count:count+len(f_index[0])] = edi_obj.Tipper.tipper[f_index]
+                            data_arr['tipper_err'][count:count+len(f_index[0])] = edi_obj.Tipper.tipper_err[f_index]
+            
+                        count += len(f_index[0])
+            except IndexError:
+                print 'Something went wrong with processing {0}'.format(edi_fn)
+                
                     
         # now replace
         data_arr = data_arr[np.nonzero(data_arr['freq'])]
