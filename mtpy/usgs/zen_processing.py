@@ -1123,6 +1123,11 @@ class Z3D_to_edi(object):
         s_fn_birrp_arr['nskip'][:] = 1
         s_fn_birrp_arr['start_dt'][:] = fn_arr['start_dt']
         s_fn_birrp_arr['comp'][:] = fn_arr['comp']
+        
+        # be sure to fill in calibration file for station mags
+        for sfb_arr in s_fn_birrp_arr:
+            if sfb_arr['comp'] in ['hx', 'hy', 'hz']:
+                sfb_arr['calibration_fn'] = r"/mnt/hgfs/MTData/Ant_calibrations/rsp_cal/ant_2284.csv"
         if remote == True:
             s_fn_birrp_arr['rr'] = True
         
