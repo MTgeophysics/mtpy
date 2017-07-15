@@ -971,8 +971,8 @@ class Location(object):
         self._latitude = None
         self._longitude = None
         
-        self.northing = None
-        self.easting = None
+        self._northing = None
+        self._easting = None
         self.utm_zone = None
         self.elev_units = 'm'
         self.coordinate_system = 'Geographic North'
@@ -1006,7 +1006,23 @@ class Location(object):
         
     elevation = property(fget=_get_elevation, 
                         fset=_set_elevation,
-                        doc="""Elevation in floating point""") 
+                        doc="""Elevation in floating point""")
+    
+    def _get_easting(self):
+        return self._easting
+    def _set_easting(self, easting):
+        self._easting = float(easting)
+    easting = property(fget=_get_easting, 
+                       fset=_set_easting,
+                       doc="""Easting in meters""")
+    
+    def _get_northing(self):
+        return self._northing
+    def _set_northing(self, northing):
+        self._northing = float(northing)
+    northing = property(fget=_get_northing, 
+                       fset=_set_northing,
+                       doc="""Northing in meters""")
     
     def project_location2utm(self):
         """
