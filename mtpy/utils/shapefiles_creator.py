@@ -519,13 +519,13 @@ if __name__ == "__main__":
 
     # create shapefiles and plots
     # epsg projection 4283 - gda94
-    process_csv_folder(path2out, bbox_dict)  # , target_epsg_code will be default 4326?
+    # process_csv_folder(path2out, bbox_dict)  # , target_epsg_code will be default 4326?
 
     # epsg projection 28354 - gda94 / mga zone 54
     # epsg projection 32754 - wgs84 / utm zone 54s
 
-    for my_epsgcode in [32754,]:  #[3112, 32755]:   # 32754, 28355]:
-        #my_epsgcode = 32755 # GDA94/GALCC =3112
-        bbox_dict=edisobj.get_bounding_box(epsgcode=my_epsgcode)
-        print(bbox_dict)
-        process_csv_folder(path2out, bbox_dict, target_epsg_code=my_epsgcode)
+    # for my_epsgcode in [32754,]:  #[3112, 32755]:   # 32754, 28355]:
+    #     #my_epsgcode = 32755 # GDA94/GALCC =3112
+    #     bbox_dict=edisobj.get_bounding_box(epsgcode=my_epsgcode)
+    #     print(bbox_dict)
+    #     process_csv_folder(path2out, bbox_dict, target_epsg_code=my_epsgcode)
