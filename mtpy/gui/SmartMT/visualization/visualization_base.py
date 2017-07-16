@@ -65,6 +65,10 @@ class VisualizationBase(object):
     def plot(self):
         pass
 
+    @abc.abstractmethod
+    def get_parameter_str(self):
+        pass
+
     def show_figure(self):
         progressbar = ProgressBar()
         progressbar.onStart()
@@ -83,7 +87,7 @@ class VisualizationBase(object):
 
             progressbar.onFinished()
 
-            self._parent._parent.create_subwindow(widget, self.plot_name(), overide=False)
+            self._parent._parent.create_subwindow(widget, "%s" % self.plot_name(), overide=False, tooltip=self.get_parameter_str())
         else:
             progressbar.onFinished()
 

@@ -15,6 +15,17 @@ from mtpy.imaging.phase_tensor_maps import PlotPhaseTensorMaps
 
 
 class PhaseTensorMap(VisualizationBase):
+    def get_parameter_str(self):
+        ellipse = self._ellipse_ui.get_ellipse_dict()
+        tipper = self._arrow_ui.get_plot_tipper()
+        return "freq=%.5f, tolerance=%.2f%%, ellipse_size=%.2f, real_induction=%s, imaginary_induction=%s" % (
+            self._frequency_ui.get_frequency(),
+            self._tolerance_ui.get_tolerance_in_float()*100,
+            ellipse['size'],
+            'on' if tipper.find('r') >= 0 else 'off',
+            'on' if tipper.find('i') >= 0 else 'off'
+        )
+
     @staticmethod
     def plot_description():
         return """

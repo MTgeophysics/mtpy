@@ -16,13 +16,16 @@ from mtpy.imaging.penetration import Depth3D
 
 
 class PenetrationDepth3D(VisualizationBase):
+    def get_parameter_str(self):
+        return "z-component=%s, period=%.5f, tolerance=%.2f%%" % (self._zcomponent, self._period, self._tolerance*100)
+
     def plot(self):
         # get parameters
         try:
-            zcomponent = self._z_component_ui.get_selection()
-            period = self._frequency_period_ui.get_frequency()
-            tolerance = self._tolerance_ui.get_tolerance_in_float()
-            self._plotting_object = Depth3D(self._mt_objs, period, zcomponent, tolerance)
+            self._zcomponent = self._z_component_ui.get_selection()
+            self._period = self._frequency_period_ui.get_frequency()
+            self._tolerance = self._tolerance_ui.get_tolerance_in_float()
+            self._plotting_object = Depth3D(self._mt_objs, self._period, self._zcomponent, self._tolerance)
             self._plotting_object.plot()
             self._fig = self._plotting_object.get_figure()
 
@@ -67,6 +70,11 @@ class PenetrationDepth3D(VisualizationBase):
         #                           self._parameter_ui.sizeHint().height())
 
         self.update_ui()
+
+        # plot parameters
+        self._zcomponent = None
+        self._period = None
+        self._tolerance = None
 
 # register subclass
 VisualizationBase.register(PenetrationDepth3D)

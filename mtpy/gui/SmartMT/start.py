@@ -172,7 +172,7 @@ class StartQt4(QtGui.QMainWindow):
         self._station_viewer.update_view()
         self._station_summary.update_view()
 
-    def create_subwindow(self, widget, title, overide=True):
+    def create_subwindow(self, widget, title, overide=True, tooltip=None):
         subwindow = None
         self._subwindow_counter += 1
         if title in self.subwindows:
@@ -207,6 +207,8 @@ class StartQt4(QtGui.QMainWindow):
         self.ui.menuWindow.addAction(new_window_action)
         # add all references to self._subwindow
         self.subwindows[title] = (subwindow, new_window_action)
+        if tooltip:
+            self.setToolTip(tooltip)
         subwindow.show()
 
         return subwindow, new_window_action
