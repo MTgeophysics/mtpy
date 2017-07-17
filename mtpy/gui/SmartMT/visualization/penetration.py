@@ -51,6 +51,8 @@ class Depth1D(VisualizationBase):
         self._z_component_ui = ZComponentMultiple(self._parameter_ui)
         self._parameter_ui.add_parameter_groubox(self._z_component_ui)
 
+        self._parameter_ui.end_of_parameter_components()
+
 
 class Depth2D(VisualizationBase):
     def plot(self):
@@ -88,6 +90,8 @@ class Depth2D(VisualizationBase):
 
         self._frequency_period_ui = FrequencyIndex(self._parameter_ui, use_period=True)
         self._parameter_ui.add_parameter_groubox(self._frequency_period_ui)
+
+        self._parameter_ui.end_of_parameter_components()
 
 
 class Depth3D(VisualizationBase):
@@ -139,6 +143,8 @@ class Depth3D(VisualizationBase):
         self._tolerance_ui = FrequencyTolerance(self._parameter_ui)
         self._tolerance_ui.setTitle("Period Tolerance")
         self._parameter_ui.add_parameter_groubox(self._tolerance_ui)
+
+        self._parameter_ui.end_of_parameter_components()
 
         # resize
         # self._parameter_ui.resize(self._parameter_ui.width(),

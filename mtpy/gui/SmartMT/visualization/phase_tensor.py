@@ -128,6 +128,8 @@ class PhaseTensorMap(VisualizationBase):
         self._station_font_ui.setTitle('Station Label Font')
         self._parameter_ui.add_parameter_groubox(self._station_font_ui)
 
+        self._parameter_ui.end_of_parameter_components()
+
         # resize
         self._parameter_ui.resize(self._parameter_ui.width(),
                                   self._parameter_ui.sizeHint().height())
@@ -165,6 +167,8 @@ class PhaseTensorPseudoSection(VisualizationBase):
         self._label_font_ui.hide_color()
         self._label_font_ui.hide_weight()
         self._parameter_ui.add_parameter_groubox(self._label_font_ui)
+
+        self._parameter_ui.end_of_parameter_components()
 
         self.update_ui()
         self._params = None

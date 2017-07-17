@@ -63,6 +63,8 @@ class PlotParameter(QtGui.QGroupBox):
         self.ui.verticalLayout_2.addWidget(groupbox, QtCore.Qt.AlignLeft)
         self.resize(self.sizeHint())
 
+    def end_of_parameter_components(self):
+        self.ui.verticalLayout_2.addStretch()
 
 class ZComponentMultiple(QtGui.QGroupBox):
     def __init__(self, parent):
@@ -618,6 +620,7 @@ class FrequencyIndex(QtGui.QGroupBox):
                 self.ui.listWidget_frequency_period.addItems(
                     ["%.5f %s" % (value, self._unit_period if self.use_period else self._unit_frequency) for value in
                      all_freqs])
+                self.ui.listWidget_frequency_period.setCurrentRow(0)  # select the first row by default
                 self.ui.listWidget_frequency_period.setEnabled(True)
             else:
                 self.ui.listWidget_frequency_period.addItem("ERROR: frequency lists from stations are not identical")
