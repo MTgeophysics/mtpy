@@ -9,7 +9,7 @@
     Date: 20/06/2017
 """
 from mtpy.gui.SmartMT.gui.plot_parameter import FrequencySingle, Ellipse, FrequencyTolerance, ColorBar, Arrow, Padding, \
-    Scale
+    Scale, Font
 from mtpy.gui.SmartMT.visualization.visualization_base import VisualizationBase
 from mtpy.imaging.phase_tensor_maps import PlotPhaseTensorMaps
 
@@ -75,6 +75,19 @@ class PhaseTensorMap(VisualizationBase):
             params['xpad'] = self._padding_ui.get_x_pad()
             params['ypad'] = self._padding_ui.get_y_pad()
 
+        if self._label_font_ui.ui.checkBox_size.isChecked():
+            params['font_size'] = self._label_font_ui.get_size()
+
+        station_dict = {}
+        if self._station_font_ui.ui.checkBox_size.isChecked():
+            station_dict['size'] = self._station_font_ui.get_size()
+        if self._station_font_ui.ui.checkBox_weight.isChecked():
+            station_dict['weight'] = self._station_font_ui.get_weight()
+        if self._station_font_ui.ui.checkBox_color.isChecked():
+            station_dict['color'] = self._station_font_ui.get_color()
+        if station_dict:
+            params['station_dict'] = station_dict
+
         self._plotting_object = PlotPhaseTensorMaps(**params)
         self._plotting_object.plot(show=False)
         self._fig = self._plotting_object.fig
@@ -103,6 +116,16 @@ class PhaseTensorMap(VisualizationBase):
 
         self._colorbar_ui = ColorBar(self._parameter_ui)
         self._parameter_ui.add_parameter_groubox(self._colorbar_ui)
+
+        self._label_font_ui = Font(self._parameter_ui)
+        self._label_font_ui.setToolTip("Font of the plot labels")
+        self._label_font_ui.hide_color()
+        self._label_font_ui.hide_weight()
+        self._parameter_ui.add_parameter_groubox(self._label_font_ui)
+
+        self._station_font_ui = Font(self._parameter_ui, simple_color=False)
+        self._station_font_ui.setTitle('Station Label Font')
+        self._parameter_ui.add_parameter_groubox(self._station_font_ui)
 
         # resize
         self._parameter_ui.resize(self._parameter_ui.width(),

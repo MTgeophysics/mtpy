@@ -8,6 +8,8 @@
     Author: YingzhiGou
     Date: 20/06/2017
 """
+import six
+from matplotlib import colors as mcolors
 import numpy as np
 from PyQt4 import QtGui, QtCore
 
@@ -15,6 +17,7 @@ from mtpy.gui.SmartMT.gui.matplotlib_imabedding import MPLCanvas, Cursor
 from mtpy.gui.SmartMT.ui_asset.groupbox_arrow import Ui_GroupBox_Arrow
 from mtpy.gui.SmartMT.ui_asset.groupbox_color_bar import Ui_GroupBox_ColorBar
 from mtpy.gui.SmartMT.ui_asset.groupbox_ellipse import Ui_GroupBoxEllipse
+from mtpy.gui.SmartMT.ui_asset.groupbox_font import Ui_GroupBox_Font
 from mtpy.gui.SmartMT.ui_asset.groupbox_frequency_period_single import Ui_groupBoxFrequency_pereiod_single
 from mtpy.gui.SmartMT.ui_asset.groupbox_padding import Ui_GroupBox_Padding
 from mtpy.gui.SmartMT.ui_asset.groupbox_scale import Ui_GroupBox_Scale
@@ -22,6 +25,25 @@ from mtpy.gui.SmartMT.ui_asset.groupbox_tolerance import Ui_GroupBoxTolerance
 from mtpy.gui.SmartMT.ui_asset.groupbox_z_component_multiple import Ui_groupBoxZ_Component_Multiple
 from mtpy.gui.SmartMT.ui_asset.groupbox_z_component_single import Ui_groupBoxZ_Component_Single
 from mtpy.gui.SmartMT.ui_asset.plot_parameters import Ui_GroupBoxParameters
+
+
+COLORS = list(six.iteritems(mcolors.cnames))
+# # add the single letter colors
+# for name, rgb in six.iteritems(mcolors.ColorConverter.colors):
+#     hex_ = mcolors.rgb2hex(rgb)
+#     COLORS.append((name, hex_))
+# sort by name
+COLORS.sort(key=lambda c: c[0])
+
+SIMPLE_COLORS = ['b',  # blue
+                 'g',  # green
+                 'r',  # red
+                 'c',  # cyan
+                 'm',  # magenta
+                 'y',  # yellow
+                 'k',  # black
+                 'w'  # white
+              ]
 
 
 class PlotParameter(QtGui.QGroupBox):
@@ -338,12 +360,19 @@ class ColorBar(QtGui.QGroupBox):
 
 
 class Arrow(QtGui.QGroupBox):
-    def __init__(self, parent):
+    def __init__(self, parent, simple_color=True):
         QtGui.QGroupBox.__init__(self, parent)
         self.ui = Ui_GroupBox_Arrow()
         self.ui.setupUi(self)
+        self._simple_color = simple_color
+        if not self._simple_color:
+            # use all colors available to matplot
+            self.ui.comboBox_color_imaginary.clear()
+            self.ui.comboBox_color_real.clear()
+            cnames = [name for name, hex in COLORS]
+            self.ui.comboBox_color_imaginary.addItems(cnames)
+            self.ui.comboBox_color_real.addItems(cnames)
 
-    _color = ['b', 'g', 'r', 'c', 'm', 'y', 'k', 'w']
     _direction = [0, 1]
 
     def get_arrow_dict(self):
@@ -353,11 +382,15 @@ class Arrow(QtGui.QGroupBox):
                 'head_length': self.ui.doubleSpinBox_head_length.value(),
                 'head_width': self.ui.doubleSpinBox_head_width.value(),
                 'lw': self.ui.doubleSpinBox_line_width.value(),
-                'color': (self._color[self.ui.comboBox_color_real.currentIndex()],
-                          self._color[self.ui.comboBox_color_imaginary.currentIndex()]),
                 'threshold': self.ui.doubleSpinBox_threshold.value(),
                 'direction': self._direction[self.ui.comboBox_direction.currentIndex()]
             }
+            if self._simple_color:
+                arrow_dict['color'] = (SIMPLE_COLORS[self.ui.comboBox_color_real.currentIndex()],
+                                       SIMPLE_COLORS[self.ui.comboBox_color_imaginary.currentIndex()])
+            else:
+                arrow_dict['color'] = (COLORS[self.ui.comboBox_color_real.currentIndex()][1],
+                                       COLORS[self.ui.comboBox_color_imaginary.currentIndex()][1])
             return arrow_dict
         else:
             return None
@@ -400,3 +433,60 @@ class Scale(QtGui.QGroupBox):
 
     def get_mapscale(self):
         return self._mapscale[self.ui.comboBox_map.currentIndex()]
+
+
+class Font(QtGui.QGroupBox):
+    def __init__(self, parent, simple_color=True):
+        QtGui.QGroupBox.__init__(self, parent)
+        self.ui = Ui_GroupBox_Font()
+        self.ui.setupUi(self)
+        self.ui.checkBox_size.stateChanged.connect(self.size_state_changed)
+        self.ui.checkBox_weight.stateChanged.connect(self.weight_state_changed)
+        self.ui.checkBox_color.stateChanged.connect(self.color_state_changed)
+        self._simple_color = simple_color
+        if not self._simple_color:
+            self.ui.comboBox_color.clear()
+            cnames = [name for name, hex in COLORS]
+            self.ui.comboBox_color.addItems(cnames)
+
+    def size_state_changed(self, p_int):
+        if p_int == 0:
+            self.ui.spinBox_size.setEnabled(False)
+        else:
+            self.ui.spinBox_size.setEnabled(True)
+
+    def weight_state_changed(self, p_int):
+        if p_int == 0:
+            self.ui.comboBox_weight.setEnabled(False)
+        else:
+            self.ui.comboBox_weight.setEnabled(True)
+
+    def color_state_changed(self, p_int):
+        if p_int == 0:
+            self.ui.comboBox_color.setEnabled(False)
+        else:
+            self.ui.comboBox_color.setEnabled(True)
+
+    def hide_size(self):
+        self.ui.spinBox_size.hide()
+        self.ui.checkBox_size.hide()
+
+    def hide_weight(self):
+        self.ui.comboBox_weight.hide()
+        self.ui.checkBox_weight.hide()
+
+    def hide_color(self):
+        self.ui.comboBox_color.hide()
+        self.ui.checkBox_color.hide()
+
+    def get_size(self):
+        return self.ui.spinBox_size.value()
+
+    def get_weight(self):
+        return str(self.ui.comboBox_weight.currentText())
+
+    def get_color(self):
+        if self._simple_color:
+            return SIMPLE_COLORS[self.ui.comboBox_color.currentIndex()]
+        else:
+            return COLORS[self.ui.comboBox_color.currentIndex()][1]

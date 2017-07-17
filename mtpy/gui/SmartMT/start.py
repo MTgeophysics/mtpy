@@ -193,6 +193,8 @@ class StartQt4(QtGui.QMainWindow):
         widget.setAttribute(QtCore.Qt.WA_DeleteOnClose, True)
         subwindow = StartQt4.MDISubWindow(self)
         subwindow.setWindowTitle(title)
+        if tooltip:
+            subwindow.setToolTip(tooltip)
         subwindow.setWidget(widget)
         subwindow.resize(widget.size())
         self.ui.mdiArea.addSubWindow(subwindow)
@@ -207,8 +209,6 @@ class StartQt4(QtGui.QMainWindow):
         self.ui.menuWindow.addAction(new_window_action)
         # add all references to self._subwindow
         self.subwindows[title] = (subwindow, new_window_action)
-        if tooltip:
-            self.setToolTip(tooltip)
         subwindow.show()
 
         return subwindow, new_window_action
