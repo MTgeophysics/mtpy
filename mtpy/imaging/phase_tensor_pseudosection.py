@@ -445,7 +445,7 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
     rot_z = property(fget=_get_rot_z, fset=_set_rot_z,
                      doc="""rotation angle(s)""")
 
-    def plot(self):
+    def plot(self, show=True):
         """
         plots the phase tensor pseudo section.  See class doc string for
         more details.
@@ -931,7 +931,8 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
         #        [line.set_zorder(10000) for line in self.ax.lines]
         self.ax.set_axisbelow(True)
 
-        plt.show()
+        if show:
+            plt.show()
 
     def writeTextFiles(self, save_path=None, ptol=0.10):
         """
