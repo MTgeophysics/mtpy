@@ -8,16 +8,17 @@
     Author: YingzhiGou
     Date: 20/06/2017
 """
-import six
-from matplotlib import colors as mcolors
 import numpy as np
+import six
 from PyQt4 import QtGui, QtCore
+from matplotlib import colors as mcolors
 
 from mtpy.gui.SmartMT.gui.matplotlib_imabedding import MPLCanvas, Cursor
 from mtpy.gui.SmartMT.ui_asset.groupbox_arrow import Ui_GroupBox_Arrow
 from mtpy.gui.SmartMT.ui_asset.groupbox_color_bar import Ui_GroupBox_ColorBar
 from mtpy.gui.SmartMT.ui_asset.groupbox_ellipse import Ui_GroupBoxEllipse
 from mtpy.gui.SmartMT.ui_asset.groupbox_font import Ui_GroupBox_Font
+from mtpy.gui.SmartMT.ui_asset.groupbox_frequency_period_index import Ui_GroupBox_Frequency_Period_Index
 from mtpy.gui.SmartMT.ui_asset.groupbox_frequency_period_single import Ui_groupBoxFrequency_pereiod_single
 from mtpy.gui.SmartMT.ui_asset.groupbox_linedir import Ui_GroupBox_Linedir
 from mtpy.gui.SmartMT.ui_asset.groupbox_padding import Ui_GroupBox_Padding
@@ -27,7 +28,6 @@ from mtpy.gui.SmartMT.ui_asset.groupbox_tolerance import Ui_GroupBoxTolerance
 from mtpy.gui.SmartMT.ui_asset.groupbox_z_component_multiple import Ui_groupBoxZ_Component_Multiple
 from mtpy.gui.SmartMT.ui_asset.groupbox_z_component_single import Ui_groupBoxZ_Component_Single
 from mtpy.gui.SmartMT.ui_asset.plot_parameters import Ui_GroupBoxParameters
-
 
 COLORS = list(six.iteritems(mcolors.cnames))
 # # add the single letter colors
@@ -45,7 +45,7 @@ SIMPLE_COLORS = ['b',  # blue
                  'y',  # yellow
                  'k',  # black
                  'w'  # white
-              ]
+                 ]
 
 
 class PlotParameter(QtGui.QGroupBox):
@@ -275,7 +275,8 @@ class Ellipse(QtGui.QGroupBox):
     """
     ellipse_dict defined for mtpy.imagining.phase_tensor_maps.PlogPhaseTensorMaps
     """
-    _colorby = ['phimin', 'phimax', 'skew', 'skew_seg', 'normalized_skew', 'normalized_skew_seg', 'phidet', 'ellipticity']
+    _colorby = ['phimin', 'phimax', 'skew', 'skew_seg', 'normalized_skew', 'normalized_skew_seg', 'phidet',
+                'ellipticity']
     _cmap = ['mt_yl2rd', 'mt_bl2yl2rd', 'mt_wh2bl', 'mt_rd2bl', 'mt_bl2wh2rd', 'mt_seg_bl2wh2rd', 'mt_rd2gr2bl']
 
     def __init__(self, parent):
@@ -570,3 +571,56 @@ class LineDir(QtGui.QGroupBox):
             return 'ew'
         else:
             return None
+
+
+class FrequencyIndex(QtGui.QGroupBox):
+    _unit_period = 'second'
+    _unit_frequency = 'Hz'
+    _title_period = 'Period'
+    _title_frequency = 'Frequency'
+
+    def __init__(self, parent, use_period=False):
+        QtGui.QGroupBox.__init__(self, parent)
+        self.ui = Ui_GroupBox_Frequency_Period_Index()
+        self.ui.setupUi(self)
+        self._mt_objs = None
+        self._unique_frequencies = None
+        self.use_period = use_period
+        self.set_use_period(self.use_period)
+
+    def set_use_period(self, use_period=False):
+        if use_period:
+            title = '%s (%s)' % (self._title_period, self._unit_period)
+        else:
+            title = '%s (%s)' % (self._title_frequency, self._unit_frequency)
+        self.setTitle(title)
+        self._update_frequency()
+
+    def set_data(self, mt_objs):
+        self._mt_objs = mt_objs
+        self._update_frequency()
+
+    def _update_frequency(self):
+        if self._mt_objs:
+            self.ui.listWidget_frequency_period.clear()
+
+            all_freqs = self._mt_objs[0].Z.freq
+            # print all_freqs
+
+            if all([all_freqs.shape == mt_obj.Z.freq.shape and np.allclose(all_freqs, mt_obj.Z.freq) for mt_obj in
+                    self._mt_objs[1:]]):
+
+                if self.use_period:
+                    all_freqs = 1.0 / np.array(all_freqs)
+
+                self._unique_frequencies = all_freqs
+                self.ui.listWidget_frequency_period.addItems(
+                    ["%.5f %s" % (value, self._unit_period if self.use_period else self._unit_frequency) for value in
+                     all_freqs])
+                self.ui.listWidget_frequency_period.setEnabled(True)
+            else:
+                self.ui.listWidget_frequency_period.addItem("ERROR: frequency lists from stations are not identical")
+                self.ui.listWidget_frequency_period.setEnabled(False)
+
+    def get_period_index_list(self):
+        return sorted([index.row() for index in self.ui.listWidget_frequency_period.selectedIndexes()], reverse=False)
