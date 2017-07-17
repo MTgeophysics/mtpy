@@ -1332,9 +1332,7 @@ class Processing(object):
     
     def __init__(self, **kwargs):
         self.Software = Software()
-        self.author = None
-        self.organization = None
-        self.organization_url = None
+        self.processing_notes = None
         
         for key in kwargs.keys():
             setattr(self, key, kwargs[key])
@@ -1347,6 +1345,7 @@ class Software(object):
     def __init__(self, **kwargs):
         self.name = None
         self.version = None
+        self.author = Person()
         
         for key in kwargs:
             setattr(self, key, kwargs[key])

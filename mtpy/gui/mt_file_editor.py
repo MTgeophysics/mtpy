@@ -67,7 +67,7 @@ class MTTabWidget(QtWidgets.QTabWidget):
  
         self.tab_site = SiteTab(self)
         self.tab_field = FieldNotesTab(self)
-        self.tab_processing = QtWidgets.QWidget()
+        self.tab_processing = ProcessingTab(self)
         
         self.addTab(self.tab_site, "Site")
         self.addTab(self.tab_field, "Field Notes")
@@ -320,177 +320,46 @@ class FieldNotesTab(QtWidgets.QWidget):
         self.data_logger_type_edit.editingFinished.connect(self.set_dl_type)
         
         
-        #--> EX 
-        self.ex_label = QtWidgets.QLabel('Electrode EX')
-        self.ex_label.setFont(label_font)
-        
-        self.ex_id_label = QtWidgets.QLabel('ID')
-        self.ex_id_edit = QtWidgets.QLineEdit('{0}'.format(self.FieldNotes.electrode_ex.id))
-        self.ex_id_edit.editingFinished.connect(self.set_ex_id)
-        
-        self.ex_man_label = QtWidgets.QLabel('Manufacturer')
-        self.ex_man_edit = QtWidgets.QLineEdit(self.FieldNotes.electrode_ex.manufacturer)
-        self.ex_man_edit.editingFinished.connect(self.set_ex_man)
-        
-        self.ex_type_label = QtWidgets.QLabel('Type')
-        self.ex_type_edit = QtWidgets.QLineEdit(self.FieldNotes.electrode_ex.type)
-        self.ex_type_edit.editingFinished.connect(self.set_ex_type)
+        #--> Instrument information
+        self.ex_widget = Electrode_Widget(self.FieldNotes.electrode_ex,
+                                          comp='EX')
+        self.ey_widget = Electrode_Widget(self.FieldNotes.electrode_ey,
+                                          comp='EY')
+    
+        self.hx_widget = Magnetometer_Widget(self.FieldNotes.magnetometer_hx,
+                                             comp='HX')
+        self.hy_widget = Magnetometer_Widget(self.FieldNotes.magnetometer_hy,
+                                             comp='HY')
+        self.hz_widget = Magnetometer_Widget(self.FieldNotes.magnetometer_hz,
+                                             comp='HZ')
 
-        self.ex_x_label = QtWidgets.QLabel("X (m)")
-        self.ex_x_edit = QtWidgets.QLineEdit()
-        
-        self.ex_y_label = QtWidgets.QLabel("Y (m)")
-        self.ex_y_edit = QtWidgets.QLineEdit()
-        
-        self.ex_x2_label = QtWidgets.QLabel("X2 (m)")
-        self.ex_x2_edit = QtWidgets.QLineEdit()
-        
-        self.ex_y2_label = QtWidgets.QLabel("Y2 (m)")
-        self.ex_y2_edit = QtWidgets.QLineEdit()
-        
-        self.ex_acqchn_label = QtWidgets.QLabel("Acq. Channel")
-        self.ex_acqchn_combo = QtWidgets.QComboBox()
-        self.ex_acqchn_combo.addItems(self._chn_list)
-        
-        ##--> EY
-        self.ey_label = QtWidgets.QLabel('Electrode EY')
-        self.ey_label.setFont(label_font)
-        
-        self.ey_id_label = QtWidgets.QLabel('ID')
-        self.ey_id_edit = QtWidgets.QLineEdit('{0}'.format(self.FieldNotes.electrode_ey.id))
-        self.ey_id_edit.editingFinished.connect(self.set_ey_id)
-        
-        self.ey_man_label = QtWidgets.QLabel('Manufacturer')
-        self.ey_man_edit = QtWidgets.QLineEdit(self.FieldNotes.electrode_ey.manufacturer)
-        self.ey_man_edit.editingFinished.connect(self.set_ey_man)
-        
-        self.ey_type_label = QtWidgets.QLabel('Type')
-        self.ey_type_edit = QtWidgets.QLineEdit(self.FieldNotes.electrode_ey.type)
-        self.ey_type_edit.editingFinished.connect(self.set_ey_type)
 
-        self.ey_x_label = QtWidgets.QLabel("X (m)")
-        self.ey_x_edit = QtWidgets.QLineEdit()
-        
-        self.ey_y_label = QtWidgets.QLabel("Y (m)")
-        self.ey_y_edit = QtWidgets.QLineEdit()
-        
-        self.ey_x2_label = QtWidgets.QLabel("X2 (m)")
-        self.ey_x2_edit = QtWidgets.QLineEdit()
-        
-        self.ey_y2_label = QtWidgets.QLabel("Y2 (m)")
-        self.ey_y2_edit = QtWidgets.QLineEdit()
-        
-        self.ey_acqchn_label = QtWidgets.QLabel("Acq. Channel")
-        self.ey_acqchn_combo = QtWidgets.QComboBox()
-        self.ey_acqchn_combo.addItems(self._chn_list)
-        
-        ##--> HX
-        self.hx_label = QtWidgets.QLabel('Magnetometer HX')
-        self.hx_label.setFont(label_font)
-        
-        self.hx_id_label = QtWidgets.QLabel('ID')
-        self.hx_id_edit = QtWidgets.QLineEdit('{0}'.format(self.FieldNotes.magnetometer_hx.id))
-        self.hx_id_edit.editingFinished.connect(self.set_hx_id)
-        
-        self.hx_man_label = QtWidgets.QLabel('Manufacturer')
-        self.hx_man_edit = QtWidgets.QLineEdit(self.FieldNotes.magnetometer_hx.manufacturer)
-        self.hx_man_edit.editingFinished.connect(self.set_hx_man)
-        
-        self.hx_type_label = QtWidgets.QLabel('Type')
-        self.hx_type_edit = QtWidgets.QLineEdit(self.FieldNotes.magnetometer_hx.type)
-        self.hx_type_edit.editingFinished.connect(self.set_hx_type)
-        
-        self.hx_x_label = QtWidgets.QLabel("X (m)")
-        self.hx_x_edit = QtWidgets.QLineEdit()
-        
-        self.hx_y_label = QtWidgets.QLabel("Y (m)")
-        self.hx_y_edit = QtWidgets.QLineEdit()
-        
-        self.hx_azm_label = QtWidgets.QLabel("Azimtuh (deg)")
-        self.hx_azm_edit = QtWidgets.QLineEdit()
-        
-        self.hx_acqchn_label = QtWidgets.QLabel("Acq. Channel")
-        self.hx_acqchn_combo = QtWidgets.QComboBox()
-        self.hx_acqchn_combo.addItems(self._chn_list)
-        
-        ##--> HY
-        self.hy_label = QtWidgets.QLabel('Magnetometer HY')
-        self.hy_label.setFont(label_font)
-        
-        self.hy_id_label = QtWidgets.QLabel('ID')
-        self.hy_id_edit = QtWidgets.QLineEdit('{0}'.format(self.FieldNotes.magnetometer_hy.id))
-        self.hy_id_edit.editingFinished.connect(self.set_hy_id)
-        
-        self.hy_man_label = QtWidgets.QLabel('Manufacturer')
-        self.hy_man_edit = QtWidgets.QLineEdit(self.FieldNotes.magnetometer_hy.manufacturer)
-        self.hy_man_edit.editingFinished.connect(self.set_hy_man)
-        
-        self.hy_type_label = QtWidgets.QLabel('Type')
-        self.hy_type_edit = QtWidgets.QLineEdit(self.FieldNotes.magnetometer_hy.type)
-        self.hy_type_edit.editingFinished.connect(self.set_hy_type)
-        
-        self.hy_x_label = QtWidgets.QLabel("X (m)")
-        self.hy_x_edit = QtWidgets.QLineEdit()
-        
-        self.hy_y_label = QtWidgets.QLabel("Y (m)")
-        self.hy_y_edit = QtWidgets.QLineEdit()
-        
-        self.hy_azm_label = QtWidgets.QLabel("Azimtuh (deg)")
-        self.hy_azm_edit = QtWidgets.QLineEdit()
-        
-        self.hy_acqchn_label = QtWidgets.QLabel("Acq. Channel")
-        self.hy_acqchn_combo = QtWidgets.QComboBox()
-        self.hy_acqchn_combo.addItems(self._chn_list)
-        
-        ##--> hz
-        self.hz_label = QtWidgets.QLabel('Magnetometer HZ')
-        self.hz_label.setFont(label_font)
-        
-        self.hz_id_label = QtWidgets.QLabel('ID')
-        self.hz_id_edit = QtWidgets.QLineEdit('{0}'.format(self.FieldNotes.magnetometer_hz.id))
-        self.hz_id_edit.editingFinished.connect(self.set_hz_id)
-        
-        self.hz_man_label = QtWidgets.QLabel('Manufacturer')
-        self.hz_man_edit = QtWidgets.QLineEdit(self.FieldNotes.magnetometer_hz.manufacturer)
-        self.hz_man_edit.editingFinished.connect(self.set_hz_man)
-        
-        self.hz_type_label = QtWidgets.QLabel('Type')
-        self.hz_type_edit = QtWidgets.QLineEdit(self.FieldNotes.magnetometer_hz.type)
-        self.hz_type_edit.editingFinished.connect(self.set_hz_type)
-        
-        self.hz_x_label = QtWidgets.QLabel("X (m)")
-        self.hz_x_edit = QtWidgets.QLineEdit()
-        
-        self.hz_y_label = QtWidgets.QLabel("Y (m)")
-        self.hz_y_edit = QtWidgets.QLineEdit()
-        
-        self.hz_azm_label = QtWidgets.QLabel("Azimtuh (deg)")
-        self.hz_azm_edit = QtWidgets.QLineEdit()
-        
-        self.hz_acqchn_label = QtWidgets.QLabel("Acq. Channel")
-        self.hz_acqchn_combo = QtWidgets.QComboBox()
-        self.hz_acqchn_combo.addItems(self._chn_list)
-        
         ##--> data quality
         self.dq_label = QtWidgets.QLabel('Data Quality')
         self.dq_label.setFont(label_font)
         self.dq_good_periods = QtWidgets.QLabel('Good Periods (min, max)')
         self.dq_good_periods_min = QtWidgets.QLineEdit()
+        self.dq_good_periods_min.editingFinished.connect(self.set_dq_period_min)
         self.dq_good_periods_max = QtWidgets.QLineEdit()
+        self.dq_good_periods_max.editingFinished.connect(self.set_dq_period_max)
         
         self.dq_rating_label = QtWidgets.QLabel('Rating')
         self.dq_rating_combo = QtWidgets.QComboBox()
         self.dq_rating_combo.addItems(self._rating_list)
+        self.dq_rating_combo.currentIndexChanged.connect(self.set_dq_rating)
         
         self.dq_warning_flag_label = QtWidgets.QLabel('Warning Flag')
         self.dq_warning_flag_combo = QtWidgets.QComboBox()
         self.dq_warning_flag_combo.addItems(['False', 'True'])
+        self.dq_warning_flag_combo.currentIndexChanged.connect(self.set_dq_flag)
         
         self.dq_warning_comments_label = QtWidgets.QLabel('Warning Comments')
         self.dq_warning_comments_edit = QtWidgets.QLineEdit()
+        self.dq_warning_comments_edit.editingFinished.connect(self.set_dq_warning_comments)
         
         self.dq_comments = QtWidgets.QTextEdit()
         self.dq_comments.setText('Data Quaility Comments')
+        self.dq_comments.textChanged.connect(self.set_dq_comments)
         
         
         #-->  layout
@@ -511,103 +380,14 @@ class FieldNotesTab(QtWidgets.QWidget):
         dq_layout.addWidget(self.dq_warning_comments_edit, 2, 3)
         dq_layout.addWidget(self.dq_comments, 3, 0, 2, 4)
         
-        ex_layout = QtWidgets.QGridLayout()
-        ex_layout.addWidget(self.ex_label, 0, 0)
-        ex_layout.addWidget(self.ex_id_label, 1, 0)
-        ex_layout.addWidget(self.ex_id_edit, 1, 1)
-        ex_layout.addWidget(self.ex_man_label, 1, 2)
-        ex_layout.addWidget(self.ex_man_edit, 1, 3)
-        ex_layout.addWidget(self.ex_type_label, 1, 4)
-        ex_layout.addWidget(self.ex_type_edit, 1, 5)
-        ex_layout.addWidget(self.ex_x_label, 2, 0)
-        ex_layout.addWidget(self.ex_x_edit, 2, 1)
-        ex_layout.addWidget(self.ex_y_label, 2, 2)
-        ex_layout.addWidget(self.ex_y_edit, 2, 3)
-        ex_layout.addWidget(self.ex_x2_label, 2, 4)
-        ex_layout.addWidget(self.ex_x2_edit, 2, 5)
-        ex_layout.addWidget(self.ex_y2_label, 2, 6)
-        ex_layout.addWidget(self.ex_y2_edit, 2, 7)
-        ex_layout.addWidget(self.ex_acqchn_label, 1, 6)
-        ex_layout.addWidget(self.ex_acqchn_combo, 1, 7)
-        
-        ey_layout = QtWidgets.QGridLayout()
-        ey_layout.addWidget(self.ey_label, 0, 0)
-        ey_layout.addWidget(self.ey_id_label, 1, 0)
-        ey_layout.addWidget(self.ey_id_edit, 1, 1)
-        ey_layout.addWidget(self.ey_man_label, 1, 2)
-        ey_layout.addWidget(self.ey_man_edit, 1, 3)
-        ey_layout.addWidget(self.ey_type_label, 1, 4)
-        ey_layout.addWidget(self.ey_type_edit, 1, 5)
-        ey_layout.addWidget(self.ey_x_label, 2, 0)
-        ey_layout.addWidget(self.ey_x_edit, 2, 1)
-        ey_layout.addWidget(self.ey_y_label, 2, 2)
-        ey_layout.addWidget(self.ey_y_edit, 2, 3)
-        ey_layout.addWidget(self.ey_x2_label, 2, 4)
-        ey_layout.addWidget(self.ey_x2_edit, 2, 5)
-        ey_layout.addWidget(self.ey_y2_label, 2, 6)
-        ey_layout.addWidget(self.ey_y2_edit, 2, 7)
-        ey_layout.addWidget(self.ey_acqchn_label, 1, 6)
-        ey_layout.addWidget(self.ey_acqchn_combo, 1, 7)
-        
-        hx_layout = QtWidgets.QGridLayout()
-        hx_layout.addWidget(self.hx_label, 0, 0)
-        hx_layout.addWidget(self.hx_id_label, 1, 0)
-        hx_layout.addWidget(self.hx_id_edit, 1, 1)
-        hx_layout.addWidget(self.hx_man_label, 1, 2)
-        hx_layout.addWidget(self.hx_man_edit, 1, 3)
-        hx_layout.addWidget(self.hx_type_label, 1, 4)
-        hx_layout.addWidget(self.hx_type_edit, 1, 5)
-        hx_layout.addWidget(self.hx_x_label, 2, 0)
-        hx_layout.addWidget(self.hx_x_edit, 2, 1)
-        hx_layout.addWidget(self.hx_y_label, 2, 2)
-        hx_layout.addWidget(self.hx_y_edit, 2, 3)
-        hx_layout.addWidget(self.hx_azm_label, 2, 4)
-        hx_layout.addWidget(self.hx_azm_edit, 2, 5)
-        hx_layout.addWidget(self.hx_acqchn_label, 1, 6)
-        hx_layout.addWidget(self.hx_acqchn_combo, 1, 7)
-        
-        hy_layout = QtWidgets.QGridLayout()
-        hy_layout.addWidget(self.hy_label, 0, 0)
-        hy_layout.addWidget(self.hy_id_label, 1, 0)
-        hy_layout.addWidget(self.hy_id_edit, 1, 1)
-        hy_layout.addWidget(self.hy_man_label, 1, 2)
-        hy_layout.addWidget(self.hy_man_edit, 1, 3)
-        hy_layout.addWidget(self.hy_type_label, 1, 4)
-        hy_layout.addWidget(self.hy_type_edit, 1, 5)
-        hy_layout.addWidget(self.hy_x_label, 2, 0)
-        hy_layout.addWidget(self.hy_x_edit, 2, 1)
-        hy_layout.addWidget(self.hy_y_label, 2, 2)
-        hy_layout.addWidget(self.hy_y_edit, 2, 3)
-        hy_layout.addWidget(self.hy_azm_label, 2, 4)
-        hy_layout.addWidget(self.hy_azm_edit, 2, 5)
-        hy_layout.addWidget(self.hy_acqchn_label, 1, 6)
-        hy_layout.addWidget(self.hy_acqchn_combo, 1, 7)
-        
-        hz_layout = QtWidgets.QGridLayout()
-        hz_layout.addWidget(self.hz_label, 0, 0)
-        hz_layout.addWidget(self.hz_id_label, 1, 0)
-        hz_layout.addWidget(self.hz_id_edit, 1, 1)
-        hz_layout.addWidget(self.hz_man_label, 1, 2)
-        hz_layout.addWidget(self.hz_man_edit, 1, 3)
-        hz_layout.addWidget(self.hz_type_label, 1, 4)
-        hz_layout.addWidget(self.hz_type_edit, 1, 5)
-        hz_layout.addWidget(self.hz_x_label, 2, 0)
-        hz_layout.addWidget(self.hz_x_edit, 2, 1)
-        hz_layout.addWidget(self.hz_y_label, 2, 2)
-        hz_layout.addWidget(self.hz_y_edit, 2, 3)
-        hz_layout.addWidget(self.hz_azm_label, 2, 4)
-        hz_layout.addWidget(self.hz_azm_edit, 2, 5)
-        hz_layout.addWidget(self.hz_acqchn_label, 1, 6)
-        hz_layout.addWidget(self.hz_acqchn_combo, 1, 7)
-        
         final_layout = QtWidgets.QVBoxLayout()
         final_layout.addLayout(layout)
         final_layout.addLayout(dq_layout)
-        final_layout.addLayout(ex_layout)
-        final_layout.addLayout(ey_layout)
-        final_layout.addLayout(hx_layout)
-        final_layout.addLayout(hy_layout)
-        final_layout.addLayout(hz_layout)
+        final_layout.addWidget(self.ex_widget)
+        final_layout.addWidget(self.ey_widget)
+        final_layout.addWidget(self.hx_widget)
+        final_layout.addWidget(self.hy_widget)
+        final_layout.addWidget(self.hz_widget)
     
         self.setLayout(final_layout)
         
@@ -621,50 +401,382 @@ class FieldNotesTab(QtWidgets.QWidget):
     def set_dl_type(self):
         self.FieldNotes.data_logger.type = self.data_logger_type_edit.text()
         
-    def set_ex_id(self):
-        self.FieldNotes.electrode_ex.id = self.ex_id_edit.text()
+    def set_dq_period_min(self):
+        self.FieldNotes.data_quality.good_from_period = _check_float(self.dq_good_periods_min.text())
+        self.dq_good_periods_min.setText('{0:.5g}'.format(self.FieldNotes.data_quality.good_from_period))
+        
+    def set_dq_period_max(self):
+        self.FieldNotes.data_quality.good_to_period = _check_float(self.dq_good_periods_max.text())
+        self.dq_good_periods_max.setText('{0:.5g}'.format(self.FieldNotes.data_quality.good_to_period))
+        
+    def set_dq_rating(self):
+        self.FieldNotes.data_quality.rating = self.dq_rating_combo.currentIndex()
+        
+    def set_dq_flag(self):
+        self.FieldNotes.data_quality.warnings_flag = self.dq_warning_flag_combo.currentIndex()
+        
+    def set_dq_warning_comments(self):
+        self.FieldNotes.data_quality.warnings_comments = self.dq_warning_comments_edit.text()
+        
+    def set_dq_comments(self):
+        self.FieldNotes.data_quality.comments = self.dq_comments.toPlainText()
+        
+#==============================================================================
+# Electrode        
+#==============================================================================  
+class Electrode_Widget(QtWidgets.QWidget):
+    """
+    class to hold Magnetometer information
+    """
+    
+    def __init__(self, electrode_class, comp='EX', parent=None):
+        super(Electrode_Widget, self).__init__(parent)
+
+        self.Electrode = electrode_class
+        self.comp = comp
+        self._chn_list = ['{0:d}'.format(ii) for ii in range(1, 7, 1)]
+        self.setup_ui()
+        
+    def setup_ui(self):
+        
+        self.e_label = QtWidgets.QLabel('Electrode {0}'.format(self.comp))
+        self.e_label.setFont(label_font)
+        
+        self.e_id_label = QtWidgets.QLabel('ID')
+        self.e_id_edit = QtWidgets.QLineEdit('{0}'.format(self.Electrode.id))
+        self.e_id_edit.editingFinished.connect(self.set_e_id)
+        
+        self.e_man_label = QtWidgets.QLabel('Manufacturer')
+        self.e_man_edit = QtWidgets.QLineEdit(self.Electrode.manufacturer)
+        self.e_man_edit.editingFinished.connect(self.set_e_man)
+        
+        self.e_type_label = QtWidgets.QLabel('Type')
+        self.e_type_edit = QtWidgets.QLineEdit(self.Electrode.type)
+        self.e_type_edit.editingFinished.connect(self.set_e_type)
+
+        self.e_x_label = QtWidgets.QLabel("X (m)")
+        self.e_x_edit = QtWidgets.QLineEdit()
+        self.e_x_edit.editingFinished.connect(self.set_x)
+        
+        self.e_y_label = QtWidgets.QLabel("Y (m)")
+        self.e_y_edit = QtWidgets.QLineEdit()
+        self.e_y_edit.editingFinished.connect(self.set_y)
+        
+        self.e_x2_label = QtWidgets.QLabel("X2 (m)")
+        self.e_x2_edit = QtWidgets.QLineEdit()
+        self.e_x2_edit.editingFinished.connect(self.set_x2)
+        
+        self.e_y2_label = QtWidgets.QLabel("Y2 (m)")
+        self.e_y2_edit = QtWidgets.QLineEdit()
+        self.e_y2_edit.editingFinished.connect(self.set_y2)
+        
+        self.e_acqchn_label = QtWidgets.QLabel("Acq. Channel")
+        self.e_acqchn_combo = QtWidgets.QComboBox()
+        self.e_acqchn_combo.addItems(self._chn_list)
+        self.e_acqchn_combo.currentIndexChanged.connect(self.set_chn)
+
+        ##--> set layout
+        e_layout = QtWidgets.QGridLayout()
+        e_layout.addWidget(self.e_label, 0, 0)
+        e_layout.addWidget(self.e_id_label, 1, 0)
+        e_layout.addWidget(self.e_id_edit, 1, 1)
+        e_layout.addWidget(self.e_man_label, 1, 2)
+        e_layout.addWidget(self.e_man_edit, 1, 3)
+        e_layout.addWidget(self.e_type_label, 1, 4)
+        e_layout.addWidget(self.e_type_edit, 1, 5)
+        e_layout.addWidget(self.e_x_label, 2, 0)
+        e_layout.addWidget(self.e_x_edit, 2, 1)
+        e_layout.addWidget(self.e_y_label, 2, 2)
+        e_layout.addWidget(self.e_y_edit, 2, 3)
+        e_layout.addWidget(self.e_x2_label, 2, 4)
+        e_layout.addWidget(self.e_x2_edit, 2, 5)
+        e_layout.addWidget(self.e_y2_label, 2, 6)
+        e_layout.addWidget(self.e_y2_edit, 2, 7)
+        e_layout.addWidget(self.e_acqchn_label, 1, 6)
+        e_layout.addWidget(self.e_acqchn_combo, 1, 7)
+        
+        self.setLayout(e_layout)
+        
+        
+    def set_e_id(self):
+        self.Electrode.id = self.e_id_edit.text()
   
-    def set_ex_man(self):
-        self.FieldNotes.electrode_ex.manufacturer = self.ex_man_edit.text()
+    def set_e_man(self):
+        self.Electrode.manufacturer = self.e_man_edit.text()
         
-    def set_ex_type(self):
-        self.FieldNotes.electrode_ex.type = self.ex_type_edit.text()
+    def set_e_type(self):
+        self.Electrode.type = self.e_type_edit.text()
         
-    def set_ey_id(self):
-        self.FieldNotes.electrode_ey.id = self.ey_id_edit.text()
+    def set_x(self):
+        self.Electrode.x = _check_float(self.e_x_edit.text())
+        self.e_x_edit.setText('{0:.2f}'.format(self.Electrode.x))
+
+    def set_x2(self):
+        self.Electrode.x2 = _check_float(self.e_x2_edit.text())
+        self.e_x2_edit.setText('{0:.2f}'.format(self.Electrode.x2))    
+    
+    def set_y(self):
+        self.Electrode.y = _check_float(self.e_y_edit.text())
+        self.e_y_edit.setText('{0:.2f}'.format(self.Electrode.y))
+    
+    def set_y2(self):
+        self.Electrode.y2 = _check_float(self.e_y2_edit.text())
+        self.e_y2_edit.setText('{0:.2f}'.format(self.Electrode.y2))
+        
+    def set_chn(self):
+        self.Electrode.acqchn = int(self.e_acqchn_combo.currentIndex())
+        
+#==============================================================================
+# Magnetometer        
+#==============================================================================
+class Magnetometer_Widget(QtWidgets.QWidget):
+    """
+    class to hold magnetometer information
+    """
+    
+    def __init__(self, magnetometer_class, comp='HX', parent=None):
+        super(Magnetometer_Widget, self).__init__(parent)
+
+        self.Magnetometer = magnetometer_class
+        self.comp = comp
+        self._chn_list = ['{0:d}'.format(ii) for ii in range(1, 7, 1)]
+        self.setup_ui()
+        
+    def setup_ui(self):
+        
+        self.h_label = QtWidgets.QLabel('Magnetometer {0}'.format(self.comp))
+        self.h_label.setFont(label_font)
+        
+        self.h_id_label = QtWidgets.QLabel('ID')
+        self.h_id_edit = QtWidgets.QLineEdit('{0}'.format(self.Magnetometer.id))
+        self.h_id_edit.editingFinished.connect(self.set_id)
+    
+        self.h_man_label = QtWidgets.QLabel('Manufacturer')
+        self.h_man_edit = QtWidgets.QLineEdit(self.Magnetometer.manufacturer)
+        self.h_man_edit.editingFinished.connect(self.set_man)
+    
+        self.h_type_label = QtWidgets.QLabel('Type')
+        self.h_type_edit = QtWidgets.QLineEdit(self.Magnetometer.type)
+        self.h_type_edit.editingFinished.connect(self.set_type)
+
+        self.h_x_label = QtWidgets.QLabel("X (m)")
+        self.h_x_edit = QtWidgets.QLineEdit()
+        self.h_x_edit.editingFinished.connect(self.set_x)
+        
+        self.h_y_label = QtWidgets.QLabel("Y (m)")
+        self.h_y_edit = QtWidgets.QLineEdit()
+        self.h_y_edit.editingFinished.connect(self.set_y)
+        
+        self.h_azm_label = QtWidgets.QLabel("Azimuth (deg)")
+        self.h_azm_edit = QtWidgets.QLineEdit()
+        self.h_azm_edit.editingFinished.connect(self.set_azm)
+        
+        self.h_acqchn_label = QtWidgets.QLabel("Acq. Channel")
+        self.h_acqchn_combo = QtWidgets.QComboBox()
+        self.h_acqchn_combo.addItems(self._chn_list)
+        self.h_acqchn_combo.currentIndexChanged.connect(self.set_chn)
+
+        
+        ##--> set layout
+        h_layout = QtWidgets.QGridLayout()
+        h_layout.addWidget(self.h_label, 0, 0)
+        h_layout.addWidget(self.h_id_label, 1, 0)
+        h_layout.addWidget(self.h_id_edit, 1, 1)
+        h_layout.addWidget(self.h_man_label, 1, 2)
+        h_layout.addWidget(self.h_man_edit, 1, 3)
+        h_layout.addWidget(self.h_type_label, 1, 4)
+        h_layout.addWidget(self.h_type_edit, 1, 5)
+        h_layout.addWidget(self.h_x_label, 2, 0)
+        h_layout.addWidget(self.h_x_edit, 2, 1)
+        h_layout.addWidget(self.h_y_label, 2, 2)
+        h_layout.addWidget(self.h_y_edit, 2, 3)
+        h_layout.addWidget(self.h_azm_label, 2, 4)
+        h_layout.addWidget(self.h_azm_edit, 2, 5)
+        h_layout.addWidget(self.h_acqchn_label, 1, 6)
+        h_layout.addWidget(self.h_acqchn_combo, 1, 7)
+        
+        self.setLayout(h_layout)
+        
+        
+    def set_id(self):
+        self.Magnetometer.id = self.h_id_edit.text()
   
-    def set_ey_man(self):
-        self.FieldNotes.electrode_ey.manufacturer = self.ey_man_edit.text()
+    def set_man(self):
+        self.Magnetometer.manufacturer = self.h_man_edit.text()
         
-    def set_ey_type(self):
-        self.FieldNotes.electrode_ey.type = self.ey_type_edit.text()
+    def set_type(self):
+        self.Magnetometer.type = self.h_type_edit.text()
         
-    def set_hx_id(self):
-        self.FieldNotes.magnetometer_hx.id = self.hx_id_edit.text()
-  
-    def set_hx_man(self):
-        self.FieldNotes.magnetometer_hx.manufacturer = self.hx_man_edit.text()
+    def set_x(self):
+        self.Magnetometer.x = _check_float(self.h_x_edit.text())
+        self.h_x_edit.setText('{0:.2f}'.format(self.Magnetometer.x))
+
+    def set_y(self):
+        self.Magnetometer.y = _check_float(self.h_y_edit.text())
+        self.h_y_edit.setText('{0:.2f}'.format(self.Magnetometer.y))    
+    
+    def set_azm(self):
+        self.Magnetometer.azm = _check_float(self.h_azm_edit.text())
+        self.h_azm_edit.setText('{0:.2f}'.format(self.Magnetometer.azm))
         
-    def set_hx_type(self):
-        self.FieldNotes.magnetometer_hx.type = self.hx_type_edit.text()
+    def set_chn(self):
+        self.Magnetometer.acqchn = int(self.h_acqchn_combo.currentIndex())
+
+#==============================================================================
+# Processing
+#==============================================================================
+class ProcessingTab(QtWidgets.QWidget):
+    """
+    processing tab
+    """
+
+    def __init__(self, parent=None):
+        super(ProcessingTab, self).__init__(parent)
         
-    def set_hy_id(self):
-        self.FieldNotes.magnetometer_hy.id = self.hy_id_edit.text()
-  
-    def set_hy_man(self):
-        self.FieldNotes.magnetometer_hy.manufacturer = self.hy_man_edit.text()
+        self.Processing = mt.Processing()
         
-    def set_hy_type(self):
-        self.FieldNotes.magnetometer_hy.type = self.hy_type_edit.text()
+        self.setup_ui()
         
-    def set_hz_id(self):
-        self.FieldNotes.magnetometer_hz.id = self.hz_id_edit.text()
-  
-    def set_hz_man(self):
-        self.FieldNotes.magnetometer_hz.manufacturer = self.hz_man_edit.text()
+    def setup_ui(self):
         
-    def set_hz_type(self):
-        self.FieldNotes.magnetometer_hz.type = self.hz_type_edit.text()
+        self.software_label = QtWidgets.QLabel('Software')
+        self.software_label.setFont(label_font)
+        
+        self.software_name_label = QtWidgets.QLabel('Name')
+        self.software_name_edit = QtWidgets.QLineEdit()
+        self.software_name_edit.editingFinished.connect(self.set_software_name)
+        
+        self.software_version_label = QtWidgets.QLabel('Version')
+        self.software_version_edit = QtWidgets.QLineEdit()
+        self.software_version_edit.editingFinished.connect(self.set_software_version)
+        
+        
+        self.software_author_label = QtWidgets.QLabel('Author')
+        self.software_author_edit = QtWidgets.QLineEdit()
+        self.software_author_edit.editingFinished.connect(self.set_software_author)
+        
+        self.software_author_email_label = QtWidgets.QLabel('Author Email')
+        self.software_author_email_edit = QtWidgets.QLineEdit()
+        self.software_author_email_edit.editingFinished.connect(self.set_software_author_email)
+        
+        self.software_author_org_label = QtWidgets.QLabel('Author Organization')
+        self.software_author_org_edit = QtWidgets.QLineEdit()
+        self.software_author_org_edit.editingFinished.connect(self.set_software_author_org)
+        
+        self.software_author_url_label = QtWidgets.QLabel('URL')
+        self.software_author_url_edit = QtWidgets.QLineEdit()
+        self.software_author_url_edit.editingFinished.connect(self.set_software_author_url)
+        
+    
+        self.software_date_label = QtWidgets.QLabel('Date (YYYY-MM-DD')
+        self.software_date_edit = QtWidgets.QLineEdit()
+        self.software_date_edit.editingFinished.connect(self.set_software_date)
+        
+        self.notes_label = QtWidgets.QLabel('Notes:')
+        self.notes_label.setFont(label_font)
+        
+        self.notes_edit = QtWidgets.QTextEdit()
+        self.notes_edit.textChanged.connect(self.set_notes)
+        
+        h_line_00 = QtWidgets.QFrame(self)
+        h_line_00.setFrameShape(QtWidgets.QFrame.HLine)
+        h_line_00.setFrameShadow(QtWidgets.QFrame.Sunken)
+        
+        # layout
+        grid_layout = QtWidgets.QGridLayout()
+        
+        grid_layout.addWidget(self.software_label, 0, 0)
+        grid_layout.addWidget(self.software_name_label, 1, 0)
+        grid_layout.addWidget(self.software_name_edit, 1, 1)
+        grid_layout.addWidget(self.software_version_label, 1, 2)
+        grid_layout.addWidget(self.software_version_edit, 1, 3)
+        grid_layout.addWidget(self.software_date_label, 1, 4)
+        grid_layout.addWidget(self.software_date_edit, 1, 5)
+        
+        grid_layout.addWidget(self.software_author_label, 2, 0)
+        grid_layout.addWidget(self.software_author_edit, 2, 1)
+        grid_layout.addWidget(self.software_author_email_label, 2, 2)
+        grid_layout.addWidget(self.software_author_email_edit, 2, 3)
+        grid_layout.addWidget(self.software_author_org_label, 2, 4)
+        grid_layout.addWidget(self.software_author_org_edit, 2, 5)
+        grid_layout.addWidget(self.software_author_url_label, 3, 0)
+        grid_layout.addWidget(self.software_author_url_edit, 3, 1, 1, 5)
+        
+        notes_layout = QtWidgets.QVBoxLayout()
+        notes_layout.addWidget(self.notes_label)
+        notes_layout.addWidget(self.notes_edit)
+        
+        final_layout = QtWidgets.QVBoxLayout()
+        final_layout.addLayout(grid_layout)
+        final_layout.addWidget(h_line_00)
+        final_layout.addLayout(notes_layout)
+        
+        self.setLayout(final_layout)
+        
+    def set_software_name(self):
+        pass
+    
+    def set_software_version(self):
+        pass
+    
+    def set_software_author(self):
+        pass
+    
+    def set_software_date(self):
+        pass
+    
+    def set_software_author_email(self):
+        pass
+
+    def set_software_author_org(self):
+        pass
+
+    def set_software_author_url(self):
+        pass
+    
+    def set_notes(self):
+        pass
+    
+class ProcessingParameter(QtWidgets.QWidget):
+    """
+    processing name and value
+    """    
+    
+    def __init__(self, parent=None):
+        super(ProcessingParameter, self).__init__(parent)
+        
+        self.name = None
+        self.value = None
+        
+        self.setup_ui()
+    
+    def setup_ui(self):
+        self.value_edit = QtWidgets.QLineEdit()
+        self.value_edit.editingFinished.connect(self.set_value)
+        
+        self.name_edit = QtWidgets.QLineEdit()
+        self.name_edit.editingFinished.connect(self.set_name)
+        
+        # layout
+        self.setLayout(QtWidgets.QFormLayout(self.name_edit, self.value_edit))
+        
+    def set_name(self):
+        self.name = self.name_edit.text()
+        
+    def set_value(self):
+        self.value = self.value_edit.text()
+        
+#==============================================================================
+# Common functions
+#==============================================================================
+def _check_float(value):
+    try:
+        return_num = float(value)
+    except ValueError:
+        return_num = 0.0
+        
+    return return_num
+
         
 if __name__ == '__main__':
     app = QtWidgets.QApplication(sys.argv)
