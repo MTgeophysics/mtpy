@@ -97,8 +97,10 @@ class PhaseTensorMap(VisualizationBase):
     def __init__(self, parent):
         VisualizationBase.__init__(self, parent)
         # set up ui
-        self._frequency_ui = FrequencySingle(self._parameter_ui)
-        self._frequency_ui.setTitle("Frequency (Hz)")
+        self._scale_ui = Scale(self._parameter_ui)
+        self._frequency_ui = FrequencySingle(self._parameter_ui, use_period=True)
+        self._scale_ui.ui.comboBox_time.currentIndexChanged.connect(self._frequency_ui.toggle_time_scale)
+        self._parameter_ui.add_parameter_groubox(self._scale_ui)
         self._parameter_ui.add_parameter_groubox(self._frequency_ui)
 
         self._tolerance_ui = FrequencyTolerance(self._parameter_ui)
@@ -109,9 +111,6 @@ class PhaseTensorMap(VisualizationBase):
 
         self._arrow_ui = Arrow(self._parameter_ui)
         self._parameter_ui.add_parameter_groubox(self._arrow_ui)
-
-        self._scale_ui = Scale(self._parameter_ui)
-        self._parameter_ui.add_parameter_groubox(self._scale_ui)
 
         self._padding_ui = Padding(self._parameter_ui)
         self._parameter_ui.add_parameter_groubox(self._padding_ui)

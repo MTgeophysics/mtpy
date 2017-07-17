@@ -123,15 +123,19 @@ class FrequencySingle(QtGui.QGroupBox):
     Frequency selection (single frequency)
     """
 
-    def __init__(self, parent, unit="Hz", distribution='Frequency', inverse=False):
+    _unit_period = 'second'
+    _unit_frequency = 'Hz'
+    _title_period = 'Period'
+    _title_frequency = 'Frequency'
+
+    def __init__(self, parent, use_period=False):
         QtGui.QGroupBox.__init__(self, parent)
         self._mt_objs = None
-        self._invert_frequency = inverse
-        self._unit = unit
-        self._distribuction = distribution
+        self.use_period = use_period
         self.ui = Ui_groupBoxFrequency_pereiod_single()
         self.ui.setupUi(self)
-        self._histogram = FrequencySingle.FrequencyHistogram(unit=self._unit, distribution=self._distribuction)
+        self._histogram = FrequencySingle.FrequencyHistogram()
+        self.set_use_period(self.use_period)
         # add matplotlib canvas
         self.ui.verticalLayoutFrequencyPeriod.addWidget(self._histogram)
         # connect components
@@ -139,6 +143,22 @@ class FrequencySingle(QtGui.QGroupBox):
         self.ui.comboBoxPeriod.currentIndexChanged.connect(self.update_histogram)
         self.ui.comboBoxPeriod.editTextChanged.connect(self.update_histogram)
         self._histogram.mpl_connect('button_release_event', self._mouse_pick)
+
+    def toggle_time_scale(self, *args):
+        self.use_period = not self.use_period
+        self.set_use_period(self.use_period)
+
+    def set_use_period(self, use_period=False):
+        if use_period:
+            self._histogram.set_unit(self._unit_period)
+            self._histogram.set_title(self._title_period)
+            title = '%s (%s)' % (self._title_period, self._unit_period)
+        else:
+            self._histogram.set_unit(self._unit_frequency)
+            self._histogram.set_title(self._unit_frequency)
+            title = '%s (%s)' % (self._title_frequency, self._unit_frequency)
+        self.setTitle(title)
+        self._update_frequency()
 
     def _mouse_pick(self, event):
         if not event.inaxes:
@@ -157,13 +177,13 @@ class FrequencySingle(QtGui.QGroupBox):
         self._mt_objs = mt_objs
         self._update_frequency()
 
-    def _update_frequency(self):
+    def _update_frequency(self, ):
         if self._mt_objs is not None:
             all_freqs = []
             for mt_obj in self._mt_objs:
                 all_freqs.extend(list(mt_obj.Z.freq))
 
-            if self._invert_frequency:
+            if self.use_period:
                 all_periods = 1.0 / np.array(all_freqs)
                 self._histogram.set_data(all_periods)
                 all_unique = sorted(list(set(all_periods)))
@@ -178,19 +198,15 @@ class FrequencySingle(QtGui.QGroupBox):
             self.update_histogram()
 
     class FrequencyHistogram(MPLCanvas):
-        def __init__(self, parent=None, width=5, hight=3, dpi=100, unit="Hz", distribution='Frequency'):
+        def __init__(self, parent=None, width=5, hight=3, dpi=100):
             self.artists = dict()
             self._frequency = None
             self._current_period = None
+            self._title = None
+            self._unit = None
             MPLCanvas.__init__(self, parent, width, hight, dpi)
             self._lx = None
-            self._unit = unit
-            self._distribution = distribution
-            self.cursor = Cursor(self._axes, track_y=False, text_format="%f " + self._unit, useblit=True)
-            # self.cursor = Cursor(self._axes, useblit=True, color='green', linewidth=1)
-            # self._cursor_x = None
-            # self._cursor_text = None
-            # self.mpl_connect('motion_notify_event', self.mouse_move)
+            self.cursor = None
 
             # self.mpl_connect('motion_notify_event', self.cursor)
             self.mpl_connect('button_release_event', self.mouse_pick)
@@ -210,6 +226,14 @@ class FrequencySingle(QtGui.QGroupBox):
         #     self._cursor_text.set_position((x, y))
         #     self.draw()
 
+        def set_title(self, title):
+            self._title = title
+
+        def set_unit(self, unit):
+            if unit != self._unit:
+                self._unit = unit
+                self.cursor = Cursor(self._axes, track_y=False, text_format="%f " + self._unit, useblit=True)
+
         def mouse_pick(self, event):
             if not event.inaxes:
                 return
@@ -221,8 +245,9 @@ class FrequencySingle(QtGui.QGroupBox):
                 self._axes.tick_params(axis='both', which='major', labelsize=6)
                 self._axes.tick_params(axis='both', which='minor', labelsize=4)
                 self._axes.hist(self._frequency, 50, normed=1)
-                self._axes.set_xlabel("%s (%s)" % (self._distribution, self._unit), fontsize=8)
-                self.figure.suptitle('%s Distribution in Selected Stations' % self._distribution, fontsize=8)
+                if self._title and self._unit:
+                    self._axes.set_xlabel("%s (%s)" % (self._title, self._unit), fontsize=8)
+                    self.figure.suptitle('%s Distribution in Selected Stations' % self._title, fontsize=8)
 
         def set_data(self, frequency):
             self._frequency = frequency
