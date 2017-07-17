@@ -257,7 +257,7 @@ class Model(object):
         """
 
         # find the edges of the grid: bounding box of the survey area.
-        nc_extra = 2
+        nc_extra = 20
         west = self.station_locations['rel_east'].min() - self.cell_size_east * nc_extra
         east = self.station_locations['rel_east'].max() + self.cell_size_east * nc_extra
         south = self.station_locations['rel_north'].min() - self.cell_size_north * nc_extra
@@ -360,7 +360,8 @@ class Model(object):
         if (nz > self.n_layers):
             self.n_layers = nz  # adjust z layers to prevent too big numbers.
 
-        numz = self.n_layers - self.pad_z + 1  # - self.n_airlayers
+        #FZ numz = self.n_layers - self.pad_z + 1  # - self.n_airlayers
+        numz = self.n_layers - self.pad_z + 1   - self.n_airlayers
         factorz = 1.2  # first few layers excluding the air_layers.
         exp_list = [self.z1_layer * (factorz ** nz) for nz in xrange(0, numz)]
         log_z = np.array(exp_list)
@@ -384,8 +385,8 @@ class Model(object):
         # JM said there should be no air layer in this mesh building stage ???
         # add air layers and define ground surface level.
         # initial layer thickness is same as z1_layer
-        # wrong: add_air = self.n_airlayers
-        add_air = 0  # set this =0 will not add any air layers below.
+        add_air = self.n_airlayers
+        #FZ: add_air = 0  # set this =0 will not add any air layers below.
         z_nodes = np.hstack([[self.z1_layer] * add_air, z_nodes])
 
         # make an array of sum values as coordinates of the horizontal lines
@@ -433,7 +434,7 @@ class Model(object):
             self.Data.write_data_file(fill=False)
 
         # --> print out useful information
-        print ('-' * 15)
+        print ('-' * 50, "Mesh Summary")
         print ('   Number of stations = {0}'.format(len(self.station_locations)))
         print ('   Dimensions: ')
         print ('      e-w = {0}'.format(east_gridr.shape[0]))
@@ -450,7 +451,7 @@ class Model(object):
         print ('    all coordinates are aligned to geographic N, E')
         print ('    therefore rotating the stations will have a similar effect')
         print ('    as rotating the mesh.')
-        print ('-' * 15)
+        print ('-' * 50)
 
         if self._utm_cross is True:
             print ('{0} {1} {2}'.format('-' * 25, 'NOTE', '-' * 25))
@@ -483,11 +484,12 @@ class Model(object):
         if topographyarray is not None:
             self.surface_dict['topography'] = topographyarray
 
-        if self.n_airlayers is None or self.n_airlayers == 0:
-            print ("No air layers specified, so cannot add topography !!!")
-            print ("Only bathymetry shall be added below !!!")
 
-        elif self.n_airlayers <0:  # FZ: new logic, add equal blocksize air layers on top of the simple flat-earth grid
+        if self.n_airlayers is None or self.n_airlayers == 0:
+            print ("No air layers specified, so will not add air/topography !!!")
+            print ("Only bathymetry shall be added below: sea-water resistivity!!!")
+
+        elif self.n_airlayers > 0:  # FZ: new logic, add equal blocksize air layers on top of the simple flat-earth grid
             # compute the air cell size to be added = topomax/n_airlayers, rounded to nearest 1 s.f.
             cs = np.amax(self.surface_dict['topography']) / float(self.n_airlayers)
             #  cs = np.ceil(0.1*cs/10.**int(np.log10(cs)))*10.**(int(np.log10(cs))+1)
@@ -500,8 +502,8 @@ class Model(object):
 
             print("self.grid_z[0:2]", self.grid_z[0:2])
 
-            self.grid_z = np.concatenate([new_airlayers, self.grid_z],axis=0)
-            print(" NEW self.grid_z = ", self.grid_z)
+            self.grid_z = np.concatenate([new_airlayers, self.grid_z[:-self.n_airlayers]],axis=0)
+            print(" NEW self.grid_z shape and values = ",self.grid_z.shape, self.grid_z)
 
 
             # adjust the nodes, which is simply the diff of adjacent grid lines
@@ -509,15 +511,13 @@ class Model(object):
 
             # adjust sea level
             # wrong? self.sea_level = self.grid_z[self.n_airlayers]
-            self.sea_level = self.grid_z[self.n_airlayers]
+            # self.sea_level = self.grid_z[self.n_airlayers]
+            self.sea_level = 0 # keep as zero
             logger.debug("FZ:***2 sea_level = %s", self.sea_level)
 
             # print (stop_here_for_debug)
 
-            # assign topography
-            self.assign_resistivity_from_surfacedata('topography', air_resistivity, where='above')
-
-        elif self.n_airlayers > 0:  # keep the old logic of re-define the first few layers! wrong
+        elif self.n_airlayers < 0:  # keep the old logic of re-define the first few layers! not sure if wrong
             # cell size is topomax/n_airlayers, rounded to nearest 1 s.f.
             cs = np.amax(self.surface_dict['topography'])/float(self.n_airlayers)
             #  cs = np.ceil(0.1*cs/10.**int(np.log10(cs)))*10.**(int(np.log10(cs))+1)
@@ -539,12 +539,16 @@ class Model(object):
             logger.debug("FZ:***2 sea_level = %s", self.sea_level)
 
             # assign topography
-            self.assign_resistivity_from_surfacedata(
-                'topography', air_resistivity, where='above')
+            # self.assign_resistivity_from_surfacedata('topography', air_resistivity, where='above')
         else:
             pass
 
-        # assign sea water
+        # needed? self.write_model_file()
+
+        logger.info("begin to self.assign_resistivity_from_surfacedata(...)")
+        self.assign_resistivity_from_surfacedata('topography', air_resistivity, where='above')
+
+        logger.info("begin to assign sea water resistivity")
         # first make a mask for all-land =1, which will be modified later according to air, water
         self.covariance_mask = np.ones_like(self.res_model)  # of grid size (xc, yc, zc)
 
@@ -693,13 +697,15 @@ class Model(object):
                 surface
         """
 
-        #FZ: should ref-define the sel.res_model after topo air layer are added.
-        # the shape has chnaged.
+        # FZ: should ref-define the self.res_model if its shape has changed after topo air layer are added
+
 
         gcz = np.mean([self.grid_z[:-1], self.grid_z[1:]], axis=0)
 
+        logger.debug("gcz is the cells centre coordinates: %s, %s", len(gcz), gcz)
         # convert to positive down, relative to the top of the grid
         surfacedata = self.sea_level - self.surface_dict[surfacename]
+        #surfacedata = self.surface_dict[surfacename] - self.sea_level
 
         # define topography, so that we don't overwrite cells above topography
         # first check if topography exists
@@ -718,9 +724,10 @@ class Model(object):
         for j in range(len(self.res_model)):
             for i in range(len(self.res_model[j])):
                 if where == 'above':
-                    ii = np.where((gcz <= surfacedata[j, i]) & (
-                        gcz > topo[j, i]))[0]
-                else:
+                    # ii = np.where((gcz <= surfacedata[j, i]) & ( gcz > topo[j, i]))[0]
+                    ii = np.where((gcz <= surfacedata[j, i]) & ( gcz < topo[j, i]))[0]
+
+                else: # for below the surface?
                     ii = np.where(gcz > surfacedata[j, i])[0]
                 self.res_model[j, i, ii] = resistivity_value
 
@@ -771,10 +778,10 @@ class Model(object):
 
             station_index_x.append(sxi)
             station_index_y.append(syi)
-            # use topo elevation directly
-            print(sname, ss, sxi, syi, szi)
+
+            # use topo elevation directly in modem.dat file
             topoval = self.surface_dict['topography'][syi,sxi]
-            print(sname,ss, sxi, syi, szi, topoval)
+            logger.debug("sname,ss, sxi, syi, szi, topoval: %s,%s,%s,%s,%s,%s",sname,ss, sxi, syi, szi, topoval )
 
             self.station_locations['elev'][ss] = topoval # + 1.  # why +1 in elev ???
             self.Data.data_array['elev'][ss] = topoval # + 1.
@@ -786,7 +793,6 @@ class Model(object):
         self.Data.write_data_file(fill=False)  # (Xi, Yi, Zi) of each station-i may be shifted
 
         # debug self.Data.write_data_file(save_path='/e/tmp', fill=False)
-        print("FZ:*** what is self.grid_z=", self.grid_z.shape, self.grid_z)
 
         return (station_index_x, station_index_y)
 
@@ -1236,8 +1242,6 @@ class Model(object):
             self.model_fn = os.path.join(self.save_path, self.model_fn_basename)
         else:
             print("Error: Must provide a model save_path !!!")
-
-
 
         if self.res_model is None or type(self.res_model) is float or \
                         type(self.res_model) is int:

@@ -110,16 +110,16 @@ if __name__ == '__main__':
     model = Model(Data=datob,
                   epsg=epsg_code,  # epsg
                   # cell_size_east=500, cell_size_north=500,  # concurry
-                  cell_size_east=10000, cell_size_north=10000, #GA_VIC
-                  #cell_size_east=1000, cell_size_north=1000, # Concurry
-                  pad_north=6,  # number of padding cells in each of the north and south directions
-                  pad_east=6,  # number of east and west padding cells
-                  pad_z=6,  # number of vertical padding cells
+                  # cell_size_east=10000, cell_size_north=10000, #GA_VIC
+                  cell_size_east=1000, cell_size_north=1000, # Concurry
+                  pad_north=8,  # number of padding cells in each of the north and south directions
+                  pad_east=8,  # number of east and west padding cells
+                  pad_z=8,  # number of vertical padding cells
                   pad_stretch_v=1.5,  # factor to increase by in padding cells (vertical)
                   pad_stretch_h=1.5,  # factor to increase by in padding cells (horizontal)
                   n_airlayers=10,  # number of air layers 0, 10
                   res_model=200,  # halfspace resistivity value for initial reference model
-                  n_layers=40,  # total number of z layers, including air and pad_z
+                  n_layers=50,  # total number of z layers, including air and pad_z
                   z1_layer=100,  # first layer thickness
                   z_target_depth=500000)
 
@@ -133,7 +133,7 @@ if __name__ == '__main__':
     model.write_model_file(save_path=outputdir)
 
 
-#=========== add topo data, with air layers?
+#=========== now add topo data, with or without air layers?
     # 1) the data file will be changed in 3 columns sxi, syi and szi meters
     # 2) The covariance file will be written.
     # 3) the model file not changed?? No air layers can be seen in the .ws file.
