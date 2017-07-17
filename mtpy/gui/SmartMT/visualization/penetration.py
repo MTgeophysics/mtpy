@@ -11,8 +11,45 @@
 
 import mtpy.imaging.penetration
 from mtpy.gui.SmartMT.gui.plot_parameter import ZComponentSingle, FrequencySingle, FrequencyTolerance, \
-    FrequencyIndex
+    FrequencyIndex, ZComponentMultiple, StationSelection
 from mtpy.gui.SmartMT.visualization.visualization_base import VisualizationBase
+
+
+class Depth1D(VisualizationBase):
+    def update_ui(self):
+        self._station_ui.set_data(self._mt_objs)
+
+    @staticmethod
+    def plot_name():
+        return "Penetration Depth (1D)"
+
+    def get_parameter_str(self):
+        return "station=%s, rho=%s" % (self._station.station, str(self._rhos))
+
+    @staticmethod
+    def plot_description():
+        return """
+<p>plot the penetration depth vs all the periods (1/frequency) of 1 station.</p>
+<p><strong>Note:</strong> This only plot one station per plot.</p>
+        """
+
+    def plot(self):
+        # get parameters
+        self._rhos = self._z_component_ui.get_selection()
+        self._station = self._station_ui.get_station()
+        self._plotting_object = mtpy.imaging.penetration.Depth1D(self._station, self._rhos)
+        self._plotting_object.plot()
+        self._fig = self._plotting_object.get_figure()
+
+    def __init__(self, parent):
+        VisualizationBase.__init__(self, parent)
+        self._rhos = None
+        self._station = None
+        # add parameter gui sub components
+        self._station_ui = StationSelection(self._parameter_ui)
+        self._parameter_ui.add_parameter_groubox(self._station_ui)
+        self._z_component_ui = ZComponentMultiple(self._parameter_ui)
+        self._parameter_ui.add_parameter_groubox(self._z_component_ui)
 
 
 class Depth2D(VisualizationBase):
@@ -43,9 +80,9 @@ class Depth2D(VisualizationBase):
 
     def __init__(self, parent):
         VisualizationBase.__init__(self, parent)
-        # add parameter sub component
         self._rho = None
         self._period_index = None
+        # add parameter sub component
         self._z_component_ui = ZComponentSingle(self._parameter_ui)
         self._parameter_ui.add_parameter_groubox(self._z_component_ui)
 

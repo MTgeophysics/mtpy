@@ -23,6 +23,7 @@ from mtpy.gui.SmartMT.ui_asset.groupbox_frequency_period_single import Ui_groupB
 from mtpy.gui.SmartMT.ui_asset.groupbox_linedir import Ui_GroupBox_Linedir
 from mtpy.gui.SmartMT.ui_asset.groupbox_padding import Ui_GroupBox_Padding
 from mtpy.gui.SmartMT.ui_asset.groupbox_scale import Ui_GroupBox_Scale
+from mtpy.gui.SmartMT.ui_asset.groupbox_station_select import Ui_GroupBox_Station_Select
 from mtpy.gui.SmartMT.ui_asset.groupbox_stretch import Ui_GroupBox_Stretch
 from mtpy.gui.SmartMT.ui_asset.groupbox_tolerance import Ui_GroupBoxTolerance
 from mtpy.gui.SmartMT.ui_asset.groupbox_z_component_multiple import Ui_groupBoxZ_Component_Multiple
@@ -94,11 +95,11 @@ class ZComponentMultiple(QtGui.QGroupBox):
 
     def get_selection(self):
         zcomponent = []
-        if self.parameter_ui.ui.radioButton_det.isChecked():
+        if self.ui.checkBox_det.isChecked():
             zcomponent.append('det')
-        if self.parameter_ui.ui.radioButton_zxy.isChecked():
+        if self.ui.checkBox_zxy.isChecked():
             zcomponent.append('zxy')
-        if self.parameter_ui.ui.radioButton_zyx.isChecked():
+        if self.ui.checkBox_zyx.isChecked():
             zcomponent.append('zyx')
         return zcomponent
 
@@ -624,3 +625,22 @@ class FrequencyIndex(QtGui.QGroupBox):
 
     def get_period_index_list(self):
         return sorted([index.row() for index in self.ui.listWidget_frequency_period.selectedIndexes()], reverse=False)
+
+
+class StationSelection(QtGui.QGroupBox):
+    def __init__(self, parent):
+        QtGui.QGroupBox.__init__(self, parent)
+        self.ui = Ui_GroupBox_Station_Select()
+        self.ui.setupUi(self)
+        self.mt_objs = None
+
+    def set_data(self, mt_objs):
+        self.ui.comboBox_station.clear()
+        self.mt_objs = []
+        for mt_obj in mt_objs:
+            self.mt_objs.append(mt_obj)
+            self.ui.comboBox_station.addItem(mt_obj.station)
+
+    def get_station(self):
+        index = self.ui.comboBox_station.currentIndex()
+        return self.mt_objs[index]
