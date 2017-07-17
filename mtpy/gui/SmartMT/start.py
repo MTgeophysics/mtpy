@@ -15,9 +15,9 @@ import sys
 
 from PyQt4 import QtCore, QtGui
 
-from mtpy.gui.SmartMT.subwindows.plot_option import PlotOption
-from mtpy.gui.SmartMT.subwindows.station_summary import StationSummary
-from mtpy.gui.SmartMT.subwindows.station_viewer import StationViewer
+from mtpy.gui.SmartMT.gui.plot_option import PlotOption
+from mtpy.gui.SmartMT.gui.station_summary import StationSummary
+from mtpy.gui.SmartMT.gui.station_viewer import StationViewer
 from mtpy.gui.SmartMT.utils.file_handler import FileHandler, FileHandlingException
 from mtpy.utils.decorator import deprecated
 from mtpy.utils.mtpylog import MtPyLog
@@ -172,7 +172,7 @@ class StartQt4(QtGui.QMainWindow):
         self._station_viewer.update_view()
         self._station_summary.update_view()
 
-    def create_subwindow(self, widget, title, overide=True):
+    def create_subwindow(self, widget, title, overide=True, tooltip=None):
         subwindow = None
         self._subwindow_counter += 1
         if title in self.subwindows:
@@ -193,6 +193,8 @@ class StartQt4(QtGui.QMainWindow):
         widget.setAttribute(QtCore.Qt.WA_DeleteOnClose, True)
         subwindow = StartQt4.MDISubWindow(self)
         subwindow.setWindowTitle(title)
+        if tooltip:
+            subwindow.setToolTip(tooltip)
         subwindow.setWidget(widget)
         subwindow.resize(widget.size())
         self.ui.mdiArea.addSubWindow(subwindow)
