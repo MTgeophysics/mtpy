@@ -68,10 +68,16 @@ class MTTabWidget(QtWidgets.QTabWidget):
         self.tab_site = SiteTab(self)
         self.tab_field = FieldNotesTab(self)
         self.tab_processing = ProcessingTab(self)
+        self.tab_provenance = ProvenanceTab(self)
+        self.tab_copyright = CopyrightTab(self)
+        self.tab_data = DataTab(self)
         
         self.addTab(self.tab_site, "Site")
         self.addTab(self.tab_field, "Field Notes")
         self.addTab(self.tab_processing, "Processing")
+        self.addTab(self.tab_provenance, "Provenance")
+        self.addTab(self.tab_copyright, "Copyright")
+        self.addTab(self.tab_data, "Data")
 
 #==============================================================================
 # Site tab        
@@ -678,6 +684,10 @@ class ProcessingTab(QtWidgets.QWidget):
         self.notes_edit = QtWidgets.QTextEdit()
         self.notes_edit.textChanged.connect(self.set_notes)
         
+#        self.parameters = []
+#        self.add_parameter_button = QtWidgets.QPushButton('Add Parameter')
+#        self.add_parameter_button.pressed.connect(self.add_parameter)
+        
         h_line_00 = QtWidgets.QFrame(self)
         h_line_00.setFrameShape(QtWidgets.QFrame.HLine)
         h_line_00.setFrameShadow(QtWidgets.QFrame.Sunken)
@@ -766,6 +776,310 @@ class ProcessingParameter(QtWidgets.QWidget):
     def set_value(self):
         self.value = self.value_edit.text()
         
+#==============================================================================
+# Provenance
+#==============================================================================
+class ProvenanceTab(QtWidgets.QWidget):
+    """
+    Provenance
+    """       
+    
+    def __init__(self, parent=None):
+        super(ProvenanceTab, self).__init__(parent)
+        
+        self.Provenance = mt.Provenance()
+        
+        self.setup_ui()
+        
+    def setup_ui(self):
+        
+        self.creating_app_label = QtWidgets.QLabel('Creating Application')
+        self.creating_app_edit = QtWidgets.QLineEdit()
+        self.creating_app_edit.editingFinished.connect(self.set_creating_app)
+        
+        self.creation_time_label = QtWidgets.QLabel('Creation Date')
+        self.creation_time_edit = QtWidgets.QDateEdit()
+        self.creation_time_edit.setCalendarPopup(True)
+        self.creation_time_edit.setDisplayFormat('yyyy-MM-dd')
+        self.creation_time_edit.dateChanged.connect(self.set_creation_time)
+        
+        self.creator_label = QtWidgets.QLabel('Creator')
+        self.creator_label.setFont(label_font)
+        
+        self.creator_name_label = QtWidgets.QLabel('Name')
+        self.creator_name_edit = QtWidgets.QLineEdit()
+        self.creator_name_edit.editingFinished.connect(self.set_creator_name)
+
+        self.creator_email_label = QtWidgets.QLabel('email')
+        self.creator_email_edit = QtWidgets.QLineEdit()
+        self.creator_email_edit.editingFinished.connect(self.set_creator_email)
+        
+        self.creator_org_label = QtWidgets.QLabel('Organization')
+        self.creator_org_edit = QtWidgets.QLineEdit()
+        self.creator_org_edit.editingFinished.connect(self.set_creator_org)
+        
+        self.creator_url_label = QtWidgets.QLabel('Organization URL')
+        self.creator_url_edit = QtWidgets.QLineEdit()
+        self.creator_url_edit.editingFinished.connect(self.set_creator_url)
+        
+        self.submitter_label = QtWidgets.QLabel('Submitter')
+        self.submitter_label.setFont(label_font)
+        
+        self.submitter_name_label = QtWidgets.QLabel('Name')
+        self.submitter_name_edit = QtWidgets.QLineEdit()
+        self.submitter_name_edit.editingFinished.connect(self.set_submitter_name)
+
+        self.submitter_email_label = QtWidgets.QLabel('email')
+        self.submitter_email_edit = QtWidgets.QLineEdit()
+        self.submitter_email_edit.editingFinished.connect(self.set_submitter_email)
+        
+        self.submitter_org_label = QtWidgets.QLabel('Organization')
+        self.submitter_org_edit = QtWidgets.QLineEdit()
+        self.submitter_org_edit.editingFinished.connect(self.set_submitter_org)
+        
+        self.submitter_url_label = QtWidgets.QLabel('Organization URL')
+        self.submitter_url_edit = QtWidgets.QLineEdit()
+        self.submitter_url_edit.editingFinished.connect(self.set_submitter_url)
+        
+        ##--> Layout
+        creation_layout = QtWidgets.QFormLayout()
+        
+        creation_layout.addRow(self.creating_app_label, 
+                               self.creating_app_edit)
+        creation_layout.addRow(self.creation_time_label,
+                               self.creation_time_edit)
+        creation_layout.setAlignment(QtCore.Qt.AlignTop)
+        
+        creator_layout = QtWidgets.QGridLayout()
+        creator_layout.addWidget(self.creator_label, 0, 0)
+        creator_layout.addWidget(self.creator_name_label, 1, 0)
+        creator_layout.addWidget(self.creator_name_edit, 1, 1)
+        creator_layout.addWidget(self.creator_email_label, 1, 2)
+        creator_layout.addWidget(self.creator_email_edit, 1, 3)
+        creator_layout.addWidget(self.creator_org_label, 1, 4)
+        creator_layout.addWidget(self.creator_org_edit, 1, 5)
+        creator_layout.addWidget(self.creator_url_label, 2, 0)
+        creator_layout.addWidget(self.creator_url_edit, 2, 1, 1, 5)
+        creator_layout.setAlignment(QtCore.Qt.AlignTop)
+        
+        submitter_layout = QtWidgets.QGridLayout()
+        submitter_layout.addWidget(self.submitter_label, 0, 0)
+        submitter_layout.addWidget(self.submitter_name_label, 1, 0)
+        submitter_layout.addWidget(self.submitter_name_edit, 1, 1)
+        submitter_layout.addWidget(self.submitter_email_label, 1, 2)
+        submitter_layout.addWidget(self.submitter_email_edit, 1, 3)
+        submitter_layout.addWidget(self.submitter_org_label, 1, 4)
+        submitter_layout.addWidget(self.submitter_org_edit, 1, 5)
+        submitter_layout.addWidget(self.submitter_url_label, 2, 0)
+        submitter_layout.addWidget(self.submitter_url_edit, 2, 1, 1, 5)
+        submitter_layout.setAlignment(QtCore.Qt.AlignTop)
+        
+        final_layout = QtWidgets.QVBoxLayout()
+        
+        final_layout.addLayout(creation_layout)
+        final_layout.addLayout(creator_layout)
+        final_layout.addLayout(submitter_layout)
+        final_layout.addStretch(0)
+        final_layout.setAlignment(QtCore.Qt.AlignTop)
+
+        
+        self.setLayout(final_layout)
+        
+    def set_creating_app(self):
+        pass
+    
+    def set_creation_time(self):
+        date = self.creation_time_edit.date()
+        print date.toPyDate()
+
+    def set_creator_name(self):
+        pass
+    
+    def set_creator_email(self):
+        pass
+    
+    def set_creator_org(self):
+        pass
+    
+    def set_creator_url(self):
+        pass
+    
+    def set_submitter_name(self):
+        pass
+    
+    def set_submitter_email(self):
+        pass
+    
+    def set_submitter_org(self):
+        pass
+    
+    def set_submitter_url(self):
+        pass
+    
+#==============================================================================
+# Copyright
+#==============================================================================
+class CopyrightTab(QtWidgets.QWidget):
+    """
+    copyright 
+    """
+
+    def __init__(self, parent=None):
+        super(CopyrightTab, self).__init__(parent)
+        
+        self.Copyright = mt.Copyright()
+        
+        self._release_list = ['Unrestricted Release', 
+                              'Academic Use Only',
+                              'Restrictions Apply']
+        
+        self.setup_ui()
+        
+    def setup_ui(self):
+        
+        self.citation_label = QtWidgets.QLabel('Citation')
+        self.citation_label.setFont(label_font)
+        
+        self.citation_author_label = QtWidgets.QLabel('Author')
+        self.citation_author_edit = QtWidgets.QLineEdit()
+        self.citation_author_edit.editingFinished.connect(self.set_author)
+        
+        self.citation_title_label = QtWidgets.QLabel('Title')
+        self.citation_title_edit = QtWidgets.QLineEdit()
+        self.citation_title_edit.editingFinished.connect(self.set_title)
+        
+        self.citation_journal_label = QtWidgets.QLabel('Journal')
+        self.citation_journal_edit = QtWidgets.QLineEdit()
+        self.citation_journal_edit.editingFinished.connect(self.set_journal)
+
+        self.citation_volume_label = QtWidgets.QLabel('Volume')
+        self.citation_volume_edit = QtWidgets.QLineEdit()
+        self.citation_volume_edit.editingFinished.connect(self.set_volume)
+
+        self.citation_year_label = QtWidgets.QLabel('Year')
+        self.citation_year_edit = QtWidgets.QLineEdit()
+        self.citation_year_edit.editingFinished.connect(self.set_year)
+        
+        self.citation_doi_label = QtWidgets.QLabel('DOI')
+        self.citation_doi_edit = QtWidgets.QLineEdit()
+        self.citation_doi_edit.editingFinished.connect(self.set_doi)
+        
+        self.release_status_name = QtWidgets.QLabel('Release Status')
+        self.release_status_combo = QtWidgets.QComboBox()
+        self.release_status_combo.addItems(self._release_list)
+        self.release_status_combo.currentIndexChanged.connect(self.set_release_status)
+        
+        self.conditions_of_use_label = QtWidgets.QLabel('Conditions of Use')
+        self.conditions_of_use_edit = QtWidgets.QTextEdit()
+        self.conditions_of_use_edit.setText(self.Copyright.conditions_of_use)
+        self.conditions_of_use_edit.textChanged.connect(self.set_conditions)
+        
+        ##--> layout
+        cite_layout = QtWidgets.QGridLayout()
+        cite_layout.addWidget(self.citation_label, 0, 0)
+        cite_layout.addWidget(self.citation_author_label, 1, 0, 1, 5)
+        cite_layout.addWidget(self.citation_author_edit, 1, 1, 1, 5)
+        cite_layout.addWidget(self.citation_title_label, 2, 0, 1, 5)
+        cite_layout.addWidget(self.citation_title_edit, 2, 1, 1, 5)
+        cite_layout.addWidget(self.citation_journal_label, 3, 0)
+        cite_layout.addWidget(self.citation_journal_edit, 3, 1)
+        cite_layout.addWidget(self.citation_volume_label, 3, 2)
+        cite_layout.addWidget(self.citation_volume_edit, 3, 3)
+        cite_layout.addWidget(self.citation_year_label, 3, 4)
+        cite_layout.addWidget(self.citation_year_edit, 3, 5)
+        cite_layout.addWidget(self.citation_doi_label, 4, 0, 1, 5)
+        cite_layout.addWidget(self.citation_doi_edit, 4, 1, 1, 5)
+        cite_layout.setAlignment(QtCore.Qt.AlignTop)
+        
+        combo_layout = QtWidgets.QHBoxLayout()
+        combo_layout.addWidget(self.release_status_name)
+        combo_layout.addWidget(self.release_status_combo)
+        
+        release_layout = QtWidgets.QVBoxLayout()
+        release_layout.addLayout(combo_layout)
+        release_layout.addWidget(self.conditions_of_use_label)
+        release_layout.addWidget(self.conditions_of_use_edit)
+        
+        final_layout = QtWidgets.QVBoxLayout()
+        final_layout.addLayout(cite_layout)
+        final_layout.addLayout(release_layout)
+        
+        self.setLayout(final_layout)
+        
+    def set_author(self):
+        pass
+
+    def set_title(self):
+        pass
+
+    def set_journal(self):
+        pass
+
+    def set_volume(self):
+        pass
+
+    def set_year(self):
+        pass
+
+    def set_doi(self):
+        pass
+
+    def set_release_status(self):
+        pass
+    
+    def set_conditions(self):
+        pass
+    
+#==============================================================================
+# Data
+#==============================================================================
+class DataTab(QtWidgets.QWidget):
+    """
+    hold the data in tabular form
+    """
+    
+    def __init__(self, parent=None):
+        super(DataTab, self).__init__(parent)
+        
+        self.Data = None
+        
+        self._z_headers = ['Frequency (Hz)', 
+                           'Real Zxx', 'Imag Zxx', 'Err Zxx',
+                           'Real Zxy', 'Imag Zxy', 'Err Zxy',
+                           'Real Zyx', 'Imag Zyx', 'Err Zyx',
+                           'Real Zyy', 'Imag Zyy', 'Err Zyy']
+        self._t_headers = ['Frequency (Hz)', 
+                           'Real Tzx', 'Imag Tzx', 'Err Tzx',
+                           'Real Tzy', 'Imag Tzy', 'Err Tzy']
+        
+        self.setup_ui()
+        
+    def setup_ui(self):
+        
+        self.tab = QtWidgets.QTabWidget()
+        
+        self.data_z_table = QtWidgets.QTableWidget()
+        self.data_z_table.setColumnCount(13)
+        self.data_z_table.setRowCount(100)
+        self.data_z_table.setHorizontalHeaderLabels(self._z_headers)
+        #setHorizontalHeaderLabels(headerlist)
+        self.tab.addTab(self.data_z_table, 'Impedance')
+        
+        self.data_t_table = QtWidgets.QTableWidget()
+        self.data_t_table.setColumnCount(7)
+        self.data_t_table.setRowCount(100)
+        self.data_t_table.setHorizontalHeaderLabels(self._t_headers)
+        self.tab.addTab(self.data_t_table, 'Tipper')
+        
+        layout = QtWidgets.QVBoxLayout()
+        layout.addWidget(self.tab)
+        
+        self.setLayout(layout)
+        
+        
+
+        
+
 #==============================================================================
 # Common functions
 #==============================================================================
