@@ -184,6 +184,7 @@ class PhaseTensorPseudoSection(VisualizationBase):
         )
 
     def update_ui(self):
+        # nothing to be done here
         pass
 
     def plot(self):
@@ -223,7 +224,7 @@ class PhaseTensorPseudoSection(VisualizationBase):
     @staticmethod
     def plot_description():
         return """
-<p>PlotPhaseTensorPseudoSection will plot the phase tensor ellipses in a pseudo section format</p>
+<p>plot the phase tensor ellipses in a pseudo section format</p>
         """
 
     @staticmethod
