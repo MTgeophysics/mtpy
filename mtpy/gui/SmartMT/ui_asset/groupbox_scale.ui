@@ -21,7 +21,7 @@
   </property>
   <layout class="QFormLayout" name="formLayout">
    <item row="0" column="0">
-    <widget class="QLabel" name="label">
+    <widget class="QLabel" name="label_time">
      <property name="toolTip">
       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Period:&lt;/span&gt; plot vertical scale in period&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Frequency:&lt;/span&gt; plot vertical scale in frequency&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
@@ -48,7 +48,7 @@
     </widget>
    </item>
    <item row="1" column="0">
-    <widget class="QLabel" name="label_2">
+    <widget class="QLabel" name="label_map">
      <property name="toolTip">
       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Scale of the map coordinates.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>

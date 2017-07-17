@@ -12,12 +12,14 @@
 import abc
 
 from PyQt4 import QtGui, QtCore
+import matplotlib.pyplot as plt
 from PyQt4.QtGui import QApplication
 
 from mtpy.gui.SmartMT.gui.plot_parameter import PlotParameter
 from mtpy.utils.mtpylog import MtPyLog
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as NavigationToolbar
+
 
 class VisualizationBase(object):
     __metaclass__ = abc.ABCMeta
@@ -55,10 +57,10 @@ class VisualizationBase(object):
     def plot_description():
         return VisualizationBase.__name__
 
-    # _plottingFinished = QtCore.pyqtSignal()
+        # _plottingFinished = QtCore.pyqtSignal()
 
-    # def _create_plot(self):
-    #     self.plot()
+        # def _create_plot(self):
+        #     self.plot()
         # self._plottingFinished.emit()
 
     @abc.abstractmethod
@@ -70,26 +72,33 @@ class VisualizationBase(object):
         pass
 
     def show_figure(self):
+        # clear the figure if there is already one up
+        plt.clf()
         progressbar = ProgressBar()
         progressbar.onStart()
         # self._plottingFinished.connect(progressbar.onFinished)
         # self._create_plot()
-        self.plot()
-        if self._fig:
-            # self._fig.show()
-            widget = QtGui.QWidget()
-            layout = QtGui.QVBoxLayout()
-            canvas = FigureCanvas(self._fig)
-            toolbar = NavigationToolbar(canvas, widget)
-            layout.addWidget(toolbar)
-            layout.addWidget(canvas)
-            widget.setLayout(layout)
+        try:
+            self.plot()
+            if self._fig:
+                # self._fig.show()
+                widget = QtGui.QWidget()
+                layout = QtGui.QVBoxLayout()
+                canvas = FigureCanvas(self._fig)
+                toolbar = NavigationToolbar(canvas, widget)
+                layout.addWidget(toolbar)
+                layout.addWidget(canvas)
+                widget.setLayout(layout)
 
-            progressbar.onFinished()
+                progressbar.onFinished()
 
-            self._parent._parent.create_subwindow(widget, "%s" % self.plot_name(), overide=False, tooltip=self.get_parameter_str())
-        else:
+                self._parent._parent.create_subwindow(widget, "%s" % self.plot_name(), overide=False,
+                                                      tooltip=self.get_parameter_str())
+            else:
+                progressbar.onFinished()
+        except Exception as e:
             progressbar.onFinished()
+            QtGui.QMessageBox.critical(self._parameter_ui, 'Plotting Error', e.message, QtGui.QMessageBox.Close)
 
 
 class ProgressBar(QtGui.QWidget):

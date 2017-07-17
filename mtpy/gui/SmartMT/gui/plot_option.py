@@ -13,8 +13,8 @@ from mtpy.gui.SmartMT.visualization.visualization_base import VisualizationBase
 from mtpy.utils.mtpylog import MtPyLog
 # import all VisualizationBase subclasses here
 # todo may need a better way of searching sublasses from unloaded files
-from mtpy.gui.SmartMT.visualization.penetration_depth3d import PenetrationDepth3D
-from mtpy.gui.SmartMT.visualization.phase_tensor_maps import PhaseTensorMap
+from mtpy.gui.SmartMT.visualization.penetration import *
+from mtpy.gui.SmartMT.visualization.phase_tensor import *
 
 
 class PlotOption(QtGui.QWidget):

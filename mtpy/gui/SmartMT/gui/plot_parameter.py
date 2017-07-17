@@ -19,8 +19,10 @@ from mtpy.gui.SmartMT.ui_asset.groupbox_color_bar import Ui_GroupBox_ColorBar
 from mtpy.gui.SmartMT.ui_asset.groupbox_ellipse import Ui_GroupBoxEllipse
 from mtpy.gui.SmartMT.ui_asset.groupbox_font import Ui_GroupBox_Font
 from mtpy.gui.SmartMT.ui_asset.groupbox_frequency_period_single import Ui_groupBoxFrequency_pereiod_single
+from mtpy.gui.SmartMT.ui_asset.groupbox_linedir import Ui_GroupBox_Linedir
 from mtpy.gui.SmartMT.ui_asset.groupbox_padding import Ui_GroupBox_Padding
 from mtpy.gui.SmartMT.ui_asset.groupbox_scale import Ui_GroupBox_Scale
+from mtpy.gui.SmartMT.ui_asset.groupbox_stretch import Ui_GroupBox_Stretch
 from mtpy.gui.SmartMT.ui_asset.groupbox_tolerance import Ui_GroupBoxTolerance
 from mtpy.gui.SmartMT.ui_asset.groupbox_z_component_multiple import Ui_groupBoxZ_Component_Multiple
 from mtpy.gui.SmartMT.ui_asset.groupbox_z_component_single import Ui_groupBoxZ_Component_Single
@@ -248,7 +250,7 @@ class Ellipse(QtGui.QGroupBox):
     """
     ellipse_dict defined for mtpy.imagining.phase_tensor_maps.PlogPhaseTensorMaps
     """
-    _colorby = ['phimin', 'phimax', 'skew', 'skew_seg', 'phidet', 'ellipticity']
+    _colorby = ['phimin', 'phimax', 'skew', 'skew_seg', 'normalized_skew', 'normalized_skew_seg', 'phidet', 'ellipticity']
     _cmap = ['mt_yl2rd', 'mt_bl2yl2rd', 'mt_wh2bl', 'mt_rd2bl', 'mt_bl2wh2rd', 'mt_seg_bl2wh2rd', 'mt_rd2gr2bl']
 
     def __init__(self, parent):
@@ -431,6 +433,10 @@ class Scale(QtGui.QGroupBox):
     def get_tscale(self):
         return self._tscale[self.ui.comboBox_time.currentIndex()]
 
+    def hide_mapscale(self):
+        self.ui.label_map.hide()
+        self.ui.comboBox_map.hide()
+
     def get_mapscale(self):
         return self._mapscale[self.ui.comboBox_map.currentIndex()]
 
@@ -490,3 +496,52 @@ class Font(QtGui.QGroupBox):
             return SIMPLE_COLORS[self.ui.comboBox_color.currentIndex()]
         else:
             return COLORS[self.ui.comboBox_color.currentIndex()][1]
+
+
+class Stretch(QtGui.QGroupBox):
+    def __init__(self, parent, simple_color=True):
+        QtGui.QGroupBox.__init__(self, parent)
+        self.ui = Ui_GroupBox_Stretch()
+        self.ui.setupUi(self)
+        self.ui.checkBox_x_range.stateChanged.connect(self._x_range_state_change)
+        self.ui.checkBox_y_range.stateChanged.connect(self._y_range_state_change)
+
+    def _x_range_state_change(self, p_int):
+        if p_int == 0:
+            self.ui.doubleSpinBox_x_min.setEnabled(False)
+            self.ui.doubleSpinBox_x_max.setEnabled(False)
+        else:
+            self.ui.doubleSpinBox_x_min.setEnabled(True)
+            self.ui.doubleSpinBox_x_max.setEnabled(True)
+
+    def _y_range_state_change(self, p_int):
+        if p_int == 0:
+            self.ui.doubleSpinBox_y_min.setEnabled(False)
+            self.ui.doubleSpinBox_y_max.setEnabled(False)
+        else:
+            self.ui.doubleSpinBox_y_min.setEnabled(True)
+            self.ui.doubleSpinBox_y_max.setEnabled(True)
+
+    def get_stretch(self):
+        return self.ui.doubleSpinBox_x.value(), self.ui.doubleSpinBox_y.value()
+
+    def get_x_limits(self):
+        return self.ui.doubleSpinBox_x_min.value(), self.ui.doubleSpinBox_x_max.value()
+
+    def get_y_limits(self):
+        return self.ui.doubleSpinBox_y_min.value(), self.ui.doubleSpinBox_y_max.value()
+
+
+class LineDir(QtGui.QGroupBox):
+    def __init__(self, parent, simple_color=True):
+        QtGui.QGroupBox.__init__(self, parent)
+        self.ui = Ui_GroupBox_Linedir()
+        self.ui.setupUi(self)
+
+    def get_linedir(self):
+        if self.ui.radioButton_ns.isChecked():
+            return 'ns'
+        elif self.ui.radioButton_ew.isChecked():
+            return 'ew'
+        else:
+            return None
