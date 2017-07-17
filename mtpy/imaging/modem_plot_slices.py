@@ -237,8 +237,8 @@ class ModemPlotSlices():
 #   python mtpy/imaging/modem_plot_slices.py  path2datfile path2rhofile [slice_locations]
 # python mtpy/imaging/modem_plot_slices.py \
 #     /e/Data/Modeling/Isa/100hs_flat_BB/Isa_run3_NLCG_048.dat /e/Data/Modeling/Isa/100hs_flat_BB/Isa_run3_NLCG_048.rho 2000 5000
-# python mtpy/imaging/modem_plot_slices.py
-#     /e/tmp/GA_UA_edited_10s-10000s_20/ModEM_Data.dat /e/tmp/GA_UA_edited_10s-10000s_20/ModEM_Model.ws
+#   python mtpy/imaging/modem_plot_slices.py /e/tmp/GA_UA_edited_10s-10000s_20/ModEM_Data.dat
+#       /e/tmp/GA_UA_edited_10s-10000s_20/ModEM_Model.ws
 # -----------------------------------------------------------------------
 if __name__ == "__main__":
     # INPUTS #
@@ -282,7 +282,8 @@ if __name__ == "__main__":
         slice_locs = sys.argv[3:]
     else:
         # a list of depth where h-slice to be visualized
-        slice_locs=[100, 200,400, 600,800,1000,1500,2000,2500,3000,3500,4000,4500,5000,5500,6000,7000,8000,9000,10000]
+        slice_locs=[-2000, -1900, -1700, -1500, -1200, -1000, -800, -600, -400, -200, 0, 200, 400, 600,800,1000,
+                    2000,3000,4000,5000,6000,7000,8000,9000,10000]
 
     # construct plot object
     myObj = ModemPlotSlices(datf, rhof)  # ,map_scale='m')

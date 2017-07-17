@@ -110,8 +110,8 @@ if __name__ == '__main__':
     model = Model(Data=datob,
                   epsg=epsg_code,  # epsg
                   # cell_size_east=500, cell_size_north=500,  # concurry
-                  # cell_size_east=10000, cell_size_north=10000, #GA_VIC
-                  cell_size_east=1000, cell_size_north=1000, # Concurry
+                  cell_size_east=10000, cell_size_north=10000, #GA_VIC
+                  # cell_size_east=1000, cell_size_north=1000, # Concurry
                   pad_north=8,  # number of padding cells in each of the north and south directions
                   pad_east=8,  # number of east and west padding cells
                   pad_z=8,  # number of vertical padding cells

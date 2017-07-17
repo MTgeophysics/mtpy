@@ -9,37 +9,66 @@ Author: fei.zhang@ga.gov.au
 Date: 2017-07-14
 """
 
+import numpy as np
+import math
+import cmath
+
+mu0 = 4*math.pi*math.pow(10,-7)
+
+def bostick_depth(f, rho):
+    """
+    :param f: freq
+    :param rho: apparent resistivity
+    :return:
+    """
+    h = math.sqrt(rho/(f*2*math.pi*mu0))
+
+    print(h)
+    return h
 
 
-	 private double bostick_depth(double f, double rho){
-		 double mu = 4*Math.PI*Math.pow(10,-7);
-		 double h = Math.sqrt(rho/(f*2*Math.PI*mu));
-		 //System.out.println(h);
-		 return h;
-	 }
+def bostick_resistivity(f, rho, pha):
+    """
+    :param f:  f is not used?
+    :param rho:
+    :param pha: phase in radian
+    :return:
+    """
+    if pha > 2*math.pi:
+        print("WARN: pha is too large, in unit degree? ", pha)
+        pha_rad = pha * math.pi / 180.0
+    else:
+        pha_rad=pha
+
+    rho_b = rho*(math.pi / (2 * pha_rad) - 1)
+    print(rho_b)
+    return rho_b
+
+def sensitivity(z, sigma_conduct=0.01, freq=10):
+    """
+    compute sensitivty S(z,sigma, omega)= -kz*exp(-2*kz)
+    :param z:
+    :param sigma_conduct:
+    :param freq:
+    :return:
+    """
+
+    omega= 2*math.pi*freq
+
+    k = cmath.sqrt( (0.0-1j)*omega*mu0*sigma_conduct )
+    #print ("k= ", k)
+
+    sen = -k*z*cmath.exp(-2*k*z)
+    #print (z, sen)
+    return sen
+
+if __name__ == "__main__":
+
+    for n in xrange(0,40):
+        zn = 0.1*n
+        sen = sensitivity(zn)
+        #print (zn, sen)
+        print (zn, 1000*np.absolute(sen))
 
 
-private double bostick__resistivity(double f, double rho,double pha_radian){
-		 // phase in radian
-		 //if (pha_radian > 180)
-		 pha_radian = pha_radian*Math.PI/180.0;
-		 double rho_b = rho*(Math.PI/(2*pha_radian) -1);
-		 //System.out.println(rho_b);
-		 return rho_b;
-	 }
 
-
-
------Original Appointment-----
-From: Zhang Fei
-Sent: Thursday, 13 July 2017 4:25 PM
-To: Wang Liejun
-Subject: chat about DOI [SEC=UNCLASSIFIED]
-When: Friday, 14 July 2017 11:00 AM-12:00 PM (UTC+10:00) Canberra, Melbourne, Sydney.
-Where: Fei's work area
-
-
-
-DOI and
-ModEM input
-other MT things.

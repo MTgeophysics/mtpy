@@ -543,7 +543,8 @@ class Model(object):
         else:
             pass
 
-        # needed? self.write_model_file()
+        # update the z-centre as the top air layer
+        self.grid_center[2] = self.grid_z[0]
 
         logger.info("begin to self.assign_resistivity_from_surfacedata(...)")
         self.assign_resistivity_from_surfacedata('topography', air_resistivity, where='above')
@@ -553,7 +554,7 @@ class Model(object):
         self.covariance_mask = np.ones_like(self.res_model)  # of grid size (xc, yc, zc)
 
         # assign model areas below sea level but above topography, as seawater
-        # get grid centres
+        # get grid node centres
         gcz = np.mean([self.grid_z[:-1], self.grid_z[1:]], axis=0)
 
         # convert topography to local grid coordinates
@@ -1309,7 +1310,7 @@ class Model(object):
             # compute grid center
             center_east = -self.nodes_east.__abs__().sum() / 2
             center_north = -self.nodes_north.__abs__().sum() / 2
-            center_z = 0
+            center_z = 0  # self.grid_z[0]
             self.grid_center = np.array([center_north, center_east, center_z])
 
         # Finally, write grid center coordinate and mesh rotation angle
