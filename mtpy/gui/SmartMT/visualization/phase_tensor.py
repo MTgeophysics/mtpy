@@ -9,7 +9,7 @@
     Date: 20/06/2017
 """
 from mtpy.gui.SmartMT.gui.plot_parameter import FrequencySingle, Ellipse, FrequencyTolerance, ColorBar, Arrow, Padding, \
-    Scale, Font, Stretch, LineDir
+    Scale, Font, Stretch, LineDir, Rotation
 from mtpy.gui.SmartMT.visualization.visualization_base import VisualizationBase
 from mtpy.imaging.phase_tensor_maps import PlotPhaseTensorMaps
 from mtpy.imaging.phase_tensor_pseudosection import PlotPhaseTensorPseudoSection
@@ -57,6 +57,7 @@ class PhaseTensorMap(VisualizationBase):
             'mapscale': self._scale_ui.get_mapscale(),
             'tscale': self._scale_ui.get_tscale(),
             'plot_tipper': self._arrow_ui.get_plot_tipper(),
+            # 'rot_z': self._rotation_ui.get_rotation_in_degree(),  # not implemented in PlotPhaseTensorMaps
             'station_id': (0, 10)
         }
 
@@ -112,6 +113,10 @@ class PhaseTensorMap(VisualizationBase):
         self._arrow_ui = Arrow(self._parameter_ui)
         self._parameter_ui.add_parameter_groubox(self._arrow_ui)
 
+        # not implemented in PlotPhaseTensorMaps
+        # self._rotation_ui = Rotation(self._parameter_ui)
+        # self._parameter_ui.add_parameter_groubox(self._rotation_ui)
+
         self._padding_ui = Padding(self._parameter_ui)
         self._parameter_ui.add_parameter_groubox(self._padding_ui)
 
@@ -159,6 +164,10 @@ class PhaseTensorPseudoSection(VisualizationBase):
         self._scale_ui.hide_mapscale()
         self._parameter_ui.add_parameter_groubox(self._scale_ui)
 
+        # this is not implemented in PlotPhaseTensorPseudoSection
+        # self._rotation_ui = Rotation(self._parameter_ui)
+        # self._parameter_ui.add_parameter_groubox(self._rotation_ui)
+
         self._colorbar_ui = ColorBar(self._parameter_ui)
         self._parameter_ui.add_parameter_groubox(self._colorbar_ui)
 
@@ -202,6 +211,7 @@ class PhaseTensorPseudoSection(VisualizationBase):
             'ellipse_dict': self._ellipse_ui.get_ellipse_dict(),
             'stretch': self._stretch_ui.get_stretch(),
             'linedir': self._linedir_ui.get_linedir(),
+            # 'rotz': self._rotation_ui.get_rotation_in_degree(), # this is not implemented in PlotPhaseTensorPseudoSection
             # default for testing
             'station_id': (0, 10),  # indices for showing station names,
         }

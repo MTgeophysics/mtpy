@@ -51,9 +51,6 @@ class MTResponse(VisualizationBase):
         self._station_ui = StationSelection(self._parameter_ui)
         self._parameter_ui.add_parameter_groubox(self._station_ui)
 
-        self._rotation_ui = Rotation(self._parameter_ui)
-        self._parameter_ui.add_parameter_groubox(self._rotation_ui)
-
         self._plot_control_ui = PlotControlMTResponse(self._parameter_ui)
         self._parameter_ui.add_parameter_groubox(self._plot_control_ui)
 
@@ -67,6 +64,9 @@ class MTResponse(VisualizationBase):
 
         self._arrow_ui = Arrow(self._parameter_ui)
         self._parameter_ui.add_parameter_groubox(self._arrow_ui)
+
+        self._rotation_ui = Rotation(self._parameter_ui)
+        self._parameter_ui.add_parameter_groubox(self._rotation_ui)
 
         self._parameter_ui.end_of_parameter_components()
 
