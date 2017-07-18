@@ -26,8 +26,8 @@ class Ui_GroupBoxParameters(object):
     def setupUi(self, GroupBoxParameters):
         GroupBoxParameters.setObjectName(_fromUtf8("GroupBoxParameters"))
         GroupBoxParameters.resize(340, 200)
-        self.verticalLayout = QtGui.QVBoxLayout(GroupBoxParameters)
-        self.verticalLayout.setObjectName(_fromUtf8("verticalLayout"))
+        self.gridLayout = QtGui.QGridLayout(GroupBoxParameters)
+        self.gridLayout.setObjectName(_fromUtf8("gridLayout"))
         self.scrollArea = QtGui.QScrollArea(GroupBoxParameters)
         self.scrollArea.setFrameShape(QtGui.QFrame.Panel)
         self.scrollArea.setWidgetResizable(True)
@@ -39,10 +39,10 @@ class Ui_GroupBoxParameters(object):
         self.verticalLayout_2.setMargin(0)
         self.verticalLayout_2.setObjectName(_fromUtf8("verticalLayout_2"))
         self.scrollArea.setWidget(self.scrollAreaWidgetContents)
-        self.verticalLayout.addWidget(self.scrollArea)
+        self.gridLayout.addWidget(self.scrollArea, 0, 0, 1, 1)
         self.pushButtonPlot = QtGui.QPushButton(GroupBoxParameters)
         self.pushButtonPlot.setObjectName(_fromUtf8("pushButtonPlot"))
-        self.verticalLayout.addWidget(self.pushButtonPlot)
+        self.gridLayout.addWidget(self.pushButtonPlot, 1, 0, 1, 1)
 
         self.retranslateUi(GroupBoxParameters)
         QtCore.QMetaObject.connectSlotsByName(GroupBoxParameters)

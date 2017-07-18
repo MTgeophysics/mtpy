@@ -158,7 +158,7 @@ class FrequencySingle(QtGui.QGroupBox):
             title = '%s (%s)' % (self._title_period, self._unit_period)
         else:
             self._histogram.set_unit(self._unit_frequency)
-            self._histogram.set_title(self._unit_frequency)
+            self._histogram.set_title(self._title_frequency)
             title = '%s (%s)' % (self._title_frequency, self._unit_frequency)
         self.setTitle(title)
         self._update_frequency()
@@ -204,7 +204,7 @@ class FrequencySingle(QtGui.QGroupBox):
         def __init__(self, parent=None, width=5, hight=3, dpi=100):
             self.artists = dict()
             self._frequency = None
-            self._current_period = None
+            self._current_frequency = None
             self._title = None
             self._unit = None
             MPLCanvas.__init__(self, parent, width, hight, dpi)
@@ -254,12 +254,14 @@ class FrequencySingle(QtGui.QGroupBox):
 
         def set_data(self, frequency):
             self._frequency = frequency
+            self._lx = None
+            self._current_frequency = None
 
         def set_current_frequency(self, freq):
-            self._current_period = freq
+            self._current_frequency = freq
             if self._lx is None:
                 self._lx = self._axes.axvline(linewidth=2, color="red")
-            self._lx.set_xdata(self._current_period)
+            self._lx.set_xdata(self._current_frequency)
             # if self._fig.canvas.supports_blit:
             #     self._axes.draw_artist(self._lx)
             #     self._fig.canvas.blit(self._axes.bbox)
