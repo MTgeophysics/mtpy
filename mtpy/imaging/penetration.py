@@ -13,18 +13,19 @@
 
 import os
 import sys
-import numpy as np
+
 import matplotlib
 import matplotlib.pyplot as plt
+import numpy as np
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from scipy.interpolate import griddata
 
 import mtpy
-from imaging_base import ImagingBase, ParameterError, ImagingError
 import mtpy.modeling.occam2d_rewrite as occam2d
+from imaging_base import ImagingBase, ParameterError, ImagingError
 from mtpy.core import mt as mt
-from mtpy.utils.mtpylog import MtPyLog
 from mtpy.utils.decorator import deprecated
+from mtpy.utils.mtpylog import MtPyLog
 
 # get a logger object for this module, using the utility class MtPyLog to
 # config the logger
@@ -671,8 +672,8 @@ def get_bounding_box(latlons):
         minlon = min(minlon, lon)
         maxlon = max(maxlon, lon)
 
-    logger.debug("Latitude Range:", minlat, maxlat)
-    logger.debug("Longitude Range:", minlon, maxlon)
+    logger.debug("Latitude Range: [%.5f, %.5f]", minlat, maxlat)
+    logger.debug("Longitude Range: [%.5f, %.5f]", minlon, maxlon)
 
     # lats = [tup[0] for tup in latlons]
     # lons = [tup[1] for tup in latlons]
