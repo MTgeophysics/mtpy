@@ -1,13 +1,13 @@
 import glob
 import inspect
+import os.path
 import unittest
-
 from unittest import TestCase
 
-import os.path
 # configure matplotlib for testing
-import matplotlib
-# matplotlib.use('Agg')  # comment out this line if you want to see the plots 1-by-1 on screen.
+import matplotlib.pyplot as plt
+
+plt.ion()
 from mtpy.imaging.penetration import load_edi_files
 from mtpy.imaging.phase_tensor_maps import PlotPhaseTensorMaps
 
@@ -23,16 +23,17 @@ edi_paths = [
 
 
 class TestPlotPhaseTensorMaps(TestCase):
-    def setUp(self):
-        self._temp_dir = "tests/temp"
-        if not os.path.isdir(self._temp_dir):
-            os.mkdir(self._temp_dir)
+    @classmethod
+    def setUpClass(cls):
+        cls._temp_dir = "tests/temp"
+        if not os.path.isdir(cls._temp_dir):
+            os.mkdir(cls._temp_dir)
 
         # 1) Define plots params
         # parameters describing ellipses, differ for different map scales: deg, m, km
         # Try different size to find a suitable value for your case. as a
         # guidance: 1 degree=100KM
-        self.ellipse_dict = {
+        cls.ellipse_dict = {
             'size': 0.2,
             'colorby': 'phimin',
             'range': (
@@ -42,18 +43,25 @@ class TestPlotPhaseTensorMaps(TestCase):
             'cmap': 'mt_bl2gr2rd'}
 
         # adjust to suitable size: parameters describing the induction vector arrows
-        self.arrow_dict = {'size': 0.5,
-                           'lw': 0.2,
-                           'head_width': 0.04,
-                           'head_length': 0.04,
-                           'threshold': 0.8,
-                           'direction': 0}
+        cls.arrow_dict = {'size': 0.5,
+                          'lw': 0.2,
+                          'head_width': 0.04,
+                          'head_length': 0.04,
+                          'threshold': 0.8,
+                          'direction': 0}
 
         # parameters describing the arrow legend (not necessarily used)
         # self.arrow_legend_dict = {'position': 'upper right',
         #                      'fontpad': 0.0025,
         #                      'xborderpad': 0.07,
         #                      'yborderpad': 0.015}
+
+    @classmethod
+    def tearDownClass(cls):
+        plt.close('all')
+
+    def setUp(self):
+        plt.clf()
 
     def test_plot_01(self):
         edi_path = edi_paths[1]
@@ -140,7 +148,9 @@ class TestPlotPhaseTensorMaps(TestCase):
                                      # fig_dpi=300, the default is OK. Higher dpi
                                      # may distort figure
                                      save_fn=save_figure_path)
-        path2figure = pt_obj.plot(save_path=save_figure_path)
+        path2figure = pt_obj.plot()
+        plt.pause(1)
+        pt_obj.save_figure(save_figure_path)
         pt_obj.export_params_to_file(save_path=save_param_path)
 
     def _plot_gen(self, edi_path, freq, save_figure_path=None, save_param_path=None):
@@ -162,5 +172,7 @@ class TestPlotPhaseTensorMaps(TestCase):
                                      # may distort figure
                                      save_fn=save_figure_path)
         # 3) do the plot and save figure - if the param save_path provided
-        path2figure = pt_obj.plot(save_path=save_figure_path)
+        path2figure = pt_obj.plot(show=True)
+        plt.pause(1)
+        pt_obj.save_figure(save_figure_path)
         pt_obj.export_params_to_file(save_path=save_param_path)

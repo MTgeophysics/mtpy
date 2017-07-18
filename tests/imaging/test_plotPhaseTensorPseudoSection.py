@@ -4,6 +4,10 @@ import os
 import unittest
 from unittest import TestCase
 
+import matplotlib.pyplot as plt
+
+plt.ion()
+
 from mtpy.imaging.phase_tensor_pseudosection import PlotPhaseTensorPseudoSection
 
 edi_paths = [
@@ -17,10 +21,18 @@ edi_paths = [
 ]
 
 class TestPlotPhaseTensorPseudoSection(TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls._temp_dir = "tests/temp"
+        if not os.path.isdir(cls._temp_dir):
+            os.mkdir(cls._temp_dir)
+
+    @classmethod
+    def tearDownClass(cls):
+        plt.close('all')
+
     def setUp(self):
-        self._temp_dir = "tests/temp"
-        if not os.path.isdir(self._temp_dir):
-            os.mkdir(self._temp_dir)
+        plt.clf()
 
     def test_plot_01(self):
         edi_path = edi_paths[1]
@@ -75,4 +87,5 @@ class TestPlotPhaseTensorPseudoSection(TestCase):
                                               font_size=4,
                                               dpi=300)
         ptpObj.plot()
+        plt.pause(1)
         ptpObj.save_figure2(save_fn=save_figure_path)

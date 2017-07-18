@@ -3,30 +3,36 @@ Run these unit test at commandline.
 $   cd u25656@PC /e/Githubz/mtpy2 (develop)
 $   nosetests tests/imaging/
 """
+import os.path
 from unittest import TestCase
 
-import os.path
+# matplotlib.use('Qt4Agg')  # comment out this line if you want to see the plots 1-by-1 on screen.
+import matplotlib.pyplot as plt
 
-# configure matplotlib for testing
-import matplotlib
-# use non-interactive backend 'Agg', so that you do not have to see figure pop-out.
-from mtpy.imaging.penetration import ZComponentError
-
-matplotlib.use('Agg')  # comment out this line if you want to see the plots 1-by-1 on screen.
-
-#import matplotlib.pyplot as plt
+plt.ion()
 # plt.ioff()
 
+from mtpy.imaging.penetration import ZComponentError
 from mtpy.imaging.penetration_depth1d import plot_edi_dir
 from mtpy.imaging.penetration_depth1d import plot_edi_file
 
 
 class TestPenetration_depth1d(TestCase):
-    def setUp(self):
-        self._temp_dir = "tests/temp"
-        if not os.path.isdir(self._temp_dir):
-            os.mkdir(self._temp_dir)
+    @classmethod
+    def setUpClass(cls):
+        cls._temp_dir = "tests/temp"
+        if not os.path.isdir(cls._temp_dir):
+            os.mkdir(cls._temp_dir)
 
+    @classmethod
+    def tearDownClass(cls):
+        plt.close('all')
+
+    # def setUp(self):
+    #     plt.clf()
+
+    def tearDown(self):
+        plt.pause(1)
 
     def test_plot_edi_dir(self):
         """
