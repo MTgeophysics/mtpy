@@ -606,6 +606,8 @@ class ScriptFile(BIRRP_Parameters):
                         print 'Something a miss with remote reference'
                         print self.comp_list
                         print len(np.where(fn_arr['rr']==True)[0])
+                        print fn_arr['fn']
+                        print self.nref
                         raise ValueError('Fuck!')
                         
                     if ff == 0:
@@ -666,113 +668,7 @@ class ScriptFile(BIRRP_Parameters):
         lines += ['{0:d}'.format(fn_arr['nskip'])]
         
         return lines
-            
-
-def write_script_file(processing_dict, save_path=None):
-    """
-    writescript_fn(processingdict will write a script file for BIRRP using 
-    info in processingdict which is a dictionary with keys:
-    
-    ================== ========================================================
-    parameter          description
-    ================== ======================================================== 
-    station            station name
-    fn_list             list of file names to be processed, this must be in 
-                       the correct order [EX, EY, HZ, HX, HY] and if multiple
-                       sections are to be processed at the same time then 
-                       must be input as a nested loop 
-                       [[EX1, EY1, HZ1, HX1, HY1], 
-                       [EX2, EY2, HZ2, HX2, HY2], ...]
-    rrfn_list           list of remote reference file names, similar to the 
-                       fn_list [[HX1, HY1], [HX2, HY2], ...]
-    ilev               processing mode 0 for basic and 1 for advanced RR-2 
-                       stage
-    nout               Number of Output time series (2 or 3-> for BZ)
-    ninp               Number of input time series for E-field (1,2,3) 
-    nref               Number of reference channels (2 for MT)
-    nrr                bounded remote reference (0) or 2 stage bounded 
-                       influence (1)
-    tbw                Time bandwidth for Sepian sequence
-    deltat             Sampling rate (+) for (s), (-) for (Hz)
-    nfft               Length of FFT (should be even)
-    nsctinc            section increment divisor (2 to divide by half)
-    nsctmax            Number of windows used in FFT
-    nf1                1st frequency to extract from FFT window (>=3)
-    nfinc              frequency extraction increment 
-    nfsect             number of frequencies to extract
-    mfft               AR filter factor, window divisor (2 for half)
-    uin                Quantile factor determination
-    ainlin             Residual rejection factor low end (usually 0)
-    ainuin             Residual rejection factor high end (.95-.99)
-    c2threshb          Coherence threshold for magnetics (0 if undesired)
-    c2threshe          Coherence threshold for electrics (0 if undesired)
-    nz                 Threshold for Bz (0=separate from E, 1=E threshold, 
-                                         2=E and B) 
-                       Input if 3 B components else None
-    c2thresh1          Squared coherence for Bz, input if NZ=0, Nout=3
-    perlo              longest period to apply coherence threshold over
-    perhi              shortes period to apply coherence threshold over
-    ofil               Output file root(usually three letters, can add full
-                                        path)
-    nlev               Output files (0=Z; 1=Z,qq; 2=Z,qq,w; 3=Z,qq,w,d)
-    nprej              number of frequencies to reject
-    prej               frequencies to reject (+) for period, (-) for frequency
-    npcs               Number of independent data to be processed (1 for one 
-                       segement)
-    nar                Prewhitening Filter (3< >15) or 0 if not desired',
-    imode              Output file mode (0=ascii; 1=binary; 2=headerless ascii; 
-                       3=ascii in TS mode',
-    jmode              input file mode (0=user defined; 1=sconvert2tart time 
-                                        YYYY-MM-DD HH:MM:SS)',
-    nread              Number of points to be read for each data set  
-                       (if segments>1 -> npts1,npts2...)',
-    nfil               Filter parameters (0=none; >0=input parameters; 
-                                          <0=filename)
-    nskip              Skip number of points in time series (0) if no skip, 
-                        (if segements >1 -> input1,input2...)',
-    nskipr             Number of points to skip over (0) if none,
-                       (if segements >1 -> input1,input2...)',
-    thetae             Rotation angles for electrics (relative to geomagnetic 
-                       North)(N,E,rot)',
-    thetab             Rotation angles for magnetics (relative to geomagnetic 
-                       North)(N,E,rot)',
-    thetar             Rotation angles for calculation (relative to geomagnetic 
-                       North)(N,E,rot)'
-    hx_cal             full path to calibration file for hx 
-    hy_cal             full path to calibration file for hy 
-    hz_cal             full path to calibration file for hz 
-    rrhx_cal           full path to calibration file for remote reference hx 
-    rrhy_cal           full path to calibration file for remote reference hy 
-                       Note that BIRRP assumes the calibrations are the same
-                       as in the first segment, so the remote reference must
-                       be the same for all segments, or at least the same
-                       instruments have to be used so the calibration is 
-                       the same.
-    ================== ========================================================              
-    
-    .. seealso:: BIRRP Manual and publications by Chave and Thomson
-                for more details on the parameters found at:
                 
-                http://www.whoi.edu/science/AOPE/people/achave/Site/Next1.html
-            
-    Arguments
-    -----------
-        **processing_dict** : dictionary with keys as above
-        
-        **save_path** : string (full path to directory to save script file)
-                        if none saves as:
-                            os.path.join(os.path.dirname(fn_list[0]),'BF')
-        
-    Outputs
-    ----------
-        **script_file** : full path to script file to guide birrp
-        
-        **birrp_dict** : dictionary of birrp parameters input into script file
-        
-    
-    """
-
-    
 #==============================================================================
 # run birrp
 #==============================================================================
@@ -1343,13 +1239,13 @@ class J_To_Edi(object):
         fill information section
         """
         self.edi_obj.Info.info_list = ['    edi file generated with MTpy',
-                                       '    Processing done with BIRRP 5.2',
-                                       '    Z units = km/s']
-        self.edi_obj.Info.info_list.append('Station Parameters')
+                                       '    Processing done with BIRRP 5.3.2',
+                                       '    Z_units = [mV/km]/[nT]']
+        self.edi_obj.Info.info_list.append('***Station Parameters***')
         for key in sorted(self.survey_config_dict.keys()):
             self.edi_obj.Info.info_list.append('    {0}: {1}'.format(key.lower(), 
                                                self.survey_config_dict[key]))
-        self.edi_obj.Info.info_list.append('\nBIRRP Parameters')
+        self.edi_obj.Info.info_list.append('\n***BIRRP Parameters***')
         for key in sorted(self.birrp_dict.keys()):
             self.edi_obj.Info.info_list.append('    {0}: {1}'.format(key.lower(),
                                                self.birrp_dict[key]))

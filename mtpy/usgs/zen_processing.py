@@ -968,8 +968,8 @@ class Z3D_to_edi(object):
                 raise ValueError('Do not understand use_blocks type {0}'.format(type(use_blocks)))
                 
             for sdate in date_list:
-                s_fn_arr = fn_arr[np.where((fn_arr['start_dt']==sdate) &
-                                            (fn_arr['df']==df))]
+                s_fn_arr = fn_arr[np.where((fn_arr['start_dt'] == sdate) &
+                                            (fn_arr['df'] == df))]
                 s_fn_birrp_arr = self._fill_birrp_fn_arr(s_fn_arr) 
                 
                 # get remote reference information if input
@@ -978,7 +978,7 @@ class Z3D_to_edi(object):
                     rr_birrp_fn_arr = np.zeros(0, dtype=self._birrp_fn_dtype)
 
                     # find elements where df is the same                    
-                    df_find = np.where(rr_fn_arr['df']==df)
+                    df_find = np.where(rr_fn_arr['df'] == df)
                     
                     # make an array of just the sampling rates                     
                     df_rr_arr = rr_fn_arr[df_find]
@@ -993,10 +993,13 @@ class Z3D_to_edi(object):
                                                             remote=True)
                         
                         rr_birrp_fn_arr = np.append(rr_birrp_fn_arr,
-                                                   dt_rr_arr)
+                                                    dt_rr_arr)
                         # need to make a list of remote reference station
                         # already found so there are no duplicates
-                        rr_station_find += list(set([os.path.basename(f['fn'])[0:4] for f in dt_rr_arr]))
+                        rr_station_find += list(set(['{0}_{1}'.format(os.path.basename(f['fn'])[0:4],
+                                                                      f['comp']) 
+                                                                      for f in 
+                                                                      dt_rr_arr]))
 
                     # find the where dates do not match
                     dt_not_find = np.where(df_rr_arr['start_dt'] != sdate)
@@ -1008,7 +1011,8 @@ class Z3D_to_edi(object):
                         # check to see if this station already has been added
                         # as a remote reference
                         f_station = os.path.basename(rr_arr['fn'])[0:4]
-                        if f_station in rr_station_find:
+                        f_find = '{0}_{1}'.format(f_station, rr_arr['comp'])
+                        if f_find in rr_station_find:
                             continue
                         
                         # find the next closest date
@@ -1034,6 +1038,7 @@ class Z3D_to_edi(object):
                         
                                 dt_arr = self._fill_birrp_fn_arr(rr_arr,
                                                                  remote=True)
+                                rr_station_find.append(f_find)
                         elif df == 4096:
                             # if the difference is more than 3 minutes
                             if abs(t_diff) > 4*60:
@@ -1045,6 +1050,7 @@ class Z3D_to_edi(object):
                         
                                 dt_arr = self._fill_birrp_fn_arr(rr_arr,
                                                                  remote=True)
+                                rr_station_find.append(f_find)
                     
                         elif df == 16:
                             # if the difference is more than 3 minutes
@@ -1057,6 +1063,7 @@ class Z3D_to_edi(object):
                         
                                 dt_arr = self._fill_birrp_fn_arr(rr_arr,
                                                                  remote=True)
+                                rr_station_find.append(f_find)
                         #--------------------------------------------------
                         # add in nskip values
                         # when t_diff is positive then skip values in 
@@ -1549,6 +1556,7 @@ class Z3D_to_edi(object):
         edi_obj = mtedi.Edi(edi_fn_list[0])
         edi_obj.Z = new_z
         edi_obj.Tipper = new_t
+        edi_obj.Data_sect.nfreq = new_z.shape[0]
 
         n_edi_fn = os.path.join(self.station_dir, 
                                 '{0}_comb.edi'.format(os.path.basename(self.station_dir)))        
