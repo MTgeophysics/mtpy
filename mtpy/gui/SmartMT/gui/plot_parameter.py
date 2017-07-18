@@ -22,6 +22,8 @@ from mtpy.gui.SmartMT.ui_asset.groupbox_frequency_period_index import Ui_GroupBo
 from mtpy.gui.SmartMT.ui_asset.groupbox_frequency_period_single import Ui_groupBoxFrequency_pereiod_single
 from mtpy.gui.SmartMT.ui_asset.groupbox_linedir import Ui_GroupBox_Linedir
 from mtpy.gui.SmartMT.ui_asset.groupbox_padding import Ui_GroupBox_Padding
+from mtpy.gui.SmartMT.ui_asset.groupbox_plot_control_mt_response import Ui_GroupBox_plot_control_mt_response
+from mtpy.gui.SmartMT.ui_asset.groupbox_rotation import Ui_GroupBox_Rotation
 from mtpy.gui.SmartMT.ui_asset.groupbox_scale import Ui_GroupBox_Scale
 from mtpy.gui.SmartMT.ui_asset.groupbox_station_select import Ui_GroupBox_Station_Select
 from mtpy.gui.SmartMT.ui_asset.groupbox_stretch import Ui_GroupBox_Stretch
@@ -408,6 +410,34 @@ class Arrow(QtGui.QGroupBox):
 
     _direction = [0, 1]
 
+    def hide_size(self):
+        self.ui.label_size.hide()
+        self.ui.doubleSpinBox_size.hide()
+
+    def hide_head_length(self):
+        self.ui.label_head_length.hide()
+        self.ui.doubleSpinBox_head_length.hide()
+
+    def hide_head_width(self):
+        self.ui.label_head_width.hide()
+        self.ui.doubleSpinBox_head_width.hide()
+
+    def hide_color_real(self):
+        self.ui.label_color_real.hide()
+        self.ui.comboBox_color_real.hide()
+
+    def hide_color_imaginary(self):
+        self.ui.label_color_imaginary.hide()
+        self.ui.comboBox_color_imaginary.hide()
+
+    def hide_threshold(self):
+        self.ui.label_threshold.hide()
+        self.ui.doubleSpinBox_threshold.hide()
+
+    def hide_direction(self):
+        self.ui.label_direction.hide()
+        self.ui.comboBox_direction.hide()
+
     def get_arrow_dict(self):
         if self.ui.groupBox_advanced_options.isChecked():
             arrow_dict = {
@@ -649,3 +679,65 @@ class StationSelection(QtGui.QGroupBox):
     def get_station(self):
         index = self.ui.comboBox_station.currentIndex()
         return self.mt_objs[index]
+
+
+class Rotation(QtGui.QGroupBox):
+    def __init__(self, parent):
+        QtGui.QGroupBox.__init__(self, parent)
+        self.ui = Ui_GroupBox_Rotation()
+        self.ui.setupUi(self)
+        self.ui.dial_rotation.valueChanged.connect(self._dial_value_changed)
+        self.ui.doubleSpinBox_rotation.valueChanged.connect(self._text_value_changed)
+
+    def _dial_value_changed(self, p_int):
+        degree = (p_int - 180) % 360
+        self.ui.doubleSpinBox_rotation.setValue(degree)
+
+    def _text_value_changed(self):
+        degree = (int(self.ui.doubleSpinBox_rotation.value()) + 180) % 360
+        if degree != self.ui.dial_rotation.value():
+            self.ui.dial_rotation.setValue(degree)
+
+    def get_rotation_in_degree(self):
+        return self.ui.doubleSpinBox_rotation.value()
+
+
+class PlotControlMTResponse(QtGui.QGroupBox):
+    def __init__(self, parent):
+        QtGui.QGroupBox.__init__(self, parent)
+        self.ui = Ui_GroupBox_plot_control_mt_response()
+        self.ui.setupUi(self)
+
+    def get_plot_num(self):
+        if self.ui.radioButton_1.isChecked():
+            return 1
+        elif self.ui.radioButton_2.isChecked():
+            return 2
+        elif self.ui.radioButton_3.isChecked():
+            return 3
+        else:
+            return 0  # should never reach here
+
+    def get_strike(self):
+        if self.ui.radioButton_strike_t.isChecked():
+            return 'yt'
+        elif self.ui.radioButton_strike_p.isChecked():
+            return 'yp'
+        elif self.ui.radioButton_strike_i.isChecked():
+            return 'yi'
+        elif self.ui.radioButton_strike_y.isChecked():
+            return 'ytpi'
+        else:
+            return 'n'
+
+    def get_skew(self):
+        if self.ui.radioButton_skew_y.isChecked():
+            return 'y'
+        else:
+            return 'n'
+
+    def get_ellipses(self):
+        if self.ui.radioButton_ellipses_y.isChecked():
+            return 'y'
+        else:
+            return 'n'
