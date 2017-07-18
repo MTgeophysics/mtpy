@@ -12,17 +12,20 @@ CreatedBy:  jpeacock-pr
 """
 #==============================================================================
 
+import os
+
+import matplotlib.colorbar as mcb
+import matplotlib.colors as colors
+import matplotlib.gridspec as gridspec
+import matplotlib.patches as patches
 import matplotlib.pyplot as plt
 import numpy as np
-import os
 from matplotlib.ticker import MultipleLocator
-import matplotlib.colors as colors
-import matplotlib.patches as patches
-import matplotlib.colorbar as mcb
-import matplotlib.gridspec as gridspec
-import mtpy.utils.exceptions as mtex
+
 import mtpy.imaging.mtcolors as mtcl
 import mtpy.imaging.mtplottools as mtpl
+import mtpy.utils.exceptions as mtex
+
 reload(mtpl)
 
 #==============================================================================
@@ -355,7 +358,7 @@ class PlotMTResponse(mtpl.MTArrows, mtpl.MTEllipse):
         phase_array = kwargs.pop('phase_array', None)
         phase_err_array = kwargs.pop('phase_err_array', None)
         res_array = kwargs.pop('res_array', None)
-        res_err_array = kwargs.pop('res__err_array', None)
+        res_err_array = kwargs.pop('res_err_array', None)
         tipper_array = kwargs.pop('tipper_array', None)
         tipper_err_array = kwargs.pop('tipper_err_array', None)
         tipper_object = kwargs.pop('tipper_object', None)
@@ -500,7 +503,7 @@ class PlotMTResponse(mtpl.MTArrows, mtpl.MTEllipse):
         if self.plot_yn == 'y':
             self.plot()
 
-    def plot(self):
+    def plot(self, show=True):
         """
         plotResPhase(filename,fig_num) will plot the apparent resistivity and
         phase for a single station.
@@ -1330,7 +1333,8 @@ class PlotMTResponse(mtpl.MTArrows, mtpl.MTEllipse):
         else:
             if self._mt.station is not None:
                 self.fig.suptitle(self._mt.station, fontdict=fontdict)
-        plt.show()
+        if show:
+            plt.show()
 
     def _set_plot_tipper(self, plot_tipper):
         """
