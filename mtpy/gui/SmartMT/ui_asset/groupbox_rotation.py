@@ -16,14 +16,11 @@ except AttributeError:
 
 try:
     _encoding = QtGui.QApplication.UnicodeUTF8
-
-
     def _translate(context, text, disambig):
         return QtGui.QApplication.translate(context, text, disambig, _encoding)
 except AttributeError:
     def _translate(context, text, disambig):
         return QtGui.QApplication.translate(context, text, disambig)
-
 
 class Ui_GroupBox_Rotation(object):
     def setupUi(self, GroupBox_Rotation):
@@ -67,9 +64,11 @@ class Ui_GroupBox_Rotation(object):
 
     def retranslateUi(self, GroupBox_Rotation):
         GroupBox_Rotation.setWindowTitle(_translate("GroupBox_Rotation", "GroupBox", None))
-        GroupBox_Rotation.setToolTip(_translate("GroupBox_Rotation",
-                                                "<html><head/><body><p>Rotation angle of impedance tensor (in degree)</p><p><span style=\" font-weight:600;\">Note:</span> All angles are referenced to geographic North, positive in clockwise direction.</p></body></html>",
-                                                None))
+        GroupBox_Rotation.setToolTip(_translate("GroupBox_Rotation", "<html><head/><body><p>Rotation angle of impedance tensor (in degree)</p><p><span\n"
+"                style=\" font-weight:600;\">Note:</span> All angles are referenced to geographic North,\n"
+"                positive in clockwise direction.</p></body></html>\n"
+"            ", None))
         GroupBox_Rotation.setTitle(_translate("GroupBox_Rotation", "Rotation", None))
         self.label.setText(_translate("GroupBox_Rotation", "North", None))
         self.doubleSpinBox_rotation.setSuffix(_translate("GroupBox_Rotation", "°", None))
+

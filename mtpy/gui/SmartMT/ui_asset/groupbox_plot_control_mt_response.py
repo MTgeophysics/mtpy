@@ -16,19 +16,16 @@ except AttributeError:
 
 try:
     _encoding = QtGui.QApplication.UnicodeUTF8
-
-
     def _translate(context, text, disambig):
         return QtGui.QApplication.translate(context, text, disambig, _encoding)
 except AttributeError:
     def _translate(context, text, disambig):
         return QtGui.QApplication.translate(context, text, disambig)
 
-
 class Ui_GroupBox_plot_control_mt_response(object):
     def setupUi(self, GroupBox_plot_control_mt_response):
         GroupBox_plot_control_mt_response.setObjectName(_fromUtf8("GroupBox_plot_control_mt_response"))
-        GroupBox_plot_control_mt_response.resize(306, 438)
+        GroupBox_plot_control_mt_response.resize(306, 418)
         sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Preferred)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -65,22 +62,15 @@ class Ui_GroupBox_plot_control_mt_response(object):
         self.groupBox_2.setObjectName(_fromUtf8("groupBox_2"))
         self.verticalLayout_3 = QtGui.QVBoxLayout(self.groupBox_2)
         self.verticalLayout_3.setObjectName(_fromUtf8("verticalLayout_3"))
-        self.radioButton_strike_i = QtGui.QRadioButton(self.groupBox_2)
-        self.radioButton_strike_i.setObjectName(_fromUtf8("radioButton_strike_i"))
-        self.verticalLayout_3.addWidget(self.radioButton_strike_i)
-        self.radioButton_strike_p = QtGui.QRadioButton(self.groupBox_2)
-        self.radioButton_strike_p.setObjectName(_fromUtf8("radioButton_strike_p"))
-        self.verticalLayout_3.addWidget(self.radioButton_strike_p)
-        self.radioButton_strike_t = QtGui.QRadioButton(self.groupBox_2)
-        self.radioButton_strike_t.setObjectName(_fromUtf8("radioButton_strike_t"))
-        self.verticalLayout_3.addWidget(self.radioButton_strike_t)
-        self.radioButton_strike_y = QtGui.QRadioButton(self.groupBox_2)
-        self.radioButton_strike_y.setObjectName(_fromUtf8("radioButton_strike_y"))
-        self.verticalLayout_3.addWidget(self.radioButton_strike_y)
-        self.radioButton_strike_n = QtGui.QRadioButton(self.groupBox_2)
-        self.radioButton_strike_n.setChecked(True)
-        self.radioButton_strike_n.setObjectName(_fromUtf8("radioButton_strike_n"))
-        self.verticalLayout_3.addWidget(self.radioButton_strike_n)
+        self.checkBox_strike_i = QtGui.QCheckBox(self.groupBox_2)
+        self.checkBox_strike_i.setObjectName(_fromUtf8("checkBox_strike_i"))
+        self.verticalLayout_3.addWidget(self.checkBox_strike_i)
+        self.checkBox_strike_p = QtGui.QCheckBox(self.groupBox_2)
+        self.checkBox_strike_p.setObjectName(_fromUtf8("checkBox_strike_p"))
+        self.verticalLayout_3.addWidget(self.checkBox_strike_p)
+        self.checkBox_strike_t = QtGui.QCheckBox(self.groupBox_2)
+        self.checkBox_strike_t.setObjectName(_fromUtf8("checkBox_strike_t"))
+        self.verticalLayout_3.addWidget(self.checkBox_strike_t)
         self.verticalLayout.addWidget(self.groupBox_2)
         self.groupBox_3 = QtGui.QGroupBox(GroupBox_plot_control_mt_response)
         self.groupBox_3.setObjectName(_fromUtf8("groupBox_3"))
@@ -111,38 +101,28 @@ class Ui_GroupBox_plot_control_mt_response(object):
         QtCore.QMetaObject.connectSlotsByName(GroupBox_plot_control_mt_response)
 
     def retranslateUi(self, GroupBox_plot_control_mt_response):
-        GroupBox_plot_control_mt_response.setWindowTitle(
-            _translate("GroupBox_plot_control_mt_response", "GroupBox", None))
-        GroupBox_plot_control_mt_response.setTitle(
-            _translate("GroupBox_plot_control_mt_response", "Plot Control", None))
+        GroupBox_plot_control_mt_response.setWindowTitle(_translate("GroupBox_plot_control_mt_response", "GroupBox", None))
+        GroupBox_plot_control_mt_response.setTitle(_translate("GroupBox_plot_control_mt_response", "Plot Control", None))
         self.groupBox.setTitle(_translate("GroupBox_plot_control_mt_response", "Plot Type", None))
         self.radioButton_1.setText(_translate("GroupBox_plot_control_mt_response", "plot just Ex/By and Ey/Bx", None))
         self.radioButton_2.setText(_translate("GroupBox_plot_control_mt_response", "plot all 4 components", None))
-        self.radioButton_3.setText(
-            _translate("GroupBox_plot_control_mt_response", "plot off diagonal and the deeterminant", None))
-        self.groupBox_2.setToolTip(_translate("GroupBox_plot_control_mt_response",
-                                              "<html><head/><body><p>Plots thee strike angle from different parameters</p></body></html>",
-                                              None))
+        self.radioButton_3.setText(_translate("GroupBox_plot_control_mt_response", "plot off diagonal and the deeterminant", None))
+        self.groupBox_2.setToolTip(_translate("GroupBox_plot_control_mt_response", "<html><head/><body><p>Plots thee strike angle from different\n"
+"                            parameters</p></body></html>\n"
+"                        ", None))
         self.groupBox_2.setTitle(_translate("GroupBox_plot_control_mt_response", "Strike", None))
-        self.radioButton_strike_i.setText(
-            _translate("GroupBox_plot_control_mt_response", "plot strike angle determined from the invariants of\n"
-                                                            "Weaver et al. [2000]", None))
-        self.radioButton_strike_p.setText(
-            _translate("GroupBox_plot_control_mt_response", "plot strike angle determined from the phase tensor\n"
-                                                            "of Caldwell et al. [2004]", None))
-        self.radioButton_strike_t.setText(
-            _translate("GroupBox_plot_control_mt_response", "plot strike angle determined from the tipper", None))
-        self.radioButton_strike_y.setText(
-            _translate("GroupBox_plot_control_mt_response", "plot all strikes above", None))
-        self.radioButton_strike_n.setText(_translate("GroupBox_plot_control_mt_response", "do not plot strike", None))
-        self.groupBox_3.setToolTip(_translate("GroupBox_plot_control_mt_response",
-                                              "<html><head/><body><p>plot the skew angle calculated from the phase tensor.</p></body></html>",
-                                              None))
+        self.checkBox_strike_i.setText(_translate("GroupBox_plot_control_mt_response", "plot strike angle determined from the invariants of\n"
+"Weaver et al. [2000]", None))
+        self.checkBox_strike_p.setText(_translate("GroupBox_plot_control_mt_response", "plot strike angle determined from the phase tensor\n"
+"of Caldwell et al. [2004]", None))
+        self.checkBox_strike_t.setText(_translate("GroupBox_plot_control_mt_response", "plot strike angle determined from the tipper", None))
+        self.groupBox_3.setToolTip(_translate("GroupBox_plot_control_mt_response", "<html><head/><body><p>plot the skew angle calculated from the\n"
+"                            phase tensor.</p></body></html>\n"
+"                        ", None))
         self.groupBox_3.setTitle(_translate("GroupBox_plot_control_mt_response", "Skew", None))
         self.radioButton_skew_y.setText(_translate("GroupBox_plot_control_mt_response", "plot skew angle", None))
         self.radioButton_skew_n.setText(_translate("GroupBox_plot_control_mt_response", "do not plot skew angle", None))
         self.groupBox_4.setTitle(_translate("GroupBox_plot_control_mt_response", "Ellipses", None))
-        self.radioButton_ellipses_n.setText(
-            _translate("GroupBox_plot_control_mt_response", "do not plot phase tensor pllipses", None))
-        self.radioButton_ellipses_y.setText(
-            _translate("GroupBox_plot_control_mt_response", "plot phase tensor ellipses", None))
+        self.radioButton_ellipses_n.setText(_translate("GroupBox_plot_control_mt_response", "do not plot phase tensor pllipses", None))
+        self.radioButton_ellipses_y.setText(_translate("GroupBox_plot_control_mt_response", "plot phase tensor ellipses", None))
+

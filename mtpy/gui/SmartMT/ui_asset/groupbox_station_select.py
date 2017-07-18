@@ -42,8 +42,6 @@ class Ui_GroupBox_Station_Select(object):
 
     def retranslateUi(self, GroupBox_Station_Select):
         GroupBox_Station_Select.setWindowTitle(_translate("GroupBox_Station_Select", "GroupBox", None))
-        GroupBox_Station_Select.setToolTip(
-            _translate("GroupBox_Station_Select", "<html><head/><body><p>Select a station to plot</p></body></html>",
-                       None))
+        GroupBox_Station_Select.setToolTip(_translate("GroupBox_Station_Select", "<html><head/><body><p>Select a station to plot</p></body></html>", None))
         GroupBox_Station_Select.setTitle(_translate("GroupBox_Station_Select", "Stations", None))
 

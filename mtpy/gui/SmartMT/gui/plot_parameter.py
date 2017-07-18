@@ -719,16 +719,18 @@ class PlotControlMTResponse(QtGui.QGroupBox):
             return 0  # should never reach here
 
     def get_strike(self):
-        if self.ui.radioButton_strike_t.isChecked():
-            return 'yt'
-        elif self.ui.radioButton_strike_p.isChecked():
-            return 'yp'
-        elif self.ui.radioButton_strike_i.isChecked():
-            return 'yi'
-        elif self.ui.radioButton_strike_y.isChecked():
-            return 'ytpi'
+        strike = "y"
+        if self.ui.checkBox_strike_t.isChecked():
+            strike += 't'
+        if self.ui.checkBox_strike_p.isChecked():
+            strike += 'p'
+        if self.ui.checkBox_strike_i.isChecked():
+            strike += 'i'
+        if len(strike) > 1:
+            return strike
         else:
             return 'n'
+
 
     def get_skew(self):
         if self.ui.radioButton_skew_y.isChecked():

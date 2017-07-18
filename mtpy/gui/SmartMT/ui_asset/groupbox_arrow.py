@@ -162,20 +162,16 @@ class Ui_GroupBox_Arrow(object):
         self.checkBox_real.setText(_translate("GroupBox_Arrow", "Plot the real induction arrows", None))
         self.checkBox_imaginary.setText(_translate("GroupBox_Arrow", "Plot the imaginary induction arrows", None))
         self.groupBox_advanced_options.setTitle(_translate("GroupBox_Arrow", "Advanced Options", None))
-        self.label_size.setToolTip(
-            _translate("GroupBox_Arrow", "<html><head/><body><p>multiplier to scale the arrow</p></body></html>", None))
+        self.label_size.setToolTip(_translate("GroupBox_Arrow", "<html><head/><body><p>multiplier to scale the arrow</p></body></html>", None))
         self.label_size.setText(_translate("GroupBox_Arrow", "Size", None))
         self.doubleSpinBox_size.setToolTip(_translate("GroupBox_Arrow", "<html><head/><body><p>multiplier to scale the arrow</p></body></html>", None))
-        self.label_head_length.setToolTip(
-            _translate("GroupBox_Arrow", "<html><head/><body><p>length of the arrwo head</p></body></html>", None))
+        self.label_head_length.setToolTip(_translate("GroupBox_Arrow", "<html><head/><body><p>length of the arrwo head</p></body></html>", None))
         self.label_head_length.setText(_translate("GroupBox_Arrow", "Head Length", None))
         self.doubleSpinBox_head_length.setToolTip(_translate("GroupBox_Arrow", "<html><head/><body><p>length of the arrwo head</p></body></html>", None))
-        self.label_head_width.setToolTip(
-            _translate("GroupBox_Arrow", "<html><head/><body><p>width of the arrow head</p></body></html>", None))
+        self.label_head_width.setToolTip(_translate("GroupBox_Arrow", "<html><head/><body><p>width of the arrow head</p></body></html>", None))
         self.label_head_width.setText(_translate("GroupBox_Arrow", "Head Width", None))
         self.doubleSpinBox_head_width.setToolTip(_translate("GroupBox_Arrow", "<html><head/><body><p>width of the arrow head</p></body></html>", None))
-        self.label_line_width.setToolTip(
-            _translate("GroupBox_Arrow", "<html><head/><body><p>line width of the arrow</p></body></html>", None))
+        self.label_line_width.setToolTip(_translate("GroupBox_Arrow", "<html><head/><body><p>line width of the arrow</p></body></html>", None))
         self.label_line_width.setText(_translate("GroupBox_Arrow", "Line Width", None))
         self.doubleSpinBox_line_width.setToolTip(_translate("GroupBox_Arrow", "<html><head/><body><p>line width of the arrow</p></body></html>", None))
         self.label_color_real.setText(_translate("GroupBox_Arrow", "Color (real)", None))
@@ -196,9 +192,7 @@ class Ui_GroupBox_Arrow(object):
         self.comboBox_color_imaginary.setItemText(5, _translate("GroupBox_Arrow", "Yellow", None))
         self.comboBox_color_imaginary.setItemText(6, _translate("GroupBox_Arrow", "Black", None))
         self.comboBox_color_imaginary.setItemText(7, _translate("GroupBox_Arrow", "White", None))
-        self.label_threshold.setToolTip(_translate("GroupBox_Arrow",
-                                                   "<html><head/><body><p>threshold of which any arrow larger than this number will not be plotted, helps clean up if the data is not good.</p><p><span style=\" font-weight:600;\">NOTE:</span> this is applied before scaling by \'size\'</p></body></html>",
-                                                   None))
+        self.label_threshold.setToolTip(_translate("GroupBox_Arrow", "<html><head/><body><p>threshold of which any arrow larger than this number will not be plotted, helps clean up if the data is not good.</p><p><span style=\" font-weight:600;\">NOTE:</span> this is applied before scaling by \'size\'</p></body></html>", None))
         self.label_threshold.setText(_translate("GroupBox_Arrow", "Threshold", None))
         self.doubleSpinBox_threshold.setToolTip(_translate("GroupBox_Arrow", "<html><head/><body><p>threshold of which any arrow larger than this number will not be plotted, helps clean up if the data is not good.</p><p><span style=\" font-weight:600;\">NOTE:</span> this is applied before scaling by \'size\'</p></body></html>", None))
         self.label_direction.setText(_translate("GroupBox_Arrow", "Direction", None))
