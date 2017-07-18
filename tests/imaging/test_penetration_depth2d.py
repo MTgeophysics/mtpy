@@ -1,19 +1,29 @@
-from unittest import TestCase
 import os.path
+from unittest import TestCase
 
 # configure matplotlib for testing
-import matplotlib
-matplotlib.use('Agg')  # comment out this line if you want to see the plots
+import matplotlib.pyplot as plt
+
+plt.ion()
+
 from mtpy.imaging.penetration_depth2d import plot2Dprofile
 
 
 class TestPenetration_depth2d(TestCase):
-    def setUp(self):
-        self._temp_dir = "tests/temp"
-        if not os.path.isdir(self._temp_dir):
-            os.mkdir(self._temp_dir)
-        self._edifiles = "tests/data/edifiles"
-        self._period_index_list = [0, 1, 10, 20, 30, 40, 50, 59]
+    @classmethod
+    def setUpClass(cls):
+        cls._temp_dir = "tests/temp"
+        if not os.path.isdir(cls._temp_dir):
+            os.mkdir(cls._temp_dir)
+        cls._edifiles = "tests/data/edifiles"
+        cls._period_index_list = [0, 1, 10, 20, 30, 40, 50, 59]
+
+    @classmethod
+    def tearDownClass(cls):
+        plt.close('all')
+
+    def tearDown(self):
+        plt.pause(1)
 
     def test_plot2Dprofile_no_period_index_list(self):
         """
