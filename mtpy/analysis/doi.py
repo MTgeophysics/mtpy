@@ -44,7 +44,7 @@ def bostick_resistivity(f, rho, pha):
     print(rho_b)
     return rho_b
 
-def sensitivity(z, sigma_conduct=0.01, freq=10):
+def sensitivity(z, sigma_conduct=0.01, freq=0.01):
     """
     compute sensitivty S(z,sigma, omega)= -kz*exp(-2*kz)
     :param z:
@@ -55,20 +55,23 @@ def sensitivity(z, sigma_conduct=0.01, freq=10):
 
     omega= 2*math.pi*freq
 
-    k = cmath.sqrt( (0.0-1j)*omega*mu0*sigma_conduct )
-    #print ("k= ", k)
+    k = cmath.sqrt( (0.0+1j)*omega*mu0*sigma_conduct )
 
-    sen = -k*z*cmath.exp(-2*k*z)
+    p=1/np.real(k)  #same as delta=sqrt(2/mu0*sigma*omega)
+
+    print ("k and p = ", k, p)
+    zp=z*p  # zp is normalized Z
+    sen = -k*zp*cmath.exp(-2*k*zp)
     #print (z, sen)
     return sen
 
 if __name__ == "__main__":
 
-    for n in xrange(0,40):
+    for n in xrange(0,36):
         zn = 0.1*n
         sen = sensitivity(zn)
         #print (zn, sen)
-        print (zn, 1000*np.absolute(sen))
+        print (zn, np.absolute(sen))
 
 
 
