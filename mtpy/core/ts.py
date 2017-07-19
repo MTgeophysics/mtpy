@@ -8,20 +8,21 @@ Created on Thu Jul 06 14:24:18 2017
 #==============================================================================
 # Imports
 #==============================================================================
-import os
 import time
 
-import tables
+import numpy as np
 import mtpy.usgs.zen as zen
+import pandas as pd
 
 #==============================================================================
 
-fn = r"d:\Peacock\MTData\Umatilla\hf05\hf05_20170517_193018_256_EX.Z3D" 
 #==============================================================================
 class MT_TS(object):
     """
     MT time series object that will read/write data in different formats
     including hdf5, txt, miniseed.
+    
+    The foundations are based on Pandas Python package.
     
     Metadata
     -----------
@@ -49,6 +50,33 @@ class MT_TS(object):
         ==================== ==================================================
     
     .. note:: Currently only supports hdf5 and text files
+    
+    Methods
+    ------------
+    
+        ======================= ===============================================
+        Method                  Description        
+        ======================= ===============================================
+        read_hdf5               read an hdf5 file
+        write_hdf5              write an hdf5 file
+        write_ascii_file        write an ascii file
+        ======================= ===============================================
+        
+    
+    .. example:: 
+    
+        >>> import mtpy.core.ts as ts
+        >>> import numpy as np
+        >>> mt_ts = ts.MT_TS()
+        >>> mt_ts.ts = np.random.randn(1024)
+        >>> mt_ts.station = 'test'
+        >>> mt_ts.lon = 30.00
+        >>> mt_ts.lat = -122.00
+        >>> mt_ts.component = 'HX'
+        >>> mt_ts.units = 'counts'
+        >>> mt_ts.write_hdf5(r"/home/test.h5")
+        
+        
     """
     
     def __init__(self, **kwargs):
@@ -70,108 +98,158 @@ class MT_TS(object):
         self.instrument_id = None
         self.calibration_fn = None
         self.declination = 0.0
-        self.ts = None 
+        self._ts = pd.DataFrame() 
         self.fn_hdf5 = None
-        self.fn_txt = None
+        self.fn_ascii = None
+        
+        self._attr_list = ['station',
+                           'sampling_rate',
+                           'start_time_epoch_sec',
+                           'start_time_utc',
+                           'n_samples',
+                           'component',
+                           'coordinate_system',
+                           'dipole_length',
+                           'azimuth',
+                           'units',
+                           'lat', 
+                           'lon',
+                           'datum',
+                           'data_logger',
+                           'instrument_id',
+                           'calibration_fn',
+                           'declination']
         
         for key in kwargs.keys():
             setattr(self, key, kwargs[key])
+            
+    # make sure that the time series is a pandas data frame
+    @property
+    def ts(self):
+        return self._ts
+    
+    @ts.setter
+    def ts(self, ts_arr):
+        if type(ts_arr) is np.ndarray:
+            self._ts = pd.DataFrame(ts_arr)
+        elif type(ts_arr) is pd.core.frame.DataFrame:
+            self._ts = ts_arr
+        else:
+            raise MT_TS_Error('Data type {0} not supported'.format(type(ts_arr)+\
+                              ', ts needs to be a numpy.ndarray or pandas DataFrame'))
         
-        
-    def write_hdf5(self, fn_hdf5, ts=None):
+    def write_hdf5(self, fn_hdf5):
         """
-        Write a hdf5 time series file
-        
-        Arguments
-        ---------------
-            **fn_hdf5** : string
-                          full path to save hdf5 file
-                          
-            **ts** : numpy.ndarray (n_samples)
-                     time series data 
-                     
-        """
-        
+        use pandas to write the hdf5 file
+        """        
         
         self.fn_hdf5 = fn_hdf5
-        if ts is not None:
-            self.ts = ts
-            
-        if self.ts is None:
-            raise MT_TS_Error('Time series is None')
         
-        # check to see if a file already exists, it doesn't like it when
-        # one already does
-        if os.path.exists(self.fn_hdf5) is True:
-            print('{0} already exists'.format(self.fn_hdf5))
-            delete_bool = input('Delete old file (True/False):\n')
-            if delete_bool == True:
-                os.remove(self.fn_hdf5)
-            else:
-                print('Did not overwrite {0}'.format(self.fn_hdf5))
-                return 
+        hdf5_store = pd.HDFStore(self.fn_hdf5, 'w')
+        hdf5_store['time_series'] = self.ts
         
-        # create the hdf5 object
-        hdf5_obj = tables.open_file(self.fn_hdf5, mode='w', title='Test')
+        # add in attributes
+        hdf5_store.get_storer('time_series').attrs.station = self.station
+        hdf5_store.get_storer('time_series').attrs.sampling_rate = self.sampling_rate
+        hdf5_store.get_storer('time_series').attrs.start_time_epoch_sec = self.start_time_epoch_sec 
+        hdf5_store.get_storer('time_series').attrs.start_time_utc = self.start_time_utc
+        hdf5_store.get_storer('time_series').attrs.n_samples = self.n_samples
+        hdf5_store.get_storer('time_series').attrs.component = self.component
+        hdf5_store.get_storer('time_series').attrs.coordinate_system = self.coordinate_system
+        hdf5_store.get_storer('time_series').attrs.dipole_length = self.dipole_length
+        hdf5_store.get_storer('time_series').attrs.azimuth = self.azimuth
+        hdf5_store.get_storer('time_series').attrs.units = self.units
+        hdf5_store.get_storer('time_series').attrs.lat = self.lat
+        hdf5_store.get_storer('time_series').attrs.lon = self.lon
+        hdf5_store.get_storer('time_series').attrs.datum = self.datum
+        hdf5_store.get_storer('time_series').attrs.data_logger = self.data_logger
+        hdf5_store.get_storer('time_series').attrs.instrument_id = self.instrument_id
+        hdf5_store.get_storer('time_series').attrs.calibration_fn = self.calibration_fn
+        hdf5_store.get_storer('time_series').attrs.declination = self.declination
         
-        # make a time series array        
-        ts_arr = hdf5_obj.create_array('/', 'time_series', self.ts)
-        
-        # add attributes
-        ts_arr.attrs.station = self.station
-        ts_arr.attrs.sampling_rate = self.sampling_rate
-        ts_arr.attrs.start_time_epoch_sec = self.start_time_epoch_sec 
-        ts_arr.attrs.start_time_utc = self.start_time_utc
-        ts_arr.attrs.n_samples = self.n_samples
-        ts_arr.attrs.component = self.component
-        ts_arr.attrs.coordinate_system = self.coordinate_system
-        ts_arr.attrs.dipole_length = self.dipole_length
-        ts_arr.attrs.azimuth = self.azimuth
-        ts_arr.attrs.units = self.units
-        ts_arr.attrs.lat = self.lat
-        ts_arr.attrs.lon = self.lon
-        ts_arr.attrs.datum = self.datum
-        ts_arr.attrs.data_logger = self.data_logger
-        ts_arr.attrs.instrument_id = self.instrument_id
-        ts_arr.attrs.calibration_fn = self.calibration_fn
-        ts_arr.attrs.declination = self.declination
-        
-        hdf5_obj.close()
-        
-        print('    Wrote time series to {0}'.format(self.fn_hdf5))
+        hdf5_store.flush()
+        hdf5_store.close()
         
     def read_hdf5(self, fn_hdf5):
         """
-        read in an hdf5 file and fill attributes accordingly
+        read using pandas
         """
-        self.fn_hdf5 = fn_hdf5        
         
-        if not os.path.isfile(self.fn_hdf5):
-            raise MT_TS_Error('Could not find {0}'.format(self.fn_hdf5))
+        self.fn_hdf5 = fn_hdf5
 
-        hdf5_obj = tables.open_file(self.fn_hdf5, 'r')
+        hdf5_store = pd.HDFStore(self.fn_hdf5, 'r')
         
-        self.ts = hdf5_obj.get_node('/', 'time_series')
+        self.ts = hdf5_store['time_series']
         
-        self.station = self.ts.attrs.station
-        self.sampling_rate = self.ts.attrs.sampling_rate
-        self.start_time_epoch_sec = self.ts.attrs.start_time_epoch_sec
-        self.start_time_utc = self.ts.attrs.start_time_utc
-        self.n_samples = self.ts.attrs.n_samples
-        self.component = self.ts.attrs.component
-        self.coordinate_system = self.ts.attrs.coordinate_system
-        self.dipole_length = self.ts.attrs.dipole_length
-        self.azimuth = self.ts.attrs.azimuth
-        self.units = self.ts.attrs.units
-        self.lat = self.ts.attrs.lat
-        self.lon = self.ts.attrs.lon
-        self.datum = self.ts.attrs.datum
-        self.data_logger = self.ts.attrs.data_logger
-        self.instrument_id = self.ts.attrs.instrument_id
-        self.calibration_fn = self.ts.attrs.calibration_fn
-        self.declination = self.ts.attrs.declination
+        for attr in self._attr_list:
+            value = getattr(hdf5_store.get_storer('time_series').attrs, attr)
+            setattr(self, attr, value)
+            
+        hdf5_store.close()
+
+                
         
-        print 'Read in {0}'.format(self.fn_hdf5)
+    def write_ascii_file(self, fn_ascii=None, chunk_size=4096):
+        """
+        write an ascii format file
+        """
+        
+        st = time.time()
+        if fn_ascii is not None:
+            self.fn_ascii = fn_ascii
+        
+        if self.fn_ascii is None:
+            self.fn_ascii = self.fn_hdf5[:-2]+'txt'
+            
+        if self.ts is None:
+            self.read_hdf5(self.fn_hdf5)
+
+        # get the number of chunks to write        
+        chunks = self.ts.shape[0]/chunk_size
+            
+        # make header lines
+        header_lines = ['# MT time series text file for {0}'.format(self.station)]
+        header_lines += ['# {0} = {1}'.format(attr, getattr(self, attr)) 
+                        for attr in sorted(self._attr_list)]
+
+        # write to file in chunks
+        with open(self.fn_ascii, 'w') as fid:
+            # write header lines first
+            fid.write('\n'.join(header_lines))
+    
+            # write time series indicator
+            fid.write('\n# *** time_series ***\n')
+            
+            # write in chunks
+            for cc in range(chunks):
+                # changing the dtype of the array is faster than making
+                # a list of strings
+                try:
+                    ts_lines = np.array(self.ts[cc*chunk_size:(cc+1)*chunk_size][0],
+                                        dtype='S20')
+                except IndexError:
+                    ts_lines = np.array(self.ts[cc*chunk_size:(cc+1)*chunk_size],
+                                        dtype='S20')
+                fid.write('\n'.join(list(ts_lines)))
+                # be sure to write a new line after each chunk otherwise
+                # they run together
+                fid.write('\n')
+             
+            # be sure to write the last little bit
+            try:
+                fid.write('\n'.join(list(np.array(self.ts[(cc+1)*chunk_size:][0],
+                                                  dtype='S20'))))
+            except IndexError:
+                fid.write('\n'.join(list(np.array(self.ts[(cc+1)*chunk_size:],
+                                                  dtype='S20'))))
+                
+        # get an estimation of how long it took to write the file    
+        et = time.time()
+        time_diff = et-st
+        
+        print '--> Wrote {0}'.format(self.fn_ascii)
+        print '    Took {0:.2f} seconds'.format(time_diff)
+
         
         
                 
@@ -181,15 +259,19 @@ class MT_TS(object):
 class MT_TS_Error(Exception):
     pass        
  
+#==============================================================================
+#  Testing
+#==============================================================================
 
-## TEST
-   
+fn = r"d:\Peacock\MTData\Umatilla\hf05\hf05_20170517_193018_256_EX.Z3D" 
+## TEST Writing
 z1 = zen.Zen3D(fn)
 z1.read_z3d()
 z1.station = '{0}{1}'.format(z1.metadata.line_name, z1.metadata.rx_xyz0[0:2])
 
-h5_fn = fn[0:-4]+'.h5' 
+h5_fn = fn[0:-4]+'04.h5' 
 
+#h5_fn = r"d:\Peacock\MTData\Umatilla\hf05\hf05_20170517_193018_256_EX.h5"
 test_ts = MT_TS()
 
 test_ts.ts = z1.convert_counts()
@@ -212,70 +294,15 @@ test_ts.instrument_num = None
 test_ts.calibration_fn = None
 test_ts.declination = 3.6
 
-test_ts.write_hdf5(h5_fn)
-
+test_ts.write_hdf5_pandas(h5_fn)
+#
 read_ts = MT_TS()
-read_ts.read_hdf5(h5_fn)
+read_ts.read_hdf5_pandas(h5_fn)
 
-#if not os.path.exists(h5_fn):
+#read_ts = MT_TS()
+#read_ts.read_hdf5(h5_fn)
 #
-#    z1_h5 = tables.open_file(h5_fn, mode='w', title='Test')
-#    ts_arr = z1_h5.create_array('/', 'time_series', z1.convert_counts())
-#    
-#    ts_arr.attrs.station = z1.station
-#    ts_arr.attrs.sampling_rate = int(z1.df)
-#    ts_arr.attrs.start_time_epoch_sec = time.mktime(time.strptime(z1.zen_schedule, 
-#                                                                  zen.datetime_fmt))
-#    ts_arr.attrs.start_time_utc = z1.zen_schedule
-#    ts_arr.attrs.n_samples = int(z1.time_series.size)
-#    ts_arr.attrs.component = z1.metadata.ch_cmp
-#    ts_arr.attrs.coordinate_system = 'geomagnetic'
-#    ts_arr.attrs.dipole_length = float(z1.metadata.ch_length)
-#    ts_arr.attrs.azimuth = float(z1.metadata.ch_azimuth)
-#    ts_arr.attrs.units = 'mV'
-#    ts_arr.attrs.lat = z1.header.lat
-#    ts_arr.attrs.lon = z1.header.long
-#    ts_arr.attrs.datum = 'WGS84'
-#    ts_arr.attrs.data_logger = 'Zonge Zen'
-#    ts_arr.attrs.instrument_num = None
-#    ts_arr.attrs.calibration_fn = None
-#    ts_arr.attrs.declination = 3.6
-#    
-#    z1_h5.close()
-    
-#if not os.path.exists(pd_h5_fn):
-#
-#    cols = pd.MultiIndex.from_product([[z1.station], 
-#                                       [int(z1.df)]],
-#                                      names=['station', 
-#                                             'sampling_rate'])
-#
-#    z1_df = pd.DataFrame(data=z1.convert_counts(), columns=cols)
-#    
-#    z1_store = pd.HDFStore(pd_h5_fn, 'w')
-#    z1_store.put('time_series', z1_df)
-#        
-##    z1_store.get_storer('time_series').attrs.station = z1.station
-##    z1_store.get_storer('time_series').attrs.sampling_rate = int(z1.df)
-##    z1_store.get_storer('time_series').attrs.start_time_epoch_sec = time.mktime(time.strptime(z1.zen_schedule, 
-##                                                                  zen.datetime_fmt))
-##    z1_store.get_storer('time_series').attrs.start_time_utc = z1.zen_schedule
-##    z1_store.get_storer('time_series').attrs.n_samples = int(z1.time_series.size)
-##    z1_store.get_storer('time_series').attrs.component = z1.metadata.ch_cmp
-##    z1_store.get_storer('time_series').attrs.coordinate_system = 'geomagnetic'
-##    z1_store.get_storer('time_series').attrs.dipole_length = float(z1.metadata.ch_length)
-##    z1_store.get_storer('time_series').attrs.azimuth = float(z1.metadata.ch_azimuth)
-##    z1_store.get_storer('time_series').attrs.units = 'mV'
-##    z1_store.get_storer('time_series').attrs.lat = z1.header.lat
-##    z1_store.get_storer('time_series').attrs.lon = z1.header.long
-##    z1_store.get_storer('time_series').attrs.datum = 'WGS84'
-##    z1_store.get_storer('time_series').attrs.instrument = 'Zonge Zen'
-##    z1_store.get_storer('time_series').attrs.calibration_fn = None
-##    z1_store.get_storer('time_series').attrs.declination = 3.6
-#    
-#    z1_store.close()
+#read_ts.write_ascii_file()
 
-
-#store = pd.HDFStore(h5_fn, 'r')
 
 

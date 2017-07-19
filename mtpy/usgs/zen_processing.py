@@ -1556,7 +1556,7 @@ class Z3D_to_edi(object):
         edi_obj = mtedi.Edi(edi_fn_list[0])
         edi_obj.Z = new_z
         edi_obj.Tipper = new_t
-        edi_obj.Data_sect.nfreq = new_z.shape[0]
+        edi_obj.Data_sect.nfreq = new_z.z.shape[0]
 
         n_edi_fn = os.path.join(self.station_dir, 
                                 '{0}_comb.edi'.format(os.path.basename(self.station_dir)))        
