@@ -23,7 +23,7 @@ from mtpy.gui.SmartMT.utils.file_handler import FileHandler, FileHandlingExcepti
 from mtpy.gui.SmartMT.visualization.visualization_base import MPLCanvasWidget
 from mtpy.utils.decorator import deprecated
 from mtpy.utils.mtpylog import MtPyLog
-from ui_asset.main_window import Ui_SmartMT_MainWindow, _fromUtf8, _translate
+from mtpy.gui.SmartMT.ui_asset.main_window import Ui_SmartMT_MainWindow, _fromUtf8, _translate
 
 DEFAULT_GROUP_NAME = str(_translate("SmartMT_MainWindow", "Default Group", None))
 
