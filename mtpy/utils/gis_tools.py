@@ -141,6 +141,13 @@ def convert_position_float2str(position):
     deg = abs(deg)
     minutes = (abs(position)-deg)*60.
     sec = (minutes-int(minutes))*60.
+    if sec == 60:
+        minutes += 1
+        sec = 0
+        
+    if minutes == 60:
+        deg += 1
+        minutes = 0
     
     position_str = '{0}:{1:02.0f}:{2:02f}'.format(sign*deg, int(minutes), sec)
     

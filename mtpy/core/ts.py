@@ -250,8 +250,32 @@ class MT_TS(object):
         print '--> Wrote {0}'.format(self.fn_ascii)
         print '    Took {0:.2f} seconds'.format(time_diff)
 
+    def read_ascii(self, fn_ascii):
+        """
+        Read in an ascii
+        """
         
+        self.fn_ascii = fn_ascii
         
+        with open(self.fn_ascii, 'r') as fid:
+            line = fid.readline()
+            count = 0
+            while line.find('#') == 0:
+                line_list = line[1:].strip().split('=')
+                if len(line_list) == 2:
+                    key = line_list[0].strip()
+                    try:
+                        value = float(line_list[1].strip())
+                    except ValueError:
+                        value = line_list[1].strip()
+                    setattr(self, key, value)
+                count +=1
+                line = fid.readline()
+        
+        self.ts = pd.read_csv(self.fn_ascii, sep='\n', skiprows=count,
+                              memory_map=True)
+        
+        print 'Read in {0}'.format(self.fn_ascii)
                 
 #==============================================================================
 # Error classes
@@ -264,45 +288,51 @@ class MT_TS_Error(Exception):
 #==============================================================================
 
 fn = r"d:\Peacock\MTData\Umatilla\hf05\hf05_20170517_193018_256_EX.Z3D" 
-## TEST Writing
-z1 = zen.Zen3D(fn)
-z1.read_z3d()
-z1.station = '{0}{1}'.format(z1.metadata.line_name, z1.metadata.rx_xyz0[0:2])
-
-h5_fn = fn[0:-4]+'04.h5' 
-
-#h5_fn = r"d:\Peacock\MTData\Umatilla\hf05\hf05_20170517_193018_256_EX.h5"
-test_ts = MT_TS()
-
-test_ts.ts = z1.convert_counts()
-test_ts.station = z1.station
-test_ts.sampling_rate = int(z1.df)
-test_ts.start_time_epoch_sec = time.mktime(time.strptime(z1.zen_schedule, 
-                                                              zen.datetime_fmt))
-test_ts.start_time_utc = z1.zen_schedule
-test_ts.n_samples = int(z1.time_series.size)
-test_ts.component = z1.metadata.ch_cmp
-test_ts.coordinate_system = 'geomagnetic'
-test_ts.dipole_length = float(z1.metadata.ch_length)
-test_ts.azimuth = float(z1.metadata.ch_azimuth)
-test_ts.units = 'mV'
-test_ts.lat = z1.header.lat
-test_ts.lon = z1.header.long
-test_ts.datum = 'WGS84'
-test_ts.data_logger = 'Zonge Zen'
-test_ts.instrument_num = None
-test_ts.calibration_fn = None
-test_ts.declination = 3.6
-
-test_ts.write_hdf5(h5_fn)
+### TEST Writing
+#z1 = zen.Zen3D(fn)
+#z1.read_z3d()
+#z1.station = '{0}{1}'.format(z1.metadata.line_name, z1.metadata.rx_xyz0[0:2])
 #
-read_ts = MT_TS()
-read_ts.read_hdf5(h5_fn)
+#h5_fn = fn[0:-4]+'04.h5' 
+#
+##h5_fn = r"d:\Peacock\MTData\Umatilla\hf05\hf05_20170517_193018_256_EX.h5"
+#test_ts = MT_TS()
+#
+#test_ts.ts = z1.convert_counts()
+#test_ts.station = z1.station
+#test_ts.sampling_rate = int(z1.df)
+#test_ts.start_time_epoch_sec = time.mktime(time.strptime(z1.zen_schedule, 
+#                                                              zen.datetime_fmt))
+#test_ts.start_time_utc = z1.zen_schedule
+#test_ts.n_samples = int(z1.time_series.size)
+#test_ts.component = z1.metadata.ch_cmp
+#test_ts.coordinate_system = 'geomagnetic'
+#test_ts.dipole_length = float(z1.metadata.ch_length)
+#test_ts.azimuth = float(z1.metadata.ch_azimuth)
+#test_ts.units = 'mV'
+#test_ts.lat = z1.header.lat
+#test_ts.lon = z1.header.long
+#test_ts.datum = 'WGS84'
+#test_ts.data_logger = 'Zonge Zen'
+#test_ts.instrument_num = None
+#test_ts.calibration_fn = None
+#test_ts.declination = 3.6
+#
+#test_ts.write_hdf5(h5_fn)
+##
+#read_ts = MT_TS()
+#read_ts.read_hdf5(h5_fn)
 
 #read_ts = MT_TS()
 #read_ts.read_hdf5(h5_fn)
 #
 #read_ts.write_ascii_file()
+fn_txt = r"d:\Peacock\MTData\Umatilla\hf05\hf05_20170517_193018_256_EX.txt"
+txt_test = MT_TS()
+txt_test.read_ascii(fn_txt)
+
+
+
 
 
 
