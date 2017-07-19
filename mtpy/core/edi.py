@@ -18,7 +18,7 @@ import os
 import numpy as np
 import datetime
 
-import mtpy.utils.format as MTft
+import mtpy.utils.gis_tools as gis_tools
 import mtpy.utils.exceptions as MTex
 import mtpy.utils.filehandling as MTfh
 import mtpy.core.z as MTz
@@ -968,19 +968,15 @@ class Header(object):
             
             if key in 'latitude':
                 key = 'lat'
-                value = MTft._assert_position_format(key, value)
+                value = gis_tools.assert_lat_value(value)
             
             elif key in 'longitude':
                 key = 'lon'
-                value = MTft._assert_position_format(key, value)
+                value = gis_tools.assert_lon_value(value)
                 
             elif key in 'elevation':
                 key = 'elev'
-                try:
-                    value = float(value)
-                except ValueError:
-                    value = 0.0
-                    print 'No elevation data'
+                value = gis_tools.assert_elevation_value(value)
                     
             elif key in ['country', 'state', 'loc', 'location', 'prospect']:
                 key = 'loc'
@@ -1037,8 +1033,8 @@ class Header(object):
                 if value is None:
                     value = 'mtpy'
             elif key in ['lat', 'lon']:
-                value = MTft.convert_dms_tuple2string(
-                                        MTft.convert_degrees2dms_tuple(value))
+                value = gis_tools.convert_position_float2str(value)
+                
             if key in ['elev']:
                 try:
                     value = '{0:.3f}'.format(value)
@@ -1394,13 +1390,13 @@ class DefineMeasurement(object):
                 value = line_list[1].strip()
                 if key in 'reflatitude':
                     key = 'reflat'
-                    value = MTft._assert_position_format('lat', value)
+                    value = gis_tools.assert_lat_value(value)
                 elif key in 'reflongitude':
                     key = 'reflon'
-                    value = MTft._assert_position_format('lon', value)
+                    value = gis_tools.assert_lon_value(value)
                 elif key in 'refelevation':
                     key = 'refelev'
-                    value = MTft._assert_position_format('elev', value)
+                    value = gis_tools.assert_elevation_value(value)
                 elif key in 'maxchannels':
                     key = 'maxchan'
                     try:
@@ -1441,10 +1437,9 @@ class DefineMeasurement(object):
         for key in self._define_meas_keys:
             value = getattr(self, key)
             if key == 'reflat' or key == 'reflon':
-                value = MTft.convert_dms_tuple2string(
-                                        MTft.convert_degrees2dms_tuple(value))
+                value = gis_tools.convert_position_float2str(value)
             elif key == 'refelev':
-                value = '{0:.3f}'.format(MTft._assert_position_format('elev', value))
+                value = '{0:.3f}'.format(gis_tools.assert_elevation_value(value))
             
             measurement_lines.append('{0}{1}={2}\n'.format(tab,
                                                            key.upper(),

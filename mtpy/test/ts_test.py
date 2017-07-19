@@ -6,6 +6,7 @@ Created on Wed Jul 19 12:04:39 2017
 """
 
 import mtpy.core.ts as mtts
+reload(mtts)
 
 
 fn = r"d:\Peacock\MTData\Umatilla\hf05\hf05_20170517_230518_256_EX.Z3D"
@@ -42,9 +43,25 @@ def read_z3d(fn):
     
     return ts_obj
 
-def test_make_hdf5_from_z3d(z3d_fn):
+def make_hdf5_from_z3d(z3d_fn):
     
     ts_obj = read_z3d(z3d_fn)
     
     h5_fn = z3d_fn[0:-4]+'.h5'
     ts_obj.write_hdf5(h5_fn)
+    
+    return h5_fn
+    
+def make_txt_from_hdf5(hdf5_fn):
+    ts_obj = mtts.MT_TS()
+    ts_obj.read_hdf5(hdf5_fn)
+    ts_obj.write_ascii_file()
+    
+    return ts_obj.fn_ascii
+    
+#==============================================================================
+# try a test
+#==============================================================================
+h5_fn = make_hdf5_from_z3d(fn)
+txt_fn = make_txt_from_hdf5(h5_fn)
+

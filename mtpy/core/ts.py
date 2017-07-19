@@ -327,9 +327,9 @@ fn = r"d:\Peacock\MTData\Umatilla\hf05\hf05_20170517_193018_256_EX.Z3D"
 #read_ts.read_hdf5(h5_fn)
 #
 #read_ts.write_ascii_file()
-fn_txt = r"d:\Peacock\MTData\Umatilla\hf05\hf05_20170517_193018_256_EX.txt"
-txt_test = MT_TS()
-txt_test.read_ascii(fn_txt)
+#fn_txt = r"d:\Peacock\MTData\Umatilla\hf05\hf05_20170517_193018_256_EX.txt"
+#txt_test = MT_TS()
+#txt_test.read_ascii(fn_txt)
 
 
 
