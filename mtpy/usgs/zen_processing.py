@@ -352,6 +352,14 @@ class Survey_Config(object):
         self.station_type = 'mt'
         self.save_path = None
         
+        self.rr_lat = None
+        self.rr_lon = None
+        self.rr_station = None
+        self.rr_date = None
+        self.rr_box = None
+#        self.survey_config.rr_lat = zd.header.lat
+
+        
         for key in kwargs:
             setattr(self, key, kwargs[key])
     
@@ -502,10 +510,10 @@ class Z3D_to_edi(object):
 
         fn_block_dict = dict([(df, {}) for df in self.df_list])
         fn_count = 0
-        for fn in os.listdir(self.station_dir):
+        for fn in os.listdir(station_dir):
             if fn.lower().endswith('.z3d'):
             
-                z3d_fn = os.path.join(self.station_dir, fn)
+                z3d_fn = os.path.join(station_dir, fn)
                 z3d_obj = zen.Zen3D(z3d_fn)
                 z3d_obj.read_all_info()
                 if remote is True:
@@ -520,9 +528,9 @@ class Z3D_to_edi(object):
 
 
         if fn_count == 0:
-            raise ValueError('No Z3D files found for in {0}'.format(self.station_dir))
+            raise ValueError('No Z3D files found for in {0}'.format(station_dir))
         else:
-            print 'Found {0} Z3D files in {1}'.format(fn_count, self.station_dir)
+            print 'Found {0} Z3D files in {1}'.format(fn_count, station_dir)
         
         # check for maximum number of blocks
         for df_key in fn_block_dict.keys():
@@ -530,7 +538,7 @@ class Z3D_to_edi(object):
             dates = sorted(date_dict.keys())
             if len(dates) == 0:
                 print 'No Z3D files found for {0} in {1}'.format(str(df_key),
-                                                                self.station_dir)
+                                                                 station_dir)
 
             if len(dates) > self.max_blocks:
                 for pop_date in dates[-(len(dates)-self.max_blocks):]:
@@ -668,7 +676,8 @@ class Z3D_to_edi(object):
                     for date_key in rr_fn_dict[df_key].keys():
                         for fn in rr_fn_dict[df_key][date_key]:
                             rr_fn_arr[rr] = self._convert_z3d_to_mt_ts(fn,
-                                                                       df_notch_dict)
+                                                                       df_notch_dict,
+                                                                       remote=True)
                     
                             # account for decimation, need to make a new instance
                             # so as to include the original file as well
@@ -676,7 +685,8 @@ class Z3D_to_edi(object):
                                 rr += 1
                                 rr_fn_arr[rr] = self._convert_z3d_to_mt_ts(fn, 
                                                                            df_notch_dict,
-                                                                           16)
+                                                                           dec=16,
+                                                                           remote=True)
                             rr += 1
 
             # change the time series directory to reflect where the time series
@@ -764,45 +774,79 @@ class Z3D_to_edi(object):
         return_fn_arr['start_dt'] = zd.zen_schedule
         return_fn_arr['comp'] = zd.metadata.ch_cmp.lower()
         return_fn_arr['fn'] = zd.fn_mt_ascii
-        if zd.metadata.ch_cmp.lower() in ['hx', 'hy']:
-            try:
-                h_num = zd.metadata.ch_number
-                return_fn_arr['calibration_fn'] = self.calibration_dict[h_num]
-            except KeyError:
-                print 'Could not find {0} in calibration list'.format(h_num)
-        
+
         # add metadata to survey configuration file
-        if zd.metadata.ch_cmp.lower() in ['hx', 'hy', 'hz']:
+        if zd.metadata.ch_cmp.lower() in ['hx', 'hy', 'hz']: 
+            
             comp = zd.metadata.ch_cmp.lower()
             chn_num = zd.metadata.ch_number
-            setattr(self.survey_config, comp, chn_num)
             try:
                 cal_fn = self.calibration_dict[chn_num]
-                setattr(self.survey_config, comp+'_cal_fn', cal_fn)
             except KeyError:
                 print 'Did not find calibration for {0}, number {1}'.format(comp, 
-                                                                            chn_num)
-
-            self.survey_config.hz = zd.metadata.ch_number
+                                                                        chn_num) 
+                cal_fn = None
+                
+            if remote == False:
+                setattr(self.survey_config, comp, chn_num)
+                setattr(self.survey_config, comp+'_cal_fn', cal_fn)
+                
+            elif remote == True:
+                if hasattr(self.survey_config, 'rr_{0}_00'.format(comp)) == False:
+                    setattr(self.survey_config, 
+                            'rr_{0}_00'.format(comp),
+                            chn_num)
+                    setattr(self.survey_config,
+                            'rr_{0}_00_cal_fn'.format(comp),
+                            cal_fn)
+                else:
+                    count = 1
+#                    while hasattr(self.survey_config, 'rr_{0}_{1:02}'.format(comp, count)):
+#                        count += 1
+#                        print count 
+                    
+                    setattr(self.survey_config, 
+                            'rr_{0}_{1:02}'.format(comp, count),
+                            chn_num)
+                    setattr(self.survey_config,
+                            'rr_{0}_{1:02}_cal_fn'.format(comp, count),
+                            cal_fn)
+                    
         elif zd.metadata.ch_cmp.lower() == 'ex':
             self.survey_config.e_xaxis_length = zd.metadata.ch_length
         elif zd.metadata.ch_cmp.lower() == 'ey':
             self.survey_config.e_yaxis_length = zd.metadata.ch_length
+
         
         if remote == False:
             if self.survey_config.lat is None or self.survey_config.lat == 0.0:
                 self.survey_config.lat = zd.header.lat
                 self.survey_config.lon = zd.header.long
-                self.survey_config.date = zd.schedule.Date.replace('-','/')
+                self.survey_config.date = zd.schedule.Date
                 self.survey_config.box = int(zd.header.box_number)
                 self.survey_config.station = station
                 self.survey_config.location = zd.metadata.job_name
                 self.survey_config.network = zd.metadata.job_by
         else:
-            if self.survey_config.rr_lat is None or self.survey_config.rr_lat == 0.0:
+            if self.survey_config.rr_lat is not None:
+                if self.survey_config.rr_lat != zd.header.lat:
+                    self.survey_config.rr_lat_01 = zd.header.lat
+               
+                if self.survey_config.rr_lon != zd.header.long:
+                    self.survey_config.rr_lon_01 = zd.header.long
+                
+                if self.survey_config.rr_date != zd.schedule.Date:
+                    self.survey_config.rr_date_01 = zd.schedule.Date
+    
+                if self.survey_config.rr_station != station:
+                    self.survey_config.rr_station_01 = station
+                
+                if self.survey_config.rr_box != int(zd.header.box_number):
+                    self.survey_config.rr_box_01 = int(zd.header.box_number)
+            else:
                 self.survey_config.rr_lat = zd.header.lat
                 self.survey_config.rr_lon = zd.header.long
-                self.survey_config.rr_date = zd.schedule.Date.replace('-','/')
+                self.survey_config.rr_date = zd.schedule.Date
                 self.survey_config.rr_box = int(zd.header.box_number)
                 self.survey_config.rr_station = station
 
@@ -1096,7 +1140,10 @@ class Z3D_to_edi(object):
                         # this will work fine for now, till I can figure 
                         # out how to fill it in automatically, need to 
                         # change the format and metadate of mtpy TS
-                        rr_b_arr['calibration_fn'] = r"/mnt/hgfs/MTData/Ant_calibrations/rsp_cal/ant_2284.csv"
+                        # for now get it from the calibration file
+                        rr_b_arr['calibration_fn'] = getattr(self.survey_config,
+                                                             'rr_{0}_{1:02}_cal_fn'.format(rr_b_arr['comp'], 
+                                                             rr_index-1))
                         rr_b_arr['rr_num'] = rr_index
                         rr_count += 1
                         if rr_count%2 == 0 and rr_count != 0:
@@ -1134,8 +1181,10 @@ class Z3D_to_edi(object):
         
         # be sure to fill in calibration file for station mags
         for sfb_arr in s_fn_birrp_arr:
-            if sfb_arr['comp'] in ['hx', 'hy', 'hz']:
-                sfb_arr['calibration_fn'] = r"/mnt/hgfs/MTData/Ant_calibrations/rsp_cal/ant_2284.csv"
+            if sfb_arr['comp'] in ['hx', 'hy', 'hz'] and remote == False:
+                sfb_arr['calibration_fn'] = getattr(self.survey_config, 
+                                                    '{0}_cal_fn'.format(sfb_arr['comp']))
+        
         if remote == True:
             s_fn_birrp_arr['rr'] = True
         
