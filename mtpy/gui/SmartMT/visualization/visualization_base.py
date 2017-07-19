@@ -11,14 +11,14 @@
 
 import abc
 
-from PyQt4 import QtGui, QtCore
 import matplotlib.pyplot as plt
-from PyQt4.QtGui import QApplication
-
-from mtpy.gui.SmartMT.gui.plot_parameter import PlotParameter
-from mtpy.utils.mtpylog import MtPyLog
+from PyQt4 import QtGui, QtCore
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as NavigationToolbar
+
+from mtpy.gui.SmartMT.gui.plot_parameter import PlotParameter
+from mtpy.gui.SmartMT.gui.progress_bar import ProgressBar
+from mtpy.utils.mtpylog import MtPyLog
 
 
 class VisualizationBase(object):
@@ -127,7 +127,7 @@ class VisualizationBase(object):
         # clear the figure if there is already one up
         plt.clf()
         # show progress bar
-        progressbar = ProgressBar()
+        progressbar = ProgressBar(title='Generating image...')
         progressbar.onStart()
         # self._plottingFinished.connect(progressbar.onFinished)
         # self._create_plot()
@@ -154,20 +154,3 @@ class VisualizationBase(object):
             QtGui.QMessageBox.critical(self._parameter_ui, 'Plotting Error', e.message, QtGui.QMessageBox.Close)
 
 
-class ProgressBar(QtGui.QWidget):
-    def __init__(self, parent=None):
-        super(ProgressBar, self).__init__(parent)
-        layout = QtGui.QVBoxLayout(self)
-        self.progressbar = QtGui.QProgressBar(self)
-        self.progressbar.setMinimum(0)
-        self.progressbar.setMaximum(0)
-        self.progressbar.setValue(0)
-        # self.progressbar.setValue(1)
-        layout.addWidget(self.progressbar)
-        self.setWindowTitle("Plotting")
-
-    def onStart(self):
-        self.show()
-
-    def onFinished(self):
-        self.hide()

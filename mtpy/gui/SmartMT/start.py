@@ -16,6 +16,7 @@ import sys
 from PyQt4 import QtCore, QtGui
 
 from mtpy.gui.SmartMT.gui.plot_option import PlotOption
+from mtpy.gui.SmartMT.gui.progress_bar import ProgressBar
 from mtpy.gui.SmartMT.gui.station_summary import StationSummary
 from mtpy.gui.SmartMT.gui.station_viewer import StationViewer
 from mtpy.gui.SmartMT.utils.file_handler import FileHandler, FileHandlingException
@@ -38,6 +39,7 @@ class StartQt4(QtGui.QMainWindow):
         self._station_viewer = None
         self._subwindow_counter = 0
         self._station_summary = None
+        self._progress_bar = ProgressBar(title='Loading files...')
         self.subwindows = {}
 
     def setup_menu(self):
@@ -108,8 +110,11 @@ class StartQt4(QtGui.QMainWindow):
         dialog.setFileMode(QtGui.QFileDialog.ExistingFiles)
         if dialog.exec_() == QtGui.QDialog.Accepted:
             file_list = dialog.selectedFiles()
+            self._progress_bar.setMaximumValue(len(file_list))
+            self._progress_bar.onStart()
             self._add_files(file_list, DEFAULT_GROUP_NAME)
             self._update_tree_view()
+            self._progress_bar.onFinished()
 
     def _add_files(self, file_list, group_id=DEFAULT_GROUP_NAME):
         for file_ref in file_list:
@@ -119,6 +124,7 @@ class StartQt4(QtGui.QMainWindow):
                 self._logger.warning(exp.message)
             except Exception as exp:
                 self._logger.critical(exp.message)
+            self._progress_bar.incrementValue()
 
     def plot_selected_station(self, *args, **kwargs):
         if self._station_viewer and self._station_viewer.fig_canvas.selected_stations:
@@ -150,8 +156,11 @@ class StartQt4(QtGui.QMainWindow):
                                                   "Directory does not contain any .edi file, please select again.")
                     dir_name = None  # will read again
                 else:
+                    self._progress_bar.setMaximumValue(len(file_list))
+                    self._progress_bar.onStart()
                     self._add_files(file_list, os.path.basename(dir_name))
                     self._update_tree_view()
+                    self._progress_bar.onFinished()
             else:
                 break
 
