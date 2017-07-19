@@ -1118,12 +1118,13 @@ class Z3D_to_edi(object):
                         elif t_diff < 0:
                             #need to test if nskip is already there
                             if s_fn_birrp_arr['nskip'][0] != 1:
-                                if t_diff > s_fn_birrp_arr['nskip'][0]:
+                                if n_skip > s_fn_birrp_arr['nskip'][0]:
                                     s_fn_birrp_arr['nskip'][:] = n_skip
                                 else:
                                     pass
+
                             else:
-                                s_fn_birrp_arr['nskip'][:] = abs(t_diff*df)
+                                s_fn_birrp_arr['nskip'][:] = n_skip
                           
                         # if there was a remote referenc channel found 
                         # append it to the array
@@ -1148,6 +1149,15 @@ class Z3D_to_edi(object):
                         rr_count += 1
                         if rr_count%2 == 0 and rr_count != 0:
                             rr_index += 1
+                        
+                        # need to make sure there is n_skip for other
+                        # remote references
+                        rr_min_read = rr_birrp_fn_arr['nread'].min()
+                        for rr_b_arr in rr_birrp_fn_arr:
+                            rr_n_skip = abs(rr_b_arr['nread']-rr_min_read)
+                            if rr_b_arr['nread'] != rr_min_read:
+                                rr_b_arr['nskip'] = rr_n_skip
+                                print rr_b_arr['fn'], rr_n_skip
                         
                     # append the remote reference data to station data                                                                        
                     s_fn_birrp_arr = np.append(s_fn_birrp_arr, rr_birrp_fn_arr)

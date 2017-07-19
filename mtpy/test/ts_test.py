@@ -24,8 +24,6 @@ def read_z3d(fn):
     ts_obj.ts = z1.convert_counts()
     ts_obj.station = z1.station
     ts_obj.sampling_rate = int(z1.df)
-    ts_obj.start_time_epoch_sec = zen.time.mktime(zen.time.strptime(z1.zen_schedule, 
-                                                                     zen.datetime_fmt))
     ts_obj.start_time_utc = z1.zen_schedule
     ts_obj.n_samples = int(z1.time_series.size)
     ts_obj.component = z1.metadata.ch_cmp
@@ -52,16 +50,26 @@ def make_hdf5_from_z3d(z3d_fn):
     
     return h5_fn
     
-def make_txt_from_hdf5(hdf5_fn):
+def make_txt_from_hdf5(hdf5_fn, chunk=4096):
     ts_obj = mtts.MT_TS()
     ts_obj.read_hdf5(hdf5_fn)
-    ts_obj.write_ascii_file()
+    ts_obj.write_ascii_file(chunk_size=chunk)
     
     return ts_obj.fn_ascii
+    
+def read_txt(txt_fn):
+    ts_obj = mtts.MT_TS()
+    ts_obj.read_ascii(txt_fn)
+    
+    return ts_obj
     
 #==============================================================================
 # try a test
 #==============================================================================
-h5_fn = make_hdf5_from_z3d(fn)
-txt_fn = make_txt_from_hdf5(h5_fn)
+ts_obj = read_z3d(fn)
+
+#h5_fn = make_hdf5_from_z3d(fn)
+#txt_fn = make_txt_from_hdf5(h5_fn, chunk=8192)
+#ts_obj = read_txt(txt_fn)
+
 
