@@ -52,6 +52,7 @@ class StartQt4(QtGui.QMainWindow):
         self.ui.actionTile_Windows.triggered.connect(self._tile_windows)
         self.ui.actionCascade_Windows.triggered.connect(self._cascade_windows)
         self.ui.actionPlot.triggered.connect(self.plot_selected_station)
+        self.ui.actionClose_All_Images.triggered.connect(self._close_all_images)
         # not yet impleneted
         self.ui.actionAbout.triggered.connect(self.dummy_action)
         self.ui.actionClose_Project.triggered.connect(self.dummy_action)
@@ -69,6 +70,16 @@ class StartQt4(QtGui.QMainWindow):
 
     def _cascade_windows(self, *args, **kwargs):
         self.ui.mdiArea.cascadeSubWindows()
+
+    def _close_all_images(self, *args, **kwargs):
+        close_later = []
+        for title, (subwindow, action) in self.subwindows.iteritems():
+            if title != self._station_viewer.windowTitle() and\
+                title != self._station_summary.windowTitle() and\
+                    not isinstance(subwindow.widget(), PlotOption):
+                    close_later.append(subwindow)
+        for subwindow in close_later:
+            subwindow.close()
 
     def _toggle_windowed_tabbed_view(self, *args, **kwargs):
         if self.ui.actionTabbed_View.isEnabled() and self.ui.actionTabbed_View.isChecked():
@@ -112,7 +123,10 @@ class StartQt4(QtGui.QMainWindow):
     def plot_selected_station(self, *args, **kwargs):
         if self._station_viewer and self._station_viewer.fig_canvas.selected_stations:
             plot_option = PlotOption(self, self._file_handler, self._station_viewer.fig_canvas.selected_stations)
-            subwindow, _ = self.create_subwindow(plot_option, plot_option.windowTitle())
+            subwindow, _ = self.create_subwindow(plot_option,
+                                                 plot_option.windowTitle(),
+                                                 tooltip="plot stations:\n%s" % "\n".join(
+                                                     self._station_viewer.fig_canvas.selected_stations))
         else:
             self._logger.info("nothing to plot")
 

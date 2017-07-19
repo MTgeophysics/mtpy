@@ -120,6 +120,8 @@ class Ui_SmartMT_MainWindow(object):
         self.actionTabbed_View = QtGui.QAction(SmartMT_MainWindow)
         self.actionTabbed_View.setCheckable(True)
         self.actionTabbed_View.setObjectName(_fromUtf8("actionTabbed_View"))
+        self.actionClose_All_Images = QtGui.QAction(SmartMT_MainWindow)
+        self.actionClose_All_Images.setObjectName(_fromUtf8("actionClose_All_Images"))
         self.menuFile.addAction(self.actionNew_Project)
         self.menuFile.addAction(self.actionOpen_Project)
         self.menuFile.addAction(self.actionSave_Project)
@@ -139,6 +141,8 @@ class Ui_SmartMT_MainWindow(object):
         self.menuWindow.addSeparator()
         self.menuWindow.addAction(self.actionTile_Windows)
         self.menuWindow.addAction(self.actionCascade_Windows)
+        self.menuWindow.addSeparator()
+        self.menuWindow.addAction(self.actionClose_All_Images)
         self.menuWindow.addSeparator()
         self.menuHelp.addAction(self.actionFind_Action)
         self.menuHelp.addAction(self.actionHelp)
@@ -186,4 +190,5 @@ class Ui_SmartMT_MainWindow(object):
         self.actionTile_Windows.setText(_translate("SmartMT_MainWindow", "Tile Windows", None))
         self.actionWindowed_View.setText(_translate("SmartMT_MainWindow", "Windowed View", None))
         self.actionTabbed_View.setText(_translate("SmartMT_MainWindow", "Tabbed View", None))
+        self.actionClose_All_Images.setText(_translate("SmartMT_MainWindow", "Close All Images", None))
 
