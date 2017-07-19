@@ -14,6 +14,7 @@ import os
 import sys
 
 from PyQt4 import QtCore, QtGui
+from PyQt4.QtCore import QString
 
 from mtpy.gui.SmartMT.gui.plot_option import PlotOption
 from mtpy.gui.SmartMT.gui.progress_bar import ProgressBar
@@ -137,7 +138,7 @@ class StartQt4(QtGui.QMainWindow):
             plot_option = PlotOption(self, self._file_handler, self._station_viewer.fig_canvas.selected_stations)
             subwindow, _ = self.create_subwindow(plot_option,
                                                  plot_option.windowTitle(),
-                                                 tooltip="plot stations:\n%s" % "\n".join(
+                                                 tooltip="plot stations: %s" % ", ".join(
                                                      self._station_viewer.fig_canvas.selected_stations))
         else:
             self._logger.info("nothing to plot")
@@ -223,7 +224,7 @@ class StartQt4(QtGui.QMainWindow):
         subwindow = StartQt4.MDISubWindow(self)
         subwindow.setWindowTitle(title)
         if tooltip:
-            subwindow.setToolTip(tooltip)
+            subwindow.setToolTip(QString("<p>"+tooltip+"</p>"))
         subwindow.setWidget(widget)
         subwindow.resize(widget.size())
         self.ui.mdiArea.addSubWindow(subwindow)
