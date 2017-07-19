@@ -149,7 +149,9 @@ def convert_position_float2str(position):
         deg += 1
         minutes = 0
     
-    position_str = '{0}:{1:02.0f}:{2:02f}'.format(sign*deg, int(minutes), sec)
+    position_str = '{0}:{1:02.0f}:{2:02.2f}'.format(sign*int(deg), 
+                                                    int(minutes),
+                                                    float(sec))
     
     return position_str
 
