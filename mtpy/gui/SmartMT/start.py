@@ -20,6 +20,7 @@ from mtpy.gui.SmartMT.gui.progress_bar import ProgressBar
 from mtpy.gui.SmartMT.gui.station_summary import StationSummary
 from mtpy.gui.SmartMT.gui.station_viewer import StationViewer
 from mtpy.gui.SmartMT.utils.file_handler import FileHandler, FileHandlingException
+from mtpy.gui.SmartMT.visualization.visualization_base import MPLCanvasWidget
 from mtpy.utils.decorator import deprecated
 from mtpy.utils.mtpylog import MtPyLog
 from ui_asset.main_window import Ui_SmartMT_MainWindow, _fromUtf8, _translate
@@ -41,6 +42,11 @@ class StartQt4(QtGui.QMainWindow):
         self._station_summary = None
         self._progress_bar = ProgressBar(title='Loading files...')
         self.subwindows = {}
+        # enable export if the activated subwindow is a image window
+        self.ui.mdiArea.subWindowActivated.connect(
+            lambda subwindow: self.ui.actionExport.setEnabled(True)
+            if subwindow and isinstance(subwindow.widget(), MPLCanvasWidget)
+            else self.ui.actionExport.setEnabled(False))
 
     def setup_menu(self):
         # connect exit menu

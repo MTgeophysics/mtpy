@@ -85,6 +85,7 @@ class Ui_SmartMT_MainWindow(object):
         self.actionExit.setMenuRole(QtGui.QAction.QuitRole)
         self.actionExit.setObjectName(_fromUtf8("actionExit"))
         self.actionExport = QtGui.QAction(SmartMT_MainWindow)
+        self.actionExport.setEnabled(False)
         self.actionExport.setObjectName(_fromUtf8("actionExport"))
         self.actionShow_Data_Collection = QtGui.QAction(SmartMT_MainWindow)
         self.actionShow_Data_Collection.setCheckable(True)

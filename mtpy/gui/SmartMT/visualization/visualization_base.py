@@ -135,13 +135,7 @@ class VisualizationBase(object):
             self.plot()
             if self._fig:
                 # self._fig.show()
-                widget = QtGui.QWidget()
-                layout = QtGui.QVBoxLayout()
-                canvas = FigureCanvas(self._fig)
-                toolbar = NavigationToolbar(canvas, widget)
-                layout.addWidget(toolbar)
-                layout.addWidget(canvas)
-                widget.setLayout(layout)
+                widget = MPLCanvasWidget(self._fig)
 
                 progressbar.onFinished()
 
@@ -153,4 +147,15 @@ class VisualizationBase(object):
             progressbar.onFinished()
             QtGui.QMessageBox.critical(self._parameter_ui, 'Plotting Error', e.message, QtGui.QMessageBox.Close)
 
+
+class MPLCanvasWidget(QtGui.QWidget):
+    def __init__(self, fig):
+        QtGui.QWidget.__init__(self)
+        self._fig = fig
+        self._layout = QtGui.QVBoxLayout()
+        self._canvas = FigureCanvas(self._fig)
+        self._toolbar = NavigationToolbar(self._canvas, self)
+        self._layout.addWidget(self._toolbar)
+        self._layout.addWidget(self._canvas)
+        self.setLayout(self._layout)
 
