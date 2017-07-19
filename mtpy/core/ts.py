@@ -24,6 +24,8 @@ class MT_TS(object):
     
     The foundations are based on Pandas Python package.
     
+    Input ts as a numpy.ndarray or Pandas DataFrame
+    
     Metadata
     -----------
     
@@ -135,8 +137,8 @@ class MT_TS(object):
         elif type(ts_arr) is pd.core.frame.DataFrame:
             self._ts = ts_arr
         else:
-            raise MT_TS_Error('Data type {0} not supported'.format(type(ts_arr)+\
-                              ', ts needs to be a numpy.ndarray or pandas DataFrame'))
+            raise MT_TS_Error('Data type {0} not supported'.format(type(ts_arr))+\
+                              ', ts needs to be a numpy.ndarray or pandas DataFrame')
         
     def write_hdf5(self, fn_hdf5):
         """
@@ -185,9 +187,7 @@ class MT_TS(object):
             value = getattr(hdf5_store.get_storer('time_series').attrs, attr)
             setattr(self, attr, value)
             
-        hdf5_store.close()
-
-                
+        hdf5_store.close()     
         
     def write_ascii_file(self, fn_ascii=None, chunk_size=4096):
         """
@@ -294,10 +294,10 @@ test_ts.instrument_num = None
 test_ts.calibration_fn = None
 test_ts.declination = 3.6
 
-test_ts.write_hdf5_pandas(h5_fn)
+test_ts.write_hdf5(h5_fn)
 #
 read_ts = MT_TS()
-read_ts.read_hdf5_pandas(h5_fn)
+read_ts.read_hdf5(h5_fn)
 
 #read_ts = MT_TS()
 #read_ts.read_hdf5(h5_fn)
