@@ -1068,13 +1068,14 @@ class Z3D_to_edi(object):
                         # add in nskip values
                         # when t_diff is positive then skip values in 
                         # the remote reference file
+                        n_skip = abs(rr_arr['npts']-s_fn_arr['npts'].min())
                         if t_diff > 0 and dt_arr is not None:
-                            dt_arr['nskip'] = t_diff*df
+                            dt_arr['nskip'] = n_skip
                         elif t_diff < 0:
                             #need to test if nskip is already there
                             if s_fn_birrp_arr['nskip'][0] != 1:
                                 if t_diff > s_fn_birrp_arr['nskip'][0]:
-                                    s_fn_birrp_arr['nskip'][:] = t_diff
+                                    s_fn_birrp_arr['nskip'][:] = n_skip
                                 else:
                                     pass
                             else:
