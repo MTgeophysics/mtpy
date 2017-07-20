@@ -10,6 +10,8 @@ import os.path
 # configure matplotlib for testing
 import matplotlib
 # use non-interactive backend 'Agg', so that you do not have to see figure pop-out.
+from mtpy.imaging.penetration import ZComponentError
+
 matplotlib.use('Agg')  # comment out this line if you want to see the plots 1-by-1 on screen.
 
 #import matplotlib.pyplot as plt
@@ -96,7 +98,10 @@ class TestPenetration_depth1d(TestCase):
         testing plotting an empty rholist of a single edi file
         :return:
         """
-        plot_edi_file("tests/data/edifiles/15125A.edi", [])
+        try:
+            plot_edi_file("tests/data/edifiles/15125A.edi", [])
+        except ZComponentError:
+            pass
 
     def test_plot_edi_file_save_inage(self):
         """
