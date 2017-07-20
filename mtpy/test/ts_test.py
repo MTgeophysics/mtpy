@@ -8,9 +8,6 @@ Created on Wed Jul 19 12:04:39 2017
 import mtpy.core.ts as mtts
 reload(mtts)
 
-
-fn = r"d:\Peacock\MTData\Umatilla\hf05\hf05_20170517_230518_256_EX.Z3D"
-
 def read_z3d(fn):
     import mtpy.usgs.zen as zen
     ## TEST Writing
@@ -66,10 +63,10 @@ def read_txt(txt_fn):
 #==============================================================================
 # try a test
 #==============================================================================
-ts_obj = read_z3d(fn)
+fn = r"d:\Peacock\MTData\Umatilla\um102\um102_20170606_230518_256_EX.Z3D"
 
-#h5_fn = make_hdf5_from_z3d(fn)
-#txt_fn = make_txt_from_hdf5(h5_fn, chunk=8192)
-#ts_obj = read_txt(txt_fn)
+h5_fn = make_hdf5_from_z3d(fn)
+txt_fn = make_txt_from_hdf5(h5_fn, chunk=8192)
+ts_obj = read_txt(txt_fn)
 
 

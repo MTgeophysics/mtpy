@@ -227,24 +227,11 @@ class MT_TS(object):
         hdf5_store['time_series'] = self.ts
         
         # add in attributes
-        hdf5_store.get_storer('time_series').attrs.station = self.station
-        hdf5_store.get_storer('time_series').attrs.sampling_rate = self.sampling_rate
-        hdf5_store.get_storer('time_series').attrs.start_time_epoch_sec = self.start_time_epoch_sec 
-        hdf5_store.get_storer('time_series').attrs.start_time_utc = self.start_time_utc
-        hdf5_store.get_storer('time_series').attrs.n_samples = self.n_samples
-        hdf5_store.get_storer('time_series').attrs.component = self.component
-        hdf5_store.get_storer('time_series').attrs.coordinate_system = self.coordinate_system
-        hdf5_store.get_storer('time_series').attrs.dipole_length = self.dipole_length
-        hdf5_store.get_storer('time_series').attrs.azimuth = self.azimuth
-        hdf5_store.get_storer('time_series').attrs.units = self.units
-        hdf5_store.get_storer('time_series').attrs.lat = self.lat
-        hdf5_store.get_storer('time_series').attrs.lon = self.lon
-        hdf5_store.get_storer('time_series').attrs.datum = self.datum
-        hdf5_store.get_storer('time_series').attrs.data_logger = self.data_logger
-        hdf5_store.get_storer('time_series').attrs.instrument_id = self.instrument_id
-        hdf5_store.get_storer('time_series').attrs.calibration_fn = self.calibration_fn
-        hdf5_store.get_storer('time_series').attrs.declination = self.declination
-        
+        for attr in self._attr_list:
+            setattr(hdf5_store.get_storer('time_series').attrs, 
+                    attr,
+                    getattr(self, attr))
+
         hdf5_store.flush()
         hdf5_store.close()
         
