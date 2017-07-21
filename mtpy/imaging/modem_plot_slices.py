@@ -282,8 +282,8 @@ if __name__ == "__main__":
         slice_locs = sys.argv[3:]
     else:
         # a list of depth where h-slice to be visualized
-        slice_locs=[-2000, -1900, -1700, -1500, -1200, -1000, -800, -600, -400, -200, 0, 200, 400, 600,800,1000,
-                    2000,3000,4000,5000,6000,7000,8000,9000,10000]
+        slice_locs=[-2000, -1900, -1700, -1500, -1200, -1000, -800, -600, -400, -200, 0, 20, 50, 80, 100,150, 200, 400, 600,800,1000,
+                    2000,3000,4000,5000,6000,7000,8000]
 
     # construct plot object
     myObj = ModemPlotSlices(datf, rhof)  # ,map_scale='m')

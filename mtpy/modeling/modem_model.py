@@ -827,10 +827,10 @@ class Model(object):
         fig_num = kwargs.pop('fig_num', 1)
 
         station_marker = kwargs.pop('station_marker', 'v')
-        marker_color = kwargs.pop('station_color', 'b')
+        marker_color = kwargs.pop('station_color', 'k')
         marker_size = kwargs.pop('marker_size', 2)
 
-        line_color = kwargs.pop('line_color', 'k')
+        line_color = kwargs.pop('line_color', 'b')
         line_width = kwargs.pop('line_width', .5)
 
         plt.rcParams['figure.subplot.hspace'] = .3
@@ -979,7 +979,7 @@ class Model(object):
         cos_ang = 1
         sin_ang = 0
 
-        line_color ='r'  # 'k'
+        line_color ='b'  # 'k'
         line_width = 0.5
 
         east_line_xlist = []
@@ -1045,7 +1045,7 @@ class Model(object):
         marker_color = 'b'
         marker_size = 2
 
-        line_color = 'r'
+        line_color = 'b'
         line_width = 0.5
 
         fig = plt.figure(2, dpi=200)

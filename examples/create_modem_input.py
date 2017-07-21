@@ -117,10 +117,10 @@ if __name__ == '__main__':
                   pad_z=8,  # number of vertical padding cells
                   pad_stretch_v=1.5,  # factor to increase by in padding cells (vertical)
                   pad_stretch_h=1.5,  # factor to increase by in padding cells (horizontal)
-                  n_airlayers=10,  # number of air layers 0, 10
+                  n_airlayers=20,  # number of air layers 0, 10
                   res_model=200,  # halfspace resistivity value for initial reference model
-                  n_layers=50,  # total number of z layers, including air and pad_z
-                  z1_layer=100,  # first layer thickness
+                  n_layers=80,  # total number of z layers, including air and pad_z
+                  z1_layer=20,  # first layer thickness
                   z_target_depth=500000)
 
     model.make_mesh()  # the data file will be re-write in this method. No topo elev file used yet
