@@ -14,14 +14,17 @@ import os
 import sys
 
 from PyQt4 import QtCore, QtGui
+from PyQt4.QtCore import QString
 
 from mtpy.gui.SmartMT.gui.plot_option import PlotOption
+from mtpy.gui.SmartMT.gui.progress_bar import ProgressBar
 from mtpy.gui.SmartMT.gui.station_summary import StationSummary
 from mtpy.gui.SmartMT.gui.station_viewer import StationViewer
 from mtpy.gui.SmartMT.utils.file_handler import FileHandler, FileHandlingException
+from mtpy.gui.SmartMT.visualization.visualization_base import MPLCanvasWidget
 from mtpy.utils.decorator import deprecated
 from mtpy.utils.mtpylog import MtPyLog
-from ui_asset.main_window import Ui_SmartMT_MainWindow, _fromUtf8, _translate
+from mtpy.gui.SmartMT.ui_asset.main_window import Ui_SmartMT_MainWindow, _fromUtf8, _translate
 
 DEFAULT_GROUP_NAME = str(_translate("SmartMT_MainWindow", "Default Group", None))
 
@@ -38,7 +41,13 @@ class StartQt4(QtGui.QMainWindow):
         self._station_viewer = None
         self._subwindow_counter = 0
         self._station_summary = None
+        self._progress_bar = ProgressBar(title='Loading files...')
         self.subwindows = {}
+        # enable export if the activated subwindow is a image window
+        self.ui.mdiArea.subWindowActivated.connect(
+            lambda subwindow: self.ui.actionExport.setEnabled(True)
+            if subwindow and isinstance(subwindow.widget(), MPLCanvasWidget)
+            else self.ui.actionExport.setEnabled(False))
 
     def setup_menu(self):
         # connect exit menu
@@ -52,6 +61,7 @@ class StartQt4(QtGui.QMainWindow):
         self.ui.actionTile_Windows.triggered.connect(self._tile_windows)
         self.ui.actionCascade_Windows.triggered.connect(self._cascade_windows)
         self.ui.actionPlot.triggered.connect(self.plot_selected_station)
+        self.ui.actionClose_All_Images.triggered.connect(self._close_all_images)
         # not yet impleneted
         self.ui.actionAbout.triggered.connect(self.dummy_action)
         self.ui.actionClose_Project.triggered.connect(self.dummy_action)
@@ -69,6 +79,16 @@ class StartQt4(QtGui.QMainWindow):
 
     def _cascade_windows(self, *args, **kwargs):
         self.ui.mdiArea.cascadeSubWindows()
+
+    def _close_all_images(self, *args, **kwargs):
+        close_later = []
+        for title, (subwindow, action) in self.subwindows.iteritems():
+            if title != self._station_viewer.windowTitle() and\
+                title != self._station_summary.windowTitle() and\
+                    not isinstance(subwindow.widget(), PlotOption):
+                    close_later.append(subwindow)
+        for subwindow in close_later:
+            subwindow.close()
 
     def _toggle_windowed_tabbed_view(self, *args, **kwargs):
         if self.ui.actionTabbed_View.isEnabled() and self.ui.actionTabbed_View.isChecked():
@@ -97,8 +117,11 @@ class StartQt4(QtGui.QMainWindow):
         dialog.setFileMode(QtGui.QFileDialog.ExistingFiles)
         if dialog.exec_() == QtGui.QDialog.Accepted:
             file_list = dialog.selectedFiles()
+            self._progress_bar.setMaximumValue(len(file_list))
+            self._progress_bar.onStart()
             self._add_files(file_list, DEFAULT_GROUP_NAME)
             self._update_tree_view()
+            self._progress_bar.onFinished()
 
     def _add_files(self, file_list, group_id=DEFAULT_GROUP_NAME):
         for file_ref in file_list:
@@ -108,11 +131,15 @@ class StartQt4(QtGui.QMainWindow):
                 self._logger.warning(exp.message)
             except Exception as exp:
                 self._logger.critical(exp.message)
+            self._progress_bar.incrementValue()
 
     def plot_selected_station(self, *args, **kwargs):
         if self._station_viewer and self._station_viewer.fig_canvas.selected_stations:
             plot_option = PlotOption(self, self._file_handler, self._station_viewer.fig_canvas.selected_stations)
-            subwindow, _ = self.create_subwindow(plot_option, plot_option.windowTitle())
+            subwindow, _ = self.create_subwindow(plot_option,
+                                                 plot_option.windowTitle(),
+                                                 tooltip="plot stations: %s" % ", ".join(
+                                                     self._station_viewer.fig_canvas.selected_stations))
         else:
             self._logger.info("nothing to plot")
 
@@ -136,8 +163,11 @@ class StartQt4(QtGui.QMainWindow):
                                                   "Directory does not contain any .edi file, please select again.")
                     dir_name = None  # will read again
                 else:
+                    self._progress_bar.setMaximumValue(len(file_list))
+                    self._progress_bar.onStart()
                     self._add_files(file_list, os.path.basename(dir_name))
                     self._update_tree_view()
+                    self._progress_bar.onFinished()
             else:
                 break
 
@@ -172,7 +202,7 @@ class StartQt4(QtGui.QMainWindow):
         self._station_viewer.update_view()
         self._station_summary.update_view()
 
-    def create_subwindow(self, widget, title, overide=True):
+    def create_subwindow(self, widget, title, overide=True, tooltip=None):
         subwindow = None
         self._subwindow_counter += 1
         if title in self.subwindows:
@@ -193,6 +223,8 @@ class StartQt4(QtGui.QMainWindow):
         widget.setAttribute(QtCore.Qt.WA_DeleteOnClose, True)
         subwindow = StartQt4.MDISubWindow(self)
         subwindow.setWindowTitle(title)
+        if tooltip:
+            subwindow.setToolTip(QString("<p>"+tooltip+"</p>"))
         subwindow.setWidget(widget)
         subwindow.resize(widget.size())
         self.ui.mdiArea.addSubWindow(subwindow)

@@ -103,6 +103,8 @@
     <addaction name="actionTile_Windows"/>
     <addaction name="actionCascade_Windows"/>
     <addaction name="separator"/>
+    <addaction name="actionClose_All_Images"/>
+    <addaction name="separator"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="title">
@@ -187,6 +189,9 @@
    </property>
   </action>
   <action name="actionExport">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="text">
     <string>Export...</string>
    </property>
@@ -280,6 +285,11 @@
    </property>
    <property name="text">
     <string>Tabbed View</string>
+   </property>
+  </action>
+  <action name="actionClose_All_Images">
+   <property name="text">
+    <string>Close All Images</string>
    </property>
   </action>
  </widget>

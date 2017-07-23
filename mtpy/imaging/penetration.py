@@ -13,18 +13,19 @@
 
 import os
 import sys
-import numpy as np
+
 import matplotlib
 import matplotlib.pyplot as plt
+import numpy as np
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from scipy.interpolate import griddata
 
 import mtpy
-from imaging_base import ImagingBase, ParameterError, ImagingError
 import mtpy.modeling.occam2d_rewrite as occam2d
+from imaging_base import ImagingBase, ParameterError, ImagingError
 from mtpy.core import mt as mt
-from mtpy.utils.mtpylog import MtPyLog
 from mtpy.utils.decorator import deprecated
+from mtpy.utils.mtpylog import MtPyLog
 
 # get a logger object for this module, using the utility class MtPyLog to
 # config the logger
@@ -226,11 +227,12 @@ class Depth3D(ImagingBase):
     Note that the values of periods within10% tolerance (ptol=0.1) are considered as equal.
     Setting a smaller value for ptol(=0.05)may result less MT sites data included.
     """
-    def __init__(self, data=None, period=None, rho='det'):
+    def __init__(self, data=None, period=None, rho='det', ptol=0.1):
         super(Depth3D, self).__init__()
         self._rho = None
         self._period = None
         self._period_fmt = None
+        self._ptol = ptol
         self.set_data(data)
         self.set_rho(rho)
         self.set_period(period)
@@ -255,7 +257,7 @@ class Depth3D(ImagingBase):
         else:
             (stations, periods, pendep, latlons) = get_penetration_depth_generic(self._data,
                                                                                  self._period,
-                                                                                 whichrho=self._rho)
+                                                                                 whichrho=self._rho, ptol=self._ptol)
 
         # create figure
         self._fig = plt.figure()
@@ -523,19 +525,19 @@ def load_edi_files(edi_path):
     return edi_list
 
 
-def get_penetration_depth_generic(edi_file_list, period_sec, whichrho='det'):
+def get_penetration_depth_generic(edi_file_list, period_sec, whichrho='det', ptol=0.1):
     """
     This is a more generic and useful function to compute the penetration depths
     of a list of edi files at given period_sec (seconds).
     No assumption is made about the edi files period list.
     A tolerance of 10% is used to identify the relevant edi files which contain the period of interest.
 
+    :param ptol: freq error/tolerance, need to be consistent with phase_tensor_map.py, default is 0.1
     :param edi_file_list: edi file list of mt object list
     :param period_sec: the float number value of the period in second: 0.1, ...20.0
     :param whichrho:
     :return: tuple of (stations, periods, penetrationdepth, lat-lons-pairs)
     """
-    ptol = 0.1  # 10% freq error, need to be consistent with phase_tensor_map.py
 
     scale_param = np.sqrt(1.0 / (2.0 * np.pi * 4 * np.pi * 10 ** (-7)))
     logger.debug("The scaling parameter=%.6f" % scale_param)
@@ -670,8 +672,8 @@ def get_bounding_box(latlons):
         minlon = min(minlon, lon)
         maxlon = max(maxlon, lon)
 
-    logger.debug("Latitude Range:", minlat, maxlat)
-    logger.debug("Longitude Range:", minlon, maxlon)
+    logger.debug("Latitude Range: [%.5f, %.5f]", minlat, maxlat)
+    logger.debug("Longitude Range: [%.5f, %.5f]", minlon, maxlon)
 
     # lats = [tup[0] for tup in latlons]
     # lons = [tup[1] for tup in latlons]

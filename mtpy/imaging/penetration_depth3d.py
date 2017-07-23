@@ -22,9 +22,8 @@ import numpy as np
 
 import mtpy.core.mt as mt
 from mtpy.imaging.penetration import get_index, load_edi_files, Depth3D
-from mtpy.utils.mtpylog import MtPyLog
-
 from mtpy.utils.decorator import deprecated
+from mtpy.utils.mtpylog import MtPyLog
 
 mpl.rcParams['lines.linewidth'] = 2
 # mpl.rcParams['lines.color'] = 'r'
@@ -82,6 +81,7 @@ def plot_latlon_depth_profile(edi_dir, period, zcomponent='det', showfig=True, s
         path2savefile = os.path.join(savedir, savefn)
         image.export_image(path2savefile, dpi=200, bbox_inches='tight')
 
+    # may want to remove the following 2 lines
     plt.clf()
     plt.close()
     return

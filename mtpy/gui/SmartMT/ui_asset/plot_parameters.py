@@ -25,7 +25,7 @@ except AttributeError:
 class Ui_GroupBoxParameters(object):
     def setupUi(self, GroupBoxParameters):
         GroupBoxParameters.setObjectName(_fromUtf8("GroupBoxParameters"))
-        GroupBoxParameters.resize(340, 300)
+        GroupBoxParameters.resize(340, 200)
         self.verticalLayout = QtGui.QVBoxLayout(GroupBoxParameters)
         self.verticalLayout.setObjectName(_fromUtf8("verticalLayout"))
         self.scrollArea = QtGui.QScrollArea(GroupBoxParameters)
@@ -33,7 +33,7 @@ class Ui_GroupBoxParameters(object):
         self.scrollArea.setWidgetResizable(True)
         self.scrollArea.setObjectName(_fromUtf8("scrollArea"))
         self.scrollAreaWidgetContents = QtGui.QWidget()
-        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 318, 236))
+        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 318, 136))
         self.scrollAreaWidgetContents.setObjectName(_fromUtf8("scrollAreaWidgetContents"))
         self.verticalLayout_2 = QtGui.QVBoxLayout(self.scrollAreaWidgetContents)
         self.verticalLayout_2.setMargin(0)

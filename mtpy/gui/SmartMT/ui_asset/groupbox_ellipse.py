@@ -104,7 +104,7 @@ class Ui_GroupBoxEllipse(object):
         self.formLayout.setWidget(3, QtGui.QFormLayout.FieldRole, self.line)
 
         self.retranslateUi(GroupBoxEllipse)
-        self.comboBox_cmap.setCurrentIndex(5)
+        self.comboBox_cmap.setCurrentIndex(6)
         QtCore.QMetaObject.connectSlotsByName(GroupBoxEllipse)
 
     def retranslateUi(self, GroupBoxEllipse):

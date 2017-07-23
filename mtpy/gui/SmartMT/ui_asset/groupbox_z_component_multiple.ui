@@ -28,6 +28,9 @@
      <property name="text">
       <string>det</string>
      </property>
+        <property name="checked">
+            <bool>true</bool>
+        </property>
     </widget>
    </item>
    <item>
@@ -35,6 +38,9 @@
      <property name="text">
       <string>zxy</string>
      </property>
+        <property name="checked">
+            <bool>true</bool>
+        </property>
     </widget>
    </item>
    <item>
@@ -42,6 +48,9 @@
      <property name="text">
       <string>zyx</string>
      </property>
+        <property name="checked">
+            <bool>true</bool>
+        </property>
     </widget>
    </item>
   </layout>

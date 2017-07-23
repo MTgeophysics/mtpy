@@ -6,15 +6,15 @@
     Author: YingzhiGou
     Date: 20/06/2017
 """
-from PyQt4 import QtGui, QtCore
+from PyQt4 import QtGui
 
 from mtpy.gui.SmartMT.ui_asset.plot_options import Ui_PlotOption
-from mtpy.gui.SmartMT.visualization.visualization_base import VisualizationBase
-from mtpy.utils.mtpylog import MtPyLog
 # import all VisualizationBase subclasses here
 # todo may need a better way of searching sublasses from unloaded files
-from mtpy.gui.SmartMT.visualization.penetration_depth3d import PenetrationDepth3D
-from mtpy.gui.SmartMT.visualization.phase_tensor_maps import PhaseTensorMap
+from mtpy.gui.SmartMT.visualization.penetration import *
+from mtpy.gui.SmartMT.visualization.phase_tensor import *
+from mtpy.gui.SmartMT.visualization.mt_response import *
+from mtpy.utils.mtpylog import MtPyLog
 
 
 class PlotOption(QtGui.QWidget):
