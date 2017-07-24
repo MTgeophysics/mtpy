@@ -159,3 +159,5 @@ class MPLCanvasWidget(QtGui.QWidget):
         self._layout.addWidget(self._canvas)
         self.setLayout(self._layout)
 
+    def get_fig(self):
+        return self._fig

@@ -58,3 +58,4 @@ class Ui_StationViewer(object):
         self.treeWidget_stations.headerItem().setText(1, _translate("StationViewer", "File", None))
         self.pushButton_showMap.setText(_translate("StationViewer", "Show Map", None))
         self.pushButton_hideMap.setText(_translate("StationViewer", "Hide Map", None))
+

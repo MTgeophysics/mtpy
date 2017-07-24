@@ -16,6 +16,7 @@ import sys
 from PyQt4 import QtCore, QtGui
 from PyQt4.QtCore import QString
 
+from mtpy.gui.SmartMT.gui.export_dialog import ExportDialog
 from mtpy.gui.SmartMT.gui.plot_option import PlotOption
 from mtpy.gui.SmartMT.gui.progress_bar import ProgressBar
 from mtpy.gui.SmartMT.gui.station_summary import StationSummary
@@ -36,6 +37,10 @@ class StartQt4(QtGui.QMainWindow):
         self._is_file_dialog_opened = False
         self.ui = Ui_SmartMT_MainWindow()
         self.ui.setupUi(self)
+
+        # export dialog
+        self._export_dialog = ExportDialog(self)
+
         self.setup_menu()
         self._file_handler = FileHandler()
         self._station_viewer = None
@@ -62,10 +67,10 @@ class StartQt4(QtGui.QMainWindow):
         self.ui.actionCascade_Windows.triggered.connect(self._cascade_windows)
         self.ui.actionPlot.triggered.connect(self.plot_selected_station)
         self.ui.actionClose_All_Images.triggered.connect(self._close_all_images)
+        self.ui.actionExport.triggered.connect(self._export_image)
         # not yet impleneted
         self.ui.actionAbout.triggered.connect(self.dummy_action)
         self.ui.actionClose_Project.triggered.connect(self.dummy_action)
-        self.ui.actionExport.triggered.connect(self.dummy_action)
         self.ui.actionFind_Action.triggered.connect(self.dummy_action)
         self.ui.actionHelp.triggered.connect(self.dummy_action)
         self.ui.actionNew_Project.triggered.connect(self.dummy_action)
@@ -73,6 +78,12 @@ class StartQt4(QtGui.QMainWindow):
         self.ui.actionOptions.triggered.connect(self.dummy_action)
         self.ui.actionSave_as_Project.triggered.connect(self.dummy_action)
         self.ui.actionSave_Project.triggered.connect(self.dummy_action)
+
+    def _export_image(self, *args, **kwargs):
+        subwindow = self.ui.mdiArea.activeSubWindow()
+        widget = subwindow.widget()
+        if isinstance(widget, MPLCanvasWidget):
+            self._export_dialog.show_dialog(widget.get_fig())
 
     def _tile_windows(self, *args, **kwargs):
         self.ui.mdiArea.tileSubWindows()
