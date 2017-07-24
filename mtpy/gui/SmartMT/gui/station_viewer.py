@@ -92,7 +92,7 @@ class StationViewer(QtGui.QWidget):
         #         ref = str(item.text(1))
         #         selected_stations.add((self.file_handler.get_MT_obj(ref), ref))
         # just use the container from the figure
-        selected_stations = self.selected_stations
+        selected_stations = self.selected_stations.copy()
         if selected_stations:
             reply = QtGui.QMessageBox.question(self, "Unload Selected Stations",
                                                "Are you sure you want to unload/remove the selected stations?\n(You can always load them back again.)",
@@ -103,12 +103,11 @@ class StationViewer(QtGui.QWidget):
                 for station in selected_stations:
                     self.file_handler.unload(self.file_handler.station2ref(station))
                     self.selected_stations.remove(station)
-                # self.fig_canvas.selected_stations.clear()
+                self.fig_canvas.selected_stations.clear()
                 self.update_view()
 
-                # hack update station summary/status
-                # todo to be improved
-                self.ui.treeWidget_stations.emit(QtCore.SIGNAL("selectionChanged()"))
+                # update station summary/status
+                self.selection_changed.emit()
 
     def add_selected_to_group(self, *args, **kwargs):
         # selected = self.ui.treeWidget_stations.selectedItems()
