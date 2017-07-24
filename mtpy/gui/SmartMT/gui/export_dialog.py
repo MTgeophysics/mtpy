@@ -39,6 +39,23 @@ class ExportDialog(QtGui.QDialog):
         # file name
         self.ui.comboBox_fileName.currentIndexChanged.connect(self._file_name_changed)
 
+        # file type
+        self.ui.comboBox_fileType.currentIndexChanged.connect(self._file_type_changed)
+
+    def _file_type_changed(self, *args, **kwargs):
+        index = self.ui.comboBox_fileType.currentIndex()
+        ext, _ = self._formats[index]
+        filename = str(self.ui.comboBox_fileName.currentText())
+        filename, _ = os.path.splitext(filename)
+
+        # update file name
+        filename = "%s.%s" % (filename, ext)
+        index = self.ui.comboBox_fileName.findText(filename)
+        if index == -1:
+            self.ui.comboBox_fileName.addItem(filename)
+        self.ui.comboBox_fileName.setCurrentIndex(index if index >= 0
+                                                  else self.ui.comboBox_fileName.findText(filename))
+
     def _file_name_changed(self, *args, **kwargs):
         filename = str(self.ui.comboBox_fileName.currentText())
         filename, extension = os.path.splitext(filename)

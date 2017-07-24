@@ -99,6 +99,11 @@
      <property name="editable">
       <bool>true</bool>
      </property>
+        <item>
+            <property name="text">
+                <string>figure.png</string>
+            </property>
+        </item>
     </widget>
    </item>
    <item row="6" column="0" colspan="5">
