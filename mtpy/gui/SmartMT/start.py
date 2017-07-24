@@ -198,9 +198,10 @@ class StartQt4(QtGui.QMainWindow):
             self.ui.actionShow_Station_Summary.setEnabled(True)
             # connect to tree view to update summary
             self._station_viewer.ui.treeWidget_stations.selectionModel().selectionChanged.connect(self._station_summary.update_view)
+            # connect to handle selection_changed signal from station_viewer
+            self._station_viewer.selection_changed.connect(self._station_summary.update_view)
             self._station_viewer.setFocus()
         self._station_viewer.update_view()
-        self._station_summary.update_view()
 
     def create_subwindow(self, widget, title, overide=True, tooltip=None):
         subwindow = None
