@@ -83,7 +83,7 @@ class StartQt4(QtGui.QMainWindow):
         subwindow = self.ui.mdiArea.activeSubWindow()
         widget = subwindow.widget()
         if isinstance(widget, MPLCanvasWidget):
-            self._export_dialog.show_dialog(widget.get_fig())
+            self._export_dialog.export_to_file(widget.get_fig())
 
     def _tile_windows(self, *args, **kwargs):
         self.ui.mdiArea.tileSubWindows()

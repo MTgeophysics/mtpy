@@ -27,6 +27,7 @@ class ExportDialog(QtGui.QDialog):
         for type, description in filetypes.iteritems():
             self.ui.comboBox_fileType.addItem("%s (.%s)" % (description, type))
             self._formats.append((type, description))
+        self._file_name_changed()  # select the default format
 
         # setup directory and dir dialog
         self._dir_dialog = QtGui.QFileDialog(self)
@@ -41,6 +42,13 @@ class ExportDialog(QtGui.QDialog):
 
         # file type
         self.ui.comboBox_fileType.currentIndexChanged.connect(self._file_type_changed)
+
+        # cancel button
+        self.ui.pushButton_cancel.clicked.connect(lambda b: self.reject())
+        # export button
+        self.ui.pushButton_export.clicked.connect(lambda b: self.accept())
+
+    _orientation = ['portrait', 'landscape']
 
     def _file_type_changed(self, *args, **kwargs):
         index = self.ui.comboBox_fileType.currentIndex()
@@ -76,8 +84,29 @@ class ExportDialog(QtGui.QDialog):
                                                        if index >= 0
                                                        else self.ui.comboBox_directory.findText(directory))
 
-    def show_dialog(self, fig):
-        self.show()
+    def export_to_file(self, fig):
+        if self.exec_() == QtGui.QDialog.Accepted:
+            # saving files
+            fname = self.get_save_file_namee()
+            params = self.get_savefig_params()
+            fig.savefig(fname, **params)
+
+    def get_save_file_namee(self):
+        return os.path.join(
+            str(self.ui.comboBox_directory.currentText()),
+            str(self.ui.comboBox_fileName.currentText())
+        )  # todo check if directory and/or file exists
+
+    def get_savefig_params(self):
+        # todo error checking
+        params = {
+            'dpi': self.ui.spinBox_dpi.value(),
+            'orientation': self._orientation[self.ui.comboBox_orientation.currentIndex()],
+            # 'format': self._formats[self.ui.comboBox_fileType.currentIndex()],
+            'transparent': self.ui.checkBox_transparent.isChecked(),
+            'bbox_inches': 'tight' if self.ui.checkBox_tightBbox.isChecked() else None
+        }
+        return params
 
     def keyPressEvent(self, event):
         """Capture and ignore all key press events.
