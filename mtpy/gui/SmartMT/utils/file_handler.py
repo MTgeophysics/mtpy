@@ -169,7 +169,7 @@ class FileHandler:
         if ref in self._file_dict:
             return self._file_dict[ref]
         else:
-            self._logger.error("File \"%s\" is not loaded" % ref)
+            self._logger.warning("File \"%s\" is not loaded" % ref)
             return None
 
     def get_file_refs(self):
