@@ -10,6 +10,7 @@
 import inspect
 import os
 import tempfile
+import webbrowser
 
 from PIL import Image
 from PyQt4 import QtGui, QtCore
@@ -158,6 +159,10 @@ class ExportDialog(QtGui.QDialog):
                                            'Exporting Error',
                                            "{}: {}".format(mod.__name__, e.message), QtGui.QMessageBox.Close)
                 raise e
+
+            if self.ui.checkBox_open_after_export.isChecked():
+                # open with the system default application, this should work on all platforms
+                webbrowser.open(fname)
             return fname
             # elif response == QtGu
 

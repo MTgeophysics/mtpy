@@ -145,6 +145,9 @@ class TestExportDialog(TestCase):
             os.remove(fname)
         self.assertFalse(os.path.exists(fname), "File exists")
 
+        # set open after to false
+        self.dialog.ui.checkBox_open_after_export.setChecked(False)
+
         self.dialog.exec_ = self._fake_export_dialog_exec_cancel  # should not create file
         self.dialog._msg_box.exec_ = self._fake_msg_dialog_exec_cancel
         fname = self.dialog.export_to_file(self._fig)
@@ -182,6 +185,8 @@ class TestExportDialog(TestCase):
                       os.path.abspath(self._temp_dir))
         self.dialog.exec_ = self._fake_export_dialog_exec_export
         self.dialog._msg_box.exec_ = self._fake_msg_dialog_exec_overwrite
+        # set open after to false
+        self.dialog.ui.checkBox_open_after_export.setChecked(False)
 
         QTest.keyClicks(self.dialog.ui.spinBox_dpi, '400')
         _rewrite_text(self.dialog.ui.comboBox_fileName, "400dpi.jpg")
@@ -239,6 +244,8 @@ def _transparent_test_gen(index, ext, description):
 
         self.dialog.exec_ = self._fake_export_dialog_exec_export
         self.dialog._msg_box.exec_ = self._fake_msg_dialog_exec_overwrite
+        # set open after to false
+        self.dialog.ui.checkBox_open_after_export.setChecked(False)
 
         # print "testing save to {0[1]} (.{0[0]})".format(self.dialog.get_file_format())
         for isTrans in [True, False]:
