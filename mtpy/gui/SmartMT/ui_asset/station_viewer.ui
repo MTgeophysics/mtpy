@@ -37,12 +37,24 @@
      <property name="selectionMode">
       <enum>QAbstractItemView::ExtendedSelection</enum>
      </property>
+        <property name="uniformRowHeights">
+            <bool>true</bool>
+        </property>
+        <property name="sortingEnabled">
+            <bool>true</bool>
+        </property>
      <property name="animated">
-      <bool>false</bool>
+         <bool>true</bool>
+     </property>
+        <property name="allColumnsShowFocus">
+            <bool>true</bool>
      </property>
      <property name="headerHidden">
       <bool>true</bool>
      </property>
+        <attribute name="headerShowSortIndicator" stdset="0">
+            <bool>false</bool>
+        </attribute>
      <column>
       <property name="text">
        <string>Station</string>
@@ -62,6 +74,16 @@
      </property>
     </widget>
    </item>
+      <item>
+          <widget class="QPushButton" name="pushButton_hideMap">
+              <property name="enabled">
+                  <bool>false</bool>
+              </property>
+              <property name="text">
+                  <string>Hide Map</string>
+              </property>
+          </widget>
+      </item>
   </layout>
  </widget>
  <resources/>

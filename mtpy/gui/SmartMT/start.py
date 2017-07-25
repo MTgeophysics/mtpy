@@ -13,9 +13,11 @@
 import os
 import sys
 
+import sip
 from PyQt4 import QtCore, QtGui
 from PyQt4.QtCore import QString
 
+from mtpy.gui.SmartMT.gui.export_dialog import ExportDialog
 from mtpy.gui.SmartMT.gui.plot_option import PlotOption
 from mtpy.gui.SmartMT.gui.progress_bar import ProgressBar
 from mtpy.gui.SmartMT.gui.station_summary import StationSummary
@@ -36,6 +38,10 @@ class StartQt4(QtGui.QMainWindow):
         self._is_file_dialog_opened = False
         self.ui = Ui_SmartMT_MainWindow()
         self.ui.setupUi(self)
+
+        # export dialog
+        self._export_dialog = ExportDialog(self)
+
         self.setup_menu()
         self._file_handler = FileHandler()
         self._station_viewer = None
@@ -62,10 +68,10 @@ class StartQt4(QtGui.QMainWindow):
         self.ui.actionCascade_Windows.triggered.connect(self._cascade_windows)
         self.ui.actionPlot.triggered.connect(self.plot_selected_station)
         self.ui.actionClose_All_Images.triggered.connect(self._close_all_images)
+        self.ui.actionExport.triggered.connect(self._export_image)
         # not yet impleneted
         self.ui.actionAbout.triggered.connect(self.dummy_action)
         self.ui.actionClose_Project.triggered.connect(self.dummy_action)
-        self.ui.actionExport.triggered.connect(self.dummy_action)
         self.ui.actionFind_Action.triggered.connect(self.dummy_action)
         self.ui.actionHelp.triggered.connect(self.dummy_action)
         self.ui.actionNew_Project.triggered.connect(self.dummy_action)
@@ -73,6 +79,12 @@ class StartQt4(QtGui.QMainWindow):
         self.ui.actionOptions.triggered.connect(self.dummy_action)
         self.ui.actionSave_as_Project.triggered.connect(self.dummy_action)
         self.ui.actionSave_Project.triggered.connect(self.dummy_action)
+
+    def _export_image(self, *args, **kwargs):
+        subwindow = self.ui.mdiArea.activeSubWindow()
+        widget = subwindow.widget()
+        if isinstance(widget, MPLCanvasWidget):
+            self._export_dialog.export_to_file(widget.get_fig())
 
     def _tile_windows(self, *args, **kwargs):
         self.ui.mdiArea.tileSubWindows()
@@ -83,10 +95,10 @@ class StartQt4(QtGui.QMainWindow):
     def _close_all_images(self, *args, **kwargs):
         close_later = []
         for title, (subwindow, action) in self.subwindows.iteritems():
-            if title != self._station_viewer.windowTitle() and\
-                title != self._station_summary.windowTitle() and\
+            if title != self._station_viewer.windowTitle() and \
+                            title != self._station_summary.windowTitle() and \
                     not isinstance(subwindow.widget(), PlotOption):
-                    close_later.append(subwindow)
+                close_later.append(subwindow)
         for subwindow in close_later:
             subwindow.close()
 
@@ -194,13 +206,16 @@ class StartQt4(QtGui.QMainWindow):
             self._station_viewer = StationViewer(self, self._file_handler)
             self.ui.actionShow_Data_Collection.setEnabled(True)
         if not self._station_summary:
-            self._station_summary = StationSummary(self, self._file_handler, self._station_viewer.fig_canvas.selected_stations)
+            self._station_summary = StationSummary(self, self._file_handler,
+                                                   self._station_viewer.fig_canvas.selected_stations)
             self.ui.actionShow_Station_Summary.setEnabled(True)
             # connect to tree view to update summary
-            self._station_viewer.ui.treeWidget_stations.selectionModel().selectionChanged.connect(self._station_summary.update_view)
+            self._station_viewer.ui.treeWidget_stations.selectionModel().selectionChanged.connect(
+                self._station_summary.update_view)
+            # connect to handle selection_changed signal from station_viewer
+            self._station_viewer.selection_changed.connect(self._station_summary.update_view)
             self._station_viewer.setFocus()
         self._station_viewer.update_view()
-        self._station_summary.update_view()
 
     def create_subwindow(self, widget, title, overide=True, tooltip=None):
         subwindow = None
@@ -224,7 +239,7 @@ class StartQt4(QtGui.QMainWindow):
         subwindow = StartQt4.MDISubWindow(self)
         subwindow.setWindowTitle(title)
         if tooltip:
-            subwindow.setToolTip(QString("<p>"+tooltip+"</p>"))
+            subwindow.setToolTip(QString("<p>" + tooltip + "</p>"))
         subwindow.setWidget(widget)
         subwindow.resize(widget.size())
         self.ui.mdiArea.addSubWindow(subwindow)
@@ -287,4 +302,10 @@ if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)
     smartMT = StartQt4()
     smartMT.show()
+
+    # hack to fix the "python has stopped working" error,
+    # the possible cause is the QtGui4.dll crashes, need to test it on linux envorinment
+    sip.setdestroyonexit(False)
+    # end of hack
+
     sys.exit(app.exec_())

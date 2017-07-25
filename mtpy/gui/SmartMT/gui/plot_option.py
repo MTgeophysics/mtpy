@@ -9,11 +9,7 @@
 from PyQt4 import QtGui
 
 from mtpy.gui.SmartMT.ui_asset.plot_options import Ui_PlotOption
-# import all VisualizationBase subclasses here
-# todo may need a better way of searching sublasses from unloaded files
-from mtpy.gui.SmartMT.visualization.penetration import *
-from mtpy.gui.SmartMT.visualization.phase_tensor import *
-from mtpy.gui.SmartMT.visualization.mt_response import *
+from mtpy.gui.SmartMT.visualization import *
 from mtpy.utils.mtpylog import MtPyLog
 
 
