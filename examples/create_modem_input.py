@@ -117,10 +117,10 @@ if __name__ == '__main__':
                   pad_z=8,  # number of vertical padding cells
                   pad_stretch_v=1.5,  # factor to increase by in padding cells (vertical)
                   pad_stretch_h=1.5,  # factor to increase by in padding cells (horizontal)
-                  n_airlayers=20,  # number of air layers 0, 10
-                  res_model=200,  # halfspace resistivity value for initial reference model
-                  n_layers=80,  # total number of z layers, including air and pad_z
-                  z1_layer=20,  # first layer thickness
+                  n_airlayers=20,  # number of air layers 0, 10, 20, depend on topo elev height
+                  res_model=100,  # halfspace resistivity value for initial reference model
+                  n_layers=70,  # total number of z layers, including air and pad_z
+                  z1_layer=100,  # first non-air layer thickness metres, depend
                   z_target_depth=500000)
 
     model.make_mesh()  # the data file will be re-write in this method. No topo elev file used yet
@@ -141,7 +141,7 @@ if __name__ == '__main__':
     # add topography, define an initial resistivity model, modify and re-write the data file, define covariance mask
     # dat file will be changed and rewritten,
     # grid centre is used as the new origin of coordinate system, topo data used in the elev column.
-    model.add_topography(topofile, interp_method='nearest')
+    model.add_topography(topofile, interp_method='nearest')  # dat file will be written again as elevation updated
 
     model.plot_topograph()  # plot the MT stations on topography elevation data
 
@@ -154,7 +154,7 @@ if __name__ == '__main__':
     cov = Covariance(mask_arr=model.covariance_mask,
                      save_path=outputdir,
                      smoothing_east=0.3,
-                     smoothing_north=0.4,
-                     smoothing_z=0.5)
+                     smoothing_north=0.3,
+                     smoothing_z=0.3)
 
     cov.write_covariance_file(model_fn=model.model_fn)
