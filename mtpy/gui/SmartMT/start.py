@@ -94,10 +94,10 @@ class StartQt4(QtGui.QMainWindow):
     def _close_all_images(self, *args, **kwargs):
         close_later = []
         for title, (subwindow, action) in self.subwindows.iteritems():
-            if title != self._station_viewer.windowTitle() and\
-                title != self._station_summary.windowTitle() and\
+            if title != self._station_viewer.windowTitle() and \
+                            title != self._station_summary.windowTitle() and \
                     not isinstance(subwindow.widget(), PlotOption):
-                    close_later.append(subwindow)
+                close_later.append(subwindow)
         for subwindow in close_later:
             subwindow.close()
 
@@ -205,10 +205,12 @@ class StartQt4(QtGui.QMainWindow):
             self._station_viewer = StationViewer(self, self._file_handler)
             self.ui.actionShow_Data_Collection.setEnabled(True)
         if not self._station_summary:
-            self._station_summary = StationSummary(self, self._file_handler, self._station_viewer.fig_canvas.selected_stations)
+            self._station_summary = StationSummary(self, self._file_handler,
+                                                   self._station_viewer.fig_canvas.selected_stations)
             self.ui.actionShow_Station_Summary.setEnabled(True)
             # connect to tree view to update summary
-            self._station_viewer.ui.treeWidget_stations.selectionModel().selectionChanged.connect(self._station_summary.update_view)
+            self._station_viewer.ui.treeWidget_stations.selectionModel().selectionChanged.connect(
+                self._station_summary.update_view)
             # connect to handle selection_changed signal from station_viewer
             self._station_viewer.selection_changed.connect(self._station_summary.update_view)
             self._station_viewer.setFocus()
@@ -236,7 +238,7 @@ class StartQt4(QtGui.QMainWindow):
         subwindow = StartQt4.MDISubWindow(self)
         subwindow.setWindowTitle(title)
         if tooltip:
-            subwindow.setToolTip(QString("<p>"+tooltip+"</p>"))
+            subwindow.setToolTip(QString("<p>" + tooltip + "</p>"))
         subwindow.setWidget(widget)
         subwindow.resize(widget.size())
         self.ui.mdiArea.addSubWindow(subwindow)

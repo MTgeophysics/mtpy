@@ -65,7 +65,7 @@ class ExportDialog(QtGui.QDialog):
 
     _orientation = ['portrait', 'landscape']
 
-    _alpha_channel_formats = ()  # ("png", "gif", "psd")
+    _no_alpha_channel_formats = ('jpg', 'jpeg')  # ("png", "gif", "psd")
 
     def _file_type_changed(self, *args, **kwargs):
         index = self.ui.comboBox_fileType.currentIndex()
@@ -73,10 +73,10 @@ class ExportDialog(QtGui.QDialog):
         filename = str(self.ui.comboBox_fileName.currentText())
         filename, _ = os.path.splitext(filename)
 
-        if ext in self._alpha_channel_formats:  # enable transparent if the format supports
-            self.ui.checkBox_transparent.setEnabled(True)
-        else:
+        if ext in self._no_alpha_channel_formats:  # enable transparent if the format supports
             self.ui.checkBox_transparent.setEnabled(False)
+        else:
+            self.ui.checkBox_transparent.setEnabled(True)
 
         # update file name
         filename = "%s.%s" % (filename, ext)
@@ -113,58 +113,61 @@ class ExportDialog(QtGui.QDialog):
                                                        else self.ui.comboBox_directory.findText(directory))
 
     def export_to_file(self, fig):
-        response = self.exec_()
-        if response == QtGui.QDialog.Accepted:
-            # saving files
+        respawn = True
+        while respawn:
+            respawn = False
+            response = self.exec_()
+            if response == QtGui.QDialog.Accepted:
+                # saving files
+                fname = self.get_save_file_name()
 
-            fname = self.get_save_file_name()
+                if os.path.exists(fname):
+                    new_name = generate_unique_file_name(fname)
+                    self._show_file_exist_message(fname, new_name)
+                    if self._msg_box.clickedButton() == self._msg_box.button_cancel:
+                        respawn = True
+                        continue
+                    elif self._msg_box.clickedButton() == self._msg_box.button_save_as:
+                        fname = new_name  # save_as
+                    else:
+                        pass  # use the original name to overwrite
 
-            if os.path.exists(fname):
-                new_name = generate_unique_file_name(fname)
-                self._show_file_exist_message(fname, new_name)
-                if self._msg_box.clickedButton() == self._msg_box.button_cancel:
-                    return  # todo go back to the export window
-                elif self._msg_box.clickedButton() == self._msg_box.button_save_as:
-                    fname = new_name  # save_as
-                else:
-                    pass  # use the original name to overwrite
+                params = self.get_savefig_params()
+                try:
+                    fig.savefig(fname, **params)
+                except IOError as err:
+                    if 'RGBA' in err.message:
+                        # if the problem is RGBA as the alpha channel is not supported in the selected format
+                        # save to png then save as
+                        basename = os.path.basename(fname)
+                        tmp_dir = tempfile.gettempdir()
+                        filename, ext = os.path.splitext(basename)
+                        png_file = filename + ".png"
+                        final_format = params['format']
+                        params['format'] = 'png'
+                        new_fname = os.path.join(tmp_dir, png_file)
+                        fig.savefig(new_fname, **params)
+                        im = Image.open(new_fname)
+                        rgb_im = im.convert('RGB')
+                        # make sure the fname is ended with the right extension
+                        fname, _ = os.path.splitext(fname)
+                        fname += "." + final_format
+                        rgb_im.save(fname)
+                    else:
+                        raise err
+                except Exception as e:
+                    frm = inspect.trace()[-1]
+                    mod = inspect.getmodule(frm[0])
+                    QtGui.QMessageBox.critical(self,
+                                               'Exporting Error',
+                                               "{}: {}".format(mod.__name__, e.message), QtGui.QMessageBox.Close)
+                    raise e
 
-            params = self.get_savefig_params()
-            try:
-                fig.savefig(fname, **params)
-            except IOError as err:
-                if 'RGBA' in err.message:
-                    # if the problem is RGBA as the alpha channel is not supported in the selected format
-                    # save to png then save as
-                    basename = os.path.basename(fname)
-                    tmp_dir = tempfile.gettempdir()
-                    filename, ext = os.path.splitext(basename)
-                    png_file = filename + ".png"
-                    final_format = params['format']
-                    params['format'] = 'png'
-                    new_fname = os.path.join(tmp_dir, png_file)
-                    fig.savefig(new_fname, **params)
-                    im = Image.open(new_fname)
-                    rgb_im = im.convert('RGB')
-                    # make sure the fname is ended with the right extension
-                    fname, _ = os.path.splitext(fname)
-                    fname += "." + final_format
-                    rgb_im.save(fname)
-                else:
-                    raise err
-            except Exception as e:
-                frm = inspect.trace()[-1]
-                mod = inspect.getmodule(frm[0])
-                QtGui.QMessageBox.critical(self,
-                                           'Exporting Error',
-                                           "{}: {}".format(mod.__name__, e.message), QtGui.QMessageBox.Close)
-                raise e
-
-            if self.ui.checkBox_open_after_export.isChecked():
-                # open with the system default application, this should work on all platforms
-                webbrowser.open(fname)
-            return fname
-            # elif response == QtGu
+                if self.ui.checkBox_open_after_export.isChecked():
+                    # open with the system default application, this should work on all platforms
+                    webbrowser.open(fname)
+                return fname
+                # elif response == QtGu
 
     def _show_file_exist_message(self, fname, new_name):
         self._msg_box.setText(
