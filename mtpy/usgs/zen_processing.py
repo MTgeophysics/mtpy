@@ -1165,6 +1165,9 @@ class Z3D_to_edi(object):
                 # fill in the dictionary accordingly
                 s_dict[df].append(s_fn_birrp_arr[np.nonzero(s_fn_birrp_arr['nread'])])
         
+        # need to check for maximum number of points
+                
+        
         # return the station dictionary        
         return s_dict
         
@@ -1567,28 +1570,36 @@ class Z3D_to_edi(object):
                                    
         count = 0
         for edi_fn in edi_fn_list:
-            try:
-                edi_obj = mtedi.Edi(edi_fn)
-                # get sampling rate from directory path
-                for fkey in sorted(sr_dict.keys(), reverse=True):
-                    if str(fkey) in edi_fn:
-                        # locate frequency range
-                        f_index = np.where((edi_obj.Z.freq >= sr_dict[fkey][1]) & 
-                                           (edi_obj.Z.freq <= sr_dict[fkey][0]))
-                                           
-                                           
-                        data_arr['freq'][count:count+len(f_index[0])] = edi_obj.Z.freq[f_index]
-                        data_arr['z'][count:count+len(f_index[0])] = edi_obj.Z.z[f_index]
-                        data_arr['z_err'][count:count+len(f_index[0])] = edi_obj.Z.z_err[f_index]
-                        if edi_obj.Tipper.tipper is not None:                    
-                            data_arr['tipper'][count:count+len(f_index[0])] = edi_obj.Tipper.tipper[f_index]
-                            data_arr['tipper_err'][count:count+len(f_index[0])] = edi_obj.Tipper.tipper_err[f_index]
-            
-                        count += len(f_index[0])
-            except IndexError:
-                print 'Something went wrong with processing {0}'.format(edi_fn)
+            # get sampling rate from file name 
+            fn_list = edi_fn[edi_fn.find('BF'):].split(os.path.sep)
+            for ss in fn_list:
+                try:
+                    sr_key = int(ss)
+                    break
+                except ValueError:
+                    pass
+            if sr_key in sr_dict.keys():
+                try:
+                    edi_obj = mtedi.Edi(edi_fn)
+                    # locate frequency range
+                    f_index = np.where((edi_obj.Z.freq >= sr_dict[sr_key][1]) & 
+                                       (edi_obj.Z.freq <= sr_dict[sr_key][0]))
+                                       
+                                       
+                    data_arr['freq'][count:count+len(f_index[0])] = edi_obj.Z.freq[f_index]
+                    data_arr['z'][count:count+len(f_index[0])] = edi_obj.Z.z[f_index]
+                    data_arr['z_err'][count:count+len(f_index[0])] = edi_obj.Z.z_err[f_index]
+                    if edi_obj.Tipper.tipper is not None:                    
+                        data_arr['tipper'][count:count+len(f_index[0])] = edi_obj.Tipper.tipper[f_index]
+                        data_arr['tipper_err'][count:count+len(f_index[0])] = edi_obj.Tipper.tipper_err[f_index]
+        
+                    count += len(f_index[0])
+                except IndexError:
+                    print 'Something went wrong with processing {0}'.format(edi_fn)
                 
-                    
+            else:
+                print '{0} was not in combining dictionary'.format(sr_key)
+                
         # now replace
         data_arr = data_arr[np.nonzero(data_arr['freq'])]
         sort_index = np.argsort(data_arr['freq'])

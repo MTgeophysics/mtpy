@@ -682,7 +682,7 @@ class Edi(object):
         set latitude and make sure it is converted to a float
         """
         
-        self.Header.lat = MTft._assert_position_format('lat', input_lat)
+        self.Header.lat = gis_tools.assert_lat_value(input_lat)
         print 'Converted input latitude to decimal degrees: {0: .6f}'.format(
                                                                self.Header.lat)
         
@@ -694,7 +694,7 @@ class Edi(object):
          return self.Header.lon
                         
     def _set_lon(self, input_lon):
-        self.Header.lon = MTft._assert_position_format('lon', input_lon)
+        self.Header.lon = gis_tools.assert_lon_value(input_lon)
         print 'Converted input longitude to decimal degrees: {0: .6f}'.format(
                                                                self.Header.lon)
         
@@ -706,7 +706,7 @@ class Edi(object):
          return self.Header.elev
                         
     def _set_elev(self, input_elev):
-        self.Header.elev = MTft._assert_position_format('elev', input_elev)
+        self.Header.elev = gis_tools.assert_elevation_value(input_elev)
         
     elev = property(fget=_get_elev, fset=_set_elev, 
                    doc='Elevation in meters')

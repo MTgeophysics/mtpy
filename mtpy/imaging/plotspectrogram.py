@@ -434,8 +434,11 @@ class PlotTF(object):
             self.axtf = self.fig.add_axes([.25, .25, .75, .7])
             
             #plot time series
-            time_array = np.arange(len(self.time_series))/self.df+\
-                                                        self.start_time/self.df
+            st = self.start_time
+            time_array = np.arange(st, 
+                                   st+self.time_series.size/self.df,
+                                   1./self.df)
+                                                       
             self.axts.plot(time_array, 
                            self.time_series, 
                            color=self.line_color_ts,
