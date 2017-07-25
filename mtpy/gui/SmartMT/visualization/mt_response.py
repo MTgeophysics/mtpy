@@ -57,9 +57,7 @@ class MTResponse(VisualizationBase):
         self._ellipse_ui = Ellipse(self._parameter_ui)
         self._ellipse_ui.setHidden(True)
         # make the radio button toggle hidden of the ellipses groupbox
-        QtCore.QObject.connect(self._plot_control_ui.ui.radioButton_ellipses_y,
-                               QtCore.SIGNAL('toggled(bool)'),
-                               lambda args: self._ellipse_ui.setHidden(not self._ellipse_ui.isHidden()))
+        self._plot_control_ui.ui.radioButton_ellipses_y.toggled.connect(self._ellipse_radio_button_toggled)
         self._parameter_ui.add_parameter_groubox(self._ellipse_ui)
 
         self._arrow_ui = Arrow(self._parameter_ui)
@@ -69,6 +67,9 @@ class MTResponse(VisualizationBase):
         self._parameter_ui.add_parameter_groubox(self._rotation_ui)
 
         self._parameter_ui.end_of_parameter_components()
+
+    def _ellipse_radio_button_toggled(self, b):
+        self._ellipse_ui.setHidden(not self._ellipse_ui.isHidden())
 
     def update_ui(self):
         self._station_ui.set_data(self._mt_objs)

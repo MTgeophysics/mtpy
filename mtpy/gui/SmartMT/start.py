@@ -50,10 +50,13 @@ class StartQt4(QtGui.QMainWindow):
         self._progress_bar = ProgressBar(title='Loading files...')
         self.subwindows = {}
         # enable export if the activated subwindow is a image window
-        self.ui.mdiArea.subWindowActivated.connect(
-            lambda subwindow: self.ui.actionExport.setEnabled(True)
-            if subwindow and isinstance(subwindow.widget(), MPLCanvasWidget)
-            else self.ui.actionExport.setEnabled(False))
+        self.ui.mdiArea.subWindowActivated.connect(self._subwindow_activated)
+
+    def _subwindow_activated(self, subwindow):
+        if subwindow and isinstance(subwindow.widget(), MPLCanvasWidget):
+            self.ui.actionExport.setEnabled(True)
+        else:
+            self.ui.actionExport.setEnabled(False)
 
     def setup_menu(self):
         # connect exit menu
@@ -304,7 +307,14 @@ if __name__ == "__main__":
     smartMT.show()
 
     # hack to fix the "python has stopped working" error,
-    # the possible cause is the QtGui4.dll crashes, need to test it on linux envorinment
+    # the possible cause is the QtGui4.dll crashes, need to test it on linux environment
+    # ref of the issue: http://pyqt.sourceforge.net/Docs/sip4/python_api.html
+    #   "When the Python interpreter exits it garbage collects those objects that it can.
+    #    This means that any corresponding C++ instances and C structures owned by Python
+    #    are destroyed. Unfortunately this happens in an unpredictable order and so can
+    #    cause memory faults within the wrapped library. Calling this function with a
+    #    value of False disables the automatic destruction of C++ instances and C
+    #    structures."
     sip.setdestroyonexit(False)
     # end of hack
 

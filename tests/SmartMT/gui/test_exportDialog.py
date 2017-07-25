@@ -212,19 +212,19 @@ class TestExportDialog(TestCase):
     def _fake_msg_dialog_exec_overwrite(self):
         self.dialog._msg_box.show()
         QTest.qWaitForWindowShown(self.dialog._msg_box)
-        QTest.mouseClick(self.dialog._msg_box.button_overwrite, QtCore.Qt.LeftButton)
+        QTest.mouseClick(self.dialog._msg_box_button_overwrite, QtCore.Qt.LeftButton)
         return QtGui.QMessageBox.Accepted
 
     def _fake_msg_dialog_exec_save_as(self):
         self.dialog._msg_box.show()
         QTest.qWaitForWindowShown(self.dialog._msg_box)
-        QTest.mouseClick(self.dialog._msg_box.button_save_as, QtCore.Qt.LeftButton)
+        QTest.mouseClick(self.dialog._msg_box_button_save_as, QtCore.Qt.LeftButton)
         return QtGui.QMessageBox.Accepted
 
     def _fake_msg_dialog_exec_cancel(self):
         self.dialog._msg_box.show()
         QTest.qWaitForWindowShown(self.dialog._msg_box)
-        QTest.mouseClick(self.dialog._msg_box.button_cancel, QtCore.Qt.LeftButton)
+        QTest.mouseClick(self.dialog._msg_box_button_cancel, QtCore.Qt.LeftButton)
         return QtGui.QMessageBox.Cancel
 
     def _fake_export_dialog_exec_cancel(self):

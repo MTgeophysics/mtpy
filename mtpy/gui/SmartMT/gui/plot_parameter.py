@@ -144,7 +144,6 @@ class FrequencySingle(QtGui.QGroupBox):
         # add matplotlib canvas
         self.ui.verticalLayoutFrequencyPeriod.addWidget(self._histogram)
         # connect components
-        # self.ui.horizontalSliderPeriod.valueChanged.connect(lambda value: self.update_period_text(value))
         self.ui.comboBoxPeriod.currentIndexChanged.connect(self.update_histogram)
         self.ui.comboBoxPeriod.editTextChanged.connect(self.update_histogram)
         self._histogram.mpl_connect('button_release_event', self._mouse_pick)
@@ -338,17 +337,27 @@ class ColorBar(QtGui.QGroupBox):
         self.ui.setupUi(self)
 
         # connect event
-        self.ui.horizontalSlider_x.valueChanged.connect(lambda value: self.ui.doubleSpinBox_x.setValue(value / 100.0))
-        self.ui.horizontalSlider_y.valueChanged.connect(lambda value: self.ui.doubleSpinBox_y.setValue(value / 100.0))
-        self.ui.horizontalSlider_width.valueChanged.connect(
-            lambda value: self.ui.doubleSpinBox_width.setValue(value / 100.0))
-        self.ui.horizontalSlider_height.valueChanged.connect(
-            lambda value: self.ui.doubleSpinBox_height.setValue(value / 100.0))
+        self.ui.horizontalSlider_x.valueChanged.connect(self._x_slider_value_changed)
+        self.ui.horizontalSlider_y.valueChanged.connect(self._y_slider_value_changed)
+        self.ui.horizontalSlider_width.valueChanged.connect(self._width_slider_value_changed)
+        self.ui.horizontalSlider_height.valueChanged.connect(self._height_slider_value_changed)
         self.ui.comboBox_orientation.currentIndexChanged.connect(self._orientation_changed)
         self.ui.doubleSpinBox_x.editingFinished.connect(self._update_slider_x)
         self.ui.doubleSpinBox_y.editingFinished.connect(self._update_slider_y)
         self.ui.doubleSpinBox_width.editingFinished.connect(self._update_slider_width)
         self.ui.doubleSpinBox_height.editingFinished.connect(self._update_slider_height)
+
+    def _width_slider_value_changed(self, value):
+        self.ui.doubleSpinBox_width.setValue(value / 100.0)
+
+    def _height_slider_value_changed(self, value):
+        self.ui.doubleSpinBox_height.setValue(value / 100.0)
+
+    def _x_slider_value_changed(self, value):
+        self.ui.doubleSpinBox_x.setValue(value / 100.0)
+
+    def _y_slider_value_changed(self, value):
+        self.ui.doubleSpinBox_y.setValue(value / 100.0)
 
     def _orientation_changed(self, *args):
         x = self.ui.doubleSpinBox_x.value()
