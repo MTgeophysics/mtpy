@@ -19,7 +19,7 @@ import matplotlib.pyplot as plt
 from mtpy.gui.SmartMT.ui_asset.dialog_export import Ui_Dialog_Export
 
 IMAGE_FORMATS = []
-filetypes = plt.gcf().canvas.get_supported_filetypes()  # this may need to be set everytime
+filetypes = plt.gcf().canvas.get_supported_filetypes()
 for type, description in filetypes.iteritems():
     IMAGE_FORMATS.append((type, description))
 
@@ -56,7 +56,7 @@ class ExportDialog(QtGui.QDialog):
         self.ui.pushButton_export.clicked.connect(lambda b: self.accept())
 
         # message box for when the file already exist
-        self._msg_box = QtGui.QMessageBox()
+        self._msg_box = QtGui.QMessageBox(self)
         self._msg_box.setWindowTitle("Export...")
         self._msg_box.button_overwrite = self._msg_box.addButton(self.tr("Overwrite"), QtGui.QMessageBox.AcceptRole)
         self._msg_box.button_save_as = self._msg_box.addButton(self.tr("Save As"), QtGui.QMessageBox.ActionRole)
@@ -160,7 +160,8 @@ class ExportDialog(QtGui.QDialog):
                     mod = inspect.getmodule(frm[0])
                     QtGui.QMessageBox.critical(self,
                                                'Exporting Error',
-                                               "{}: {}".format(mod.__name__, e.message), QtGui.QMessageBox.Close)
+                                               "{}: {}".format(mod.__name__, e.message),
+                                               QtGui.QMessageBox.Close)
                     raise e
 
                 if self.ui.checkBox_open_after_export.isChecked():
@@ -183,7 +184,6 @@ class ExportDialog(QtGui.QDialog):
         return name
 
     def get_savefig_params(self):
-        # todo error checking
         params = {
             'dpi': self.ui.spinBox_dpi.value(),
             'orientation': self.get_orientation(),

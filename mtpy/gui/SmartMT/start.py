@@ -13,6 +13,7 @@
 import os
 import sys
 
+import sip
 from PyQt4 import QtCore, QtGui
 from PyQt4.QtCore import QString
 
@@ -301,4 +302,10 @@ if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)
     smartMT = StartQt4()
     smartMT.show()
+
+    # hack to fix the "python has stopped working" error,
+    # the possible cause is the QtGui4.dll crashes, need to test it on linux envorinment
+    sip.setdestroyonexit(False)
+    # end of hack
+
     sys.exit(app.exec_())
