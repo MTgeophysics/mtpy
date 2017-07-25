@@ -9,7 +9,9 @@
 """
 import inspect
 import os
+import tempfile
 
+from PIL import Image
 from PyQt4 import QtGui, QtCore
 import matplotlib.pyplot as plt
 
@@ -129,6 +131,26 @@ class ExportDialog(QtGui.QDialog):
             params = self.get_savefig_params()
             try:
                 fig.savefig(fname, **params)
+            except IOError as err:
+                if 'RGBA' in err.message:
+                    # if the problem is RGBA as the alpha channel is not supported in the selected format
+                    # save to png then save as
+                    basename = os.path.basename(fname)
+                    tmp_dir = tempfile.gettempdir()
+                    filename, ext = os.path.splitext(basename)
+                    png_file = filename + ".png"
+                    final_format = params['format']
+                    params['format'] = 'png'
+                    new_fname = os.path.join(tmp_dir, png_file)
+                    fig.savefig(new_fname, **params)
+                    im = Image.open(new_fname)
+                    rgb_im = im.convert('RGB')
+                    # make sure the fname is ended with the right extension
+                    fname, _ = os.path.splitext(fname)
+                    fname += "." + final_format
+                    rgb_im.save(fname)
+                else:
+                    raise err
             except Exception as e:
                 frm = inspect.trace()[-1]
                 mod = inspect.getmodule(frm[0])

@@ -28,33 +28,38 @@ def _rewrite_text(widget, text):
     QTest.keyEvent(QTest.Click, widget, QtCore.Qt.Key_Enter)
 
 
+def _create_fig():
+    t = np.arange(0.0, 2.0, 0.01)
+    s = 1 + np.sin(2 * np.pi * t)
+    plt.plot(t, s)
+    plt.xlabel('time (s)')
+    plt.ylabel('voltage (mV)')
+    plt.title('About as simple as it gets, folks')
+    plt.grid(True)
+    # plt.savefig("test.png")
+    # plt.show()
+    return plt.gcf()  # get access to the current fig
+
+
 class TestExportDialog(TestCase):
     @classmethod
     def setUpClass(cls):
-        # create figure
-        t = np.arange(0.0, 2.0, 0.01)
-        s = 1 + np.sin(2 * np.pi * t)
-        plt.plot(t, s)
-        plt.xlabel('time (s)')
-        plt.ylabel('voltage (mV)')
-        plt.title('About as simple as it gets, folks')
-        plt.grid(True)
-        # plt.savefig("test.png")
-        # plt.show()
-        cls._fig = plt.gcf()  # get access to the current fig
         # setup temp dir
         cls._temp_dir = "tests/temp"
         if not os.path.isdir(cls._temp_dir):
             os.mkdir(cls._temp_dir)
 
     def setUp(self):
-        """ create GUI"""
+        # create figure
+        self._fig = _create_fig()
+        # create GUI
         self.dialog = ExportDialog()
         self.dialog.show()
         QTest.qWaitForWindowShown(self.dialog)
 
     def tearDown(self):
         self.dialog.close()
+        plt.clf()
 
     def test_defaults(self):
         """ test gui default state"""
@@ -170,15 +175,34 @@ class TestExportDialog(TestCase):
         self.assertTrue(file_count + 1 == new_file_count)  # one extra file should be created
         file_count = new_file_count
 
+    def test_dpi(self):
         # save to higher dpi
+        # set export dir
+        _rewrite_text(self.dialog.ui.comboBox_directory,
+                      os.path.abspath(self._temp_dir))
+        self.dialog.exec_ = self._fake_export_dialog_exec_export
+        self.dialog._msg_box.exec_ = self._fake_msg_dialog_exec_overwrite
+
+        QTest.keyClicks(self.dialog.ui.spinBox_dpi, '400')
+        _rewrite_text(self.dialog.ui.comboBox_fileName, "400dpi.jpg")
+        fname = self.dialog.export_to_file(self._fig)
+        self.assertTrue(os.path.exists(fname), "File exists")
+        new_file_count = len([name for name in os.listdir(self._temp_dir)
+                              if os.path.isfile(os.path.join(self._temp_dir, name))])
+
         QTest.keyClicks(self.dialog.ui.spinBox_dpi, '600')
         _rewrite_text(self.dialog.ui.comboBox_fileName, "600dpi.jpg")
         fname = self.dialog.export_to_file(self._fig)
         self.assertTrue(os.path.exists(fname), "File exists")
         new_file_count = len([name for name in os.listdir(self._temp_dir)
                               if os.path.isfile(os.path.join(self._temp_dir, name))])
-        self.assertTrue(file_count + 1 == new_file_count)  # one extra file should be created
-        file_count = new_file_count
+
+        QTest.keyClicks(self.dialog.ui.spinBox_dpi, '1000')
+        _rewrite_text(self.dialog.ui.comboBox_fileName, "1000dpi.jpg")
+        fname = self.dialog.export_to_file(self._fig)
+        self.assertTrue(os.path.exists(fname), "File exists")
+        new_file_count = len([name for name in os.listdir(self._temp_dir)
+                              if os.path.isfile(os.path.join(self._temp_dir, name))])
 
     def _fake_msg_dialog_exec_overwrite(self):
         self.dialog._msg_box.show()
