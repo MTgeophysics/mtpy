@@ -1,4 +1,5 @@
 import sys
+
 from PyQt4 import QtCore, QtGui
 from unittest import TestCase
 import matplotlib.pyplot as plt
@@ -8,7 +9,7 @@ import os
 from PyQt4.QtGui import QApplication
 from PyQt4.QtTest import QTest
 
-from mtpy.gui.SmartMT.gui.export_dialog import ExportDialog
+from mtpy.gui.SmartMT.gui.export_dialog import ExportDialog, IMAGE_FORMATS
 
 app = QApplication(sys.argv)
 
@@ -68,7 +69,7 @@ class TestExportDialog(TestCase):
                         "Supported Formats")
 
         self.assertTrue(self.dialog.ui.checkBox_tightBbox.isChecked(), "Tight Layout Default")
-        self.assertFalse(self.dialog.ui.checkBox_transparent.isChecked(), "Transparent Default")
+        self.assertFalse(self.dialog.get_transparent(), "Transparent Default")
         self.assertTrue(self.dialog.ui.comboBox_orientation.currentText() == "Landscape", "Orientation Default")
         self.assertTrue(self.dialog.ui.spinBox_dpi.value() == 300)
         self.assertTrue(self.dialog.ui.checkBox_open_after_export.isChecked())
@@ -91,6 +92,8 @@ class TestExportDialog(TestCase):
                         "Changed file name")
         # format should have changed
         self.assertTrue(self.dialog.get_file_format()[0] == "jpg")
+        # transparent should be false
+        self.assertFalse(self.dialog.get_transparent(), "transparent")
 
         # change to file with unsupported format
         _rewrite_text(self.dialog.ui.comboBox_fileName, "test_file_2.abcd")
@@ -129,7 +132,6 @@ class TestExportDialog(TestCase):
 
     def test_export(self):
         # set export dir
-
         _rewrite_text(self.dialog.ui.comboBox_directory,
                       os.path.abspath(self._temp_dir))
         fname = self.dialog.get_save_file_name()
@@ -165,7 +167,17 @@ class TestExportDialog(TestCase):
         self.assertTrue(os.path.exists(fname), "File exists")
         new_file_count = len([name for name in os.listdir(self._temp_dir)
                               if os.path.isfile(os.path.join(self._temp_dir, name))])
-        self.assertTrue(file_count + 1 == new_file_count)  # one extra file should be creataed
+        self.assertTrue(file_count + 1 == new_file_count)  # one extra file should be created
+        file_count = new_file_count
+
+        # save to higher dpi
+        QTest.keyClicks(self.dialog.ui.spinBox_dpi, '600')
+        _rewrite_text(self.dialog.ui.comboBox_fileName, "600dpi.jpg")
+        fname = self.dialog.export_to_file(self._fig)
+        self.assertTrue(os.path.exists(fname), "File exists")
+        new_file_count = len([name for name in os.listdir(self._temp_dir)
+                              if os.path.isfile(os.path.join(self._temp_dir, name))])
+        self.assertTrue(file_count + 1 == new_file_count)  # one extra file should be created
         file_count = new_file_count
 
     def _fake_msg_dialog_exec_overwrite(self):
@@ -193,3 +205,36 @@ class TestExportDialog(TestCase):
     def _fake_export_dialog_exec_export(self):
         QTest.mouseClick(self.dialog.ui.pushButton_export, QtCore.Qt.LeftButton)
         return QtGui.QDialog.Accepted
+
+
+def _transparent_test_gen(index, ext, description):
+    def test_transparent(self):
+        # set to save to tmp dir
+        _rewrite_text(self.dialog.ui.comboBox_directory,
+                      os.path.abspath(self._temp_dir))
+
+        self.dialog.exec_ = self._fake_export_dialog_exec_export
+        self.dialog._msg_box.exec_ = self._fake_msg_dialog_exec_overwrite
+
+        # print "testing save to {0[1]} (.{0[0]})".format(self.dialog.get_file_format())
+        for isTrans in [True, False]:
+            _rewrite_text(self.dialog.ui.comboBox_fileName, "transparent_{}.{}".format(isTrans, ext))
+            self.dialog.ui.comboBox_fileType.setCurrentIndex(index)
+            self.assertTrue((ext, description) == self.dialog.get_file_format(), "sanity check")
+            self.dialog.ui.checkBox_transparent.setChecked(isTrans)
+            try:
+                fname = self.dialog.export_to_file(self._fig)
+            except RuntimeError as e:
+                self.skipTest(e.message)
+            self.assertTrue(os.path.exists(fname),
+                            "testing save to {0[1]} (.{0[0]}) without transparent".format(
+                                self.dialog.get_file_format()))
+
+    return test_transparent
+
+
+# generate tests
+for index, (ext, description) in enumerate(IMAGE_FORMATS):
+    test = _transparent_test_gen(index, ext, description)
+    test.__name__ = "test_transparent_{}".format(ext)
+    setattr(TestExportDialog, test.__name__, test)

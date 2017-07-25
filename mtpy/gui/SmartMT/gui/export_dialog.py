@@ -7,12 +7,18 @@
     Author: YingzhiGou
     Date: 24/07/2017
 """
+import inspect
 import os
 
 from PyQt4 import QtGui, QtCore
 import matplotlib.pyplot as plt
 
 from mtpy.gui.SmartMT.ui_asset.dialog_export import Ui_Dialog_Export
+
+IMAGE_FORMATS = []
+filetypes = plt.gcf().canvas.get_supported_filetypes()  # this may need to be set everytime
+for type, description in filetypes.iteritems():
+    IMAGE_FORMATS.append((type, description))
 
 
 class ExportDialog(QtGui.QDialog):
@@ -22,11 +28,9 @@ class ExportDialog(QtGui.QDialog):
         self.ui.setupUi(self)
 
         # setup file types
-        self._formats = []
-        filetypes = plt.gcf().canvas.get_supported_filetypes()  # this may need to be set everytime
-        for type, description in filetypes.iteritems():
-            self.ui.comboBox_fileType.addItem("%s (.%s)" % (description, type))
-            self._formats.append((type, description))
+        for frmt in IMAGE_FORMATS:
+            self.ui.comboBox_fileType.addItem("{0[1]} (.{0[0]})".format(frmt))
+
         self._file_name_changed()  # select the default format
 
         # setup directory and dir dialog
@@ -58,11 +62,18 @@ class ExportDialog(QtGui.QDialog):
 
     _orientation = ['portrait', 'landscape']
 
+    _alpha_channel_formats = ()  # ("png", "gif", "psd")
+
     def _file_type_changed(self, *args, **kwargs):
         index = self.ui.comboBox_fileType.currentIndex()
-        ext, _ = self._formats[index]
+        ext, _ = IMAGE_FORMATS[index]
         filename = str(self.ui.comboBox_fileName.currentText())
         filename, _ = os.path.splitext(filename)
+
+        if ext in self._alpha_channel_formats:  # enable transparent if the format supports
+            self.ui.checkBox_transparent.setEnabled(True)
+        else:
+            self.ui.checkBox_transparent.setEnabled(False)
 
         # update file name
         filename = "%s.%s" % (filename, ext)
@@ -77,7 +88,7 @@ class ExportDialog(QtGui.QDialog):
         filename, extension = os.path.splitext(filename)
         extension = extension[1:]  # get ride of .
         # check if the extension is supported
-        index = [i for i, (ext, dsc) in enumerate(self._formats) if ext == extension]
+        index = [i for i, (ext, dsc) in enumerate(IMAGE_FORMATS) if ext == extension]
         if index:
             self.ui.comboBox_fileType.setCurrentIndex(index[0])
         elif extension:
@@ -116,7 +127,15 @@ class ExportDialog(QtGui.QDialog):
                     pass  # use the original name to overwrite
 
             params = self.get_savefig_params()
-            fig.savefig(fname, **params)
+            try:
+                fig.savefig(fname, **params)
+            except Exception as e:
+                frm = inspect.trace()[-1]
+                mod = inspect.getmodule(frm[0])
+                QtGui.QMessageBox.critical(self,
+                                           'Exporting Error',
+                                           "{}: {}".format(mod.__name__, e.message), QtGui.QMessageBox.Close)
+                raise e
             return fname
             # elif response == QtGu
 
@@ -139,13 +158,16 @@ class ExportDialog(QtGui.QDialog):
             'dpi': self.ui.spinBox_dpi.value(),
             'orientation': self.get_orientation(),
             'format': self.get_file_format()[0],
-            'transparent': self.ui.checkBox_transparent.isChecked(),
+            'transparent': self.get_transparent(),
             'bbox_inches': self.get_bbox_inches()
         }
         return params
 
+    def get_transparent(self):
+        return self.ui.checkBox_transparent.isEnabled() and self.ui.checkBox_transparent.isChecked()
+
     def get_file_format(self):
-        return self._formats[self.ui.comboBox_fileType.currentIndex()]
+        return IMAGE_FORMATS[self.ui.comboBox_fileType.currentIndex()]
 
     def get_bbox_inches(self):
         return 'tight' if self.ui.checkBox_tightBbox.isChecked() else None
