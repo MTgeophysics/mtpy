@@ -106,17 +106,6 @@
         </item>
     </widget>
    </item>
-   <item row="6" column="0" colspan="5">
-    <widget class="QGroupBox" name="groupBox_2">
-     <property name="title">
-      <string>Advanced Options</string>
-     </property>
-     <zorder>groupBox</zorder>
-     <zorder>groupBox</zorder>
-     <zorder>groupBox</zorder>
-     <zorder>groupBox</zorder>
-    </widget>
-   </item>
    <item row="4" column="4">
     <widget class="QCheckBox" name="checkBox_transparent">
      <property name="toolTip">
@@ -212,7 +201,14 @@
      </property>
     </widget>
    </item>
-   <item row="7" column="0" colspan="5">
+      <item row="6" column="0" colspan="5">
+          <widget class="QGroupBox" name="groupBox_2">
+              <property name="title">
+                  <string>Advanced Options</string>
+              </property>
+          </widget>
+      </item>
+      <item row="8" column="0" colspan="5">
     <widget class="QWidget" name="widget" native="true">
      <property name="sizePolicy">
       <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
@@ -220,10 +216,7 @@
        <verstretch>0</verstretch>
       </sizepolicy>
      </property>
-     <layout class="QHBoxLayout" name="horizontalLayout_2">
-      <property name="spacing">
-       <number>0</number>
-      </property>
+        <layout class="QGridLayout" name="gridLayout">
       <property name="leftMargin">
        <number>0</number>
       </property>
@@ -236,7 +229,21 @@
       <property name="bottomMargin">
        <number>0</number>
       </property>
-      <item>
+            <item row="1" column="2">
+                <widget class="QPushButton" name="pushButton_export">
+                    <property name="text">
+                        <string>Export</string>
+                    </property>
+                </widget>
+            </item>
+            <item row="1" column="0">
+                <widget class="QPushButton" name="pushButton_preview">
+                    <property name="text">
+                        <string>Preview</string>
+                    </property>
+                </widget>
+            </item>
+            <item row="1" column="1">
        <spacer name="horizontalSpacer">
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
@@ -249,24 +256,20 @@
         </property>
        </spacer>
       </item>
-      <item>
-       <widget class="QPushButton" name="pushButton_preview">
+            <item row="1" column="3">
+                <widget class="QPushButton" name="pushButton_cancel">
         <property name="text">
-         <string>Preview</string>
+            <string>Cancel</string>
         </property>
        </widget>
       </item>
-      <item>
-       <widget class="QPushButton" name="pushButton_export">
+            <item row="0" column="2" colspan="2">
+                <widget class="QCheckBox" name="checkBox_open_after_export">
         <property name="text">
-         <string>Export</string>
+            <string>Open Image After Export</string>
         </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QPushButton" name="pushButton_cancel">
-        <property name="text">
-         <string>Cancel</string>
+                    <property name="checked">
+                        <bool>true</bool>
         </property>
        </widget>
       </item>
