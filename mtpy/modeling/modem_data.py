@@ -953,9 +953,9 @@ class Data(object):
                 dlines.append('> exp({0}i\omega t)\n'.format(
                     self.wave_sign_tipper))
                 dlines.append('> []\n')
-            dlines.append('> 0\n')  # oriention, need to add at some point
+            dlines.append('> 0.00\n')  # oriention, need to add at some point
             dlines.append('> {0: >10.6f} {1:>10.6f}\n'.format(
-                self.center_position[0], self.center_position[1]))
+                self.center_position[1], self.center_position[0]))  # (lat,long) correct order
             dlines.append('> {0} {1}\n'.format(nper,
                                                self.data_array['z'].shape[0]))
 
