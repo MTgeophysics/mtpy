@@ -16,6 +16,9 @@ class ProgressBar(QtGui.QWidget):
         if title:
             self.setWindowTitle(title)
 
+    def setRange(self, min, max):
+        self.progressbar.setRange(min, max)
+
     def setValue(self, value):
         self.progressbar.setValue(value)
 
