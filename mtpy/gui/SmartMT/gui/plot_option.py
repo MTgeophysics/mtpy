@@ -8,6 +8,7 @@
 """
 from PyQt4 import QtGui
 
+from mtpy.gui.SmartMT.gui.busy_indicators import BusyOverlay
 from mtpy.gui.SmartMT.ui_asset.plot_options import Ui_PlotOption
 from mtpy.gui.SmartMT.visualization import *
 from mtpy.utils.mtpylog import MtPyLog
@@ -45,16 +46,22 @@ class PlotOption(QtGui.QWidget):
             else:
                 raise Exception("Duplicated Plot Name: %s in class %s" % (name, child.__name__))
 
-        # self.ui.comboBoxSelect_Plot.addItem("test")
+        # busy overlay
+        self._busy_overlay = BusyOverlay(self)
+        self._busy_overlay.hide()
+
+        self.ui.comboBoxSelect_Plot.currentIndexChanged.connect(self._selection_changed)
 
         if VisualizationBase.__subclasses__():
             self.ui.comboBoxSelect_Plot.setEnabled(True)
             self.ui.comboBoxSelect_Plot.setCurrentIndex(0)
-            self._selection_changed()
+            self.ui.comboBoxSelect_Plot.currentIndexChanged.emit(0)
         else:
             self.ui.comboBoxSelect_Plot.setEnabled(False)
 
-        self.ui.comboBoxSelect_Plot.currentIndexChanged.connect(self._selection_changed)
+    def resizeEvent(self, event):
+        self._busy_overlay.resize(event.size())
+        event.accept()
 
     def _selection_changed(self, *args, **kwargs):
         # print "selection changed"
@@ -69,8 +76,12 @@ class PlotOption(QtGui.QWidget):
             # self.ui.verticalLayout.removeWidget(self._current_plot.parameter_ui)
             self._current_plot.parameter_ui.deleteLater()
         self._current_plot = plot_option(self)
+        # connect signal
+        self._current_plot.plotting_started.connect(self._busy_overlay.show)
+        self._current_plot.plotting_finished.connect(self._busy_overlay.hide)
 
         self.ui.verticalLayout.addWidget(self._current_plot.parameter_ui)
+
         # self.resize(self.width(), self.sizeHint().height())
         self.update_ui()
 

@@ -19,7 +19,7 @@ from PyQt4.QtCore import QString
 
 from mtpy.gui.SmartMT.gui.export_dialog import ExportDialog
 from mtpy.gui.SmartMT.gui.plot_option import PlotOption
-from mtpy.gui.SmartMT.gui.progress_bar import ProgressBar
+from mtpy.gui.SmartMT.gui.busy_indicators import ProgressBar
 from mtpy.gui.SmartMT.gui.station_summary import StationSummary
 from mtpy.gui.SmartMT.gui.station_viewer import StationViewer
 from mtpy.gui.SmartMT.utils.file_handler import FileHandler, FileHandlingException
