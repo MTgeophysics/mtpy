@@ -23,7 +23,7 @@ from mtpy.gui.SmartMT.gui.busy_indicators import ProgressBar
 from mtpy.utils.mtpylog import MtPyLog
 
 
-class VisualizationBase(QtCore.QObject):
+class VisualizationBase(QtCore.QThread):
     """
     plugin base for data visualization
     """
@@ -46,7 +46,6 @@ class VisualizationBase(QtCore.QObject):
         self._parameter_ui = PlotParameter(self._parent)
         self._plotting_object = None
         # connect plot button
-        QtCore.QObject.connect(self._parameter_ui.ui.pushButtonPlot, QtCore.SIGNAL("clicked()"), self.show_figure)
 
     def set_data(self, mt_objs):
         """
@@ -122,34 +121,14 @@ class VisualizationBase(QtCore.QObject):
         """
         pass
 
-    plotting_started = pyqtSignal()
-    plotting_finished = pyqtSignal()
+    # plotting_started = pyqtSignal()
+    # plotting_finished = pyqtSignal()
 
-    def show_figure(self):
-        """
-        function that creates plot by calling self.plot(), then create subwindow for the created image,
-        exception and error handling, progress indication are handled here
-        :return:
-        """
-        self.plotting_started.emit()
-        # clear the figure if there is already one up
-        plt.clf()
-        # self._create_plot()
-        try:
-            self.plot()
-            if self._fig:
-                # self._fig.show()
-                widget = MPLCanvasWidget(self._fig)
+    def run(self):
+        self.plot()
 
-                self._parent._parent.create_subwindow(widget, "%s" % self.plot_name(), overide=False,
-                                                      tooltip=self.get_parameter_str())
-        except Exception as e:
-            frm = inspect.trace()[-1]
-            mod = inspect.getmodule(frm[0])
-            QtGui.QMessageBox.critical(self._parameter_ui,
-                                       'Plotting Error', "{}: {}".format(mod.__name__, e.message),
-                                       QtGui.QMessageBox.Close)
-        self.plotting_finished.emit()
+    def get_fig(self):
+        return self._fig
 
 
 class MPLCanvasWidget(QtGui.QWidget):

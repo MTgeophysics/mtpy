@@ -81,6 +81,13 @@
      </layout>
     </widget>
    </item>
+         <item>
+             <widget class="QPushButton" name="pushButton_plot">
+                 <property name="text">
+                     <string>Plot</string>
+                 </property>
+             </widget>
+         </item>
   </layout>
  </widget>
  <resources/>

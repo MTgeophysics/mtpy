@@ -56,6 +56,9 @@ class Ui_PlotOption(object):
         self.verticalLayout_2.addWidget(self.textEditPlot_Description)
         self.verticalLayout.addWidget(self.groupBoxPlot_Type)
         self.verticalLayout_3.addWidget(self.widget)
+        self.pushButton_plot = QtGui.QPushButton(PlotOption)
+        self.pushButton_plot.setObjectName(_fromUtf8("pushButton_plot"))
+        self.verticalLayout_3.addWidget(self.pushButton_plot)
 
         self.retranslateUi(PlotOption)
         QtCore.QMetaObject.connectSlotsByName(PlotOption)
@@ -63,4 +66,4 @@ class Ui_PlotOption(object):
     def retranslateUi(self, PlotOption):
         PlotOption.setWindowTitle(_translate("PlotOption", "Plot Option", None))
         self.groupBoxPlot_Type.setTitle(_translate("PlotOption", "Plot Type", None))
-
+        self.pushButton_plot.setText(_translate("PlotOption", "Plot", None))

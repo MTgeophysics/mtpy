@@ -33,21 +33,17 @@ class Ui_GroupBoxParameters(object):
         self.scrollArea.setWidgetResizable(True)
         self.scrollArea.setObjectName(_fromUtf8("scrollArea"))
         self.scrollAreaWidgetContents = QtGui.QWidget()
-        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 318, 136))
+        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 318, 165))
         self.scrollAreaWidgetContents.setObjectName(_fromUtf8("scrollAreaWidgetContents"))
         self.verticalLayout_2 = QtGui.QVBoxLayout(self.scrollAreaWidgetContents)
         self.verticalLayout_2.setMargin(0)
         self.verticalLayout_2.setObjectName(_fromUtf8("verticalLayout_2"))
         self.scrollArea.setWidget(self.scrollAreaWidgetContents)
         self.verticalLayout.addWidget(self.scrollArea)
-        self.pushButtonPlot = QtGui.QPushButton(GroupBoxParameters)
-        self.pushButtonPlot.setObjectName(_fromUtf8("pushButtonPlot"))
-        self.verticalLayout.addWidget(self.pushButtonPlot)
 
         self.retranslateUi(GroupBoxParameters)
         QtCore.QMetaObject.connectSlotsByName(GroupBoxParameters)
 
     def retranslateUi(self, GroupBoxParameters):
         GroupBoxParameters.setTitle(_translate("GroupBoxParameters", "Parameters", None))
-        self.pushButtonPlot.setText(_translate("GroupBoxParameters", "Create Figure", None))
 

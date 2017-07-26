@@ -6,11 +6,14 @@
     Author: YingzhiGou
     Date: 20/06/2017
 """
+import inspect
+
 from PyQt4 import QtGui
 
 from mtpy.gui.SmartMT.gui.busy_indicators import BusyOverlay
 from mtpy.gui.SmartMT.ui_asset.plot_options import Ui_PlotOption
 from mtpy.gui.SmartMT.visualization import *
+from mtpy.gui.SmartMT.visualization.visualization_base import MPLCanvasWidget
 from mtpy.utils.mtpylog import MtPyLog
 
 
@@ -77,13 +80,33 @@ class PlotOption(QtGui.QWidget):
             self._current_plot.parameter_ui.deleteLater()
         self._current_plot = plot_option(self)
         # connect signal
-        self._current_plot.plotting_started.connect(self._busy_overlay.show)
-        self._current_plot.plotting_finished.connect(self._busy_overlay.hide)
+        self._current_plot.started.connect(self._busy_overlay.show)
+        self._current_plot.finished.connect(self._busy_overlay.hide)
+        self._current_plot.finished.connect(self._show_plot)
+        self.ui.pushButton_plot.clicked.connect(self._create_plot)
 
         self.ui.verticalLayout.addWidget(self._current_plot.parameter_ui)
 
         # self.resize(self.width(), self.sizeHint().height())
         self.update_ui()
+
+    def _create_plot(self):
+        try:
+            self._current_plot.start()
+        except Exception as e:
+            frm = inspect.trace()[-1]
+            mod = inspect.getmodule(frm[0])
+            QtGui.QMessageBox.critical(self,
+                                       'Plotting Error', "{}: {}".format(mod.__name__, e.message),
+                                       QtGui.QMessageBox.Close)
+
+    def _show_plot(self):
+        fig = self._current_plot.get_fig()
+        if fig:
+            # self._fig.show()
+            widget = MPLCanvasWidget(fig)
+            self._parent.create_subwindow(widget, "%s" % self._current_plot.plot_name(), overide=False,
+                                          tooltip=self._current_plot.get_parameter_str())
 
     def update_ui(self):
         if self._current_plot is not None:
