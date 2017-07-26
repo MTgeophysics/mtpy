@@ -45,12 +45,9 @@ class PhaseTensorMap(VisualizationBase):
         # NOTE: this is a hack because the existing bug(s) in the PlotPhaseTensorMaps class, that is the
         # constructor of the class only populate all the necessary information correctly when reads from file
         # this is the only way before this bug(s) is fixed
-        file_list = []
-        for mt_obj in self._mt_objs:
-            file_list.append(mt_obj.fn)
 
         self._params = {
-            'fn_list': file_list,
+            'fn_list': [mt_obj.fn for mt_obj in self._mt_objs],
             'plot_freq': self._frequency_ui.get_frequency(),
             'ftol': self._tolerance_ui.get_tolerance_in_float(),
             'ellipse_dict': self._ellipse_ui.get_ellipse_dict(),
@@ -201,11 +198,8 @@ class PhaseTensorPseudoSection(VisualizationBase):
 
     def plot(self):
         # get parameters
-        file_list = []
-        for mt_obj in self._mt_objs:
-            file_list.append(mt_obj.fn)
         self._params = {
-            'fn_list': file_list,
+            'fn_list': [mt_obj.fn for mt_obj in self._mt_objs],
             'plot_tipper': self._arrow_ui.get_plot_tipper(),
             'tscale': self._scale_ui.get_tscale(),
             'ellipse_dict': self._ellipse_ui.get_ellipse_dict(),
