@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
        <width>312</width>
-       <height>392</height>
+       <height>448</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -23,6 +23,38 @@
    <string>Plot Control</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
+      <item>
+          <widget class="QGroupBox" name="groupBox_plot_style">
+              <property name="sizePolicy">
+                  <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                      <horstretch>0</horstretch>
+                      <verstretch>0</verstretch>
+                  </sizepolicy>
+              </property>
+              <property name="title">
+                  <string>Plot Style</string>
+              </property>
+              <layout class="QHBoxLayout" name="horizontalLayout">
+                  <item>
+                      <widget class="QRadioButton" name="radioButton_compare">
+                          <property name="text">
+                              <string>Compare</string>
+                          </property>
+                          <property name="checked">
+                              <bool>true</bool>
+                          </property>
+                      </widget>
+                  </item>
+                  <item>
+                      <widget class="QRadioButton" name="radioButton_all">
+                          <property name="text">
+                              <string>Side-by-Side</string>
+                          </property>
+                      </widget>
+                  </item>
+              </layout>
+          </widget>
+      </item>
    <item>
     <widget class="QGroupBox" name="groupBox">
      <property name="sizePolicy">

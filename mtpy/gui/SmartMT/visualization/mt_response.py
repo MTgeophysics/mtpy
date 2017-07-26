@@ -60,6 +60,7 @@ class MTResponse(VisualizationBase):
         self._parameter_ui.add_parameter_groubox(self._title_ui)
 
         self._plot_control_ui = PlotControlMTResponse(self._parameter_ui)
+        self._plot_control_ui.hide_plot_style()
         self._parameter_ui.add_parameter_groubox(self._plot_control_ui)
 
         self._ellipse_ui = Ellipse(self._parameter_ui)
@@ -128,6 +129,18 @@ class MultipleMTResponses(VisualizationBase):
         return """
 <p>Plots multiple MT responses simultaneously in one plot of sub-figures 
 or in a single plot with subfigures for comparing each component</p>
+<p>The plot places the apparent resistivity in log scale in the top panel(s),
+depending on the plot_num. The phase is below this, note that 180 degrees 
+has been added to the yx phase so the xy and yx phases plot in the same quadrant.
+Both the resistivity and phase share the same x-axis which is in log period, 
+short periods on the left to long periods on the right. So if you zoom in on the 
+plot both plots will zoom in to the same x-coordinates.  If there is tipper 
+information, you can plot the tipper as a third panel at the bottom, and also 
+shares the x-axis.  The arrows are in the convention of pointing towards a 
+conductor. The xx and yy components can be plotted as well, this adds two panels 
+on the right. Here the phase is left unwrapped. Other parameters can be added as 
+subplots such as strike, skew and phase tensor ellipses.</p>
+<p><strong>Warning</strong> This plot could take very long time.</p>
         """
 
     def __init__(self, parent):
@@ -177,7 +190,7 @@ or in a single plot with subfigures for comparing each component</p>
             'plot_skew': self._plot_control_ui.get_skew(),
             'plot_pt': self._plot_control_ui.get_ellipses(),
             'plot_title': self._title_ui.get_title(),
-            'plot_style': 'all',
+            'plot_style': self._plot_control_ui.get_style(),
             'plot_yn': 'n'
         }
 

@@ -125,7 +125,15 @@ class VisualizationBase(QtCore.QThread):
     # plotting_finished = pyqtSignal()
 
     def run(self):
-        self.plot()
+        plt.clf()
+        try:
+            self.plot()
+        except Exception as e:
+            frm = inspect.trace()[-1]
+            mod = inspect.getmodule(frm[0])
+            self.plotting_error.emit("{}: {}".format(mod.__name__, e.message))
+
+    plotting_error = pyqtSignal(str)
 
     def get_fig(self):
         return self._fig

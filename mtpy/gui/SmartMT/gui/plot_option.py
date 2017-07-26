@@ -83,6 +83,7 @@ class PlotOption(QtGui.QWidget):
         self._current_plot.started.connect(self._busy_overlay.show)
         self._current_plot.finished.connect(self._busy_overlay.hide)
         self._current_plot.finished.connect(self._show_plot)
+        self._current_plot.plotting_error.connect(self._plotting_error)
         self.ui.pushButton_plot.clicked.connect(self._create_plot)
 
         self.ui.verticalLayout.addWidget(self._current_plot.parameter_ui)
@@ -91,14 +92,12 @@ class PlotOption(QtGui.QWidget):
         self.update_ui()
 
     def _create_plot(self):
-        try:
-            self._current_plot.start()
-        except Exception as e:
-            frm = inspect.trace()[-1]
-            mod = inspect.getmodule(frm[0])
-            QtGui.QMessageBox.critical(self,
-                                       'Plotting Error', "{}: {}".format(mod.__name__, e.message),
-                                       QtGui.QMessageBox.Close)
+        self._current_plot.start()
+
+    def _plotting_error(self, msg):
+        QtGui.QMessageBox.critical(self,
+                                   'Plotting Error', msg,
+                                   QtGui.QMessageBox.Close)
 
     def _show_plot(self):
         fig = self._current_plot.get_fig()

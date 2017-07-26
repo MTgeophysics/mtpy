@@ -762,6 +762,15 @@ class PlotControlMTResponse(QtGui.QGroupBox):
         else:
             return 'n'
 
+    def get_style(self):
+        if self.ui.radioButton_compare.isChecked():
+            return "compare"
+        else:
+            return "all"
+
+    def hide_plot_style(self):
+        self.ui.groupBox_plot_style.hide()
+
 
 class PlotTitle(QtGui.QGroupBox):
     def __init__(self, parent):

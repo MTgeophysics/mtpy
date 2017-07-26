@@ -67,3 +67,4 @@ class Ui_PlotOption(object):
         PlotOption.setWindowTitle(_translate("PlotOption", "Plot Option", None))
         self.groupBoxPlot_Type.setTitle(_translate("PlotOption", "Plot Type", None))
         self.pushButton_plot.setText(_translate("PlotOption", "Plot", None))
+
