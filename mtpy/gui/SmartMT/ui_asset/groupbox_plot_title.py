@@ -46,14 +46,13 @@ class Ui_GroupBox_plot_title(object):
     def retranslateUi(self, GroupBox_plot_title):
         GroupBox_plot_title.setWindowTitle(_translate("GroupBox_plot_title", "GroupBox", None))
         GroupBox_plot_title.setTitle(_translate("GroupBox_plot_title", "Plot Title", None))
-        self.label.setToolTip(
-            _translate("GroupBox_plot_title", "<html><head/><body><p>The title of the plot, leave blank to\n"
-                                              "                            remove title.</p><p><span style=\" font-weight:600;\">Note:</span>\n"
-                                              "                            The size and location of the title may depends on the selected plot type.</p></body></html>\n"
-                                              "                        ", None))
+        self.label.setToolTip(_translate("GroupBox_plot_title", "<html><head/><body><p>The title of the plot, leave blank to\n"
+"                            remove title.</p><p><span style=\" font-weight:600;\">Note:</span>\n"
+"                            The size and location of the title may depends on the selected plot type.</p></body></html>\n"
+"                        ", None))
         self.label.setText(_translate("GroupBox_plot_title", "Title", None))
-        self.lineEdit_title.setToolTip(
-            _translate("GroupBox_plot_title", "<html><head/><body><p>The title of the plot, leave blank to\n"
-                                              "                            remove title.</p><p><span style=\" font-weight:600;\">Note:</span>\n"
-                                              "                            The size and location of the title may depends on the selected plot type.</p></body></html>\n"
-                                              "                        ", None))
+        self.lineEdit_title.setToolTip(_translate("GroupBox_plot_title", "<html><head/><body><p>The title of the plot, leave blank to\n"
+"                            remove title.</p><p><span style=\" font-weight:600;\">Note:</span>\n"
+"                            The size and location of the title may depends on the selected plot type.</p></body></html>\n"
+"                        ", None))
+

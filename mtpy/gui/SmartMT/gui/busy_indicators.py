@@ -44,7 +44,6 @@ class BusyOverlay(QtGui.QWidget):
         palette.setColor(palette.Background, QtCore.Qt.transparent)
         self.setPalette(palette)
         self.timer = None
-        self.resize(parent.size())
 
     def paintEvent(self, event):
         painter = QtGui.QPainter()

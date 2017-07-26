@@ -59,6 +59,9 @@ class Ui_PlotOption(object):
         self.pushButton_plot = QtGui.QPushButton(PlotOption)
         self.pushButton_plot.setObjectName(_fromUtf8("pushButton_plot"))
         self.verticalLayout_3.addWidget(self.pushButton_plot)
+        self.pushButton_cancel = QtGui.QPushButton(PlotOption)
+        self.pushButton_cancel.setObjectName(_fromUtf8("pushButton_cancel"))
+        self.verticalLayout_3.addWidget(self.pushButton_cancel)
 
         self.retranslateUi(PlotOption)
         QtCore.QMetaObject.connectSlotsByName(PlotOption)
@@ -67,4 +70,5 @@ class Ui_PlotOption(object):
         PlotOption.setWindowTitle(_translate("PlotOption", "Plot Option", None))
         self.groupBoxPlot_Type.setTitle(_translate("PlotOption", "Plot Type", None))
         self.pushButton_plot.setText(_translate("PlotOption", "Plot", None))
+        self.pushButton_cancel.setText(_translate("PlotOption", "Cancel", None))
 

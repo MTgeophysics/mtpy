@@ -17,6 +17,7 @@ from PyQt4 import QtGui, QtCore
 from PyQt4.QtCore import pyqtSignal
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as NavigationToolbar
+from matplotlib.figure import Figure
 
 from mtpy.gui.SmartMT.gui.plot_parameter import PlotParameter
 from mtpy.gui.SmartMT.gui.busy_indicators import ProgressBar
@@ -125,15 +126,18 @@ class VisualizationBase(QtCore.QThread):
     # plotting_finished = pyqtSignal()
 
     def run(self):
+        # self.setTerminationEnabled(True)
         plt.clf()
         try:
             self.plot()
+            self.plotting_completed.emit(self._fig)
         except Exception as e:
             frm = inspect.trace()[-1]
             mod = inspect.getmodule(frm[0])
             self.plotting_error.emit("{}: {}".format(mod.__name__, e.message))
 
     plotting_error = pyqtSignal(str)
+    plotting_completed = pyqtSignal(Figure)
 
     def get_fig(self):
         return self._fig
