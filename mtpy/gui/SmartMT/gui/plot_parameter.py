@@ -11,6 +11,7 @@
 import numpy as np
 import six
 from PyQt4 import QtGui, QtCore
+from PyQt4.QtCore import pyqtSignal
 from matplotlib import colors as mcolors
 
 from mtpy.gui.SmartMT.gui.matplotlib_imabedding import MPLCanvas, Cursor
@@ -23,6 +24,7 @@ from mtpy.gui.SmartMT.ui_asset.groupbox_frequency_period_single import Ui_groupB
 from mtpy.gui.SmartMT.ui_asset.groupbox_linedir import Ui_GroupBox_Linedir
 from mtpy.gui.SmartMT.ui_asset.groupbox_padding import Ui_GroupBox_Padding
 from mtpy.gui.SmartMT.ui_asset.groupbox_plot_control_mt_response import Ui_GroupBox_plot_control_mt_response
+from mtpy.gui.SmartMT.ui_asset.groupbox_plot_title import Ui_GroupBox_plot_title
 from mtpy.gui.SmartMT.ui_asset.groupbox_rotation import Ui_GroupBox_Rotation
 from mtpy.gui.SmartMT.ui_asset.groupbox_scale import Ui_GroupBox_Scale
 from mtpy.gui.SmartMT.ui_asset.groupbox_station_select import Ui_GroupBox_Station_Select
@@ -67,6 +69,7 @@ class PlotParameter(QtGui.QGroupBox):
 
     def end_of_parameter_components(self):
         self.ui.verticalLayout_2.addStretch()
+
 
 class ZComponentMultiple(QtGui.QGroupBox):
     def __init__(self, parent):
@@ -678,6 +681,13 @@ class StationSelection(QtGui.QGroupBox):
         self.ui.setupUi(self)
         self.mt_objs = None
 
+        self.ui.comboBox_station.currentIndexChanged.connect(self._current_station_changed)
+
+    def _current_station_changed(self):
+        self.station_changed.emit()
+
+    station_changed = pyqtSignal()
+
     def set_data(self, mt_objs):
         self.ui.comboBox_station.clear()
         self.mt_objs = []
@@ -740,7 +750,6 @@ class PlotControlMTResponse(QtGui.QGroupBox):
         else:
             return 'n'
 
-
     def get_skew(self):
         if self.ui.radioButton_skew_y.isChecked():
             return 'y'
@@ -752,3 +761,16 @@ class PlotControlMTResponse(QtGui.QGroupBox):
             return 'y'
         else:
             return 'n'
+
+
+class PlotTitle(QtGui.QGroupBox):
+    def __init__(self, parent):
+        QtGui.QGroupBox.__init__(self, parent)
+        self.ui = Ui_GroupBox_plot_title()
+        self.ui.setupUi(self)
+
+    def get_title(self):
+        return str(self.ui.lineEdit_title.text())
+
+    def set_title(self, title):
+        self.ui.lineEdit_title.setText(title)

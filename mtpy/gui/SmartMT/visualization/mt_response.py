@@ -10,7 +10,8 @@
 """
 from PyQt4 import QtCore
 
-from mtpy.gui.SmartMT.gui.plot_parameter import StationSelection, Rotation, PlotControlMTResponse, Arrow, Ellipse
+from mtpy.gui.SmartMT.gui.plot_parameter import StationSelection, Rotation, PlotControlMTResponse, Arrow, Ellipse, \
+    PlotTitle
 from mtpy.gui.SmartMT.visualization.visualization_base import VisualizationBase
 from mtpy.imaging.plot_mt_response import PlotMTResponse
 
@@ -27,7 +28,8 @@ class MTResponse(VisualizationBase):
             'plot_tipper': self._arrow_ui.get_plot_tipper(),
             'plot_strike': self._plot_control_ui.get_strike(),
             'plot_skew': self._plot_control_ui.get_skew(),
-            'plot_pt': self._plot_control_ui.get_ellipses()
+            'plot_pt': self._plot_control_ui.get_ellipses(),
+            'plot_title': self._title_ui.get_title()
         }
 
         if self._arrow_ui.ui.groupBox_advanced_options.isChecked():
@@ -48,8 +50,13 @@ class MTResponse(VisualizationBase):
         self._params = None
 
         # set up parameter GUIs here
+
         self._station_ui = StationSelection(self._parameter_ui)
         self._parameter_ui.add_parameter_groubox(self._station_ui)
+        self._station_ui.station_changed.connect(self._station_changed)
+
+        self._title_ui = PlotTitle(self._parameter_ui)
+        self._parameter_ui.add_parameter_groubox(self._title_ui)
 
         self._plot_control_ui = PlotControlMTResponse(self._parameter_ui)
         self._parameter_ui.add_parameter_groubox(self._plot_control_ui)
@@ -67,6 +74,10 @@ class MTResponse(VisualizationBase):
         self._parameter_ui.add_parameter_groubox(self._rotation_ui)
 
         self._parameter_ui.end_of_parameter_components()
+
+    def _station_changed(self):
+        # change title
+        self._title_ui.set_title(self._station_ui.get_station().station)
 
     def _ellipse_radio_button_toggled(self, b):
         self._ellipse_ui.setHidden(not self._ellipse_ui.isHidden())

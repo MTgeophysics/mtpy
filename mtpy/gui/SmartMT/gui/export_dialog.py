@@ -7,7 +7,6 @@
     Author: YingzhiGou
     Date: 24/07/2017
 """
-import inspect
 import os
 import tempfile
 import webbrowser
@@ -161,14 +160,6 @@ class ExportDialog(QtGui.QDialog):
                             rgb_im.save(fname)
                     else:
                         raise err
-                except Exception as e:
-                    frm = inspect.trace()[-1]
-                    mod = inspect.getmodule(frm[0])
-                    QtGui.QMessageBox.critical(self,
-                                               'Exporting Error',
-                                               "{}: {}".format(mod.__name__, e.message),
-                                               QtGui.QMessageBox.Close)
-                    raise e
 
                 if self.ui.checkBox_open_after_export.isChecked():
                     # open with the system default application, this should work on all platforms

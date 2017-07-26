@@ -9,7 +9,7 @@
     Author: YingzhiGou
     Date: 20/06/2017
 """
-
+import inspect
 import os
 import sys
 
@@ -87,7 +87,15 @@ class StartQt4(QtGui.QMainWindow):
         subwindow = self.ui.mdiArea.activeSubWindow()
         widget = subwindow.widget()
         if isinstance(widget, MPLCanvasWidget):
-            self._export_dialog.export_to_file(widget.get_fig())
+            try:
+                self._export_dialog.export_to_file(widget.get_fig())
+            except Exception as e:
+                frm = inspect.trace()[-1]
+                mod = inspect.getmodule(frm[0])
+                QtGui.QMessageBox.critical(self,
+                                           'Exporting Error',
+                                           "{}: {}".format(mod.__name__, e.message),
+                                           QtGui.QMessageBox.Close)
 
     def _tile_windows(self, *args, **kwargs):
         self.ui.mdiArea.tileSubWindows()

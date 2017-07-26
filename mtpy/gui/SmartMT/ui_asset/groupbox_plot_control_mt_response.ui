@@ -6,12 +6,12 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>306</width>
-    <height>418</height>
+       <width>312</width>
+       <height>392</height>
    </rect>
   </property>
   <property name="sizePolicy">
-   <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+      <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
     <horstretch>0</horstretch>
     <verstretch>0</verstretch>
    </sizepolicy>
@@ -107,6 +107,12 @@ of Caldwell et al. [2004]</string>
    </item>
    <item>
     <widget class="QGroupBox" name="groupBox_3">
+        <property name="sizePolicy">
+            <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+            </sizepolicy>
+        </property>
      <property name="toolTip">
       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;plot the skew angle calculated from the
                             phase tensor.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
@@ -138,6 +144,12 @@ of Caldwell et al. [2004]</string>
    </item>
    <item>
     <widget class="QGroupBox" name="groupBox_4">
+        <property name="sizePolicy">
+            <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+            </sizepolicy>
+        </property>
      <property name="title">
       <string>Ellipses</string>
      </property>
