@@ -10,7 +10,7 @@
 import os
 import tempfile
 import webbrowser
-
+import numpy as np
 from PIL import Image
 from PyQt4 import QtGui, QtCore
 import matplotlib.pyplot as plt
@@ -54,6 +54,15 @@ class ExportDialog(QtGui.QDialog):
         # export button
         self.ui.pushButton_export.clicked.connect(self._export_button_clicked)
 
+        # dpi
+        self.ui.spinBox_dpi.valueChanged.connect(self._dpi_changed)
+        # inches
+        self.ui.doubleSpinBox_width_inches.valueChanged.connect(self._width_inches_changed)
+        self.ui.doubleSpinBox_height_inches.valueChanged.connect(self._height_inches_changed)
+        # pixels
+        self.ui.spinBox_width_pixels.valueChanged.connect(self._width_pixels_changed)
+        self.ui.spinBox_height_pixels.valueChanged.connect(self._height_pixels_changed)
+
         # message box for when the file already exist
         self._msg_box = QtGui.QMessageBox(self)
         self._msg_box.setWindowTitle("Export...")
@@ -65,6 +74,44 @@ class ExportDialog(QtGui.QDialog):
     _orientation = ['portrait', 'landscape']
 
     _no_alpha_channel_formats = ('jpg', 'jpeg')  # ("png", "gif", "psd")
+
+    def _dpi_changed(self, dpi):
+        self.ui.doubleSpinBox_height_inches.blockSignals(True)
+        self.ui.doubleSpinBox_width_inches.blockSignals(True)
+        self.ui.spinBox_height_pixels.setValue(
+            self.ui.doubleSpinBox_height_inches.value() * dpi
+        )
+        self.ui.spinBox_width_pixels.setValue(
+            self.ui.doubleSpinBox_width_inches.value() * dpi
+        )
+        self.ui.doubleSpinBox_height_inches.blockSignals(False)
+        self.ui.doubleSpinBox_width_inches.blockSignals(False)
+
+    def _width_pixels_changed(self, width):
+        self.ui.doubleSpinBox_width_inches.blockSignals(True)
+        new_width_inches = width / float(self.ui.spinBox_dpi.value())
+        self.ui.doubleSpinBox_width_inches.setValue(new_width_inches)
+        self.ui.doubleSpinBox_width_inches.blockSignals(False)
+
+    def _height_pixels_changed(self, height):
+        self.ui.doubleSpinBox_height_inches.blockSignals(True)
+        new_height_inches = height / float(self.ui.spinBox_dpi.value())
+        self.ui.doubleSpinBox_height_inches.setValue(new_height_inches)
+        self.ui.doubleSpinBox_height_inches.blockSignals(False)
+
+    def _width_inches_changed(self, width):
+        self.ui.spinBox_width_pixels.blockSignals(True)
+        self.ui.spinBox_width_pixels.setValue(
+            width * self.ui.spinBox_dpi.value()
+        )
+        self.ui.spinBox_width_pixels.blockSignals(False)
+
+    def _height_inches_changed(self, height):
+        self.ui.spinBox_height_pixels.blockSignals(True)
+        self.ui.spinBox_height_pixels.setValue(
+            height * self.ui.spinBox_dpi.value()
+        )
+        self.ui.spinBox_height_pixels.blockSignals(False)
 
     def _cancel_button_clicked(self, b):
         self.reject()
@@ -121,6 +168,7 @@ class ExportDialog(QtGui.QDialog):
         respawn = True
         while respawn:
             respawn = False
+            self.ui.spinBox_dpi.setValue(fig.get_dpi())
             response = self.exec_()
             if response == QtGui.QDialog.Accepted:
                 # saving files
@@ -139,6 +187,8 @@ class ExportDialog(QtGui.QDialog):
 
                 params = self.get_savefig_params()
                 try:
+                    # change size
+                    fig.set_size_inches(self.get_size_inches_width(), self.get_size_inches_height())
                     fig.savefig(fname, **params)
                 except IOError as err:
                     if 'RGBA' in err.message:
@@ -166,6 +216,12 @@ class ExportDialog(QtGui.QDialog):
                     webbrowser.open(fname)
                 return fname
                 # elif response == QtGu
+
+    def get_size_inches_width(self):
+        return self.ui.doubleSpinBox_width_inches.value()
+
+    def get_size_inches_height(self):
+        return self.ui.doubleSpinBox_height_inches.value()
 
     def _show_file_exist_message(self, fname, new_name):
         self._msg_box.setText(
