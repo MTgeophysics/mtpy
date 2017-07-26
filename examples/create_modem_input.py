@@ -58,7 +58,7 @@ def select_periods(edifiles_list):
     # 2 percetage stats
     # select commonly occured frequencies from all stations.
     # This could miss some slightly varied frequencies in the middle range.
-    select_period_list = np.array(edis_obj.get_periods_by_stats(percentage=0.0))
+    select_period_list = np.array(edis_obj.get_periods_by_stats(percentage=10.0))
     print("Selected periods ", len(select_period_list))
 
     return select_period_list
@@ -141,7 +141,9 @@ if __name__ == '__main__':
     # add topography, define an initial resistivity model, modify and re-write the data file, define covariance mask
     # dat file will be changed and rewritten,
     # grid centre is used as the new origin of coordinate system, topo data used in the elev column.
-    #model.add_topography(topofile, interp_method='nearest')  # dat file will be written again as elevation updated
+
+    # model.add_topography(topofile, interp_method='nearest')  # dat file will be written again as elevation updated
+
     model.add_topography_2mesh(topofile, interp_method='nearest')  # dat file will be written again as elevation updated
 
     model.plot_topograph()  # plot the MT stations on topography elevation data

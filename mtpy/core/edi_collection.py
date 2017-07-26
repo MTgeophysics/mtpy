@@ -381,11 +381,11 @@ if __name__ == "__main__":
         else:
             sys.exit(2)
 
-        # obj.show_prop()
-        #
-        # print(obj.get_bounding_box(epsgcode=28353))
-        #
-        # obj.create_mt_station_gdf(outshpfile='/e/tmp/edi_collection_test.shp')
+        obj.show_prop()
+
+        print(obj.get_bounding_box(epsgcode=28353))
+
+        obj.create_mt_station_gdf(outshpfile='/e/tmp/edi_collection_test.shp')
 
         #######################################################################
         # how to quick check the shape file created
@@ -402,7 +402,7 @@ if __name__ == "__main__":
         #                  "Elev": "float:24.15", "UtmZone": "str:80"}}}
         #######################################################################
 
-        #obj.create_csv_files_moved(dest_dir=sys.argv[2])
+        obj.create_csv_files_moved(dest_dir=sys.argv[2])
 
         myper = obj.get_periods_by_stats(percentage=10)
 
