@@ -159,4 +159,4 @@ class Depth3D(VisualizationBase):
 
 
 # register subclass
-VisualizationBase.register(Depth3D)
+# VisualizationBase.register(Depth3D)

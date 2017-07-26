@@ -14,19 +14,21 @@ import inspect
 
 import matplotlib.pyplot as plt
 from PyQt4 import QtGui, QtCore
+from PyQt4.QtCore import pyqtSignal
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as NavigationToolbar
 
 from mtpy.gui.SmartMT.gui.plot_parameter import PlotParameter
-from mtpy.gui.SmartMT.gui.progress_bar import ProgressBar
+from mtpy.gui.SmartMT.gui.busy_indicators import ProgressBar
 from mtpy.utils.mtpylog import MtPyLog
 
 
-class VisualizationBase(object):
+class VisualizationBase(QtCore.QObject):
     """
     plugin base for data visualization
     """
-    __metaclass__ = abc.ABCMeta
+
+    # __metaclass__ = abc.ABCMeta
 
     @abc.abstractmethod
     def __init__(self, parent):
@@ -36,6 +38,7 @@ class VisualizationBase(object):
         for visualization
         :param parent:
         """
+        QtCore.QObject.__init__(self, parent)
         self._parent = parent
         self._mt_objs = None
         self._fig = None
@@ -119,18 +122,18 @@ class VisualizationBase(object):
         """
         pass
 
+    plotting_started = pyqtSignal()
+    plotting_finished = pyqtSignal()
+
     def show_figure(self):
         """
         function that creates plot by calling self.plot(), then create subwindow for the created image,
         exception and error handling, progress indication are handled here
         :return:
         """
+        self.plotting_started.emit()
         # clear the figure if there is already one up
         plt.clf()
-        # show progress bar
-        progressbar = ProgressBar(title='Generating image...')
-        progressbar.onStart()
-        # self._plottingFinished.connect(progressbar.onFinished)
         # self._create_plot()
         try:
             self.plot()
@@ -138,19 +141,15 @@ class VisualizationBase(object):
                 # self._fig.show()
                 widget = MPLCanvasWidget(self._fig)
 
-                progressbar.onFinished()
-
                 self._parent._parent.create_subwindow(widget, "%s" % self.plot_name(), overide=False,
                                                       tooltip=self.get_parameter_str())
-            else:
-                progressbar.onFinished()
         except Exception as e:
-            progressbar.onFinished()
             frm = inspect.trace()[-1]
             mod = inspect.getmodule(frm[0])
             QtGui.QMessageBox.critical(self._parameter_ui,
                                        'Plotting Error', "{}: {}".format(mod.__name__, e.message),
                                        QtGui.QMessageBox.Close)
+        self.plotting_finished.emit()
 
 
 class MPLCanvasWidget(QtGui.QWidget):

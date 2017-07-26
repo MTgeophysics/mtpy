@@ -177,3 +177,4 @@ class Ui_Dialog_Export(object):
         self.label_2.setText(_translate("Dialog_Export", "File Name:", None))
         self.spinBox_dpi.setToolTip(_translate("Dialog_Export", "<html><head/><body><p>The resolution in dots per inch.</p></body></html>", None))
         self.comboBox_fileType.setToolTip(_translate("Dialog_Export", "<html><head/><body><p>Format of the exported image</p></body></html>", None))
+

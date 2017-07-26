@@ -1074,14 +1074,14 @@ class Data(object):
                                              com, rea, ima, abs_err, '\n'])
                             dlines.append(dline)
 
-        new_data_fn = MTfh.make_unique_filename(self.data_fn)
+        #self.data_fn = MTfh.make_unique_filename(self.data_fn) # make a unique file in debug stage
         # if os.path.exists(self.data_fn):
         #     data_fn1= self.data_fn[:-3]+"OLD"
         #     os.rename(self.data_fn, data_fn1)
 
 
         # dfid = file(self.data_fn, 'w')
-        dfid = file(new_data_fn, 'w')
+        dfid = file(self.data_fn, 'w')
         dfid.writelines(dlines)
         dfid.close()
 
@@ -1091,9 +1091,9 @@ class Data(object):
         np.savetxt(op.join(self.save_path, 'epsg.txt'),
                    np.array([self.epsg]), fmt='%1i')
 
-        logger.debug('Wrote ModEM data file to %s', new_data_fn)
+        logger.debug('Wrote ModEM data file to %s', self.data_fn)
 
-        return new_data_fn
+        return self.data_fn
 
     def convert_ws3dinv_data_file(self, ws_data_fn, station_fn=None,
                                   save_path=None, fn_basename=None):

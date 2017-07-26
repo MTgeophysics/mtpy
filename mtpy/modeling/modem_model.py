@@ -360,8 +360,8 @@ class Model(object):
         if (nz > self.n_layers):
             self.n_layers = nz  # adjust z layers to prevent too big numbers.
 
-        #FZ numz = self.n_layers - self.pad_z + 1  # - self.n_airlayers
-        numz = self.n_layers - self.pad_z + 1   - self.n_airlayers
+        numz = self.n_layers - self.pad_z + 1  # - self.n_airlayers
+        # numz = self.n_layers - self.pad_z + 1   - self.n_airlayers
         factorz = 1.2  # first few layers excluding the air_layers.
         exp_list = [self.z1_layer * (factorz ** nz) for nz in xrange(0, numz)]
         log_z = np.array(exp_list)
@@ -385,8 +385,8 @@ class Model(object):
         # JM said there should be no air layer in this mesh building stage ???
         # add air layers and define ground surface level.
         # initial layer thickness is same as z1_layer
-        add_air = self.n_airlayers
-        #FZ: add_air = 0  # set this =0 will not add any air layers below.
+        #add_air = self.n_airlayers
+        add_air = 0  # FZ: will add No air layers below if add_air=0
         z_nodes = np.hstack([[self.z1_layer] * add_air, z_nodes])
 
         # make an array of sum values as coordinates of the horizontal lines
@@ -487,7 +487,7 @@ class Model(object):
 
         if self.n_airlayers is None or self.n_airlayers == 0:
             print ("No air layers specified, so will not add air/topography !!!")
-            print ("Only bathymetry shall be added below: sea-water resistivity!!!")
+            print ("Only bathymetry shall be added below according to the topofile: sea-water low resistivity!!!")
 
         elif self.n_airlayers > 0:  # FZ: new logic, add equal blocksize air layers on top of the simple flat-earth grid
             # compute the air cell size to be added = topomax/n_airlayers, rounded to nearest 1 s.f.
@@ -1262,7 +1262,7 @@ class Model(object):
             self.covariance_mask = np.ones_like(self.res_model)
 
         # --> write file
-        self.model_fn = MTfh.make_unique_filename(self.model_fn)  # keep the existing file, increment file_1, file_2...
+        #self.model_fn = MTfh.make_unique_filename(self.model_fn)  # if keep existing files, increment file_1, file_2...
         ifid = file(self.model_fn, 'w')
         ifid.write('# {0}\n'.format(self.title.upper()))
         ifid.write('{0:>5}{1:>5}{2:>5}{3:>5} {4}\n'.format(self.nodes_north.shape[0],
@@ -1314,7 +1314,8 @@ class Model(object):
             self.grid_center = np.array([center_north, center_east, center_z])
 
         # Finally, write grid center coordinate and mesh rotation angle
-        ifid.write('\n{0:>16.3f}{1:>16.3f}{2:>16.3f}\n'.format(self.grid_center[0],
+        # No blank line \n
+        ifid.write('{0:>16.3f}{1:>16.3f}{2:>16.3f}\n'.format(self.grid_center[0],
                                                                self.grid_center[1], self.grid_center[2]))
 
         if self.mesh_rotation_angle is None:
