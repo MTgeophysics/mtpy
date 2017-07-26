@@ -10,6 +10,7 @@
 """
 
 import abc
+import inspect
 
 import matplotlib.pyplot as plt
 from PyQt4 import QtGui, QtCore
@@ -145,7 +146,11 @@ class VisualizationBase(object):
                 progressbar.onFinished()
         except Exception as e:
             progressbar.onFinished()
-            QtGui.QMessageBox.critical(self._parameter_ui, 'Plotting Error', e.message, QtGui.QMessageBox.Close)
+            frm = inspect.trace()[-1]
+            mod = inspect.getmodule(frm[0])
+            QtGui.QMessageBox.critical(self._parameter_ui,
+                                       'Plotting Error', "{}: {}".format(mod.__name__, e.message),
+                                       QtGui.QMessageBox.Close)
 
 
 class MPLCanvasWidget(QtGui.QWidget):
@@ -159,3 +164,5 @@ class MPLCanvasWidget(QtGui.QWidget):
         self._layout.addWidget(self._canvas)
         self.setLayout(self._layout)
 
+    def get_fig(self):
+        return self._fig
