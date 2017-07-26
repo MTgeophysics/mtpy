@@ -4,9 +4,6 @@ import unittest
 from unittest import TestCase
 
 import matplotlib.pyplot as plt
-import sys
-
-from mtpy.gui.SmartMT.gui.progress_bar import ProgressBar
 from mtpy.imaging.plotnresponses import PlotMultipleResponses
 
 plt.ion()
