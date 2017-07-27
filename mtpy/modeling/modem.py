@@ -1529,6 +1529,8 @@ class Model(object):
         self.pad_north = kwargs.pop('pad_north', 7)
         self.pad_z = kwargs.pop('pad_z', 4)
         
+        self.pad_num = 3
+        
         #root of padding cells
         self.pad_stretch_h= kwargs.pop('pad_stretch_h', 1.2)
         self.pad_stretch_v= kwargs.pop('pad_stretch_v', 1.2)
@@ -1739,6 +1741,30 @@ class Model(object):
         #remove the average distance to get coordinates in a relative space
         self.station_locations['rel_east'] -= east_center
         self.station_locations['rel_north'] -= north_center
+        
+    def get_padding_cells(self, cell_width, max_distance, num_cells):
+        """
+        get padding cells, which are exponentially increasing to a given 
+        distance.  Make sure that each cell is larger than the one previously.
+        
+        
+        """
+        # compute scaling factor
+        scaling = ((max_distance)/(cell_width*1.2))**(1./(num_cells-1)) 
+        
+        # make padding cell
+        padding = np.zeros(num_cells)
+        for ii in range(num_cells):
+            # calculate the cell width for an exponential increase
+            exp_pad = np.round((cell_width*1.2)*scaling**ii, -2)
+            
+            # calculate the cell width for a geometric increase by 1.2
+            mult_pad = np.round((cell_width*1.2)*((1-1.2**(ii+1))/(1-1.2)), -2)
+            
+            # take the maximum width for padding
+            padding[ii] = max([exp_pad, mult_pad])
+
+        return padding
 
     def make_mesh(self):
         """ 
@@ -1774,10 +1800,14 @@ class Model(object):
         self.get_station_locations()
         
         #find the edges of the grid
-        west = self.station_locations['rel_east'].min()-(1.5*self.cell_size_east)
-        east = self.station_locations['rel_east'].max()+(1.5*self.cell_size_east)
-        south = self.station_locations['rel_north'].min()-(1.5*self.cell_size_north)
-        north = self.station_locations['rel_north'].max()+(1.5*self.cell_size_north)
+        pad_width_east = self.pad_num*1.5*self.cell_size_east
+        pad_width_north = self.pad_num*1.5*self.cell_size_north
+        west = self.station_locations['rel_east'].min()-pad_width_east
+        east = self.station_locations['rel_east'].max()+pad_width_east
+        south = self.station_locations['rel_north'].min()-pad_width_north
+        north = self.station_locations['rel_north'].max()+pad_width_north
+        
+        # round the numbers so they are easier to read
         west = np.round(west, -2)
         east= np.round(east, -2)
         south= np.round(south, -2)
@@ -1840,6 +1870,42 @@ class Model(object):
             except IndexError:
                 continue
             
+            
+            
+        ##---> make station mesh
+## get station padding cells
+#pad_width_east = 1.5*cell_size_east*pad_cell_num
+#pad_width_north = 1.5*cell_size_north*pad_cell_num
+#
+#station_west = west-pad_width_east
+#station_east = east+pad_width_east
+#station_south = south-pad_width_north
+#station_north = north+pad_width_north
+#
+#
+#inner_east = np.arange(station_west,
+#                      station_east+cell_size_east,
+#                      cell_size_east)
+#inner_north = np.arange(station_south,
+#                       station_north+cell_size_north,
+#                       cell_size_north)
+#
+### get outside station area padding cells
+#
+#padding_east = get_padding_cells(cell_size_east,
+#                                 east_west_ext/2-station_east, 
+#                                 pad_east)
+#padding_north = get_padding_cells(cell_size_north,
+#                                 north_south_ext/2-station_north, 
+#                                 pad_north)
+#
+#                                    
+#grid_east = np.append(np.append(-1*padding_east[::-1]+station_west, 
+#                                inner_east), 
+#                      padding_east+station_east)
+#grid_north = np.append(np.append(-1*padding_north[::-1]+station_south,
+#                                 inner_north), 
+#                      padding_north+station_north)
         #--> make depth grid
         log_z = np.logspace(np.log10(self.z1_layer), 
                             np.log10(self.z_target_depth-np.logspace(np.log10(self.z1_layer), 
