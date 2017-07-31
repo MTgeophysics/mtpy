@@ -11,7 +11,7 @@
 from PyQt4 import QtCore
 
 from mtpy.gui.SmartMT.gui.plot_parameter import StationSelection, Rotation, PlotControlMTResponse, Arrow, Ellipse, \
-    PlotTitle
+    CommonSettings
 from mtpy.gui.SmartMT.visualization.visualization_base import VisualizationBase
 from mtpy.imaging.plot_mt_response import PlotMTResponse
 from mtpy.imaging.plotnresponses import PlotMultipleResponses
@@ -30,7 +30,7 @@ class MTResponse(VisualizationBase):
             'plot_strike': self._plot_control_ui.get_strike(),
             'plot_skew': self._plot_control_ui.get_skew(),
             'plot_pt': self._plot_control_ui.get_ellipses(),
-            'plot_title': self._title_ui.get_title()
+            'plot_title': self._common_ui.get_title()
         }
 
         if self._arrow_ui.ui.groupBox_advanced_options.isChecked():
@@ -56,8 +56,8 @@ class MTResponse(VisualizationBase):
         self._parameter_ui.add_parameter_groubox(self._station_ui)
         self._station_ui.station_changed.connect(self._station_changed)
 
-        self._title_ui = PlotTitle(self._parameter_ui)
-        self._parameter_ui.add_parameter_groubox(self._title_ui)
+        # self._title_ui = CommonSettings(self._parameter_ui)
+        # self._parameter_ui.add_parameter_groubox(self._title_ui)
 
         self._plot_control_ui = PlotControlMTResponse(self._parameter_ui)
         self._plot_control_ui.hide_plot_style()
@@ -79,7 +79,7 @@ class MTResponse(VisualizationBase):
 
     def _station_changed(self):
         # change title
-        self._title_ui.set_title(self._station_ui.get_station().station)
+        self._common_ui.set_title(self._station_ui.get_station().station)
 
     def _ellipse_radio_button_toggled(self, b):
         self._ellipse_ui.setHidden(not self._ellipse_ui.isHidden())
@@ -149,8 +149,8 @@ subplots such as strike, skew and phase tensor ellipses.</p>
         self._params = None
 
         # set up parameter GUIs here
-        self._title_ui = PlotTitle(self._parameter_ui)
-        self._parameter_ui.add_parameter_groubox(self._title_ui)
+        # self._title_ui = CommonSettings(self._parameter_ui)
+        # self._parameter_ui.add_parameter_groubox(self._title_ui)
 
         self._plot_control_ui = PlotControlMTResponse(self._parameter_ui)
         self._parameter_ui.add_parameter_groubox(self._plot_control_ui)
@@ -189,7 +189,7 @@ subplots such as strike, skew and phase tensor ellipses.</p>
             'plot_strike': self._plot_control_ui.get_strike(),
             'plot_skew': self._plot_control_ui.get_skew(),
             'plot_pt': self._plot_control_ui.get_ellipses(),
-            'plot_title': self._title_ui.get_title(),
+            'plot_title': self._common_ui.get_title(),
             'plot_style': self._plot_control_ui.get_style(),
             'plot_yn': 'n'
         }
