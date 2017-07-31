@@ -187,11 +187,12 @@ class Ui_Dialog_Export(object):
         Dialog_Export.setWindowTitle(_translate("Dialog_Export", "Export Image...", None))
         self.label_6.setText(_translate("Dialog_Export", "Width:", None))
         self.label_7.setText(_translate("Dialog_Export", "Height:", None))
-        self.checkBox_transparent.setToolTip(_translate("Dialog_Export",
-                                                        "<html><head/><body><p>make the axes patches transparent; the figure patch will abso be transparent unless facecolor and/or edgecolor are specified in the figure. This is useful, for example, for displaying a plot on top of a colored background.</p></body></html>",
-                                                        None))
+        self.checkBox_transparent.setToolTip(_translate("Dialog_Export", "<html><head/><body><p>make the axes patches transparent; the figure\n"
+"                      patch will abso be transparent unless facecolor and/or edgecolor are specified in the figure. This\n"
+"                      is useful, for example, for displaying a plot on top of a colored background.</p></body></html>\n"
+"                  ", None))
         self.checkBox_transparent.setText(_translate("Dialog_Export", "Transparent", None))
-        self.doubleSpinBox_width_inches.setSuffix(_translate("Dialog_Export", " inches", None))
+        self.doubleSpinBox_width_inches.setSuffix(_translate("Dialog_Export", "inches", None))
         self.pushButton_export.setText(_translate("Dialog_Export", "Export", None))
         self.pushButton_preview.setText(_translate("Dialog_Export", "Preview", None))
         self.pushButton_cancel.setText(_translate("Dialog_Export", "Cancel", None))
@@ -202,29 +203,25 @@ class Ui_Dialog_Export(object):
         self.label.setText(_translate("Dialog_Export", "To Directory:", None))
         self.label_3.setToolTip(_translate("Dialog_Export", "<html><head/><body><p>Format of the exported image</p></body></html>", None))
         self.label_3.setText(_translate("Dialog_Export", "File Type:", None))
-        self.label_2.setToolTip(_translate("Dialog_Export",
-                                           "<html><head/><body><p>Name of the image file (with or without . format extension)</p></body></html>",
-                                           None))
+        self.label_2.setToolTip(_translate("Dialog_Export", "<html><head/><body><p>Name of the image file (with or without . format\n"
+"             extension)</p></body></html>\n"
+"         ", None))
         self.label_2.setText(_translate("Dialog_Export", "File Name:", None))
         self.checkBox_tightBbox.setToolTip(_translate("Dialog_Export", "<html><head/><body><p>Save only the minimum figure area</p></body></html>", None))
         self.checkBox_tightBbox.setText(_translate("Dialog_Export", "Tight Format", None))
-        self.comboBox_fileType.setToolTip(
-            _translate("Dialog_Export", "<html><head/><body><p>Format of the exported image</p></body></html>", None))
-        self.label_4.setToolTip(
-            _translate("Dialog_Export", "<html><head/><body><p>The resolution in dots per inch.</p></body></html>",
-                       None))
+        self.comboBox_fileType.setToolTip(_translate("Dialog_Export", "<html><head/><body><p>Format of the exported image</p></body></html>", None))
+        self.label_4.setToolTip(_translate("Dialog_Export", "<html><head/><body><p>The resolution in dots per inch.</p></body></html>", None))
         self.label_4.setText(_translate("Dialog_Export", "DPI:", None))
         self.comboBox_fileName.setToolTip(_translate("Dialog_Export", "<html><head/><body><p>Name of the image file (with or without . format extension)</p></body></html>", None))
         self.comboBox_fileName.setItemText(0, _translate("Dialog_Export", "figure.png", None))
         self.comboBox_orientation.setToolTip(_translate("Dialog_Export", "<html><head/><body><p>Orientation of the export, currently only available on postscripts</p></body></html>", None))
         self.comboBox_orientation.setItemText(0, _translate("Dialog_Export", "Portrait", None))
         self.comboBox_orientation.setItemText(1, _translate("Dialog_Export", "Landscape", None))
-        self.doubleSpinBox_height_inches.setSuffix(_translate("Dialog_Export", " inches", None))
-        self.spinBox_dpi.setToolTip(
-            _translate("Dialog_Export", "<html><head/><body><p>The resolution in dots per inch.</p></body></html>",
-                       None))
+        self.doubleSpinBox_height_inches.setSuffix(_translate("Dialog_Export", "inches", None))
+        self.spinBox_dpi.setToolTip(_translate("Dialog_Export", "<html><head/><body><p>The resolution in dots per inch.</p></body></html>", None))
         self.pushButton_browse.setToolTip(_translate("Dialog_Export", "<html><head/><body><p>Directory to save the file</p></body></html>", None))
         self.pushButton_browse.setText(_translate("Dialog_Export", "Browse", None))
         self.comboBox_directory.setToolTip(_translate("Dialog_Export", "<html><head/><body><p>Directory to save the file</p></body></html>", None))
-        self.spinBox_width_pixels.setSuffix(_translate("Dialog_Export", " pixels", None))
-        self.spinBox_height_pixels.setSuffix(_translate("Dialog_Export", " pixels", None))
+        self.spinBox_width_pixels.setSuffix(_translate("Dialog_Export", "pixels", None))
+        self.spinBox_height_pixels.setSuffix(_translate("Dialog_Export", "pixels", None))
+

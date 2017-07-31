@@ -17,6 +17,7 @@ from matplotlib import colors as mcolors
 from mtpy.gui.SmartMT.gui.matplotlib_imabedding import MPLCanvas, Cursor
 from mtpy.gui.SmartMT.ui_asset.groupbox_arrow import Ui_GroupBox_Arrow
 from mtpy.gui.SmartMT.ui_asset.groupbox_color_bar import Ui_GroupBox_ColorBar
+from mtpy.gui.SmartMT.ui_asset.groupbox_common import Ui_GroupBox_common_settings
 from mtpy.gui.SmartMT.ui_asset.groupbox_ellipse import Ui_GroupBoxEllipse
 from mtpy.gui.SmartMT.ui_asset.groupbox_font import Ui_GroupBox_Font
 from mtpy.gui.SmartMT.ui_asset.groupbox_frequency_period_index import Ui_GroupBox_Frequency_Period_Index
@@ -24,7 +25,6 @@ from mtpy.gui.SmartMT.ui_asset.groupbox_frequency_period_single import Ui_groupB
 from mtpy.gui.SmartMT.ui_asset.groupbox_linedir import Ui_GroupBox_Linedir
 from mtpy.gui.SmartMT.ui_asset.groupbox_padding import Ui_GroupBox_Padding
 from mtpy.gui.SmartMT.ui_asset.groupbox_plot_control_mt_response import Ui_GroupBox_plot_control_mt_response
-from mtpy.gui.SmartMT.ui_asset.groupbox_plot_title import Ui_GroupBox_plot_title
 from mtpy.gui.SmartMT.ui_asset.groupbox_rotation import Ui_GroupBox_Rotation
 from mtpy.gui.SmartMT.ui_asset.groupbox_scale import Ui_GroupBox_Scale
 from mtpy.gui.SmartMT.ui_asset.groupbox_station_select import Ui_GroupBox_Station_Select
@@ -772,14 +772,76 @@ class PlotControlMTResponse(QtGui.QGroupBox):
         self.ui.groupBox_plot_style.hide()
 
 
-class PlotTitle(QtGui.QGroupBox):
+class CommonSettings(QtGui.QGroupBox):
     def __init__(self, parent):
         QtGui.QGroupBox.__init__(self, parent)
-        self.ui = Ui_GroupBox_plot_title()
+        self.ui = Ui_GroupBox_common_settings()
         self.ui.setupUi(self)
+
+        # dpi
+        self.ui.spinBox_dpi.valueChanged.connect(self._dpi_changed)
+        # inches
+        self.ui.doubleSpinBox_width_inches.valueChanged.connect(self._width_inches_changed)
+        self.ui.doubleSpinBox_height_inches.valueChanged.connect(self._height_inches_changed)
+        # pixels
+        self.ui.spinBox_width_pixels.valueChanged.connect(self._width_pixels_changed)
+        self.ui.spinBox_height_pixels.valueChanged.connect(self._height_pixels_changed)
 
     def get_title(self):
         return str(self.ui.lineEdit_title.text())
 
     def set_title(self, title):
         self.ui.lineEdit_title.setText(title)
+
+    def _dpi_changed(self, dpi):
+        self.ui.doubleSpinBox_height_inches.blockSignals(True)
+        self.ui.doubleSpinBox_width_inches.blockSignals(True)
+        self.ui.spinBox_height_pixels.setValue(
+            self.ui.doubleSpinBox_height_inches.value() * dpi
+        )
+        self.ui.spinBox_width_pixels.setValue(
+            self.ui.doubleSpinBox_width_inches.value() * dpi
+        )
+        self.ui.doubleSpinBox_height_inches.blockSignals(False)
+        self.ui.doubleSpinBox_width_inches.blockSignals(False)
+
+    def _width_pixels_changed(self, width):
+        self.ui.doubleSpinBox_width_inches.blockSignals(True)
+        new_width_inches = width / float(self.ui.spinBox_dpi.value())
+        self.ui.doubleSpinBox_width_inches.setValue(new_width_inches)
+        self.ui.doubleSpinBox_width_inches.blockSignals(False)
+
+    def _height_pixels_changed(self, height):
+        self.ui.doubleSpinBox_height_inches.blockSignals(True)
+        new_height_inches = height / float(self.ui.spinBox_dpi.value())
+        self.ui.doubleSpinBox_height_inches.setValue(new_height_inches)
+        self.ui.doubleSpinBox_height_inches.blockSignals(False)
+
+    def _width_inches_changed(self, width):
+        self.ui.spinBox_width_pixels.blockSignals(True)
+        self.ui.spinBox_width_pixels.setValue(
+            width * self.ui.spinBox_dpi.value()
+        )
+        self.ui.spinBox_width_pixels.blockSignals(False)
+
+    def _height_inches_changed(self, height):
+        self.ui.spinBox_height_pixels.blockSignals(True)
+        self.ui.spinBox_height_pixels.setValue(
+            height * self.ui.spinBox_dpi.value()
+        )
+        self.ui.spinBox_height_pixels.blockSignals(False)
+
+    def get_size_inches_width(self):
+        return self.ui.doubleSpinBox_width_inches.value()
+
+    def get_size_inches_height(self):
+        return self.ui.doubleSpinBox_height_inches.value()
+
+    def get_dpi(self):
+        return self.ui.spinBox_dpi.value()
+
+    def get_layout(self):
+        if self.ui.checkBox_tight_layout.isChecked():
+            return True
+        else:
+            return False
