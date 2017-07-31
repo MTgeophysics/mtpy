@@ -137,7 +137,8 @@ class VisualizationBase(QtCore.QThread):
             self._fig.set_size_inches(self._common_ui.get_size_inches_width(),
                                       self._common_ui.get_size_inches_height())
             self._fig.set_dpi(self._common_ui.get_dpi())
-            self._fig.set_tight_layout('tight')
+            self._fig.set_tight_layout(self._common_ui.get_layout())
+
             self.plotting_completed.emit(self._fig)
         except Exception as e:
             frm = inspect.trace()[-1]
@@ -161,6 +162,21 @@ class MPLCanvasWidget(QtGui.QWidget):
         self._layout.addWidget(self._toolbar)
         self._layout.addWidget(self._canvas)
         self.setLayout(self._layout)
+
+        # resize the figure
+        # dpi = self._fig.get_dpi()
+        # width = int(self._fig.get_figwidth() * dpi) + margins[0] + margins[2]
+        # height = int(self._fig.get_figheight() * dpi) + margins[1] + margins[3]
+        # self._canvas.resize(width, height)
+        # self._canvas.resize(self._canvas.sizeHint())
+        # this is a hack to keep the figure close to the right size (pixels)
+        # everything above this code does not work
+        size = self.sizeHint()
+        margins = self._layout.getContentsMargins()
+        width = size.width() + margins[0]
+        height = size.height() + self._toolbar.sizeHint().height()
+        print width, height
+        self.resize(width, height)
 
     def get_fig(self):
         return self._fig

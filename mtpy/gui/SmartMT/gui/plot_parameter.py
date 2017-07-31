@@ -839,3 +839,9 @@ class CommonSettings(QtGui.QGroupBox):
 
     def get_dpi(self):
         return self.ui.spinBox_dpi.value()
+
+    def get_layout(self):
+        if self.ui.checkBox_tight_layout.isChecked():
+            return True
+        else:
+            return False

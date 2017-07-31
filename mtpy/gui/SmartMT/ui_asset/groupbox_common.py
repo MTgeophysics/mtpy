@@ -88,6 +88,10 @@ class Ui_GroupBox_common_settings(object):
         self.spinBox_dpi.setProperty("value", 100)
         self.spinBox_dpi.setObjectName(_fromUtf8("spinBox_dpi"))
         self.gridLayout.addWidget(self.spinBox_dpi, 3, 1, 1, 1)
+        self.checkBox_tight_layout = QtGui.QCheckBox(GroupBox_common_settings)
+        self.checkBox_tight_layout.setChecked(True)
+        self.checkBox_tight_layout.setObjectName(_fromUtf8("checkBox_tight_layout"))
+        self.gridLayout.addWidget(self.checkBox_tight_layout, 3, 2, 1, 1)
 
         self.retranslateUi(GroupBox_common_settings)
         QtCore.QMetaObject.connectSlotsByName(GroupBox_common_settings)
@@ -111,4 +115,5 @@ class Ui_GroupBox_common_settings(object):
         self.doubleSpinBox_height_inches.setSuffix(_translate("GroupBox_common_settings", " inches", None))
         self.spinBox_height_pixels.setSuffix(_translate("GroupBox_common_settings", " pixels", None))
         self.label_4.setText(_translate("GroupBox_common_settings", "DPI", None))
+        self.checkBox_tight_layout.setText(_translate("GroupBox_common_settings", "Tight Layout", None))
 
