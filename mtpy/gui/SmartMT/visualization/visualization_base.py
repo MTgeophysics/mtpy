@@ -48,10 +48,10 @@ class VisualizationBase(QtCore.QThread):
         self._parameter_ui = PlotParameter(self._parent)
 
         # add plot common setting gui
-        self._common_ui = CommonSettings(self._parameter_ui)
+        # self._common_ui = CommonSettings(self._parameter_ui)
         # apply default common settings
         self.default_common_settings()
-        self._parameter_ui.add_parameter_groubox(self._common_ui)
+        # self._parameter_ui.add_parameter_groubox(self._common_ui)
 
     def default_common_settings(self):
         """
@@ -146,14 +146,14 @@ class VisualizationBase(QtCore.QThread):
         try:
             self.plot()
             # change size and title
-            if self._common_ui.customized_figure_size():
-                self._fig.set_size_inches(self._common_ui.get_size_inches_width(),
-                                      self._common_ui.get_size_inches_height())
-                self._fig.set_dpi(self._common_ui.get_dpi())
-                self._fig.set_tight_layout(self._common_ui.get_layout())
-            if self._common_ui.customized_figure_title():
-                self._fig.suptitle(self._common_ui.get_title(),
-                                   **self._common_ui.get_title_font_dict())
+            if self._parameter_ui.customized_figure_size():
+                self._fig.set_size_inches(self._parameter_ui.get_size_inches_width(),
+                                          self._parameter_ui.get_size_inches_height())
+                self._fig.set_dpi(self._parameter_ui.get_dpi())
+                self._fig.set_tight_layout(self._parameter_ui.get_layout())
+            if self._parameter_ui.customized_figure_title():
+                self._fig.suptitle(self._parameter_ui.get_title(),
+                                   **self._parameter_ui.get_title_font_dict())
 
             self.plotting_completed.emit(self._fig)
         except Exception as e:

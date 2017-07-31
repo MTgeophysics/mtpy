@@ -79,7 +79,7 @@ class MTResponse(VisualizationBase):
 
     def _station_changed(self):
         # change title
-        self._common_ui.set_title(self._station_ui.get_station().station)
+        self._parameter_ui.set_title(self._station_ui.get_station().station)
 
     def _ellipse_radio_button_toggled(self, b):
         self._ellipse_ui.setHidden(not self._ellipse_ui.isHidden())
