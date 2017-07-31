@@ -857,6 +857,12 @@ class CommonSettings(QtGui.QGroupBox):
         )
         self.ui.spinBox_height_pixels.blockSignals(False)
 
+    def customized_figure_title(self):
+        return self.ui.groupBox_title.isChecked()
+
+    def customized_figure_size(self):
+        return self.ui.groupBox_figure_size.isChecked()
+
     def get_size_inches_width(self):
         return self.ui.doubleSpinBox_width_inches.value()
 

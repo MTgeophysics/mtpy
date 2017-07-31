@@ -30,7 +30,7 @@ class MTResponse(VisualizationBase):
             'plot_strike': self._plot_control_ui.get_strike(),
             'plot_skew': self._plot_control_ui.get_skew(),
             'plot_pt': self._plot_control_ui.get_ellipses(),
-            'plot_title': self._common_ui.get_title()
+            # 'plot_title': self._common_ui.get_title()
         }
 
         if self._arrow_ui.ui.groupBox_advanced_options.isChecked():
@@ -189,7 +189,7 @@ subplots such as strike, skew and phase tensor ellipses.</p>
             'plot_strike': self._plot_control_ui.get_strike(),
             'plot_skew': self._plot_control_ui.get_skew(),
             'plot_pt': self._plot_control_ui.get_ellipses(),
-            'plot_title': self._common_ui.get_title(),
+            # 'plot_title': self._common_ui.get_title(),
             'plot_style': self._plot_control_ui.get_style(),
             'plot_yn': 'n'
         }

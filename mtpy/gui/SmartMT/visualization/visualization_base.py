@@ -49,7 +49,19 @@ class VisualizationBase(QtCore.QThread):
 
         # add plot common setting gui
         self._common_ui = CommonSettings(self._parameter_ui)
+        # apply default common settings
+        self.default_common_settings()
         self._parameter_ui.add_parameter_groubox(self._common_ui)
+
+    def default_common_settings(self):
+        """
+        this function will be called to initialize the common_settings parameters of the plot.
+        including titles (title text and its font and positions) and figure size.
+        The default value should fit for the most purpose but override this function to change
+        the default values when necessary.
+        :return:
+        """
+        pass
 
     def set_data(self, mt_objs):
         """
@@ -134,12 +146,14 @@ class VisualizationBase(QtCore.QThread):
         try:
             self.plot()
             # change size and title
-            self._fig.set_size_inches(self._common_ui.get_size_inches_width(),
+            if self._common_ui.customized_figure_size():
+                self._fig.set_size_inches(self._common_ui.get_size_inches_width(),
                                       self._common_ui.get_size_inches_height())
-            self._fig.set_dpi(self._common_ui.get_dpi())
-            self._fig.set_tight_layout(self._common_ui.get_layout())
-            self._fig.suptitle(self._common_ui.get_title(),
-                               **self._common_ui.get_title_font_dict())
+                self._fig.set_dpi(self._common_ui.get_dpi())
+                self._fig.set_tight_layout(self._common_ui.get_layout())
+            if self._common_ui.customized_figure_title():
+                self._fig.suptitle(self._common_ui.get_title(),
+                                   **self._common_ui.get_title_font_dict())
 
             self.plotting_completed.emit(self._fig)
         except Exception as e:
