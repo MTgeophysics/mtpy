@@ -138,6 +138,8 @@ class VisualizationBase(QtCore.QThread):
                                       self._common_ui.get_size_inches_height())
             self._fig.set_dpi(self._common_ui.get_dpi())
             self._fig.set_tight_layout(self._common_ui.get_layout())
+            self._fig.suptitle(self._common_ui.get_title(),
+                               **self._common_ui.get_title_font_dict())
 
             self.plotting_completed.emit(self._fig)
         except Exception as e:

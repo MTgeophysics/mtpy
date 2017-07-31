@@ -786,12 +786,38 @@ class CommonSettings(QtGui.QGroupBox):
         # pixels
         self.ui.spinBox_width_pixels.valueChanged.connect(self._width_pixels_changed)
         self.ui.spinBox_height_pixels.valueChanged.connect(self._height_pixels_changed)
+        # x
+        self.ui.horizontalSlider_x.valueChanged.connect(self._x_slider_changed)
+        self.ui.doubleSpinBox_x.valueChanged.connect(self._x_spinbox_changed)
+        # y
+        self.ui.horizontalSlider_y.valueChanged.connect(self._y_slider_changed)
+        self.ui.doubleSpinBox_y.valueChanged.connect(self._y_spinbox_changed)
 
     def get_title(self):
         return str(self.ui.lineEdit_title.text())
 
     def set_title(self, title):
         self.ui.lineEdit_title.setText(title)
+
+    def _x_slider_changed(self, value):
+        self.ui.doubleSpinBox_x.blockSignals(True)
+        self.ui.doubleSpinBox_x.setValue(value/100.0)
+        self.ui.doubleSpinBox_x.blockSignals(False)
+
+    def _y_slider_changed(self, value):
+        self.ui.doubleSpinBox_y.blockSignals(True)
+        self.ui.doubleSpinBox_y.setValue(value/100.0)
+        self.ui.doubleSpinBox_y.blockSignals(False)
+
+    def _x_spinbox_changed(self, value):
+        self.ui.horizontalSlider_x.blockSignals(True)
+        self.ui.horizontalSlider_x.setValue(value * 100)
+        self.ui.horizontalSlider_x.blockSignals(False)
+
+    def _y_spinbox_changed(self, value):
+        self.ui.horizontalSlider_y.blockSignals(True)
+        self.ui.horizontalSlider_y.setValue(value * 100)
+        self.ui.horizontalSlider_y.blockSignals(False)
 
     def _dpi_changed(self, dpi):
         self.ui.doubleSpinBox_height_inches.blockSignals(True)
@@ -845,3 +871,19 @@ class CommonSettings(QtGui.QGroupBox):
             return True
         else:
             return False
+
+    def get_title_font_dict(self):
+        font_properties = {
+            'x': self.ui.doubleSpinBox_x.value(),
+            'y': self.ui.doubleSpinBox_y.value(),
+            'horizontalalignment': self._horizontalalignment[
+                self.ui.comboBox_horizontal_alignment.currentIndex()],
+            'verticalalignment': self._verticalalignment[
+                self.ui.comboBox_vertical_alignment.currentIndex()
+            ],
+            'fontsize': self.ui.spinBox_fontsize.value()
+        }
+        return font_properties
+
+    _horizontalalignment = ['right', 'center', 'left']
+    _verticalalignment = ['top', 'center', 'bottom', 'baseline']
