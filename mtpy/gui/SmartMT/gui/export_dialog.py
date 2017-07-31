@@ -169,6 +169,8 @@ class ExportDialog(QtGui.QDialog):
         while respawn:
             respawn = False
             self.ui.spinBox_dpi.setValue(fig.get_dpi())
+            self.ui.doubleSpinBox_width_inches.setValue(fig.get_figwidth())
+            self.ui.doubleSpinBox_height_inches.setValue(fig.get_figheight())
             response = self.exec_()
             if response == QtGui.QDialog.Accepted:
                 # saving files
