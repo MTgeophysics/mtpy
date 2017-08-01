@@ -321,7 +321,7 @@ class FrequencySingle(QtGui.QGroupBox):
             self.update_histogram()
 
     class FrequencyHistogram(MPLCanvas):
-        def __init__(self, parent=None, width=5, hight=3, dpi=100):
+        def __init__(self, parent=None, width=5, hight=2, dpi=100):
             self.artists = dict()
             self._frequency = None
             self._current_frequency = None
@@ -334,6 +334,7 @@ class FrequencySingle(QtGui.QGroupBox):
             # self.mpl_connect('motion_notify_event', self.cursor)
             self.mpl_connect('button_release_event', self.mouse_pick)
             self.setMinimumSize(200, 150)
+            self.resize(self.sizeHint())
 
         # def mouse_move(self, event):
         #     if not event.inaxes:
@@ -371,6 +372,8 @@ class FrequencySingle(QtGui.QGroupBox):
                 if self._title and self._unit:
                     self._axes.set_xlabel("%s (%s)" % (self._title, self._unit), fontsize=8)
                     self.figure.suptitle('%s Distribution in Selected Stations' % self._title, fontsize=8)
+
+                self._fig.set_tight_layout(True)
 
         def set_data(self, frequency):
             self._frequency = frequency

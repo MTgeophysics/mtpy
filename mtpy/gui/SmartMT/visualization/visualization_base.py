@@ -142,7 +142,7 @@ class VisualizationBase(QtCore.QThread):
 
     def run(self):
         # self.setTerminationEnabled(True)
-        plt.clf()
+        # plt.clf()
         try:
             self.plot()
             # change size and title

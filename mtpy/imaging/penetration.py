@@ -73,7 +73,8 @@ class Depth1D(ImagingBase):
             return
 
         self._logger.info("Plotting the edi file %s", self._data.fn)
-        self._fig = plt.figure()
+        self._fig = plt.figure(figsize=(8, 6), dpi=80)
+        self._fig.set_tight_layout(True)
         plt.grid(True)
 
         zeta = self._data.Z  # the attribute Z represent the impedance tensor 2X2 matrix
@@ -150,7 +151,8 @@ class Depth2D(ImagingBase):
         pr.generate_profile()
         # pr.plot_profile(station_id=[0, 4])
 
-        self._fig = plt.figure()
+        self._fig = plt.figure(figsize=(8, 6), dpi=80)
+        self._fig.set_tight_layout(True)
         for period_index in self._period_indexes:
             self._logger.debug("doing period index %s", period_index)
             (stations, periods, pen, _) = get_penetration_depth(pr.edi_list, int(period_index), whichrho=self._rho)
@@ -260,7 +262,8 @@ class Depth3D(ImagingBase):
                                                                                  whichrho=self._rho, ptol=self._ptol)
 
         # create figure
-        self._fig = plt.figure()
+        self._fig = plt.figure(figsize=(8, 6), dpi=80)
+        self._fig.set_tight_layout(True)
 
         if check_period_values(periods) is False:
             self._logger.error("The period values are NOT equal - Please check!!! %s", periods)
