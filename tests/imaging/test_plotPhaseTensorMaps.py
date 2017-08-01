@@ -11,8 +11,6 @@ plt.ion()
 from mtpy.imaging.penetration import load_edi_files
 from mtpy.imaging.phase_tensor_maps import PlotPhaseTensorMaps
 
-# use non-interactive backend 'Agg', so that you do not have to see figure pop-out.
-
 edi_paths = [
     "",
     "tests\\data\\edifiles",
