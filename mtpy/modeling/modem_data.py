@@ -11,23 +11,21 @@ Date: 2017-06-05
 
 __author__ = 'fei.zhang@ga.gov.au'
 
-#from __future__ import print_function
-import os
-import sys
 import glob
-import numpy as np
-from mtpy.core.edi_collection import EdiCollection
-
+# from __future__ import print_function
+import os
 import os.path as op
+import sys
 
-from mtpy import constants
+import numpy as np
+
 import mtpy.core.mt as mt
 import mtpy.core.z as mtz
 import mtpy.modeling.ws3dinv as ws
-import mtpy.utils.filehandling as MTfh
 import mtpy.utils.latlon_utm_conversion as utm2ll
+from mtpy import constants
+from mtpy.core.edi_collection import EdiCollection
 from mtpy.utils.mtpylog import MtPyLog
-
 
 try:
     from evtk.hl import gridToVTK, pointsToVTK
@@ -959,6 +957,9 @@ class Data(object):
             dlines.append('> {0} {1}\n'.format(nper,
                                                self.data_array['z'].shape[0]))
 
+            # YG: create new list for sorting data
+            data_lines = []
+
             for ss in range(self.data_array['z'].shape[0]):
                 for ff in range(self.data_array['z'].shape[1]):
                     for comp in self.inv_comp_dict[inv_mode]:
@@ -1070,15 +1071,22 @@ class Data(object):
 
                             abs_err = '{0:> 14.6e}'.format(abs(abs_err))
                             # make sure that x==north, y==east, z==+down
-                            dline = ''.join([per, sta, lat, lon, nor, eas, ele,
+                            # YG: populate data that needs to be sorted
+                            data_lines.append([per, sta, lat, lon, nor, eas, ele,
                                              com, rea, ima, abs_err, '\n'])
-                            dlines.append(dline)
+                            # dline = ''.join([per, sta, lat, lon, nor, eas, ele,
+                            #                  com, rea, ima, abs_err, '\n'])
+                            # dlines.append(dline)
+
+            # YG: sort by station then by period
+            data_lines = sorted(data_lines, key=lambda line: (line[1], float(line[0])))
+            # add data table to output lines
+            dlines += [''.join(row) for row in data_lines]
 
         #self.data_fn = MTfh.make_unique_filename(self.data_fn) # make a unique file in debug stage
         # if os.path.exists(self.data_fn):
         #     data_fn1= self.data_fn[:-3]+"OLD"
         #     os.rename(self.data_fn, data_fn1)
-
 
         # dfid = file(self.data_fn, 'w')
         dfid = file(self.data_fn, 'w')
