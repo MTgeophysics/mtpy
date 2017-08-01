@@ -304,7 +304,7 @@ class PreviewDialog(QtGui.QDialog):
         self.ui = Ui_Dialog_preview()
         self.ui.setupUi(self)
         self._canvas = FigureCanvas(fig)
-        self.ui.verticalLayout.addWidget(self._canvas)
+        self.ui.verticalLayout_2.addWidget(self._canvas)
         self.resize(self.sizeHint())
 
 def generate_unique_file_name(basename):
