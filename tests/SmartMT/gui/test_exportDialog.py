@@ -76,11 +76,11 @@ class TestExportDialog(TestCase):
         self.assertTrue(self.dialog.ui.checkBox_tightBbox.isChecked(), "Tight Layout Default")
         self.assertFalse(self.dialog.get_transparent(), "Transparent Default")
         self.assertTrue(self.dialog.ui.comboBox_orientation.currentText() == "Landscape", "Orientation Default")
-        self.assertTrue(self.dialog.ui.spinBox_dpi.value() == 100)
+        self.assertTrue(self.dialog.ui.spinBox_dpi.value() == 80)
         self.assertTrue(self.dialog.ui.doubleSpinBox_height_inches.value() == 6.)
         self.assertTrue(self.dialog.ui.doubleSpinBox_width_inches.value() == 8.)
-        self.assertTrue(self.dialog.ui.spinBox_height_pixels.value() == 710)
-        self.assertTrue(self.dialog.ui.spinBox_width_pixels.value() == 570)
+        self.assertTrue(self.dialog.ui.spinBox_height_pixels.value() == 480)
+        self.assertTrue(self.dialog.ui.spinBox_width_pixels.value() == 640)
         self.assertTrue(self.dialog.ui.checkBox_open_after_export.isChecked())
 
         # check states from the getters

@@ -12,15 +12,13 @@
 import abc
 import inspect
 
-import matplotlib.pyplot as plt
 from PyQt4 import QtGui, QtCore
 from PyQt4.QtCore import pyqtSignal
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure
 
-from mtpy.gui.SmartMT.gui.plot_parameter import PlotParameter, CommonSettings
-from mtpy.gui.SmartMT.gui.busy_indicators import ProgressBar
+from mtpy.gui.SmartMT.gui.plot_parameter import PlotParameter
 from mtpy.utils.mtpylog import MtPyLog
 
 

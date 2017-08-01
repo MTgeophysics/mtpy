@@ -14,8 +14,10 @@ import numpy as np
 from PIL import Image
 from PyQt4 import QtGui, QtCore
 import matplotlib.pyplot as plt
+from matplotlib.backends.backend_qt4agg import FigureCanvas
 
 from mtpy.gui.SmartMT.ui_asset.dialog_export import Ui_Dialog_Export
+from mtpy.gui.SmartMT.ui_asset.dialog_preview import Ui_Dialog_preview
 
 IMAGE_FORMATS = []
 filetypes = plt.gcf().canvas.get_supported_filetypes()
@@ -28,6 +30,8 @@ class ExportDialog(QtGui.QDialog):
         QtGui.QDialog.__init__(self, parent)
         self.ui = Ui_Dialog_Export()
         self.ui.setupUi(self)
+
+        self._fig = None
 
         # setup file types
         for frmt in IMAGE_FORMATS:
@@ -53,6 +57,8 @@ class ExportDialog(QtGui.QDialog):
         self.ui.pushButton_cancel.clicked.connect(self._cancel_button_clicked)
         # export button
         self.ui.pushButton_export.clicked.connect(self._export_button_clicked)
+        # preview button
+        self.ui.pushButton_preview.clicked.connect(self._preview_button_clicked)
 
         # dpi
         self.ui.spinBox_dpi.valueChanged.connect(self._dpi_changed)
@@ -119,6 +125,21 @@ class ExportDialog(QtGui.QDialog):
     def _export_button_clicked(self, b):
         self.accept()
 
+    def _preview_button_clicked(self):
+        if self._fig:
+            # set figures
+            self._fig.set_size_inches(self.get_size_inches_width(), self.get_size_inches_height())
+            params = self.get_savefig_params()
+            self._fig.set_dpi(params['dpi'])
+            self._fig.set_tight_layout(True if params['bbox_inches'] == 'tight' else False)
+
+            canvas = FigureCanvas(self._fig)
+            canvas.show()
+
+            # dialog
+            preview_dialog = PreviewDialog(self, self._fig)
+            preview_dialog.exec_()
+
     def _file_type_changed(self, *args, **kwargs):
         index = self.ui.comboBox_fileType.currentIndex()
         ext, _ = IMAGE_FORMATS[index]
@@ -165,6 +186,7 @@ class ExportDialog(QtGui.QDialog):
                                                        else self.ui.comboBox_directory.findText(directory))
 
     def export_to_file(self, fig):
+        self._fig = fig
         respawn = True
         while respawn:
             respawn = False
@@ -188,9 +210,9 @@ class ExportDialog(QtGui.QDialog):
                         pass  # use the original name to overwrite
 
                 params = self.get_savefig_params()
+                # change size
+                fig.set_size_inches(self.get_size_inches_width(), self.get_size_inches_height())
                 try:
-                    # change size
-                    fig.set_size_inches(self.get_size_inches_width(), self.get_size_inches_height())
                     fig.savefig(fname, **params)
                 except IOError as err:
                     if 'RGBA' in err.message:
@@ -275,6 +297,15 @@ class ExportDialog(QtGui.QDialog):
         #     self._msg_box.deleteLater()
         #     super(ExportDialog, self).closeEvent(event)
 
+
+class PreviewDialog(QtGui.QDialog):
+    def __init__(self, parent, fig):
+        QtGui.QDialog.__init__(self, parent)
+        self.ui = Ui_Dialog_preview()
+        self.ui.setupUi(self)
+        self._canvas = FigureCanvas(fig)
+        self.ui.verticalLayout.addWidget(self._canvas)
+        self.resize(self.sizeHint())
 
 def generate_unique_file_name(basename):
     name, ext = os.path.splitext(basename)

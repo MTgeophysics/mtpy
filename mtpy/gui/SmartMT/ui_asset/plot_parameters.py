@@ -203,17 +203,18 @@ class Ui_GroupBoxParameters(object):
     def retranslateUi(self, GroupBoxParameters):
         GroupBoxParameters.setTitle(_translate("GroupBoxParameters", "Settings", None))
         self.groupBox_title.setTitle(_translate("GroupBoxParameters", "Title", None))
-        self.lineEdit_title.setToolTip(
-            _translate("GroupBoxParameters", "<html><head/><body><p>The title of the plot, leave blank to\n"
-                                             "                            remove title.</p><p><span style=\" font-weight:600;\">Note:</span>\n"
-                                             "                            The size and location of the title may depends on the selected plot type.</p></body></html>\n"
-                                             "                        ", None))
+        self.lineEdit_title.setToolTip(_translate("GroupBoxParameters", "<html><head/><body><p>The title of the plot,\n"
+                                                                        "                                               leave blank to\n"
+                                                                        "                                               remove title.</p><p><span style=\" font-weight:600;\">Note:</span>\n"
+                                                                        "                                               The size and location of the title may depends on the selected plot type.</p></body></html>\n"
+                                                                        "                                           ",
+                                                  None))
         self.label_5.setText(_translate("GroupBoxParameters", "X", None))
-        self.label.setToolTip(
-            _translate("GroupBoxParameters", "<html><head/><body><p>The title of the plot, leave blank to\n"
-                                             "                            remove title.</p><p><span style=\" font-weight:600;\">Note:</span>\n"
-                                             "                            The size and location of the title may depends on the selected plot type.</p></body></html>\n"
-                                             "                        ", None))
+        self.label.setToolTip(_translate("GroupBoxParameters", "<html><head/><body><p>The title of the plot,\n"
+                                                               "                                               leave blank to\n"
+                                                               "                                               remove title.</p><p><span style=\" font-weight:600;\">Note:</span>\n"
+                                                               "                                               The size and location of the title may depends on the selected plot type.</p></body></html>\n"
+                                                               "                                           ", None))
         self.label.setText(_translate("GroupBoxParameters", "Plot Title", None))
         self.label_6.setText(_translate("GroupBoxParameters", "Y", None))
         self.label_9.setText(_translate("GroupBoxParameters", "Font Size", None))
@@ -226,14 +227,14 @@ class Ui_GroupBoxParameters(object):
         self.comboBox_vertical_alignment.setItemText(1, _translate("GroupBoxParameters", "Center", None))
         self.comboBox_vertical_alignment.setItemText(2, _translate("GroupBoxParameters", "Bottom", None))
         self.comboBox_vertical_alignment.setItemText(3, _translate("GroupBoxParameters", "Baseline", None))
-        self.spinBox_fontsize.setSuffix(_translate("GroupBoxParameters", " points", None))
+        self.spinBox_fontsize.setSuffix(_translate("GroupBoxParameters", "points", None))
         self.groupBox_figure_size.setTitle(_translate("GroupBoxParameters", "Figure Size", None))
         self.label_4.setText(_translate("GroupBoxParameters", "DPI", None))
         self.label_3.setText(_translate("GroupBoxParameters", "Height", None))
-        self.doubleSpinBox_height_inches.setSuffix(_translate("GroupBoxParameters", " inches", None))
-        self.spinBox_height_pixels.setSuffix(_translate("GroupBoxParameters", " pixels", None))
-        self.doubleSpinBox_width_inches.setSuffix(_translate("GroupBoxParameters", " inches", None))
-        self.spinBox_width_pixels.setSuffix(_translate("GroupBoxParameters", " pixels", None))
+        self.doubleSpinBox_height_inches.setSuffix(_translate("GroupBoxParameters", "inches", None))
+        self.spinBox_height_pixels.setSuffix(_translate("GroupBoxParameters", "pixels", None))
+        self.doubleSpinBox_width_inches.setSuffix(_translate("GroupBoxParameters", "inches", None))
+        self.spinBox_width_pixels.setSuffix(_translate("GroupBoxParameters", "pixels", None))
         self.checkBox_tight_layout.setText(_translate("GroupBoxParameters", "Tight Layout", None))
         self.label_2.setText(_translate("GroupBoxParameters", "Width", None))
         self.toolBox.setItemText(self.toolBox.indexOf(self.page_common_settings),
