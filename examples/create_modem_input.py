@@ -27,10 +27,40 @@ import sys
 import matplotlib.pyplot as plt
 
 import numpy as np
+
 from mtpy.core.edi_collection import EdiCollection
 from mtpy.modeling.modem_covariance import Covariance
 from mtpy.modeling.modem_data import Data
 from mtpy.modeling.modem_model import Model
+
+
+# YG: patch that changes the matplotlib behaviour
+plt.ion()  # enable interactive
+# plt.ioff()  # disable interactive, which will also disable this patch
+
+
+def show_patcher(show_func):
+    """
+    patch the plt.show() if interactive is enabled to display and then close the plot after 1 second
+    so plt.show() will not block the script and the figure is still visible to the user
+    :param show_func:
+    :return:
+    """
+    def new_show_func(*args, **kwargs):
+        stuff = show_func(*args, **kwargs)
+        # wait 1 second for the image to show on screen
+        figManager = plt.gcf()
+        if figManager is not None:
+            canvas = figManager.canvas
+            # if canvas.figure.stale:
+            #     canvas.draw()
+            # show(block=False)
+            canvas.start_event_loop(1)  # wait time = 1
+        plt.close()
+        return stuff
+    return new_show_func if plt.isinteractive() else show_func
+plt.show = show_patcher(plt.show)
+# end of patch
 
 
 def select_periods(edifiles_list):
