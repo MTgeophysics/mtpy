@@ -588,6 +588,7 @@ class Data(object):
             return  # finished
 
         # FZ: why here ? log space interpolation???
+        # YG: NOTE the code below never reached
         data_period_list = []
         for s_key in sorted(self.mt_dict.keys()):
             mt_obj = self.mt_dict[s_key]
@@ -1029,10 +1030,12 @@ class Data(object):
                                         abs_err = self.error_tipper
                                 elif comp.find('z') == 0:
                                     if self.error_type == 'floor':
-                                        rel_err = self.data_array[ss][c_key + '_err'][ff, z_ii, z_jj] / \
-                                                  abs(zz)
-                                        if rel_err < self.error_floor / 100.:
-                                            rel_err = self.error_floor / 100.
+                                        rel_err = max(
+                                            self.error_floor/100.,
+                                            self.data_array[ss][c_key + '_err'][ff, z_ii, z_jj] / abs(zz)
+                                        )
+                                        # if rel_err < self.error_floor / 100.:
+                                        #     rel_err = self.error_floor / 100.
                                         abs_err = rel_err * abs(zz)
                                     elif self.error_type == 'value':
                                         abs_err = abs(zz) * \
@@ -1046,15 +1049,17 @@ class Data(object):
                                         abs_err = np.sqrt(abs(d_zxy * d_zyx)) * \
                                                   self.error_egbert / 100.
                                     elif self.error_type == 'floor_egbert':
-                                        abs_err = self.data_array[ss][
-                                            c_key + '_err'][ff, z_ii, z_jj]
-                                        d_zxy = self.data_array[
-                                            ss]['z'][ff, 0, 1]
-                                        d_zyx = self.data_array[
-                                            ss]['z'][ff, 1, 0]
-                                        if abs_err < np.sqrt(abs(d_zxy * d_zyx)) * self.error_egbert / 100.:
-                                            abs_err = np.sqrt(
-                                                abs(d_zxy * d_zyx)) * self.error_egbert / 100.
+                                        # abs_err = self.data_array[ss][
+                                        #     c_key + '_err'][ff, z_ii, z_jj]
+                                        d_zxy = self.data_array[ss]['z'][ff, 0, 1]
+                                        d_zyx = self.data_array[ss]['z'][ff, 1, 0]
+                                        # if abs_err < np.sqrt(abs(d_zxy * d_zyx)) * self.error_egbert / 100.:
+                                        #     abs_err = np.sqrt(
+                                        #         abs(d_zxy * d_zyx)) * self.error_egbert / 100.
+                                        abs_err = max(
+                                            np.sqrt(abs(d_zxy * d_zyx)) * self.error_egbert / 100.,
+                                            self.data_array[ss][c_key + '_err'][ff, z_ii, z_jj]
+                                        )
 
                                 if abs_err == 0.0:
                                     abs_err = 1e3
