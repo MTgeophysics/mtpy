@@ -38,12 +38,13 @@ except ImportError:
            '    python setup.py build -compiler=mingw32  or \n'
            '    python setup.py build -compiler=cygwin')
 
-
 logger = MtPyLog().get_mtpy_logger(__name__)
+
 
 class DataError(Exception):
     """Raise for ModEM Data class specific exception"""
     pass
+
 
 # =============================================================================
 class Data(object):
@@ -133,11 +134,13 @@ class Data(object):
                                 * 'sqr' use sqrare error of a frequency of a component of a station
                                 * 'meansqr' mean sqr of the errors for a given component of a station across
                                     all crequenction
-                                * dict { 'zxx', 'zxy', 'zyx', 'zyy', 'tx', 'ty', 'default' }
-                                    where each key is associated with an error type from
-                                    [ 'floor' | 'value' | 'egbert' | 'floor_egbert' | 'stddev' | 'sqrerr' ]
-                                    the error of each component will be calculated using its specified error
-                                    type. 'default' is used if the error type of a component is not specified.
+    comp_error_type        dictionary contains some of the following keys
+                            { 'zxx', 'zxy', 'zyx', 'zyy'}
+                            where each key is associated with an error type from error_type
+                            the error of each component will be calculated using its specified error
+                            type. If the error type is not specified for a component, the value of error_type
+                            will be used
+                            *default* is None
 
     error_value            percentage to multiply Z by to set error
                            *default* is 5 for 5% of Z as error
@@ -245,6 +248,7 @@ class Data(object):
         self.edi_list = edi_list
 
         self.error_type = kwargs.pop('error_type', 'egbert')
+        self.comp_error_type = kwargs.pop('comp_error_type', None)
         self.error_floor = kwargs.pop('error_floor', 10.0)
         self.error_value = kwargs.pop('error_value', 5.0)
         self.error_egbert = kwargs.pop('error_egbert', 3.0)
@@ -310,7 +314,13 @@ class Data(object):
         self.header_strings = \
             ['# Created using MTpy error type {0} of {1:.0f}%, data rotated {2:.1f} deg clockwise from N\n'.format(
                 self.error_type, self.error_floor, self._rotation_angle),
-                '# Period(s) Code GG_Lat GG_Lon X(m) Y(m) Z(m) Component Real Imag Error\n']
+                '# Period(s) Code GG_Lat GG_Lon X(m) Y(m) Z(m) Component Real Imag Error\n'
+            ]
+        if self.comp_error_type is not None:
+            self.header_strings += [
+                "# component \'{}\' used error type: {}\n".format(comp, err_type) for comp, err_type in
+                self.comp_error_type.iteritems()
+            ]
 
         # size of a utm grid
         self._utm_grid_size_north = 888960.0
@@ -366,11 +376,11 @@ class Data(object):
 
         if self.edi_list is None:
             raise DataError('edi_list is None, please input a list of '
-                             '.edi files containing the full path')
+                            '.edi files containing the full path')
 
         if len(self.edi_list) == 0:
             raise DataError('edi_list is empty, please input a list of '
-                             '.edi files containing the full path')
+                            '.edi files containing the full path')
 
         self.mt_dict = {}
         for edi in self.edi_list:
@@ -523,7 +533,6 @@ class Data(object):
 
         """
 
-
         if self.epsg is not None:
             use_pyproj = True
         else:
@@ -544,8 +553,8 @@ class Data(object):
         self.center_position = self.project_xy(*self.center_position_EN)
 
         # get center position of the stations in lat and lon
-        self.center_position2 = 0.5*np.array([self.data_array['lon'].min() + self.data_array['lon'].max(),
-                                             self.data_array['lat'].min() + self.data_array['lat'].max()])
+        self.center_position2 = 0.5 * np.array([self.data_array['lon'].min() + self.data_array['lon'].max(),
+                                                self.data_array['lat'].min() + self.data_array['lat'].max()])
 
         logger.debug("compare center positions: %s, %s", self.center_position, self.center_position2)
 
@@ -587,7 +596,7 @@ class Data(object):
 
         if self.period_list is None:
             raise DataError('Need to input period_min, period_max, '
-                             'max_num_periods or a period_list')
+                            'max_num_periods or a period_list')
         else:
             print '-' * 50
             print ('Inverting for these periods:', len(self.period_list))
@@ -796,14 +805,17 @@ class Data(object):
 
             # FZ: sort in order
             interp_periods = np.sort(interp_periods)
-            logger.debug("station_name and its original period: %s %s %s", mt_obj.station, len(mt_obj.Z.freq), 1.0/mt_obj.Z.freq)
-            logger.debug("station_name and interpolation period: %s %s %s", mt_obj.station, len(interp_periods), interp_periods)
+            logger.debug("station_name and its original period: %s %s %s", mt_obj.station, len(mt_obj.Z.freq),
+                         1.0 / mt_obj.Z.freq)
+            logger.debug("station_name and interpolation period: %s %s %s", mt_obj.station, len(interp_periods),
+                         interp_periods)
 
             # default: use_original_freq = True, each MT station edi file will use it's own frequency-filtered.
             # no new freq in the output modem.dat file. select those freq of mt_obj according to interp_periods
             if use_original_freq:
                 interp_periods = self.filter_periods(mt_obj, interp_periods)
-                logger.debug ("station_name and selected/filtered periods: %s, %s, %s", mt_obj.station, len(interp_periods), interp_periods)
+                logger.debug("station_name and selected/filtered periods: %s, %s, %s", mt_obj.station,
+                             len(interp_periods), interp_periods)
                 # in this case the below interpolate_impedance_tensor function will degenerate into a same-freq set.
 
             if len(interp_periods) > 0:  # not empty
@@ -950,8 +962,9 @@ class Data(object):
 
         dlines = []
         for inv_mode in self.inv_mode_dict[self.inv_mode]:
-            dlines.append(self.header_strings[0])
-            dlines.append(self.header_strings[1])
+            # dlines.append(self.header_strings[0])
+            # dlines.append(self.header_strings[1])
+            dlines += self.header_strings
             dlines.append('> {0}\n'.format(inv_mode))
 
             if inv_mode.find('Impedance') > 0:
@@ -1035,25 +1048,27 @@ class Data(object):
                                 if comp.find('t') == 0:
                                     abs_err = self._vertical_components_error_floor(ff, c_key, ss, z_ii)
                                 elif comp.find('z') == 0:
-                                    if self.error_type == 'floor':
-                                        abs_err = self._impedance_components_error_floor(c_key, ff, ss, z_ii, z_jj, zz)
-                                    elif self.error_type == 'value':
-                                        abs_err = self._impedance_components_error_value(zz)
+                                    comp_error_type = self.comp_error_type[comp] if self.comp_error_type is not None \
+                                                                                    and comp in self.comp_error_type \
+                                        else self.error_type
+                                    # use the type from comp_error_type if the type of comp is specified otherwise
+                                    # use self.error_type
 
-                                    elif self.error_type == 'egbert':
+                                    if comp_error_type == 'floor':
+                                        abs_err = self._impedance_components_error_floor(c_key, ff, ss, z_ii, z_jj, zz)
+                                    elif comp_error_type == 'value':
+                                        abs_err = self._impedance_components_error_value(zz)
+                                    elif comp_error_type == 'egbert':
                                         abs_err = self._impedance_components_error_egbert(ff, ss)
-                                    elif self.error_type == 'floor_egbert':
+                                    elif comp_error_type == 'floor_egbert':
                                         abs_err = self._impedance_components_error_floor_egbert(c_key, ff, ss, z_ii,
                                                                                                 z_jj)
-                                    elif self.error_type == 'stddev':
+                                    elif comp_error_type == 'stddev':
                                         abs_err = self._impedance_components_error_stddev(c_key, ss, z_ii, z_jj)
-                                    elif self.error_type == 'sqr':
+                                    elif comp_error_type == 'sqr':
                                         abs_err = self._impedance_components_error_sqr(c_key, ff, ss, z_ii, z_jj)
-                                    elif self.error_type == 'meansqr':
+                                    elif comp_error_type == 'meansqr':
                                         abs_err = self._impedance_components_error_meansqr(c_key, ss, z_ii, z_jj)
-                                    elif isinstance(self.error_type, dict):
-                                        # specifies error function for each component
-                                        abs_err = 0.0
 
                                 if abs_err == 0.0:
                                     abs_err = 1e3
@@ -1072,7 +1087,7 @@ class Data(object):
                             # make sure that x==north, y==east, z==+down
                             # YG: populate data that needs to be sorted
                             data_lines.append([per, sta, lat, lon, nor, eas, ele,
-                                             com, rea, ima, abs_err, '\n'])
+                                               com, rea, ima, abs_err, '\n'])
                             # dline = ''.join([per, sta, lat, lon, nor, eas, ele,
                             #                  com, rea, ima, abs_err, '\n'])
                             # dlines.append(dline)
@@ -1082,7 +1097,7 @@ class Data(object):
             # add data table to output lines
             dlines += [''.join(row) for row in data_lines]
 
-        #self.data_fn = MTfh.make_unique_filename(self.data_fn) # make a unique file in debug stage
+        # self.data_fn = MTfh.make_unique_filename(self.data_fn) # make a unique file in debug stage
         # if os.path.exists(self.data_fn):
         #     data_fn1= self.data_fn[:-3]+"OLD"
         #     os.rename(self.data_fn, data_fn1)
@@ -1139,7 +1154,7 @@ class Data(object):
         # print errors
         # abs_err = np.std(errors)
         # print abs_err
-        errors = self.data_array[ss][c_key+'_err'][:, z_ii, z_jj]
+        errors = self.data_array[ss][c_key + '_err'][:, z_ii, z_jj]
         # print errors
         abs_err = np.std(errors)
         # print abs_err
@@ -1186,7 +1201,7 @@ class Data(object):
     def _vertical_components_error_floor(self, ff, c_key, ss, z_ii):
         if 'floor' in self.error_type:
             abs_err = max(self.error_tipper,
-                          self.data_array[ss][c_key+'_err'][ff, 0, z_ii])  # this may be wrong as z_ii is always 0
+                          self.data_array[ss][c_key + '_err'][ff, 0, z_ii])  # this may be wrong as z_ii is always 0
         else:
             abs_err = self.error_tipper
         return abs_err
@@ -1521,7 +1536,7 @@ class Data(object):
         logger.debug('Wrote file to %s', vtk_fn)
 
 
-#====================================================================
+# ====================================================================
 
 def select_periods(edifiles_list, percent=10.0):
     """
@@ -1552,7 +1567,6 @@ def select_periods(edifiles_list, percent=10.0):
     logger.info("Number of Selected Periods= %s", len(select_period_list))
 
     return select_period_list
-
 
 
 ####################################################################################
