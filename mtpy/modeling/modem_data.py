@@ -120,7 +120,7 @@ class Data(object):
                            set to this value unless you specify error_type as
                            'floor' or 'floor_egbert'.
                            *default* is .05 for 5%
-    error_type             [ 'floor' | 'value' | 'egbert' ]
+    error_type             [ 'floor' | 'value' | 'egbert' | 'floor_egbert' |'stddev' | 'sqrerr' | dict ]
                            *default* is 'egbert'
                                 * 'floor' sets the error floor to error_floor
                                 * 'value' sets error to error_value
@@ -128,6 +128,13 @@ class Data(object):
                                            error_egbert * sqrt(abs(zxy*zyx))
                                 * 'floor_egbert' sets error floor to
                                            error_egbert * sqrt(abs(zxy*zyx))
+                                * 'stddev' use the stddev of the errors in the edi file
+                                * 'sqrerr' use sqrare error of the errors in the edi file
+                                * dict { 'zxx', 'zxy', 'zyx', 'zyy', 'tx', 'ty', 'default' }
+                                    where each key is associated with an error type from
+                                    [ 'floor' | 'value' | 'egbert' | 'floor_egbert' | 'stddev' | 'sqrerr' ]
+                                    the error of each component will be calculated using its specified error
+                                    type. 'default' is used if the error type of a component is not specified.
 
     error_value            percentage to multiply Z by to set error
                            *default* is 5 for 5% of Z as error
@@ -1035,6 +1042,12 @@ class Data(object):
                                     elif self.error_type == 'floor_egbert':
                                         abs_err = self._impedance_components_error_floor_egbert(c_key, ff, ss, z_ii,
                                                                                                 z_jj)
+                                    elif self.error_type == 'stddev':
+                                        print self.data_array[ss][c_key+'_err'][ff, z_ii, z_jj]
+                                        abs_err = 0.0
+                                    elif isinstance(self.error_type, dict):
+                                        # specifies error function for each component
+                                        abs_err = 0.0
 
                                 if abs_err == 0.0:
                                     abs_err = 1e3
