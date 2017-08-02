@@ -120,7 +120,7 @@ class Data(object):
                            set to this value unless you specify error_type as
                            'floor' or 'floor_egbert'.
                            *default* is .05 for 5%
-    error_type             [ 'floor' | 'value' | 'egbert' | 'floor_egbert' |'stddev' | 'sqrerr' | dict ]
+    error_type             [ 'floor' | 'value' | 'egbert' | 'floor_egbert' |'stddev' | 'sqr' | 'meansqr' | | dict ]
                            *default* is 'egbert'
                                 * 'floor' sets the error floor to error_floor
                                 * 'value' sets error to error_value
@@ -128,8 +128,11 @@ class Data(object):
                                            error_egbert * sqrt(abs(zxy*zyx))
                                 * 'floor_egbert' sets error floor to
                                            error_egbert * sqrt(abs(zxy*zyx))
-                                * 'stddev' use the stddev of the errors in the edi file
-                                * 'sqrerr' use sqrare error of the errors in the edi file
+                                * 'stddev' use the stddev of the errors of for a given component of a station
+                                    across all frequencies
+                                * 'sqr' use sqrare error of a frequency of a component of a station
+                                * 'meansqr' mean sqr of the errors for a given component of a station across
+                                    all crequenction
                                 * dict { 'zxx', 'zxy', 'zyx', 'zyy', 'tx', 'ty', 'default' }
                                     where each key is associated with an error type from
                                     [ 'floor' | 'value' | 'egbert' | 'floor_egbert' | 'stddev' | 'sqrerr' ]
@@ -1030,7 +1033,7 @@ class Data(object):
                             if compute_error:
                                 # compute relative error
                                 if comp.find('t') == 0:
-                                    abs_err = self._vertical_components_error_floor(ff, ss, z_ii)
+                                    abs_err = self._vertical_components_error_floor(ff, c_key, ss, z_ii)
                                 elif comp.find('z') == 0:
                                     if self.error_type == 'floor':
                                         abs_err = self._impedance_components_error_floor(c_key, ff, ss, z_ii, z_jj, zz)
@@ -1043,8 +1046,11 @@ class Data(object):
                                         abs_err = self._impedance_components_error_floor_egbert(c_key, ff, ss, z_ii,
                                                                                                 z_jj)
                                     elif self.error_type == 'stddev':
-                                        print self.data_array[ss][c_key+'_err'][ff, z_ii, z_jj]
-                                        abs_err = 0.0
+                                        abs_err = self._impedance_components_error_stddev(c_key, ss, z_ii, z_jj)
+                                    elif self.error_type == 'sqr':
+                                        abs_err = self._impedance_components_error_sqr(c_key, ff, ss, z_ii, z_jj)
+                                    elif self.error_type == 'meansqr':
+                                        abs_err = self._impedance_components_error_meansqr(c_key, ss, z_ii, z_jj)
                                     elif isinstance(self.error_type, dict):
                                         # specifies error function for each component
                                         abs_err = 0.0
@@ -1096,6 +1102,49 @@ class Data(object):
 
         return self.data_fn
 
+    def _impedance_components_error_meansqr(self, c_key, ss, z_ii, z_jj):
+        """
+        calculate the mean square of errors of a given component over all frequencies for a given station
+        :param c_key:
+        :param ss:
+        :param z_ii:
+        :param z_jj:
+        :return:
+        """
+        abs_err = np.mean(np.square(self.data_array[ss][c_key + '_err'][:, z_ii, z_jj]))
+        return abs_err
+
+    def _impedance_components_error_sqr(self, c_key, ff, ss, z_ii, z_jj):
+        """
+        use the square of the error of a given frequency and a given component at the given station
+        :param c_key:
+        :param ff:
+        :param ss:
+        :param z_ii:
+        :param z_jj:
+        :return:
+        """
+        return np.square(self.data_array[ss][c_key + '_err'][ff, z_ii, z_jj])
+
+    def _impedance_components_error_stddev(self, c_key, ss, z_ii, z_jj):
+        """
+        calculate the stddev across all frequencies on a given component
+        :param c_key:
+        :param ss:
+        :param z_ii:
+        :param z_jj:
+        :return:
+        """
+        # errors = [self.data_array[ss][c_key + '_err'][freq, z_ii, z_jj] for freq in range(self.data_array['z'].shape[1])]
+        # print errors
+        # abs_err = np.std(errors)
+        # print abs_err
+        errors = self.data_array[ss][c_key+'_err'][:, z_ii, z_jj]
+        # print errors
+        abs_err = np.std(errors)
+        # print abs_err
+        return abs_err
+
     def _impedance_components_error_egbert(self, ff, ss):
         d_zxy = self.data_array[
             ss]['z'][ff, 0, 1]
@@ -1134,10 +1183,10 @@ class Data(object):
         abs_err = rel_err * abs(zz)
         return abs_err
 
-    def _vertical_components_error_floor(self, ff, ss, z_ii):
+    def _vertical_components_error_floor(self, ff, c_key, ss, z_ii):
         if 'floor' in self.error_type:
             abs_err = max(self.error_tipper,
-                          self.data_array[ss]['tip_err'][ff, 0, z_ii])
+                          self.data_array[ss][c_key+'_err'][ff, 0, z_ii])  # this may be wrong as z_ii is always 0
         else:
             abs_err = self.error_tipper
         return abs_err

@@ -53,7 +53,10 @@ error_types = [
     'floor',
     'value',
     'egbert',
-    'floor_egbert'
+    'floor_egbert',
+    'stddev',
+    'sqr',
+    'meansqr'
 ]
 
 
