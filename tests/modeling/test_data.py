@@ -1,7 +1,10 @@
+import difflib
 import glob
 import os
 import shutil
 from unittest import TestCase
+
+import sys
 
 from examples.create_modem_input import select_periods
 from mtpy.modeling.modem_data import Data
@@ -23,6 +26,16 @@ class TestData(TestCase):
             shutil.rmtree(self._output_dir)
         os.mkdir(self._output_dir)
 
+        # set the dir to the output from the previously correct run
+        self._expected_output_dir = os.path.normpath(
+            os.path.join(
+                os.path.join(self._temp_dir, 'expected_output'),
+                self._testMethodName
+            )
+        )
+        if not os.path.isdir(self._expected_output_dir):
+            self._expected_output_dir = None
+
 
 edi_paths = [
     "tests\\data\\edifiles",
@@ -36,7 +49,7 @@ edi_paths = [
 epsg_code = 28354
 epsg_code = 3112
 
-error_types = ['floor']
+error_types = ['floor', 'value', 'egbert', 'floor_egbert']
 
 
 def _test_gen(index, edi_path):
@@ -64,6 +77,34 @@ def _test_gen(index, edi_path):
                          error_type=error_type,
                          error_floor=10)
             datob.write_data_file(save_path=self._output_dir)
+
+            # check the output
+            if self._expected_output_dir:
+                output_data_file = os.path.normpath(os.path.join(self._output_dir, "ModEM_Data.dat"))
+                self.assertTrue(os.path.isfile(output_data_file), "output data file does not exist")
+                expected_data_file = os.path.normpath(os.path.join(self._expected_output_dir,
+                                                                   "ModEM_Data.dat"))
+                self.assertTrue(
+                    os.path.isfile(expected_data_file),
+                    "expected output data file does not exist, nothing to compare"
+                )
+
+                print "\ncomparing", output_data_file, "and", expected_data_file
+                with open(output_data_file, 'r') as output:
+                    with open(expected_data_file, 'r') as expected:
+                        diff = difflib.unified_diff(
+                            expected.readlines(),
+                            output.readlines(),
+                            fromfile='expected',
+                            tofile='output'
+                        )
+                        count = 0
+                        for line in diff:
+                            sys.stdout.write(line)
+                            count += 1
+                        self.assertTrue(count == 0, "output different!")
+            else:
+                print "no expected output exist, nothing to compare"
 
         tests.append(
             (
