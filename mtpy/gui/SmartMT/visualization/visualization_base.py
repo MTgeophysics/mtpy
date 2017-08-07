@@ -11,6 +11,7 @@
 
 import abc
 import inspect
+import matplotlib.pyplot as plt
 
 from PyQt4 import QtGui, QtCore
 from PyQt4.QtCore import pyqtSignal
@@ -140,7 +141,7 @@ class VisualizationBase(QtCore.QThread):
 
     def run(self):
         # self.setTerminationEnabled(True)
-        # plt.clf()
+        plt.clf()
         try:
             self.plot()
             # change size and title
@@ -189,7 +190,7 @@ class MPLCanvasWidget(QtGui.QWidget):
         margins = self._layout.getContentsMargins()
         width = size.width() + margins[0]
         height = size.height() + self._toolbar.sizeHint().height()
-        print width, height
+        # print width, height
         self.resize(width, height)
 
     def get_fig(self):

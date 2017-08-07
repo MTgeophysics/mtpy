@@ -13,6 +13,7 @@ from mtpy.gui.SmartMT.gui.plot_parameter import FrequencySingle, Ellipse, Freque
 from mtpy.gui.SmartMT.visualization.visualization_base import VisualizationBase
 from mtpy.imaging.phase_tensor_maps import PlotPhaseTensorMaps
 from mtpy.imaging.phase_tensor_pseudosection import PlotPhaseTensorPseudoSection
+from mtpy.imaging.plotpseudosection import PlotResPhasePseudoSection
 
 
 class PhaseTensorMap(VisualizationBase):
@@ -133,8 +134,8 @@ class PhaseTensorMap(VisualizationBase):
         self._parameter_ui.end_of_parameter_components()
 
         # resize
-        self._parameter_ui.resize(self._parameter_ui.width(),
-                                  self._parameter_ui.sizeHint().height())
+        # self._parameter_ui.resize(self._parameter_ui.width(),
+        #                           self._parameter_ui.sizeHint().height())
 
         self.update_ui()
         self._params = None
@@ -237,3 +238,41 @@ class PhaseTensorPseudoSection(VisualizationBase):
     @staticmethod
     def plot_name():
         return "Phase Tensor Pseudo Section"
+
+
+class ResistivityPhasePseudoSection(VisualizationBase):
+    @staticmethod
+    def plot_description():
+        return """
+        <p> Plot resistivity and phase pseudo section for different components</p>
+        """
+
+    def plot(self):
+        self._params = {
+            'fn_list': [mt_obj.fn for mt_obj in self._mt_objs],
+            'plot_yn': 'n'  # do not plot on class creation
+        }
+        print self._params
+        self._plotting_object = PlotResPhasePseudoSection(**self._params)
+        self._plotting_object.plot(show=False)
+        self._fig = self._plotting_object.fig
+
+    def update_ui(self):
+        pass
+
+    @staticmethod
+    def plot_name():
+        return "Resistivity and Phase Pseudo Section"
+
+    def get_parameter_str(self):
+        pass
+
+    def __init__(self, parent):
+        VisualizationBase.__init__(self, parent)
+
+        # setup gui
+        
+        self._parameter_ui.end_of_parameter_components()
+
+        self.update_ui()
+        self._params = None

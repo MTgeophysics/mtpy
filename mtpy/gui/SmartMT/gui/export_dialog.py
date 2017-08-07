@@ -307,6 +307,7 @@ class PreviewDialog(QtGui.QDialog):
         self.ui.verticalLayout_2.addWidget(self._canvas)
         self.resize(self.sizeHint())
 
+
 def generate_unique_file_name(basename):
     name, ext = os.path.splitext(basename)
     counter = 1  # start from 2 as the first extension

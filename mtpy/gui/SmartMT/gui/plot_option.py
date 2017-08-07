@@ -89,6 +89,9 @@ class PlotOption(QtGui.QWidget):
         if self._current_plot is not None:
             # self.ui.verticalLayout.removeWidget(self._current_plot.parameter_ui)
             self._current_plot.parameter_ui.deleteLater()
+        # reload visualization module for testing only
+        reload(mtpy.gui.SmartMT.visualization)  # todo remove it when deploy
+
         self._current_plot = plot_option(self)
         # connect signal
         self._current_plot.started.connect(self._busy_overlay.show)
