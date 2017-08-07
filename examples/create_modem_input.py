@@ -27,10 +27,40 @@ import sys
 import matplotlib.pyplot as plt
 
 import numpy as np
+
 from mtpy.core.edi_collection import EdiCollection
 from mtpy.modeling.modem_covariance import Covariance
 from mtpy.modeling.modem_data import Data
 from mtpy.modeling.modem_model import Model
+
+
+# YG: patch that changes the matplotlib behaviour
+plt.ion()  # enable interactive
+# plt.ioff()  # disable interactive, which will also disable this patch
+
+
+def show_patcher(show_func):
+    """
+    patch the plt.show() if interactive is enabled to display and then close the plot after 1 second
+    so plt.show() will not block the script and the figure is still visible to the user
+    :param show_func:
+    :return:
+    """
+    def new_show_func(*args, **kwargs):
+        stuff = show_func(*args, **kwargs)
+        # wait 1 second for the image to show on screen
+        figManager = plt.gcf()
+        if figManager is not None:
+            canvas = figManager.canvas
+            # if canvas.figure.stale:
+            #     canvas.draw()
+            # show(block=False)
+            canvas.start_event_loop(1)  # wait time = 1
+        plt.close()
+        return stuff
+    return new_show_func if plt.isinteractive() else show_func
+plt.show = show_patcher(plt.show)
+# end of patch
 
 
 def select_periods(edifiles_list):
@@ -117,10 +147,10 @@ if __name__ == '__main__':
                   pad_z=8,  # number of vertical padding cells
                   pad_stretch_v=1.5,  # factor to increase by in padding cells (vertical)
                   pad_stretch_h=1.5,  # factor to increase by in padding cells (horizontal)
-                  n_airlayers=20,  # number of air layers 0, 10, 20, depend on topo elev height
+                  n_airlayers=0,  # number of air layers 0, 10, 20, depend on topo elev height
                   res_model=100,  # halfspace resistivity value for initial reference model
-                  n_layers=70,  # total number of z layers, including air and pad_z
-                  z1_layer=100,  # first non-air layer thickness metres, depend
+                  n_layers=50,  # total number of z layers, including air and pad_z
+                  z1_layer=50,  # first layer thickness metres, depend
                   z_target_depth=500000)
 
     model.make_mesh()  # the data file will be re-write in this method. No topo elev file used yet
@@ -141,7 +171,10 @@ if __name__ == '__main__':
     # add topography, define an initial resistivity model, modify and re-write the data file, define covariance mask
     # dat file will be changed and rewritten,
     # grid centre is used as the new origin of coordinate system, topo data used in the elev column.
-    model.add_topography(topofile, interp_method='nearest')  # dat file will be written again as elevation updated
+
+    # model.add_topography(topofile, interp_method='nearest')  # dat file will be written again as elevation updated
+
+    model.add_topography_2mesh(topofile, interp_method='nearest')  # dat file will be written again as elevation updated
 
     model.plot_topograph()  # plot the MT stations on topography elevation data
 
