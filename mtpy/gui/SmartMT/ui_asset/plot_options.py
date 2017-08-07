@@ -65,6 +65,9 @@ class Ui_PlotOption(object):
 
         self.retranslateUi(PlotOption)
         QtCore.QMetaObject.connectSlotsByName(PlotOption)
+        PlotOption.setTabOrder(self.comboBoxSelect_Plot, self.textEditPlot_Description)
+        PlotOption.setTabOrder(self.textEditPlot_Description, self.pushButton_plot)
+        PlotOption.setTabOrder(self.pushButton_plot, self.pushButton_cancel)
 
     def retranslateUi(self, PlotOption):
         PlotOption.setWindowTitle(_translate("PlotOption", "Plot Option", None))

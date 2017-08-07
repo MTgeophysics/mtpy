@@ -633,3 +633,9 @@ class MeshGrid(QtGui.QGroupBox):
             ]
         else:
             return None
+
+
+class PlotControlResistivityPhasePseudoSection(QtGui.QGroupBox):
+    def __init__(self, parent):
+        QtGui.QGroupBox.__init__(self, parent)
+

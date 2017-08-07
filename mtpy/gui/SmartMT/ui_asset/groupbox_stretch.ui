@@ -178,6 +178,16 @@
    </item>
   </layout>
  </widget>
+ <tabstops>
+  <tabstop>doubleSpinBox_x</tabstop>
+  <tabstop>doubleSpinBox_y</tabstop>
+  <tabstop>checkBox_x_range</tabstop>
+  <tabstop>doubleSpinBox_x_min</tabstop>
+  <tabstop>doubleSpinBox_x_max</tabstop>
+  <tabstop>checkBox_y_range</tabstop>
+  <tabstop>doubleSpinBox_y_min</tabstop>
+  <tabstop>doubleSpinBox_y_max</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>

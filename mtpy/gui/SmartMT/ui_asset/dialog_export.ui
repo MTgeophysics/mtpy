@@ -6,137 +6,137 @@
    <rect>
     <x>0</x>
     <y>0</y>
-       <width>401</width>
-       <height>223</height>
+    <width>401</width>
+    <height>223</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Export Image...</string>
   </property>
   <layout class="QGridLayout" name="gridLayout_2">
-      <item row="5" column="0">
-          <widget class="QLabel" name="label_6">
-              <property name="sizePolicy">
-                  <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
-                      <horstretch>0</horstretch>
-                      <verstretch>0</verstretch>
-                  </sizepolicy>
-              </property>
-              <property name="text">
-                  <string>Width:</string>
-              </property>
-          </widget>
-      </item>
-      <item row="6" column="0">
-          <widget class="QLabel" name="label_7">
-              <property name="sizePolicy">
-                  <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
-                      <horstretch>0</horstretch>
-                      <verstretch>0</verstretch>
-                  </sizepolicy>
-              </property>
-              <property name="text">
-                  <string>Height:</string>
-              </property>
-          </widget>
-      </item>
-      <item row="2" column="4">
-          <widget class="QCheckBox" name="checkBox_transparent">
-              <property name="toolTip">
-                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;make the axes patches transparent; the figure
+   <item row="5" column="0">
+    <widget class="QLabel" name="label_6">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="text">
+      <string>Width:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="6" column="0">
+    <widget class="QLabel" name="label_7">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="text">
+      <string>Height:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="4">
+    <widget class="QCheckBox" name="checkBox_transparent">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;make the axes patches transparent; the figure
                       patch will abso be transparent unless facecolor and/or edgecolor are specified in the figure. This
                       is useful, for example, for displaying a plot on top of a colored background.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
                   </string>
-              </property>
-              <property name="text">
-                  <string>Transparent</string>
-              </property>
-          </widget>
+     </property>
+     <property name="text">
+      <string>Transparent</string>
+     </property>
+    </widget>
+   </item>
+   <item row="5" column="1">
+    <widget class="QDoubleSpinBox" name="doubleSpinBox_width_inches">
+     <property name="suffix">
+      <string>inches</string>
+     </property>
+     <property name="minimum">
+      <double>1.000000000000000</double>
+     </property>
+     <property name="maximum">
+      <double>1000.000000000000000</double>
+     </property>
+     <property name="value">
+      <double>8.000000000000000</double>
+     </property>
+    </widget>
+   </item>
+   <item row="8" column="0" colspan="5">
+    <widget class="QWidget" name="widget" native="true">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <layout class="QGridLayout" name="gridLayout">
+      <property name="leftMargin">
+       <number>0</number>
+      </property>
+      <property name="topMargin">
+       <number>0</number>
+      </property>
+      <property name="rightMargin">
+       <number>0</number>
+      </property>
+      <property name="bottomMargin">
+       <number>0</number>
+      </property>
+      <item row="1" column="2">
+       <widget class="QPushButton" name="pushButton_export">
+        <property name="text">
+         <string>Export</string>
+        </property>
+       </widget>
       </item>
-      <item row="5" column="1">
-          <widget class="QDoubleSpinBox" name="doubleSpinBox_width_inches">
-              <property name="suffix">
-                  <string>inches</string>
-              </property>
-              <property name="minimum">
-                  <double>1.000000000000000</double>
-              </property>
-              <property name="maximum">
-                  <double>1000.000000000000000</double>
-              </property>
-              <property name="value">
-                  <double>8.000000000000000</double>
-              </property>
-          </widget>
+      <item row="1" column="0">
+       <widget class="QPushButton" name="pushButton_preview">
+        <property name="text">
+         <string>Preview</string>
+        </property>
+       </widget>
       </item>
-      <item row="8" column="0" colspan="5">
-          <widget class="QWidget" name="widget" native="true">
-              <property name="sizePolicy">
-                  <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-                      <horstretch>0</horstretch>
-                      <verstretch>0</verstretch>
-                  </sizepolicy>
-              </property>
-              <layout class="QGridLayout" name="gridLayout">
-                  <property name="leftMargin">
-                      <number>0</number>
-                  </property>
-                  <property name="topMargin">
-                      <number>0</number>
-                  </property>
-                  <property name="rightMargin">
-                      <number>0</number>
-                  </property>
-                  <property name="bottomMargin">
-                      <number>0</number>
-                  </property>
-                  <item row="1" column="2">
-                      <widget class="QPushButton" name="pushButton_export">
-                          <property name="text">
-                              <string>Export</string>
-                          </property>
-                      </widget>
-                  </item>
-                  <item row="1" column="0">
-                      <widget class="QPushButton" name="pushButton_preview">
-                          <property name="text">
-                              <string>Preview</string>
-                          </property>
-                      </widget>
-                  </item>
-                  <item row="1" column="1">
-                      <spacer name="horizontalSpacer">
-                          <property name="orientation">
-                              <enum>Qt::Horizontal</enum>
-                          </property>
-                          <property name="sizeHint" stdset="0">
-                              <size>
-                                  <width>40</width>
-                                  <height>20</height>
-                              </size>
-                          </property>
-                      </spacer>
-                  </item>
-                  <item row="1" column="3">
-                      <widget class="QPushButton" name="pushButton_cancel">
-                          <property name="text">
-                              <string>Cancel</string>
-                          </property>
-                      </widget>
-                  </item>
-                  <item row="0" column="2" colspan="2">
-                      <widget class="QCheckBox" name="checkBox_open_after_export">
-                          <property name="text">
-                              <string>Open Image After Export</string>
-                          </property>
-                          <property name="checked">
-                              <bool>true</bool>
-                          </property>
-                      </widget>
-                  </item>
-              </layout>
-          </widget>
+      <item row="1" column="1">
+       <spacer name="horizontalSpacer">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
       </item>
+      <item row="1" column="3">
+       <widget class="QPushButton" name="pushButton_cancel">
+        <property name="text">
+         <string>Cancel</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="2" colspan="2">
+       <widget class="QCheckBox" name="checkBox_open_after_export">
+        <property name="text">
+         <string>Open Image After Export</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
    <item row="4" column="0">
     <widget class="QLabel" name="label_5">
      <property name="sizePolicy">
@@ -169,8 +169,8 @@
      </property>
     </widget>
    </item>
-      <item row="2" column="0">
-          <widget class="QLabel" name="label_3">
+   <item row="2" column="0">
+    <widget class="QLabel" name="label_3">
      <property name="sizePolicy">
       <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
        <horstretch>0</horstretch>
@@ -178,15 +178,15 @@
       </sizepolicy>
      </property>
      <property name="toolTip">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Format of the exported image&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Format of the exported image&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
      <property name="text">
-         <string>File Type:</string>
+      <string>File Type:</string>
      </property>
     </widget>
    </item>
-      <item row="0" column="0">
-          <widget class="QLabel" name="label_2">
+   <item row="0" column="0">
+    <widget class="QLabel" name="label_2">
      <property name="sizePolicy">
       <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
        <horstretch>0</horstretch>
@@ -194,16 +194,16 @@
       </sizepolicy>
      </property>
      <property name="toolTip">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Name of the image file (with or without . format
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Name of the image file (with or without . format
              extension)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
          </string>
      </property>
      <property name="text">
-         <string>File Name:</string>
+      <string>File Name:</string>
      </property>
     </widget>
    </item>
-      <item row="6" column="3" colspan="2">
+   <item row="6" column="3" colspan="2">
     <widget class="QCheckBox" name="checkBox_tightBbox">
      <property name="toolTip">
       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Save only the minimum figure area&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
@@ -216,29 +216,29 @@
      </property>
     </widget>
    </item>
-      <item row="2" column="1" colspan="3">
-          <widget class="QComboBox" name="comboBox_fileType">
-              <property name="toolTip">
-                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Format of the exported image&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-              </property>
-          </widget>
-      </item>
-      <item row="5" column="3">
-          <widget class="QLabel" name="label_4">
-              <property name="sizePolicy">
-                  <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
-                      <horstretch>0</horstretch>
-                      <verstretch>0</verstretch>
-                  </sizepolicy>
-              </property>
-              <property name="toolTip">
-                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The resolution in dots per inch.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-              </property>
-              <property name="text">
-                  <string>DPI:</string>
-              </property>
-          </widget>
-      </item>
+   <item row="2" column="1" colspan="3">
+    <widget class="QComboBox" name="comboBox_fileType">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Format of the exported image&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+    </widget>
+   </item>
+   <item row="5" column="3">
+    <widget class="QLabel" name="label_4">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The resolution in dots per inch.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+     <property name="text">
+      <string>DPI:</string>
+     </property>
+    </widget>
+   </item>
    <item row="0" column="1" colspan="4">
     <widget class="QComboBox" name="comboBox_fileName">
      <property name="toolTip">
@@ -247,14 +247,14 @@
      <property name="editable">
       <bool>true</bool>
      </property>
-        <item>
-            <property name="text">
-                <string>figure.png</string>
-            </property>
-        </item>
+     <item>
+      <property name="text">
+       <string>figure.png</string>
+      </property>
+     </item>
     </widget>
    </item>
-      <item row="4" column="1" colspan="3">
+   <item row="4" column="1" colspan="3">
     <widget class="QComboBox" name="comboBox_orientation">
      <property name="toolTip">
       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Orientation of the export, currently only available on postscripts&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
@@ -274,38 +274,38 @@
      </item>
     </widget>
    </item>
-      <item row="6" column="1">
-          <widget class="QDoubleSpinBox" name="doubleSpinBox_height_inches">
-              <property name="suffix">
-                  <string>inches</string>
-              </property>
-              <property name="minimum">
-                  <double>1.000000000000000</double>
-              </property>
-              <property name="maximum">
-                  <double>1000.000000000000000</double>
-              </property>
-              <property name="value">
-                  <double>6.000000000000000</double>
-              </property>
-          </widget>
-      </item>
-      <item row="5" column="4">
-          <widget class="QSpinBox" name="spinBox_dpi">
-              <property name="toolTip">
-                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The resolution in dots per inch.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-              </property>
-              <property name="minimum">
-                  <number>50</number>
-              </property>
-              <property name="maximum">
-                  <number>1000</number>
-              </property>
-              <property name="value">
-                  <number>80</number>
-              </property>
-          </widget>
-      </item>
+   <item row="6" column="1">
+    <widget class="QDoubleSpinBox" name="doubleSpinBox_height_inches">
+     <property name="suffix">
+      <string>inches</string>
+     </property>
+     <property name="minimum">
+      <double>1.000000000000000</double>
+     </property>
+     <property name="maximum">
+      <double>1000.000000000000000</double>
+     </property>
+     <property name="value">
+      <double>6.000000000000000</double>
+     </property>
+    </widget>
+   </item>
+   <item row="5" column="4">
+    <widget class="QSpinBox" name="spinBox_dpi">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The resolution in dots per inch.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+     <property name="minimum">
+      <number>50</number>
+     </property>
+     <property name="maximum">
+      <number>1000</number>
+     </property>
+     <property name="value">
+      <number>80</number>
+     </property>
+    </widget>
+   </item>
    <item row="1" column="4">
     <widget class="QPushButton" name="pushButton_browse">
      <property name="sizePolicy">
@@ -332,35 +332,35 @@
      </property>
     </widget>
    </item>
-      <item row="5" column="2">
-          <widget class="QSpinBox" name="spinBox_width_pixels">
-              <property name="suffix">
-                  <string>pixels</string>
+   <item row="5" column="2">
+    <widget class="QSpinBox" name="spinBox_width_pixels">
+     <property name="suffix">
+      <string>pixels</string>
      </property>
-              <property name="minimum">
-                  <number>1</number>
+     <property name="minimum">
+      <number>1</number>
      </property>
-              <property name="maximum">
-                  <number>1000000</number>
-              </property>
-              <property name="value">
-                  <number>640</number>
+     <property name="maximum">
+      <number>1000000</number>
+     </property>
+     <property name="value">
+      <number>640</number>
      </property>
     </widget>
    </item>
-      <item row="6" column="2">
-          <widget class="QSpinBox" name="spinBox_height_pixels">
-              <property name="suffix">
-                  <string>pixels</string>
+   <item row="6" column="2">
+    <widget class="QSpinBox" name="spinBox_height_pixels">
+     <property name="suffix">
+      <string>pixels</string>
      </property>
      <property name="minimum">
-         <number>1</number>
+      <number>1</number>
      </property>
      <property name="maximum">
-         <number>1000000</number>
+      <number>1000000</number>
      </property>
      <property name="value">
-         <number>480</number>
+      <number>480</number>
      </property>
     </widget>
    </item>
@@ -369,8 +369,17 @@
  <tabstops>
   <tabstop>comboBox_fileName</tabstop>
   <tabstop>comboBox_directory</tabstop>
+  <tabstop>pushButton_browse</tabstop>
   <tabstop>comboBox_fileType</tabstop>
+  <tabstop>checkBox_transparent</tabstop>
   <tabstop>comboBox_orientation</tabstop>
+  <tabstop>doubleSpinBox_width_inches</tabstop>
+  <tabstop>spinBox_width_pixels</tabstop>
+  <tabstop>spinBox_dpi</tabstop>
+  <tabstop>doubleSpinBox_height_inches</tabstop>
+  <tabstop>spinBox_height_pixels</tabstop>
+  <tabstop>checkBox_tightBbox</tabstop>
+  <tabstop>checkBox_open_after_export</tabstop>
   <tabstop>pushButton_preview</tabstop>
   <tabstop>pushButton_export</tabstop>
   <tabstop>pushButton_cancel</tabstop>

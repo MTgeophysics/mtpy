@@ -101,6 +101,13 @@ class Ui_GroupBox_Stretch(object):
 
         self.retranslateUi(GroupBox_Stretch)
         QtCore.QMetaObject.connectSlotsByName(GroupBox_Stretch)
+        GroupBox_Stretch.setTabOrder(self.doubleSpinBox_x, self.doubleSpinBox_y)
+        GroupBox_Stretch.setTabOrder(self.doubleSpinBox_y, self.checkBox_x_range)
+        GroupBox_Stretch.setTabOrder(self.checkBox_x_range, self.doubleSpinBox_x_min)
+        GroupBox_Stretch.setTabOrder(self.doubleSpinBox_x_min, self.doubleSpinBox_x_max)
+        GroupBox_Stretch.setTabOrder(self.doubleSpinBox_x_max, self.checkBox_y_range)
+        GroupBox_Stretch.setTabOrder(self.checkBox_y_range, self.doubleSpinBox_y_min)
+        GroupBox_Stretch.setTabOrder(self.doubleSpinBox_y_min, self.doubleSpinBox_y_max)
 
     def retranslateUi(self, GroupBox_Stretch):
         GroupBox_Stretch.setWindowTitle(_translate("GroupBox_Stretch", "GroupBox", None))

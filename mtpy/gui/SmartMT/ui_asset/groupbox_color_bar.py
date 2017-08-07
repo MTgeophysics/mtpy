@@ -122,6 +122,14 @@ class Ui_GroupBox_ColorBar(object):
 
         self.retranslateUi(GroupBox_ColorBar)
         QtCore.QMetaObject.connectSlotsByName(GroupBox_ColorBar)
+        GroupBox_ColorBar.setTabOrder(self.comboBox_orientation, self.horizontalSlider_x)
+        GroupBox_ColorBar.setTabOrder(self.horizontalSlider_x, self.doubleSpinBox_x)
+        GroupBox_ColorBar.setTabOrder(self.doubleSpinBox_x, self.horizontalSlider_y)
+        GroupBox_ColorBar.setTabOrder(self.horizontalSlider_y, self.doubleSpinBox_y)
+        GroupBox_ColorBar.setTabOrder(self.doubleSpinBox_y, self.horizontalSlider_width)
+        GroupBox_ColorBar.setTabOrder(self.horizontalSlider_width, self.doubleSpinBox_width)
+        GroupBox_ColorBar.setTabOrder(self.doubleSpinBox_width, self.horizontalSlider_height)
+        GroupBox_ColorBar.setTabOrder(self.horizontalSlider_height, self.doubleSpinBox_height)
 
     def retranslateUi(self, GroupBox_ColorBar):
         GroupBox_ColorBar.setTitle(_translate("GroupBox_ColorBar", "Color Bar", None))

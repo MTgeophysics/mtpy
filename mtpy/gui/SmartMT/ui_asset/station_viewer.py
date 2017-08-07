@@ -50,6 +50,8 @@ class Ui_StationViewer(object):
 
         self.retranslateUi(StationViewer)
         QtCore.QMetaObject.connectSlotsByName(StationViewer)
+        StationViewer.setTabOrder(self.treeWidget_stations, self.pushButton_showMap)
+        StationViewer.setTabOrder(self.pushButton_showMap, self.pushButton_hideMap)
 
     def retranslateUi(self, StationViewer):
         StationViewer.setWindowTitle(_translate("StationViewer", "Stations", None))

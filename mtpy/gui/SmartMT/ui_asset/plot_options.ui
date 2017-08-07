@@ -97,6 +97,12 @@
    </item>
   </layout>
  </widget>
+ <tabstops>
+  <tabstop>comboBoxSelect_Plot</tabstop>
+  <tabstop>textEditPlot_Description</tabstop>
+  <tabstop>pushButton_plot</tabstop>
+  <tabstop>pushButton_cancel</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>

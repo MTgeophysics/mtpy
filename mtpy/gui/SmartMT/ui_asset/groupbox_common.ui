@@ -369,6 +369,7 @@
   </layout>
  </widget>
  <tabstops>
+  <tabstop>groupBox_title</tabstop>
   <tabstop>lineEdit_title</tabstop>
   <tabstop>spinBox_fontsize</tabstop>
   <tabstop>horizontalSlider_x</tabstop>
@@ -377,6 +378,7 @@
   <tabstop>doubleSpinBox_y</tabstop>
   <tabstop>comboBox_horizontal_alignment</tabstop>
   <tabstop>comboBox_vertical_alignment</tabstop>
+  <tabstop>groupBox_figure_size</tabstop>
   <tabstop>doubleSpinBox_width_inches</tabstop>
   <tabstop>spinBox_width_pixels</tabstop>
   <tabstop>doubleSpinBox_height_inches</tabstop>
