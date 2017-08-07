@@ -28,7 +28,7 @@ class TestData(TestCase):
         # set the dir to the output from the previously correct run
         self._expected_output_dir = os.path.normpath(
             os.path.join(
-                os.path.join(self._temp_dir, 'expected_output'),
+                os.path.join(self._temp_dir, 'expected_data_output'),
                 self._testMethodName
             )
         )
