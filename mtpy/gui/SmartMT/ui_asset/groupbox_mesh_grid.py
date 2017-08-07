@@ -16,14 +16,11 @@ except AttributeError:
 
 try:
     _encoding = QtGui.QApplication.UnicodeUTF8
-
-
     def _translate(context, text, disambig):
         return QtGui.QApplication.translate(context, text, disambig, _encoding)
 except AttributeError:
     def _translate(context, text, disambig):
         return QtGui.QApplication.translate(context, text, disambig)
-
 
 class Ui_GroupBox_mash_grid(object):
     def setupUi(self, GroupBox_mash_grid):
@@ -93,20 +90,24 @@ class Ui_GroupBox_mash_grid(object):
     def retranslateUi(self, GroupBox_mash_grid):
         GroupBox_mash_grid.setWindowTitle(_translate("GroupBox_mash_grid", "GroupBox", None))
         GroupBox_mash_grid.setTitle(_translate("GroupBox_mash_grid", "Mesh Grid", None))
-        self.groupBox.setToolTip(
-            _translate("GroupBox_mash_grid", "<html><head/><body><p>Type of Grids in the plot</p></body></html>", None))
+        self.groupBox.setToolTip(_translate("GroupBox_mash_grid", "<html><head/><body><p>Type of Grids in the plot</p></body></html>", None))
         self.groupBox.setTitle(_translate("GroupBox_mash_grid", "Grid Type", None))
-        self.radioButton_imshow.setToolTip(_translate("GroupBox_mash_grid",
-                                                      "<html><head/><body><p>plots the data as an image and can be interpolated, though the image is sstretched to the station spacing and plot_period, the cells remain of equal size, so the interpolation might be a little skewed.</p></body></html>",
-                                                      None))
+        self.radioButton_imshow.setToolTip(_translate("GroupBox_mash_grid", "<html><head/><body><p>plots the data as an image and\n"
+"                                        can be interpolated, though the image is sstretched to the station spacing and\n"
+"                                        plot_period, the cells remain of equal size, so the interpolation might be a\n"
+"                                        little skewed.</p></body></html>\n"
+"                                    ", None))
         self.radioButton_imshow.setText(_translate("GroupBox_mash_grid", "imshow", None))
-        self.radioButton_pcolormesh.setToolTip(_translate("GroupBox_mash_grid",
-                                                          "<html><head/><body><p>plot the data on an irregular grid, but with no interpolation, which results an accurate location of resistivity values.</p></body></html>",
-                                                          None))
+        self.radioButton_pcolormesh.setToolTip(_translate("GroupBox_mash_grid", "<html><head/><body><p>plot the data on an irregular\n"
+"                                        grid, but with no interpolation, which results an accurate location of\n"
+"                                        resistivity values.</p></body></html>\n"
+"                                    ", None))
         self.radioButton_pcolormesh.setText(_translate("GroupBox_mash_grid", "pcolormesh", None))
-        self.groupBox_interpolation_method.setToolTip(_translate("GroupBox_mash_grid",
-                                                                 "<html><head/><body><p>defines the interpolation method if gride style is \'imshow\'.</p><p><br/></p><p>\'Nearest\' is same as pcolormesh except the lateral boxes are equal size instead of set in a grid like pcolormesh. imshow just gives a smoother interpretation of pseudosection.</p></body></html>",
-                                                                 None))
+        self.groupBox_interpolation_method.setToolTip(_translate("GroupBox_mash_grid", "<html><head/><body><p>defines the interpolation method if gride\n"
+"                            style is \'imshow\'.</p><p><br/></p><p>\'Nearest\' is same as\n"
+"                            pcolormesh except the lateral boxes are equal size instead of set in a grid like pcolormesh.\n"
+"                            imshow just gives a smoother interpretation of pseudosection.</p></body></html>\n"
+"                        ", None))
         self.groupBox_interpolation_method.setTitle(_translate("GroupBox_mash_grid", "Interpolation Method", None))
         self.comboBox_interpolation_method.setItemText(0, _translate("GroupBox_mash_grid", "None", None))
         self.comboBox_interpolation_method.setItemText(1, _translate("GroupBox_mash_grid", "Nearest", None))
@@ -125,3 +126,4 @@ class Ui_GroupBox_mash_grid(object):
         self.comboBox_interpolation_method.setItemText(14, _translate("GroupBox_mash_grid", "Mitchell", None))
         self.comboBox_interpolation_method.setItemText(15, _translate("GroupBox_mash_grid", "Sinc", None))
         self.comboBox_interpolation_method.setItemText(16, _translate("GroupBox_mash_grid", "Lanczos", None))
+

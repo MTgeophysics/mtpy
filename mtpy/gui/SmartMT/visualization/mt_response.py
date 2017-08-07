@@ -10,8 +10,8 @@
 """
 from PyQt4 import QtCore
 
-from mtpy.gui.SmartMT.gui.plot_parameter import StationSelection, Rotation, PlotControlMTResponse, Arrow, Ellipse, \
-    CommonSettings
+from mtpy.gui.SmartMT.gui.figure_setting_guis import CommonSettings
+from mtpy.gui.SmartMT.gui.plot_parameter_guis import Ellipse, Arrow, StationSelection, Rotation, PlotControlMTResponse
 from mtpy.gui.SmartMT.visualization.visualization_base import VisualizationBase
 from mtpy.imaging.plot_mt_response import PlotMTResponse
 from mtpy.imaging.plotnresponses import PlotMultipleResponses
@@ -53,7 +53,7 @@ class MTResponse(VisualizationBase):
         # set up parameter GUIs here
 
         self._station_ui = StationSelection(self._parameter_ui)
-        self._parameter_ui.add_parameter_groubox(self._station_ui)
+        self._parameter_ui.add_parameter_groupbox(self._station_ui)
         self._station_ui.station_changed.connect(self._station_changed)
 
         # self._title_ui = CommonSettings(self._parameter_ui)
@@ -61,19 +61,19 @@ class MTResponse(VisualizationBase):
 
         self._plot_control_ui = PlotControlMTResponse(self._parameter_ui)
         self._plot_control_ui.hide_plot_style()
-        self._parameter_ui.add_parameter_groubox(self._plot_control_ui)
+        self._parameter_ui.add_parameter_groupbox(self._plot_control_ui)
 
         self._ellipse_ui = Ellipse(self._parameter_ui)
         self._ellipse_ui.setHidden(True)
         # make the radio button toggle hidden of the ellipses groupbox
         self._plot_control_ui.ui.radioButton_ellipses_y.toggled.connect(self._ellipse_radio_button_toggled)
-        self._parameter_ui.add_parameter_groubox(self._ellipse_ui)
+        self._parameter_ui.add_parameter_groupbox(self._ellipse_ui)
 
         self._arrow_ui = Arrow(self._parameter_ui)
-        self._parameter_ui.add_parameter_groubox(self._arrow_ui)
+        self._parameter_ui.add_parameter_groupbox(self._arrow_ui)
 
         self._rotation_ui = Rotation(self._parameter_ui)
-        self._parameter_ui.add_parameter_groubox(self._rotation_ui)
+        self._parameter_ui.add_parameter_groupbox(self._rotation_ui)
 
         self._parameter_ui.end_of_parameter_components()
 
@@ -153,19 +153,19 @@ subplots such as strike, skew and phase tensor ellipses.</p>
         # self._parameter_ui.add_parameter_groubox(self._title_ui)
 
         self._plot_control_ui = PlotControlMTResponse(self._parameter_ui)
-        self._parameter_ui.add_parameter_groubox(self._plot_control_ui)
+        self._parameter_ui.add_parameter_groupbox(self._plot_control_ui)
 
         self._ellipse_ui = Ellipse(self._parameter_ui)
         self._ellipse_ui.setHidden(True)
         # make the radio button toggle hidden of the ellipses groupbox
         self._plot_control_ui.ui.radioButton_ellipses_y.toggled.connect(self._ellipse_radio_button_toggled)
-        self._parameter_ui.add_parameter_groubox(self._ellipse_ui)
+        self._parameter_ui.add_parameter_groupbox(self._ellipse_ui)
 
         self._arrow_ui = Arrow(self._parameter_ui)
-        self._parameter_ui.add_parameter_groubox(self._arrow_ui)
+        self._parameter_ui.add_parameter_groupbox(self._arrow_ui)
 
         self._rotation_ui = Rotation(self._parameter_ui)
-        self._parameter_ui.add_parameter_groubox(self._rotation_ui)
+        self._parameter_ui.add_parameter_groupbox(self._rotation_ui)
 
         self._parameter_ui.end_of_parameter_components()
 

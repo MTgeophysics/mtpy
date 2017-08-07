@@ -33,8 +33,8 @@ class Ui_GroupBoxParameters(object):
         self.page_common_settings = QtGui.QWidget()
         self.page_common_settings.setGeometry(QtCore.QRect(0, 0, 320, 322))
         self.page_common_settings.setObjectName(_fromUtf8("page_common_settings"))
-        self.verticalLayout_4 = QtGui.QVBoxLayout(self.page_common_settings)
-        self.verticalLayout_4.setObjectName(_fromUtf8("verticalLayout_4"))
+        self.verticalLayout_figure = QtGui.QVBoxLayout(self.page_common_settings)
+        self.verticalLayout_figure.setObjectName(_fromUtf8("verticalLayout_figure"))
         self.groupBox_title = QtGui.QGroupBox(self.page_common_settings)
         sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
@@ -124,7 +124,7 @@ class Ui_GroupBoxParameters(object):
         self.spinBox_fontsize.setProperty("value", 12)
         self.spinBox_fontsize.setObjectName(_fromUtf8("spinBox_fontsize"))
         self.gridLayout_2.addWidget(self.spinBox_fontsize, 1, 1, 1, 1)
-        self.verticalLayout_4.addWidget(self.groupBox_title)
+        self.verticalLayout_figure.addWidget(self.groupBox_title)
         self.groupBox_figure_size = QtGui.QGroupBox(self.page_common_settings)
         sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
@@ -184,14 +184,14 @@ class Ui_GroupBoxParameters(object):
         self.label_2.setSizePolicy(sizePolicy)
         self.label_2.setObjectName(_fromUtf8("label_2"))
         self.gridLayout_3.addWidget(self.label_2, 0, 0, 1, 1)
-        self.verticalLayout_4.addWidget(self.groupBox_figure_size)
+        self.verticalLayout_figure.addWidget(self.groupBox_figure_size)
         self.toolBox.addItem(self.page_common_settings, _fromUtf8(""))
         self.page_plot_parameters = QtGui.QWidget()
         self.page_plot_parameters.setGeometry(QtCore.QRect(0, 0, 320, 322))
         self.page_plot_parameters.setObjectName(_fromUtf8("page_plot_parameters"))
-        self.verticalLayout_2 = QtGui.QVBoxLayout(self.page_plot_parameters)
-        self.verticalLayout_2.setMargin(0)
-        self.verticalLayout_2.setObjectName(_fromUtf8("verticalLayout_2"))
+        self.verticalLayout_plot = QtGui.QVBoxLayout(self.page_plot_parameters)
+        self.verticalLayout_plot.setMargin(0)
+        self.verticalLayout_plot.setObjectName(_fromUtf8("verticalLayout_plot"))
         self.toolBox.addItem(self.page_plot_parameters, _fromUtf8(""))
         self.verticalLayout.addWidget(self.toolBox)
 
@@ -201,20 +201,19 @@ class Ui_GroupBoxParameters(object):
         QtCore.QMetaObject.connectSlotsByName(GroupBoxParameters)
 
     def retranslateUi(self, GroupBoxParameters):
-        GroupBoxParameters.setTitle(_translate("GroupBoxParameters", "Settings", None))
+        GroupBoxParameters.setTitle(_translate("GroupBoxParameters", "Plot Configuration", None))
         self.groupBox_title.setTitle(_translate("GroupBoxParameters", "Title", None))
         self.lineEdit_title.setToolTip(_translate("GroupBoxParameters", "<html><head/><body><p>The title of the plot,\n"
-                                                                        "                                               leave blank to\n"
-                                                                        "                                               remove title.</p><p><span style=\" font-weight:600;\">Note:</span>\n"
-                                                                        "                                               The size and location of the title may depends on the selected plot type.</p></body></html>\n"
-                                                                        "                                           ",
-                                                  None))
+"                                               leave blank to\n"
+"                                               remove title.</p><p><span style=\" font-weight:600;\">Note:</span>\n"
+"                                               The size and location of the title may depends on the selected plot type.</p></body></html>\n"
+"                                           ", None))
         self.label_5.setText(_translate("GroupBoxParameters", "X", None))
         self.label.setToolTip(_translate("GroupBoxParameters", "<html><head/><body><p>The title of the plot,\n"
-                                                               "                                               leave blank to\n"
-                                                               "                                               remove title.</p><p><span style=\" font-weight:600;\">Note:</span>\n"
-                                                               "                                               The size and location of the title may depends on the selected plot type.</p></body></html>\n"
-                                                               "                                           ", None))
+"                                               leave blank to\n"
+"                                               remove title.</p><p><span style=\" font-weight:600;\">Note:</span>\n"
+"                                               The size and location of the title may depends on the selected plot type.</p></body></html>\n"
+"                                           ", None))
         self.label.setText(_translate("GroupBoxParameters", "Plot Title", None))
         self.label_6.setText(_translate("GroupBoxParameters", "Y", None))
         self.label_9.setText(_translate("GroupBoxParameters", "Font Size", None))
@@ -237,7 +236,6 @@ class Ui_GroupBoxParameters(object):
         self.spinBox_width_pixels.setSuffix(_translate("GroupBoxParameters", "pixels", None))
         self.checkBox_tight_layout.setText(_translate("GroupBoxParameters", "Tight Layout", None))
         self.label_2.setText(_translate("GroupBoxParameters", "Width", None))
-        self.toolBox.setItemText(self.toolBox.indexOf(self.page_common_settings),
-                                 _translate("GroupBoxParameters", "Common Settings", None))
-        self.toolBox.setItemText(self.toolBox.indexOf(self.page_plot_parameters),
-                                 _translate("GroupBoxParameters", "Plot Parameters", None))
+        self.toolBox.setItemText(self.toolBox.indexOf(self.page_common_settings), _translate("GroupBoxParameters", "Figure Settings", None))
+        self.toolBox.setItemText(self.toolBox.indexOf(self.page_plot_parameters), _translate("GroupBoxParameters", "Plot Parameters", None))
+

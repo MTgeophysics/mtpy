@@ -8,8 +8,9 @@
     Author: YingzhiGou
     Date: 20/06/2017
 """
-from mtpy.gui.SmartMT.gui.plot_parameter import FrequencySingle, Ellipse, FrequencyTolerance, ColorBar, Arrow, Padding, \
-    Scale, Font, Stretch, LineDir, MeshGrid, FrequencyIndex
+from mtpy.gui.SmartMT.gui.figure_setting_guis import ColorBar, Font
+from mtpy.gui.SmartMT.gui.plot_parameter_guis import FrequencySingle, Ellipse, FrequencyTolerance, Arrow, Padding, \
+    Scale, Stretch, LineDir, FrequencyIndex, MeshGrid
 from mtpy.gui.SmartMT.visualization.visualization_base import VisualizationBase
 from mtpy.imaging.phase_tensor_maps import PlotPhaseTensorMaps
 from mtpy.imaging.phase_tensor_pseudosection import PlotPhaseTensorPseudoSection
@@ -99,37 +100,37 @@ class PhaseTensorMap(VisualizationBase):
         self._scale_ui = Scale(self._parameter_ui)
         self._frequency_ui = FrequencySingle(self._parameter_ui, use_period=True)
         self._scale_ui.ui.comboBox_time.currentIndexChanged.connect(self._frequency_ui.toggle_time_scale)
-        self._parameter_ui.add_parameter_groubox(self._scale_ui)
-        self._parameter_ui.add_parameter_groubox(self._frequency_ui)
+        self._parameter_ui.add_parameter_groupbox(self._scale_ui)
+        self._parameter_ui.add_parameter_groupbox(self._frequency_ui)
 
         self._tolerance_ui = FrequencyTolerance(self._parameter_ui)
-        self._parameter_ui.add_parameter_groubox(self._tolerance_ui)
+        self._parameter_ui.add_parameter_groupbox(self._tolerance_ui)
 
         self._ellipse_ui = Ellipse(self._parameter_ui)
-        self._parameter_ui.add_parameter_groubox(self._ellipse_ui)
+        self._parameter_ui.add_parameter_groupbox(self._ellipse_ui)
 
         self._arrow_ui = Arrow(self._parameter_ui)
-        self._parameter_ui.add_parameter_groubox(self._arrow_ui)
+        self._parameter_ui.add_parameter_groupbox(self._arrow_ui)
 
         # not implemented in PlotPhaseTensorMaps
         # self._rotation_ui = Rotation(self._parameter_ui)
         # self._parameter_ui.add_parameter_groubox(self._rotation_ui)
 
         self._padding_ui = Padding(self._parameter_ui)
-        self._parameter_ui.add_parameter_groubox(self._padding_ui)
+        self._parameter_ui.add_parameter_groupbox(self._padding_ui)
 
         self._colorbar_ui = ColorBar(self._parameter_ui)
-        self._parameter_ui.add_parameter_groubox(self._colorbar_ui)
+        self._parameter_ui.add_figure_groupbox(self._colorbar_ui)
 
         self._label_font_ui = Font(self._parameter_ui)
         self._label_font_ui.setToolTip("Font of the plot labels")
         self._label_font_ui.hide_color()
         self._label_font_ui.hide_weight()
-        self._parameter_ui.add_parameter_groubox(self._label_font_ui)
+        self._parameter_ui.add_figure_groupbox(self._label_font_ui)
 
         self._station_font_ui = Font(self._parameter_ui, simple_color=False)
         self._station_font_ui.setTitle('Station Label Font')
-        self._parameter_ui.add_parameter_groubox(self._station_font_ui)
+        self._parameter_ui.add_figure_groupbox(self._station_font_ui)
 
         self._parameter_ui.end_of_parameter_components()
 
@@ -147,33 +148,33 @@ class PhaseTensorPseudoSection(VisualizationBase):
 
         # setup gui
         self._ellipse_ui = Ellipse(self._parameter_ui)
-        self._parameter_ui.add_parameter_groubox(self._ellipse_ui)
+        self._parameter_ui.add_parameter_groupbox(self._ellipse_ui)
 
         self._linedir_ui = LineDir(self._parameter_ui)
-        self._parameter_ui.add_parameter_groubox(self._linedir_ui)
+        self._parameter_ui.add_parameter_groupbox(self._linedir_ui)
 
         self._stretch_ui = Stretch(self._parameter_ui)
-        self._parameter_ui.add_parameter_groubox(self._stretch_ui)
+        self._parameter_ui.add_parameter_groupbox(self._stretch_ui)
 
         self._arrow_ui = Arrow(self._parameter_ui)
-        self._parameter_ui.add_parameter_groubox(self._arrow_ui)
+        self._parameter_ui.add_parameter_groupbox(self._arrow_ui)
 
         self._scale_ui = Scale(self._parameter_ui)
         self._scale_ui.hide_mapscale()
-        self._parameter_ui.add_parameter_groubox(self._scale_ui)
+        self._parameter_ui.add_parameter_groupbox(self._scale_ui)
 
         # this is not implemented in PlotPhaseTensorPseudoSection
         # self._rotation_ui = Rotation(self._parameter_ui)
         # self._parameter_ui.add_parameter_groubox(self._rotation_ui)
 
         self._colorbar_ui = ColorBar(self._parameter_ui)
-        self._parameter_ui.add_parameter_groubox(self._colorbar_ui)
+        self._parameter_ui.add_figure_groupbox(self._colorbar_ui)
 
         self._label_font_ui = Font(self._parameter_ui)
         self._label_font_ui.setToolTip("Font of the plot labels")
         self._label_font_ui.hide_color()
         self._label_font_ui.hide_weight()
-        self._parameter_ui.add_parameter_groubox(self._label_font_ui)
+        self._parameter_ui.add_figure_groupbox(self._label_font_ui)
 
         self._parameter_ui.end_of_parameter_components()
 
@@ -254,6 +255,7 @@ class ResistivityPhasePseudoSection(VisualizationBase):
             'imshow_interp': self._mesh_grid_ui.get_interpolation_method(),
             'ftol': self._tolerance_ui.get_tolerance_in_float(),
             'linedir': self._linedir_ui.get_linedir(),
+            'stationid': (0, 20),
             'plot_yn': 'n'  # do not plot on class creation
         }
 
@@ -276,14 +278,14 @@ class ResistivityPhasePseudoSection(VisualizationBase):
 
         # setup gui
         self._mesh_grid_ui = MeshGrid(self._parameter_ui)
-        self._parameter_ui.add_parameter_groubox(self._mesh_grid_ui)
+        self._parameter_ui.add_parameter_groupbox(self._mesh_grid_ui)
 
         self._tolerance_ui = FrequencyTolerance(self._parameter_ui)
-        self._parameter_ui.add_parameter_groubox(self._tolerance_ui)
+        self._parameter_ui.add_parameter_groupbox(self._tolerance_ui)
 
         self._linedir_ui = LineDir(self._parameter_ui)
         self._linedir_ui.ui.radioButton_ew.setChecked(True)
-        self._parameter_ui.add_parameter_groubox(self._linedir_ui)
+        self._parameter_ui.add_parameter_groupbox(self._linedir_ui)
 
         self._parameter_ui.end_of_parameter_components()
 
