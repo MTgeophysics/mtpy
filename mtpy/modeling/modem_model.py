@@ -955,7 +955,7 @@ class Model(object):
         fig_num = kwargs.pop('fig_num', 1)
 
         station_marker = kwargs.pop('station_marker', 'v')
-        marker_color = kwargs.pop('station_color', 'k')
+        marker_color = kwargs.pop('station_color', 'r')
         marker_size = kwargs.pop('marker_size', 2)
 
         line_color = kwargs.pop('line_color', 'b')
@@ -985,6 +985,7 @@ class Model(object):
         plot_east = self.station_locations['rel_east']
         plot_north = self.station_locations['rel_north']
 
+        # plot stations
         ax1.scatter(plot_east,
                     plot_north,
                     marker=station_marker,
@@ -1158,7 +1159,6 @@ class Model(object):
         plt.ylabel('Northing (m)', fontdict={'size': 9, 'weight': 'bold'})
         plt.xlabel('Easting (m)', fontdict={'size': 9, 'weight': 'bold'})
         plt.title("Mesh grid in north-east dimension")
-
 
         plt.show()
 
