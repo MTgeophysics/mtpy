@@ -1,6 +1,7 @@
 from PyQt4 import QtGui
 
 from mtpy.gui.SmartMT.gui.plot_parameter import COLORS, SIMPLE_COLORS
+from mtpy.gui.SmartMT.ui_asset.groupbox_aspect import Ui_GroupBox_aspect
 from mtpy.gui.SmartMT.ui_asset.groupbox_color_bar import Ui_GroupBox_ColorBar
 from mtpy.gui.SmartMT.ui_asset.groupbox_common import Ui_GroupBox_common_settings
 from mtpy.gui.SmartMT.ui_asset.groupbox_font import Ui_GroupBox_Font
@@ -257,3 +258,24 @@ class CommonSettings(QtGui.QGroupBox):
 
     _horizontalalignment = ['right', 'center', 'left']
     _verticalalignment = ['top', 'center', 'bottom', 'baseline']
+
+
+class AspectRatio(QtGui.QGroupBox):
+    def __init__(self, parent):
+        QtGui.QGroupBox.__init__(self, parent)
+        self.ui = Ui_GroupBox_aspect()
+        self.ui.setupUi(self)
+
+        # connect signal
+        self.ui.radioButton_aspect_float.toggled.connect(self._aspect_float_toggled)
+
+    def _aspect_float_toggled(self, checked):
+        self.ui.doubleSpinBox_aspect_float.setEnabled(checked)
+
+    def get_aspect(self):
+        if self.ui.radioButton_aspect_auto.isChecked():
+            return 'auto'
+        elif self.ui.radioButton_aspect_equal.isChecked():
+            return 'equal'
+        else:
+            return self.ui.doubleSpinBox_aspect_float.value()

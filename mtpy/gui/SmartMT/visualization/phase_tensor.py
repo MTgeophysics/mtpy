@@ -8,9 +8,9 @@
     Author: YingzhiGou
     Date: 20/06/2017
 """
-from mtpy.gui.SmartMT.gui.figure_setting_guis import ColorBar, Font
+from mtpy.gui.SmartMT.gui.figure_setting_guis import ColorBar, Font, AspectRatio
 from mtpy.gui.SmartMT.gui.plot_parameter_guis import FrequencySingle, Ellipse, FrequencyTolerance, Arrow, Padding, \
-    Scale, Stretch, LineDir, FrequencyIndex, MeshGrid
+    Scale, Stretch, LineDir, FrequencyIndex, MeshGrid, PlotControlResistivityPhasePseudoSection
 from mtpy.gui.SmartMT.visualization.visualization_base import VisualizationBase
 from mtpy.imaging.phase_tensor_maps import PlotPhaseTensorMaps
 from mtpy.imaging.phase_tensor_pseudosection import PlotPhaseTensorPseudoSection
@@ -255,6 +255,7 @@ class ResistivityPhasePseudoSection(VisualizationBase):
             'imshow_interp': self._mesh_grid_ui.get_interpolation_method(),
             'ftol': self._tolerance_ui.get_tolerance_in_float(),
             'linedir': self._linedir_ui.get_linedir(),
+            'aspect': self._aspect_ui.get_aspect(),
             'stationid': (0, 20),
             'plot_yn': 'n'  # do not plot on class creation
         }
@@ -277,6 +278,9 @@ class ResistivityPhasePseudoSection(VisualizationBase):
         VisualizationBase.__init__(self, parent)
 
         # setup gui
+        self._plot_control = PlotControlResistivityPhasePseudoSection(self._parameter_ui)
+        self.parameter_ui.add_parameter_groupbox(self._plot_control)
+
         self._mesh_grid_ui = MeshGrid(self._parameter_ui)
         self._parameter_ui.add_parameter_groupbox(self._mesh_grid_ui)
 
@@ -286,6 +290,10 @@ class ResistivityPhasePseudoSection(VisualizationBase):
         self._linedir_ui = LineDir(self._parameter_ui)
         self._linedir_ui.ui.radioButton_ew.setChecked(True)
         self._parameter_ui.add_parameter_groupbox(self._linedir_ui)
+
+        # figure settings
+        self._aspect_ui = AspectRatio(self._parameter_ui)
+        self._parameter_ui.add_figure_groupbox(self._aspect_ui)
 
         self._parameter_ui.end_of_parameter_components()
 

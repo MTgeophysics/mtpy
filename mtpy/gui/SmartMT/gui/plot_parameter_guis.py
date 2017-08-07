@@ -12,6 +12,8 @@ from mtpy.gui.SmartMT.ui_asset.groupbox_linedir import Ui_GroupBox_Linedir
 from mtpy.gui.SmartMT.ui_asset.groupbox_mesh_grid import Ui_GroupBox_mash_grid
 from mtpy.gui.SmartMT.ui_asset.groupbox_padding import Ui_GroupBox_Padding
 from mtpy.gui.SmartMT.ui_asset.groupbox_plot_control_mt_response import Ui_GroupBox_plot_control_mt_response
+from mtpy.gui.SmartMT.ui_asset.groupbox_plot_control_resistivity_phase_pseudo_section import \
+    Ui_GroupBox_plot_control_resistivity_phase_pseudo_section
 from mtpy.gui.SmartMT.ui_asset.groupbox_rotation import Ui_GroupBox_Rotation
 from mtpy.gui.SmartMT.ui_asset.groupbox_scale import Ui_GroupBox_Scale
 from mtpy.gui.SmartMT.ui_asset.groupbox_station_select import Ui_GroupBox_Station_Select
@@ -638,4 +640,7 @@ class MeshGrid(QtGui.QGroupBox):
 class PlotControlResistivityPhasePseudoSection(QtGui.QGroupBox):
     def __init__(self, parent):
         QtGui.QGroupBox.__init__(self, parent)
+        self.ui = Ui_GroupBox_plot_control_resistivity_phase_pseudo_section()
+        self.ui.setupUi(self)
+
 
