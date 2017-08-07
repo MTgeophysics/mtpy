@@ -224,3 +224,4 @@ class Ui_Dialog_Export(object):
         self.comboBox_directory.setToolTip(_translate("Dialog_Export", "<html><head/><body><p>Directory to save the file</p></body></html>", None))
         self.spinBox_width_pixels.setSuffix(_translate("Dialog_Export", "pixels", None))
         self.spinBox_height_pixels.setSuffix(_translate("Dialog_Export", "pixels", None))
+

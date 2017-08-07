@@ -6,8 +6,6 @@
     Author: YingzhiGou
     Date: 20/06/2017
 """
-import inspect
-
 from PyQt4 import QtGui
 
 from mtpy.gui.SmartMT.gui.busy_indicators import BusyOverlay
@@ -57,7 +55,6 @@ class PlotOption(QtGui.QWidget):
         self._busy_overlay = BusyOverlay(self)
         self._busy_overlay.hide()
 
-
         # connect signals
         self.ui.comboBoxSelect_Plot.currentIndexChanged.connect(self._selection_changed)
         self.ui.pushButton_plot.clicked.connect(self._create_plot)
@@ -89,8 +86,6 @@ class PlotOption(QtGui.QWidget):
         if self._current_plot is not None:
             # self.ui.verticalLayout.removeWidget(self._current_plot.parameter_ui)
             self._current_plot.parameter_ui.deleteLater()
-        # reload visualization module for testing only
-        reload(mtpy.gui.SmartMT.visualization)  # todo remove it when deploy
 
         self._current_plot = plot_option(self)
         # connect signal

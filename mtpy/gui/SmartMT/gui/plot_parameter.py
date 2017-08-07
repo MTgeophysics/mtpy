@@ -23,6 +23,7 @@ from mtpy.gui.SmartMT.ui_asset.groupbox_font import Ui_GroupBox_Font
 from mtpy.gui.SmartMT.ui_asset.groupbox_frequency_period_index import Ui_GroupBox_Frequency_Period_Index
 from mtpy.gui.SmartMT.ui_asset.groupbox_frequency_period_single import Ui_groupBoxFrequency_pereiod_single
 from mtpy.gui.SmartMT.ui_asset.groupbox_linedir import Ui_GroupBox_Linedir
+from mtpy.gui.SmartMT.ui_asset.groupbox_mesh_grid import Ui_GroupBox_mash_grid
 from mtpy.gui.SmartMT.ui_asset.groupbox_padding import Ui_GroupBox_Padding
 from mtpy.gui.SmartMT.ui_asset.groupbox_plot_control_mt_response import Ui_GroupBox_plot_control_mt_response
 from mtpy.gui.SmartMT.ui_asset.groupbox_rotation import Ui_GroupBox_Rotation
@@ -920,12 +921,12 @@ class CommonSettings(QtGui.QGroupBox):
 
     def _x_slider_changed(self, value):
         self.ui.doubleSpinBox_x.blockSignals(True)
-        self.ui.doubleSpinBox_x.setValue(value/100.0)
+        self.ui.doubleSpinBox_x.setValue(value / 100.0)
         self.ui.doubleSpinBox_x.blockSignals(False)
 
     def _y_slider_changed(self, value):
         self.ui.doubleSpinBox_y.blockSignals(True)
-        self.ui.doubleSpinBox_y.setValue(value/100.0)
+        self.ui.doubleSpinBox_y.setValue(value / 100.0)
         self.ui.doubleSpinBox_y.blockSignals(False)
 
     def _x_spinbox_changed(self, value):
@@ -1012,3 +1013,42 @@ class CommonSettings(QtGui.QGroupBox):
 
     _horizontalalignment = ['right', 'center', 'left']
     _verticalalignment = ['top', 'center', 'bottom', 'baseline']
+
+
+class MeshGrid(QtGui.QGroupBox):
+    def __init__(self, parent):
+        QtGui.QGroupBox.__init__(self, parent)
+        self.ui = Ui_GroupBox_mash_grid()
+        self.ui.setupUi(self)
+
+        # connect signal
+        self.ui.radioButton_imshow.toggled.connect(self._imshow_toggled)
+
+    _grid_types = ['imshow', 'pcolormesh']
+    _interpolation_methods = ['none', 'nearest', 'bilinear', 'bicubic',
+                              'spline16', 'spline36', 'hanning', 'hamming',
+                              'hermite', 'kaiser', 'quadric', 'catrom',
+                              'gaussian', 'bessel', 'mitchell', 'sinc',
+                              'lanczos']
+
+    def _imshow_toggled(self, checked):
+        if checked:
+            self.ui.groupBox_interpolation_method.setHidden(False)
+        else:
+            self.ui.groupBox_interpolation_method.setHidden(True)
+
+    def get_grid_type(self):
+        if self.ui.radioButton_imshow.isChecked():
+            return self._grid_types[0]
+        elif self.ui.radioButton_pcolormesh.isChecked():
+            return self._grid_types[1]
+        else:
+            return None  # should never reach here
+
+    def get_interpolation_method(self):
+        if not self.ui.groupBox_interpolation_method.isHidden():
+            return self._interpolation_methods[
+                self.ui.comboBox_interpolation_method.currentIndex()
+            ]
+        else:
+            return None
