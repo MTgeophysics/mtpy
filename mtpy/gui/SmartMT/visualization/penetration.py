@@ -58,7 +58,7 @@ class Depth2D(VisualizationBase):
     def plot(self):
         # get parameters
         self._rho = self._z_component_ui.get_selection()
-        self._period_index = self._frequency_period_ui.get_period_index_list()
+        self._period_index = self._frequency_period_ui.get_index_list()
         self._plotting_object = mtpy.imaging.penetration.Depth2D(self._mt_objs, self._period_index, self._rho)
         self._plotting_object.plot()
         self._fig = self._plotting_object.get_figure()

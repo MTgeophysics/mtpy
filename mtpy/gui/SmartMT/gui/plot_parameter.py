@@ -790,7 +790,7 @@ class FrequencyIndex(QtGui.QGroupBox):
                 self.ui.listWidget_frequency_period.addItem("ERROR: frequency lists from stations are not identical")
                 self.ui.listWidget_frequency_period.setEnabled(False)
 
-    def get_period_index_list(self):
+    def get_index_list(self):
         return sorted([index.row() for index in self.ui.listWidget_frequency_period.selectedIndexes()], reverse=False)
 
 

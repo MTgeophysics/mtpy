@@ -9,7 +9,7 @@
     Date: 20/06/2017
 """
 from mtpy.gui.SmartMT.gui.plot_parameter import FrequencySingle, Ellipse, FrequencyTolerance, ColorBar, Arrow, Padding, \
-    Scale, Font, Stretch, LineDir, MeshGrid
+    Scale, Font, Stretch, LineDir, MeshGrid, FrequencyIndex
 from mtpy.gui.SmartMT.visualization.visualization_base import VisualizationBase
 from mtpy.imaging.phase_tensor_maps import PlotPhaseTensorMaps
 from mtpy.imaging.phase_tensor_pseudosection import PlotPhaseTensorPseudoSection
@@ -252,8 +252,11 @@ class ResistivityPhasePseudoSection(VisualizationBase):
             'fn_list': [mt_obj.fn for mt_obj in self._mt_objs],
             'plot_style': self._mesh_grid_ui.get_grid_type(),
             'imshow_interp': self._mesh_grid_ui.get_interpolation_method(),
+            'ftol': self._tolerance_ui.get_tolerance_in_float(),
+            'linedir': self._linedir_ui.get_linedir(),
             'plot_yn': 'n'  # do not plot on class creation
         }
+
         self._plotting_object = PlotResPhasePseudoSection(**self._params)
         self._plotting_object.plot(show=False)
         self._fig = self._plotting_object.fig
@@ -274,6 +277,13 @@ class ResistivityPhasePseudoSection(VisualizationBase):
         # setup gui
         self._mesh_grid_ui = MeshGrid(self._parameter_ui)
         self._parameter_ui.add_parameter_groubox(self._mesh_grid_ui)
+
+        self._tolerance_ui = FrequencyTolerance(self._parameter_ui)
+        self._parameter_ui.add_parameter_groubox(self._tolerance_ui)
+
+        self._linedir_ui = LineDir(self._parameter_ui)
+        self._linedir_ui.ui.radioButton_ew.setChecked(True)
+        self._parameter_ui.add_parameter_groubox(self._linedir_ui)
 
         self._parameter_ui.end_of_parameter_components()
 
