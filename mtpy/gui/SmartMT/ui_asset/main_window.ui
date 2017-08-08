@@ -78,6 +78,7 @@
     <addaction name="actionSave_as_Project"/>
     <addaction name="separator"/>
     <addaction name="actionExport"/>
+    <addaction name="actionExport_ModEM_Data"/>
     <addaction name="separator"/>
     <addaction name="actionExit"/>
    </widget>
@@ -237,6 +238,9 @@
    </property>
   </action>
   <action name="actionPlot">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="text">
     <string>Plot...</string>
    </property>
@@ -290,6 +294,14 @@
   <action name="actionClose_All_Images">
    <property name="text">
     <string>Close All Images</string>
+   </property>
+  </action>
+  <action name="actionExport_ModEM_Data">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Export ModEM Data...</string>
    </property>
   </action>
  </widget>

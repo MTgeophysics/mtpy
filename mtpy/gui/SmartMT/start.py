@@ -18,6 +18,7 @@ from PyQt4 import QtCore, QtGui
 from PyQt4.QtCore import QString
 
 from mtpy.gui.SmartMT.gui.export_dialog import ExportDialog
+from mtpy.gui.SmartMT.gui.export_dialog_modem import ExportDialogModEm
 from mtpy.gui.SmartMT.gui.plot_option import PlotOption
 from mtpy.gui.SmartMT.gui.busy_indicators import ProgressBar
 from mtpy.gui.SmartMT.gui.station_summary import StationSummary
@@ -39,8 +40,9 @@ class StartQt4(QtGui.QMainWindow):
         self.ui = Ui_SmartMT_MainWindow()
         self.ui.setupUi(self)
 
-        # export dialog
+        # export dialogs
         self._export_dialog = ExportDialog(self)
+        self._export_dialog_modem = ExportDialogModEm(self)
 
         self.setup_menu()
         self._file_handler = FileHandler()
@@ -72,6 +74,7 @@ class StartQt4(QtGui.QMainWindow):
         self.ui.actionPlot.triggered.connect(self.plot_selected_station)
         self.ui.actionClose_All_Images.triggered.connect(self._close_all_images)
         self.ui.actionExport.triggered.connect(self._export_image)
+        self.ui.actionExport_ModEM_Data.triggered.connect(self._export_modem)
         # not yet impleneted
         self.ui.actionAbout.triggered.connect(self.dummy_action)
         self.ui.actionClose_Project.triggered.connect(self.dummy_action)
@@ -96,6 +99,9 @@ class StartQt4(QtGui.QMainWindow):
                                            'Exporting Error',
                                            "{}: {}".format(mod.__name__, e.message),
                                            QtGui.QMessageBox.Close)
+
+    def _export_modem(self, *args, **kwargs):
+        self._export_dialog_modem.exec_()
 
     def _tile_windows(self, *args, **kwargs):
         self.ui.mdiArea.tileSubWindows()
@@ -216,6 +222,7 @@ class StartQt4(QtGui.QMainWindow):
         if not self._station_viewer:
             self._station_viewer = StationViewer(self, self._file_handler)
             self.ui.actionShow_Data_Collection.setEnabled(True)
+            self._station_viewer.selection_changed.connect(self._selected_station_changed)
         if not self._station_summary:
             self._station_summary = StationSummary(self, self._file_handler,
                                                    self._station_viewer.fig_canvas.selected_stations)
@@ -227,6 +234,10 @@ class StartQt4(QtGui.QMainWindow):
             self._station_viewer.selection_changed.connect(self._station_summary.update_view)
             self._station_viewer.setFocus()
         self._station_viewer.update_view()
+
+    def _selected_station_changed(self):
+        self.ui.actionPlot.setEnabled(bool(self._station_viewer.selected_stations))
+        self.ui.actionExport_ModEM_Data.setEnabled(bool(self._station_viewer.selected_stations))
 
     def create_subwindow(self, widget, title, overide=True, tooltip=None):
         subwindow = None
