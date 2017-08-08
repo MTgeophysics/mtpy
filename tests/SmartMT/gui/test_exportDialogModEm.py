@@ -1,9 +1,11 @@
-import sys
+from __future__ import print_function
 
 import os
-from PyQt4 import QtGui, QtCore
+import pprint
+import sys
 from unittest import TestCase
 
+from PyQt4 import QtGui, QtCore
 from PyQt4.QtGui import QApplication
 from PyQt4.QtTest import QTest
 
@@ -55,4 +57,5 @@ class TestExportDialogModEm(TestCase):
         self.dialog.close()
 
     def test_defaults(self):
-        pass
+        while self.dialog.exec_() == QtGui.QWizard.Accepted:
+            pprint.pprint(self.dialog.get_data_kwargs())

@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>403</width>
-    <height>361</height>
+       <height>374</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -119,6 +119,81 @@
     </item>
    </layout>
   </widget>
+     <widget class="QWizardPage" name="wizardPage_inversion_mode">
+         <property name="title">
+             <string>Inversion Mode</string>
+         </property>
+         <layout class="QHBoxLayout" name="horizontalLayout">
+             <item>
+                 <widget class="QGroupBox" name="groupBox">
+                     <property name="title">
+                         <string>Impedance Components</string>
+                     </property>
+                     <layout class="QVBoxLayout" name="verticalLayout">
+                         <item>
+                             <widget class="QRadioButton" name="radioButton_impedance_full">
+                                 <property name="toolTip">
+                                     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;zxx, zxy, zyx, and zyy&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                                 </property>
+                                 <property name="text">
+                                     <string>All</string>
+                                 </property>
+                                 <property name="checked">
+                                     <bool>true</bool>
+                                 </property>
+                             </widget>
+                         </item>
+                         <item>
+                             <widget class="QRadioButton" name="radioButton_impedance_off_diagonal">
+                                 <property name="toolTip">
+                                     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;zxy and zyx&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                                 </property>
+                                 <property name="text">
+                                     <string>Off Diagonal</string>
+                                 </property>
+                             </widget>
+                         </item>
+                         <item>
+                             <widget class="QRadioButton" name="radioButton_impedance_none">
+                                 <property name="text">
+                                     <string>None</string>
+                                 </property>
+                             </widget>
+                         </item>
+                     </layout>
+                 </widget>
+             </item>
+             <item>
+                 <widget class="QGroupBox" name="groupBox_2">
+                     <property name="title">
+                         <string>Vertical Components</string>
+                     </property>
+                     <layout class="QVBoxLayout" name="verticalLayout_2">
+                         <item>
+                             <widget class="QRadioButton" name="radioButton_vertical_full">
+                                 <property name="toolTip">
+                                     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;tx and ty&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                                 </property>
+                                 <property name="text">
+                                     <string>All</string>
+                                 </property>
+                                 <property name="checked">
+                                     <bool>true</bool>
+                                 </property>
+                             </widget>
+                         </item>
+                         <item>
+                             <widget class="QRadioButton" name="radioButton_vertical_none">
+                                 <property name="text">
+                                     <string>None</string>
+                                 </property>
+                             </widget>
+                         </item>
+                     </layout>
+                 </widget>
+             </item>
+         </layout>
+     </widget>
   <widget class="QWizardPage" name="wizardPage_error_type">
    <property name="title">
     <string>Error Type</string>
@@ -586,7 +661,169 @@
     </item>
    </layout>
   </widget>
-  <widget class="QWizardPage" name="wizardPage2"/>
+     <widget class="QWizardPage" name="wizardPage_wave_sign_unit">
+         <property name="title">
+             <string>Wave Sign and Unit</string>
+         </property>
+         <property name="subTitle">
+             <string>Wave Sign is the sign of time dependent wave. the default is '+' as positive downwards.</string>
+         </property>
+         <layout class="QHBoxLayout" name="horizontalLayout_2">
+             <item>
+                 <widget class="QGroupBox" name="groupBox_4">
+                     <property name="sizePolicy">
+                         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                             <horstretch>0</horstretch>
+                             <verstretch>0</verstretch>
+                         </sizepolicy>
+                     </property>
+                     <property name="toolTip">
+                         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Sign of time depend wave. Default is '+'
+                             as positive downwards.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
+                         </string>
+                     </property>
+                     <property name="title">
+                         <string>Wave Sign</string>
+                     </property>
+                     <layout class="QVBoxLayout" name="verticalLayout_3">
+                         <item>
+                             <widget class="QGroupBox" name="groupBox_sign_impedance">
+                                 <property name="sizePolicy">
+                                     <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                                         <horstretch>0</horstretch>
+                                         <verstretch>0</verstretch>
+                                     </sizepolicy>
+                                 </property>
+                                 <property name="title">
+                                     <string>Impedances</string>
+                                 </property>
+                                 <layout class="QVBoxLayout" name="verticalLayout_4">
+                                     <item>
+                                         <widget class="QRadioButton" name="radioButton_impedance_sign_plus">
+                                             <property name="text">
+                                                 <string>+</string>
+                                             </property>
+                                             <property name="checked">
+                                                 <bool>true</bool>
+                                             </property>
+                                         </widget>
+                                     </item>
+                                     <item>
+                                         <widget class="QRadioButton" name="radioButton_impedance_sign_minus">
+                                             <property name="text">
+                                                 <string>-</string>
+                                             </property>
+                                         </widget>
+                                     </item>
+                                 </layout>
+                             </widget>
+                         </item>
+                         <item>
+                             <widget class="QGroupBox" name="groupBox_sign_vertical">
+                                 <property name="sizePolicy">
+                                     <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                                         <horstretch>0</horstretch>
+                                         <verstretch>0</verstretch>
+                                     </sizepolicy>
+                                 </property>
+                                 <property name="title">
+                                     <string>Vertical/Tipper</string>
+                                 </property>
+                                 <layout class="QVBoxLayout" name="verticalLayout_5">
+                                     <item>
+                                         <widget class="QRadioButton" name="radioButton_vertical_sign_plus">
+                                             <property name="text">
+                                                 <string>+</string>
+                                             </property>
+                                             <property name="checked">
+                                                 <bool>true</bool>
+                                             </property>
+                                         </widget>
+                                     </item>
+                                     <item>
+                                         <widget class="QRadioButton" name="radioButton_vertical_sign_minus">
+                                             <property name="text">
+                                                 <string>-</string>
+                                             </property>
+                                         </widget>
+                                     </item>
+                                 </layout>
+                             </widget>
+                         </item>
+                     </layout>
+                 </widget>
+             </item>
+             <item>
+                 <widget class="QGroupBox" name="groupBox_z_unit">
+                     <property name="toolTip">
+                         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Units of Z&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                     </property>
+                     <property name="title">
+                         <string>Z-Unit</string>
+                     </property>
+                     <layout class="QVBoxLayout" name="verticalLayout_6">
+                         <item>
+                             <widget class="QRadioButton" name="radioButton_unit_vmt">
+                                 <property name="text">
+                                     <string>[V/m]/[T]</string>
+                                 </property>
+                             </widget>
+                         </item>
+                         <item>
+                             <widget class="QRadioButton" name="radioButton_unit_mvkmnt">
+                                 <property name="text">
+                                     <string>[mV/km]/[nT]</string>
+                                 </property>
+                                 <property name="checked">
+                                     <bool>true</bool>
+                                 </property>
+                             </widget>
+                         </item>
+                         <item>
+                             <widget class="QRadioButton" name="radioButton_unit_ohm">
+                                 <property name="text">
+                                     <string>Ohm</string>
+                                 </property>
+                             </widget>
+                         </item>
+                     </layout>
+                 </widget>
+             </item>
+         </layout>
+     </widget>
+     <widget class="QWizardPage" name="wizardPage_data">
+         <property name="title">
+             <string>Other Settings</string>
+         </property>
+         <layout class="QHBoxLayout" name="horizontalLayout_data">
+             <item>
+                 <widget class="QGroupBox" name="groupBox_5">
+                     <property name="title">
+                         <string>GroupBox</string>
+                     </property>
+                     <layout class="QVBoxLayout" name="verticalLayout_7">
+                         <item>
+                             <widget class="QRadioButton" name="radioButton_format_2">
+                                 <property name="text">
+                                     <string>Type 2</string>
+                                 </property>
+                             </widget>
+                         </item>
+                         <item>
+                             <widget class="QRadioButton" name="radioButton_format_1">
+                                 <property name="text">
+                                     <string>Type 1</string>
+                                 </property>
+                                 <property name="checked">
+                                     <bool>true</bool>
+                                 </property>
+                             </widget>
+                         </item>
+                     </layout>
+                 </widget>
+             </item>
+         </layout>
+     </widget>
  </widget>
  <tabstops>
   <tabstop>comboBox_output_name</tabstop>

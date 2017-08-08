@@ -11,6 +11,7 @@ import os
 
 from PyQt4 import QtGui, QtCore
 
+from mtpy.gui.SmartMT.gui.plot_parameter_guis import Rotation
 from mtpy.gui.SmartMT.ui_asset.wizard_export_modem import Ui_Wizard_esport_modem
 
 
@@ -21,6 +22,9 @@ class ExportDialogModEm(QtGui.QWizard):
         self.ui.setupUi(self)
 
         # setup gui
+        # add rotation
+        self._rotation_ui = Rotation(self.ui.wizardPage_data)
+        self.ui.horizontalLayout_data.addWidget(self._rotation_ui)
 
         # setup directory and dir dialog
         self._dir_dialog = QtGui.QFileDialog(self)
@@ -39,11 +43,17 @@ class ExportDialogModEm(QtGui.QWizard):
             self.ui.comboBox_error_type_zyy.setItemData(index, tooltip, QtCore.Qt.ToolTipRole)
 
         # connect signals
+
         self.ui.comboBox_output_name.currentIndexChanged.connect(self._update_full_output)
         self.ui.comboBox_output_name.lineEdit().editingFinished.connect(self._output_name_changed)
         self.ui.comboBox_directory.currentIndexChanged.connect(self._update_full_output)
         self.ui.comboBox_directory.lineEdit().editingFinished.connect(self._output_dir_changed)
         self.ui.pushButton_browse.clicked.connect(self._browse)
+
+        self.ui.radioButton_impedance_full.toggled.connect(self._impedance_full_toggled)
+        self.ui.radioButton_impedance_off_diagonal.toggled.connect(self._impedance_off_diagonal_toggled)
+        self.ui.radioButton_impedance_none.toggled.connect(self._impedance_none_toggled)
+        self.ui.radioButton_vertical_full.toggled.connect(self._vertical_full_toggled)
 
         self.ui.comboBox_error_type.currentIndexChanged.connect(self._error_type_changed)
         for component in self._impedance_components:
@@ -60,13 +70,13 @@ class ExportDialogModEm(QtGui.QWizard):
     _vertical_components = ['tx', 'ty']
 
     _error_type = [
-        'floor',            # 0
-        'value',            # 1
-        'egbert',           # 2
-        'floor_egbert',     # 3
-        'stddev',           # 4
-        'sqr',              # 5
-        'meansqr'           # 6
+        'floor',  # 0
+        'value',  # 1
+        'egbert',  # 2
+        'floor_egbert',  # 3
+        'stddev',  # 4
+        'sqr',  # 5
+        'meansqr'  # 6
     ]
 
     _error_type_tool_tip = [
@@ -79,10 +89,40 @@ class ExportDialogModEm(QtGui.QWizard):
         'mean square error of a frequency of a component across all frequencies for one station'
     ]
 
+    def _impedance_full_toggled(self, checked):
+        if checked:
+            for comp in self._impedance_components:
+                checkbox = getattr(self.ui, 'checkBox_{}'.format(comp))
+                checkbox.setEnabled(True)
+            self.ui.radioButton_vertical_none.setEnabled(True)
+            self.ui.groupBox_sign_impedance.setEnabled(True)
+
+    def _impedance_off_diagonal_toggled(self, checked):
+        if checked:
+            for comp in self._impedance_components:
+                checkbox = getattr(self.ui, 'checkBox_{}'.format(comp))
+                checkbox.setEnabled(comp == 'zxy' or comp == 'zyx')
+            self.ui.radioButton_vertical_none.setEnabled(True)
+            self.ui.groupBox_sign_impedance.setEnabled(True)
+
+    def _impedance_none_toggled(self, checked):
+        if checked:
+            for comp in self._impedance_components:
+                checkbox = getattr(self.ui, 'checkBox_{}'.format(comp))
+                checkbox.setEnabled(False)
+            self.ui.radioButton_vertical_none.setEnabled(False)
+            self.ui.groupBox_sign_impedance.setEnabled(False)
+
+    def _vertical_full_toggled(self, checked):
+        self.ui.doubleSpinBox_error_tipper.setEnabled(checked)
+        self.ui.radioButton_impedance_none.setEnabled(checked)
+        self.ui.groupBox_sign_vertical.setEnabled(checked)
+
     def _error_component_checkbox_toggled(self, combobox):
         def _checkbox_toggled(checked):
             combobox.setEnabled(checked)
             self._component_error_type_changed()
+
         return _checkbox_toggled
 
     def _component_error_type_changed(self, error_type_index=-1):
@@ -136,3 +176,57 @@ class ExportDialogModEm(QtGui.QWizard):
             directory = str(self._dir_dialog.selectedFiles()[0])
             self.ui.comboBox_directory.setEditText(directory)
             self._output_dir_changed()
+
+    def get_data_kwargs(self):
+        kwargs = {
+            'error_type': self._error_type[self.ui.comboBox_error_type.currentIndex()],
+            'save_path': str(self.ui.lineEdit_full_output.text()),
+            'format': '1' if self.ui.radioButton_format_1.isChecked() else '2',
+            'rotation_angle': self._rotation_ui.get_rotation_in_degree()
+        }
+
+        # comp_error_type
+        if any(
+                [getattr(self.ui, 'comboBox_error_type_{}'.format(component)).isEnabled()
+                 for component in self._impedance_components]
+        ):
+            kwargs['comp_error_type'] = dict(
+                [
+                    (
+                        component,
+                        self._error_type[
+                            getattr(self.ui, 'comboBox_error_type_{}'.format(component)).currentIndex()
+                        ]
+                    )
+                    for component in self._impedance_components
+                    if getattr(self.ui, 'comboBox_error_type_{}'.format(component)).isEnabled()
+                ]
+            )
+
+        # error_floor
+        if self.ui.doubleSpinBox_error_floor.isEnabled():
+            kwargs['error_floor'] = self.ui.doubleSpinBox_error_floor.value()
+        # error_value
+        if self.ui.doubleSpinBox_error_value.isEnabled():
+            kwargs['error_value'] = self.ui.doubleSpinBox_error_value.value()
+        # error_egbert
+        if self.ui.doubleSpinBox_error_egbert.isEnabled():
+            kwargs['error_egbert'] = self.ui.doubleSpinBox_error_egbert.value()
+        # error_tipper
+        if self.ui.doubleSpinBox_error_tipper.isEnabled():
+            kwargs['error_tipper'] = self.ui.doubleSpinBox_error_tipper.value() / 100.
+
+        # wave signs
+        if self.ui.groupBox_sign_impedance.isEnabled():
+            kwargs['wave_sign_impedance'] = '+' if self.ui.radioButton_impedance_sign_plus.isChecked() \
+                else '-'
+        if self.ui.groupBox_sign_vertical.isEnabled():
+            kwargs['wave_sign_tipper'] = '+' if self.ui.radioButton_vertical_sign_plus.isChecked() \
+                else '-'
+
+        # units
+        kwargs['units'] = '[mV/km]/[nT]' if self.ui.radioButton_unit_mvkmnt.isChecked() \
+            else '[V/m]/[T]' if self.ui.radioButton_unit_vmt.isChecked() \
+            else 'Ohm'
+
+        return kwargs
