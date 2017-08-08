@@ -58,4 +58,6 @@ class TestExportDialogModEm(TestCase):
 
     def test_defaults(self):
         while self.dialog.exec_() == QtGui.QWizard.Accepted:
+            print(self.dialog.get_save_file_path())
             pprint.pprint(self.dialog.get_data_kwargs())
+            pprint.pprint(self.dialog.get_model_kwargs())

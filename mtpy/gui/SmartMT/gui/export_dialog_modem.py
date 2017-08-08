@@ -24,7 +24,12 @@ class ExportDialogModEm(QtGui.QWizard):
         # setup gui
         # add rotation
         self._rotation_ui = Rotation(self.ui.wizardPage_data)
+        self._rotation_ui.setTitle('Data Rotation Angle')
         self.ui.horizontalLayout_data.addWidget(self._rotation_ui)
+
+        self._mesh_rotation_ui = Rotation(self.ui.wizardPage_mesh)
+        self._mesh_rotation_ui.setTitle('Mesh Rotation Angle')
+        self.ui.gridLayout_mesh.addWidget(self._mesh_rotation_ui)
 
         # setup directory and dir dialog
         self._dir_dialog = QtGui.QFileDialog(self)
@@ -44,12 +49,6 @@ class ExportDialogModEm(QtGui.QWizard):
 
         # connect signals
 
-        self.ui.comboBox_output_name.currentIndexChanged.connect(self._update_full_output)
-        self.ui.comboBox_output_name.lineEdit().editingFinished.connect(self._output_name_changed)
-        self.ui.comboBox_directory.currentIndexChanged.connect(self._update_full_output)
-        self.ui.comboBox_directory.lineEdit().editingFinished.connect(self._output_dir_changed)
-        self.ui.pushButton_browse.clicked.connect(self._browse)
-
         self.ui.radioButton_impedance_full.toggled.connect(self._impedance_full_toggled)
         self.ui.radioButton_impedance_off_diagonal.toggled.connect(self._impedance_off_diagonal_toggled)
         self.ui.radioButton_impedance_none.toggled.connect(self._impedance_none_toggled)
@@ -61,6 +60,12 @@ class ExportDialogModEm(QtGui.QWizard):
             checkbox = getattr(self.ui, 'checkBox_{}'.format(component))
             combobox.currentIndexChanged.connect(self._component_error_type_changed)
             checkbox.toggled.connect(self._error_component_checkbox_toggled(combobox))
+
+        self.ui.comboBox_output_name.currentIndexChanged.connect(self._update_full_output)
+        self.ui.comboBox_output_name.lineEdit().editingFinished.connect(self._output_name_changed)
+        self.ui.comboBox_directory.currentIndexChanged.connect(self._update_full_output)
+        self.ui.comboBox_directory.lineEdit().editingFinished.connect(self._output_dir_changed)
+        self.ui.pushButton_browse.clicked.connect(self._browse)
 
         # register fields
         self.ui.wizardPage_intro.registerField('output_name', self.ui.comboBox_output_name)
@@ -180,7 +185,7 @@ class ExportDialogModEm(QtGui.QWizard):
     def get_data_kwargs(self):
         kwargs = {
             'error_type': self._error_type[self.ui.comboBox_error_type.currentIndex()],
-            'save_path': str(self.ui.lineEdit_full_output.text()),
+            'save_path': self.get_save_file_path(),
             'format': '1' if self.ui.radioButton_format_1.isChecked() else '2',
             'rotation_angle': self._rotation_ui.get_rotation_in_degree()
         }
@@ -230,3 +235,24 @@ class ExportDialogModEm(QtGui.QWizard):
             else 'Ohm'
 
         return kwargs
+
+    def get_model_kwargs(self):
+        kwargs = {
+            'cell_size_east': self.ui.doubleSpinBox_cell_size_east.value(),
+            'cell_size_north': self.ui.doubleSpinBox_cell_szie_north.value(),
+            'pad_east': self.ui.spinBox_pad_east.value(),
+            'pad_north': self.ui.spinBox_pad_north.value(),
+            'pad_z': self.ui.spinBox_pad_z.value(),
+            'pad_stretch_h': self.ui.doubleSpinBox_pad_stretch_h.value(),
+            'pad_stretch_v': self.ui.doubleSpinBox_pad_stretch_v.value(),
+            'z1_layer': self.ui.doubleSpinBox_z1_thickness.value(),
+            'z_target_depth': self.ui.doubleSpinBox_target_depth.value(),
+            'z_bottom': self.ui.doubleSpinBox_bottom.value(),
+            'n_layers': self.ui.spinBox_num_layers.value(),
+            'n_airlayers': self.ui.spinBox_num_air_layers.value(),
+            'mesh_rotation_angle': self._mesh_rotation_ui.get_rotation_in_degree()
+        }
+        return kwargs
+
+    def get_save_file_path(self):
+        return str(self.ui.lineEdit_full_output.text())
