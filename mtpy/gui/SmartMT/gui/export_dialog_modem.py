@@ -48,7 +48,6 @@ class ExportDialogModEm(QtGui.QWizard):
             self.ui.comboBox_error_type_zyy.setItemData(index, tooltip, QtCore.Qt.ToolTipRole)
 
         # connect signals
-
         self.ui.radioButton_impedance_full.toggled.connect(self._impedance_full_toggled)
         self.ui.radioButton_impedance_off_diagonal.toggled.connect(self._impedance_off_diagonal_toggled)
         self.ui.radioButton_impedance_none.toggled.connect(self._impedance_none_toggled)
@@ -67,9 +66,13 @@ class ExportDialogModEm(QtGui.QWizard):
         self.ui.comboBox_directory.lineEdit().editingFinished.connect(self._output_dir_changed)
         self.ui.pushButton_browse.clicked.connect(self._browse)
 
+        self.ui.comboBox_topography_file.lineEdit().editingFinished.connect(self._topography_file_changed)
+        self.ui.pushButton_browse_topography_file.clicked.connect(self._browse_topography_file)
+
         # register fields
         self.ui.wizardPage_intro.registerField('output_name', self.ui.comboBox_output_name)
         self.ui.wizardPage_intro.registerField('output_directory', self.ui.comboBox_directory)
+        self.ui.wizardPage_topography.registerField('topography_file*', self.ui.comboBox_topography_file)
 
     _impedance_components = ['zxx', 'zxy', 'zyx', 'zyy']
     _vertical_components = ['tx', 'ty']
@@ -181,6 +184,20 @@ class ExportDialogModEm(QtGui.QWizard):
             directory = str(self._dir_dialog.selectedFiles()[0])
             self.ui.comboBox_directory.setEditText(directory)
             self._output_dir_changed()
+
+    def _topography_file_changed(self, *args, **kwargs):
+        topo_file = str(self.ui.comboBox_topography_file.currentText())
+        topo_file = os.path.normpath(topo_file)
+        # update
+        index = self.ui.comboBox_topography_file.findText(topo_file)
+        if index == -1:
+            self.ui.comboBox_topography_file.addItem(topo_file)
+        self.ui.comboBox_topography_file.setCurrentIndex(index
+                                                         if index >= 0
+                                                         else self.ui.comboBox_topography_file.findText(topo_file))
+
+    def _browse_topography_file(self, *args, **kwargs):
+        pass
 
     def get_data_kwargs(self):
         kwargs = {

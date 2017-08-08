@@ -6,13 +6,16 @@
    <rect>
     <x>0</x>
     <y>0</y>
-       <width>473</width>
-       <height>487</height>
+       <width>569</width>
+       <height>416</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Export to ModEM Data File</string>
   </property>
+     <property name="wizardStyle">
+         <enum>QWizard::ModernStyle</enum>
+     </property>
   <widget class="QWizardPage" name="wizardPage_intro">
    <property name="title">
     <string>Introduction</string>
@@ -686,7 +689,7 @@
   </widget>
      <widget class="QWizardPage" name="wizardPage_data">
          <property name="title">
-             <string>Other Settings</string>
+             <string>Other Data Settings</string>
          </property>
          <layout class="QHBoxLayout" name="horizontalLayout_data">
              <item>
@@ -1074,6 +1077,229 @@
                          </item>
                      </layout>
                  </widget>
+             </item>
+         </layout>
+     </widget>
+     <widget class="QWizardPage" name="wizardPage_topography">
+         <property name="title">
+             <string>Topography</string>
+         </property>
+         <property name="subTitle">
+             <string>After creating the mesh grid, the topography file is used to define resistivity model.</string>
+         </property>
+         <layout class="QGridLayout" name="gridLayout">
+             <item row="0" column="0">
+                 <widget class="QLabel" name="label_17">
+                     <property name="sizePolicy">
+                         <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+                             <horstretch>0</horstretch>
+                             <verstretch>0</verstretch>
+                         </sizepolicy>
+                     </property>
+                     <property name="text">
+                         <string>Fopography File</string>
+                     </property>
+                     <property name="buddy">
+                         <cstring>comboBox_topography_file</cstring>
+                     </property>
+                 </widget>
+             </item>
+             <item row="0" column="1">
+                 <widget class="QComboBox" name="comboBox_topography_file">
+                     <property name="toolTip">
+                         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Directory to save the file&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                     </property>
+                     <property name="editable">
+                         <bool>true</bool>
+                     </property>
+                 </widget>
+             </item>
+             <item row="0" column="2">
+                 <widget class="QPushButton" name="pushButton_browse_topography_file">
+                     <property name="sizePolicy">
+                         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                             <horstretch>0</horstretch>
+                             <verstretch>0</verstretch>
+                         </sizepolicy>
+                     </property>
+                     <property name="toolTip">
+                         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Directory to save the file&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                     </property>
+                     <property name="text">
+                         <string>Browse</string>
+                     </property>
+                 </widget>
+             </item>
+             <item row="1" column="0" colspan="3">
+                 <layout class="QHBoxLayout" name="horizontalLayout">
+                     <item>
+                         <widget class="QGroupBox" name="groupBox_9">
+                             <property name="toolTip">
+                                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;default is 'nearest', if model
+                                     grid is dense compared to the surface points then choose 'linear' or 'cubic'&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
+                                 </string>
+                             </property>
+                             <property name="title">
+                                 <string>Interpolation Method</string>
+                             </property>
+                             <layout class="QVBoxLayout" name="verticalLayout_8">
+                                 <item>
+                                     <widget class="QRadioButton" name="radioButton_interpo_method_nearest">
+                                         <property name="text">
+                                             <string>Nearest</string>
+                                         </property>
+                                         <property name="checked">
+                                             <bool>true</bool>
+                                         </property>
+                                     </widget>
+                                 </item>
+                                 <item>
+                                     <widget class="QRadioButton" name="radioButton_interpo_method_linear">
+                                         <property name="text">
+                                             <string>Linear</string>
+                                         </property>
+                                     </widget>
+                                 </item>
+                                 <item>
+                                     <widget class="QRadioButton" name="radioButton_interpo_method_cubic">
+                                         <property name="text">
+                                             <string>Cubic</string>
+                                         </property>
+                                     </widget>
+                                 </item>
+                             </layout>
+                         </widget>
+                     </item>
+                     <item>
+                         <widget class="QGroupBox" name="groupBox_10">
+                             <property name="title">
+                                 <string>Default Resistivity</string>
+                             </property>
+                             <layout class="QFormLayout" name="formLayout_3">
+                                 <item row="0" column="0">
+                                     <widget class="QLabel" name="label_18">
+                                         <property name="text">
+                                             <string>Air</string>
+                                         </property>
+                                         <property name="buddy">
+                                             <cstring>doubleSpinBox_resistivity_air</cstring>
+                                         </property>
+                                     </widget>
+                                 </item>
+                                 <item row="0" column="1">
+                                     <widget class="QDoubleSpinBox" name="doubleSpinBox_resistivity_air">
+                                         <property name="decimals">
+                                             <number>4</number>
+                                         </property>
+                                         <property name="maximum">
+                                             <double>200000000000000000.000000000000000</double>
+                                         </property>
+                                         <property name="value">
+                                             <double>100000000000000000.000000000000000</double>
+                                         </property>
+                                     </widget>
+                                 </item>
+                                 <item row="1" column="0">
+                                     <widget class="QLabel" name="label_19">
+                                         <property name="text">
+                                             <string>Sea</string>
+                                         </property>
+                                         <property name="buddy">
+                                             <cstring>doubleSpinBox_resistivity_sea</cstring>
+                                         </property>
+                                     </widget>
+                                 </item>
+                                 <item row="1" column="1">
+                                     <widget class="QDoubleSpinBox" name="doubleSpinBox_resistivity_sea">
+                                         <property name="decimals">
+                                             <number>4</number>
+                                         </property>
+                                         <property name="maximum">
+                                             <double>200000000000000000000.000000000000000</double>
+                                         </property>
+                                     </widget>
+                                 </item>
+                             </layout>
+                         </widget>
+                     </item>
+                     <item>
+                         <widget class="QGroupBox" name="groupBox_11">
+                             <property name="title">
+                                 <string>Smoothing</string>
+                             </property>
+                             <layout class="QFormLayout" name="formLayout_4">
+                                 <item row="0" column="0">
+                                     <widget class="QLabel" name="label_20">
+                                         <property name="text">
+                                             <string>East</string>
+                                         </property>
+                                         <property name="buddy">
+                                             <cstring>doubleSpinBox_smoothing_east</cstring>
+                                         </property>
+                                     </widget>
+                                 </item>
+                                 <item row="0" column="1">
+                                     <widget class="QDoubleSpinBox" name="doubleSpinBox_smoothing_east">
+                                         <property name="value">
+                                             <double>0.300000000000000</double>
+                                         </property>
+                                     </widget>
+                                 </item>
+                                 <item row="1" column="0">
+                                     <widget class="QLabel" name="label_21">
+                                         <property name="text">
+                                             <string>North</string>
+                                         </property>
+                                         <property name="buddy">
+                                             <cstring>doubleSpinBox_smoothing_north</cstring>
+                                         </property>
+                                     </widget>
+                                 </item>
+                                 <item row="1" column="1">
+                                     <widget class="QDoubleSpinBox" name="doubleSpinBox_smoothing_north">
+                                         <property name="value">
+                                             <double>0.300000000000000</double>
+                                         </property>
+                                     </widget>
+                                 </item>
+                                 <item row="2" column="0">
+                                     <widget class="QLabel" name="label_22">
+                                         <property name="text">
+                                             <string>Z</string>
+                                         </property>
+                                         <property name="buddy">
+                                             <cstring>doubleSpinBox_smoothing_z</cstring>
+                                         </property>
+                                     </widget>
+                                 </item>
+                                 <item row="2" column="1">
+                                     <widget class="QDoubleSpinBox" name="doubleSpinBox_smoothing_z">
+                                         <property name="value">
+                                             <double>0.300000000000000</double>
+                                         </property>
+                                     </widget>
+                                 </item>
+                                 <item row="3" column="0">
+                                     <widget class="QLabel" name="label_23">
+                                         <property name="text">
+                                             <string>Number</string>
+                                         </property>
+                                         <property name="buddy">
+                                             <cstring>spinBox_smoothing_number</cstring>
+                                         </property>
+                                     </widget>
+                                 </item>
+                                 <item row="3" column="1">
+                                     <widget class="QSpinBox" name="spinBox_smoothing_number">
+                                         <property name="value">
+                                             <number>1</number>
+                                         </property>
+                                     </widget>
+                                 </item>
+                             </layout>
+                         </widget>
+                     </item>
+                 </layout>
              </item>
          </layout>
      </widget>
