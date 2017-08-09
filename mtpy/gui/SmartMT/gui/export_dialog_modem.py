@@ -9,6 +9,7 @@
 """
 import inspect
 import os
+import webbrowser
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -23,13 +24,14 @@ from mtpy.gui.SmartMT.gui.export_dialog import PreviewDialog
 from mtpy.gui.SmartMT.gui.plot_parameter_guis import Rotation
 from mtpy.gui.SmartMT.ui_asset.wizard_export_modem import Ui_Wizard_esport_modem
 from mtpy.gui.SmartMT.utils.validator import FileValidator, DirectoryValidator
+from mtpy.modeling.modem_data import Data
+from mtpy.modeling.modem_model import Model
 from mtpy.utils.mtpylog import MtPyLog
 
 
 class ExportDialogModEm(QtGui.QWizard):
     def __init__(self, parent=None):
         QtGui.QDialog.__init__(self, parent)
-        self.real_plt_show = plt.show
         self.ui = Ui_Wizard_esport_modem()
         self.ui.setupUi(self)
 
@@ -59,7 +61,6 @@ class ExportDialogModEm(QtGui.QWizard):
 
         self._dir_validator = DirectoryValidator()
         self.ui.comboBox_directory.lineEdit().setValidator(self._dir_validator)
-
 
         # setup directory and dir dialog
         self._dir_dialog = QtGui.QFileDialog(self)
@@ -253,6 +254,14 @@ class ExportDialogModEm(QtGui.QWizard):
     def set_data(self, mt_objs):
         self._mt_objs = mt_objs
 
+    def get_inversion_mode(self):
+        if self.ui.radioButton_impedance_full.isChecked():
+            return '1' if self.ui.radioButton_vertical_full.isChecked() else '2'
+        elif self.ui.radioButton_impedance_off_diagonal.isChecked():
+            return '3' if self.ui.radioButton_vertical_full.isChecked() else '4'
+        else:
+            return '5'
+
     def get_data_kwargs(self):
         kwargs = {
             'error_type': self._error_type[self.ui.comboBox_error_type.currentIndex()],
@@ -260,6 +269,7 @@ class ExportDialogModEm(QtGui.QWizard):
             'format': '1' if self.ui.radioButton_format_1.isChecked() else '2',
             'rotation_angle': self._rotation_ui.get_rotation_in_degree(),
             'epsg': self.get_epsg(),
+            'inv_mode': self.get_inversion_mode()
         }
 
         # comp_error_type
@@ -310,6 +320,7 @@ class ExportDialogModEm(QtGui.QWizard):
 
     def get_model_kwargs(self):
         kwargs = {
+            'save_path': self.get_save_file_path(),
             'cell_size_east': self.ui.doubleSpinBox_cell_size_east.value(),
             'cell_size_north': self.ui.doubleSpinBox_cell_szie_north.value(),
             'pad_east': self.ui.spinBox_pad_east.value(),
@@ -363,12 +374,19 @@ class ExportDialogModEm(QtGui.QWizard):
         if self._mt_objs is None:
             return
 
-        # monkey patch to not display any figure in the thread
-        plt.show = _fake_plt_show
+        # self._progress_bar.progressbar.setRange(0, 1)
+        self._progress_bar.progressbar.setRange(0, 0)
+        self._progress_bar.show()
+
+        self._update_full_output()
 
         worker = ModEMWorker(
             self,
-            edi_list=[mt_obj.fn for mt_obj in self._mt_objs]
+            show=test,
+            edi_list=[mt_obj.fn for mt_obj in self._mt_objs],
+            data_kwargs=self.get_data_kwargs(),
+            mesh_kwargs=self.get_model_kwargs(),
+            topo_args=self.get_topography_2_mesh_args()
         )
 
         if test:
@@ -376,55 +394,118 @@ class ExportDialogModEm(QtGui.QWizard):
         self._progress_bar.setWindowTitle(
             'Testing ModEM Data...' if test else 'Generating ModEM Data...'
         )
-        worker.started.connect(self._progress_bar.onStart)
-        worker.finished.connect(self._progress_bar.onFinished)
+        # worker.started.connect(self._progress_bar.onStart)
+        # worker.finished.connect(self._progress_bar.onFinished)
         worker.status_updated.connect(self._update_progress_bar_text)
         worker.export_error.connect(self._export_error)
+        # self._plot_opened.connect(worker.pause)
 
         worker.start()
         worker.wait()
+        # worker.run()
 
-        # restore show
-        plt.show = self.real_plt_show
         # clean up
         worker.deleteLater()
+        if self.ui.checkBox_open_output_dir.isChecked():
+            webbrowser.open(self.get_save_file_path())
+
+        self._progress_bar.progressbar.setRange(0, 1)
+        self._progress_bar.hide()
+
+    # _plot_opened = pyqtSignal(bool)
 
     def _update_progress_bar_text(self, text):
         self._progress_bar.progressbar._text = text
 
-    def _show_figure(self, fig):
-        preview_dialog = PreviewDialog(self, fig)
+    def _show_figure(self, str, fig):
+        # self._plot_opened.emit(True)
+        # print "plot_opened"
+        preview_dialog = PreviewDialog(None, fig)
+        preview_dialog.setWindowTitle(str)
         preview_dialog.exec_()
         preview_dialog.deleteLater()
+        # self._plot_opened.emit(False)
 
     def _export_error(self, message):
         QtGui.QMessageBox.critical(self,
-                                   'Plotting Error', message,
+                                   'Export Error', message,
                                    QtGui.QMessageBox.Close)
 
 
 class ModEMWorker(QtCore.QThread):
-    def __init__(self, parent, edi_list):
+    def __init__(self, parent, edi_list, data_kwargs, mesh_kwargs, topo_args, show=False):
         QtCore.QThread.__init__(self, parent)
         self._logger = MtPyLog().get_mtpy_logger(__name__)
 
         self._edi_list = edi_list
+        self._data_kwargs = data_kwargs
+        self._mesh_kwagrs = mesh_kwargs
+        self._topo_args = topo_args
+
+        self.output_dir = self._data_kwargs['save_path']
+
+        self.show = show
 
     status_updated = pyqtSignal(str)
-    figure_updated = pyqtSignal(Figure)
+    figure_updated = pyqtSignal(str, Figure)
     export_error = pyqtSignal(str)
 
+    # def pause(self, paused):
+    #     print "paused"
+    #     self.is_paused = paused
+
     def run(self):
+        # monkey patch plt.show() so the plot is not displayed in worker thread
+        true_plt_show = plt.show
+        plt.show = _fake_plt_show
+        self._figures = []
         try:
+            if not os.path.exists(self.output_dir):
+                os.mkdir(self.output_dir)
+
             # get period_list list
+            self.status_updated.emit("Selecting Periods...")
             period_list = select_periods(self._edi_list)
-            self.status_updated.emit("Periods Selected")
-            self.figure_updated.emit(plt.gcf())
+            self.figure_updated.emit('Period Distribution', plt.gcf())
+
+            # data object
+            self.status_updated.emit("Creating ModEM Data Object...")
+            self._data_kwargs['period_list'] = period_list
+            data = Data(edi_list=self._edi_list, **self._data_kwargs)
+            # write data file
+            self.status_updated.emit("Writing Initial ModEM Data File...")
+            data.write_data_file()
+
+            # create model
+            self.status_updated.emit("Creating Mesh Model...")
+            self._mesh_kwagrs['Data'] = data
+            model = Model(**self._mesh_kwagrs)
+            model.make_mesh()
+            if self.show:
+                model.plot_mesh(fig_num=plt.gcf().number + 1)
+                self.figure_updated.emit("Mesh", plt.gcf())
+                # model.plot_mesh_xy()
+                # self.figure_updated.emit("Mesh XY", plt.gcf())
+                # model.plot_mesh_xz()
+                # self.figure_updated.emit("Mesh XZ", plt.gcf())
+            model.write_model_file()
+
+            # add topography
+            self.status_updated.emit("Adding Topography...")
+            model.add_topography_2mesh(*self._topo_args)
+            if self.show:
+                model.plot_topograph()
+                self.figure_updated.emit("Topography", plt.gcf())
+            model.write_model_file()
         except Exception as e:
             frm = inspect.trace()[-1]
             mod = inspect.getmodule(frm[0])
             self.export_error.emit("{}: {}".format(mod.__name__, e.message))
 
+        # restore plt.show()
+        plt.show = true_plt_show
 
-def _fake_plt_show():
+
+def _fake_plt_show(*args, **kwargs):
+    # print "suppressed show"
     pass

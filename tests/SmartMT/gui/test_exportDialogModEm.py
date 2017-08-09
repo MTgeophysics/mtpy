@@ -60,7 +60,7 @@ class TestExportDialogModEm(TestCase):
 
     def test_defaults(self):
         edi_files = glob.glob(os.path.join(edi_paths[1], '*.edi'))
-        mt_objs = [mt.MT(file_name) for file_name in edi_files]
+        mt_objs = [mt.MT(os.path.abspath(file_name)) for file_name in edi_files]
         self.dialog.set_data(mt_objs)
         if self.dialog.exec_() == QtGui.QWizard.Accepted:
             print(self.dialog.get_save_file_path())

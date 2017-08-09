@@ -1,8 +1,9 @@
-from PyQt4 import QtGui, QtCore
 import numpy as np
+from PyQt4 import QtGui, QtCore
+
 
 class ProgressBar(QtGui.QWidget):
-    def __init__(self, parent=None, title=None, minimum=0, maximum=0, value=0):
+    def __init__(self, parent=None, title=None, minimum=0, maximum=1, value=0):
         super(ProgressBar, self).__init__(parent)
         layout = QtGui.QVBoxLayout(self)
         self.progressbar = QtGui.QProgressBar(self)
@@ -13,6 +14,7 @@ class ProgressBar(QtGui.QWidget):
         self.setFixedSize(256, 64)
         # self.progressbar.setValue(1)
         layout.addWidget(self.progressbar)
+        # self.setLayout(layout)
         if title:
             self.setWindowTitle(title)
 

@@ -1167,7 +1167,8 @@ class Model(object):
         line_color = 'b'
         line_width = 0.5
 
-        fig = plt.figure(2, dpi=200)
+        # fig = plt.figure(2, dpi=200)
+        fig = plt.figure(dpi=200)
         plt.clf()
         ax2 = plt.gca()
         # ---------------------------------------
@@ -1241,7 +1242,8 @@ class Model(object):
         # plt.rcParams['figure.subplot.left'] = .12
         # plt.rcParams['font.size'] = 7
 
-        fig = plt.figure(3, dpi=200)
+        # fig = plt.figure(3, dpi=200)
+        fig = plt.figure(dpi=200)
         plt.clf()
         ax = plt.gca()
 

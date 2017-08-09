@@ -946,7 +946,7 @@ class Data(object):
 
         # be sure to fill in data array
         if fill is True:
-            new_edi_dir = os.path.join(save_path, 'new_edis')  # output edi files according to selected periods
+            new_edi_dir = os.path.join(self.save_path, 'new_edis')  # output edi files according to selected periods
             if not os.path.exists(new_edi_dir):
                 os.mkdir(new_edi_dir)
             self._fill_data_array(new_edi_dir=new_edi_dir)
