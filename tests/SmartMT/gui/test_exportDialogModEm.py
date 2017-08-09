@@ -1,5 +1,6 @@
 from __future__ import print_function
 
+import glob
 import os
 import pprint
 import sys
@@ -9,6 +10,7 @@ from PyQt4 import QtGui, QtCore
 from PyQt4.QtGui import QApplication
 from PyQt4.QtTest import QTest
 
+from mtpy.core import mt
 from mtpy.gui.SmartMT.gui.export_dialog_modem import ExportDialogModEm
 
 app = QApplication(sys.argv)
@@ -57,7 +59,12 @@ class TestExportDialogModEm(TestCase):
         self.dialog.close()
 
     def test_defaults(self):
+        edi_files = glob.glob(os.path.join(edi_paths[1], '*.edi'))
+        mt_objs = [mt.MT(file_name) for file_name in edi_files]
+        self.dialog.set_data(mt_objs)
         while self.dialog.exec_() == QtGui.QWizard.Accepted:
             print(self.dialog.get_save_file_path())
             pprint.pprint(self.dialog.get_data_kwargs())
             pprint.pprint(self.dialog.get_model_kwargs())
+
+            self.dialog.export_data(True)

@@ -11,8 +11,8 @@
 
 import abc
 import inspect
-import matplotlib.pyplot as plt
 
+import matplotlib.pyplot as plt
 from PyQt4 import QtGui, QtCore
 from PyQt4.QtCore import pyqtSignal
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
@@ -38,7 +38,7 @@ class VisualizationBase(QtCore.QThread):
         for visualization
         :param parent:
         """
-        QtCore.QObject.__init__(self, parent)
+        QtCore.QThread.__init__(self, parent)
         self._parent = parent
         self._mt_objs = None
         self._fig = None

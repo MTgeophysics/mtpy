@@ -9,10 +9,15 @@
 """
 import os
 
+import numpy as np
 from PyQt4 import QtGui, QtCore
+from PyQt4.QtCore import pyqtSignal
+from matplotlib.figure import Figure
 
+from examples.create_modem_input import select_periods
 from mtpy.gui.SmartMT.gui.plot_parameter_guis import Rotation
 from mtpy.gui.SmartMT.ui_asset.wizard_export_modem import Ui_Wizard_esport_modem
+from mtpy.utils.mtpylog import MtPyLog
 
 
 class ExportDialogModEm(QtGui.QWizard):
@@ -31,11 +36,17 @@ class ExportDialogModEm(QtGui.QWizard):
         self._mesh_rotation_ui.setTitle('Mesh Rotation Angle')
         self.ui.gridLayout_mesh.addWidget(self._mesh_rotation_ui)
 
+        # patch some double spinBox
+        # patch_QDoubleSpinBox(self.ui.doubleSpinBox_resistivity_air)
+        # patch_QDoubleSpinBox(self.ui.doubleSpinBox_resistivity_sea)
+        self._double_validator = QtGui.QDoubleValidator(-np.inf, np.inf, 1000)
+        self._double_validator.setNotation(QtGui.QDoubleValidator.ScientificNotation)
+        self.ui.lineEdit_resistivity_air.setValidator(self._double_validator)
+        self.ui.lineEdit_resistivity_sea.setValidator(self._double_validator)
+
         # setup directory and dir dialog
         self._dir_dialog = QtGui.QFileDialog(self)
         # self._dir_dialog.setDirectory(os.path.expanduser("~"))
-        self._dir_dialog.setFileMode(QtGui.QFileDialog.DirectoryOnly)
-        self._dir_dialog.setWindowTitle("Save to ...")
         self.ui.comboBox_directory.addItem(os.path.expanduser("~"))
         self._update_full_output()
 
@@ -66,13 +77,24 @@ class ExportDialogModEm(QtGui.QWizard):
         self.ui.comboBox_directory.lineEdit().editingFinished.connect(self._output_dir_changed)
         self.ui.pushButton_browse.clicked.connect(self._browse)
 
-        self.ui.comboBox_topography_file.lineEdit().editingFinished.connect(self._topography_file_changed)
+        # self.ui.comboBox_topography_file.currentIndexChanged.connect()
+        self.ui.comboBox_topography_file.lineEdit().editingFinished.connect(
+            self._topography_file_changed
+        )
         self.ui.pushButton_browse_topography_file.clicked.connect(self._browse_topography_file)
 
+        self.ui.pushButton_test.clicked.connect(self._test_button_clicked)
+
         # register fields
-        self.ui.wizardPage_intro.registerField('output_name', self.ui.comboBox_output_name)
-        self.ui.wizardPage_intro.registerField('output_directory', self.ui.comboBox_directory)
+        self.ui.wizardPage_output.registerField('output_path*', self.ui.lineEdit_full_output)
         self.ui.wizardPage_topography.registerField('topography_file*', self.ui.comboBox_topography_file)
+        self.ui.wizardPage_topography.registerField('sea_resistivity',
+                                                    self.ui.lineEdit_resistivity_sea)
+        self.ui.wizardPage_topography.registerField('air_resistivity',
+                                                    self.ui.lineEdit_resistivity_air)
+
+        # attribute
+        self._mt_objs = None
 
     _impedance_components = ['zxx', 'zxy', 'zyx', 'zyy']
     _vertical_components = ['tx', 'ty']
@@ -180,6 +202,8 @@ class ExportDialogModEm(QtGui.QWizard):
         self.ui.lineEdit_full_output.setText(full_output)
 
     def _browse(self, *args, **kwargs):
+        self._dir_dialog.setFileMode(QtGui.QFileDialog.DirectoryOnly)
+        self._dir_dialog.setWindowTitle("Save to ...")
         if self._dir_dialog.exec_() == QtGui.QDialog.Accepted:
             directory = str(self._dir_dialog.selectedFiles()[0])
             self.ui.comboBox_directory.setEditText(directory)
@@ -192,12 +216,23 @@ class ExportDialogModEm(QtGui.QWizard):
         index = self.ui.comboBox_topography_file.findText(topo_file)
         if index == -1:
             self.ui.comboBox_topography_file.addItem(topo_file)
-        self.ui.comboBox_topography_file.setCurrentIndex(index
-                                                         if index >= 0
-                                                         else self.ui.comboBox_topography_file.findText(topo_file))
+        self.ui.comboBox_topography_file.setCurrentIndex(
+            index if index >= 0 else self.ui.comboBox_topography_file.findText(topo_file)
+        )
 
     def _browse_topography_file(self, *args, **kwargs):
-        pass
+        self._dir_dialog.setFileMode(QtGui.QFileDialog.AnyFile)
+        self._dir_dialog.setWindowTitle("Find Topography File...")
+        if self._dir_dialog.exec_() == QtGui.QDialog.Accepted:
+            file_path = str(self._dir_dialog.selectedFiles()[0])
+            self.ui.comboBox_topography_file.setEditText(file_path)
+            self._topography_file_changed()
+
+    def _test_button_clicked(self, *args, **kwargs):
+        self.export_data(True)
+
+    def set_data(self, mt_objs):
+        self._mt_objs = mt_objs
 
     def get_data_kwargs(self):
         kwargs = {
@@ -273,3 +308,55 @@ class ExportDialogModEm(QtGui.QWizard):
 
     def get_save_file_path(self):
         return str(self.ui.lineEdit_full_output.text())
+
+    def get_air_resistivity(self):
+        return float(str(self.ui.lineEdit_resistivity_air.text()))
+
+    def get_sea_resistivity(self):
+        return float(str(self.ui.lineEdit_resistivity_sea.text()))
+
+    def get_topography_2_mesh_args(self):
+        topo_file = str(self.ui.comboBox_topography_file.currentText())
+        topo_array = None
+        interp_method = 'nearest' if self.ui.radioButton_interpo_method_nearest.isChecked() \
+            else 'linear' if self.ui.radioButton_interpo_method_linear.isChecked() \
+            else 'cubic'
+        air_resis = self.get_air_resistivity()
+        sea_resis = self.get_sea_resistivity()
+        return topo_file, topo_array, interp_method, air_resis, sea_resis
+
+    def get_covariance_kwargs(self):
+        kwargs = {
+            'smoothing_east': self.ui.doubleSpinBox_smoothing_east.value(),
+            'smoothing_north': self.ui.doubleSpinBox_smoothing_north.value(),
+            'smoothing_z': self.ui.doubleSpinBox_smoothing_z.value(),
+            'smoothing_num': self.ui.spinBox_smoothing_number.value(),
+            'save_path': self.get_save_file_path()
+        }
+        return kwargs
+
+    def export_data(self, test=False):
+        if self._mt_objs is None:
+            return
+
+        worker = ModEMWorker(
+            self,
+            edi_list=[mt_obj.fn for mt_obj in self._mt_objs]
+        )
+
+        worker.start()
+        worker.wait()
+
+
+class ModEMWorker(QtCore.QThread):
+    def __init__(self, parent, edi_list):
+        QtCore.QThread.__init__(self, parent)
+        self._logger = MtPyLog().get_mtpy_logger(__name__)
+
+        self._edi_list = edi_list
+
+    status_updated = pyqtSignal(str)
+    figure_updated = pyqtSignal(Figure)
+
+    def run(self):
+        period_list = select_periods(self._edi_list)

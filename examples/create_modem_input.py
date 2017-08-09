@@ -24,15 +24,14 @@ from __future__ import print_function
 import glob
 import os
 import sys
-import matplotlib.pyplot as plt
 
+import matplotlib.pyplot as plt
 import numpy as np
 
 from mtpy.core.edi_collection import EdiCollection
 from mtpy.modeling.modem_covariance import Covariance
 from mtpy.modeling.modem_data import Data
 from mtpy.modeling.modem_model import Model
-
 
 # YG: patch that changes the matplotlib behaviour
 plt.ion()  # enable interactive
@@ -59,7 +58,9 @@ def show_patcher(show_func):
         plt.close()
         return stuff
     return new_show_func if plt.isinteractive() else show_func
-plt.show = show_patcher(plt.show)
+
+
+# plt.show = show_patcher(plt.show)
 # end of patch
 
 

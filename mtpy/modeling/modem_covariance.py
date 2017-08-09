@@ -81,7 +81,7 @@ class Covariance(object):
 
     def write_covariance_file(self, cov_fn=None, save_path=None,
                               cov_fn_basename=None, model_fn=None,
-                              sea_water=0.3, air=1e12):
+                              sea_water=0.3, air=1e17):
         """
         write a covariance file
         """
