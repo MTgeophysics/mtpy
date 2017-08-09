@@ -33,8 +33,9 @@ from mtpy.modeling.modem_covariance import Covariance
 from mtpy.modeling.modem_data import Data
 from mtpy.modeling.modem_model import Model
 
+
 # YG: patch that changes the matplotlib behaviour
-plt.ion()  # enable interactive
+# plt.ion()  # enable interactive
 # plt.ioff()  # disable interactive, which will also disable this patch
 
 

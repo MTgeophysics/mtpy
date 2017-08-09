@@ -62,9 +62,9 @@ class TestExportDialogModEm(TestCase):
         edi_files = glob.glob(os.path.join(edi_paths[1], '*.edi'))
         mt_objs = [mt.MT(file_name) for file_name in edi_files]
         self.dialog.set_data(mt_objs)
-        while self.dialog.exec_() == QtGui.QWizard.Accepted:
+        if self.dialog.exec_() == QtGui.QWizard.Accepted:
             print(self.dialog.get_save_file_path())
             pprint.pprint(self.dialog.get_data_kwargs())
             pprint.pprint(self.dialog.get_model_kwargs())
 
-            self.dialog.export_data(True)
+            self.dialog.export_data()

@@ -7,22 +7,29 @@
     Author: YingzhiGou
     Date: 24/07/2017
 """
+import inspect
 import os
 
+import matplotlib.pyplot as plt
 import numpy as np
 from PyQt4 import QtGui, QtCore
 from PyQt4.QtCore import pyqtSignal
 from matplotlib.figure import Figure
 
 from examples.create_modem_input import select_periods
+from mtpy.constants import epsg_dict
+from mtpy.gui.SmartMT.gui.busy_indicators import ProgressBar
+from mtpy.gui.SmartMT.gui.export_dialog import PreviewDialog
 from mtpy.gui.SmartMT.gui.plot_parameter_guis import Rotation
 from mtpy.gui.SmartMT.ui_asset.wizard_export_modem import Ui_Wizard_esport_modem
+from mtpy.gui.SmartMT.utils.validator import FileValidator, DirectoryValidator
 from mtpy.utils.mtpylog import MtPyLog
 
 
 class ExportDialogModEm(QtGui.QWizard):
     def __init__(self, parent=None):
         QtGui.QDialog.__init__(self, parent)
+        self.real_plt_show = plt.show
         self.ui = Ui_Wizard_esport_modem()
         self.ui.setupUi(self)
 
@@ -36,13 +43,23 @@ class ExportDialogModEm(QtGui.QWizard):
         self._mesh_rotation_ui.setTitle('Mesh Rotation Angle')
         self.ui.gridLayout_mesh.addWidget(self._mesh_rotation_ui)
 
-        # patch some double spinBox
-        # patch_QDoubleSpinBox(self.ui.doubleSpinBox_resistivity_air)
-        # patch_QDoubleSpinBox(self.ui.doubleSpinBox_resistivity_sea)
+        # epsg
+        self.ui.comboBox_epsg.addItems(
+            [str(epsg) for epsg in sorted(epsg_dict.keys())]
+        )
+
+        # set validators
         self._double_validator = QtGui.QDoubleValidator(-np.inf, np.inf, 1000)
         self._double_validator.setNotation(QtGui.QDoubleValidator.ScientificNotation)
         self.ui.lineEdit_resistivity_air.setValidator(self._double_validator)
         self.ui.lineEdit_resistivity_sea.setValidator(self._double_validator)
+
+        self._file_validator = FileValidator()
+        self.ui.comboBox_topography_file.lineEdit().setValidator(self._file_validator)
+
+        self._dir_validator = DirectoryValidator()
+        self.ui.comboBox_directory.lineEdit().setValidator(self._dir_validator)
+
 
         # setup directory and dir dialog
         self._dir_dialog = QtGui.QFileDialog(self)
@@ -95,6 +112,8 @@ class ExportDialogModEm(QtGui.QWizard):
 
         # attribute
         self._mt_objs = None
+
+        self._progress_bar = ProgressBar()
 
     _impedance_components = ['zxx', 'zxy', 'zyx', 'zyy']
     _vertical_components = ['tx', 'ty']
@@ -239,7 +258,8 @@ class ExportDialogModEm(QtGui.QWizard):
             'error_type': self._error_type[self.ui.comboBox_error_type.currentIndex()],
             'save_path': self.get_save_file_path(),
             'format': '1' if self.ui.radioButton_format_1.isChecked() else '2',
-            'rotation_angle': self._rotation_ui.get_rotation_in_degree()
+            'rotation_angle': self._rotation_ui.get_rotation_in_degree(),
+            'epsg': self.get_epsg(),
         }
 
         # comp_error_type
@@ -302,7 +322,8 @@ class ExportDialogModEm(QtGui.QWizard):
             'z_bottom': self.ui.doubleSpinBox_bottom.value(),
             'n_layers': self.ui.spinBox_num_layers.value(),
             'n_airlayers': self.ui.spinBox_num_air_layers.value(),
-            'mesh_rotation_angle': self._mesh_rotation_ui.get_rotation_in_degree()
+            'mesh_rotation_angle': self._mesh_rotation_ui.get_rotation_in_degree(),
+            'epsg': self.get_epsg()
         }
         return kwargs
 
@@ -335,17 +356,51 @@ class ExportDialogModEm(QtGui.QWizard):
         }
         return kwargs
 
+    def get_epsg(self):
+        return int(str(self.ui.comboBox_epsg.currentText()))
+
     def export_data(self, test=False):
         if self._mt_objs is None:
             return
+
+        # monkey patch to not display any figure in the thread
+        plt.show = _fake_plt_show
 
         worker = ModEMWorker(
             self,
             edi_list=[mt_obj.fn for mt_obj in self._mt_objs]
         )
 
+        if test:
+            worker.figure_updated.connect(self._show_figure)
+        self._progress_bar.setWindowTitle(
+            'Testing ModEM Data...' if test else 'Generating ModEM Data...'
+        )
+        worker.started.connect(self._progress_bar.onStart)
+        worker.finished.connect(self._progress_bar.onFinished)
+        worker.status_updated.connect(self._update_progress_bar_text)
+        worker.export_error.connect(self._export_error)
+
         worker.start()
         worker.wait()
+
+        # restore show
+        plt.show = self.real_plt_show
+        # clean up
+        worker.deleteLater()
+
+    def _update_progress_bar_text(self, text):
+        self._progress_bar.progressbar._text = text
+
+    def _show_figure(self, fig):
+        preview_dialog = PreviewDialog(self, fig)
+        preview_dialog.exec_()
+        preview_dialog.deleteLater()
+
+    def _export_error(self, message):
+        QtGui.QMessageBox.critical(self,
+                                   'Plotting Error', message,
+                                   QtGui.QMessageBox.Close)
 
 
 class ModEMWorker(QtCore.QThread):
@@ -357,6 +412,19 @@ class ModEMWorker(QtCore.QThread):
 
     status_updated = pyqtSignal(str)
     figure_updated = pyqtSignal(Figure)
+    export_error = pyqtSignal(str)
 
     def run(self):
-        period_list = select_periods(self._edi_list)
+        try:
+            # get period_list list
+            period_list = select_periods(self._edi_list)
+            self.status_updated.emit("Periods Selected")
+            self.figure_updated.emit(plt.gcf())
+        except Exception as e:
+            frm = inspect.trace()[-1]
+            mod = inspect.getmodule(frm[0])
+            self.export_error.emit("{}: {}".format(mod.__name__, e.message))
+
+
+def _fake_plt_show():
+    pass

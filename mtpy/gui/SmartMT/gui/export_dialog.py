@@ -10,14 +10,15 @@
 import os
 import tempfile
 import webbrowser
-import numpy as np
+
+import matplotlib.pyplot as plt
 from PIL import Image
 from PyQt4 import QtGui, QtCore
-import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt4agg import FigureCanvas
 
 from mtpy.gui.SmartMT.ui_asset.dialog_export import Ui_Dialog_Export
 from mtpy.gui.SmartMT.ui_asset.dialog_preview import Ui_Dialog_preview
+from mtpy.gui.SmartMT.utils.validator import DirectoryValidator
 
 IMAGE_FORMATS = []
 filetypes = plt.gcf().canvas.get_supported_filetypes()
@@ -46,6 +47,9 @@ class ExportDialog(QtGui.QDialog):
         self._dir_dialog.setWindowTitle("Save to ...")
         self.ui.comboBox_directory.addItem(os.path.expanduser("~"))
         self.ui.pushButton_browse.clicked.connect(self._browse)
+
+        self._dir_validator = DirectoryValidator()
+        self.ui.comboBox_directory.lineEdit().setValidator(self._dir_validator)
 
         # file name
         self.ui.comboBox_fileName.currentIndexChanged.connect(self._file_name_changed)
@@ -258,7 +262,7 @@ class ExportDialog(QtGui.QDialog):
             str(self.ui.comboBox_directory.currentText()),
             str(self.ui.comboBox_fileName.currentText())
         )
-        return name
+        return os.path.normpath(name)
 
     def get_savefig_params(self):
         params = {

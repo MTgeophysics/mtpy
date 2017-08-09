@@ -292,6 +292,8 @@ class Ui_Wizard_esport_modem(object):
         self.wizardPage_data.setObjectName(_fromUtf8("wizardPage_data"))
         self.horizontalLayout_data = QtGui.QHBoxLayout(self.wizardPage_data)
         self.horizontalLayout_data.setObjectName(_fromUtf8("horizontalLayout_data"))
+        self.verticalLayout_11 = QtGui.QVBoxLayout()
+        self.verticalLayout_11.setObjectName(_fromUtf8("verticalLayout_11"))
         self.groupBox_5 = QtGui.QGroupBox(self.wizardPage_data)
         self.groupBox_5.setObjectName(_fromUtf8("groupBox_5"))
         self.verticalLayout_7 = QtGui.QVBoxLayout(self.groupBox_5)
@@ -303,7 +305,21 @@ class Ui_Wizard_esport_modem(object):
         self.radioButton_format_2 = QtGui.QRadioButton(self.groupBox_5)
         self.radioButton_format_2.setObjectName(_fromUtf8("radioButton_format_2"))
         self.verticalLayout_7.addWidget(self.radioButton_format_2)
-        self.horizontalLayout_data.addWidget(self.groupBox_5)
+        self.verticalLayout_11.addWidget(self.groupBox_5)
+        self.groupBox_12 = QtGui.QGroupBox(self.wizardPage_data)
+        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.groupBox_12.sizePolicy().hasHeightForWidth())
+        self.groupBox_12.setSizePolicy(sizePolicy)
+        self.groupBox_12.setObjectName(_fromUtf8("groupBox_12"))
+        self.verticalLayout_9 = QtGui.QVBoxLayout(self.groupBox_12)
+        self.verticalLayout_9.setObjectName(_fromUtf8("verticalLayout_9"))
+        self.comboBox_epsg = QtGui.QComboBox(self.groupBox_12)
+        self.comboBox_epsg.setObjectName(_fromUtf8("comboBox_epsg"))
+        self.verticalLayout_9.addWidget(self.comboBox_epsg)
+        self.verticalLayout_11.addWidget(self.groupBox_12)
+        self.horizontalLayout_data.addLayout(self.verticalLayout_11)
         Wizard_esport_modem.addPage(self.wizardPage_data)
         self.wizardPage_mesh = QtGui.QWizardPage()
         self.wizardPage_mesh.setObjectName(_fromUtf8("wizardPage_mesh"))
@@ -727,6 +743,7 @@ class Ui_Wizard_esport_modem(object):
         self.groupBox_5.setTitle(_translate("Wizard_esport_modem", "Data File Format", None))
         self.radioButton_format_1.setText(_translate("Wizard_esport_modem", "Type 1", None))
         self.radioButton_format_2.setText(_translate("Wizard_esport_modem", "Type 2", None))
+        self.groupBox_12.setTitle(_translate("Wizard_esport_modem", "EPSG", None))
         self.wizardPage_mesh.setTitle(_translate("Wizard_esport_modem", "Mesh Settings", None))
         self.groupBox_7.setTitle(_translate("Wizard_esport_modem", "Horizontal Plane", None))
         self.label_2.setToolTip(
@@ -867,9 +884,12 @@ class Ui_Wizard_esport_modem(object):
         self.label_9.setText(_translate("Wizard_esport_modem", "Output Directory", None))
         self.label_8.setText(_translate("Wizard_esport_modem", "Output Name", None))
         self.label_10.setText(_translate("Wizard_esport_modem", "All data files will be written to:", None))
-        self.pushButton_test.setToolTip(_translate("Wizard_esport_modem",
-                                                   "<html><head/><body><p>Testing and/or Validating the output file with a series of visulation of frequencies, mesh grids etc. This will create files in the output directory as well but the final version will be overwritten by after Finish is clicked. </p></body></html>",
-                                                   None))
+        self.pushButton_test.setToolTip(
+            _translate("Wizard_esport_modem", "<html><head/><body><p>Testing and/or Validating the output file\n"
+                                              "                             with a series of visulation of frequencies, mesh grids etc. This will create files in the\n"
+                                              "                             output directory as well but the final version will be overwritten by after Finish is\n"
+                                              "                             clicked. </p></body></html>\n"
+                                              "                         ", None))
         self.pushButton_test.setText(_translate("Wizard_esport_modem", "Test/Validate", None))
         self.pushButton_browse.setToolTip(
             _translate("Wizard_esport_modem", "<html><head/><body><p>Directory to save the file</p></body></html>",
