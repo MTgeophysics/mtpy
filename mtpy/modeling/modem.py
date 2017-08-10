@@ -1887,20 +1887,23 @@ class Model(object):
                             np.log10(self.z_target_depth), 
                             num=self.n_layers)[-2]), 
                             num=self.n_layers-self.pad_z)
-        z_nodes = np.array([zz-zz%10**np.floor(np.log10(zz)) for zz in 
+
+        z_nodes = np.array([np.round(zz, -int(np.floor(np.log10(zz))-1)) for zz in 
                            log_z])
                            
         #padding cells in the vertical
-        for ii in range(1, self.pad_z+1):
-            z_0 = np.float(z_nodes[-2])
-            pad_d = np.round(z_0*self.pad_stretch_v*ii, -2)
-            z_nodes = np.append(z_nodes, pad_d)                  
-        
-        self.nodes_z = z_nodes
+        z_padding = self.get_padding_cells(z_nodes[-1],
+                                           self.z_bottom-z_nodes.sum(),
+                                           self.pad_z)
+        # make the blocks into nodes as oppose to total width
+        z_padding = np.array([z_padding[ii+1]-z_padding[ii] 
+                              for ii in range(z_padding.size-1)])
+
+        self.nodes_z = np.append(z_nodes, z_padding)                  
 
         #compute grid center
-        center_east = self.grid_east.min()
-        center_north = self.grid_north.min()
+        center_east = np.round(self.grid_east.min()-self.grid_east.mean(), -1)
+        center_north = np.round(self.grid_north.min()-self.grid_north.mean(), -1)
         center_z = 0
         self.grid_center = np.array([center_north, center_east, center_z])
             
