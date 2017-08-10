@@ -247,8 +247,15 @@ def project_point_utm2ll(easting, northing, utm_zone, datum='WGS84'):
                         degrees.
                     
     """
-    assert type(easting) is float, 'Easting is not a float'
-    assert type(northing) is float, 'Northing is not a float'
+    try:
+        easting = float(easting)
+    except ValueError:
+        raise ValueError("easting is not a float")
+    try:
+        northing = float(northing)
+    except ValueError:
+        raise ValueError("easting is not a float")
+
     
     assert len(utm_zone) == 3, 'UTM zone should be imput as ##N or ##S'
     

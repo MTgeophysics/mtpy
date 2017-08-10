@@ -1009,7 +1009,11 @@ class Location(object):
     def _get_easting(self):
         return self._easting
     def _set_easting(self, easting):
-        self._easting = float(easting)
+        try:
+            self._easting = float(easting)
+        except TypeError:
+            self._easting = None
+            
     easting = property(fget=_get_easting, 
                        fset=_set_easting,
                        doc="""Easting in meters""")
@@ -1017,7 +1021,10 @@ class Location(object):
     def _get_northing(self):
         return self._northing
     def _set_northing(self, northing):
-        self._northing = float(northing)
+        try:
+            self._northing = float(northing)
+        except TypeError:
+            self._northing = None
     northing = property(fget=_get_northing, 
                        fset=_set_northing,
                        doc="""Northing in meters""")
