@@ -45,11 +45,19 @@ except ImportError:
 class Stations(object):
     """
     station locations class
+    
+    ..note:: If the survey steps across multiple UTM zones, then a 
+             distance will be added to the stations to place them in 
+             the correct location.  This distance is 
+             _utm_grid_size_north and _utm_grid_size_east.  You should 
+             these parameters to place the locations in the proper spot
+             as grid distances and overlaps change over the globe.
+             **This is not implemented yet**
     """
     
     def __init__(self, **kwargs):
         
-        self._dtype = [('station', '|S10'),
+        self.dtype = [('station', '|S10'),
                        ('lat', np.float),
                        ('lon', np.float),
                        ('elev', np.float),
@@ -58,9 +66,7 @@ class Stations(object):
                        ('east', np.float),
                        ('north', np.float),
                        ('zone', 'S4')]
-        self.station_locations = np.zeros(0, dtype=self._dtype)
-        
-        self.center_point = np.zeros(1, dtype=self._dtype)
+        self.station_locations = np.zeros(0, dtype=self.dtype)
     
     ## --> define properties that can only be returned and not set    
     @property
@@ -117,7 +123,7 @@ class Stations(object):
         
         #make a structured array to put station location information into
         self.station_locations = np.zeros(n_stations,
-                                          dtype=self._dtype)
+                                          dtype=self.dtype)
         #get station locations in meters
         for ii, edi in enumerate(edi_list):
             mt_obj = mt.MT(edi)
@@ -150,7 +156,7 @@ class Stations(object):
         
         #make a structured array to put station location information into
         self.station_locations = np.zeros(n_stations,
-                                          dtype=self._dtype)
+                                          dtype=self.dtype)
         #get station locations in meters
         for ii, mt_obj in enumerate(mt_obj_list):
             self.station_locations[ii]['lat'] = mt_obj.lat
@@ -173,11 +179,25 @@ class Stations(object):
         (-) shift left or down
         
         """
-        
-        center_point = np.array([self.east.mean(), self.north.mean()])
+
         #remove the average distance to get coordinates in a relative space
         self.station_locations['rel_east'] = self.east-self.east.mean()
         self.station_locations['rel_north'] = self.north-self.north.mean()
+        
+        #translate the stations so they are relative to 0,0
+        east_center = (self.rel_east.max()-np.abs(self.rel_east.min()))/2
+        north_center = (self.rel_north.max()-np.abs(self.rel_north.min()))/2
+
+        #remove the average distance to get coordinates in a relative space
+        self.station_locations['rel_east'] -= east_center+shift_east
+        self.station_locations['rel_north'] -= north_center+shift_north
+        
+                                                   
+    # make center point a get method, can't set it.
+    @property
+    def center_point(self):
+        center_location = np.recarray(1, dtype=self.dtype)
+        center_point = np.array([self.east.mean(), self.north.mean()])
         
         #translate the stations so they are relative to 0,0
         east_center = (self.rel_east.max()-np.abs(self.rel_east.min()))/2
@@ -186,22 +206,19 @@ class Stations(object):
         center_point[0] -= east_center
         center_point[1] -= north_center
         
-        #remove the average distance to get coordinates in a relative space
-        self.station_locations['rel_east'] -= east_center+shift_east
-        self.station_locations['rel_north'] -= north_center+shift_north
-        
         # calculate center point in lat, lon, easting, northing        
-        self.center_point['east'] = center_point[0]
-        self.center_point['north'] = center_point[1]
-        self.center_point['zone'] = self.utm_zone[0]
+        center_location['east'] = center_point[0]
+        center_location['north'] = center_point[1]
+        center_location['zone'] = self.utm_zone[0]
 
         center_ll = gis_tools.project_point_utm2ll(float(center_point[0]),
                                                    float(center_point[1]),
                                                    self.utm_zone[0])
                                                    
-        self.center_point['lat'] = center_ll[0]
-        self.center_point['lon'] = center_ll[1]                                                   
+        center_location['lat'] = center_ll[0]
+        center_location['lon'] = center_ll[1]
         
+        return center_location
         
     def rotate_stations(self, rotation_angle):
         #--> rotate grid if necessary
@@ -370,23 +387,23 @@ class Data(object):
     data_fn                full path to data file 
     data_period_list       period list from all the data
     edi_list               list of full paths to edi files
-    error_egbert           percentage to multiply sqrt(Z_xy*Zyx) by. 
-                           *default* is 3 as prescribed by Egbert & Kelbert
-    error_floor            percentage to set the error floor at, anything below
-                           this number will be set to error_floor. 
-                           *default* is 10
     error_tipper           absolute tipper error, all tipper error will be 
                            set to this value unless you specify error_type as 
                            'floor' or 'floor_egbert'. 
                            *default* is .05 for 5%
-    error_type             [ 'floor' | 'value' | 'egbert' ]
-                           *default* is 'egbert'
-                                * 'floor' sets the error floor to error_floor
-                                * 'value' sets error to error_value
+    error_type_z           [ 'egbert' | 'mean'| 'median' | 'square' ]
+                           *default* is 'egbert_floor'
+                                * add '_floor' to any of the above to set the
+                                  error as an error floor, otherwise all 
+                                  components are give weighted the same
+
                                 * 'egbert' sets error to  
-                                           error_egbert * sqrt(abs(zxy*zyx))
-                                * 'floor_egbert' sets error floor to 
-                                           error_egbert * sqrt(abs(zxy*zyx))
+                                           error_value_z * sqrt(abs(zxy*zyx))
+                                * 'mean_od' sets error to 
+                                           error_value_z * mean([Zxy, Zyx])
+                                * 'eigen' sets error to
+                                          error_value_z * eigenvalues(Z[ii])
+
                                            
     error_value            percentage to multiply Z by to set error
                            *default* is 5 for 5% of Z as error
@@ -523,7 +540,7 @@ class Data(object):
     def __init__(self, edi_list=None, **kwargs):
         self.edi_list = edi_list
 
-        self.error_type_z = 'median_floor'
+        self.error_type_z = 'egbert_floor'
         self.error_value_z = 5.0
         
         self.error_value_tipper = .05
@@ -663,13 +680,14 @@ class Data(object):
         """
         
         stations_obj = Stations()
-        mt_list = [self.mt_dict[s_key] for s_key in self.mt_dict.keys()]
+        mt_list = [self.mt_dict[s_key] for s_key in sorted(self.mt_dict.keys())]
         
         stations_obj.get_station_locations_from_mt_obj(mt_list)
         
         if self._rotation_angle != 0:
             stations_obj.rotate_stations(self._rotation_angle)
-        
+
+            
         self.data_array[:]['station'] = stations_obj.station
         self.data_array[:]['lat'] = stations_obj.lat
         self.data_array[:]['lon'] = stations_obj.lon
@@ -679,8 +697,7 @@ class Data(object):
         self.data_array[:]['rel_east'] = stations_obj.rel_east
         self.data_array[:]['rel_north'] = stations_obj.rel_north
         
-        self.center_point = np.array([stations_obj.center_point['lat'],
-                                      stations_obj.center_point['lon']])
+        self.center_point = stations_obj.center_point
         
         
     def get_period_list(self):
@@ -774,7 +791,7 @@ class Data(object):
         print '   if stations have not already been rotated in Model'
         print '*'*70
         
-        self._fill_data_array()
+        self.fill_data_array()
                 
     def _get_rotation_angle(self):
         return self._rotation_angle
@@ -783,7 +800,7 @@ class Data(object):
                               fset=_set_rotation_angle,
                               doc="""Rotate data assuming N=0, E=90""")
                               
-    def _fill_data_array(self):
+    def fill_data_array(self):
         """
         fill the data array from mt_dict
         
@@ -865,25 +882,23 @@ class Data(object):
         if rel_distance is False:
             self.get_relative_station_locations()
             
-    def _set_station_locations(self, station_locations):
+    def _set_station_locations(self, station_locations=None, station_obj=None):
         """
         take a station_locations array and populate data_array
         """
+        if station_locations is None and station_obj is None:
+            raise ModEMError('Need to input station data')
+
+        if station_locations is None and station_obj is not None:
+            station_locations = station_obj.station_locations
+            
 
         if self.data_array is None:
-            self.get_mt_dict()
-            self.get_period_list()
-            self._fill_data_array()
-            
-        for s_arr in station_locations:
-            try:
-                d_index = np.where(self.data_array['station'] == 
-                                    s_arr['station'])[0][0]
-            except IndexError:
-                print 'Could not find {0} in data_array'.format(s_arr['station'])
-                d_index = None
-            
-            if d_index is not None:
+            self._set_dtype((len(self.period_list), 2, 2),
+                            (len(self.period_list), 1, 2))
+            self.data_array = np.zeros(station_locations.size, 
+                                       dtype=self._dtype)
+            for d_index, s_arr in enumerate(station_locations):
                 self.data_array[d_index]['lat'] = s_arr['lat']
                 self.data_array[d_index]['lon'] = s_arr['lon']
                 self.data_array[d_index]['east'] = s_arr['east']
@@ -891,6 +906,24 @@ class Data(object):
                 self.data_array[d_index]['elev'] = s_arr['elev']
                 self.data_array[d_index]['rel_east'] = s_arr['rel_east']
                 self.data_array[d_index]['rel_north'] = s_arr['rel_north']
+                
+        else:
+            for s_arr in station_locations:
+                try:
+                    d_index = np.where(self.data_array['station'] == 
+                                        s_arr['station'])[0][0]
+                except IndexError:
+                    print 'Could not find {0} in data_array'.format(s_arr['station'])
+                    d_index = None
+                
+                if d_index is not None:
+                    self.data_array[d_index]['lat'] = s_arr['lat']
+                    self.data_array[d_index]['lon'] = s_arr['lon']
+                    self.data_array[d_index]['east'] = s_arr['east']
+                    self.data_array[d_index]['north'] = s_arr['north']
+                    self.data_array[d_index]['elev'] = s_arr['elev']
+                    self.data_array[d_index]['rel_east'] = s_arr['rel_east']
+                    self.data_array[d_index]['rel_north'] = s_arr['rel_north']
                 
     def _get_station_locations(self):
         """
@@ -902,7 +935,10 @@ class Data(object):
         station_locations = self.data_array[['station', 'lat', 'lon', 
                                              'north', 'east', 'elev',
                                              'rel_north', 'rel_east']]
-        return station_locations
+        station_obj = Stations()
+        station_obj.station_locations = station_locations
+        
+        return station_obj
         
     station_locations = property(_get_station_locations, 
                                   _set_station_locations,
@@ -932,6 +968,7 @@ class Data(object):
                 d_yx = abs(self.data_array['z'][ss, ff, 1, 0])
                 d_yy = abs(self.data_array['z'][ss, ff, 1, 1])
                 d = np.array([d_xx, d_xy, d_yx, d_yy])
+                nz = np.nonzero(d)
                 
                 if d.sum() == 0.0:
                     continue
@@ -946,13 +983,18 @@ class Data(object):
                         err = max([d_xx, d_xy, d_yx, d_yy])*10
         
                 elif 'median' in self.error_type_z:
-                    err = err_value*np.median(d[np.nonzero(d)])
+                    err = err_value*np.median(d[nz])
                     
-                elif 'mean' in self.error_type_z:
-                    err = err_value*np.mean(d[np.nonzero(d)])
+                elif 'mean_od' in self.error_type_z:
+                    d = np.array(d_xy, d_yx)
+                    nz = np.nonzero(d)
+                    err = err_value*np.mean(d[nz])
                     
-                elif 'square' in self.error_type_z:
-                    err = err_value*np.sqrt(d_xx**2+d_xy**2+d_yx**2+d_yy**2)
+                elif 'eigen' in self.error_type_z:
+                    d = d.reshape((2, 2))
+                    err = err_value*np.abs(np.linalg.eigvals(d)).mean()
+                    if err == 0:
+                        err = err_value*d.flattend()[nz].mean()
             
                 else:
                     raise NameError('{0} not understood'.format(self.error_type_z))
@@ -967,7 +1009,8 @@ class Data(object):
             
                 
     def write_data_file(self, save_path=None, fn_basename=None, 
-                        rotation_angle=None, compute_error=True, fill=True):
+                        rotation_angle=None, compute_error=True, fill=True,
+                        elevation=False):
         """
         write data file for ModEM
         
@@ -1020,9 +1063,12 @@ class Data(object):
         
         #be sure to fill in data array
         if fill is True:
-            self._fill_data_array()
+            self.fill_data_array()
             # get relative station locations in grid coordinates
             self.get_relative_station_locations()
+            
+        if elevation is False:
+            self.data_array['elev'][:] = 0.0
 
         dlines = []        
         for inv_mode in self.inv_mode_dict[self.inv_mode]:
@@ -1044,8 +1090,8 @@ class Data(object):
                 dlines.append('> exp({0}i\omega t)\n'.format(self.wave_sign_tipper))
                 dlines.append('> []\n')
             dlines.append('> 0\n') #oriention, need to add at some point
-            dlines.append('> {0: >10.6f} {1:>10.6f}\n'.format(
-                          self.center_point[0], self.center_point[1]))
+            dlines.append('> {0:>10.6f} {1:>10.6f}\n'.format(
+                          self.center_point.lat[0], self.center_point.lon[0]))
             dlines.append('> {0} {1}\n'.format(self.data_array['z'].shape[1],
                                                self.data_array['z'].shape[0]))
                                                
@@ -1103,7 +1149,10 @@ class Data(object):
                             
                             # get error from inversion error
                             abs_err = self.data_array['{0}_inv_err'.format(c_key)][ss, ff, z_ii, z_jj]
-                                    
+                            
+                            if np.isinf(abs_err) or np.isnan(abs_err):
+                                abs_err = 10**(np.floor(np.log10(abs(max([float(rea), 
+                                                                           float(ima)])))))
                             abs_err = '{0:> 14.6e}'.format(abs(abs_err))
                             #make sure that x==north, y==east, z==+down                            
                             dline = ''.join([per, sta, lat, lon, nor, eas, ele, 
@@ -1334,7 +1383,18 @@ class Data(object):
                     if dline.find('.') > 0:
                         value_list = [float(value) for value in 
                                       dline[1:].strip().split()]
-                        self.center_point = np.array(value_list)
+                            
+                        self.center_point = np.recarray(1, dtype=[('station', '|S10'),
+                                                                   ('lat', np.float),
+                                                                   ('lon', np.float),
+                                                                   ('elev', np.float),
+                                                                   ('rel_east', np.float), 
+                                                                   ('rel_north', np.float), 
+                                                                   ('east', np.float),
+                                                                   ('north', np.float),
+                                                                   ('zone', 'S4')])
+                        self.center_point.lat = value_list[0]
+                        self.center_point.lon = value_list[1]
 
                     else:
                         pass
@@ -1518,18 +1578,38 @@ class Model(object):
         
     All dimensions are in meters.
     
+    The mesh is created by first making a regular grid around the station area,
+    then padding cells are added that exponentially increase to the given 
+    extensions.  Depth cell increase on a log10 scale to the desired depth,
+    then padding cells are added that increase exponentially.  
+    
+    Arguments
+    -------------
+        **station_object** : mtpy.modeling.modem.Stations object
+                            .. seealso:: mtpy.modeling.modem.Stations
+                            
+    Examples
+    -------------
+    
     :Example 1 --> create mesh first then data file: ::
     
         >>> import mtpy.modeling.modem as modem
         >>> import os
-        >>> #1) make a list of all .edi files that will be inverted for 
+        >>> # 1) make a list of all .edi files that will be inverted for 
         >>> edi_path = r"/home/EDI_Files"
         >>> edi_list = [os.path.join(edi_path, edi) 
                         for edi in os.listdir(edi_path) 
         >>> ...         if edi.find('.edi') > 0]
-        >>> #2) make a grid from the stations themselves with 200m cell spacing
-        >>> mmesh = modem.Model(edi_list=edi_list, cell_size_east=200, 
-        >>> ...                cell_size_north=200)
+        >>> # 2) Make a Stations object
+        >>> stations_obj = modem.Stations()
+        >>> stations_obj.get_station_locations_from_edi(edi_list)
+        >>> # 3) make a grid from the stations themselves with 200m cell spacing
+        >>> mmesh = modem.Model(station_obj)
+        >>> # change cell sizes
+        >>> mmesh.cell_size_east = 200, 
+        >>> mmesh.cell_size_north = 200
+        >>> mmesh.ns_ext = 300000 # north-south extension
+        >>> mmesh.ew_ext = 200000 # east-west extension of model
         >>> mmesh.make_mesh()
         >>> # check to see if the mesh is what you think it should be
         >>> msmesh.plot_mesh()
@@ -1538,35 +1618,13 @@ class Model(object):
         >>> # create data file
         >>> md = modem.Data(edi_list, station_locations=mmesh.station_locations)
         >>> md.write_data_file(save_path=r"/home/modem/Inv1")
-    
-    :Example 2 --> create data file first then model file: ::
-    
-        >>> import mtpy.modeling.modem as modem
-        >>> import os
-        >>> #1) make a list of all .edi files that will be inverted for 
-        >>> edi_path = r"/home/EDI_Files"
-        >>> edi_list = [os.path.join(edi_path, edi) 
-                        for edi in os.listdir(edi_path) 
-        >>> ...         if edi.find('.edi') > 0]
-        >>> #2) create data file
-        >>> md = modem.Data(edi_list)
-        >>> md.write_data_file(save_path=r"/home/modem/Inv1")
-        >>> #3) make a grid from the stations themselves with 200m cell spacing
-        >>> mmesh = modem.Model(edi_list=edi_list, cell_size_east=200, 
-                                cell_size_north=200, 
-                                station_locations=md.station_locations)
-        >>> mmesh.make_mesh()
-        >>> # check to see if the mesh is what you think it should be
-        >>> msmesh.plot_mesh()
-        >>> # all is good write the mesh file
-        >>> msmesh.write_model_file(save_path=r"/home/modem/Inv1")
         
-    :Example 3 --> Rotate Mesh: ::
+    :Example 2 --> Rotate Mesh: ::
     
         >>> mmesh.mesh_rotation_angle = 60
         >>> mmesh.make_mesh()
         
-    ..note:: ModEM assumes all coordinates are relative to North and East, and
+    .. note:: ModEM assumes all coordinates are relative to North and East, and
              does not accommodate mesh rotations, therefore, here the rotation
              is of the stations, which essentially does the same thing.  You
              will need to rotate you data to align with the 'new' coordinate
@@ -1592,8 +1650,11 @@ class Model(object):
                          *default* is 7
     pad_north            number of cells for padding on S and N sides
                          *default* is 7
-    pad_root_east        padding cells E & W will be pad_root_east**(x)
-    pad_root_north       padding cells N & S will be pad_root_north**(x) 
+    pad_num              number of cells with cell_size with outside of 
+                         station area.  *default* is 3
+    pad_stretch_h        multiplicative number for padding in horizontal
+                         direction.  
+    pad_stretch_v        padding cells N & S will be pad_root_north**(x) 
     pad_z                number of cells for padding at bottom
                          *default* is 4
     res_list             list of resistivity values for starting model
@@ -1615,12 +1676,6 @@ class Model(object):
     
     ==================== ======================================================
     
-    ..note:: If the survey steps across multiple UTM zones, then a 
-                 distance will be added to the stations to place them in 
-                 the correct location.  This distance is 
-                 _utm_grid_size_north and _utm_grid_size_east.  You should 
-                 these parameters to place the locations in the proper spot
-                 as grid distances and overlaps change over the globe.
                  
     ==================== ======================================================
     Methods              Description
@@ -1681,8 +1736,8 @@ class Model(object):
         
         #inital file stuff
         self.model_fn = None
-        self.save_path = None
-        self.model_fn_basename = 'ModEM_Data_File.dat'
+        self.save_path = os.getcwd()
+        self.model_fn_basename = 'ModEM_Model_File.rho'
         if self.model_fn is not None:
             self.save_path = os.path.dirname(self.model_fn)
             self.model_fn_basename = os.path.basename(self.model_fn)
@@ -1742,7 +1797,7 @@ class Model(object):
         self.grid_z = np.array([nodes[0:ii].sum() for ii in range(nodes.size)]+\
                                 [nodes.sum()])
         
-    def get_padding_cells(self, cell_width, max_distance, num_cells):
+    def get_padding_cells(self, cell_width, max_distance, num_cells, stretch):
         """
         get padding cells, which are exponentially increasing to a given 
         distance.  Make sure that each cell is larger than the one previously.
@@ -1759,6 +1814,9 @@ class Model(object):
             **num_cells** : int
                             number of padding cells
                             
+            **stretch** : float
+                          base geometric factor
+                            
         Returns
         ----------------
         
@@ -1766,7 +1824,6 @@ class Model(object):
                           array of padding cells for one side
         
         """
-        stretch = self.pad_stretch_h
         # compute scaling factor
         scaling = ((max_distance)/(cell_width*stretch))**(1./(num_cells-1)) 
         
@@ -1788,43 +1845,31 @@ class Model(object):
         """ 
         create finite element mesh according to parameters set.
         
-        The mesh is built by first finding the center of the station area.  
-        Then cells are added in the north and east direction with width
-        cell_size_east and cell_size_north to the extremeties of the station 
-        area.  Padding cells are then added to extend the model to reduce 
-        edge effects.  The number of cells are pad_east and pad_north and the
-        increase in size is by pad_root_east and pad_root_north.  The station
-        locations are then computed as the center of the nearest cell as 
-        required by the code.
-        
-        The vertical cells are built to increase in size exponentially with
-        depth.  The first cell depth is first_layer_thickness and should be
-        about 1/10th the shortest skin depth.  The layers then increase
-        on a log scale to z_target_depth.  Then the model is
-        padded with pad_z number of cells to extend the depth of the model.
-        
-        padding = np.round(cell_size_east*pad_root_east**np.arange(start=.5,
-                           stop=3, step=3./pad_east))+west 
-                           
-        ..note:: If the survey steps across multiple UTM zones, then a 
-                 distance will be added to the stations to place them in 
-                 the correct location.  This distance is 
-                 _utm_grid_size_north and _utm_grid_size_east.  You should 
-                 these parameters to place the locations in the proper spot
-                 as grid distances and overlaps change over the globe.
+        The mesh is built by:
+            1. Making a regular grid within the station area.  
+            2. Adding pad_num of cell_width cells outside of station area
+            3. Adding padding cells to given extension and number of padding
+               cells.
+            4. Making vertical cells starting with z1_layer increasing 
+               logarithmically (base 10) to z_target_depth and num_layers.
+            5. Add vertical padding cells to desired extension.
+            6. Check to make sure none of the stations lie on a node.
+               If they do then move the node by .02*cell_width
         
         """
         
-        #find the edges of the grid
+        ## --> find the edges of the grid
+        ## calculate the extra width of padding cells
+        ## multiply by 1.5 because this is only for 1 side
         pad_width_east = self.pad_num*1.5*self.cell_size_east
         pad_width_north = self.pad_num*1.5*self.cell_size_north
+        
+        ## get the extremities
         west = self.station_locations.rel_east.min()-pad_width_east
         east = self.station_locations.rel_east.max()+pad_width_east
         south = self.station_locations.rel_north.min()-pad_width_north
         north = self.station_locations.rel_north.max()+pad_width_north
-        
-        
-        
+
         # round the numbers so they are easier to read
         west = np.round(west, -2)
         east= np.round(east, -2)
@@ -1833,7 +1878,6 @@ class Model(object):
         
         #-------make a grid around the stations from the parameters above------
         #--> make the inner grid first
-
         inner_east = np.arange(west,
                                east+self.cell_size_east,
                                self.cell_size_east)
@@ -1843,12 +1887,14 @@ class Model(object):
         ## compute padding cells
         padding_east = self.get_padding_cells(self.cell_size_east,
                                               self.ew_ext/2-east, 
-                                              self.pad_east)
+                                              self.pad_east,
+                                              self.pad_stretch_h)
         padding_north = self.get_padding_cells(self.cell_size_north,
                                                self.ns_ext/2-north, 
-                                               self.pad_north)
+                                               self.pad_north,
+                                               self.pad_stretch_h)
    
-        # make the grid                                    
+        # make the horizontal grid                                    
         self.grid_east = np.append(np.append(-1*padding_east[::-1]+inner_east.min(), 
                                         inner_east), 
                                     padding_east+inner_east.max())
@@ -1894,7 +1940,8 @@ class Model(object):
         #padding cells in the vertical
         z_padding = self.get_padding_cells(z_nodes[-1],
                                            self.z_bottom-z_nodes.sum(),
-                                           self.pad_z)
+                                           self.pad_z,
+                                           self.pad_stretch_v)
         # make the blocks into nodes as oppose to total width
         z_padding = np.array([z_padding[ii+1]-z_padding[ii] 
                               for ii in range(z_padding.size-1)])
@@ -1905,6 +1952,8 @@ class Model(object):
         center_east = np.round(self.grid_east.min()-self.grid_east.mean(), -1)
         center_north = np.round(self.grid_north.min()-self.grid_north.mean(), -1)
         center_z = 0
+        
+        # this is the value to the lower left corner from the center.
         self.grid_center = np.array([center_north, center_east, center_z])
             
         #--> print out useful information                    
@@ -2164,20 +2213,10 @@ class Model(object):
                             *default* is 'loge'
                             
         """
+        for key in kwargs.keys():
+            setattr(self, key, kwargs[key])
+
         
-        keys = ['nodes_east', 'nodes_north', 'nodes_z', 'title',
-                'res_model', 'save_path', 'model_fn', 'model_fn_basename']
-                
-        for key in keys:
-            try:
-                setattr(self, key, kwargs[key])
-            except KeyError:
-                if self.__dict__[key] is None:
-                    pass
-        
-        if self.save_path is not None:
-            self.model_fn = os.path.join(self.save_path, 
-                                         self.model_fn_basename)
         if self.model_fn is None:
             if self.save_path is None:
                 self.save_path = os.getcwd()
