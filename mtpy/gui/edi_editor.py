@@ -1130,6 +1130,8 @@ class PlotWidget(QtGui.QWidget):
         #--> set axes properties
         if self.plot_properties.phase_limits_od != None:
             self.ax_phase_od.set_ylim(self.plot_properties.phase_limits_od)
+        else:
+            self.ax_phase_od.set_ylim((-5, 100))
         if self.plot_properties.phase_limits_d != None:
             self.ax_phase_d.set_ylim(self.plot_properties.phase_limits_d)
         for aa, ax in enumerate([self.ax_phase_od, self.ax_phase_d]):
@@ -1213,8 +1215,12 @@ class PlotWidget(QtGui.QWidget):
         #--> set axes properties for magnitude and angle of induction vectors
         if self.plot_properties.tipper_x_limits != None:
             self.ax_tip_x.set_ylim(self.plot_properties.tipper_x_limits)
+        else:
+            self.ax_tip_x.set_ylim((0, 1))
         if self.plot_properties.tipper_y_limits != None:
             self.ax_tip_y.set_ylim(self.plot_properties.tipper_y_limits)
+        else:
+            self.ax_tip_y.set_ylim((0, 1))
         for aa, ax in enumerate([self.ax_tip_x, self.ax_tip_y]):
             if aa == 0:            
                 ax.set_ylabel('Magnitude', fontdict=font_dict)

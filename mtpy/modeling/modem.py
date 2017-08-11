@@ -994,7 +994,7 @@ class Data(object):
                     d = d.reshape((2, 2))
                     err = err_value*np.abs(np.linalg.eigvals(d)).mean()
                     if err == 0:
-                        err = err_value*d.flattend()[nz].mean()
+                        err = err_value*d.flatten()[nz].mean()
             
                 else:
                     raise NameError('{0} not understood'.format(self.error_type_z))
@@ -1072,6 +1072,7 @@ class Data(object):
 
         dlines = []        
         for inv_mode in self.inv_mode_dict[self.inv_mode]:
+            print inv_mode
             if 'impedance' in inv_mode.lower():
                 dlines.append(self.get_header_string(self.error_type_z,
                                                      self.error_value_z,
@@ -1086,7 +1087,7 @@ class Data(object):
             if inv_mode.find('Impedance') > 0:
                 dlines.append('> exp({0}i\omega t)\n'.format(self.wave_sign_impedance))
                 dlines.append('> {0}\n'.format(self.units))
-            elif inv_mode.find('Vertical') >=0:
+            elif inv_mode.find('Vertical') >= 0:
                 dlines.append('> exp({0}i\omega t)\n'.format(self.wave_sign_tipper))
                 dlines.append('> []\n')
             dlines.append('> 0\n') #oriention, need to add at some point
@@ -1555,10 +1556,10 @@ class Data(object):
             vtk_fn = os.path.join(vtk_save_path, vtk_fn_basename)
             
         pointsToVTK(vtk_fn, 
-                 self.station_locations['rel_north']/1000, 
-                 self.station_locations['rel_east']/1000,
-                 -self.station_locations['elev']/1000,
-                 data={'elevation':self.station_locations['elev']})
+                 self.station_locations.rel_north/1000., 
+                 self.station_locations.rel_east/1000.,
+                 self.station_locations.elev/1000.,
+                 data={'elevation':self.station_locations.elev})
                  
         print '--> Wrote station file to {0}'.format(vtk_fn)
         print '-'*50
@@ -3506,8 +3507,8 @@ class ModelManipulator(Model):
             md_data.read_data_file(self.data_fn)
             
             #get station locations
-            self.station_east = md_data.station_locations['rel_east']
-            self.station_north = md_data.station_locations['rel_north']
+            self.station_east = md_data.station_locations.rel_east
+            self.station_north = md_data.station_locations.rel_north
         
         #get cell block sizes
         self.m_height = np.median(self.nodes_north[5:-5])/self.dscale

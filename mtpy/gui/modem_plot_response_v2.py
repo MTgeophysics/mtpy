@@ -196,7 +196,8 @@ class ModEMPlotResponse(QtGui.QMainWindow):
         self.modem_data.write_data_file(save_path=os.path.dirname(save_fn),
                                         fn_basename=os.path.basename(save_fn),
                                         compute_error=False,
-                                        fill=False)
+                                        fill=False,
+                                        elevation=True)
         
     def get_resp_fn(self):
         """
@@ -429,7 +430,8 @@ class PlotResponses(QtGui.QWidget):
         self.modem_data.write_data_file(save_path=os.path.dirname(save_fn),
                                         fn_basename=os.path.basename(save_fn),
                                         compute_error=False,
-                                        fill=False)
+                                        fill=False,
+                                        elevation=True)
         
     def apply_edits(self):
         self.plot()
