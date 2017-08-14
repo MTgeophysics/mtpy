@@ -25,15 +25,34 @@
   <property name="checked">
    <bool>false</bool>
   </property>
-  <layout class="QFormLayout" name="formLayout">
+     <layout class="QGridLayout" name="gridLayout">
+         <item row="1" column="0">
+             <widget class="QCheckBox" name="checkBox_weight">
+                 <property name="sizePolicy">
+                     <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                         <horstretch>0</horstretch>
+                         <verstretch>0</verstretch>
+                     </sizepolicy>
+                 </property>
+                 <property name="text">
+                     <string>Weight</string>
+                 </property>
+             </widget>
+         </item>
    <item row="0" column="0">
     <widget class="QCheckBox" name="checkBox_size">
+        <property name="sizePolicy">
+            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+            </sizepolicy>
+        </property>
      <property name="text">
       <string>Size</string>
      </property>
     </widget>
    </item>
-   <item row="0" column="1">
+         <item row="0" column="2">
     <widget class="QSpinBox" name="spinBox_size">
      <property name="enabled">
       <bool>false</bool>
@@ -41,6 +60,9 @@
      <property name="toolTip">
       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Font size&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
+        <property name="suffix">
+            <string>points</string>
+        </property>
      <property name="minimum">
       <number>4</number>
      </property>
@@ -49,69 +71,73 @@
      </property>
     </widget>
    </item>
-   <item row="1" column="0">
-    <widget class="QCheckBox" name="checkBox_weight">
+         <item row="2" column="0">
+             <widget class="QCheckBox" name="checkBox_color">
+                 <property name="sizePolicy">
+                     <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                         <horstretch>0</horstretch>
+                         <verstretch>0</verstretch>
+                     </sizepolicy>
+                 </property>
+                 <property name="toolTip">
+                     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Font color&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                 </property>
      <property name="text">
-      <string>Weight</string>
+         <string>Color</string>
      </property>
     </widget>
    </item>
-   <item row="1" column="1">
-    <widget class="QComboBox" name="comboBox_weight">
+         <item row="0" column="1">
+             <widget class="QComboBox" name="comboBox_size">
      <property name="enabled">
       <bool>false</bool>
      </property>
      <property name="currentIndex">
-      <number>1</number>
+         <number>2</number>
      </property>
      <item>
       <property name="text">
-       <string>light</string>
+          <string>xx-small</string>
       </property>
      </item>
      <item>
       <property name="text">
-       <string>normal</string>
+          <string>x-small</string>
       </property>
      </item>
      <item>
       <property name="text">
-       <string>medium</string>
+          <string>small</string>
       </property>
      </item>
      <item>
       <property name="text">
-       <string>semibold</string>
+          <string>medium</string>
       </property>
      </item>
      <item>
       <property name="text">
-       <string>bold</string>
+          <string>large</string>
       </property>
      </item>
      <item>
       <property name="text">
-       <string>heavy</string>
+          <string>x-large</string>
       </property>
      </item>
      <item>
       <property name="text">
-       <string>black</string>
+          <string>xx-large</string>
       </property>
      </item>
+                 <item>
+                     <property name="text">
+                         <string>size in points</string>
+                     </property>
+                 </item>
     </widget>
    </item>
-   <item row="2" column="0">
-    <widget class="QCheckBox" name="checkBox_color">
-     <property name="toolTip">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Font color&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-     </property>
-     <property name="text">
-      <string>Color</string>
-     </property>
-    </widget>
-   </item>
-   <item row="2" column="1">
+         <item row="2" column="1" colspan="2">
     <widget class="QComboBox" name="comboBox_color">
      <property name="enabled">
       <bool>false</bool>
@@ -160,7 +186,52 @@
       </property>
      </item>
     </widget>
-   </item>
+         </item>
+         <item row="1" column="1" colspan="2">
+             <widget class="QComboBox" name="comboBox_weight">
+                 <property name="enabled">
+                     <bool>false</bool>
+                 </property>
+                 <property name="currentIndex">
+                     <number>1</number>
+                 </property>
+                 <item>
+                     <property name="text">
+                         <string>light</string>
+                     </property>
+                 </item>
+                 <item>
+                     <property name="text">
+                         <string>normal</string>
+                     </property>
+                 </item>
+                 <item>
+                     <property name="text">
+                         <string>medium</string>
+                     </property>
+                 </item>
+                 <item>
+                     <property name="text">
+                         <string>semibold</string>
+                     </property>
+                 </item>
+                 <item>
+                     <property name="text">
+                         <string>bold</string>
+                     </property>
+                 </item>
+                 <item>
+                     <property name="text">
+                         <string>heavy</string>
+                     </property>
+                 </item>
+                 <item>
+                     <property name="text">
+                         <string>black</string>
+                     </property>
+                 </item>
+             </widget>
+         </item>
   </layout>
  </widget>
  <resources/>

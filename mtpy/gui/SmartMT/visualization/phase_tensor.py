@@ -8,9 +8,10 @@
     Author: YingzhiGou
     Date: 20/06/2017
 """
-from mtpy.gui.SmartMT.gui.figure_setting_guis import ColorBar, Font, AspectRatio
+from mtpy.gui.SmartMT.gui.figure_setting_guis import ColorBar, Font, AspectRatio, TextBox
 from mtpy.gui.SmartMT.gui.plot_parameter_guis import FrequencySingle, Ellipse, FrequencyTolerance, Arrow, Padding, \
-    Scale, Stretch, LineDir, FrequencyIndex, MeshGrid, PlotControlResistivityPhasePseudoSection
+    Scale, Stretch, LineDir, MeshGrid, PlotControlResistivityPhasePseudoSection
+from mtpy.gui.SmartMT.utils.matplotlib_utils import get_next_fig_num
 from mtpy.gui.SmartMT.visualization.visualization_base import VisualizationBase
 from mtpy.imaging.phase_tensor_maps import PlotPhaseTensorMaps
 from mtpy.imaging.phase_tensor_pseudosection import PlotPhaseTensorPseudoSection
@@ -257,8 +258,22 @@ class ResistivityPhasePseudoSection(VisualizationBase):
             'linedir': self._linedir_ui.get_linedir(),
             'aspect': self._aspect_ui.get_aspect(),
             'stationid': (0, 20),
-            'plot_yn': 'n'  # do not plot on class creation
+            'plot_yn': 'n',  # do not plot on class creation
+            'fig_num': get_next_fig_num()
         }
+
+        if self._font_ui.ui.checkBox_size.isChecked():
+            self._params['font_size'] = self._font_ui.get_size()
+
+        if self._text_box.ui.checkBox_size.isChecked():
+            self._params['text_size'] = self._text_box.get_size()
+        if self._text_box.ui.checkBox_weight.isChecked():
+            self._params['text_weight'] = self._text_box.get_weight()
+        if self._text_box.ui.groupBox_location.isChecked():
+            self._params['text_location'] = self._text_box.get_location()
+        if self._text_box.ui.groupBox_padding.isChecked():
+            self._params['text_xpad'] = self._text_box.get_xpad()
+            self._params['text_ypad'] = self._text_box.get_ypad()
 
         self._plotting_object = PlotResPhasePseudoSection(**self._params)
         self._plotting_object.plot(show=False)
@@ -294,6 +309,14 @@ class ResistivityPhasePseudoSection(VisualizationBase):
         # figure settings
         self._aspect_ui = AspectRatio(self._parameter_ui)
         self._parameter_ui.add_figure_groupbox(self._aspect_ui)
+
+        self._font_ui = Font(self._parameter_ui, point_size=True)
+        self._font_ui.hide_color()
+        self._font_ui.hide_weight()
+        self._parameter_ui.add_figure_groupbox(self._font_ui)
+
+        self._text_box = TextBox(self._parameter_ui, point_size=True, key_size=True)
+        self._parameter_ui.add_figure_groupbox(self._text_box)
 
         self._parameter_ui.end_of_parameter_components()
 
