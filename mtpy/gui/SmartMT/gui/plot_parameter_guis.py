@@ -19,7 +19,6 @@ from mtpy.gui.SmartMT.ui_asset.groupbox_scale import Ui_GroupBox_Scale
 from mtpy.gui.SmartMT.ui_asset.groupbox_station_select import Ui_GroupBox_Station_Select
 from mtpy.gui.SmartMT.ui_asset.groupbox_stretch import Ui_GroupBox_Stretch
 from mtpy.gui.SmartMT.ui_asset.groupbox_tolerance import Ui_GroupBoxTolerance
-
 from mtpy.gui.SmartMT.ui_asset.groupbox_z_component_multiple import Ui_groupBoxZ_Component_Multiple
 from mtpy.gui.SmartMT.ui_asset.groupbox_z_component_single import Ui_groupBoxZ_Component_Single
 
@@ -145,11 +144,13 @@ class FrequencySingle(QtGui.QGroupBox):
 
             if self.use_period:
                 all_periods = 1.0 / np.array(all_freqs)
-                self._histogram.set_data(all_periods)
+                # self._histogram.set_data(all_periods)
                 all_unique = sorted(list(set(all_periods)))
+
             else:
-                self._histogram.set_data(all_freqs)
+                # self._histogram.set_data(all_freqs)
                 all_unique = sorted(list(set(all_freqs)))
+            self._histogram.set_data(all_unique)
             self._histogram.update_figure()
             # sort all frequencies in ascending order
             for period in all_unique:
@@ -205,7 +206,7 @@ class FrequencySingle(QtGui.QGroupBox):
             if self._frequency is not None:
                 self._axes.tick_params(axis='both', which='major', labelsize=6)
                 self._axes.tick_params(axis='both', which='minor', labelsize=4)
-                self._axes.hist(self._frequency, 50, normed=1)
+                self._axes.hist(self._frequency)  # , 50, normed=1)
                 if self._title and self._unit:
                     self._axes.set_xlabel("%s (%s)" % (self._title, self._unit), fontsize=8)
                     self.figure.suptitle('%s Distribution in Selected Stations' % self._title, fontsize=8)
