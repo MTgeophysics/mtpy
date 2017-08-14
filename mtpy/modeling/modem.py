@@ -1396,6 +1396,13 @@ class Data(object):
                                                                    ('zone', 'S4')])
                         self.center_point.lat = value_list[0]
                         self.center_point.lon = value_list[1]
+                        
+                        ce, cn, cz = gis_tools.project_point_ll2utm(self.center_point.lat,
+                                                                    self.center_point.lon)
+                        
+                        self.center_point.east = ce
+                        self.center_point.north = cn
+                        self.center_point.zone = cz
 
                     else:
                         pass
@@ -2964,13 +2971,15 @@ def read_dem_ascii(ascii_fn, cell_size=500, model_center=(0, 0), rot_90=0):
     lon = np.arange(x0, x0+cs*(nx), cs)
     lat = np.arange(y0, y0+cs*(ny), cs)
     
+    dem_center = gis_tools.project_point_ll2utm(lat.mean(), lon.mean())
+    
     # calculate the lower left and uper right corners of the grid in meters
-    ll_en = utm2ll.LLtoUTM(23, lat[0], lon[0])
-    ur_en = utm2ll.LLtoUTM(23, lat[-1], lon[-1])
+    ll_en = gis_tools.project_point_ll2utm(lat[0], lon[0])
+    ur_en = gis_tools.project_point_ll2utm(lat[-1], lon[-1])
     
     # estimate cell sizes for each dem measurement
-    d_east = abs(ll_en[1]-ur_en[1])/nx
-    d_north = abs(ll_en[2]-ur_en[2])/ny
+    d_east = abs(ll_en[0]-ur_en[0])/nx
+    d_north = abs(ll_en[1]-ur_en[1])/ny
 
     # calculate the number of new cells according to the given cell size
     # if the given cell size and cs are similar int could make the value 0,
@@ -2978,8 +2987,8 @@ def read_dem_ascii(ascii_fn, cell_size=500, model_center=(0, 0), rot_90=0):
     num_cells = max([1, int(cell_size/np.mean([d_east, d_north]))])
 
     # make easting and northing arrays in meters corresponding to lat and lon
-    east = np.arange(ll_en[1], ur_en[1], d_east)
-    north = np.arange(ll_en[2], ur_en[2], d_north)
+    east = np.arange(ll_en[0], ur_en[0], d_east)
+    north = np.arange(ll_en[1], ur_en[1], d_north)
     
     #resample the data accordingly
     new_east = east[np.arange(0, east.shape[0], num_cells)]
@@ -2990,13 +2999,16 @@ def read_dem_ascii(ascii_fn, cell_size=500, model_center=(0, 0), rot_90=0):
     elevation = elevation[new_x, new_y]
     
     # estimate the shift of the DEM to relative model coordinates
-    shift_east = new_east.mean()-model_center[0]
-    shift_north = new_north.mean()-model_center[1]
+#    shift_east = new_east.mean()-model_center[0]
+#    shift_north = new_north.mean()-model_center[1]
+    shift_east = dem_center[0]-model_center[0]
+    shift_north = dem_center[1]-model_center[1]
     
     # shift the easting and northing arrays accordingly so the DEM and model
     # are collocated.
     new_east = (new_east-new_east.mean())+shift_east
     new_north = (new_north-new_north.mean())+shift_north
+
     
     # need to rotate cause I think I wrote the dem backwards
     if rot_90 == 1 or rot_90 == 3:
@@ -3548,8 +3560,8 @@ class ModelManipulator(Model):
         
         #need to add an extra row and column to east and north to make sure 
         #all is plotted see pcolor for details.
-        plot_east = np.append(self.grid_east, self.grid_east[-1]*1.25)/self.dscale
-        plot_north = np.append(self.grid_north, self.grid_north[-1]*1.25)/self.dscale
+        plot_east = self.grid_east/self.dscale
+        plot_north = self.grid_north/self.dscale
         
         #make a mesh grid for plotting
         #the 'ij' makes sure the resulting grid is in east, north
