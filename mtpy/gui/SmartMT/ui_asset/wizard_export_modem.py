@@ -697,28 +697,23 @@ class Ui_Wizard_esport_modem(object):
         self.wizardPage_intro.setSubTitle(_translate("Wizard_esport_modem", "This wizard will help you to export the selected stations to the ModEM data files.", None))
         self.wizardPage_inversion_mode.setTitle(_translate("Wizard_esport_modem", "Inversion Mode", None))
         self.groupBox.setTitle(_translate("Wizard_esport_modem", "Impedance Components", None))
-        self.radioButton_impedance_full.setToolTip(
-            _translate("Wizard_esport_modem", "<html><head/><body><p>zxx, zxy, zyx, and zyy</p></body></html>", None))
+        self.radioButton_impedance_full.setToolTip(_translate("Wizard_esport_modem", "<html><head/><body><p>zxx, zxy, zyx, and zyy</p></body></html>", None))
         self.radioButton_impedance_full.setText(_translate("Wizard_esport_modem", "All", None))
-        self.radioButton_impedance_off_diagonal.setToolTip(
-            _translate("Wizard_esport_modem", "<html><head/><body><p>zxy and zyx</p></body></html>", None))
+        self.radioButton_impedance_off_diagonal.setToolTip(_translate("Wizard_esport_modem", "<html><head/><body><p>zxy and zyx</p></body></html>", None))
         self.radioButton_impedance_off_diagonal.setText(_translate("Wizard_esport_modem", "Off Diagonal", None))
         self.radioButton_impedance_none.setText(_translate("Wizard_esport_modem", "None", None))
         self.groupBox_2.setTitle(_translate("Wizard_esport_modem", "Vertical Components", None))
-        self.radioButton_vertical_full.setToolTip(
-            _translate("Wizard_esport_modem", "<html><head/><body><p>tx and ty</p></body></html>", None))
+        self.radioButton_vertical_full.setToolTip(_translate("Wizard_esport_modem", "<html><head/><body><p>tx and ty</p></body></html>", None))
         self.radioButton_vertical_full.setText(_translate("Wizard_esport_modem", "All", None))
         self.radioButton_vertical_none.setText(_translate("Wizard_esport_modem", "None", None))
-        self.groupBox_z_unit.setToolTip(
-            _translate("Wizard_esport_modem", "<html><head/><body><p>Units of Z</p></body></html>", None))
+        self.groupBox_z_unit.setToolTip(_translate("Wizard_esport_modem", "<html><head/><body><p>Units of Z</p></body></html>", None))
         self.groupBox_z_unit.setTitle(_translate("Wizard_esport_modem", "Z-Unit", None))
         self.radioButton_unit_vmt.setText(_translate("Wizard_esport_modem", "[V/m]/[T]", None))
         self.radioButton_unit_mvkmnt.setText(_translate("Wizard_esport_modem", "[mV/km]/[nT]", None))
         self.radioButton_unit_ohm.setText(_translate("Wizard_esport_modem", "Ohm", None))
-        self.groupBox_4.setToolTip(
-            _translate("Wizard_esport_modem", "<html><head/><body><p>Sign of time depend wave. Default is \'+\'\n"
-                                              "                             as positive downwards.</p></body></html>\n"
-                                              "                         ", None))
+        self.groupBox_4.setToolTip(_translate("Wizard_esport_modem", "<html><head/><body><p>Sign of time depend wave. Default is \'+\'\n"
+"                             as positive downwards.</p></body></html>\n"
+"                         ", None))
         self.groupBox_4.setTitle(_translate("Wizard_esport_modem", "Wave Sign", None))
         self.groupBox_sign_impedance.setTitle(_translate("Wizard_esport_modem", "Impedances", None))
         self.radioButton_impedance_sign_plus.setText(_translate("Wizard_esport_modem", "+", None))
@@ -792,120 +787,92 @@ class Ui_Wizard_esport_modem(object):
         self.groupBox_12.setTitle(_translate("Wizard_esport_modem", "EPSG", None))
         self.wizardPage_mesh.setTitle(_translate("Wizard_esport_modem", "Mesh Settings", None))
         self.groupBox_7.setTitle(_translate("Wizard_esport_modem", "Horizontal Plane", None))
-        self.label_2.setToolTip(
-            _translate("Wizard_esport_modem", "<html><head/><body><p>mesh block width in east-west\n"
-                                              "                                         direction</p></body></html>\n"
-                                              "                                     ", None))
+        self.label_2.setToolTip(_translate("Wizard_esport_modem", "<html><head/><body><p>mesh block width in east-west\n"
+"                                         direction</p></body></html>\n"
+"                                     ", None))
         self.label_2.setText(_translate("Wizard_esport_modem", "Cell Size East", None))
-        self.doubleSpinBox_cell_size_east.setToolTip(
-            _translate("Wizard_esport_modem", "<html><head/><body><p>mesh block width in east-west\n"
-                                              "                                         direction</p></body></html>\n"
-                                              "                                     ", None))
+        self.doubleSpinBox_cell_size_east.setToolTip(_translate("Wizard_esport_modem", "<html><head/><body><p>mesh block width in east-west\n"
+"                                         direction</p></body></html>\n"
+"                                     ", None))
         self.doubleSpinBox_cell_size_east.setSuffix(_translate("Wizard_esport_modem", "m", None))
         self.label_3.setToolTip(_translate("Wizard_esport_modem", "<html><head/><body><p>mesh block width in north\n"
-                                                                  "                                         direction</p></body></html>\n"
-                                                                  "                                     ", None))
+"                                         direction</p></body></html>\n"
+"                                     ", None))
         self.label_3.setText(_translate("Wizard_esport_modem", "Cell Size North", None))
-        self.doubleSpinBox_cell_szie_north.setToolTip(
-            _translate("Wizard_esport_modem", "<html><head/><body><p>mesh block width in north\n"
-                                              "                                         direction</p></body></html>\n"
-                                              "                                     ", None))
+        self.doubleSpinBox_cell_szie_north.setToolTip(_translate("Wizard_esport_modem", "<html><head/><body><p>mesh block width in north\n"
+"                                         direction</p></body></html>\n"
+"                                     ", None))
         self.doubleSpinBox_cell_szie_north.setSuffix(_translate("Wizard_esport_modem", "m", None))
         self.groupBox_8.setTitle(_translate("Wizard_esport_modem", "Vertical", None))
         self.label_15.setToolTip(_translate("Wizard_esport_modem", "<html><head/><body><p>total number of vertical\n"
-                                                                   "                                         layers in the model</p></body></html>\n"
-                                                                   "                                     ", None))
+"                                         layers in the model</p></body></html>\n"
+"                                     ", None))
         self.label_15.setText(_translate("Wizard_esport_modem", "Number of Layers", None))
-        self.spinBox_num_layers.setToolTip(
-            _translate("Wizard_esport_modem", "<html><head/><body><p>total number of vertical\n"
-                                              "                                         layers in the model</p></body></html>\n"
-                                              "                                     ", None))
-        self.label_16.setToolTip(
-            _translate("Wizard_esport_modem", "<html><head/><body><p>number of air layers</p></body></html>", None))
+        self.spinBox_num_layers.setToolTip(_translate("Wizard_esport_modem", "<html><head/><body><p>total number of vertical\n"
+"                                         layers in the model</p></body></html>\n"
+"                                     ", None))
+        self.label_16.setToolTip(_translate("Wizard_esport_modem", "<html><head/><body><p>number of air layers</p></body></html>", None))
         self.label_16.setText(_translate("Wizard_esport_modem", "Number of Air Layers", None))
-        self.spinBox_num_air_layers.setToolTip(
-            _translate("Wizard_esport_modem", "<html><head/><body><p>number of air layers</p></body></html>", None))
-        self.label_12.setToolTip(
-            _translate("Wizard_esport_modem", "<html><head/><body><p>thickness of the first layer</p></body></html>",
-                       None))
+        self.spinBox_num_air_layers.setToolTip(_translate("Wizard_esport_modem", "<html><head/><body><p>number of air layers</p></body></html>", None))
+        self.label_12.setToolTip(_translate("Wizard_esport_modem", "<html><head/><body><p>thickness of the first layer</p></body></html>", None))
         self.label_12.setText(_translate("Wizard_esport_modem", "First Layer Thickness", None))
-        self.doubleSpinBox_z1_thickness.setToolTip(
-            _translate("Wizard_esport_modem", "<html><head/><body><p>thickness of the first layer</p></body></html>",
-                       None))
+        self.doubleSpinBox_z1_thickness.setToolTip(_translate("Wizard_esport_modem", "<html><head/><body><p>thickness of the first layer</p></body></html>", None))
         self.doubleSpinBox_z1_thickness.setSuffix(_translate("Wizard_esport_modem", "m", None))
-        self.label_13.setToolTip(
-            _translate("Wizard_esport_modem", "<html><head/><body><p>depth of deepest target</p></body></html>", None))
+        self.label_13.setToolTip(_translate("Wizard_esport_modem", "<html><head/><body><p>depth of deepest target</p></body></html>", None))
         self.label_13.setText(_translate("Wizard_esport_modem", "Target Depth", None))
-        self.doubleSpinBox_target_depth.setToolTip(
-            _translate("Wizard_esport_modem", "<html><head/><body><p>depth of deepest target</p></body></html>", None))
+        self.doubleSpinBox_target_depth.setToolTip(_translate("Wizard_esport_modem", "<html><head/><body><p>depth of deepest target</p></body></html>", None))
         self.doubleSpinBox_target_depth.setSuffix(_translate("Wizard_esport_modem", "m", None))
-        self.label_14.setToolTip(
-            _translate("Wizard_esport_modem", "<html><head/><body><p>absolute bottom of the model</p></body></html>",
-                       None))
+        self.label_14.setToolTip(_translate("Wizard_esport_modem", "<html><head/><body><p>absolute bottom of the model</p></body></html>", None))
         self.label_14.setText(_translate("Wizard_esport_modem", "Bottom", None))
-        self.doubleSpinBox_bottom.setToolTip(
-            _translate("Wizard_esport_modem", "<html><head/><body><p>absolute bottom of the model</p></body></html>",
-                       None))
+        self.doubleSpinBox_bottom.setToolTip(_translate("Wizard_esport_modem", "<html><head/><body><p>absolute bottom of the model</p></body></html>", None))
         self.groupBox_6.setTitle(_translate("Wizard_esport_modem", "Paddings", None))
         self.label_11.setToolTip(_translate("Wizard_esport_modem", "<html><head/><body><p>factor to increase by in\n"
-                                                                   "                                         padding cells (vertical)</p></body></html>\n"
-                                                                   "                                     ", None))
+"                                         padding cells (vertical)</p></body></html>\n"
+"                                     ", None))
         self.label_11.setText(_translate("Wizard_esport_modem", "Horizontal Stretch", None))
-        self.doubleSpinBox_pad_stretch_h.setToolTip(
-            _translate("Wizard_esport_modem", "<html><head/><body><p>factor to increase by in\n"
-                                              "                                         padding cells (vertical)</p></body></html>\n"
-                                              "                                     ", None))
-        self.spinBox_pad_north.setToolTip(
-            _translate("Wizard_esport_modem", "<html><head/><body><p>number of padding cells on\n"
-                                              "                                         the North and South directions</p></body></html>\n"
-                                              "                                     ", None))
+        self.doubleSpinBox_pad_stretch_h.setToolTip(_translate("Wizard_esport_modem", "<html><head/><body><p>factor to increase by in\n"
+"                                         padding cells (vertical)</p></body></html>\n"
+"                                     ", None))
+        self.spinBox_pad_north.setToolTip(_translate("Wizard_esport_modem", "<html><head/><body><p>number of padding cells on\n"
+"                                         the North and South directions</p></body></html>\n"
+"                                     ", None))
         self.spinBox_pad_north.setSuffix(_translate("Wizard_esport_modem", "cells", None))
         self.label_4.setToolTip(_translate("Wizard_esport_modem", "<html><head/><body><p>Number of padding cells on\n"
-                                                                  "                                         East and West directions</p></body></html>\n"
-                                                                  "                                     ", None))
+"                                         East and West directions</p></body></html>\n"
+"                                     ", None))
         self.label_4.setText(_translate("Wizard_esport_modem", "East and West", None))
         self.label_6.setToolTip(_translate("Wizard_esport_modem", "<html><head/><body><p>number of vertical padding\n"
-                                                                  "                                         cells</p></body></html>\n"
-                                                                  "                                     ", None))
+"                                         cells</p></body></html>\n"
+"                                     ", None))
         self.label_6.setText(_translate("Wizard_esport_modem", "Bottom", None))
         self.label_5.setToolTip(_translate("Wizard_esport_modem", "<html><head/><body><p>number of padding cells on\n"
-                                                                  "                                         the North and South directions</p></body></html>\n"
-                                                                  "                                     ", None))
+"                                         the North and South directions</p></body></html>\n"
+"                                     ", None))
         self.label_5.setText(_translate("Wizard_esport_modem", "North and South", None))
-        self.spinBox_pad_z.setToolTip(
-            _translate("Wizard_esport_modem", "<html><head/><body><p>number of vertical padding\n"
-                                              "                                         cells</p></body></html>\n"
-                                              "                                     ", None))
+        self.spinBox_pad_z.setToolTip(_translate("Wizard_esport_modem", "<html><head/><body><p>number of vertical padding\n"
+"                                         cells</p></body></html>\n"
+"                                     ", None))
         self.spinBox_pad_z.setSuffix(_translate("Wizard_esport_modem", "cells", None))
         self.label_7.setToolTip(_translate("Wizard_esport_modem", "<html><head/><body><p>factor to increase by in\n"
-                                                                  "                                         padding cells (horizontal)</p></body></html>\n"
-                                                                  "                                     ", None))
+"                                         padding cells (horizontal)</p></body></html>\n"
+"                                     ", None))
         self.label_7.setText(_translate("Wizard_esport_modem", "Vertical Stretch", None))
-        self.doubleSpinBox_pad_stretch_v.setToolTip(
-            _translate("Wizard_esport_modem", "<html><head/><body><p>factor to increase by in\n"
-                                              "                                         padding cells (horizontal)</p></body></html>\n"
-                                              "                                     ", None))
-        self.spinBox_pad_east.setToolTip(
-            _translate("Wizard_esport_modem", "<html><head/><body><p>Number of padding cells on\n"
-                                              "                                         East and West directions</p></body></html>\n"
-                                              "                                     ", None))
+        self.doubleSpinBox_pad_stretch_v.setToolTip(_translate("Wizard_esport_modem", "<html><head/><body><p>factor to increase by in\n"
+"                                         padding cells (horizontal)</p></body></html>\n"
+"                                     ", None))
+        self.spinBox_pad_east.setToolTip(_translate("Wizard_esport_modem", "<html><head/><body><p>Number of padding cells on\n"
+"                                         East and West directions</p></body></html>\n"
+"                                     ", None))
         self.spinBox_pad_east.setSuffix(_translate("Wizard_esport_modem", "cells", None))
         self.wizardPage_topography.setTitle(_translate("Wizard_esport_modem", "Topography", None))
-        self.wizardPage_topography.setSubTitle(_translate("Wizard_esport_modem",
-                                                          "After creating the mesh grid, the topography file is used to define resistivity model.",
-                                                          None))
+        self.wizardPage_topography.setSubTitle(_translate("Wizard_esport_modem", "After creating the mesh grid, the topography file is used to define resistivity model.", None))
         self.label_17.setText(_translate("Wizard_esport_modem", "Fopography File", None))
-        self.comboBox_topography_file.setToolTip(
-            _translate("Wizard_esport_modem", "<html><head/><body><p>Directory to save the file</p></body></html>",
-                       None))
-        self.pushButton_browse_topography_file.setToolTip(
-            _translate("Wizard_esport_modem", "<html><head/><body><p>Directory to save the file</p></body></html>",
-                       None))
+        self.comboBox_topography_file.setToolTip(_translate("Wizard_esport_modem", "<html><head/><body><p>Directory to save the file</p></body></html>", None))
+        self.pushButton_browse_topography_file.setToolTip(_translate("Wizard_esport_modem", "<html><head/><body><p>Directory to save the file</p></body></html>", None))
         self.pushButton_browse_topography_file.setText(_translate("Wizard_esport_modem", "Browse", None))
-        self.groupBox_9.setToolTip(
-            _translate("Wizard_esport_modem", "<html><head/><body><p>default is \'nearest\', if model\n"
-                                              "                                     grid is dense compared to the surface points then choose \'linear\' or \'cubic\'</p></body></html>\n"
-                                              "                                 ", None))
+        self.groupBox_9.setToolTip(_translate("Wizard_esport_modem", "<html><head/><body><p>default is \'nearest\', if model\n"
+"                                     grid is dense compared to the surface points then choose \'linear\' or \'cubic\'</p></body></html>\n"
+"                                 ", None))
         self.groupBox_9.setTitle(_translate("Wizard_esport_modem", "Interpolation Method", None))
         self.radioButton_interpo_method_nearest.setText(_translate("Wizard_esport_modem", "Nearest", None))
         self.radioButton_interpo_method_linear.setText(_translate("Wizard_esport_modem", "Linear", None))
@@ -923,30 +890,23 @@ class Ui_Wizard_esport_modem(object):
         self.label_22.setText(_translate("Wizard_esport_modem", "Z", None))
         self.label_23.setText(_translate("Wizard_esport_modem", "Number", None))
         self.wizardPage_output.setTitle(_translate("Wizard_esport_modem", "Output", None))
-        self.wizardPage_output.setSubTitle(_translate("Wizard_esport_modem",
-                                                      "Plsease select the output directry and the new folder that will be created to save all the data\n"
-                                                      "                 files for ModEM.\n"
-                                                      "             ", None))
+        self.wizardPage_output.setSubTitle(_translate("Wizard_esport_modem", "Plsease select the output directry and the new folder that will be created to save all the data\n"
+"                 files for ModEM.\n"
+"             ", None))
         self.label_9.setText(_translate("Wizard_esport_modem", "Output Directory", None))
         self.label_8.setText(_translate("Wizard_esport_modem", "Output Name", None))
         self.label_10.setText(_translate("Wizard_esport_modem", "All data files will be written to:", None))
-        self.pushButton_test.setToolTip(
-            _translate("Wizard_esport_modem", "<html><head/><body><p>Testing and/or Validating the output file\n"
-                                              "                             with a series of visulation of frequencies, mesh grids etc. This will create files in the\n"
-                                              "                             output directory as well but the final version will be overwritten by after Finish is\n"
-                                              "                             clicked. </p></body></html>\n"
-                                              "                         ", None))
+        self.pushButton_test.setToolTip(_translate("Wizard_esport_modem", "<html><head/><body><p>Testing and/or Validating the output file\n"
+"                             with a series of visulation of frequencies, mesh grids etc. This will create files in the\n"
+"                             output directory as well but the final version will be overwritten by after Finish is\n"
+"                             clicked. </p></body></html>\n"
+"                         ", None))
         self.pushButton_test.setText(_translate("Wizard_esport_modem", "Test/Validate", None))
-        self.pushButton_browse.setToolTip(
-            _translate("Wizard_esport_modem", "<html><head/><body><p>Directory to save the file</p></body></html>",
-                       None))
+        self.pushButton_browse.setToolTip(_translate("Wizard_esport_modem", "<html><head/><body><p>Directory to save the file</p></body></html>", None))
         self.pushButton_browse.setText(_translate("Wizard_esport_modem", "Browse", None))
-        self.comboBox_directory.setToolTip(
-            _translate("Wizard_esport_modem", "<html><head/><body><p>Directory to save the file</p></body></html>",
-                       None))
-        self.comboBox_output_name.setToolTip(
-            _translate("Wizard_esport_modem", "<html><head/><body><p>Name of the image file (with or without .\n"
-                                              "                             format extension)</p></body></html>\n"
-                                              "                         ", None))
-        self.checkBox_open_output_dir.setText(
-            _translate("Wizard_esport_modem", "Open Output Directory After Export", None))
+        self.comboBox_directory.setToolTip(_translate("Wizard_esport_modem", "<html><head/><body><p>Directory to save the file</p></body></html>", None))
+        self.comboBox_output_name.setToolTip(_translate("Wizard_esport_modem", "<html><head/><body><p>Name of the image file (with or without .\n"
+"                             format extension)</p></body></html>\n"
+"                         ", None))
+        self.checkBox_open_output_dir.setText(_translate("Wizard_esport_modem", "Open Output Directory After Export", None))
+

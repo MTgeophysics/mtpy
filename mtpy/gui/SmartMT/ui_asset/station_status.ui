@@ -33,9 +33,9 @@
        </item>
       </layout>
      </widget>
-     <widget class="QWidget" name="tab_detial">
+     <widget class="QWidget" name="tab_detail">
       <attribute name="title">
-       <string>Station Detial</string>
+       <string>Station Detail</string>
       </attribute>
       <layout class="QVBoxLayout" name="verticalLayout_3">
        <item>
