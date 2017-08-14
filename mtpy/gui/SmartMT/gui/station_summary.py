@@ -31,6 +31,9 @@ class StationSummary(QtGui.QWidget):
         self.ui = Ui_StationStatus()
         self.ui.setupUi(self)
         self.subwindow, _ = parent.create_subwindow(self, self.windowTitle())
+        # self.subwindow.setMaximumWidth(600)
+        # self.subwindow.setMinimumWidth(400)
+        # self.subwindow.resize(parent.width()/3, self.height())
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose, False)
 
     def update_view(self):
