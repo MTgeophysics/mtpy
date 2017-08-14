@@ -13,6 +13,7 @@ from PyQt4 import QtGui, QtCore
 
 from mtpy.gui.SmartMT.ui_asset.station_status import Ui_StationStatus
 
+
 class StationSummary(QtGui.QWidget):
     def __init__(self, parent, file_handler, selected_files):
         """
@@ -65,6 +66,9 @@ class StationSummary(QtGui.QWidget):
             self.ui.lineEditLong.setText('%.5f' % mt_obj.lon)
         if mt_obj.edi_object.Header.filedate:
             self.ui.lineEditDate_Acq.setText(mt_obj.edi_object.Header.filedate)
+        with open(mt_obj.fn, 'r') as edi_file:
+            self.ui.plainTextEdit_edi_text.setPlainText(edi_file.read())
+
 
     def _clear_station_detail(self):
         # clear text
@@ -76,6 +80,7 @@ class StationSummary(QtGui.QWidget):
         self.ui.lineEditElev.clear()
         self.ui.lineEditLocation.clear()
         self.ui.lineEditDate_Acq.clear()
+        self.ui.plainTextEdit_edi_text.clear()
 
     def _update_station_summary(self, mt_objs):
         pass
