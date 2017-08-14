@@ -9,7 +9,7 @@
     Author: YingzhiGou
     Date: 20/06/2017
 """
-
+import inspect
 import os
 import sys
 
@@ -17,16 +17,17 @@ import sip
 from PyQt4 import QtCore, QtGui
 from PyQt4.QtCore import QString
 
+from mtpy.gui.SmartMT.gui.busy_indicators import ProgressBar
 from mtpy.gui.SmartMT.gui.export_dialog import ExportDialog
+from mtpy.gui.SmartMT.gui.export_dialog_modem import ExportDialogModEm
 from mtpy.gui.SmartMT.gui.plot_option import PlotOption
-from mtpy.gui.SmartMT.gui.progress_bar import ProgressBar
 from mtpy.gui.SmartMT.gui.station_summary import StationSummary
 from mtpy.gui.SmartMT.gui.station_viewer import StationViewer
+from mtpy.gui.SmartMT.ui_asset.main_window import Ui_SmartMT_MainWindow, _fromUtf8, _translate
 from mtpy.gui.SmartMT.utils.file_handler import FileHandler, FileHandlingException
 from mtpy.gui.SmartMT.visualization.visualization_base import MPLCanvasWidget
 from mtpy.utils.decorator import deprecated
 from mtpy.utils.mtpylog import MtPyLog
-from mtpy.gui.SmartMT.ui_asset.main_window import Ui_SmartMT_MainWindow, _fromUtf8, _translate
 
 DEFAULT_GROUP_NAME = str(_translate("SmartMT_MainWindow", "Default Group", None))
 
@@ -39,8 +40,9 @@ class StartQt4(QtGui.QMainWindow):
         self.ui = Ui_SmartMT_MainWindow()
         self.ui.setupUi(self)
 
-        # export dialog
+        # export dialogs
         self._export_dialog = ExportDialog(self)
+        self._export_dialog_modem = ExportDialogModEm(self)
 
         self.setup_menu()
         self._file_handler = FileHandler()
@@ -50,10 +52,13 @@ class StartQt4(QtGui.QMainWindow):
         self._progress_bar = ProgressBar(title='Loading files...')
         self.subwindows = {}
         # enable export if the activated subwindow is a image window
-        self.ui.mdiArea.subWindowActivated.connect(
-            lambda subwindow: self.ui.actionExport.setEnabled(True)
-            if subwindow and isinstance(subwindow.widget(), MPLCanvasWidget)
-            else self.ui.actionExport.setEnabled(False))
+        self.ui.mdiArea.subWindowActivated.connect(self._subwindow_activated)
+
+    def _subwindow_activated(self, subwindow):
+        if subwindow and isinstance(subwindow.widget(), MPLCanvasWidget):
+            self.ui.actionExport.setEnabled(True)
+        else:
+            self.ui.actionExport.setEnabled(False)
 
     def setup_menu(self):
         # connect exit menu
@@ -69,6 +74,7 @@ class StartQt4(QtGui.QMainWindow):
         self.ui.actionPlot.triggered.connect(self.plot_selected_station)
         self.ui.actionClose_All_Images.triggered.connect(self._close_all_images)
         self.ui.actionExport.triggered.connect(self._export_image)
+        self.ui.actionExport_ModEM_Data.triggered.connect(self._export_modem)
         # not yet impleneted
         self.ui.actionAbout.triggered.connect(self.dummy_action)
         self.ui.actionClose_Project.triggered.connect(self.dummy_action)
@@ -84,7 +90,26 @@ class StartQt4(QtGui.QMainWindow):
         subwindow = self.ui.mdiArea.activeSubWindow()
         widget = subwindow.widget()
         if isinstance(widget, MPLCanvasWidget):
-            self._export_dialog.export_to_file(widget.get_fig())
+            try:
+                self._export_dialog.export_to_file(widget.get_fig())
+            except Exception as e:
+                frm = inspect.trace()[-1]
+                mod = inspect.getmodule(frm[0])
+                QtGui.QMessageBox.critical(self,
+                                           'Exporting Error',
+                                           "{}: {}".format(mod.__name__, e.message),
+                                           QtGui.QMessageBox.Close)
+
+    def _export_modem(self, *args, **kwargs):
+        mt_objs = []
+        for selected_station in self._station_viewer.selected_stations:
+            ref = self._file_handler.station2ref(selected_station)
+            mt_obj = self._file_handler.get_MT_obj(ref)
+            mt_objs.append(mt_obj)
+        self._export_dialog_modem.set_data(mt_objs)
+        self._export_dialog_modem.restart()
+        if self._export_dialog_modem.exec_() == QtGui.QWizard.Accepted:
+            self._export_dialog_modem.export_data()
 
     def _tile_windows(self, *args, **kwargs):
         self.ui.mdiArea.tileSubWindows()
@@ -205,6 +230,7 @@ class StartQt4(QtGui.QMainWindow):
         if not self._station_viewer:
             self._station_viewer = StationViewer(self, self._file_handler)
             self.ui.actionShow_Data_Collection.setEnabled(True)
+            self._station_viewer.selection_changed.connect(self._selected_station_changed)
         if not self._station_summary:
             self._station_summary = StationSummary(self, self._file_handler,
                                                    self._station_viewer.fig_canvas.selected_stations)
@@ -216,6 +242,10 @@ class StartQt4(QtGui.QMainWindow):
             self._station_viewer.selection_changed.connect(self._station_summary.update_view)
             self._station_viewer.setFocus()
         self._station_viewer.update_view()
+
+    def _selected_station_changed(self):
+        self.ui.actionPlot.setEnabled(bool(self._station_viewer.selected_stations))
+        self.ui.actionExport_ModEM_Data.setEnabled(bool(self._station_viewer.selected_stations))
 
     def create_subwindow(self, widget, title, overide=True, tooltip=None):
         subwindow = None
@@ -304,7 +334,14 @@ if __name__ == "__main__":
     smartMT.show()
 
     # hack to fix the "python has stopped working" error,
-    # the possible cause is the QtGui4.dll crashes, need to test it on linux envorinment
+    # the possible cause is the QtGui4.dll crashes, need to test it on linux environment
+    # ref of the issue: http://pyqt.sourceforge.net/Docs/sip4/python_api.html
+    #   "When the Python interpreter exits it garbage collects those objects that it can.
+    #    This means that any corresponding C++ instances and C structures owned by Python
+    #    are destroyed. Unfortunately this happens in an unpredictable order and so can
+    #    cause memory faults within the wrapped library. Calling this function with a
+    #    value of False disables the automatic destruction of C++ instances and C
+    #    structures."
     sip.setdestroyonexit(False)
     # end of hack
 

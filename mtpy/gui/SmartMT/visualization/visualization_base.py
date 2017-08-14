@@ -14,19 +14,21 @@ import inspect
 
 import matplotlib.pyplot as plt
 from PyQt4 import QtGui, QtCore
+from PyQt4.QtCore import pyqtSignal
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as NavigationToolbar
+from matplotlib.figure import Figure
 
 from mtpy.gui.SmartMT.gui.plot_parameter import PlotParameter
-from mtpy.gui.SmartMT.gui.progress_bar import ProgressBar
 from mtpy.utils.mtpylog import MtPyLog
 
 
-class VisualizationBase(object):
+class VisualizationBase(QtCore.QThread):
     """
     plugin base for data visualization
     """
-    __metaclass__ = abc.ABCMeta
+
+    # __metaclass__ = abc.ABCMeta
 
     @abc.abstractmethod
     def __init__(self, parent):
@@ -36,14 +38,29 @@ class VisualizationBase(object):
         for visualization
         :param parent:
         """
+        QtCore.QThread.__init__(self, parent)
         self._parent = parent
         self._mt_objs = None
         self._fig = None
+        self._plotting_object = None
         self._logger = MtPyLog().get_mtpy_logger(__name__)
         self._parameter_ui = PlotParameter(self._parent)
-        self._plotting_object = None
-        # connect plot button
-        QtCore.QObject.connect(self._parameter_ui.ui.pushButtonPlot, QtCore.SIGNAL("clicked()"), self.show_figure)
+
+        # add plot common setting gui
+        # self._common_ui = CommonSettings(self._parameter_ui)
+        # apply default common settings
+        self.default_common_settings()
+        # self._parameter_ui.add_parameter_groubox(self._common_ui)
+
+    def default_common_settings(self):
+        """
+        this function will be called to initialize the common_settings parameters of the plot.
+        including titles (title text and its font and positions) and figure size.
+        The default value should fit for the most purpose but override this function to change
+        the default values when necessary.
+        :return:
+        """
+        pass
 
     def set_data(self, mt_objs):
         """
@@ -119,38 +136,35 @@ class VisualizationBase(object):
         """
         pass
 
-    def show_figure(self):
-        """
-        function that creates plot by calling self.plot(), then create subwindow for the created image,
-        exception and error handling, progress indication are handled here
-        :return:
-        """
-        # clear the figure if there is already one up
+    # plotting_started = pyqtSignal()
+    # plotting_finished = pyqtSignal()
+
+    def run(self):
+        # self.setTerminationEnabled(True)
         plt.clf()
-        # show progress bar
-        progressbar = ProgressBar(title='Generating image...')
-        progressbar.onStart()
-        # self._plottingFinished.connect(progressbar.onFinished)
-        # self._create_plot()
         try:
             self.plot()
-            if self._fig:
-                # self._fig.show()
-                widget = MPLCanvasWidget(self._fig)
+            # change size and title
+            if self._parameter_ui.customized_figure_size():
+                self._fig.set_size_inches(self._parameter_ui.get_size_inches_width(),
+                                          self._parameter_ui.get_size_inches_height())
+                self._fig.set_dpi(self._parameter_ui.get_dpi())
+                self._fig.set_tight_layout(self._parameter_ui.get_layout())
+            if self._parameter_ui.customized_figure_title():
+                self._fig.suptitle(self._parameter_ui.get_title(),
+                                   **self._parameter_ui.get_title_font_dict())
 
-                progressbar.onFinished()
-
-                self._parent._parent.create_subwindow(widget, "%s" % self.plot_name(), overide=False,
-                                                      tooltip=self.get_parameter_str())
-            else:
-                progressbar.onFinished()
+            self.plotting_completed.emit(self._fig)
         except Exception as e:
-            progressbar.onFinished()
             frm = inspect.trace()[-1]
             mod = inspect.getmodule(frm[0])
-            QtGui.QMessageBox.critical(self._parameter_ui,
-                                       'Plotting Error', "{}: {}".format(mod.__name__, e.message),
-                                       QtGui.QMessageBox.Close)
+            self.plotting_error.emit("{}: {}".format(mod.__name__, e.message))
+
+    plotting_error = pyqtSignal(str)
+    plotting_completed = pyqtSignal(Figure)
+
+    def get_fig(self):
+        return self._fig
 
 
 class MPLCanvasWidget(QtGui.QWidget):
@@ -163,6 +177,21 @@ class MPLCanvasWidget(QtGui.QWidget):
         self._layout.addWidget(self._toolbar)
         self._layout.addWidget(self._canvas)
         self.setLayout(self._layout)
+
+        # resize the figure
+        # dpi = self._fig.get_dpi()
+        # width = int(self._fig.get_figwidth() * dpi) + margins[0] + margins[2]
+        # height = int(self._fig.get_figheight() * dpi) + margins[1] + margins[3]
+        # self._canvas.resize(width, height)
+        # self._canvas.resize(self._canvas.sizeHint())
+        # this is a hack to keep the figure close to the right size (pixels)
+        # everything above this code does not work
+        size = self.sizeHint()
+        margins = self._layout.getContentsMargins()
+        width = size.width() + margins[0]
+        height = size.height() + self._toolbar.sizeHint().height()
+        # print width, height
+        self.resize(width, height)
 
     def get_fig(self):
         return self._fig

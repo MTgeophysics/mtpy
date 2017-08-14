@@ -10,8 +10,8 @@
 """
 
 import mtpy.imaging.penetration
-from mtpy.gui.SmartMT.gui.plot_parameter import ZComponentSingle, FrequencySingle, FrequencyTolerance, \
-    FrequencyIndex, ZComponentMultiple, StationSelection
+from mtpy.gui.SmartMT.gui.plot_parameter_guis import ZComponentMultiple, ZComponentSingle, FrequencySingle, \
+    FrequencyTolerance, FrequencyIndex, StationSelection
 from mtpy.gui.SmartMT.visualization.visualization_base import VisualizationBase
 
 
@@ -47,9 +47,9 @@ class Depth1D(VisualizationBase):
         self._station = None
         # add parameter gui sub components
         self._station_ui = StationSelection(self._parameter_ui)
-        self._parameter_ui.add_parameter_groubox(self._station_ui)
+        self._parameter_ui.add_parameter_groupbox(self._station_ui)
         self._z_component_ui = ZComponentMultiple(self._parameter_ui)
-        self._parameter_ui.add_parameter_groubox(self._z_component_ui)
+        self._parameter_ui.add_parameter_groupbox(self._z_component_ui)
 
         self._parameter_ui.end_of_parameter_components()
 
@@ -58,7 +58,7 @@ class Depth2D(VisualizationBase):
     def plot(self):
         # get parameters
         self._rho = self._z_component_ui.get_selection()
-        self._period_index = self._frequency_period_ui.get_period_index_list()
+        self._period_index = self._frequency_period_ui.get_index_list()
         self._plotting_object = mtpy.imaging.penetration.Depth2D(self._mt_objs, self._period_index, self._rho)
         self._plotting_object.plot()
         self._fig = self._plotting_object.get_figure()
@@ -86,10 +86,10 @@ class Depth2D(VisualizationBase):
         self._period_index = None
         # add parameter sub component
         self._z_component_ui = ZComponentSingle(self._parameter_ui)
-        self._parameter_ui.add_parameter_groubox(self._z_component_ui)
+        self._parameter_ui.add_parameter_groupbox(self._z_component_ui)
 
         self._frequency_period_ui = FrequencyIndex(self._parameter_ui, use_period=True)
-        self._parameter_ui.add_parameter_groubox(self._frequency_period_ui)
+        self._parameter_ui.add_parameter_groupbox(self._frequency_period_ui)
 
         self._parameter_ui.end_of_parameter_components()
 
@@ -135,14 +135,14 @@ class Depth3D(VisualizationBase):
         VisualizationBase.__init__(self, parent)
         # add parameter sub component
         self._z_component_ui = ZComponentSingle(self._parameter_ui)
-        self._parameter_ui.add_parameter_groubox(self._z_component_ui)
+        self._parameter_ui.add_parameter_groupbox(self._z_component_ui)
 
         self._frequency_period_ui = FrequencySingle(self._parameter_ui, use_period=True)
-        self._parameter_ui.add_parameter_groubox(self._frequency_period_ui)
+        self._parameter_ui.add_parameter_groupbox(self._frequency_period_ui)
 
         self._tolerance_ui = FrequencyTolerance(self._parameter_ui)
         self._tolerance_ui.setTitle("Period Tolerance")
-        self._parameter_ui.add_parameter_groubox(self._tolerance_ui)
+        self._parameter_ui.add_parameter_groupbox(self._tolerance_ui)
 
         self._parameter_ui.end_of_parameter_components()
 
@@ -159,4 +159,4 @@ class Depth3D(VisualizationBase):
 
 
 # register subclass
-VisualizationBase.register(Depth3D)
+# VisualizationBase.register(Depth3D)

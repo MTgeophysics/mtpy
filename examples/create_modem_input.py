@@ -24,8 +24,8 @@ from __future__ import print_function
 import glob
 import os
 import sys
-import matplotlib.pyplot as plt
 
+import matplotlib.pyplot as plt
 import numpy as np
 
 from mtpy.core.edi_collection import EdiCollection
@@ -35,7 +35,7 @@ from mtpy.modeling.modem_model import Model
 
 
 # YG: patch that changes the matplotlib behaviour
-plt.ion()  # enable interactive
+# plt.ion()  # enable interactive
 # plt.ioff()  # disable interactive, which will also disable this patch
 
 
@@ -59,11 +59,13 @@ def show_patcher(show_func):
         plt.close()
         return stuff
     return new_show_func if plt.isinteractive() else show_func
-plt.show = show_patcher(plt.show)
+
+
+# plt.show = show_patcher(plt.show)
 # end of patch
 
 
-def select_periods(edifiles_list):
+def select_periods(edifiles_list, show=True):
     """
     FZ: Use edi_collection to analyse the whole set of EDI files
     :param edifiles:
@@ -76,12 +78,15 @@ def select_periods(edifiles_list):
     uniq_period_list = edis_obj.all_unique_periods  # filtered list of periods ?
     print("Unique periods", len(uniq_period_list))
 
-    plt.hist(edis_obj.mt_periods, bins=uniq_period_list)
-    # plt.hist(edis_obj.mt_periods, bins=1000)
-    plt.title("Histogram with uniq_periods bins")
-    plt.xlabel("Periods")
-    plt.ylabel("Occurance in number of MT stations")
-    plt.show()
+    if show:
+        plt.figure()
+        plt.clf()
+        plt.hist(edis_obj.mt_periods, bins=uniq_period_list)
+        # plt.hist(edis_obj.mt_periods, bins=1000)
+        plt.title("Histogram with uniq_periods bins")
+        plt.xlabel("Periods")
+        plt.ylabel("Occurance in number of MT stations")
+        plt.show()
 
     # 1 ASK user to input a Pmin and Pmax
 

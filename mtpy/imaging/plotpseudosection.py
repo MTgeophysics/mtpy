@@ -520,7 +520,7 @@ class PlotResPhasePseudoSection(object):
                     print 'did not find period {0:.6g} (s) for {1}'.format(
                         rper, self.station_list[ii])
 
-    def plot(self):
+    def plot(self, show=True):
 
         # --> set subplot spacing
         plt.rcParams['font.size'] = self.font_size
@@ -714,8 +714,8 @@ class PlotResPhasePseudoSection(object):
                 elif tt == 'yy':
                     self.ax_ryy = axr
                     self.ax_pyy = axp
-
-            plt.show()
+            if show:
+                plt.show()
 
         # plot data as an image which can have interpolation
         elif self.plot_style == 'imshow':
@@ -907,8 +907,8 @@ class PlotResPhasePseudoSection(object):
                 elif tt[0] == 'yy':
                     self.ax_ryy = axr
                     self.ax_pyy = axp
-
-            plt.show()
+            if show:
+                plt.show()
 
     def save_plot(self, save_fn, file_format='pdf', orientation='portrait',
                   fig_dpi=None, close_plot='y'):

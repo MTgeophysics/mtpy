@@ -520,7 +520,7 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                          doc="""string to plot skew""")
 
     # ---plot the resistivity and phase
-    def plot(self):
+    def plot(self, show=True):
         """
         plot the apparent resistivity and phase
         """
@@ -618,7 +618,7 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                 # --> plot the apparent resistivity and phase
                 self.plotlist.append(p1)
 
-                p1.plot()
+                p1.plot(show=show)
 
         # -----Plot All in one figure with each plot as a subfigure------------
         if self.plot_style == 'all':
@@ -1497,6 +1497,7 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                 # make title and show
                 axr.set_title(mt.station, fontsize=self.font_size,
                               fontweight='bold')
+            if show:
                 plt.show()
 
         # ===Plot all responses into one plot to compare changes ==
@@ -2402,8 +2403,8 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                 if pdict['pt'] != nrows - 1:
                     plt.setp(self.axpt.xaxis.get_ticklabels(), visible=False)
                     self.axpt.set_xlabel(' ')
-
-            plt.show()
+            if show:
+                plt.show()
 
     def update_plot(self):
         """

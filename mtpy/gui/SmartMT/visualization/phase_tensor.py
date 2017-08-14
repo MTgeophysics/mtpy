@@ -8,11 +8,13 @@
     Author: YingzhiGou
     Date: 20/06/2017
 """
-from mtpy.gui.SmartMT.gui.plot_parameter import FrequencySingle, Ellipse, FrequencyTolerance, ColorBar, Arrow, Padding, \
-    Scale, Font, Stretch, LineDir, Rotation
+from mtpy.gui.SmartMT.gui.figure_setting_guis import ColorBar, Font, AspectRatio
+from mtpy.gui.SmartMT.gui.plot_parameter_guis import FrequencySingle, Ellipse, FrequencyTolerance, Arrow, Padding, \
+    Scale, Stretch, LineDir, FrequencyIndex, MeshGrid, PlotControlResistivityPhasePseudoSection
 from mtpy.gui.SmartMT.visualization.visualization_base import VisualizationBase
 from mtpy.imaging.phase_tensor_maps import PlotPhaseTensorMaps
 from mtpy.imaging.phase_tensor_pseudosection import PlotPhaseTensorPseudoSection
+from mtpy.imaging.plotpseudosection import PlotResPhasePseudoSection
 
 
 class PhaseTensorMap(VisualizationBase):
@@ -45,12 +47,9 @@ class PhaseTensorMap(VisualizationBase):
         # NOTE: this is a hack because the existing bug(s) in the PlotPhaseTensorMaps class, that is the
         # constructor of the class only populate all the necessary information correctly when reads from file
         # this is the only way before this bug(s) is fixed
-        file_list = []
-        for mt_obj in self._mt_objs:
-            file_list.append(mt_obj.fn)
 
         self._params = {
-            'fn_list': file_list,
+            'fn_list': [mt_obj.fn for mt_obj in self._mt_objs],
             'plot_freq': self._frequency_ui.get_frequency(),
             'ftol': self._tolerance_ui.get_tolerance_in_float(),
             'ellipse_dict': self._ellipse_ui.get_ellipse_dict(),
@@ -101,43 +100,43 @@ class PhaseTensorMap(VisualizationBase):
         self._scale_ui = Scale(self._parameter_ui)
         self._frequency_ui = FrequencySingle(self._parameter_ui, use_period=True)
         self._scale_ui.ui.comboBox_time.currentIndexChanged.connect(self._frequency_ui.toggle_time_scale)
-        self._parameter_ui.add_parameter_groubox(self._scale_ui)
-        self._parameter_ui.add_parameter_groubox(self._frequency_ui)
+        self._parameter_ui.add_parameter_groupbox(self._scale_ui)
+        self._parameter_ui.add_parameter_groupbox(self._frequency_ui)
 
         self._tolerance_ui = FrequencyTolerance(self._parameter_ui)
-        self._parameter_ui.add_parameter_groubox(self._tolerance_ui)
+        self._parameter_ui.add_parameter_groupbox(self._tolerance_ui)
 
         self._ellipse_ui = Ellipse(self._parameter_ui)
-        self._parameter_ui.add_parameter_groubox(self._ellipse_ui)
+        self._parameter_ui.add_parameter_groupbox(self._ellipse_ui)
 
         self._arrow_ui = Arrow(self._parameter_ui)
-        self._parameter_ui.add_parameter_groubox(self._arrow_ui)
+        self._parameter_ui.add_parameter_groupbox(self._arrow_ui)
 
         # not implemented in PlotPhaseTensorMaps
         # self._rotation_ui = Rotation(self._parameter_ui)
         # self._parameter_ui.add_parameter_groubox(self._rotation_ui)
 
         self._padding_ui = Padding(self._parameter_ui)
-        self._parameter_ui.add_parameter_groubox(self._padding_ui)
+        self._parameter_ui.add_parameter_groupbox(self._padding_ui)
 
         self._colorbar_ui = ColorBar(self._parameter_ui)
-        self._parameter_ui.add_parameter_groubox(self._colorbar_ui)
+        self._parameter_ui.add_figure_groupbox(self._colorbar_ui)
 
         self._label_font_ui = Font(self._parameter_ui)
         self._label_font_ui.setToolTip("Font of the plot labels")
         self._label_font_ui.hide_color()
         self._label_font_ui.hide_weight()
-        self._parameter_ui.add_parameter_groubox(self._label_font_ui)
+        self._parameter_ui.add_figure_groupbox(self._label_font_ui)
 
         self._station_font_ui = Font(self._parameter_ui, simple_color=False)
         self._station_font_ui.setTitle('Station Label Font')
-        self._parameter_ui.add_parameter_groubox(self._station_font_ui)
+        self._parameter_ui.add_figure_groupbox(self._station_font_ui)
 
         self._parameter_ui.end_of_parameter_components()
 
         # resize
-        self._parameter_ui.resize(self._parameter_ui.width(),
-                                  self._parameter_ui.sizeHint().height())
+        # self._parameter_ui.resize(self._parameter_ui.width(),
+        #                           self._parameter_ui.sizeHint().height())
 
         self.update_ui()
         self._params = None
@@ -149,33 +148,33 @@ class PhaseTensorPseudoSection(VisualizationBase):
 
         # setup gui
         self._ellipse_ui = Ellipse(self._parameter_ui)
-        self._parameter_ui.add_parameter_groubox(self._ellipse_ui)
+        self._parameter_ui.add_parameter_groupbox(self._ellipse_ui)
 
         self._linedir_ui = LineDir(self._parameter_ui)
-        self._parameter_ui.add_parameter_groubox(self._linedir_ui)
+        self._parameter_ui.add_parameter_groupbox(self._linedir_ui)
 
         self._stretch_ui = Stretch(self._parameter_ui)
-        self._parameter_ui.add_parameter_groubox(self._stretch_ui)
+        self._parameter_ui.add_parameter_groupbox(self._stretch_ui)
 
         self._arrow_ui = Arrow(self._parameter_ui)
-        self._parameter_ui.add_parameter_groubox(self._arrow_ui)
+        self._parameter_ui.add_parameter_groupbox(self._arrow_ui)
 
         self._scale_ui = Scale(self._parameter_ui)
         self._scale_ui.hide_mapscale()
-        self._parameter_ui.add_parameter_groubox(self._scale_ui)
+        self._parameter_ui.add_parameter_groupbox(self._scale_ui)
 
         # this is not implemented in PlotPhaseTensorPseudoSection
         # self._rotation_ui = Rotation(self._parameter_ui)
         # self._parameter_ui.add_parameter_groubox(self._rotation_ui)
 
         self._colorbar_ui = ColorBar(self._parameter_ui)
-        self._parameter_ui.add_parameter_groubox(self._colorbar_ui)
+        self._parameter_ui.add_figure_groupbox(self._colorbar_ui)
 
         self._label_font_ui = Font(self._parameter_ui)
         self._label_font_ui.setToolTip("Font of the plot labels")
         self._label_font_ui.hide_color()
         self._label_font_ui.hide_weight()
-        self._parameter_ui.add_parameter_groubox(self._label_font_ui)
+        self._parameter_ui.add_figure_groupbox(self._label_font_ui)
 
         self._parameter_ui.end_of_parameter_components()
 
@@ -201,11 +200,8 @@ class PhaseTensorPseudoSection(VisualizationBase):
 
     def plot(self):
         # get parameters
-        file_list = []
-        for mt_obj in self._mt_objs:
-            file_list.append(mt_obj.fn)
         self._params = {
-            'fn_list': file_list,
+            'fn_list': [mt_obj.fn for mt_obj in self._mt_objs],
             'plot_tipper': self._arrow_ui.get_plot_tipper(),
             'tscale': self._scale_ui.get_tscale(),
             'ellipse_dict': self._ellipse_ui.get_ellipse_dict(),
@@ -243,3 +239,63 @@ class PhaseTensorPseudoSection(VisualizationBase):
     @staticmethod
     def plot_name():
         return "Phase Tensor Pseudo Section"
+
+
+class ResistivityPhasePseudoSection(VisualizationBase):
+    @staticmethod
+    def plot_description():
+        return """
+        <p> Plot resistivity and phase pseudo section for different components</p>
+        """
+
+    def plot(self):
+        self._params = {
+            'fn_list': [mt_obj.fn for mt_obj in self._mt_objs],
+            'plot_style': self._mesh_grid_ui.get_grid_type(),
+            'imshow_interp': self._mesh_grid_ui.get_interpolation_method(),
+            'ftol': self._tolerance_ui.get_tolerance_in_float(),
+            'linedir': self._linedir_ui.get_linedir(),
+            'aspect': self._aspect_ui.get_aspect(),
+            'stationid': (0, 20),
+            'plot_yn': 'n'  # do not plot on class creation
+        }
+
+        self._plotting_object = PlotResPhasePseudoSection(**self._params)
+        self._plotting_object.plot(show=False)
+        self._fig = self._plotting_object.fig
+
+    def update_ui(self):
+        pass
+
+    @staticmethod
+    def plot_name():
+        return "Resistivity and Phase Pseudo Section"
+
+    def get_parameter_str(self):
+        pass
+
+    def __init__(self, parent):
+        VisualizationBase.__init__(self, parent)
+
+        # setup gui
+        self._plot_control = PlotControlResistivityPhasePseudoSection(self._parameter_ui)
+        self.parameter_ui.add_parameter_groupbox(self._plot_control)
+
+        self._mesh_grid_ui = MeshGrid(self._parameter_ui)
+        self._parameter_ui.add_parameter_groupbox(self._mesh_grid_ui)
+
+        self._tolerance_ui = FrequencyTolerance(self._parameter_ui)
+        self._parameter_ui.add_parameter_groupbox(self._tolerance_ui)
+
+        self._linedir_ui = LineDir(self._parameter_ui)
+        self._linedir_ui.ui.radioButton_ew.setChecked(True)
+        self._parameter_ui.add_parameter_groupbox(self._linedir_ui)
+
+        # figure settings
+        self._aspect_ui = AspectRatio(self._parameter_ui)
+        self._parameter_ui.add_figure_groupbox(self._aspect_ui)
+
+        self._parameter_ui.end_of_parameter_components()
+
+        self.update_ui()
+        self._params = None

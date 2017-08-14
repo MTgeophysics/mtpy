@@ -121,7 +121,7 @@ class Data(object):
                            set to this value unless you specify error_type as
                            'floor' or 'floor_egbert'.
                            *default* is .05 for 5%
-    error_type             [ 'floor' | 'value' | 'egbert' | 'floor_egbert' |'stddev' | 'sqr' | 'meansqr' | | dict ]
+    error_type             [ 'floor' | 'value' | 'egbert' | 'floor_egbert' |'stddev' | 'sqr' | 'meansqr' ]
                            *default* is 'egbert'
                                 * 'floor' sets the error floor to error_floor
                                 * 'value' sets error to error_value
@@ -129,9 +129,9 @@ class Data(object):
                                            error_egbert * sqrt(abs(zxy*zyx))
                                 * 'floor_egbert' sets error floor to
                                            error_egbert * sqrt(abs(zxy*zyx))
-                                * 'stddev' use the stddev of the errors of for a given component of a station
+                                * 'stddev' use the stddev of the errors of a given component of a station
                                     across all frequencies
-                                * 'sqr' use sqrare error of a frequency of a component of a station
+                                * 'sqr' use square error of a frequency of a component of a station
                                 * 'meansqr' mean sqr of the errors for a given component of a station across
                                     all crequenction
     comp_error_type        dictionary contains some of the following keys
@@ -946,7 +946,7 @@ class Data(object):
 
         # be sure to fill in data array
         if fill is True:
-            new_edi_dir = os.path.join(save_path, 'new_edis')  # output edi files according to selected periods
+            new_edi_dir = os.path.join(self.save_path, 'new_edis')  # output edi files according to selected periods
             if not os.path.exists(new_edi_dir):
                 os.mkdir(new_edi_dir)
             self._fill_data_array(new_edi_dir=new_edi_dir)

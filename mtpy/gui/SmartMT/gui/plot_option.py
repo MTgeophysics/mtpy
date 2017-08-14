@@ -8,8 +8,10 @@
 """
 from PyQt4 import QtGui
 
+from mtpy.gui.SmartMT.gui.busy_indicators import BusyOverlay
 from mtpy.gui.SmartMT.ui_asset.plot_options import Ui_PlotOption
 from mtpy.gui.SmartMT.visualization import *
+from mtpy.gui.SmartMT.visualization.visualization_base import MPLCanvasWidget
 from mtpy.utils.mtpylog import MtPyLog
 
 
@@ -32,6 +34,10 @@ class PlotOption(QtGui.QWidget):
         self._current_plot = None
         self.ui = Ui_PlotOption()
         self.ui.setupUi(self)
+
+        # hide cancel button
+        self.ui.pushButton_cancel.hide()
+
         # populate dropdown menu
         self.plotOptions = []
 
@@ -45,16 +51,28 @@ class PlotOption(QtGui.QWidget):
             else:
                 raise Exception("Duplicated Plot Name: %s in class %s" % (name, child.__name__))
 
-        # self.ui.comboBoxSelect_Plot.addItem("test")
+        # busy overlay
+        self._busy_overlay = BusyOverlay(self)
+        self._busy_overlay.hide()
+
+        # connect signals
+        self.ui.comboBoxSelect_Plot.currentIndexChanged.connect(self._selection_changed)
+        self.ui.pushButton_plot.clicked.connect(self._create_plot)
+        self.ui.pushButton_cancel.clicked.connect(self._cancel_plot)
 
         if VisualizationBase.__subclasses__():
             self.ui.comboBoxSelect_Plot.setEnabled(True)
             self.ui.comboBoxSelect_Plot.setCurrentIndex(0)
-            self._selection_changed()
+            self.ui.comboBoxSelect_Plot.currentIndexChanged.emit(0)
         else:
             self.ui.comboBoxSelect_Plot.setEnabled(False)
 
-        self.ui.comboBoxSelect_Plot.currentIndexChanged.connect(self._selection_changed)
+    def resizeEvent(self, event):
+        size = event.size()
+        size.setHeight(size.height() - self.ui.pushButton_plot.height())  # give space to the buttons
+        self._busy_overlay.resize(size)
+        # self._busy_overlay.resize(event.size())
+        event.accept()
 
     def _selection_changed(self, *args, **kwargs):
         # print "selection changed"
@@ -68,11 +86,44 @@ class PlotOption(QtGui.QWidget):
         if self._current_plot is not None:
             # self.ui.verticalLayout.removeWidget(self._current_plot.parameter_ui)
             self._current_plot.parameter_ui.deleteLater()
+
         self._current_plot = plot_option(self)
+        # connect signal
+        self._current_plot.started.connect(self._busy_overlay.show)
+        self._current_plot.started.connect(self._tuggle_plot_cancel)
+        self._current_plot.finished.connect(self._busy_overlay.hide)
+        self._current_plot.finished.connect(self._tuggle_plot_cancel)
+        self._current_plot.plotting_completed.connect(self._show_plot)
+        self._current_plot.plotting_error.connect(self._plotting_error)
 
         self.ui.verticalLayout.addWidget(self._current_plot.parameter_ui)
+
         # self.resize(self.width(), self.sizeHint().height())
         self.update_ui()
+
+    def _create_plot(self):
+        self._current_plot.start(QtCore.QThread.HighPriority)
+
+    def _cancel_plot(self):
+        # self._current_plot.terminate()  # this does not work
+        self._current_plot.wait()
+
+    def _tuggle_plot_cancel(self):
+        self.ui.pushButton_cancel.setHidden(not self.ui.pushButton_cancel.isHidden())
+        self.ui.pushButton_plot.setHidden(not self.ui.pushButton_plot.isHidden())
+
+    def _plotting_error(self, msg):
+        QtGui.QMessageBox.critical(self,
+                                   'Plotting Error', msg,
+                                   QtGui.QMessageBox.Close)
+
+    def _show_plot(self):
+        fig = self._current_plot.get_fig()
+        if fig:
+            # self._fig.show()
+            widget = MPLCanvasWidget(fig)
+            self._parent.create_subwindow(widget, "%s" % self._current_plot.plot_name(), overide=False,
+                                          tooltip=self._current_plot.get_parameter_str())
 
     def update_ui(self):
         if self._current_plot is not None:

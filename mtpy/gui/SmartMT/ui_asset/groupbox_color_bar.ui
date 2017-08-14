@@ -261,6 +261,17 @@
    </item>
   </layout>
  </widget>
+ <tabstops>
+  <tabstop>comboBox_orientation</tabstop>
+  <tabstop>horizontalSlider_x</tabstop>
+  <tabstop>doubleSpinBox_x</tabstop>
+  <tabstop>horizontalSlider_y</tabstop>
+  <tabstop>doubleSpinBox_y</tabstop>
+  <tabstop>horizontalSlider_width</tabstop>
+  <tabstop>doubleSpinBox_width</tabstop>
+  <tabstop>horizontalSlider_height</tabstop>
+  <tabstop>doubleSpinBox_height</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>

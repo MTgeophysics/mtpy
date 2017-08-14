@@ -1328,11 +1328,19 @@ class PlotMTResponse(mtpl.MTArrows, mtpl.MTEllipse):
                             borderpad=.02)
 
         # make plot_title and show
-        if self.plot_title is not None:
-            self.fig.suptitle(self.plot_title, fontdict=fontdict)
-        else:
-            if self._mt.station is not None:
-                self.fig.suptitle(self._mt.station, fontdict=fontdict)
+        # changed by Yingzhi
+        # ==== before ====
+        # if self.plot_title is not None:
+        #     self.fig.suptitle(self.plot_title, fontdict=fontdict)
+        # else:
+        #     if self._mt.station is not None:
+        #         self.fig.suptitle(self._mt.station, fontdict=fontdict)
+        # ==== after ====
+        self.fig.suptitle(
+            self._mt.station if self.plot_title is None else self.plot_title,
+            fontsize=fontdict['size'] + 4
+        )
+        # ==== end of changes ====
         if show:
             plt.show()
 

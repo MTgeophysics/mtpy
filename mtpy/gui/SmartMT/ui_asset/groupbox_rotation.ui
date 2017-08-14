@@ -20,9 +20,9 @@
             <string>GroupBox</string>
         </property>
         <property name="toolTip">
-            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Rotation angle of impedance tensor (in degree)&lt;/p&gt;&lt;p&gt;&lt;span
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Rotation angle (in degree)&lt;/p&gt;&lt;p&gt;&lt;span
                 style=&quot; font-weight:600;&quot;&gt;Note:&lt;/span&gt; All angles are referenced to geographic North,
-                positive in clockwise direction.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
+                positive in clockwise direction. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
             </string>
         </property>
         <property name="title">

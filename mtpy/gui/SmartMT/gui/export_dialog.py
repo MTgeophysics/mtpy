@@ -7,16 +7,18 @@
     Author: YingzhiGou
     Date: 24/07/2017
 """
-import inspect
 import os
 import tempfile
 import webbrowser
 
+import matplotlib.pyplot as plt
 from PIL import Image
 from PyQt4 import QtGui, QtCore
-import matplotlib.pyplot as plt
+from matplotlib.backends.backend_qt4agg import FigureCanvas
 
 from mtpy.gui.SmartMT.ui_asset.dialog_export import Ui_Dialog_Export
+from mtpy.gui.SmartMT.ui_asset.dialog_preview import Ui_Dialog_preview
+from mtpy.gui.SmartMT.utils.validator import DirectoryValidator
 
 IMAGE_FORMATS = []
 filetypes = plt.gcf().canvas.get_supported_filetypes()
@@ -29,6 +31,8 @@ class ExportDialog(QtGui.QDialog):
         QtGui.QDialog.__init__(self, parent)
         self.ui = Ui_Dialog_Export()
         self.ui.setupUi(self)
+
+        self._fig = None
 
         # setup file types
         for frmt in IMAGE_FORMATS:
@@ -44,6 +48,9 @@ class ExportDialog(QtGui.QDialog):
         self.ui.comboBox_directory.addItem(os.path.expanduser("~"))
         self.ui.pushButton_browse.clicked.connect(self._browse)
 
+        self._dir_validator = DirectoryValidator()
+        self.ui.comboBox_directory.lineEdit().setValidator(self._dir_validator)
+
         # file name
         self.ui.comboBox_fileName.currentIndexChanged.connect(self._file_name_changed)
 
@@ -51,21 +58,91 @@ class ExportDialog(QtGui.QDialog):
         self.ui.comboBox_fileType.currentIndexChanged.connect(self._file_type_changed)
 
         # cancel button
-        self.ui.pushButton_cancel.clicked.connect(lambda b: self.reject())
+        self.ui.pushButton_cancel.clicked.connect(self._cancel_button_clicked)
         # export button
-        self.ui.pushButton_export.clicked.connect(lambda b: self.accept())
+        self.ui.pushButton_export.clicked.connect(self._export_button_clicked)
+        # preview button
+        self.ui.pushButton_preview.clicked.connect(self._preview_button_clicked)
+
+        # dpi
+        self.ui.spinBox_dpi.valueChanged.connect(self._dpi_changed)
+        # inches
+        self.ui.doubleSpinBox_width_inches.valueChanged.connect(self._width_inches_changed)
+        self.ui.doubleSpinBox_height_inches.valueChanged.connect(self._height_inches_changed)
+        # pixels
+        self.ui.spinBox_width_pixels.valueChanged.connect(self._width_pixels_changed)
+        self.ui.spinBox_height_pixels.valueChanged.connect(self._height_pixels_changed)
 
         # message box for when the file already exist
         self._msg_box = QtGui.QMessageBox(self)
         self._msg_box.setWindowTitle("Export...")
-        self._msg_box.button_overwrite = self._msg_box.addButton(self.tr("Overwrite"), QtGui.QMessageBox.AcceptRole)
-        self._msg_box.button_save_as = self._msg_box.addButton(self.tr("Save As"), QtGui.QMessageBox.ActionRole)
-        self._msg_box.button_cancel = self._msg_box.addButton(QtGui.QMessageBox.Cancel)
-        self._msg_box.setDefaultButton(self._msg_box.button_save_as)
+        self._msg_box_button_overwrite = self._msg_box.addButton(self.tr("Overwrite"), QtGui.QMessageBox.AcceptRole)
+        self._msg_box_button_save_as = self._msg_box.addButton(self.tr("Save As"), QtGui.QMessageBox.ActionRole)
+        self._msg_box_button_cancel = self._msg_box.addButton(QtGui.QMessageBox.Cancel)
+        self._msg_box.setDefaultButton(self._msg_box_button_save_as)
 
     _orientation = ['portrait', 'landscape']
 
     _no_alpha_channel_formats = ('jpg', 'jpeg')  # ("png", "gif", "psd")
+
+    def _dpi_changed(self, dpi):
+        self.ui.doubleSpinBox_height_inches.blockSignals(True)
+        self.ui.doubleSpinBox_width_inches.blockSignals(True)
+        self.ui.spinBox_height_pixels.setValue(
+            self.ui.doubleSpinBox_height_inches.value() * dpi
+        )
+        self.ui.spinBox_width_pixels.setValue(
+            self.ui.doubleSpinBox_width_inches.value() * dpi
+        )
+        self.ui.doubleSpinBox_height_inches.blockSignals(False)
+        self.ui.doubleSpinBox_width_inches.blockSignals(False)
+
+    def _width_pixels_changed(self, width):
+        self.ui.doubleSpinBox_width_inches.blockSignals(True)
+        new_width_inches = width / float(self.ui.spinBox_dpi.value())
+        self.ui.doubleSpinBox_width_inches.setValue(new_width_inches)
+        self.ui.doubleSpinBox_width_inches.blockSignals(False)
+
+    def _height_pixels_changed(self, height):
+        self.ui.doubleSpinBox_height_inches.blockSignals(True)
+        new_height_inches = height / float(self.ui.spinBox_dpi.value())
+        self.ui.doubleSpinBox_height_inches.setValue(new_height_inches)
+        self.ui.doubleSpinBox_height_inches.blockSignals(False)
+
+    def _width_inches_changed(self, width):
+        self.ui.spinBox_width_pixels.blockSignals(True)
+        self.ui.spinBox_width_pixels.setValue(
+            width * self.ui.spinBox_dpi.value()
+        )
+        self.ui.spinBox_width_pixels.blockSignals(False)
+
+    def _height_inches_changed(self, height):
+        self.ui.spinBox_height_pixels.blockSignals(True)
+        self.ui.spinBox_height_pixels.setValue(
+            height * self.ui.spinBox_dpi.value()
+        )
+        self.ui.spinBox_height_pixels.blockSignals(False)
+
+    def _cancel_button_clicked(self, b):
+        self.reject()
+
+    def _export_button_clicked(self, b):
+        self.accept()
+
+    def _preview_button_clicked(self):
+        if self._fig:
+            # set figures
+            self._fig.set_size_inches(self.get_size_inches_width(), self.get_size_inches_height())
+            params = self.get_savefig_params()
+            self._fig.set_dpi(params['dpi'])
+            self._fig.set_tight_layout(True if params['bbox_inches'] == 'tight' else False)
+
+            canvas = FigureCanvas(self._fig)
+            canvas.show()
+
+            # dialog
+            preview_dialog = PreviewDialog(self, self._fig)
+            preview_dialog.exec_()
 
     def _file_type_changed(self, *args, **kwargs):
         index = self.ui.comboBox_fileType.currentIndex()
@@ -113,9 +190,13 @@ class ExportDialog(QtGui.QDialog):
                                                        else self.ui.comboBox_directory.findText(directory))
 
     def export_to_file(self, fig):
+        self._fig = fig
         respawn = True
         while respawn:
             respawn = False
+            self.ui.spinBox_dpi.setValue(fig.get_dpi())
+            self.ui.doubleSpinBox_width_inches.setValue(fig.get_figwidth())
+            self.ui.doubleSpinBox_height_inches.setValue(fig.get_figheight())
             response = self.exec_()
             if response == QtGui.QDialog.Accepted:
                 # saving files
@@ -124,15 +205,17 @@ class ExportDialog(QtGui.QDialog):
                 if os.path.exists(fname):
                     new_name = generate_unique_file_name(fname)
                     self._show_file_exist_message(fname, new_name)
-                    if self._msg_box.clickedButton() == self._msg_box.button_cancel:
+                    if self._msg_box.clickedButton() == self._msg_box_button_cancel:
                         respawn = True
                         continue
-                    elif self._msg_box.clickedButton() == self._msg_box.button_save_as:
+                    elif self._msg_box.clickedButton() == self._msg_box_button_save_as:
                         fname = new_name  # save_as
                     else:
                         pass  # use the original name to overwrite
 
                 params = self.get_savefig_params()
+                # change size
+                fig.set_size_inches(self.get_size_inches_width(), self.get_size_inches_height())
                 try:
                     fig.savefig(fname, **params)
                 except IOError as err:
@@ -147,28 +230,26 @@ class ExportDialog(QtGui.QDialog):
                         params['format'] = 'png'
                         new_fname = os.path.join(tmp_dir, png_file)
                         fig.savefig(new_fname, **params)
-                        im = Image.open(new_fname)
-                        rgb_im = im.convert('RGB')
-                        # make sure the fname is ended with the right extension
-                        fname, _ = os.path.splitext(fname)
-                        fname += "." + final_format
-                        rgb_im.save(fname)
+                        with Image.open(new_fname) as im:
+                            rgb_im = im.convert('RGB')
+                            # make sure the fname is ended with the right extension
+                            fname, _ = os.path.splitext(fname)
+                            fname += "." + final_format
+                            rgb_im.save(fname)
                     else:
                         raise err
-                except Exception as e:
-                    frm = inspect.trace()[-1]
-                    mod = inspect.getmodule(frm[0])
-                    QtGui.QMessageBox.critical(self,
-                                               'Exporting Error',
-                                               "{}: {}".format(mod.__name__, e.message),
-                                               QtGui.QMessageBox.Close)
-                    raise e
 
                 if self.ui.checkBox_open_after_export.isChecked():
                     # open with the system default application, this should work on all platforms
                     webbrowser.open(fname)
                 return fname
                 # elif response == QtGu
+
+    def get_size_inches_width(self):
+        return self.ui.doubleSpinBox_width_inches.value()
+
+    def get_size_inches_height(self):
+        return self.ui.doubleSpinBox_height_inches.value()
 
     def _show_file_exist_message(self, fname, new_name):
         self._msg_box.setText(
@@ -181,7 +262,7 @@ class ExportDialog(QtGui.QDialog):
             str(self.ui.comboBox_directory.currentText()),
             str(self.ui.comboBox_fileName.currentText())
         )
-        return name
+        return os.path.normpath(name)
 
     def get_savefig_params(self):
         params = {
@@ -215,6 +296,20 @@ class ExportDialog(QtGui.QDialog):
             # call reject if Escape is pressed.
             self.reject()
         pass
+
+        # def closeEvent(self, event):
+        #     self._msg_box.deleteLater()
+        #     super(ExportDialog, self).closeEvent(event)
+
+
+class PreviewDialog(QtGui.QDialog):
+    def __init__(self, parent, fig):
+        QtGui.QDialog.__init__(self, parent)
+        self.ui = Ui_Dialog_preview()
+        self.ui.setupUi(self)
+        self._canvas = FigureCanvas(fig)
+        self.ui.verticalLayout_2.addWidget(self._canvas)
+        self.resize(self.sizeHint())
 
 
 def generate_unique_file_name(basename):
