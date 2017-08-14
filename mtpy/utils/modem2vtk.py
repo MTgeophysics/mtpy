@@ -205,6 +205,8 @@ def main():
     #can be read by paraview directly 
     arr = np.zeros((len(X)*len(Y)*len(D),4))
     
+    print Y, Y.shape
+    
     for idx_D in range(dims[2]):
         for idx_Y in range(dims[1]):
             for idx_X in range(dims[0]):

@@ -1763,9 +1763,9 @@ class Model(object):
     def nodes_east(self, nodes):
         nodes = np.array(nodes)
         self._nodes_east = nodes
-        self.grid_east = np.array([nodes.sum()/2-nodes[0:ii].sum()
+        self.grid_east = np.array([-nodes.sum()/2+nodes[0:ii].sum()
                                    for ii in range(nodes.size)]+\
-                                   [-nodes.sum()/2])
+                                   [nodes.sum()/2])
     
     ## Nodes North                             
     @property
@@ -1779,9 +1779,9 @@ class Model(object):
     def nodes_north(self, nodes):
         nodes = np.array(nodes)
         self._nodes_north = nodes
-        self.grid_north = np.array([nodes.sum()/2-nodes[0:ii].sum()
+        self.grid_north = np.array([-nodes.sum()/2+nodes[0:ii].sum()
                                    for ii in range(nodes.size)]+\
-                                   [-nodes.sum()/2])
+                                   [nodes.sum()/2])
     
     @property
     def nodes_z(self):
@@ -2306,7 +2306,7 @@ class Model(object):
         
         print 'Wrote file to: {0}'.format(self.model_fn)
         
-    def read_model_file(self, model_fn=None):
+    def read_model_file(self, model_fn=None, shift_grid=False):
         """
         read an initial file and return the pertinent information including
         grid positions in coordinates relative to the center point (0,0) and 
@@ -2429,21 +2429,12 @@ class Model(object):
             self.res_model = np.e**self.res_model
         elif log_yn.lower() == 'log' or log_yn.lower() == 'log10':
             self.res_model = 10**self.res_model
-            
-        #put the grids into coordinates relative to the center of the grid
-        self.grid_north = np.array([self.nodes_north[0:ii].sum() 
-                                   for ii in range(n_north)])
-        self.grid_east = np.array([self.nodes_east[0:ii].sum() 
-                                   for ii in range(n_east)])
-                                
-        self.grid_z = np.array([self.nodes_z[:ii+1].sum() 
-                                for ii in range(n_z)])
         
         # center the grids
-        if self.grid_center is not None:
-            self.grid_north += self.grid_center[0]
-            self.grid_east += self.grid_center[1]
-            self.grid_z += self.grid_center[2]
+        if self.grid_center is not None and shift_grid is True:
+            self.grid_north -= self.grid_center[0]
+            self.grid_east -= self.grid_center[1]
+            self.grid_z -= self.grid_center[2]
             
         self.cell_size_east = stats.mode(self.nodes_east)[0][0]
         self.cell_size_north = stats.mode(self.nodes_north)[0][0]
@@ -2494,20 +2485,21 @@ class Model(object):
             vtk_fn = os.path.join(self.save_path, vtk_fn_basename)
         else:
             vtk_fn = os.path.join(vtk_save_path, vtk_fn_basename)
-        
+            
+        # use cellData, this makes the grid properly as grid is n+1
         gridToVTK(vtk_fn, 
                  self.grid_north/1000., 
                  self.grid_east/1000.,
                  self.grid_z/1000.,
-                 pointData={'resistivity':self.res_model}) 
+                 cellData={'resistivity':self.res_model}) 
         
         print '-'*50
         print '--> Wrote model file to {0}\n'.format(vtk_fn)
         print '='*26
         print '  model dimensions = {0}'.format(self.res_model.shape)
-        print '     * north         {0}'.format(self.grid_north.shape[0])
-        print '     * east          {0}'.format(self.grid_east.shape[0])
-        print '     * depth         {0}'.format(self.grid_z.shape[0])
+        print '     * north         {0}'.format(self.nodes_north.shape[0])
+        print '     * east          {0}'.format(self.nodes_east.shape[0])
+        print '     * depth         {0}'.format(self.nodes_z.shape[0])
         print '='*26
             
 #==============================================================================
