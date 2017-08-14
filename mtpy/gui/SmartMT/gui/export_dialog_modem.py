@@ -98,6 +98,11 @@ class ExportDialogModEm(QtGui.QWizard):
         self.ui.comboBox_directory.editTextChanged.connect(self._update_full_output)
         self.ui.pushButton_browse.clicked.connect(self._browse)
 
+        # self.ui.doubleSpinBox_target_depth.valueChanged.connect(self._target_depth_changed)
+        self.ui.doubleSpinBox_target_depth.lineEdit().editingFinished.connect(self._target_depth_changed)
+        self.ui.doubleSpinBox_bottom.lineEdit().editingFinished.connect(self._bottom_changed)
+        # self.ui.doubleSpinBox_bottom.valueChanged.connect(self._bottom_changed)
+
         # self.ui.comboBox_topography_file.currentIndexChanged.connect()
         self.ui.comboBox_topography_file.lineEdit().editingFinished.connect(
             self._topography_file_changed
@@ -141,6 +146,18 @@ class ExportDialogModEm(QtGui.QWizard):
         'use square error of a frequency of component of a station',
         'mean square error of a frequency of a component across all frequencies for one station'
     ]
+
+    def _target_depth_changed(self, *args):
+        value = self.ui.doubleSpinBox_target_depth.value()
+        # target depth has too be at least as deep as the bottom
+        if self.ui.doubleSpinBox_bottom.value() < value:
+            self.ui.doubleSpinBox_bottom.setValue(value)
+
+    def _bottom_changed(self, *args):
+        value = self.ui.doubleSpinBox_bottom.value()
+        # bottom as to be at least at least as deep as the target depth
+        if self.ui.doubleSpinBox_target_depth.value() > value:
+            self.ui.doubleSpinBox_target_depth.setValue(value)
 
     def _impedance_full_toggled(self, checked):
         if checked:

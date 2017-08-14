@@ -933,6 +933,9 @@
                                  <property name="toolTip">
                                      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;absolute bottom of the model&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                                  </property>
+                                 <property name="suffix">
+                                     <string>m</string>
+                                 </property>
                                  <property name="maximum">
                                      <double>6371000.000000000000000</double>
                                  </property>
@@ -1119,7 +1122,7 @@
                          </sizepolicy>
                      </property>
                      <property name="text">
-                         <string>Fopography File</string>
+                         <string>Topography File</string>
                      </property>
                      <property name="buddy">
                          <cstring>comboBox_topography_file</cstring>

@@ -825,6 +825,7 @@ class Ui_Wizard_esport_modem(object):
         self.label_14.setToolTip(_translate("Wizard_esport_modem", "<html><head/><body><p>absolute bottom of the model</p></body></html>", None))
         self.label_14.setText(_translate("Wizard_esport_modem", "Bottom", None))
         self.doubleSpinBox_bottom.setToolTip(_translate("Wizard_esport_modem", "<html><head/><body><p>absolute bottom of the model</p></body></html>", None))
+        self.doubleSpinBox_bottom.setSuffix(_translate("Wizard_esport_modem", "m", None))
         self.groupBox_6.setTitle(_translate("Wizard_esport_modem", "Paddings", None))
         self.label_11.setToolTip(_translate("Wizard_esport_modem", "<html><head/><body><p>factor to increase by in\n"
 "                                         padding cells (vertical)</p></body></html>\n"
@@ -836,7 +837,7 @@ class Ui_Wizard_esport_modem(object):
         self.spinBox_pad_north.setToolTip(_translate("Wizard_esport_modem", "<html><head/><body><p>number of padding cells on\n"
 "                                         the North and South directions</p></body></html>\n"
 "                                     ", None))
-        self.spinBox_pad_north.setSuffix(_translate("Wizard_esport_modem", "cells", None))
+        self.spinBox_pad_north.setSuffix(_translate("Wizard_esport_modem", " cells", None))
         self.label_4.setToolTip(_translate("Wizard_esport_modem", "<html><head/><body><p>Number of padding cells on\n"
 "                                         East and West directions</p></body></html>\n"
 "                                     ", None))
@@ -852,7 +853,7 @@ class Ui_Wizard_esport_modem(object):
         self.spinBox_pad_z.setToolTip(_translate("Wizard_esport_modem", "<html><head/><body><p>number of vertical padding\n"
 "                                         cells</p></body></html>\n"
 "                                     ", None))
-        self.spinBox_pad_z.setSuffix(_translate("Wizard_esport_modem", "cells", None))
+        self.spinBox_pad_z.setSuffix(_translate("Wizard_esport_modem", " cells", None))
         self.label_7.setToolTip(_translate("Wizard_esport_modem", "<html><head/><body><p>factor to increase by in\n"
 "                                         padding cells (horizontal)</p></body></html>\n"
 "                                     ", None))
@@ -863,10 +864,10 @@ class Ui_Wizard_esport_modem(object):
         self.spinBox_pad_east.setToolTip(_translate("Wizard_esport_modem", "<html><head/><body><p>Number of padding cells on\n"
 "                                         East and West directions</p></body></html>\n"
 "                                     ", None))
-        self.spinBox_pad_east.setSuffix(_translate("Wizard_esport_modem", "cells", None))
+        self.spinBox_pad_east.setSuffix(_translate("Wizard_esport_modem", " cells", None))
         self.wizardPage_topography.setTitle(_translate("Wizard_esport_modem", "Topography", None))
         self.wizardPage_topography.setSubTitle(_translate("Wizard_esport_modem", "After creating the mesh grid, the topography file is used to define resistivity model.", None))
-        self.label_17.setText(_translate("Wizard_esport_modem", "Fopography File", None))
+        self.label_17.setText(_translate("Wizard_esport_modem", "Topography File", None))
         self.comboBox_topography_file.setToolTip(_translate("Wizard_esport_modem", "<html><head/><body><p>Directory to save the file</p></body></html>", None))
         self.pushButton_browse_topography_file.setToolTip(_translate("Wizard_esport_modem", "<html><head/><body><p>Directory to save the file</p></body></html>", None))
         self.pushButton_browse_topography_file.setText(_translate("Wizard_esport_modem", "Browse", None))
