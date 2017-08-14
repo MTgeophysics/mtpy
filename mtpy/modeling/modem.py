@@ -2380,9 +2380,9 @@ class Model(object):
         self.nodes_north = np.array([np.float(nn)
                                      for nn in ilines[2].strip().split()])
         self.nodes_east = np.array([np.float(nn)
-                                     for nn in ilines[3].strip().split()])
+                                    for nn in ilines[3].strip().split()])
         self.nodes_z = np.array([np.float(nn)
-                                     for nn in ilines[4].strip().split()])
+                                 for nn in ilines[4].strip().split()])
 
         self.res_model = np.zeros((n_north, n_east, n_z))
         
@@ -2431,14 +2431,24 @@ class Model(object):
             self.res_model = 10**self.res_model
         
         # center the grids
-        if self.grid_center is not None and shift_grid is True:
-            self.grid_north -= self.grid_center[0]
-            self.grid_east -= self.grid_center[1]
-            self.grid_z -= self.grid_center[2]
+        if self.grid_center is None:
+            self.grid_center = np.array([-self.nodes_north.sum()/2, 
+                                         -self.nodes_east.sum()/2,
+                                         0.0])
             
+        # need to shift the grid if the center is not symmetric
+        shift_north = self.grid_center[0]+self.nodes_north.sum()/2
+        shift_east = self.grid_center[1]+self.nodes_east.sum()/2
+        
+        # shift the grid.  if shift is + then that means the center is 
+        self.grid_north += shift_north
+        self.grid_east += shift_east
+           
+        # get cell size
         self.cell_size_east = stats.mode(self.nodes_east)[0][0]
         self.cell_size_north = stats.mode(self.nodes_north)[0][0]
         
+        # get number of padding cells
         self.pad_east = np.where(self.nodes_east[0:int(self.nodes_east.size/2)]
                                  != self.cell_size_east)[0][-1]
         self.north_pad = np.where(self.nodes_north[0:int(self.nodes_north.size/2)]
@@ -3291,7 +3301,8 @@ def change_data_elevation(data_fn, model_fn, new_data_fn=None, res_air=1e12):
     d_obj.write_data_file(save_path=os.path.dirname(new_dfn), 
                           fn_basename=os.path.basename(new_dfn),
                           compute_error=False,
-                          fill=False)
+                          fill=False, 
+                          elevation=True)
          
     return new_dfn
 
