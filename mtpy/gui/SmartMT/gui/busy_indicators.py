@@ -3,18 +3,34 @@ from PyQt4 import QtGui, QtCore
 
 
 class ProgressBar(QtGui.QWidget):
+    style = """
+    QProgressBar
+    {
+        border: 2px solid grey;
+        border-radius: 5px;
+        text-align: center;
+    }
+    """
     def __init__(self, parent=None, title=None, minimum=0, maximum=1, value=0):
         super(ProgressBar, self).__init__(parent)
-        layout = QtGui.QVBoxLayout(self)
+        layout = QtGui.QGridLayout(self)
+
         self.progressbar = QtGui.QProgressBar(self)
         self.progressbar.setMinimum(minimum)
         self.progressbar.setMaximum(maximum)
         self.progressbar.setValue(value)
+        self.progressbar.setStyleSheet(self.style)
+        self.label = QtGui.QLabel("")
+        self.label.setStyleSheet("Qlabel { font-size: 20px }")
+        self.label.setAlignment(QtCore.Qt.AlignCenter)
+
         self.setSizePolicy(QtGui.QSizePolicy.Fixed, QtGui.QSizePolicy.Fixed)
         self.setFixedSize(256, 64)
         # self.progressbar.setValue(1)
-        layout.addWidget(self.progressbar)
-        # self.setLayout(layout)
+        layout.addWidget(self.progressbar, 0, 0)
+        layout.addWidget(self.label, 0, 0)
+        self.setLayout(layout)
+
         if title:
             self.setWindowTitle(title)
 
@@ -28,10 +44,15 @@ class ProgressBar(QtGui.QWidget):
         self.progressbar.setValue(self.progressbar.value() + increment)
 
     def onStart(self):
+        self.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
         self.show()
+        # self.setWindowState(self.windowState() | QtCore.Qt.WindowActive)
 
     def onFinished(self):
         self.hide()
+
+    def updateIndicatorText(self, string):
+        self.label.setText(string)
 
 
 class BusyOverlay(QtGui.QWidget):

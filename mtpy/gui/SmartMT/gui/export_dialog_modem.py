@@ -24,6 +24,7 @@ from mtpy.gui.SmartMT.gui.export_dialog import PreviewDialog
 from mtpy.gui.SmartMT.gui.plot_parameter_guis import Rotation
 from mtpy.gui.SmartMT.ui_asset.wizard_export_modem import Ui_Wizard_esport_modem
 from mtpy.gui.SmartMT.utils.validator import FileValidator, DirectoryValidator
+from mtpy.modeling.modem_covariance import Covariance
 from mtpy.modeling.modem_data import Data
 from mtpy.modeling.modem_model import Model
 from mtpy.utils.mtpylog import MtPyLog
@@ -91,8 +92,10 @@ class ExportDialogModEm(QtGui.QWizard):
 
         self.ui.comboBox_output_name.currentIndexChanged.connect(self._update_full_output)
         self.ui.comboBox_output_name.lineEdit().editingFinished.connect(self._output_name_changed)
+        self.ui.comboBox_output_name.editTextChanged.connect(self._update_full_output)
         self.ui.comboBox_directory.currentIndexChanged.connect(self._update_full_output)
         self.ui.comboBox_directory.lineEdit().editingFinished.connect(self._output_dir_changed)
+        self.ui.comboBox_directory.editTextChanged.connect(self._update_full_output)
         self.ui.pushButton_browse.clicked.connect(self._browse)
 
         # self.ui.comboBox_topography_file.currentIndexChanged.connect()
@@ -376,7 +379,7 @@ class ExportDialogModEm(QtGui.QWizard):
 
         # self._progress_bar.progressbar.setRange(0, 1)
         self._progress_bar.progressbar.setRange(0, 0)
-        self._progress_bar.show()
+        self._progress_bar.onStart()
 
         self._update_full_output()
 
@@ -386,7 +389,8 @@ class ExportDialogModEm(QtGui.QWizard):
             edi_list=[mt_obj.fn for mt_obj in self._mt_objs],
             data_kwargs=self.get_data_kwargs(),
             mesh_kwargs=self.get_model_kwargs(),
-            topo_args=self.get_topography_2_mesh_args()
+            topo_args=self.get_topography_2_mesh_args(),
+            covariance_kwargs=self.get_covariance_kwargs()
         )
 
         if test:
@@ -400,28 +404,28 @@ class ExportDialogModEm(QtGui.QWizard):
         worker.export_error.connect(self._export_error)
         # self._plot_opened.connect(worker.pause)
 
-        worker.start()
-        worker.wait()
-        # worker.run()
+        # worker.start()
+        # worker.wait()
+        worker.run()
 
         # clean up
         worker.deleteLater()
         if self.ui.checkBox_open_output_dir.isChecked():
             webbrowser.open(self.get_save_file_path())
 
+        self._progress_bar.onFinished()
         self._progress_bar.progressbar.setRange(0, 1)
-        self._progress_bar.hide()
-
     # _plot_opened = pyqtSignal(bool)
 
     def _update_progress_bar_text(self, text):
-        self._progress_bar.progressbar._text = text
+        self._progress_bar.incrementValue()
+        self._progress_bar.updateIndicatorText(text)
 
-    def _show_figure(self, str, fig):
+    def _show_figure(self, string, fig):
         # self._plot_opened.emit(True)
         # print "plot_opened"
         preview_dialog = PreviewDialog(None, fig)
-        preview_dialog.setWindowTitle(str)
+        preview_dialog.setWindowTitle(string)
         preview_dialog.exec_()
         preview_dialog.deleteLater()
         # self._plot_opened.emit(False)
@@ -433,7 +437,7 @@ class ExportDialogModEm(QtGui.QWizard):
 
 
 class ModEMWorker(QtCore.QThread):
-    def __init__(self, parent, edi_list, data_kwargs, mesh_kwargs, topo_args, show=False):
+    def __init__(self, parent, edi_list, data_kwargs, mesh_kwargs, topo_args, covariance_kwargs, show=False):
         QtCore.QThread.__init__(self, parent)
         self._logger = MtPyLog().get_mtpy_logger(__name__)
 
@@ -441,6 +445,7 @@ class ModEMWorker(QtCore.QThread):
         self._data_kwargs = data_kwargs
         self._mesh_kwagrs = mesh_kwargs
         self._topo_args = topo_args
+        self._covariance_kwargs = covariance_kwargs
 
         self.output_dir = self._data_kwargs['save_path']
 
@@ -465,8 +470,9 @@ class ModEMWorker(QtCore.QThread):
 
             # get period_list list
             self.status_updated.emit("Selecting Periods...")
-            period_list = select_periods(self._edi_list)
-            self.figure_updated.emit('Period Distribution', plt.gcf())
+            period_list = select_periods(self._edi_list, show=self.show)
+            if self.show:
+                self.figure_updated.emit('Period Distribution', plt.gcf())
 
             # data object
             self.status_updated.emit("Creating ModEM Data Object...")
@@ -496,7 +502,19 @@ class ModEMWorker(QtCore.QThread):
             if self.show:
                 model.plot_topograph()
                 self.figure_updated.emit("Topography", plt.gcf())
+            self.status_updated.emit("Updating Mesh Model...")
             model.write_model_file()
+
+            # covariance
+            self.status_updated.emit("Creating Covariance File...")
+            self._covariance_kwargs['mask_arr'] = model.covariance_mask
+            cov = Covariance(**self._covariance_kwargs)
+            self.status_updated.emit("Writing Covariance File...")
+            cov.write_covariance_file(model_fn=model.model_fn, sea_water=self._topo_args[4], air=self._topo_args[3])
+
+            # done
+            self.status_updated.emit("Finishing...")
+
         except Exception as e:
             frm = inspect.trace()[-1]
             mod = inspect.getmodule(frm[0])

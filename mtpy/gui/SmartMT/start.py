@@ -17,17 +17,17 @@ import sip
 from PyQt4 import QtCore, QtGui
 from PyQt4.QtCore import QString
 
+from mtpy.gui.SmartMT.gui.busy_indicators import ProgressBar
 from mtpy.gui.SmartMT.gui.export_dialog import ExportDialog
 from mtpy.gui.SmartMT.gui.export_dialog_modem import ExportDialogModEm
 from mtpy.gui.SmartMT.gui.plot_option import PlotOption
-from mtpy.gui.SmartMT.gui.busy_indicators import ProgressBar
 from mtpy.gui.SmartMT.gui.station_summary import StationSummary
 from mtpy.gui.SmartMT.gui.station_viewer import StationViewer
+from mtpy.gui.SmartMT.ui_asset.main_window import Ui_SmartMT_MainWindow, _fromUtf8, _translate
 from mtpy.gui.SmartMT.utils.file_handler import FileHandler, FileHandlingException
 from mtpy.gui.SmartMT.visualization.visualization_base import MPLCanvasWidget
 from mtpy.utils.decorator import deprecated
 from mtpy.utils.mtpylog import MtPyLog
-from mtpy.gui.SmartMT.ui_asset.main_window import Ui_SmartMT_MainWindow, _fromUtf8, _translate
 
 DEFAULT_GROUP_NAME = str(_translate("SmartMT_MainWindow", "Default Group", None))
 
@@ -101,7 +101,15 @@ class StartQt4(QtGui.QMainWindow):
                                            QtGui.QMessageBox.Close)
 
     def _export_modem(self, *args, **kwargs):
-        self._export_dialog_modem.exec_()
+        mt_objs = []
+        for selected_station in self._station_viewer.selected_stations:
+            ref = self._file_handler.station2ref(selected_station)
+            mt_obj = self._file_handler.get_MT_obj(ref)
+            mt_objs.append(mt_obj)
+        self._export_dialog_modem.set_data(mt_objs)
+        self._export_dialog_modem.restart()
+        if self._export_dialog_modem.exec_() == QtGui.QWizard.Accepted:
+            self._export_dialog_modem.export_data()
 
     def _tile_windows(self, *args, **kwargs):
         self.ui.mdiArea.tileSubWindows()

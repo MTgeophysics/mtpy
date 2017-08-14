@@ -65,7 +65,7 @@ def show_patcher(show_func):
 # end of patch
 
 
-def select_periods(edifiles_list):
+def select_periods(edifiles_list, show=True):
     """
     FZ: Use edi_collection to analyse the whole set of EDI files
     :param edifiles:
@@ -78,12 +78,15 @@ def select_periods(edifiles_list):
     uniq_period_list = edis_obj.all_unique_periods  # filtered list of periods ?
     print("Unique periods", len(uniq_period_list))
 
-    plt.hist(edis_obj.mt_periods, bins=uniq_period_list)
-    # plt.hist(edis_obj.mt_periods, bins=1000)
-    plt.title("Histogram with uniq_periods bins")
-    plt.xlabel("Periods")
-    plt.ylabel("Occurance in number of MT stations")
-    plt.show()
+    if show:
+        plt.figure()
+        plt.clf()
+        plt.hist(edis_obj.mt_periods, bins=uniq_period_list)
+        # plt.hist(edis_obj.mt_periods, bins=1000)
+        plt.title("Histogram with uniq_periods bins")
+        plt.xlabel("Periods")
+        plt.ylabel("Occurance in number of MT stations")
+        plt.show()
 
     # 1 ASK user to input a Pmin and Pmax
 

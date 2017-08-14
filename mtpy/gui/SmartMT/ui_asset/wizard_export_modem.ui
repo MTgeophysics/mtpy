@@ -1209,6 +1209,9 @@
                                          <property name="text">
                                              <string>Air</string>
                                          </property>
+                                         <property name="buddy">
+                                             <cstring>lineEdit_resistivity_air</cstring>
+                                         </property>
                                      </widget>
                                  </item>
                                  <item row="0" column="1">
@@ -1231,6 +1234,9 @@
                                      <widget class="QLabel" name="label_19">
                                          <property name="text">
                                              <string>Sea</string>
+                                         </property>
+                                         <property name="buddy">
+                                             <cstring>lineEdit_resistivity_sea</cstring>
                                          </property>
                                      </widget>
                                  </item>
@@ -1469,18 +1475,32 @@
                      <property name="text">
                          <string>Open Output Directory After Export</string>
                      </property>
+                     <property name="checked">
+                         <bool>true</bool>
+                     </property>
                  </widget>
              </item>
          </layout>
      </widget>
  </widget>
  <tabstops>
+     <tabstop>radioButton_impedance_full</tabstop>
+     <tabstop>radioButton_impedance_off_diagonal</tabstop>
+     <tabstop>radioButton_impedance_none</tabstop>
+     <tabstop>radioButton_vertical_full</tabstop>
+     <tabstop>radioButton_vertical_none</tabstop>
+     <tabstop>radioButton_impedance_sign_plus</tabstop>
+     <tabstop>radioButton_impedance_sign_minus</tabstop>
+     <tabstop>radioButton_vertical_sign_plus</tabstop>
+     <tabstop>radioButton_vertical_sign_minus</tabstop>
+     <tabstop>radioButton_unit_vmt</tabstop>
+     <tabstop>radioButton_unit_mvkmnt</tabstop>
+     <tabstop>radioButton_unit_ohm</tabstop>
   <tabstop>comboBox_error_type</tabstop>
   <tabstop>doubleSpinBox_error_egbert</tabstop>
   <tabstop>doubleSpinBox_error_floor</tabstop>
   <tabstop>doubleSpinBox_error_tipper</tabstop>
   <tabstop>doubleSpinBox_error_value</tabstop>
-  <tabstop>groupBox_3</tabstop>
   <tabstop>checkBox_zxx</tabstop>
   <tabstop>comboBox_error_type_zxx</tabstop>
   <tabstop>checkBox_zxy</tabstop>
@@ -1489,6 +1509,38 @@
   <tabstop>comboBox_error_type_zyx</tabstop>
   <tabstop>checkBox_zyy</tabstop>
   <tabstop>comboBox_error_type_zyy</tabstop>
+     <tabstop>radioButton_format_1</tabstop>
+     <tabstop>radioButton_format_2</tabstop>
+     <tabstop>comboBox_epsg</tabstop>
+     <tabstop>doubleSpinBox_cell_size_east</tabstop>
+     <tabstop>doubleSpinBox_cell_szie_north</tabstop>
+     <tabstop>spinBox_num_layers</tabstop>
+     <tabstop>spinBox_num_air_layers</tabstop>
+     <tabstop>doubleSpinBox_z1_thickness</tabstop>
+     <tabstop>doubleSpinBox_target_depth</tabstop>
+     <tabstop>doubleSpinBox_bottom</tabstop>
+     <tabstop>spinBox_pad_east</tabstop>
+     <tabstop>spinBox_pad_north</tabstop>
+     <tabstop>spinBox_pad_z</tabstop>
+     <tabstop>doubleSpinBox_pad_stretch_h</tabstop>
+     <tabstop>doubleSpinBox_pad_stretch_v</tabstop>
+     <tabstop>comboBox_topography_file</tabstop>
+     <tabstop>pushButton_browse_topography_file</tabstop>
+     <tabstop>radioButton_interpo_method_nearest</tabstop>
+     <tabstop>radioButton_interpo_method_linear</tabstop>
+     <tabstop>radioButton_interpo_method_cubic</tabstop>
+     <tabstop>lineEdit_resistivity_air</tabstop>
+     <tabstop>lineEdit_resistivity_sea</tabstop>
+     <tabstop>doubleSpinBox_smoothing_east</tabstop>
+     <tabstop>doubleSpinBox_smoothing_north</tabstop>
+     <tabstop>doubleSpinBox_smoothing_z</tabstop>
+     <tabstop>spinBox_smoothing_number</tabstop>
+     <tabstop>comboBox_output_name</tabstop>
+     <tabstop>comboBox_directory</tabstop>
+     <tabstop>pushButton_browse</tabstop>
+     <tabstop>lineEdit_full_output</tabstop>
+     <tabstop>pushButton_test</tabstop>
+     <tabstop>checkBox_open_output_dir</tabstop>
  </tabstops>
  <resources/>
  <connections/>
