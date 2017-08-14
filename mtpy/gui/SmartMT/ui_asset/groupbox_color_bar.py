@@ -119,6 +119,11 @@ class Ui_GroupBox_ColorBar(object):
         self.line.setFrameShadow(QtGui.QFrame.Sunken)
         self.line.setObjectName(_fromUtf8("line"))
         self.gridLayout.addWidget(self.line, 1, 2, 1, 2)
+        self.label_2.setBuddy(self.horizontalSlider_x)
+        self.label.setBuddy(self.comboBox_orientation)
+        self.label_5.setBuddy(self.horizontalSlider_width)
+        self.label_3.setBuddy(self.horizontalSlider_y)
+        self.label_6.setBuddy(self.horizontalSlider_height)
 
         self.retranslateUi(GroupBox_ColorBar)
         QtCore.QMetaObject.connectSlotsByName(GroupBox_ColorBar)

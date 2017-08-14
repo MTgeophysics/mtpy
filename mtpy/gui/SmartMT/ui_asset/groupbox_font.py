@@ -105,13 +105,19 @@ class Ui_GroupBox_Font(object):
         self.comboBox_size.setCurrentIndex(2)
         self.comboBox_weight.setCurrentIndex(1)
         QtCore.QMetaObject.connectSlotsByName(GroupBox_Font)
+        GroupBox_Font.setTabOrder(self.checkBox_size, self.comboBox_size)
+        GroupBox_Font.setTabOrder(self.comboBox_size, self.spinBox_size)
+        GroupBox_Font.setTabOrder(self.spinBox_size, self.checkBox_weight)
+        GroupBox_Font.setTabOrder(self.checkBox_weight, self.comboBox_weight)
+        GroupBox_Font.setTabOrder(self.comboBox_weight, self.checkBox_color)
+        GroupBox_Font.setTabOrder(self.checkBox_color, self.comboBox_color)
 
     def retranslateUi(self, GroupBox_Font):
         GroupBox_Font.setTitle(_translate("GroupBox_Font", "Font", None))
         self.checkBox_weight.setText(_translate("GroupBox_Font", "Weight", None))
         self.checkBox_size.setText(_translate("GroupBox_Font", "Size", None))
         self.spinBox_size.setToolTip(_translate("GroupBox_Font", "<html><head/><body><p>Font size</p></body></html>", None))
-        self.spinBox_size.setSuffix(_translate("GroupBox_Font", " points", None))
+        self.spinBox_size.setSuffix(_translate("GroupBox_Font", "points", None))
         self.checkBox_color.setToolTip(_translate("GroupBox_Font", "<html><head/><body><p>Font color</p></body></html>", None))
         self.checkBox_color.setText(_translate("GroupBox_Font", "Color", None))
         self.comboBox_size.setItemText(0, _translate("GroupBox_Font", "xx-small", None))
@@ -138,3 +144,4 @@ class Ui_GroupBox_Font(object):
         self.comboBox_weight.setItemText(4, _translate("GroupBox_Font", "bold", None))
         self.comboBox_weight.setItemText(5, _translate("GroupBox_Font", "heavy", None))
         self.comboBox_weight.setItemText(6, _translate("GroupBox_Font", "black", None))
+

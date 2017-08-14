@@ -16,14 +16,11 @@ except AttributeError:
 
 try:
     _encoding = QtGui.QApplication.UnicodeUTF8
-
-
     def _translate(context, text, disambig):
         return QtGui.QApplication.translate(context, text, disambig, _encoding)
 except AttributeError:
     def _translate(context, text, disambig):
         return QtGui.QApplication.translate(context, text, disambig)
-
 
 class Ui_GroupBox_text_box(object):
     def setupUi(self, GroupBox_text_box):
@@ -171,52 +168,67 @@ class Ui_GroupBox_text_box(object):
         self.doubleSpinBox_y_pad.setObjectName(_fromUtf8("doubleSpinBox_y_pad"))
         self.gridLayout_3.addWidget(self.doubleSpinBox_y_pad, 1, 2, 1, 1)
         self.verticalLayout.addWidget(self.groupBox_padding)
+        self.label_3.setBuddy(self.horizontalSlider_y)
+        self.label_2.setBuddy(self.horizontalSlider_x)
+        self.label_5.setBuddy(self.horizontalSlider_x_pad)
+        self.label_4.setBuddy(self.horizontalSlider_y_pad)
 
         self.retranslateUi(GroupBox_text_box)
         self.comboBox_size.setCurrentIndex(2)
         self.comboBox_weight.setCurrentIndex(1)
         QtCore.QMetaObject.connectSlotsByName(GroupBox_text_box)
+        GroupBox_text_box.setTabOrder(self.groupBox_location, self.horizontalSlider_x)
+        GroupBox_text_box.setTabOrder(self.horizontalSlider_x, self.doubleSpinBox_x)
+        GroupBox_text_box.setTabOrder(self.doubleSpinBox_x, self.horizontalSlider_y)
+        GroupBox_text_box.setTabOrder(self.horizontalSlider_y, self.doubleSpinBox_y)
+        GroupBox_text_box.setTabOrder(self.doubleSpinBox_y, self.checkBox_size)
+        GroupBox_text_box.setTabOrder(self.checkBox_size, self.comboBox_size)
+        GroupBox_text_box.setTabOrder(self.comboBox_size, self.spinBox_size)
+        GroupBox_text_box.setTabOrder(self.spinBox_size, self.checkBox_weight)
+        GroupBox_text_box.setTabOrder(self.checkBox_weight, self.comboBox_weight)
+        GroupBox_text_box.setTabOrder(self.comboBox_weight, self.groupBox_padding)
+        GroupBox_text_box.setTabOrder(self.groupBox_padding, self.horizontalSlider_x_pad)
+        GroupBox_text_box.setTabOrder(self.horizontalSlider_x_pad, self.doubleSpinBox_x_pad)
+        GroupBox_text_box.setTabOrder(self.doubleSpinBox_x_pad, self.horizontalSlider_y_pad)
+        GroupBox_text_box.setTabOrder(self.horizontalSlider_y_pad, self.doubleSpinBox_y_pad)
 
     def retranslateUi(self, GroupBox_text_box):
         GroupBox_text_box.setWindowTitle(_translate("GroupBox_text_box", "GroupBox", None))
-        GroupBox_text_box.setToolTip(_translate("GroupBox_text_box",
-                                                "<html><head/><body><p>Set text box parameters</p><p><br/></p></body></html>",
-                                                None))
+        GroupBox_text_box.setToolTip(_translate("GroupBox_text_box", "<html><head/><body><p>Set text box parameters</p><p><br/></p></body></html>", None))
         GroupBox_text_box.setTitle(_translate("GroupBox_text_box", "Text Box", None))
-        self.groupBox_location.setToolTip(_translate("GroupBox_text_box",
-                                                     "<html><head/><body><p>Location for text label for each resistivity subplot.</p><p>Location is in relative coordinates of the datas.</p><p><br/></p></body></html>",
-                                                     None))
+        self.groupBox_location.setToolTip(_translate("GroupBox_text_box", "<html><head/><body><p>Location for text label for each\n"
+"                            resistivity subplot.</p><p>Location is in relative coordinates of the datas.</p><p><br/></p></body></html>\n"
+"                        ", None))
         self.groupBox_location.setTitle(_translate("GroupBox_text_box", "Location", None))
-        self.label_3.setToolTip(_translate("GroupBox_text_box",
-                                           "<html><head/><body><p>vertical position of the bottom of the color bar in figure between [0, 1], 0 is bottom side.</p></body></html>",
-                                           None))
+        self.label_3.setToolTip(_translate("GroupBox_text_box", "<html><head/><body><p>vertical position of the\n"
+"                                        bottom of the color bar in figure between [0, 1], 0 is bottom side.</p></body></html>\n"
+"                                    ", None))
         self.label_3.setText(_translate("GroupBox_text_box", "Y", None))
-        self.horizontalSlider_x.setToolTip(_translate("GroupBox_text_box",
-                                                      "<html><head/><body><p>lateral position of the left hand corner of the color bar in figure between [0, 1], 0 is the left side.</p></body></html>",
-                                                      None))
-        self.doubleSpinBox_x.setToolTip(_translate("GroupBox_text_box",
-                                                   "<html><head/><body><p>lateral position of the left hand corner of the color bar in figure between [0, 1], 0 is the left side.</p></body></html>",
-                                                   None))
-        self.horizontalSlider_y.setToolTip(_translate("GroupBox_text_box",
-                                                      "<html><head/><body><p>vertical position of the bottom of the color bar in figure between [0, 1], 0 is bottom side.</p></body></html>",
-                                                      None))
-        self.doubleSpinBox_y.setToolTip(_translate("GroupBox_text_box",
-                                                   "<html><head/><body><p>vertical position of the bottom of the color bar in figure between [0, 1], 0 is bottom side.</p></body></html>",
-                                                   None))
-        self.label_2.setToolTip(_translate("GroupBox_text_box",
-                                           "<html><head/><body><p>lateral position of the left hand corner of the color bar in figure between [0, 1], 0 is the left side.</p></body></html>",
-                                           None))
+        self.horizontalSlider_x.setToolTip(_translate("GroupBox_text_box", "<html><head/><body><p>lateral position of the left\n"
+"                                        hand corner of the color bar in figure between [0, 1], 0 is the left side.</p></body></html>\n"
+"                                    ", None))
+        self.doubleSpinBox_x.setToolTip(_translate("GroupBox_text_box", "<html><head/><body><p>lateral position of the left\n"
+"                                        hand corner of the color bar in figure between [0, 1], 0 is the left side.</p></body></html>\n"
+"                                    ", None))
+        self.horizontalSlider_y.setToolTip(_translate("GroupBox_text_box", "<html><head/><body><p>vertical position of the\n"
+"                                        bottom of the color bar in figure between [0, 1], 0 is bottom side.</p></body></html>\n"
+"                                    ", None))
+        self.doubleSpinBox_y.setToolTip(_translate("GroupBox_text_box", "<html><head/><body><p>vertical position of the\n"
+"                                        bottom of the color bar in figure between [0, 1], 0 is bottom side.</p></body></html>\n"
+"                                    ", None))
+        self.label_2.setToolTip(_translate("GroupBox_text_box", "<html><head/><body><p>lateral position of the left\n"
+"                                        hand corner of the color bar in figure between [0, 1], 0 is the left side.</p></body></html>\n"
+"                                    ", None))
         self.label_2.setText(_translate("GroupBox_text_box", "X", None))
-        self.groupBox_2.setToolTip(
-            _translate("GroupBox_text_box", "<html><head/><body><p><br/></p></body></html>", None))
+        self.groupBox_2.setToolTip(_translate("GroupBox_text_box", "<html><head/><body><p><br/></p></body></html>", None))
         self.groupBox_2.setTitle(_translate("GroupBox_text_box", "Font", None))
-        self.checkBox_size.setToolTip(
-            _translate("GroupBox_text_box", "<html><head/><body><p>Size of text for subplot labels</p></body></html>",
-                       None))
+        self.checkBox_size.setToolTip(_translate("GroupBox_text_box", "<html><head/><body><p>Size of text for subplot\n"
+"                                        labels</p></body></html>\n"
+"                                    ", None))
         self.checkBox_size.setText(_translate("GroupBox_text_box", "Size", None))
-        self.comboBox_size.setToolTip(
-            _translate("GroupBox_text_box", "<html><head/><body><p>Size of text for subplot labels</p></body></html>",
-                       None))
+        self.comboBox_size.setToolTip(_translate("GroupBox_text_box", "<html><head/><body><p>Size of text for subplot\n"
+"                                        labels</p></body></html>\n"
+"                                    ", None))
         self.comboBox_size.setItemText(0, _translate("GroupBox_text_box", "xx-small", None))
         self.comboBox_size.setItemText(1, _translate("GroupBox_text_box", "x-small", None))
         self.comboBox_size.setItemText(2, _translate("GroupBox_text_box", "small", None))
@@ -225,15 +237,13 @@ class Ui_GroupBox_text_box(object):
         self.comboBox_size.setItemText(5, _translate("GroupBox_text_box", "x-large", None))
         self.comboBox_size.setItemText(6, _translate("GroupBox_text_box", "xx-large", None))
         self.comboBox_size.setItemText(7, _translate("GroupBox_text_box", "size in points", None))
-        self.spinBox_size.setToolTip(
-            _translate("GroupBox_text_box", "<html><head/><body><p>Size of text for subplot labels</p></body></html>",
-                       None))
-        self.spinBox_size.setSuffix(_translate("GroupBox_text_box", " points", None))
-        self.checkBox_weight.setToolTip(
-            _translate("GroupBox_text_box", "<html><head/><body><p>weight of text label font</p></body></html>", None))
+        self.spinBox_size.setToolTip(_translate("GroupBox_text_box", "<html><head/><body><p>Size of text for subplot\n"
+"                                        labels</p></body></html>\n"
+"                                    ", None))
+        self.spinBox_size.setSuffix(_translate("GroupBox_text_box", "points", None))
+        self.checkBox_weight.setToolTip(_translate("GroupBox_text_box", "<html><head/><body><p>weight of text label font</p></body></html>", None))
         self.checkBox_weight.setText(_translate("GroupBox_text_box", "Weight", None))
-        self.comboBox_weight.setToolTip(
-            _translate("GroupBox_text_box", "<html><head/><body><p>weight of text label font</p></body></html>", None))
+        self.comboBox_weight.setToolTip(_translate("GroupBox_text_box", "<html><head/><body><p>weight of text label font</p></body></html>", None))
         self.comboBox_weight.setItemText(0, _translate("GroupBox_text_box", "light", None))
         self.comboBox_weight.setItemText(1, _translate("GroupBox_text_box", "normal", None))
         self.comboBox_weight.setItemText(2, _translate("GroupBox_text_box", "medium", None))
@@ -242,23 +252,24 @@ class Ui_GroupBox_text_box(object):
         self.comboBox_weight.setItemText(5, _translate("GroupBox_text_box", "heavy", None))
         self.comboBox_weight.setItemText(6, _translate("GroupBox_text_box", "black", None))
         self.groupBox_padding.setTitle(_translate("GroupBox_text_box", "Paddings", None))
-        self.label_5.setToolTip(_translate("GroupBox_text_box",
-                                           "<html><head/><body><p>lateral position of the left hand corner of the color bar in figure between [0, 1], 0 is the left side.</p></body></html>",
-                                           None))
+        self.label_5.setToolTip(_translate("GroupBox_text_box", "<html><head/><body><p>lateral position of the left\n"
+"                                        hand corner of the color bar in figure between [0, 1], 0 is the left side.</p></body></html>\n"
+"                                    ", None))
         self.label_5.setText(_translate("GroupBox_text_box", "X", None))
-        self.horizontalSlider_x_pad.setToolTip(_translate("GroupBox_text_box",
-                                                          "<html><head/><body><p>lateral position of the left hand corner of the color bar in figure between [0, 1], 0 is the left side.</p></body></html>",
-                                                          None))
-        self.doubleSpinBox_x_pad.setToolTip(_translate("GroupBox_text_box",
-                                                       "<html><head/><body><p>lateral position of the left hand corner of the color bar in figure between [0, 1], 0 is the left side.</p></body></html>",
-                                                       None))
-        self.label_4.setToolTip(_translate("GroupBox_text_box",
-                                           "<html><head/><body><p>vertical position of the bottom of the color bar in figure between [0, 1], 0 is bottom side.</p></body></html>",
-                                           None))
+        self.horizontalSlider_x_pad.setToolTip(_translate("GroupBox_text_box", "<html><head/><body><p>lateral position of the left\n"
+"                                        hand corner of the color bar in figure between [0, 1], 0 is the left side.</p></body></html>\n"
+"                                    ", None))
+        self.doubleSpinBox_x_pad.setToolTip(_translate("GroupBox_text_box", "<html><head/><body><p>lateral position of the left\n"
+"                                        hand corner of the color bar in figure between [0, 1], 0 is the left side.</p></body></html>\n"
+"                                    ", None))
+        self.label_4.setToolTip(_translate("GroupBox_text_box", "<html><head/><body><p>vertical position of the\n"
+"                                        bottom of the color bar in figure between [0, 1], 0 is bottom side.</p></body></html>\n"
+"                                    ", None))
         self.label_4.setText(_translate("GroupBox_text_box", "Y", None))
-        self.horizontalSlider_y_pad.setToolTip(_translate("GroupBox_text_box",
-                                                          "<html><head/><body><p>vertical position of the bottom of the color bar in figure between [0, 1], 0 is bottom side.</p></body></html>",
-                                                          None))
-        self.doubleSpinBox_y_pad.setToolTip(_translate("GroupBox_text_box",
-                                                       "<html><head/><body><p>vertical position of the bottom of the color bar in figure between [0, 1], 0 is bottom side.</p></body></html>",
-                                                       None))
+        self.horizontalSlider_y_pad.setToolTip(_translate("GroupBox_text_box", "<html><head/><body><p>vertical position of the\n"
+"                                        bottom of the color bar in figure between [0, 1], 0 is bottom side.</p></body></html>\n"
+"                                    ", None))
+        self.doubleSpinBox_y_pad.setToolTip(_translate("GroupBox_text_box", "<html><head/><body><p>vertical position of the\n"
+"                                        bottom of the color bar in figure between [0, 1], 0 is bottom side.</p></body></html>\n"
+"                                    ", None))
+
