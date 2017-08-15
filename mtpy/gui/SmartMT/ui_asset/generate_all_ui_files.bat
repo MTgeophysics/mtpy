@@ -1,0 +1,1 @@
+for %%f in (*.ui) do (pyuic4.bat "%%f" > %%~nf.py)
