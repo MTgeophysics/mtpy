@@ -129,8 +129,12 @@ class Model(object):
         self.Data = kwargs.pop('Data', None)
 
         # size of cells within station area in meters
-        self.cell_size_east = kwargs.pop('cell_size_east', 500)
-        self.cell_size_north = kwargs.pop('cell_size_north', 500)
+        self.cell_size_east = kwargs.pop('cell_size_east', 1000)
+        self.cell_size_north = kwargs.pop('cell_size_north', 1000)
+
+        #FZ: added this for user input number of cells in the horizontal mesh
+        self.cell_number_ew = kwargs.pop('cell_number_ew', None)
+        self.cell_number_ns = kwargs.pop('cell_number_ns', None)
 
         # padding cells on either side
         self.pad_east = kwargs.pop('pad_east', 7)
@@ -256,11 +260,28 @@ class Model(object):
         """
 
         # find the edges of the grid: bounding box of the survey area.
-        nc_extra = 20
-        west = self.station_locations['rel_east'].min() - self.cell_size_east * nc_extra
-        east = self.station_locations['rel_east'].max() + self.cell_size_east * nc_extra
-        south = self.station_locations['rel_north'].min() - self.cell_size_north * nc_extra
-        north = self.station_locations['rel_north'].max() + self.cell_size_north * nc_extra
+        nc_extra = 20  # extra cells around the stations area
+        if self.cell_number_ew is None:
+            west = self.station_locations['rel_east'].min() - self.cell_size_east * nc_extra
+            east = self.station_locations['rel_east'].max() + self.cell_size_east * nc_extra
+        else:
+            logger.debug("user specified cell number in east-west mesh %s", self.cell_number_ew)
+            center_ew= 0.5*(self.station_locations['rel_east'].min() + self.station_locations['rel_east'].max())
+            cellnumb =  int(self.cell_number_ew/2)
+            west = center_ew - self.cell_size_east *cellnumb
+            east = center_ew + self.cell_size_east *cellnumb
+
+        if self.cell_number_ns is None:
+            south = self.station_locations['rel_north'].min() - self.cell_size_north * nc_extra
+            north = self.station_locations['rel_north'].max() + self.cell_size_north * nc_extra
+        else:
+            logger.debug("user specified cell number in north-south mesh %s", self.cell_number_ns)
+            center_ns = self.station_locations['rel_north'].min() + self.station_locations['rel_north'].max()
+            center_ns = 0.5*center_ns
+            cellnumb = int(self.cell_number_ns / 2)
+            south = center_ns - self.cell_size_north *cellnumb
+            north = center_ns + self.cell_size_north *cellnumb
+
 
         # rounding appropriately.
         westr = np.round(west, -2)
