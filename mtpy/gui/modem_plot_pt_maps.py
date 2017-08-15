@@ -652,12 +652,9 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
             
             #need to add an extra row and column to east and north to make sure 
             #all is plotted see pcolor for details.
-            plot_east = np.append(self.modem_model.grid_east, 
-                                  self.modem_model.grid_east[-1]*1.25)/\
-                                  self.dscale
-            plot_north = np.append(self.modem_model.grid_north, 
-                                   self.modem_model.grid_north[-1]*1.25)/\
-                                   self.dscale
+            plot_east = self.modem_model.grid_east/self.dscale
+            plot_north = self.modem_model.grid_north/self.dscale
+
             
             #make a mesh grid for plotting
             #the 'ij' makes sure the resulting grid is in east, north

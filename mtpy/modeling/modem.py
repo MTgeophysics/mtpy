@@ -34,6 +34,7 @@ import mtpy.analysis.pt as mtpt
 import mtpy.imaging.mtcolors as mtcl
 import scipy.interpolate as spi
 import scipy.stats as stats
+import mtpy.utils.configfile as mtcfg
 
 try:
     from evtk.hl import gridToVTK, pointsToVTK
@@ -1571,6 +1572,33 @@ class Data(object):
         print '--> Wrote station file to {0}'.format(vtk_fn)
         print '-'*50
             
+    def get_parameters(self):
+        """
+        get important parameters for documentation
+        """
+        
+        parameter_list = ['error_type_z',
+                          'error_value_z',
+                          'error_type_tipper',
+                          'error_value_tipper',
+                          'wave_sign_impedance',
+                          'wave_sign_tipper',
+                          'rotation_angle',
+                          'save_path']
+                          
+        parameter_dict = {}
+        for parameter in parameter_list:
+            key = 'data.{0}'.format(parameter)
+            parameter_dict[key] = getattr(self, parameter)
+            
+        parameter_dict['data.period_min'] = self.period_list.min()
+        parameter_dict['data.period_max'] = self.period_list.max()
+        parameter_dict['data.period_num'] = self.period_list.size
+        
+        parameter_dict['data.inv_mode'] = self.inv_mode_dict[self.inv_mode]
+        parameter_dict['data.num_stations'] = self.station_locations.station.size
+        
+        return parameter_dict
         
 #==============================================================================
 # mesh class
@@ -1740,6 +1768,7 @@ class Model(object):
         self.grid_z = None
         
         #resistivity model
+        self.res_starting_value = 100.0
         self.res_model = None
         
         #inital file stuff
@@ -1972,9 +2001,9 @@ class Model(object):
         print '-'*15
         print '   Number of stations = {0}'.format(len(self.station_locations.station))
         print '   Dimensions: '
-        print '      e-w = {0}'.format(self.grid_east.shape[0])
-        print '      n-s = {0}'.format(self.grid_north.shape[0])
-        print '       z  = {0} (without 7 air layers)'.format(self.grid_z.shape[0])
+        print '      e-w = {0}'.format(self.grid_east.size)
+        print '      n-s = {0}'.format(self.grid_north.size)
+        print '       z  = {0} (without 7 air layers)'.format(self.grid_z.size)
         print '   Extensions: '
         print '      e-w = {0:.1f} (m)'.format(self.nodes_east.__abs__().sum())
         print '      n-s = {0:.1f} (m)'.format(self.nodes_north.__abs__().sum())
@@ -2137,7 +2166,7 @@ class Model(object):
         
         #--> plot stations
         ax2.scatter(plot_east,
-                    [0]*self.station_locations.station.shape[0],
+                    [0]*self.station_locations.station.size,
                     marker=station_marker,
                     c=marker_color,
                     s=marker_size)
@@ -2214,6 +2243,11 @@ class Model(object):
                         most row and the first column it reads in is the 
                         western most column.  Similarly, the first plane it 
                         reads in is the Earth's surface.
+            
+            **res_starting_value** : float
+                                     starting model resistivity value, 
+                                     assumes a half space in Ohm-m
+                                     *default* is 100 Ohm-m
                         
             **res_scale** : [ 'loge' | 'log' | 'log10' | 'linear' ]
                             scale of resistivity.  In the ModEM code it 
@@ -2236,27 +2270,28 @@ class Model(object):
             else:
                 self.save_path = os.path.dirname(self.save_path)
                 self.model_fn= self.save_path
-                
-        if self.res_model is None or type(self.res_model) is float or\
-            type(self.res_model) is int:
-            res_model = np.zeros((self.nodes_north.shape[0],
-                                  self.nodes_east.shape[0],
-                                  self.nodes_z.shape[0]))
-                                          
-            if self.res_model is None:
-                res_model[:, :, :] = 100.0
-                self.res_model = res_model
-            else:
-                res_model[:, :, :] = self.res_model
-                self.res_model = res_model
+        
+        # get resistivity model        
+        if self.res_model is None:
+            self.res_model = np.zeros((self.nodes_north.size,
+                                       self.nodes_east.size,
+                                      self.nodes_z.size))
+            self.res_model[:, :, :] = self.res_starting_value
+            
+        elif type(self.res_model) in [float, int]:
+            self.res_starting_value = self.res_model
+            self.res_model = np.zeros((self.nodes_north.size,
+                                       self.nodes_east.size,
+                                      self.nodes_z.size))
+            self.res_model[:, :, :] = self.res_starting_value
         
 
         #--> write file
         ifid = file(self.model_fn, 'w')
         ifid.write('# {0}\n'.format(self.title.upper()))
-        ifid.write('{0:>5}{1:>5}{2:>5}{3:>5} {4}\n'.format(self.nodes_north.shape[0],
-                                              self.nodes_east.shape[0],
-                                              self.nodes_z.shape[0],
+        ifid.write('{0:>5}{1:>5}{2:>5}{3:>5} {4}\n'.format(self.nodes_north.size,
+                                              self.nodes_east.size,
+                                              self.nodes_z.size,
                                               0,  
                                               self.res_scale.upper()))
     
@@ -2287,10 +2322,10 @@ class Model(object):
             write_res_model = self.res_model[::-1, :, :]
             
         #write out the layers from resmodel
-        for zz in range(self.nodes_z.shape[0]):
+        for zz in range(self.nodes_z.size):
             ifid.write('\n')
-            for ee in range(self.nodes_east.shape[0]):
-                for nn in range(self.nodes_north.shape[0]):
+            for ee in range(self.nodes_east.size):
+                for nn in range(self.nodes_north.size):
                     ifid.write('{0:>13.5E}'.format(write_res_model[nn, ee, zz]))
                 ifid.write('\n')
                 
@@ -2514,11 +2549,42 @@ class Model(object):
         print '--> Wrote model file to {0}\n'.format(vtk_fn)
         print '='*26
         print '  model dimensions = {0}'.format(self.res_model.shape)
-        print '     * north         {0}'.format(self.nodes_north.shape[0])
-        print '     * east          {0}'.format(self.nodes_east.shape[0])
-        print '     * depth         {0}'.format(self.nodes_z.shape[0])
+        print '     * north         {0}'.format(self.nodes_north.size)
+        print '     * east          {0}'.format(self.nodes_east.size)
+        print '     * depth         {0}'.format(self.nodes_z.size)
         print '='*26
+        
+    def get_parameters(self):
+        """
+        get important model parameters to write to a file for documentation 
+        later.  
+        
+        
+        """
+
+        parameter_list = ['cell_size_east',
+                          'cell_size_north',
+                          'ew_ext',
+                          'ns_ext',
+                          'pad_east',
+                          'pad_north',
+                          'pad_z',
+                          'pad_num',
+                          'z1_layer',
+                          'z_target_depth',
+                          'z_bottom',
+                          'mesh_rotation_angle',
+                          'res_starting_value',
+                          'save_path']
+                          
+        parameter_dict = {}
+        for parameter in parameter_list:
+            key = 'model.{0}'.format(parameter)
+            parameter_dict[key] = getattr(self, parameter)
             
+        parameter_dict['model.size'] = self.res_model.shape
+        
+        return parameter_dict
 #==============================================================================
 # Control File for inversion
 #==============================================================================
@@ -2917,6 +2983,20 @@ class Covariance(object):
         
         print 'Wrote covariance file to {0}'.format(self.cov_fn)
         
+    def get_parameters(self):
+        
+        parameter_list = ['smoothing_north',
+                          'smoothing_east',
+                          'smoothing_z',
+                          'smoothing_num']
+                          
+        parameter_dict = {}
+        for parameter in parameter_list:
+            key = 'covariance.{0}'.format(parameter)
+            parameter_dict[key] = getattr(self, parameter)
+        
+        return parameter_dict
+        
 #==============================================================================
 # Add in elevation to the model
 #==============================================================================
@@ -2971,8 +3051,6 @@ def read_dem_ascii(ascii_fn, cell_size=500, model_center=(0, 0), rot_90=0):
     lon = np.arange(x0, x0+cs*(nx), cs)
     lat = np.arange(y0, y0+cs*(ny), cs)
     
-    dem_center = gis_tools.project_point_ll2utm(lat.mean(), lon.mean())
-    
     # calculate the lower left and uper right corners of the grid in meters
     ll_en = gis_tools.project_point_ll2utm(lat[0], lon[0])
     ur_en = gis_tools.project_point_ll2utm(lat[-1], lon[-1])
@@ -2991,25 +3069,20 @@ def read_dem_ascii(ascii_fn, cell_size=500, model_center=(0, 0), rot_90=0):
     north = np.arange(ll_en[1], ur_en[1], d_north)
     
     #resample the data accordingly
-    new_east = east[np.arange(0, east.shape[0], num_cells)]
-    new_north = north[np.arange(0, north.shape[0], num_cells)]
-    new_x, new_y = np.meshgrid(np.arange(0, east.shape[0], num_cells),
-                               np.arange(0, north.shape[0], num_cells),
+    new_east = east[np.arange(0, east.size, num_cells)]
+    new_north = north[np.arange(0, north.size, num_cells)]
+    new_x, new_y = np.meshgrid(np.arange(0, east.size, num_cells),
+                               np.arange(0, north.size, num_cells),
                                indexing='ij') 
     elevation = elevation[new_x, new_y]
     
     # estimate the shift of the DEM to relative model coordinates
-#    shift_east = new_east.mean()-model_center[0]
-#    shift_north = new_north.mean()-model_center[1]
-    shift_east = dem_center[0]-model_center[0]
-    shift_north = dem_center[1]-model_center[1]
-    
-    # shift the easting and northing arrays accordingly so the DEM and model
-    # are collocated.
-    new_east = (new_east-new_east.mean())+shift_east
-    new_north = (new_north-new_north.mean())+shift_north
+    mid_east = np.where(new_east >= model_center[0])[0][0]
+    mid_north = np.where(new_north >= model_center[1])[0][0]
 
-    
+    new_east -= new_east[mid_east]
+    new_north -= new_north[mid_north]
+ 
     # need to rotate cause I think I wrote the dem backwards
     if rot_90 == 1 or rot_90 == 3:
         elevation = np.rot90(elevation, rot_90)
@@ -3253,6 +3326,7 @@ def add_topography_to_model(dem_ascii_fn, model_fn, model_center=(0,0),
     m_elev = interpolate_elevation(e_east, e_north, elevation, 
                                    m_obj.grid_east, m_obj.grid_north, pad=3)
     
+    m_elev[np.where(m_elev == -9999.0)] = m_elev[np.where(m_elev != -9999.0)].min()    
     ### 3.) make a resistivity model that incoorporates topography
     mod_elev, elev_nodes_z = make_elevation_model(m_elev, m_obj.nodes_z, 
                                                   elevation_cell=elev_cell) 
@@ -3317,7 +3391,67 @@ def change_data_elevation(data_fn, model_fn, new_data_fn=None, res_air=1e12):
                           elevation=True)
          
     return new_dfn
+    
+#==============================================================================
+# Write inversion parameters to a config type file
+#==============================================================================
+class ModEM_Config(object):
+    """
+    read and write configuration files for how each inversion is run
+    """
+    
+    def __init__(self, **kwargs):
+        self.cfg_dict = {'ModEM_Inversion_Parameters':{}}
+        
+        for key in kwargs.keys():
+            setattr(self, key, kwargs[key])
+        
+    
 
+    def write_config_file(self, save_dir=None, 
+                          config_fn_basename='ModEM_inv.cfg'):
+        """
+        write a config file based on provided information
+        """
+        
+        if save_dir is None:
+            save_dir = os.getcwd()
+            
+        cfg_fn = os.path.join(save_dir, config_fn_basename)
+        
+        if self.cfg_dict is not None:
+            mtcfg.write_dict_to_configfile(self.cfg_dict,
+                                           cfg_fn)
+
+            
+    def add_dict(self, fn=None, obj=None):
+        """
+        add dictionary based on file name or object
+        """
+        
+        if fn is not None:
+            if fn.endswith('.rho'):
+                m_obj = Model()
+                m_obj.read_model_file(fn)
+            elif fn.endswith('.dat'):
+                m_obj = Data()
+                m_obj.read_data_file(fn)
+            elif fn.endswith('.cov'):
+                m_obj = Covariance()
+                m_obj.read_cov_fn(fn)
+        elif obj is not None:
+            m_obj = obj
+        
+        else:
+            raise ModEMError('Need to input a file name or object')
+        
+        add_dict = m_obj.get_parameters()
+        
+        for key in add_dict.keys():
+            self.cfg_dict['ModEM_Inversion_Parameters'][key] = add_dict[key]
+        
+            
+        
 #==============================================================================
 # Manipulate the model to test structures or create a starting model
 #==============================================================================
@@ -6254,12 +6388,12 @@ class PlotSlices(object):
         key_press = event.key
         
         if key_press == 'n':
-            if self.index_north == self.grid_north.shape[0]:
+            if self.index_north == self.grid_north.size:
                 print 'Already at northern most grid cell'
             else:
                 self.index_north += 1
-                if self.index_north > self.grid_north.shape[0]:
-                    self.index_north = self.grid_north.shape[0]
+                if self.index_north > self.grid_north.size:
+                    self.index_north = self.grid_north.size
             self._update_ax_ez()
             self._update_map()
        
@@ -6274,12 +6408,12 @@ class PlotSlices(object):
             self._update_map()
                     
         if key_press == 'e':
-            if self.index_east == self.grid_east.shape[0]:
+            if self.index_east == self.grid_east.size:
                 print 'Already at eastern most grid cell'
             else:
                 self.index_east += 1
-                if self.index_east > self.grid_east.shape[0]:
-                    self.index_east = self.grid_east.shape[0]
+                if self.index_east > self.grid_east.size:
+                    self.index_east = self.grid_east.size
             self._update_ax_nz()
             self._update_map()
        
@@ -6294,12 +6428,12 @@ class PlotSlices(object):
             self._update_map()
                     
         if key_press == 'd':
-            if self.index_vertical == self.grid_z.shape[0]:
+            if self.index_vertical == self.grid_z.size:
                 print 'Already at deepest grid cell'
             else:
                 self.index_vertical += 1
-                if self.index_vertical > self.grid_z.shape[0]:
-                    self.index_vertical = self.grid_z.shape[0]
+                if self.index_vertical > self.grid_z.size:
+                    self.index_vertical = self.grid_z.size
             self._update_ax_en()
             print 'Depth = {0:.5g} ({1})'.format(self.grid_z[self.index_vertical],
                                                  self.map_scale)
@@ -6918,7 +7052,7 @@ class Plot_RMS_Maps(object):
         """
         self.read_residual_fn()
         
-        for f_index in range(self.residual.period_list.shape[0]):
+        for f_index in range(self.residual.period_list.size):
             self.period_index = f_index
             self.plot()
             self.save_figure(fig_format=fig_format)
