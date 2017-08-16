@@ -12,7 +12,7 @@ import numpy as np
 
 from mtpy.gui.SmartMT.gui.figure_setting_guis import ColorBar, Font, AspectRatio, TextBox
 from mtpy.gui.SmartMT.gui.plot_parameter_guis import FrequencySingle, Ellipse, FrequencyTolerance, Arrow, Padding, \
-    Scale, Stretch, LineDir, MeshGrid, PlotControlResistivityPhasePseudoSection, FrequencyIndex, UniqueFrequencies
+    Scale, Stretch, LineDir, MeshGrid, PlotControlResistivityPhasePseudoSection, UniqueFrequencies
 from mtpy.gui.SmartMT.utils.matplotlib_utils import get_next_fig_num
 from mtpy.gui.SmartMT.visualization.visualization_base import VisualizationBase
 from mtpy.imaging.phase_tensor_maps import PlotPhaseTensorMaps
