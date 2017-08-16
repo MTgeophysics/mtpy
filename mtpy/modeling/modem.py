@@ -11,29 +11,35 @@ ModEM
 # revised by JP 2014
 
 """
-
+#==============================================================================
+# Imports
+#==============================================================================
+# general packages
 import os
+import numpy as np
+import scipy.interpolate as spi
+import scipy.stats as stats
+
 import mtpy.core.z as mtz
 import mtpy.core.mt_new as mt
-import numpy as np
-#import mtpy.utils.latlongutmconversion as utm2ll
-import mtpy.utils.gis_tools as gis_tools
-import mtpy.modeling.ws3dinv as ws
+
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MultipleLocator, FormatStrFormatter
 from matplotlib.patches import Ellipse
 from matplotlib.colors import Normalize
 import matplotlib.colorbar as mcb
 import matplotlib.gridspec as gridspec
-import mtpy.imaging.mtplottools as mtplottools
 import matplotlib.widgets as widgets
 import matplotlib.colors as colors
 import matplotlib.cm as cm
+
+import mtpy.utils.gis_tools as gis_tools
+import mtpy.modeling.ws3dinv as ws
+import mtpy.imaging.mtplottools as mtplottools
 import mtpy.utils.exceptions as mtex
 import mtpy.analysis.pt as mtpt
 import mtpy.imaging.mtcolors as mtcl
-import scipy.interpolate as spi
-import scipy.stats as stats
+
 import mtpy.utils.configfile as mtcfg
 
 try:
@@ -351,19 +357,7 @@ class Data(object):
                            array.  All stations are relative to this location
                            for plotting purposes.
     comp_index_dict        dictionary for index values of component of Z and T
-    station_locations      numpy.ndarray structured to store station 
-                           location values.  Keys are:
-                               * station --> station name
-                               * east --> UTM east (m)
-                               * north --> UTM north (m)
-                               * lat --> latitude in decimal degrees
-                               * lon --> longitude in decimal degrees
-                               * elev --> elevation (m)
-                               * zone --> UTM zone
-                               * rel_east -- > relative east location to 
-                                               center_position (m)
-                               * rel_north --> relative north location to 
-                                               center_position (m)
+    station_locations      Stations object
     data_array             numpy.ndarray (num_stations) structured to store
                            data.  keys are:
                                * station --> station name
@@ -388,11 +382,9 @@ class Data(object):
     data_fn                full path to data file 
     data_period_list       period list from all the data
     edi_list               list of full paths to edi files
-    error_tipper           absolute tipper error, all tipper error will be 
-                           set to this value unless you specify error_type as 
-                           'floor' or 'floor_egbert'. 
-                           *default* is .05 for 5%
-    error_type_z           [ 'egbert' | 'mean'| 'median' | 'square' ]
+    error_type_tipper      [ 'abs' | 'floor' ] 
+                           *default* is 'abs'
+    error_type_z           [ 'egbert' | 'mean_od' | 'eigen' ]
                            *default* is 'egbert_floor'
                                 * add '_floor' to any of the above to set the
                                   error as an error floor, otherwise all 
@@ -406,8 +398,9 @@ class Data(object):
                                           error_value_z * eigenvalues(Z[ii])
 
                                            
-    error_value            percentage to multiply Z by to set error
+    error_value_z            percentage to multiply Z by to set error
                            *default* is 5 for 5% of Z as error
+    error_value_tipper     absolute error between 0 and 1.
     fn_basename            basename of data file. *default* is 'ModEM_Data.dat'
     header_strings         strings for header of data file following the format
                            outlined in the ModEM documentation
@@ -435,7 +428,9 @@ class Data(object):
     save_path              path to save data file to
     units                  [ [V/m]/[T] | [mV/km]/[nT] | Ohm ] units of Z
                            *default* is [mV/km]/[nT]
-    wave_sign              [ + | - ] sign of time dependent wave.  
+    wave_sign_impedance    [ + | - ] sign of time dependent wave.  
+                           *default* is '+' as positive downwards. 
+    wave_sign_tipper       [ + | - ] sign of time dependent wave.  
                            *default* is '+' as positive downwards. 
     ====================== ====================================================
    
@@ -506,28 +501,7 @@ class Data(object):
         >>> mdr.inv_mode = '3'
         >>> mdr.write_data_file(save_path=r"/home/modem/inv2")
         
-    :Example 5 --> create mesh first then data file: ::
-    
-        >>> import mtpy.modeling.modem as modem
-        >>> import os
-        >>> #1) make a list of all .edi files that will be inverted for 
-        >>> edi_path = r"/home/EDI_Files"
-        >>> edi_list = [os.path.join(edi_path, edi) 
-                        for edi in os.listdir(edi_path) 
-        >>> ...         if edi.find('.edi') > 0]
-        >>> #2) make a grid from the stations themselves with 200m cell spacing
-        >>> mmesh = modem.Model(edi_list=edi_list, cell_size_east=200, 
-        >>> ...                cell_size_north=200)
-        >>> mmesh.make_mesh()
-        >>> # check to see if the mesh is what you think it should be
-        >>> mmesh.plot_mesh()
-        >>> # all is good write the mesh file
-        >>> mmesh.write_model_file(save_path=r"/home/modem/Inv1")
-        >>> # create data file
-        >>> md = modem.Data(edi_list, station_locations=mmesh.station_locations)
-        >>> md.write_data_file(save_path=r"/home/modem/Inv1")
-        
-    :Example 6 --> rotate data: ::
+    :Example 5 --> rotate data: ::
         
         >>> md.rotation_angle = 60
         >>> md.write_data_file(save_path=r"/home/modem/Inv1")
