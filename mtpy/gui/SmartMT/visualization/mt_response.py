@@ -91,7 +91,7 @@ class MTResponse(VisualizationBase):
     def plot_name():
         return "MT Response"
 
-    def get_parameter_str(self):
+    def get_plot_tooltip(self):
         return "station=%s, rotation=%.2f°, plot_num=%d" % (
             self._station.station,
             self._params['rot_z'],
@@ -118,7 +118,7 @@ subplots such as strike, skew and phase tensor ellipses.</p>
 
 
 class MultipleMTResponses(VisualizationBase):
-    def get_parameter_str(self):
+    def get_plot_tooltip(self):
         return "rotation=%.2f°, plot_num=%d" % (
             self._params['rot_z'],
             self._params['plot_num'],

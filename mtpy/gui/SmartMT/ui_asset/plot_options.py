@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'C:\Users\u64132\Documents\mtpy2\mtpy\gui\SmartMT\ui_asset\plot_options.ui'
+# Form implementation generated from reading ui file 'plot_options.ui'
 #
 # Created by: PyQt4 UI code generator 4.11.4
 #

@@ -53,6 +53,7 @@ class StartQt4(QtGui.QMainWindow):
         self.subwindows = {}
         # enable export if the activated subwindow is a image window
         self.ui.mdiArea.subWindowActivated.connect(self._subwindow_activated)
+        self.setWindowState(QtCore.Qt.WindowMaximized)
 
     def _subwindow_activated(self, subwindow):
         if subwindow and isinstance(subwindow.widget(), MPLCanvasWidget):

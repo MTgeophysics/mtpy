@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'C:\Users\u64132\Documents\mtpy2\mtpy\gui\SmartMT\ui_asset\wizard_export_modem.ui'
+# Form implementation generated from reading ui file 'wizard_export_modem.ui'
 #
 # Created by: PyQt4 UI code generator 4.11.4
 #
@@ -345,6 +345,24 @@ class Ui_Wizard_esport_modem(object):
         self.doubleSpinBox_cell_szie_north.setProperty("value", 500.0)
         self.doubleSpinBox_cell_szie_north.setObjectName(_fromUtf8("doubleSpinBox_cell_szie_north"))
         self.formLayout.setWidget(1, QtGui.QFormLayout.FieldRole, self.doubleSpinBox_cell_szie_north)
+        self.checkBox_cell_num_ew = QtGui.QCheckBox(self.groupBox_7)
+        self.checkBox_cell_num_ew.setObjectName(_fromUtf8("checkBox_cell_num_ew"))
+        self.formLayout.setWidget(2, QtGui.QFormLayout.LabelRole, self.checkBox_cell_num_ew)
+        self.checkBox_cell_num_ns = QtGui.QCheckBox(self.groupBox_7)
+        self.checkBox_cell_num_ns.setObjectName(_fromUtf8("checkBox_cell_num_ns"))
+        self.formLayout.setWidget(3, QtGui.QFormLayout.LabelRole, self.checkBox_cell_num_ns)
+        self.spinBox_cell_num_ew = QtGui.QSpinBox(self.groupBox_7)
+        self.spinBox_cell_num_ew.setEnabled(False)
+        self.spinBox_cell_num_ew.setMinimum(1)
+        self.spinBox_cell_num_ew.setMaximum(1888888888)
+        self.spinBox_cell_num_ew.setObjectName(_fromUtf8("spinBox_cell_num_ew"))
+        self.formLayout.setWidget(2, QtGui.QFormLayout.FieldRole, self.spinBox_cell_num_ew)
+        self.spinBox_cell_num_ns = QtGui.QSpinBox(self.groupBox_7)
+        self.spinBox_cell_num_ns.setEnabled(False)
+        self.spinBox_cell_num_ns.setMinimum(1)
+        self.spinBox_cell_num_ns.setMaximum(1888888888)
+        self.spinBox_cell_num_ns.setObjectName(_fromUtf8("spinBox_cell_num_ns"))
+        self.formLayout.setWidget(3, QtGui.QFormLayout.FieldRole, self.spinBox_cell_num_ns)
         self.gridLayout_mesh.addWidget(self.groupBox_7, 0, 0, 1, 1)
         self.groupBox_8 = QtGui.QGroupBox(self.wizardPage_mesh)
         self.groupBox_8.setObjectName(_fromUtf8("groupBox_8"))
@@ -803,6 +821,8 @@ class Ui_Wizard_esport_modem(object):
 "                                         direction</p></body></html>\n"
 "                                     ", None))
         self.doubleSpinBox_cell_szie_north.setSuffix(_translate("Wizard_esport_modem", "m", None))
+        self.checkBox_cell_num_ew.setText(_translate("Wizard_esport_modem", "Number of Cells (East)", None))
+        self.checkBox_cell_num_ns.setText(_translate("Wizard_esport_modem", "Number of Cells (North)", None))
         self.groupBox_8.setTitle(_translate("Wizard_esport_modem", "Vertical", None))
         self.label_15.setToolTip(_translate("Wizard_esport_modem", "<html><head/><body><p>total number of vertical\n"
 "                                         layers in the model</p></body></html>\n"
@@ -837,7 +857,7 @@ class Ui_Wizard_esport_modem(object):
         self.spinBox_pad_north.setToolTip(_translate("Wizard_esport_modem", "<html><head/><body><p>number of padding cells on\n"
 "                                         the North and South directions</p></body></html>\n"
 "                                     ", None))
-        self.spinBox_pad_north.setSuffix(_translate("Wizard_esport_modem", " cells", None))
+        self.spinBox_pad_north.setSuffix(_translate("Wizard_esport_modem", "cells", None))
         self.label_4.setToolTip(_translate("Wizard_esport_modem", "<html><head/><body><p>Number of padding cells on\n"
 "                                         East and West directions</p></body></html>\n"
 "                                     ", None))
@@ -853,7 +873,7 @@ class Ui_Wizard_esport_modem(object):
         self.spinBox_pad_z.setToolTip(_translate("Wizard_esport_modem", "<html><head/><body><p>number of vertical padding\n"
 "                                         cells</p></body></html>\n"
 "                                     ", None))
-        self.spinBox_pad_z.setSuffix(_translate("Wizard_esport_modem", " cells", None))
+        self.spinBox_pad_z.setSuffix(_translate("Wizard_esport_modem", "cells", None))
         self.label_7.setToolTip(_translate("Wizard_esport_modem", "<html><head/><body><p>factor to increase by in\n"
 "                                         padding cells (horizontal)</p></body></html>\n"
 "                                     ", None))
@@ -864,7 +884,7 @@ class Ui_Wizard_esport_modem(object):
         self.spinBox_pad_east.setToolTip(_translate("Wizard_esport_modem", "<html><head/><body><p>Number of padding cells on\n"
 "                                         East and West directions</p></body></html>\n"
 "                                     ", None))
-        self.spinBox_pad_east.setSuffix(_translate("Wizard_esport_modem", " cells", None))
+        self.spinBox_pad_east.setSuffix(_translate("Wizard_esport_modem", "cells", None))
         self.wizardPage_topography.setTitle(_translate("Wizard_esport_modem", "Topography", None))
         self.wizardPage_topography.setSubTitle(_translate("Wizard_esport_modem", "After creating the mesh grid, the topography file is used to define resistivity model.", None))
         self.label_17.setText(_translate("Wizard_esport_modem", "Topography File", None))

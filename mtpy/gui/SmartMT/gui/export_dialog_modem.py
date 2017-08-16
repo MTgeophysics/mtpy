@@ -69,6 +69,10 @@ class ExportDialogModEm(QtGui.QWizard):
         self.ui.comboBox_directory.addItem(os.path.expanduser("~"))
         self._update_full_output()
 
+        # set maximum
+        # self.ui.spinBox_cell_num_ew.setMaximum(0xFFFFFFFF)
+        # self.ui.spinBox_cell_num_ns.setMaximum(0xFFFFFFFF)
+
         # tooltip for error types
         for index, tooltip in enumerate(self._error_type_tool_tip):
             self.ui.comboBox_error_type.setItemData(index, tooltip, QtCore.Qt.ToolTipRole)
@@ -110,6 +114,13 @@ class ExportDialogModEm(QtGui.QWizard):
         self.ui.pushButton_browse_topography_file.clicked.connect(self._browse_topography_file)
 
         self.ui.pushButton_test.clicked.connect(self._test_button_clicked)
+
+        self.ui.checkBox_cell_num_ew.stateChanged.connect(
+            lambda p_int: self.ui.spinBox_cell_num_ew.setEnabled(p_int != 0)
+        )
+        self.ui.checkBox_cell_num_ns.stateChanged.connect(
+            lambda p_int: self.ui.spinBox_cell_num_ns.setEnabled(p_int != 0)
+        )
 
         # register fields
         self.ui.wizardPage_output.registerField('output_path*', self.ui.lineEdit_full_output)
@@ -354,7 +365,11 @@ class ExportDialogModEm(QtGui.QWizard):
             'n_layers': self.ui.spinBox_num_layers.value(),
             'n_airlayers': self.ui.spinBox_num_air_layers.value(),
             'mesh_rotation_angle': self._mesh_rotation_ui.get_rotation_in_degree(),
-            'epsg': self.get_epsg()
+            'epsg': self.get_epsg(),
+            'cell_number_ew': self.ui.spinBox_cell_num_ew.value()
+                if self.ui.checkBox_cell_num_ew.isChecked() else None,
+            'cell_number_ns': self.ui.spinBox_cell_num_ns.value()
+                if self.ui.checkBox_cell_num_ns.isChecked() else None
         }
         return kwargs
 

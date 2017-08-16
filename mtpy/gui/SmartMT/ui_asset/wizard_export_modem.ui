@@ -6,16 +6,16 @@
    <rect>
     <x>0</x>
     <y>0</y>
-       <width>569</width>
-       <height>416</height>
+    <width>569</width>
+    <height>416</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Export to ModEM Data File</string>
   </property>
-     <property name="wizardStyle">
-         <enum>QWizard::ModernStyle</enum>
-     </property>
+  <property name="wizardStyle">
+   <enum>QWizard::ModernStyle</enum>
+  </property>
   <widget class="QWizardPage" name="wizardPage_intro">
    <property name="title">
     <string>Introduction</string>
@@ -23,203 +23,203 @@
    <property name="subTitle">
     <string>This wizard will help you to export the selected stations to the ModEM data files.</string>
    </property>
-      <layout class="QGridLayout" name="gridLayout_4"/>
+   <layout class="QGridLayout" name="gridLayout_4"/>
   </widget>
-     <widget class="QWizardPage" name="wizardPage_inversion_mode">
-         <property name="title">
-             <string>Inversion Mode</string>
-         </property>
-         <layout class="QGridLayout" name="gridLayout_7">
+  <widget class="QWizardPage" name="wizardPage_inversion_mode">
+   <property name="title">
+    <string>Inversion Mode</string>
+   </property>
+   <layout class="QGridLayout" name="gridLayout_7">
     <item row="0" column="0">
-        <widget class="QGroupBox" name="groupBox">
-            <property name="title">
-                <string>Impedance Components</string>
+     <widget class="QGroupBox" name="groupBox">
+      <property name="title">
+       <string>Impedance Components</string>
       </property>
-            <layout class="QVBoxLayout" name="verticalLayout">
-                <item>
-                    <widget class="QRadioButton" name="radioButton_impedance_full">
-                        <property name="toolTip">
-                            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;zxx, zxy, zyx, and zyy&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                        </property>
-                        <property name="text">
-                            <string>All</string>
-                        </property>
-                        <property name="checked">
-                            <bool>true</bool>
-                        </property>
-                    </widget>
-                </item>
-                <item>
-                    <widget class="QRadioButton" name="radioButton_impedance_off_diagonal">
-                        <property name="toolTip">
-                            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;zxy and zyx&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                        </property>
-                        <property name="text">
-                            <string>Off Diagonal</string>
-                        </property>
-                    </widget>
-                </item>
-                <item>
-                    <widget class="QRadioButton" name="radioButton_impedance_none">
-                        <property name="text">
-                            <string>None</string>
-                        </property>
-                    </widget>
-                </item>
-            </layout>
+      <layout class="QVBoxLayout" name="verticalLayout">
+       <item>
+        <widget class="QRadioButton" name="radioButton_impedance_full">
+         <property name="toolTip">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;zxx, zxy, zyx, and zyy&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+         <property name="text">
+          <string>All</string>
+         </property>
+         <property name="checked">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QRadioButton" name="radioButton_impedance_off_diagonal">
+         <property name="toolTip">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;zxy and zyx&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+         <property name="text">
+          <string>Off Diagonal</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QRadioButton" name="radioButton_impedance_none">
+         <property name="text">
+          <string>None</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
      </widget>
     </item>
-             <item row="0" column="1">
-                 <widget class="QGroupBox" name="groupBox_2">
-                     <property name="title">
-                         <string>Vertical Components</string>
+    <item row="0" column="1">
+     <widget class="QGroupBox" name="groupBox_2">
+      <property name="title">
+       <string>Vertical Components</string>
       </property>
-                     <layout class="QVBoxLayout" name="verticalLayout_2">
-                         <item>
-                             <widget class="QRadioButton" name="radioButton_vertical_full">
-                                 <property name="toolTip">
-                                     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;tx and ty&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                                 </property>
-                                 <property name="text">
-                                     <string>All</string>
-                                 </property>
-                                 <property name="checked">
-                                     <bool>true</bool>
-                                 </property>
-                             </widget>
-                         </item>
-                         <item>
-                             <widget class="QRadioButton" name="radioButton_vertical_none">
-                                 <property name="text">
-                                     <string>None</string>
-                                 </property>
-                             </widget>
-                         </item>
-                     </layout>
+      <layout class="QVBoxLayout" name="verticalLayout_2">
+       <item>
+        <widget class="QRadioButton" name="radioButton_vertical_full">
+         <property name="toolTip">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;tx and ty&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+         <property name="text">
+          <string>All</string>
+         </property>
+         <property name="checked">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QRadioButton" name="radioButton_vertical_none">
+         <property name="text">
+          <string>None</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
      </widget>
     </item>
-             <item row="1" column="1">
-                 <widget class="QGroupBox" name="groupBox_z_unit">
+    <item row="1" column="1">
+     <widget class="QGroupBox" name="groupBox_z_unit">
       <property name="toolTip">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Units of Z&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Units of Z&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
       </property>
-                     <property name="title">
-                         <string>Z-Unit</string>
+      <property name="title">
+       <string>Z-Unit</string>
       </property>
-                     <layout class="QVBoxLayout" name="verticalLayout_6">
-                         <item>
-                             <widget class="QRadioButton" name="radioButton_unit_vmt">
-                                 <property name="text">
-                                     <string>[V/m]/[T]</string>
-                                 </property>
-                             </widget>
-                         </item>
-                         <item>
-                             <widget class="QRadioButton" name="radioButton_unit_mvkmnt">
-                                 <property name="text">
-                                     <string>[mV/km]/[nT]</string>
-                                 </property>
-                                 <property name="checked">
-                                     <bool>true</bool>
-                                 </property>
-                             </widget>
-                         </item>
-                         <item>
-                             <widget class="QRadioButton" name="radioButton_unit_ohm">
-                                 <property name="text">
-                                     <string>Ohm</string>
-                                 </property>
-                             </widget>
-                         </item>
-                     </layout>
-                 </widget>
-             </item>
-             <item row="1" column="0">
-                 <widget class="QGroupBox" name="groupBox_4">
-                     <property name="sizePolicy">
-                         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-                             <horstretch>0</horstretch>
-                             <verstretch>0</verstretch>
-                         </sizepolicy>
-                     </property>
-                     <property name="toolTip">
-                         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Sign of time depend wave. Default is '+'
+      <layout class="QVBoxLayout" name="verticalLayout_6">
+       <item>
+        <widget class="QRadioButton" name="radioButton_unit_vmt">
+         <property name="text">
+          <string>[V/m]/[T]</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QRadioButton" name="radioButton_unit_mvkmnt">
+         <property name="text">
+          <string>[mV/km]/[nT]</string>
+         </property>
+         <property name="checked">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QRadioButton" name="radioButton_unit_ohm">
+         <property name="text">
+          <string>Ohm</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </item>
+    <item row="1" column="0">
+     <widget class="QGroupBox" name="groupBox_4">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="toolTip">
+       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Sign of time depend wave. Default is '+'
                              as positive downwards.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
                          </string>
-                     </property>
-                     <property name="title">
-                         <string>Wave Sign</string>
-                     </property>
-                     <layout class="QVBoxLayout" name="verticalLayout_3">
-                         <item>
-                             <widget class="QGroupBox" name="groupBox_sign_impedance">
-                                 <property name="sizePolicy">
-                                     <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-                                         <horstretch>0</horstretch>
-                                         <verstretch>0</verstretch>
-                                     </sizepolicy>
-                                 </property>
-                                 <property name="title">
-                                     <string>Impedances</string>
-                                 </property>
-                                 <layout class="QVBoxLayout" name="verticalLayout_4">
-                                     <item>
-                                         <widget class="QRadioButton" name="radioButton_impedance_sign_plus">
-                                             <property name="text">
-                                                 <string>+</string>
-                                             </property>
-                                             <property name="checked">
-                                                 <bool>true</bool>
-                                             </property>
-                                         </widget>
-                                     </item>
-                                     <item>
-                                         <widget class="QRadioButton" name="radioButton_impedance_sign_minus">
-                                             <property name="text">
-                                                 <string>-</string>
-                                             </property>
-                                         </widget>
-                                     </item>
-                                 </layout>
-                             </widget>
-                         </item>
-                         <item>
-                             <widget class="QGroupBox" name="groupBox_sign_vertical">
-                                 <property name="sizePolicy">
-                                     <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-                                         <horstretch>0</horstretch>
-                                         <verstretch>0</verstretch>
-                                     </sizepolicy>
-                                 </property>
-                                 <property name="title">
-                                     <string>Vertical/Tipper</string>
-                                 </property>
-                                 <layout class="QVBoxLayout" name="verticalLayout_5">
-                                     <item>
-                                         <widget class="QRadioButton" name="radioButton_vertical_sign_plus">
-                                             <property name="text">
-                                                 <string>+</string>
-                                             </property>
-                                             <property name="checked">
-                                                 <bool>true</bool>
-                                             </property>
-                                         </widget>
-                                     </item>
-                                     <item>
-                                         <widget class="QRadioButton" name="radioButton_vertical_sign_minus">
-                                             <property name="text">
-                                                 <string>-</string>
-                                             </property>
-                                         </widget>
-                                     </item>
-                                 </layout>
-                             </widget>
-                         </item>
-                     </layout>
-     </widget>
-             </item>
+      </property>
+      <property name="title">
+       <string>Wave Sign</string>
+      </property>
+      <layout class="QVBoxLayout" name="verticalLayout_3">
+       <item>
+        <widget class="QGroupBox" name="groupBox_sign_impedance">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="title">
+          <string>Impedances</string>
+         </property>
+         <layout class="QVBoxLayout" name="verticalLayout_4">
+          <item>
+           <widget class="QRadioButton" name="radioButton_impedance_sign_plus">
+            <property name="text">
+             <string>+</string>
+            </property>
+            <property name="checked">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QRadioButton" name="radioButton_impedance_sign_minus">
+            <property name="text">
+             <string>-</string>
+            </property>
+           </widget>
+          </item>
          </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QGroupBox" name="groupBox_sign_vertical">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="title">
+          <string>Vertical/Tipper</string>
+         </property>
+         <layout class="QVBoxLayout" name="verticalLayout_5">
+          <item>
+           <widget class="QRadioButton" name="radioButton_vertical_sign_plus">
+            <property name="text">
+             <string>+</string>
+            </property>
+            <property name="checked">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QRadioButton" name="radioButton_vertical_sign_minus">
+            <property name="text">
+             <string>-</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+      </layout>
      </widget>
+    </item>
+   </layout>
+  </widget>
   <widget class="QWizardPage" name="wizardPage_error_type">
    <property name="title">
     <string>Error Type</string>
@@ -687,818 +687,858 @@
     </item>
    </layout>
   </widget>
-     <widget class="QWizardPage" name="wizardPage_data">
-         <property name="title">
-             <string>Other Data Settings</string>
+  <widget class="QWizardPage" name="wizardPage_data">
+   <property name="title">
+    <string>Other Data Settings</string>
+   </property>
+   <layout class="QHBoxLayout" name="horizontalLayout_data">
+    <item>
+     <layout class="QVBoxLayout" name="verticalLayout_11">
+      <item>
+       <widget class="QGroupBox" name="groupBox_5">
+        <property name="title">
+         <string>Data File Format</string>
+        </property>
+        <layout class="QVBoxLayout" name="verticalLayout_7">
+         <item>
+          <widget class="QRadioButton" name="radioButton_format_1">
+           <property name="text">
+            <string>Type 1</string>
+           </property>
+           <property name="checked">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QRadioButton" name="radioButton_format_2">
+           <property name="text">
+            <string>Type 2</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+      </item>
+      <item>
+       <widget class="QGroupBox" name="groupBox_12">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="title">
+         <string>EPSG</string>
+        </property>
+        <layout class="QVBoxLayout" name="verticalLayout_9">
+         <item>
+          <widget class="QComboBox" name="comboBox_epsg"/>
+         </item>
+        </layout>
+       </widget>
+      </item>
+     </layout>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QWizardPage" name="wizardPage_mesh">
+   <property name="title">
+    <string>Mesh Settings</string>
+   </property>
+   <layout class="QGridLayout" name="gridLayout_mesh">
+    <item row="0" column="0">
+     <widget class="QGroupBox" name="groupBox_7">
+      <property name="title">
+       <string>Horizontal Plane</string>
+      </property>
+      <layout class="QFormLayout" name="formLayout">
+       <item row="0" column="0">
+        <widget class="QLabel" name="label_2">
+         <property name="toolTip">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;mesh block width in east-west
+                                         direction&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
+                                     </string>
          </property>
-         <layout class="QHBoxLayout" name="horizontalLayout_data">
-             <item>
-                 <layout class="QVBoxLayout" name="verticalLayout_11">
-                     <item>
-                         <widget class="QGroupBox" name="groupBox_5">
-                             <property name="title">
-                                 <string>Data File Format</string>
-                             </property>
-                             <layout class="QVBoxLayout" name="verticalLayout_7">
-                                 <item>
-                                     <widget class="QRadioButton" name="radioButton_format_1">
-                                         <property name="text">
-                                             <string>Type 1</string>
-                                         </property>
-                                         <property name="checked">
-                                             <bool>true</bool>
-                                         </property>
-                                     </widget>
-                                 </item>
-                                 <item>
-                                     <widget class="QRadioButton" name="radioButton_format_2">
-                                         <property name="text">
-                                             <string>Type 2</string>
-                                         </property>
-                                     </widget>
-                                 </item>
-                             </layout>
-                         </widget>
-                     </item>
-                     <item>
-                         <widget class="QGroupBox" name="groupBox_12">
-                             <property name="sizePolicy">
-                                 <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-                                     <horstretch>0</horstretch>
-                                     <verstretch>0</verstretch>
-                                 </sizepolicy>
-                             </property>
-                             <property name="title">
-                                 <string>EPSG</string>
-                             </property>
-                             <layout class="QVBoxLayout" name="verticalLayout_9">
-                                 <item>
-                                     <widget class="QComboBox" name="comboBox_epsg"/>
-                                 </item>
-                             </layout>
-                         </widget>
-                     </item>
-                 </layout>
-             </item>
-         </layout>
+         <property name="text">
+          <string>Cell Size East</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="1">
+        <widget class="QDoubleSpinBox" name="doubleSpinBox_cell_size_east">
+         <property name="toolTip">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;mesh block width in east-west
+                                         direction&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
+                                     </string>
+         </property>
+         <property name="suffix">
+          <string>m</string>
+         </property>
+         <property name="maximum">
+          <double>6371000.000000000000000</double>
+         </property>
+         <property name="value">
+          <double>500.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="0">
+        <widget class="QLabel" name="label_3">
+         <property name="toolTip">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;mesh block width in north
+                                         direction&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
+                                     </string>
+         </property>
+         <property name="text">
+          <string>Cell Size North</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="1">
+        <widget class="QDoubleSpinBox" name="doubleSpinBox_cell_szie_north">
+         <property name="toolTip">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;mesh block width in north
+                                         direction&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
+                                     </string>
+         </property>
+         <property name="suffix">
+          <string>m</string>
+         </property>
+         <property name="maximum">
+          <double>6371000.000000000000000</double>
+         </property>
+         <property name="value">
+          <double>500.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="0">
+        <widget class="QCheckBox" name="checkBox_cell_num_ew">
+         <property name="text">
+          <string>Number of Cells (East)</string>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="0">
+        <widget class="QCheckBox" name="checkBox_cell_num_ns">
+         <property name="text">
+          <string>Number of Cells (North)</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="1">
+        <widget class="QSpinBox" name="spinBox_cell_num_ew">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
+         <property name="minimum">
+          <number>1</number>
+         </property>
+         <property name="maximum">
+          <number>1888888888</number>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="1">
+        <widget class="QSpinBox" name="spinBox_cell_num_ns">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
+         <property name="minimum">
+          <number>1</number>
+         </property>
+         <property name="maximum">
+          <number>1888888888</number>
+         </property>
+        </widget>
+       </item>
+      </layout>
      </widget>
-     <widget class="QWizardPage" name="wizardPage_mesh">
-         <property name="title">
-             <string>Mesh Settings</string>
-         </property>
-         <layout class="QGridLayout" name="gridLayout_mesh">
-             <item row="0" column="0">
-                 <widget class="QGroupBox" name="groupBox_7">
-                     <property name="title">
-                         <string>Horizontal Plane</string>
-                     </property>
-                     <layout class="QFormLayout" name="formLayout">
-                         <item row="0" column="0">
-                             <widget class="QLabel" name="label_2">
-                                 <property name="toolTip">
-                                     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;mesh block width in east-west
-                                         direction&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
-                                     </string>
-                                 </property>
-                                 <property name="text">
-                                     <string>Cell Size East</string>
-                                 </property>
-                             </widget>
-                         </item>
-                         <item row="0" column="1">
-                             <widget class="QDoubleSpinBox" name="doubleSpinBox_cell_size_east">
-                                 <property name="toolTip">
-                                     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;mesh block width in east-west
-                                         direction&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
-                                     </string>
-                                 </property>
-                                 <property name="suffix">
-                                     <string>m</string>
-                                 </property>
-                                 <property name="maximum">
-                                     <double>6371000.000000000000000</double>
-                                 </property>
-                                 <property name="value">
-                                     <double>500.000000000000000</double>
-                                 </property>
-                             </widget>
-                         </item>
-                         <item row="1" column="0">
-                             <widget class="QLabel" name="label_3">
-                                 <property name="toolTip">
-                                     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;mesh block width in north
-                                         direction&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
-                                     </string>
-                                 </property>
-                                 <property name="text">
-                                     <string>Cell Size North</string>
-                                 </property>
-                             </widget>
-                         </item>
-                         <item row="1" column="1">
-                             <widget class="QDoubleSpinBox" name="doubleSpinBox_cell_szie_north">
-                                 <property name="toolTip">
-                                     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;mesh block width in north
-                                         direction&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
-                                     </string>
-                                 </property>
-                                 <property name="suffix">
-                                     <string>m</string>
-                                 </property>
-                                 <property name="maximum">
-                                     <double>6371000.000000000000000</double>
-                                 </property>
-                                 <property name="value">
-                                     <double>500.000000000000000</double>
-                                 </property>
-                             </widget>
-                         </item>
-                     </layout>
-                 </widget>
-             </item>
-             <item row="0" column="1">
-                 <widget class="QGroupBox" name="groupBox_8">
-                     <property name="title">
-                         <string>Vertical</string>
-                     </property>
-                     <layout class="QFormLayout" name="formLayout_2">
-                         <item row="0" column="0">
-                             <widget class="QLabel" name="label_15">
-                                 <property name="toolTip">
-                                     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;total number of vertical
+    </item>
+    <item row="0" column="1">
+     <widget class="QGroupBox" name="groupBox_8">
+      <property name="title">
+       <string>Vertical</string>
+      </property>
+      <layout class="QFormLayout" name="formLayout_2">
+       <item row="0" column="0">
+        <widget class="QLabel" name="label_15">
+         <property name="toolTip">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;total number of vertical
                                          layers in the model&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
                                      </string>
-                                 </property>
-                                 <property name="text">
-                                     <string>Number of Layers</string>
-                                 </property>
-                             </widget>
-                         </item>
-                         <item row="0" column="1">
-                             <widget class="QSpinBox" name="spinBox_num_layers">
-                                 <property name="toolTip">
-                                     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;total number of vertical
+         </property>
+         <property name="text">
+          <string>Number of Layers</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="1">
+        <widget class="QSpinBox" name="spinBox_num_layers">
+         <property name="toolTip">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;total number of vertical
                                          layers in the model&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
                                      </string>
-                                 </property>
-                                 <property name="maximum">
-                                     <number>6471000</number>
-                                 </property>
-                                 <property name="value">
-                                     <number>30</number>
-                                 </property>
-                             </widget>
-                         </item>
-                         <item row="1" column="0">
-                             <widget class="QLabel" name="label_16">
-                                 <property name="toolTip">
-                                     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;number of air layers&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                                 </property>
-                                 <property name="text">
-                                     <string>Number of Air Layers</string>
-                                 </property>
-                             </widget>
-                         </item>
-                         <item row="1" column="1">
-                             <widget class="QSpinBox" name="spinBox_num_air_layers">
-                                 <property name="toolTip">
-                                     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;number of air layers&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                                 </property>
-                             </widget>
-                         </item>
-                         <item row="2" column="0">
-                             <widget class="QLabel" name="label_12">
-                                 <property name="toolTip">
-                                     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;thickness of the first layer&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                                 </property>
-                                 <property name="text">
-                                     <string>First Layer Thickness</string>
-                                 </property>
-                             </widget>
-                         </item>
-                         <item row="2" column="1">
-                             <widget class="QDoubleSpinBox" name="doubleSpinBox_z1_thickness">
-                                 <property name="toolTip">
-                                     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;thickness of the first layer&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                                 </property>
-                                 <property name="suffix">
-                                     <string>m</string>
-                                 </property>
-                                 <property name="maximum">
-                                     <double>6371000.000000000000000</double>
-                                 </property>
-                                 <property name="value">
-                                     <double>10.000000000000000</double>
-                                 </property>
-                             </widget>
-                         </item>
-                         <item row="3" column="0">
-                             <widget class="QLabel" name="label_13">
-                                 <property name="toolTip">
-                                     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;depth of deepest target&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                                 </property>
-                                 <property name="text">
-                                     <string>Target Depth</string>
-                                 </property>
-                             </widget>
-                         </item>
-                         <item row="3" column="1">
-                             <widget class="QDoubleSpinBox" name="doubleSpinBox_target_depth">
-                                 <property name="toolTip">
-                                     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;depth of deepest target&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                                 </property>
-                                 <property name="suffix">
-                                     <string>m</string>
-                                 </property>
-                                 <property name="maximum">
-                                     <double>6371000.000000000000000</double>
-                                 </property>
-                                 <property name="value">
-                                     <double>50000.000000000000000</double>
-                                 </property>
-                             </widget>
-                         </item>
-                         <item row="4" column="0">
-                             <widget class="QLabel" name="label_14">
-                                 <property name="toolTip">
-                                     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;absolute bottom of the model&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                                 </property>
-                                 <property name="text">
-                                     <string>Bottom</string>
-                                 </property>
-                             </widget>
-                         </item>
-                         <item row="4" column="1">
-                             <widget class="QDoubleSpinBox" name="doubleSpinBox_bottom">
-                                 <property name="toolTip">
-                                     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;absolute bottom of the model&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                                 </property>
-                                 <property name="suffix">
-                                     <string>m</string>
-                                 </property>
-                                 <property name="maximum">
-                                     <double>6371000.000000000000000</double>
-                                 </property>
-                                 <property name="value">
-                                     <double>300000.000000000000000</double>
-                                 </property>
-                             </widget>
-                         </item>
-                     </layout>
-                 </widget>
-             </item>
-             <item row="1" column="0">
-                 <widget class="QGroupBox" name="groupBox_6">
-                     <property name="title">
-                         <string>Paddings</string>
-                     </property>
-                     <layout class="QGridLayout" name="gridLayout_6">
-                         <item row="3" column="0">
-                             <widget class="QLabel" name="label_11">
-                                 <property name="toolTip">
-                                     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;factor to increase by in
-                                         padding cells (vertical)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
-                                     </string>
-                                 </property>
-                                 <property name="text">
-                                     <string>Horizontal Stretch</string>
-                                 </property>
-                             </widget>
-                         </item>
-                         <item row="3" column="1">
-                             <widget class="QDoubleSpinBox" name="doubleSpinBox_pad_stretch_h">
-                                 <property name="toolTip">
-                                     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;factor to increase by in
-                                         padding cells (vertical)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
-                                     </string>
-                                 </property>
-                                 <property name="value">
-                                     <double>1.200000000000000</double>
-                                 </property>
-                             </widget>
-                         </item>
-                         <item row="1" column="1">
-                             <widget class="QSpinBox" name="spinBox_pad_north">
-                                 <property name="toolTip">
-                                     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;number of padding cells on
-                                         the North and South directions&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
-                                     </string>
-                                 </property>
-                                 <property name="suffix">
-                                     <string>cells</string>
-                                 </property>
-                                 <property name="value">
-                                     <number>7</number>
-                                 </property>
-                             </widget>
-                         </item>
-                         <item row="0" column="0">
-                             <widget class="QLabel" name="label_4">
-                                 <property name="sizePolicy">
-                                     <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
-                                         <horstretch>0</horstretch>
-                                         <verstretch>0</verstretch>
-                                     </sizepolicy>
-                                 </property>
-                                 <property name="toolTip">
-                                     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Number of padding cells on
-                                         East and West directions&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
-                                     </string>
-                                 </property>
-                                 <property name="text">
-                                     <string>East and West</string>
-                                 </property>
-                             </widget>
-                         </item>
-                         <item row="2" column="0">
-                             <widget class="QLabel" name="label_6">
-                                 <property name="sizePolicy">
-                                     <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
-                                         <horstretch>0</horstretch>
-                                         <verstretch>0</verstretch>
-                                     </sizepolicy>
-                                 </property>
-                                 <property name="toolTip">
-                                     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;number of vertical padding
-                                         cells&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
-                                     </string>
-                                 </property>
-                                 <property name="text">
-                                     <string>Bottom</string>
-                                 </property>
-                             </widget>
-                         </item>
-                         <item row="1" column="0">
-                             <widget class="QLabel" name="label_5">
-                                 <property name="sizePolicy">
-                                     <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
-                                         <horstretch>0</horstretch>
-                                         <verstretch>0</verstretch>
-                                     </sizepolicy>
-                                 </property>
-                                 <property name="toolTip">
-                                     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;number of padding cells on
-                                         the North and South directions&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
-                                     </string>
-                                 </property>
-                                 <property name="text">
-                                     <string>North and South</string>
-                                 </property>
-                             </widget>
-                         </item>
-                         <item row="2" column="1">
-                             <widget class="QSpinBox" name="spinBox_pad_z">
-                                 <property name="toolTip">
-                                     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;number of vertical padding
-                                         cells&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
-                                     </string>
-                                 </property>
-                                 <property name="suffix">
-                                     <string>cells</string>
-                                 </property>
-                                 <property name="value">
-                                     <number>4</number>
-                                 </property>
-                             </widget>
-                         </item>
-                         <item row="4" column="0">
-                             <widget class="QLabel" name="label_7">
-                                 <property name="toolTip">
-                                     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;factor to increase by in
-                                         padding cells (horizontal)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
-                                     </string>
-                                 </property>
-                                 <property name="text">
-                                     <string>Vertical Stretch</string>
-                                 </property>
-                             </widget>
-                         </item>
-                         <item row="4" column="1">
-                             <widget class="QDoubleSpinBox" name="doubleSpinBox_pad_stretch_v">
-                                 <property name="toolTip">
-                                     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;factor to increase by in
-                                         padding cells (horizontal)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
-                                     </string>
-                                 </property>
-                                 <property name="value">
-                                     <double>1.200000000000000</double>
-                                 </property>
-                             </widget>
-                         </item>
-                         <item row="0" column="1">
-                             <widget class="QSpinBox" name="spinBox_pad_east">
-                                 <property name="toolTip">
-                                     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Number of padding cells on
-                                         East and West directions&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
-                                     </string>
-                                 </property>
-                                 <property name="suffix">
-                                     <string>cells</string>
-                                 </property>
-                                 <property name="value">
-                                     <number>7</number>
-                                 </property>
-                             </widget>
-                         </item>
-                     </layout>
-                 </widget>
-             </item>
-         </layout>
+         </property>
+         <property name="maximum">
+          <number>6471000</number>
+         </property>
+         <property name="value">
+          <number>30</number>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="0">
+        <widget class="QLabel" name="label_16">
+         <property name="toolTip">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;number of air layers&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+         <property name="text">
+          <string>Number of Air Layers</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="1">
+        <widget class="QSpinBox" name="spinBox_num_air_layers">
+         <property name="toolTip">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;number of air layers&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="0">
+        <widget class="QLabel" name="label_12">
+         <property name="toolTip">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;thickness of the first layer&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+         <property name="text">
+          <string>First Layer Thickness</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="1">
+        <widget class="QDoubleSpinBox" name="doubleSpinBox_z1_thickness">
+         <property name="toolTip">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;thickness of the first layer&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+         <property name="suffix">
+          <string>m</string>
+         </property>
+         <property name="maximum">
+          <double>6371000.000000000000000</double>
+         </property>
+         <property name="value">
+          <double>10.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="0">
+        <widget class="QLabel" name="label_13">
+         <property name="toolTip">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;depth of deepest target&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+         <property name="text">
+          <string>Target Depth</string>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="1">
+        <widget class="QDoubleSpinBox" name="doubleSpinBox_target_depth">
+         <property name="toolTip">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;depth of deepest target&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+         <property name="suffix">
+          <string>m</string>
+         </property>
+         <property name="maximum">
+          <double>6371000.000000000000000</double>
+         </property>
+         <property name="value">
+          <double>50000.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="0">
+        <widget class="QLabel" name="label_14">
+         <property name="toolTip">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;absolute bottom of the model&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+         <property name="text">
+          <string>Bottom</string>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="1">
+        <widget class="QDoubleSpinBox" name="doubleSpinBox_bottom">
+         <property name="toolTip">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;absolute bottom of the model&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+         <property name="suffix">
+          <string>m</string>
+         </property>
+         <property name="maximum">
+          <double>6371000.000000000000000</double>
+         </property>
+         <property name="value">
+          <double>300000.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+      </layout>
      </widget>
-     <widget class="QWizardPage" name="wizardPage_topography">
-         <property name="title">
-             <string>Topography</string>
+    </item>
+    <item row="1" column="0">
+     <widget class="QGroupBox" name="groupBox_6">
+      <property name="title">
+       <string>Paddings</string>
+      </property>
+      <layout class="QGridLayout" name="gridLayout_6">
+       <item row="3" column="0">
+        <widget class="QLabel" name="label_11">
+         <property name="toolTip">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;factor to increase by in
+                                         padding cells (vertical)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
+                                     </string>
          </property>
-         <property name="subTitle">
-             <string>After creating the mesh grid, the topography file is used to define resistivity model.</string>
+         <property name="text">
+          <string>Horizontal Stretch</string>
          </property>
-         <layout class="QGridLayout" name="gridLayout">
-             <item row="0" column="0">
-                 <widget class="QLabel" name="label_17">
-                     <property name="sizePolicy">
-                         <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
-                             <horstretch>0</horstretch>
-                             <verstretch>0</verstretch>
-                         </sizepolicy>
-                     </property>
-                     <property name="text">
-                         <string>Topography File</string>
-                     </property>
-                     <property name="buddy">
-                         <cstring>comboBox_topography_file</cstring>
-                     </property>
-                 </widget>
-             </item>
-             <item row="0" column="1">
-                 <widget class="QComboBox" name="comboBox_topography_file">
-                     <property name="toolTip">
-                         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Directory to save the file&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                     </property>
-                     <property name="editable">
-                         <bool>true</bool>
-                     </property>
-                 </widget>
-             </item>
-             <item row="0" column="2">
-                 <widget class="QPushButton" name="pushButton_browse_topography_file">
-                     <property name="sizePolicy">
-                         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-                             <horstretch>0</horstretch>
-                             <verstretch>0</verstretch>
-                         </sizepolicy>
-                     </property>
-                     <property name="toolTip">
-                         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Directory to save the file&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                     </property>
-                     <property name="text">
-                         <string>Browse</string>
-                     </property>
-                 </widget>
-             </item>
-             <item row="1" column="0" colspan="3">
-                 <layout class="QHBoxLayout" name="horizontalLayout">
-                     <item>
-                         <widget class="QGroupBox" name="groupBox_9">
-                             <property name="toolTip">
-                                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;default is 'nearest', if model
+        </widget>
+       </item>
+       <item row="3" column="1">
+        <widget class="QDoubleSpinBox" name="doubleSpinBox_pad_stretch_h">
+         <property name="toolTip">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;factor to increase by in
+                                         padding cells (vertical)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
+                                     </string>
+         </property>
+         <property name="value">
+          <double>1.200000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="1">
+        <widget class="QSpinBox" name="spinBox_pad_north">
+         <property name="toolTip">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;number of padding cells on
+                                         the North and South directions&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
+                                     </string>
+         </property>
+         <property name="suffix">
+          <string>cells</string>
+         </property>
+         <property name="value">
+          <number>7</number>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="0">
+        <widget class="QLabel" name="label_4">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="toolTip">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Number of padding cells on
+                                         East and West directions&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
+                                     </string>
+         </property>
+         <property name="text">
+          <string>East and West</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="0">
+        <widget class="QLabel" name="label_6">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="toolTip">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;number of vertical padding
+                                         cells&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
+                                     </string>
+         </property>
+         <property name="text">
+          <string>Bottom</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="0">
+        <widget class="QLabel" name="label_5">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="toolTip">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;number of padding cells on
+                                         the North and South directions&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
+                                     </string>
+         </property>
+         <property name="text">
+          <string>North and South</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="1">
+        <widget class="QSpinBox" name="spinBox_pad_z">
+         <property name="toolTip">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;number of vertical padding
+                                         cells&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
+                                     </string>
+         </property>
+         <property name="suffix">
+          <string>cells</string>
+         </property>
+         <property name="value">
+          <number>4</number>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="0">
+        <widget class="QLabel" name="label_7">
+         <property name="toolTip">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;factor to increase by in
+                                         padding cells (horizontal)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
+                                     </string>
+         </property>
+         <property name="text">
+          <string>Vertical Stretch</string>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="1">
+        <widget class="QDoubleSpinBox" name="doubleSpinBox_pad_stretch_v">
+         <property name="toolTip">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;factor to increase by in
+                                         padding cells (horizontal)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
+                                     </string>
+         </property>
+         <property name="value">
+          <double>1.200000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="1">
+        <widget class="QSpinBox" name="spinBox_pad_east">
+         <property name="toolTip">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Number of padding cells on
+                                         East and West directions&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
+                                     </string>
+         </property>
+         <property name="suffix">
+          <string>cells</string>
+         </property>
+         <property name="value">
+          <number>7</number>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QWizardPage" name="wizardPage_topography">
+   <property name="title">
+    <string>Topography</string>
+   </property>
+   <property name="subTitle">
+    <string>After creating the mesh grid, the topography file is used to define resistivity model.</string>
+   </property>
+   <layout class="QGridLayout" name="gridLayout">
+    <item row="0" column="0">
+     <widget class="QLabel" name="label_17">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="text">
+       <string>Topography File</string>
+      </property>
+      <property name="buddy">
+       <cstring>comboBox_topography_file</cstring>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="1">
+     <widget class="QComboBox" name="comboBox_topography_file">
+      <property name="toolTip">
+       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Directory to save the file&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      </property>
+      <property name="editable">
+       <bool>true</bool>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="2">
+     <widget class="QPushButton" name="pushButton_browse_topography_file">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="toolTip">
+       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Directory to save the file&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      </property>
+      <property name="text">
+       <string>Browse</string>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="0" colspan="3">
+     <layout class="QHBoxLayout" name="horizontalLayout">
+      <item>
+       <widget class="QGroupBox" name="groupBox_9">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;default is 'nearest', if model
                                      grid is dense compared to the surface points then choose 'linear' or 'cubic'&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
                                  </string>
-                             </property>
-                             <property name="title">
-                                 <string>Interpolation Method</string>
-                             </property>
-                             <layout class="QVBoxLayout" name="verticalLayout_8">
-                                 <item>
-                                     <widget class="QRadioButton" name="radioButton_interpo_method_nearest">
-                                         <property name="text">
-                                             <string>Nearest</string>
-                                         </property>
-                                         <property name="checked">
-                                             <bool>true</bool>
-                                         </property>
-                                     </widget>
-                                 </item>
-                                 <item>
-                                     <widget class="QRadioButton" name="radioButton_interpo_method_linear">
-                                         <property name="text">
-                                             <string>Linear</string>
-                                         </property>
-                                     </widget>
-                                 </item>
-                                 <item>
-                                     <widget class="QRadioButton" name="radioButton_interpo_method_cubic">
-                                         <property name="text">
-                                             <string>Cubic</string>
-                                         </property>
-                                     </widget>
-                                 </item>
-                             </layout>
-                         </widget>
-                     </item>
-                     <item>
-                         <widget class="QGroupBox" name="groupBox_10">
-                             <property name="sizePolicy">
-                                 <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
-                                     <horstretch>0</horstretch>
-                                     <verstretch>0</verstretch>
-                                 </sizepolicy>
-                             </property>
-                             <property name="title">
-                                 <string>Default Resistivity</string>
-                             </property>
-                             <layout class="QFormLayout" name="formLayout_3">
-                                 <item row="0" column="0">
-                                     <widget class="QLabel" name="label_18">
-                                         <property name="text">
-                                             <string>Air</string>
-                                         </property>
-                                         <property name="buddy">
-                                             <cstring>lineEdit_resistivity_air</cstring>
-                                         </property>
-                                     </widget>
-                                 </item>
-                                 <item row="0" column="1">
-                                     <widget class="QLineEdit" name="lineEdit_resistivity_air">
-                                         <property name="sizePolicy">
-                                             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-                                                 <horstretch>0</horstretch>
-                                                 <verstretch>0</verstretch>
-                                             </sizepolicy>
-                                         </property>
-                                         <property name="text">
-                                             <string>1e17</string>
-                                         </property>
-                                         <property name="placeholderText">
-                                             <string>1e17</string>
-                                         </property>
-                                     </widget>
-                                 </item>
-                                 <item row="1" column="0">
-                                     <widget class="QLabel" name="label_19">
-                                         <property name="text">
-                                             <string>Sea</string>
-                                         </property>
-                                         <property name="buddy">
-                                             <cstring>lineEdit_resistivity_sea</cstring>
-                                         </property>
-                                     </widget>
-                                 </item>
-                                 <item row="1" column="1">
-                                     <widget class="QLineEdit" name="lineEdit_resistivity_sea">
-                                         <property name="sizePolicy">
-                                             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-                                                 <horstretch>0</horstretch>
-                                                 <verstretch>0</verstretch>
-                                             </sizepolicy>
-                                         </property>
-                                         <property name="text">
-                                             <string>0.3</string>
-                                         </property>
-                                         <property name="placeholderText">
-                                             <string>0.3</string>
-                                         </property>
-                                     </widget>
-                                 </item>
-                             </layout>
-                         </widget>
-                     </item>
-                     <item>
-                         <widget class="QGroupBox" name="groupBox_11">
-                             <property name="title">
-                                 <string>Smoothing</string>
-                             </property>
-                             <layout class="QFormLayout" name="formLayout_4">
-                                 <item row="0" column="0">
-                                     <widget class="QLabel" name="label_20">
-                                         <property name="text">
-                                             <string>East</string>
-                                         </property>
-                                         <property name="buddy">
-                                             <cstring>doubleSpinBox_smoothing_east</cstring>
-                                         </property>
-                                     </widget>
-                                 </item>
-                                 <item row="0" column="1">
-                                     <widget class="QDoubleSpinBox" name="doubleSpinBox_smoothing_east">
-                                         <property name="value">
-                                             <double>0.300000000000000</double>
-                                         </property>
-                                     </widget>
-                                 </item>
-                                 <item row="1" column="0">
-                                     <widget class="QLabel" name="label_21">
-                                         <property name="text">
-                                             <string>North</string>
-                                         </property>
-                                         <property name="buddy">
-                                             <cstring>doubleSpinBox_smoothing_north</cstring>
-                                         </property>
-                                     </widget>
-                                 </item>
-                                 <item row="1" column="1">
-                                     <widget class="QDoubleSpinBox" name="doubleSpinBox_smoothing_north">
-                                         <property name="value">
-                                             <double>0.300000000000000</double>
-                                         </property>
-                                     </widget>
-                                 </item>
-                                 <item row="2" column="0">
-                                     <widget class="QLabel" name="label_22">
-                                         <property name="text">
-                                             <string>Z</string>
-                                         </property>
-                                         <property name="buddy">
-                                             <cstring>doubleSpinBox_smoothing_z</cstring>
-                                         </property>
-                                     </widget>
-                                 </item>
-                                 <item row="2" column="1">
-                                     <widget class="QDoubleSpinBox" name="doubleSpinBox_smoothing_z">
-                                         <property name="value">
-                                             <double>0.300000000000000</double>
-                                         </property>
-                                     </widget>
-                                 </item>
-                                 <item row="3" column="0">
-                                     <widget class="QLabel" name="label_23">
-                                         <property name="text">
-                                             <string>Number</string>
-                                         </property>
-                                         <property name="buddy">
-                                             <cstring>spinBox_smoothing_number</cstring>
-                                         </property>
-                                     </widget>
-                                 </item>
-                                 <item row="3" column="1">
-                                     <widget class="QSpinBox" name="spinBox_smoothing_number">
-                                         <property name="value">
-                                             <number>1</number>
-                                         </property>
-                                     </widget>
-                                 </item>
-                             </layout>
-                         </widget>
-                     </item>
-                 </layout>
-             </item>
-         </layout>
-     </widget>
-     <widget class="QWizardPage" name="wizardPage_output">
-         <property name="title">
-             <string>Output</string>
-         </property>
-         <property name="subTitle">
-             <string>Plsease select the output directry and the new folder that will be created to save all the data
+        </property>
+        <property name="title">
+         <string>Interpolation Method</string>
+        </property>
+        <layout class="QVBoxLayout" name="verticalLayout_8">
+         <item>
+          <widget class="QRadioButton" name="radioButton_interpo_method_nearest">
+           <property name="text">
+            <string>Nearest</string>
+           </property>
+           <property name="checked">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QRadioButton" name="radioButton_interpo_method_linear">
+           <property name="text">
+            <string>Linear</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QRadioButton" name="radioButton_interpo_method_cubic">
+           <property name="text">
+            <string>Cubic</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+      </item>
+      <item>
+       <widget class="QGroupBox" name="groupBox_10">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="title">
+         <string>Default Resistivity</string>
+        </property>
+        <layout class="QFormLayout" name="formLayout_3">
+         <item row="0" column="0">
+          <widget class="QLabel" name="label_18">
+           <property name="text">
+            <string>Air</string>
+           </property>
+           <property name="buddy">
+            <cstring>lineEdit_resistivity_air</cstring>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="1">
+          <widget class="QLineEdit" name="lineEdit_resistivity_air">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="text">
+            <string>1e17</string>
+           </property>
+           <property name="placeholderText">
+            <string>1e17</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="0">
+          <widget class="QLabel" name="label_19">
+           <property name="text">
+            <string>Sea</string>
+           </property>
+           <property name="buddy">
+            <cstring>lineEdit_resistivity_sea</cstring>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="1">
+          <widget class="QLineEdit" name="lineEdit_resistivity_sea">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="text">
+            <string>0.3</string>
+           </property>
+           <property name="placeholderText">
+            <string>0.3</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+      </item>
+      <item>
+       <widget class="QGroupBox" name="groupBox_11">
+        <property name="title">
+         <string>Smoothing</string>
+        </property>
+        <layout class="QFormLayout" name="formLayout_4">
+         <item row="0" column="0">
+          <widget class="QLabel" name="label_20">
+           <property name="text">
+            <string>East</string>
+           </property>
+           <property name="buddy">
+            <cstring>doubleSpinBox_smoothing_east</cstring>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="1">
+          <widget class="QDoubleSpinBox" name="doubleSpinBox_smoothing_east">
+           <property name="value">
+            <double>0.300000000000000</double>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="0">
+          <widget class="QLabel" name="label_21">
+           <property name="text">
+            <string>North</string>
+           </property>
+           <property name="buddy">
+            <cstring>doubleSpinBox_smoothing_north</cstring>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="1">
+          <widget class="QDoubleSpinBox" name="doubleSpinBox_smoothing_north">
+           <property name="value">
+            <double>0.300000000000000</double>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="0">
+          <widget class="QLabel" name="label_22">
+           <property name="text">
+            <string>Z</string>
+           </property>
+           <property name="buddy">
+            <cstring>doubleSpinBox_smoothing_z</cstring>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="1">
+          <widget class="QDoubleSpinBox" name="doubleSpinBox_smoothing_z">
+           <property name="value">
+            <double>0.300000000000000</double>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="0">
+          <widget class="QLabel" name="label_23">
+           <property name="text">
+            <string>Number</string>
+           </property>
+           <property name="buddy">
+            <cstring>spinBox_smoothing_number</cstring>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="1">
+          <widget class="QSpinBox" name="spinBox_smoothing_number">
+           <property name="value">
+            <number>1</number>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+      </item>
+     </layout>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QWizardPage" name="wizardPage_output">
+   <property name="title">
+    <string>Output</string>
+   </property>
+   <property name="subTitle">
+    <string>Plsease select the output directry and the new folder that will be created to save all the data
                  files for ModEM.
              </string>
-         </property>
-         <layout class="QGridLayout" name="gridLayout_5">
-             <item row="4" column="1">
-                 <spacer name="horizontalSpacer">
-                     <property name="orientation">
-                         <enum>Qt::Horizontal</enum>
-                     </property>
-                     <property name="sizeHint" stdset="0">
-                         <size>
-                             <width>40</width>
-                             <height>20</height>
-                         </size>
-                     </property>
-                 </spacer>
-             </item>
-             <item row="1" column="0">
-                 <widget class="QLabel" name="label_9">
-                     <property name="sizePolicy">
-                         <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
-                             <horstretch>0</horstretch>
-                             <verstretch>0</verstretch>
-                         </sizepolicy>
-                     </property>
-                     <property name="text">
-                         <string>Output Directory</string>
-                     </property>
-                     <property name="buddy">
-                         <cstring>comboBox_directory</cstring>
-                     </property>
-                 </widget>
-             </item>
-             <item row="0" column="0">
-                 <widget class="QLabel" name="label_8">
-                     <property name="sizePolicy">
-                         <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
-                             <horstretch>0</horstretch>
-                             <verstretch>0</verstretch>
-                         </sizepolicy>
-                     </property>
-                     <property name="text">
-                         <string>Output Name</string>
-                     </property>
-                     <property name="buddy">
-                         <cstring>comboBox_output_name</cstring>
-                     </property>
-                 </widget>
-             </item>
-             <item row="2" column="0" colspan="3">
-                 <widget class="QLabel" name="label_10">
-                     <property name="sizePolicy">
-                         <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
-                             <horstretch>0</horstretch>
-                             <verstretch>0</verstretch>
-                         </sizepolicy>
-                     </property>
-                     <property name="text">
-                         <string>All data files will be written to:</string>
-                     </property>
-                     <property name="buddy">
-                         <cstring>lineEdit_full_output</cstring>
-                     </property>
-                 </widget>
-             </item>
-             <item row="4" column="0">
-                 <widget class="QPushButton" name="pushButton_test">
-                     <property name="toolTip">
-                         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Testing and/or Validating the output file
+   </property>
+   <layout class="QGridLayout" name="gridLayout_5">
+    <item row="4" column="1">
+     <spacer name="horizontalSpacer">
+      <property name="orientation">
+       <enum>Qt::Horizontal</enum>
+      </property>
+      <property name="sizeHint" stdset="0">
+       <size>
+        <width>40</width>
+        <height>20</height>
+       </size>
+      </property>
+     </spacer>
+    </item>
+    <item row="1" column="0">
+     <widget class="QLabel" name="label_9">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="text">
+       <string>Output Directory</string>
+      </property>
+      <property name="buddy">
+       <cstring>comboBox_directory</cstring>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="0">
+     <widget class="QLabel" name="label_8">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="text">
+       <string>Output Name</string>
+      </property>
+      <property name="buddy">
+       <cstring>comboBox_output_name</cstring>
+      </property>
+     </widget>
+    </item>
+    <item row="2" column="0" colspan="3">
+     <widget class="QLabel" name="label_10">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="text">
+       <string>All data files will be written to:</string>
+      </property>
+      <property name="buddy">
+       <cstring>lineEdit_full_output</cstring>
+      </property>
+     </widget>
+    </item>
+    <item row="4" column="0">
+     <widget class="QPushButton" name="pushButton_test">
+      <property name="toolTip">
+       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Testing and/or Validating the output file
                              with a series of visulation of frequencies, mesh grids etc. This will create files in the
                              output directory as well but the final version will be overwritten by after Finish is
                              clicked. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
                          </string>
-                     </property>
-                     <property name="text">
-                         <string>Test/Validate</string>
-                     </property>
-                 </widget>
-             </item>
-             <item row="1" column="3">
-                 <widget class="QPushButton" name="pushButton_browse">
-                     <property name="sizePolicy">
-                         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-                             <horstretch>0</horstretch>
-                             <verstretch>0</verstretch>
-                         </sizepolicy>
-                     </property>
-                     <property name="toolTip">
-                         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Directory to save the file&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                     </property>
-                     <property name="text">
-                         <string>Browse</string>
-                     </property>
-                 </widget>
-             </item>
-             <item row="3" column="0" colspan="4">
-                 <widget class="QLineEdit" name="lineEdit_full_output">
-                     <property name="readOnly">
-                         <bool>true</bool>
-                     </property>
-                 </widget>
-             </item>
-             <item row="1" column="1" colspan="2">
-                 <widget class="QComboBox" name="comboBox_directory">
-                     <property name="toolTip">
-                         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Directory to save the file&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                     </property>
-                     <property name="editable">
-                         <bool>true</bool>
-                     </property>
-                 </widget>
-             </item>
-             <item row="0" column="1" colspan="3">
-                 <widget class="QComboBox" name="comboBox_output_name">
-                     <property name="toolTip">
-                         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Name of the image file (with or without .
+      </property>
+      <property name="text">
+       <string>Test/Validate</string>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="3">
+     <widget class="QPushButton" name="pushButton_browse">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="toolTip">
+       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Directory to save the file&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      </property>
+      <property name="text">
+       <string>Browse</string>
+      </property>
+     </widget>
+    </item>
+    <item row="3" column="0" colspan="4">
+     <widget class="QLineEdit" name="lineEdit_full_output">
+      <property name="readOnly">
+       <bool>true</bool>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="1" colspan="2">
+     <widget class="QComboBox" name="comboBox_directory">
+      <property name="toolTip">
+       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Directory to save the file&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      </property>
+      <property name="editable">
+       <bool>true</bool>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="1" colspan="3">
+     <widget class="QComboBox" name="comboBox_output_name">
+      <property name="toolTip">
+       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Name of the image file (with or without .
                              format extension)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
                          </string>
-                     </property>
-                     <property name="editable">
-                         <bool>true</bool>
-                     </property>
-                 </widget>
-             </item>
-             <item row="4" column="2" colspan="2">
-                 <widget class="QCheckBox" name="checkBox_open_output_dir">
-                     <property name="text">
-                         <string>Open Output Directory After Export</string>
-                     </property>
-                     <property name="checked">
-                         <bool>true</bool>
-                     </property>
-                 </widget>
-             </item>
-         </layout>
+      </property>
+      <property name="editable">
+       <bool>true</bool>
+      </property>
      </widget>
+    </item>
+    <item row="4" column="2" colspan="2">
+     <widget class="QCheckBox" name="checkBox_open_output_dir">
+      <property name="text">
+       <string>Open Output Directory After Export</string>
+      </property>
+      <property name="checked">
+       <bool>true</bool>
+      </property>
+     </widget>
+    </item>
+   </layout>
+  </widget>
  </widget>
  <tabstops>
-     <tabstop>radioButton_impedance_full</tabstop>
-     <tabstop>radioButton_impedance_off_diagonal</tabstop>
-     <tabstop>radioButton_impedance_none</tabstop>
-     <tabstop>radioButton_vertical_full</tabstop>
-     <tabstop>radioButton_vertical_none</tabstop>
-     <tabstop>radioButton_impedance_sign_plus</tabstop>
-     <tabstop>radioButton_impedance_sign_minus</tabstop>
-     <tabstop>radioButton_vertical_sign_plus</tabstop>
-     <tabstop>radioButton_vertical_sign_minus</tabstop>
-     <tabstop>radioButton_unit_vmt</tabstop>
-     <tabstop>radioButton_unit_mvkmnt</tabstop>
-     <tabstop>radioButton_unit_ohm</tabstop>
+  <tabstop>radioButton_impedance_full</tabstop>
+  <tabstop>radioButton_impedance_off_diagonal</tabstop>
+  <tabstop>radioButton_impedance_none</tabstop>
+  <tabstop>radioButton_vertical_full</tabstop>
+  <tabstop>radioButton_vertical_none</tabstop>
+  <tabstop>radioButton_impedance_sign_plus</tabstop>
+  <tabstop>radioButton_impedance_sign_minus</tabstop>
+  <tabstop>radioButton_vertical_sign_plus</tabstop>
+  <tabstop>radioButton_vertical_sign_minus</tabstop>
+  <tabstop>radioButton_unit_vmt</tabstop>
+  <tabstop>radioButton_unit_mvkmnt</tabstop>
+  <tabstop>radioButton_unit_ohm</tabstop>
   <tabstop>comboBox_error_type</tabstop>
   <tabstop>doubleSpinBox_error_egbert</tabstop>
   <tabstop>doubleSpinBox_error_floor</tabstop>
@@ -1512,38 +1552,38 @@
   <tabstop>comboBox_error_type_zyx</tabstop>
   <tabstop>checkBox_zyy</tabstop>
   <tabstop>comboBox_error_type_zyy</tabstop>
-     <tabstop>radioButton_format_1</tabstop>
-     <tabstop>radioButton_format_2</tabstop>
-     <tabstop>comboBox_epsg</tabstop>
-     <tabstop>doubleSpinBox_cell_size_east</tabstop>
-     <tabstop>doubleSpinBox_cell_szie_north</tabstop>
-     <tabstop>spinBox_num_layers</tabstop>
-     <tabstop>spinBox_num_air_layers</tabstop>
-     <tabstop>doubleSpinBox_z1_thickness</tabstop>
-     <tabstop>doubleSpinBox_target_depth</tabstop>
-     <tabstop>doubleSpinBox_bottom</tabstop>
-     <tabstop>spinBox_pad_east</tabstop>
-     <tabstop>spinBox_pad_north</tabstop>
-     <tabstop>spinBox_pad_z</tabstop>
-     <tabstop>doubleSpinBox_pad_stretch_h</tabstop>
-     <tabstop>doubleSpinBox_pad_stretch_v</tabstop>
-     <tabstop>comboBox_topography_file</tabstop>
-     <tabstop>pushButton_browse_topography_file</tabstop>
-     <tabstop>radioButton_interpo_method_nearest</tabstop>
-     <tabstop>radioButton_interpo_method_linear</tabstop>
-     <tabstop>radioButton_interpo_method_cubic</tabstop>
-     <tabstop>lineEdit_resistivity_air</tabstop>
-     <tabstop>lineEdit_resistivity_sea</tabstop>
-     <tabstop>doubleSpinBox_smoothing_east</tabstop>
-     <tabstop>doubleSpinBox_smoothing_north</tabstop>
-     <tabstop>doubleSpinBox_smoothing_z</tabstop>
-     <tabstop>spinBox_smoothing_number</tabstop>
-     <tabstop>comboBox_output_name</tabstop>
-     <tabstop>comboBox_directory</tabstop>
-     <tabstop>pushButton_browse</tabstop>
-     <tabstop>lineEdit_full_output</tabstop>
-     <tabstop>pushButton_test</tabstop>
-     <tabstop>checkBox_open_output_dir</tabstop>
+  <tabstop>radioButton_format_1</tabstop>
+  <tabstop>radioButton_format_2</tabstop>
+  <tabstop>comboBox_epsg</tabstop>
+  <tabstop>doubleSpinBox_cell_size_east</tabstop>
+  <tabstop>doubleSpinBox_cell_szie_north</tabstop>
+  <tabstop>spinBox_num_layers</tabstop>
+  <tabstop>spinBox_num_air_layers</tabstop>
+  <tabstop>doubleSpinBox_z1_thickness</tabstop>
+  <tabstop>doubleSpinBox_target_depth</tabstop>
+  <tabstop>doubleSpinBox_bottom</tabstop>
+  <tabstop>spinBox_pad_east</tabstop>
+  <tabstop>spinBox_pad_north</tabstop>
+  <tabstop>spinBox_pad_z</tabstop>
+  <tabstop>doubleSpinBox_pad_stretch_h</tabstop>
+  <tabstop>doubleSpinBox_pad_stretch_v</tabstop>
+  <tabstop>comboBox_topography_file</tabstop>
+  <tabstop>pushButton_browse_topography_file</tabstop>
+  <tabstop>radioButton_interpo_method_nearest</tabstop>
+  <tabstop>radioButton_interpo_method_linear</tabstop>
+  <tabstop>radioButton_interpo_method_cubic</tabstop>
+  <tabstop>lineEdit_resistivity_air</tabstop>
+  <tabstop>lineEdit_resistivity_sea</tabstop>
+  <tabstop>doubleSpinBox_smoothing_east</tabstop>
+  <tabstop>doubleSpinBox_smoothing_north</tabstop>
+  <tabstop>doubleSpinBox_smoothing_z</tabstop>
+  <tabstop>spinBox_smoothing_number</tabstop>
+  <tabstop>comboBox_output_name</tabstop>
+  <tabstop>comboBox_directory</tabstop>
+  <tabstop>pushButton_browse</tabstop>
+  <tabstop>lineEdit_full_output</tabstop>
+  <tabstop>pushButton_test</tabstop>
+  <tabstop>checkBox_open_output_dir</tabstop>
  </tabstops>
  <resources/>
  <connections/>

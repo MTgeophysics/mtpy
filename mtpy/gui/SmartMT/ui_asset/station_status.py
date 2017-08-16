@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'C:\Users\u64132\Documents\mtpy2\mtpy\gui\SmartMT\ui_asset\station_status.ui'
+# Form implementation generated from reading ui file 'station_status.ui'
 #
 # Created by: PyQt4 UI code generator 4.11.4
 #
@@ -25,7 +25,7 @@ except AttributeError:
 class Ui_StationStatus(object):
     def setupUi(self, StationStatus):
         StationStatus.setObjectName(_fromUtf8("StationStatus"))
-        StationStatus.resize(340, 298)
+        StationStatus.resize(340, 498)
         self.verticalLayout = QtGui.QVBoxLayout(StationStatus)
         self.verticalLayout.setObjectName(_fromUtf8("verticalLayout"))
         self.tabWidget = QtGui.QTabWidget(StationStatus)
@@ -102,6 +102,10 @@ class Ui_StationStatus(object):
         self.lineEditFile_Ref.setReadOnly(True)
         self.lineEditFile_Ref.setObjectName(_fromUtf8("lineEditFile_Ref"))
         self.formLayout.setWidget(7, QtGui.QFormLayout.FieldRole, self.lineEditFile_Ref)
+        self.plainTextEdit_edi_text = QtGui.QPlainTextEdit(self.groupBox)
+        self.plainTextEdit_edi_text.setLineWrapMode(QtGui.QPlainTextEdit.NoWrap)
+        self.plainTextEdit_edi_text.setObjectName(_fromUtf8("plainTextEdit_edi_text"))
+        self.formLayout.setWidget(8, QtGui.QFormLayout.SpanningRole, self.plainTextEdit_edi_text)
         self.verticalLayout_3.addWidget(self.groupBox)
         self.tabWidget.addTab(self.tab_detail, _fromUtf8(""))
         self.verticalLayout.addWidget(self.tabWidget)

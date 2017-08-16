@@ -23,7 +23,7 @@ class Depth1D(VisualizationBase):
     def plot_name():
         return "Penetration Depth (1D)"
 
-    def get_parameter_str(self):
+    def get_plot_tooltip(self):
         return "station=%s, rho=%s" % (self._station.station, str(self._rhos))
 
     @staticmethod
@@ -77,7 +77,7 @@ class Depth2D(VisualizationBase):
     def update_ui(self):
         self._frequency_period_ui.set_data(self._mt_objs)
 
-    def get_parameter_str(self):
+    def get_plot_tooltip(self):
         return "rho=%s, period_index=%s" % (self._rho, self._period_index)
 
     def __init__(self, parent):
@@ -95,7 +95,7 @@ class Depth2D(VisualizationBase):
 
 
 class Depth3D(VisualizationBase):
-    def get_parameter_str(self):
+    def get_plot_tooltip(self):
         return "z-component=%s, period=%.5f, tolerance=%.2f%%" % (self._zcomponent, self._period, self._tolerance * 100)
 
     def plot(self):

@@ -56,6 +56,9 @@
      <property name="text">
       <string>X</string>
      </property>
+     <property name="buddy">
+      <cstring>horizontalSlider_x</cstring>
+     </property>
     </widget>
    </item>
    <item row="3" column="3">
@@ -126,6 +129,9 @@
      <property name="text">
       <string>Orientation</string>
      </property>
+     <property name="buddy">
+      <cstring>comboBox_orientation</cstring>
+     </property>
     </widget>
    </item>
    <item row="4" column="0">
@@ -135,6 +141,9 @@
      </property>
      <property name="text">
       <string>Width</string>
+     </property>
+     <property name="buddy">
+      <cstring>horizontalSlider_width</cstring>
      </property>
     </widget>
    </item>
@@ -202,6 +211,9 @@
      <property name="text">
       <string>Y</string>
      </property>
+     <property name="buddy">
+      <cstring>horizontalSlider_y</cstring>
+     </property>
     </widget>
    </item>
    <item row="5" column="0">
@@ -211,6 +223,9 @@
      </property>
      <property name="text">
       <string>Height</string>
+     </property>
+     <property name="buddy">
+      <cstring>horizontalSlider_height</cstring>
      </property>
     </widget>
    </item>

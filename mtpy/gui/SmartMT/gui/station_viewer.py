@@ -11,7 +11,6 @@
 """
 from itertools import cycle
 
-import matplotlib.artist
 import pandas as pd
 from PyQt4 import QtGui, QtCore
 from PyQt4.QtCore import pyqtSignal
@@ -44,6 +43,9 @@ class StationViewer(QtGui.QWidget):
         self.ui = Ui_StationViewer()
         self.ui.setupUi(self)
         self.subwindow, _ = parent.create_subwindow(self, self.windowTitle())
+        # self.subwindow.setMaximumWidth(600)
+        # self.subwindow.setMinimumWidth(400)
+        # self.subwindow.resize(parent.width()/3, self.height())
         # set the item to be ordered by ascending order
         self.ui.treeWidget_stations.sortByColumn(0, QtCore.Qt.AscendingOrder)
         # make station_viewer never been deleted
