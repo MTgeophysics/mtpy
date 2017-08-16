@@ -28,15 +28,14 @@ logger = MtPyLog().get_mtpy_logger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
-def is_it_in(anum, aseq):
+def is_num_in_seq(anum, aseq, tolerance=0.0000001):
     """
-    check if anum is in asequence by a small tolerance
+    check if anum is in a sequence by a small tolerance
     :param anum:
     :param aseq:
-    :return:
+    :param tolerance:
+    :return: True | False
     """
-
-    tolerance = 0.0000001
 
     for an_number in aseq:
         if abs(anum - an_number) < tolerance:
@@ -127,7 +126,7 @@ class EdiCollection(object):
             acount = 0
             for mt_obj in self.mt_obj_list:
                 # if afreq in mt_obj.Z.freq:
-                if is_it_in(afreq, mt_obj.Z.freq):
+                if is_num_in_seq(afreq, mt_obj.Z.freq):
                     acount = acount + 1
 
             if (100.0 * acount) / self.num_of_edifiles >= percentage:
@@ -242,28 +241,32 @@ class EdiCollection(object):
 
         return myax2
 
-    def create_csv_files_moved(self, dest_dir=None):
+    def create_measurement_csv(self, dest_dir='/e/tmp'):
         """
-        create csv file. It is moved/copied to shapefiles_creator.py
+        create csv file for the measurement in the edi files.
+        For phase tensor tipper csv, see utils/shapefiles_creator.py
         :return:
         """
         if dest_dir is None:
-            raise Exception("output dir was not provided")
+            raise Exception("output dir was not provided!!")
+        else:
+            logger.info("result will be in the dir %s", dest_dir)
 
         # summary csv file
-        csvfname = os.path.join(dest_dir, "phase_tensor_tipper.csv")
+        csv_basename = "edi_measurement"
+        csvfname = os.path.join(dest_dir, "%s.csv"%csv_basename)
 
         pt_dict = {}
 
-        csv_header = ['station', 'freq', 'lon', 'lat', 'phi_min', 'phi_max', 'azimuth', 'skew', 'n_skew', 'elliptic',
-                      'tip_mag_re', 'tip_mag_im', 'tip_ang_re', 'tip_ang_im']
+        csv_header = ['freq','station', 'lat', 'lon',  'ZXXR','ZXXI',
+                      'ZXYR', 'ZXYI', 'ZYXR', 'ZYXI', 'ZYYR', 'ZYYI']
 
         with open(csvfname, "wb") as csvf:
             writer = csv.writer(csvf)
             writer.writerow(csv_header)
 
         for freq in self.all_frequencies:
-            ptlist = []
+            mtlist = []
             for mt_obj in self.mt_obj_list:
 
                 f_index_list = [ff for ff, f2 in enumerate(mt_obj.Z.freq)
@@ -274,42 +277,42 @@ class EdiCollection(object):
 
                 if len(f_index_list) >= 1:
                     p_index = f_index_list[0]
+
+                    logger.debug("The freqs index %s", f_index_list)
                     # geographic coord lat long and elevation
                     # long, lat, elev = (mt_obj.lon, mt_obj.lat, 0)
-                    station, lon, lat = (
-                        mt_obj.station, mt_obj.lon, mt_obj.lat)
+                    station, lat, lon = (
+                        mt_obj.station, mt_obj.lat, mt_obj.lon)
 
-                    pt_stat = [station, freq, lon, lat,
-                               mt_obj.pt.phimin[0][p_index],
-                               mt_obj.pt.phimax[0][p_index],
-                               mt_obj.pt.azimuth[0][p_index],
-                               mt_obj.pt.beta[0][p_index],
-                               2 * mt_obj.pt.beta[0][p_index],
-                               # FZ: get ellipticity begin here
-                               mt_obj.pt.ellipticity[0][p_index],
-                               mt_obj.Tipper.mag_real[p_index],
-                               mt_obj.Tipper.mag_imag[p_index],
-                               mt_obj.Tipper.angle_real[p_index],
-                               mt_obj.Tipper.angle_imag[p_index]]
-
-                    ptlist.append(pt_stat)
+                    mt_stat = [freq, station, lat, lon,
+                               mt_obj.Z.resistivity[p_index,0,0].real,
+                               mt_obj.Z.resistivity[p_index,0,0].imag,
+                               mt_obj.Z.resistivity[p_index,0,1].real,
+                               mt_obj.Z.resistivity[p_index,0,1].imag,
+                               mt_obj.Z.resistivity[p_index,1,0].real,
+                               mt_obj.Z.resistivity[p_index,1,0].imag,
+                               mt_obj.Z.resistivity[p_index,1,1].real,
+                               mt_obj.Z.resistivity[p_index,1,1].imag
+                               ]
+                    mtlist.append(mt_stat)
                 else:
                     logger.warn(
                         'Freq %s NOT found for this station %s', freq, mt_obj.station)
 
             with open(csvfname, "ab") as csvf:  # summary csv for all freqs
                 writer = csv.writer(csvf)
-                writer.writerows(ptlist)
+                writer.writerows(mtlist)
 
-            csvfile2 = csvfname.replace('.csv', '_%sHz.csv' % str(freq))
+            csv_basename2 = "%s_%sHz.csv" %(csv_basename, str(freq))
+            csvfile2 = os.path.join(dest_dir, csv_basename2)
 
             with open(csvfile2, "wb") as csvf:  # individual csvfile for each freq
                 writer = csv.writer(csvf)
 
                 writer.writerow(csv_header)
-                writer.writerows(ptlist)
+                writer.writerows(mtlist)
 
-            pt_dict[freq] = ptlist
+            pt_dict[freq] = mtlist
 
         return pt_dict
 
@@ -365,6 +368,8 @@ class EdiCollection(object):
 
 if __name__ == "__main__":
 
+# python mtpy/core/edi_collection.py examples/data/edi2/ /e/tmp
+
     if len(sys.argv) < 2:
         print ("USAGE: %s edi_dir OR edi_list " % sys.argv[0])
         sys.exit(1)
@@ -402,7 +407,7 @@ if __name__ == "__main__":
         #                  "Elev": "float:24.15", "UtmZone": "str:80"}}}
         #######################################################################
 
-        obj.create_csv_files_moved(dest_dir=sys.argv[2])
+        obj.create_measurement_csv(dest_dir=sys.argv[2])
 
         myper = obj.get_periods_by_stats(percentage=10)
 
