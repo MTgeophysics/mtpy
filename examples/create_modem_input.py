@@ -147,14 +147,15 @@ if __name__ == '__main__':
                   # cell_size_east=500, cell_size_north=500,  # concurry
                   cell_size_east=10000, cell_size_north=10000, #GA_VIC
                   # cell_size_east=1000, cell_size_north=1000, # Concurry
+                  cell_number_ew=120, cell_number_ns=100,   # option to specify cell numbers
                   pad_north=8,  # number of padding cells in each of the north and south directions
                   pad_east=8,  # number of east and west padding cells
                   pad_z=8,  # number of vertical padding cells
                   pad_stretch_v=1.5,  # factor to increase by in padding cells (vertical)
                   pad_stretch_h=1.5,  # factor to increase by in padding cells (horizontal)
-                  n_airlayers=0,  # number of air layers 0, 10, 20, depend on topo elev height
+                  n_airlayers=10,  # number of air layers 0, 10, 20, depend on topo elev height
                   res_model=100,  # halfspace resistivity value for initial reference model
-                  n_layers=50,  # total number of z layers, including air and pad_z
+                  n_layers=55,  # total number of z layers, including air and pad_z
                   z1_layer=50,  # first layer thickness metres, depend
                   z_target_depth=500000)
 
