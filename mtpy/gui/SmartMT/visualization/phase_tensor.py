@@ -8,9 +8,11 @@
     Author: YingzhiGou
     Date: 20/06/2017
 """
+import numpy as np
+
 from mtpy.gui.SmartMT.gui.figure_setting_guis import ColorBar, Font, AspectRatio, TextBox
 from mtpy.gui.SmartMT.gui.plot_parameter_guis import FrequencySingle, Ellipse, FrequencyTolerance, Arrow, Padding, \
-    Scale, Stretch, LineDir, MeshGrid, PlotControlResistivityPhasePseudoSection
+    Scale, Stretch, LineDir, MeshGrid, PlotControlResistivityPhasePseudoSection, FrequencyIndex, UniqueFrequencies
 from mtpy.gui.SmartMT.utils.matplotlib_utils import get_next_fig_num
 from mtpy.gui.SmartMT.visualization.visualization_base import VisualizationBase
 from mtpy.imaging.phase_tensor_maps import PlotPhaseTensorMaps
@@ -19,7 +21,7 @@ from mtpy.imaging.plotpseudosection import PlotResPhasePseudoSection
 
 
 class PhaseTensorMap(VisualizationBase):
-    def get_parameter_str(self):
+    def get_plot_tooltip(self):
         ellipse = self._params['ellipse_dict']
         tipper = self._params['plot_tipper']
         return "freq=%.5f, tolerance=%.2f%%, ellipse_size=%.2f, real_induction=%s, imaginary_induction=%s" % (
@@ -148,6 +150,9 @@ class PhaseTensorPseudoSection(VisualizationBase):
         VisualizationBase.__init__(self, parent)
 
         # setup gui
+        self._plot_control = PlotControlResistivityPhasePseudoSection(self._parameter_ui)
+        self._parameter_ui = self._parameter_ui.add_parameter_groupbox(self._plot_control)
+
         self._ellipse_ui = Ellipse(self._parameter_ui)
         self._parameter_ui.add_parameter_groupbox(self._ellipse_ui)
 
@@ -182,7 +187,7 @@ class PhaseTensorPseudoSection(VisualizationBase):
         self.update_ui()
         self._params = None
 
-    def get_parameter_str(self):
+    def get_plot_tooltip(self):
         ellipse = self._params['ellipse_dict']
         tipper = self._params['plot_tipper']
         stretch = self._params['stretch']
@@ -257,36 +262,57 @@ class ResistivityPhasePseudoSection(VisualizationBase):
             'ftol': self._tolerance_ui.get_tolerance_in_float(),
             'linedir': self._linedir_ui.get_linedir(),
             'aspect': self._aspect_ui.get_aspect(),
+            'plot_xx': self._plot_control.get_plot_xx(),
+            'plot_xy': self._plot_control.get_plot_xy(),
+            'plot_yx': self._plot_control.get_plot_yx(),
+            'plot_yy': self._plot_control.get_plot_yy(),
+            'res_cmap': self._plot_control.get_res_cmap(),
+            'phase_cmap': self._plot_control.get_phase_cmap(),
+            'xtickspace': self._plot_control.get_tickspace(),
             'stationid': (0, 20),
             'plot_yn': 'n',  # do not plot on class creation
             'fig_num': get_next_fig_num()
         }
 
-        if self._font_ui.ui.checkBox_size.isChecked():
-            self._params['font_size'] = self._font_ui.get_size()
-
-        if self._text_box.ui.checkBox_size.isChecked():
-            self._params['text_size'] = self._text_box.get_size()
-        if self._text_box.ui.checkBox_weight.isChecked():
-            self._params['text_weight'] = self._text_box.get_weight()
-        if self._text_box.ui.groupBox_location.isChecked():
-            self._params['text_location'] = self._text_box.get_location()
+        param = self._font_ui.get_size()
+        if param is not None:
+            self._params['font_size'] = param
+        param = self._text_box.get_size()
+        if param is not None:
+            self._params['text_size'] = param
+        param = self._text_box.get_weight()
+        if param is not None:
+            self._params['text_weight'] = param
+        param = self._text_box.get_location()
+        if param is not None:
+            self._params['text_location'] = param
         if self._text_box.ui.groupBox_padding.isChecked():
             self._params['text_xpad'] = self._text_box.get_xpad()
             self._params['text_ypad'] = self._text_box.get_ypad()
+        param = self._plot_control.get_period_limit()
+        if param is not None:
+            self._params['period_limits'] = param
+        param = self._plot_control.get_phase_limit()
+        if param is not None:
+            self._params['phase_limits'] = param
+        param = self._plot_control.get_resistivity_limits()
+        if param is not None:
+            self._params['res_limits'] = param
+        if self._period_ui.isChecked():
+            self._params['plot_period'] = np.array(self._period_ui.get_frequency_list())
 
         self._plotting_object = PlotResPhasePseudoSection(**self._params)
         self._plotting_object.plot(show=False)
         self._fig = self._plotting_object.fig
 
     def update_ui(self):
-        pass
+        self._period_ui.set_data(self._mt_objs)
 
     @staticmethod
     def plot_name():
         return "Resistivity and Phase Pseudo Section"
 
-    def get_parameter_str(self):
+    def get_plot_tooltip(self):
         pass
 
     def __init__(self, parent):
@@ -305,6 +331,11 @@ class ResistivityPhasePseudoSection(VisualizationBase):
         self._linedir_ui = LineDir(self._parameter_ui)
         self._linedir_ui.ui.radioButton_ew.setChecked(True)
         self._parameter_ui.add_parameter_groupbox(self._linedir_ui)
+
+        self._period_ui = UniqueFrequencies(self._parameter_ui, use_period=True)
+        self._period_ui.setCheckable(True)
+        self._period_ui.setChecked(False)
+        self._parameter_ui.add_parameter_groupbox(self._period_ui)
 
         # figure settings
         self._aspect_ui = AspectRatio(self._parameter_ui)

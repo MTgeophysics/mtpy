@@ -21,6 +21,7 @@ from mtpy.gui.SmartMT.ui_asset.groupbox_stretch import Ui_GroupBox_Stretch
 from mtpy.gui.SmartMT.ui_asset.groupbox_tolerance import Ui_GroupBoxTolerance
 from mtpy.gui.SmartMT.ui_asset.groupbox_z_component_multiple import Ui_groupBoxZ_Component_Multiple
 from mtpy.gui.SmartMT.ui_asset.groupbox_z_component_single import Ui_groupBoxZ_Component_Single
+from mtpy.imaging.mtcolors import cmapdict
 
 
 class ZComponentMultiple(QtGui.QGroupBox):
@@ -136,7 +137,7 @@ class FrequencySingle(QtGui.QGroupBox):
         self._mt_objs = mt_objs
         self._update_frequency()
 
-    def _update_frequency(self, ):
+    def _update_frequency(self):
         if self._mt_objs is not None:
             all_freqs = []
             for mt_obj in self._mt_objs:
@@ -458,12 +459,12 @@ class FrequencyIndex(QtGui.QGroupBox):
         self.ui = Ui_GroupBox_Frequency_Period_Index()
         self.ui.setupUi(self)
         self._mt_objs = None
-        self._unique_frequencies = None
         self.use_period = use_period
         self.set_use_period(self.use_period)
 
     def set_use_period(self, use_period=False):
-        if use_period:
+        self.use_period = use_period
+        if self.use_period:
             title = '%s (%s)' % (self._title_period, self._unit_period)
         else:
             title = '%s (%s)' % (self._title_frequency, self._unit_frequency)
@@ -487,7 +488,6 @@ class FrequencyIndex(QtGui.QGroupBox):
                 if self.use_period:
                     all_freqs = 1.0 / np.array(all_freqs)
 
-                self._unique_frequencies = all_freqs
                 self.ui.listWidget_frequency_period.addItems(
                     ["%.5f %s" % (value, self._unit_period if self.use_period else self._unit_frequency) for value in
                      all_freqs])
@@ -499,6 +499,41 @@ class FrequencyIndex(QtGui.QGroupBox):
 
     def get_index_list(self):
         return sorted([index.row() for index in self.ui.listWidget_frequency_period.selectedIndexes()], reverse=False)
+
+
+class UniqueFrequencies(FrequencyIndex):
+    def __init__(self, parent, use_period=False):
+        FrequencyIndex.__init__(self, parent, use_period)
+        self.unique_freqs = None
+
+    def _update_frequency(self):
+        if self._mt_objs:
+            self.ui.listWidget_frequency_period.clear()
+
+            unique_freqs = set()
+            for mt_obj in self._mt_objs:
+                unique_freqs.update(mt_obj.Z.freq)
+            self.unique_freqs = np.array(list(unique_freqs))
+            if self.use_period:
+                self.unique_freqs = 1.0 / self.unique_freqs
+            self.unique_freqs.sort()
+
+            self.ui.listWidget_frequency_period.addItems(
+                [
+                    "%.5f %s" % (value, self._unit_period if self.use_period else self._unit_frequency)
+                    for value in self.unique_freqs
+                ]
+            )
+
+    def get_index_list(self):
+        """
+        should net be used
+        :return:
+        """
+        pass
+
+    def get_frequency_list(self):
+        return sorted([self.unique_freqs[index.row()] for index in self.ui.listWidget_frequency_period.selectedIndexes()], reverse=False)
 
 
 class StationSelection(QtGui.QGroupBox):
@@ -639,9 +674,123 @@ class MeshGrid(QtGui.QGroupBox):
 
 
 class PlotControlResistivityPhasePseudoSection(QtGui.QGroupBox):
+    """
+    plot settings for resistivity phase pseudo section that cannot be standardized
+    """
     def __init__(self, parent):
         QtGui.QGroupBox.__init__(self, parent)
         self.ui = Ui_GroupBox_plot_control_resistivity_phase_pseudo_section()
+        # set up gui
         self.ui.setupUi(self)
 
+        self.ui.comboBox_res_cmap.addItems(cmapdict.keys())
+        self.ui.comboBox_res_cmap.setCurrentIndex(self.ui.comboBox_res_cmap.findText('mt_rd2gr2bl'))
+        self.ui.comboBox_phase_cmap.addItems(cmapdict.keys())
+        self.ui.comboBox_phase_cmap.setCurrentIndex(self.ui.comboBox_phase_cmap.findText('mt_bl2gr2rd'))
 
+        self.ui.doubleSpinBox_res_max.setMaximum(np.inf)
+        self.ui.doubleSpinBox_res_min.setMaximum(np.inf)
+        self.ui.doubleSpinBox_period_min.setMaximum(np.inf)
+        self.ui.doubleSpinBox_period_max.setMaximum(np.inf)
+
+        # connect signals
+        self.ui.doubleSpinBox_period_min.valueChanged.connect(self._period_min_changed)
+        self.ui.doubleSpinBox_period_max.valueChanged.connect(self._period_max_changed)
+        self.ui.doubleSpinBox_phase_min.valueChanged.connect(self._phase_min_changed)
+        self.ui.doubleSpinBox_phase_max.valueChanged.connect(self._phase_max_changed)
+        self.ui.doubleSpinBox_res_min.valueChanged.connect(self._res_min_changed)
+        self.ui.doubleSpinBox_res_max.valueChanged.connect(self._res_max_changed)
+
+        self.ui.checkBox_phase.stateChanged.connect(self._phase_state_changed)
+        self.ui.checkBox_period.stateChanged.connect(self._period_state_changed)
+        self.ui.checkBox_resistivity.stateChanged.connect(self._res_state_changed)
+
+    def _res_min_changed(self, value):
+        if value > self.ui.doubleSpinBox_res_max.value():
+            self.ui.doubleSpinBox_res_max.blockSignals(True)
+            self.ui.doubleSpinBox_res_max.setValue(value)
+            self.ui.doubleSpinBox_res_max.blockSignals(False)
+
+    def _res_max_changed(self, value):
+        if value < self.ui.doubleSpinBox_res_min.value():
+            self.ui.doubleSpinBox_res_min.blockSignals(True)
+            self.ui.doubleSpinBox_res_min.setValue(value)
+            self.ui.doubleSpinBox_res_min.blockSignals(False)
+
+    def _res_state_changed(self, p_int):
+        state = bool(p_int != 0)
+        self.ui.doubleSpinBox_res_min.setEnabled(state)
+        self.ui.doubleSpinBox_res_max.setEnabled(state)
+
+    def _phase_state_changed(self, p_int):
+        state = bool(p_int != 0)
+        self.ui.doubleSpinBox_phase_min.setEnabled(state)
+        self.ui.doubleSpinBox_phase_max.setEnabled(state)
+
+    def _period_state_changed(self, p_int):
+        state = bool(p_int != 0)
+        self.ui.doubleSpinBox_period_min.setEnabled(state)
+        self.ui.doubleSpinBox_period_max.setEnabled(state)
+
+    def _period_min_changed(self, value):
+        if value > self.ui.doubleSpinBox_period_max.value():
+            self.ui.doubleSpinBox_period_max.blockSignals(True)
+            self.ui.doubleSpinBox_period_max.setValue(value)
+            self.ui.doubleSpinBox_period_max.blockSignals(False)
+
+    def _period_max_changed(self, value):
+        if value < self.ui.doubleSpinBox_period_min.value():
+            self.ui.doubleSpinBox_period_min.blockSignals(True)
+            self.ui.doubleSpinBox_period_min.setValue(value)
+            self.ui.doubleSpinBox_period_min.blockSignals(False)
+
+    def _phase_min_changed(self, value):
+        if value > self.ui.doubleSpinBox_phase_max.value():
+            self.ui.doubleSpinBox_phase_max.blockSignals(True)
+            self.ui.doubleSpinBox_phase_max.setValue(value)
+            self.ui.doubleSpinBox_phase_max.blockSignals(False)
+
+    def _phase_max_changed(self, value):
+        if value < self.ui.doubleSpinBox_phase_min.value():
+            self.ui.doubleSpinBox_phase_min.blockSignals(True)
+            self.ui.doubleSpinBox_phase_min.setValue(value)
+            self.ui.doubleSpinBox_phase_min.blockSignals(False)
+
+    def get_phase_limit(self):
+        if self.ui.checkBox_phase.isChecked():
+            return self.ui.doubleSpinBox_phase_min.value(), self.ui.doubleSpinBox_phase_max.value()
+        else:
+            return None
+
+    def get_period_limit(self):
+        if self.ui.checkBox_period.isChecked():
+            return self.ui.doubleSpinBox_period_min, self.ui.doubleSpinBox_period_max
+        else:
+            return None
+
+    def get_resistivity_limits(self):
+        if self.ui.checkBox_resistivity.isChecked():
+            return self.ui.doubleSpinBox_res_min, self.ui.doubleSpinBox_res_max
+        else:
+            return None
+
+    def get_plot_xx(self):
+        return 'y' if self.ui.checkBox_zxx.isChecked() else 'n'
+
+    def get_plot_xy(self):
+        return 'y' if self.ui.checkBox_zxy.isChecked() else 'n'
+
+    def get_plot_yx(self):
+        return 'y' if self.ui.checkBox_zyx.isChecked() else 'n'
+
+    def get_plot_yy(self):
+        return 'y' if self.ui.checkBox_zyy.isChecked() else 'n'
+
+    def get_res_cmap(self):
+        return cmapdict[str(self.ui.comboBox_res_cmap.currentText())]
+
+    def get_phase_cmap(self):
+        return cmapdict[str(self.ui.comboBox_phase_cmap.currentText())]
+
+    def get_tickspace(self):
+        return self.ui.spinBox_tickspace.value()

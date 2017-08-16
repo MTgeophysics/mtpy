@@ -140,9 +140,12 @@ class Font(QtGui.QGroupBox):
         self.ui.checkBox_color.hide()
 
     def get_size(self):
-        return self._size_keys[self.ui.comboBox_size.currentIndex()] \
-            if self.ui.comboBox_size.currentIndex() < len(self._size_keys) \
-            else self.ui.spinBox_size.value()
+        if self.ui.checkBox_size.isChecked():
+            return self._size_keys[self.ui.comboBox_size.currentIndex()] \
+                if self.ui.comboBox_size.currentIndex() < len(self._size_keys) \
+                else self.ui.spinBox_size.value()
+        else:
+            return None
 
     def get_weight(self):
         return str(self.ui.comboBox_weight.currentText())
@@ -382,18 +385,33 @@ class TextBox(QtGui.QGroupBox):
         self.ui.horizontalSlider_y_pad.setValue(value)
 
     def get_size(self):
-        return self._size_keys[self.ui.comboBox_size.currentIndex()] \
-            if self.ui.comboBox_size.currentIndex() < len(self._size_keys) \
-            else self.ui.spinBox_size.value()
+        if self.ui.checkBox_size.isChecked():
+            return self._size_keys[self.ui.comboBox_size.currentIndex()] \
+                if self.ui.comboBox_size.currentIndex() < len(self._size_keys) \
+                else self.ui.spinBox_size.value()
+        else:
+            return None
 
     def get_weight(self):
-        return str(self.ui.comboBox_weight.currentText())
+        if self.ui.checkBox_weight.isChecked():
+            return str(self.ui.comboBox_weight.currentText())
+        else:
+            return None
 
     def get_location(self):
-        return self.ui.doubleSpinBox_x.value(), self.ui.doubleSpinBox_y.value()
+        if self.ui.groupBox_location.isChecked():
+            return self.ui.doubleSpinBox_x.value(), self.ui.doubleSpinBox_y.value()
+        else:
+            return None
 
     def get_xpad(self):
-        return self.ui.doubleSpinBox_x_pad.value()
+        if self.ui.groupBox_padding.isChecked():
+            return self.ui.doubleSpinBox_x_pad.value()
+        else:
+            return None
 
     def get_ypad(self):
-        return self.ui.doubleSpinBox_y_pad.value()
+        if self.ui.groupBox_padding.isChecked():
+            return self.ui.doubleSpinBox_y_pad.value()
+        else:
+            return None

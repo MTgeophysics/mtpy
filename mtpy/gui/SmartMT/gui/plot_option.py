@@ -123,7 +123,7 @@ class PlotOption(QtGui.QWidget):
             # self._fig.show()
             widget = MPLCanvasWidget(fig)
             self._parent.create_subwindow(widget, "%s" % self._current_plot.plot_name(), overide=False,
-                                          tooltip=self._current_plot.get_parameter_str())
+                                          tooltip=self._current_plot.get_plot_tooltip())
 
     def update_ui(self):
         if self._current_plot is not None:

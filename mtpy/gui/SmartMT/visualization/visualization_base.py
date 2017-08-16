@@ -128,7 +128,7 @@ class VisualizationBase(QtCore.QThread):
         pass
 
     @abc.abstractmethod
-    def get_parameter_str(self):
+    def get_plot_tooltip(self):
         """
         returns the string that describe the plotting parameter, which will be used in the
         tooltips of the popup image window containing the plot to help users identify plots
