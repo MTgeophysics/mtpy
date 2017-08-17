@@ -3355,16 +3355,31 @@ def change_data_elevation(data_fn, model_fn, new_data_fn=None, res_air=1e12):
     m_obj = Model()
     m_obj.read_model_file(model_fn)
     
-    for key in d_obj.mt_dict.keys():
-        mt_obj = d_obj.mt_dict[key]
-        e_index = np.where(m_obj.grid_east > mt_obj.grid_east)[0][0]
-        n_index = np.where(m_obj.grid_north > mt_obj.grid_north)[0][0]
+    s_locations = d_obj.station_locations.station_locations.copy()
+    
+    # need to subtract one because we are finding the cell next to it
+    for s_arr in s_locations:
+        e_index = np.where(m_obj.grid_east >= s_arr['rel_east'])[0][0]-1
+        n_index = np.where(m_obj.grid_north >= s_arr['rel_north'])[0][0]-1
         z_index = np.where(m_obj.res_model[n_index, e_index, :] < res_air*.9)[0][0]
-        s_index = np.where(d_obj.data_array['station']==key)[0][0]        
+        s_index = np.where(d_obj.data_array['station']==s_arr['station'])[0][0]
         d_obj.data_array[s_index]['elev'] = m_obj.grid_z[z_index]
-                
-        mt_obj.grid_elev = m_obj.grid_z[z_index] 
         
+        print s_arr['station'], s_arr['elev'], n_index, e_index, z_index
+        print s_arr['rel_north'], s_arr['rel_east']
+        print m_obj.grid_north[n_index], m_obj.grid_east[e_index]
+        print '-'*20
+#    
+#    for key in d_obj.mt_dict.keys():
+#        mt_obj = d_obj.mt_dict[key]
+#        e_index = np.where(m_obj.grid_east > mt_obj.grid_east)[0][0]
+#        n_index = np.where(m_obj.grid_north > mt_obj.grid_north)[0][0]
+#        z_index = np.where(m_obj.res_model[n_index, e_index, :] < res_air*.9)[0][0]
+#        s_index = np.where(d_obj.data_array['station']==key)[0][0]        
+#        d_obj.data_array[s_index]['elev'] = m_obj.grid_z[z_index]
+#                
+#        mt_obj.grid_elev = m_obj.grid_z[z_index] 
+#        
     if new_data_fn is None:
         new_dfn = '{0}{1}'.format(data_fn[:-4], '_elev.dat')
     else:
@@ -3377,6 +3392,48 @@ def change_data_elevation(data_fn, model_fn, new_data_fn=None, res_air=1e12):
                           elevation=True)
          
     return new_dfn
+    
+def center_stations(data_fn, model_fn, new_data_fn=None):
+    """
+    center station locations to the middle of cells, might be useful for 
+    topography.
+    """
+    
+    d_obj = Data()
+    d_obj.read_data_file(data_fn)
+    
+    m_obj = Model()
+    m_obj.read_model_file(model_fn)
+    
+    for s_arr in d_obj.station_locations.station_locations:
+        e_index = np.where(m_obj.grid_east >= s_arr['rel_east'])[0][0]-1
+        n_index = np.where(m_obj.grid_north >= s_arr['rel_north'])[0][0]-1
+        
+        mid_east = m_obj.grid_east[e_index:e_index+2].mean()
+        mid_north = m_obj.grid_north[n_index:n_index+2].mean()
+        
+        s_index = np.where(d_obj.data_array['station']==s_arr['station'])[0][0]
+        
+        d_obj.data_array[s_index]['rel_east'] = mid_east
+        d_obj.data_array[s_index]['rel_north'] = mid_north
+        
+        print s_arr['rel_east'], s_arr['rel_north']
+        print mid_east, mid_north
+        print '-'*30
+        
+    if new_data_fn is None:
+        new_dfn = '{0}{1}'.format(data_fn[:-4], '_center.dat')
+    else:
+        new_dfn=new_data_fn
+        
+    d_obj.write_data_file(save_path=os.path.dirname(new_dfn), 
+                          fn_basename=os.path.basename(new_dfn),
+                          compute_error=False,
+                          fill=False, 
+                          elevation=True)
+         
+    return new_dfn
+    
     
 #==============================================================================
 # Write inversion parameters to a config type file
@@ -5815,9 +5872,10 @@ class PlotDepthSlice(object):
             if os.path.isfile(self.data_fn) == True:
                 md_data = Data()
                 md_data.read_data_file(self.data_fn)
-                self.station_east = md_data.station_locations['rel_east']/self.dscale
-                self.station_north = md_data.station_locations['rel_north']/self.dscale
-                self.station_names = md_data.station_locations['station']
+                self.station_east = md_data.station_locations.rel_east/self.dscale
+                self.station_north = md_data.station_locations.rel_north/self.dscale
+                self.station_elev = md_data.station_locations.elev/self.dscale                
+                self.station_names = md_data.station_locations.station
             else:
                 print 'Could not find data file {0}'.format(self.data_fn)
         
@@ -6034,116 +6092,116 @@ class PlotDepthSlice(object):
 # plot slices 
 #==============================================================================
 class PlotSlices(object):
-    """
-    plot all slices and be able to scroll through the model
-    
-    :Example: ::
-    
-        >>> import mtpy.modeling.modem as modem
-        >>> mfn = r"/home/modem/Inv1/Modular_NLCG_100.rho"
-        >>> dfn = r"/home/modem/Inv1/ModEM_data.dat"       
-        >>> pds = ws.PlotSlices(model_fn=mfn, data_fn=dfn)
-        
-    ======================= ===================================================
-    Buttons                  Description    
-    ======================= ===================================================
-    'e'                     moves n-s slice east by one model block
-    'w'                     moves n-s slice west by one model block
-    'n'                     moves e-w slice north by one model block
-    'm'                     moves e-w slice south by one model block
-    'd'                     moves depth slice down by one model block
-    'u'                     moves depth slice up by one model block
-    ======================= ===================================================
-
-    
-    ======================= ===================================================
-    Attributes              Description    
-    ======================= ===================================================
-    ax_en                   matplotlib.axes instance for depth slice  map view 
-    ax_ez                   matplotlib.axes instance for e-w slice
-    ax_map                  matplotlib.axes instance for location map
-    ax_nz                   matplotlib.axes instance for n-s slice
-    climits                 (min , max) color limits on resistivity in log 
-                            scale. *default* is (0, 4)
-    cmap                    name of color map for resisitiviy.
-                            *default* is 'jet_r'
-    data_fn                 full path to data file name
-    dscale                  scaling parameter depending on map_scale
-    east_line_xlist         list of line nodes of east grid for faster plotting
-    east_line_ylist         list of line nodes of east grid for faster plotting
-    ew_limits               (min, max) limits of e-w in map_scale units
-                            *default* is None and scales to station area
-    fig                     matplotlib.figure instance for figure
-    fig_aspect              aspect ratio of plots. *default* is 1
-    fig_dpi                 resolution of figure in dots-per-inch
-                            *default* is 300
-    fig_num                 figure instance number
-    fig_size                [width, height] of figure window. 
-                            *default* is [6,6]
-    font_dict               dictionary of font keywords, internally created
-    font_size               size of ticklables in points, axes labes are 
-                            font_size+2. *default* is 7
-    grid_east               relative location of grid nodes in e-w direction
-                            in map_scale units
-    grid_north              relative location of grid nodes in n-s direction
-                            in map_scale units
-    grid_z                  relative location of grid nodes in z direction
-                            in map_scale units
-    index_east              index value of grid_east being plotted
-    index_north             index value of grid_north being plotted
-    index_vertical          index value of grid_z being plotted
-    initial_fn              full path to initial file
-    key_press               matplotlib.canvas.connect instance
-    map_scale               [ 'm' | 'km' ] scale of map. *default* is km
-    mesh_east               np.meshgrid(grid_east, grid_north)[0]
-    mesh_en_east            np.meshgrid(grid_east, grid_north)[0]
-    mesh_en_north           np.meshgrid(grid_east, grid_north)[1]
-    mesh_ez_east            np.meshgrid(grid_east, grid_z)[0]
-    mesh_ez_vertical        np.meshgrid(grid_east, grid_z)[1]
-    mesh_north              np.meshgrid(grid_east, grid_north)[1]
-    mesh_nz_north           np.meshgrid(grid_north, grid_z)[0]
-    mesh_nz_vertical        np.meshgrid(grid_north, grid_z)[1]
-    model_fn                full path to model file
-    ms                      size of station markers in points. *default* is 2
-    nodes_east              relative distance betwen nodes in e-w direction
-                            in map_scale units
-    nodes_north             relative distance betwen nodes in n-s direction
-                            in map_scale units
-    nodes_z                 relative distance betwen nodes in z direction
-                            in map_scale units
-    north_line_xlist        list of line nodes north grid for faster plotting  
-    north_line_ylist        list of line nodes north grid for faster plotting
-    ns_limits               (min, max) limits of plots in n-s direction
-                            *default* is None, set veiwing area to station area 
-    plot_yn                 [ 'y' | 'n' ] 'y' to plot on instantiation
-                            *default* is 'y'
-    res_model               np.ndarray(n_north, n_east, n_vertical) of 
-                            model resistivity values in linear scale           
-    station_color           color of station marker. *default* is black
-    station_dict_east       location of stations for each east grid row
-    station_dict_north      location of stations for each north grid row
-    station_east            location of stations in east direction
-    station_fn              full path to station file 
-    station_font_color      color of station label 
-    station_font_pad        padding between station marker and label
-    station_font_rotation   angle of station label
-    station_font_size       font size of station label
-    station_font_weight     weight of font for station label
-    station_id              [min, max] index values for station labels
-    station_marker          station marker
-    station_names           name of stations
-    station_north           location of stations in north direction
-    subplot_bottom          distance between axes and bottom of figure window
-    subplot_hspace          distance between subplots in vertical direction
-    subplot_left            distance between axes and left of figure window  
-    subplot_right           distance between axes and right of figure window
-    subplot_top             distance between axes and top of figure window
-    subplot_wspace          distance between subplots in horizontal direction
-    title                   title of plot 
-    z_limits                (min, max) limits in vertical direction,
-    ======================= ===================================================
-    
-    """
+#    """
+#    plot all slices and be able to scroll through the model
+#    
+#    :Example: ::
+#    
+#        >>> import mtpy.modeling.modem as modem
+#        >>> mfn = r"/home/modem/Inv1/Modular_NLCG_100.rho"
+#        >>> dfn = r"/home/modem/Inv1/ModEM_data.dat"       
+#        >>> pds = ws.PlotSlices(model_fn=mfn, data_fn=dfn)
+#        
+#    ======================= ===================================================
+#    Buttons                  Description    
+#    ======================= ===================================================
+#    'e'                     moves n-s slice east by one model block
+#    'w'                     moves n-s slice west by one model block
+#    'n'                     moves e-w slice north by one model block
+#    'm'                     moves e-w slice south by one model block
+#    'd'                     moves depth slice down by one model block
+#    'u'                     moves depth slice up by one model block
+#    ======================= ===================================================
+#
+#    
+#    ======================= ===================================================
+#    Attributes              Description    
+#    ======================= ===================================================
+#    ax_en                   matplotlib.axes instance for depth slice  map view 
+#    ax_ez                   matplotlib.axes instance for e-w slice
+#    ax_map                  matplotlib.axes instance for location map
+#    ax_nz                   matplotlib.axes instance for n-s slice
+#    climits                 (min , max) color limits on resistivity in log 
+#                            scale. *default* is (0, 4)
+#    cmap                    name of color map for resisitiviy.
+#                            *default* is 'jet_r'
+#    data_fn                 full path to data file name
+#    dscale                  scaling parameter depending on map_scale
+#    east_line_xlist         list of line nodes of east grid for faster plotting
+#    east_line_ylist         list of line nodes of east grid for faster plotting
+#    ew_limits               (min, max) limits of e-w in map_scale units
+#                            *default* is None and scales to station area
+#    fig                     matplotlib.figure instance for figure
+#    fig_aspect              aspect ratio of plots. *default* is 1
+#    fig_dpi                 resolution of figure in dots-per-inch
+#                            *default* is 300
+#    fig_num                 figure instance number
+#    fig_size                [width, height] of figure window. 
+#                            *default* is [6,6]
+#    font_dict               dictionary of font keywords, internally created
+#    font_size               size of ticklables in points, axes labes are 
+#                            font_size+2. *default* is 7
+#    grid_east               relative location of grid nodes in e-w direction
+#                            in map_scale units
+#    grid_north              relative location of grid nodes in n-s direction
+#                            in map_scale units
+#    grid_z                  relative location of grid nodes in z direction
+#                            in map_scale units
+#    index_east              index value of grid_east being plotted
+#    index_north             index value of grid_north being plotted
+#    index_vertical          index value of grid_z being plotted
+#    initial_fn              full path to initial file
+#    key_press               matplotlib.canvas.connect instance
+#    map_scale               [ 'm' | 'km' ] scale of map. *default* is km
+#    mesh_east               np.meshgrid(grid_east, grid_north)[0]
+#    mesh_en_east            np.meshgrid(grid_east, grid_north)[0]
+#    mesh_en_north           np.meshgrid(grid_east, grid_north)[1]
+#    mesh_ez_east            np.meshgrid(grid_east, grid_z)[0]
+#    mesh_ez_vertical        np.meshgrid(grid_east, grid_z)[1]
+#    mesh_north              np.meshgrid(grid_east, grid_north)[1]
+#    mesh_nz_north           np.meshgrid(grid_north, grid_z)[0]
+#    mesh_nz_vertical        np.meshgrid(grid_north, grid_z)[1]
+#    model_fn                full path to model file
+#    ms                      size of station markers in points. *default* is 2
+#    nodes_east              relative distance betwen nodes in e-w direction
+#                            in map_scale units
+#    nodes_north             relative distance betwen nodes in n-s direction
+#                            in map_scale units
+#    nodes_z                 relative distance betwen nodes in z direction
+#                            in map_scale units
+#    north_line_xlist        list of line nodes north grid for faster plotting  
+#    north_line_ylist        list of line nodes north grid for faster plotting
+#    ns_limits               (min, max) limits of plots in n-s direction
+#                            *default* is None, set veiwing area to station area 
+#    plot_yn                 [ 'y' | 'n' ] 'y' to plot on instantiation
+#                            *default* is 'y'
+#    res_model               np.ndarray(n_north, n_east, n_vertical) of 
+#                            model resistivity values in linear scale           
+#    station_color           color of station marker. *default* is black
+#    station_dict_east       location of stations for each east grid row
+#    station_dict_north      location of stations for each north grid row
+#    station_east            location of stations in east direction
+#    station_fn              full path to station file 
+#    station_font_color      color of station label 
+#    station_font_pad        padding between station marker and label
+#    station_font_rotation   angle of station label
+#    station_font_size       font size of station label
+#    station_font_weight     weight of font for station label
+#    station_id              [min, max] index values for station labels
+#    station_marker          station marker
+#    station_names           name of stations
+#    station_north           location of stations in north direction
+#    subplot_bottom          distance between axes and bottom of figure window
+#    subplot_hspace          distance between subplots in vertical direction
+#    subplot_left            distance between axes and left of figure window  
+#    subplot_right           distance between axes and right of figure window
+#    subplot_top             distance between axes and top of figure window
+#    subplot_wspace          distance between subplots in horizontal direction
+#    title                   title of plot 
+#    z_limits                (min, max) limits in vertical direction,
+#    ======================= ===================================================
+#    
+#    """
     
     def __init__(self, model_fn, data_fn=None, **kwargs):
         self.model_fn = model_fn
@@ -6237,9 +6295,10 @@ class PlotSlices(object):
             if os.path.isfile(self.data_fn) == True:
                 md_data = Data()
                 md_data.read_data_file(self.data_fn)
-                self.station_east = md_data.station_locations['rel_east']/self.dscale
-                self.station_north = md_data.station_locations['rel_north']/self.dscale
-                self.station_names = md_data.station_locations['station']
+                self.station_east = md_data.station_locations.rel_east/self.dscale
+                self.station_north = md_data.station_locations.rel_north/self.dscale
+                self.station_names = md_data.station_locations.station
+                self.station_elev = md_data.station_locations.elev/self.dscale
             else:
                 print 'Could not find data file {0}'.format(self.data_fn)
         
@@ -6517,11 +6576,21 @@ class PlotSlices(object):
                               fontdict=self.font_dict)
         #--> plot the stations
         if self.station_east is not None:
-            for ee, nn in zip(self.station_east, self.station_north):
-                self.ax_en.text(ee, nn, '*', 
-                                 verticalalignment='center',
-                                 horizontalalignment='center',
-                                 fontdict={'size':5, 'weight':'bold'})
+            for ee, nn, elev, name in zip(self.station_east, 
+                                          self.station_north,
+                                          self.station_elev,
+                                          self.station_names):
+                if elev <= self.grid_z[self.index_vertical]:                
+                    self.ax_en.text(ee, nn, '+', 
+                                    verticalalignment='center',
+                                    horizontalalignment='center',
+                                    fontdict={'size':7, 'weight':'bold',
+                                              'color':(.75, 0, 0)})
+                    self.ax_en.text(ee, nn, name[2:], 
+                                    verticalalignment='center',
+                                    horizontalalignment='center',
+                                    fontdict={'size':7, 'weight':'bold',
+                                              'color':(.75, 0, 0)})
 
         self.fig.canvas.draw()
         self._update_map()
