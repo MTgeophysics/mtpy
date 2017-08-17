@@ -285,14 +285,14 @@ class EdiCollection(object):
                         mt_obj.station, mt_obj.lat, mt_obj.lon)
 
                     mt_stat = [freq, station, lat, lon,
-                               mt_obj.Z.resistivity[p_index,0,0].real,
-                               mt_obj.Z.resistivity[p_index,0,0].imag,
-                               mt_obj.Z.resistivity[p_index,0,1].real,
-                               mt_obj.Z.resistivity[p_index,0,1].imag,
-                               mt_obj.Z.resistivity[p_index,1,0].real,
-                               mt_obj.Z.resistivity[p_index,1,0].imag,
-                               mt_obj.Z.resistivity[p_index,1,1].real,
-                               mt_obj.Z.resistivity[p_index,1,1].imag
+                               mt_obj.Z.z[p_index,0,0].real,
+                               mt_obj.Z.z[p_index,0,0].imag,
+                               mt_obj.Z.z[p_index,0,1].real,
+                               mt_obj.Z.z[p_index,0,1].imag,
+                               mt_obj.Z.z[p_index,1,0].real,
+                               mt_obj.Z.z[p_index,1,0].imag,
+                               mt_obj.Z.z[p_index,1,1].real,
+                               mt_obj.Z.z[p_index,1,1].imag
                                ]
                     mtlist.append(mt_stat)
                 else:
