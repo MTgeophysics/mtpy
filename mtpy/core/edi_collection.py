@@ -258,8 +258,9 @@ class EdiCollection(object):
 
         pt_dict = {}
 
-        csv_header = ['freq','station', 'lat', 'lon',  'ZXXR','ZXXI',
-                      'ZXYR', 'ZXYI', 'ZYXR', 'ZYXI', 'ZYYR', 'ZYYI']
+        csv_header = ['FREQ','STATION', 'LAT', 'LON',  'ZXXre','ZXXim',
+                      'ZXYre', 'ZXYim', 'ZYXre', 'ZYXim', 'ZYYre', 'ZYYim',
+                      'TXre', 'TXim', 'TYre', 'TYim']
 
         with open(csvfname, "wb") as csvf:
             writer = csv.writer(csvf)
@@ -292,7 +293,11 @@ class EdiCollection(object):
                                mt_obj.Z.z[p_index,1,0].real,
                                mt_obj.Z.z[p_index,1,0].imag,
                                mt_obj.Z.z[p_index,1,1].real,
-                               mt_obj.Z.z[p_index,1,1].imag
+                               mt_obj.Z.z[p_index,1,1].imag,
+                               mt_obj.Tipper.tipper[p_index,0,0].real,
+                               mt_obj.Tipper.tipper[p_index,0,0].imag,
+                               mt_obj.Tipper.tipper[p_index, 0, 1].real,
+                               mt_obj.Tipper.tipper[p_index, 0, 1].imag,
                                ]
                     mtlist.append(mt_stat)
                 else:
