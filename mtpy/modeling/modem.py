@@ -1571,7 +1571,12 @@ class Data(object):
         
         parameter_dict['data.inv_mode'] = self.inv_mode_dict[self.inv_mode]
         parameter_dict['data.num_stations'] = self.station_locations.station.size
+        parameter_dict['data.center_point_ll'] = (self.center_point.lat[0],
+                                                  self.center_point.lon[0])
         
+        parameter_dict['data.center_point_utm'] = (self.center_point.north[0],
+                                                   self.center_point.east[0],
+                                                   self.center_point.zone[0])
         return parameter_dict
         
 #==============================================================================
@@ -3049,7 +3054,9 @@ def read_dem_ascii(ascii_fn, cell_size=500, model_center=(0, 0), rot_90=0):
                                np.arange(0, north.size, num_cells),
                                indexing='ij') 
     elevation = elevation[new_x, new_y]
-    
+    # make any null values set to minimum elevation, could be dangerous
+    elevation[np.where(elevation == -9999.0)] = elevation[np.where(elevation != -9999.0)].min()
+
     # estimate the shift of the DEM to relative model coordinates
     mid_east = np.where(new_east >= model_center[0])[0][0]
     mid_north = np.where(new_north >= model_center[1])[0][0]
@@ -3240,7 +3247,7 @@ def make_elevation_model(interp_elev, model_nodes_z, elevation_cell=30,
     return elevation_model, new_nodes_z    
         
 def add_topography_to_model(dem_ascii_fn, model_fn, model_center=(0,0),
-                            rot_90=0, cell_size=500, elev_cell=30):
+                            rot_90=0, cell_size=500, elev_cell=30, pad=1):
     """
     Add topography to an existing model from a dem in ascii format.      
     
@@ -3291,14 +3298,15 @@ def add_topography_to_model(dem_ascii_fn, model_fn, model_center=(0,0),
                       
     """
      ### 1.) read in the dem and center it onto the resistivity model 
-    e_east, e_north, elevation = read_dem_ascii(dem_ascii_fn, cell_size=500, 
-                                            model_center=model_center, 
-                                            rot_90=3)
+    e_east, e_north, elevation = read_dem_ascii(dem_ascii_fn, 
+                                                cell_size=cell_size, 
+                                                model_center=model_center, 
+                                                rot_90=rot_90)
     m_obj = Model()
     m_obj.read_model_file(model_fn)
     ### 2.) interpolate the elevation model onto the model grid
     m_elev = interpolate_elevation(e_east, e_north, elevation, 
-                                   m_obj.grid_east, m_obj.grid_north, pad=3)
+                                   m_obj.grid_east, m_obj.grid_north, pad=pad)
     
     m_elev[np.where(m_elev == -9999.0)] = m_elev[np.where(m_elev != -9999.0)].min()    
     ### 3.) make a resistivity model that incoorporates topography
@@ -3308,8 +3316,12 @@ def add_topography_to_model(dem_ascii_fn, model_fn, model_center=(0,0),
     ### 4.) write new model file  
     m_obj.nodes_z = elev_nodes_z
     m_obj.res_model = mod_elev
+    m_obj.model_fn = None
+    m_obj.save_path = os.path.dirname(model_fn)
     m_obj.write_model_file(model_fn_basename='{0}_topo.rho'.format(
-                           os.path.basename(m_obj.model_fn)[0:-4]))
+                           os.path.basename(model_fn)[0:-4]))
+                           
+    return m_obj.model_fn
 
 def change_data_elevation(data_fn, model_fn, new_data_fn=None, res_air=1e12):
     """
