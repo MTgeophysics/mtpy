@@ -1335,6 +1335,7 @@ class Data(object):
         station_list = []
         read_impedance = False
         read_tipper = False
+        inv_list = []
         for dline in dlines:
             if dline.find('#') == 0:
                 header_list.append(dline.strip())
@@ -1347,9 +1348,11 @@ class Data(object):
                 elif dline.lower().find('vertical') > 0:
                     read_tipper = True
                     read_impedance = False
+                    inv_list.append('Full_Vertical_Components')
                 elif dline.lower().find('impedance') > 0:
                     read_impedance = True
                     read_tipper = False
+                    inv_list.append('Full_Impedance')
                 if dline.find('exp') > 0:
                     if read_impedance is True:
                         self.wave_sign_impedance = dline[dline.find('(')+1]
@@ -1410,6 +1413,25 @@ class Data(object):
                 except ValueError:
                     pass
                 
+                
+        
+        # find inversion mode
+        print inv_list
+        for inv_key in self.inv_mode_dict.keys():
+            inv_mode_list = self.inv_mode_dict[inv_key]
+            if len(inv_mode_list) != inv_list:
+                continue
+            else:
+                tf_arr = np.zeros(len(inv_list), dtype=np.bool)
+            
+                for tf, data_inv in enumerate(inv_list):
+                    if data_inv in self.inv_mode_dict[inv_key]:
+                        tf_arr[tf] = True
+                
+                if np.alltrue(tf_arr) == True:
+                    self.inv_mode = inv_key
+                    break
+                    
             
         self.period_list = np.array(sorted(set(period_list)))
         station_list = sorted(set(station_list))
@@ -1579,6 +1601,61 @@ class Data(object):
                                                    self.center_point.zone[0])
         return parameter_dict
         
+        
+    def center_stations(self, data_fn, model_fn, new_data_fn=None):
+        """
+        Center station locations to the middle of cells, might be useful for 
+        topography.
+    
+    
+        Arguments
+        -----------
+            **data_fn** : string
+                          full path to data file
+                          
+            **model_fn** : string
+                          full path to model file
+                          
+            **new_data_fn** : string
+                             full path to new data file
+                             *default* is None, which save as 
+                             data_fn_center.dat
+                             
+        Returns
+        -----------
+            **new_data_fn** : string
+                              full path to new data file 
+        """
+        
+        self.read_data_file(data_fn)
+        
+        m_obj = Model()
+        m_obj.read_model_file(model_fn)
+        
+        for s_arr in self.station_locations.station_locations:
+            e_index = np.where(m_obj.grid_east >= s_arr['rel_east'])[0][0]-1
+            n_index = np.where(m_obj.grid_north >= s_arr['rel_north'])[0][0]-1
+            
+            mid_east = m_obj.grid_east[e_index:e_index+2].mean()
+            mid_north = m_obj.grid_north[n_index:n_index+2].mean()
+            
+            s_index = np.where(self.data_array['station']==s_arr['station'])[0][0]
+            
+            self.data_array[s_index]['rel_east'] = mid_east
+            self.data_array[s_index]['rel_north'] = mid_north
+
+        if new_data_fn is None:
+            new_dfn = '{0}{1}'.format(data_fn[:-4], '_center.dat')
+        else:
+            new_dfn=new_data_fn
+            
+        self.write_data_file(save_path=os.path.dirname(new_dfn), 
+                              fn_basename=os.path.basename(new_dfn),
+                              compute_error=False,
+                              fill=False, 
+                              elevation=True)
+             
+        return new_dfn
 #==============================================================================
 # mesh class
 #==============================================================================
