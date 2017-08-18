@@ -15,11 +15,9 @@ Created on Tue Jan 07 12:42:34 2014
 #==============================================================================
 import mtpy.core.edi as MTedi
 import mtpy.core.z as MTz
-import mtpy.utils.latlongutmconversion as MTutm
 import mtpy.utils.exceptions as MTex
-import mtpy.utils.format as MTformat
+import mtpy.utils.gis_tools as gis_tools
 import mtpy.analysis.pt as MTpt
-import mtpy.analysis.zinvariants as MTinv
 import mtpy.analysis.distortion as MTdistortion
 import os
 import numpy as np
@@ -147,33 +145,25 @@ class MT(object):
     
     def __init__(self, fn=None, **kwargs):
         
-        self._fn = fn
-        self.station = kwargs.pop('station', None)
-        self._lat = kwargs.pop('lat', None)
-        self._lon = kwargs.pop('lon', None)
-        self._elev = kwargs.pop('elev', None)
+        # important information held in objects
+        self.Site = Site()
+        self.FieldNotes = FieldNotes()
+        self.Provenance = Provenance()
+        self.Notes = MTedi.Information()
+        self.Processing = Processing()
+
         self._Z = kwargs.pop('Z', MTz.Z())
         self._Tipper = kwargs.pop('Tipper', MTz.Tipper())
-        self._utm_zone = kwargs.pop('utm_zone', None)
-        self._east = kwargs.pop('east', None)
-        self._north = kwargs.pop('north', None)
-        self._rotation_angle = kwargs.pop('rotation_angle', 0)
+        self._rotation_angle = 0
+        self._fn = None
+        self._edi_obj = MTedi.Edi()
         
-        self.edi_object = MTedi.Edi()
-        self.pt = None
-        self.zinv = None
-        self._utm_ellipsoid = 23
+        self.fn = fn
         
         #provide key words to fill values if an edi file does not exist
         for key in kwargs.keys():
             setattr(self, key, kwargs[key])
-        
-        #--> read in the file name given
-        if self._fn is not None:
-            self._set_fn(fn)
 
-        
-    
     #==========================================================================
     # set functions                        
     #==========================================================================
@@ -183,11 +173,8 @@ class MT(object):
         
         upon setting utm coordinates are recalculated
         """
-        
-        self._lat = MTformat._assert_position_format('lat', latitude)
-        
-        if self._lon is not None and self._lat is not None:
-            self._get_utm()
+        self.Site.Location.latitude = latitude
+        self.Site.Location.project_location2utm()
         
     def _set_lon(self, longitude):
         """
@@ -195,19 +182,16 @@ class MT(object):
         
         upon setting utm coordinates are recalculated
         """
-        
-        self._lon = MTformat._assert_position_format('lon', longitude)
-        
-        if self._lon is not None and self._lat is not None:
-            self._get_utm()
+        self.Site.Location.longitude = longitude
+        self.Site.Location.project_location2utm()
         
         
     def _set_elev(self, elevation):
         """
         set elevation, should be input as meters
         """
-        
-        self._elev = elevation
+        self._elev = self.Site.Location.elevation = elevation
+
         
     def _set_east(self, easting):
         """
@@ -215,8 +199,8 @@ class MT(object):
         
         upon setting lat and lon are recalculated
         """
-        
-        self._east = easting
+        self.Site.Location.easting = easting
+        self.Site.Location.project_location2ll()
         
     def _set_north(self, northing):
         """
@@ -224,8 +208,8 @@ class MT(object):
         
         upon setting lat and lon are recalculated
         """
-        
-        self._north = northing
+        self.Site.Location.northing = northing
+        self.Site.Location.project_location2ll()
     
         
     def _set_utm_zone(self, utm_zone):
@@ -234,8 +218,8 @@ class MT(object):
         
         upon setting lat and lon are recalculated
         """
-        
-        self._utm_zone = utm_zone
+        self.Site.Location.utm_zone = utm_zone
+        self.Site.Location.project_location2ll()
         
     def _set_fn(self, filename):
         """
@@ -243,12 +227,16 @@ class MT(object):
         """
         
         self._fn = filename
+        if self._fn is None:
+            return 
+            
         if self._fn.lower().endswith('.edi'):
-            self._read_edi_file()
+            self.read_edi_file()
         else:
             not_fn = self._fn[os.path.basename(self._fn).find['.']:]
             raise MTex.MTpyError_file_handling('File '+\
                               'type {0} not supported yet.'.format(not_fn))
+            
     
     def _set_rotation_angle(self, theta_r):
         """
@@ -279,12 +267,6 @@ class MT(object):
         self._Z = z_object
         self._Z._compute_res_phase()
         
-        #--> compute phase tensor
-        self.pt = MTpt.PhaseTensor(z_object=self._Z, freq=self._Z.freq)
-        
-        #--> compute invariants 
-        self.zinv = MTinv.Zinvariants(z_object=self._Z) 
-        
     def _set_Tipper(self, t_object):
         """
         set tipper object
@@ -296,27 +278,33 @@ class MT(object):
         if self._Tipper is not None:
             self._Tipper._compute_amp_phase()
             self._Tipper._compute_mag_direction()
+            
+    def _set_station(self, station_name):
+        """
+        set station name
+        """
+        self.Site.id = station_name
         
     #==========================================================================
     # get functions                         
     #==========================================================================    
     def _get_lat(self):
-        return self._lat
+        return self.Site.Location.latitude
 
     def _get_lon(self):
-        return self._lon
+        return self.Site.Location.longitude
         
     def _get_elev(self):
-        return self._elev
+        return self.Site.Location.elevation
         
     def _get_east(self):
-        return self._east
+        return self.Site.Location.easting
         
     def _get_north(self):
-        return self._north
+        return self.Site.Location.northing
     
     def _get_utm_zone(self):
-        return self._utm_zone
+        return self.Site.Location.utm_zone
     
     def _get_fn(self):
         return self._fn
@@ -329,6 +317,12 @@ class MT(object):
         
     def _get_Tipper(self):
         return self._Tipper
+        
+    def _get_station(self):
+        return self.Site.id
+    
+    def _get_pt(self):
+        return MTpt.PhaseTensor(z_object=self.Z)
     #==========================================================================
     # set properties                          
     #==========================================================================
@@ -359,53 +353,112 @@ class MT(object):
     
     Tipper = property(_get_Tipper, _set_Tipper, doc="Tipper object")
     
-    #--> conversion between utm and ll
-    def _get_utm(self):
-        """
-        get utm coordinates from lat and lon
-        """
-        
-        self.utm_zone, self.east, self.north = MTutm.LLtoUTM(self._utm_ellipsoid,
-                                                             self.lat, self.lon)
-                                                         
-    def _get_ll(self):
-        """
-        get lat and long from utm
-        """
-        
-        self.lat, self.lon = MTutm.UTMtoLL(self._utm_ellipsoid, 
-                                           self.north, 
-                                           self.east, 
-                                           self.utm_zone)
-                                           
-                                           
-                                           
+    station = property(_get_station, _set_station, doc="Station name")
+    
+    pt = property(_get_pt, doc="""Phase Tensor, can only get, not set""")
+                                       
+    #==========================================================================
+    #  read in files   
+    #==========================================================================
     #--> read in edi file                                                    
-    def _read_edi_file(self):
+    def read_edi_file(self):
         """
         read in edi file and set attributes accordingly
         
-        """
+        """        
+        edi_obj = MTedi.Edi(edi_fn=self.fn)
+
+        # read in site information from the header
+        self.lat = edi_obj.lat
+        self.lon = edi_obj.lon
+        self.elev = edi_obj.elev
+        self.Site.acquired_by = edi_obj.Header.acqby
+        self.Site.survey = edi_obj.Header.loc
+        self.Site.start_date = edi_obj.Header.acqdate
+        self.Site.project = edi_obj.Header.project
+        self.Site.Location.datum = edi_obj.Header.datum
+        self.Site.Location.elev_units = edi_obj.Define_measurement.units
+        self.Site.Location.coordinate_system = edi_obj.Header.coordinate_system
         
-        self.edi_object = MTedi.Edi(edi_fn=self.fn)
-        self._lat = self.edi_object.lat
-        self._lon = self.edi_object.lon
-        self._elev = self.edi_object.elev
-        self._Z = self.edi_object.Z
-        self._Tipper = self.edi_object.Tipper
-        self.station = self.edi_object.station
+        # get information about different sensors
+        try:
+            for key in edi_obj.Define_measurement.meas_hx.__dict__.keys():
+                setattr(self.FieldNotes.magnetometer_hx,
+                        key, 
+                        edi_obj.Define_measurement.meas_hx.__dict__[key])
+        except AttributeError:
+            pass
+        try:
+            for key in edi_obj.Define_measurement.meas_hy.__dict__.keys():
+                setattr(self.FieldNotes.magnetometer_hy,
+                        key, 
+                        edi_obj.Define_measurement.meas_hy.__dict__[key])
+        except AttributeError:
+            pass
+        try:
+            for key in edi_obj.Define_measurement.meas_hz.__dict__.keys():
+                setattr(self.FieldNotes.magnetometer_hz,
+                        key, 
+                        edi_obj.Define_measurement.meas_hz.__dict__[key])
+        except AttributeError:
+            pass
+        try:
+            for key in edi_obj.Define_measurement.meas_ex.__dict__.keys():
+                setattr(self.FieldNotes.electrode_ex,
+                        key, 
+                        edi_obj.Define_measurement.meas_ex.__dict__[key])
+        except AttributeError:
+            pass
+        try:
+            for key in edi_obj.Define_measurement.meas_ey.__dict__.keys():
+                setattr(self.FieldNotes.electrode_ey,
+                        key, 
+                        edi_obj.Define_measurement.meas_ey.__dict__[key])
+        except AttributeError:
+            pass
         
-        #--> get utm coordinates from lat and lon        
-        self._get_utm()
+        # get info 
+        self.Notes = edi_obj.Info
+        try: 
+            self.FieldNotes.magnetometer_hx.id = self.Notes.hx
+        except AttributeError:
+            pass
+        try: 
+            self.FieldNotes.magnetometer_hy.id = self.Notes.hy
+        except AttributeError:
+            pass
+        try: 
+            self.FieldNotes.magnetometer_hz.id = self.Notes.hz
+        except AttributeError:
+            pass
+        
+        try:
+            self.FieldNotes.magnetometer_hx.type = self.Notes.b_instrument_type
+            self.FieldNotes.magnetometer_hy.type = self.Notes.b_instrument_type
+            self.FieldNotes.magnetometer_hz.type = self.Notes.b_instrument_type
+        except AttributeError:
+            pass
+        
+        try:
+            self.FieldNotes.electrode_ex.type = self.Notes.e_instrument_type
+            self.FieldNotes.electrode_ey.type = self.Notes.e_instrument_type
+        except AttributeError:
+            pass
+        
+        try:
+            self.FieldNotes.data_logger = self.Notes.b_logger_type
+        except AttributeError:
+            pass
+                
+        
+        self.Z = edi_obj.Z
+        self.Tipper = edi_obj.Tipper
+        self.station = edi_obj.station
         
         #--> make sure things are ordered from high frequency to low
         self._check_freq_order()
         
-        #--> compute phase tensor
-        self.pt = MTpt.PhaseTensor(z_object=self.Z, freq=self.Z.freq)
-        
-        #--> compute invariants 
-        self.zinv = MTinv.Zinvariants(z_object=self.Z)
+        self._edi_obj = edi_obj
         
     #--> write edi file 
     def write_edi_file(self, new_fn=None, new_Z=None, new_Tipper=None):
@@ -429,26 +482,171 @@ class MT(object):
                            a new Tipper object to be written
         """
         
+        # get header information, mostly from site
+        self._edi_obj = MTedi.Edi()
+        self._edi_obj.Header = self._get_edi_header()
+        
+        # get information 
+        self._edi_obj.Info = MTedi.Information()
+        self._edi_obj.Info.info_list = self._get_edi_info_list()
+        
+        # get define measurement
+        self._edi_obj.Define_measurement = self._get_edi_define_measurement()
+        
+        # get mtsec
+        self._edi_obj.Data_sect = self._get_edi_data_sect()
+        
         if new_Z is not None:
-            self.edi_object.Z = new_Z
+            self._edi_obj.Z = new_Z
         else:
-            self.edi_object.Z = self._Z
+            self._edi_obj.Z = self._Z
        
         if new_Tipper is not None:
-            self.edi_object.Tipper = new_Tipper
+            self._edi_obj.Tipper = new_Tipper
         else:
-            self.edi_object.Tipper = self._Tipper
+            self._edi_obj.Tipper = self._Tipper
             
-        self.edi_object.lat = self._lat
-        self.edi_object.lon = self._lon
-        self.edi_object.station = self.station
-        self.edi_object.zrot = self.rotation_angle
+        self._edi_obj.zrot = self.rotation_angle
         
         if new_fn is None:
             new_fn = self.fn[:-4]+'_RW'+'.edi'
             
-        self.edi_object.write_edi_file(new_edi_fn=new_fn)
+        self._edi_obj.write_edi_file(new_edi_fn=new_fn)
         
+    def _get_edi_header(self):
+        """
+        make an edi header class
+        """
+        
+        header = MTedi.Header()
+        header.acqby = self.Site.acquired_by
+        header.acqdate = self.Site.start_date
+        header.coordinate_system = self.Site.Location.coordinate_system
+        header.dataid = self.Site.id
+        header.datum = self.Site.Location.datum
+        header.elev = self.elev
+        header.fileby = self.Site.acquired_by
+        header.lat = self.lat
+        header.loc = self.Site.project
+        header.lon = self.lon
+        header.project = self.Site.project
+        header.survey = self.Site.survey
+        header.units = self.Site.Location.elev_units
+        
+        return header
+        
+    #--> get information list for edi
+    def _get_edi_info_list(self):
+        """
+        get the information for an edi file
+        """
+        
+        info_list = []
+        # write previous information first
+        for key in sorted(self.Notes.__dict__.keys()):
+            if key.lower() not in ['edi_lines', 'info_list', 'edi_fn']:
+                l_key = key.lower()
+                l_value = getattr(self.Notes, key)
+                info_list.append('{0} = {1}'.format(l_key, l_value))
+        
+        # get instrument information
+        for key in ['ex', 'ey', 'hx', 'hy', 'hz']:
+            if 'e' in key:
+                key = 'electrode_{0}'.format(key)
+            elif 'h' in key:
+                key = 'magnetometer_{0}'.format(key)
+                
+            instrument_obj = getattr(self.FieldNotes, key) 
+            for mkey in ['manufacturer', 'id', 'type']:
+                l_key = '{0}.{1}'.format(key, mkey)
+                line = '{0} = {1}'.format(l_key.lower(), 
+                                          getattr(instrument_obj, mkey))
+                info_list.append(line)
+                
+        # get processing information  
+        for p_key in self.Processing.__dict__.keys():
+            if p_key.lower() == 'software':
+                for s_key in self.Processing.Software.__dict__.keys():
+                    l_key = 'processing.software.{0}'.format(s_key)
+                    l_value = getattr(self.Processing.Software, s_key)
+                    info_list.append('{0} = {1}'.format(l_key.lower(), l_value))
+            else:
+                l_key = 'processing.{0}'.format(p_key)
+                l_value = getattr(self.Processing, p_key)
+                info_list.append('{0} = {1}'.format(l_key, l_value))
+            
+        return info_list
+    
+    # get edi define measurement
+    def _get_edi_define_measurement(self):
+        """
+        get define measurement block for an edi file
+        """       
+        
+        define_meas = MTedi.DefineMeasurement()
+        define_meas.maxchan = 7
+        define_meas.refelev = self.elev
+        define_meas.reflat = self.lat
+        define_meas.reflon = self.lon
+        define_meas.reftype = self.Site.Location.coordinate_system
+        define_meas.units = self.Site.Location.elev_units
+        
+        define_meas.meas_ex = MTedi.EMeasurement()
+        for key in define_meas.meas_ex._kw_list:
+            setattr(define_meas.meas_ex,
+                    key, 
+                    getattr(self.FieldNotes.electrode_ex, key))
+        
+        define_meas.meas_ey = MTedi.EMeasurement()
+        for key in define_meas.meas_ey._kw_list:
+            setattr(define_meas.meas_ey,
+                    key, 
+                    getattr(self.FieldNotes.electrode_ey, key))
+            
+        define_meas.meas_hx = MTedi.HMeasurement()
+        for key in define_meas.meas_hx._kw_list:
+            setattr(define_meas.meas_hx,
+                    key, 
+                    getattr(self.FieldNotes.magnetometer_hx, key))
+ 
+        define_meas.meas_hy = MTedi.HMeasurement()
+        for key in define_meas.meas_hy._kw_list:
+            setattr(define_meas.meas_hy,
+                    key, 
+                    getattr(self.FieldNotes.magnetometer_hy, key)) 
+            
+        if np.all(self.Tipper.tipper == 0) == False:    
+            define_meas.meas_hz = MTedi.HMeasurement()
+            for key in define_meas.meas_hz._kw_list:
+                setattr(define_meas.meas_hz,
+                        key, 
+                        getattr(self.FieldNotes.magnetometer_hz, key))
+            
+        return define_meas
+    
+    def _get_edi_data_sect(self):
+        """
+        get mt data section for edi file
+        """
+        
+        sect = MTedi.DataSection()
+        sect.data_type = 'MT'
+        sect.nfreq = self.Z.z.shape[0]
+        sect.sectid = self.station
+        nchan = 5
+        if np.all(self.Tipper.tipper == 0) == True:
+            nchan = 4
+        sect.nchan = nchan
+        sect.maxblks = 999
+        sect.ex = self.FieldNotes.electrode_ex.id
+        sect.ey = self.FieldNotes.electrode_ey.id
+        sect.hx = self.FieldNotes.magnetometer_hx.id
+        sect.hy = self.FieldNotes.magnetometer_hy.id
+        if np.all(self.Tipper.tipper == 0) == False:
+            sect.hz = self.FieldNotes.magnetometer_hz.id
+            
+        return sect
+            
         
     #--> check the order of frequencies
     def _check_freq_order(self):
@@ -470,7 +668,7 @@ class MT(object):
                 self.Tipper.tipper = self.Tipper.tipper.copy()[::-1]
                 self.Tipper.tipper_err = self.Tipper.tipper_err.copy()[::-1]
                 self.Tipper.freq = self.Tipper.freq.copy()[::-1]
-                
+        
     def remove_distortion(self, num_freq=None):
         """
         remove distortion following Bibby et al. [2005].
@@ -707,4 +905,453 @@ class MT(object):
         plot_obj = plotresponse.PlotResponse(fn=self.fn, **kwargs)
         
         return plot_obj
+        
+#==============================================================================
+# Site details    
+#==============================================================================
+class Site(object):
+    """
+    Information on the site, including location, id, etc.
+    
+    Holds the following information:
+    
+    ================= =========== =============================================
+    Attributes         Type        Explanation    
+    ================= =========== =============================================
+    aqcuired_by       string       name of company or person whom aqcuired the
+                                   data.
+    id                string       station name
+    Location          object       Holds location information, lat, lon, elev
+                      Location     datum, easting, northing see Location class  
+    start_date        string       YYYY-MM-DD start date of measurement
+    end_date          string       YYYY-MM-DD end date of measurement
+    year_collected    string       year data collected
+    survey            string       survey name
+    project           string       project name
+    run_list          string       list of measurment runs ex. [mt01a, mt01b]
+    ================= =========== =============================================
+
+    More attributes can be added by inputing a key word dictionary
+    
+    >>> Site(**{'state':'Nevada', 'Operator':'MTExperts'})
+
+    """
+    
+    def __init__(self, **kwargs):
+        
+        self.acquired_by = None
+        self.end_date = None
+        self.id = None
+        self.Location = Location()
+        self.project = None
+        self.run_list = None
+        self.start_date = None
+        self.survey = None
+        self.year_collected = None
+        
+        for key in kwargs.keys():
+            setattr(self, key, kwargs[key])
+            
+#==============================================================================
+# Location class, be sure to put locations in decimal degrees, and note datum            
+#==============================================================================
+class Location(object):
+    """
+    location details
+    """
+    
+    def __init__(self, **kwargs):
+        self.datum = 'WGS84'
+        self.declination = None
+        self.declination_epoch = None
+        
+        self._elevation = None
+        self._latitude = None
+        self._longitude = None
+        
+        self._northing = None
+        self._easting = None
+        self.utm_zone = None
+        self.elev_units = 'm'
+        self.coordinate_system = 'Geographic North'
+        
+        
+        for key in kwargs.keys():
+            setattr(self, key, kwargs[key])
+            
+    def _get_latitude(self):
+        return self._latitude
+    def _set_latitude(self, lat):
+        self._latitude = gis_tools.assert_lat_value(lat)
+        
+    latitude = property(fget=_get_latitude, 
+                        fset=_set_latitude,
+                        doc="""Latitude in decimal degrees""") 
+                        
+    def _get_longitude(self):
+        return self._longitude
+    def _set_longitude(self, lon):
+        self._longitude = gis_tools.assert_lon_value( lon)
+        
+    longitude = property(fget=_get_longitude, 
+                        fset=_set_longitude,
+                        doc="""Longitude in decimal degrees""") 
+                        
+    def _get_elevation(self):
+        return self._elevation
+    def _set_elevation(self, elev):
+        self._elevation = gis_tools.assert_elevation_value(elev)
+        
+    elevation = property(fget=_get_elevation, 
+                        fset=_set_elevation,
+                        doc="""Elevation in floating point""")
+    
+    def _get_easting(self):
+        return self._easting
+    def _set_easting(self, easting):
+        try:
+            self._easting = float(easting)
+        except TypeError:
+            self._easting = None
+            
+    easting = property(fget=_get_easting, 
+                       fset=_set_easting,
+                       doc="""Easting in meters""")
+    
+    def _get_northing(self):
+        return self._northing
+    def _set_northing(self, northing):
+        try:
+            self._northing = float(northing)
+        except TypeError:
+            self._northing = None
+    northing = property(fget=_get_northing, 
+                       fset=_set_northing,
+                       doc="""Northing in meters""")
+    
+    def project_location2utm(self):
+        """
+        project location coordinates into meters given the reference ellipsoid,
+        for now that is constrained to WGS84
+        
+        Returns East, North, Zone
+        """
+        utm_point = gis_tools.project_point_ll2utm(self._latitude, 
+                                                   self._longitude,
+                                                   datum=self.datum)
+        
+        self.easting = utm_point[0]
+        self.northing = utm_point[1]
+        self.utm_zone = utm_point[2]
+        
+    def project_location2ll(self):
+        """
+        project location coordinates into meters given the reference ellipsoid,
+        for now that is constrained to WGS84
+        
+        Returns East, North, Zone
+        """
+        ll_point = gis_tools.project_point_utm2ll(self.easting, 
+                                                   self.northing,
+                                                   self.utm_zone,
+                                                   datum=self.datum)
+        
+        self.latitude = ll_point[0]
+        self.longitude = ll_point[1]
+ 
+#==============================================================================
+# Field Notes    
+#==============================================================================
+class FieldNotes(object):
+    """
+    Field note information.
+    
+    
+    Holds the following information:
+    
+    ================= =========== =============================================
+    Attributes         Type        Explanation    
+    ================= =========== =============================================
+    data_quality      DataQuality notes on data quality
+    electrode         Instrument      type of electrode used
+    data_logger       Instrument      type of data logger
+    magnetometer      Instrument      type of magnetotmeter
+    ================= =========== =============================================
+
+    More attributes can be added by inputing a key word dictionary
+    
+    >>> FieldNotes(**{'electrode_ex':'Ag-AgCl 213', 'magnetometer_hx':'102'})
+    """
+    
+    def __init__(self, **kwargs):
+        null_emeas = MTedi.EMeasurement()
+        null_hmeas = MTedi.HMeasurement()
+        
+        self.data_quality = DataQuality()
+        self.data_logger = Instrument()
+        self.electrode_ex = Instrument(**null_emeas.__dict__)
+        self.electrode_ey = Instrument(**null_emeas.__dict__)
+        self.magnetometer_hx = Instrument(**null_hmeas.__dict__)
+        self.magnetometer_hy = Instrument(**null_hmeas.__dict__)
+        self.magnetometer_hz = Instrument(**null_hmeas.__dict__)
+
+        for key in kwargs.keys():
+            setattr(self, key, kwargs[key])
+            
+
+#==============================================================================
+# Instrument            
+#==============================================================================
+class Instrument(object):
+    """
+    Information on an instrument that was used.
+    
+    Holds the following information:
+    
+    ================= =========== =============================================
+    Attributes         Type        Explanation    
+    ================= =========== =============================================
+    id                string      serial number or id number of data logger
+    manufacturer      string      company whom makes the instrument
+    type              string      Broadband, long period, something else 
+    ================= =========== =============================================
+
+    More attributes can be added by inputing a key word dictionary
+    
+    >>> Instrument(**{'ports':'5', 'gps':'time_stamped'})
+    """
+    
+    def __init__(self, **kwargs):
+        self.id = None
+        self.manufacturer = None
+        self.type = None
+        
+        for key in kwargs.keys():
+            setattr(self, key, kwargs[key])
+
+#==============================================================================
+# Data Quality            
+#==============================================================================
+class DataQuality(object):
+    """
+    Information on data quality.
+    
+    Holds the following information:
+    
+    ================= =========== =============================================
+    Attributes         Type        Explanation    
+    ================= =========== =============================================
+    comments          string      comments on data quality
+    good_from_period  float       minimum period data are good 
+    good_to_period    float       maximum period data are good
+    rating            int         [1-5]; 1 = poor, 5 = excellent
+    warrning_comments string      any comments on warnings in the data
+    warnings_flag     int         [0-#of warnings]       
+    ================= =========== =============================================
+
+    More attributes can be added by inputing a key word dictionary
+    
+    >>>DataQuality(**{'time_series_comments':'Periodic Noise'})
+    """
+    
+    def __init__(self, **kwargs):
+        self.comments = None
+        self.good_from_period = None
+        self.good_to_period = None
+        self.rating = None
+        self.warnings_comments = None
+        self.warnings_flag = 0
+        
+        for key in kwargs.keys():
+            setattr(self, key, kwargs[key])
+            
+
+#==============================================================================
+# Citation        
+#==============================================================================
+class Citation(object):
+    """
+    Information for a citation.
+    
+    Holds the following information:
+    
+    ================= =========== =============================================
+    Attributes         Type        Explanation    
+    ================= =========== =============================================
+    author            string      Author names
+    title             string      Title of article, or publication
+    journal           string      Name of journal
+    doi               string      DOI number (doi:10.110/sf454)
+    year              int         year published
+    ================= =========== =============================================
+
+    More attributes can be added by inputing a key word dictionary
+    
+    >>> Citation(**{'volume':56, 'pages':'234--214'})
+    """
+    
+    def __init__(self, **kwargs):
+        self.author = None
+        self.title = None
+        self.journal = None
+        self.volume = None
+        self.doi = None
+        self.year = None
+        
+        for key in kwargs.keys():
+            setattr(self, key, kwargs[key])
+            
+
+#==============================================================================
+# Copyright            
+#==============================================================================
+class Copyright(object):
+    """
+    Information of copyright, mainly about how someone else can use these 
+    data. Be sure to read over the conditions_of_use.
+    
+    Holds the following information:
+    
+    ================= =========== =============================================
+    Attributes         Type        Explanation    
+    ================= =========== =============================================
+    citation          Citation    citation of published work using these data
+    conditions_of_use string      conditions of use of these data
+    release_status    string      release status [ open | public | proprietary]
+    ================= =========== =============================================
+
+    More attributes can be added by inputing a key word dictionary
+    
+    >>> Copyright(**{'owner':'University of MT', 'contact':'Cagniard'})
+    """
+    
+    def __init__(self, **kwargs):
+        self.citation = Citation()
+        self.conditions_of_use = ''.join(['All data and metadata for this survey are ',
+                                          'available free of charge and may be copied ',
+                                          'freely, duplicated and further distributed ',
+                                          'provided this data set is cited as the ',
+                                          'reference. While the author(s) strive to ',
+                                          'provide data and metadata of best possible ',
+                                          'quality, neither the author(s) of this data ',
+                                          'set, not IRIS make any claims, promises, or ', 
+                                          'guarantees about the accuracy, completeness, ',
+                                          'or adequacy of this information, and expressly ',
+                                          'disclaim liability for errors and omissions in ',
+                                          'the contents of this file. Guidelines about ',
+                                          'the quality or limitations of the data and ',
+                                          'metadata, as obtained from the author(s), are ',
+                                          'included for informational purposes only.'])
+        self.release_status = None
+        for key in kwargs.keys():
+            setattr(self, key, kwargs[key])
+            
+#==============================================================================
+# Provenance        
+#==============================================================================
+class Provenance(object):
+    """
+    Information of the file history, how it was made
+    
+    Holds the following information:
+    
+    ====================== =========== ========================================
+    Attributes             Type        Explanation    
+    ====================== =========== ========================================
+    creation_time          string      creation time of file YYYY-MM-DD,hh:mm:ss
+    creating_application   string      name of program creating the file
+    creator                Person      person whom created the file
+    submitter              Person      person whom is submitting file for 
+                                       archiving 
+    ====================== =========== ========================================
+
+    More attributes can be added by inputing a key word dictionary
+    
+    >>> Provenance(**{'archive':'IRIS', 'reprocessed_by':'grad_student'}) 
+    """
+    
+    def __init__(self, **kwargs):
+        
+        self.creation_time = None
+        self.creating_application = None
+        self.creator = Person()
+        self.submitter = Person()
+        
+        for key in kwargs.keys():
+            setattr(self, key, kwargs[key])
+ 
+#==============================================================================
+# Person
+#==============================================================================
+class Person(object):
+    """
+    Information for a person
+    
+    Holds the following information:
+    
+    ================= =========== =============================================
+    Attributes         Type        Explanation    
+    ================= =========== =============================================
+    email             string      email of person 
+    name              string      name of person
+    organization      string      name of person's organization
+    organization_url  string      organizations web address
+    ================= =========== =============================================
+
+    More attributes can be added by inputing a key word dictionary
+    
+    >>> Person(**{'phone':'650-888-6666'})
+    """    
+    
+    def __init__(self, **kwargs):
+        self.email = None
+        self.name = None
+        self.organization = None
+        self.organization_url = None
+        
+        for key in kwargs.keys():
+            setattr(self, key, kwargs[key])
+            
+#==============================================================================
+# Processing
+#==============================================================================
+class Processing(object):
+    """
+    Information for a processing
+    
+    Holds the following information:
+    
+    ================= =========== =============================================
+    Attributes         Type        Explanation    
+    ================= =========== =============================================
+    email             string      email of person 
+    name              string      name of person
+    organization      string      name of person's organization
+    organization_url  string      organizations web address
+    ================= =========== =============================================
+
+    More attributes can be added by inputing a key word dictionary
+    
+    >>> Person(**{'phone':'650-888-6666'})
+    """    
+    
+    def __init__(self, **kwargs):
+        self.Software = Software()
+        self.processing_notes = None
+        
+        for key in kwargs.keys():
+            setattr(self, key, kwargs[key])
+        
+class Software(object):
+    """
+    software
+    """        
+    
+    def __init__(self, **kwargs):
+        self.name = None
+        self.version = None
+        self.author = Person()
+        
+        for key in kwargs:
+            setattr(self, key, kwargs[key])
         
