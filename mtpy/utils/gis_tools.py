@@ -283,13 +283,5 @@ def project_point_utm2ll(easting, northing, utm_zone, datum='WGS84'):
     
     # be sure to round out the numbers to remove computing with floats
     return (round(ll_point[1], 6), round(ll_point[0], 6))
-
-#new_p = project_point_ll2utm(10.0, -150.0)
-#
-#print new_p
-#
-#ll_p = project_point_utm2ll(new_p[0], new_p[1], new_p[2])
-#
-#print ll_p
-#    
+  
 

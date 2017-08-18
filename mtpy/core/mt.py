@@ -668,6 +668,15 @@ class MT(object):
                 self.Tipper.tipper = self.Tipper.tipper.copy()[::-1]
                 self.Tipper.tipper_err = self.Tipper.tipper_err.copy()[::-1]
                 self.Tipper.freq = self.Tipper.freq.copy()[::-1]
+                
+    def read_j_file(self, j_fn):
+        """
+        read j file
+        """
+        
+        
+        
+        pass
         
     def remove_distortion(self, num_freq=None):
         """
