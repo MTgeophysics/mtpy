@@ -122,18 +122,20 @@ class EdiCollection(object):
         """
         adict = {}
         for aper in self.all_unique_periods:
+            station_list = []
             afreq = 1.0 / aper
             acount = 0
             for mt_obj in self.mt_obj_list:
                 # if afreq in mt_obj.Z.freq:
                 if is_num_in_seq(afreq, mt_obj.Z.freq):
                     acount = acount + 1
+                    station_list.append(mt_obj.station)
 
             if (100.0 * acount) / self.num_of_edifiles >= percentage:
                 adict.update({aper: acount})
                 #print (aper, acount)
             else:
-                logger.info("Period %s is excluded ", aper)
+                logger.info("Period=%s is excluded. it is from stations: %s ", aper, station_list)
 
         mydict_ordered = sorted(
             adict.items(), key=lambda value: value[1], reverse=True)
@@ -351,6 +353,10 @@ class EdiCollection(object):
         print (len(self.all_frequencies),
                'unique frequencies (Hz)', self.all_frequencies)
 
+        myper = obj.get_periods_by_stats(percentage=20)
+        print(myper)
+
+
         print (self.bound_box_dict)
 
         self.plot_stations(savefile='/e/tmp/edi_collection_test.jpg')
@@ -376,7 +382,7 @@ if __name__ == "__main__":
 # python mtpy/core/edi_collection.py examples/data/edi2/ /e/tmp
 
     if len(sys.argv) < 2:
-        print ("USAGE: %s edi_dir OR edi_list " % sys.argv[0])
+        print ("\n  USAGE: %s edi_dir OR edi_list " % sys.argv[0])
         sys.exit(1)
     else:
         argv1 = sys.argv[1]
@@ -391,29 +397,11 @@ if __name__ == "__main__":
         else:
             sys.exit(2)
 
+
         obj.show_prop()
 
         print(obj.get_bounding_box(epsgcode=28353))
 
         obj.create_mt_station_gdf(outshpfile='/e/tmp/edi_collection_test.shp')
 
-        #######################################################################
-        # how to quick check the shape file created
-        # fio info /e/tmp/edi_collection_test.shp
-        #
-        # {"count": 25, "crs": "+ellps=GRS80 +no_defs +proj=longlat", "name": "edi_collection_test",
-        #  "driver": "ESRI Shapefile",
-        #  "bounds": [136.77222222222224, -20.593694444444445, 136.93077777777776, -20.41086111111111],
-        #  "crs_wkt": "GEOGCS[\"GDA94\",DATUM[\"Geocentric_Datum_of_Australia_1994\",
-        #  SPHEROID[\"GRS_1980\",6378137,298.257222101]],PRIMEM[\"Greenwich\",0],
-        #  UNIT[\"Degree\",0.017453292519943295]]",
-        #  "schema": {"geometry": "Point",
-        #             "properties": {"StationId": "str:80", "Lon": "float:24.15", "Lat": "float:24.15",
-        #                  "Elev": "float:24.15", "UtmZone": "str:80"}}}
-        #######################################################################
-
         obj.create_measurement_csv(dest_dir=sys.argv[2])
-
-        myper = obj.get_periods_by_stats(percentage=10)
-
-        print(myper)
