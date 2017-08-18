@@ -14,6 +14,9 @@ Created on Tue Dec 22 16:03:31 2015
 @author: jpeacock
 """
 
+#==============================================================================
+#  Imports
+#==============================================================================
 import os
 import numpy as np
 import datetime
@@ -22,6 +25,7 @@ import mtpy.utils.gis_tools as gis_tools
 import mtpy.utils.exceptions as MTex
 import mtpy.utils.filehandling as MTfh
 import mtpy.core.z as MTz
+
 try:
     import scipy.stats.distributions as ssd 
     ssd_test = True
@@ -29,6 +33,9 @@ except ImportError:
     print 'Need scipy.stats.distributions to compute spectra errors'
     print 'Could not find scipy.stats.distributions, check distribution'
     ssd_test = False
+#==============================================================================
+# 
+#==============================================================================
 
 tab = ' '*4
 
