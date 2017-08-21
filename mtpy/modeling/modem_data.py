@@ -1046,7 +1046,7 @@ class Data(object):
                             if compute_error:
                                 # compute relative error
                                 if comp.find('t') == 0:
-                                    abs_err = self._vertical_components_error_floor(ff, c_key, ss, z_ii)
+                                    abs_err = self._vertical_components_error_floor(ff, c_key, ss, z_ii, z_jj)
                                 elif comp.find('z') == 0:
                                     comp_error_type = self.comp_error_type[comp] if self.comp_error_type is not None \
                                                                                     and comp in self.comp_error_type \
@@ -1198,10 +1198,11 @@ class Data(object):
         abs_err = rel_err * abs(zz)
         return abs_err
 
-    def _vertical_components_error_floor(self, ff, c_key, ss, z_ii):
+    def _vertical_components_error_floor(self, ff, c_key, ss, z_ii, z_jj):
         if 'floor' in self.error_type:
-            abs_err = max(self.error_tipper,
-                          self.data_array[ss][c_key + '_err'][ff, 0, z_ii])  # this may be wrong as z_ii is always 0
+            # abs_err = max(self.error_tipper,
+            #               self.data_array[ss][c_key + '_err'][ff, 0, z_ii])  # this may be wrong as z_ii is always 0
+            abs_err = max(self.error_tipper, self.data_array[ss][c_key + '_err'][ff, z_ii, z_jj])
         else:
             abs_err = self.error_tipper
         return abs_err
