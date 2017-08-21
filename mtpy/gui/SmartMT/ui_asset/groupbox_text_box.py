@@ -240,7 +240,7 @@ class Ui_GroupBox_text_box(object):
         self.spinBox_size.setToolTip(_translate("GroupBox_text_box", "<html><head/><body><p>Size of text for subplot\n"
 "                                        labels</p></body></html>\n"
 "                                    ", None))
-        self.spinBox_size.setSuffix(_translate("GroupBox_text_box", "points", None))
+        self.spinBox_size.setSuffix(_translate("GroupBox_text_box", " points", None))
         self.checkBox_weight.setToolTip(_translate("GroupBox_text_box", "<html><head/><body><p>weight of text label font</p></body></html>", None))
         self.checkBox_weight.setText(_translate("GroupBox_text_box", "Weight", None))
         self.comboBox_weight.setToolTip(_translate("GroupBox_text_box", "<html><head/><body><p>weight of text label font</p></body></html>", None))

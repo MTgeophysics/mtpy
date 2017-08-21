@@ -8,10 +8,9 @@
     Author: YingzhiGou
     Date: 20/06/2017
 """
-from PyQt4 import QtCore
 
-from mtpy.gui.SmartMT.gui.figure_setting_guis import CommonSettings
-from mtpy.gui.SmartMT.gui.plot_parameter_guis import Ellipse, Arrow, StationSelection, Rotation, PlotControlMTResponse
+from mtpy.gui.SmartMT.gui.plot_control_guis import PlotControlMTResponse
+from mtpy.gui.SmartMT.gui.plot_parameter_guis import Ellipse, Arrow, StationSelection, Rotation
 from mtpy.gui.SmartMT.visualization.visualization_base import VisualizationBase
 from mtpy.imaging.plot_mt_response import PlotMTResponse
 from mtpy.imaging.plotnresponses import PlotMultipleResponses

@@ -20,7 +20,7 @@
    <string>GroupBox</string>
   </property>
   <property name="title">
-   <string>Plot Control</string>
+      <string>Plot Settings</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
       <item>
@@ -33,6 +33,9 @@
               </property>
               <property name="title">
                   <string>Plot Style</string>
+              </property>
+              <property name="flat">
+                  <bool>true</bool>
               </property>
               <layout class="QHBoxLayout" name="horizontalLayout">
                   <item>
@@ -66,6 +69,9 @@
      <property name="title">
       <string>Plot Type</string>
      </property>
+        <property name="flat">
+            <bool>true</bool>
+        </property>
      <layout class="QVBoxLayout" name="verticalLayout_2">
       <item>
        <widget class="QRadioButton" name="radioButton_1">
@@ -110,6 +116,9 @@
      <property name="title">
       <string>Strike</string>
      </property>
+        <property name="flat">
+            <bool>true</bool>
+        </property>
      <layout class="QVBoxLayout" name="verticalLayout_3">
       <item>
        <widget class="QCheckBox" name="checkBox_strike_i">
@@ -153,6 +162,9 @@ of Caldwell et al. [2004]</string>
      <property name="title">
       <string>Skew</string>
      </property>
+        <property name="flat">
+            <bool>true</bool>
+        </property>
      <layout class="QGridLayout" name="gridLayout">
       <item row="0" column="0">
        <widget class="QRadioButton" name="radioButton_skew_y">
@@ -185,6 +197,9 @@ of Caldwell et al. [2004]</string>
      <property name="title">
       <string>Ellipses</string>
      </property>
+        <property name="flat">
+            <bool>true</bool>
+        </property>
      <layout class="QVBoxLayout" name="verticalLayout_4">
       <item>
        <widget class="QRadioButton" name="radioButton_ellipses_n">

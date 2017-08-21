@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from PyQt4 import QtGui
 
 from mtpy.gui.SmartMT.gui.plot_parameter import COLORS, SIMPLE_COLORS

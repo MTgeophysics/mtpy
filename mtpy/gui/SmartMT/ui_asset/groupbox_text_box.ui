@@ -259,7 +259,7 @@
                                     </string>
         </property>
         <property name="suffix">
-         <string>points</string>
+            <string>points</string>
         </property>
         <property name="minimum">
          <number>4</number>

@@ -1,0 +1,206 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+    <class>GroupBox_plot_control_strike</class>
+    <widget class="QGroupBox" name="GroupBox_plot_control_strike">
+        <property name="geometry">
+            <rect>
+                <x>0</x>
+                <y>0</y>
+                <width>300</width>
+                <height>274</height>
+            </rect>
+        </property>
+        <property name="sizePolicy">
+            <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+            </sizepolicy>
+        </property>
+        <property name="windowTitle">
+            <string>GroupBox</string>
+        </property>
+        <property name="title">
+            <string>Plot Settings</string>
+        </property>
+        <layout class="QVBoxLayout" name="verticalLayout">
+            <item>
+                <widget class="QGroupBox" name="groupBox_2">
+                    <property name="title">
+                        <string>Plot Type</string>
+                    </property>
+                    <property name="flat">
+                        <bool>true</bool>
+                    </property>
+                    <layout class="QGridLayout" name="gridLayout_2">
+                        <item row="2" column="0">
+                            <widget class="QCheckBox" name="checkBox_plot_tipper">
+                                <property name="text">
+                                    <string>Plot Tipper Strike</string>
+                                </property>
+                            </widget>
+                        </item>
+                        <item row="2" column="1">
+                            <widget class="QCheckBox" name="checkBox_fold">
+                                <property name="toolTip">
+                                    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;check to plot only from 0 to
+                                        180 degree, 0 to 360 degree if otherwise&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
+                                    </string>
+                                </property>
+                                <property name="text">
+                                    <string>Fold</string>
+                                </property>
+                            </widget>
+                        </item>
+                        <item row="1" column="0" colspan="2">
+                            <widget class="QRadioButton" name="radioButton_type_2">
+                                <property name="text">
+                                    <string>plot all period ranges into one polar diagram for
+                                        each strike angle estimation
+                                    </string>
+                                </property>
+                                <property name="checked">
+                                    <bool>true</bool>
+                                </property>
+                            </widget>
+                        </item>
+                        <item row="0" column="0" colspan="2">
+                            <widget class="QRadioButton" name="radioButton_type_1">
+                                <property name="text">
+                                    <string>plot individual decades in one plot</string>
+                                </property>
+                            </widget>
+                        </item>
+                        <item row="3" column="0">
+                            <widget class="QCheckBox" name="checkBox_max_error">
+                                <property name="toolTip">
+                                    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Maximum error in degrees that
+                                        is allowed to estimate strike. if not checked/provided, all estimates are
+                                        allowed.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
+                                    </string>
+                                </property>
+                                <property name="text">
+                                    <string>Maximum Error</string>
+                                </property>
+                            </widget>
+                        </item>
+                        <item row="3" column="1">
+                            <widget class="QDoubleSpinBox" name="doubleSpinBox_max_error">
+                                <property name="enabled">
+                                    <bool>false</bool>
+                                </property>
+                                <property name="toolTip">
+                                    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Maximum error in degrees that
+                                        is allowed to estimate strike. if not checked/provided, all estimates are
+                                        allowed.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
+                                    </string>
+                                </property>
+                                <property name="suffix">
+                                    <string>°</string>
+                                </property>
+                                <property name="maximum">
+                                    <double>360.000000000000000</double>
+                                </property>
+                            </widget>
+                        </item>
+                    </layout>
+                </widget>
+            </item>
+            <item>
+                <widget class="QGroupBox" name="groupBox">
+                    <property name="toolTip">
+                        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Period range to estimate the strike angle&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                    </property>
+                    <property name="title">
+                        <string>Plot Range</string>
+                    </property>
+                    <property name="flat">
+                        <bool>true</bool>
+                    </property>
+                    <layout class="QGridLayout" name="gridLayout">
+                        <item row="1" column="1">
+                            <widget class="QLabel" name="label_min">
+                                <property name="enabled">
+                                    <bool>false</bool>
+                                </property>
+                                <property name="sizePolicy">
+                                    <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+                                        <horstretch>0</horstretch>
+                                        <verstretch>0</verstretch>
+                                    </sizepolicy>
+                                </property>
+                                <property name="text">
+                                    <string>min=</string>
+                                </property>
+                            </widget>
+                        </item>
+                        <item row="0" column="0">
+                            <widget class="QRadioButton" name="radioButton_range_data">
+                                <property name="toolTip">
+                                    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;estimating the strike for all
+                                        periods in the data&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
+                                    </string>
+                                </property>
+                                <property name="text">
+                                    <string>Based on Data</string>
+                                </property>
+                                <property name="checked">
+                                    <bool>true</bool>
+                                </property>
+                            </widget>
+                        </item>
+                        <item row="1" column="0">
+                            <widget class="QRadioButton" name="radioButton_range_minmax">
+                                <property name="toolTip">
+                                    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;define minimum and maximum
+                                        periods, will be used as log10(min) and log10(max)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
+                                    </string>
+                                </property>
+                                <property name="text">
+                                    <string>(min, max)</string>
+                                </property>
+                            </widget>
+                        </item>
+                        <item row="2" column="1">
+                            <widget class="QLabel" name="label_max">
+                                <property name="enabled">
+                                    <bool>false</bool>
+                                </property>
+                                <property name="sizePolicy">
+                                    <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+                                        <horstretch>0</horstretch>
+                                        <verstretch>0</verstretch>
+                                    </sizepolicy>
+                                </property>
+                                <property name="text">
+                                    <string>max=</string>
+                                </property>
+                            </widget>
+                        </item>
+                        <item row="1" column="2">
+                            <widget class="QLineEdit" name="lineEdit_min">
+                                <property name="enabled">
+                                    <bool>false</bool>
+                                </property>
+                                <property name="text">
+                                    <string>0</string>
+                                </property>
+                            </widget>
+                        </item>
+                        <item row="2" column="2">
+                            <widget class="QLineEdit" name="lineEdit_max">
+                                <property name="enabled">
+                                    <bool>false</bool>
+                                </property>
+                                <property name="text">
+                                    <string>inf</string>
+                                </property>
+                            </widget>
+                        </item>
+                    </layout>
+                </widget>
+            </item>
+        </layout>
+    </widget>
+    <resources/>
+    <connections/>
+</ui>

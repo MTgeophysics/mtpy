@@ -11,8 +11,9 @@
 import numpy as np
 
 from mtpy.gui.SmartMT.gui.figure_setting_guis import ColorBar, Font, AspectRatio, TextBox
+from mtpy.gui.SmartMT.gui.plot_control_guis import PlotControlResistivityPhasePseudoSection
 from mtpy.gui.SmartMT.gui.plot_parameter_guis import FrequencySingle, Ellipse, FrequencyTolerance, Arrow, Padding, \
-    Scale, Stretch, LineDir, MeshGrid, PlotControlResistivityPhasePseudoSection, UniqueFrequencies
+    Scale, Stretch, LineDir, MeshGrid, UniqueFrequencies
 from mtpy.gui.SmartMT.utils.matplotlib_utils import get_next_fig_num
 from mtpy.gui.SmartMT.visualization.visualization_base import VisualizationBase
 from mtpy.imaging.phase_tensor_maps import PlotPhaseTensorMaps
@@ -151,7 +152,7 @@ class PhaseTensorPseudoSection(VisualizationBase):
 
         # setup gui
         self._plot_control = PlotControlResistivityPhasePseudoSection(self._parameter_ui)
-        self._parameter_ui = self._parameter_ui.add_parameter_groupbox(self._plot_control)
+        self._parameter_ui.add_parameter_groupbox(self._plot_control)
 
         self._ellipse_ui = Ellipse(self._parameter_ui)
         self._parameter_ui.add_parameter_groupbox(self._ellipse_ui)

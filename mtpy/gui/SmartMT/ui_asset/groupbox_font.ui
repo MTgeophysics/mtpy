@@ -61,7 +61,7 @@
       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Font size&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
      <property name="suffix">
-      <string>points</string>
+         <string>points</string>
      </property>
      <property name="minimum">
       <number>4</number>

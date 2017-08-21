@@ -100,6 +100,7 @@ class Ui_GroupBox_plot_control_resistivity_phase_pseudo_section(object):
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.groupBox_limits.sizePolicy().hasHeightForWidth())
         self.groupBox_limits.setSizePolicy(sizePolicy)
+        self.groupBox_limits.setFlat(True)
         self.groupBox_limits.setObjectName(_fromUtf8("groupBox_limits"))
         self.gridLayout_2 = QtGui.QGridLayout(self.groupBox_limits)
         self.gridLayout_2.setObjectName(_fromUtf8("gridLayout_2"))
@@ -210,7 +211,8 @@ class Ui_GroupBox_plot_control_resistivity_phase_pseudo_section(object):
 
     def retranslateUi(self, GroupBox_plot_control_resistivity_phase_pseudo_section):
         GroupBox_plot_control_resistivity_phase_pseudo_section.setWindowTitle(_translate("GroupBox_plot_control_resistivity_phase_pseudo_section", "GroupBox", None))
-        GroupBox_plot_control_resistivity_phase_pseudo_section.setTitle(_translate("GroupBox_plot_control_resistivity_phase_pseudo_section", "Plot Control", None))
+        GroupBox_plot_control_resistivity_phase_pseudo_section.setTitle(
+            _translate("GroupBox_plot_control_resistivity_phase_pseudo_section", "Plot Settings", None))
         self.label.setToolTip(_translate("GroupBox_plot_control_resistivity_phase_pseudo_section", "<html><head/><body><p>Interger telling at what interval to place station names as the tick labels, in case they are closely spaced</p></body></html>", None))
         self.label.setText(_translate("GroupBox_plot_control_resistivity_phase_pseudo_section", "X Tick Space", None))
         self.label_5.setText(_translate("GroupBox_plot_control_resistivity_phase_pseudo_section", "Phase Colormap", None))

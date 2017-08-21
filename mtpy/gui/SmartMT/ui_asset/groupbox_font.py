@@ -117,7 +117,7 @@ class Ui_GroupBox_Font(object):
         self.checkBox_weight.setText(_translate("GroupBox_Font", "Weight", None))
         self.checkBox_size.setText(_translate("GroupBox_Font", "Size", None))
         self.spinBox_size.setToolTip(_translate("GroupBox_Font", "<html><head/><body><p>Font size</p></body></html>", None))
-        self.spinBox_size.setSuffix(_translate("GroupBox_Font", "points", None))
+        self.spinBox_size.setSuffix(_translate("GroupBox_Font", " points", None))
         self.checkBox_color.setToolTip(_translate("GroupBox_Font", "<html><head/><body><p>Font color</p></body></html>", None))
         self.checkBox_color.setText(_translate("GroupBox_Font", "Color", None))
         self.comboBox_size.setItemText(0, _translate("GroupBox_Font", "xx-small", None))

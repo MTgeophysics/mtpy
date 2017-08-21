@@ -1,11 +1,11 @@
 import glob
 import inspect
+import os
 import unittest
 from unittest import TestCase
 
 # configure matplotlib for testing
 import matplotlib.pyplot as plt
-import os
 
 from mtpy.imaging.plotstrike import PlotStrike
 
@@ -67,26 +67,26 @@ class TestPlotStrike(TestCase):
     def _plot(self, edi_path, save_figure_path):
         edi_file_list = glob.glob(os.path.join(edi_path, "*.edi"))
         save_figure_path = os.path.join(self._temp_dir, save_figure_path)
-        pt_obj = PlotStrike(fn_list=edi_file_list, plot_yn=False)
+        pt_obj = PlotStrike(fn_list=edi_file_list, plot_yn='n')
         pt_obj.plot()
         plt.pause(1)
 
         # change rotation
-        pt_obj = PlotStrike(fn_list=edi_file_list, plot_yn=False, rot_z=90)
+        pt_obj = PlotStrike(fn_list=edi_file_list, plot_yn='n', rot_z=90)
         pt_obj.plot()
         plt.pause(1)
 
         # plot type
-        pt_obj = PlotStrike(fn_list=edi_file_list, plot_yn=False, plot_type=1)
+        pt_obj = PlotStrike(fn_list=edi_file_list, plot_yn='n', plot_type=1)
         pt_obj.plot()
         plt.pause(1)
 
         # plot_tipper
-        pt_obj = PlotStrike(fn_list=edi_file_list, plot_yn=False, plot_tipper='y')
+        pt_obj = PlotStrike(fn_list=edi_file_list, plot_yn='n', plot_tipper='y')
         pt_obj.plot()
         plt.pause(1)
 
         # fold
-        pt_obj = PlotStrike(fn_list=edi_file_list, plot_yn=False, fold=False)
+        pt_obj = PlotStrike(fn_list=edi_file_list, plot_yn='n', fold=False)
         pt_obj.plot()
         plt.pause(1)

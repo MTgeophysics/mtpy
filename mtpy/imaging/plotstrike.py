@@ -7,11 +7,14 @@ Created on Thu May 30 18:28:24 2013
 
 #==============================================================================
 
+import os
+
 import matplotlib.pyplot as plt
 import numpy as np
-import os
 from matplotlib.ticker import MultipleLocator
+
 import mtpy.imaging.mtplottools as mtpl
+
 
 #==============================================================================
 
@@ -57,10 +60,10 @@ class PlotStrike(object):
                   dots-per-inch resolution of figure, 300 is needed for
                   publications. *Default* is 300
 
-        **thetar** : float    # YG: **rot_z** ?
+        **rot_z** : float
                      angle of rotation clockwise positive. *Default* is 0
 
-        **ptol** : float
+        **period_tolerance** : float
                    Tolerance level to match periods from different edi files.
                    *Default* is 0.05
 

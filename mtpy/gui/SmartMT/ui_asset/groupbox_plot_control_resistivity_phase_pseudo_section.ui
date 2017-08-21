@@ -20,7 +20,7 @@
    <string>GroupBox</string>
   </property>
   <property name="title">
-   <string>Plot Control</string>
+      <string>Plot Settings</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
    <item row="0" column="1">
@@ -154,6 +154,9 @@
      <property name="title">
       <string>Limits</string>
      </property>
+        <property name="flat">
+            <bool>true</bool>
+        </property>
      <layout class="QGridLayout" name="gridLayout_2">
       <item row="3" column="2">
        <widget class="QDoubleSpinBox" name="doubleSpinBox_res_max">
