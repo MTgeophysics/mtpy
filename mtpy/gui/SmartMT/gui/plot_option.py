@@ -6,7 +6,7 @@
     Author: YingzhiGou
     Date: 20/06/2017
 """
-from PyQt4 import QtGui
+from PyQt4 import QtGui, QtCore
 
 from mtpy.gui.SmartMT.gui.busy_indicators import BusyOverlay
 from mtpy.gui.SmartMT.ui_asset.plot_options import Ui_PlotOption
