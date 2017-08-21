@@ -57,7 +57,7 @@ class PlotStrike(object):
                   dots-per-inch resolution of figure, 300 is needed for
                   publications. *Default* is 300
 
-        **thetar** : float
+        **thetar** : float    # YG: **rot_z** ?
                      angle of rotation clockwise positive. *Default* is 0
 
         **ptol** : float
@@ -267,7 +267,7 @@ class PlotStrike(object):
     rot_z = property(fget=_get_rot_z, fset=_set_rot_z,
                      doc="""rotation angle(s)""")
 
-    def plot(self):
+    def plot(self, show=True):
 
         plt.rcParams['font.size'] = self.font_size
         plt.rcParams['figure.subplot.left'] = .07
@@ -674,7 +674,8 @@ class PlotStrike(object):
             print 'Note: North is assumed to be 0 and the strike angle is measured' +\
                   'clockwise positive.'
 
-            plt.show()
+            if show:
+                plt.show()
 
         #------------------Plot strike angles for all period ranges------------
         elif self.plot_type == 2:
@@ -884,8 +885,8 @@ class PlotStrike(object):
             # remind the user what the assumptions of the strike angle are
             print 'Note: North is assumed to be 0 and the strike angle is ' +\
                   'measured clockwise positive.'
-
-            plt.show()
+            if show:
+                plt.show()
 
     def save_plot(self, save_fn, file_format='pdf',
                   orientation='portrait', fig_dpi=None, close_plot='y'):
