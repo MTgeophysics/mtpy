@@ -27,16 +27,7 @@
     </sizepolicy>
    </property>
    <layout class="QHBoxLayout" name="horizontalLayout">
-    <property name="leftMargin">
-     <number>0</number>
-    </property>
-    <property name="topMargin">
-     <number>0</number>
-    </property>
-    <property name="rightMargin">
-     <number>0</number>
-    </property>
-    <property name="bottomMargin">
+    <property name="margin">
      <number>0</number>
     </property>
     <item>
@@ -61,7 +52,7 @@
      <x>0</x>
      <y>0</y>
      <width>1024</width>
-     <height>21</height>
+     <height>26</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -301,7 +292,7 @@
     <bool>false</bool>
    </property>
    <property name="text">
-    <string>Export ModEM Data...</string>
+    <string>Generate ModEM Input Files...</string>
    </property>
   </action>
  </widget>

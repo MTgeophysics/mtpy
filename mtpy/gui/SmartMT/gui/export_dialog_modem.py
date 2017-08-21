@@ -37,6 +37,7 @@ class ExportDialogModEm(QtGui.QWizard):
         self.ui.setupUi(self)
 
         # setup gui
+        # self.setWindowTitle("ModEM input file generator")
         # add rotation
         self._rotation_ui = Rotation(self.ui.wizardPage_data)
         self._rotation_ui.setTitle('Data Rotation Angle')

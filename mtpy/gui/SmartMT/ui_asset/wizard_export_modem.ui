@@ -6,12 +6,12 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>569</width>
-    <height>416</height>
+    <width>578</width>
+    <height>458</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Export to ModEM Data File</string>
+   <string>Generate ModEM input data files</string>
   </property>
   <property name="wizardStyle">
    <enum>QWizard::ModernStyle</enum>

@@ -16,14 +16,11 @@ except AttributeError:
 
 try:
     _encoding = QtGui.QApplication.UnicodeUTF8
-
-
     def _translate(context, text, disambig):
         return QtGui.QApplication.translate(context, text, disambig, _encoding)
 except AttributeError:
     def _translate(context, text, disambig):
         return QtGui.QApplication.translate(context, text, disambig)
-
 
 class Ui_GroupBox_plot_control_strike(object):
     def setupUi(self, GroupBox_plot_control_strike):
@@ -111,36 +108,36 @@ class Ui_GroupBox_plot_control_strike(object):
         GroupBox_plot_control_strike.setTitle(_translate("GroupBox_plot_control_strike", "Plot Settings", None))
         self.groupBox_2.setTitle(_translate("GroupBox_plot_control_strike", "Plot Type", None))
         self.checkBox_plot_tipper.setText(_translate("GroupBox_plot_control_strike", "Plot Tipper Strike", None))
-        self.checkBox_fold.setToolTip(_translate("GroupBox_plot_control_strike",
-                                                 "<html><head/><body><p>check to plot only from 0 to 180 degree, 0 to 360 degree if otherwise</p></body></html>",
-                                                 None))
+        self.checkBox_fold.setToolTip(_translate("GroupBox_plot_control_strike", "<html><head/><body><p>check to plot only from 0 to\n"
+"                                        180 degree, 0 to 360 degree if otherwise</p></body></html>\n"
+"                                    ", None))
         self.checkBox_fold.setText(_translate("GroupBox_plot_control_strike", "Fold", None))
-        self.radioButton_type_2.setText(
-            _translate("GroupBox_plot_control_strike", "plot all period ranges into one polar diagram for\n"
-                                                       "each strike angle estimation", None))
-        self.radioButton_type_1.setText(
-            _translate("GroupBox_plot_control_strike", "plot individual decades in one plot", None))
-        self.checkBox_max_error.setToolTip(_translate("GroupBox_plot_control_strike",
-                                                      "<html><head/><body><p>Maximum error in degrees that is allowed to estimate strike. if not checked/provided, all estimates are allowed.</p></body></html>",
-                                                      None))
+        self.radioButton_type_2.setText(_translate("GroupBox_plot_control_strike", "plot all period ranges into one polar diagram for\n"
+"                                        each strike angle estimation\n"
+"                                    ", None))
+        self.radioButton_type_1.setText(_translate("GroupBox_plot_control_strike", "plot individual decades in one plot", None))
+        self.checkBox_max_error.setToolTip(_translate("GroupBox_plot_control_strike", "<html><head/><body><p>Maximum error in degrees that\n"
+"                                        is allowed to estimate strike. if not checked/provided, all estimates are\n"
+"                                        allowed.</p></body></html>\n"
+"                                    ", None))
         self.checkBox_max_error.setText(_translate("GroupBox_plot_control_strike", "Maximum Error", None))
-        self.doubleSpinBox_max_error.setToolTip(_translate("GroupBox_plot_control_strike",
-                                                           "<html><head/><body><p>Maximum error in degrees that is allowed to estimate strike. if not checked/provided, all estimates are allowed.</p></body></html>",
-                                                           None))
+        self.doubleSpinBox_max_error.setToolTip(_translate("GroupBox_plot_control_strike", "<html><head/><body><p>Maximum error in degrees that\n"
+"                                        is allowed to estimate strike. if not checked/provided, all estimates are\n"
+"                                        allowed.</p></body></html>\n"
+"                                    ", None))
         self.doubleSpinBox_max_error.setSuffix(_translate("GroupBox_plot_control_strike", "°", None))
-        self.groupBox.setToolTip(_translate("GroupBox_plot_control_strike",
-                                            "<html><head/><body><p>Period range to estimate the strike angle</p></body></html>",
-                                            None))
+        self.groupBox.setToolTip(_translate("GroupBox_plot_control_strike", "<html><head/><body><p>Period range to estimate the strike angle</p></body></html>", None))
         self.groupBox.setTitle(_translate("GroupBox_plot_control_strike", "Plot Range", None))
         self.label_min.setText(_translate("GroupBox_plot_control_strike", "min=", None))
-        self.radioButton_range_data.setToolTip(_translate("GroupBox_plot_control_strike",
-                                                          "<html><head/><body><p>estimating the strike for all periods in the data</p></body></html>",
-                                                          None))
+        self.radioButton_range_data.setToolTip(_translate("GroupBox_plot_control_strike", "<html><head/><body><p>estimating the strike for all\n"
+"                                        periods in the data</p></body></html>\n"
+"                                    ", None))
         self.radioButton_range_data.setText(_translate("GroupBox_plot_control_strike", "Based on Data", None))
-        self.radioButton_range_minmax.setToolTip(_translate("GroupBox_plot_control_strike",
-                                                            "<html><head/><body><p>define minimum and maximum periods, will be used as log10(min) and log10(max)</p></body></html>",
-                                                            None))
+        self.radioButton_range_minmax.setToolTip(_translate("GroupBox_plot_control_strike", "<html><head/><body><p>define minimum and maximum\n"
+"                                        periods, will be used as log10(min) and log10(max)</p></body></html>\n"
+"                                    ", None))
         self.radioButton_range_minmax.setText(_translate("GroupBox_plot_control_strike", "(min, max)", None))
         self.label_max.setText(_translate("GroupBox_plot_control_strike", "max=", None))
         self.lineEdit_min.setText(_translate("GroupBox_plot_control_strike", "0", None))
         self.lineEdit_max.setText(_translate("GroupBox_plot_control_strike", "inf", None))
+

@@ -211,8 +211,7 @@ class Ui_GroupBox_plot_control_resistivity_phase_pseudo_section(object):
 
     def retranslateUi(self, GroupBox_plot_control_resistivity_phase_pseudo_section):
         GroupBox_plot_control_resistivity_phase_pseudo_section.setWindowTitle(_translate("GroupBox_plot_control_resistivity_phase_pseudo_section", "GroupBox", None))
-        GroupBox_plot_control_resistivity_phase_pseudo_section.setTitle(
-            _translate("GroupBox_plot_control_resistivity_phase_pseudo_section", "Plot Settings", None))
+        GroupBox_plot_control_resistivity_phase_pseudo_section.setTitle(_translate("GroupBox_plot_control_resistivity_phase_pseudo_section", "Plot Settings", None))
         self.label.setToolTip(_translate("GroupBox_plot_control_resistivity_phase_pseudo_section", "<html><head/><body><p>Interger telling at what interval to place station names as the tick labels, in case they are closely spaced</p></body></html>", None))
         self.label.setText(_translate("GroupBox_plot_control_resistivity_phase_pseudo_section", "X Tick Space", None))
         self.label_5.setText(_translate("GroupBox_plot_control_resistivity_phase_pseudo_section", "Phase Colormap", None))

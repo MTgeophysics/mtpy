@@ -48,7 +48,7 @@ class Ui_SmartMT_MainWindow(object):
         self.statusbar.setObjectName(_fromUtf8("statusbar"))
         SmartMT_MainWindow.setStatusBar(self.statusbar)
         self.menubar = QtGui.QMenuBar(SmartMT_MainWindow)
-        self.menubar.setGeometry(QtCore.QRect(0, 0, 1024, 21))
+        self.menubar.setGeometry(QtCore.QRect(0, 0, 1024, 26))
         self.menubar.setObjectName(_fromUtf8("menubar"))
         self.menuFile = QtGui.QMenu(self.menubar)
         self.menuFile.setObjectName(_fromUtf8("menuFile"))
@@ -197,5 +197,5 @@ class Ui_SmartMT_MainWindow(object):
         self.actionWindowed_View.setText(_translate("SmartMT_MainWindow", "Windowed View", None))
         self.actionTabbed_View.setText(_translate("SmartMT_MainWindow", "Tabbed View", None))
         self.actionClose_All_Images.setText(_translate("SmartMT_MainWindow", "Close All Images", None))
-        self.actionExport_ModEM_Data.setText(_translate("SmartMT_MainWindow", "Export ModEM Data...", None))
+        self.actionExport_ModEM_Data.setText(_translate("SmartMT_MainWindow", "Generate ModEM Input Files...", None))
 

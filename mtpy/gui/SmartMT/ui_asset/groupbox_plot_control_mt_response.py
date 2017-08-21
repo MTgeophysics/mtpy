@@ -134,8 +134,7 @@ class Ui_GroupBox_plot_control_mt_response(object):
 
     def retranslateUi(self, GroupBox_plot_control_mt_response):
         GroupBox_plot_control_mt_response.setWindowTitle(_translate("GroupBox_plot_control_mt_response", "GroupBox", None))
-        GroupBox_plot_control_mt_response.setTitle(
-            _translate("GroupBox_plot_control_mt_response", "Plot Settings", None))
+        GroupBox_plot_control_mt_response.setTitle(_translate("GroupBox_plot_control_mt_response", "Plot Settings", None))
         self.groupBox_plot_style.setTitle(_translate("GroupBox_plot_control_mt_response", "Plot Style", None))
         self.radioButton_compare.setText(_translate("GroupBox_plot_control_mt_response", "Compare", None))
         self.radioButton_all.setText(_translate("GroupBox_plot_control_mt_response", "Side-by-Side", None))

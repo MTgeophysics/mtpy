@@ -55,6 +55,7 @@ class StartQt4(QtGui.QMainWindow):
         self.ui.mdiArea.subWindowActivated.connect(self._subwindow_activated)
         self.setWindowState(QtCore.Qt.WindowMaximized)
 
+
     def _subwindow_activated(self, subwindow):
         if subwindow and isinstance(subwindow.widget(), MPLCanvasWidget):
             self.ui.actionExport.setEnabled(True)

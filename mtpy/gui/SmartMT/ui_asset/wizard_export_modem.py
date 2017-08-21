@@ -25,7 +25,7 @@ except AttributeError:
 class Ui_Wizard_esport_modem(object):
     def setupUi(self, Wizard_esport_modem):
         Wizard_esport_modem.setObjectName(_fromUtf8("Wizard_esport_modem"))
-        Wizard_esport_modem.resize(569, 416)
+        Wizard_esport_modem.resize(578, 458)
         Wizard_esport_modem.setWizardStyle(QtGui.QWizard.ModernStyle)
         self.wizardPage_intro = QtGui.QWizardPage()
         self.wizardPage_intro.setObjectName(_fromUtf8("wizardPage_intro"))
@@ -710,7 +710,7 @@ class Ui_Wizard_esport_modem(object):
         Wizard_esport_modem.setTabOrder(self.pushButton_test, self.checkBox_open_output_dir)
 
     def retranslateUi(self, Wizard_esport_modem):
-        Wizard_esport_modem.setWindowTitle(_translate("Wizard_esport_modem", "Export to ModEM Data File", None))
+        Wizard_esport_modem.setWindowTitle(_translate("Wizard_esport_modem", "Generate ModEM input data files", None))
         self.wizardPage_intro.setTitle(_translate("Wizard_esport_modem", "Introduction", None))
         self.wizardPage_intro.setSubTitle(_translate("Wizard_esport_modem", "This wizard will help you to export the selected stations to the ModEM data files.", None))
         self.wizardPage_inversion_mode.setTitle(_translate("Wizard_esport_modem", "Inversion Mode", None))
