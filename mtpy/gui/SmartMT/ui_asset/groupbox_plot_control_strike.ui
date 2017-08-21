@@ -6,8 +6,8 @@
             <rect>
                 <x>0</x>
                 <y>0</y>
-                <width>300</width>
-                <height>274</height>
+                <width>316</width>
+                <height>289</height>
             </rect>
         </property>
         <property name="sizePolicy">
@@ -201,6 +201,18 @@
             </item>
         </layout>
     </widget>
+    <tabstops>
+        <tabstop>radioButton_type_1</tabstop>
+        <tabstop>radioButton_type_2</tabstop>
+        <tabstop>checkBox_plot_tipper</tabstop>
+        <tabstop>checkBox_fold</tabstop>
+        <tabstop>checkBox_max_error</tabstop>
+        <tabstop>doubleSpinBox_max_error</tabstop>
+        <tabstop>radioButton_range_data</tabstop>
+        <tabstop>radioButton_range_minmax</tabstop>
+        <tabstop>lineEdit_min</tabstop>
+        <tabstop>lineEdit_max</tabstop>
+    </tabstops>
     <resources/>
     <connections/>
 </ui>

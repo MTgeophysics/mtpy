@@ -25,7 +25,7 @@ except AttributeError:
 class Ui_StationStatus(object):
     def setupUi(self, StationStatus):
         StationStatus.setObjectName(_fromUtf8("StationStatus"))
-        StationStatus.resize(340, 498)
+        StationStatus.resize(340, 537)
         self.verticalLayout = QtGui.QVBoxLayout(StationStatus)
         self.verticalLayout.setObjectName(_fromUtf8("verticalLayout"))
         self.tabWidget = QtGui.QTabWidget(StationStatus)
@@ -102,11 +102,12 @@ class Ui_StationStatus(object):
         self.lineEditFile_Ref.setReadOnly(True)
         self.lineEditFile_Ref.setObjectName(_fromUtf8("lineEditFile_Ref"))
         self.formLayout.setWidget(7, QtGui.QFormLayout.FieldRole, self.lineEditFile_Ref)
-        self.plainTextEdit_edi_text = QtGui.QPlainTextEdit(self.groupBox)
-        self.plainTextEdit_edi_text.setLineWrapMode(QtGui.QPlainTextEdit.NoWrap)
-        self.plainTextEdit_edi_text.setObjectName(_fromUtf8("plainTextEdit_edi_text"))
-        self.formLayout.setWidget(8, QtGui.QFormLayout.SpanningRole, self.plainTextEdit_edi_text)
         self.verticalLayout_3.addWidget(self.groupBox)
+        self.plainTextEdit_edi_text = QtGui.QPlainTextEdit(self.tab_detail)
+        self.plainTextEdit_edi_text.setLineWrapMode(QtGui.QPlainTextEdit.NoWrap)
+        self.plainTextEdit_edi_text.setReadOnly(True)
+        self.plainTextEdit_edi_text.setObjectName(_fromUtf8("plainTextEdit_edi_text"))
+        self.verticalLayout_3.addWidget(self.plainTextEdit_edi_text)
         self.tabWidget.addTab(self.tab_detail, _fromUtf8(""))
         self.verticalLayout.addWidget(self.tabWidget)
 

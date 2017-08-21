@@ -82,6 +82,10 @@ class ExportDialogModEm(QtGui.QWizard):
             self.ui.comboBox_error_type_zyx.setItemData(index, tooltip, QtCore.Qt.ToolTipRole)
             self.ui.comboBox_error_type_zyy.setItemData(index, tooltip, QtCore.Qt.ToolTipRole)
 
+        # hide parts
+        self.ui.groupBox_component_error_types.setHidden(True)
+        self.ui.label_component_error_types.setHidden(True)
+
         # connect signals
         self.ui.radioButton_impedance_full.toggled.connect(self._impedance_full_toggled)
         self.ui.radioButton_impedance_off_diagonal.toggled.connect(self._impedance_off_diagonal_toggled)
@@ -123,6 +127,8 @@ class ExportDialogModEm(QtGui.QWizard):
             lambda p_int: self.ui.spinBox_cell_num_ns.setEnabled(p_int != 0)
         )
 
+        self.ui.checkBox_component_error_types.toggled.connect(self._component_error_type_toggled)
+
         # register fields
         self.ui.wizardPage_output.registerField('output_path*', self.ui.lineEdit_full_output)
         self.ui.wizardPage_topography.registerField('topography_file*', self.ui.comboBox_topography_file)
@@ -158,6 +164,10 @@ class ExportDialogModEm(QtGui.QWizard):
         'use square error of a frequency of component of a station',
         'mean square error of a frequency of a component across all frequencies for one station'
     ]
+
+    def _component_error_type_toggled(self, is_checked):
+        self.ui.label_component_error_types.setHidden(not is_checked)
+        self.ui.groupBox_component_error_types.setHidden(not is_checked)
 
     def _target_depth_changed(self, *args):
         value = self.ui.doubleSpinBox_target_depth.value()

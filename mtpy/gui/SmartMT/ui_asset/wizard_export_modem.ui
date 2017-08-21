@@ -6,15 +6,15 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>578</width>
-    <height>458</height>
+       <width>603</width>
+       <height>493</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Generate ModEM input data files</string>
   </property>
   <property name="wizardStyle">
-   <enum>QWizard::ModernStyle</enum>
+      <enum>QWizard::MacStyle</enum>
   </property>
   <widget class="QWizardPage" name="wizardPage_intro">
    <property name="title">
@@ -228,7 +228,28 @@
     <string>Error Type(s) of the exported data file. Supported types are floor, value, egbert, egbert (floor), standard deviation, square error, and mean square error. It is also possible to configure error type(s) for each impedance component.   </string>
    </property>
    <layout class="QGridLayout" name="gridLayout_3">
-    <item row="3" column="1">
+       <item row="3" column="0">
+           <widget class="QLabel" name="label_error_egbert">
+               <property name="sizePolicy">
+                   <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                       <horstretch>0</horstretch>
+                       <verstretch>0</verstretch>
+                   </sizepolicy>
+               </property>
+               <property name="toolTip">
+                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Percentage to multiply sqrt(zxy*zyx) by.
+                       Default is 3 precent as prescribed by Egbert &amp;amp; Kelbert.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
+                   </string>
+               </property>
+               <property name="text">
+                   <string>Egbert Error</string>
+               </property>
+               <property name="buddy">
+                   <cstring>doubleSpinBox_error_egbert</cstring>
+               </property>
+           </widget>
+       </item>
+       <item row="1" column="1">
      <widget class="QDoubleSpinBox" name="doubleSpinBox_error_tipper">
       <property name="toolTip">
        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Absolute tipper error, all tipper error will be set to this value unless you specify error_type as 'floor' or 'floor_egbert'. Default is 5%.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
@@ -244,52 +265,15 @@
       </property>
      </widget>
     </item>
-    <item row="0" column="1">
-     <widget class="QComboBox" name="comboBox_error_type">
-      <property name="currentIndex">
-       <number>2</number>
+       <item row="6" column="1">
+           <widget class="QDoubleSpinBox" name="doubleSpinBox_error_value">
+               <property name="enabled">
+                   <bool>false</bool>
       </property>
-      <item>
-       <property name="text">
-        <string>floor</string>
-       </property>
-      </item>
-      <item>
-       <property name="text">
-        <string>value</string>
-       </property>
-      </item>
-      <item>
-       <property name="text">
-        <string>egbert</string>
-       </property>
-      </item>
-      <item>
-       <property name="text">
-        <string>egbert (floor)</string>
-       </property>
-      </item>
-      <item>
-       <property name="text">
-        <string>stddev</string>
-       </property>
-      </item>
-      <item>
-       <property name="text">
-        <string>square error</string>
-       </property>
-      </item>
-      <item>
-       <property name="text">
-        <string>mean square error</string>
-       </property>
-      </item>
-     </widget>
-    </item>
-    <item row="1" column="1">
-     <widget class="QDoubleSpinBox" name="doubleSpinBox_error_egbert">
       <property name="toolTip">
-       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Percentage to multiply sqrt(zxy*zyx) by. Default is 3 precent as prescribed by Egbert &amp;amp; Kelbert.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Percentage to multiply Z by, to set error. Default is 5
+              for 5% of Z as error.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
+          </string>
       </property>
       <property name="suffix">
        <string>%</string>
@@ -298,12 +282,12 @@
        <double>100.000000000000000</double>
       </property>
       <property name="value">
-       <double>3.000000000000000</double>
+          <double>5.000000000000000</double>
       </property>
      </widget>
     </item>
-    <item row="2" column="0">
-     <widget class="QLabel" name="label_error_floor">
+       <item row="6" column="0">
+           <widget class="QLabel" name="label_error_value">
       <property name="sizePolicy">
        <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
         <horstretch>0</horstretch>
@@ -311,17 +295,35 @@
        </sizepolicy>
       </property>
       <property name="toolTip">
-       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Percentage to set the error floor at, anything below this number will be set to this value. Default is 10%&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Percentage to multiply Z by, to set error. Default is 5
+              for 5% of Z as error.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
+          </string>
       </property>
       <property name="text">
-       <string>Error Floor</string>
+          <string>Value Error</string>
       </property>
       <property name="buddy">
-       <cstring>doubleSpinBox_error_floor</cstring>
+          <cstring>doubleSpinBox_error_value</cstring>
       </property>
      </widget>
     </item>
-    <item row="2" column="1">
+       <item row="2" column="0">
+           <widget class="QLabel" name="label">
+               <property name="sizePolicy">
+                   <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                       <horstretch>0</horstretch>
+                       <verstretch>0</verstretch>
+                   </sizepolicy>
+               </property>
+               <property name="text">
+                   <string>Error Type</string>
+               </property>
+               <property name="buddy">
+                   <cstring>comboBox_error_type</cstring>
+               </property>
+           </widget>
+       </item>
+       <item row="4" column="1">
      <widget class="QDoubleSpinBox" name="doubleSpinBox_error_floor">
       <property name="enabled">
        <bool>false</bool>
@@ -340,8 +342,8 @@
       </property>
      </widget>
     </item>
-    <item row="3" column="0">
-     <widget class="QLabel" name="label_error_tipper">
+       <item row="4" column="0">
+           <widget class="QLabel" name="label_error_floor">
       <property name="sizePolicy">
        <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
         <horstretch>0</horstretch>
@@ -349,53 +351,78 @@
        </sizepolicy>
       </property>
       <property name="toolTip">
-       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Absolute tipper error, all tipper error will be set to this value unless you specify error_type as 'floor' or 'floor_egbert'. Default is 5%.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Percentage to set the error floor at, anything below
+              this number will be set to this value. Default is 10%&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
+          </string>
       </property>
       <property name="text">
-       <string>Error Tipper</string>
+          <string>Floor Error</string>
       </property>
       <property name="buddy">
-       <cstring>doubleSpinBox_error_tipper</cstring>
+          <cstring>doubleSpinBox_error_floor</cstring>
       </property>
      </widget>
     </item>
-    <item row="1" column="0">
-     <widget class="QLabel" name="label_error_egbert">
-      <property name="sizePolicy">
-       <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-        <horstretch>0</horstretch>
-        <verstretch>0</verstretch>
-       </sizepolicy>
-      </property>
+       <item row="3" column="1">
+           <widget class="QDoubleSpinBox" name="doubleSpinBox_error_egbert">
       <property name="toolTip">
        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Percentage to multiply sqrt(zxy*zyx) by. Default is 3 precent as prescribed by Egbert &amp;amp; Kelbert.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
       </property>
-      <property name="text">
-       <string>Error Egbert</string>
+               <property name="suffix">
+                   <string>%</string>
       </property>
-      <property name="buddy">
-       <cstring>doubleSpinBox_error_egbert</cstring>
-      </property>
-     </widget>
-    </item>
-    <item row="0" column="0">
-     <widget class="QLabel" name="label">
-      <property name="sizePolicy">
-       <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-        <horstretch>0</horstretch>
-        <verstretch>0</verstretch>
-       </sizepolicy>
-      </property>
-      <property name="text">
-       <string>Error Type</string>
-      </property>
-      <property name="buddy">
-       <cstring>comboBox_error_type</cstring>
+               <property name="maximum">
+                   <double>100.000000000000000</double>
+               </property>
+               <property name="value">
+                   <double>3.000000000000000</double>
       </property>
      </widget>
     </item>
-    <item row="4" column="0">
-     <widget class="QLabel" name="label_error_value">
+       <item row="2" column="1">
+           <widget class="QComboBox" name="comboBox_error_type">
+               <property name="currentIndex">
+                   <number>2</number>
+      </property>
+               <item>
+                   <property name="text">
+                       <string>floor</string>
+                   </property>
+               </item>
+               <item>
+                   <property name="text">
+                       <string>value</string>
+                   </property>
+               </item>
+               <item>
+                   <property name="text">
+                       <string>egbert</string>
+                   </property>
+               </item>
+               <item>
+                   <property name="text">
+                       <string>egbert (floor)</string>
+                   </property>
+               </item>
+               <item>
+                   <property name="text">
+                       <string>stddev</string>
+                   </property>
+               </item>
+               <item>
+                   <property name="text">
+                       <string>square error</string>
+                   </property>
+               </item>
+               <item>
+                   <property name="text">
+                       <string>mean square error</string>
+                   </property>
+               </item>
+     </widget>
+    </item>
+       <item row="1" column="0">
+           <widget class="QLabel" name="label_error_tipper">
       <property name="sizePolicy">
        <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
         <horstretch>0</horstretch>
@@ -403,37 +430,20 @@
        </sizepolicy>
       </property>
       <property name="toolTip">
-       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Percentage to multiply Z by, to set error. Default is 5 for 5% of Z as error.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Absolute tipper error, all tipper error will be set to
+              this value unless you specify error_type as 'floor' or 'floor_egbert'. Default is 5%.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
+          </string>
       </property>
       <property name="text">
-       <string>Error Value</string>
+          <string>Tipper Error</string>
       </property>
       <property name="buddy">
-       <cstring>doubleSpinBox_error_value</cstring>
+          <cstring>doubleSpinBox_error_tipper</cstring>
       </property>
      </widget>
     </item>
-    <item row="4" column="1">
-     <widget class="QDoubleSpinBox" name="doubleSpinBox_error_value">
-      <property name="enabled">
-       <bool>false</bool>
-      </property>
-      <property name="toolTip">
-       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Percentage to multiply Z by, to set error. Default is 5 for 5% of Z as error.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-      </property>
-      <property name="suffix">
-       <string>%</string>
-      </property>
-      <property name="maximum">
-       <double>100.000000000000000</double>
-      </property>
-      <property name="value">
-       <double>5.000000000000000</double>
-      </property>
-     </widget>
-    </item>
-    <item row="0" column="2" rowspan="5">
-     <widget class="QGroupBox" name="groupBox_3">
+       <item row="9" column="0" colspan="2">
+           <widget class="QGroupBox" name="groupBox_component_error_types">
       <property name="sizePolicy">
        <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
         <horstretch>0</horstretch>
@@ -685,6 +695,25 @@
       </layout>
      </widget>
     </item>
+       <item row="8" column="0" colspan="2">
+           <widget class="QLabel" name="label_component_error_types">
+               <property name="text">
+                   <string>Configure error types for each individual component by checking the box then select a error
+                       type from the drop down menu.
+                   </string>
+               </property>
+               <property name="wordWrap">
+                   <bool>true</bool>
+               </property>
+           </widget>
+       </item>
+       <item row="7" column="0" colspan="2">
+           <widget class="QCheckBox" name="checkBox_component_error_types">
+               <property name="text">
+                   <string>show advanced options</string>
+               </property>
+           </widget>
+       </item>
    </layout>
   </widget>
   <widget class="QWizardPage" name="wizardPage_data">
@@ -1388,9 +1417,9 @@
     <string>Output</string>
    </property>
    <property name="subTitle">
-    <string>Plsease select the output directry and the new folder that will be created to save all the data
-                 files for ModEM.
-             </string>
+       <string>Plsease select the output directry and the new folder that will be created to save all the data files for
+           ModEM.
+       </string>
    </property>
    <layout class="QGridLayout" name="gridLayout_5">
     <item row="4" column="1">
@@ -1542,7 +1571,6 @@
   <tabstop>comboBox_error_type</tabstop>
   <tabstop>doubleSpinBox_error_egbert</tabstop>
   <tabstop>doubleSpinBox_error_floor</tabstop>
-  <tabstop>doubleSpinBox_error_tipper</tabstop>
   <tabstop>doubleSpinBox_error_value</tabstop>
   <tabstop>checkBox_zxx</tabstop>
   <tabstop>comboBox_error_type_zxx</tabstop>

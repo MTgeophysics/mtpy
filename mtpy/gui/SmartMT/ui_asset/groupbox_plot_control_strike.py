@@ -25,7 +25,7 @@ except AttributeError:
 class Ui_GroupBox_plot_control_strike(object):
     def setupUi(self, GroupBox_plot_control_strike):
         GroupBox_plot_control_strike.setObjectName(_fromUtf8("GroupBox_plot_control_strike"))
-        GroupBox_plot_control_strike.resize(300, 274)
+        GroupBox_plot_control_strike.resize(316, 289)
         sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -102,6 +102,15 @@ class Ui_GroupBox_plot_control_strike(object):
 
         self.retranslateUi(GroupBox_plot_control_strike)
         QtCore.QMetaObject.connectSlotsByName(GroupBox_plot_control_strike)
+        GroupBox_plot_control_strike.setTabOrder(self.radioButton_type_1, self.radioButton_type_2)
+        GroupBox_plot_control_strike.setTabOrder(self.radioButton_type_2, self.checkBox_plot_tipper)
+        GroupBox_plot_control_strike.setTabOrder(self.checkBox_plot_tipper, self.checkBox_fold)
+        GroupBox_plot_control_strike.setTabOrder(self.checkBox_fold, self.checkBox_max_error)
+        GroupBox_plot_control_strike.setTabOrder(self.checkBox_max_error, self.doubleSpinBox_max_error)
+        GroupBox_plot_control_strike.setTabOrder(self.doubleSpinBox_max_error, self.radioButton_range_data)
+        GroupBox_plot_control_strike.setTabOrder(self.radioButton_range_data, self.radioButton_range_minmax)
+        GroupBox_plot_control_strike.setTabOrder(self.radioButton_range_minmax, self.lineEdit_min)
+        GroupBox_plot_control_strike.setTabOrder(self.lineEdit_min, self.lineEdit_max)
 
     def retranslateUi(self, GroupBox_plot_control_strike):
         GroupBox_plot_control_strike.setWindowTitle(_translate("GroupBox_plot_control_strike", "GroupBox", None))
