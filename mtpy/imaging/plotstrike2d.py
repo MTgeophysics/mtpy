@@ -302,7 +302,7 @@ class PlotStrike2D(object):
 
             # estimate where only the 2D sections are
             dim_2d = MTgy.dimensionality(z_object=mt._Z,
-                                         beta_threshold=self.skew_threshold)
+                                         skew_threshold=self.skew_threshold)
             index_2d = np.where(dim_2d == 2)[0]
             #------------get strike from phase tensor strike angle-------------
             pt = mt.get_PhaseTensor()
