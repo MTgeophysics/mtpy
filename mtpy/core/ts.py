@@ -89,7 +89,7 @@ class MT_TS(object):
         self.station = 'mt00'
         self.sampling_rate = 1
         self._start_time_epoch_sec = 0.0
-        self._start_time_utc = '1980-01-01,00:00:00'
+        self._start_time_utc = '1980-01-01 00:00:00'
         self.n_samples = 0
         self.component = None
         self.coordinate_system = 'geomagnetic'
@@ -108,7 +108,7 @@ class MT_TS(object):
         self.fn_hdf5 = None
         self.fn_ascii = None
         
-        self._date_time_fmt = '%Y-%m-%d,%H:%M:%S'
+        self._date_time_fmt = '%Y-%m-%d %H:%M:%S'
         self._attr_list = ['station',
                            'sampling_rate',
                            'start_time_epoch_sec',
@@ -140,10 +140,19 @@ class MT_TS(object):
     
     @ts.setter
     def ts(self, ts_arr):
+        """
+        if setting ts with a pandas data frame, make sure the data is in a 
+        column name 'data'
+        """
         if type(ts_arr) is np.ndarray:
-            self._ts = pd.DataFrame(ts_arr)
+            self._ts = pd.DataFrame({'data':ts_arr})
         elif type(ts_arr) is pd.core.frame.DataFrame:
-            self._ts = ts_arr
+            try:
+                ts_arr['data']
+                self._ts = ts_arr
+            except AttributeError:
+                raise MT_TS_Error('Data frame needs to have a column named "data" '+\ 
+                                   'where the time series data is stored')
         else:
             raise MT_TS_Error('Data type {0} not supported'.format(type(ts_arr))+\
                               ', ts needs to be a numpy.ndarray or pandas DataFrame')
@@ -182,20 +191,22 @@ class MT_TS(object):
     
     @start_time_utc.setter
     def start_time_utc(self, start_time):
-        try:
-            dt = datetime.datetime.strptime(start_time, self._date_time_fmt)
-            self._start_time_utc = datetime.datetime.strftime(dt,
-                                                              self._date_time_fmt)
-              
-            # these should be mutually self consistent
-            epoch_sec = time.mktime(time.strptime(start_time,
-                                                  self._date_time_fmt))
-            if self.start_time_epoch_sec != epoch_sec:                                                
-                self.start_time_epoch_sec = epoch_sec
-                print 'Changed start_time_epoch_sec to {0}'.format(epoch_sec)
-        except:
-            raise MT_TS_Error('Time not input correctly, input as {0}'.format(self._date_time_fmt)+\
-                              ', or change MT_TS._date_time_fmt')
+        start_time = self._valitate_dt_str(start_time)
+
+        dt = datetime.datetime.strptime(start_time, self._date_time_fmt)
+        self._start_time_utc = datetime.datetime.strftime(dt,
+                                                          self._date_time_fmt)
+         
+        # make a time series that the data can be indexed by
+        self._set_dt_index(self._start_time_utc)
+        
+        # these should be mutually self consistent
+        epoch_sec = self.convert_dt_to_sec(start_time)
+
+        if self.start_time_epoch_sec != epoch_sec:                                                
+            self.start_time_epoch_sec = epoch_sec
+            print 'Changed start_time_epoch_sec to {0}'.format(epoch_sec)
+
         
     ## epoch seconds
     @property
@@ -211,8 +222,75 @@ class MT_TS(object):
         if self.start_time_utc != dt_utc:
             self.start_time_utc = dt_utc
             print 'Changed start_time_utc to {0}'.format(dt_utc)
+            
+            # reset the time index
+            self._set_dt_index(self.start_time_utc)
         
+    def _valitate_dt_str(self, date_time_str):
+        """
+        Check the format of the date time string against self._date_time_fmt,
+        Basically, replace a comma with a space.
+        
+        .. note:: Pandas wants yyyy-mm-dd HH:MM:SS.ss, which is what is set
+                  as the default.
+                  
+        Arguments
+        --------------
+            **date_time_str** : string
+                                date time string
+                                
+        Returns
+        -------------
+            **validated_dt_str** : string
+                                   validated date time string
+        
+        """
+        
+        validated_dt_str = date_time_str.replace(',', ' ')
+        
+        try: 
+            dt = datetime.datetime.strptime(date_time_str, self._date_time_fmt)
+        except ValueError:
+            raise MT_TS_Error('Could not read format of {0}'.format(date_time_str)+\
+                              ' Should be of format {0}'.format(self._date_time_fmt))
+        
+        return validated_dt_str
+                
+    def _set_dt_index(self, start_time):
+        """
+        get the date time index from the data
+        """
+        
+        dt_freq = '{0:0f}N'.format(1./self.sampling_rate*1E9)
+        
+        dt_index = pd.date_range(start=start_time, 
+                                 periods=self.ts.size, 
+                                 freq=dt_freq)
+        
+        self.ts.index = dt_index
+        print "   * Reset time seies index to start at {0}".format(start_time)
     
+    # convert time to epoch seconds
+    def convert_dt_to_sec(self, date_time_str):
+        """
+        convert date time string to epoch seconds
+        
+        Arguments
+        --------------
+            **date_time_str** : string
+                                format is defined by self._date_time_fmt
+                                *default* is YYYY-MM-DD hh:mm:ss
+                                
+        Returns
+        --------------
+            **epoch_seconds** : float
+                                time in epoch seconds
+                                
+        
+        
+        """
+        
+        return time.mktime(time.strptime(date_time_str, self._date_time_fmt))
     
     ###------------------------------------------------------------------
     ### read and write file types
@@ -348,7 +426,7 @@ class MT_TS_Error(Exception):
     pass        
  
 #==============================================================================
-#  
+#  spectra
 #==============================================================================
 
 
