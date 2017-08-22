@@ -101,7 +101,7 @@ class MT_TS(object):
     def __init__(self, **kwargs):
         
         self.station = 'mt00'
-        self.sampling_rate = 1
+        self._sampling_rate = 1
         self._start_time_epoch_sec = 0.0
         self._start_time_utc = '1980-01-01 00:00:00'
         self.n_samples = 0
@@ -160,6 +160,9 @@ class MT_TS(object):
         """
         if type(ts_arr) is np.ndarray:
             self._ts = pd.DataFrame({'data':ts_arr})
+            if self.start_time_utc is not None:
+                self._set_dt_index(self.start_time_utc)
+                
         elif type(ts_arr) is pd.core.frame.DataFrame:
             try:
                 ts_arr['data']
@@ -204,7 +207,26 @@ class MT_TS(object):
     def elev(self, elevation):
         self._elev = gis_tools.assert_elevation_value(elevation)
         
-    ## time
+    #--> sampling rate
+    @property
+    def sampling_rate(self):
+        return self._sampling_rate
+    
+    @sampling_rate.setter
+    def sampling_rate(self, sampling_rate):
+        """
+        sampling rate in samples/second
+        
+        type float
+        """
+        try:
+            self._sampling_rate = float(sampling_rate)
+            if self.start_time_utc is not None:
+                self._set_dt_index(self.start_time_utc)
+        except ValueError:
+            raise MT_TS_Error("Input sampling rate should be a float not {0}".format(type(sampling_rate)))
+            
+    ## set time and set index
     @property
     def start_time_utc(self):
         return self._start_time_utc
@@ -229,18 +251,10 @@ class MT_TS(object):
         # make a time series that the data can be indexed by
         self._set_dt_index(self._start_time_utc)
         
-        # these should be mutually self consistent
-        epoch_sec = self.convert_dt_to_sec(start_time)
-
-        if self.start_time_epoch_sec != epoch_sec:                                                
-            self.start_time_epoch_sec = epoch_sec
-            print 'Changed start_time_epoch_sec to {0}'.format(epoch_sec)
-
-        
     ## epoch seconds
     @property
     def start_time_epoch_sec(self):
-        return self._start_time_epoch_sec
+        return self._convert_dt_to_sec(self.start_time_utc)
         
     @start_time_epoch_sec.setter
     def start_time_epoch_sec(self, epoch_sec):
@@ -252,17 +266,16 @@ class MT_TS(object):
         Resets how ts data frame is indexed.
         """
         
-        self._start_time_epoch_sec = float(epoch_sec)
+        try:
+            self._start_time_epoch_sec = float(epoch_sec)
+        except ValueError:
+            raise MT_TS_Error("Need to input epoch_sec as a float not {0}".format(type(epoch_sec)))
         
         dt_struct = datetime.datetime.fromtimestamp(self._start_time_epoch_sec)
         # these should be self cosistent
         dt_utc = datetime.datetime.strftime(dt_struct, self._date_time_fmt)
         if self.start_time_utc != dt_utc:
             self.start_time_utc = dt_utc
-            print 'Changed start_time_utc to {0}'.format(dt_utc)
-            
-            # reset the time index
-            self._set_dt_index(self.start_time_utc)
         
     def _valitate_dt_str(self, date_time_str):
         """
@@ -305,7 +318,7 @@ class MT_TS(object):
         get the date time index from the data
         """
         
-        dt_freq = '{0:0f}N'.format(1./self.sampling_rate*1E9)
+        dt_freq = '{0:0f}N'.format(1./(self.sampling_rate)*1E9)
         
         dt_index = pd.date_range(start=start_time, 
                                  periods=self.ts.size, 
@@ -315,7 +328,7 @@ class MT_TS(object):
         print "   * Reset time seies index to start at {0}".format(start_time)
     
     # convert time to epoch seconds
-    def convert_dt_to_sec(self, date_time_str):
+    def _convert_dt_to_sec(self, date_time_str):
         """
         convert date time string to epoch seconds
         
@@ -337,7 +350,7 @@ class MT_TS(object):
                                                self._date_time_fmt)
         dt_time = dt_struct.timetuple()
         
-        return calendar.timegm(dt_time)
+        return calendar.timegm(dt_time)+dt_struct.microsecond*1E-6
     
     ###------------------------------------------------------------------
     ### read and write file types
