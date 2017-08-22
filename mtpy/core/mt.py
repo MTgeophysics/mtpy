@@ -154,8 +154,8 @@ class MT(object):
         self.Notes = MTedi.Information()
         self.Processing = Processing()
 
-        self._Z = kwargs.pop('Z', MTz.Z())
-        self._Tipper = kwargs.pop('Tipper', MTz.Tipper())
+        self._Z = MTz.Z()
+        self._Tipper = MTz.Tipper()
         self._rotation_angle = 0
         self._fn = None
         self._edi_obj = MTedi.Edi()

@@ -653,7 +653,7 @@ class Tipper(object):
 class MTplot(object):
     """
     This class will be able to read in the imporant information from either
-    an .edi file or information input by had and can be extended to other 
+    an .edi file or information input by hand and can be extended to other 
     file types in the future.  This is a helper class to get all the 
     information needed in one place.
     
