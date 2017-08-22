@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 from matplotlib.ticker import FormatStrFormatter
-import mtpy.utils.conversions as utm2ll
+import mtpy.utils.gis_tools as gis_tools
 import matplotlib.colors as colors
 import matplotlib.patches as patches
 import matplotlib.colorbar as mcb
@@ -722,7 +722,8 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
             
             #if map scale is in meters easting and northing
             elif self.map_scale == 'm':
-                zone, east, north = utm2ll.LLtoUTM(23, rpt['lat'], rpt['lon'])
+                east, north, zone = gis_tools.project_point_ll2utm(rpt['lat'],
+                                                                   rpt['lon'])
                 
                 #set the first point read in as a refernce other points                    
                 if ii == 0:
@@ -751,7 +752,8 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
                 
             #if map_scale is in km easting and northing
             elif self.map_scale == 'km':
-                zone, east, north = utm2ll.LLtoUTM(23, rpt['lat'], rpt['lon'])
+                east, north, zone = gis_tools.project_point_ll2utm(rpt['lat'],
+                                                                   rpt['lon'])
                 if ii == 0:
                     zone1 = zone
                     plotx = (east-self.plot_reference_point[0])/1000.
