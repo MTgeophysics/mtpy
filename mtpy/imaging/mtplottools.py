@@ -19,7 +19,7 @@ import mtpy.core.z as mtz
 import mtpy.analysis.pt as mtpt
 import mtpy.analysis.zinvariants as mtinv
 import mtpy.utils.exceptions as mtex
-import mtpy.utils.conversions as utm2ll
+import mtpy.utils.gis_tools as gis_tools
 import matplotlib.mlab as mlab
 
 #==============================================================================
@@ -1625,8 +1625,8 @@ def get_station_locations(mt_list, map_scale='latlon', ref_point=(0,0)):
             y = mt.lat-ref_point[1]
         
         #if map scale is in meters easting and northing
-        elif map_scale == 'eastnorth' or map_scale == 'eastnorthkm' :
-            zone, east, north = utm2ll.LLtoUTM(23, mt.lat, mt.lon)
+        elif map_scale == 'eastnorth' or map_scale == 'eastnorthkm':
+            east, north, zone = gis_tools.project_point_ll2utm(mt.lat, mt.lon)
             
             east /= dscale
             north /= dscale
