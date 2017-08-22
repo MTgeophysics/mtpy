@@ -1051,7 +1051,7 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
 
         if self.plot_stations == True:
             for ax in ax_list:
-                for s_arr in self.modem_data.station_locations:
+                for s_arr in self.modem_data.station_locations.station_locations:
                     ax.text(s_arr['rel_east']/self.dscale,
                             s_arr['rel_north']/self.dscale,
                             s_arr['station'],
