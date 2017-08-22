@@ -13,14 +13,16 @@ Created on Tue Jan 07 12:42:34 2014
 """
 
 #==============================================================================
+import os
+import numpy as np
+
 import mtpy.core.edi as MTedi
 import mtpy.core.z as MTz
 import mtpy.utils.exceptions as MTex
 import mtpy.utils.gis_tools as gis_tools
 import mtpy.analysis.pt as MTpt
 import mtpy.analysis.distortion as MTdistortion
-import os
-import numpy as np
+import mtpy.core.jfile as MTj
 import mtpy.imaging.plotresponse as plotresponse
 
 try:
@@ -220,24 +222,7 @@ class MT(object):
         """
         self.Site.Location.utm_zone = utm_zone
         self.Site.Location.project_location2ll()
-        
-    def _set_fn(self, filename):
-        """
-        set filename, currently only support .edi files
-        """
-        
-        self._fn = filename
-        if self._fn is None:
-            return 
-            
-        if self._fn.lower().endswith('.edi'):
-            self.read_edi_file()
-        else:
-            not_fn = self._fn[os.path.basename(self._fn).find['.']:]
-            raise MTex.MTpyError_file_handling('File '+\
-                              'type {0} not supported yet.'.format(not_fn))
-            
-    
+                
     def _set_rotation_angle(self, theta_r):
         """
         set rotation angle in degrees assuming North is 0 measuring clockwise
@@ -306,9 +291,6 @@ class MT(object):
     def _get_utm_zone(self):
         return self.Site.Location.utm_zone
     
-    def _get_fn(self):
-        return self._fn
-    
     def _get_rotation_angle(self):
         return self._rotation_angle
     
@@ -343,8 +325,6 @@ class MT(object):
                     
     utm_zone = property(_get_utm_zone, _set_utm_zone,
                         doc="UTM zone")
-                        
-    fn = property(_get_fn, _set_fn, doc="name of file containing MT info")
     
     rotation_angle = property(_get_rotation_angle, _set_rotation_angle,
                               doc="rotation angle of Z and Tipper")
@@ -360,6 +340,42 @@ class MT(object):
     #==========================================================================
     #  read in files   
     #==========================================================================
+    def read_mt_file(self, fn, file_type=None):
+        """
+        read an MT response file.
+        
+        .. note:: Currently only .edi and .j files are supported
+        
+        Arguments
+        -----------
+            **fn** : string
+                     full path to input file
+                     
+            **file_type** : string
+                            ['edi' | 'j' | ...]
+                            if None, automatically detects file type by 
+                            the extension.
+                            
+        
+        """
+        self.fn = fn
+        
+        if file_type is None:
+            if fn.endswith('.edi'):
+                self.read_edi_file()
+            elif fn.endswith('.j'):
+                self.read_j_file()
+            else:
+                raise MT_Error('File type not supported yet')
+                
+        else:
+            if file_type in '.edi':
+                self.read_edi_file()
+            elif file_type in '.j':
+                self.read_j_file()
+            else:
+                raise MT_Error('File type not supported yet')
+                
     #--> read in edi file                                                    
     def read_edi_file(self):
         """
@@ -669,14 +685,25 @@ class MT(object):
                 self.Tipper.tipper_err = self.Tipper.tipper_err.copy()[::-1]
                 self.Tipper.freq = self.Tipper.freq.copy()[::-1]
                 
-    def read_j_file(self, j_fn):
+    def read_j_file(self, j_fn=None):
         """
         read j file
         """
+        if j_fn is not None:
+            self.fn = j_fn
         
+        j_obj = MTj.JFile(self.fn)
         
+        self.Z = j_obj.Z
+        self.Tipper = j_obj.Tipper
         
-        pass
+        self._check_freq_order()
+        
+        self.Site.Location.latitude = j_obj.metadata_dict['latitude']
+        self.Site.Location.longitude = j_obj.metadata_dict['longitude']
+        self.Site.Location.elevation = j_obj.metadata_dict['elevation']
+        
+
         
     def remove_distortion(self, num_freq=None):
         """
@@ -911,7 +938,9 @@ class MT(object):
             
         """
         
-        plot_obj = plotresponse.PlotResponse(fn=self.fn, **kwargs)
+        plot_obj = plotresponse.PlotResponse(z_object=self.Z,
+                                             tipper_object=self.Tipper,
+                                             **kwargs)
         
         return plot_obj
         
@@ -1363,4 +1392,8 @@ class Software(object):
         
         for key in kwargs:
             setattr(self, key, kwargs[key])
-        
+#==============================================================================
+#             Error
+#==============================================================================
+class MT_Error(Exception):
+    pass

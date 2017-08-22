@@ -25,14 +25,14 @@ class JFile(object):
     """
     
     def __init__(self, j_fn=None):
-        self.j_lines = j_fn
+        self.j_fn = j_fn
         self.header_dict = None
         self.metadata_dict = None
         self.Z = None
         self.Tipper = None
         
         if self.j_fn is not None:
-            self.read_j_file(self.j_fn)
+            self.read_j_file()
 
         
     def _get_j_lines(self):
@@ -99,7 +99,52 @@ class JFile(object):
         file_str = file_str[0:index_begin]+new_line+file_str[index_end:]        
          
         return file_str
+    
+    def _read_header_line(self, line):
+        """
+        read a header line
+        """
+        line = ' '.join(line[1:].strip().split())
         
+        new_line = ''
+        
+        e_find = 0
+        for ii in range(len(line)):
+            if line[ii] == '=':
+                e_find = ii
+                new_line += line[ii]
+            elif line[ii] == ' ':
+                if abs(e_find-ii) == 1:
+                    pass
+                else:
+                    new_line += ','
+            else:
+                new_line += line[ii] 
+                
+        line_list = new_line.split(',')
+        
+        l_dict = {}
+        for ll in line_list:
+            ll_list = ll.split('=')
+            if len(ll_list) != 2:
+                if type(l_dict[key]) is not list:
+                    l_dict[key] = list([l_dict[key]])
+                try:
+                    l_dict[key].append(float(ll))
+                except ValueError:
+                    l_dict[key].append(ll)
+            else:
+                key = ll_list[0]
+                try:
+                    value = float(ll_list[1])
+                except ValueError:
+                    value = ll_list[1]
+                    
+                l_dict[key] = value
+            
+        return l_dict
+    
+    
     def read_header(self):
         """
         Parsing the header lines of a j-file to extract processing information.
@@ -122,47 +167,48 @@ class JFile(object):
         theta_count = 0
         # put the information into a dictionary 
         for h_line in header_lines[1:]:
-            # replace '=' with a ' ' to be sure that when split is called there is a
-            # split, especially with filenames
-            h_list = h_line[1:].strip().replace('=', ' ').split()
-            # skip if there is only one element in the list
-            if len(h_list) == 1:
-                continue
-            # get the key and value for each parameter in the given line
-            for h_index in range(0, len(h_list), 2):
-                h_key = h_list[h_index]
-                # if its the file name, make the dictionary value be a list so that 
-                # we can append nread and nskip to it, and make the name unique by
-                # adding a counter on the end
-                if h_key == 'filnam':
-                    h_key = '{0}_{1:02}'.format(h_key, fn_count)
-                    fn_count += 1
-                    h_value = [h_list[h_index+1]]
-                    header_dict[h_key] = h_value
-                    continue
-                elif h_key == 'nskip' or h_key == 'nread':
-                    h_key = 'filnam_{0:02}'.format(fn_count-1)
-                    h_value = int(h_list[h_index+1])
-                    header_dict[h_key].append(h_value)
-                    
-                # if its the line of angles, put them all in a list with a unique key
-                elif h_key == 'theta1':
-                    h_key = '{0}_{1:02}'.format(h_key, theta_count)
-                    theta_count += 1
-                    h_value = float(h_list[h_index+1])
-                    header_dict[h_key] = [h_value]
-                elif h_key == 'theta2' or h_key == 'phi':
-                    h_key = '{0}_{1:02}'.format('theta1', theta_count-1)
-                    h_value = float(h_list[h_index+1])
-                    header_dict[h_key].append(h_value)
-                    
-                else:
-                    try:
-                        h_value = float(h_list[h_index+1])
-                    except ValueError:
-                        h_value = h_list[h_index+1]
-                    
-                    header_dict[h_key] = h_value
+            h_dict = self._read_header_line(h_line)
+            for key in h_dict.keys():
+                header_dict[key] = h_dict[key]
+#            # replace '=' with a ' ' to be sure that when split is called there is a
+#            # split, especially with filenames
+#            h_list = h_line[1:].strip().replace('=', ' ').split()
+#            # skip if there is only one element in the list
+#            if len(h_list) == 1:
+#                continue
+#            # get the key and value for each parameter in the given line
+#            for h_index in range(0, len(h_list), 2):
+#                h_key = h_list[h_index]
+#                # if its the file name, make the dictionary value be a list so that 
+#                # we can append nread and nskip to it, and make the name unique by
+#                # adding a counter on the end
+#                if h_key == 'filnam':
+#                    h_key = '{0}_{1:02}'.format(h_key, fn_count)
+#                    fn_count += 1
+#                    h_value = [h_list[h_index+1]]
+#                    header_dict[h_key] = h_value
+#                    continue
+#                elif h_key == 'nskip' or h_key == 'nread':
+#                    h_key = 'filnam_{0:02}'.format(fn_count-1)
+#                    h_value = int(h_list[h_index+1])
+#                    header_dict[h_key].append(h_value)
+#                    
+#                # if its the line of angles, put them all in a list with a unique key
+#                elif h_key == 'theta1':
+#                    h_key = '{0}_{1:02}'.format(h_key, theta_count)
+#                    theta_count += 1
+#                    h_value = float(h_list[h_index+1])
+#                    header_dict[h_key] = [h_value]
+#                elif h_key == 'theta2' or h_key == 'phi':
+#                    h_key = '{0}_{1:02}'.format('theta1', theta_count-1)
+#                    h_value = float(h_list[h_index+1])
+#                    header_dict[h_key].append(h_value)
+#                    
+#                else:
+#                    h_value = h_list[h_index:]
+#                    
+#                    header_dict[h_key] = h_value
+#                    continue
             
         self.header_dict = header_dict
         
@@ -192,7 +238,7 @@ class JFile(object):
             
         self.metadata_dict = metadata_dict
         
-    def read_j_file(self):
+    def read_j_file(self, j_fn=None):
         """
         read_j_file will read in a *.j file output by BIRRP (better than reading lots of *.<k>r<l>.rf files)
     
@@ -206,6 +252,10 @@ class JFile(object):
         - processing_dict : parsed processing parameters from j-file header
     
         """   
+        if j_fn is not None:
+            self.j_fn = j_fn
+            
+        print '--> Reading {0}'.format(self.j_fn)
     
         # read data
         z_index_dict = {'zxx':(0, 0),

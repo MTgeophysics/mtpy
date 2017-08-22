@@ -453,11 +453,15 @@ class ResPhase(object):
                                                 'compute z.')
                 self._Z.freq = 1./period
         
-        if self._Z.freq == None:
-            if period is not None:
-                self._Z.freq = 1./period
-            else:
-                raise mtex.MTpyError_Z('Need to set z_object.freq')
+        try:
+            if len(z_object.freq) == 0:
+                raise mtex.MTpyError_Z('Need to set Z.freq to an'+\
+                                       ' array that cooresponds to Z.z')
+        except TypeError:
+            raise mtex.MTpyError_Z('Need to set Z.freq to an'+\
+                                       ' array that cooresponds to Z.z')
+        if period is not None:
+            self._Z.freq = 1./period
         else:
             self.period = 1./self._Z.freq
             
@@ -816,7 +820,11 @@ class MTplot(object):
         #if a z_object is input make it the attribute _Z
         if z_object is not None:
             self._Z = z_object
-            if z_object.freq == None:
+            try:
+                if len(z_object.freq) == 0:
+                    raise mtex.MTpyError_Z('Need to set Z.freq to an'+\
+                                           ' array that cooresponds to Z.z')
+            except TypeError:
                 raise mtex.MTpyError_Z('Need to set Z.freq to an'+\
                                            ' array that cooresponds to Z.z')
             self.period = 1./z_object.freq
