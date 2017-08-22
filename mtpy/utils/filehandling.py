@@ -26,16 +26,8 @@ import fnmatch
 import shutil
 
 import mtpy.utils.calculator as MTcc
-import mtpy.processing.general as MTgn
 import mtpy.utils.exceptions as MTex
-import mtpy.utils.format as MTft
 import mtpy.utils.configfile as MTcf
-
-reload(MTgn)
-reload(MTcc)
-reload(MTex)
-reload(MTcf)
-#import ipdb
 
 #=================================================================
 

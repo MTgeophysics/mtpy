@@ -20,7 +20,7 @@ import ConfigParser
 import copy
 import StringIO
 import mtpy.utils.exceptions as MTex
-import mtpy.utils.format as MTft
+import mtpy.utils.gis_tools as gis_tools
 #=================================================================
 
 list_of_required_keywords = ['latitude',
@@ -345,7 +345,12 @@ def read_survey_configfile(filename):
                     #(deg,min,sec)-triple#assert correct format
                     value = stationdict[req_keyword]
                     try:
-                        new_value = MTft._assert_position_format(req_keyword,value)
+                        if req_keyword in 'latitude':
+                            new_value = gis_tools.assert_lat_value(value)
+                        elif req_keyword in 'longitude':
+                            new_value = gis_tools.assert_lon_value(value)
+                        elif req_keyword in 'elevation':
+                            new_value = gis_tools.assert_elevation_value(value)
                     except:
                         raise MTex.MTpyError_config_file('Error - wrong '
                                 'coordinate format for station {0}'.format(stationname))
@@ -449,14 +454,11 @@ def read_survey_configfile(filename):
         if stationdict['rr_station'] != None:
             try:
                 stationdict['rr_latitude'] = \
-                            MTft._assert_position_format(
-                                'latitude',stationdict['rr_latitude'])
+                            gis_tools.assert_lat_value(stationdict['rr_latitude'])
                 stationdict['rr_longitude'] = \
-                            MTft._assert_position_format(
-                                'longitude',stationdict['rr_longitude'])
+                            gis_tools.assert_lon_value(stationdict['rr_longitude'])
                 stationdict['rr_elevation'] = \
-                            MTft._assert_position_format(
-                                'elevation',stationdict['rr_elevation'])
+                            gis_tools.assert_elevation_value(stationdict['rr_elevation'])
 
             except:
                 print 'Problem with remote reference station ({0}) -'

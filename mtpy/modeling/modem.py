@@ -116,7 +116,7 @@ class Stations(object):
         get mt_objects from a list of files or mt_objects
         """
         
-        if type(input_list) is not in [list, np.ndarray]:
+        if type(input_list) not in [list, np.ndarray]:
             raise ValueError('Input list needs to be type list, not {0}'.format(type(input_list)))
         
         if type(input_list[0]) is mt.MT:
