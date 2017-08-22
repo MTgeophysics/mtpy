@@ -5,9 +5,10 @@ Created on Fri Apr 14 14:47:48 2017
 @author: jrpeacock
 """
 
-from osgeo import ogr
+#==============================================================================
+# Imports
+#==============================================================================
 from osgeo import osr
-import mtpy.utils.format as MTft
 
 #==============================================================================
 # Make sure lat and lon are in decimal degrees

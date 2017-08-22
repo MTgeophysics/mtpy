@@ -8,8 +8,8 @@ Created on Thu Jul 06 14:24:18 2017
 #==============================================================================
 # Imports
 #==============================================================================
-import time
 import datetime
+import calendar
 
 import numpy as np
 import pandas as pd
@@ -25,6 +25,20 @@ class MT_TS(object):
     including hdf5, txt, miniseed.
     
     The foundations are based on Pandas Python package.
+    
+    The data are store in the variable ts, which is a pandas dataframe with
+    the data in the column 'data'.  This way the data can be indexed as a
+    numpy array:
+        
+        >>> MT_TS.ts['data'][0:256]
+        
+        or
+        
+        >>> MT_TS.ts.data[0:256]
+        
+    Also, the data can be indexed by time (note needs to be exact time):
+        
+        >>> MT_TS.ts['2017-05-04 12:32:00.0078125':'2017-05-05 12:35:00]
     
     Input ts as a numpy.ndarray or Pandas DataFrame
     
@@ -108,7 +122,7 @@ class MT_TS(object):
         self.fn_hdf5 = None
         self.fn_ascii = None
         
-        self._date_time_fmt = '%Y-%m-%d %H:%M:%S'
+        self._date_time_fmt = '%Y-%m-%d %H:%M:%S.%f'
         self._attr_list = ['station',
                            'sampling_rate',
                            'start_time_epoch_sec',
@@ -151,7 +165,7 @@ class MT_TS(object):
                 ts_arr['data']
                 self._ts = ts_arr
             except AttributeError:
-                raise MT_TS_Error('Data frame needs to have a column named "data" '+\ 
+                raise MT_TS_Error('Data frame needs to have a column named "data" '+\
                                    'where the time series data is stored')
         else:
             raise MT_TS_Error('Data type {0} not supported'.format(type(ts_arr))+\
@@ -164,6 +178,9 @@ class MT_TS(object):
         
     @lat.setter
     def lat(self, latitude):
+        """
+        latitude in either decimal degrees or hh:mm:ss
+        """
         self._lat = gis_tools.assert_lat_value(latitude)
         
     ##--> Longitude
@@ -173,6 +190,9 @@ class MT_TS(object):
         
     @lon.setter
     def lon(self, longitude):
+        """
+        longitude in either decimal degrees or hh:mm:ss
+        """
         self._lon = gis_tools.assert_lon_value(longitude)
         
     ##--> elevation
@@ -191,6 +211,15 @@ class MT_TS(object):
     
     @start_time_utc.setter
     def start_time_utc(self, start_time):
+        """
+        start time of time series in UTC given in format of self._date_time_fmt
+        
+        Resets epoch seconds if the new value is not equivalent to previous
+        value.
+        
+        Resets how the ts data frame is indexed, setting the starting time to
+        the new start time.
+        """
         start_time = self._valitate_dt_str(start_time)
 
         dt = datetime.datetime.strptime(start_time, self._date_time_fmt)
@@ -215,10 +244,19 @@ class MT_TS(object):
         
     @start_time_epoch_sec.setter
     def start_time_epoch_sec(self, epoch_sec):
+        """
+        start time in epoch seconds
+        
+        Resets start_time_utc if different
+        
+        Resets how ts data frame is indexed.
+        """
+        
         self._start_time_epoch_sec = float(epoch_sec)
         
+        dt_struct = datetime.datetime.fromtimestamp(self._start_time_epoch_sec)
         # these should be self cosistent
-        dt_utc = time.strftime(self._date_time_fmt, time.localtime(epoch_sec))
+        dt_utc = datetime.datetime.strftime(dt_struct, self._date_time_fmt)
         if self.start_time_utc != dt_utc:
             self.start_time_utc = dt_utc
             print 'Changed start_time_utc to {0}'.format(dt_utc)
@@ -248,8 +286,14 @@ class MT_TS(object):
         
         validated_dt_str = date_time_str.replace(',', ' ')
         
+        if validated_dt_str.find('.') == -1:
+            validated_dt_str += '.00'
+            
+        print validated_dt_str
+        
         try: 
-            dt = datetime.datetime.strptime(date_time_str, self._date_time_fmt)
+            dt = datetime.datetime.strptime(validated_dt_str, 
+                                            self._date_time_fmt)
         except ValueError:
             raise MT_TS_Error('Could not read format of {0}'.format(date_time_str)+\
                               ' Should be of format {0}'.format(self._date_time_fmt))
@@ -289,8 +333,11 @@ class MT_TS(object):
         
         
         """
+        dt_struct = datetime.datetime.strptime(date_time_str, 
+                                               self._date_time_fmt)
+        dt_time = dt_struct.timetuple()
         
-        return time.mktime(time.strptime(date_time_str, self._date_time_fmt))
+        return calendar.timegm(dt_time)
     
     ###------------------------------------------------------------------
     ### read and write file types
