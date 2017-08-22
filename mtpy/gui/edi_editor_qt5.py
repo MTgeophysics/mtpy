@@ -112,8 +112,9 @@ class EDI_Editor_Window(QtWidgets.QMainWindow):
         fn_dialog = QtWidgets.QFileDialog()
         fn = str(fn_dialog.getOpenFileName(caption='Choose EDI file',
                                            directory=self.plot_widget.dir_path,
-                                           filter='*.edi'))
+                                           filter='*.edi')[0])
                                            
+        fn = os.path.abspath(fn)
         self.plot_widget.dir_path = os.path.dirname(fn)
                                            
         self.plot_widget.mt_obj = mt.MT(fn)
@@ -150,15 +151,15 @@ class EDI_Editor_Window(QtWidgets.QMainWindow):
         self.plot_widget.redraw_plot()
     
     def edit_metadata(self):
-        self.edi_text_editor = EDITextEditor(self.plot_widget.mt_obj.edi_object)
+        self.edi_text_editor = EDITextEditor(self.plot_widget.mt_obj._edi_obj)
         self.edi_text_editor.metadata_updated.connect(self.update_edi_metadata)
         
     def update_edi_metadata(self):
-        self.plot_widget.mt_obj.edi_object = copy.deepcopy(self.edi_text_editor.edi_obj)      
-        self.plot_widget.mt_obj.station = self.plot_widget.mt_obj.edi_object.station         
-        self.plot_widget.mt_obj.elev = self.plot_widget.mt_obj.edi_object.elev         
-        self.plot_widget.mt_obj.lat = self.plot_widget.mt_obj.edi_object.lat         
-        self.plot_widget.mt_obj.lon = self.plot_widget.mt_obj.edi_object.lon         
+        self.plot_widget.mt_obj._edi_obj = copy.deepcopy(self.edi_text_editor.edi_obj)      
+        self.plot_widget.mt_obj.station = self.plot_widget.mt_obj._edi_obj.station         
+        self.plot_widget.mt_obj.elev = self.plot_widget.mt_obj._edi_obj.elev         
+        self.plot_widget.mt_obj.lat = self.plot_widget.mt_obj._edi_obj.lat         
+        self.plot_widget.mt_obj.lon = self.plot_widget.mt_obj._edi_obj.lon         
         self.plot_widget.fill_metadata()        
                        
 #==============================================================================
@@ -233,11 +234,11 @@ class PlotWidget(QtWidgets.QWidget):
         self.mpl_toolbar = NavigationToolbar(self.mpl_widget, self)
         
          # header label font
-        header_font = QtWidgets.QFont()
+        header_font = QtGui.QFont()
         header_font.setBold = True
         header_font.setPointSize (14)
         
-        button_font = QtWidgets.QFont()
+        button_font = QtGui.QFont()
         button_font.setBold = True
         button_font.setPointSize(11)
         
@@ -579,16 +580,16 @@ class PlotWidget(QtWidgets.QWidget):
         self.meta_elev_edit.setText('{0:.6f}'.format(self.mt_obj.elev))
         
     def meta_edit_loc(self):
-        self.mt_obj.edi_object.Header.loc = (str(self.meta_loc_edit.text()))
-        self.meta_loc_edit.setText('{0}'.format(self.mt_obj.edi_object.Header.loc))
+        self.mt_obj._edi_obj.Header.loc = (str(self.meta_loc_edit.text()))
+        self.meta_loc_edit.setText('{0}'.format(self.mt_obj._edi_obj.Header.loc))
         
     def meta_edit_date(self):
-        self.mt_obj.edi_object.Header.filedate = str(self.meta_date_edit.text())
-        self.meta_date_edit.setText(self.mt_obj.edi_object.Header.filedate) 
+        self.mt_obj._edi_obj.Header.filedate = str(self.meta_date_edit.text())
+        self.meta_date_edit.setText(self.mt_obj._edi_obj.Header.filedate) 
     
     def meta_edit_acq(self):
-        self.mt_obj.edi_object.Header.acqby = str(self.meta_acq_edit.text())
-        self.meta_acq_edit.setText(self.mt_obj.edi_object.Header.acqby)    
+        self.mt_obj._edi_obj.Header.acqby = str(self.meta_acq_edit.text())
+        self.meta_acq_edit.setText(self.mt_obj._edi_obj.Header.acqby)    
    
     def fill_metadata(self):
         self.meta_station_name_edit.setText(self.mt_obj.station)
@@ -599,9 +600,9 @@ class PlotWidget(QtWidgets.QWidget):
         except ValueError:
             self.mt_obj.elev = 0.0
             self.meta_elev_edit.setText('{0:.6f}'.format(self.mt_obj.elev))
-        self.meta_date_edit.setText('{0}'.format(self.mt_obj.edi_object.Header.filedate))
-        self.meta_loc_edit.setText('{0}'.format(self.mt_obj.edi_object.Header.loc))
-        self.meta_acq_edit.setText('{0}'.format(self.mt_obj.edi_object.Header.acqby))
+        self.meta_date_edit.setText('{0}'.format(self.mt_obj._edi_obj.Header.filedate))
+        self.meta_loc_edit.setText('{0}'.format(self.mt_obj._edi_obj.Header.loc))
+        self.meta_acq_edit.setText('{0}'.format(self.mt_obj._edi_obj.Header.acqby))
         self.remove_distortion_num_freq_edit.setText('{0:.0f}'.format(self.mt_obj.Z.freq.size))
         
     def static_shift_set_x(self):
