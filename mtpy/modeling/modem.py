@@ -997,7 +997,6 @@ class Data(object):
 
         dlines = []        
         for inv_mode in self.inv_mode_dict[self.inv_mode]:
-            print inv_mode
             if 'impedance' in inv_mode.lower():
                 dlines.append(self.get_header_string(self.error_type_z,
                                                      self.error_value_z,

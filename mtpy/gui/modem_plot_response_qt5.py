@@ -210,9 +210,9 @@ class ModEMPlotResponse(QtWidgets.QMainWindow):
         
         fn_dialog = QtWidgets.QFileDialog(directory=self.dir_path)
         fn = str(fn_dialog.getOpenFileName(caption='Choose ModEM response file',
-                                       filter='*.dat'))
+                                       filter='(*.dat);; (*.data)')[0])
                                        
-        self.plot_response.resp_fn = fn
+        self.plot_response.resp_fn = os.path.abspath(fn)
         
     def show_settings(self):
         self.settings_window = PlotSettings(**self.__dict__)
@@ -290,15 +290,11 @@ class PlotResponses(QtWidgets.QWidget):
     # trying to use decorators for syntactical sugar    
     @property
     def data_fn(self):
-        self._data_fn
-        
-    @data_fn.getter
-    def data_fn(self):
         return self._data_fn
         
     @data_fn.setter
     def data_fn(self, data_fn):
-        self._data_fn = data_fn
+        self._data_fn = os.path.abspath(data_fn)
         self.file_watcher_dfn.addPath(self._data_fn)
         
         # create new modem data object
@@ -324,25 +320,17 @@ class PlotResponses(QtWidgets.QWidget):
         
     @property
     def resp_fn(self):
-        self._resp_fn
-        
-    @resp_fn.getter
-    def resp_fn(self):
         return self._resp_fn
         
     @resp_fn.setter
     def resp_fn(self, resp_fn):
-        self._resp_fn = resp_fn
+        self._resp_fn = os.path.abspath(resp_fn)
         self.modem_resp = modem.Data()
 
         self.modem_resp.read_data_file(self._resp_fn)
         self.plot() 
         
     @property
-    def plot_z(self):
-        self._plot_z
-
-    @plot_z.getter
     def plot_z(self):
         return self._plot_z
         

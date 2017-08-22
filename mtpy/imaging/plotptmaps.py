@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 from matplotlib.ticker import FormatStrFormatter
-import mtpy.utils.conversions as utm2ll
+import mtpy.utils.gis_tools as gis_tools
 import matplotlib.colors as colors
 import matplotlib.patches as patches
 import matplotlib.colorbar as mcb
@@ -692,7 +692,8 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
                 
                 #if map scale is in meters easting and northing
                 elif self.mapscale == 'm':
-                    zone, east, north = utm2ll.LLtoUTM(23, mt.lat, mt.lon)
+                    east, north, zone = gis_tools.project_point_ll2utm(mt.lat,
+                                                                       mt.lon)
                     
                     #set the first point read in as a refernce other points                    
                     if ii == 0:
@@ -724,7 +725,8 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
                 
                 #if mapscale is in km easting and northing
                 elif self.mapscale == 'km':
-                    zone,east,north = utm2ll.LLtoUTM(23, mt.lat, mt.lon)
+                    east, north, zone = gis_tools.project_point_ll2utm(mt.lat, 
+                                                                       mt.lon)
                     if ii == 0:
                         zone1 = zone
                         plotx = (east-refpoint[0])/1000.
