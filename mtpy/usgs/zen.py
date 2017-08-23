@@ -1173,7 +1173,7 @@ class Zen3D(object):
                     mtfilt.adaptive_notch_filter(self.time_series, **kwargs) 
         
     #==================================================
-    def write_ascii_mt_file(self, save_fn=None, save_station='mb', fmt='%.8e',
+    def write_ascii_mt_file(self, save_fn=None, fmt='%.8e',
                             ex=100., ey=100., notch_dict=None, dec=1):
         """
         write an mtpy time series data file
@@ -1185,10 +1185,6 @@ class Zen3D(object):
                           
                           ex. mt01_20130206_120000_256.HX
                           
-            **save_station** : string
-                               prefix string to add to station number as only
-                               integers can be input into metadata of the zen
-                               boxes.  ex. mb001
             
             **fmt** : string format
                       format of data numbers output to ascii file.
@@ -1242,7 +1238,8 @@ class Zen3D(object):
                 
             svfn_date = ''.join(self.schedule.Date.split('-'))
             svfn_time = ''.join(self.schedule.Time.split(':'))
-            svfn_station = save_station+self.metadata.rx_xyz0.split(':')[0]
+            svfn_station = self.metadata.line_name+\
+                                    self.metadata.rx_xyz0.split(':')[0]
             save_fn = os.path.join(svfn_directory, 
                                    '{0}_{1}_{2}_{3}.{4}'.format(svfn_station,
                                                    svfn_date,
@@ -1270,7 +1267,8 @@ class Zen3D(object):
             self.read_z3d()
             svfn_date = ''.join(self.schedule.Date.split('-'))
             svfn_time = ''.join(self.schedule.Time.split(':'))
-            svfn_station = save_station+self.metadata.rx_xyz0.split(':')[0]
+            svfn_station = self.metadata.line_name+\
+                                    self.metadata.rx_xyz0.split(':')[0]
             self.save_fn = os.path.join(svfn_directory, 
                                    '{0}_{1}_{2}_{3}.{4}'.format(svfn_station,
                                                    svfn_date,
@@ -1309,7 +1307,7 @@ class Zen3D(object):
             print 'Using scales EY = {0} m'.format(ey)
         
                                                    
-        header_tuple = ('# {0}{1}'.format(save_station,
+        header_tuple = ('# {0}{1}'.format(self.metadata.line_name,
                                           self.metadata.rx_xyz0.split(':')[0]), 
                         self.metadata.ch_cmp.lower(), 
                         '{0:.1f}'.format(self.df),
