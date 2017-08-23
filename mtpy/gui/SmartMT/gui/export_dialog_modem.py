@@ -48,6 +48,9 @@ class ExportDialogModEm(QtGui.QWizard):
         self._mesh_rotation_ui.setTitle('Mesh Rotation Angle')
         self.ui.gridLayout_mesh.addWidget(self._mesh_rotation_ui)
 
+        # hide error percents
+        self._component_error_type_changed()
+
         # epsg
         self.ui.comboBox_epsg.addItems(
             [str(epsg) for epsg in sorted(epsg_dict.keys())]
@@ -225,9 +228,12 @@ class ExportDialogModEm(QtGui.QWizard):
             combobox = getattr(self.ui, 'comboBox_error_type_{}'.format(component))
             if combobox.isEnabled():
                 types.add(combobox.currentIndex())
-        self.ui.doubleSpinBox_error_floor.setEnabled(0 in types)
-        self.ui.doubleSpinBox_error_egbert.setEnabled(2 in types or 3 in types)
-        self.ui.doubleSpinBox_error_value.setEnabled(1 in types)
+        self.ui.label_error_floor.setHidden(0 not in types)
+        self.ui.doubleSpinBox_error_floor.setHidden(0 not in types)
+        self.ui.label_error_egbert.setHidden(2 not in types and 3 not in types)
+        self.ui.doubleSpinBox_error_egbert.setHidden(2 not in types and 3 not in types)
+        self.ui.label_error_value.setHidden(1 not in types)
+        self.ui.doubleSpinBox_error_value.setHidden(1 not in types)
 
     def _error_type_changed(self, error_type_index):
         # sync the component error types with default
@@ -335,17 +341,16 @@ class ExportDialogModEm(QtGui.QWizard):
             )
 
         # error_floor
-        if self.ui.doubleSpinBox_error_floor.isEnabled():
+        if not self.ui.doubleSpinBox_error_floor.isHidden():
             kwargs['error_floor'] = self.ui.doubleSpinBox_error_floor.value()
         # error_value
-        if self.ui.doubleSpinBox_error_value.isEnabled():
+        if not self.ui.doubleSpinBox_error_value.isHidden():
             kwargs['error_value'] = self.ui.doubleSpinBox_error_value.value()
         # error_egbert
-        if self.ui.doubleSpinBox_error_egbert.isEnabled():
+        if not self.ui.doubleSpinBox_error_egbert.isHidden():
             kwargs['error_egbert'] = self.ui.doubleSpinBox_error_egbert.value()
         # error_tipper
-        if self.ui.doubleSpinBox_error_tipper.isEnabled():
-            kwargs['error_tipper'] = self.ui.doubleSpinBox_error_tipper.value() / 100.
+        kwargs['error_tipper'] = self.ui.doubleSpinBox_error_tipper.value() / 100.
 
         # wave signs
         if self.ui.groupBox_sign_impedance.isEnabled():

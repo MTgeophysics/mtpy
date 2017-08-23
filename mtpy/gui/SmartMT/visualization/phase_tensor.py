@@ -61,7 +61,8 @@ class PhaseTensorMap(VisualizationBase):
             'tscale': self._scale_ui.get_tscale(),
             'plot_tipper': self._arrow_ui.get_plot_tipper(),
             # 'rot_z': self._rotation_ui.get_rotation_in_degree(),  # not implemented in PlotPhaseTensorMaps
-            'station_id': (0, 10)
+            'station_id': (0, 10),
+            'fig_num': get_next_fig_num()
         }
 
         if self._colorbar_ui.isChecked():
@@ -217,6 +218,7 @@ class PhaseTensorPseudoSection(VisualizationBase):
             # 'rotz': self._rotation_ui.get_rotation_in_degree(), # this is not implemented in PlotPhaseTensorPseudoSection
             # default for testing
             'station_id': (0, 10),  # indices for showing station names,
+            'fig_num': get_next_fig_num()
         }
         if self._arrow_ui.isChecked():
             self._params['arrow_dict'] = self._arrow_ui.get_arrow_dict()

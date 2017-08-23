@@ -158,7 +158,6 @@
    <addaction name="actionOpen_edi_Folder"/>
    <addaction name="separator"/>
    <addaction name="actionPlot"/>
-   <addaction name="separator"/>
    <addaction name="actionClose_All_Images"/>
    <addaction name="separator"/>
    <addaction name="actionExport"/>

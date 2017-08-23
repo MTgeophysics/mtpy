@@ -11,6 +11,7 @@
 
 from mtpy.gui.SmartMT.gui.plot_control_guis import PlotControlMTResponse
 from mtpy.gui.SmartMT.gui.plot_parameter_guis import Ellipse, Arrow, StationSelection, Rotation
+from mtpy.gui.SmartMT.utils.matplotlib_utils import get_next_fig_num
 from mtpy.gui.SmartMT.visualization.visualization_base import VisualizationBase
 from mtpy.imaging.plot_mt_response import PlotMTResponse
 from mtpy.imaging.plotnresponses import PlotMultipleResponses
@@ -29,6 +30,7 @@ class MTResponse(VisualizationBase):
             'plot_strike': self._plot_control_ui.get_strike(),
             'plot_skew': self._plot_control_ui.get_skew(),
             'plot_pt': self._plot_control_ui.get_ellipses(),
+            'fig_num': get_next_fig_num()
             # 'plot_title': self._common_ui.get_title()
         }
 
@@ -190,7 +192,8 @@ subplots such as strike, skew and phase tensor ellipses.</p>
             'plot_pt': self._plot_control_ui.get_ellipses(),
             # 'plot_title': self._common_ui.get_title(),
             'plot_style': self._plot_control_ui.get_style(),
-            'plot_yn': 'n'
+            'plot_yn': 'n',
+            'fig_num': get_next_fig_num()
         }
 
         if self._arrow_ui.ui.groupBox_advanced_options.isChecked():

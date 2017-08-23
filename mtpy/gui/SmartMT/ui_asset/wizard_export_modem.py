@@ -141,7 +141,6 @@ class Ui_Wizard_esport_modem(object):
         self.doubleSpinBox_error_tipper.setObjectName(_fromUtf8("doubleSpinBox_error_tipper"))
         self.gridLayout_3.addWidget(self.doubleSpinBox_error_tipper, 1, 1, 1, 1)
         self.doubleSpinBox_error_value = QtGui.QDoubleSpinBox(self.wizardPage_error_type)
-        self.doubleSpinBox_error_value.setEnabled(False)
         self.doubleSpinBox_error_value.setMaximum(100.0)
         self.doubleSpinBox_error_value.setProperty("value", 5.0)
         self.doubleSpinBox_error_value.setObjectName(_fromUtf8("doubleSpinBox_error_value"))
@@ -163,7 +162,6 @@ class Ui_Wizard_esport_modem(object):
         self.label.setObjectName(_fromUtf8("label"))
         self.gridLayout_3.addWidget(self.label, 2, 0, 1, 1)
         self.doubleSpinBox_error_floor = QtGui.QDoubleSpinBox(self.wizardPage_error_type)
-        self.doubleSpinBox_error_floor.setEnabled(False)
         self.doubleSpinBox_error_floor.setMaximum(100.0)
         self.doubleSpinBox_error_floor.setProperty("value", 10.0)
         self.doubleSpinBox_error_floor.setObjectName(_fromUtf8("doubleSpinBox_error_floor"))
@@ -921,13 +919,15 @@ class Ui_Wizard_esport_modem(object):
 "                                     grid is dense compared to the surface points then choose \'linear\' or \'cubic\'</p></body></html>\n"
 "                                 ", None))
         self.groupBox_9.setTitle(_translate("Wizard_esport_modem", "Interpolation Method", None))
-        self.radioButton_interpo_method_nearest.setToolTip(_translate("Wizard_esport_modem",
-                                                                      "<html><head/><body><p>Use the value at the data point closest to the point of interpolation.</p></body></html>",
-                                                                      None))
+        self.radioButton_interpo_method_nearest.setToolTip(
+            _translate("Wizard_esport_modem", "<html><head/><body><p>Use the value at the data point closest to the\n"
+                                              "                      point of interpolation.</p></body></html>\n"
+                                              "                  ", None))
         self.radioButton_interpo_method_nearest.setText(_translate("Wizard_esport_modem", "Nearest", None))
-        self.radioButton_interpo_method_linear.setToolTip(_translate("Wizard_esport_modem",
-                                                                     "<html><head/><body><p>Tesselate the input point set to n-dimensional simplices, and interpolate linearly on each simplex.</p></body></html>",
-                                                                     None))
+        self.radioButton_interpo_method_linear.setToolTip(
+            _translate("Wizard_esport_modem", "<html><head/><body><p>Tesselate the input point set to n-dimensional\n"
+                                              "                      simplices, and interpolate linearly on each simplex.</p></body></html>\n"
+                                              "                  ", None))
         self.radioButton_interpo_method_linear.setText(_translate("Wizard_esport_modem", "Linear", None))
         self.radioButton_interpo_method_cubic.setToolTip(_translate("Wizard_esport_modem",
                                                                     "<html><head/><body><p>use the value determined from a cubic spline.</p></body></html>",
@@ -940,13 +940,15 @@ class Ui_Wizard_esport_modem(object):
         self.label_19.setText(_translate("Wizard_esport_modem", "Sea Resistivity", None))
         self.lineEdit_resistivity_sea.setText(_translate("Wizard_esport_modem", "0.3", None))
         self.lineEdit_resistivity_sea.setPlaceholderText(_translate("Wizard_esport_modem", "0.3", None))
-        self.label_24.setToolTip(_translate("Wizard_esport_modem",
-                                            "<html><head/><body><p>Halfspace resistivity value for initial reference model</p></body></html>",
-                                            None))
+        self.label_24.setToolTip(
+            _translate("Wizard_esport_modem", "<html><head/><body><p>Halfspace resistivity value for initial\n"
+                                              "                            reference model</p></body></html>\n"
+                                              "                        ", None))
         self.label_24.setText(_translate("Wizard_esport_modem", "Initial Cell Resistivity", None))
-        self.lineEdit_resistivity_init.setToolTip(_translate("Wizard_esport_modem",
-                                                             "<html><head/><body><p>Halfspace resistivity value for initial reference model</p></body></html>",
-                                                             None))
+        self.lineEdit_resistivity_init.setToolTip(
+            _translate("Wizard_esport_modem", "<html><head/><body><p>Halfspace resistivity value for initial\n"
+                                              "                            reference model</p></body></html>\n"
+                                              "                        ", None))
         self.lineEdit_resistivity_init.setText(_translate("Wizard_esport_modem", "100", None))
         self.groupBox_11.setTitle(_translate("Wizard_esport_modem", "Smoothing", None))
         self.label_20.setText(_translate("Wizard_esport_modem", "East", None))
