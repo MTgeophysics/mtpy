@@ -25,7 +25,7 @@ except AttributeError:
 class Ui_Wizard_esport_modem(object):
     def setupUi(self, Wizard_esport_modem):
         Wizard_esport_modem.setObjectName(_fromUtf8("Wizard_esport_modem"))
-        Wizard_esport_modem.resize(603, 493)
+        Wizard_esport_modem.resize(743, 493)
         Wizard_esport_modem.setWizardStyle(QtGui.QWizard.MacStyle)
         self.wizardPage_intro = QtGui.QWizardPage()
         self.wizardPage_intro.setObjectName(_fromUtf8("wizardPage_intro"))
@@ -522,7 +522,7 @@ class Ui_Wizard_esport_modem(object):
         self.formLayout_3.setObjectName(_fromUtf8("formLayout_3"))
         self.label_18 = QtGui.QLabel(self.groupBox_10)
         self.label_18.setObjectName(_fromUtf8("label_18"))
-        self.formLayout_3.setWidget(0, QtGui.QFormLayout.LabelRole, self.label_18)
+        self.formLayout_3.setWidget(1, QtGui.QFormLayout.LabelRole, self.label_18)
         self.lineEdit_resistivity_air = QtGui.QLineEdit(self.groupBox_10)
         sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Fixed, QtGui.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
@@ -530,10 +530,10 @@ class Ui_Wizard_esport_modem(object):
         sizePolicy.setHeightForWidth(self.lineEdit_resistivity_air.sizePolicy().hasHeightForWidth())
         self.lineEdit_resistivity_air.setSizePolicy(sizePolicy)
         self.lineEdit_resistivity_air.setObjectName(_fromUtf8("lineEdit_resistivity_air"))
-        self.formLayout_3.setWidget(0, QtGui.QFormLayout.FieldRole, self.lineEdit_resistivity_air)
+        self.formLayout_3.setWidget(1, QtGui.QFormLayout.FieldRole, self.lineEdit_resistivity_air)
         self.label_19 = QtGui.QLabel(self.groupBox_10)
         self.label_19.setObjectName(_fromUtf8("label_19"))
-        self.formLayout_3.setWidget(1, QtGui.QFormLayout.LabelRole, self.label_19)
+        self.formLayout_3.setWidget(2, QtGui.QFormLayout.LabelRole, self.label_19)
         self.lineEdit_resistivity_sea = QtGui.QLineEdit(self.groupBox_10)
         sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Fixed, QtGui.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
@@ -541,7 +541,13 @@ class Ui_Wizard_esport_modem(object):
         sizePolicy.setHeightForWidth(self.lineEdit_resistivity_sea.sizePolicy().hasHeightForWidth())
         self.lineEdit_resistivity_sea.setSizePolicy(sizePolicy)
         self.lineEdit_resistivity_sea.setObjectName(_fromUtf8("lineEdit_resistivity_sea"))
-        self.formLayout_3.setWidget(1, QtGui.QFormLayout.FieldRole, self.lineEdit_resistivity_sea)
+        self.formLayout_3.setWidget(2, QtGui.QFormLayout.FieldRole, self.lineEdit_resistivity_sea)
+        self.label_24 = QtGui.QLabel(self.groupBox_10)
+        self.label_24.setObjectName(_fromUtf8("label_24"))
+        self.formLayout_3.setWidget(0, QtGui.QFormLayout.LabelRole, self.label_24)
+        self.lineEdit_resistivity_init = QtGui.QLineEdit(self.groupBox_10)
+        self.lineEdit_resistivity_init.setObjectName(_fromUtf8("lineEdit_resistivity_init"))
+        self.formLayout_3.setWidget(0, QtGui.QFormLayout.FieldRole, self.lineEdit_resistivity_init)
         self.horizontalLayout.addWidget(self.groupBox_10)
         self.groupBox_11 = QtGui.QGroupBox(self.wizardPage_topography)
         self.groupBox_11.setObjectName(_fromUtf8("groupBox_11"))
@@ -820,7 +826,7 @@ class Ui_Wizard_esport_modem(object):
         self.checkBox_component_error_types.setText(_translate("Wizard_esport_modem", "show advanced options", None))
         self.wizardPage_data.setTitle(_translate("Wizard_esport_modem", "Other Data Settings", None))
         self.groupBox_5.setTitle(_translate("Wizard_esport_modem", "Data File Format", None))
-        self.radioButton_format_1.setText(_translate("Wizard_esport_modem", "Type 1", None))
+        self.radioButton_format_1.setText(_translate("Wizard_esport_modem", "ModEM Data Format", None))
         self.radioButton_format_2.setText(_translate("Wizard_esport_modem", "Type 2", None))
         self.groupBox_12.setTitle(_translate("Wizard_esport_modem", "EPSG", None))
         self.wizardPage_mesh.setTitle(_translate("Wizard_esport_modem", "Mesh Settings", None))
@@ -915,16 +921,33 @@ class Ui_Wizard_esport_modem(object):
 "                                     grid is dense compared to the surface points then choose \'linear\' or \'cubic\'</p></body></html>\n"
 "                                 ", None))
         self.groupBox_9.setTitle(_translate("Wizard_esport_modem", "Interpolation Method", None))
+        self.radioButton_interpo_method_nearest.setToolTip(_translate("Wizard_esport_modem",
+                                                                      "<html><head/><body><p>Use the value at the data point closest to the point of interpolation.</p></body></html>",
+                                                                      None))
         self.radioButton_interpo_method_nearest.setText(_translate("Wizard_esport_modem", "Nearest", None))
+        self.radioButton_interpo_method_linear.setToolTip(_translate("Wizard_esport_modem",
+                                                                     "<html><head/><body><p>Tesselate the input point set to n-dimensional simplices, and interpolate linearly on each simplex.</p></body></html>",
+                                                                     None))
         self.radioButton_interpo_method_linear.setText(_translate("Wizard_esport_modem", "Linear", None))
+        self.radioButton_interpo_method_cubic.setToolTip(_translate("Wizard_esport_modem",
+                                                                    "<html><head/><body><p>use the value determined from a cubic spline.</p></body></html>",
+                                                                    None))
         self.radioButton_interpo_method_cubic.setText(_translate("Wizard_esport_modem", "Cubic", None))
-        self.groupBox_10.setTitle(_translate("Wizard_esport_modem", "Default Resistivity", None))
-        self.label_18.setText(_translate("Wizard_esport_modem", "Air", None))
+        self.groupBox_10.setTitle(_translate("Wizard_esport_modem", "Resistivity", None))
+        self.label_18.setText(_translate("Wizard_esport_modem", "Air Resistivity", None))
         self.lineEdit_resistivity_air.setText(_translate("Wizard_esport_modem", "1e17", None))
         self.lineEdit_resistivity_air.setPlaceholderText(_translate("Wizard_esport_modem", "1e17", None))
-        self.label_19.setText(_translate("Wizard_esport_modem", "Sea", None))
+        self.label_19.setText(_translate("Wizard_esport_modem", "Sea Resistivity", None))
         self.lineEdit_resistivity_sea.setText(_translate("Wizard_esport_modem", "0.3", None))
         self.lineEdit_resistivity_sea.setPlaceholderText(_translate("Wizard_esport_modem", "0.3", None))
+        self.label_24.setToolTip(_translate("Wizard_esport_modem",
+                                            "<html><head/><body><p>Halfspace resistivity value for initial reference model</p></body></html>",
+                                            None))
+        self.label_24.setText(_translate("Wizard_esport_modem", "Initial Cell Resistivity", None))
+        self.lineEdit_resistivity_init.setToolTip(_translate("Wizard_esport_modem",
+                                                             "<html><head/><body><p>Halfspace resistivity value for initial reference model</p></body></html>",
+                                                             None))
+        self.lineEdit_resistivity_init.setText(_translate("Wizard_esport_modem", "100", None))
         self.groupBox_11.setTitle(_translate("Wizard_esport_modem", "Smoothing", None))
         self.label_20.setText(_translate("Wizard_esport_modem", "East", None))
         self.label_21.setText(_translate("Wizard_esport_modem", "North", None))

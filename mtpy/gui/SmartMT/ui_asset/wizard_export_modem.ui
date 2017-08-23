@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-       <width>603</width>
+       <width>743</width>
        <height>493</height>
    </rect>
   </property>
@@ -732,7 +732,7 @@
          <item>
           <widget class="QRadioButton" name="radioButton_format_1">
            <property name="text">
-            <string>Type 1</string>
+               <string>ModEM Data Format</string>
            </property>
            <property name="checked">
             <bool>true</bool>
@@ -1239,6 +1239,11 @@
         <layout class="QVBoxLayout" name="verticalLayout_8">
          <item>
           <widget class="QRadioButton" name="radioButton_interpo_method_nearest">
+              <property name="toolTip">
+                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Use the value at the data point closest to the
+                      point of interpolation.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
+                  </string>
+              </property>
            <property name="text">
             <string>Nearest</string>
            </property>
@@ -1249,6 +1254,11 @@
          </item>
          <item>
           <widget class="QRadioButton" name="radioButton_interpo_method_linear">
+              <property name="toolTip">
+                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Tesselate the input point set to n-dimensional
+                      simplices, and interpolate linearly on each simplex.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
+                  </string>
+              </property>
            <property name="text">
             <string>Linear</string>
            </property>
@@ -1256,6 +1266,9 @@
          </item>
          <item>
           <widget class="QRadioButton" name="radioButton_interpo_method_cubic">
+              <property name="toolTip">
+                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;use the value determined from a cubic spline.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
            <property name="text">
             <string>Cubic</string>
            </property>
@@ -1273,20 +1286,20 @@
          </sizepolicy>
         </property>
         <property name="title">
-         <string>Default Resistivity</string>
+            <string>Resistivity</string>
         </property>
         <layout class="QFormLayout" name="formLayout_3">
-         <item row="0" column="0">
+            <item row="1" column="0">
           <widget class="QLabel" name="label_18">
            <property name="text">
-            <string>Air</string>
+               <string>Air Resistivity</string>
            </property>
            <property name="buddy">
             <cstring>lineEdit_resistivity_air</cstring>
            </property>
           </widget>
          </item>
-         <item row="0" column="1">
+            <item row="1" column="1">
           <widget class="QLineEdit" name="lineEdit_resistivity_air">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
@@ -1302,17 +1315,17 @@
            </property>
           </widget>
          </item>
-         <item row="1" column="0">
+            <item row="2" column="0">
           <widget class="QLabel" name="label_19">
            <property name="text">
-            <string>Sea</string>
+               <string>Sea Resistivity</string>
            </property>
            <property name="buddy">
             <cstring>lineEdit_resistivity_sea</cstring>
            </property>
           </widget>
          </item>
-         <item row="1" column="1">
+            <item row="2" column="1">
           <widget class="QLineEdit" name="lineEdit_resistivity_sea">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
@@ -1327,7 +1340,31 @@
             <string>0.3</string>
            </property>
           </widget>
-         </item>
+            </item>
+            <item row="0" column="0">
+                <widget class="QLabel" name="label_24">
+                    <property name="toolTip">
+                        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Halfspace resistivity value for initial
+                            reference model&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
+                        </string>
+                    </property>
+                    <property name="text">
+                        <string>Initial Cell Resistivity</string>
+                    </property>
+                </widget>
+            </item>
+            <item row="0" column="1">
+                <widget class="QLineEdit" name="lineEdit_resistivity_init">
+                    <property name="toolTip">
+                        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Halfspace resistivity value for initial
+                            reference model&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
+                        </string>
+                    </property>
+                    <property name="text">
+                        <string>100</string>
+                    </property>
+                </widget>
+            </item>
         </layout>
        </widget>
       </item>
