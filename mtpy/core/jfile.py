@@ -8,14 +8,8 @@ Created on Fri Aug 18 15:47:52 2017
 #==============================================================================
 import numpy as np
 import os
-from datetime import datetime
 
 import mtpy.core.z as mtz
-import mtpy.utils.configfile as mtcfg
-import mtpy.utils.filehandling as mtfh
-import mtpy.utils.exceptions as mtex
-import mtpy.core.edi as mtedi
-
 #==============================================================================
 # Class to read j_file
 #==============================================================================
@@ -108,6 +102,8 @@ class JFile(object):
         
         new_line = ''
         
+        # need to restructure the string so its readable, at least the way
+        # that birrp outputs the file
         e_find = 0
         for ii in range(len(line)):
             if line[ii] == '=':
@@ -120,12 +116,21 @@ class JFile(object):
                     new_line += ','
             else:
                 new_line += line[ii] 
-                
+        
+        # now that we have a useful line, split it into its parts
         line_list = new_line.split(',')
         
+        # try to split up the parts into a key=value setup
+        # and try to make the values floats if they can be
         l_dict = {}
+        key = 'null'
         for ll in line_list:
             ll_list = ll.split('=')
+            if len(ll_list) == 1:
+                continue
+            
+            # some times there is just a list of numbers, need a way to read
+            # that.
             if len(ll_list) != 2:
                 if type(l_dict[key]) is not list:
                     l_dict[key] = list([l_dict[key]])
@@ -169,46 +174,23 @@ class JFile(object):
         for h_line in header_lines[1:]:
             h_dict = self._read_header_line(h_line)
             for key in h_dict.keys():
-                header_dict[key] = h_dict[key]
-#            # replace '=' with a ' ' to be sure that when split is called there is a
-#            # split, especially with filenames
-#            h_list = h_line[1:].strip().replace('=', ' ').split()
-#            # skip if there is only one element in the list
-#            if len(h_list) == 1:
-#                continue
-#            # get the key and value for each parameter in the given line
-#            for h_index in range(0, len(h_list), 2):
-#                h_key = h_list[h_index]
-#                # if its the file name, make the dictionary value be a list so that 
-#                # we can append nread and nskip to it, and make the name unique by
-#                # adding a counter on the end
-#                if h_key == 'filnam':
-#                    h_key = '{0}_{1:02}'.format(h_key, fn_count)
-#                    fn_count += 1
-#                    h_value = [h_list[h_index+1]]
-#                    header_dict[h_key] = h_value
-#                    continue
-#                elif h_key == 'nskip' or h_key == 'nread':
-#                    h_key = 'filnam_{0:02}'.format(fn_count-1)
-#                    h_value = int(h_list[h_index+1])
-#                    header_dict[h_key].append(h_value)
-#                    
-#                # if its the line of angles, put them all in a list with a unique key
-#                elif h_key == 'theta1':
-#                    h_key = '{0}_{1:02}'.format(h_key, theta_count)
-#                    theta_count += 1
-#                    h_value = float(h_list[h_index+1])
-#                    header_dict[h_key] = [h_value]
-#                elif h_key == 'theta2' or h_key == 'phi':
-#                    h_key = '{0}_{1:02}'.format('theta1', theta_count-1)
-#                    h_value = float(h_list[h_index+1])
-#                    header_dict[h_key].append(h_value)
-#                    
-#                else:
-#                    h_value = h_list[h_index:]
-#                    
-#                    header_dict[h_key] = h_value
-#                    continue
+                if key == 'filnam':
+                    h_key = '{0}_{1:02}'.format(key, fn_count)
+                    fn_count += 1
+                elif key == 'nskip' or key == 'nread':
+                    h_key = '{0}_{1:02}'.format(key, fn_count-1)
+                    
+                # if its the line of angles, put them all in a list with a unique key
+                elif key == 'theta1':
+                    h_key = '{0}_{1:02}'.format(key, theta_count)
+                    theta_count += 1
+
+                elif key == 'theta2' or key == 'phi':
+                    h_key = '{0}_{1:02}'.format(key, theta_count-1)
+                else:
+                    h_key = key
+
+                header_dict[h_key] = h_dict[key]
             
         self.header_dict = header_dict
         
