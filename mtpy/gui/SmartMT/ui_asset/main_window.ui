@@ -19,6 +19,10 @@
   <property name="windowTitle">
    <string>SmartMT</string>
   </property>
+  <property name="windowIcon">
+   <iconset resource="icons.qrc">
+    <normaloff>:/Tango/resources/icons/Tango/Application-x-pcb.svg</normaloff>:/Tango/resources/icons/Tango/Application-x-pcb.svg</iconset>
+  </property>
   <widget class="QWidget" name="centralwidget">
    <property name="sizePolicy">
     <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
@@ -150,13 +154,12 @@
    <attribute name="toolBarBreak">
     <bool>false</bool>
    </attribute>
-   <addaction name="actionNew_Project"/>
-   <addaction name="actionOpen_Project"/>
-   <addaction name="separator"/>
    <addaction name="actionOpen_edi_File"/>
    <addaction name="actionOpen_edi_Folder"/>
    <addaction name="separator"/>
    <addaction name="actionPlot"/>
+   <addaction name="separator"/>
+   <addaction name="actionClose_All_Images"/>
    <addaction name="separator"/>
    <addaction name="actionExport"/>
    <addaction name="actionExport_ModEM_Data"/>
@@ -231,6 +234,10 @@
    <property name="enabled">
     <bool>false</bool>
    </property>
+   <property name="icon">
+    <iconset resource="icons.qrc">
+     <normaloff>:/Tango/resources/icons/Tango/Image-x-generic.svg</normaloff>:/Tango/resources/icons/Tango/Image-x-generic.svg</iconset>
+   </property>
    <property name="text">
     <string>Export Image...</string>
    </property>
@@ -278,6 +285,10 @@
   <action name="actionPlot">
    <property name="enabled">
     <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icons.qrc">
+     <normaloff>:/Tango/resources/icons/Tango/Icon_Mathematical_Plot.svg</normaloff>:/Tango/resources/icons/Tango/Icon_Mathematical_Plot.svg</iconset>
    </property>
    <property name="text">
     <string>Plot...</string>
@@ -330,6 +341,10 @@
    </property>
   </action>
   <action name="actionClose_All_Images">
+   <property name="icon">
+    <iconset resource="icons.qrc">
+     <normaloff>:/Tango/resources/icons/Tango/Edit-clear.svg</normaloff>:/Tango/resources/icons/Tango/Edit-clear.svg</iconset>
+   </property>
    <property name="text">
     <string>Close All Images</string>
    </property>
@@ -337,6 +352,10 @@
   <action name="actionExport_ModEM_Data">
    <property name="enabled">
     <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icons.qrc">
+     <normaloff>:/Tango/resources/icons/Tango/Package-x-generic.svg</normaloff>:/Tango/resources/icons/Tango/Package-x-generic.svg</iconset>
    </property>
    <property name="text">
     <string>Generate ModEM Input Files...</string>

@@ -2,5 +2,10 @@
     <qresource prefix="/Tango">
         <file>resources/icons/Tango/Document-open.svg</file>
         <file>resources/icons/Tango/Text-x-generic_with_pencil.svg</file>
+        <file>resources/icons/Tango/Icon_Mathematical_Plot.svg</file>
+        <file>resources/icons/Tango/Image-x-generic.svg</file>
+        <file>resources/icons/Tango/Application-x-pcb.svg</file>
+        <file>resources/icons/Tango/Package-x-generic.svg</file>
+        <file>resources/icons/Tango/Edit-clear.svg</file>
     </qresource>
 </RCC>
