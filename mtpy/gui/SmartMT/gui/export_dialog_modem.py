@@ -22,6 +22,7 @@ from examples.create_modem_input import select_periods
 from mtpy.constants import epsg_dict
 from mtpy.gui.SmartMT.gui.busy_indicators import ProgressBar
 from mtpy.gui.SmartMT.gui.export_dialog import PreviewDialog
+from mtpy.gui.SmartMT.gui.matplotlib_imabedding import MathTextLabel
 from mtpy.gui.SmartMT.gui.plot_parameter_guis import Rotation
 from mtpy.gui.SmartMT.ui_asset.wizard_export_modem import Ui_Wizard_esport_modem
 from mtpy.gui.SmartMT.utils.validator import FileValidator, DirectoryValidator
@@ -39,6 +40,30 @@ class ExportDialogModEm(QtGui.QWizard):
 
         # setup gui
         # self.setWindowTitle("ModEM input file generator")
+
+        # add math label
+        self._math_label_sign_impedances = MathTextLabel(
+            self,
+            self._math_label_sign_text.format(
+                "+" if self.ui.radioButton_impedance_sign_plus.isChecked() else "-"
+            )
+        )
+        self.ui.horizontalLayout_sign_impedance.addWidget(self._math_label_sign_impedances)
+        self._math_label_sign_vertical = MathTextLabel(
+            self,
+            self._math_label_sign_text.format(
+                "+" if self.ui.radioButton_vertical_sign_plus.isChecked() else "-"
+            )
+        )
+        self.ui.horizontalLayout_sign_vertical.addWidget(self._math_label_sign_vertical)
+
+        # add math formulae of each error type
+        self._math_label_elbert = MathTextLabel(
+            self,
+            "$error_{egbert}=level_{egbert}\\times |Z_{xy}\\times Z_{yx}|^\\frac{1}{2}$"
+        )
+        self.ui.verticalLayout_error_types.addWidget(self._math_label_elbert)
+
         # add rotation
         self._rotation_ui = Rotation(self.ui.wizardPage_data)
         self._rotation_ui.setTitle('Data Rotation Angle')
@@ -92,6 +117,16 @@ class ExportDialogModEm(QtGui.QWizard):
         self.ui.label_component_error_types.setHidden(True)
 
         # connect signals
+        self.ui.radioButton_impedance_sign_plus.toggled.connect(
+            lambda is_checked: self._math_label_sign_impedances.set_math_text(
+                self._math_label_sign_text.format("+" if is_checked else "-"))
+        )
+        self.ui.radioButton_vertical_sign_plus.toggled.connect(
+            lambda is_checked: self._math_label_sign_vertical.set_math_text(
+                self._math_label_sign_text.format("+" if is_checked else "-")
+            )
+        )
+
         self.ui.radioButton_impedance_full.toggled.connect(self._impedance_full_toggled)
         self.ui.radioButton_impedance_off_diagonal.toggled.connect(self._impedance_off_diagonal_toggled)
         self.ui.radioButton_impedance_none.toggled.connect(self._impedance_none_toggled)
@@ -149,6 +184,7 @@ class ExportDialogModEm(QtGui.QWizard):
 
     _impedance_components = ['zxx', 'zxy', 'zyx', 'zyy']
     _vertical_components = ['tx', 'ty']
+    _math_label_sign_text = "$exp({}i\\omega t)$"
 
     _error_type = [
         'floor',  # 0

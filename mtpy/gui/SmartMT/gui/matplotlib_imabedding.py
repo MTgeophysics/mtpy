@@ -52,7 +52,9 @@ class Cursor(AxesWidget):
     """
     inspaired by matplotlib.widgets.Cursor
     """
-    def __init__(self, ax, track_x=True, track_y=True, show_coord=True, text_format="(%.2f, %.2f)", col='green', useblit=True, **lineprops):
+
+    def __init__(self, ax, track_x=True, track_y=True, show_coord=True, text_format="(%.2f, %.2f)", col='green',
+                 useblit=True, **lineprops):
         AxesWidget.__init__(self, ax)
 
         self.connect_event('motion_notify_event', self.onmove)
@@ -138,7 +140,7 @@ class Cursor(AxesWidget):
 
 
 class MathTextLabel(QtGui.QWidget):
-    def __init__(self, mathText,  parent=None, **kwargs):
+    def __init__(self, parent=None, math_text=None, **kwargs):
         QtGui.QWidget.__init__(self, parent, **kwargs)
 
         layout = QtGui.QVBoxLayout(self)
@@ -152,17 +154,21 @@ class MathTextLabel(QtGui.QWidget):
         layout.addWidget(self._canvas)
 
         self._figure.clear()
-        text = self._figure.suptitle(mathText,
+        self._display_text = self._figure.suptitle(math_text,
                                      x=0.0,
                                      y=1.0,
                                      horizontalalignment='left',
                                      verticalalignment='top',
-                                     size=QtGui.QApplication.font().pointSize()*2)
+                                     size=QtGui.QApplication.font().pointSize() * 2)
         self._canvas.draw()
 
-        (x0, y0), (x1, y1) = text.get_window_extent().get_points()
+        (x0, y0), (x1, y1) = self._display_text.get_window_extent().get_points()
         w = x1 - x0
         h = y1 - y0
 
-        self._figure.set_size_inches(w/80, h/80)
-        self.setFixedSize(w ,h)
+        self._figure.set_size_inches(w / 80, h / 80)
+        self.setFixedSize(w, h)
+
+    def set_math_text(self, math_text):
+        self._display_text.set_text(math_text)
+        self._canvas.draw_idle()
