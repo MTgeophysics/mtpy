@@ -2737,30 +2737,30 @@ class Model(object):
             return new_east, new_north, elevation
     
     def interpolate_elevation(elev_east, elev_north, elevation, model_east, 
-                              model_north, pad=3):
+                              model_north, pad=3, elevation_max=None):
         """ 
         interpolate the elevation onto the model grid.
         
         Arguments:
         ---------------
         
-            *elev_east* : np.ndarray(num_east_nodes)
+            **elev_east** : np.ndarray(num_east_nodes)
                           easting grid for elevation model
                           
-            *elev_north* : np.ndarray(num_north_nodes)
+            **elev_north** : np.ndarray(num_north_nodes)
                           northing grid for elevation model 
                           
-            *elevation* : np.ndarray(num_east_nodes, num_north_nodes)
+            **elevation** : np.ndarray(num_east_nodes, num_north_nodes)
                          elevation model assumes x is east, y is north
                          Units are meters
                          
-            *model_east* : np.ndarray(num_east_nodes_model)
+            **model_east** : np.ndarray(num_east_nodes_model)
                          relative easting grid of resistivity model 
                          
-            *model_north* : np.ndarray(num_north_nodes_model)
+            **model_north** : np.ndarray(num_north_nodes_model)
                          relative northin grid of resistivity model 
                          
-            *pad* : int
+            **pad** : int
                     number of cells to repeat elevation model by.  So for pad=3,
                     then the interpolated elevation model onto the resistivity
                     model grid will have the outer 3 cells will be repeats of
@@ -2768,14 +2768,25 @@ class Model(object):
                     to the resistivity model cause most elevation models will
                     not cover the entire area.
                     
+            **elevation_max** : float
+                                maximum value for elevation
+                                *default* is None, which will use 
+                                elevation.max()
+                    
         Returns:
         --------------
         
-            *interp_elev* : np.ndarray(num_north_nodes_model, num_east_nodes_model)
+            **interp_elev** : np.ndarray(num_north_nodes_model, num_east_nodes_model)
                             the elevation model interpolated onto the resistivity 
                             model grid.
                          
         """
+        # set a maximum on the elevation, used to get rid of singular high 
+        # points in the model
+        if type(elevation_max) in [float, int]:
+            max_find = np.where(elevation > float(elevation_max))
+            elevation[max_find] = elevation_max
+            
         # need to line up the elevation with the model
         grid_east, grid_north = np.broadcast_arrays(elev_east[:, None],
                                                     elev_north[None, :])
@@ -2810,42 +2821,42 @@ class Model(object):
                 
         Arguments:
         -------------
-            *interp_elev* : np.ndarray(num_nodes_north, num_nodes_east)
+            **interp_elev** : np.ndarray(num_nodes_north, num_nodes_east)
                             elevation model that has been interpolated onto the
                             resistivity model grid. Units are in meters.
                             
-            *model_nodes_z* : np.ndarray(num_z_nodes_of_model)
+            **model_nodes_z** : np.ndarray(num_z_nodes_of_model)
                               vertical nodes of the resistivity model without
                               topography.  Note these are the nodes given in 
                               relative thickness, not the grid, which is total
                               depth.  Units are meters.
                         
-            *elevation_cell* : float
+            **elevation_cell** : float
                                height of elevation cells to be added on.  These
                                are assumed to be the same at all elevations. 
                                Units are in meters
                                
-            *pad* : int
+            **pad** : int
                     number of cells to look for maximum and minimum elevation.
                     So if you only want elevations within the survey area, 
                     set pad equal to the number of padding cells of the 
                     resistivity model grid.
                     
-            *res_air* : float
+            **res_air** : float
                         resistivity of air.  Default is 1E12 Ohm-m
             
-            *fill_res* : float
+            **fill_res** : float
                          resistivity value of subsurface in Ohm-m.
                     
         Returns:
         -------------
-            *elevation_model* : np.ndarray(num_north_nodes, num_east_nodes, 
+            **elevation_model** : np.ndarray(num_north_nodes, num_east_nodes, 
                                            num_elev_nodes+num_z_nodes)
                              Model grid with elevation mapped onto it. 
                              Where anything above the surface will be given the
                              value of res_air, everything else will be fill_res
                              
-            *new_nodes_z* : np.ndarray(num_z_nodes+num_elev_nodes)
+            **new_nodes_z** : np.ndarray(num_z_nodes+num_elev_nodes)
                             a new array of vertical nodes, where any nodes smaller
                             than elevation_cell will be set to elevation_cell.
                             This can be input into a modem.Model object to
@@ -2911,7 +2922,7 @@ class Model(object):
             
     def add_topography_to_model(self, dem_ascii_fn, model_fn=None, 
                                 model_center=(0,0), rot_90=0, cell_size=500, 
-                                elev_cell=30, pad=1):
+                                elev_cell=30, pad=1, elev_max=None):
         """
         Add topography to an existing model from a dem in ascii format.      
         
@@ -2930,34 +2941,34 @@ class Model(object):
         
         Arguments:
         -------------
-            *dem_ascii_fn* : string
+            **dem_ascii_fn** : string
                              full path to ascii dem file
                              
-            *model_fn* : string
+            **model_fn** : string
                          full path to existing ModEM model file
              
-            *model_center* : (east, north) in meters
+            **model_center** : (east, north) in meters
                              Sometimes the center of the DEM and the center of the
                              model don't line up.  Use this parameter to line 
                              everything up properly.
                              
-            *rot_90* : [ 0 | 1 | 2 | 3 ]
+            **rot_90** : [ 0 | 1 | 2 | 3 ]
                        rotate the elevation model by rot_90*90 degrees.  Sometimes
                        the elevation model is flipped depending on your coordinate
                        system.
                        
-            *cell_size* : float (meters)
+            **cell_size** : float (meters)
                           horizontal cell size of grid to interpolate elevation
                           onto.  This should be smaller or equal to the input
                           model cell size to be sure there is not spatial aliasing
                           
-            *elev_cell* : float (meters)
+            **elev_cell** : float (meters)
                           vertical size of each elevation cell.  This value should
                           be about 1/10th the smalles skin depth.
                           
         Returns:
         ---------------
-            *new_model_fn* : string
+            **new_model_fn** : string
                              full path to model file that contains topography
                           
         """
@@ -2972,7 +2983,7 @@ class Model(object):
         ### 2.) interpolate the elevation model onto the model grid
         m_elev = self.interpolate_elevation(e_east, e_north, elevation, 
                                             self.grid_east, self.grid_north,
-                                            pad=pad)
+                                            pad=pad, elevation_max=elev_max)
         
         m_elev[np.where(m_elev == -9999.0)] = m_elev[np.where(m_elev != -9999.0)].min()    
         ### 3.) make a resistivity model that incoorporates topography

@@ -918,14 +918,14 @@ class Z3D_to_edi(object):
                     rr_arr, count = self._make_ts_arr_entry(rr_fn, remote=True)
                     if rr_arr is not None:
                         rr_fn_arr[rr_count] = rr_arr
-                    rr_count += count
-                    
+                    rr_count += count     
             # be sure to trim the array
             rr_fn_arr = rr_fn_arr[np.nonzero(rr_fn_arr['npts'])]
 
         else:
             rr_fn_arr = None
             
+        
         return self.get_schedules_fn(fn_arr, rr_fn_arr,
                                      use_blocks_dict=use_blocks_dict)
 #        return (fn_arr, rr_fn_arr)
@@ -984,6 +984,7 @@ class Z3D_to_edi(object):
                                    lists of file names for each schedule
                                    block up to max blocks
         """
+        
         if df_list is not None:
             self.df_list = df_list
             
@@ -1035,7 +1036,7 @@ class Z3D_to_edi(object):
                     if len(dt_find[0]) >= 1:
                         dt_rr_arr = self._fill_birrp_fn_arr(df_rr_arr[dt_find],
                                                             remote=True)
-                        
+
                         rr_birrp_fn_arr = np.append(rr_birrp_fn_arr,
                                                     dt_rr_arr)
                         # need to make a list of remote reference station
@@ -1142,9 +1143,13 @@ class Z3D_to_edi(object):
                         # out how to fill it in automatically, need to 
                         # change the format and metadate of mtpy TS
                         # for now get it from the calibration file
-                        rr_b_arr['calibration_fn'] = getattr(self.survey_config,
-                                                             'rr_{0}_{1:02}_cal_fn'.format(rr_b_arr['comp'], 
-                                                             rr_index-1))
+                        try:
+                            rr_b_arr['calibration_fn'] = getattr(self.survey_config,
+                                                                 'rr_{0}_{1:02}_cal_fn'.format(rr_b_arr['comp'], 
+                                                                 rr_index-1))
+                        except AttributeError:
+                            print 'Could not find calibration for {0}'.format(rr_b_arr['fn'])
+                            
                         rr_b_arr['rr_num'] = rr_index
                         rr_count += 1
                         if rr_count%2 == 0 and rr_count != 0:
@@ -1195,8 +1200,11 @@ class Z3D_to_edi(object):
         # be sure to fill in calibration file for station mags
         for sfb_arr in s_fn_birrp_arr:
             if sfb_arr['comp'] in ['hx', 'hy', 'hz'] and remote == False:
-                sfb_arr['calibration_fn'] = getattr(self.survey_config, 
-                                                    '{0}_cal_fn'.format(sfb_arr['comp']))
+                try:
+                    sfb_arr['calibration_fn'] = getattr(self.survey_config, 
+                                                        '{0}_cal_fn'.format(sfb_arr['comp']))
+                except AttributeError:
+                    sfb_arr['calibration_fn'] = None
         
         if remote == True:
             s_fn_birrp_arr['rr'] = True
