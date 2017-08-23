@@ -1,11 +1,11 @@
 <RCC>
     <qresource prefix="/Tango">
-        <file>resources/icons/Tango/Document-open.svg</file>
-        <file>resources/icons/Tango/Text-x-generic_with_pencil.svg</file>
-        <file>resources/icons/Tango/Icon_Mathematical_Plot.svg</file>
-        <file>resources/icons/Tango/Image-x-generic.svg</file>
-        <file>resources/icons/Tango/Application-x-pcb.svg</file>
-        <file>resources/icons/Tango/Package-x-generic.svg</file>
-        <file>resources/icons/Tango/Edit-clear.svg</file>
+        <file alias="open_edi_dir">resources/icons/Tango/Document-open.svg</file>
+        <file alias="open_edi">resources/icons/Tango/Text-x-generic_with_pencil.svg</file>
+        <file alias="plot">resources/icons/Tango/Icon_Mathematical_Plot.svg</file>
+        <file alias="export">resources/icons/Tango/Image-x-generic.svg</file>
+        <file alias="main_window_icon">resources/icons/Tango/Application-x-pcb.svg</file>
+        <file alias="export_modem">resources/icons/Tango/Package-x-generic.svg</file>
+        <file alias="close_all_images">resources/icons/Tango/Edit-clear.svg</file>
     </qresource>
 </RCC>

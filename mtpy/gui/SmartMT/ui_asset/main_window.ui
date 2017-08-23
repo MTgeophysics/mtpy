@@ -21,7 +21,8 @@
   </property>
   <property name="windowIcon">
    <iconset resource="icons.qrc">
-    <normaloff>:/Tango/resources/icons/Tango/Application-x-pcb.svg</normaloff>:/Tango/resources/icons/Tango/Application-x-pcb.svg</iconset>
+       <normaloff>:/Tango/main_window_icon</normaloff>:/Tango/main_window_icon
+   </iconset>
   </property>
   <widget class="QWidget" name="centralwidget">
    <property name="sizePolicy">
@@ -187,7 +188,8 @@
   <action name="actionOpen_edi_File">
    <property name="icon">
     <iconset resource="icons.qrc">
-     <normaloff>:/Tango/resources/icons/Tango/Text-x-generic_with_pencil.svg</normaloff>:/Tango/resources/icons/Tango/Text-x-generic_with_pencil.svg</iconset>
+        <normaloff>:/Tango/open_edi</normaloff>:/Tango/open_edi
+    </iconset>
    </property>
    <property name="text">
     <string>Open .edi File...</string>
@@ -196,7 +198,8 @@
   <action name="actionOpen_edi_Folder">
    <property name="icon">
     <iconset resource="icons.qrc">
-     <normaloff>:/Tango/resources/icons/Tango/Document-open.svg</normaloff>:/Tango/resources/icons/Tango/Document-open.svg</iconset>
+        <normaloff>:/Tango/open_edi_dir</normaloff>:/Tango/open_edi_dir
+    </iconset>
    </property>
    <property name="text">
     <string>Open .edi Folder...</string>
@@ -235,7 +238,8 @@
    </property>
    <property name="icon">
     <iconset resource="icons.qrc">
-     <normaloff>:/Tango/resources/icons/Tango/Image-x-generic.svg</normaloff>:/Tango/resources/icons/Tango/Image-x-generic.svg</iconset>
+        <normaloff>:/Tango/export</normaloff>:/Tango/export
+    </iconset>
    </property>
    <property name="text">
     <string>Export Image...</string>
@@ -287,7 +291,8 @@
    </property>
    <property name="icon">
     <iconset resource="icons.qrc">
-     <normaloff>:/Tango/resources/icons/Tango/Icon_Mathematical_Plot.svg</normaloff>:/Tango/resources/icons/Tango/Icon_Mathematical_Plot.svg</iconset>
+        <normaloff>:/Tango/plot</normaloff>:/Tango/plot
+    </iconset>
    </property>
    <property name="text">
     <string>Plot...</string>
@@ -342,7 +347,8 @@
   <action name="actionClose_All_Images">
    <property name="icon">
     <iconset resource="icons.qrc">
-     <normaloff>:/Tango/resources/icons/Tango/Edit-clear.svg</normaloff>:/Tango/resources/icons/Tango/Edit-clear.svg</iconset>
+        <normaloff>:/Tango/close_all_images</normaloff>:/Tango/close_all_images
+    </iconset>
    </property>
    <property name="text">
     <string>Close All Images</string>
@@ -354,7 +360,8 @@
    </property>
    <property name="icon">
     <iconset resource="icons.qrc">
-     <normaloff>:/Tango/resources/icons/Tango/Package-x-generic.svg</normaloff>:/Tango/resources/icons/Tango/Package-x-generic.svg</iconset>
+        <normaloff>:/Tango/export_modem</normaloff>:/Tango/export_modem
+    </iconset>
    </property>
    <property name="text">
     <string>Generate ModEM Input Files...</string>

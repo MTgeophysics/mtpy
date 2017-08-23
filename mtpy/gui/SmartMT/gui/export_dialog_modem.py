@@ -611,6 +611,7 @@ class ModEMWorker(QtCore.QThread):
             'all' if self._data_kwargs['inv_mode'] in ('1', '3', '5') else 'no'
         )
         )
+        lines.append("")
 
         with open(fname, 'w') as outf:
             outf.writelines(lines)
