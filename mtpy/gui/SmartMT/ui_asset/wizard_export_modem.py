@@ -747,32 +747,28 @@ class Ui_Wizard_esport_modem(object):
         self.radioButton_vertical_sign_minus.setText(_translate("Wizard_esport_modem", "-", None))
         self.wizardPage_error_type.setTitle(_translate("Wizard_esport_modem", "Error Type", None))
         self.wizardPage_error_type.setSubTitle(_translate("Wizard_esport_modem", "Error Type(s) of the exported data file. Supported types are floor, value, egbert, egbert (floor), standard deviation, square error, and mean square error. It is also possible to configure error type(s) for each impedance component.   ", None))
-        self.label_error_egbert.setToolTip(_translate("Wizard_esport_modem",
-                                                      "<html><head/><body><p>Percentage to multiply sqrt(zxy*zyx) by. Default is 3 precent as prescribed by Egbert &amp; Kelbert.</p></body></html>",
-                                                      None))
+        self.label_error_egbert.setToolTip(_translate("Wizard_esport_modem", "<html><head/><body><p>Percentage to multiply sqrt(zxy*zyx) by.\n"
+"                       Default is 3 precent as prescribed by Egbert &amp; Kelbert.</p></body></html>\n"
+"                   ", None))
         self.label_error_egbert.setText(_translate("Wizard_esport_modem", "Egbert Error", None))
         self.doubleSpinBox_error_tipper.setToolTip(_translate("Wizard_esport_modem", "<html><head/><body><p>Absolute tipper error, all tipper error will be set to this value unless you specify error_type as \'floor\' or \'floor_egbert\'. Default is 5%.</p></body></html>", None))
         self.doubleSpinBox_error_tipper.setSuffix(_translate("Wizard_esport_modem", "%", None))
-        self.doubleSpinBox_error_value.setToolTip(_translate("Wizard_esport_modem",
-                                                             "<html><head/><body><p>Percentage to multiply Z by, to set error. Default is 5 for 5% of Z as error.</p></body></html>",
-                                                             None))
+        self.doubleSpinBox_error_value.setToolTip(_translate("Wizard_esport_modem", "<html><head/><body><p>Percentage to multiply Z by, to set error. Default is 5\n"
+"              for 5% of Z as error.</p></body></html>\n"
+"          ", None))
         self.doubleSpinBox_error_value.setSuffix(_translate("Wizard_esport_modem", "%", None))
-        self.label_error_value.setToolTip(_translate("Wizard_esport_modem",
-                                                     "<html><head/><body><p>Percentage to multiply Z by, to set error. Default is 5 for 5% of Z as error.</p></body></html>",
-                                                     None))
+        self.label_error_value.setToolTip(_translate("Wizard_esport_modem", "<html><head/><body><p>Percentage to multiply Z by, to set error. Default is 5\n"
+"              for 5% of Z as error.</p></body></html>\n"
+"          ", None))
         self.label_error_value.setText(_translate("Wizard_esport_modem", "Value Error", None))
         self.label.setText(_translate("Wizard_esport_modem", "Error Type", None))
-        self.doubleSpinBox_error_floor.setToolTip(_translate("Wizard_esport_modem",
-                                                             "<html><head/><body><p>Percentage to set the error floor at, anything below this number will be set to this value. Default is 10%</p></body></html>",
-                                                             None))
+        self.doubleSpinBox_error_floor.setToolTip(_translate("Wizard_esport_modem", "<html><head/><body><p>Percentage to set the error floor at, anything below this number will be set to this value. Default is 10%</p></body></html>", None))
         self.doubleSpinBox_error_floor.setSuffix(_translate("Wizard_esport_modem", "%", None))
-        self.label_error_floor.setToolTip(_translate("Wizard_esport_modem",
-                                                     "<html><head/><body><p>Percentage to set the error floor at, anything below this number will be set to this value. Default is 10%</p></body></html>",
-                                                     None))
+        self.label_error_floor.setToolTip(_translate("Wizard_esport_modem", "<html><head/><body><p>Percentage to set the error floor at, anything below\n"
+"              this number will be set to this value. Default is 10%</p></body></html>\n"
+"          ", None))
         self.label_error_floor.setText(_translate("Wizard_esport_modem", "Floor Error", None))
-        self.doubleSpinBox_error_egbert.setToolTip(_translate("Wizard_esport_modem",
-                                                              "<html><head/><body><p>Percentage to multiply sqrt(zxy*zyx) by. Default is 3 precent as prescribed by Egbert &amp; Kelbert.</p></body></html>",
-                                                              None))
+        self.doubleSpinBox_error_egbert.setToolTip(_translate("Wizard_esport_modem", "<html><head/><body><p>Percentage to multiply sqrt(zxy*zyx) by. Default is 3 precent as prescribed by Egbert &amp; Kelbert.</p></body></html>", None))
         self.doubleSpinBox_error_egbert.setSuffix(_translate("Wizard_esport_modem", "%", None))
         self.comboBox_error_type.setItemText(0, _translate("Wizard_esport_modem", "floor", None))
         self.comboBox_error_type.setItemText(1, _translate("Wizard_esport_modem", "value", None))
@@ -781,7 +777,9 @@ class Ui_Wizard_esport_modem(object):
         self.comboBox_error_type.setItemText(4, _translate("Wizard_esport_modem", "stddev", None))
         self.comboBox_error_type.setItemText(5, _translate("Wizard_esport_modem", "square error", None))
         self.comboBox_error_type.setItemText(6, _translate("Wizard_esport_modem", "mean square error", None))
-        self.label_error_tipper.setToolTip(_translate("Wizard_esport_modem", "<html><head/><body><p>Absolute tipper error, all tipper error will be set to this value unless you specify error_type as \'floor\' or \'floor_egbert\'. Default is 5%.</p></body></html>", None))
+        self.label_error_tipper.setToolTip(_translate("Wizard_esport_modem", "<html><head/><body><p>Absolute tipper error, all tipper error will be set to\n"
+"              this value unless you specify error_type as \'floor\' or \'floor_egbert\'. Default is 5%.</p></body></html>\n"
+"          ", None))
         self.label_error_tipper.setText(_translate("Wizard_esport_modem", "Tipper Error", None))
         self.groupBox_component_error_types.setTitle(_translate("Wizard_esport_modem", "Component Error Type", None))
         self.checkBox_zxx.setText(_translate("Wizard_esport_modem", "zxx", None))
@@ -816,8 +814,9 @@ class Ui_Wizard_esport_modem(object):
         self.comboBox_error_type_zyy.setItemText(6, _translate("Wizard_esport_modem", "mean square error", None))
         self.checkBox_zyx.setText(_translate("Wizard_esport_modem", "zyx", None))
         self.checkBox_zyy.setText(_translate("Wizard_esport_modem", "zyy", None))
-        self.label_component_error_types.setText(
-            _translate("Wizard_esport_modem", "Configure error types for each individual component.  ", None))
+        self.label_component_error_types.setText(_translate("Wizard_esport_modem", "Configure error types for each individual component by checking the box then select a error\n"
+"                       type from the drop down menu.\n"
+"                   ", None))
         self.checkBox_component_error_types.setText(_translate("Wizard_esport_modem", "show advanced options", None))
         self.wizardPage_data.setTitle(_translate("Wizard_esport_modem", "Other Data Settings", None))
         self.groupBox_5.setTitle(_translate("Wizard_esport_modem", "Data File Format", None))
@@ -932,9 +931,9 @@ class Ui_Wizard_esport_modem(object):
         self.label_22.setText(_translate("Wizard_esport_modem", "Z", None))
         self.label_23.setText(_translate("Wizard_esport_modem", "Number", None))
         self.wizardPage_output.setTitle(_translate("Wizard_esport_modem", "Output", None))
-        self.wizardPage_output.setSubTitle(_translate("Wizard_esport_modem",
-                                                      "Plsease select the output directry and the new folder that will be created to save all the data files for ModEM.              ",
-                                                      None))
+        self.wizardPage_output.setSubTitle(_translate("Wizard_esport_modem", "Plsease select the output directry and the new folder that will be created to save all the data files for\n"
+"           ModEM.\n"
+"       ", None))
         self.label_9.setText(_translate("Wizard_esport_modem", "Output Directory", None))
         self.label_8.setText(_translate("Wizard_esport_modem", "Output Name", None))
         self.label_10.setText(_translate("Wizard_esport_modem", "All data files will be written to:", None))

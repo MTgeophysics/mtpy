@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/Tango">
+        <file>resources/icons/Tango/Document-open.svg</file>
+        <file>resources/icons/Tango/Text-x-generic_with_pencil.svg</file>
+    </qresource>
+</RCC>
