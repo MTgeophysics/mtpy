@@ -228,12 +228,16 @@ class ExportDialogModEm(QtGui.QWizard):
             combobox = getattr(self.ui, 'comboBox_error_type_{}'.format(component))
             if combobox.isEnabled():
                 types.add(combobox.currentIndex())
-        self.ui.label_error_floor.setHidden(0 not in types)
-        self.ui.doubleSpinBox_error_floor.setHidden(0 not in types)
-        self.ui.label_error_egbert.setHidden(2 not in types and 3 not in types)
-        self.ui.doubleSpinBox_error_egbert.setHidden(2 not in types and 3 not in types)
-        self.ui.label_error_value.setHidden(1 not in types)
-        self.ui.doubleSpinBox_error_value.setHidden(1 not in types)
+
+        hidden = bool(0 not in types)
+        self.ui.label_error_floor.setHidden(hidden)
+        self.ui.doubleSpinBox_error_floor.setHidden(hidden)
+        hidden = bool(2 not in types and 3 not in types)
+        self.ui.label_error_egbert.setHidden(hidden)
+        self.ui.doubleSpinBox_error_egbert.setHidden(hidden)
+        hidden = bool(1 not in types)
+        self.ui.label_error_value.setHidden(hidden)
+        self.ui.doubleSpinBox_error_value.setHidden(hidden)
 
     def _error_type_changed(self, error_type_index):
         # sync the component error types with default
@@ -529,7 +533,7 @@ class ModEMWorker(QtCore.QThread):
 
             # get period_list list
             self.status_updated.emit("Selecting Periods...")
-            period_list = select_periods(self._edi_list, show=self.show)
+            period_list = select_periods(self._edi_list)
             # save period plot for reference
             figure = plt.gcf()
             figure.savefig(os.path.join(self.output_dir, self._period_image_name))
