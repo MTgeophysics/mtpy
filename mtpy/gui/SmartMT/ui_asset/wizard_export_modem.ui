@@ -162,6 +162,9 @@
          <property name="title">
           <string>Impedances</string>
          </property>
+         <property name="flat">
+          <bool>true</bool>
+         </property>
          <layout class="QVBoxLayout" name="verticalLayout_4">
           <item>
            <widget class="QRadioButton" name="radioButton_impedance_sign_plus">
@@ -193,6 +196,9 @@
          </property>
          <property name="title">
           <string>Vertical/Tipper</string>
+         </property>
+         <property name="flat">
+          <bool>true</bool>
          </property>
          <layout class="QVBoxLayout" name="verticalLayout_5">
           <item>

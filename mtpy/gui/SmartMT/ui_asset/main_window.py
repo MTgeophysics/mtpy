@@ -235,3 +235,4 @@ class Ui_SmartMT_MainWindow(object):
         self.actionClose_All_Images.setText(_translate("SmartMT_MainWindow", "Close All Images", None))
         self.actionExport_ModEM_Data.setText(_translate("SmartMT_MainWindow", "Generate ModEM Input Files...", None))
 
+import icons_rc
