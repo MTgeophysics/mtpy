@@ -1084,9 +1084,8 @@ class Data(object):
                                              com, rea, ima, abs_err, '\n'])
                             dlines.append(dline)
         
-        dfid = file(self.data_fn, 'w')
-        dfid.writelines(dlines)
-        dfid.close()
+        with open(self.data_fn, 'w') as dfid:
+            dfid.writelines(dlines)
         
         print 'Wrote ModEM data file to {0}'.format(self.data_fn)
         
@@ -1641,15 +1640,15 @@ class Data(object):
             e_index = np.where(m_obj.grid_east >= s_arr['rel_east'])[0][0]-1
             n_index = np.where(m_obj.grid_north >= s_arr['rel_north'])[0][0]-1
             z_index = np.where(m_obj.res_model[n_index, e_index, :] < res_air*.9)[0][0]
-            s_index = np.where(d_obj.data_array['station']==s_arr['station'])[0][0]
-            d_obj.data_array[s_index]['elev'] = m_obj.grid_z[z_index]
+            s_index = np.where(self.data_array['station']==s_arr['station'])[0][0]
+            self.data_array[s_index]['elev'] = m_obj.grid_z[z_index]
             
         if new_data_fn is None:
             new_dfn = '{0}{1}'.format(data_fn[:-4], '_elev.dat')
         else:
             new_dfn=new_data_fn
             
-        d_obj.write_data_file(save_path=os.path.dirname(new_dfn), 
+        self.write_data_file(save_path=os.path.dirname(new_dfn), 
                               fn_basename=os.path.basename(new_dfn),
                               compute_error=False,
                               fill=False, 
@@ -2644,7 +2643,8 @@ class Model(object):
         return parameter_dict
     
     #--> read in ascii dem file
-    def read_dem_ascii(ascii_fn, cell_size=500, model_center=(0, 0), rot_90=0):
+    def read_dem_ascii(self, ascii_fn, cell_size=500, model_center=(0, 0),
+                       rot_90=0):
         """
         read in dem which is ascii format
         
@@ -2736,8 +2736,9 @@ class Model(object):
     
             return new_east, new_north, elevation
     
-    def interpolate_elevation(elev_east, elev_north, elevation, model_east, 
-                              model_north, pad=3, elevation_max=None):
+    def interpolate_elevation(self, elev_east, elev_north, elevation,
+                              model_east, model_north, pad=3,
+                              elevation_max=None):
         """ 
         interpolate the elevation onto the model grid.
         
@@ -2810,8 +2811,9 @@ class Model(object):
                               
         return interp_elev   
     
-    def make_elevation_model(interp_elev, model_nodes_z, elevation_cell=30, 
-                             pad=3, res_air=1e12, fill_res=100, res_sea=0.3):
+    def make_elevation_model(self, interp_elev, model_nodes_z, 
+                             elevation_cell=30, pad=3, res_air=1e12,
+                             fill_res=100, res_sea=0.3):
         """
         Take the elevation data of the interpolated elevation model and map that
         onto the resistivity model by adding elevation cells to the existing model.

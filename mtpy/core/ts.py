@@ -13,6 +13,7 @@ import calendar
 
 import numpy as np
 import pandas as pd
+import scipy.signal as sps
 
 import mtpy.utils.gis_tools as gis_tools
 
@@ -318,10 +319,10 @@ class MT_TS(object):
         get the date time index from the data
         """
         
-        dt_freq = '{0:0f}N'.format(1./(self.sampling_rate)*1E9)
+        dt_freq = '{0:.0f}N'.format(1./(self.sampling_rate)*1E9)
         
         dt_index = pd.date_range(start=start_time, 
-                                 periods=self.ts.size, 
+                                 periods=self.ts.data.size, 
                                  freq=dt_freq)
         
         self.ts.index = dt_index
@@ -395,7 +396,7 @@ class MT_TS(object):
         write an ascii format file
         """
         
-        st = time.time()
+        st = datetime.datetime.utcnow()
         
         if fn_ascii is not None:
             self.fn_ascii = fn_ascii
@@ -446,11 +447,11 @@ class MT_TS(object):
                                                   dtype='S20'))))
                 
         # get an estimation of how long it took to write the file    
-        et = time.time()
+        et = datetime.datetime.utcnow()
         time_diff = et-st
         
         print '--> Wrote {0}'.format(self.fn_ascii)
-        print '    Took {0:.2f} seconds'.format(time_diff)
+        print '    Took {0:.2f} seconds'.format(time_diff.seconds+time_diff.microseconds*1E-6)
 
     def read_ascii(self, fn_ascii):
         """
@@ -488,8 +489,20 @@ class MT_TS_Error(Exception):
 #==============================================================================
 #  spectra
 #==============================================================================
-
-
+class Spectra(object):
+    """
+    compute spectra of time series
+    """
+    
+    def __init__(self, **kwargs):
+        self.spectra_type = 'welch'
+        self.ts = None
+        
+    def welch_method(self, **kwargs):
+        
+        f, p = sps.welch(self.ts, **kwargs)
+        
+        return f, p
 
 
 
