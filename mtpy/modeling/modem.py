@@ -2922,7 +2922,7 @@ class Model(object):
         
         return elevation_model, new_nodes_z    
             
-    def add_topography_to_model(self, dem_ascii_fn, model_fn=None, 
+    def add_topography_to_model(self, dem_ascii_fn, write_file=True, 
                                 model_center=(0,0), rot_90=0, cell_size=500, 
                                 elev_cell=30, pad=1, elev_max=None):
         """
@@ -2979,8 +2979,6 @@ class Model(object):
                                                          cell_size=cell_size, 
                                                          model_center=model_center, 
                                                          rot_90=rot_90)
-        if model_fn is not None:
-            self.model_fn = model_fn
             
         ### 2.) interpolate the elevation model onto the model grid
         m_elev = self.interpolate_elevation(e_east, e_north, elevation, 
@@ -2996,11 +2994,13 @@ class Model(object):
         ### 4.) write new model file  
         self.nodes_z = elev_nodes_z
         self.res_model = mod_elev
-        self.save_path = os.path.dirname(self.model_fn)
-        self.write_model_file(model_fn_basename='{0}_topo.rho'.format(
-                               os.path.basename(self.model_fn)[0:-4]))
-                               
-        return self.model_fn
+        
+        if write_file == True:
+            self.save_path = os.path.dirname(self.model_fn)
+            self.write_model_file(model_fn_basename='{0}_topo.rho'.format(
+                                   os.path.basename(self.model_fn)[0:-4]))
+                                   
+            return self.model_fn
 
 
 #==============================================================================
@@ -3611,6 +3611,67 @@ class Covariance(object):
         
         print 'Wrote covariance file to {0}'.format(self.cov_fn)
         
+    def read_cov_file(self, cov_fn):
+        """
+        read a covariance file
+        """
+        if not os.path.isfile(cov_fn):
+            raise ModEMError('{0} not found, check path'.format(cov_fn))
+        
+        self.cov_fn = cov_fn
+        self.save_path = os.path.dirname(self.cov_fn)
+        self.cov_fn_basename = os.path.basename(self.cov_fn)        
+        
+        
+        with open(cov_fn, 'r') as fid:
+            lines = fid.readlines()
+            
+        num_find = False
+        east_find = False
+        north_find = False
+        count = 0
+            
+        for line in lines:
+            if line.find('+') >= 0 or line.find('|') >= 0:
+                continue
+            else:
+                line_list = line.strip().split()
+                if len(line_list) == 0:
+                    continue
+                elif len(line_list) == 1 and num_find == False and \
+                     line_list[0].find('.') == -1:
+                    self.smoothing_num = int(line_list[0])
+                    num_find = True
+                elif len(line_list) == 1 and num_find == True and \
+                     line_list[0].find('.') == -1:
+                     self.exceptions_num = int(line_list[0])
+                elif len(line_list) == 1 and line_list[0].find('.') >= 0:
+                    self.smoothing_z = float(line_list[0])
+                elif len(line_list) == 3:
+                    nx, ny, nz = [int(ii) for ii in line_list]
+                    self.grid_dimensions = (nx, ny, nz)
+                    self.mask_arr = np.ones((nx, ny, nz), dtype=np.int)
+                    self.smoothing_east = np.zeros(ny)
+                    self.smoothing_north = np.zeros(nx)
+                    
+                elif len(line_list) == 2:
+                    # starts at 1 but python starts at 0
+                    index_00, index_01 = [int(ii)-1 for ii in line_list]
+                    
+                    count = 0
+                elif line_list[0].find('.') >= 0 and north_find == False:
+                    self.smoothing_north = np.array(line_list, dtype=np.float)
+                    north_find = True
+                elif line_list[0].find('.') >= 0 and north_find == True:
+                    self.smoothing_east = np.array(line_list, dtype=np.float)
+                    east_find = True
+                elif north_find == True and east_find == True:
+                    line_list = np.array(line_list, dtype=np.int)
+                    line_list = line_list.reshape((ny, 1))
+                    
+                    self.mask_arr[count, :, index_00:index_01+1] = line_list
+                    count += 1
+        
     def get_parameters(self):
         
         parameter_list = ['smoothing_north',
@@ -3625,6 +3686,36 @@ class Covariance(object):
         
         return parameter_dict
         
+    def write_cov_vtk_file(self, cov_vtk_fn, model_fn=None, grid_east=None,
+                           grid_north=None, grid_z=None):
+        """
+        write a vtk file of the covariance to match things up
+        """
+        
+        if model_fn is not None:
+            m_obj = Model()
+            m_obj.read_model_file(model_fn)
+            grid_east = m_obj.grid_east
+            grid_north = m_obj.grid_north
+            grid_z = m_obj.grid_z
+        
+        if grid_east is not None:
+            grid_east = grid_east
+        if grid_north is not None:
+            grid_north = grid_north
+        if grid_z is not None:
+            grid_z = grid_z
+            
+        # use cellData, this makes the grid properly as grid is n+1
+        gridToVTK(cov_vtk_fn, 
+                  grid_north/1000., 
+                  grid_east/1000.,
+                  grid_z/1000.,
+                  cellData={'covariance_mask':self.mask_arr}) 
+        
+        print '-'*50
+        print '--> Wrote covariance file to {0}\n'.format(cov_vtk_fn)
+        print '='*26
 ##==============================================================================
 ## Add in elevation to the model
 ##==============================================================================

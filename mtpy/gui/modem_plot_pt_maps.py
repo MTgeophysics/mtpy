@@ -15,9 +15,9 @@ import os
 import numpy as np
 
 try:
-    from PyQt5 import QtCore, QtGui, QtWidgets
+    from PyQt4 import QtCore, QtGui
 except ImportError:
-    raise ImportError("This version needs PyQt5")
+    raise ImportError("This version needs PyQt4")
 
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
@@ -44,12 +44,12 @@ except AttributeError:
         return s
 
 try:
-    _encoding = QtWidgets.QApplication.UnicodeUTF8
+    _encoding = QtGui.QApplication.UnicodeUTF8
     def _translate(context, text, disambig):
-        return QtWidgets.QApplication.translate(context, text, disambig, _encoding)
+        return QtGui.QApplication.translate(context, text, disambig, _encoding)
 except AttributeError:
     def _translate(context, text, disambig):
-        return QtWidgets.QApplication.translate(context, text, disambig)
+        return QtGui.QApplication.translate(context, text, disambig)
 # 
 #==============================================================================
 
@@ -133,25 +133,25 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
         MainWindow.setWindowState(QtCore.Qt.WindowMaximized)
         
         #make a central widget that everything is tied to.
-        self.central_widget = QtWidgets.QWidget(MainWindow)
+        self.central_widget = QtGui.QWidget(MainWindow)
         self.central_widget.setWindowTitle("Plot MT Response")
         
         #make a widget that will be the period list
-        self.list_widget = QtWidgets.QListWidget()
+        self.list_widget = QtGui.QListWidget()
         self.list_widget.itemClicked.connect(self.get_period)
         self.list_widget.setMaximumWidth(150)
         
         # make a depth text bar
-        self.depth_label = QtWidgets.QLabel('Depth (m):')
+        self.depth_label = QtGui.QLabel('Depth (m):')
         depth_font = QtGui.QFont()
         depth_font.setBold = True
         depth_font.setPointSize (16)
         self.depth_label.setFont(depth_font)
         
-        self.depth_text = QtWidgets.QLabel('0.0')
+        self.depth_text = QtGui.QLabel('0.0')
         self.depth_text.setFont(depth_font)
         self.depth_text.setAlignment(QtCore.Qt.AlignCenter)
-        depth_vbox = QtWidgets.QVBoxLayout()
+        depth_vbox = QtGui.QVBoxLayout()
         depth_vbox.addWidget(self.depth_label)
         depth_vbox.addWidget(self.depth_text)
 
@@ -168,24 +168,24 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
                                     wspace=self.subplot_wspace)
         
         #make sure the figure takes up the entire plottable space
-        self.mpl_widget.setSizePolicy(QtWidgets.QSizePolicy.Expanding,
-                                     QtWidgets.QSizePolicy.Expanding)
+        self.mpl_widget.setSizePolicy(QtGui.QSizePolicy.Expanding,
+                                     QtGui.QSizePolicy.Expanding)
 
         # this is the Navigation widget
         # it takes the Canvas widget and a parent
         self.mpl_toolbar = NavigationToolbar(self.mpl_widget, MainWindow)
          
         # set the layout for the plot
-        mpl_vbox = QtWidgets.QVBoxLayout()
+        mpl_vbox = QtGui.QVBoxLayout()
         mpl_vbox.addWidget(self.mpl_toolbar)
         mpl_vbox.addWidget(self.mpl_widget)
         
-        left_layout = QtWidgets.QVBoxLayout()
+        left_layout = QtGui.QVBoxLayout()
         left_layout.addWidget(self.list_widget)
         left_layout.addLayout(depth_vbox)
         
         # set the layout the main window
-        layout = QtWidgets.QHBoxLayout()
+        layout = QtGui.QHBoxLayout()
         layout.addLayout(left_layout)
         layout.addLayout(mpl_vbox)
         self.central_widget.setLayout(layout)
@@ -199,44 +199,44 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
         MainWindow.setCentralWidget(self.central_widget)
 
         #create a menu bar on the window
-        self.menubar = QtWidgets.QMenuBar(MainWindow)
+        self.menubar = QtGui.QMenuBar(MainWindow)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 1920, 38))
         self.menubar.setObjectName(_fromUtf8("menubar"))
 
         # add a tab for File --> open, close, save
-        self.menu_data_file = QtWidgets.QMenu(self.menubar)
+        self.menu_data_file = QtGui.QMenu(self.menubar)
         self.menu_data_file.setTitle("Data File")
         
-        self.menu_resp_file = QtWidgets.QMenu(self.menubar)
+        self.menu_resp_file = QtGui.QMenu(self.menubar)
         self.menu_resp_file.setTitle("Response File")
         
-        self.menu_model_file = QtWidgets.QMenu(self.menubar)
+        self.menu_model_file = QtGui.QMenu(self.menubar)
         self.menu_model_file.setTitle("Model File")
         
         # add a tab for chaning the display
-        self.menu_display = QtWidgets.QMenu(self.menubar)
+        self.menu_display = QtGui.QMenu(self.menubar)
         self.menu_display.setTitle("Display")
 
         MainWindow.setMenuBar(self.menubar)
 
         # add a status bar on the bottom of the main window
-        self.statusbar = QtWidgets.QStatusBar(MainWindow)
+        self.statusbar = QtGui.QStatusBar(MainWindow)
         self.statusbar.setObjectName(_fromUtf8("statusbar"))
 
         MainWindow.setStatusBar(self.statusbar)
         
         # set an open option that on click opens a modem file
-        self.action_data_open = QtWidgets.QAction(MainWindow)
+        self.action_data_open = QtGui.QAction(MainWindow)
         self.action_data_open.setText("Open")
         self.action_data_open.triggered.connect(self.get_data_fn)
 
         # set a close that closes the main window
-        self.action_close = QtWidgets.QAction(MainWindow)
+        self.action_close = QtGui.QAction(MainWindow)
         self.action_close.setText("Close")
         self.action_close.triggered.connect(MainWindow.close)
 
         # set a save option that will eventually save the masked data
-        self.action_save = QtWidgets.QAction(MainWindow)
+        self.action_save = QtGui.QAction(MainWindow)
         self.action_save.setText("Save")
 
         # add the action on the menu tab
@@ -245,43 +245,43 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
         self.menu_data_file.addAction(self.action_save)
         self.menubar.addAction(self.menu_data_file.menuAction())
         
-        self.action_resp_open = QtWidgets.QAction(MainWindow)
+        self.action_resp_open = QtGui.QAction(MainWindow)
         self.action_resp_open.setText("Open")
         self.action_resp_open.triggered.connect(self.get_resp_fn)
         self.menu_resp_file.addAction(self.action_resp_open)
         self.menubar.addAction(self.menu_resp_file.menuAction())
         
-        self.action_model_open = QtWidgets.QAction(MainWindow)
+        self.action_model_open = QtGui.QAction(MainWindow)
         self.action_model_open.setText("Open")
         self.action_model_open.triggered.connect(self.get_model_fn)
         self.menu_model_file.addAction(self.action_model_open)
         self.menubar.addAction(self.menu_model_file.menuAction())
 #        
         #adding options for display plot type        
-#        self.menu_plot_type = QtWidgets.QMenu(MainWindow)
+#        self.menu_plot_type = QtGui.QMenu(MainWindow)
 #        self.menu_plot_type.setTitle("Plot Type")
 #        self.menuDisplay.addMenu(self.menu_plot_type)
 #        self.menubar.addAction(self.menuDisplay.menuAction())
 #        
 #        #set plot impedance or resistivity and phase
-#        self.action_plot_z = QtWidgets.QAction(MainWindow)
+#        self.action_plot_z = QtGui.QAction(MainWindow)
 #        self.action_plot_z.setText('Impedance')
 #        self.action_plot_z.setCheckable(True)
 #        self.menu_plot_type.addAction(self.action_plot_z)
 #        self.action_plot_z.toggled.connect(self.status_checked_ptz)
 #        
-#        self.action_plot_rp = QtWidgets.QAction(MainWindow)
+#        self.action_plot_rp = QtGui.QAction(MainWindow)
 #        self.action_plot_rp.setText('Resistivity-Phase')
 #        self.action_plot_rp.setCheckable(True)
 #        self.menu_plot_type.addAction(self.action_plot_rp)
 #        self.action_plot_rp.toggled.connect(self.status_checked_ptrp)
 
-        self.action_plot_settings = QtWidgets.QAction(MainWindow)
+        self.action_plot_settings = QtGui.QAction(MainWindow)
         self.action_plot_settings.setText('Settings')
         self.action_plot_settings.triggered.connect(self.show_settings)
         self.menu_display.addAction(self.action_plot_settings)
         
-        self.action_plot_stations = QtWidgets.QAction(MainWindow)
+        self.action_plot_stations = QtGui.QAction(MainWindow)
         self.action_plot_stations.setText('Plot Stations')
         self.action_plot_stations.setCheckable(True)
         self.action_plot_stations.toggled.connect(self.set_plot_stations)
@@ -303,9 +303,9 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
         
         """        
 
-        fn_dialog = QtWidgets.QFileDialog()
+        fn_dialog = QtGui.QFileDialog()
         fn = str(fn_dialog.getOpenFileName(caption='Choose ModEM data file',
-                                       filter='(*.dat);; (*.data)')[0])
+                                       filter='(*.dat);; (*.data)'))
         
         fn = os.path.abspath(fn)
                                        
@@ -337,10 +337,10 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
         
         """        
 
-        fn_dialog = QtWidgets.QFileDialog()
+        fn_dialog = QtGui.QFileDialog()
         fn = str(fn_dialog.getOpenFileName(caption='Choose ModEM model file',
                                            filter='(*.rho);; (*.ws)',
-                                           directory=self.dir_path)[0])
+                                           directory=self.dir_path))
         fn = os.path.abspath(fn)
         self.modem_model = modem.Model()
         self.modem_model.read_model_file(fn)
@@ -360,7 +360,7 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
         get response file name
         """
         print self.dir_path
-        fn_dialog = QtWidgets.QFileDialog()
+        fn_dialog = QtGui.QFileDialog()
         fn = str(fn_dialog.getOpenFileName(caption='Choose ModEM response file',
                                            filter='*.dat', 
                                            directory=self.dir_path))
@@ -1051,7 +1051,7 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
 
         if self.plot_stations == True:
             for ax in ax_list:
-                for s_arr in self.modem_data.station_locations:
+                for s_arr in self.modem_data.station_locations.station_locations:
                     ax.text(s_arr['rel_east']/self.dscale,
                             s_arr['rel_north']/self.dscale,
                             s_arr['station'],
@@ -1063,7 +1063,7 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
         # draw plot
         self.mpl_widget.draw()
         
-class PlotSettings(QtWidgets.QWidget):
+class PlotSettings(QtGui.QWidget):
     settings_updated = QtCore.pyqtSignal()
     def __init__(self, parent, **kwargs):
         super(PlotSettings, self).__init__(parent)
@@ -1125,49 +1125,49 @@ class PlotSettings(QtWidgets.QWidget):
 
     def initUI(self):
         #--> line properties
-        fs_label = QtWidgets.QLabel('Font Size')
-        fs_edit = QtWidgets.QLineEdit()
+        fs_label = QtGui.QLabel('Font Size')
+        fs_edit = QtGui.QLineEdit()
         fs_edit.setText('{0:.1f}'.format(self.font_size))
         fs_edit.textChanged[str].connect(self.set_text_fs)
         
         #--> Map properties
-        mapscale_label = QtWidgets.QLabel('Map Scale')
-        mapscale_combo = QtWidgets.QComboBox()
+        mapscale_label = QtGui.QLabel('Map Scale')
+        mapscale_combo = QtGui.QComboBox()
         mapscale_combo.addItem('km')
         mapscale_combo.addItem('m')
         mapscale_combo.activated[str].connect(self.set_mapscale) 
         
-        ew_limits_label = QtWidgets.QLabel('E-W Limits (min, max)')
-        ew_limits_min_edit = QtWidgets.QLineEdit()
+        ew_limits_label = QtGui.QLabel('E-W Limits (min, max)')
+        ew_limits_min_edit = QtGui.QLineEdit()
         ew_limits_min_edit.setText('{0:.3f}'.format(self.ew_limits[0]))
         ew_limits_min_edit.textChanged[str].connect(self.set_ew_limits_min)
         
-        ew_limits_max_edit = QtWidgets.QLineEdit()
+        ew_limits_max_edit = QtGui.QLineEdit()
         ew_limits_max_edit.setText('{0:.3f}'.format(self.ew_limits[1]))
         ew_limits_max_edit.textChanged[str].connect(self.set_ew_limits_max)
         
-        ew_limits_grid = QtWidgets.QGridLayout()
+        ew_limits_grid = QtGui.QGridLayout()
         ew_limits_grid.setSpacing(5)
         ew_limits_grid.addWidget(ew_limits_label, 1, 0)
         ew_limits_grid.addWidget(ew_limits_min_edit, 1, 1)
         ew_limits_grid.addWidget(ew_limits_max_edit, 1, 2)
         
-        ns_limits_label = QtWidgets.QLabel('N-S Limits (min, max)')
-        ns_limits_min_edit = QtWidgets.QLineEdit()
+        ns_limits_label = QtGui.QLabel('N-S Limits (min, max)')
+        ns_limits_min_edit = QtGui.QLineEdit()
         ns_limits_min_edit.setText('{0:.3f}'.format(self.ns_limits[0]))
         ns_limits_min_edit.textChanged[str].connect(self.set_ns_limits_min)
         
-        ns_limits_max_edit = QtWidgets.QLineEdit()
+        ns_limits_max_edit = QtGui.QLineEdit()
         ns_limits_max_edit.setText('{0:.3f}'.format(self.ns_limits[1]))
         ns_limits_max_edit.textChanged[str].connect(self.set_ns_limits_max)
         
-        ns_limits_grid = QtWidgets.QGridLayout()
+        ns_limits_grid = QtGui.QGridLayout()
         ns_limits_grid.setSpacing(5)
         ns_limits_grid.addWidget(ns_limits_label, 1, 0)
         ns_limits_grid.addWidget(ns_limits_min_edit, 1, 1)
         ns_limits_grid.addWidget(ns_limits_max_edit, 1, 2)
         
-        grid_line = QtWidgets.QGridLayout()
+        grid_line = QtGui.QGridLayout()
         grid_line.setSpacing(10)
         
         grid_line.addWidget(fs_label, 1, 0)
@@ -1181,14 +1181,14 @@ class PlotSettings(QtWidgets.QWidget):
         grid_line.addLayout(ns_limits_grid, 1, 5)
         
         #--> ellipse properties
-        ellipse_size_label = QtWidgets.QLabel('Ellipse Size')
-        ellipse_size_edit = QtWidgets.QLineEdit()
+        ellipse_size_label = QtGui.QLabel('Ellipse Size')
+        ellipse_size_edit = QtGui.QLineEdit()
         ellipse_size_edit.setText('{0:.2f}'.format(self.ellipse_size))
         ellipse_size_edit.textChanged[str].connect(self.set_ellipse_size)
         
-        ellipse_range_label = QtWidgets.QLabel('Ellipse Range (min, max, step)')
+        ellipse_range_label = QtGui.QLabel('Ellipse Range (min, max, step)')
         
-        ellipse_range_edit_min = QtWidgets.QLineEdit()
+        ellipse_range_edit_min = QtGui.QLineEdit()
         try:
             ellipse_range_edit_min.setText('{0:.2f}'.format(self.ellipse_range[0]))
         except IndexError:
@@ -1200,7 +1200,7 @@ class PlotSettings(QtWidgets.QWidget):
                 self.ellipse_range = [0]
         ellipse_range_edit_min.textChanged[str].connect(self.set_ellipse_range_min)
         
-        ellipse_range_edit_max = QtWidgets.QLineEdit()
+        ellipse_range_edit_max = QtGui.QLineEdit()
         try:
             ellipse_range_edit_max.setText('{0:.2f}'.format(self.ellipse_range[1]))
         except IndexError:
@@ -1212,7 +1212,7 @@ class PlotSettings(QtWidgets.QWidget):
                 self.ellipse_range.append(90.0)
         ellipse_range_edit_max.textChanged[str].connect(self.set_ellipse_range_max)
         
-        ellipse_range_edit_step = QtWidgets.QLineEdit()
+        ellipse_range_edit_step = QtGui.QLineEdit()
         try:
             ellipse_range_edit_step.setText('{0:.2f}'.format(self.ellipse_range[2]))
         except IndexError:
@@ -1224,22 +1224,22 @@ class PlotSettings(QtWidgets.QWidget):
                 self.ellipse_range.append(5)
         ellipse_range_edit_step.textChanged[str].connect(self.set_ellipse_range_step)
 
-        range_grid = QtWidgets.QGridLayout()
+        range_grid = QtGui.QGridLayout()
         range_grid.setSpacing(5)
         range_grid.addWidget(ellipse_range_edit_min, 1, 0)
         range_grid.addWidget(ellipse_range_edit_max, 1, 1)
         range_grid.addWidget(ellipse_range_edit_step, 1, 2)
 
-        ellipse_colorby_label = QtWidgets.QLabel('Ellipse Color By')
-        ellipse_colorby_combo = QtWidgets.QComboBox()
+        ellipse_colorby_label = QtGui.QLabel('Ellipse Color By')
+        ellipse_colorby_combo = QtGui.QComboBox()
         ellipse_colorby_combo.addItem('phimin')
         ellipse_colorby_combo.addItem('phimax')
         ellipse_colorby_combo.addItem('ellipticty')
         ellipse_colorby_combo.addItem('skew')
         ellipse_colorby_combo.activated[str].connect(self.set_ellipse_colorby)
         
-        ellipse_cmap_label = QtWidgets.QLabel('Ellipse Color Map')
-        ellipse_cmap_combo = QtWidgets.QComboBox()
+        ellipse_cmap_label = QtGui.QLabel('Ellipse Color Map')
+        ellipse_cmap_combo = QtGui.QComboBox()
         ellipse_cmap_combo.addItem('mt_bl2wh2rd')
         ellipse_cmap_combo.addItem('mt_yl2rd')
         ellipse_cmap_combo.addItem('mt_wh2bl')
@@ -1248,7 +1248,7 @@ class PlotSettings(QtWidgets.QWidget):
         ellipse_cmap_combo.addItem('mt_seg_bl2wh2rd')
         ellipse_cmap_combo.activated[str].connect(self.set_ellipse_cmap)
         
-        ellipse_grid = QtWidgets.QGridLayout()
+        ellipse_grid = QtGui.QGridLayout()
         ellipse_grid.setSpacing(10)
         
         ellipse_grid.addWidget(ellipse_size_label, 1, 0)
@@ -1264,44 +1264,44 @@ class PlotSettings(QtWidgets.QWidget):
         ellipse_grid.addWidget(ellipse_cmap_combo, 1, 7)
         
         #--> arrow settings
-        arrow_size_label = QtWidgets.QLabel('Induction Arrow Size')
-        arrow_size_edit = QtWidgets.QLineEdit()
+        arrow_size_label = QtGui.QLabel('Induction Arrow Size')
+        arrow_size_edit = QtGui.QLineEdit()
         arrow_size_edit.setText('{0:.2f}'.format(self.arrow_size))
         arrow_size_edit.textChanged[str].connect(self.set_arrow_size)
         
-        arrow_lw_label = QtWidgets.QLabel('Arrow Line Width')
-        arrow_lw_edit = QtWidgets.QLineEdit()
+        arrow_lw_label = QtGui.QLabel('Arrow Line Width')
+        arrow_lw_edit = QtGui.QLineEdit()
         arrow_lw_edit.setText('{0:.2f}'.format(self.arrow_lw))
         arrow_lw_edit.textChanged[str].connect(self.set_arrow_lw)
         
-        arrow_head_length_label = QtWidgets.QLabel('Arrow Head Size')
-        arrow_head_length_edit = QtWidgets.QLineEdit()
+        arrow_head_length_label = QtGui.QLabel('Arrow Head Size')
+        arrow_head_length_edit = QtGui.QLineEdit()
         arrow_head_length_edit.setText('{0:.2f}'.format(self.arrow_head_length))
         arrow_head_length_edit.textChanged[str].connect(self.set_arrow_head_length)
         
-        arrow_head_width_label = QtWidgets.QLabel('Arrow Head Width')
-        arrow_head_width_edit = QtWidgets.QLineEdit()
+        arrow_head_width_label = QtGui.QLabel('Arrow Head Width')
+        arrow_head_width_edit = QtGui.QLineEdit()
         arrow_head_width_edit.setText('{0:.2f}'.format(self.arrow_head_width))
         arrow_head_width_edit.textChanged[str].connect(self.set_arrow_head_width)
         
-        arrow_direction_label = QtWidgets.QLabel('Arrow Direction')
-        arrow_direction_combo = QtWidgets.QComboBox()
+        arrow_direction_label = QtGui.QLabel('Arrow Direction')
+        arrow_direction_combo = QtGui.QComboBox()
         arrow_direction_combo.addItem('Parkinson')
         arrow_direction_combo.addItem('Weise')
         arrow_direction_combo.activated[str].connect(self.set_arrow_direction)
         
-        arrow_threshold_label = QtWidgets.QLabel('Arrow Threshold')
-        arrow_threshold_edit = QtWidgets.QLineEdit()
+        arrow_threshold_label = QtGui.QLabel('Arrow Threshold')
+        arrow_threshold_edit = QtGui.QLineEdit()
         arrow_threshold_edit.setText('{0:.2f}'.format(self.arrow_threshold))
         arrow_threshold_edit.textChanged[str].connect(self.set_arrow_threshold)
         
-        arrow_color_real = QtWidgets.QPushButton('Arrow Color Real', self)
+        arrow_color_real = QtGui.QPushButton('Arrow Color Real', self)
         arrow_color_real.clicked.connect(self.get_arrow_color_real)    
         
-        arrow_color_imag = QtWidgets.QPushButton('Arrow Color Imaginary', self)
+        arrow_color_imag = QtGui.QPushButton('Arrow Color Imaginary', self)
         arrow_color_imag.clicked.connect(self.get_arrow_color_imag)        
         
-        arrow_grid = QtWidgets.QGridLayout()
+        arrow_grid = QtGui.QGridLayout()
         arrow_grid.setSpacing(10)
         
         arrow_grid.addWidget(arrow_size_label, 1, 0)
@@ -1326,30 +1326,30 @@ class PlotSettings(QtWidgets.QWidget):
         arrow_grid.addWidget(arrow_color_imag, 3, 3)
         
         #--> colorbar properties
-        cb_pt_label = QtWidgets.QLabel('PT Colorbar Pad')
-        cb_pt_edit = QtWidgets.QLineEdit()
+        cb_pt_label = QtGui.QLabel('PT Colorbar Pad')
+        cb_pt_edit = QtGui.QLineEdit()
         cb_pt_edit.setText('{0:.2f}'.format(self.cb_pt_pad))
         cb_pt_edit.textChanged[str].connect(self.set_cb_pt_pad)
         
-        cb_res_label = QtWidgets.QLabel('Resistivity Colorbar Pad')
-        cb_res_edit = QtWidgets.QLineEdit()
+        cb_res_label = QtGui.QLabel('Resistivity Colorbar Pad')
+        cb_res_edit = QtGui.QLineEdit()
         cb_res_edit.setText('{0:.2f}'.format(self.cb_res_pad))
         cb_res_edit.textChanged[str].connect(self.set_cb_res_pad)
         
-        res_limits_label = QtWidgets.QLabel('Resistivity Limits (log scale)')
-        res_limits_min_edit = QtWidgets.QLineEdit()
+        res_limits_label = QtGui.QLabel('Resistivity Limits (log scale)')
+        res_limits_min_edit = QtGui.QLineEdit()
         res_limits_min_edit.setText('{0:.1f}'.format(self.res_limits[0]))
         res_limits_min_edit.textChanged[str].connect(self.set_res_limits_min)
         
-        res_limits_max_edit = QtWidgets.QLineEdit()
+        res_limits_max_edit = QtGui.QLineEdit()
         res_limits_max_edit.setText('{0:.1f}'.format(self.res_limits[1]))
         res_limits_max_edit.textChanged[str].connect(self.set_res_limits_max)
     
-        res_grid = QtWidgets.QGridLayout()
+        res_grid = QtGui.QGridLayout()
         res_grid.addWidget(res_limits_min_edit, 1, 0)        
         res_grid.addWidget(res_limits_max_edit, 1, 1)        
         
-        cb_grid = QtWidgets.QGridLayout()
+        cb_grid = QtGui.QGridLayout()
         cb_grid.setSpacing(5)
         
         cb_grid.addWidget(cb_pt_label, 1, 0)
@@ -1362,37 +1362,37 @@ class PlotSettings(QtWidgets.QWidget):
         cb_grid.addLayout(res_grid, 1, 5)
         
         #--> subplot parameters
-        subplot_left_label = QtWidgets.QLabel('Subplot Left')
-        subplot_left_edit = QtWidgets.QLineEdit()
+        subplot_left_label = QtGui.QLabel('Subplot Left')
+        subplot_left_edit = QtGui.QLineEdit()
         subplot_left_edit.setText('{0:.2f}'.format(self.subplot_left))
         subplot_left_edit.textChanged[str].connect(self.set_subplot_left)
         
-        subplot_right_label = QtWidgets.QLabel('Subplot right')
-        subplot_right_edit = QtWidgets.QLineEdit()
+        subplot_right_label = QtGui.QLabel('Subplot right')
+        subplot_right_edit = QtGui.QLineEdit()
         subplot_right_edit.setText('{0:.2f}'.format(self.subplot_right))
         subplot_right_edit.textChanged[str].connect(self.set_subplot_right)
         
-        subplot_bottom_label = QtWidgets.QLabel('Subplot bottom')
-        subplot_bottom_edit = QtWidgets.QLineEdit()
+        subplot_bottom_label = QtGui.QLabel('Subplot bottom')
+        subplot_bottom_edit = QtGui.QLineEdit()
         subplot_bottom_edit.setText('{0:.2f}'.format(self.subplot_bottom))
         subplot_bottom_edit.textChanged[str].connect(self.set_subplot_bottom)
         
-        subplot_top_label = QtWidgets.QLabel('Subplot top')
-        subplot_top_edit = QtWidgets.QLineEdit()
+        subplot_top_label = QtGui.QLabel('Subplot top')
+        subplot_top_edit = QtGui.QLineEdit()
         subplot_top_edit.setText('{0:.2f}'.format(self.subplot_top))
         subplot_top_edit.textChanged[str].connect(self.set_subplot_top)
         
-        subplot_hspace_label = QtWidgets.QLabel('Subplot Horizontal Spacing')
-        subplot_hspace_edit = QtWidgets.QLineEdit()
+        subplot_hspace_label = QtGui.QLabel('Subplot Horizontal Spacing')
+        subplot_hspace_edit = QtGui.QLineEdit()
         subplot_hspace_edit.setText('{0:.2f}'.format(self.subplot_wspace))
         subplot_hspace_edit.textChanged[str].connect(self.set_subplot_hspace)
         
-        subplot_vspace_label = QtWidgets.QLabel('Subplot Vertical Spacing')
-        subplot_vspace_edit = QtWidgets.QLineEdit()
+        subplot_vspace_label = QtGui.QLabel('Subplot Vertical Spacing')
+        subplot_vspace_edit = QtGui.QLineEdit()
         subplot_vspace_edit.setText('{0:.2f}'.format(self.subplot_wspace))
         subplot_vspace_edit.textChanged[str].connect(self.set_subplot_vspace)
         
-        subplot_grid = QtWidgets.QGridLayout()
+        subplot_grid = QtGui.QGridLayout()
         subplot_grid.setSpacing(5)
         
         subplot_grid.addWidget(subplot_left_label, 1, 0)
@@ -1414,11 +1414,11 @@ class PlotSettings(QtWidgets.QWidget):
         subplot_grid.addWidget(subplot_vspace_edit, 2, 2)
         
         #--> update button        
-        update_button = QtWidgets.QPushButton('Update')
+        update_button = QtGui.QPushButton('Update')
         update_button.clicked.connect(self.update_settings) 
         
         #--> set the final layout as a vertical box
-        vbox = QtWidgets.QVBoxLayout()
+        vbox = QtGui.QVBoxLayout()
         vbox.addLayout(grid_line)
         vbox.addLayout(ellipse_grid)
         vbox.addLayout(arrow_grid)
@@ -1537,7 +1537,7 @@ class PlotSettings(QtWidgets.QWidget):
             self.arrow_direction = 1
             
     def get_arrow_color_real(self):
-        real_color = QtWidgets.QColorDialog().getColor()
+        real_color = QtGui.QColorDialog().getColor()
         
         if real_color.isValid():
             self.arrow_color_real = real_color.getRgbF()
@@ -1545,7 +1545,7 @@ class PlotSettings(QtWidgets.QWidget):
             print 'Not a valid color'
             
     def get_arrow_color_imag(self):
-        imag_color = QtWidgets.QColorDialog().getColor()
+        imag_color = QtGui.QColorDialog().getColor()
         
         if imag_color.isValid():
             self.arrow_color_imag = imag_color.getRgbF()
@@ -1620,8 +1620,8 @@ class PlotSettings(QtWidgets.QWidget):
 def main():
 #if __name__ == "__main__":
     import sys
-    app = QtWidgets.QApplication(sys.argv)
-    MainWindow = QtWidgets.QMainWindow()
+    app = QtGui.QApplication(sys.argv)
+    MainWindow = QtGui.QMainWindow()
     ui = Ui_MainWindow()
     ui.setupUi(MainWindow)
     MainWindow.show()
