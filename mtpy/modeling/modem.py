@@ -1088,6 +1088,7 @@ class Data(object):
             dfid.writelines(dlines)
         
         print 'Wrote ModEM data file to {0}'.format(self.data_fn)
+        return self.data_fn
         
     def convert_ws3dinv_data_file(self, ws_data_fn, station_fn=None, 
                                   save_path=None, fn_basename=None):
@@ -1546,7 +1547,7 @@ class Data(object):
         return parameter_dict
         
         
-    def center_stations(self, data_fn, model_fn, new_data_fn=None):
+    def center_stations(self, model_fn, data_fn=None):
         """
         Center station locations to the middle of cells, might be useful for 
         topography.
@@ -1571,7 +1572,8 @@ class Data(object):
                               full path to new data file 
         """
         
-        self.read_data_file(data_fn)
+        if data_fn is not None:
+            self.read_data_file(data_fn)
         
         m_obj = Model()
         m_obj.read_model_file(model_fn)
@@ -1587,21 +1589,8 @@ class Data(object):
             
             self.data_array[s_index]['rel_east'] = mid_east
             self.data_array[s_index]['rel_north'] = mid_north
-
-        if new_data_fn is None:
-            new_dfn = '{0}{1}'.format(data_fn[:-4], '_center.dat')
-        else:
-            new_dfn=new_data_fn
-            
-        self.write_data_file(save_path=os.path.dirname(new_dfn), 
-                              fn_basename=os.path.basename(new_dfn),
-                              compute_error=False,
-                              fill=False, 
-                              elevation=True)
-             
-        return new_dfn
     
-    def change_data_elevation(self, data_fn, model_fn, new_data_fn=None, 
+    def change_data_elevation(self, model_fn, data_fn=None, 
                               res_air=1e12):
         """
         At each station in the data file rewrite the elevation, so the station is
@@ -1627,8 +1616,8 @@ class Data(object):
             *new_data_fn* : string
                             full path to new data file.
         """
-        
-        self.read_data_file(data_fn)
+        if data_fn is not None:
+            self.read_data_file(data_fn)
         
         m_obj = Model()
         m_obj.read_model_file(model_fn)
@@ -1642,19 +1631,6 @@ class Data(object):
             z_index = np.where(m_obj.res_model[n_index, e_index, :] < res_air*.9)[0][0]
             s_index = np.where(self.data_array['station']==s_arr['station'])[0][0]
             self.data_array[s_index]['elev'] = m_obj.grid_z[z_index]
-            
-        if new_data_fn is None:
-            new_dfn = '{0}{1}'.format(data_fn[:-4], '_elev.dat')
-        else:
-            new_dfn=new_data_fn
-            
-        self.write_data_file(save_path=os.path.dirname(new_dfn), 
-                              fn_basename=os.path.basename(new_dfn),
-                              compute_error=False,
-                              fill=False, 
-                              elevation=True)
-             
-        return new_dfn
 
 #==============================================================================
 # mesh class
