@@ -271,109 +271,6 @@ class Z(ResPhase):
             except IndexError:
                 print 'Need to input frequency array'
 
-    #---real part of impedance tensor-----------------------------------------
-    @property
-    def real(self):
-        """
-        Return the real part of Z.
-        """
-
-        if self.z is None:
-            print 'z array is None - cannot calculate real'
-            return
-
-        return np.real(self.z)
-
-    @real.setter
-    def real(self, real_array):
-        """
-        Set the real part of 'z'.
-
-        Arguments
-		  -------------
-
-            **real_array** : np.ndarray(nfreq, 2, 2)
-                          real part of impedance tensor array
-
-        Test for shape, but no test for consistency!
-
-        """
-
-        if (self.z is not None) and (self.z.shape != real_array.shape):
-            print 'shape of "real" array does not match shape of'+\
-                  'Z array: {0} ; {1}'.format(real_array.shape, self.z.shape)
-            return
-
-        #assert real array:
-        if np.linalg.norm(np.imag(real_array)) != 0:
-            print 'Error - array "real" is not real valued !'
-            return
-
-        ii_arr = np.complex(0, 1)
-
-        if self.z is not None:
-            z_new = real_array+ii_arr*self.imag()
-        else:
-            z_new = real_array
-
-        self.z = z_new
-
-        #for consistency recalculate resistivity and phase
-        self.compute_resistivity_phase()
-
-    #real = property(_get_real, _set_real, doc='Real part of Z')
-    #---imaginary part of impedance tensor------------------------------------
-    @property
-    def imag(self):
-        """
-        Return the imaginary part of Z.
-
-        """
-
-        if self.z is None:
-            print 'z array is None - cannot calculate imag'
-            return
-
-
-        return np.imag(self.z)
-
-    @imag.setter
-    def imag(self, imag_array):
-        """
-        Set the imaginary part of 'z'.
-
-        Arguments
-		  -------------
-
-            **imag_array** : np.ndarray(nfreq, 2, 2)
-                           imaginary part of impedance tensor array
-
-        Test for shape, but no test for consistency!
-
-        """
-
-
-        if (self.z is not None) and (self.z.shape != imag_array.shape):
-            print 'Error - shape of "imag" array does not match shape of'+\
-                  'Z array: {0} ; {1}'.format(imag_array.shape, self.z.shape)
-            return
-
-        #assert real array:
-        if np.linalg.norm(np.imag(imag_array)) != 0:
-            print 'Error - array "imag" is not real valued !'
-            return
-
-        i_arr = np.complex(0, 1)
-
-        if self.z is not None:
-            z_new = self.real()+i_arr*imag_array
-        else:
-            z_new = i_arr*imag_array
-
-        self.z = z_new
-
-        #for consistency recalculate resistivity and phase
-        self.compute_resistivity_phase()
 
     @property
     def inverse(self):
@@ -1263,25 +1160,32 @@ class Tipper(object):
         if self.tipper is not None:
             self.rotation_angle = np.zeros((len(self.tipper)))
 
-        self.amplitude = None
-        self.amplitude_err = None
+        self._amplitude = None
+        self._amplitude_err = None
         self._phase = None
         self._phase_err = None
-
-        self.mag_real = None
-        self.mag_imag = None
-        self.angle_real = None
-        self.angle_imag = None
-
-        self.mag_err = None
-        self.angle_err = None
-
+        
+        self._mag_real = None
+        self._mag_imag = None
+        self._angle_real = None
+        self._angle_imag = None
+        self._mag_err = None
+        self._angle_err = None
+        
+        if self._tipper is not None and self._freq is not None:
+            self._compute_amp_phase()
+            self._compute_mag_direction()
 
     #==========================================================================
     # Define get/set and properties
     #==========================================================================
     #----freq----------------------------------------------------------
-    def _set_freq(self, lo_freq):
+    @property
+    def freq(self):
+        return self._freq
+    
+    @freq.setter
+    def freq(self, freq_arr):
         """
         Set the array of freq.
 
@@ -1292,27 +1196,24 @@ class Tipper(object):
 
         No test for consistency!
         """
+        if freq_arr is not None:
+            self._freq = np.array(freq_arr)
 
-        if len(lo_freq) is not len(self.tipper):
+        if self._freq.size is not len(self.tipper):
             print 'length of freq list/array not correct'+\
-                  ' (%ii instead of %ii)'%(len(lo_freq), len(self.tipper))
+                  ' (%ii instead of %ii)'%(self._freq.size, len(self.tipper))
             return
-
-        self._freq = np.array(lo_freq)
 
         #for consistency recalculate amplitude and phase
         self._compute_amp_phase()
 
-    def _get_freq(self):
-        if self._freq is not None:
-            self._freq = np.array(self._freq)
-        return self._freq
-
-    freq = property(_get_freq, _set_freq,
-                           doc='array of freq')
-
     #---tipper--------------------------------------------------------------
-    def _set_tipper(self, tipper_array):
+    @property
+    def tipper(self):
+        return self._tipper
+    
+    @tipper.setter
+    def tipper(self, tipper_array):
         """
         Set the attribute *tipper*
 
@@ -1326,22 +1227,17 @@ class Tipper(object):
         Test for shape, but no test for consistency!
 
         """
-        #make sure the array is of required shape
-        try:
+        
+        #check to see if the new tipper array is the same shape as the old
+        if self._tipper is not None and self._tipper.shape != tipper_array.shape:
+            raise MT_Z_Error('Shape of new "tipper" array does not match old'+\
+                             'new shape {0} != old shape {1}'.format(tipper_array.shape,
+                                                                     self._tipper.shape)+\
+                            '\n***Make new Tipper object***')
+        if tipper_array is not None:
             if len(tipper_array.shape) == 3 and tipper_array.shape[1:3] == (1, 2):
                 if tipper_array.dtype in ['complex', 'float', 'int']:
                     self._tipper = tipper_array
-        except IndexError:
-            pass
-
-        #check to see if the new tipper array is the same shape as the old
-        if (self._tipper != None) and (self._tipper.shape != tipper_array.shape):
-            print 'Error - shape of "tipper" array does not match shape of '+\
-                  'tipper-array: %s ; %s'%(str(tipper_array.shape),
-                                           str(self.tipper.shape))
-            return
-
-        self._tipper = tipper_array
 
         #neeed to set the rotation angle such that it is an array
         if self.rotation_angle is float:
@@ -1354,13 +1250,13 @@ class Tipper(object):
         #for consistency recalculate amplitude and phase
         self._compute_amp_phase()
 
-    def _get_tipper(self):
-        return self._tipper
-
-    tipper = property(_get_tipper, _set_tipper, doc="Tipper array")
-
     #----tipper error---------------------------------------------------------
-    def _set_tipper_err(self, tipper_err_array):
+    @property
+    def tipper_err(self):
+        return self._tipper_err
+    
+    @tipper_err.setter
+    def tipper_err(self, tipper_err_array):
         """
         Set the attribute *tipper_err*.
 
@@ -1375,155 +1271,26 @@ class Tipper(object):
         Test for shape, but no test for consistency!
 
         """
+        if (self.tipper_err != None) and \
+                            (self._tipper_err.shape != tipper_err_array.shape):
+            raise MT_Z_Error('Shape of new "tipper_err" array does not match old'+\
+                             'new shape {0} != old shape {1}'.format(tipper_err_array.shape),
+                                                                     self._tipper_err.shape)
 
         #make sure the input array is of required shape
-        try:
+        if tipper_err_array is not None:
             if len(tipper_err_array.shape) == 3 and \
                                         tipper_err_array.shape[1:3] == (1, 2):
                 if tipper_err_array.dtype in ['float', 'int']:
                     self._tipper_err = tipper_err_array
-        except IndexError:
-            pass
 
-        #make sure the error array is the same shape as tipper
-        try:
-            if len(self.tipper) != len(self._tipper_err):
-                self._tipper_err = None
-        except TypeError:
-            pass
-
-
-        if (self.tipper_err != None) and \
-                            (self._tipper_err.shape != tipper_err_array.shape):
-            print 'Error - shape of "tipper_err" array does not match shape '+\
-                  'of tipper_err array: %s ; %s'%(str(tipper_err_array.shape),
-                                                 str(self._tipper_err.shape))
-            return
-
-        self._tipper_err = tipper_err_array
+                    assert self._tipper_err.shape == self._tipper.shape
 
         #for consistency recalculate mag and angle
         self._compute_mag_direction()
 
         #for consistency recalculate amplitude and phase
         self._compute_amp_phase()
-
-    def _get_tipper_err(self):
-        return self._tipper_err
-
-    tipper_err = property(_get_tipper_err, _set_tipper_err,
-                          doc="Estimated Tipper errors")
-
-    #----real part---------------------------------------------------------
-    def _get_real(self):
-        """
-        Return the real part of the Tipper.
-
-        """
-        if self.tipper is None:
-            print 'tipper array is None - cannot calculate real'
-            return
-
-        return np.real(self.tipper)
-
-    def _set_real(self, real_array):
-        """
-        Set the real part of 'tipper'.
-
-        Arguments
-		--------------
-
-            **tipper_array** : np.ndarray((nf, 1, 2)) real part
-                               tipper array in the shape of [Tx, Ty]
-                               *default* is None
-
-        Test for shape, but no test for consistency!
-
-        """
-
-
-        if (self.tipper is not None) and (self.tipper.shape != real_array.shape):
-            print 'shape of "real" array does not match shape of tipper '+\
-                  'array: %s ; %s'%(str(real_array.shape),
-                                    str(self.tipper.shape))
-            return
-
-        #assert real array:
-        if np.linalg.norm(np.imag(real_array)) != 0 :
-            print 'Error - array "real" is not real valued !'
-            return
-
-        if self.tipper is not None:
-            tipper_new = real_array + 1j* self.imag()
-        else:
-            tipper_new = real_array
-
-        self.tipper = tipper_new
-
-        #for consistency recalculate mag and angle
-        self._compute_mag_direction()
-
-        #for consistency recalculate amplitude and phase
-        self._compute_amp_phase()
-
-    _real = property(_get_real, _set_real, doc='Real part of the Tipper')
-
-    #---imaginary part------------------------------------------------------
-    def _get_imag(self):
-        """
-        Return the imaginary part of the Tipper.
-
-        """
-
-        if self.tipper is None:
-            print 'tipper array is None - cannot calculate imag'
-            return
-
-        return np.imag(self.tipper)
-
-
-    def _set_imag(self, imag_array):
-        """
-        Set the imaginary part of 'tipper'.
-
-        Arguments
-		--------------
-
-            **tipper_array** : np.ndarray((nf, 1, 2)) imaginary part
-                               tipper array in the shape of [Tx, Ty]
-                               *default* is None
-
-        Test for shape, but no test for consistency!
-
-        """
-
-        if (self.tipper is not None) and (self.tipper.shape != imag_array.shape):
-            print 'shape of "real" array does not match shape of tipper '+\
-                  'array: %s ; %s'%(str(imag_array.shape),
-                                    str(self.tipper.shape))
-            return
-
-        #assert real array:
-        if np.linalg.norm(np.imag(imag_array)) != 0:
-            print 'Error - array "imag" is not real valued !'
-            return
-
-        ii_arr = np.complex(0, 1)
-        if self.tipper is not None:
-            tipper_new = self.real() + ii_arr * imag_array
-        else:
-            tipper_new = ii_arr * imag_array
-
-
-        self.tipper = tipper_new
-
-        #for consistency recalculate mag and angle
-        self._compute_mag_direction()
-
-        #for consistency recalculate amplitude and phase
-        self._compute_amp_phase()
-
-    _imag = property(_get_imag, _set_imag, doc='Imaginary part of the Tipper')
 
     #----amplitude and phase
     def _compute_amp_phase(self):
@@ -1541,31 +1308,27 @@ class Tipper(object):
             #print 'tipper array is None - cannot calculate rho/phi'
             return None
 
-        self.amplitude_err = None
+        self._amplitude_err = None
         self._phase_err = None
         if self.tipper_err is not None:
-            self.amplitude_err = np.zeros(self.tipper_err.shape)
+            self._amplitude_err = np.zeros(self.tipper_err.shape)
             self._phase_err = np.zeros(self.tipper_err.shape)
 
-        self.amplitude = np.zeros(self.tipper.shape)
-        self._phase = np.zeros(self.tipper.shape)
+        self._amplitude = np.abs(self.tipper)
+        self._phase = np.rad2deg(np.angle(self.tipper))
 
-
-        for idx_f in range(len(self.tipper)):
-            for jj in range(2):
-                self.amplitude[idx_f, 0, jj] = np.abs(self.tipper[idx_f, 0, jj])
-                self._phase[idx_f, 0, jj] = math.degrees(cmath.phase(
-                                                      self.tipper[idx_f, 0, jj]))
-
-                if self.tipper_err is not None:
-                    r_err, phi_err = MTcc.propagate_error_rect2polar(
-                                            np.real(self.tipper[idx_f, 0, jj]),
-                                            self.tipper_err[idx_f, 0, jj],
-                                            np.imag(self.tipper[idx_f, 0, jj]),
-                                            self.tipper_err[idx_f, 0, jj])
-
-                    self.amplitude_err[idx_f, 0, jj] = r_err
-                    self._phase_err[idx_f, 0, jj] = phi_err
+        if self.tipper_err is not None: 
+            for idx_f in range(len(self.tipper)):
+                for jj in range(2):
+                    if self.tipper_err is not None:
+                        r_err, phi_err = MTcc.propagate_error_rect2polar(
+                                                np.real(self.tipper[idx_f, 0, jj]),
+                                                self.tipper_err[idx_f, 0, jj],
+                                                np.imag(self.tipper[idx_f, 0, jj]),
+                                                self.tipper_err[idx_f, 0, jj])
+    
+                        self.amplitude_err[idx_f, 0, jj] = r_err
+                        self._phase_err[idx_f, 0, jj] = phi_err
 
     def set_amp_phase(self, r_array, phi_array):
         """
@@ -1619,7 +1382,26 @@ class Tipper(object):
 
         #for consistency recalculate amplitude and phase
         self._compute_amp_phase()
-
+        self._compute_mag_direction()
+        
+    #---------------------------------
+    #properties
+    @property
+    def amplitude(self):
+        return self._amplitude
+    
+    @property
+    def phase(self):
+        return self._phase
+    
+    @property
+    def amplitude_err(self):
+        return self._amplitude_err
+    
+    @property
+    def phase_err(self):
+        return self._phase_err
+    
     #----magnitude and direction----------------------------------------------
     def _compute_mag_direction(self):
         """
@@ -1650,27 +1432,27 @@ class Tipper(object):
 
         if self.tipper is None:
             return None
-        self.mag_real = np.sqrt(self.tipper[:, 0, 0].real**2 + \
+        self._mag_real = np.sqrt(self.tipper[:, 0, 0].real**2 + \
                                 self.tipper[:, 0, 1].real**2)
-        self.mag_imag = np.sqrt(self.tipper[:, 0, 0].imag**2 +
+        self._mag_imag = np.sqrt(self.tipper[:, 0, 0].imag**2 +
                                 self.tipper[:, 0, 1].imag**2)
 
-        self.mag_err = None
-        self.angle_err = None
+        self._mag_err = None
+        self._angle_err = None
         #get the angle, need to make both parts negative to get it into the
         #parkinson convention where the arrows point towards the conductor
 
-        self.angle_real = np.rad2deg(np.arctan2(-self.tipper[:, 0, 1].real,
+        self._angle_real = np.rad2deg(np.arctan2(-self.tipper[:, 0, 1].real,
                                               -self.tipper[:, 0, 0].real))
 
-        self.angle_imag = np.rad2deg(np.arctan2(-self.tipper[:, 0, 1].imag,
+        self._angle_imag = np.rad2deg(np.arctan2(-self.tipper[:, 0, 1].imag,
                                                 -self.tipper[:, 0, 0].imag))
 
         ## estimate error: THIS MAYBE A HACK
         if self.tipper_err is not None:
-            self.mag_err = np.sqrt(self.tipper_err[:, 0, 0]**2+ \
+            self._mag_err = np.sqrt(self.tipper_err[:, 0, 0]**2+ \
                                    self.tipper_err[:, 0, 1]**2)
-            self.angle_err = np.rad2deg(np.arctan2(self.tipper_err[:, 0, 0],
+            self._angle_err = np.rad2deg(np.arctan2(self.tipper_err[:, 0, 0],
                                                    self.tipper_err[:, 0, 1]))%45
 
     def set_mag_direction(self, mag_real, ang_real, mag_imag, ang_imag):
@@ -1696,6 +1478,31 @@ class Tipper(object):
                                          (1-np.arctan(ang_imag)**2))
         #for consistency recalculate mag and angle
         self._compute_mag_direction()
+        self._compute_amp_phase()
+        
+    @property
+    def mag_real(self):
+        return self._mag_real
+    
+    @property
+    def mag_imag(self):
+        return self._mag_imag
+    
+    @property
+    def angle_real(self):
+        return self._angle_real
+    
+    @property
+    def angle_imag(self):
+        return self._angle_imag
+    
+    @property
+    def mag_err(self):
+        return self._mag_err
+    
+    @property
+    def angle_err(self):
+        return self._angle_err
 
     #----rotate---------------------------------------------------------------
     def rotate(self, alpha):
