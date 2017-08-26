@@ -17,6 +17,8 @@ import scipy.signal as sps
 
 import mtpy.utils.gis_tools as gis_tools
 
+import matplotlib.pyplot as plt
+
 #==============================================================================
 
 #==============================================================================
@@ -104,7 +106,7 @@ class MT_TS(object):
         self.station = 'mt00'
         self._sampling_rate = 1
         self._start_time_epoch_sec = 0.0
-        self._start_time_utc = '1980-01-01 00:00:00'
+        self._start_time_utc = None
         self.n_samples = 0
         self.component = None
         self.coordinate_system = 'geomagnetic'
@@ -122,6 +124,8 @@ class MT_TS(object):
         self._ts = pd.DataFrame() 
         self.fn_hdf5 = None
         self.fn_ascii = None
+        self.conversion = None
+        self.gain = None
         
         self._date_time_fmt = '%Y-%m-%d %H:%M:%S.%f'
         self._attr_list = ['station',
@@ -141,7 +145,9 @@ class MT_TS(object):
                            'data_logger',
                            'instrument_id',
                            'calibration_fn',
-                           'declination']
+                           'declination',
+                           'gain',
+                           'conversion']
         
         for key in kwargs.keys():
             setattr(self, key, kwargs[key])
@@ -222,11 +228,12 @@ class MT_TS(object):
         """
         try:
             self._sampling_rate = float(sampling_rate)
-            if self.start_time_utc is not None:
-                self._set_dt_index(self.start_time_utc)
+            
         except ValueError:
             raise MT_TS_Error("Input sampling rate should be a float not {0}".format(type(sampling_rate)))
             
+        if self.start_time_utc is not None:
+            self._set_dt_index(self.start_time_utc)
     ## set time and set index
     @property
     def start_time_utc(self):
@@ -244,6 +251,9 @@ class MT_TS(object):
         the new start time.
         """
         start_time = self._valitate_dt_str(start_time)
+        
+        if start_time == self.start_time_utc:
+            return
 
         dt = datetime.datetime.strptime(start_time, self._date_time_fmt)
         self._start_time_utc = datetime.datetime.strftime(dt,
@@ -255,7 +265,10 @@ class MT_TS(object):
     ## epoch seconds
     @property
     def start_time_epoch_sec(self):
-        return self._convert_dt_to_sec(self.start_time_utc)
+        if self.start_time_utc is None:
+            return None
+        else:
+            return self._convert_dt_to_sec(self.start_time_utc)
         
     @start_time_epoch_sec.setter
     def start_time_epoch_sec(self, epoch_sec):
@@ -272,7 +285,7 @@ class MT_TS(object):
         except ValueError:
             raise MT_TS_Error("Need to input epoch_sec as a float not {0}".format(type(epoch_sec)))
         
-        dt_struct = datetime.datetime.fromtimestamp(self._start_time_epoch_sec)
+        dt_struct = datetime.datetime.utcfromtimestamp(self._start_time_epoch_sec)
         # these should be self cosistent
         dt_utc = datetime.datetime.strftime(dt_struct, self._date_time_fmt)
         if self.start_time_utc != dt_utc:
@@ -302,12 +315,9 @@ class MT_TS(object):
         
         if validated_dt_str.find('.') == -1:
             validated_dt_str += '.00'
-            
-        print validated_dt_str
         
         try: 
-            dt = datetime.datetime.strptime(validated_dt_str, 
-                                            self._date_time_fmt)
+            datetime.datetime.strptime(validated_dt_str, self._date_time_fmt)
         except ValueError:
             raise MT_TS_Error('Could not read format of {0}'.format(date_time_str)+\
                               ' Should be of format {0}'.format(self._date_time_fmt))
@@ -319,12 +329,15 @@ class MT_TS(object):
         get the date time index from the data
         """
         
+        if start_time is None:
+            print 'Start time is None, skipping calculating index'
+            return 
         dt_freq = '{0:.0f}N'.format(1./(self.sampling_rate)*1E9)
-        
+
         dt_index = pd.date_range(start=start_time, 
                                  periods=self.ts.data.size, 
                                  freq=dt_freq)
-        
+
         self.ts.index = dt_index
         print "   * Reset time seies index to start at {0}".format(start_time)
     
@@ -343,9 +356,7 @@ class MT_TS(object):
         --------------
             **epoch_seconds** : float
                                 time in epoch seconds
-                                
-        
-        
+                                      
         """
         dt_struct = datetime.datetime.strptime(date_time_str, 
                                                self._date_time_fmt)
@@ -355,14 +366,17 @@ class MT_TS(object):
     
     ###------------------------------------------------------------------
     ### read and write file types
-    def write_hdf5(self, fn_hdf5):
+    def write_hdf5(self, fn_hdf5, compression_level=0, compression_lib='blosc'):
         """
         use pandas to write the hdf5 file
         """        
         
         self.fn_hdf5 = fn_hdf5
         
-        hdf5_store = pd.HDFStore(self.fn_hdf5, 'w')
+        hdf5_store = pd.HDFStore(self.fn_hdf5, 'w', 
+                                 complevel=compression_level,
+                                 complib=compression_lib)
+        
         hdf5_store['time_series'] = self.ts
         
         # add in attributes
@@ -374,14 +388,14 @@ class MT_TS(object):
         hdf5_store.flush()
         hdf5_store.close()
         
-    def read_hdf5(self, fn_hdf5):
+    def read_hdf5(self, fn_hdf5, compression_level=0, compression_lib='blosc'):
         """
         read using pandas
         """
         
         self.fn_hdf5 = fn_hdf5
 
-        hdf5_store = pd.HDFStore(self.fn_hdf5, 'r')
+        hdf5_store = pd.HDFStore(self.fn_hdf5, 'r', complib=compression_lib)
         
         self.ts = hdf5_store['time_series']
         
@@ -479,6 +493,14 @@ class MT_TS(object):
                               memory_map=True)
         
         print 'Read in {0}'.format(self.fn_ascii)
+        
+    def estimate_spectra(self, spectra_type='welch', **kwargs):
+        """
+        
+        """
+        
+        s = Spectra()
+        s.compute_spectra(self.ts.data, spectra_type, **kwargs)
                 
 #==============================================================================
 # Error classes
@@ -496,11 +518,38 @@ class Spectra(object):
     
     def __init__(self, **kwargs):
         self.spectra_type = 'welch'
-        self.ts = None
         
-    def welch_method(self, **kwargs):
+    def compute_spectra(self, data, spectra_type, **kwargs):
+        """
+        compute spectra according to input type
+        """
         
-        f, p = sps.welch(self.ts, **kwargs)
+        if spectra_type.lower() == 'welch':
+            self.welch_method(data, **kwargs)
+        
+    def welch_method(self, data, sampling_rate=1, nperseg=2**8, plot=True, 
+                     **kwargs):
+        """
+        Compute the spectra using the Welch method, which is an average 
+        spectra of the data.  Computes short time window of length nperseg and
+        averages them to reduce noise.
+        
+        Arguments
+        ------------
+        
+        """
+        f, p = sps.welch(data, **kwargs)
+        
+        if plot:
+            fig = plt.figure()
+            ax = fig.add_subplot(1, 1, 1)
+            ax.loglog(f, p, lw=1.5)
+            ax.set_xlabel('Frequency (Hz)',
+                          fontdict={'size':10, 'weight':'bold'})
+            ax.set_xlabel('Power (dB)',
+                          fontdict={'size':10, 'weight':'bold'})
+            
+            plt.show()
         
         return f, p
 

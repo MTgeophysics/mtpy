@@ -23,9 +23,239 @@ import mtpy.utils.calculator as MTcc
 import mtpy.utils.exceptions as MTex
 
 #=================================================================
+#==============================================================================
+# Resistivity and phase object
+#==============================================================================
+class ResPhase(object):
+    """
+    resistivity and phase container
+    """
+    
+    def __init__(self, z_array=None, z_err_array=None, freq=None, **kwargs):
+        
+        self._z = z_array
+        self._z_err = z_err_array 
+        
+        self._resistivity = None
+        self._phase = None
+        
+        self._resistivity_err = None
+        self._phase_err = None
+        
+        self.freq = freq
+        
+        for key in kwargs:
+            setattr(self, key, kwargs[key])
+            
+    @property
+    def resistivity(self):
+        return self._resistivity
+    
+    @resistivity.setter
+    def resistivity(self, res_array):
+        self._resistivity = res_array
+        
+    @property
+    def resistivity_err(self):
+        return self._resistivity_err
+    
+    @resistivity_err.setter
+    def resistivity_err(self, res_err_array):
+        self._resistivity_err = res_err_array
+    
+    @property
+    def phase(self):
+        return self._phase
+    
+    @phase.setter
+    def phase(self, phase_array):
+        self._phase = phase_array
+        
+    @property
+    def phase_err(self):
+        return self._phase_err
+    
+    @phase_err.setter
+    def phase_err(self, phase_err_array):
+        self._phase_err = phase_err_array
+        
+    def compute_resistivity_phase(self, z_array=None, z_err_array=None, 
+                                  freq=None):
+        """
+        compute resistivity and phase from z and z_err
+        """
+        
+        if z_array is not None:
+            self._z = z_array
+        if z_err_array is not None:
+            self._z_err = z_err_array
+        if freq is not None:
+            self.freq = freq
+            
+        if self._z is None or self._z_err is None or self.freq is None:
+            raise MT_Z_Error('Values are None, check _z, _z_err, freq')
+
+        self._resistivity = np.apply_along_axis(lambda x: np.abs(x)**2/self.freq*0.2,
+                                                0, self._z)
+        self._phase = np.rad2deg(np.angle(self._z))
+        
+        self._resistivity_err = np.zeros_like(self._resistivity, dtype=np.float)
+        self._phase_err = np.zeros_like(self._phase, dtype=np.float)
+        
+        #calculate resistivity and phase
+        if self._z_err is not None:
+            for idx_f in range(self.freq.size):
+                for ii in range(2):
+                    for jj in range(2):
+                        r_err, phi_err = MTcc.z_error2r_phi_error(
+                                                 np.real(self._z[idx_f, ii, jj]),
+                                                 self._z_err[idx_f, ii, jj],
+                                                 np.imag(self._z[idx_f, ii, jj]),
+                                                 self._z_err[idx_f, ii, jj])
 
 
-#------------------------
+                        self._resistivity_err[idx_f, ii, jj] = \
+                                               0.4*np.abs(self._z[idx_f, ii, jj])/\
+                                               self.freq[idx_f]*r_err
+                        self._phase_err[idx_f, ii, jj] = phi_err
+                        
+    def set_res_phase(self, res_array, phase_array, freq, res_err_array=None,
+                      phase_err_array=None):
+        """
+        Set values for resistivity (res - in Ohm m) and phase
+        (phase - in degrees), including error propagation.
+
+        Arguments
+        ------------
+            **res_array** : np.ndarray(num_freq, 2, 2)
+                            resistivity array in Ohm-m
+            
+            **phase_arr** : np.ndarray(num_freq, 2, 2)
+                            phase array in degrees
+            
+            **freq** : np.ndarray(num_freq)
+                       frequency array in Hz
+                       
+            **res_err_array** : np.ndarray(num_freq, 2, 2)
+                               resistivity error array in Ohm-m
+            
+            **phase_err_arr** : np.ndarray(num_freq, 2, 2)
+                               phase error array in degrees
+
+        """
+        
+        print 'Reseting z and z_err'
+
+        self._resistivity = res_array
+        self._phase = phase_array
+        self.freq = freq
+        self._resistivity_err = res_err_array
+        self._phase_err = phase_err_array
+        
+        
+        #assert real array:
+        if np.linalg.norm(np.imag(res_array)) != 0:
+            raise MTex.MTpyError_inputarguments('Error - array "res" is not'+\
+                                                 'real valued !')
+
+        if np.linalg.norm(np.imag(phase_array)) != 0:
+            raise MTex.MTpyError_inputarguments('Error - array "phase" is'+\
+                                                'not real valued !')
+
+        abs_z = np.sqrt(5.0*self.freq*self.resistivity)
+        self._z = abs_z*np.exp(1j*np.radians(self.phase))
+
+        self._z_err = np.zeros_like(self._z, dtype=np.float)
+        #---------------------------
+        # error propagation:
+        if self._resistivity_err is None or self._phase_err is None:
+            return
+
+        for idx_f in range(self.freq.shape):
+            for ii in range(2):
+                for jj in range(2):
+                    abs_z = np.sqrt(5*self.freq[idx_f]*\
+                                    self.resistivity[idx_f, ii, jj])
+                    rel_error_res = self.resistivity_err[idx_f, ii, jj]/\
+                                            self.resistivity[idx_f, ii, jj]
+                    #relative error varies by a factor of 0.5, which is the
+                    #exponent in the relation between them:
+                    abs_z_error = 0.5*abs_z*rel_error_res
+
+                    self._z_err[idx_f, ii, jj] = max(MTcc.propagate_error_polar2rect(
+                                                        abs_z,
+                                                        abs_z_error,
+                                                        self.phase[idx_f, ii, jj],
+                                                        self.phase_err[idx_f, ii, jj]))
+
+                    
+    @property
+    def res_xx(self):
+        return self._resistivity[:, 0, 0]
+    
+    @property
+    def res_xy(self):
+        return self._resistivity[:, 0, 1]
+    
+    @property
+    def res_yx(self):
+        return self._resistivity[:, 1, 0]
+    
+    @property
+    def res_yy(self):
+        return self._resistivity[:, 1, 1]
+    
+    @property
+    def phase_xx(self):
+        return self._phase[:, 0, 0]
+    
+    @property
+    def phase_xy(self):
+        return self._phase[:, 0, 1]
+    
+    @property
+    def phase_yx(self):
+        return self._phase[:, 1, 0]
+    
+    @property
+    def phase_yy(self):
+        return self._phase[:, 1, 1]
+    
+    @property
+    def res_err_xx(self):
+        return self._resistivity_err[:, 0, 0]
+    
+    @property
+    def res_err_xy(self):
+        return self._resistivity_err[:, 0, 1]
+    
+    @property
+    def res_err_yx(self):
+        return self._resistivity_err[:, 1, 0]
+    
+    @property
+    def res_err_yy(self):
+        return self._resistivity_err[:, 1, 1]
+    
+    @property
+    def phase_err_xx(self):
+        return self._phase_err[:, 0, 0]
+    
+    @property
+    def phase_err_xy(self):
+        return self._phase_err[:, 0, 1]
+    
+    @property
+    def phase_err_yx(self):
+        return self._phase_err[:, 1, 0]
+    
+    @property
+    def phase_err_yy(self):
+        return self._phase_err[:, 1, 1]
+
+#==============================================================================
+# Impedance Tensor Class
+#==============================================================================
 class Z(ResPhase):
     """
     Z class - generates an impedance tensor (Z) object.
@@ -839,235 +1069,7 @@ class Z(ResPhase):
 
         return invariants_dict
 
-#==============================================================================
-# Resistivity and phase object
-#==============================================================================
-class ResPhase(object):
-    """
-    resistivity and phase container
-    """
-    
-    def __init__(self, z_array=None, z_err_array=None, freq=None, **kwargs):
-        
-        self._z = z_array
-        self._z_err = z_err_array 
-        
-        self._resistivity = None
-        self._phase = None
-        
-        self._resistivity_err = None
-        self._phase_err = None
-        
-        self.freq = freq
-        
-        for key in kwargs:
-            setattr(self, key, kwargs[key])
-            
-    @property
-    def resistivity(self):
-        return self._resistivity
-    
-    @resistivity.setter
-    def resistivity(self, res_array):
-        self._resistivity = res_array
-        
-    @property
-    def resistivity_err(self):
-        return self._resistivity_err
-    
-    @resistivity_err.setter
-    def resistivity_err(self, res_err_array):
-        self._resistivity_err = res_err_array
-    
-    @property
-    def phase(self):
-        return self._phase
-    
-    @phase.setter
-    def phase(self, phase_array):
-        self._phase = phase_array
-        
-    @property
-    def phase_err(self):
-        return self._phase_err
-    
-    @phase_err.setter
-    def phase_err(self, phase_err_array):
-        self._phase_err = phase_err_array
-        
-    def compute_resistivity_phase(self, z_array=None, z_err_array=None, 
-                                  freq=None):
-        """
-        compute resistivity and phase from z and z_err
-        """
-        
-        if z_array is not None:
-            self._z = z_array
-        if z_err_array is not None:
-            self._z_err = z_err_array
-        if freq is not None:
-            self.freq = freq
-            
-        if self._z is None or self._z_err is None or self.freq is None:
-            raise MT_Z_Error('Values are None, check _z, _z_err, freq')
 
-        self._resistivity = np.apply_along_axis(lambda x: np.abs(x)**2/self.freq*0.2,
-                                                0, self._z)
-        self._phase = np.rad2deg(np.angle(self._z))
-        
-        self._resistivity_err = np.zeros_like(self._resistivity, dtype=np.float)
-        self._phase_err = np.zeros_like(self._phase, dtype=np.float)
-        
-        #calculate resistivity and phase
-        if self._z_err is not None:
-            for idx_f in range(self.freq.size):
-                for ii in range(2):
-                    for jj in range(2):
-                        r_err, phi_err = MTcc.z_error2r_phi_error(
-                                                 np.real(self._z[idx_f, ii, jj]),
-                                                 self._z_err[idx_f, ii, jj],
-                                                 np.imag(self._z[idx_f, ii, jj]),
-                                                 self._z_err[idx_f, ii, jj])
-
-
-                        self._resistivity_err[idx_f, ii, jj] = \
-                                               0.4*np.abs(self._z[idx_f, ii, jj])/\
-                                               self.freq[idx_f]*r_err
-                        self._phase_err[idx_f, ii, jj] = phi_err
-                        
-    def set_res_phase(self, res_array, phase_array, freq, res_err_array=None,
-                      phase_err_array=None):
-        """
-        Set values for resistivity (res - in Ohm m) and phase
-        (phase - in degrees), including error propagation.
-
-        Arguments
-        ------------
-            **res_array** : np.ndarray(num_freq, 2, 2)
-                            resistivity array in Ohm-m
-            
-            **phase_arr** : np.ndarray(num_freq, 2, 2)
-                            phase array in degrees
-            
-            **freq** : np.ndarray(num_freq)
-                       frequency array in Hz
-                       
-            **res_err_array** : np.ndarray(num_freq, 2, 2)
-                               resistivity error array in Ohm-m
-            
-            **phase_err_arr** : np.ndarray(num_freq, 2, 2)
-                               phase error array in degrees
-
-        """
-        
-        print 'Reseting z and z_err'
-
-        self._resistivity = res_array
-        self._phase = phase_array
-        self.freq = freq
-        self._resistivity_err = res_err_array
-        self._phase_err = phase_err_array
-        
-        
-        #assert real array:
-        if np.linalg.norm(np.imag(res_array)) != 0:
-            raise MTex.MTpyError_inputarguments('Error - array "res" is not'+\
-                                                 'real valued !')
-
-        if np.linalg.norm(np.imag(phase_array)) != 0:
-            raise MTex.MTpyError_inputarguments('Error - array "phase" is'+\
-                                                'not real valued !')
-
-        abs_z = np.sqrt(5.0*self.freq*self.resistivity)
-        self._z = abs_z*np.exp(1j*np.radians(self.phase))
-
-        self._z_err = np.zeros_like(self._z, dtype=np.float)
-        #---------------------------
-        # error propagation:
-        if self._resistivity_err is None or self._phase_err is None:
-            return
-
-        for idx_f in range(self.freq.shape):
-            for ii in range(2):
-                for jj in range(2):
-                    abs_z = np.sqrt(5*self.freq[idx_f]*\
-                                    self.resistivity[idx_f, ii, jj])
-                    rel_error_res = self.resistivity_err[idx_f, ii, jj]/\
-                                            self.resistivity[idx_f, ii, jj]
-                    #relative error varies by a factor of 0.5, which is the
-                    #exponent in the relation between them:
-                    abs_z_error = 0.5*abs_z*rel_error_res
-
-                    self._z_err[idx_f, ii, jj] = max(MTcc.propagate_error_polar2rect(
-                                                        abs_z,
-                                                        abs_z_error,
-                                                        self.phase[idx_f, ii, jj],
-                                                        self.phase_err[idx_f, ii, jj]))
-
-                    
-    @property
-    def res_xx(self):
-        return self._resistivity[:, 0, 0]
-    
-    @property
-    def res_xy(self):
-        return self._resistivity[:, 0, 1]
-    
-    @property
-    def res_yx(self):
-        return self._resistivity[:, 1, 0]
-    
-    @property
-    def res_yy(self):
-        return self._resistivity[:, 1, 1]
-    
-    @property
-    def phase_xx(self):
-        return self._phase[:, 0, 0]
-    
-    @property
-    def phase_xy(self):
-        return self._phase[:, 0, 1]
-    
-    @property
-    def phase_yx(self):
-        return self._phase[:, 1, 0]
-    
-    @property
-    def phase_yy(self):
-        return self._phase[:, 1, 1]
-    
-    @property
-    def res_err_xx(self):
-        return self._resistivity_err[:, 0, 0]
-    
-    @property
-    def res_err_xy(self):
-        return self._resistivity_err[:, 0, 1]
-    
-    @property
-    def res_err_yx(self):
-        return self._resistivity_err[:, 1, 0]
-    
-    @property
-    def res_err_yy(self):
-        return self._resistivity_err[:, 1, 1]
-    
-    @property
-    def phase_err_xx(self):
-        return self._phase_err[:, 0, 0]
-    
-    @property
-    def phase_err_xy(self):
-        return self._phase_err[:, 0, 1]
-    
-    @property
-    def phase_err_yx(self):
-        return self._phase_err[:, 1, 0]
-    
-    @property
-    def phase_err_yy(self):
-        return self._phase_err[:, 1, 1]
 
 
 #==============================================================================
