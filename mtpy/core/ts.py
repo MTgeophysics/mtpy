@@ -377,6 +377,10 @@ class MT_TS(object):
                                  complevel=compression_level,
                                  complib=compression_lib)
         
+        # might want to re index because the time string takes up a lot of 
+        # storage
+        #df = pd.DataFrame({'data':self.ts.data})
+        #df.index = np.arange(df.data.size)
         hdf5_store['time_series'] = self.ts
         
         # add in attributes
