@@ -646,8 +646,9 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
                 d_index = 0
             else:
                 try:
-                    d_index = np.where(self.modem_model.grid_z >= 
-                                        self.depth_array[data_ii])[0][0]
+                    d_index = min([np.where(self.modem_model.grid_z >= 
+                                        self.depth_array[data_ii])[0][0],
+                                  self.modem_model.grid_z.size-1])
                                         
                     print 'Estimated depth for period {0:.5g} is {1:.2f} m'.format(
                             float(self.plot_period), self.depth_array[data_ii])

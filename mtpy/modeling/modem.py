@@ -807,14 +807,12 @@ class Data(object):
         if rel_distance is False:
             self.get_relative_station_locations()
             
-    def _set_station_locations(self, station_locations=None, station_obj=None):
+    def _set_station_locations(self, station_obj=None):
         """
         take a station_locations array and populate data_array
         """
-        if station_locations is None and station_obj is None:
-            raise ModEMError('Need to input station data')
 
-        if station_locations is None and station_obj is not None:
+        if station_obj is not None:
             station_locations = station_obj.station_locations
             
 

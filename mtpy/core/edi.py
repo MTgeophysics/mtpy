@@ -307,7 +307,7 @@ class Edi(object):
             self.Z.rotation_angle = np.zeros_like(freq_arr)
         
         # compute resistivity and phase
-        self.Z._compute_res_phase()
+        self.Z.compute_resistivity_phase()
 
         
         ## fill tipper data if there it exists
@@ -512,7 +512,7 @@ class Edi(object):
         self.Z.z_err = z_err_arr
         self.Z.freq = freq_arr
         self.Z.rotation_angle = np.zeros_like(freq_arr)
-        self.Z._compute_res_phase()
+        self.Z.compute_resistivity_phase()
         
         self.Tipper.tipper = t_arr
         self.Tipper.tipper_err = t_err_arr

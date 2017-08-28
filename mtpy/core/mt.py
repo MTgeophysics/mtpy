@@ -161,6 +161,8 @@ class MT(object):
         self._edi_obj = MTedi.Edi()
         
         self.fn = fn
+        if self.fn is not None:
+            self.read_mt_file(self.fn)
         
         #provide key words to fill values if an edi file does not exist
         for key in kwargs.keys():
