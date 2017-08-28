@@ -236,6 +236,17 @@ class FrequencySingle(QtGui.QGroupBox):
             self.draw()
 
 
+class FrequencySelect(QtGui.QGroupBox):
+    """
+    frequency selection
+    """
+    def __init__(self, parent, use_period=False):
+        QtGui.QGroupBox.__init__(self, parent)
+        self._mt_objs = None
+        self._use_period = use_period
+        self.ui
+
+
 class Ellipse(QtGui.QGroupBox):
     """
     ellipse_dict defined for mtpy.imagining.phase_tensor_maps.PlogPhaseTensorMaps
