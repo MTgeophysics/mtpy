@@ -23,7 +23,28 @@
    <property name="subTitle">
     <string>This wizard will help you to export the selected stations to the ModEM data files.</string>
    </property>
-   <layout class="QGridLayout" name="gridLayout_4"/>
+      <layout class="QGridLayout" name="gridLayout_4">
+          <item row="0" column="0">
+              <widget class="QLabel" name="label_25">
+                  <property name="text">
+                      <string>The following .edi files will be included in the ModEM data</string>
+                  </property>
+              </widget>
+          </item>
+          <item row="1" column="0">
+              <widget class="QListWidget" name="listWidget_edi_files">
+                  <property name="selectionMode">
+                      <enum>QAbstractItemView::NoSelection</enum>
+                  </property>
+                  <property name="selectionBehavior">
+                      <enum>QAbstractItemView::SelectRows</enum>
+                  </property>
+                  <property name="sortingEnabled">
+                      <bool>true</bool>
+                  </property>
+              </widget>
+          </item>
+      </layout>
   </widget>
   <widget class="QWizardPage" name="wizardPage_inversion_mode">
    <property name="title">

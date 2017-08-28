@@ -344,6 +344,9 @@ class ExportDialogModEm(QtGui.QWizard):
 
     def set_data(self, mt_objs):
         self._mt_objs = mt_objs
+        self.ui.listWidget_edi_files.clear()
+        for mt_obj in mt_objs:
+            self.ui.listWidget_edi_files.addItem("{mt.station} ({mt.fn})".format(mt=mt_obj))
 
     def get_inversion_mode(self):
         if self.ui.radioButton_impedance_full.isChecked():
@@ -474,7 +477,6 @@ class ExportDialogModEm(QtGui.QWizard):
     def export_data(self, test=False):
         if self._mt_objs is None:
             return
-
         # self._progress_bar.progressbar.setRange(0, 1)
         self._progress_bar.progressbar.setRange(0, 0)
         self._progress_bar.onStart()

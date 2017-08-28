@@ -31,6 +31,14 @@ class Ui_Wizard_esport_modem(object):
         self.wizardPage_intro.setObjectName(_fromUtf8("wizardPage_intro"))
         self.gridLayout_4 = QtGui.QGridLayout(self.wizardPage_intro)
         self.gridLayout_4.setObjectName(_fromUtf8("gridLayout_4"))
+        self.label_25 = QtGui.QLabel(self.wizardPage_intro)
+        self.label_25.setObjectName(_fromUtf8("label_25"))
+        self.gridLayout_4.addWidget(self.label_25, 0, 0, 1, 1)
+        self.listWidget_edi_files = QtGui.QListWidget(self.wizardPage_intro)
+        self.listWidget_edi_files.setSelectionMode(QtGui.QAbstractItemView.NoSelection)
+        self.listWidget_edi_files.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
+        self.listWidget_edi_files.setObjectName(_fromUtf8("listWidget_edi_files"))
+        self.gridLayout_4.addWidget(self.listWidget_edi_files, 1, 0, 1, 1)
         Wizard_esport_modem.addPage(self.wizardPage_intro)
         self.wizardPage_inversion_mode = QtGui.QWizardPage()
         self.wizardPage_inversion_mode.setObjectName(_fromUtf8("wizardPage_inversion_mode"))
@@ -755,6 +763,9 @@ class Ui_Wizard_esport_modem(object):
         Wizard_esport_modem.setWindowTitle(_translate("Wizard_esport_modem", "Generate ModEM input data files", None))
         self.wizardPage_intro.setTitle(_translate("Wizard_esport_modem", "Introduction", None))
         self.wizardPage_intro.setSubTitle(_translate("Wizard_esport_modem", "This wizard will help you to export the selected stations to the ModEM data files.", None))
+        self.label_25.setText(
+            _translate("Wizard_esport_modem", "The following .edi files will be included in the ModEM data ", None))
+        self.listWidget_edi_files.setSortingEnabled(True)
         self.wizardPage_inversion_mode.setTitle(_translate("Wizard_esport_modem", "Inversion Mode", None))
         self.groupBox.setTitle(_translate("Wizard_esport_modem", "Impedance Components", None))
         self.radioButton_impedance_full.setToolTip(_translate("Wizard_esport_modem", "<html><head/><body><p>zxx, zxy, zyx, and zyy</p></body></html>", None))
@@ -994,13 +1005,15 @@ class Ui_Wizard_esport_modem(object):
         self.label_22.setText(_translate("Wizard_esport_modem", "Z", None))
         self.doubleSpinBox_smoothing_z.setToolTip(
             _translate("Wizard_esport_modem", "<html><head/><body><p>Vertical smoothing</p></body></html>", None))
-        self.label_23.setToolTip(_translate("Wizard_esport_modem",
-                                            "<html><head/><body><p>Number of times the smoothing should be applied (1 interger &gt;= 0)</p></body></html>",
-                                            None))
+        self.label_23.setToolTip(
+            _translate("Wizard_esport_modem", "<html><head/><body><p>Number of times the smoothing should be applied\n"
+                                              "                      (1 interger &gt;= 0)</p></body></html>\n"
+                                              "                  ", None))
         self.label_23.setText(_translate("Wizard_esport_modem", "Number", None))
-        self.spinBox_smoothing_number.setToolTip(_translate("Wizard_esport_modem",
-                                                            "<html><head/><body><p>Number of times the smoothing should be applied (1 interger &gt;= 0)</p></body></html>",
-                                                            None))
+        self.spinBox_smoothing_number.setToolTip(
+            _translate("Wizard_esport_modem", "<html><head/><body><p>Number of times the smoothing should be applied\n"
+                                              "                      (1 interger &gt;= 0)</p></body></html>\n"
+                                              "                  ", None))
         self.wizardPage_output.setTitle(_translate("Wizard_esport_modem", "Output", None))
         self.wizardPage_output.setSubTitle(_translate("Wizard_esport_modem", "Plsease select the output directry and the new folder that will be created to save all the data files for\n"
 "           ModEM.\n"
