@@ -812,7 +812,7 @@
          <item>
           <widget class="QRadioButton" name="radioButton_format_2">
            <property name="text">
-            <string>Type 2</string>
+               <string>Type 2 (Possibly Compatible with WSINV3DMT)</string>
            </property>
           </widget>
          </item>
