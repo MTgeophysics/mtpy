@@ -16,14 +16,11 @@ except AttributeError:
 
 try:
     _encoding = QtGui.QApplication.UnicodeUTF8
-
-
     def _translate(context, text, disambig):
         return QtGui.QApplication.translate(context, text, disambig, _encoding)
 except AttributeError:
     def _translate(context, text, disambig):
         return QtGui.QApplication.translate(context, text, disambig)
-
 
 class Ui_GroupBox_z_unit(object):
     def setupUi(self, GroupBox_z_unit):
@@ -52,3 +49,4 @@ class Ui_GroupBox_z_unit(object):
         GroupBox_z_unit.setTitle(_translate("GroupBox_z_unit", "Z Unit", None))
         self.radioButton_m.setText(_translate("GroupBox_z_unit", "meter (m)", None))
         self.radioButton_km.setText(_translate("GroupBox_z_unit", "kilometre (km)", None))
+

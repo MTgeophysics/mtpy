@@ -9,6 +9,7 @@ from mtpy.gui.SmartMT.ui_asset.groupbox_arrow import Ui_GroupBox_Arrow
 from mtpy.gui.SmartMT.ui_asset.groupbox_ellipse import Ui_GroupBoxEllipse
 from mtpy.gui.SmartMT.ui_asset.groupbox_frequency_period_index import Ui_GroupBox_Frequency_Period_Index
 from mtpy.gui.SmartMT.ui_asset.groupbox_frequency_period_single import Ui_groupBoxFrequency_pereiod_single
+from mtpy.gui.SmartMT.ui_asset.groupbox_frequency_select import Ui_GroupBox_frequency_select
 from mtpy.gui.SmartMT.ui_asset.groupbox_linedir import Ui_GroupBox_Linedir
 from mtpy.gui.SmartMT.ui_asset.groupbox_mesh_grid import Ui_GroupBox_mash_grid
 from mtpy.gui.SmartMT.ui_asset.groupbox_padding import Ui_GroupBox_Padding
@@ -240,11 +241,94 @@ class FrequencySelect(QtGui.QGroupBox):
     """
     frequency selection
     """
-    def __init__(self, parent, use_period=False):
+
+    def __init__(self, parent, use_period=False, allow_frequency_period_option=True):
         QtGui.QGroupBox.__init__(self, parent)
         self._mt_objs = None
-        self._use_period = use_period
-        self.ui
+        self._unique_period = None
+        self._unique_frequency = None
+        self.ui = Ui_GroupBox_frequency_select()
+        self.ui.setupUi(self)
+
+        self.histogram = FrequencySelect.Histogram(self)
+        self.histogram.set_unit(self._units[0])
+        self.ui.widget_histgram.layout().addWidget(self.histogram)
+
+        self.ui.radioButton_period.setChecked(use_period)
+        self.ui.radioButton_period.setHidden(not allow_frequency_period_option)
+        self.ui.radioButton_frequency.setHidden(not allow_frequency_period_option)
+        self.ui.radioButton_frequency.toggled.connect(self._frequency_toggled)
+
+    def set_data(self, mt_objs):
+        self._mt_objs = mt_objs
+        self._unique_frequency = None
+        self._unique_period = None
+        self._update_frequency()
+
+    _units = ['Hz', 's']
+
+    def _frequency_toggled(self, is_checked):
+        self.histogram.set_unit(self._units[0] if is_checked else self._units[1])
+        self._update_frequency()
+
+    def _update_frequency(self):
+        if self._mt_objs is not None:
+            if self._unique_frequency is None:
+                all_unique = (freq for mt_obj in self._mt_objs for freq in list(mt_obj.Z.freq))
+                self._unique_frequency = sorted(list(all_unique))
+            if self.ui.radioButton_period.isChecked() and self._unique_period is None:
+                all_unique = 1.0 / np.array(self._unique_frequency)
+                self._unique_period = sorted(list(all_unique))
+
+            self.histogram.set_data(
+                self._unique_period if self.ui.radioButton_period.isChecked() else self._unique_frequency
+            )
+            self.histogram.update_figure()
+
+    class Histogram(MPLCanvas):
+        def __init__(self, parent):
+            self._artists = dict()
+            self._frequency = None
+            self._current_frequency = None
+            self._title = None
+            self._unit = None
+            MPLCanvas.__init__(self, parent)
+            self._lx = None
+            self._cursor = None
+
+            self.mpl_connect('button_release_event', self.mouse_pick)
+
+        def set_unit(self, unit):
+            if unit != self._unit:
+                self._unit = unit
+                self._cursor = Cursor(self._axes, track_y=False, text_format="%f " + self._unit, useblit=True)
+
+        def set_data(self, frequency):
+            self._frequency = frequency
+            self._lx = None
+            self._current_frequency = None
+
+        def mouse_pick(self, event):
+            if not event.inaxes:
+                return
+            x = event.xdata
+            raise NotImplemented
+
+        def compute_initial_figure(self):
+            self._axes.tick_params(axis='both', which='major', labelsize=6)
+            self._axes.tick_params(axis='both', which='minor', labelsize=4)
+            if self._frequency is not None:
+                self._axes.hist(self._frequency)  # , 50, normed=1)
+            if self._title and self._unit:
+                self._axes.set_xlabel("%s (%s)" % (self._title, self._unit), fontsize=8)
+                self.figure.suptitle('%s Distribution in Selected Stations' % self._title, fontsize=8)
+
+            self._fig.set_tight_layout(True)
+
+        def update_figure(self):
+            self._axes.cla()
+            self.compute_initial_figure()
+            self.draw()
 
 
 class Ellipse(QtGui.QGroupBox):
@@ -542,7 +626,9 @@ class UniqueFrequencies(FrequencyIndex):
         pass
 
     def get_frequency_list(self):
-        return sorted([self.unique_freqs[index.row()] for index in self.ui.listWidget_frequency_period.selectedIndexes()], reverse=False)
+        return sorted(
+            [self.unique_freqs[index.row()] for index in self.ui.listWidget_frequency_period.selectedIndexes()],
+            reverse=False)
 
 
 class StationSelection(QtGui.QGroupBox):
