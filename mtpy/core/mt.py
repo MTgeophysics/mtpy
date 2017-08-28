@@ -250,7 +250,8 @@ class MT(object):
         """
         
         self._Z = z_object
-        self._Z._compute_res_phase()
+        self._Z.compute_resistivity_phase()
+
         
     def _set_Tipper(self, t_object):
         """

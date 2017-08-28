@@ -449,7 +449,8 @@ class PlotResponses(QtGui.QWidget):
         period = self.modem_data.period_list
         
         # need to make sure that resistivity and phase is computed
-        z_obj._compute_res_phase()
+        z_obj.compute_resistivity_phase()
+        z_obj.compute_resistivity_phase()
 
         plt.rcParams['font.size'] = self.plot_settings.fs
         fontdict = {'size':self.plot_settings.fs+2, 'weight':'bold'} 
@@ -765,7 +766,7 @@ class PlotResponses(QtGui.QWidget):
         if self.modem_resp is not None:
             resp_z_obj = self.modem_resp.mt_dict[self.station].Z
             resp_z_err = np.nan_to_num((z_obj.z-resp_z_obj.z)/z_obj.z_err)
-            resp_z_obj._compute_res_phase()
+            resp_z_obj.compute_resistivity_phase()
             
             resp_t_obj = self.modem_resp.mt_dict[self.station].Tipper
             resp_t_err = np.nan_to_num((t_obj.tipper-resp_t_obj.tipper)/t_obj.tipper_err)
