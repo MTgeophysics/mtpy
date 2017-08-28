@@ -1415,6 +1415,9 @@
         <layout class="QFormLayout" name="formLayout_4">
          <item row="0" column="0">
           <widget class="QLabel" name="label_20">
+              <property name="toolTip">
+                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Smoothing in the X direction.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
            <property name="text">
             <string>East</string>
            </property>
@@ -1425,6 +1428,9 @@
          </item>
          <item row="0" column="1">
           <widget class="QDoubleSpinBox" name="doubleSpinBox_smoothing_east">
+              <property name="toolTip">
+                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Smoothing in the X direction.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
            <property name="value">
             <double>0.300000000000000</double>
            </property>
@@ -1432,6 +1438,9 @@
          </item>
          <item row="1" column="0">
           <widget class="QLabel" name="label_21">
+              <property name="toolTip">
+                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Smoothing in the Y direction.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
            <property name="text">
             <string>North</string>
            </property>
@@ -1442,6 +1451,9 @@
          </item>
          <item row="1" column="1">
           <widget class="QDoubleSpinBox" name="doubleSpinBox_smoothing_north">
+              <property name="toolTip">
+                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Smoothing in the Y direction.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
            <property name="value">
             <double>0.300000000000000</double>
            </property>
@@ -1449,6 +1461,9 @@
          </item>
          <item row="2" column="0">
           <widget class="QLabel" name="label_22">
+              <property name="toolTip">
+                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Vertical smoothing&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
            <property name="text">
             <string>Z</string>
            </property>
@@ -1459,6 +1474,9 @@
          </item>
          <item row="2" column="1">
           <widget class="QDoubleSpinBox" name="doubleSpinBox_smoothing_z">
+              <property name="toolTip">
+                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Vertical smoothing&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
            <property name="value">
             <double>0.300000000000000</double>
            </property>
@@ -1466,6 +1484,11 @@
          </item>
          <item row="3" column="0">
           <widget class="QLabel" name="label_23">
+              <property name="toolTip">
+                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Number of times the smoothing should be applied
+                      (1 interger &amp;gt;= 0)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
+                  </string>
+              </property>
            <property name="text">
             <string>Number</string>
            </property>
@@ -1476,6 +1499,11 @@
          </item>
          <item row="3" column="1">
           <widget class="QSpinBox" name="spinBox_smoothing_number">
+              <property name="toolTip">
+                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Number of times the smoothing should be applied
+                      (1 interger &amp;gt;= 0)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
+                  </string>
+              </property>
            <property name="value">
             <number>1</number>
            </property>

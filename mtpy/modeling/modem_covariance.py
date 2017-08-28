@@ -43,6 +43,24 @@ class MTException(Exception):
 # ==============================================================================
 class Covariance(object):
     """ Read and write covariance files
+    Arguments
+    -----------
+
+    ====================== ====================================================
+    Attributes/Key Words   Description
+    ====================== ====================================================
+    grid_dimensions        Grid dimensions excluding air layers (Nx, Ny, NzEarth)
+    smoothing_east         Smoothing in the X direction (NzEarth real values)
+    smoothing_north        Smoothing in the Y direction (NzEarth real values)
+    smoothing_z            Vertical smoothing (1 real value)
+    smoothing_num          Number of times the smoothing should be applied (1 integer >= 0)
+
+    exception_list         Exceptions in the for e.g. 2 3 0. (to turn off smoothing between 3 & 4)
+    mask_arr
+
+    save_path              path to save data file to
+    cov_fn_basename
+    cov_fn
     """
 
     def __init__(self, grid_dimensions=None, **kwargs):

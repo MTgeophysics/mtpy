@@ -975,10 +975,32 @@ class Ui_Wizard_esport_modem(object):
 "                        ", None))
         self.lineEdit_resistivity_init.setText(_translate("Wizard_esport_modem", "100", None))
         self.groupBox_11.setTitle(_translate("Wizard_esport_modem", "Smoothing", None))
+        self.label_20.setToolTip(
+            _translate("Wizard_esport_modem", "<html><head/><body><p>Smoothing in the X direction.</p></body></html>",
+                       None))
         self.label_20.setText(_translate("Wizard_esport_modem", "East", None))
+        self.doubleSpinBox_smoothing_east.setToolTip(
+            _translate("Wizard_esport_modem", "<html><head/><body><p>Smoothing in the X direction.</p></body></html>",
+                       None))
+        self.label_21.setToolTip(
+            _translate("Wizard_esport_modem", "<html><head/><body><p>Smoothing in the Y direction.</p></body></html>",
+                       None))
         self.label_21.setText(_translate("Wizard_esport_modem", "North", None))
+        self.doubleSpinBox_smoothing_north.setToolTip(
+            _translate("Wizard_esport_modem", "<html><head/><body><p>Smoothing in the Y direction.</p></body></html>",
+                       None))
+        self.label_22.setToolTip(
+            _translate("Wizard_esport_modem", "<html><head/><body><p>Vertical smoothing</p></body></html>", None))
         self.label_22.setText(_translate("Wizard_esport_modem", "Z", None))
+        self.doubleSpinBox_smoothing_z.setToolTip(
+            _translate("Wizard_esport_modem", "<html><head/><body><p>Vertical smoothing</p></body></html>", None))
+        self.label_23.setToolTip(_translate("Wizard_esport_modem",
+                                            "<html><head/><body><p>Number of times the smoothing should be applied (1 interger &gt;= 0)</p></body></html>",
+                                            None))
         self.label_23.setText(_translate("Wizard_esport_modem", "Number", None))
+        self.spinBox_smoothing_number.setToolTip(_translate("Wizard_esport_modem",
+                                                            "<html><head/><body><p>Number of times the smoothing should be applied (1 interger &gt;= 0)</p></body></html>",
+                                                            None))
         self.wizardPage_output.setTitle(_translate("Wizard_esport_modem", "Output", None))
         self.wizardPage_output.setSubTitle(_translate("Wizard_esport_modem", "Plsease select the output directry and the new folder that will be created to save all the data files for\n"
 "           ModEM.\n"
