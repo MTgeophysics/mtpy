@@ -19,6 +19,7 @@ from mtpy.gui.SmartMT.ui_asset.groupbox_stretch import Ui_GroupBox_Stretch
 from mtpy.gui.SmartMT.ui_asset.groupbox_tolerance import Ui_GroupBoxTolerance
 from mtpy.gui.SmartMT.ui_asset.groupbox_z_component_multiple import Ui_groupBoxZ_Component_Multiple
 from mtpy.gui.SmartMT.ui_asset.groupbox_z_component_single import Ui_groupBoxZ_Component_Single
+from mtpy.gui.SmartMT.ui_asset.groupbox_z_unit import Ui_GroupBox_z_unit
 
 
 class ZComponentMultiple(QtGui.QGroupBox):
@@ -619,3 +620,11 @@ class MeshGrid(QtGui.QGroupBox):
             return None
 
 
+class ZUnit(QtGui.QGroupBox):
+    def __init__(self, parent):
+        QtGui.QGroupBox.__init__(self, parent)
+        self.ui = Ui_GroupBox_z_unit()
+        self.ui.setupUi(self)
+
+    def get_unit(self):
+        return 'km' if self.ui.radioButton_km.isChecked() else 'm'

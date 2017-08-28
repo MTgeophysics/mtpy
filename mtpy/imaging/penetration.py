@@ -250,6 +250,11 @@ class Depth3D(ImagingBase):
 
         period_by_index = kwargs.pop("period_by_index", False)  # search periods by its index in the data file
         plot_station_id = kwargs.pop("plot_station_id", False)  # plot the id of each station on the image
+        z_unit = kwargs.pop("z_unit", 'km')
+
+        if z_unit not in ('m', 'km'):
+            raise ParameterError("z_unit has to be m or km.")
+
         if period_by_index:  # self._period is considered as an index
             if not isinstance(self._period, int):
                 self._logger.warning("period value is not integer but used as an index.")
@@ -350,7 +355,8 @@ class Depth3D(ImagingBase):
             # method='cubic' may cause negative interp values; set them nan to make
             # empty
             grid_z[grid_z < 0] = np.nan
-            grid_z = grid_z / 1000.0
+            if z_unit == 'km':  # change to km
+                grid_z = grid_z / 1000.0
 
             # use reverse color map in imshow and the colorbar
             my_cmap = matplotlib.cm.jet_r
@@ -405,8 +411,8 @@ class Depth3D(ImagingBase):
 
             plt.xticks(xticks, xticks_label, rotation='0', fontsize=ftsize)
             plt.yticks(yticks, yticks_label, rotation='horizontal', fontsize=ftsize)
-            ax.set_ylabel('Latitude(degree)', fontsize=ftsize)
-            ax.set_xlabel('Longitude(degree)', fontsize=ftsize)
+            ax.set_ylabel('Latitude', fontsize=ftsize)
+            ax.set_xlabel('Longitude', fontsize=ftsize)
             ax.tick_params(
                 axis='both',
                 which='major',
@@ -431,7 +437,7 @@ class Depth3D(ImagingBase):
             cax = divider.append_axes("right", size="3%", pad=0.2)
             mycb = plt.colorbar(imgplot, cax=cax)  # cmap=my_cmap_r, does not work!!
             mycb.outline.set_linewidth(2)
-            mycb.set_label(label='Penetration Depth (Km)', size=ftsize)
+            mycb.set_label(label='Penetration Depth ({})'.format(z_unit), size=ftsize)
             mycb.set_cmap(my_cmap)
 
     def set_data(self, data):

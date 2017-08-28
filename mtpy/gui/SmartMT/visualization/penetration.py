@@ -11,7 +11,7 @@
 
 import mtpy.imaging.penetration
 from mtpy.gui.SmartMT.gui.plot_parameter_guis import ZComponentMultiple, ZComponentSingle, FrequencySingle, \
-    FrequencyTolerance, FrequencyIndex, StationSelection
+    FrequencyTolerance, FrequencyIndex, StationSelection, ZUnit
 from mtpy.gui.SmartMT.visualization.visualization_base import VisualizationBase
 
 
@@ -96,7 +96,8 @@ class Depth2D(VisualizationBase):
 
 class Depth3D(VisualizationBase):
     def get_plot_tooltip(self):
-        return "z-component=%s, period=%.5f, tolerance=%.2f%%" % (self._zcomponent, self._period, self._tolerance * 100)
+        return "z-component=%s, period=%.5f, tolerance=%.2f%%, z_unit=%s" % (
+        self._zcomponent, self._period, self._tolerance * 100, self._z_unit)
 
     def plot(self):
         # get parameters
@@ -106,7 +107,8 @@ class Depth3D(VisualizationBase):
             self._tolerance = self._tolerance_ui.get_tolerance_in_float()
             self._plotting_object = mtpy.imaging.penetration.Depth3D(self._mt_objs, self._period, self._zcomponent,
                                                                      self._tolerance)
-            self._plotting_object.plot()
+            self._z_unit = self._z_unit_ui.get_unit()
+            self._plotting_object.plot(z_unit=self._z_unit)
             self._fig = self._plotting_object.get_figure()
 
         except Exception as e:
@@ -143,6 +145,9 @@ class Depth3D(VisualizationBase):
         self._tolerance_ui = FrequencyTolerance(self._parameter_ui)
         self._tolerance_ui.setTitle("Period Tolerance")
         self._parameter_ui.add_parameter_groupbox(self._tolerance_ui)
+
+        self._z_unit_ui = ZUnit(self._parameter_ui)
+        self._parameter_ui.add_parameter_groupbox(self._z_unit_ui)
 
         self._parameter_ui.end_of_parameter_components()
 
