@@ -61,7 +61,7 @@ class ExportDialogModEm(QtGui.QWizard):
         # add math formulae of each error type
         self._math_label_elbert = MathTextLabel(
             self,
-            "$error_{egbert}=level_{egbert}\\times |Z_{xy}\\times Z_{yx}|^\\frac{1}{2}$"
+            "$error_{egbert}=level_{egbert}\\times |Z_{xy}\\times Z_{yx}|^\\frac{1}{2}$",
         )
         self.ui.verticalLayout_error_types.addWidget(self._math_label_elbert)
 
@@ -272,6 +272,7 @@ class ExportDialogModEm(QtGui.QWizard):
         hidden = bool(2 not in types and 3 not in types)
         self.ui.label_error_egbert.setHidden(hidden)
         self.ui.doubleSpinBox_error_egbert.setHidden(hidden)
+        self._math_label_elbert.setHidden(hidden)
         hidden = bool(1 not in types)
         self.ui.label_error_value.setHidden(hidden)
         self.ui.doubleSpinBox_error_value.setHidden(hidden)

@@ -11,15 +11,14 @@
     Date: 20/06/2017
 """
 
-import matplotlib.pyplot as plt
 from matplotlib.backends import qt_compat
 from matplotlib.widgets import AxesWidget
 
 use_pyside = qt_compat.QT_API == qt_compat.QT_API_PYSIDE
 if use_pyside:
-    from PySide import QtGui, QtCore
+    from PySide import QtGui
 else:
-    from PyQt4 import QtGui, QtCore
+    from PyQt4 import QtGui
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 
@@ -140,7 +139,7 @@ class Cursor(AxesWidget):
 
 
 class MathTextLabel(QtGui.QWidget):
-    def __init__(self, parent=None, math_text=None, **kwargs):
+    def __init__(self, parent=None, math_text=None, horizontalalignment='left', verticalalignment='top', **kwargs):
         QtGui.QWidget.__init__(self, parent, **kwargs)
 
         layout = QtGui.QVBoxLayout(self)
@@ -155,11 +154,11 @@ class MathTextLabel(QtGui.QWidget):
 
         self._figure.clear()
         self._display_text = self._figure.suptitle(math_text,
-                                     x=0.0,
-                                     y=1.0,
-                                     horizontalalignment='left',
-                                     verticalalignment='top',
-                                     size=QtGui.QApplication.font().pointSize() * 2)
+                                                   x=0.0,
+                                                   y=1.0,
+                                                   horizontalalignment=horizontalalignment,
+                                                   verticalalignment=verticalalignment,
+                                                   size=QtGui.QApplication.font().pointSize() * 2)
         self._canvas.draw()
 
         (x0, y0), (x1, y1) = self._display_text.get_window_extent().get_points()
