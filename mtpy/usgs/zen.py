@@ -943,7 +943,6 @@ class Zen3D(object):
         ts_obj.station = station
         ts_obj.sampling_rate = float(self.df)
         ts_obj.start_time_utc = self.zen_schedule
-        ts_obj.n_samples = int(self.time_series.size)
         ts_obj.component = self.metadata.ch_cmp
         ts_obj.coordinate_system = 'geomagnetic'
         ts_obj.dipole_length = float(self.metadata.ch_length)

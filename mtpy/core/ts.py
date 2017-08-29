@@ -115,6 +115,7 @@ class MT_TS(object):
         self._lat = 0.0
         self._lon = 0.0
         self._elev = 0.0
+        self._n_samples = 0
         self.datum = 'WGS84'
         self.data_logger = 'Zonge Zen'
         self.instrument_id = None
@@ -487,12 +488,17 @@ class MT_TS(object):
                         value = float(line_list[1].strip())
                     except ValueError:
                         value = line_list[1].strip()
-                    setattr(self, key, value)
+                    try:
+                        setattr(self, key, value)
+                    except AttributeError:
+                        if key != 'n_samples':
+                            print 'Could not set {0} to {1}'.format(key, value)
+                            
                 count +=1
                 line = fid.readline()
         
         self.ts = pd.read_csv(self.fn_ascii, sep='\n', skiprows=count,
-                              memory_map=True)
+                              memory_map=True, names=['data'])
         
         print 'Read in {0}'.format(self.fn_ascii)
         
@@ -502,7 +508,12 @@ class MT_TS(object):
         """
         
         s = Spectra()
-        s.compute_spectra(self.ts.data, spectra_type, **kwargs)
+        param_dict = {}
+        if spectra_type == 'welch':
+            param_dict['fs'] = kwargs.pop('sampling_rate',
+                                                       self.sampling_rate)
+            param_dict['nperseg'] = kwargs.pop('nperseg', 2**12)
+            s.compute_spectra(self.ts.data, spectra_type, **param_dict)
                 
 #==============================================================================
 # Error classes
@@ -529,8 +540,7 @@ class Spectra(object):
         if spectra_type.lower() == 'welch':
             self.welch_method(data, **kwargs)
         
-    def welch_method(self, data, sampling_rate=1, nperseg=2**8, plot=True, 
-                     **kwargs):
+    def welch_method(self, data, plot=True, **kwargs):
         """
         Compute the spectra using the Welch method, which is an average 
         spectra of the data.  Computes short time window of length nperseg and
@@ -540,6 +550,7 @@ class Spectra(object):
         ------------
         
         """
+
         f, p = sps.welch(data, **kwargs)
         
         if plot:
@@ -548,8 +559,10 @@ class Spectra(object):
             ax.loglog(f, p, lw=1.5)
             ax.set_xlabel('Frequency (Hz)',
                           fontdict={'size':10, 'weight':'bold'})
-            ax.set_xlabel('Power (dB)',
+            ax.set_ylabel('Power (dB)',
                           fontdict={'size':10, 'weight':'bold'})
+            ax.axis('tight')
+            ax.grid(which='both')
             
             plt.show()
         
