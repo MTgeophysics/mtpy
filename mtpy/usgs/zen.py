@@ -15,29 +15,31 @@ Created on Tue Jun 11 10:53:23 2013
 """
 
 #==============================================================================
-
-import numpy as np
-import scipy.signal as sps
 import time
 import datetime
 import os
 import struct
 import string
 import shutil
+from cStringIO import StringIO
+import sys
+import numpy as np
+import scipy.signal as sps
 from collections import Counter
+
 import mtpy.utils.filehandling as mtfh
 import mtpy.processing.birrp as birrp
 import mtpy.utils.configfile as mtcfg
 import mtpy.utils.exceptions as mtex
 import mtpy.utils.configfile as mtcf
 import matplotlib.pyplot as plt
+
 import mtpy.imaging.plotspectrogram as plotspectrogram
 import mtpy.imaging.plotnresponses as plotnresponses
 import mtpy.imaging.plotresponse as plotresponse
-from cStringIO import StringIO
-import sys
 import mtpy.processing.filter as mtfilt
 import mtpy.core.edi as mtedi
+import mtpy.core.ts as mtts
 
 try:
     import win32api
@@ -925,6 +927,39 @@ class Zen3D(object):
         
         print '    found {0} GPS time stamps'.format(self.gps_stamps.shape[0])
         print '    found {0} data points'.format(self.time_series_len)
+        
+    def read_z3d_to_ts(self, fn):
+        """
+        read a z3d file and return a TS object
+        """
+        self.fn = fn
+        self.read_z3d()
+        station = '{0}{1}'.format(self.metadata.line_name,
+                                  self.metadata.rx_xyz0.split(':')[0])
+        
+        ts_obj = mtts.MT_TS()
+        
+        ts_obj.ts = self.convert_counts()
+        ts_obj.station = station
+        ts_obj.sampling_rate = float(self.df)
+        ts_obj.start_time_utc = self.zen_schedule
+        ts_obj.n_samples = int(self.time_series.size)
+        ts_obj.component = self.metadata.ch_cmp
+        ts_obj.coordinate_system = 'geomagnetic'
+        ts_obj.dipole_length = float(self.metadata.ch_length)
+        ts_obj.azimuth = float(self.metadata.ch_azimuth)
+        ts_obj.units = 'mV'
+        ts_obj.lat = self.header.lat
+        ts_obj.lon = self.header.long
+        ts_obj.datum = 'WGS84'
+        ts_obj.data_logger = 'Zonge Zen'
+        ts_obj.instrument_num = None
+        ts_obj.calibration_fn = None
+        ts_obj.declination = 0.0
+        ts_obj.conversion = self._counts_to_mv_conversion
+        ts_obj.gain = self.header.ad_gain
+        
+        return ts_obj
         
     #=================================================
     def trim_data(self):

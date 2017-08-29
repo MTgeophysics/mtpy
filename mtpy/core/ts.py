@@ -107,7 +107,6 @@ class MT_TS(object):
         self._sampling_rate = 1
         self._start_time_epoch_sec = 0.0
         self._start_time_utc = None
-        self.n_samples = 0
         self.component = None
         self.coordinate_system = 'geomagnetic'
         self.dipole_length = 0
@@ -213,6 +212,11 @@ class MT_TS(object):
     @elev.setter
     def elev(self, elevation):
         self._elev = gis_tools.assert_elevation_value(elevation)
+        
+    #--> number of samples just to make sure there is consistency
+    @property
+    def n_samples(self):
+        return self.ts.data.size
         
     #--> sampling rate
     @property
@@ -429,7 +433,7 @@ class MT_TS(object):
         chunks = self.ts.shape[0]/chunk_size
             
         # make header lines
-        header_lines = ['# MT time series text file for {0}'.format(self.station)]
+        header_lines = ['# *** MT time series text file for {0} ***'.format(self.station)]
         header_lines += ['# {0} = {1}'.format(attr, getattr(self, attr)) 
                         for attr in sorted(self._attr_list)]
 
@@ -445,24 +449,18 @@ class MT_TS(object):
             for cc in range(chunks):
                 # changing the dtype of the array is faster than making
                 # a list of strings
-                try:
-                    ts_lines = np.array(self.ts[cc*chunk_size:(cc+1)*chunk_size][0],
-                                        dtype='S20')
-                except IndexError:
-                    ts_lines = np.array(self.ts[cc*chunk_size:(cc+1)*chunk_size],
-                                        dtype='S20')
+                ts_lines = np.array(self.ts.data[cc*chunk_size:(cc+1)*chunk_size],
+                                    dtype='S20')
+
                 fid.write('\n'.join(list(ts_lines)))
                 # be sure to write a new line after each chunk otherwise
                 # they run together
                 fid.write('\n')
              
             # be sure to write the last little bit
-            try:
-                fid.write('\n'.join(list(np.array(self.ts[(cc+1)*chunk_size:][0],
-                                                  dtype='S20'))))
-            except IndexError:
-                fid.write('\n'.join(list(np.array(self.ts[(cc+1)*chunk_size:],
-                                                  dtype='S20'))))
+            fid.write('\n'.join(list(np.array(self.ts.data[(cc+1)*chunk_size:],
+                                              dtype='S20'))))
+
                 
         # get an estimation of how long it took to write the file    
         et = datetime.datetime.utcnow()

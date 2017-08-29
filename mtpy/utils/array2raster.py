@@ -150,15 +150,17 @@ class ModEM_to_Raster(object):
                              model_obj.grid_north[-self.pad_north-1],
                              self.cell_size_north)
             
-        model_n, model_e = np.broadcast_arrays(model_obj.grid_north[:, None], 
-                                               model_obj.grid_east[None, :])
+        # needs to be -1 because the grid is n+1 as it is the edges of the
+        # the nodes.  Might need to change this in the future
+        model_n, model_e = np.broadcast_arrays(model_obj.grid_north[:-1, None], 
+                                               model_obj.grid_east[None, :-1])
 
                                              
         new_res_arr = np.zeros((new_north.shape[0],
                                 new_east.shape[0],
                                 model_obj.grid_z.shape[0]))
                                 
-        for z_index in range(model_obj.grid_z.shape[0]):
+        for z_index in range(model_obj.grid_z.shape[0]-1):
             res = model_obj.res_model[:, :, z_index]
             new_res_arr[:, :, z_index] = interpolate.griddata(
                                          (model_n.ravel(), model_e.ravel()),

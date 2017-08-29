@@ -105,7 +105,7 @@ def assert_elevation_value(elevation):
     
     try:
         elev_value = float(elevation)
-    except ValueError:
+    except (ValueError, TypeError):
         elev_value = 0.0
         print 'WARNING -- {0} is not a number, setting elevation to 0'.format(elevation)
         

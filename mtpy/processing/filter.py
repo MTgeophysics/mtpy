@@ -5,30 +5,19 @@ mtpy/processing/filter.py
 
 Functions for the frequency filtering of raw time series. 
 
-
-
-For calling a batch filtering rather than just one file, use the appropriate scripts from the mtpy.utils subpackage. 
-
-
 @UofA, 2013
 (LK)
+
+Revised 2017
+JP
 
 """
 
 #=================================================================
-
-
 import numpy as np
-import sys, os
-import os.path as op
-import time
-import copy
-import scipy.signal as SS
-from scipy.signal import butter, lfilter, buttord
+import  os
 
-
-
-import  mtpy.utils.exceptions as MTex
+import scipy.signal as signal
 
 #=================================================================
 
@@ -37,38 +26,46 @@ def butter_bandpass(lowcut, highcut, samplingrate, order=4):
     nyq = 0.5 * samplingrate
     low = lowcut / nyq
     high = highcut / nyq
-    print high, low
-    if high >=1. and low == 0.:
+
+    if high >= 1. and low == 0.:
         b = np.array([1.])
         a = np.array([1.])
 
     elif high < 0.95 and low > 0. :
         wp = [1.05*low,high-0.05]
         ws = [0.95*low,high+0.05]
- 
-        print wp,ws
-        order,wn = buttord(wp,ws,0., 30.)
-        b, a = butter(order, wn, btype='band')
+
+        order,wn = signal.buttord(wp, ws, 3., 40.)
+        b, a = signal.butter(order, wn, btype='band')
     
-    elif high>= 0.95:
-        print 'highpass',low,1.2*low,0.8*low
-        order,wn = buttord( 15*low,0.05*low,gpass=0.0, gstop=10.0)
+    elif high >= 0.95:
+        print 'highpass', low, 1.2*low, 0.8*low
+        order,wn = signal.buttord(15*low, 0.05*low, gpass=0.0, gstop=10.0)
         print order,wn
-        b, a = butter(order, wn, btype='high')
+        b, a = signal.butter(order, wn, btype='high')
+    
     elif low <= 0.05:
-        print 'lowpass',high
-        order,wn = buttord( high-0.05,high+0.05,gpass=0.0, gstop=10.0)
-        b, a = butter(order, wn, btype='low')
+        print 'lowpass', high
+        order,wn = signal.buttord(high-0.05, high+0.05, gpass=0.0, gstop=10.0)
+        b, a = signal.butter(order, wn, btype='low')
 
     return b, a
 
-
-
 def butter_bandpass_filter(data, lowcut, highcut, samplingrate, order=4):
     b, a = butter_bandpass(lowcut, highcut, samplingrate, order=order)
-    print b,a
-    y = lfilter(b, a, data)
+    y = signal.lfilter(b, a, data)
     return y
+    
+def low_pass(f, low_pass_freq, cutoff_freq, sampling_rate):
+    nyq = .5*sampling_rate
+    filt_order, wn = signal.buttord(low_pass_freq/nyq, 
+                                    cutoff_freq/nyq, 
+                                    3, 40)
+                                    
+    b, a = signal.butter(filt_order, wn, btype='low')
+    f_filt = signal.filtfilt(b, a, f)
+    
+    return f_filt
 
 
 def tukey(window_length, alpha=0.2):
