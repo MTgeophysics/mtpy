@@ -103,21 +103,19 @@ def find_distortion(z_object, g ='det', num_freq=None, lo_dims=None):
             
     """
 
-    z_obj = copy.deepcopy(z_object)
-    
     if num_freq is not None:
-        if num_freq > z_obj.freq.size:
-            num_freq = z_obj.freq.size
+        if num_freq > z_object.freq.size:
+            num_freq = z_object.freq.size
             print 'Number of frequencies to sweep over is too high for z'
             print 'setting num_freq to {0}'.format(num_freq)
     else:
-        num_freq = z_obj.freq.size
+        num_freq = z_object.freq.size
         
-    z_obj.z = z_obj.z[0:num_freq]
-    z_obj.z_err = z_obj.z_err[0:num_freq]
-    z_obj.freq = z_obj.freq[0:num_freq]
     
-    
+    z_obj = MTz.Z(z_object.z[0:num_freq],
+                  z_object.z_err[0:num_freq],
+                  z_object.freq[0:num_freq])
+
     g = 'det'
     
     dim_arr = MTge.dimensionality(z_object=z_obj)
@@ -125,11 +123,9 @@ def find_distortion(z_object, g ='det', num_freq=None, lo_dims=None):
     
     dis = np.zeros_like(z_obj.z, dtype=np.float)
     dis_err = np.ones_like(z_obj.z, dtype=np.float)
-    
-    
+
     #dictionary of values that should be no distortion in case distortion
     #cannot be calculated for that component
-    
     rot_mat = np.matrix([[0, -1], [1, 0]])
     for idx, dim in enumerate(dim_arr):
         if np.any(z_obj.z[idx] == 0.0+0.0j) == True:
