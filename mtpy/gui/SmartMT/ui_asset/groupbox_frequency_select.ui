@@ -23,6 +23,31 @@
             <string>Frequency/Period</string>
         </property>
         <layout class="QGridLayout" name="gridLayout">
+            <item row="0" column="0" colspan="2">
+                <widget class="QWidget" name="widget_histgram" native="true">
+                    <layout class="QVBoxLayout" name="verticalLayout">
+                        <property name="leftMargin">
+                            <number>0</number>
+                        </property>
+                        <property name="topMargin">
+                            <number>0</number>
+                        </property>
+                        <property name="rightMargin">
+                            <number>0</number>
+                        </property>
+                        <property name="bottomMargin">
+                            <number>0</number>
+                        </property>
+                        <item>
+                            <widget class="QLabel" name="label_place_holder">
+                                <property name="text">
+                                    <string>Place Holder for Frequency/Period Diagram</string>
+                                </property>
+                            </widget>
+                        </item>
+                    </layout>
+                </widget>
+            </item>
             <item row="7" column="0" colspan="2">
                 <widget class="QCheckBox" name="checkBox_existing_only">
                     <property name="toolTip">
@@ -53,32 +78,14 @@
                     </property>
                 </widget>
             </item>
-            <item row="8" column="0" colspan="2">
+            <item row="9" column="0" colspan="2">
                 <widget class="QListView" name="listView_selected"/>
             </item>
-            <item row="0" column="0" colspan="2">
-                <widget class="QWidget" name="widget_histgram" native="true">
-                    <layout class="QVBoxLayout" name="verticalLayout">
-                        <property name="leftMargin">
-                            <number>0</number>
-                        </property>
-                        <property name="topMargin">
-                            <number>0</number>
-                        </property>
-                        <property name="rightMargin">
-                            <number>0</number>
-                        </property>
-                        <property name="bottomMargin">
-                            <number>0</number>
-                        </property>
-                        <item>
-                            <widget class="QLabel" name="label">
-                                <property name="text">
-                                    <string>Place Holder for Frequency/Period Diagram</string>
-                                </property>
-                            </widget>
-                        </item>
-                    </layout>
+            <item row="8" column="0">
+                <widget class="QCheckBox" name="checkBox_log_scale">
+                    <property name="text">
+                        <string>Use log-scale on y-axes</string>
+                    </property>
                 </widget>
             </item>
         </layout>

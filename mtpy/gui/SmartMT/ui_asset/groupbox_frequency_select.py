@@ -33,6 +33,15 @@ class Ui_GroupBox_frequency_select(object):
         GroupBox_frequency_select.setSizePolicy(sizePolicy)
         self.gridLayout = QtGui.QGridLayout(GroupBox_frequency_select)
         self.gridLayout.setObjectName(_fromUtf8("gridLayout"))
+        self.widget_histgram = QtGui.QWidget(GroupBox_frequency_select)
+        self.widget_histgram.setObjectName(_fromUtf8("widget_histgram"))
+        self.verticalLayout = QtGui.QVBoxLayout(self.widget_histgram)
+        self.verticalLayout.setMargin(0)
+        self.verticalLayout.setObjectName(_fromUtf8("verticalLayout"))
+        self.label_place_holder = QtGui.QLabel(self.widget_histgram)
+        self.label_place_holder.setObjectName(_fromUtf8("label_place_holder"))
+        self.verticalLayout.addWidget(self.label_place_holder)
+        self.gridLayout.addWidget(self.widget_histgram, 0, 0, 1, 2)
         self.checkBox_existing_only = QtGui.QCheckBox(GroupBox_frequency_select)
         self.checkBox_existing_only.setObjectName(_fromUtf8("checkBox_existing_only"))
         self.gridLayout.addWidget(self.checkBox_existing_only, 7, 0, 1, 2)
@@ -45,16 +54,10 @@ class Ui_GroupBox_frequency_select(object):
         self.gridLayout.addWidget(self.radioButton_frequency, 2, 0, 1, 1)
         self.listView_selected = QtGui.QListView(GroupBox_frequency_select)
         self.listView_selected.setObjectName(_fromUtf8("listView_selected"))
-        self.gridLayout.addWidget(self.listView_selected, 8, 0, 1, 2)
-        self.widget_histgram = QtGui.QWidget(GroupBox_frequency_select)
-        self.widget_histgram.setObjectName(_fromUtf8("widget_histgram"))
-        self.verticalLayout = QtGui.QVBoxLayout(self.widget_histgram)
-        self.verticalLayout.setMargin(0)
-        self.verticalLayout.setObjectName(_fromUtf8("verticalLayout"))
-        self.label = QtGui.QLabel(self.widget_histgram)
-        self.label.setObjectName(_fromUtf8("label"))
-        self.verticalLayout.addWidget(self.label)
-        self.gridLayout.addWidget(self.widget_histgram, 0, 0, 1, 2)
+        self.gridLayout.addWidget(self.listView_selected, 9, 0, 1, 2)
+        self.checkBox_log_scale = QtGui.QCheckBox(GroupBox_frequency_select)
+        self.checkBox_log_scale.setObjectName(_fromUtf8("checkBox_log_scale"))
+        self.gridLayout.addWidget(self.checkBox_log_scale, 8, 0, 1, 1)
 
         self.retranslateUi(GroupBox_frequency_select)
         QtCore.QMetaObject.connectSlotsByName(GroupBox_frequency_select)
@@ -62,9 +65,14 @@ class Ui_GroupBox_frequency_select(object):
     def retranslateUi(self, GroupBox_frequency_select):
         GroupBox_frequency_select.setWindowTitle(_translate("GroupBox_frequency_select", "GroupBox", None))
         GroupBox_frequency_select.setTitle(_translate("GroupBox_frequency_select", "Frequency/Period", None))
-        self.checkBox_existing_only.setToolTip(_translate("GroupBox_frequency_select", "<html><head/><body><p>Check this to select the frequency/period that is exists in the data file. The frequency/period that is closest to the cursor will be selected.</p></body></html>", None))
+        self.label_place_holder.setText(
+            _translate("GroupBox_frequency_select", "Place Holder for Frequency/Period Diagram", None))
+        self.checkBox_existing_only.setToolTip(
+            _translate("GroupBox_frequency_select", "<html><head/><body><p>Check this to select the frequency/period\n"
+                                                    "                            that is exists in the data file. The frequency/period that is closest to the cursor will be\n"
+                                                    "                            selected.</p></body></html>\n"
+                                                    "                        ", None))
         self.checkBox_existing_only.setText(_translate("GroupBox_frequency_select", "Selecting Existing Frequency/Period Only", None))
         self.radioButton_period.setText(_translate("GroupBox_frequency_select", "Show Period", None))
         self.radioButton_frequency.setText(_translate("GroupBox_frequency_select", "Show Frequency", None))
-        self.label.setText(_translate("GroupBox_frequency_select", "Place Holder for Frequency/Period Diagram", None))
-
+        self.checkBox_log_scale.setText(_translate("GroupBox_frequency_select", "Use log-scale on y-axes", None))
