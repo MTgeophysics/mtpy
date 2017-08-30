@@ -77,11 +77,8 @@ class Cursor(AxesWidget):
         self.lineh = ax.axhline(ax.get_ybound()[0], visible=False, **lineprops)
         self.linev = ax.axvline(ax.get_xbound()[0], visible=False, **lineprops)
         self.text = ax.text(ax.get_xbound()[0], ax.get_ybound()[0], '', fontsize=8, color=col, visible=False)
-        self.area = patches.Rectangle((0, 0),
-                                      0 if self.horizOn else self.ax.get_xlim(),
-                                      0 if self.vertOn else self.ax.get_ylim(),
-                                      fc=col, ec=None, alpha=0.2, visible=False)
-        ax.add_patch(self.area)
+        self.area = patches.Rectangle((0, 0), 0, 0, fc=col, ec=None, alpha=0.2, visible=False)
+        self.ax.add_patch(self.area)
 
         self._press = None
         self.background = None
@@ -94,13 +91,18 @@ class Cursor(AxesWidget):
             self._press = event.xdata, event.ydata
             x0, y0 = self._press
             self.area.set_visible(self.visible)
-            if self.horizOn:
-                self.area.set_x(x0)
             if self.vertOn:
+                self.area.set_x(x0)
+            else:
+                self.area.set_x(0)
+            if self.horizOn:
                 self.area.set_y(y0)
+            else:
+                self.area.set_y(0)
 
     def on_release(self, event):
         self._press = None
+        self.area.set_visible(False)
 
     def clear(self, event):
         """clear the cursor"""
@@ -139,12 +141,16 @@ class Cursor(AxesWidget):
         if self.drag_on and self._press and self.visible:
             self.area.set_visible(True)
             x0, y0 = self._press
-            dx = event.xdata - x0
-            dy = event.ydata - y0
-            if self.horizOn:
-                self.area.set_width(dx)
             if self.vertOn:
+                dx = event.xdata - x0
+                self.area.set_width(dx)
+            else:
+                self.area.set_width(self.ax.get_xlim()[1])
+            if self.horizOn:
+                dy = event.ydata - y0
                 self.area.set_height(dy)
+            else:
+                self.area.set_height(self.ax.get_ylim()[1])
 
         if self.visible and self.show_coord:
             self.text.set_visible(True)
@@ -152,7 +158,7 @@ class Cursor(AxesWidget):
                 self.text.set_text(self.text_format % (event.xdata, event.ydata))
             elif self.vertOn:
                 self.text.set_text(self.text_format % event.xdata)
-            elif self.ly:
+            elif self.horizOn:
                 self.text.set_text(self.text_format % event.ydata)
             self.text.set_position((event.xdata, event.ydata))
         else:

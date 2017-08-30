@@ -430,7 +430,7 @@ class FrequencySelect(QtGui.QGroupBox):
         def set_unit(self, unit):
             if unit != self._unit:
                 self._unit = unit
-                self._cursor = Cursor(self._axes, track_x=False, show_drag=True, text_format="%f %f" + self._unit,
+                self._cursor = Cursor(self._axes, track_y=False, show_drag=True, text_format="%f" + self._unit,
                                       useblit=True)
 
         def select_existing(self, select_existing):
