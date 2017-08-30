@@ -113,3 +113,4 @@ class Ui_GroupBox_frequency_select(object):
         self.checkBox_log_scale.setText(_translate("GroupBox_frequency_select", "Use log-scale on y-axes", None))
         self.pushButton_delete.setText(_translate("GroupBox_frequency_select", "Delete", None))
         self.pushButton_clear.setText(_translate("GroupBox_frequency_select", "Clear", None))
+

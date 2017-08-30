@@ -40,6 +40,14 @@ class Ui_Wizard_esport_modem(object):
         self.listWidget_edi_files.setObjectName(_fromUtf8("listWidget_edi_files"))
         self.gridLayout_4.addWidget(self.listWidget_edi_files, 1, 0, 1, 1)
         Wizard_esport_modem.addPage(self.wizardPage_intro)
+        self.wizardPage_period = QtGui.QWizardPage()
+        self.wizardPage_period.setObjectName(_fromUtf8("wizardPage_period"))
+        self.verticalLayout_10 = QtGui.QVBoxLayout(self.wizardPage_period)
+        self.verticalLayout_10.setObjectName(_fromUtf8("verticalLayout_10"))
+        self.label_26 = QtGui.QLabel(self.wizardPage_period)
+        self.label_26.setObjectName(_fromUtf8("label_26"))
+        self.verticalLayout_10.addWidget(self.label_26)
+        Wizard_esport_modem.addPage(self.wizardPage_period)
         self.wizardPage_inversion_mode = QtGui.QWizardPage()
         self.wizardPage_inversion_mode.setObjectName(_fromUtf8("wizardPage_inversion_mode"))
         self.gridLayout_7 = QtGui.QGridLayout(self.wizardPage_inversion_mode)
@@ -766,6 +774,11 @@ class Ui_Wizard_esport_modem(object):
         self.label_25.setText(
             _translate("Wizard_esport_modem", "The following .edi files will be included in the ModEM data", None))
         self.listWidget_edi_files.setSortingEnabled(True)
+        self.wizardPage_period.setTitle(_translate("Wizard_esport_modem", "Period Selection", None))
+        self.wizardPage_period.setSubTitle(_translate("Wizard_esport_modem",
+                                                      "Select period values and/or intervals by clicking and/or selecting on the diagram.",
+                                                      None))
+        self.label_26.setText(_translate("Wizard_esport_modem", "NOTE: This functionality is under development.", None))
         self.wizardPage_inversion_mode.setTitle(_translate("Wizard_esport_modem", "Inversion Mode", None))
         self.groupBox.setTitle(_translate("Wizard_esport_modem", "Impedance Components", None))
         self.radioButton_impedance_full.setToolTip(_translate("Wizard_esport_modem", "<html><head/><body><p>zxx, zxy, zyx, and zyy</p></body></html>", None))

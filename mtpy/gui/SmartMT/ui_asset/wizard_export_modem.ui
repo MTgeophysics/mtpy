@@ -46,6 +46,23 @@
           </item>
       </layout>
   </widget>
+     <widget class="QWizardPage" name="wizardPage_period">
+         <property name="title">
+             <string>Period Selection</string>
+         </property>
+         <property name="subTitle">
+             <string>Select period values and/or intervals by clicking and/or selecting on the diagram.</string>
+         </property>
+         <layout class="QVBoxLayout" name="verticalLayout_10">
+             <item>
+                 <widget class="QLabel" name="label_26">
+                     <property name="text">
+                         <string>NOTE: This functionality is under development.</string>
+                     </property>
+                 </widget>
+             </item>
+         </layout>
+     </widget>
   <widget class="QWizardPage" name="wizardPage_inversion_mode">
    <property name="title">
     <string>Inversion Mode</string>

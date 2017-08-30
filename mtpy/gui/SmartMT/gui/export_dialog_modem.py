@@ -24,7 +24,7 @@ from mtpy.constants import epsg_dict
 from mtpy.gui.SmartMT.gui.busy_indicators import ProgressBar
 from mtpy.gui.SmartMT.gui.export_dialog import PreviewDialog
 from mtpy.gui.SmartMT.gui.matplotlib_imabedding import MathTextLabel
-from mtpy.gui.SmartMT.gui.plot_parameter_guis import Rotation
+from mtpy.gui.SmartMT.gui.plot_parameter_guis import Rotation, FrequencySelect
 from mtpy.gui.SmartMT.ui_asset.wizard_export_modem import Ui_Wizard_esport_modem
 from mtpy.gui.SmartMT.utils.validator import FileValidator, DirectoryValidator
 from mtpy.modeling.modem_covariance import Covariance
@@ -64,6 +64,16 @@ class ExportDialogModEm(QtGui.QWizard):
             "$error_{egbert}=level_{egbert}\\times |Z_{xy}\\times Z_{yx}|^\\frac{1}{2}$",
         )
         self.ui.verticalLayout_error_types.addWidget(self._math_label_elbert)
+
+        # add period selection
+        self._period_select_ui = FrequencySelect(
+            self.ui.wizardPage_period,
+            show_period=True,
+            show_frequency=False,
+            allow_range_select=True,
+            select_multiple=True
+        )
+        self.ui.wizardPage_period.layout().addWidget(self._period_select_ui)
 
         # add rotation
         self._rotation_ui = Rotation(self.ui.wizardPage_data)
@@ -346,6 +356,7 @@ class ExportDialogModEm(QtGui.QWizard):
     def set_data(self, mt_objs):
         self._mt_objs = mt_objs
         self.ui.listWidget_edi_files.clear()
+        self._period_select_ui.set_data(mt_objs)
         for mt_obj in mt_objs:
             self.ui.listWidget_edi_files.addItem("{mt.station} ({mt.fn})".format(mt=mt_obj))
 
