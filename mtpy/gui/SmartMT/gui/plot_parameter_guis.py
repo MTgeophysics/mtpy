@@ -8,7 +8,6 @@ from mtpy.gui.SmartMT.gui.plot_parameter import COLORS, SIMPLE_COLORS
 from mtpy.gui.SmartMT.ui_asset.groupbox_arrow import Ui_GroupBox_Arrow
 from mtpy.gui.SmartMT.ui_asset.groupbox_ellipse import Ui_GroupBoxEllipse
 from mtpy.gui.SmartMT.ui_asset.groupbox_frequency_period_index import Ui_GroupBox_Frequency_Period_Index
-from mtpy.gui.SmartMT.ui_asset.groupbox_frequency_period_single import Ui_groupBoxFrequency_pereiod_single
 from mtpy.gui.SmartMT.ui_asset.groupbox_frequency_select import Ui_GroupBox_frequency_select
 from mtpy.gui.SmartMT.ui_asset.groupbox_linedir import Ui_GroupBox_Linedir
 from mtpy.gui.SmartMT.ui_asset.groupbox_mesh_grid import Ui_GroupBox_mash_grid
@@ -78,165 +77,6 @@ class ZComponentSingle(QtGui.QGroupBox):
             return 'zyx'
 
 
-class FrequencySingle(QtGui.QGroupBox):
-    """
-    Frequency selection (single frequency)
-    """
-
-    _unit_period = 'second'
-    _unit_frequency = 'Hz'
-    _title_period = 'Period'
-    _title_frequency = 'Frequency'
-
-    def __init__(self, parent, use_period=False):
-        QtGui.QGroupBox.__init__(self, parent)
-        self._mt_objs = None
-        self.use_period = use_period
-        self.ui = Ui_groupBoxFrequency_pereiod_single()
-        self.ui.setupUi(self)
-        self._histogram = FrequencySingle.FrequencyHistogram()
-        self.set_use_period(self.use_period)
-        # add matplotlib canvas
-        self.ui.verticalLayoutFrequencyPeriod.addWidget(self._histogram)
-        # connect components
-        self.ui.comboBoxPeriod.currentIndexChanged.connect(self.update_histogram)
-        self.ui.comboBoxPeriod.editTextChanged.connect(self.update_histogram)
-        self._histogram.mpl_connect('button_release_event', self._mouse_pick)
-
-    def toggle_time_scale(self, *args):
-        self.use_period = not self.use_period
-        self.set_use_period(self.use_period)
-
-    def set_use_period(self, use_period=False):
-        if use_period:
-            self._histogram.set_unit(self._unit_period)
-            self._histogram.set_title(self._title_period)
-            title = '%s (%s)' % (self._title_period, self._unit_period)
-        else:
-            self._histogram.set_unit(self._unit_frequency)
-            self._histogram.set_title(self._title_frequency)
-            title = '%s (%s)' % (self._title_frequency, self._unit_frequency)
-        self.setTitle(title)
-        self._update_frequency()
-
-    def _mouse_pick(self, event):
-        if not event.inaxes:
-            return
-        x = event.xdata
-        self.ui.comboBoxPeriod.setEditText("%.5f" % x)
-
-    def get_frequency(self):
-        return float(self.ui.comboBoxPeriod.currentText())
-
-    def update_histogram(self):
-        value = float(self.ui.comboBoxPeriod.currentText())
-        self._histogram.set_current_frequency(value)
-
-    def set_data(self, mt_objs):
-        self._mt_objs = mt_objs
-        self._update_frequency()
-
-    def _update_frequency(self):
-        if self._mt_objs is not None:
-            all_freqs = []
-            for mt_obj in self._mt_objs:
-                all_freqs.extend(list(mt_obj.Z.freq))
-
-            if self.use_period:
-                all_periods = 1.0 / np.array(all_freqs)
-                # self._histogram.set_data(all_periods)
-                all_unique = sorted(list(set(all_periods)))
-
-            else:
-                # self._histogram.set_data(all_freqs)
-                all_unique = sorted(list(set(all_freqs)))
-            self._histogram.set_data(all_unique)
-            self._histogram.update_figure()
-            # sort all frequencies in ascending order
-            for period in all_unique:
-                self.ui.comboBoxPeriod.addItem("%.5f" % period)
-            self.ui.comboBoxPeriod.setCurrentIndex(0)
-            self.update_histogram()
-
-    class FrequencyHistogram(MPLCanvas):
-        def __init__(self, parent=None, width=5, hight=2, dpi=100):
-            self.artists = dict()
-            self._frequency = None
-            self._current_frequency = None
-            self._title = None
-            self._unit = None
-            MPLCanvas.__init__(self, parent, width, hight, dpi)
-            self._lx = None
-            self.cursor = None
-
-            # self.mpl_connect('motion_notify_event', self.cursor)
-            self.mpl_connect('button_release_event', self.mouse_pick)
-            self.setMinimumSize(200, 150)
-            self.resize(self.sizeHint())
-
-        # def mouse_move(self, event):
-        #     if not event.inaxes:
-        #         return
-        #     x = event.xdata
-        #     y = event.ydata
-        #     if self._cursor_x is None:
-        #         self._cursor_x = self._axes.axvline(linewidth=1, color="green")
-        #     if self._cursor_text is None:
-        #         self._cursor_text = self._axes.text(0.0, 0.0, '', fontsize=8)
-        #     self._cursor_x.set_xdata(x)
-        #     self._cursor_text.set_text('period=%.2f' % x)
-        #     self._cursor_text.set_position((x, y))
-        #     self.draw()
-
-        def set_title(self, title):
-            self._title = title
-
-        def set_unit(self, unit):
-            if unit != self._unit:
-                self._unit = unit
-                self.cursor = Cursor(self._axes, track_y=False, text_format="%f " + self._unit, useblit=True)
-
-        def mouse_pick(self, event):
-            if not event.inaxes:
-                return
-            x = event.xdata
-            self.set_current_frequency(x)
-
-        def compute_initial_figure(self):
-            if self._frequency is not None:
-                self._axes.tick_params(axis='both', which='major', labelsize=6)
-                self._axes.tick_params(axis='both', which='minor', labelsize=4)
-                self._axes.hist(self._frequency)  # , 50, normed=1)
-                if self._title and self._unit:
-                    self._axes.set_xlabel("%s (%s)" % (self._title, self._unit), fontsize=8)
-                    self.figure.suptitle('%s Distribution in Selected Stations' % self._title, fontsize=8)
-
-                self._fig.set_tight_layout(True)
-
-        def set_data(self, frequency):
-            self._frequency = frequency
-            self._lx = None
-            self._current_frequency = None
-
-        def set_current_frequency(self, freq):
-            self._current_frequency = freq
-            if self._lx is None:
-                self._lx = self._axes.axvline(linewidth=2, color="red")
-            self._lx.set_xdata(self._current_frequency)
-            # if self._fig.canvas.supports_blit:
-            #     self._axes.draw_artist(self._lx)
-            #     self._fig.canvas.blit(self._axes.bbox)
-            # else:
-            #     self._fig.canvas.draw_idle()
-            self._fig.canvas.draw_idle()
-
-        def update_figure(self):
-            # clear figure
-            self._axes.cla()
-            self.compute_initial_figure()
-            self.draw()
-
-
 class FrequencySelect(QtGui.QGroupBox):
     """
     frequency selection
@@ -268,6 +108,11 @@ class FrequencySelect(QtGui.QGroupBox):
         self.ui.radioButton_frequency.setChecked(show_frequency)
         self.ui.radioButton_period.setHidden(not (show_period and show_frequency))
         self.ui.radioButton_frequency.setHidden(not (show_period and show_frequency))
+        if self.ui.radioButton_frequency.isHidden():
+            self.setTitle(self._type[1])
+        elif self.ui.radioButton_period.isHidden():
+            self.setTitle(self._type[0])
+
         self.ui.radioButton_frequency.toggled.connect(self._frequency_toggled)
         self.ui.checkBox_existing_only.toggled.connect(self.histogram.select_existing)
         self.ui.checkBox_existing_only.toggled.connect(self.model_selected.clear)
@@ -282,7 +127,17 @@ class FrequencySelect(QtGui.QGroupBox):
         self._unique_period = None
         self._update_frequency()
 
+    def get_frequency(self):
+        frequencies = [self.model_selected.item(index).data(QtCore.Qt.DisplayRole).toPyObject()
+                       for index in range(self.model_selected.rowCount())]
+        # print frequencies
+        if self._select_multiple:
+            return frequencies
+        else:
+            return frequencies[0] if frequencies else None
+
     _units = ['Hz', 's']
+    _type = ['Frequency', 'Period']
 
     def _clear_all(self):
         self.model_selected.clear()
@@ -332,6 +187,12 @@ class FrequencySelect(QtGui.QGroupBox):
         # update model
         self.model_selected.appendRow(new_item)
         self.model_selected.sort(0)
+
+    def show_period(self):
+        self.ui.radioButton_period.setChecked(True)
+
+    def show_frequency(self):
+        self.ui.radioButton_frequency.setChecked(True)
 
     def _frequency_toggled(self, is_checked):
         self.histogram.set_unit(self._units[0] if is_checked else self._units[1])
@@ -393,14 +254,15 @@ class FrequencySelect(QtGui.QGroupBox):
             self._title = None
             self._unit = None
             self._press = None
-            MPLCanvas.__init__(self, parent)
+            MPLCanvas.__init__(self, parent, 5, 1.5)
             self._lx = {}
             self._cursor = None
             self._select_existing_only = False
             self._show_existing = False
             self._y_log_scale = y_log_scale
+            self._select_range = allow_range_select
 
-            if allow_range_select:
+            if self._select_range:
                 self.mpl_connect('button_press_event', self.on_press)
             self.mpl_connect('button_release_event', self.on_release)
 
@@ -430,7 +292,10 @@ class FrequencySelect(QtGui.QGroupBox):
         def set_unit(self, unit):
             if unit != self._unit:
                 self._unit = unit
-                self._cursor = Cursor(self._axes, track_y=False, show_drag=True, text_format="%f" + self._unit,
+                self._cursor = Cursor(self._axes,
+                                      track_y=False,
+                                      show_drag=self._select_range,
+                                      text_format="%f" + self._unit,
                                       useblit=True)
 
         def select_existing(self, select_existing):

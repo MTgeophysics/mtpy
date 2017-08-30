@@ -12,8 +12,8 @@ import numpy as np
 
 from mtpy.gui.SmartMT.gui.figure_setting_guis import ColorBar, Font, AspectRatio, TextBox
 from mtpy.gui.SmartMT.gui.plot_control_guis import PlotControlResistivityPhasePseudoSection
-from mtpy.gui.SmartMT.gui.plot_parameter_guis import FrequencySingle, Ellipse, FrequencyTolerance, Arrow, Padding, \
-    Scale, Stretch, LineDir, MeshGrid, UniqueFrequencies
+from mtpy.gui.SmartMT.gui.plot_parameter_guis import Ellipse, FrequencyTolerance, Arrow, Padding, \
+    Scale, Stretch, LineDir, MeshGrid, UniqueFrequencies, FrequencySelect
 from mtpy.gui.SmartMT.utils.matplotlib_utils import get_next_fig_num
 from mtpy.gui.SmartMT.visualization.visualization_base import VisualizationBase
 from mtpy.imaging.phase_tensor_maps import PlotPhaseTensorMaps
@@ -103,8 +103,14 @@ class PhaseTensorMap(VisualizationBase):
         VisualizationBase.__init__(self, parent)
         # set up ui
         self._scale_ui = Scale(self._parameter_ui)
-        self._frequency_ui = FrequencySingle(self._parameter_ui, use_period=True)
-        self._scale_ui.ui.comboBox_time.currentIndexChanged.connect(self._frequency_ui.toggle_time_scale)
+        self._frequency_ui = FrequencySelect(self._parameter_ui,
+                                             show_frequency=False,
+                                             allow_range_select=False,
+                                             select_multiple=False)
+        self._scale_ui.ui.comboBox_time.currentIndexChanged.connect(
+            lambda index: self._frequency_ui.show_period() if index == 0
+            else self._frequency_ui.show_frequency()
+        )
         self._parameter_ui.add_parameter_groupbox(self._scale_ui)
         self._parameter_ui.add_parameter_groupbox(self._frequency_ui)
 
