@@ -186,6 +186,7 @@ class MT_TS(object):
             raise MT_TS_Error('Data type {0} not supported'.format(type(ts_arr))+\
                               ', ts needs to be a numpy.ndarray or pandas DataFrame')
     
+        self._n_samples = self.ts.data.size
     ##--> Latitude
     @property
     def lat(self):
@@ -222,7 +223,11 @@ class MT_TS(object):
     #--> number of samples just to make sure there is consistency
     @property
     def n_samples(self):
-        return self.ts.data.size
+        return int(self._n_samples)
+        
+    @n_samples.setter
+    def n_samples(self, num_samples):
+        self._n_samples = int(num_samples)
         
     #--> sampling rate
     @property
