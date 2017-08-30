@@ -269,8 +269,12 @@ class FrequencySelect(QtGui.QGroupBox):
         self.ui.radioButton_period.setHidden(not (show_period and show_frequency))
         self.ui.radioButton_frequency.setHidden(not (show_period and show_frequency))
         self.ui.radioButton_frequency.toggled.connect(self._frequency_toggled)
-        self.ui.checkBox_existing_only.toggled.connect(self.histogram.set_select_existing)
+        self.ui.checkBox_existing_only.toggled.connect(self.histogram.select_existing)
+        self.ui.checkBox_existing_only.toggled.connect(self.model_selected.clear)
+        self.ui.checkBox_show_existing.toggled.connect(self.histogram.show_existing)
         self.ui.checkBox_log_scale.toggled.connect(self.histogram.set_y_log_scale)
+        self.ui.pushButton_clear.clicked.connect(self._clear_all)
+        self.ui.pushButton_delete.clicked.connect(self._delete_selected)
 
     def set_data(self, mt_objs):
         self._mt_objs = mt_objs
@@ -279,6 +283,16 @@ class FrequencySelect(QtGui.QGroupBox):
         self._update_frequency()
 
     _units = ['Hz', 's']
+
+    def _clear_all(self):
+        self.model_selected.clear()
+        self.histogram.clear_all_drawing()
+
+    def _delete_selected(self):
+        for item in [self.model_selected.item(index.row()) for index in self.ui.listView_selected.selectedIndexes()]:
+            x = item.data(QtCore.Qt.DisplayRole).toPyObject()
+            self.model_selected.removeRow(self.model_selected.indexFromItem(item).row())
+            self.histogram.remove_marker(x)
 
     def _frequency_selected(self, x):
         if not self._select_multiple:
@@ -293,14 +307,14 @@ class FrequencySelect(QtGui.QGroupBox):
             elif isinstance(x, tuple) and isinstance(value, float) and x[0] <= value <= x[1]:
                 # existing value in new interval
                 self.model_selected.removeRow(self.model_selected.indexFromItem(item).row())
-                self.histogram.remove_v_line(value)
+                self.histogram.remove_marker(value)
             elif isinstance(x, tuple) and isinstance(value, tuple):
                 if min(x[1], value[1]) - max(x[0], value[0]) >= 0:
                     # there is intersection between intervals, so marge them
                     x = (min(x[0], value[0]), max(x[1], value[1]))
                     # remove old interval
                     self.model_selected.removeRow(self.model_selected.indexFromItem(item).row())
-                    self.histogram.remove_v_space(value)
+                    self.histogram.remove_marker(value)
             else:
                 prec = self.frequency_delegate.prec
                 while np.all(np.isclose(value, x, pow(.1, prec))):
@@ -310,10 +324,10 @@ class FrequencySelect(QtGui.QGroupBox):
         new_item.setData(x, QtCore.Qt.DisplayRole)
         # update graphic
         if isinstance(x, float):
-            self.histogram.add_v_line(x)
+            self.histogram.add_marker(x)
             # new_item.setData(x, QtCore.Qt.UserRole)
         elif isinstance(x, tuple):
-            self.histogram.fell_v_space(x)
+            self.histogram.add_marker(x)
             # new_item.setData(x[0], QtCore.Qt.UserRole)
         # update model
         self.model_selected.appendRow(new_item)
@@ -383,28 +397,25 @@ class FrequencySelect(QtGui.QGroupBox):
             self._lx = {}
             self._cursor = None
             self._select_existing_only = False
+            self._show_existing = False
             self._y_log_scale = y_log_scale
 
             if allow_range_select:
                 self.mpl_connect('button_press_event', self.on_press)
             self.mpl_connect('button_release_event', self.on_release)
 
-        def add_v_line(self, x):
-            lx = self._lx.setdefault(x, self._draw_v_line(x))
-            # self._axes.draw_artist(lx)
-            self.draw_idle()
-
-        def remove_v_line(self, x):
-            if x in self._lx:
-                self._lx[x].remove()
+        def add_marker(self, x):
+            if isinstance(x, float):
+                lx = self._lx.setdefault(x, self._draw_v_line(x))
+                # self._axes.draw_artist(lx)
                 self.draw_idle()
-                del self._lx[x]
-
-        def fell_v_space(self, x):
-            lx = self._lx.setdefault(x, self._fill_v_area(x[0], x[1]))
+            elif isinstance(x, tuple):
+                lx = self._lx.setdefault(x, self._fill_v_area(x[0], x[1]))
+            else:
+                raise NotImplemented
             self.draw_idle()
 
-        def remove_v_space(self, x):
+        def remove_marker(self, x):
             if x in self._lx:
                 self._lx[x].remove()
                 self.draw_idle()
@@ -419,10 +430,16 @@ class FrequencySelect(QtGui.QGroupBox):
         def set_unit(self, unit):
             if unit != self._unit:
                 self._unit = unit
-                self._cursor = Cursor(self._axes, track_y=False, text_format="%f " + self._unit, useblit=True)
+                self._cursor = Cursor(self._axes, track_x=False, show_drag=True, text_format="%f %f" + self._unit,
+                                      useblit=True)
 
-        def set_select_existing(self, select_existing):
+        def select_existing(self, select_existing):
             self._select_existing_only = select_existing
+            self.clear_all_drawing()
+
+        def show_existing(self, show_existing):
+            self._show_existing = show_existing
+            self.update_figure()
 
         def set_data(self, frequency):
             self._frequencies = frequency
@@ -473,6 +490,9 @@ class FrequencySelect(QtGui.QGroupBox):
                 self._axes.hist(self._frequencies)  # , 50, normed=1)
                 if self._y_log_scale:
                     self._axes.set_yscale('log')
+                if self._show_existing:
+                    for freq in self._frequencies:
+                        self._axes.axvline(freq, linewidth=1, color='black', alpha=0.2)
             if self._title and self._unit:
                 self._axes.set_xlabel("%s (%s)" % (self._title, self._unit), fontsize=8)
                 self.figure.suptitle('%s Distribution in Selected Stations' % self._title, fontsize=8)

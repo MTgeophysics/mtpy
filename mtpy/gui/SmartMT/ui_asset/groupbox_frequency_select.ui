@@ -7,7 +7,7 @@
                 <x>0</x>
                 <y>0</y>
                 <width>300</width>
-                <height>300</height>
+                <height>313</height>
             </rect>
         </property>
         <property name="sizePolicy">
@@ -23,7 +23,7 @@
             <string>Frequency/Period</string>
         </property>
         <layout class="QGridLayout" name="gridLayout">
-            <item row="0" column="0" colspan="2">
+            <item row="0" column="0" colspan="4">
                 <widget class="QWidget" name="widget_histgram" native="true">
                     <layout class="QVBoxLayout" name="verticalLayout">
                         <property name="leftMargin">
@@ -40,6 +40,12 @@
                         </property>
                         <item>
                             <widget class="QLabel" name="label_place_holder">
+                                <property name="sizePolicy">
+                                    <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                                        <horstretch>0</horstretch>
+                                        <verstretch>0</verstretch>
+                                    </sizepolicy>
+                                </property>
                                 <property name="text">
                                     <string>Place Holder for Frequency/Period Diagram</string>
                                 </property>
@@ -48,7 +54,20 @@
                     </layout>
                 </widget>
             </item>
-            <item row="7" column="0" colspan="2">
+            <item row="11" column="3">
+                <widget class="QPushButton" name="pushButton_delete">
+                    <property name="sizePolicy">
+                        <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+                            <horstretch>0</horstretch>
+                            <verstretch>0</verstretch>
+                        </sizepolicy>
+                    </property>
+                    <property name="text">
+                        <string>Delete</string>
+                    </property>
+                </widget>
+            </item>
+            <item row="10" column="0" colspan="4">
                 <widget class="QCheckBox" name="checkBox_existing_only">
                     <property name="toolTip">
                         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Check this to select the frequency/period
@@ -57,18 +76,45 @@
                         </string>
                     </property>
                     <property name="text">
-                        <string>Selecting Existing Frequency/Period Only</string>
+                        <string>Selecting Existing Frequencies/Periods Only</string>
                     </property>
                 </widget>
             </item>
-            <item row="2" column="1">
+            <item row="12" column="3">
+                <widget class="QPushButton" name="pushButton_clear">
+                    <property name="sizePolicy">
+                        <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+                            <horstretch>0</horstretch>
+                            <verstretch>0</verstretch>
+                        </sizepolicy>
+                    </property>
+                    <property name="text">
+                        <string>Clear</string>
+                    </property>
+                </widget>
+            </item>
+            <item row="8" column="0" colspan="3">
+                <widget class="QCheckBox" name="checkBox_log_scale">
+                    <property name="text">
+                        <string>Use log-scale on y-axes</string>
+                    </property>
+                </widget>
+            </item>
+            <item row="2" column="2" colspan="2">
                 <widget class="QRadioButton" name="radioButton_period">
                     <property name="text">
                         <string>Show Period</string>
                     </property>
                 </widget>
             </item>
-            <item row="2" column="0">
+            <item row="9" column="0" colspan="4">
+                <widget class="QCheckBox" name="checkBox_show_existing">
+                    <property name="text">
+                        <string>Show Existing Frequencies/Periods</string>
+                    </property>
+                </widget>
+            </item>
+            <item row="2" column="0" colspan="2">
                 <widget class="QRadioButton" name="radioButton_frequency">
                     <property name="text">
                         <string>Show Frequency</string>
@@ -78,13 +124,26 @@
                     </property>
                 </widget>
             </item>
-            <item row="9" column="0" colspan="2">
-                <widget class="QListView" name="listView_selected"/>
+            <item row="13" column="3">
+                <spacer name="verticalSpacer">
+                    <property name="orientation">
+                        <enum>Qt::Vertical</enum>
+                    </property>
+                    <property name="sizeHint" stdset="0">
+                        <size>
+                            <width>20</width>
+                            <height>40</height>
+                        </size>
+                    </property>
+                </spacer>
             </item>
-            <item row="8" column="0">
-                <widget class="QCheckBox" name="checkBox_log_scale">
-                    <property name="text">
-                        <string>Use log-scale on y-axes</string>
+            <item row="11" column="0" rowspan="3" colspan="3">
+                <widget class="QListView" name="listView_selected">
+                    <property name="selectionMode">
+                        <enum>QAbstractItemView::ExtendedSelection</enum>
+                    </property>
+                    <property name="selectionRectVisible">
+                        <bool>true</bool>
                     </property>
                 </widget>
             </item>
