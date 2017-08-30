@@ -8,12 +8,13 @@ Created on Thu Jul 06 14:24:18 2017
 #==============================================================================
 # Imports
 #==============================================================================
+import os
 import datetime
 import calendar
 
 import numpy as np
 import pandas as pd
-import scipy.signal as sps
+import scipy.signal as signal
 
 import mtpy.utils.gis_tools as gis_tools
 
@@ -167,13 +168,17 @@ class MT_TS(object):
         """
         if type(ts_arr) is np.ndarray:
             self._ts = pd.DataFrame({'data':ts_arr})
-            if self.start_time_utc is not None:
+            if self.start_time_utc is not None or \
+               type(self._ts.index[0]) in ['int']:
                 self._set_dt_index(self.start_time_utc)
                 
         elif type(ts_arr) is pd.core.frame.DataFrame:
             try:
                 ts_arr['data']
                 self._ts = ts_arr
+                # be sure to set the index time
+                if self.start_time_utc is not None:
+                    self._set_dt_index(self.start_time_utc)
             except AttributeError:
                 raise MT_TS_Error('Data frame needs to have a column named "data" '+\
                                    'where the time series data is stored')
@@ -232,13 +237,17 @@ class MT_TS(object):
         type float
         """
         try:
-            self._sampling_rate = float(sampling_rate)
-            
+            sr = float(sampling_rate)
+            if self._sampling_rate == sr:
+                return
+            else:
+                self._sampling_rate = sr
+                if self.start_time_utc is not None:
+                    self._set_dt_index(self.start_time_utc)
+                
         except ValueError:
             raise MT_TS_Error("Input sampling rate should be a float not {0}".format(type(sampling_rate)))
-            
-        if self.start_time_utc is not None:
-            self._set_dt_index(self.start_time_utc)
+   
     ## set time and set index
     @property
     def start_time_utc(self):
@@ -368,6 +377,30 @@ class MT_TS(object):
         dt_time = dt_struct.timetuple()
         
         return calendar.timegm(dt_time)+dt_struct.microsecond*1E-6
+        
+    # decimate data
+    def decimate(self, dec_factor=1):
+        """
+        decimate the data by using scipy.signal.decimate
+        
+        Arguments
+        -------------
+            **dec_factor** : int
+                             decimation factor
+                             
+        Outputs
+        -----------
+        
+            * refills ts.data with decimated data and replaces sampling_rate
+            
+        """
+        # be sure the decimation factor is an integer
+        dec_factor = int(dec_factor)
+        
+        if dec_factor > 1:
+            self.ts = signal.decimate(self.ts.data, dec_factor, n=8)
+            self.sampling_rate /= float(dec_factor)
+            
     
     ###------------------------------------------------------------------
     ### read and write file types
@@ -412,7 +445,7 @@ class MT_TS(object):
             value = getattr(hdf5_store.get_storer('time_series').attrs, attr)
             setattr(self, attr, value)
             
-        hdf5_store.close()     
+        hdf5_store.close()  
         
     def write_ascii_file(self, fn_ascii=None, chunk_size=4096):
         """
@@ -470,11 +503,12 @@ class MT_TS(object):
         print '--> Wrote {0}'.format(self.fn_ascii)
         print '    Took {0:.2f} seconds'.format(time_diff.seconds+time_diff.microseconds*1E-6)
 
-    def read_ascii(self, fn_ascii):
+    def read_ascii_header(self, fn_ascii):
         """
-        Read in an ascii
+        read the header of an ascii file
         """
-        
+        if not os.path.isfile(fn_ascii):
+            raise NameError('Could not find {0}, check path'.format(fn_ascii))
         self.fn_ascii = fn_ascii
         
         with open(self.fn_ascii, 'r') as fid:
@@ -491,11 +525,19 @@ class MT_TS(object):
                     try:
                         setattr(self, key, value)
                     except AttributeError:
-                        if key != 'n_samples':
+                        if key not in ['n_samples', 'start_time_epoch_sec']:
                             print 'Could not set {0} to {1}'.format(key, value)
                             
                 count +=1
                 line = fid.readline()
+        return count
+
+    def read_ascii(self, fn_ascii):
+        """
+        Read in an ascii
+        """
+        
+        count = self.read_ascii_header(fn_ascii)
         
         self.ts = pd.read_csv(self.fn_ascii, sep='\n', skiprows=count,
                               memory_map=True, names=['data'])
@@ -551,7 +593,7 @@ class Spectra(object):
         
         """
 
-        f, p = sps.welch(data, **kwargs)
+        f, p = signal.welch(data, **kwargs)
         
         if plot:
             fig = plt.figure()

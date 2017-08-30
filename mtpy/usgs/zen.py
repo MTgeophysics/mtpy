@@ -21,15 +21,13 @@ import os
 import struct
 import string
 import shutil
-from cStringIO import StringIO
-import sys
+
 import numpy as np
 import scipy.signal as sps
 
 import matplotlib.pyplot as plt
 
 import mtpy.utils.filehandling as mtfh
-import mtpy.utils.exceptions as mtex
 import mtpy.utils.configfile as mtcf
 import mtpy.imaging.plotspectrogram as plotspectrogram
 import mtpy.processing.filter as mtfilt
@@ -46,7 +44,6 @@ datetime_sec = '%Y-%m-%d %H:%M:%S'
 #==============================================================================
 # 
 #==============================================================================
-
 class Z3D_Header(object):
     """
     class for z3d header.  This will read in the header information of a 
@@ -416,6 +413,7 @@ class Z3D_Metadata(object):
         self.line_name = None
         self.survey_type = None
         self.unit_length = None
+        self.station = None
         
         for key in kwargs:
             setattr(self, key, kwargs[key])
@@ -522,12 +520,14 @@ class Z3D_Metadata(object):
             self.board_cal = np.core.records.fromrecords(self.board_cal, 
                                    names='frequency, rate, amplitude, phase',
                                    formats='f8, f8, f8, f8')
+                                   
+        self.station = '{0}{1}'.format(self.line_name,
+                                       self.rx_xyz0.split(':')[0])
         
         
 #==============================================================================
 # 
 #==============================================================================
-
 class Zen3D(object):
     """
     Deals with the raw Z3D files output by zen.
@@ -677,13 +677,24 @@ class Zen3D(object):
         self._block_len = 2**16
         self.zen_schedule = None
         # the number in the cac files is for volts, we want mV
-        self._counts_to_mv_conversion = 9.5367431640625e-10#*1e3
+        self._counts_to_mv_conversion = 9.5367431640625e-10
 
         self.units = 'counts'
         self.df = None
         
-        self.time_series = None
-        self.time_series_len = None
+        self.ts_obj = mtts.MT_TS()
+        
+    @property
+    def time_series_len(self):
+        return self.ts_obj.ts.data.size
+        
+    @property
+    def station(self):
+        return self.metadata.station
+        
+    @station.setter
+    def station(self, station):
+        self.metadata.station = station
         
     #====================================== 
     def _read_header(self, fn=None, fid=None):
@@ -901,8 +912,28 @@ class Zen3D(object):
                 data[gps_find:gps_find+self._gps_bytes] = 0
 
         # trim the data after taking out the gps stamps
-        self.time_series = data[np.nonzero(data)]
-        self.time_series_len = self.time_series.size
+        self.ts_obj = mtts.MT_TS()
+        self.ts_obj.ts = data[np.nonzero(data)]
+        
+        # fill time series object metadata
+        self.ts_obj.ts = self.convert_counts()
+        self.ts_obj.station = self.station
+        self.ts_obj.sampling_rate = float(self.df)
+        self.ts_obj.start_time_utc = self.zen_schedule
+        self.ts_obj.component = self.metadata.ch_cmp
+        self.ts_obj.coordinate_system = 'geomagnetic'
+        self.ts_obj.dipole_length = float(self.metadata.ch_length)
+        self.ts_obj.azimuth = float(self.metadata.ch_azimuth)
+        self.ts_obj.units = 'mV'
+        self.ts_obj.lat = self.header.lat
+        self.ts_obj.lon = self.header.long
+        self.ts_obj.datum = 'WGS84'
+        self.ts_obj.data_logger = 'Zonge Zen'
+        self.ts_obj.instrument_num = None
+        self.ts_obj.calibration_fn = None
+        self.ts_obj.declination = 0.0
+        self.ts_obj.conversion = self._counts_to_mv_conversion
+        self.ts_obj.gain = self.header.ad_gain
         
         # time it
         et = time.time()
@@ -914,38 +945,6 @@ class Zen3D(object):
         
         print '    found {0} GPS time stamps'.format(self.gps_stamps.shape[0])
         print '    found {0} data points'.format(self.time_series_len)
-        
-    def read_z3d_to_ts(self, fn):
-        """
-        read a z3d file and return a TS object
-        """
-        self.fn = fn
-        self.read_z3d()
-        station = '{0}{1}'.format(self.metadata.line_name,
-                                  self.metadata.rx_xyz0.split(':')[0])
-        
-        ts_obj = mtts.MT_TS()
-        
-        ts_obj.ts = self.convert_counts()
-        ts_obj.station = station
-        ts_obj.sampling_rate = float(self.df)
-        ts_obj.start_time_utc = self.zen_schedule
-        ts_obj.component = self.metadata.ch_cmp
-        ts_obj.coordinate_system = 'geomagnetic'
-        ts_obj.dipole_length = float(self.metadata.ch_length)
-        ts_obj.azimuth = float(self.metadata.ch_azimuth)
-        ts_obj.units = 'mV'
-        ts_obj.lat = self.header.lat
-        ts_obj.lon = self.header.long
-        ts_obj.datum = 'WGS84'
-        ts_obj.data_logger = 'Zonge Zen'
-        ts_obj.instrument_num = None
-        ts_obj.calibration_fn = None
-        ts_obj.declination = 0.0
-        ts_obj.conversion = self._counts_to_mv_conversion
-        ts_obj.gain = self.header.ad_gain
-        
-        return ts_obj
         
     #=================================================
     def trim_data(self):
@@ -1284,14 +1283,12 @@ class Zen3D(object):
             return
         
         # read in time series data if haven't yet.
-        if self.time_series is None:
+        if self.ts_obj is None:
             self.read_z3d()
             svfn_date = ''.join(self.schedule.Date.split('-'))
             svfn_time = ''.join(self.schedule.Time.split(':'))
-            svfn_station = self.metadata.line_name+\
-                                    self.metadata.rx_xyz0.split(':')[0]
             self.save_fn = os.path.join(svfn_directory, 
-                                   '{0}_{1}_{2}_{3}.{4}'.format(svfn_station,
+                                   '{0}_{1}_{2}_{3}.{4}'.format(self.station,
                                                    svfn_date,
                                                    svfn_time,
                                                    int(self.df),
@@ -1319,11 +1316,9 @@ class Zen3D(object):
         # calibrate electric channels should be in mV/km
         # I have no idea why this works but it does
         if self.metadata.ch_cmp.lower() == 'ex':
-#            time_series = (time_series/(ex/1e3))/#*(np.sqrt(2*np.pi))
             time_series = time_series/((ex/100)*2*np.pi)
             print 'Using scales EX = {0} m'.format(ex)
         elif self.metadata.ch_cmp.lower() == 'ey':
-#            time_series = (time_series/(ey/1e3))#*(np.sqrt(2*np.pi))
             time_series = time_series/((ey/100)*2*np.pi)
             print 'Using scales EY = {0} m'.format(ey)
         
