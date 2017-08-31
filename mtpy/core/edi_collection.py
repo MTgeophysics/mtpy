@@ -21,6 +21,7 @@ from shapely.geometry import Point #, Polygon, LineString, LinearRing
 # import matplotlib as mpl
 # from mpl_toolkits.axes_grid1 import make_axes_locatable
 import mtpy.core.mt as mt
+import mtpy.imaging.mtplottools as mtplottools
 
 from mtpy.utils.mtpylog import MtPyLog
 
@@ -245,8 +246,8 @@ class EdiCollection(object):
 
     def create_measurement_csv(self, dest_dir='/e/tmp'):
         """
-        create csv file for the measurement in the edi files.
-        For phase tensor tipper csv, see utils/shapefiles_creator.py
+        create csv file from the data of EDI files: IMPEDANCE, APPARENT RESISTIVITIES AND PHASES
+        see also utils/shapefiles_creator.py
         :return:
         """
         if dest_dir is None:
@@ -260,15 +261,18 @@ class EdiCollection(object):
 
         pt_dict = {}
 
-        csv_header = ['FREQ','STATION', 'LAT', 'LON',  'ZXXre','ZXXim',
-                      'ZXYre', 'ZXYim', 'ZYXre', 'ZYXim', 'ZYYre', 'ZYYim',
-                      'TXre', 'TXim', 'TYre', 'TYim']
+        csv_header = [
+            'FREQ','STATION', 'LAT', 'LON',  'ZXXre','ZXXim',
+            'ZXYre', 'ZXYim', 'ZYXre', 'ZYXim', 'ZYYre', 'ZYYim','TXre', 'TXim', 'TYre', 'TYim',
+            'RHOxx', 'RHOxy', 'RHOyx', 'RHOyy', 'PHSxx', 'PHSxy', 'PHSyx', 'PHSyy'
+                      ]
 
         with open(csvfname, "wb") as csvf:
             writer = csv.writer(csvf)
             writer.writerow(csv_header)
 
         for freq in self.all_frequencies:
+
             mtlist = []
             for mt_obj in self.mt_obj_list:
 
@@ -287,6 +291,9 @@ class EdiCollection(object):
                     station, lat, lon = (
                         mt_obj.station, mt_obj.lat, mt_obj.lon)
 
+                    resist_phase =  mtplottools.ResPhase(z_object=mt_obj.Z)
+                    # resist_phase.compute_res_phase()
+
                     mt_stat = [freq, station, lat, lon,
                                mt_obj.Z.z[p_index,0,0].real,
                                mt_obj.Z.z[p_index,0,0].imag,
@@ -300,8 +307,13 @@ class EdiCollection(object):
                                mt_obj.Tipper.tipper[p_index,0,0].imag,
                                mt_obj.Tipper.tipper[p_index, 0, 1].real,
                                mt_obj.Tipper.tipper[p_index, 0, 1].imag,
+                               resist_phase.resxx[p_index], resist_phase.resxy[p_index],
+                               resist_phase.resyx[p_index], resist_phase.resyy[p_index],
+                               resist_phase.phasexx[p_index], resist_phase.phasexy[p_index],
+                               resist_phase.phaseyx[p_index], resist_phase.phaseyy[p_index]
                                ]
                     mtlist.append(mt_stat)
+
                 else:
                     logger.warn(
                         'Freq %s NOT found for this station %s', freq, mt_obj.station)
@@ -379,7 +391,8 @@ class EdiCollection(object):
 
 if __name__ == "__main__":
 
-# python mtpy/core/edi_collection.py examples/data/edi2/ /e/tmp
+# python mtpy/core/edi_collection.py examples/data/edi2/ /e/tmp3/edi2_csv
+# python mtpy/core/edi_collection.py /e/Data/MT_Datasets/GA_UA_edited_10s-10000s /e/tmp3/GA_UA_edited_10s-10000s_csv
 
     if len(sys.argv) < 2:
         print ("\n  USAGE: %s edi_dir OR edi_list " % sys.argv[0])
