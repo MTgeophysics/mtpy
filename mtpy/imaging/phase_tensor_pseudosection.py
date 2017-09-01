@@ -1270,7 +1270,7 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
             >>> pt1.redraw_plot()
         """
 
-        plt.close(self.fig)
+        #plt.close(self.fig)
         self.plot()
 
     def __str__(self):
