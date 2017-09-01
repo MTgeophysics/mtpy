@@ -411,10 +411,10 @@ if __name__ == "__main__":
             sys.exit(2)
 
 
-        obj.show_prop()
+        #obj.show_prop()
 
-        print(obj.get_bounding_box(epsgcode=28353))
+        #print(obj.get_bounding_box(epsgcode=28353))
 
-        obj.create_mt_station_gdf(outshpfile='/e/tmp/edi_collection_test.shp')
+        #obj.create_mt_station_gdf(outshpfile='/e/tmp/edi_collection_test.shp')
 
         obj.create_measurement_csv(dest_dir=sys.argv[2])
