@@ -248,12 +248,14 @@ class EdiCollection(object):
         """
         create csv file from the data of EDI files: IMPEDANCE, APPARENT RESISTIVITIES AND PHASES
         see also utils/shapefiles_creator.py
-        :return:
+        :return: csvfname
         """
         if dest_dir is None:
             raise Exception("output dir was not provided!!")
         else:
             logger.info("result will be in the dir %s", dest_dir)
+            if not os.path.exists(dest_dir):
+                os.mkdir(dest_dir)
 
         # summary csv file
         csv_basename = "edi_measurement"
@@ -333,7 +335,7 @@ class EdiCollection(object):
 
             pt_dict[freq] = mtlist
 
-        return pt_dict
+        return csvfname
 
     def get_bounding_box(self, epsgcode=None):
         """ compute bounding box
