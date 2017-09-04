@@ -88,6 +88,7 @@ class FrequencySelect(QtGui.QGroupBox):
         self._mt_objs = None
         self._unique_period = None
         self._unique_frequency = None
+        self._allow_range = allow_range_select
         self._select_multiple = select_multiple
         self.ui = Ui_GroupBox_frequency_select()
         self.ui.setupUi(self)
@@ -98,7 +99,7 @@ class FrequencySelect(QtGui.QGroupBox):
         self.frequency_delegate = FrequencySelect.FrequencyDelegate(self.ui.listView_selected)
         self.ui.listView_selected.setItemDelegate(self.frequency_delegate)
 
-        self.histogram = FrequencySelect.Histogram(self, allow_range_select=allow_range_select)
+        self.histogram = FrequencySelect.Histogram(self, allow_range_select=self._allow_range)
         self.histogram.set_unit(self._units[0])
         self.histogram.set_tol(self.ui.doubleSpinBox_tolerance.value())
         self.histogram.frequency_selected.connect(self._frequency_selected)
@@ -107,6 +108,8 @@ class FrequencySelect(QtGui.QGroupBox):
 
         self.ui.radioButton_period.setChecked(show_period)
         self.ui.radioButton_frequency.setChecked(show_frequency)
+        self.ui.doubleSpinBox_tolerance.setHidden(not self._allow_range)
+        self.ui.label_tolerance.setHidden(not self._allow_range)
         self.ui.radioButton_period.setHidden(not (show_period and show_frequency))
         self.ui.radioButton_frequency.setHidden(not (show_period and show_frequency))
         if self.ui.radioButton_frequency.isHidden():
@@ -132,6 +135,10 @@ class FrequencySelect(QtGui.QGroupBox):
     def get_frequency(self):
         frequencies = [self.model_selected.item(index).data(QtCore.Qt.DisplayRole).toPyObject()
                        for index in range(self.model_selected.rowCount())]
+        if self._allow_range:
+            frequencies = [(freq[0], freq[1]) if isinstance(freq, tuple) else freq for freq in frequencies]
+        else:
+            frequencies = [freq[3] if isinstance(freq, tuple) else freq for freq in frequencies if (isinstance(freq, tuple) and len(freq) == 5) or isinstance(freq, float)]
         # print frequencies
         if self._select_multiple:
             return frequencies
@@ -383,9 +390,9 @@ class FrequencySelect(QtGui.QGroupBox):
                                 len([freq for freq in self._frequencies if x <= freq <= self._press])
                             )
                         )
-                elif self._select_existing_only:
+                elif not self._select_range or self._select_existing_only:
                     x = self._find_closest(x)
-                    self.frequency_selected(x)
+                    self.frequency_selected.emit(x)
                 else:  # emit (min, max, num, freq, tol)
                     tol = x * self._tol/100.
                     min = x - tol
