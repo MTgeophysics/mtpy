@@ -10,8 +10,8 @@
 """
 
 import mtpy.imaging.penetration
-from mtpy.gui.SmartMT.gui.plot_parameter_guis import ZComponentMultiple, ZComponentSingle, FrequencySingle, \
-    FrequencyTolerance, FrequencyIndex, StationSelection, ZUnit
+from mtpy.gui.SmartMT.gui.plot_parameter_guis import ZComponentMultiple, ZComponentSingle, \
+    FrequencyTolerance, FrequencyIndex, StationSelection, ZUnit, FrequencySelect
 from mtpy.gui.SmartMT.visualization.visualization_base import VisualizationBase
 
 
@@ -101,18 +101,14 @@ class Depth3D(VisualizationBase):
 
     def plot(self):
         # get parameters
-        try:
-            self._zcomponent = self._z_component_ui.get_selection()
-            self._period = self._frequency_period_ui.get_frequency()
-            self._tolerance = self._tolerance_ui.get_tolerance_in_float()
-            self._plotting_object = mtpy.imaging.penetration.Depth3D(self._mt_objs, self._period, self._zcomponent,
-                                                                     self._tolerance)
-            self._z_unit = self._z_unit_ui.get_unit()
-            self._plotting_object.plot(z_unit=self._z_unit)
-            self._fig = self._plotting_object.get_figure()
-
-        except Exception as e:
-            self._logger.warning(e.message)
+        self._zcomponent = self._z_component_ui.get_selection()
+        self._period = self._frequency_period_ui.get_frequencies()
+        self._tolerance = self._tolerance_ui.get_tolerance_in_float()
+        self._plotting_object = mtpy.imaging.penetration.Depth3D(self._mt_objs, self._period, self._zcomponent,
+                                                                 self._tolerance)
+        self._z_unit = self._z_unit_ui.get_unit()
+        self._plotting_object.plot(z_unit=self._z_unit)
+        self._fig = self._plotting_object.get_figure()
 
     def update_ui(self):
         self._frequency_period_ui.set_data(self._mt_objs)
@@ -139,7 +135,9 @@ class Depth3D(VisualizationBase):
         self._z_component_ui = ZComponentSingle(self._parameter_ui)
         self._parameter_ui.add_parameter_groupbox(self._z_component_ui)
 
-        self._frequency_period_ui = FrequencySingle(self._parameter_ui, use_period=True)
+        # self._frequency_period_ui = FrequencySingle(self._parameter_ui, use_period=True)
+        self._frequency_period_ui = FrequencySelect(self._parameter_ui, show_frequency=False, allow_range_select=False,
+                                                    select_multiple=False)
         self._parameter_ui.add_parameter_groupbox(self._frequency_period_ui)
 
         self._tolerance_ui = FrequencyTolerance(self._parameter_ui)
