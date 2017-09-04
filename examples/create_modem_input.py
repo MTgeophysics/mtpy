@@ -65,7 +65,7 @@ def show_patcher(show_func):
 # end of patch
 
 
-def select_periods(edifiles_list, show=True):
+def select_periods(edifiles_list, show=True, period_list=None, percentage=10.0):
     """
     FZ: Use edi_collection to analyse the whole set of EDI files
     :param edifiles:
@@ -88,12 +88,27 @@ def select_periods(edifiles_list, show=True):
         plt.ylabel("Occurance in number of MT stations")
         plt.show()
 
+    if period_list:
     # 1 ASK user to input a Pmin and Pmax
-
+        # assume uniq_period_list is sorted
+        select_period_list = []
+        index_start = 0
+        for period in period_list:
+            for index in range(index_start, len(uniq_period_list)):
+                if (isinstance(period, float) and np.isclose(uniq_period_list[index], period)) or \
+                        (isinstance(period, tuple) and period[0] <= uniq_period_list[index] <= period[1]):
+                    select_period_list.append(uniq_period_list[index])
+                elif (isinstance(period, float) and uniq_period_list[index] > period) or \
+                        (isinstance(period, tuple) and period[1] < uniq_period_list[index]):
+                    index_start = index
+                    break
+            select_period_list = np.array(select_period_list)
+    else:
     # 2 percetage stats
     # select commonly occured frequencies from all stations.
     # This could miss some slightly varied frequencies in the middle range.
-    select_period_list = np.array(edis_obj.get_periods_by_stats(percentage=10.0))
+        select_period_list = np.array(edis_obj.get_periods_by_stats(percentage=percentage))
+
     print("Selected periods ", len(select_period_list))
 
     return select_period_list

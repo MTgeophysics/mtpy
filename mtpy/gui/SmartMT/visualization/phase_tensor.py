@@ -54,7 +54,7 @@ class PhaseTensorMap(VisualizationBase):
 
         self._params = {
             'fn_list': [mt_obj.fn for mt_obj in self._mt_objs],
-            'plot_freq': self._frequency_ui.get_frequency(),
+            'plot_freq': self._frequency_ui.get_frequencies(),
             'ftol': self._tolerance_ui.get_tolerance_in_float(),
             'ellipse_dict': self._ellipse_ui.get_ellipse_dict(),
             'mapscale': self._scale_ui.get_mapscale(),

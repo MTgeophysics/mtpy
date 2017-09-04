@@ -102,7 +102,7 @@ class Depth3D(VisualizationBase):
     def plot(self):
         # get parameters
         self._zcomponent = self._z_component_ui.get_selection()
-        self._period = self._frequency_period_ui.get_frequency()
+        self._period = self._frequency_period_ui.get_frequencies()
         self._tolerance = self._tolerance_ui.get_tolerance_in_float()
         self._plotting_object = mtpy.imaging.penetration.Depth3D(self._mt_objs, self._period, self._zcomponent,
                                                                  self._tolerance)

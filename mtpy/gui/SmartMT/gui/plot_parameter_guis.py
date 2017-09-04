@@ -132,7 +132,7 @@ class FrequencySelect(QtGui.QGroupBox):
         self._unique_period = None
         self._update_frequency()
 
-    def get_frequency(self):
+    def get_frequencies(self):
         frequencies = [self.model_selected.item(index).data(QtCore.Qt.DisplayRole).toPyObject()
                        for index in range(self.model_selected.rowCount())]
         if self._allow_range:
@@ -216,7 +216,7 @@ class FrequencySelect(QtGui.QGroupBox):
         self.model_selected.clear()
         if self._mt_objs is not None:
             if self._unique_frequency is None:
-                all_unique = (freq for mt_obj in self._mt_objs for freq in list(mt_obj.Z.freq))
+                all_unique = set([freq for mt_obj in self._mt_objs for freq in list(mt_obj.Z.freq)])
                 self._unique_frequency = sorted(list(all_unique))
             if self.ui.radioButton_period.isChecked() and self._unique_period is None:
                 all_unique = 1.0 / np.array(self._unique_frequency)
