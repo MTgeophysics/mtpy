@@ -771,13 +771,10 @@ class Ui_Wizard_esport_modem(object):
         Wizard_esport_modem.setWindowTitle(_translate("Wizard_esport_modem", "Generate ModEM input data files", None))
         self.wizardPage_intro.setTitle(_translate("Wizard_esport_modem", "Introduction", None))
         self.wizardPage_intro.setSubTitle(_translate("Wizard_esport_modem", "This wizard will help you to export the selected stations to the ModEM data files.", None))
-        self.label_25.setText(
-            _translate("Wizard_esport_modem", "The following .edi files will be included in the ModEM data", None))
+        self.label_25.setText(_translate("Wizard_esport_modem", "The following .edi files will be included in the ModEM data", None))
         self.listWidget_edi_files.setSortingEnabled(True)
         self.wizardPage_period.setTitle(_translate("Wizard_esport_modem", "Period Selection", None))
-        self.wizardPage_period.setSubTitle(_translate("Wizard_esport_modem",
-                                                      "Select period values and/or intervals by clicking and/or selecting on the diagram.",
-                                                      None))
+        self.wizardPage_period.setSubTitle(_translate("Wizard_esport_modem", "Select period values and/or intervals by clicking and/or selecting on the diagram.", None))
         self.label_26.setText(_translate("Wizard_esport_modem", "NOTE: This functionality is under development.", None))
         self.wizardPage_inversion_mode.setTitle(_translate("Wizard_esport_modem", "Inversion Mode", None))
         self.groupBox.setTitle(_translate("Wizard_esport_modem", "Impedance Components", None))
@@ -808,45 +805,38 @@ class Ui_Wizard_esport_modem(object):
         self.wizardPage_error_type.setTitle(_translate("Wizard_esport_modem", "Error Type", None))
         self.wizardPage_error_type.setSubTitle(_translate("Wizard_esport_modem", "Error Type(s) of the exported data file. Supported types are floor, value, egbert, egbert (floor), standard deviation, square error, and mean square error. It is also possible to configure error type(s) for each impedance component.   ", None))
         self.label_component_error_types.setText(_translate("Wizard_esport_modem", "Configure error types for each individual component by checking the box then select a error type from the drop down menu.                   ", None))
-        self.label_error_tipper.setToolTip(
-            _translate("Wizard_esport_modem", "<html><head/><body><p>Absolute tipper error, all tipper error will be\n"
-                                              "                       set to\n"
-                                              "                       this value unless you specify error_type as \'floor\' or \'floor_egbert\'. Default is 5%.</p></body></html>\n"
-                                              "                   ", None))
+        self.label_error_tipper.setToolTip(_translate("Wizard_esport_modem", "<html><head/><body><p>Absolute tipper error, all tipper error will be\n"
+"                       set to\n"
+"                       this value unless you specify error_type as \'floor\' or \'floor_egbert\'. Default is 5%.</p></body></html>\n"
+"                   ", None))
         self.label_error_tipper.setText(_translate("Wizard_esport_modem", "Tipper Error Level", None))
         self.checkBox_component_error_types.setText(_translate("Wizard_esport_modem", "show advanced options", None))
-        self.label_error_floor.setToolTip(
-            _translate("Wizard_esport_modem", "<html><head/><body><p>Percentage to set the error floor at, anything\n"
-                                              "                       below\n"
-                                              "                       this number will be set to this value. Default is 10%</p></body></html>\n"
-                                              "                   ", None))
+        self.label_error_floor.setToolTip(_translate("Wizard_esport_modem", "<html><head/><body><p>Percentage to set the error floor at, anything\n"
+"                       below\n"
+"                       this number will be set to this value. Default is 10%</p></body></html>\n"
+"                   ", None))
         self.label_error_floor.setText(_translate("Wizard_esport_modem", "Floor Error Level", None))
         self.label.setText(_translate("Wizard_esport_modem", "Error Type", None))
-        self.label_error_value.setToolTip(
-            _translate("Wizard_esport_modem", "<html><head/><body><p>Percentage to multiply Z by, to set error.\n"
-                                              "                       Default is 5\n"
-                                              "                       for 5% of Z as error.</p></body></html>\n"
-                                              "                   ", None))
+        self.label_error_value.setToolTip(_translate("Wizard_esport_modem", "<html><head/><body><p>Percentage to multiply Z by, to set error.\n"
+"                       Default is 5\n"
+"                       for 5% of Z as error.</p></body></html>\n"
+"                   ", None))
         self.label_error_value.setText(_translate("Wizard_esport_modem", "Value Error Level", None))
-        self.label_error_egbert.setToolTip(
-            _translate("Wizard_esport_modem", "<html><head/><body><p>Percentage to multiply sqrt(zxy*zyx) by.\n"
-                                              "                       Default is 3 precent as prescribed by Egbert &amp; Kelbert.</p></body></html>\n"
-                                              "                   ", None))
+        self.label_error_egbert.setToolTip(_translate("Wizard_esport_modem", "<html><head/><body><p>Percentage to multiply sqrt(zxy*zyx) by.\n"
+"                       Default is 3 precent as prescribed by Egbert &amp; Kelbert.</p></body></html>\n"
+"                   ", None))
         self.label_error_egbert.setText(_translate("Wizard_esport_modem", "Egbert Error Level", None))
-        self.doubleSpinBox_error_egbert.setToolTip(
-            _translate("Wizard_esport_modem", "<html><head/><body><p>Percentage to multiply sqrt(zxy*zyx) by.\n"
-                                              "                       Default is 3 precent as prescribed by Egbert &amp; Kelbert.</p></body></html>\n"
-                                              "                   ", None))
+        self.doubleSpinBox_error_egbert.setToolTip(_translate("Wizard_esport_modem", "<html><head/><body><p>Percentage to multiply sqrt(zxy*zyx) by.\n"
+"                       Default is 3 precent as prescribed by Egbert &amp; Kelbert.</p></body></html>\n"
+"                   ", None))
         self.doubleSpinBox_error_egbert.setSuffix(_translate("Wizard_esport_modem", "%", None))
-        self.doubleSpinBox_error_floor.setToolTip(
-            _translate("Wizard_esport_modem", "<html><head/><body><p>Percentage to set the error floor at, anything\n"
-                                              "                       below this number will be set to this value. Default is 10%</p></body></html>\n"
-                                              "                   ", None))
+        self.doubleSpinBox_error_floor.setToolTip(_translate("Wizard_esport_modem", "<html><head/><body><p>Percentage to set the error floor at, anything\n"
+"                       below this number will be set to this value. Default is 10%</p></body></html>\n"
+"                   ", None))
         self.doubleSpinBox_error_floor.setSuffix(_translate("Wizard_esport_modem", "%", None))
-        self.doubleSpinBox_error_tipper.setToolTip(
-            _translate("Wizard_esport_modem", "<html><head/><body><p>Absolute tipper error, all tipper error will be\n"
-                                              "                       set to this value unless you specify error_type as \'floor\' or \'floor_egbert\'. Default is 5%.</p></body></html>\n"
-                                              "                   ", None))
+        self.doubleSpinBox_error_tipper.setToolTip(_translate("Wizard_esport_modem", "<html><head/><body><p>Absolute tipper error, all tipper error will be\n"
+"                       set to this value unless you specify error_type as \'floor\' or \'floor_egbert\'. Default is 5%.</p></body></html>\n"
+"                   ", None))
         self.doubleSpinBox_error_tipper.setSuffix(_translate("Wizard_esport_modem", "%", None))
         self.comboBox_error_type.setItemText(0, _translate("Wizard_esport_modem", "floor", None))
         self.comboBox_error_type.setItemText(1, _translate("Wizard_esport_modem", "value", None))
@@ -855,11 +845,10 @@ class Ui_Wizard_esport_modem(object):
         self.comboBox_error_type.setItemText(4, _translate("Wizard_esport_modem", "stddev", None))
         self.comboBox_error_type.setItemText(5, _translate("Wizard_esport_modem", "square error", None))
         self.comboBox_error_type.setItemText(6, _translate("Wizard_esport_modem", "mean square error", None))
-        self.doubleSpinBox_error_value.setToolTip(
-            _translate("Wizard_esport_modem", "<html><head/><body><p>Percentage to multiply Z by, to set error.\n"
-                                              "                       Default is 5\n"
-                                              "                       for 5% of Z as error.</p></body></html>\n"
-                                              "                   ", None))
+        self.doubleSpinBox_error_value.setToolTip(_translate("Wizard_esport_modem", "<html><head/><body><p>Percentage to multiply Z by, to set error.\n"
+"                       Default is 5\n"
+"                       for 5% of Z as error.</p></body></html>\n"
+"                   ", None))
         self.doubleSpinBox_error_value.setSuffix(_translate("Wizard_esport_modem", "%", None))
         self.groupBox_component_error_types.setTitle(_translate("Wizard_esport_modem", "Component Error Type", None))
         self.checkBox_zxx.setText(_translate("Wizard_esport_modem", "zxx", None))
@@ -897,8 +886,7 @@ class Ui_Wizard_esport_modem(object):
         self.wizardPage_data.setTitle(_translate("Wizard_esport_modem", "Other Data Settings", None))
         self.groupBox_5.setTitle(_translate("Wizard_esport_modem", "Data File Format", None))
         self.radioButton_format_1.setText(_translate("Wizard_esport_modem", "ModEM Data Format", None))
-        self.radioButton_format_2.setText(
-            _translate("Wizard_esport_modem", "Type 2 (Possibly Compatible with WSINV3DMT)", None))
+        self.radioButton_format_2.setText(_translate("Wizard_esport_modem", "Type 2 (Possibly Compatible with WSINV3DMT)", None))
         self.groupBox_12.setTitle(_translate("Wizard_esport_modem", "EPSG", None))
         self.wizardPage_mesh.setTitle(_translate("Wizard_esport_modem", "Mesh Settings", None))
         self.groupBox_7.setTitle(_translate("Wizard_esport_modem", "Horizontal Plane", None))
@@ -1018,34 +1006,22 @@ class Ui_Wizard_esport_modem(object):
 "                        ", None))
         self.lineEdit_resistivity_init.setText(_translate("Wizard_esport_modem", "100", None))
         self.groupBox_11.setTitle(_translate("Wizard_esport_modem", "Smoothing", None))
-        self.label_20.setToolTip(
-            _translate("Wizard_esport_modem", "<html><head/><body><p>Smoothing in the X direction.</p></body></html>",
-                       None))
+        self.label_20.setToolTip(_translate("Wizard_esport_modem", "<html><head/><body><p>Smoothing in the X direction.</p></body></html>", None))
         self.label_20.setText(_translate("Wizard_esport_modem", "East", None))
-        self.doubleSpinBox_smoothing_east.setToolTip(
-            _translate("Wizard_esport_modem", "<html><head/><body><p>Smoothing in the X direction.</p></body></html>",
-                       None))
-        self.label_21.setToolTip(
-            _translate("Wizard_esport_modem", "<html><head/><body><p>Smoothing in the Y direction.</p></body></html>",
-                       None))
+        self.doubleSpinBox_smoothing_east.setToolTip(_translate("Wizard_esport_modem", "<html><head/><body><p>Smoothing in the X direction.</p></body></html>", None))
+        self.label_21.setToolTip(_translate("Wizard_esport_modem", "<html><head/><body><p>Smoothing in the Y direction.</p></body></html>", None))
         self.label_21.setText(_translate("Wizard_esport_modem", "North", None))
-        self.doubleSpinBox_smoothing_north.setToolTip(
-            _translate("Wizard_esport_modem", "<html><head/><body><p>Smoothing in the Y direction.</p></body></html>",
-                       None))
-        self.label_22.setToolTip(
-            _translate("Wizard_esport_modem", "<html><head/><body><p>Vertical smoothing</p></body></html>", None))
+        self.doubleSpinBox_smoothing_north.setToolTip(_translate("Wizard_esport_modem", "<html><head/><body><p>Smoothing in the Y direction.</p></body></html>", None))
+        self.label_22.setToolTip(_translate("Wizard_esport_modem", "<html><head/><body><p>Vertical smoothing</p></body></html>", None))
         self.label_22.setText(_translate("Wizard_esport_modem", "Z", None))
-        self.doubleSpinBox_smoothing_z.setToolTip(
-            _translate("Wizard_esport_modem", "<html><head/><body><p>Vertical smoothing</p></body></html>", None))
-        self.label_23.setToolTip(
-            _translate("Wizard_esport_modem", "<html><head/><body><p>Number of times the smoothing should be applied\n"
-                                              "                      (1 interger &gt;= 0)</p></body></html>\n"
-                                              "                  ", None))
+        self.doubleSpinBox_smoothing_z.setToolTip(_translate("Wizard_esport_modem", "<html><head/><body><p>Vertical smoothing</p></body></html>", None))
+        self.label_23.setToolTip(_translate("Wizard_esport_modem", "<html><head/><body><p>Number of times the smoothing should be applied\n"
+"                      (1 interger &gt;= 0)</p></body></html>\n"
+"                  ", None))
         self.label_23.setText(_translate("Wizard_esport_modem", "Number", None))
-        self.spinBox_smoothing_number.setToolTip(
-            _translate("Wizard_esport_modem", "<html><head/><body><p>Number of times the smoothing should be applied\n"
-                                              "                      (1 interger &gt;= 0)</p></body></html>\n"
-                                              "                  ", None))
+        self.spinBox_smoothing_number.setToolTip(_translate("Wizard_esport_modem", "<html><head/><body><p>Number of times the smoothing should be applied\n"
+"                      (1 interger &gt;= 0)</p></body></html>\n"
+"                  ", None))
         self.wizardPage_output.setTitle(_translate("Wizard_esport_modem", "Output", None))
         self.wizardPage_output.setSubTitle(_translate("Wizard_esport_modem", "Plsease select the output directry and the new folder that will be created to save all the data files for\n"
 "           ModEM.\n"

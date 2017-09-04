@@ -100,6 +100,7 @@ class FrequencySelect(QtGui.QGroupBox):
 
         self.histogram = FrequencySelect.Histogram(self, allow_range_select=allow_range_select)
         self.histogram.set_unit(self._units[0])
+        self.histogram.set_tol(self.ui.doubleSpinBox_tolerance.value())
         self.histogram.frequency_selected.connect(self._frequency_selected)
         self.histogram.frequency_range_selected.connect(self._frequency_selected)
         self.ui.widget_histgram.layout().addWidget(self.histogram)
@@ -120,6 +121,7 @@ class FrequencySelect(QtGui.QGroupBox):
         self.ui.checkBox_log_scale.toggled.connect(self.histogram.set_y_log_scale)
         self.ui.pushButton_clear.clicked.connect(self._clear_all)
         self.ui.pushButton_delete.clicked.connect(self._delete_selected)
+        self.ui.doubleSpinBox_tolerance.valueChanged.connect(self.histogram.set_tol)
 
     def set_data(self, mt_objs):
         self._mt_objs = mt_objs
@@ -137,6 +139,7 @@ class FrequencySelect(QtGui.QGroupBox):
             return frequencies[0] if frequencies else None
 
     _units = ['Hz', 's']
+
     _type = ['Frequency', 'Period']
 
     def _clear_all(self):
@@ -166,7 +169,11 @@ class FrequencySelect(QtGui.QGroupBox):
             elif isinstance(x, tuple) and isinstance(value, tuple):
                 if min(x[1], value[1]) - max(x[0], value[0]) >= 0:
                     # there is intersection between intervals, so marge them
-                    x = (min(x[0], value[0]), max(x[1], value[1]))
+                    mi = min(x[0], value[0])
+                    ma = max(x[1], value[1])
+                    uniques = self._unique_frequency if self.ui.radioButton_frequency.isChecked() else self._unique_period
+                    num = len([freq for freq in uniques if mi <= freq <= ma ])  # num of existing freqs in the new interval
+                    x = (mi, ma, num)
                     # remove old interval
                     self.model_selected.removeRow(self.model_selected.indexFromItem(item).row())
                     self.histogram.remove_marker(value)
@@ -210,6 +217,7 @@ class FrequencySelect(QtGui.QGroupBox):
             self.histogram.set_data(
                 self._unique_period if self.ui.radioButton_period.isChecked() else self._unique_frequency
             )
+            self.frequency_delegate.freqs = self._unique_period if self.ui.radioButton_period.isChecked() else self._unique_frequency
             self.histogram.update_figure()
 
     class FrequencyItem(QtGui.QStandardItem):
@@ -237,13 +245,17 @@ class FrequencySelect(QtGui.QGroupBox):
             py_obj = value.toPyObject()
             if isinstance(py_obj, float):
                 return '{:.{prec}f}'.format(py_obj, prec=self._prec)
-            elif isinstance(py_obj, tuple) and len(py_obj) == 2:
-                return '{}{}, {}{}'.format(
+            elif isinstance(py_obj, tuple) and len(py_obj) == 3:  # (min, max, num)
+                return '{}{}, {}{} ({num} selected)'.format(
                     '(' if py_obj[0] == -np.inf else '[',
                     '{:.{prec}f}'.format(py_obj[0], prec=self._prec),
                     '{:.{prec}f}'.format(py_obj[1], prec=self._prec),
-                    ')' if py_obj[1] == np.inf else ']'
+                    ')' if py_obj[1] == np.inf else ']',
+                    num=py_obj[2]
                 )
+            elif len(py_obj) == 5:  # (min, max, num, freq, tol)
+                return u'{:.{prec}f} ±{tol}% ({num} selected)'.format(
+                    py_obj[3], prec=self._prec, tol=py_obj[4], num=py_obj[2])
             # elif isinstance(py_obj, set):
             #     return '{{}}'.format(','.join(['{:.{prec}f}'.format(f, prec=self._prec) for f in py_obj if isinstance(f, float)]))
             return value
@@ -254,6 +266,7 @@ class FrequencySelect(QtGui.QGroupBox):
             self._title = None
             self._unit = None
             self._press = None
+            self._tol = None
             MPLCanvas.__init__(self, parent, 5, 1.5)
             self._lx = {}
             self._cursor = None
@@ -272,20 +285,36 @@ class FrequencySelect(QtGui.QGroupBox):
                 # self._axes.draw_artist(lx)
                 self.draw_idle()
             elif isinstance(x, tuple):
-                lx = self._lx.setdefault(x, self._fill_v_area(x[0], x[1]))
+                if len(x) == 3:
+                    lx = self._lx.setdefault(x, self._fill_v_area(x[0], x[1]))
+                elif len(x) == 5:
+                    lx = self._lx.setdefault(x, (
+                        self._draw_v_line(x[3]),
+                        self._fill_v_area(x[0], x[1])
+                    ))
             else:
                 raise NotImplemented
             self.draw_idle()
 
         def remove_marker(self, x):
             if x in self._lx:
-                self._lx[x].remove()
+                marker = self._lx[x]
+                if isinstance(marker, tuple):
+                    for m in marker:
+                        m.remove()
+                else:
+                    marker.remove()
                 self.draw_idle()
                 del self._lx[x]
 
         def clear_all_drawing(self):
             for key in self._lx.keys():
-                self._lx[key].remove()
+                marker = self._lx[key]
+                if isinstance(marker, tuple):
+                    for m in marker:
+                        m.remove()
+                else:
+                    marker.remove()
             self._lx.clear()
             self.draw_idle()
 
@@ -301,6 +330,9 @@ class FrequencySelect(QtGui.QGroupBox):
         def select_existing(self, select_existing):
             self._select_existing_only = select_existing
             self.clear_all_drawing()
+
+        def set_tol(self, tol):
+            self._tol = tol
 
         def show_existing(self, show_existing):
             self._show_existing = show_existing
@@ -334,15 +366,39 @@ class FrequencySelect(QtGui.QGroupBox):
         def on_release(self, event):
             x = self._get_valid_cursor_loc(event)
             if x:
-                if self._press and self._press != x:
+                if self._press and self._press != x:  # emit (min, max, num)
                     if self._press < x:
-                        self.frequency_range_selected.emit((self._press, x))
+                        self.frequency_range_selected.emit(
+                            (
+                                self._press,
+                                x,
+                                len([freq for freq in self._frequencies if self._press <= freq <= x])
+                            )
+                        )
                     elif self._press > x:
-                        self.frequency_range_selected.emit((x, self._press))
-                else:
-                    if self._select_existing_only:
-                        x = self._find_closest(x)
-                    self.frequency_selected.emit(x)
+                        self.frequency_range_selected.emit(
+                            (
+                                x,
+                                self._press,
+                                len([freq for freq in self._frequencies if x <= freq <= self._press])
+                            )
+                        )
+                elif self._select_existing_only:
+                    x = self._find_closest(x)
+                    self.frequency_selected(x)
+                else:  # emit (min, max, num, freq, tol)
+                    tol = x * self._tol/100.
+                    min = x - tol
+                    max = x + tol
+                    self.frequency_range_selected.emit(
+                        (
+                            min,
+                            max,
+                            len([freq for freq in self._frequencies if min <= freq <= max]),
+                            x,
+                            self._tol
+                        )
+                    )
             self._press = None
 
         def _find_closest(self, x):
@@ -371,7 +427,10 @@ class FrequencySelect(QtGui.QGroupBox):
                 if isinstance(key, float):
                     self._lx[key] = self._draw_v_line(key)
                 elif isinstance(key, tuple):
-                    self._lx[key] = self._fill_v_area(key[0], key[1])
+                    if len(key) == 3:
+                        self._lx[key] = self._fill_v_area(key[0], key[1])
+                    elif len(key) == 5:
+                        self._lx[key] = (self._draw_v_line(key[3]), self._fill_v_area(key[0], key[1]))
             self.draw()
 
         def _draw_v_line(self, x):
@@ -379,7 +438,7 @@ class FrequencySelect(QtGui.QGroupBox):
                 x = self._axes.get_xlim()[0]
             if x == np.inf:
                 x = self._axes.get_xlim()[1]
-            return self._axes.axvline(x=x, linewidth=2, color="red")
+            return self._axes.axvline(x=x, linewidth=1, color="red")
 
         def _fill_v_area(self, x1, x2):
             if x1 == -np.inf:

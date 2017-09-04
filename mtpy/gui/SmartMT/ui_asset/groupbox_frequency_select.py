@@ -90,6 +90,14 @@ class Ui_GroupBox_frequency_select(object):
         self.listView_selected.setSelectionRectVisible(True)
         self.listView_selected.setObjectName(_fromUtf8("listView_selected"))
         self.gridLayout.addWidget(self.listView_selected, 11, 0, 3, 3)
+        self.label_tolerance = QtGui.QLabel(GroupBox_frequency_select)
+        self.label_tolerance.setObjectName(_fromUtf8("label_tolerance"))
+        self.gridLayout.addWidget(self.label_tolerance, 1, 0, 1, 2)
+        self.doubleSpinBox_tolerance = QtGui.QDoubleSpinBox(GroupBox_frequency_select)
+        self.doubleSpinBox_tolerance.setMaximum(100.0)
+        self.doubleSpinBox_tolerance.setProperty("value", 10.0)
+        self.doubleSpinBox_tolerance.setObjectName(_fromUtf8("doubleSpinBox_tolerance"))
+        self.gridLayout.addWidget(self.doubleSpinBox_tolerance, 1, 2, 1, 1)
 
         self.retranslateUi(GroupBox_frequency_select)
         QtCore.QMetaObject.connectSlotsByName(GroupBox_frequency_select)
@@ -97,20 +105,18 @@ class Ui_GroupBox_frequency_select(object):
     def retranslateUi(self, GroupBox_frequency_select):
         GroupBox_frequency_select.setWindowTitle(_translate("GroupBox_frequency_select", "GroupBox", None))
         GroupBox_frequency_select.setTitle(_translate("GroupBox_frequency_select", "Frequency/Period", None))
-        self.label_place_holder.setText(
-            _translate("GroupBox_frequency_select", "Place Holder for Frequency/Period Diagram", None))
-        self.checkBox_existing_only.setToolTip(
-            _translate("GroupBox_frequency_select", "<html><head/><body><p>Check this to select the frequency/period\n"
-                                                    "                            that is exists in the data file. The frequency/period that is closest to the cursor will be\n"
-                                                    "                            selected.</p></body></html>\n"
-                                                    "                        ", None))
-        self.checkBox_existing_only.setText(
-            _translate("GroupBox_frequency_select", "Selecting Existing Frequencies/Periods Only", None))
+        self.label_place_holder.setText(_translate("GroupBox_frequency_select", "Place Holder for Frequency/Period Diagram", None))
+        self.checkBox_existing_only.setToolTip(_translate("GroupBox_frequency_select", "<html><head/><body><p>Check this to select the frequency/period\n"
+"                            that is exists in the data file. The frequency/period that is closest to the cursor will be\n"
+"                            selected.</p></body></html>\n"
+"                        ", None))
+        self.checkBox_existing_only.setText(_translate("GroupBox_frequency_select", "Selecting Existing Frequencies/Periods Only", None))
         self.radioButton_frequency.setText(_translate("GroupBox_frequency_select", "Show Frequency", None))
-        self.checkBox_show_existing.setText(
-            _translate("GroupBox_frequency_select", "Show Existing Frequencies/Periods", None))
+        self.checkBox_show_existing.setText(_translate("GroupBox_frequency_select", "Show Existing Frequencies/Periods", None))
         self.radioButton_period.setText(_translate("GroupBox_frequency_select", "Show Period", None))
         self.checkBox_log_scale.setText(_translate("GroupBox_frequency_select", "Use log-scale on y-axes", None))
         self.pushButton_delete.setText(_translate("GroupBox_frequency_select", "Delete", None))
         self.pushButton_clear.setText(_translate("GroupBox_frequency_select", "Clear", None))
+        self.label_tolerance.setText(_translate("GroupBox_frequency_select", "Selection Tolerance", None))
+        self.doubleSpinBox_tolerance.setSuffix(_translate("GroupBox_frequency_select", "%", None))
 
