@@ -24,7 +24,7 @@ from mtpy.constants import epsg_dict
 from mtpy.gui.SmartMT.gui.busy_indicators import ProgressBar
 from mtpy.gui.SmartMT.gui.export_dialog import PreviewDialog
 from mtpy.gui.SmartMT.gui.matplotlib_imabedding import MathTextLabel
-from mtpy.gui.SmartMT.gui.plot_parameter_guis import Rotation
+from mtpy.gui.SmartMT.gui.plot_parameter_guis import Rotation, FrequencySelect
 from mtpy.gui.SmartMT.ui_asset.wizard_export_modem import Ui_Wizard_esport_modem
 from mtpy.gui.SmartMT.utils.validator import FileValidator, DirectoryValidator
 from mtpy.modeling.modem_covariance import Covariance
@@ -64,6 +64,17 @@ class ExportDialogModEm(QtGui.QWizard):
             "$error_{egbert}=level_{egbert}\\times |Z_{xy}\\times Z_{yx}|^\\frac{1}{2}$",
         )
         self.ui.verticalLayout_error_types.addWidget(self._math_label_elbert)
+
+        # add period selection
+        self._period_select_ui = FrequencySelect(
+            self.ui.wizardPage_period,
+            show_period=True,
+            show_frequency=False,
+            allow_range_select=True,
+            select_multiple=True
+        )
+        self._period_select_ui.setEnabled(False)
+        self.ui.wizardPage_period.layout().addWidget(self._period_select_ui)
 
         # add rotation
         self._rotation_ui = Rotation(self.ui.wizardPage_data)
@@ -169,6 +180,11 @@ class ExportDialogModEm(QtGui.QWizard):
         )
 
         self.ui.checkBox_component_error_types.toggled.connect(self._component_error_type_toggled)
+        self.ui.radioButton_select_period_percent.toggled.connect(
+            lambda checked: self.ui.doubleSpinBox_select_period_percent.setEnabled(checked))
+        self.ui.radioButton_select_period.toggled.connect(
+            lambda checked: self._period_select_ui.setEnabled(checked)
+        )
 
         # register fields
         self.ui.wizardPage_output.registerField('output_path*', self.ui.lineEdit_full_output)
@@ -345,6 +361,7 @@ class ExportDialogModEm(QtGui.QWizard):
 
     def set_data(self, mt_objs):
         self._mt_objs = mt_objs
+        self._period_select_ui.set_data(self._mt_objs)
         self.ui.listWidget_edi_files.clear()
         for mt_obj in mt_objs:
             self.ui.listWidget_edi_files.addItem("{mt.station} ({mt.fn})".format(mt=mt_obj))
@@ -472,6 +489,13 @@ class ExportDialogModEm(QtGui.QWizard):
         }
         return kwargs
 
+    def get_select_period_kwargs(self):
+        kwargs = {
+            'period_list': self._period_select_ui.get_frequencies() if self.ui.radioButton_select_period.isChecked() else None,
+            'percentage': self.ui.doubleSpinBox_select_period_percent.value()
+        }
+        return kwargs
+
     def get_epsg(self):
         return int(str(self.ui.comboBox_epsg.currentText()))
 
@@ -488,6 +512,7 @@ class ExportDialogModEm(QtGui.QWizard):
             self,
             show=test,
             edi_list=[mt_obj.fn for mt_obj in self._mt_objs],
+            select_period_kwargs=self.get_select_period_kwargs(),
             data_kwargs=self.get_data_kwargs(),
             mesh_kwargs=self.get_model_kwargs(),
             topo_args=self.get_topography_2_mesh_args(),
@@ -539,11 +564,12 @@ class ExportDialogModEm(QtGui.QWizard):
 
 
 class ModEMWorker(QtCore.QThread):
-    def __init__(self, parent, edi_list, data_kwargs, mesh_kwargs, topo_args, covariance_kwargs, show=False):
+    def __init__(self, parent, edi_list, select_period_kwargs, data_kwargs, mesh_kwargs, topo_args, covariance_kwargs, show=False):
         QtCore.QThread.__init__(self, parent)
         self._logger = MtPyLog().get_mtpy_logger(__name__)
 
         self._edi_list = edi_list
+        self._select_period_kwargs = select_period_kwargs
         self._data_kwargs = data_kwargs
         self._mesh_kwagrs = mesh_kwargs
         self._topo_args = topo_args
@@ -577,7 +603,7 @@ class ModEMWorker(QtCore.QThread):
 
             # get period_list list
             self.status_updated.emit("Selecting Periods...")
-            period_list = select_periods(self._edi_list)
+            period_list = select_periods(self._edi_list, **self._select_period_kwargs)
             # save period plot for reference
             figure = plt.gcf()
             figure.savefig(os.path.join(self.output_dir, self._period_image_name))
