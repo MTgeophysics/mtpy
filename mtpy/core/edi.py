@@ -24,6 +24,7 @@ import mtpy.utils.exceptions as MTex
 import mtpy.utils.filehandling as MTfh
 import mtpy.utils.format as MTft
 from mtpy.utils.mtpylog import MtPyLog
+import logging
 
 try:
     import scipy.stats.distributions as ssd
@@ -40,7 +41,7 @@ tab = ""
 # get a logger object for this module, using the utility class MtPyLog to
 # config the logger
 logger = MtPyLog().get_mtpy_logger(__name__)
-
+logger.setLevel(logging.INFO)  #this sets the module specific log Level
 
 class Edi(object):
     """
@@ -240,8 +241,7 @@ class Edi(object):
 
         if self.Data_sect.data_type == 'spectra':
             logger.info('Converting Spectra to Impedance and Tipper')
-            logger.info('Check to make sure input channel list is correct if')
-            logger.info(' the data looks incorrect.')
+            logger.info('Check to make sure input channel list is correct if the data looks incorrect')
             self._read_spectra(lines)
 
         elif self.Data_sect.data_type == 'z':

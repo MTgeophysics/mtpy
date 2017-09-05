@@ -10,8 +10,6 @@ Classes
     * Z --> deals with impedance tesnsor.
     * Tipper --> deals with Tipper matrix.
 
-
-LK, JP 2013
 """
 
 # =================================================================
@@ -24,7 +22,13 @@ import numpy as np
 import mtpy.utils.calculator as MTcc
 import mtpy.utils.exceptions as MTex
 
+from mtpy.utils.mtpylog import MtPyLog
+import logging
 
+# get a logger object for this module, using the utility class MtPyLog to
+# config the logger
+logger = MtPyLog().get_mtpy_logger(__name__)
+#logger.setLevel(logging.INFO)  #this sets the module specific log Level
 # =================================================================
 
 
@@ -375,22 +379,20 @@ class Z(object):
 
     # -----resistivity and phase----------------------------------------------
     def _compute_res_phase(self):
-        """
-        Sets attributes
-                        * resistivity
-                        * phase
-                        * resistivity_err
-                        * phase_err
-
+        """ Compute and sets attributes
+                * resistivity
+                * phase
+                * resistivity_err
+                * phase_err
         values for resistivity are in in Ohm-m and phase in degrees.
-
         """
         if self.freq is None:
-            print 'Need to input frequency list'
+            logger.info('self.freq is None - cannot calculate Res/Phase')
+            # This is due to spectra type EDI file!!!
             return
 
         if self.z is None:
-            print 'Z array is None - cannot calculate Res/Phase'
+            logger.info('Z array is None - cannot calculate Res/Phase')
             return
 
         self._resistivity_err = None

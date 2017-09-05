@@ -72,6 +72,7 @@ class EdiCollection(object):
         self.ptol = ptol
 
         if self.edifiles is not None:
+            logger.debug("contructing MT objects from edi files")
             self.mt_obj_list = [mt.MT(edi) for edi in self.edifiles]
         else:
             logger.error("None Edi file set")
