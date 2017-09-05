@@ -175,8 +175,9 @@ class Z(object):
 
         if self.z is not None:
             if len(self.z.shape) == 3:
-                if len(lo_freq) is not len(self.z):
-                    print ('length of freq list/array not correct'
+                #if len(lo_freq) is not len(self.z):
+                if len(lo_freq) != len(self.z):
+                    logger.warn('length of freq list/array not correct'
                            '({0} instead of {1})'.format(len(lo_freq),
                                                          len(self.z)))
                     return
@@ -188,7 +189,7 @@ class Z(object):
             try:
                 self._compute_res_phase()
             except IndexError:
-                print 'Need to input frequency array'
+                logging.error('Need to input frequency array')
 
     def _get_freq(self):
         if self._freq is None:
@@ -226,8 +227,7 @@ class Z(object):
                         self._z = np.zeros((1, 2, 2), 'complex')
                         self._z[0] = z_array
             except IndexError:
-                print ('provided Z array does not have correct dimensions'
-                       '- Z unchanged')
+                logger.error('provided Z array does not have correct dimensions- Z unchanged')
 
         if isinstance(self.rotation_angle, float):
             self.rotation_angle = np.repeat(self.rotation_angle,
@@ -238,7 +238,7 @@ class Z(object):
             try:
                 self._compute_res_phase()
             except IndexError:
-                print 'Need to input frequency array'
+                logger.error('Need to input frequency array')
 
     def _get_z(self):
         return self._z
@@ -260,9 +260,8 @@ class Z(object):
 
         """
         if z_err_array.shape != self.z.shape:
-            print 'z_err_array shape {0} is not same shape as z {1}'.format(
-                z_err_array.shape,
-                self.z.shape)
+            logger.warn('z_err_array shape {0} is not same shape as z {1}'.format(
+                z_err_array.shape, self.z.shape))
         self._z_err = z_err_array
 
         # for consistency recalculate resistivity and phase
@@ -270,7 +269,7 @@ class Z(object):
             try:
                 self._compute_res_phase()
             except IndexError:
-                print 'Need to input frequency array'
+                logger.error('Need to input frequency array')
 
     def _get_z_err(self):
         return self._z_err
@@ -284,7 +283,7 @@ class Z(object):
         """
 
         if self.z is None:
-            print 'z array is None - cannot calculate real'
+            logger.warn('z array is None - cannot calculate real')
             return
 
         return np.real(self.z)
@@ -304,13 +303,13 @@ class Z(object):
         """
 
         if (self.z is not None) and (self.z.shape != real_array.shape):
-            print 'shape of "real" array does not match shape of' + \
-                  'Z array: {0} ; {1}'.format(real_array.shape, self.z.shape)
+            logger.error('shape of "real" array does not match shape of' + \
+                  'Z array: {0} ; {1}'.format(real_array.shape, self.z.shape))
             return
 
         # assert real array:
         if np.linalg.norm(np.imag(real_array)) != 0:
-            print 'Error - array "real" is not real valued !'
+            logger.error('Error - array "real" is not real valued !')
             return
 
         ii_arr = np.complex(0, 1)
@@ -328,13 +327,11 @@ class Z(object):
     # real = property(_get_real, _set_real, doc='Real part of Z')
     # ---imaginary part of impedance tensor------------------------------------
     def _get_imag(self):
-        """
-        Return the imaginary part of Z.
-
+        """ Return the imaginary part of Z.
         """
 
         if self.z is None:
-            print 'z array is None - cannot calculate imag'
+            logger.error('z array is None - cannot calculate imag')
             return
 
         return np.imag(self.z)
@@ -354,13 +351,13 @@ class Z(object):
         """
 
         if (self.z is not None) and (self.z.shape != imag_array.shape):
-            print 'Error - shape of "imag" array does not match shape of' + \
-                  'Z array: {0} ; {1}'.format(imag_array.shape, self.z.shape)
+            logger.error('Error - shape of "imag" array does not match shape of' + \
+                  'Z array: {0} ; {1}'.format(imag_array.shape, self.z.shape))
             return
 
         # assert real array:
         if np.linalg.norm(np.imag(imag_array)) != 0:
-            print 'Error - array "imag" is not real valued !'
+            logger.error('Error - array "imag" is not real valued !')
             return
 
         i_arr = np.complex(0, 1)
@@ -438,16 +435,16 @@ class Z(object):
         return self._phase_err
 
     def _set_resistivity(self, *kwargs):
-        print "cannot be set individually - use method 'set_res_phase'!"
+        logger.info ("cannot be set individually - use method 'set_res_phase'!")
 
     def _set_resistivity_err(self, *kwargs):
-        print "cannot be set individually - use method 'set_res_phase'!"
+        logger.info ("cannot be set individually - use method 'set_res_phase'!")
 
     def _set_phase(self, *kwargs):
-        print "cannot be set individually - use method 'set_res_phase'!"
+        logger.info("cannot be set individually - use method 'set_res_phase'!")
 
     def _set_phase_err(self, *kwargs):
-        print "cannot be set individually - use method 'set_res_phase'!"
+        logger.info("cannot be set individually - use method 'set_res_phase'!")
 
     resistivity = property(_get_resistivity,
                            _set_resistivity,
@@ -478,23 +475,20 @@ class Z(object):
             z_new = copy.copy(self.z)
 
             if self.z.shape != res_array.shape:
-                print 'Error - shape of "res" array does not match shape' + \
-                      'of Z array: {0} ; {1}'.format(res_array.shape,
-                                                     self.z.shape)
+                logger.error('Error - shape of "res" array does not match shape' + \
+                      'of Z array: {0} ; {1}'.format(res_array.shape, self.z.shape))
                 return
 
             if self.z.shape != phase_array.shape:
-                print 'Error - shape of "phase" array does not match shape' + \
-                      'of Z array: {0} ; {1}'.format(phase_array.shape,
-                                                     self.z.shape)
+                logger.error('Error - shape of "phase" array does not match shape' + \
+                      'of Z array: {0} ; {1}'.format(phase_array.shape, self.z.shape))
                 return
         else:
             z_new = np.zeros(res_array.shape, 'complex')
 
             if res_array.shape != phase_array.shape:
-                print 'Error - shape of "phase" array does not match shape' + \
-                      'of "res" array: {0} ; {1}'.format(phase_array.shape,
-                                                         res_array.shape)
+                logger.error('Error - shape of "phase" array does not match shape' + \
+                      'of "res" array: {0} ; {1}'.format(phase_array.shape, res_array.shape))
                 return
 
         if (self.freq is None) or (len(self.freq) != len(res_array)):
@@ -531,21 +525,18 @@ class Z(object):
 
             try:
                 if self.z_err.shape != reserr_array.shape:
-                    print 'Error - shape of "reserr" array does not match' + \
+                    logger.error('Error - shape of "reserr" array does not match' + \
                           'shape of Zerr array: {0} ; {1}'.format(
-                              reserr_array.shape,
-                              self.z_err.shape)
+                              reserr_array.shape, self.z_err.shape))
                     return
 
                 if self.z_err.shape != phaseerr_array.shape:
-                    print 'Error - shape of "phase" array does not match' + \
+                    logger.error('Error - shape of "phase" array does not match' + \
                           'shape of Zerr array: {0} ; {1}'.format(
-                              phase_array.shape,
-                              self.z.shape)
+                              phase_array.shape, self.z.shape))
                     return
             except AttributeError:
-                print 'Error - "phaseerr" or "reserr" is/are not array(s)' + \
-                      '- Zerr not set'
+                logger.error('Error - "phaseerr" or "reserr" is/are not array(s) - Zerr not set')
                 self.z_err = None
                 return
 
@@ -553,14 +544,13 @@ class Z(object):
             z_err_new = np.zeros(reserr_array.shape, 'float')
             try:
                 if reserr_array.shape != phaseerr_array.shape:
-                    print 'Error - shape of "phase" array does not match' + \
+                    logger.error('Error - shape of "phase" array does not match' + \
                           'shape of Zerr array: {0} ; {1}'.format(
-                              reserr_array.shape,
-                              self.z_err.shape)
+                              reserr_array.shape,  self.z_err.shape))
                     return
             except AttributeError:
-                print 'Error - "phaseerr" or "reserr" is/are not array(s) -' + \
-                      ' Zerr not set'
+                logger.error('Error - "phaseerr" or "reserr" is/are not array(s) -' + \
+                      ' Zerr not set')
                 return
 
         for idx_f in range(len(z_err_new)):
@@ -594,7 +584,7 @@ class Z(object):
         """
 
         if self.z is None:
-            print 'z array is "None" - I cannot invert that'
+            logger.war('z array is "None" - I cannot invert that')
             return
 
         inverse = copy.copy(self.z)
@@ -632,7 +622,7 @@ class Z(object):
         """
 
         if self.z is None:
-            print 'Z array is "None" - I cannot rotate that'
+            logger.warn('Z array is "None" - I cannot rotate that')
             return
 
         # check for iterable list/set of angles - if so, it must have length
@@ -641,7 +631,7 @@ class Z(object):
             try:
                 degreeangle = float(alpha % 360)
             except ValueError:
-                print '"Angle" must be a valid number (in degrees)'
+                logger.error('"Angle" must be a valid number (in degrees)')
                 return
 
             # make an n long list of identical angles
@@ -651,7 +641,7 @@ class Z(object):
                 try:
                     degreeangle = float(alpha % 360)
                 except ValueError:
-                    print '"Angle" must be a valid number (in degrees)'
+                    logger.error('"Angle" must be a valid number (in degrees)')
                     return
                 # make an n long list of identical angles
                 lo_angles = [degreeangle for ii in self.z]
@@ -659,14 +649,14 @@ class Z(object):
                 try:
                     lo_angles = [float(ii % 360) for ii in alpha]
                 except ValueError:
-                    print '"Angles" must be valid numbers (in degrees)'
+                    logger.error('"Angles" must be valid numbers (in degrees)')
                     return
 
         self.rotation_angle = np.array([(oldangle + lo_angles[ii]) % 360
                                         for ii, oldangle in enumerate(self.rotation_angle)])
 
         if len(lo_angles) != len(self.z):
-            print 'Wrong number of "angles" - I need {0}'.format(len(self.z))
+            logger.warn('Wrong number of "angles" - I need {0}'.format(len(self.z)))
             # self.rotation_angle = 0.
             return
 
@@ -744,7 +734,7 @@ class Z(object):
             try:
                 x_factor = float(reduce_res_factor_x)
             except ValueError:
-                print '"reduce_res_factor_x" must be a valid numbers'
+                logger.error('reduce_res_factor_x must be a valid numbers')
                 return
 
             lo_x_factors = np.repeat(x_factor, len(self.z))
@@ -753,7 +743,7 @@ class Z(object):
                 try:
                     x_factor = float(reduce_res_factor_x)
                 except ValueError:
-                    print '"reduce_res_factor_x" must be a valid numbers'
+                    logging.error('reduce_res_factor_x must be a valid numbers')
                     return
                 lo_x_factors = np.repeat(x_factor, len(self.z))
             else:
@@ -761,12 +751,11 @@ class Z(object):
                     lo_x_factors = np.repeat(x_factor,
                                              len(reduce_res_factor_x))
                 except ValueError:
-                    print '"reduce_res_factor_x" must be valid numbers'
+                    logging.error( '"reduce_res_factor_x" must be valid numbers')
                     return
 
         if len(lo_x_factors) != len(self.z):
-            print 'Wrong number Number of "reduce_res_factor_x"' + \
-                  '- need {0}'.format(len(self.z))
+            logging.error('Wrong number Number of reduce_res_factor_x - need {0}'.format(len(self.z)))
             return
 
         # check for iterable list/set of reduce_res_factor_y - if so,
@@ -775,7 +764,7 @@ class Z(object):
             try:
                 y_factor = float(reduce_res_factor_y)
             except ValueError:
-                print '"reduce_res_factor_y" must be a valid numbers'
+                logging.error('"reduce_res_factor_y" must be a valid numbers')
                 return
 
             lo_y_factors = np.repeat(y_factor, len(self.z))
@@ -784,7 +773,7 @@ class Z(object):
                 try:
                     y_factor = float(reduce_res_factor_y)
                 except ValueError:
-                    print '"reduce_res_factor_y" must be a valid numbers'
+                    logging.error( '"reduce_res_factor_y" must be a valid numbers')
                     return
                 lo_y_factors = np.repeat(y_factor, len(self.z))
             else:
@@ -792,12 +781,12 @@ class Z(object):
                     lo_y_factors = np.repeat(y_factor,
                                              len(reduce_res_factor_y))
                 except ValueError:
-                    print '"reduce_res_factor_y" must be valid numbers'
+                    logging.error('"reduce_res_factor_y" must be valid numbers')
                     return
 
         if len(lo_y_factors) != len(self.z):
-            print 'Wrong number Number of "reduce_res_factor_y"' + \
-                  '- need {0} '.format(len(self.z))
+            logging.error( 'Wrong number Number of "reduce_res_factor_y"' + \
+                  '- need {0} '.format(len(self.z)))
             return
 
         z_corrected = copy.copy(self.z)
@@ -858,8 +847,8 @@ class Z(object):
                 raise ValueError('Shape not the same')
             if len(distortion_tensor.shape) == 3 or \
                     len(distortion_err_tensor.shape) == 3:
-                print 'Distortion is not time-dependent - take only first' + \
-                      'of given distortion tensors'
+                logger.info('Distortion is not time-dependent - take only first' + \
+                      'of given distortion tensors')
                 try:
                     distortion_tensor = distortion_tensor[0]
                     distortion_err_tensor = distortion_err_tensor[0]
@@ -1251,8 +1240,8 @@ class Tipper(object):
         """
 
         if len(lo_freq) is not len(self.tipper):
-            print 'length of freq list/array not correct' + \
-                  ' (%ii instead of %ii)' % (len(lo_freq), len(self.tipper))
+            logger.info('length of freq list/array not correct' + \
+                  ' (%ii instead of %ii)' % (len(lo_freq), len(self.tipper)))
             return
 
         self._freq = np.array(lo_freq)
@@ -1295,9 +1284,9 @@ class Tipper(object):
         # check to see if the new tipper array is the same shape as the old
         if (self._tipper is not None) and (
                 self._tipper.shape != tipper_array.shape):
-            print 'Error - shape of "tipper" array does not match shape of ' + \
+            logging.error( 'Error - shape of "tipper" array does not match shape of ' + \
                   'tipper-array: %s ; %s' % (str(tipper_array.shape),
-                                             str(self.tipper.shape))
+                                             str(self.tipper.shape)))
             return
 
         self._tipper = tipper_array
@@ -1353,9 +1342,9 @@ class Tipper(object):
 
         if (self.tipper_err is not None) and \
                 (self._tipper_err.shape != tipper_err_array.shape):
-            print 'Error - shape of "tipper_err" array does not match shape ' + \
+            logging.error( 'Error - shape of "tipper_err" array does not match shape ' + \
                   'of tipper_err array: %s ; %s' % (str(tipper_err_array.shape),
-                                                    str(self._tipper_err.shape))
+                                                    str(self._tipper_err.shape)))
             return
 
         self._tipper_err = tipper_err_array
@@ -1379,7 +1368,7 @@ class Tipper(object):
 
         """
         if self.tipper is None:
-            print 'tipper array is None - cannot calculate real'
+            logging.error( 'tipper array is None - cannot calculate real')
             return
 
         return np.real(self.tipper)
@@ -1401,14 +1390,13 @@ class Tipper(object):
 
         if (self.tipper is not None) and (
                 self.tipper.shape != real_array.shape):
-            print 'shape of "real" array does not match shape of tipper ' + \
-                  'array: %s ; %s' % (str(real_array.shape),
-                                      str(self.tipper.shape))
+            logging.error( 'shape of "real" array does not match shape of tipper ' + \
+                  'array: %s ; %s' % (str(real_array.shape), str(self.tipper.shape)))
             return
 
         # assert real array:
         if np.linalg.norm(np.imag(real_array)) != 0:
-            print 'Error - array "real" is not real valued !'
+            logging.error( 'Error - array "real" is not real valued !')
             return
 
         if self.tipper is not None:
@@ -1434,7 +1422,7 @@ class Tipper(object):
         """
 
         if self.tipper is None:
-            print 'tipper array is None - cannot calculate imag'
+            logging.error( 'tipper array is None - cannot calculate imag')
             return
 
         return np.imag(self.tipper)
@@ -1456,14 +1444,14 @@ class Tipper(object):
 
         if (self.tipper is not None) and (
                 self.tipper.shape != imag_array.shape):
-            print 'shape of "real" array does not match shape of tipper ' + \
+            logging.error( 'shape of "real" array does not match shape of tipper ' + \
                   'array: %s ; %s' % (str(imag_array.shape),
-                                      str(self.tipper.shape))
+                                      str(self.tipper.shape)))
             return
 
         # assert real array:
         if np.linalg.norm(np.imag(imag_array)) != 0:
-            print 'Error - array "imag" is not real valued !'
+            logging.error( 'Error - array "imag" is not real valued !')
             return
 
         ii_arr = np.complex(0, 1)
@@ -1495,7 +1483,7 @@ class Tipper(object):
         """
 
         if self.tipper is None:
-            # print 'tipper array is None - cannot calculate rho/phi'
+            # logging.error( 'tipper array is None - cannot calculate rho/phi')
             return None
 
         self.amplitude_err = None
@@ -1539,32 +1527,32 @@ class Tipper(object):
             tipper_new = copy.copy(self.tipper)
 
             if self.tipper.shape != r_array.shape:
-                print 'Error - shape of "r" array does not match shape of ' + \
+                logging.error( 'Error - shape of "r" array does not match shape of ' + \
                       'tipper array: %s ; %s' % (str(r_array.shape),
-                                                 str(self.tipper.shape))
+                                                 str(self.tipper.shape)))
                 return
 
             if self.tipper.shape != phi_array.shape:
-                print 'Error - shape of "phi" array does not match shape of ' + \
+                logging.error( 'Error - shape of "phi" array does not match shape of ' + \
                       'tipper array: %s ; %s' % (str(phi_array.shape),
-                                                 str(self.tipper.shape))
+                                                 str(self.tipper.shape)))
                 return
         else:
 
             tipper_new = np.zeros(r_array.shape, 'complex')
 
             if r_array.shape != phi_array.shape:
-                print 'Error - shape of "phi" array does not match shape ' + \
+                logging.error( 'Error - shape of "phi" array does not match shape ' + \
                       'of "r" array: %s ; %s' % (str(phi_array.shape),
-                                                 str(r_array.shape))
+                                                 str(r_array.shape)))
                 return
 
         # assert real array:
         if np.linalg.norm(np.imag(r_array)) != 0:
-            print 'Error - array "r" is not real valued !'
+            logging.error( 'Error - array "r" is not real valued !')
             return
         if np.linalg.norm(np.imag(phi_array)) != 0:
-            print 'Error - array "phi" is not real valued !'
+            logging.error( 'Error - array "phi" is not real valued !')
             return
 
         for idx_f in range(len(r_array)):
@@ -1672,7 +1660,7 @@ class Tipper(object):
         """
 
         if self.tipper is None:
-            print 'tipper array is "None" - I cannot rotate that'
+            logging.error( 'tipper array is "None" - I cannot rotate that')
             return
 
         # check for iterable list/set of angles - if so, it must have length 1
@@ -1681,7 +1669,7 @@ class Tipper(object):
             try:
                 degreeangle = float(alpha % 360)
             except ValueError:
-                print '"Angle" must be a valid number (in degrees)'
+                logging.error( '"Angle" must be a valid number (in degrees)')
                 return
 
             # make an n long list of identical angles
@@ -1691,7 +1679,7 @@ class Tipper(object):
                 try:
                     degreeangle = float(alpha % 360)
                 except ValueError:
-                    print '"Angle" must be a valid number (in degrees)'
+                    logging.error( '"Angle" must be a valid number (in degrees)')
                     return
                 # make an n long list of identical angles
                 lo_angles = [degreeangle for ii in self.tipper]
@@ -1699,14 +1687,14 @@ class Tipper(object):
                 try:
                     lo_angles = [float(ii % 360) for ii in alpha]
                 except ValueError:
-                    print '"Angles" must be valid numbers (in degrees)'
+                    logging.error( '"Angles" must be valid numbers (in degrees)')
                     return
 
         self.rotation_angle = np.array([(oldangle + lo_angles[ii]) % 360
                                         for ii, oldangle in enumerate(self.rotation_angle)])
 
         if len(lo_angles) != len(self.tipper):
-            print 'Wrong number Number of "angles" - need %ii ' % (len(self.tipper))
+            logging.error( 'Wrong number Number of "angles" - need %ii ' % (len(self.tipper)))
             self.rotation_angle = 0.
             return
 
