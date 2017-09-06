@@ -96,7 +96,7 @@ def plot_model(data_dir, plot_type='PTMap', depth_index=20, periodin=0):
             save_plots='y',
             depth_index=depth_index)
 
-        pltObj.plot()
+        pltObj.plot(ind=depth_index)
 
     return
 

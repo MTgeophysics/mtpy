@@ -1,10 +1,9 @@
 """
 Description:
-    Compute Phase Tensor from ModEM Dat File
+    Compute Phase Tensors from ModEM Dat File
 
-Author: fei.zhang@ga.gov.au
-
-Date: 2017-09-06
+LastUpdated:    2017-09-06
+Author:         fei.zhang@ga.gov.au
 """
 import os,sys
 

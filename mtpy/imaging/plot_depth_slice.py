@@ -226,7 +226,7 @@ class PlotDepthSlice(object):
             else:
                 print 'Could not find data file {0}'.format(self.data_fn)
 
-    def plot(self, ind):
+    def plot(self, ind=1):
         """
         plot depth slices
         """
@@ -507,4 +507,4 @@ if __name__ == '__main__':
         # loop to plot multi slices:
         max_slices = 10
         for index in xrange(1, max_slices):
-            pltObj.plot(index)
+            pltObj.plot(ind=index)
