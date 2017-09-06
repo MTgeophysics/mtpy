@@ -93,19 +93,20 @@ python examples/create_modem_input.py  /e/Data/MT_Datasets/WenPingJiang_EDI /e/D
 python examples/create_modem_input.py  /e/Data/MT_Datasets/GA_UA_edited_10s-10000s /e/Data/MT_Datasets/concurry_topo/AussieContinent_etopo1.asc /e/tmp/GA_UA_edited_10s-10000s_16
 python examples/create_modem_input.py /e/Data/MT_Datasets/concurry_EDI_files/ /e/Data/MT_Datasets/concurry_topo/AussieContinent_etopo1.asc /e/tmp/concurry_modem
 
-# FZ: Todo 2017-09
-# visualize ModEM output python examples/modem_plot_models.py
+# FZ: Todo 2017-09 Visualize ModEM outputs and create CSV files for the data
 python examples/modem_plot_models.py ./examples/data/ModEM_files/VicSynthetic07
 python examples/modem_plot_models.py ./examples/data/ModEM_files/VicSynthetic07 RMSMap
 python examples/modem_plot_models.py ./examples/data/ModEM_files/VicSynthetic07 PTMap
 python examples/modem_plot_models.py ./examples/data/ModEM_files/VicSynthetic07 Response
-python examples/modem_plot_models.py ./examples/data/ModEM_files/VicSynthetic07 DepthSlice
+#? python examples/modem_plot_models.py ./examples/data/ModEM_files/VicSynthetic07 DepthSlice
 
 python examples/modem_plot_models.py /e/Data/Modeling/Isa/100hs_flat_BB/
 python examples/modem_plot_models.py /e/Data/Modeling/Isa/100hs_flat_BB/ Response
-python examples/modem_plot_models.py /e/Data/Modeling/Isa/100hs_flat_BB/ DepthSlice
+#? python examples/modem_plot_models.py /e/Data/Modeling/Isa/100hs_flat_BB/ DepthSlice
 
-# view horizontal slice of a rho file
+# view horizontal slices of a rho file
 python mtpy/imaging/plot_depth_slice.py /e/Data/Modeling/Isa/100hs_flat_BB/Isa_run3_NLCG_048.rho 20
+
+# multiple slices
+python mtpy/imaging/modem_plot_slices.py /e/Data/Modeling/Isa/100hs_flat_BB/Isa_run3_NLCG_048.dat /e/Data/Modeling/Isa/100hs_flat_BB/Isa_run3_NLCG_048.rho
 python mtpy/imaging/modem_plot_slices.py /e/tmp/GA_UA_No_airs14/ModEM_Data.dat  /e/tmp/GA_UA_No_airs14/ModEM_Model.ws
-python mtpy/imaging/modem_plot_vertical_slice.py /e/Data/Modeling/Isa/100hs_flat_BB/Isa_run3_NLCG_048.dat /e/Data/Modeling/Isa/100hs_flat_BB/Isa_run3_NLCG_048.rho
