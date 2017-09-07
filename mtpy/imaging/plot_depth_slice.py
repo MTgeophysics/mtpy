@@ -8,7 +8,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.ticker import MultipleLocator
 
-import mtpy.utils.exceptions as mtex
 from mtpy.modeling.modem import Data
 from mtpy.modeling.modem import Model
 
@@ -126,18 +125,17 @@ class PlotDepthSlice(object):
         self.data_fn = data_fn  # optional
 
         self.save_path = kwargs.pop('save_path', None)
-        if self.model_fn is not None and self.save_path is None:
-            self.save_path = os.path.dirname(self.model_fn)
-        elif self.initial_fn is not None and self.save_path is None:
-            self.save_path = os.path.dirname(self.initial_fn)
 
-        if self.save_path is not None:
-            if not os.path.exists(self.save_path):
-                os.mkdir(self.save_path)
+        if self.save_path is None and self.model_fn is not None:
+            modelfile_path = os.path.dirname(self.model_fn)
+            self.save_path = os.path.join(modelfile_path, 'images_mtpy2')
+
+        if not os.path.exists(self.save_path):
+            os.mkdir(self.save_path)
 
         self.save_plots = kwargs.pop('save_plots', 'y')
 
-        self.depth_index = kwargs.pop('depth_index', None)
+        # no need this self.depth_index = kwargs.pop('depth_index', None)
         self.map_scale = kwargs.pop('map_scale', 'km')
         # make map scale
         if self.map_scale == 'km':
@@ -194,10 +192,10 @@ class PlotDepthSlice(object):
         if self.plot_yn == 'y':
             self.plot()
 
+        # read in the model data.
         self._read_model_data()
 
         return
-
 
     def _read_model_data(self):
         """
@@ -215,25 +213,30 @@ class PlotDepthSlice(object):
             self.nodes_north = md_model.nodes_north / self.dscale
             self.nodes_z = md_model.nodes_z / self.dscale
         else:
-            raise Exception('Error with the Model file: %s. Please check.'%(self.model_fn))
+            raise Exception('Error with the Model file: %s. Please check.' % (self.model_fn))
 
         # --> Optionally: read in data file to get station locations
-        if self.data_fn is not None and  os.path.isfile(self.data_fn):
+        if self.data_fn is not None and os.path.isfile(self.data_fn):
             md_data = Data()
             md_data.read_data_file(self.data_fn)
             self.station_east = md_data.station_locations[
-                'rel_east'] / self.dscale  # convert meters
+                                    'rel_east'] / self.dscale  # convert meters
             self.station_north = md_data.station_locations[
-                'rel_north'] / self.dscale
+                                     'rel_north'] / self.dscale
             self.station_names = md_data.station_locations['station']
         else:
-            print ('Problem with the (optional) Data file: %s. Please check.'%self.data_fn)
+            print ('Problem with the optional Data file: %s. Please check.' % self.data_fn)
+
+        self.total_horizontal_slices = self.grid_z.shape[0]
+        print ("Total Number of H-slices=", self.total_horizontal_slices)
+
+        return self.total_horizontal_slices
 
     def plot(self, ind=1):
         """
         plot the depth slice ind-th
         """
-        self.depth_index=ind
+        self.depth_index = ind
 
         fdict = {'size': self.font_size + 2, 'weight': 'bold'}
 
@@ -412,12 +415,9 @@ class PlotDepthSlice(object):
 
             # --> save plots to a common folder
             if self.save_plots == 'y':
-                out_file_name = "Depth_{}_{:.4f}.png".format(
+                out_file_name = "Resistivity_Slice_at_Depth_{}_{:.4f}.png".format(
                     ii, self.grid_z[ii])
-                outdir = os.path.join(self.save_path, 'SliceImages')
-                if not os.path.exists(outdir):
-                    os.mkdir(outdir)
-                path2outfile = os.path.join(outdir, out_file_name)
+                path2outfile = os.path.join(self.save_path, out_file_name)
                 fig.savefig(
                     path2outfile,
                     dpi=self.fig_dpi,
@@ -427,31 +427,19 @@ class PlotDepthSlice(object):
 
             # when runs interactively, plt show a figure
             plt.show()
-#            fig.clear()
-#            plt.close()
+            plt.close()
 
             return
 
     def redraw_plot(self):
         """
         redraw plot if parameters were changed
-
         use this function if you updated some attributes and want to re-plot.
-
-        :Example: ::
-
-            >>> # change the color and marker of the xy components
-            >>> import mtpy.modeling.occam2d as occam2d
-            >>> ocd = occam2d.Occam2DData(r"/home/occam2d/Data.dat")
-            >>> p1 = ocd.plotAllResponses()
-            >>> #change line width
-            >>> p1.lw = 2
-            >>> p1.redraw_plot()
         """
+
         for fig in self.fig_list:
             plt.close(fig)
         self.plot()
-
 
     def __str__(self):
         """
@@ -459,31 +447,34 @@ class PlotDepthSlice(object):
         """
 
         return ("Plots depth slices of model from INVERSION")
-#-------------------------------------------------------------------------
+
+
+# -------------------------------------------------------------------------
 if __name__ == '__main__':
     """
     plot depth slices
     """
     import sys
-    if len(sys.argv)<2:
+
+    if len(sys.argv) < 2:
         print("Usage: %s file.rho depth_index" % sys.argv[0])
         sys.exit(1)
 
     depth_ind = -1
 
-    if len(sys.argv)>=2:
-        modrho=sys.argv[1]
-    if len(sys.argv)>=3:
+    if len(sys.argv) >= 2:
+        modrho = sys.argv[1]
+    if len(sys.argv) >= 3:
         depth_ind = int(sys.argv[2])
     # pltObj= PlotDepthSlice(model_fn=modrho, xminorticks=100000, yminorticks=100000, depth_index=di, save_plots='y')
 
-    pltObj=PlotDepthSlice( model_fn=modrho, save_plots='y', depth_index=1)
+    pltObj = PlotDepthSlice(model_fn=modrho, save_plots='y')  # , depth_index=1)
 
     print (depth_ind)
-    if depth_ind >0:
+    if depth_ind > 0:
         pltObj.plot(depth_ind)
     else:
-        # loop to plot multi slices:
-        max_slices = 10
+        # loop to plot all slices:
+        max_slices = pltObj.total_horizontal_slices - 2  # 10
         for index in xrange(1, max_slices):
             pltObj.plot(ind=index)
