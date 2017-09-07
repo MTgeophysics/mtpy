@@ -26,8 +26,8 @@ def compute_phase_tensor(datfile):
     # Read the datafile
     md.read_data_file(data_fn=data_file)
 
-    num_sites = md.data_array.shape
-    print ("ModEM data file number of sites:", num_sites, num_sites[0])
+    num_sites = md.data_array.shape[0]
+    print ("ModEM data file number of sites:", num_sites)
 
     first_site_periods = md.data_array[0][9]  # (23L, 2L, 2L)
     print ("first_site_periods = %s" % str(first_site_periods.shape[0]))
@@ -35,12 +35,10 @@ def compute_phase_tensor(datfile):
     period_list = md.period_list
     freq_list = 1.0 / period_list
     num_periods = len(period_list)
-    print "ModEM data file number of periods:", num_periods
-
-    sys.exit(6)
+    print ("ModEM data file number of periods:", num_periods)
 
     for period_num in range(num_periods):
-        print "Working on period", period_list[period_num], "frequency:", freq_list[period_num]
+        print ("Working on period", period_list[period_num], "frequency:", freq_list[period_num])
         for num_site in range(num_sites):
             # Obtain the site for this number
             this_site = md.data_array[num_site]
@@ -83,8 +81,9 @@ def compute_phase_tensor(datfile):
 
 if __name__ == "__main__":
     """
-    How2Run:
+    How2Run Examples:
     python examples/phase_tensor_from_data.py examples/data/ModEM_files/Modular_MPI_NLCG_028.dat
+    python examples/phase_tensor_from_data.py /e/tmp/GA_UA_edited_10s-10000s_16/ModEM_Data.dat
     """
     file_dat = sys.argv[1]
     compute_phase_tensor(file_dat)

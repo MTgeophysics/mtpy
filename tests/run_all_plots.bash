@@ -112,3 +112,6 @@ python mtpy/imaging/modem_plot_slices.py /e/Data/Modeling/Isa/100hs_flat_BB/Isa_
 
 # View multiple horizontal slices of an initial model
 python mtpy/imaging/modem_plot_slices.py /e/tmp/GA_UA_edited_10s-10000s_16/ModEM_Data.dat  /e/tmp/GA_UA_edited_10s-10000s_16/ModEM_Model.ws
+
+python examples/phase_tensor_from_data.py examples/data/ModEM_files/Modular_MPI_NLCG_028.dat
+python examples/phase_tensor_from_data.py /e/tmp/GA_UA_edited_10s-10000s_16/ModEM_Data.dat
