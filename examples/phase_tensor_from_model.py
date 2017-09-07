@@ -5,15 +5,11 @@ Description:
 LastUpdated:    2017-09-06
 Author:         fei.zhang@ga.gov.au
 """
-import os,sys
+import sys
 
-from mtpy.modeling import modem_data
-
-# Import Z to deal with impedence data
-from mtpy.core import z
-
-# Phase tensor analysis toolkit
 import mtpy.analysis.pt as pt
+from mtpy.core import z
+from mtpy.modeling import modem_data
 
 def compute_phase_tensor(datfile):
     """
@@ -30,14 +26,18 @@ def compute_phase_tensor(datfile):
     # Read the datafile
     md.read_data_file(data_fn=data_file)
 
-    num_sites = md.data_array.shape[0]
-    print "ModEM data file number of sites:", num_sites
+    num_sites = md.data_array.shape
+    print ("ModEM data file number of sites:", num_sites, num_sites[0])
+
+    first_site_periods = md.data_array[0][9]  # (23L, 2L, 2L)
+    print ("first_site_periods = %s" % str(first_site_periods.shape[0]))
 
     period_list = md.period_list
     freq_list = 1.0 / period_list
-    num_periods = md.data_array[0][9].shape[0]
     num_periods = len(period_list)
     print "ModEM data file number of periods:", num_periods
+
+    sys.exit(6)
 
     for period_num in range(num_periods):
         print "Working on period", period_list[period_num], "frequency:", freq_list[period_num]
