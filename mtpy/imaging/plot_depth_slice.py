@@ -193,7 +193,7 @@ class PlotDepthSlice(object):
             self.plot()
 
         # read in the model data.
-        self._read_model_data()
+        self.total_horizontal_slices = self._read_model_data()
 
         return
 
@@ -227,10 +227,10 @@ class PlotDepthSlice(object):
         else:
             print ('Problem with the optional Data file: %s. Please check.' % self.data_fn)
 
-        self.total_horizontal_slices = self.grid_z.shape[0]
-        print ("Total Number of H-slices=", self.total_horizontal_slices)
+        total_horizontal_slices = self.grid_z.shape[0]
+        print ("Total Number of H-slices=", total_horizontal_slices)
 
-        return self.total_horizontal_slices
+        return total_horizontal_slices
 
     def plot(self, ind=1):
         """
@@ -245,7 +245,6 @@ class PlotDepthSlice(object):
                        6: '$10^{6}$', 7: '$10^{7}$', 8: '$10^{8}$'}
 
         # create an list of depth slices to plot
-        print self.grid_z  # FZ:
         if self.depth_index is None:
             zrange = range(self.grid_z.shape[0])
         elif isinstance(self.depth_index, int):
@@ -254,7 +253,7 @@ class PlotDepthSlice(object):
                 isinstance(self.depth_index, np.ndarray):
             zrange = self.depth_index
 
-        print (zrange)
+        print ("The depth index list:", zrange)
 
         # set the limits of the plot
         if self.ew_limits is None:
@@ -286,7 +285,7 @@ class PlotDepthSlice(object):
 
         plt.rcParams['font.size'] = self.font_size
 
-        # --> plot depths into individual figures
+        # --> plot each depth ii into individual figure
         for ii in zrange:
             depth = '{0:.3f} ({1})'.format(self.grid_z[ii],
                                            self.map_scale)
@@ -367,47 +366,6 @@ class PlotDepthSlice(object):
                 cax=cax,
                 label='Resistivity ($\Omega \cdot$m)')
 
-            # below orginal not good
-            # cax.set_label('Resistivity ($\Omega \cdot$m)')
-            # #,fontdict={'size': self.font_size + 1})
-
-            # # plot the colorbar - Original
-            # if self.cb_location is None:
-            #     if self.cb_orientation == 'horizontal':
-            #         self.cb_location = (ax1.axes.figbox.bounds[3] - .225,
-            #                             ax1.axes.figbox.bounds[1] + .05, .3, .025)
-            #
-            #     elif self.cb_orientation == 'vertical':
-            #         self.cb_location = ((ax1.axes.figbox.bounds[2] - .15,
-            #                              ax1.axes.figbox.bounds[3] - .21, .025, .3))
-            #
-            # ax2 = fig.add_axes(self.cb_location)
-            #
-            # cb = mcb.ColorbarBase(ax2,
-            #                       cmap=self.cmap,
-            #                       norm=Normalize(vmin=self.climits[0],
-            #                                      vmax=self.climits[1]),
-            #                       orientation=self.cb_orientation)
-            #
-            # if self.cb_orientation == 'horizontal':
-            #     cb.ax.xaxis.set_label_position('top')
-            #     cb.ax.xaxis.set_label_coords(.5, 1.3)
-            #
-            #
-            # elif self.cb_orientation == 'vertical':
-            #     cb.ax.yaxis.set_label_position('right')
-            #     cb.ax.yaxis.set_label_coords(1.25, .5)
-            #     cb.ax.yaxis.tick_left()
-            #     cb.ax.tick_params(axis='y', direction='in')
-            #
-            # cb.set_label('Resistivity ($\Omega \cdot$m)',
-            #              fontdict={'size': self.font_size + 1})
-            # cb.set_ticks(np.arange(self.climits[0], self.climits[1] + 1))
-            # cb.set_ticklabels([cblabeldict[cc]
-            #                    for cc in np.arange(self.climits[0],
-            #                                        self.climits[1] + 1)])
-            # plot the colorbar - Original-End
-            # FZ:  fig_list not work?
             self.fig_list.append(fig)
 
             # Figure Objects
@@ -471,10 +429,10 @@ if __name__ == '__main__':
     pltObj = PlotDepthSlice(model_fn=modrho, save_plots='y')  # , depth_index=1)
 
     print (depth_ind)
-    if depth_ind > 0:
+    if depth_ind >= 0:
         pltObj.plot(depth_ind)
     else:
-        # loop to plot all slices:
+        print("loop to plot all slices: ************** ")
         max_slices = pltObj.total_horizontal_slices - 2  # 10
         for index in xrange(1, max_slices):
             pltObj.plot(ind=index)
