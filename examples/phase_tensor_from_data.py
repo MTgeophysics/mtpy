@@ -84,7 +84,7 @@ def compute_phase_tensor(datfile):
 if __name__ == "__main__":
     """
     How2Run:
-    python examples/phase_tensor_from_model.py examples/data/ModEM_files/Modular_MPI_NLCG_028.dat
+    python examples/phase_tensor_from_data.py examples/data/ModEM_files/Modular_MPI_NLCG_028.dat
     """
     file_dat = sys.argv[1]
     compute_phase_tensor(file_dat)
