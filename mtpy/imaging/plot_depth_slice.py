@@ -26,14 +26,14 @@ except ImportError:
 
 class PlotDepthSlice(object):
     """
-    Plots depth slices of resistivity model
+    Plots depth slices of resistivity model (file.rho)
 
     :Example: ::
 
         >>> import mtpy.modeling.ws3dinv as ws
         >>> mfn = r"/home/MT/ws3dinv/Inv1/Test_model.00"
         >>> sfn = r"/home/MT/ws3dinv/Inv1/WSStationLocations.txt"
-        >>> # plot just first layer to check the formating
+        >>> # plot just first layer to check the formatting
         >>> pds = ws.PlotDepthSlice(model_fn=mfn, station_fn=sfn,
         >>> ...                     depth_index=0, save_plots='n')
         >>> #move color bar up
@@ -123,7 +123,7 @@ class PlotDepthSlice(object):
 
     def __init__(self, model_fn=None, data_fn=None, **kwargs):
         self.model_fn = model_fn
-        self.data_fn = data_fn
+        self.data_fn = data_fn  # optional
 
         self.save_path = kwargs.pop('save_path', None)
         if self.model_fn is not None and self.save_path is None:
@@ -144,6 +144,7 @@ class PlotDepthSlice(object):
             self.dscale = 1000.
         elif self.map_scale == 'm':
             self.dscale = 1.
+
         self.ew_limits = kwargs.pop('ew_limits', None)
         self.ns_limits = kwargs.pop('ns_limits', None)
 
@@ -193,48 +194,46 @@ class PlotDepthSlice(object):
         if self.plot_yn == 'y':
             self.plot()
 
-    def read_files(self):
+        self._read_model_data()
+
+        return
+
+
+    def _read_model_data(self):
         """
         read in the files to get appropriate information
         """
         # --> read in model file
-        if self.model_fn is not None:
-            if os.path.isfile(self.model_fn) == True:
-                md_model = Model()
-                md_model.read_model_file(self.model_fn)
-                self.res_model = md_model.res_model
-                self.grid_east = md_model.grid_east / self.dscale
-                self.grid_north = md_model.grid_north / self.dscale
-                self.grid_z = md_model.grid_z / self.dscale
-                self.nodes_east = md_model.nodes_east / self.dscale
-                self.nodes_north = md_model.nodes_north / self.dscale
-                self.nodes_z = md_model.nodes_z / self.dscale
-            else:
-                raise mtex.MTpyError_file_handling(
-                    '{0} does not exist, check path'.format(self.model_fn))
+        if self.model_fn is not None and os.path.isfile(self.model_fn):
+            md_model = Model()
+            md_model.read_model_file(self.model_fn)
+            self.res_model = md_model.res_model
+            self.grid_east = md_model.grid_east / self.dscale
+            self.grid_north = md_model.grid_north / self.dscale
+            self.grid_z = md_model.grid_z / self.dscale
+            self.nodes_east = md_model.nodes_east / self.dscale
+            self.nodes_north = md_model.nodes_north / self.dscale
+            self.nodes_z = md_model.nodes_z / self.dscale
+        else:
+            raise Exception('Error with the Model file: %s. Please check.'%(self.model_fn))
 
-        # --> read in data file to get station locations
-        if self.data_fn is not None:
-            if os.path.isfile(self.data_fn) == True:
-                md_data = Data()
-                md_data.read_data_file(self.data_fn)
-                self.station_east = md_data.station_locations[
-                    'rel_east'] / self.dscale
-                self.station_north = md_data.station_locations[
-                    'rel_north'] / self.dscale
-                self.station_names = md_data.station_locations['station']
-            else:
-                print 'Could not find data file {0}'.format(self.data_fn)
+        # --> Optionally: read in data file to get station locations
+        if self.data_fn is not None and  os.path.isfile(self.data_fn):
+            md_data = Data()
+            md_data.read_data_file(self.data_fn)
+            self.station_east = md_data.station_locations[
+                'rel_east'] / self.dscale  # convert meters
+            self.station_north = md_data.station_locations[
+                'rel_north'] / self.dscale
+            self.station_names = md_data.station_locations['station']
+        else:
+            print ('Problem with the (optional) Data file: %s. Please check.'%self.data_fn)
 
     def plot(self, ind=1):
         """
-        plot depth slices
+        plot the depth slice ind-th
         """
-
         self.depth_index=ind
-
-        # --> get information from files
-        self.read_files()
 
         fdict = {'size': self.font_size + 2, 'weight': 'bold'}
 
@@ -453,26 +452,6 @@ class PlotDepthSlice(object):
             plt.close(fig)
         self.plot()
 
-    def update_plot(self, fig):
-        """
-        update any parameters that where changed using the built-in draw from
-        canvas.
-
-        Use this if you change an of the .fig or axes properties
-
-        :Example: ::
-
-            >>> # to change the grid lines to only be on the major ticks
-            >>> import mtpy.modeling.occam2d as occam2d
-            >>> dfn = r"/home/occam2d/Inv1/data.dat"
-            >>> ocd = occam2d.Occam2DData(dfn)
-            >>> ps1 = ocd.plotAllResponses()
-            >>> [ax.grid(True, which='major') for ax in [ps1.axrte,ps1.axtep]]
-            >>> ps1.update_plot()
-
-        """
-
-        fig.canvas.draw()
 
     def __str__(self):
         """
