@@ -252,6 +252,34 @@ class ResPhase(object):
     @property
     def phase_err_yy(self):
         return self._phase_err[:, 1, 1]
+    
+    #calculate determinant values
+    @property
+    def _zdet(self):
+        return np.array([np.linalg.det(zz)**.5 for zz in self._z])
+    
+    @property
+    def _zdet_var(self):
+        if self._z_err is not None:
+            return np.array([abs(np.linalg.det(zzv))**.5 for zzv in self._z_err])
+        else:
+            return np.ones_like(self._zdet, dtype=np.float)
+    
+    @property
+    def phase_det(self):
+        return np.arctan2(self._zdet.imag, self._zdet.real)*(180/np.pi)
+    
+    @property
+    def phase_det_err(self):
+        return np.arcsin(self._zdet_var/abs(self._zdet))*(180/np.pi)
+
+    @property
+    def res_det(self):
+        return 0.2*(1./self.freq)*abs(self._zdet)**2
+    
+    @property
+    def res_det_err(self):
+        return 0.2*(1./self.freq)*np.abs(self._zdet+self._zdet_var)**2-self.res_det
 
 #==============================================================================
 # Impedance Tensor Class

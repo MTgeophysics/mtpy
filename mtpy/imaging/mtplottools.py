@@ -14,6 +14,8 @@ Contains helper functions and classes for plotting
 
 import numpy as np
 import os
+
+import mtpy.core.mt as mt
 import mtpy.core.edi as mtedi
 import mtpy.core.z as mtz
 import mtpy.analysis.pt as mtpt
@@ -291,6 +293,9 @@ class PlotSettings(object):
         self.fig_size = None
         
         self.font_size = 7
+        self.marker_size = 7
+        self.lw = 1
+        self.plot_title = None
         
         # line styles:
         self.xy_ls = None
@@ -309,9 +314,9 @@ class PlotSettings(object):
         self.strike_tip_marker = '>'
         
         # marker color styles:
-        self.xy_marker = (0, 0, .75)
-        self.yx_marker = (.75, 0, 0)
-        self.det_marker = (0, .75, 0)        
+        self.xy_color = (0, 0, .75)
+        self.yx_color = (.75, 0, 0)
+        self.det_color = (0, .75, 0)        
         self.skew_color = (.85, .35, 0)
         self.strike_inv_color = (.2, .2, .7)
         self.strike_pt_color = (.7, .2, .2)
@@ -650,7 +655,7 @@ class Tipper(object):
 #  make an MT object that has all the important information and methods               
 #==============================================================================
                
-class MTplot(object):
+class MTplot(mt.MT):
     """
     This class will be able to read in the imporant information from either
     an .edi file or information input by hand and can be extended to other 
@@ -802,334 +807,31 @@ class MTplot(object):
         
     """
     
-    def __init__(self, fn=None, z=None, z_err=None, res_array=None,
-                 phase_array=None, res_err_array=None, phase_err_array=None,
-                 tipper=None, tipper_err=None, station=None, period=None, 
-                 lat=None, lon=None, elev=None, rot_z=0, z_object=None, 
-                 tipper_object=None, freq=None):
+    def __init__(self, fn=None, z_object=None, tipper_object=None, **kwargs):
                      
-
-        self._station = station
-        self._freq = freq
-        self._lat = lat
-        self._lon = lon
-        self._elev = elev
-        self._fn = fn
-        self._rot_z = rot_z
-        
-        #if a z_object is input make it the attribute _Z
+        mt.MT.__init__(self, fn=fn)
+            
         if z_object is not None:
-            self._Z = z_object
-            try:
-                if len(z_object.freq) == 0:
-                    raise mtex.MTpyError_Z('Need to set Z.freq to an'+\
-                                           ' array that cooresponds to Z.z')
-            except TypeError:
-                raise mtex.MTpyError_Z('Need to set Z.freq to an'+\
-                                           ' array that cooresponds to Z.z')
-            self.period = 1./z_object.freq
-        
-        #if z_array is input
-        elif z is not None:
-            #make sure period is input for plotting
-            if self.period == None:
-                raise mtex.MTpyError_Z('Need to input period array to '+\
-                                            'compute Resistivity')
-                               
-            self._Z = mtz.Z(z_array=z, z_err_array=z_err)
-            self._Z.freq = 1./period
-
-        #if a tipper object is input set it to _Tipper
+            self.Z = z_object
+            
         if tipper_object is not None:
-            self._Tipper = tipper_object
+            self.Tipper = tipper_object
             
-        else:
-            self._Tipper = mtz.Tipper(tipper_array=tipper, 
-                                      tipper_err_array=tipper_err,
-                                      freq=freq)
         
-        #--> read in the edi file if its given
-        if self._fn is not None:
-            if self._fn.lower().endswith('.edi'):
-                self._read_edi()
+        for key in kwargs.keys():
+            setattr(self, key, kwargs[key])
+
+    @property
+    def period(self):
+        if np.all(self.Z.z == 0+0j):
+            if np.all(self.Tipper.tipper == 0+0j):
+                return None
             else:
-                not_fn = self._fn[os.path.basename(self._fn).find['.']:]
-                raise mtex.MTpyError_file_handling('File '+\
-                          'type {0} not supported yet.'.format(not_fn))
-        
-            
-        #--> if resistivity and phase are given set the z_array, z_err_array
-        if res_array != None and phase_array != None:
-            if period is None and freq is None:
-                raise mtex.MTpyError_Z('Need to input period array for '+\
-                                           'plotting')
-            
-            if not res_array.shape == phase_array.shape:
-                raise mtex.MTpyError_inputarguments('res_array and phase array '+\
-                                               'do not have the same shape')
-                                               
-            if not res_array.shape[0] == period.shape[0]:
-                raise mtex.MTpyError_inputarguments('res_array and period array '+\
-                                               'do not have the same shape')
-            
-            self._Z = mtz.Z()
-            self._Z.freq = 1./period
-            self._set_res_phase(res_array,phase_array, 
-                                res_err_array=res_err_array,
-                                phase_err_array=phase_err_array)
-                               
-            self._set_period(period)
-
-            
-    def _read_edi(self):
-        """
-        read in an .edi file using mtpy.core.edi
-        """
-        
-        edi_obj = mtedi.Edi(self._fn)
-        
-        #--> set the attributes accordingly
-        # impedance tensor and error
-        self._Z = edi_obj.Z
-        
-        # tipper and error
-        if np.all(edi_obj.Tipper.tipper == 0+0j):
-            self._set_tipper(np.zeros((self._Z.z.shape[0], 1, 2),
-                                     dtype='complex'))
-            self._set_tipper_err(np.zeros((self._Z.z.shape[0], 1, 2)))
-            self._Tipper.rotation_angle = np.zeros(self._Z.z.shape[0])
-            self._Tipper.freq = edi_obj.Z.freq
-            
+                return 1./self.Tipper.freq
         else:
-            self._Tipper = edi_obj.Tipper
+            return 1./self.Z.freq
+        
             
-        # station name
-        try:
-            self.station = edi_obj.station
-        except KeyError:
-            print 'Could not get station name set to MT01'
-            self.station = 'MT01'
-            
-        # period
-        self.freq = edi_obj.Z.freq.copy()
-        
-        # lat, lon and elevation
-        self.lat = edi_obj.lat
-        self.lon = edi_obj.lon
-        self.elev = edi_obj.elev
-        
-        
-    # don't really like this way of programming but I'll do it anyway
-    #==========================================================================
-    #  make set methods for each of the attributes    
-    #==========================================================================
-    def _set_z(self, z):
-        self._Z.z = z
-        
-    def _set_z_err(self, z_err):
-        self._Z.z_err = z_err
-        
-    def _set_tipper(self, tipper):
-        self._Tipper.tipper = tipper
-        self._plot_tipper = 'y'
-        
-    def _set_tipper_err(self, tipper_err):
-        self._Tipper.tipper_err = tipper_err
-        
-    def _set_station(self, station):
-        self._station = station
-        
-    def _set_period(self, period):
-        self._set_freq(1./period)
-        
-    def _set_lat(self, lat):
-        self._lat = lat
-        
-    def _set_lon(self, lon):
-        self._lon = lon
-        
-    def _set_elev(self, elev):
-        self._elev = elev
-        
-    def _set_fn(self, fn):
-        self._fn = fn
-        if self._fn[-3:] == 'edi':
-            self._read_edi()
-        else:
-            not_fn = self._fn[os.path.basename(self._fn).find['.']:]
-            raise mtex.MTpyError_file_handling('File '+\
-                              'type {0} not supported yet.'.format(not_fn))
-           
-    def _set_rot_z(self, rot_z):
-        self._rot_z = rot_z
-        
-        # be sure to rotate the components if rot_z is set
-        try:
-            self._Z.rotate(self._rot_z)
-            self._Tipper.rotate(self._rot_z)
-        except TypeError:
-            self._Z.rotation_angle = np.array([rot_z 
-                                        for rr in range(self.period.shape[0])])
-        
-    def _set_res_phase(self, res_array, phase_array, res_err_array=None,
-                       phase_err_array=None):        
-        self._Z.set_res_phase(res_array, phase_array, res_err_array, 
-                              phase_err_array)
-        
-    def _set_freq(self, freq):
-        self._freq = freq
-        
-        self._check_freq_order()
-            
-    def _check_freq_order(self):
-        #make sure things are in order from highest freq first
-        if len(self._freq) > 1:
-            if self._freq[0] < self._freq[1]:
-                print 'Flipping arrays to be ordered from short period to long'
-                self._freq = self._freq.copy()[::-1]
-                
-                self._Z.z = self._Z.z.copy()[::-1]
-                self._Z.z_err = self._Z.z_err.copy()[::-1]
-                self._Z.freq = self._freq.copy()
-                
-                try:
-                    if self._Tipper.tipper is not None:
-                        self._Tipper.tipper = self._Tipper.tipper.copy()[::-1]
-                        self._Tipper.tipper_err = self._Tipper.tipper_err.copy()[::-1]
-                        self._Tipper.freq = self._freq.copy()
-                except AttributeError:
-                    pass
-
-        
-    #==========================================================================
-    # make get methods for each attribute
-    #==========================================================================
-    def _get_z(self):
-        return self._Z.z
-        
-    def _get_z_err(self):
-        return self._Z.z_err
-
-    def _get_tipper(self):
-        return self._Tipper.tipper
-        
-    def _get_tipper_err(self):
-        return self._Tipper.tipper_err
-        
-    def _get_station(self):
-        return self._station
-        
-    def _get_period(self):
-        return 1./self._freq
-        
-    def _get_lat(self):
-        return self._lat
-        
-    def _get_lon(self):
-        return self._lon
-        
-    def _get_elev(self):
-        return self._elev
-        
-    def _get_fn(self):
-        return self._fn
-        
-    def _get_rot_z(self):
-        return self._rot_z
-        
-    def _get_freq(self):
-        return self._freq
-        
-    #==========================================================================
-    # use the property built-in to make these get/set useable behind the scenes
-    #==========================================================================
-    z = property(_get_z, _set_z, 
-                 doc="Impedance tensor in the shape (nz,2,2) complex "+\
-                     "numpy.array")
-    
-    z_err = property(_get_z_err, _set_z_err, 
-                 doc="Impedance tensor error same shape as MT.z real "+\
-                     "numpy.array")
-                  
-    tipper = property(_get_tipper, _set_tipper, 
-                      doc="Tipper array in the shape (nz, 2) complex "+\
-                          "numpy.array")
-                       
-    tipper_err = property(_get_tipper_err, _set_tipper_err, 
-                          doc="Tipper error array same shape as MT.tipper"+\
-                              "real numpy.array")
-                          
-    station = property(_get_station, _set_station, 
-                       doc="Name of the station to be plotted")
-                       
-    period = property(_get_period, _set_period, 
-                      doc="array of periods corresponding to MT.z")
-                      
-    lat = property(_get_lat, _set_lat, 
-                   doc="Latitude in decimal degrees of the station")
-    
-    lon = property(_get_lon, _set_lon,
-                   doc="Longitude in decimal degrees of the station")
-    
-    elev = property(_get_elev, _set_elev, 
-                    doc="Elevation of the station in meters")
-                    
-    fn = property(_get_fn, _set_fn,
-                      doc="full path to the file of the station "+\
-                          "being plotted")
-                      
-    rot_z = property(_get_rot_z, _set_rot_z, 
-                     doc="Rotation angle positive clockwise assuming North "+\
-                         "is 0, can be an array with same shape at z")
-                         
-    freq = property(_get_freq, _set_freq,
-                           doc="freq array corresponding to elemens in z")
-                      
-    #==========================================================================
-    # define methods to get resphase, phasetensor, invariants
-    #
-    # --> used uppercase in the function names to signify that it is getting a 
-    #     class object
-    #==========================================================================
-
-    def get_ResPhase(self, **kwargs):
-        """
-        returns a ResPhase object from z_object
-        
-        """
-        rp = ResPhase(self._Z, **kwargs)
-        return rp
-
-    def get_PhaseTensor(self):
-        """
-        returns a mtpy.analysis.pt.PhaseTensor object from z_object
-        
-        """
-        pt = mtpt.PhaseTensor(z_object=self._Z)
-        pt.freq = 1./self.period
-        
-        return pt
-    
-    def get_Zinvariants(self):
-        """
-        returns a mtpy.analysis.zinvariants.Zinvariants object
-        """
-        
-        zinv = mtinv.Zinvariants(z_object=self._Z)
-        
-        return zinv
-        
-    def get_Tipper(self):
-        """
-        returns Tipper class
-        
-        """
-        
-        tp = Tipper(tipper_object=self._Tipper)
-        
-        return tp
-        
-        
 #==============================================================================
 # define a class object that contains list of mt_objects
 #==============================================================================

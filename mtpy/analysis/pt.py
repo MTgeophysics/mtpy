@@ -411,7 +411,8 @@ class PhaseTensor(object):
     #  define get methods for read only properties
     #==========================================================================
     #---invariants-------------------------------------------------------------
-    def _get_invariants(self):
+    @property
+    def invariants(self):
         """
             Return a dictionary of PT-invariants.
 
@@ -432,10 +433,9 @@ class PhaseTensor(object):
 
         return inv_dict
 
-    invariants = property(_get_invariants, doc="")
-
     #---trace-------------------------------------------------------------
-    def _get_trace(self):
+    @property
+    def trace(self):
         """
             Return the trace of PT (incl. uncertainties).
 
@@ -445,22 +445,21 @@ class PhaseTensor(object):
 
         """
         if self.pt is None:
-            return None, None
+            return None
         
-        tr = np.array( [np.trace(i) for i in self.pt])
+        return np.array([np.trace(i) for i in self.pt])
 
+    @property
+    def trace_err(self):
         tr_err = None
         if self.pt_err is not None:
-            tr_err = np.zeros_like(tr)
+            tr_err = np.zeros_like(self.trace)
             tr_err[:] = self.pt_err[:,0,0] + self.pt_err[:,1,1]
-
-
-        return [tr, tr_err]
-
-    trace = property(_get_trace, doc= "")
-
+        return tr_err
+    
     #---alpha-------------------------------------------------------------
-    def _get_alpha(self):
+    @property
+    def alpha(self):
         """
             Return the principal axis angle (strike) of PT in degrees 
 			(incl. uncertainties).
@@ -472,14 +471,16 @@ class PhaseTensor(object):
         """
 
         if self.pt is None:
-            return None, None
+            return None
 
-        alpha = np.degrees(0.5 * np.arctan2( self.pt[:,0,1] + self.pt[:,1,0],
+        return np.degrees(0.5 * np.arctan2( self.pt[:,0,1] + self.pt[:,1,0],
                                             self.pt[:,0,0] - self.pt[:,1,1]))
         
-        alphaerr = None
+    @property
+    def alpha_err(self):
+        alpha_err = None
         if self.pt_err is not None:
-            alphaerr = np.zeros_like(alpha)
+            alphaerr = np.zeros_like(self.alpha)
             y = self.pt[:,0,1] + self.pt[:,1,0]
             yerr = np.sqrt( self.pt_err[:,0,1]**2 + self.pt_err[:,1,0]**2  )
             x = self.pt[:,0,0] - self.pt[:,1,1] 
@@ -488,12 +489,11 @@ class PhaseTensor(object):
             alphaerr[:] = 0.5 / ( x**2 + y**2) * np.sqrt(y**2 * xerr**2 + \
                                                          x**2 * yerr**2 )
 
-        return [alpha, alphaerr]
-        
-    alpha = property(_get_alpha, doc = "")
+        return alpha_err
 
     #---beta-------------------------------------------------------------
-    def _get_beta(self):
+    @property
+    def beta(self):
         """
             Return the 3D-dimensionality angle Beta of PT in degrees 
             (incl. uncertainties).
@@ -505,30 +505,30 @@ class PhaseTensor(object):
         """
 
         if self.pt is None:
-            return None, None
+            return None
         
-        beta = np.degrees(0.5 * np.arctan2( self.pt[:,0,1] - self.pt[:,1,0],
+        return np.degrees(0.5 * np.arctan2( self.pt[:,0,1] - self.pt[:,1,0],
                                             self.pt[:,0,0] + self.pt[:,1,1]))
-
+    @property
+    def beta_err(self):
         betaerr = None
 
         if self.pt_err is not None:
-            betaerr = np.zeros_like(beta)
+            beta_err = np.zeros_like(self.beta)
 
             y = self.pt[:,0,1] - self.pt[:,1,0]
             yerr = np.sqrt( self.pt_err[:,0,1]**2 + self.pt_err[:,1,0]**2  )
             x = self.pt[:,0,0] + self.pt[:,1,1] 
             xerr = np.sqrt( self.pt_err[:,0,0]**2 + self.pt_err[:,1,1]**2  )
 
-            betaerr[:] = 0.5 / ( x**2 + y**2) * np.sqrt( y**2 * xerr**2 +\
-                                                         x**2 * yerr**2 )
+            beta_err[:] = 0.5 / ( x**2 + y**2) * np.sqrt( y**2 * xerr**2 +\
+                                                          x**2 * yerr**2 )
 
-        return [beta, betaerr]
-
-    beta = property(_get_beta, doc="")
+        return betaerr
 
     #---skew-------------------------------------------------------------
-    def _get_skew(self):
+    @property
+    def skew(self):
         """
             Return the skew of PT (incl. uncertainties).
 
@@ -540,19 +540,20 @@ class PhaseTensor(object):
         if self.pt is None:
             return None, None
        
-        skew = np.array([i[0,1] - i[1,0] for i in self.pt])
+        return np.array([i[0,1] - i[1,0] for i in self.pt])
         
-        skewerr = None
+    @property
+    def skew_err(self):
+        skew_err = None
         if self.pt_err is not None:
-            skewerr = np.zeros_like(skew)
-            skewerr[:] = self.pt_err[:,0,1] + self.pt_err[:,1,0]
+            skew_err = np.zeros_like(self.skew)
+            skew_err[:] = self.pt_err[:,0,1] + self.pt_err[:,1,0]
 
-        return [skew, skewerr]
-
-    skew = property(_get_skew, doc="Skew angle in degrees")
-
+        return skew_err
+    
     #---azimuth (strike angle)-------------------------------------------------
-    def _get_azimuth(self):
+    @property
+    def azimuth(self):
         """
         Returns the azimuth angle related to geoelectric strike in degrees
         including uncertainties
@@ -571,20 +572,20 @@ class PhaseTensor(object):
         if self.pt is None:
             return None, None
             
-        az = self.alpha[0] - self.beta[0]
+        return self.alpha - self.beta
         
+    @property
+    def azimuth_err(self):
         if self.pt_err is not None:
-            az_err = np.sqrt(self.alpha[1]+self.beta[1])
+            az_err = np.sqrt(self.alpha+self.beta)
         else:
             az_err = None
             
-        return [az, az_err]
-        
-    azimuth = property(_get_azimuth, 
-                       doc="Azimuth angle (deg) related to geoelectric strike")
-                       
+        return az_err
+
     #---ellipticity----------------------------------------------------
-    def _get_ellipticity(self):
+    @property
+    def ellipticity(self):
         """
         Returns the ellipticity of the phase tensor, related to dimesionality
         
@@ -601,22 +602,22 @@ class PhaseTensor(object):
         if self.pt is None:
             return None, None
             
-        ellip = (self.phimax[0]-self.phimin[0])/(self.phimax[0]+self.phimin[0])
+        return (self.phimax-self.phimin)/(self.phimax+self.phimin)
         
+    @property
+    def ellipticity_err(self):
         if self.pt_err is not None:
-            ellip_err = ellip * np.sqrt(self.phimax[1]+self.phimin[1])*\
-                        np.sqrt((1/(self.phimax[0]-self.phimin[0]))**2+\
-                        (1/(self.phimax[0]+self.phimin[0]))**2)
+            ellip_err = self.ellipticity * np.sqrt(self.phimax_err+self.phimin_err)*\
+                        np.sqrt((1/(self.phimax-self.phimin))**2+\
+                        (1/(self.phimax+self.phimin))**2)
         else:
             ellip_err = None
             
-        return [ellip, ellip_err]
-        
-    ellipticity = property(_get_ellipticity,
-                           doc="Ellipticity of phase tensor related to "+\
-                               "dimensionality")
+        return ellip_err
+
     #---det-------------------------------------------------------------
-    def _get_det(self):
+    @property
+    def det(self):
         """
             Return the determinant of PT (incl. uncertainties).
 
@@ -628,20 +629,19 @@ class PhaseTensor(object):
         if self.pt is None:
             return None, None
 
-        det_phi = np.array( [np.linalg.det(i) for i in self.pt])
+        return np.array( [np.linalg.det(i) for i in self.pt])
         
+    @property
+    def det_err(self):
         det_phi_err = None
         if self.pt_err is not None:
-            det_phi_err = np.zeros_like(det_phi)
+            det_phi_err = np.zeros_like(self.det)
             det_phi_err[:] = np.abs(self.pt[:,1,1] * self.pt_err[:,0,0]) +\
                              np.abs(self.pt[:,0,0] * self.pt_err[:,1,1]) +\
                              np.abs(self.pt[:,0,1] * self.pt_err[:,1,0]) +\
                              np.abs(self.pt[:,1,0] * self.pt_err[:,0,1])
-
-        return [det_phi, det_phi_err]
-
-    det = property(_get_det, doc = "")
-
+        return det_phi_err
+    
     #---principle component 1----------------------------------------------
     def _pi1(self):
         """
@@ -698,7 +698,8 @@ class PhaseTensor(object):
    
 
     #---phimin----------------------------------------------
-    def _get_phimin(self):
+    @property
+    def phimin(self):
         """
             Return the angle Phi_min of PT (incl. uncertainties).
             
@@ -712,22 +713,22 @@ class PhaseTensor(object):
         """
 
         if self.pt is None:
-            return None, None
+            return None
 
-        phimin = self._pi2()[0] - self._pi1()[0]
+        return np.rad2deg(self._pi2()[0] - self._pi1()[0])
 
+    @property
+    def phimin_err(self):
         phiminerr = None
         if self.pt_err is not None:
             phiminerr = np.sqrt(self._pi2()[1]**2+self._pi1()[1]**2)
- 
-            return [np.degrees(np.arctan(phimin)), np.degrees(np.arctan(phiminerr))]
+            return np.degrees(np.arctan(phiminerr))
         else:
-            return [np.degrees(np.arctan(phimin)),None]
-
-    phimin = property(_get_phimin, doc =" Minimum phase in degrees")
+            return None
 
     #---phimax----------------------------------------------
-    def _get_phimax(self):
+    @property
+    def phimax(self):
         """
             Return the angle Phi_max of PT (incl. uncertainties).
             
@@ -743,20 +744,19 @@ class PhaseTensor(object):
         if self.pt is None:
             return None, None
 
-        phimax = self._pi2()[0] + self._pi1()[0]
+        return np.rad2deg(self._pi2()[0] + self._pi1()[0])
 
+    @property
+    def phimax_err(self):
         phimaxerr = None
         if self.pt_err is not None:
             phimaxerr = np.sqrt(self._pi2()[1]**2+self._pi1()[1]**2)
  
-            return [np.degrees(np.arctan(phimax)), np.degrees(np.arctan(phimaxerr))]
+            return np.degrees(np.arctan(phimaxerr))
         else:
-            return [np.degrees(np.arctan(phimax)),None]
+            return None
 
-    phimax = property(_get_phimax, doc = "Maximum phase in degrees")
-
-    
-    def rotate(self,alpha):
+    def rotate(self, alpha):
         """
             Rotate PT array. Change the rotation angles attribute respectively.
 
@@ -768,7 +768,6 @@ class PhaseTensor(object):
 
 
         """
-
 
         if self._pt is None :
             print 'pt-array is "None" - I cannot rotate that'
