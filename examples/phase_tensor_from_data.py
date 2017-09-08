@@ -1,10 +1,17 @@
 """
 Description:
-    Compute Phase Tensors from ModEM Dat File
+    Compute Phase Tensors from ModEM Dat File and output to CSV file
 
-LastUpdated:    2017-09-06
-Author:         fei.zhang@ga.gov.au
+References:
+    https://gajira.atlassian.net/browse/ALAMP-49
+
+CreationDate:   06/09/2017
+CreatedBy:      SysUser='u25656'
+
+Developer:      fei.zhang@ga.gov.au
+LastUpdate:     08/09/2017
 """
+
 import sys
 
 import mtpy.analysis.pt as pt
