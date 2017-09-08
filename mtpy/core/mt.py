@@ -706,8 +706,6 @@ class MT(object):
         self.Site.Location.longitude = j_obj.metadata_dict['longitude']
         self.Site.Location.elevation = j_obj.metadata_dict['elevation']
         
-
-        
     def remove_distortion(self, num_freq=None):
         """
         remove distortion following Bibby et al. [2005].
