@@ -1017,56 +1017,47 @@ class Location(object):
         
         for key in kwargs.keys():
             setattr(self, key, kwargs[key])
-            
-    def _get_latitude(self):
+    
+    @property        
+    def latitude(self):
         return self._latitude
-    def _set_latitude(self, lat):
+    @latitude.setter
+    def latitude(self, lat):
         self._latitude = gis_tools.assert_lat_value(lat)
-        
-    latitude = property(fget=_get_latitude, 
-                        fset=_set_latitude,
-                        doc="""Latitude in decimal degrees""") 
-                        
-    def _get_longitude(self):
+
+    @property
+    def longitude(self):
         return self._longitude
-    def _set_longitude(self, lon):
+    @longitude.setter
+    def longitude(self, lon):
         self._longitude = gis_tools.assert_lon_value( lon)
         
-    longitude = property(fget=_get_longitude, 
-                        fset=_set_longitude,
-                        doc="""Longitude in decimal degrees""") 
-                        
-    def _get_elevation(self):
+    @property
+    def elevation(self):
         return self._elevation
-    def _set_elevation(self, elev):
+    @elevation.setter
+    def elevation(self, elev):
         self._elevation = gis_tools.assert_elevation_value(elev)
-        
-    elevation = property(fget=_get_elevation, 
-                        fset=_set_elevation,
-                        doc="""Elevation in floating point""")
     
-    def _get_easting(self):
+    @property
+    def easting(self):
         return self._easting
-    def _set_easting(self, easting):
+    @easting.setter
+    def easting(self, easting):
         try:
             self._easting = float(easting)
         except TypeError:
             self._easting = None
-            
-    easting = property(fget=_get_easting, 
-                       fset=_set_easting,
-                       doc="""Easting in meters""")
-    
-    def _get_northing(self):
+
+    @property    
+    def northing(self):
         return self._northing
-    def _set_northing(self, northing):
+    @northing.setter
+    def northing(self, northing):
         try:
             self._northing = float(northing)
         except TypeError:
             self._northing = None
-    northing = property(fget=_get_northing, 
-                       fset=_set_northing,
-                       doc="""Northing in meters""")
     
     def project_location2utm(self):
         """

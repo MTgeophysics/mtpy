@@ -893,7 +893,7 @@ class MTplot(object):
         self._Z = edi_obj.Z
         
         # tipper and error
-        if edi_obj.Tipper.tipper == None:
+        if np.all(edi_obj.Tipper.tipper == 0+0j):
             self._set_tipper(np.zeros((self._Z.z.shape[0], 1, 2),
                                      dtype='complex'))
             self._set_tipper_err(np.zeros((self._Z.z.shape[0], 1, 2)))

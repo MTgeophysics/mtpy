@@ -11,7 +11,7 @@ import xml.etree.cElementTree as ET
 import datetime
 from xml.dom import minidom
 
-dt_fmt = '%Y-%m-%dT%H:%M:%S'
+dt_fmt = '%Y-%m-%d %H:%M:%S'
 #==============================================================================
 # Generic object to hold information
 #==============================================================================
@@ -34,18 +34,15 @@ class XML_element(object):
         for key in kwargs.keys():
             setattr(self, key, kwargs[key])
             
-    def _get_value(self):
+    @property
+    def value(self):
         return self._value
-        
-    def _get_attr(self):
+    @property
+    def attr(self):
         return self._attr
-        
-    def _get_name(self):
+    @property
+    def name(self):
         return self._name
-        
-    name = property(fget=_get_name)
-    attr = property(fget=_get_attr)
-    value = property(fget=_get_value)
     
 #==============================================================================
 # General information
@@ -687,12 +684,12 @@ class MT_XML(XML_Config):
        
         # Field Notes
         self.FieldNotes.Magnetometer.HX = XML_element('HX', None, 
-                                                str(self.edi_obj.Define_measurement.meas_hx.acqchan))
+                                                str(self.edi_obj.Define_measurement.meas_hx.id))
         self.FieldNotes.Magnetometer.HY = XML_element('HY', None, 
-                                                str(self.edi_obj.Define_measurement.meas_hy.acqchan))
+                                                str(self.edi_obj.Define_measurement.meas_hy.id))
         try:        
             self.cfg_obj.FieldNotes.Magnetometer.HZ = XML_element('HZ', None,
-                                                            str(self.edi_obj.Define_measurement.meas_hz.acqchan))
+                                                            str(self.edi_obj.Define_measurement.meas_hz.id))
         except AttributeError:
             pass
         #TODO: need to fill in more information on dipoles and magnetometers        
