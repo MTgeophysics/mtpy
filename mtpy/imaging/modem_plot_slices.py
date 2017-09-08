@@ -41,7 +41,7 @@ class ModemPlotSlices():
         # maximum distance in metres from vertical slice location and station
         self.station_dist = kwargs.pop('station_dist', 50000)
         # z limits (positive down so order is reversed)
-        self.zlim = kwargs.pop('zlim', (20000, -1000))
+        self.zlim = kwargs.pop('zlim', (200000, -1000))
         # colour limits
         self.clim = kwargs.pop('clim', [0.3, 3.7])
         self.fig_size = kwargs.pop('fig_size', [16, 12])
@@ -288,6 +288,11 @@ if __name__ == "__main__":
     # construct plot object
     myObj = ModemPlotSlices(datf, rhof)  # ,map_scale='m')
 
+    # horizontal at a given depth
+    myObj.set_plot_orientation('z')
+    myObj.set_plot_orientation('ns')
+    myObj.set_plot_orientation('ew')
+
     for dist in slice_locs:
         sdist=int(dist)
 
@@ -296,8 +301,6 @@ if __name__ == "__main__":
 
         # plot resistivity image at slices in three orientations at a given slice_location=sdist
 
-        # horizontal at a given depth
-        myObj.set_plot_orientation('z')
         myObj.make_plot(slice_location=sdist)  # actual location will be nearest cell centre
 
         # myObj.set_plot_orientation('ew')

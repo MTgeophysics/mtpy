@@ -106,10 +106,10 @@ python examples/modem_plot_models.py /e/Data/Modeling/Isa/100hs_flat_BB/ DepthSl
 
 # view horizontal slices of a rho file
 python mtpy/imaging/plot_depth_slice.py /e/Data/Modeling/Isa/100hs_flat_BB/Isa_run3_NLCG_048.rho 20
+python mtpy/imaging/plot_depth_slice.py /e/tmp/GA_UA_edited_10s-10000s_16/ModEM_Model.ws
 
 # View multiple horizontal slices of an inverted output model
 python mtpy/imaging/modem_plot_slices.py /e/Data/Modeling/Isa/100hs_flat_BB/Isa_run3_NLCG_048.dat /e/Data/Modeling/Isa/100hs_flat_BB/Isa_run3_NLCG_048.rho
-
 # View multiple horizontal slices of an initial model
 python mtpy/imaging/modem_plot_slices.py /e/tmp/GA_UA_edited_10s-10000s_16/ModEM_Data.dat  /e/tmp/GA_UA_edited_10s-10000s_16/ModEM_Model.ws
 
