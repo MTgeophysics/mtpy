@@ -167,11 +167,59 @@ class MT(object):
         #provide key words to fill values if an edi file does not exist
         for key in kwargs.keys():
             setattr(self, key, kwargs[key])
+            
+    #==========================================================================
+    # get functions                         
+    #==========================================================================
+    @property    
+    def lat(self):
+        return self.Site.Location.latitude
+
+    @property
+    def lon(self):
+        return self.Site.Location.longitude
+        
+    @property
+    def elev(self):
+        return self.Site.Location.elevation
+        
+    @property
+    def east(self):
+        return self.Site.Location.easting
+        
+    @property
+    def north(self):
+        return self.Site.Location.northing
+    
+    @property
+    def utm_zone(self):
+        return self.Site.Location.utm_zone
+    
+    @property
+    def rotation_angle(self):
+        return self._rotation_angle
+    
+    @property
+    def Z(self):
+        return self._Z
+        
+    @property
+    def Tipper(self):
+        return self._Tipper
+        
+    @property
+    def station(self):
+        return self.Site.id
+    
+    @property
+    def pt(self):
+        return MTpt.PhaseTensor(z_object=self.Z)
 
     #==========================================================================
     # set functions                        
     #==========================================================================
-    def _set_lat(self, latitude):
+    @lat.setter
+    def lat(self, latitude):
         """
         set latitude making sure the input is in decimal degrees
         
@@ -180,7 +228,8 @@ class MT(object):
         self.Site.Location.latitude = latitude
         self.Site.Location.project_location2utm()
         
-    def _set_lon(self, longitude):
+    @lon.setter
+    def lon(self, longitude):
         """
         set longitude making sure the input is in decimal degrees
         
@@ -189,15 +238,15 @@ class MT(object):
         self.Site.Location.longitude = longitude
         self.Site.Location.project_location2utm()
         
-        
-    def _set_elev(self, elevation):
+    @elev.setter    
+    def elev(self, elevation):
         """
         set elevation, should be input as meters
         """
         self._elev = self.Site.Location.elevation = elevation
 
-        
-    def _set_east(self, easting):
+    @east.setter
+    def east(self, easting):
         """
         set easting in meters
         
@@ -206,7 +255,8 @@ class MT(object):
         self.Site.Location.easting = easting
         self.Site.Location.project_location2ll()
         
-    def _set_north(self, northing):
+    @north.setter
+    def north(self, northing):
         """
         set northing in meters
         
@@ -215,8 +265,8 @@ class MT(object):
         self.Site.Location.northing = northing
         self.Site.Location.project_location2ll()
     
-        
-    def _set_utm_zone(self, utm_zone):
+    @utm_zone.setter
+    def utm_zone(self, utm_zone):
         """
         set UTM zone
         
@@ -224,8 +274,9 @@ class MT(object):
         """
         self.Site.Location.utm_zone = utm_zone
         self.Site.Location.project_location2ll()
-                
-    def _set_rotation_angle(self, theta_r):
+             
+    @rotation_angle.setter
+    def rotation_angle(self, theta_r):
         """
         set rotation angle in degrees assuming North is 0 measuring clockwise
         positive to East as 90.
@@ -242,8 +293,9 @@ class MT(object):
         
         print ("Rotated Z, Tipper, Phase Tensor and Zinvariants by"
                "{0:.3f} degrees".format(self._rotation_angle))
-               
-    def _set_Z(self, z_object):
+             
+    @Z.setter
+    def Z(self, z_object):
         """
         set z_object
         
@@ -254,8 +306,8 @@ class MT(object):
         self._Z = z_object
         self._Z.compute_resistivity_phase()
 
-        
-    def _set_Tipper(self, t_object):
+    @Tipper.setter
+    def Tipper(self, t_object):
         """
         set tipper object
         
@@ -267,79 +319,13 @@ class MT(object):
             self._Tipper._compute_amp_phase()
             self._Tipper._compute_mag_direction()
             
-    def _set_station(self, station_name):
+    @station.setter
+    def station(self, station_name):
         """
         set station name
         """
         self.Site.id = station_name
-        
-    #==========================================================================
-    # get functions                         
-    #==========================================================================    
-    def _get_lat(self):
-        return self.Site.Location.latitude
-
-    def _get_lon(self):
-        return self.Site.Location.longitude
-        
-    def _get_elev(self):
-        return self.Site.Location.elevation
-        
-    def _get_east(self):
-        return self.Site.Location.easting
-        
-    def _get_north(self):
-        return self.Site.Location.northing
-    
-    def _get_utm_zone(self):
-        return self.Site.Location.utm_zone
-    
-    def _get_rotation_angle(self):
-        return self._rotation_angle
-    
-    def _get_Z(self):
-        return self._Z
-        
-    def _get_Tipper(self):
-        return self._Tipper
-        
-    def _get_station(self):
-        return self.Site.id
-    
-    def _get_pt(self):
-        return MTpt.PhaseTensor(z_object=self.Z)
-    #==========================================================================
-    # set properties                          
-    #==========================================================================
-    lat = property(_get_lat, _set_lat, 
-                   doc="latitude of station in decimal degrees")
-    
-    lon = property(_get_lon, _set_lon, 
-                   doc="longitude of station in decimal degrees")
-                   
-    elev = property(_get_elev, _set_elev, 
-                    doc="elevation in meters")
-                   
-    east = property(_get_east, _set_east,
-                    doc="easting in meters of station location on UTM grid")
-    
-    north = property(_get_north, _set_north,
-                    doc="northing in meters of station location on UTM grid")
-                    
-    utm_zone = property(_get_utm_zone, _set_utm_zone,
-                        doc="UTM zone")
-    
-    rotation_angle = property(_get_rotation_angle, _set_rotation_angle,
-                              doc="rotation angle of Z and Tipper")
-                              
-    Z = property(_get_Z, _set_Z, doc="impedence tensor object")
-    
-    Tipper = property(_get_Tipper, _set_Tipper, doc="Tipper object")
-    
-    station = property(_get_station, _set_station, doc="Station name")
-    
-    pt = property(_get_pt, doc="""Phase Tensor, can only get, not set""")
-                                       
+                                         
     #==========================================================================
     #  read in files   
     #==========================================================================
@@ -477,6 +463,7 @@ class MT(object):
         #--> make sure things are ordered from high frequency to low
         self._check_freq_order()
         
+        # keep the edi object around, should be able to deprecate this later
         self._edi_obj = edi_obj
         
     #--> write edi file 
@@ -586,9 +573,18 @@ class MT(object):
         for p_key in self.Processing.__dict__.keys():
             if p_key.lower() == 'software':
                 for s_key in self.Processing.Software.__dict__.keys():
-                    l_key = 'processing.software.{0}'.format(s_key)
-                    l_value = getattr(self.Processing.Software, s_key)
-                    info_list.append('{0} = {1}'.format(l_key.lower(), l_value))
+                    if s_key == 'author':
+                        for a_key in self.Processing.Software.author.__dict__.keys():
+                            l_key = 'processing.software.author.{0}'.format(a_key)
+                            l_value = getattr(self.Processing.Software.author,
+                                              a_key)
+                            info_list.append('{0} = {1}'.format(l_key.lower(),
+                                                                l_value))
+                    else:
+                        l_key = 'processing.software.{0}'.format(s_key)       
+                        l_value = getattr(self.Processing.Software, s_key)
+                        info_list.append('{0} = {1}'.format(l_key.lower(),
+                                                            l_value))
             else:
                 l_key = 'processing.{0}'.format(p_key)
                 l_value = getattr(self.Processing, p_key)

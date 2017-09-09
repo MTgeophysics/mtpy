@@ -1460,9 +1460,10 @@ class DefineMeasurement(object):
             print 'No XMEAS information.'
         else:
             # need to sort the dictionary by chanel id
-            for key in sorted(m_key_list, key=lambda x: x[1]):
-                key = key[0]
-                m_obj = getattr(self, key)
+            chn_count = 1
+            for x_key in sorted(m_key_list, key=lambda x: x[1]):
+                x_key = x_key[0]
+                m_obj = getattr(self, x_key)
                 if m_obj.chtype.lower().find('h') >= 0:
                     head = 'hmeas'
                 elif m_obj.chtype.lower().find('e') >= 0:
@@ -1471,7 +1472,14 @@ class DefineMeasurement(object):
                     head = None
                 
                 m_list = ['>{0}'.format(head.upper())]
+
                 for mkey, mfmt in zip(m_obj._kw_list, m_obj._fmt_list):
+                    if mkey == 'acqchan':
+                        if getattr(m_obj, mkey) is None or \
+                           getattr(m_obj, mkey) == 'None':
+                            setattr(m_obj, mkey, chn_count)
+                            chn_count += 1
+
                     try:
                         m_list.append(' {0}={1:{2}}'.format(mkey.upper(),
                                                             getattr(m_obj, mkey),
@@ -1495,7 +1503,7 @@ class DefineMeasurement(object):
             if key.find('meas_') == 0:
                 meas_attr = getattr(self, key)
                 meas_key = meas_attr.chtype
-                meas_dict[meas_key] =meas_attr
+                meas_dict[meas_key] = meas_attr
             
         return meas_dict
 #==============================================================================
@@ -1533,7 +1541,7 @@ class HMeasurement(object):
     def __init__(self, **kwargs):
         
         self._kw_list = ['id', 'chtype', 'x', 'y', 'azm', 'acqchan']
-        self._fmt_list = ['<4.4g','<3', '<4.1f', '<4.1f', '<4.1f', '<4']
+        self._fmt_list = ['<4','<3', '<4.1f', '<4.1f', '<4.1f', '<4']
         for key in self._kw_list:
             setattr(self, key, 0.0)
         
