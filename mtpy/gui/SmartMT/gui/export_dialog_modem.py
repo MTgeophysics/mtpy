@@ -586,7 +586,7 @@ class ModEMWorker(QtCore.QThread):
     _period_image_name = "periods.png"
     _mesh_image_name = "mesh.png"
     _topo_image_name = "topography.png"
-    _readme_name = "README.md"
+    _readme_name = "README.txt"
 
     # def pause(self, paused):
     #     print "paused"
@@ -675,7 +675,7 @@ class ModEMWorker(QtCore.QThread):
             outf.write("====================\n")
             outf.write("Created on: {}\n".format(str(datetime.datetime.now())))
             outf.write("\n")
-            outf.write("**NOTE** All paths are modified to hide identity. \"[*]\" indicates the hidden path.")
+            outf.write("**NOTE** All paths are modified to hide identity. \"[*]\" indicates the hidden path.\n")
             outf.write("## EDI Files:\n")
             # hide path that may review user's identity
             outf.write("\n".join([
@@ -685,6 +685,12 @@ class ModEMWorker(QtCore.QThread):
             ]))
             outf.write("\n\n")
             outf.write("## Parameters Used:\n\n")
+            outf.write("### Period Included\n")
+            pprint.pprint(self._select_period_kwargs, stream=outf)
+            outf.write("\n")
+            outf.write("\nSelected Period List:\n")
+            pprint.pprint(select_periods(self._edi_list, **self._select_period_kwargs), stream=outf)
+            outf.write("\n")
             outf.write("### Data:\n")
             kwargs = self._data_kwargs.copy()
             # hide path that may review user's identity
