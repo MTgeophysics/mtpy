@@ -609,21 +609,23 @@ class MT(object):
 #                                          getattr(instrument_obj, mkey))
 #                info_list.append(line)
 
-        # get field notes information
-        for f_key in self.FieldNotes.__dict__.keys():
+        # get field notes information includes data quality
+        for f_key in sorted(self.FieldNotes.__dict__.keys()):
             obj = getattr(self.FieldNotes, f_key)
-            for t_key in obj.__dict__.keys():
+            for t_key in sorted(obj.__dict__.keys()):
+                if t_key in ['_kw_list', '_fmt_list']:
+                    continue
                 l_key = 'fieldnotes.{0}.{1}'.format(f_key.lower(),
                                                     t_key.lower())
                 l_value = getattr(obj, t_key)
                 info_list.append('{0} = {1}'.format(l_key, l_value))
         
         # get processing information  
-        for p_key in self.Processing.__dict__.keys():
+        for p_key in sorted(self.Processing.__dict__.keys()):
             if p_key.lower() == 'software':
-                for s_key in self.Processing.Software.__dict__.keys():
+                for s_key in sorted(self.Processing.Software.__dict__.keys()):
                     if s_key == 'author':
-                        for a_key in self.Processing.Software.author.__dict__.keys():
+                        for a_key in sorted(self.Processing.Software.author.__dict__.keys()):
                             l_key = 'processing.software.author.{0}'.format(a_key)
                             l_value = getattr(self.Processing.Software.author,
                                               a_key)
@@ -638,17 +640,11 @@ class MT(object):
                 l_key = 'processing.{0}'.format(p_key)
                 l_value = getattr(self.Processing, p_key)
                 info_list.append('{0} = {1}'.format(l_key, l_value))
-                
-        # get data quality
-        for d_key in self.DataQuality.__dict__.keys():
-            l_key = 'dataquality.{0}'.format(d_key)
-            l_value = getattr(self.DataQuality, d_key)
-            info_list.append('{0} = {1}'.format(l_key, l_value))
             
         # get copyright information
-        for c_key in self.Copyright.__dict__.keys():
+        for c_key in sorted(self.Copyright.__dict__.keys()):
             if c_key.lower() == 'citation':
-                for p_key in self.Copyright.Citation.__dict__.keys():
+                for p_key in sorted(self.Copyright.Citation.__dict__.keys()):
                     l_key = 'copyright.citation.{0}'.format(p_key.lower())
                     l_value = getattr(self.Copyright.Citation, p_key)
                     info_list.append('{0} = {1}'.format(l_key, l_value))
@@ -658,7 +654,7 @@ class MT(object):
                 info_list.append('{0} = {1}'.format(l_key, l_value))
                 
         # get provenance
-        for p_key in self.Provenance.__dict__.keys():
+        for p_key in sorted(self.Provenance.__dict__.keys()):
             if p_key.lower() == 'creator':
                 for s_key in self.Provenance.Creator.__dict__.keys():
                     l_key = 'provenance.creator.{0}'.format(s_key)
@@ -694,32 +690,32 @@ class MT(object):
         for key in define_meas.meas_ex._kw_list:
             setattr(define_meas.meas_ex,
                     key, 
-                    getattr(self.FieldNotes.electrode_ex, key))
+                    getattr(self.FieldNotes.Electrode_ex, key))
         
         define_meas.meas_ey = MTedi.EMeasurement()
         for key in define_meas.meas_ey._kw_list:
             setattr(define_meas.meas_ey,
                     key, 
-                    getattr(self.FieldNotes.electrode_ey, key))
+                    getattr(self.FieldNotes.Electrode_ey, key))
             
         define_meas.meas_hx = MTedi.HMeasurement()
         for key in define_meas.meas_hx._kw_list:
             setattr(define_meas.meas_hx,
                     key, 
-                    getattr(self.FieldNotes.magnetometer_hx, key))
+                    getattr(self.FieldNotes.Magnetometer_hx, key))
  
         define_meas.meas_hy = MTedi.HMeasurement()
         for key in define_meas.meas_hy._kw_list:
             setattr(define_meas.meas_hy,
                     key, 
-                    getattr(self.FieldNotes.magnetometer_hy, key)) 
+                    getattr(self.FieldNotes.Magnetometer_hy, key)) 
             
         if np.all(self.Tipper.tipper == 0) == False:    
             define_meas.meas_hz = MTedi.HMeasurement()
             for key in define_meas.meas_hz._kw_list:
                 setattr(define_meas.meas_hz,
                         key, 
-                        getattr(self.FieldNotes.magnetometer_hz, key))
+                        getattr(self.FieldNotes.Magnetometer_hz, key))
             
         return define_meas
     
@@ -737,12 +733,12 @@ class MT(object):
             nchan = 4
         sect.nchan = nchan
         sect.maxblks = 999
-        sect.ex = self.FieldNotes.electrode_ex.acqchan
-        sect.ey = self.FieldNotes.electrode_ey.acqchan
-        sect.hx = self.FieldNotes.magnetometer_hx.acqchan
-        sect.hy = self.FieldNotes.magnetometer_hy.acqchan
+        sect.ex = self.FieldNotes.Electrode_ex.acqchan
+        sect.ey = self.FieldNotes.Electrode_ey.acqchan
+        sect.hx = self.FieldNotes.Magnetometer_hx.acqchan
+        sect.hy = self.FieldNotes.Magnetometer_hy.acqchan
         if np.all(self.Tipper.tipper == 0) == False:
-            sect.hz = self.FieldNotes.magnetometer_hz.acqchan
+            sect.hz = self.FieldNotes.Magnetometer_hz.acqchan
             
         return sect
             
@@ -1550,6 +1546,7 @@ class Processing(object):
     def __init__(self, **kwargs):
         self.Software = Software()
         self.notes = None
+        self.sign_convention = 'exp(+i \omega t)'
         
         for key in kwargs.keys():
             setattr(self, key, kwargs[key])

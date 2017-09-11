@@ -763,7 +763,10 @@ class MTplot(mt.MT):
     
     def __init__(self, fn=None, z_object=None, tipper_object=None, **kwargs):
                      
-        mt.MT.__init__(self, fn=fn)
+        super(MTplot, self).__init__()
+        self.fn = fn
+        if self.fn is not None:
+            self.read_mt_file(self.fn)
             
         if z_object is not None:
             self.Z = z_object
