@@ -153,6 +153,7 @@ class MT(object):
         self.Provenance = Provenance()
         self.Notes = MTedi.Information()
         self.Processing = Processing()
+        self.DataQuality = DataQuality()
 
         self._Z = MTz.Z()
         self._Tipper = MTz.Tipper()
@@ -424,6 +425,8 @@ class MT(object):
         
         # get info 
         self.Notes = edi_obj.Info
+        self._parse_notes()
+        
         try: 
             self.FieldNotes.magnetometer_hx.id = self.Notes.hx
         except AttributeError:
@@ -465,6 +468,40 @@ class MT(object):
         
         # keep the edi object around, should be able to deprecate this later
         self._edi_obj = edi_obj
+        
+    def _parse_notes(self):
+        """
+        parse the notes section if there is any information that is useful
+        """
+        
+        for a_key in self.Notes.info_dict.keys():
+            a_value = self.Notes.info_dict[a_key]
+            a_list = a_key.strip().lower().split('.')
+            a1 = a_list[0]
+            obj_attr = a_list[-1]
+            if a1 in ['processing', 'site', 'location', 'fieldnotes',
+                              'instrument', 'dataquality', 'citation',
+                              'provenance']:
+                cl = a_list[0].capitalize()
+                if a1 == 'dataquality':
+                    cl = 'DataQuality'
+                    
+                obj = getattr(self, cl)
+                count = 1
+                while count < len(a_list)-1:
+                    cl_attr = a_list[count]
+                    try:
+                        obj = getattr(obj, cl_attr)
+                    except AttributeError:
+                        try:
+                            obj = getattr(obj, cl_attr.capitalize())
+                        except AttributeError:
+                            print 'Could not get {0}'.format(cl_attr)
+                            
+                    count += 1
+
+                setattr(obj, obj_attr, a_value)
+                self.Notes.info_dict.pop(a_key)
         
     #--> write edi file 
     def write_edi_file(self, new_fn=None, new_Z=None, new_Tipper=None):
@@ -549,11 +586,10 @@ class MT(object):
         
         info_list = []
         # write previous information first
-        for key in sorted(self.Notes.__dict__.keys()):
-            if key.lower() not in ['edi_lines', 'info_list', 'edi_fn']:
-                l_key = key.lower()
-                l_value = getattr(self.Notes, key)
-                info_list.append('{0} = {1}'.format(l_key, l_value))
+        for key in sorted(self.Notes.info_dict.keys()):
+            l_key = key.lower()
+            l_value = self.Notes.info_dict[key]
+            info_list.append('{0} = {1}'.format(l_key, l_value))
         
         # get instrument information
         for key in ['ex', 'ey', 'hx', 'hy', 'hz']:
@@ -578,17 +614,23 @@ class MT(object):
                             l_key = 'processing.software.author.{0}'.format(a_key)
                             l_value = getattr(self.Processing.Software.author,
                                               a_key)
-                            info_list.append('{0} = {1}'.format(l_key.lower(),
+                            info_list.append('{0} = {1}'.format(l_key,
                                                                 l_value))
                     else:
                         l_key = 'processing.software.{0}'.format(s_key)       
                         l_value = getattr(self.Processing.Software, s_key)
-                        info_list.append('{0} = {1}'.format(l_key.lower(),
+                        info_list.append('{0} = {1}'.format(l_key,
                                                             l_value))
             else:
                 l_key = 'processing.{0}'.format(p_key)
                 l_value = getattr(self.Processing, p_key)
                 info_list.append('{0} = {1}'.format(l_key, l_value))
+                
+        # get data quality
+        for d_key in self.DataQuality.__dict__.keys():
+            l_key = 'DataQuality.{0}'.format(d_key)
+            l_value = getattr(self.DataQuality, d_key)
+            info_list.append('{0} = {1}'.format(l_key, l_value))
             
         return info_list
     
@@ -1363,7 +1405,7 @@ class Processing(object):
     
     def __init__(self, **kwargs):
         self.Software = Software()
-        self.processing_notes = None
+        self.notes = None
         
         for key in kwargs.keys():
             setattr(self, key, kwargs[key])

@@ -94,59 +94,23 @@ class MTArrows(object):
                               
     """
     
-    def __init__(self,arrow_dict):
-        self._arrow_dict = arrow_dict
+    def __init__(self, **kwargs):
+        self.arrow_size = 2.5
+        self.arrow_head_length = .15*self.arrow_size
+        self.arrow_head_width = .1*self.arrow_size
+        self.arrow_lw = .5*self.arrow_size
+        self.arrow_threshold = 2
+        self.arrow_color_imag = 'b'
+        self.arrow_color_real = 'k'
+        self.arrow_direction = 0
 
-    def _read_arrow_dict(self):        
+        for key in kwargs.keys():
+            setattr(self, key, kwargs[key])
+            
+    def _read_arrow_dict(self, arrow_dict):        
     
-        #set arrow length
-        try:
-            self.arrow_size = self._arrow_dict['size']
-        except KeyError:
-            self.arrow_size = 2.5
-            
-        #set head length
-        try:
-            self.arrow_head_length = self._arrow_dict['head_length']
-        except KeyError:
-            self.arrow_head_length = .15*self.arrow_size
-            
-        #set head width
-        try:
-            self.arrow_head_width = self._arrow_dict['head_width']
-        except KeyError:
-            self.arrow_head_width = .1*self.arrow_size
-            
-        #set line width
-        try:
-            self.arrow_lw = self._arrow_dict['lw']
-        except KeyError:
-            self.arrow_lw = .5*self.arrow_size
-            
-        #set real color to black
-        try:
-            self.arrow_color_real = self._arrow_dict['color'][0]
-        except KeyError:
-            self.arrow_color_real = 'k'
-            
-        #set imaginary color to black
-        try:
-            self.arrow_color_imag = self._arrow_dict['color'][1]
-        except KeyError:
-            self.arrow_color_imag = 'b'
-            
-        #set threshold of induction arrows to plot
-        try:
-            self.arrow_threshold = self._arrow_dict['threshold']
-        except KeyError:
-            self.arrow_threshold = 1
-            
-        #set arrow direction to point towards or away from conductor
-        try:
-            self.arrow_direction = self._arrow_dict['direction']
-        except KeyError:
-            self.arrow_direction = 0
-
+        for key in arrow_dict.keys():
+            setattr(self, key, kwargs[key])
 
 #==============================================================================
 #  ellipse properties           
@@ -217,66 +181,56 @@ class MTEllipse(object):
                                                            
     """
     
-    def __init__(self, ellipse_dict):
-        self._ellipse_dict = ellipse_dict
+    def __init__(self, **kwargs):
+        self.ellipse_size = 2
+        self.ellipse_colorby = 'phimin'
+        self.ellipse_range = (0, 90, 10)
+        self.ellipse_cmap = 'mt_bl2gr2rd'
+
+        for key in kwargs.keys():
+            setattr(self, key, kwargs[key])
         
-    def _read_ellipse_dict(self):
+    def _read_ellipse_dict(self, ellipse_dict):
         """
         read in dictionary and set default values if no entry given
         """
         
         #--> set the ellipse properties
-        
-        #set default size to 2
-        try:
-            self.ellipse_size = self._ellipse_dict['size']
-        except KeyError:
-            self.ellipse_size = 2
-        
-        #set default colorby to phimin
-        try:
-            self.ellipse_colorby = self._ellipse_dict['colorby']
-        except KeyError:
-            self.ellipse_colorby = 'phimin'
-        
-        #set color range to 0-90
-        try:
-            self.ellipse_range = self._ellipse_dict['range']
-        except KeyError:
-            if self.ellipse_colorby == 'skew' or \
-                self.ellipse_colorby == 'skew_seg' or \
-                self.ellipse_colorby == 'normalized_skew' or \
-                self.ellipse_colorby == 'normalized_skew_seg':
-                
-                self.ellipse_range = (-9, 9, 3)
+        for key in ellipse_dict.keys():
+            setattr(self, key, ellipse_dict[key])
             
-            elif self.ellipse_colorby == 'ellipticity':
-                self.ellipse_range = (0, 1, .1)
-            
-            else:
-                self.ellipse_range = (0, 90, 5)
-                
         try:
             self.ellipse_range[2]
         except IndexError:
             self.ellipse_range = (self.ellipse_range[0], 
                                   self.ellipse_range[1],
                                   1)
+        
+        #set color range to 0-90
+        if self.ellipse_colorby == 'skew' or \
+            self.ellipse_colorby == 'skew_seg' or \
+            self.ellipse_colorby == 'normalized_skew' or \
+            self.ellipse_colorby == 'normalized_skew_seg':
             
+            self.ellipse_range = (-9, 9, 3)
+        
+        elif self.ellipse_colorby == 'ellipticity':
+            self.ellipse_range = (0, 1, .1)
+        
+        else:
+            self.ellipse_range = (0, 90, 5)
+
         #set colormap to yellow to red
-        try:
-            self.ellipse_cmap = self._ellipse_dict['cmap']
-        except KeyError:
-            if self.ellipse_colorby == 'skew' or \
-               self.ellipse_colorby == 'normalized_skew':
-                self.ellipse_cmap = 'mt_bl2wh2rd'
-                
-            elif self.ellipse_colorby == 'skew_seg' or\
-                 self.ellipse_colorby == 'normalized_skew_seg':
-                self.ellipse_cmap = 'mt_seg_bl2wh2rd'
-                
-            else:
-                self.ellipse_cmap = 'mt_bl2gr2rd'
+        if self.ellipse_colorby == 'skew' or \
+           self.ellipse_colorby == 'normalized_skew':
+            self.ellipse_cmap = 'mt_bl2wh2rd'
+            
+        elif self.ellipse_colorby == 'skew_seg' or\
+             self.ellipse_colorby == 'normalized_skew_seg':
+            self.ellipse_cmap = 'mt_seg_bl2wh2rd'
+            
+        else:
+            self.ellipse_cmap = 'mt_bl2gr2rd'
                 
 #==============================================================================
 # Plot settings

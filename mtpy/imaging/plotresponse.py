@@ -345,6 +345,11 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse, mtpl.PlotSettings):
     
     def __init__(self, **kwargs):
         
+        #super(PlotResponse, self).__init__()
+        mtpl.MTArrows.__init__(self)
+        mtpl.MTEllipse.__init__(self)
+        mtpl.PlotSettings.__init__(self)
+        
         fn = kwargs.pop('fn', None)
         z_object = kwargs.pop('z_object', None)
         tipper_object = kwargs.pop('tipper_object', None)
@@ -361,7 +366,7 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse, mtpl.PlotSettings):
             
         self.phase_quadrant =  1
         
-        mtpl.PlotSettings.__init__(self)
+        #mtpl.PlotSettings.__init__(self)
         
         self.plot_num = kwargs.pop('plot_num', 1)
         self.rotation_angle = kwargs.pop('rotation_angle', 0)
@@ -390,17 +395,12 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse, mtpl.PlotSettings):
                                                             self._plot_skew])])
         
         #set arrow properties
-        self._arrow_dict = kwargs.pop('arrow_dict', {'color' : ('k', 'b'),
-                                                     'direction' : 0,
-                                                     'head_length' : .03,
-                                                     'head_width' : .03,
-                                                     'lw' : .5})
-                           
-        self._read_arrow_dict()
+        self.arrow_head_length = 0.03
+        self.arrow_head_width = 0.03
+        self.arrow_lw = .5
         
         #ellipse_properties
-        self._ellipse_dict = kwargs.pop('ellipse_dict', {'size':.25})
-        self._read_ellipse_dict()
+        self.ellipse_size = 0.25
         self.ellipse_spacing = kwargs.pop('ellipse_spacing', 1)
         if self.ellipse_size == 2 and self.ellipse_spacing == 1:
             self.ellipse_size = 0.25

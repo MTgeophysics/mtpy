@@ -1096,6 +1096,7 @@ class Information(object):
         self.edi_fn = edi_fn
         self.edi_lines = edi_lines
         self.info_list = None
+        self.info_dict = None
         
         if self.edi_fn is not None or self.edi_lines is not None:
             self.read_info()
@@ -1155,6 +1156,7 @@ class Information(object):
         elif self.edi_fn is not None or self.edi_lines is not None:
             self.get_info_list()
             
+        self.info_dict = {}
         # make info items attributes of Information
         for ll in self.info_list:
             l_list = [None, '']
@@ -1165,9 +1167,10 @@ class Information(object):
             else:
                 l_list[0] = ll
             if l_list[0] is not None:
-                l_key = l_list[0].replace('.', '_')
+                l_key = l_list[0]
                 l_value = l_list[1].strip()
-                setattr(self, l_key, l_value)
+                self.info_dict[l_key] = l_value.replace('"', '')
+                #setattr(self, l_key, l_value)
             
         if self.info_list is None:
             print "Could not read information"
