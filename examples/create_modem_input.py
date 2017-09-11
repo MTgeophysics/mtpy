@@ -29,6 +29,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from mtpy.core.edi_collection import EdiCollection
+from mtpy.gui.SmartMT.utils.matplotlib_utils import gen_hist_bins
 from mtpy.modeling.modem_covariance import Covariance
 from mtpy.modeling.modem_data import Data
 from mtpy.modeling.modem_model import Model
@@ -81,8 +82,7 @@ def select_periods(edifiles_list, show=True, period_list=None, percentage=10.0):
     if show:
         plt.figure()
         plt.clf()
-        bins = np.array(uniq_period_list)  # get center of bins
-        bins -= np.diff(np.r_[0, bins]).dot(.5)  # shift left
+        bins = gen_hist_bins(uniq_period_list)
         plt.hist(edis_obj.mt_periods, bins=bins)
         # plt.hist(edis_obj.mt_periods, bins=1000)
         plt.title("Histogram with uniq_periods bins")

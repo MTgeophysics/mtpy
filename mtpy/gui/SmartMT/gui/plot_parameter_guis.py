@@ -20,6 +20,7 @@ from mtpy.gui.SmartMT.ui_asset.groupbox_tolerance import Ui_GroupBoxTolerance
 from mtpy.gui.SmartMT.ui_asset.groupbox_z_component_multiple import Ui_groupBoxZ_Component_Multiple
 from mtpy.gui.SmartMT.ui_asset.groupbox_z_component_single import Ui_groupBoxZ_Component_Single
 from mtpy.gui.SmartMT.ui_asset.groupbox_z_unit import Ui_GroupBox_z_unit
+from mtpy.gui.SmartMT.utils.matplotlib_utils import gen_hist_bins
 
 
 class ZComponentMultiple(QtGui.QGroupBox):
@@ -433,8 +434,7 @@ class FrequencySelect(QtGui.QGroupBox):
             self._axes.tick_params(axis='both', which='major', labelsize=6)
             self._axes.tick_params(axis='both', which='minor', labelsize=4)
             if self._frequencies is not None:
-                bins = np.array(self._unique_frequencies)  # get center of bins
-                bins -= np.diff(np.r_[0, bins]).dot(.5)  # shift left
+                bins = gen_hist_bins(self._unique_frequencies)
                 self._axes.hist(self._frequencies, bins=bins)  # , 50, normed=1)
                 if self._y_log_scale:
                     self._axes.set_yscale('log')
