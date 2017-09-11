@@ -15,6 +15,7 @@ Created on Tue Jan 07 12:42:34 2014
 #==============================================================================
 import os
 import numpy as np
+import time
 
 import mtpy.core.edi as MTedi
 import mtpy.core.z as MTz
@@ -785,6 +786,108 @@ class MT(object):
         self.Site.Location.longitude = j_obj.metadata_dict['longitude']
         self.Site.Location.elevation = j_obj.metadata_dict['elevation']
         
+    def read_cfg_file(self, cfg_fn):
+        """
+        read in a configuration file and populate properties
+        """
+        
+        with open(cfg_fn, 'r') as fid:
+            cfg_lines = fid.readlines()
+            
+        for line in cfg_lines:
+            line_list = line.strip().split('=')
+            if len(line) < 2:
+                continue
+            else:
+                name_list = line_list[0].strip().split('.')
+                cl_name = name_list[0]
+                if cl_name.lower() == 'fieldnotes':
+                    cl_name = 'FieldNotes'
+                else:
+                    cl_name = cl_name.capitalize()
+                    
+                cl_obj = getattr(self, cl_name)
+                cl_attr = name_list[-1]
+                cl_value = line_list[1].strip()
+                try:
+                    cl_value = float(cl_value)
+                except ValueError:
+                    if cl_value.find(',') >= 0:
+                        cl_value = cl_value.replace('[', '').replace(']', '')
+                        cl_value = cl_value.strip().split(',')
+                        try:
+                            cl_value = [float(vv) for vv in cl_value]
+                        except ValueError:
+                            pass
+                        
+                count = 1
+                while count < len(name_list)-1:
+                    cl_name = name_list[count].lower()
+                    if cl_name == 'dataquality':
+                        cl_name = 'DataQuality'
+                    elif cl_name == 'datalogger':
+                        cl_name = 'DataLogger'
+                    try:
+                        cl_obj = getattr(cl_obj, cl_name)
+                    except AttributeError:
+                        try:
+                            cl_obj = getattr(cl_obj, cl_name.capitalize())
+                            cl_name = cl_name.capitalize()
+                        except AttributeError:
+                            print 'Could not get {0}'.format(cl_name)
+                            
+                    count += 1
+                setattr(cl_obj, cl_attr, cl_value)
+
+    def write_cfg_file(self, cfg_fn):
+        """
+        Write a configuration file for the MT sections
+        """
+            
+        cfg_lines = []
+        for obj_name in sorted(['Site', 'FieldNotes', 'Provenance',
+                                'Processing', 'Copyright']):
+            obj = getattr(self, obj_name)
+            l_key = obj_name
+            for obj_key in obj.__dict__.keys():
+                obj_attr = getattr(obj, obj_key)
+                l_key = '{0}.{1}'.format(obj_name, obj_key)
+
+                if type(obj_attr) not in [str, float, int, list] and \
+                   obj_attr is not None:
+                    for a_key in obj_attr.__dict__.keys():
+                        if a_key in ['_kw_list', '_fmt_list']:
+                            continue
+                        obj_attr_01 = getattr(obj_attr, a_key)
+                        l_key = '{0}.{1}.{2}'.format(obj_name, obj_key, a_key)
+                        if type(obj_attr_01) not in [str, float, int, list] and \
+                           obj_attr_01 is not None:
+                            for b_key in obj_attr_01.__dict__.keys():
+                                obj_attr_02 = getattr(obj_attr_01, b_key)
+                                l_key = '{0}.{1}.{2}.{3}'.format(obj_name, 
+                                                                 obj_key, 
+                                                                 a_key, 
+                                                                 b_key)
+
+                                cfg_lines.append('{0} = {1}'.format(l_key,
+                                                                    obj_attr_02))
+                        else:
+                            cfg_lines.append('{0} = {1}'.format(l_key,
+                                                                obj_attr_01))
+                else:
+                    cfg_lines.append('{0} = {1}'.format(l_key, obj_attr))
+                    
+            cfg_lines.append('')
+                    
+        
+        with open(cfg_fn, 'w') as fid:
+            fid.write('\n'.join(cfg_lines))
+            
+        print '--> Wrote MT configuration file to {0}'.format(cfg_fn)
+            
+    
+        
+        
     def remove_distortion(self, num_freq=None):
         """
         remove distortion following Bibby et al. [2005].
@@ -1381,8 +1484,8 @@ class Provenance(object):
     
     def __init__(self, **kwargs):
         
-        self.creation_time = None
-        self.creating_application = None
+        self.creation_time = time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime())
+        self.creating_application = 'MTpy'
         self.Creator = Person()
         self.Submitter = Person()
         
