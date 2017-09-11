@@ -12,13 +12,14 @@ Developer:      fei.zhang@ga.gov.au
 LastUpdate:     08/09/2017
 """
 
-import sys
+import os, sys
+import csv
 
 import mtpy.analysis.pt as pt
 from mtpy.core import z
 from mtpy.modeling import modem_data
 
-def compute_phase_tensor(datfile):
+def compute_phase_tensor(datfile, dest_dir='e:/tmp'):
     """
     Compute the phase tensors from a ModEM dat file
     :param datfile: path2/file.dat
@@ -44,8 +45,21 @@ def compute_phase_tensor(datfile):
     num_periods = len(period_list)
     print ("ModEM data file number of periods:", num_periods)
 
-    for period_num in range(num_periods):
-        print ("Working on period", period_list[period_num], "frequency:", freq_list[period_num])
+    csv_basename ="phase_tensor_from_data"
+    csvfname = os.path.join(dest_dir, "%s.csv" % csv_basename)
+
+    csv_header = [
+        'Freq', 'Station', 'Lat', 'Long', 'Phimin', 'Phimax', 'Ellipticity', 'Azimuth']
+
+    with open(csvfname, "wb") as csvf:
+        writer = csv.writer(csvf)
+        writer.writerow(csv_header)
+
+    for period_num in xrange(num_periods):
+        per= period_list[period_num]
+        freq = freq_list[period_num]
+        print ("Working on period",per , "frequency:", freq )
+        csvrows = []
         for num_site in range(num_sites):
             # Obtain the site for this number
             this_site = md.data_array[num_site]
@@ -75,12 +89,23 @@ def compute_phase_tensor(datfile):
             this_azimuth = this_phase_tensor.azimuth[0][0]
 
             # Print out comma delimited version of the parameters: label, lat, long, phimin, phimax, ellipticity, azimuth
-            print str(site_label) + "," + str(site_lat) + "," + str(site_long) + "," + str(this_phimin) + "," + str(
-                this_phimax) + "," + str(this_ellipticity) + "," + str(this_azimuth)
-        # Done for this site
-        # Done for this period
-        # Print a blank line for neatness
-        print ""
+            arow = [freq, site_label, site_lat, site_long, this_phimin, this_phimax, this_ellipticity, this_azimuth]
+            # Done for this site
+
+            csvrows.append(arow)
+
+        with open(csvfname, "ab") as csvf:  # append to this summary csv file for all freqs
+            writer = csv.writer(csvf)
+            writer.writerows(csvrows)
+
+        csv_basename2 = "%s_%sHz.csv" % (csv_basename, str(freq))
+        csvfile2 = os.path.join(dest_dir, csv_basename2)
+
+        with open(csvfile2, "wb") as csvf:  # csvfile  for eachindividual freq
+            writer = csv.writer(csvf)
+            writer.writerow(csv_header)
+            writer.writerows(csvrows)
+
     # Done with all sites and periods
 
     return
@@ -93,4 +118,6 @@ if __name__ == "__main__":
     python examples/phase_tensor_from_data.py /e/tmp/GA_UA_edited_10s-10000s_16/ModEM_Data.dat
     """
     file_dat = sys.argv[1]
-    compute_phase_tensor(file_dat)
+    if len(sys.argv)>2: outdir = sys.argv[2]
+    else: outdir='E:/tmp'
+    compute_phase_tensor(file_dat,dest_dir = outdir)
