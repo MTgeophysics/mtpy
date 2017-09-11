@@ -86,8 +86,10 @@ class FrequencySelect(QtGui.QGroupBox):
                  select_multiple=True):
         QtGui.QGroupBox.__init__(self, parent)
         self._mt_objs = None
-        self._unique_period = None
-        self._unique_frequency = None
+        self._unique_periods = None
+        self._unique_frequencies = None
+        self._periods = None
+        self._frequencies = None
         self._allow_range = allow_range_select
         self._select_multiple = select_multiple
         self.ui = Ui_GroupBox_frequency_select()
@@ -109,6 +111,8 @@ class FrequencySelect(QtGui.QGroupBox):
         self.ui.radioButton_period.setChecked(show_period)
         self.ui.radioButton_frequency.setChecked(show_frequency)
         self.ui.doubleSpinBox_tolerance.setHidden(not self._allow_range)
+        self.ui.checkBox_existing_only.setChecked(not self._allow_range)
+        self.ui.checkBox_existing_only.setHidden(not self._allow_range)
         self.ui.label_tolerance.setHidden(not self._allow_range)
         self.ui.radioButton_period.setHidden(not (show_period and show_frequency))
         self.ui.radioButton_frequency.setHidden(not (show_period and show_frequency))
@@ -121,15 +125,16 @@ class FrequencySelect(QtGui.QGroupBox):
         self.ui.checkBox_existing_only.toggled.connect(self.histogram.select_existing)
         self.ui.checkBox_existing_only.toggled.connect(self.model_selected.clear)
         self.ui.checkBox_show_existing.toggled.connect(self.histogram.show_existing)
-        self.ui.checkBox_log_scale.toggled.connect(self.histogram.set_y_log_scale)
+        self.ui.checkBox_x_log_scale.toggled.connect(self.histogram.set_x_log_scale)
+        self.ui.checkBox_y_log_scale.toggled.connect(self.histogram.set_y_log_scale)
         self.ui.pushButton_clear.clicked.connect(self._clear_all)
         self.ui.pushButton_delete.clicked.connect(self._delete_selected)
         self.ui.doubleSpinBox_tolerance.valueChanged.connect(self.histogram.set_tol)
 
     def set_data(self, mt_objs):
         self._mt_objs = mt_objs
-        self._unique_frequency = None
-        self._unique_period = None
+        self._unique_frequencies = None
+        self._unique_periods = None
         self._update_frequency()
 
     def get_frequencies(self):
@@ -178,7 +183,7 @@ class FrequencySelect(QtGui.QGroupBox):
                     # there is intersection between intervals, so marge them
                     mi = min(x[0], value[0])
                     ma = max(x[1], value[1])
-                    uniques = self._unique_frequency if self.ui.radioButton_frequency.isChecked() else self._unique_period
+                    uniques = self._unique_frequencies if self.ui.radioButton_frequency.isChecked() else self._unique_periods
                     num = len([freq for freq in uniques if mi <= freq <= ma ])  # num of existing freqs in the new interval
                     x = (mi, ma, num)
                     # remove old interval
@@ -215,16 +220,19 @@ class FrequencySelect(QtGui.QGroupBox):
     def _update_frequency(self):
         self.model_selected.clear()
         if self._mt_objs is not None:
-            if self._unique_frequency is None:
-                all_unique = set([freq for mt_obj in self._mt_objs for freq in list(mt_obj.Z.freq)])
-                self._unique_frequency = sorted(list(all_unique))
-            if self.ui.radioButton_period.isChecked() and self._unique_period is None:
-                all_unique = 1.0 / np.array(self._unique_frequency)
-                self._unique_period = sorted(list(all_unique))
+            if self._unique_frequencies is None:
+                self._frequencies = [freq for mt_obj in self._mt_objs for freq in list(mt_obj.Z.freq)]
+                all_unique = set(self._frequencies)
+                self._unique_frequencies = sorted(list(all_unique))
+            if self.ui.radioButton_period.isChecked() and self._unique_periods is None:
+                self._periods = 1. / np.array(self._frequencies)
+                all_unique = set(self._periods)
+                self._unique_periods = sorted(list(all_unique))
             self.histogram.set_data(
-                self._unique_period if self.ui.radioButton_period.isChecked() else self._unique_frequency
+                self._periods if self.ui.radioButton_period.isChecked() else self._frequencies,
+                self._unique_periods if self.ui.radioButton_period.isChecked() else self._unique_frequencies
             )
-            self.frequency_delegate.freqs = self._unique_period if self.ui.radioButton_period.isChecked() else self._unique_frequency
+            self.frequency_delegate.freqs = self._unique_periods if self.ui.radioButton_period.isChecked() else self._unique_frequencies
             self.histogram.update_figure()
 
     class FrequencyItem(QtGui.QStandardItem):
@@ -268,8 +276,9 @@ class FrequencySelect(QtGui.QGroupBox):
             return value
 
     class Histogram(MPLCanvas):
-        def __init__(self, parent, y_log_scale=False, allow_range_select=True):
+        def __init__(self, parent, y_log_scale=False, x_log_scale=False, allow_range_select=True):
             self._frequencies = None
+            self._unique_frequencies = None
             self._title = None
             self._unit = None
             self._press = None
@@ -279,6 +288,7 @@ class FrequencySelect(QtGui.QGroupBox):
             self._cursor = None
             self._select_existing_only = False
             self._show_existing = False
+            self._x_log_scale = x_log_scale
             self._y_log_scale = y_log_scale
             self._select_range = allow_range_select
 
@@ -345,12 +355,20 @@ class FrequencySelect(QtGui.QGroupBox):
             self._show_existing = show_existing
             self.update_figure()
 
-        def set_data(self, frequency):
-            self._frequencies = frequency
+        def set_data(self, frequencies, unique_frequencies=None):
+            self._frequencies = frequencies
+            if unique_frequencies is not None:
+                self._unique_frequencies = unique_frequencies
+            else:
+                self._unique_frequencies = sorted(list(set(frequencies)))
             self._lx.clear()
 
         def set_y_log_scale(self, ischecked):
             self._y_log_scale = ischecked
+            self.update_figure()
+
+        def set_x_log_scale(self, isChecked):
+            self._x_log_scale = isChecked
             self.update_figure()
 
         frequency_selected = pyqtSignal(float)
@@ -379,7 +397,7 @@ class FrequencySelect(QtGui.QGroupBox):
                             (
                                 self._press,
                                 x,
-                                len([freq for freq in self._frequencies if self._press <= freq <= x])
+                                len([freq for freq in self._unique_frequencies if self._press <= freq <= x])
                             )
                         )
                     elif self._press > x:
@@ -387,7 +405,7 @@ class FrequencySelect(QtGui.QGroupBox):
                             (
                                 x,
                                 self._press,
-                                len([freq for freq in self._frequencies if x <= freq <= self._press])
+                                len([freq for freq in self._unique_frequencies if x <= freq <= self._press])
                             )
                         )
                 elif not self._select_range or self._select_existing_only:
@@ -401,7 +419,7 @@ class FrequencySelect(QtGui.QGroupBox):
                         (
                             min,
                             max,
-                            len([freq for freq in self._frequencies if min <= freq <= max]),
+                            len([freq for freq in self._unique_frequencies if min <= freq <= max]),
                             x,
                             self._tol
                         )
@@ -415,11 +433,15 @@ class FrequencySelect(QtGui.QGroupBox):
             self._axes.tick_params(axis='both', which='major', labelsize=6)
             self._axes.tick_params(axis='both', which='minor', labelsize=4)
             if self._frequencies is not None:
-                self._axes.hist(self._frequencies)  # , 50, normed=1)
+                bins = np.array(self._unique_frequencies)  # get center of bins
+                bins -= np.diff(np.r_[0, bins]).dot(.5)  # shift left
+                self._axes.hist(self._frequencies, bins=bins)  # , 50, normed=1)
                 if self._y_log_scale:
                     self._axes.set_yscale('log')
+                if self._x_log_scale:
+                    self._axes.set_xscale('log')
                 if self._show_existing:
-                    for freq in self._frequencies:
+                    for freq in self._unique_frequencies:
                         self._axes.axvline(freq, linewidth=1, color='black', alpha=0.2)
             if self._title and self._unit:
                 self._axes.set_xlabel("%s (%s)" % (self._title, self._unit), fontsize=8)
