@@ -153,7 +153,7 @@ class MT(object):
         self.Provenance = Provenance()
         self.Notes = MTedi.Information()
         self.Processing = Processing()
-        self.DataQuality = DataQuality()
+        self.Copyright = Copyright()
 
         self._Z = MTz.Z()
         self._Tipper = MTz.Tipper()
@@ -389,35 +389,35 @@ class MT(object):
         # get information about different sensors
         try:
             for key in edi_obj.Define_measurement.meas_hx.__dict__.keys():
-                setattr(self.FieldNotes.magnetometer_hx,
+                setattr(self.FieldNotes.Magnetometer_hx,
                         key, 
                         edi_obj.Define_measurement.meas_hx.__dict__[key])
         except AttributeError:
             pass
         try:
             for key in edi_obj.Define_measurement.meas_hy.__dict__.keys():
-                setattr(self.FieldNotes.magnetometer_hy,
+                setattr(self.FieldNotes.Magnetometer_hy,
                         key, 
                         edi_obj.Define_measurement.meas_hy.__dict__[key])
         except AttributeError:
             pass
         try:
             for key in edi_obj.Define_measurement.meas_hz.__dict__.keys():
-                setattr(self.FieldNotes.magnetometer_hz,
+                setattr(self.FieldNotes.Magnetometer_hz,
                         key, 
                         edi_obj.Define_measurement.meas_hz.__dict__[key])
         except AttributeError:
             pass
         try:
             for key in edi_obj.Define_measurement.meas_ex.__dict__.keys():
-                setattr(self.FieldNotes.electrode_ex,
+                setattr(self.FieldNotes.Electrode_ex,
                         key, 
                         edi_obj.Define_measurement.meas_ex.__dict__[key])
         except AttributeError:
             pass
         try:
             for key in edi_obj.Define_measurement.meas_ey.__dict__.keys():
-                setattr(self.FieldNotes.electrode_ey,
+                setattr(self.FieldNotes.Electrode_ey,
                         key, 
                         edi_obj.Define_measurement.meas_ey.__dict__[key])
         except AttributeError:
@@ -428,33 +428,33 @@ class MT(object):
         self._parse_notes()
         
         try: 
-            self.FieldNotes.magnetometer_hx.id = self.Notes.hx
+            self.FieldNotes.Magnetometer_hx.id = self.Notes.hx
         except AttributeError:
             pass
         try: 
-            self.FieldNotes.magnetometer_hy.id = self.Notes.hy
+            self.FieldNotes.Magnetometer_hy.id = self.Notes.hy
         except AttributeError:
             pass
         try: 
-            self.FieldNotes.magnetometer_hz.id = self.Notes.hz
+            self.FieldNotes.Magnetometer_hz.id = self.Notes.hz
         except AttributeError:
             pass
         
         try:
-            self.FieldNotes.magnetometer_hx.type = self.Notes.b_instrument_type
-            self.FieldNotes.magnetometer_hy.type = self.Notes.b_instrument_type
-            self.FieldNotes.magnetometer_hz.type = self.Notes.b_instrument_type
+            self.FieldNotes.Magnetometer_hx.type = self.Notes.b_instrument_type
+            self.FieldNotes.Magnetometer_hy.type = self.Notes.b_instrument_type
+            self.FieldNotes.Magnetometer_hz.type = self.Notes.b_instrument_type
         except AttributeError:
             pass
         
         try:
-            self.FieldNotes.electrode_ex.type = self.Notes.e_instrument_type
-            self.FieldNotes.electrode_ey.type = self.Notes.e_instrument_type
+            self.FieldNotes.Electrode_ex.type = self.Notes.e_instrument_type
+            self.FieldNotes.Electrode_ey.type = self.Notes.e_instrument_type
         except AttributeError:
             pass
         
         try:
-            self.FieldNotes.data_logger = self.Notes.b_logger_type
+            self.FieldNotes.DataLogger = self.Notes.b_logger_type
         except AttributeError:
             pass
                 
@@ -477,19 +477,22 @@ class MT(object):
         for a_key in self.Notes.info_dict.keys():
             a_value = self.Notes.info_dict[a_key]
             a_list = a_key.strip().lower().split('.')
+            if a_key.find('mtft') == 0 or a_key.find('birrp') == 0:
+                a_list = ['processing']+a_list
+                
             a1 = a_list[0]
             obj_attr = a_list[-1]
-            if a1 in ['processing', 'site', 'location', 'fieldnotes',
-                              'instrument', 'dataquality', 'citation',
-                              'provenance']:
+            if a1 in ['processing','fieldnotes', 'copyright', 'provenance']:
                 cl = a_list[0].capitalize()
-                if a1 == 'dataquality':
-                    cl = 'DataQuality'
+                if a1 == 'fieldnotes':
+                    cl = 'FieldNotes'
                     
                 obj = getattr(self, cl)
                 count = 1
                 while count < len(a_list)-1:
                     cl_attr = a_list[count]
+                    if cl_attr == 'dataquality':
+                        cl_attr = 'DataQuality'
                     try:
                         obj = getattr(obj, cl_attr)
                     except AttributeError:
@@ -589,22 +592,31 @@ class MT(object):
         for key in sorted(self.Notes.info_dict.keys()):
             l_key = key.lower()
             l_value = self.Notes.info_dict[key]
-            info_list.append('{0} = {1}'.format(l_key, l_value))
+            info_list.append('{0} = {1}'.format(l_key.strip(), l_value.strip()))
         
-        # get instrument information
-        for key in ['ex', 'ey', 'hx', 'hy', 'hz']:
-            if 'e' in key:
-                key = 'electrode_{0}'.format(key)
-            elif 'h' in key:
-                key = 'magnetometer_{0}'.format(key)
-                
-            instrument_obj = getattr(self.FieldNotes, key) 
-            for mkey in ['manufacturer', 'id', 'type']:
-                l_key = '{0}.{1}'.format(key, mkey)
-                line = '{0} = {1}'.format(l_key.lower(), 
-                                          getattr(instrument_obj, mkey))
-                info_list.append(line)
-                
+#        # get instrument information
+#        for key in ['ex', 'ey', 'hx', 'hy', 'hz']:
+#            if 'e' in key:
+#                key = 'electrode_{0}'.format(key)
+#            elif 'h' in key:
+#                key = 'magnetometer_{0}'.format(key)
+#                
+#            instrument_obj = getattr(self.FieldNotes, key) 
+#            for mkey in ['manufacturer', 'id', 'type']:
+#                l_key = 'fieldnotes.{0}.{1}'.format(key, mkey)
+#                line = '{0} = {1}'.format(l_key.lower(), 
+#                                          getattr(instrument_obj, mkey))
+#                info_list.append(line)
+
+        # get field notes information
+        for f_key in self.FieldNotes.__dict__.keys():
+            obj = getattr(self.FieldNotes, f_key)
+            for t_key in obj.__dict__.keys():
+                l_key = 'fieldnotes.{0}.{1}'.format(f_key.lower(),
+                                                    t_key.lower())
+                l_value = getattr(obj, t_key)
+                info_list.append('{0} = {1}'.format(l_key, l_value))
+        
         # get processing information  
         for p_key in self.Processing.__dict__.keys():
             if p_key.lower() == 'software':
@@ -628,10 +640,39 @@ class MT(object):
                 
         # get data quality
         for d_key in self.DataQuality.__dict__.keys():
-            l_key = 'DataQuality.{0}'.format(d_key)
+            l_key = 'dataquality.{0}'.format(d_key)
             l_value = getattr(self.DataQuality, d_key)
             info_list.append('{0} = {1}'.format(l_key, l_value))
             
+        # get copyright information
+        for c_key in self.Copyright.__dict__.keys():
+            if c_key.lower() == 'citation':
+                for p_key in self.Copyright.Citation.__dict__.keys():
+                    l_key = 'copyright.citation.{0}'.format(p_key.lower())
+                    l_value = getattr(self.Copyright.Citation, p_key)
+                    info_list.append('{0} = {1}'.format(l_key, l_value))
+            else:
+                l_key = 'copyright.{0}'.format(c_key.lower())
+                l_value = getattr(self.Copyright, c_key)
+                info_list.append('{0} = {1}'.format(l_key, l_value))
+                
+        # get provenance
+        for p_key in self.Provenance.__dict__.keys():
+            if p_key.lower() == 'creator':
+                for s_key in self.Provenance.Creator.__dict__.keys():
+                    l_key = 'provenance.creator.{0}'.format(s_key)
+                    l_value = getattr(self.Provenance.Creator, s_key)
+                    info_list.append('{0} = {1}'.format(l_key, l_value))
+            elif p_key.lower() == 'submitter':
+                for s_key in self.Provenance.Submitter.__dict__.keys():
+                    l_key = 'provenance.submitter.{0}'.format(s_key)
+                    l_value = getattr(self.Provenance.Submitter, s_key)
+                    info_list.append('{0} = {1}'.format(l_key, l_value))
+            else:
+                l_key = 'provenance.{0}'.format(p_key)
+                l_value = getattr(self.Provenance, p_key)
+                info_list.append('{0} = {1}'.format(l_key, l_value))
+                
         return info_list
     
     # get edi define measurement
@@ -695,12 +736,12 @@ class MT(object):
             nchan = 4
         sect.nchan = nchan
         sect.maxblks = 999
-        sect.ex = self.FieldNotes.electrode_ex.id
-        sect.ey = self.FieldNotes.electrode_ey.id
-        sect.hx = self.FieldNotes.magnetometer_hx.id
-        sect.hy = self.FieldNotes.magnetometer_hy.id
+        sect.ex = self.FieldNotes.electrode_ex.acqchan
+        sect.ey = self.FieldNotes.electrode_ey.acqchan
+        sect.hx = self.FieldNotes.magnetometer_hx.acqchan
+        sect.hy = self.FieldNotes.magnetometer_hy.acqchan
         if np.all(self.Tipper.tipper == 0) == False:
-            sect.hz = self.FieldNotes.magnetometer_hz.id
+            sect.hz = self.FieldNotes.magnetometer_hz.acqchan
             
         return sect
             
@@ -1155,13 +1196,13 @@ class FieldNotes(object):
         null_emeas = MTedi.EMeasurement()
         null_hmeas = MTedi.HMeasurement()
         
-        self.data_quality = DataQuality()
-        self.data_logger = Instrument()
-        self.electrode_ex = Instrument(**null_emeas.__dict__)
-        self.electrode_ey = Instrument(**null_emeas.__dict__)
-        self.magnetometer_hx = Instrument(**null_hmeas.__dict__)
-        self.magnetometer_hy = Instrument(**null_hmeas.__dict__)
-        self.magnetometer_hz = Instrument(**null_hmeas.__dict__)
+        self.DataQuality = DataQuality()
+        self.DataLogger = Instrument()
+        self.Electrode_ex = Instrument(**null_emeas.__dict__)
+        self.Electrode_ey = Instrument(**null_emeas.__dict__)
+        self.Magnetometer_hx = Instrument(**null_hmeas.__dict__)
+        self.Magnetometer_hy = Instrument(**null_hmeas.__dict__)
+        self.Magnetometer_hz = Instrument(**null_hmeas.__dict__)
 
         for key in kwargs.keys():
             setattr(self, key, kwargs[key])
@@ -1294,7 +1335,7 @@ class Copyright(object):
     """
     
     def __init__(self, **kwargs):
-        self.citation = Citation()
+        self.Citation = Citation()
         self.conditions_of_use = ''.join(['All data and metadata for this survey are ',
                                           'available free of charge and may be copied ',
                                           'freely, duplicated and further distributed ',
@@ -1342,8 +1383,8 @@ class Provenance(object):
         
         self.creation_time = None
         self.creating_application = None
-        self.creator = Person()
-        self.submitter = Person()
+        self.Creator = Person()
+        self.Submitter = Person()
         
         for key in kwargs.keys():
             setattr(self, key, kwargs[key])
