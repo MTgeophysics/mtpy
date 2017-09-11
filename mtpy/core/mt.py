@@ -845,20 +845,20 @@ class MT(object):
                                 'Processing', 'Copyright']):
             obj = getattr(self, obj_name)
             l_key = obj_name
-            for obj_key in obj.__dict__.keys():
+            for obj_key in sorted(obj.__dict__.keys()):
                 obj_attr = getattr(obj, obj_key)
                 l_key = '{0}.{1}'.format(obj_name, obj_key)
 
                 if type(obj_attr) not in [str, float, int, list] and \
                    obj_attr is not None:
-                    for a_key in obj_attr.__dict__.keys():
+                    for a_key in sorted(obj_attr.__dict__.keys()):
                         if a_key in ['_kw_list', '_fmt_list']:
                             continue
                         obj_attr_01 = getattr(obj_attr, a_key)
                         l_key = '{0}.{1}.{2}'.format(obj_name, obj_key, a_key)
                         if type(obj_attr_01) not in [str, float, int, list] and \
                            obj_attr_01 is not None:
-                            for b_key in obj_attr_01.__dict__.keys():
+                            for b_key in sorted(obj_attr_01.__dict__.keys()):
                                 obj_attr_02 = getattr(obj_attr_01, b_key)
                                 l_key = '{0}.{1}.{2}.{3}'.format(obj_name, 
                                                                  obj_key, 
