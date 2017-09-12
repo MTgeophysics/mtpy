@@ -105,7 +105,7 @@ def dimensionality(z_array = None, z_object = None, pt_array= None,
     # for each frequency of the pt/z array:
     for idx_f in range(len(pt_obj.pt)):
         #1. determine skew value...
-        skew = pt_obj.beta[0][idx_f]
+        skew = pt_obj.beta[idx_f]
             #compare with threshold for 3D
         if skew > skew_threshold:
             lo_dimensionality.append(3)
@@ -202,8 +202,8 @@ def strike_angle(z_array = None, z_object = None, pt_array= None,
             lo_strikes.append((np.nan, np.nan))
             continue
 
-        a = pt_obj.alpha[0][idx]
-        b = pt_obj.beta[0][idx]
+        a = pt_obj.alpha[idx]
+        b = pt_obj.beta[idx]
 
         strike1 = (a - b)%90
         if 0 < strike1 < 45 :

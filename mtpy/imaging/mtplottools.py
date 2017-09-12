@@ -26,7 +26,6 @@ import matplotlib.mlab as mlab
 
 #==============================================================================
 
-
 #define text formating for plotting
 ckdict = {'phiminang' : r'$\Phi_{min}$ (deg)',
           'phimin' : r'$\Phi_{min}$ (deg)',
