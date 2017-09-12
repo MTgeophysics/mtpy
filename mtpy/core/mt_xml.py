@@ -293,7 +293,7 @@ class XML_Config(object):
                                        'ProcessingSoftware':XML_element('ProcessingSoftware', None, None,
                                                                   **{'Name':XML_element('Name', None, None),
                                                                      'LastMod':XML_element('LastMod', None, None),
-                                                                     'Version':XML_element('Version', None, None)
+                                                                     'Version':XML_element('Version', None, None),
                                                                      'Author':XML_element('Author', None, None)}),
                                         'SignConvention':XML_element('SignConvention', None, r'exp(+i\omega t)'),
                                         'RemoteRef':XML_element('RemoteRef', {'type':'Robust Remote Processing'}, None),
