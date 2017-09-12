@@ -934,6 +934,59 @@ class MT(object):
                 value = obj.value
                 
                 setattr(self.Provenance, name, value)
+                
+    def _xml_get_processing(self, xml_obj):
+        """
+        get processing info
+        """
+        
+        for f_attr in xml_obj.Processing.__dict__.keys():
+            if f_attr in ['_name', '_attr', '_value']:
+                continue
+            if 'software' in f_attr.lower():
+                obj = getattr(xml_obj.Processing, f_attr)
+                for i_attr in obj.__dict__.keys():
+                    if i_attr in ['_name', '_attr', '_value']:
+                        continue 
+                    i_obj = getattr(obj, i_attr)
+                    name = i_obj.name.lower()
+                    if name == 'lastmod':
+                        name = 'last_modified'
+                    value = i_obj.value
+                    setattr(self.Processing.Software, name, value)
+            elif 'remoteinfo' in f_attr.lower():
+                obj = getattr(xml_obj.Processing, f_attr)
+                for i_attr in obj.__dict__.keys():
+                    if i_attr in ['_name', '_attr', '_value']:
+                        continue 
+                    if i_attr.lower() == 'location':
+                        for l_attr in obj.__dict__.keys():
+                            if l_attr in ['_name', '_attr', '_value']:
+                                continue
+                            l_obj = getattr(obj.Location, l_attr)
+                            name = l_obj.name.lower()
+                            value = l_obj.value
+                            setattr(self.Processing.RemoteSite.Location, 
+                                    name, value)
+                            
+                    i_obj = getattr(obj, i_attr)
+                    name = i_obj.name.lower()
+                    if name == 'yearcollected':
+                        name = 'year_collected'
+                    value = i_obj.value
+                    setattr(self.Processing.RemoteSite, name, value)
+            else:
+                obj = getattr(xml_obj.Provenance, f_attr)
+                name = obj.name.lower()
+                if name == 'signconvention':
+                    name = 'sign_convention'
+                elif name == 'remoteref':
+                    name = 'remote_ref'
+                value = obj.value
+                
+                setattr(self.Provenance, name, value)
+        
+        
         
     def read_cfg_file(self, cfg_fn):
         """
@@ -1700,6 +1753,8 @@ class Processing(object):
         self.Software = Software()
         self.notes = None
         self.sign_convention = 'exp(+i \omega t)'
+        self.remote_reference = None
+        self.RemoteSite = Site()
         
         for key in kwargs.keys():
             setattr(self, key, kwargs[key])
