@@ -248,7 +248,7 @@ class XML_Config(object):
                                                       'Volume':XML_element('Volume', None, None),
                                                       'DOI':XML_element('DOI', None, None)}),
                                   'ReleaseStatus':XML_element('ReleaseStatus', None, 'Closed'),
-                                  'ConditionsOfUse':XML_element('CondictionsOfUse', None, conditions_of_use)})
+                                  'ConditionsOfUse':XML_element('ConditionsOfUse', None, conditions_of_use)})
 
         self.Site = XML_element('Site', None, None,
                           **{'Project':XML_element('Project', None, None),

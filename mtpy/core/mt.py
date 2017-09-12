@@ -532,17 +532,17 @@ class MT(object):
         
         # get header information, mostly from site
         self._edi_obj = MTedi.Edi()
-        self._edi_obj.Header = self._get_edi_header()
+        self._edi_obj.Header = self._set_edi_header()
         
         # get information 
         self._edi_obj.Info = MTedi.Information()
-        self._edi_obj.Info.info_list = self._get_edi_info_list()
+        self._edi_obj.Info.info_list = self._set_edi_info_list()
         
         # get define measurement
-        self._edi_obj.Define_measurement = self._get_edi_define_measurement()
+        self._edi_obj.Define_measurement = self._set_edi_define_measurement()
         
         # get mtsec
-        self._edi_obj.Data_sect = self._get_edi_data_sect()
+        self._edi_obj.Data_sect = self._set_edi_data_sect()
         
         if new_Z is not None:
             self._edi_obj.Z = new_Z
@@ -561,7 +561,7 @@ class MT(object):
             
         self._edi_obj.write_edi_file(new_edi_fn=new_fn)
         
-    def _get_edi_header(self):
+    def _set_edi_header(self):
         """
         make an edi header class
         """
@@ -584,7 +584,7 @@ class MT(object):
         return header
         
     #--> get information list for edi
-    def _get_edi_info_list(self):
+    def _set_edi_info_list(self):
         """
         get the information for an edi file
         """
@@ -595,20 +595,6 @@ class MT(object):
             l_key = key.lower()
             l_value = self.Notes.info_dict[key]
             info_list.append('{0} = {1}'.format(l_key.strip(), l_value.strip()))
-        
-#        # get instrument information
-#        for key in ['ex', 'ey', 'hx', 'hy', 'hz']:
-#            if 'e' in key:
-#                key = 'electrode_{0}'.format(key)
-#            elif 'h' in key:
-#                key = 'magnetometer_{0}'.format(key)
-#                
-#            instrument_obj = getattr(self.FieldNotes, key) 
-#            for mkey in ['manufacturer', 'id', 'type']:
-#                l_key = 'fieldnotes.{0}.{1}'.format(key, mkey)
-#                line = '{0} = {1}'.format(l_key.lower(), 
-#                                          getattr(instrument_obj, mkey))
-#                info_list.append(line)
 
         # get field notes information includes data quality
         for f_key in sorted(self.FieldNotes.__dict__.keys()):
@@ -674,7 +660,7 @@ class MT(object):
         return info_list
     
     # get edi define measurement
-    def _get_edi_define_measurement(self):
+    def _set_edi_define_measurement(self):
         """
         get define measurement block for an edi file
         """       
@@ -720,7 +706,7 @@ class MT(object):
             
         return define_meas
     
-    def _get_edi_data_sect(self):
+    def _set_edi_data_sect(self):
         """
         get mt data section for edi file
         """
@@ -793,6 +779,16 @@ class MT(object):
         xml_obj = MTxml.MT_XML()
         xml_obj.read_xml_file(self.fn)
         
+        # get information and fill attributes
+        self._xml_get_site(xml_obj)
+        self._xml_get_field_notes(xml_obj)
+        self._xml_get_copyright(xml_obj)
+        self._xml_get_provenance(xml_obj)
+        
+    def _xml_get_site(self, xml_obj):
+        """
+        get Site information from xml Site
+        """
         # get information
         for s_attr in xml_obj.Site.__dict__.keys():
             if s_attr in ['_name', '_attr', '_value']:
@@ -822,19 +818,122 @@ class MT(object):
                     value = l_obj.value
                     if name == 'elevation':
                         units = l_obj.attr['units']
-                        setattr(self.Site.Location.elev_units, units)
+                        self.Site.Location.elev_units = units
                         
-                    if name == 
+                    elif name == 'declination':
+                        units = l_obj.attr['epoch']
+                        self.Site.Location.declination_epoch = units
                     setattr(self.Site.Location, name, value)
             else:
                 setattr(self.Site, name, value)
                 
-#            except AttributeError:
-#                print 'No information for {0}'.format(s_attr)
+    def _xml_get_field_notes(self, xml_obj):
+        """
+        get field notes information
+        """
+        
+        for f_attr in xml_obj.FieldNotes.__dict__.keys():
+            if f_attr.lower() == 'instrument':
+                for i_attr in xml_obj.FieldNotes.Instrument.__dict__.keys():
+                    if i_attr in ['_name', '_attr', '_value']:
+                        continue 
+                    i_obj = getattr(xml_obj.FieldNotes.Instrument, i_attr)
+                    name = i_obj.name.lower()
+                    value = i_obj.value
+                    setattr(self.FieldNotes.DataLogger, name, value)
+                    
+            elif f_attr.lower() == 'electrode':
+                for e_attr in xml_obj.FieldNotes.Electrode.__dict__.keys():
+                    if e_attr in ['_name', '_attr', '_value']:
+                        continue
+                    e_obj = getattr(xml_obj.FieldNotes.Electrode, e_attr)
+                    name = e_obj.name.lower()
+                    value = e_obj.value
+                    
+                    setattr(self.FieldNotes.Electrode_ex, name, value)
+                    setattr(self.FieldNotes.Electrode_ey, name, value)
             
-#        self.Site.acquired_by = xml_obj.Site.AcquiredBy._value
-#        self.Site.end_date = xml_obj.Site.End._value
-#        self.Site.id = xml_obj.Site.Id._value
+            elif f_attr.lower() == 'magnetometer':
+                for m_attr in xml_obj.FieldNotes.Magnetometer.__dict__.keys():
+                    if m_attr in ['_name', '_attr', '_value']:
+                        continue
+                    m_obj = getattr(xml_obj.FieldNotes.Magnetometer, m_attr)
+                    name = m_obj.name.lower()
+                    value = m_obj.value
+                    
+                    setattr(self.FieldNotes.Magnetometer_hx, name, value)
+                    setattr(self.FieldNotes.Magnetometer_hy, name, value)
+                    setattr(self.FieldNotes.Magnetometer_hz, name, value)
+                    
+            elif 'dataquality' in f_attr.lower():
+                obj = getattr(xml_obj.FieldNotes, f_attr)
+                for d_attr in obj.__dict__.keys():
+                    if d_attr in ['_name', '_attr', '_value']:
+                        continue
+                    d_obj = getattr(obj, d_attr)
+                    name = d_obj.name.lower()
+                    if name == 'goodfromperiod':
+                        name = 'good_from_period'
+                    elif name == 'goodtoperiod':
+                        name = 'good_to_period'
+                    value = d_obj.value
+                    
+                    setattr(self.FieldNotes.DataQuality, name, value)
+                    
+    def _xml_get_copyright(self, xml_obj):
+        """
+        get copyright information
+        """
+        
+        for f_attr in xml_obj.Copyright.__dict__.keys():
+            if f_attr in ['_name', '_attr', '_value']:
+                continue
+            if f_attr.lower() == 'citation':
+                for i_attr in xml_obj.Copyright.Citation.__dict__.keys():
+                    if i_attr in ['_name', '_attr', '_value']:
+                        continue 
+                    i_obj = getattr(xml_obj.Copyright.Citation, i_attr)
+                    name = i_obj.name.lower()
+                    value = i_obj.value
+                    setattr(self.Copyright.Citation, name, value)
+            else:
+                obj = getattr(xml_obj.Copyright, f_attr)
+                name = obj.name.lower()
+                if name == 'releasestatus':
+                    name = 'release_status'
+                elif name == 'conditionsofuse':
+                    name = 'conditions_of_use'
+                value = obj.value
+                
+                setattr(self.Copyright, name, value)
+                
+    def _xml_get_provenance(self, xml_obj):
+        """
+        get provenance infor
+        """
+        for f_attr in xml_obj.Provenance.__dict__.keys():
+            if f_attr in ['_name', '_attr', '_value']:
+                continue
+            if f_attr.lower() in ['creator', 'submitter']:
+                obj = getattr(xml_obj.Provenance, f_attr)
+                s_obj = getattr(self.Provenance, f_attr)
+                for i_attr in obj.__dict__.keys():
+                    if i_attr in ['_name', '_attr', '_value']:
+                        continue 
+                    i_obj = getattr(obj, i_attr)
+                    name = i_obj.name.lower()
+                    value = i_obj.value
+                    setattr(s_obj, name, value)
+            else:
+                obj = getattr(xml_obj.Provenance, f_attr)
+                name = obj.name.lower()
+                if name == 'creationtime':
+                    name = 'creation_time'
+                elif name == 'creatingapplication':
+                    name = 'creating_application'
+                value = obj.value
+                
+                setattr(self.Provenance, name, value)
         
     def read_cfg_file(self, cfg_fn):
         """
