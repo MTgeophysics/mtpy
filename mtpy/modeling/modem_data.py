@@ -1169,11 +1169,6 @@ class Data(object):
                   self.error_egbert / 100.
         return abs_err
 
-    def _impedance_components_error_value(self, zz):
-        abs_err = abs(zz) * \
-                  self.error_value / 100.
-        return abs_err
-
     def _impedance_components_error_floor_egbert(self, c_key, ff, ss, z_ii, z_jj):
         # abs_err = self.data_array[ss][
         #     c_key + '_err'][ff, z_ii, z_jj]
@@ -1186,6 +1181,13 @@ class Data(object):
             np.sqrt(abs(d_zxy * d_zyx)) * self.error_egbert / 100.,
             self.data_array[ss][c_key + '_err'][ff, z_ii, z_jj]
         )
+        return abs_err
+
+    def _impedance_components_error_value(self, zz):
+        abs_err = abs(zz) * \
+                  self.error_value / 100.
+        # YG: This looks wrong, according to error_floor, it should be
+        # abs_err = self.data_array[ss][c_key + '_err'][ff, z_ii, z_jj]
         return abs_err
 
     def _impedance_components_error_floor(self, c_key, ff, ss, z_ii, z_jj, zz):
