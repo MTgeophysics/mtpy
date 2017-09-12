@@ -165,14 +165,24 @@ class ModemSlices():
                         self.modObj.pad_north], self.modObj.grid_north[-self.modObj.pad_north - 1])
             title = 'Horizontal Slice at Depth {} meters'.format(gcz[sno])
 
-            # dump into CSV file with the output look like:
-            # StationName, Lat, Long, X, Y, Z, Log(Resistivity)
-            # where (X,Y,Z) are relative distances in meters from the mesh's origin.
-            # Projection/Coordinate system must be known in order to associate (Lat, Long) to (X, Y)
-
 
         return (X,Y,res,sX,sY,xlim,ylim,title)
 
+
+    def create_csv(self):
+        """
+        dump into CSV file with the output columns:
+            StationName, Lat, Long, X, Y, Z, Log(Resistivity)
+        where (X,Y,Z) are relative distances in meters from the mesh's origin.
+        Projection/Coordinate system must be known in order to associate (Lat, Long) to (X, Y)
+        :return:
+        """
+        self.set_plot_orientation('z')
+
+        (X, Y, res, sX, sY, xlim, ylim, title) = self.get_slice_data(1000)
+
+        #print (X,Y,res)
+        print(sX,sY)
 
     def make_plot(self,slice_location=1000):
         """ create a plot based on the input data and parameters
@@ -262,11 +272,14 @@ class ModemSlices():
 
 
 #########################################################################
-# Usage:
-# python mtpy/modeling/modem_outfiles_to_csv.py
-# /e/Data/Modeling/Isa/100hs_flat_BB/Isa_run3_NLCG_048.dat  /e/Data/Modeling/Isa/100hs_flat_BB/Isa_run3_NLCG_048.rho 20
-# -----------------------------------------------------------------------
 if __name__ == "__main__":
+    """ Usage:
+    python mtpy/modeling/modem_outfiles_to_csv.py
+    /e/Data/Modeling/Isa/100hs_flat_BB/Isa_run3_NLCG_048.dat /e/Data/Modeling/Isa/100hs_flat_BB/Isa_run3_NLCG_048.rho 20
+
+    python mtpy/modeling/modem_outfiles_to_csv.py
+    /e/tmp/GA_UA_edited_10s-10000s_16/ModEM_Data.dat  /e/tmp/GA_UA_edited_10s-10000s_16/ModEM_Model.ws 5000
+    """
 
     # Take commandline input
     if (len(sys.argv) == 2):  # A model dir provided
@@ -300,6 +313,8 @@ if __name__ == "__main__":
 
     # construct plot object
     myObj = ModemSlices(datf, rhof)  # ,map_scale='m')
+
+    myObj.create_csv()
 
     # myObj.set_plot_orientation('ew')
     # myObj.set_plot_orientation('ns')
