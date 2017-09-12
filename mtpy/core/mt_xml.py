@@ -573,7 +573,36 @@ class XML_Config(object):
     def _get_attr_keys(self, attribute):
         return [a_key for a_key in sorted(attribute.__dict__.keys()) 
                 if a_key not in ['_name', '_value', '_attr']]
-
+        
+#==============================================================================
+# Site
+#==============================================================================
+#class XML_Site(object):
+#    """
+#    Site
+#    """
+#
+#    def __init__(self, **kwargs):
+#        self.project = XML_element('Project', None, None)
+#        self.end_date = XML_element('End', None, None)
+#        self.id = XML_element('Id', None, None)
+#        self.Location = XML_Location()
+#        self.run_list = XML_element('RunList', None, None)
+#        self.start_date = XML_element('Start', None, None)
+#        self.survey = XML_element('Survey', None, None)
+#        self.year_collected = XML_element('YearCollected', None, None)
+#        self.acqby = XML_element('AcquiredBy', None, None)
+#
+#
+#class XML_Location(object):
+#    
+#    def __init__(self, **kwargs):
+#        self.latitude = XML_element('Latitude', None, None)
+#        self.longitude = XML_element('Longitude', None, None)
+#        self.elevation = XML_element('Elevation', {'units':'meters'}, None),
+#        self.declination = XML_element('Declination', {'epoch':'1995'}, None)
+#
+#class XML
 #==============================================================================
 #  EDI to XML
 #==============================================================================

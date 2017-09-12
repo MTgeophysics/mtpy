@@ -24,6 +24,7 @@ import mtpy.utils.gis_tools as gis_tools
 import mtpy.analysis.pt as MTpt
 import mtpy.analysis.distortion as MTdistortion
 import mtpy.core.jfile as MTj
+import mtpy.core.mt_xml as MTxml
 import mtpy.imaging.plotresponse as plotresponse
 
 try:
@@ -781,6 +782,59 @@ class MT(object):
         self.Site.Location.latitude = j_obj.metadata_dict['latitude']
         self.Site.Location.longitude = j_obj.metadata_dict['longitude']
         self.Site.Location.elevation = j_obj.metadata_dict['elevation']
+        
+    def read_xml_file(self, xml_fn):
+        """
+        read xml file
+        """
+        
+        self.fn = xml_fn
+        
+        xml_obj = MTxml.MT_XML()
+        xml_obj.read_xml_file(self.fn)
+        
+        # get information
+        for s_attr in xml_obj.Site.__dict__.keys():
+            if s_attr in ['_name', '_attr', '_value']:
+                continue
+            x_obj = getattr(xml_obj.Site, s_attr)
+            name = x_obj.name.lower()
+            if name == 'acquiredby':
+                name = 'acquired_by'
+            elif name == 'end':
+                name = 'end_date'
+            elif name == 'start':
+                name = 'start_date'
+            elif name == 'runlist':
+                name = 'run_list'
+            elif name == 'yearcollected':
+                name = 'year_collected'
+            elif name == 'datecollected':
+                name = 'date_collected'
+                
+            value = x_obj.value
+            if name == 'location':
+                for l_attr in xml_obj.Site.Location.__dict__.keys():
+                    if l_attr in ['_name', '_attr', '_value']:
+                        continue
+                    l_obj = getattr(xml_obj.Site.Location, l_attr)
+                    name = l_obj.name.lower()
+                    value = l_obj.value
+                    if name == 'elevation':
+                        units = l_obj.attr['units']
+                        setattr(self.Site.Location.elev_units, units)
+                        
+                    if name == 
+                    setattr(self.Site.Location, name, value)
+            else:
+                setattr(self.Site, name, value)
+                
+#            except AttributeError:
+#                print 'No information for {0}'.format(s_attr)
+            
+#        self.Site.acquired_by = xml_obj.Site.AcquiredBy._value
+#        self.Site.end_date = xml_obj.Site.End._value
+#        self.Site.id = xml_obj.Site.Id._value
         
     def read_cfg_file(self, cfg_fn):
         """
