@@ -70,23 +70,21 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
         #make map scale
         if self.map_scale == 'km':
             self.dscale = 1000.
-            self._ellipse_dict = {'size':3}
-            self._arrow_dict = {'size':2,
-                                'head_length':.35,
-                                'head_width':.35,
-                                'lw':1.}
+            self.ellipse_size = 2
+            self.arrow_head_length = 0.35
+            self.arrow_head_width = 0.35
+            self.arrow_lw = .75
+            self.arrow_size = 2
+
                                 
         elif self.map_scale == 'm':
             self.dscale = 1.
-            self._ellipse_dict = {'size':500}
-            self._arrow_dict = {'size':500,
-                                'head_length':50,
-                                'head_width':50,
-                                'lw':.75}
-        
-        self._read_ellipse_dict()
-        self._read_arrow_dict()
-        
+            self.ellipse_size = 500
+            self.arrow_head_length = 50
+            self.arrow_head_width = 50
+            self.arrow_lw = .75
+            self.arrow_size = 500
+
         self.ew_limits = None
         self.ns_limits = None
         
