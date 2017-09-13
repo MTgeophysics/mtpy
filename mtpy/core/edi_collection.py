@@ -31,7 +31,7 @@ logger = MtPyLog().get_mtpy_logger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
-def is_num_in_seq(anum, aseq, atol=0.0000001):
+def is_num_in_seq(anum, aseq, atol=0.0001):
     """
     check if anum is in a sequence by a small tolerance
     :param anum:
