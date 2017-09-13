@@ -688,7 +688,7 @@ class PhaseTensor(object):
         pi2err = None
 
         if self.pt_err is not None:
-            pi2err = 1./ pi2 * np.sqrt( (self.pt[:,0,0] + self.pt[:,1,1] )**2 *
+            pi2err = 1./ pi2 * np.sqrt( (self.pt[:,0,0] + self.pt[:,1,1] )**2*\
                     (self.pt_err[:,0,0]**2 + self.pt_err[:,1,1]**2)  +\
                     (self.pt[:,0,1] - self.pt[:,1,0] )**2 *\
                     (self.pt_err[:,0,1]**2 + self.pt_err[:,1,0]**2) )
@@ -715,7 +715,7 @@ class PhaseTensor(object):
         if self.pt is None:
             return None
 
-        return np.rad2deg(self._pi2()[0] - self._pi1()[0])
+        return np.degrees(self._pi2()[0] - self._pi1()[0])
 
     @property
     def phimin_err(self):
@@ -742,9 +742,9 @@ class PhaseTensor(object):
         
 
         if self.pt is None:
-            return None, None
+            return None
 
-        return np.rad2deg(self._pi2()[0] + self._pi1()[0])
+        return np.degrees(self._pi2()[0] + self._pi1()[0])
 
     @property
     def phimax_err(self):

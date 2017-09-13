@@ -66,6 +66,9 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
         self.plot_period_list = None
         self.period_dict = None
         
+        mtplottools.MTArrows.__init__(self)
+        mtplottools.MTEllipse.__init__(self)
+        
         self.map_scale = 'km'
         #make map scale
         if self.map_scale == 'km':
@@ -443,10 +446,10 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
             dpt = self.modem_data.mt_dict[key].pt
             data_pt_arr[:, ii]['east'] = east
             data_pt_arr[:, ii]['north'] = north
-            data_pt_arr[:, ii]['phimin'] = dpt.phimin[0]
-            data_pt_arr[:, ii]['phimax'] = dpt.phimax[0]
-            data_pt_arr[:, ii]['azimuth'] = dpt.azimuth[0]
-            data_pt_arr[:, ii]['skew'] = dpt.beta[0]
+            data_pt_arr[:, ii]['phimin'] = dpt.phimin
+            data_pt_arr[:, ii]['phimax'] = dpt.phimax
+            data_pt_arr[:, ii]['azimuth'] = dpt.azimuth
+            data_pt_arr[:, ii]['skew'] = dpt.beta
 
             # compute tipper data
             tip = self.modem_data.mt_dict[key].Tipper
@@ -465,10 +468,10 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
                 
                 model_pt_arr[:, ii]['east'] = east
                 model_pt_arr[:, ii]['north'] = north
-                model_pt_arr[:, ii]['phimin'] = mpt.phimin[0]
-                model_pt_arr[:, ii]['phimax'] = mpt.phimax[0]
-                model_pt_arr[:, ii]['azimuth'] = mpt.azimuth[0]
-                model_pt_arr[:, ii]['skew'] = mpt.beta[0]
+                model_pt_arr[:, ii]['phimin'] = mpt.phimin
+                model_pt_arr[:, ii]['phimax'] = mpt.phimax
+                model_pt_arr[:, ii]['azimuth'] = mpt.azimuth
+                model_pt_arr[:, ii]['skew'] = mpt.beta
                 
                 mtip = self.modem_resp.mt_dict[key].Tipper
                 mtip._compute_mag_direction()
@@ -486,12 +489,12 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
                                                    pt_object2=mpt)
                     rpt = rpt.residual_pt
                     
-                    res_pt_arr[:, ii]['phimin'] = rpt.phimin[0]
-                    res_pt_arr[:, ii]['phimax'] = rpt.phimax[0]
-                    res_pt_arr[:, ii]['azimuth'] = rpt.azimuth[0]
-                    res_pt_arr[:, ii]['skew'] = rpt.beta[0]
-                    res_pt_arr[:, ii]['geometric_mean'] = np.sqrt(abs(rpt.phimin[0]*\
-                                                                  rpt.phimax[0]))
+                    res_pt_arr[:, ii]['phimin'] = rpt.phimin
+                    res_pt_arr[:, ii]['phimax'] = rpt.phimax
+                    res_pt_arr[:, ii]['azimuth'] = rpt.azimuth
+                    res_pt_arr[:, ii]['skew'] = rpt.beta
+                    res_pt_arr[:, ii]['geometric_mean'] = np.sqrt(abs(rpt.phimin*\
+                                                                  rpt.phimax))
                                                                   
             
                 except mtex.MTpyError_PT:
@@ -621,12 +624,13 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
                                           aspect='equal',
                                           sharex=axd, 
                                           sharey=axd,
-                                          adjustable='datalim')
+                                          adjustable='box-forced')
             axr = self.figure.add_subplot(gs[0, 2], 
                                           aspect='equal',
                                           sharex=axd,
                                           sharey=axd,
-                                          adjustable='datalim')
+                                          adjustable='box-forced')
+#                                          adjustable='datalim')
             ax_list = [axd, axm, axr]
 #        
         else:
@@ -691,7 +695,7 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
                 ewidth = pt['phimax']/\
                           self.pt_data_arr[data_ii]['phimax'].max()*\
                           self.ellipse_size
-                          
+
                 ellipse = Ellipse((pt['east'],
                                    pt['north']),
                                    width=ewidth,
@@ -764,7 +768,7 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
                     ewidth = mpt['phimax']/\
                               self.pt_resp_arr[data_ii]['phimax'].max()*\
                               self.ellipse_size
-                              
+
                     ellipsem = Ellipse((mpt['east'],
                                        mpt['north']),
                                        width=ewidth,
@@ -832,7 +836,7 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
                     ewidth = rpt['phimax']/\
                               self.pt_resid_arr[data_ii]['phimax'].max()*\
                               self.ellipse_size
-                              
+                    
                     ellipser = Ellipse((rpt['east'],
                                        rpt['north']),
                                        width=ewidth,
