@@ -885,26 +885,30 @@ class Model(object):
         for key in kwargs.keys():
             setattr(self, key, kwargs[key])
         
-        #---------create depth layers--------------------                
-        log_z = np.logspace(np.log10(self.z1_layer), 
-                            np.log10(self.target_depth-
-                                     np.logspace(np.log10(self.z1_layer), 
-                            np.log10(self.target_depth), 
-                            num=self.n_layers)[-2]), 
-                            num=self.n_layers-self.pad_z)
-        ztarget = np.array([zz-zz%10**np.floor(np.log10(zz)) for zz in 
-                           log_z])
-        log_zpad = np.logspace(np.log10(self.target_depth), 
-                            np.log10(self.bottom_layer-
-                                    np.logspace(np.log10(self.target_depth), 
-                            np.log10(self.bottom_layer), 
-                            num=self.pad_z)[-2]), 
-                            num=self.pad_z)
-        zpadding = np.array([zz-zz%10**np.floor(np.log10(zz)) for zz in 
-                               log_zpad])
-        z_nodes = np.append(ztarget, zpadding)
-        self.model_depth = np.array([z_nodes[:ii+1].sum() 
-                                     for ii in range(z_nodes.shape[0])])
+        if self.model_depth is None:
+            #---------create depth layers--------------------                
+            log_z = np.logspace(np.log10(self.z1_layer), 
+                                np.log10(self.target_depth-
+                                         np.logspace(np.log10(self.z1_layer), 
+                                np.log10(self.target_depth), 
+                                num=self.n_layers)[-2]), 
+                                num=self.n_layers-self.pad_z)
+            ztarget = np.array([zz-zz%10**np.floor(np.log10(zz)) for zz in 
+                               log_z])
+            log_zpad = np.logspace(np.log10(self.target_depth), 
+                                np.log10(self.bottom_layer-
+                                        np.logspace(np.log10(self.target_depth), 
+                                np.log10(self.bottom_layer), 
+                                num=self.pad_z)[-2]), 
+                                num=self.pad_z)
+            zpadding = np.array([zz-zz%10**np.floor(np.log10(zz)) for zz in 
+                                   log_zpad])
+            z_nodes = np.append(ztarget, zpadding)
+            self.model_depth = np.array([z_nodes[:ii+1].sum() 
+                                         for ii in range(z_nodes.shape[0])])
+        else:
+            self.n_layers = len(self.model_depth)
+            
         self.num_params = self.n_layers+2
         #make the model file
         modfid=open(self.model_fn,'w')
@@ -1055,20 +1059,19 @@ class Model(object):
         
         freeparams = np.where(self.model_res == -1)[0]
         
-        ifid = file(self.iter_fn, 'r')
-        ilines = ifid.readlines()
-        ifid.close()
+        with open(self.iter_fn, 'r') as ifid:
+            ilines = ifid.readlines()
         
         self.itdict={}
         model=[]    
         for ii,iline in enumerate(ilines):
             if iline.find(':')>=0:
-                ikey=iline[0:20].strip()
-                ivalue=iline[20:].split('!')[0].strip()
-                self.itdict[ikey[:-1]]=ivalue
+                ikey = iline[0:20].strip()
+                ivalue = iline[20:].split('!')[0].strip()
+                self.itdict[ikey[:-1]] = ivalue
             else:
                 try:
-                    ilst=iline.strip().split()
+                    ilst = iline.strip().split()
                     for kk in ilst:
                         model.append(float(kk))
                 except ValueError:
@@ -1076,7 +1079,7 @@ class Model(object):
         
         #put the model values into the model dictionary into the res array
         #for easy manipulation and access.       
-        model=np.array(model)
+        model = np.array(model)
         self.model_res[freeparams, 1] = model
 
 
