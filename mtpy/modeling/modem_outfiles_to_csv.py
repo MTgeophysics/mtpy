@@ -86,6 +86,13 @@ class ModemSlices():
         self.modObj = Model(model_fn=self.rhofile)
         self.modObj.read_model_file()
 
+        self.ew_lim = (self.modObj.grid_east[self.modObj.pad_east], self.modObj.grid_east[-self.modObj.pad_east - 1])
+        self.ns_lim = (self.modObj.grid_north[self.modObj.pad_north], self.modObj.grid_north[-self.modObj.pad_north - 1])
+
+        logger.debug("ns-limit %s", self.ns_lim)
+        logger.debug("ew-limit %s", self.ew_lim)
+        logger.info("z-limit %s", self.zlim)
+
         return
 
     def set_plot_orientation(self, orient):
@@ -181,8 +188,10 @@ class ModemSlices():
 
         (X, Y, res, sX, sY, xlim, ylim, title) = self.get_slice_data(1000)
 
-        #print (X,Y,res)
-        print(sX,sY)
+        print (X,Y,res)
+        #print(sX,sY)
+
+        return
 
     def make_plot(self,slice_location=1000):
         """ create a plot based on the input data and parameters
@@ -215,7 +224,8 @@ class ModemSlices():
         plt.title(title, fontdict=fdict)
 
         #if self.plot_orientation == 'z':
-        plt.gca().set_aspect('equal', 'datalim')
+        #plt.gca().set_aspect('equal') # an axis may be too small to view
+        plt.gca().set_aspect('auto')
 
         plt.clim(*self.clim)
         # plt.colorbar()
@@ -303,29 +313,39 @@ if __name__ == "__main__":
         datf = sys.argv[1]
         rhof = sys.argv[2]
 
-    if len(sys.argv) >= 4:
-        slice_locs = sys.argv[3:]
-    else:
-        # a list of depth where h-slice to be visualized
-        slice_locs=[-2000, -1900, -1700, -1500, -1200, -1000, -800, -600, -400, -200,
-                    0, 20, 50, 80, 100,150, 200, 400, 600,800,1000,
-                    2000,3000,4000,5000,6000,7000,8000,9000,10000]
-
     # construct plot object
-    myObj = ModemSlices(datf, rhof)  # ,map_scale='m')
+    #myObj = ModemSlices(datf, rhof)  # default  map_scale='m')
+    myObj = ModemSlices(datf, rhof, map_scale='km')
 
     myObj.create_csv()
 
+#--------------------- visualize slices:
     # myObj.set_plot_orientation('ew')
     # myObj.set_plot_orientation('ns')
-    # horizontal at a given depth
+    # horizontal at a given depth z
     myObj.set_plot_orientation('z')
+
+
+    if len(sys.argv) >= 4:
+        slice_locs = sys.argv[3:] # a list of depth where h-slice to be visualized
+        # slice_locs=[-2000, -1900, -1700, -1500, -1200, -1000, -800, -600, -400, -200,
+        #             0, 20, 50, 80, 100,150, 200, 400, 600,800,1000,
+        #             2000,3000,4000,5000,6000,7000,8000,9000,10000]
+    else:
+        slice_number = 10  # 10 evenly spaced slices
+        if myObj.plot_orientation == 'ns':
+            slice_locs = np.linspace(myObj.ns_lim[0], myObj.ns_lim[1], num=slice_number)
+        if myObj.plot_orientation == 'ew':
+            slice_locs = np.linspace(myObj.ew_lim[0], myObj.ew_lim[1], num=slice_number)
+        if myObj.plot_orientation == 'z':
+            slice_locs = np.linspace(myObj.zlim[1], myObj.zlim[0], num=slice_number)
+
 
     for dist in slice_locs:
         sdist=int(dist)
 
         print("**** plotting slice at location: ****", sdist)
-        print("**** actual location will be at nearest cell centre ****")
+        print("**** actual location will be at the nearest cell centre ****")
 
         # plot resistivity image at slices in three orientations at a given slice_location=sdist
 
