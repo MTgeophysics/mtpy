@@ -363,7 +363,7 @@ class Model(object):
                 continue
 
         # =================================  begin to make vertical mesh
-        (z_nodes, z_grid) = self.make_z_mesh2()
+        (z_nodes, z_grid) = self.make_z_mesh3()
 
         # Need to make an array of the individual cell dimensions for modem
         east_nodes = east_gridr[1:] - east_gridr[:-1]
@@ -547,6 +547,52 @@ class Model(object):
         logger.debug("shape of vertical layers cells and grid lines %s, %s", z_nodes.shape, z_grid.shape)
 
         return (z_nodes, z_grid)
+
+
+    def make_z_mesh3(self):
+        """
+        new version of make_z_mesh. make_z_mesh and M
+        """
+        
+        #--> make depth grid
+        # make initial guess for maximum cell thickness
+        max_cell_thickness = self.z_target_depth
+        
+        log_z = np.logspace(np.log10(self.z1_layer), 
+                            np.log10(max_cell_thickness),
+                            num=self.n_layers-self.pad_z-self.n_airlayers)
+        counter = 0                    
+        while np.sum(log_z) > self.z_target_depth:
+            max_cell_thickness *= 0.9
+            log_z = np.logspace(np.log10(self.z1_layer), 
+                                np.log10(max_cell_thickness),
+                                num=self.n_layers-self.pad_z-self.n_airlayers) 
+            counter += 1
+            if counter > 1e6:
+                break
+        
+        z_nodes = np.around(log_z[log_z<100],decimals=-int(np.floor(np.log10(self.z1_layer))))
+        z_nodes = np.append(z_nodes, np.around(log_z[log_z >= 100],decimals=-2))
+
+
+        # index of top of padding
+        itp = len(z_nodes) - 1
+                           
+        #padding cells in the vertical direction
+        for ii in range(1, self.pad_z+1):
+            z_0 = np.float(z_nodes[itp])
+            pad_d = np.round(z_0*self.pad_stretch_v*ii, -2)
+            z_nodes = np.append(z_nodes, pad_d)                  
+        
+        # add air layers and define ground surface level.
+        # initial layer thickness is same as z1_layer
+        z_nodes = np.hstack([[self.z1_layer]*self.n_airlayers,z_nodes])
+        
+        #make an array of absolute values
+        z_grid = np.array([z_nodes[:ii].sum() for ii in range(z_nodes.shape[0]+1)])
+        
+        return (z_nodes, z_grid)
+
 
     def add_topography_2mesh(self, topographyfile=None, topographyarray=None, interp_method='nearest',
                              air_resistivity=1e17, sea_resistivity=0.3):
