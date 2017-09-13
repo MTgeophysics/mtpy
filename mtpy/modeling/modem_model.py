@@ -1760,6 +1760,7 @@ class Model(object):
                               fn=fn, workdir=savepath)
         sgObj.write_sgrid_file()
 
+
     def read_gocad_sgrid_file(self, sgrid_header_file, air_resistivity=1e39, sea_resistivity=0.3):
         """
         read a gocad sgrid file and put this info into a ModEM file.
