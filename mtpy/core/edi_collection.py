@@ -8,38 +8,41 @@ InitDate: 2017-04-20
 """
 
 from __future__ import print_function
-import sys
-import os
+
+import csv
 import glob
 import logging
-import csv
-import numpy as np
-import pandas as pd
+import os
+import sys
+
 import geopandas as gpd
 import matplotlib.pyplot as plt
-from shapely.geometry import Point #, Polygon, LineString, LinearRing
+import numpy as np
+import pandas as pd
+from shapely.geometry import Point  # , Polygon, LineString, LinearRing
+
 # import matplotlib as mpl
 # from mpl_toolkits.axes_grid1 import make_axes_locatable
 import mtpy.core.mt as mt
 import mtpy.imaging.mtplottools as mtplottools
-
 from mtpy.utils.mtpylog import MtPyLog
 
 logger = MtPyLog().get_mtpy_logger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
-def is_num_in_seq(anum, aseq, tolerance=0.0000001):
+def is_num_in_seq(anum, aseq, atol=0.0000001):
     """
     check if anum is in a sequence by a small tolerance
     :param anum:
     :param aseq:
-    :param tolerance:
+    :param atol: absolute tolerance
     :return: True | False
     """
-
+    # print(np.isclose(anum, aseq, atol=atol))
+    # return np.isclose(anum, aseq, atol=atol).any()
     for an_number in aseq:
-        if abs(anum - an_number) < tolerance:
+        if abs(anum - an_number) < atol:
             return True
         else:
             pass
@@ -72,14 +75,14 @@ class EdiCollection(object):
         self.ptol = ptol
 
         if self.edifiles is not None:
-            logger.debug("contructing MT objects from edi files")
+            logger.debug("constructing MT objects from edi files")
             self.mt_obj_list = [mt.MT(edi) for edi in self.edifiles]
         else:
             logger.error("None Edi file set")
 
         # get all frequencies from all edi files
         self.all_frequencies = None
-        self.mt_periods=None
+        self.mt_periods = None
         self.all_unique_periods = self._get_all_periods()
 
         self.geopdf = self.create_mt_station_gdf()
