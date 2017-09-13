@@ -674,15 +674,14 @@ class MT(object):
                 non_zero = np.nonzero(self.Z.z[:,ii,jj])
                 ind = np.argsort(self.Z.freq[non_zero])
                 if len(ind) > 0:
-                    print "indices z",ind
-                    z_func_real = spi.interp1d(np.log10(self.Z.freq[ind]), self.Z.z[ind][:, ii, jj].real,
+                    z_func_real = spi.interp1d(np.log10(self.Z.freq[non_zero][ind]), self.Z.z[non_zero][ind][:, ii, jj].real,
                                                kind=interpkind, bounds_error=False, fill_value=0.)
-                    z_func_imag = spi.interp1d(np.log10(self.Z.freq[ind]), self.Z.z[ind][:, ii, jj].imag,
+                    z_func_imag = spi.interp1d(np.log10(self.Z.freq[non_zero][ind]), self.Z.z[non_zero][ind][:, ii, jj].imag,
                                                kind=interpkind, bounds_error=False, fill_value=0.)
                     new_Z.z[:, ii, jj] = z_func_real(np.log10(new_freq_array)) + \
                         1j * z_func_imag(np.log10(new_freq_array))
     
-                    z_func_err = spi.interp1d(np.log10(self.Z.freq[ind]), self.Z.z_err[ind][:, ii, jj],
+                    z_func_err = spi.interp1d(np.log10(self.Z.freq[non_zero][ind]), self.Z.z_err[ind][:, ii, jj],
                                               kind=interpkind, bounds_error=False)
                     new_Z.z_err[:, ii, jj] = z_func_err(np.log10(new_freq_array))
 
@@ -696,17 +695,16 @@ class MT(object):
             ind = np.argsort(self.Z.freq[non_zero])
 
             if len(ind) > 0:
-                print "indices tip",ind
-                t_func_real = spi.interp1d(np.log10(self.Z.freq[ind]),
-                                           self.Tipper.tipper[ind][:, 0, jj].real,
+                t_func_real = spi.interp1d(np.log10(self.Z.freq[non_zero][ind]),
+                                           self.Tipper.tipper[non_zero][ind][:, 0, jj].real,
                                            kind=interpkind, bounds_error=False, fill_value=0.)
-                t_func_imag = spi.interp1d(np.log10(self.Z.freq[ind]),
-                                           self.Tipper.tipper[ind][:, 0, jj].imag,
+                t_func_imag = spi.interp1d(np.log10(self.Z.freq[non_zero][ind]),
+                                           self.Tipper.tipper[non_zero][ind][:, 0, jj].imag,
                                            kind=interpkind, bounds_error=False, fill_value=0.)
                 new_Tipper.tipper[:, 0, jj] = t_func_real(np.log10(new_freq_array)) + \
                     1j * t_func_imag(np.log10(new_freq_array))
     
-                t_func_err = spi.interp1d(np.log10(self.Z.freq[ind]),
+                t_func_err = spi.interp1d(np.log10(self.Z.freq[non_zero][ind]),
                                           self.Tipper.tipper_err[ind][:, 0, jj],
                                           kind=interpkind, bounds_error=False)
                 new_Tipper.tipper_err[
