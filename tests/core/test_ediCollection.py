@@ -8,6 +8,7 @@ import numpy as np
 from geopandas import GeoDataFrame
 
 from mtpy.core.edi_collection import is_num_in_seq, EdiCollection
+from mtpy.core.mt import MT
 
 plt.ion()
 
@@ -43,8 +44,7 @@ class TestUtilities(TestCase):
 class _BaseTest(object):
     def setUp(self):
         if os.path.isdir(self.edi_path):
-            edi_files = glob.glob(os.path.join(self.edi_path, "*.edi"))
-            self.edi_collection = EdiCollection(edi_files)
+            self.edi_files = glob.glob(os.path.join(self.edi_path, "*.edi"))
         else:
             self.skipTest("edi path not exist")
 
@@ -98,19 +98,37 @@ class _BaseTest(object):
         plt.pause(1)
 
     def test_create_mt_station_gdf(self):
-        self.edi_collection.create_mt_station_gdf(
-            os.path.join(self._temp_dir, self.__class__.__name__ + "_mt_station_gdf")
-        )
+        path = os.path.join(self._temp_dir, self.__class__.__name__ + "_mt_station_gdf")
+        if not os.path.exists(path):
+            os.mkdir(path)
+        self.edi_collection.create_mt_station_gdf(path)
 
     def test_create_measurement_csv(self):
-        path = os.path.join(self._temp_dir, self.__class__.__name__ + "_mt_station_gdf")
+        path = os.path.join(self._temp_dir, self.__class__.__name__ + "_measurement_csv")
         if not os.path.exists(path):
             os.mkdir(path)
         self.edi_collection.create_measurement_csv(path)
 
 
+class TsetFromFile(_BaseTest):
+    def setUp(self):
+        _BaseTest.setUp(self)
+        self.edi_collection = EdiCollection(self.edi_files)
+
+
+class TestFromMTObj(_BaseTest):
+    def setUp(self):
+        _BaseTest.setUp(self)
+        mt_objs = [MT(edi_file) for edi_file in self.edi_files]
+        self.edi_collection = EdiCollection(mt_objs=mt_objs)
+
+
 for edi_path in edi_paths:
-    cls_name = "TestEdiCollection_%s" % (os.path.basename(edi_path))
-    globals()[cls_name] = type(cls_name, (_BaseTest, unittest.TestCase), {
+    cls_name = "TestEdiCollectionFromFile_%s" % (os.path.basename(edi_path))
+    globals()[cls_name] = type(cls_name, (TsetFromFile, unittest.TestCase), {
+        "edi_path": edi_path
+    })
+    cls_name = "TestEdiCollectionFromMTObj_%s" % (os.path.basename(edi_path))
+    globals()[cls_name] = type(cls_name, (TestFromMTObj, unittest.TestCase), {
         "edi_path": edi_path
     })

@@ -55,7 +55,7 @@ class EdiCollection(object):
     A super class to encapsulate the properties pertinent to a set of EDI files
     """
 
-    def __init__(self, edilist, ptol=0.05):
+    def __init__(self, edilist=None, mt_objs=None, ptol=0.05):
         """ constructor
         :param edilist: a list of edifiles with full path, for read-only
         :param ptol: period tolerance considered as equal, default 0.05 means 5 percent
@@ -64,9 +64,12 @@ class EdiCollection(object):
         eg: E:/Data/MT_Datasets/WenPingJiang_EDI 18528 rows vs 14654 rows
         """
 
-        self.edifiles = edilist
-        logger.info("number of edi files in this collection: %s",
-                    len(self.edifiles))
+        if edilist is not None:
+            self.edifiles = edilist
+            logger.info("number of edi files in this collection: %s",
+                        len(self.edifiles))
+        elif mt_objs is not None:
+            self.edifiles = [mt_obj.fn for mt_obj in mt_objs]
         assert len(self.edifiles) > 0
 
         self.num_of_edifiles = len(self.edifiles)  # number of stations
@@ -74,9 +77,13 @@ class EdiCollection(object):
 
         self.ptol = ptol
 
-        if self.edifiles is not None:
+        if edilist is not None:
+            # if edilist is provided, always create MT objects from the list
             logger.debug("constructing MT objects from edi files")
             self.mt_obj_list = [mt.MT(edi) for edi in self.edifiles]
+        elif mt_objs is not None:
+            # use the supplied mt_objs
+            self.mt_obj_list = mt_objs
         else:
             logger.error("None Edi file set")
 
