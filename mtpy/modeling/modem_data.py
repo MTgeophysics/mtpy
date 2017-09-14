@@ -1110,10 +1110,12 @@ class Data(object):
         dfid.close()
 
         # write epsg and center position to a file, if they exist
-        np.savetxt(op.join(self.save_path, 'center_position.txt'),
-                   self.center_position_EN, fmt='%.1f')
-        np.savetxt(op.join(self.save_path, 'epsg.txt'),
-                   np.array([self.epsg]), fmt='%1i')
+        if hasattr(self,'center_position_EN'):
+            np.savetxt(op.join(self.save_path, 'center_position.txt'),
+                       self.center_position_EN, fmt='%.1f')
+        if hasattr(self,'epsg'):
+            np.savetxt(op.join(self.save_path, 'epsg.txt'),
+                       np.array([self.epsg]), fmt='%1i')
 
         logger.debug('Wrote ModEM data file to %s', self.data_fn)
 
