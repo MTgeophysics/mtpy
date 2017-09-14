@@ -345,10 +345,7 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse, mtpl.PlotSettings):
     
     def __init__(self, **kwargs):
         
-#        super(PlotResponse, self).__init__()
-        mtpl.MTArrows.__init__(self)
-        mtpl.MTEllipse.__init__(self)
-        mtpl.PlotSettings.__init__(self)
+        super(PlotResponse, self).__init__()
         
         fn = kwargs.pop('fn', None)
         z_object = kwargs.pop('z_object', None)
