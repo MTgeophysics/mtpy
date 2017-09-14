@@ -86,23 +86,31 @@ class Occam1D_GUI(QtGui.QMainWindow):
 
         ## menu bar
         self.menu_bar = self.menuBar()
-        #self.menu_bar.setGeometry(QtCore.QRect(0, 0, 1920, 40))
-        
+
+        self.menu_data = self.menu_bar.addMenu("Data")
+        self.menu_model = self.menu_bar.addMenu("Model")
         self.menu_help = self.menu_bar.addMenu('Help')
+        
         help_action = QtGui.QAction('help doc', self)
         help_action.triggered.connect(self.display_help)
-        
-        
         self.menu_help.addAction(help_action)
         
-        #self.menu_model = QtGui.QMenu(self.menu_bar)
-        #self.menu_model.setTitle("Model")
+        self.setMenuBar(self.menu_bar)        
+        # set the actions for the data file menu item 
+        # set an open option that on click opens an existing occam file
+        self.action_open_data = QtGui.QAction(self)
+        self.action_open_data.setText("&Open")
+        self.action_open_data.triggered.connect(self.get_data_file)
         
-        #self.menu_startup = QtGui.QMenu(self.menu_bar)
-        #self.menu_startup.setTitle('Startup')
+        self.action_open_model = QtGui.QAction(self)
+        self.action_open_model.setText("&Open")
+        self.action_open_model.triggered.connect(self.get_model_file)
         
-        #self.setMenuBar(self.menu_bar)
-        #self.show()
+        # add actions to menu
+        self.menu_data.addAction(self.action_open_data)
+        self.menu_model.addAction(self.action_open_model)
+        
+        self.show()
         #--------------------------------------------------------
         # stream the output of occam 1D        
         self.my_stream = MyStream()
@@ -136,6 +144,25 @@ class Occam1D_GUI(QtGui.QMainWindow):
         help_string = '\n'.join(ll)        
         
         QtGui.QMessageBox.information(self.central_widget, 'Help', help_string)
+        
+    def get_data_file(self):
+        fn_dialog = QtGui.QFileDialog()
+        fn = str(fn_dialog.getOpenFileName(caption='Choose Occam 1D data file',
+                                           filter='(*.dat);; (*.data)',
+                                           directory=self.dir_path))
+                                       
+        self.occam_widget.occam_data.read_data_file(fn)
+        self.dir_path = os.path.dirname(fn)
+        self.occam_widget.mpl_widget.plot_data(data_fn=self.occam_widget.occam_data.data_fn)
+        self.occam_widget.save_dir = self.dir_path
+        
+    def get_model_file(self):
+        fn_dialog = QtGui.QFileDialog()
+        fn = str(fn_dialog.getOpenFileName(caption='Choose Occam 1D model file',
+                                           directory=self.dir_path))
+                                       
+        self.occam_widget.occam_model.read_model_file(fn)
+        self.dir_path = os.path.dirname(fn)
 #==============================================================================
 # Occam 1D widget
 #==============================================================================
@@ -528,19 +555,22 @@ class OccamWidget(QtGui.QWidget):
         """
         create an inversion folder for each run
         """
-        dir_path = os.path.join(self.station_dir, self.data_mode)
-        if not os.path.isdir(dir_path):
-            os.mkdir(dir_path)
-            print 'Made directory {0}'.format(dir_path)
         
-        dir_list = []
-        for roots, dirs, files in os.walk(dir_path):
-            dir_list.append(dirs)
+        if self.save_dir is None:
+            dir_path = os.path.join(self.station_dir, self.data_mode)
+            if not os.path.isdir(dir_path):
+                os.mkdir(dir_path)
+                print 'Made directory {0}'.format(dir_path)
             
-        inv_num = len(dir_list[0])+1
-        
-        self.save_dir = os.path.join(self.station_dir, self.data_mode,
-                                     'Inv_{0:02}'.format(inv_num))
+            dir_list = []
+            for roots, dirs, files in os.walk(dir_path):
+                dir_list.append(dirs)
+                
+            inv_num = len(dir_list[0])+1
+            
+            if self.occam_data.data_fn is None:
+                self.save_dir = os.path.join(self.station_dir, self.data_mode,
+                                             'Inv_{0:02}'.format(inv_num))
         
     def run_occam(self):
         """
@@ -554,15 +584,19 @@ class OccamWidget(QtGui.QWidget):
             print 'Made directory {0}'.format(self.save_dir)
         
         # write data file
-        self.occam_data.write_data_file(edi_file=self.edi_fn,
-                                        save_path=self.save_dir,
-                                        mode=self.data_mode,
-                                        res_err=self.res_err,
-                                        phase_err=self.phase_err,
-                                        thetar=self.rotation_angle)
+        if self.occam_data.data_fn is None:
+            self.occam_data.write_data_file(edi_file=self.edi_fn,
+                                            save_path=self.save_dir,
+                                            mode=self.data_mode,
+                                            res_err=self.res_err,
+                                            phase_err=self.phase_err,
+                                            thetar=self.rotation_angle)
+        else:
+            pass
                                         
         # write model file
-        self.occam_model.write_model_file(save_path=self.save_dir)
+        if self.occam_model.model_fn is None:
+            self.occam_model.write_model_file(save_path=self.save_dir)
         
         # write startup file
         self.occam_startup.data_fn = self.occam_data.data_fn
