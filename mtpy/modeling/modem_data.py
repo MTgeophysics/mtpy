@@ -820,6 +820,7 @@ class Data(object):
 
             if len(interp_periods) > 0:  # not empty
                 interp_z, interp_t = mt_obj.interpolate_impedance_tensor(1. / interp_periods)  # ,bounds_error=False)
+#                interp_z, interp_t = mt_obj.interpolate(1./interp_periods)
                 for kk, ff in enumerate(interp_periods):
                     jj = np.where(self.period_list == ff)[0][0]
                     self.data_array[ii]['z'][jj] = interp_z.z[kk, :, :]
@@ -906,7 +907,7 @@ class Data(object):
 
     def write_data_file(self, save_path=None, fn_basename=None,
                         rotation_angle=None, compute_error=True,
-                        fill=True):
+                        fill=True, use_original_freq=True):
         """
         write data file for ModEM
         will save file as save_path/fn_basename
@@ -949,7 +950,7 @@ class Data(object):
             new_edi_dir = os.path.join(self.save_path, 'new_edis')  # output edi files according to selected periods
             if not os.path.exists(new_edi_dir):
                 os.mkdir(new_edi_dir)
-            self._fill_data_array(new_edi_dir=new_edi_dir)
+            self._fill_data_array(new_edi_dir=new_edi_dir, use_original_freq=use_original_freq)
             # get relative station locations in grid coordinates
             self.get_relative_station_locations()
 

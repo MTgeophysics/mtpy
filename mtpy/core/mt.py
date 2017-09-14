@@ -713,6 +713,7 @@ class MT(object):
 
         return new_Z, new_Tipper
 
+
     def plot_mt_response(self, **kwargs):
         """
         Returns a mtpy.imaging.plot_mt_response.PlotMTResponse object
