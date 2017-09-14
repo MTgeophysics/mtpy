@@ -10,7 +10,8 @@ import os.path as op
 import matplotlib.pyplot as plt
 import numpy as np
 
-import mtpy.modeling.modem as mtmn
+import mtpy.modeling.modem_data as md
+import mtpy.modeling.modem_model as mm
 
 # INPUTS #
 # define a workdir for your environ
@@ -42,9 +43,9 @@ datafn = 'ModEM_Data_noise10inv.dat'
 
 read_data = True
 if read_data:
-    doo = mtmn.Data()
+    doo = md.Data()
     doo.read_data_file(op.join(modeldir, datafn))
-    moo = mtmn.Model(model_fn=op.join(modeldir, iterfn))
+    moo = mm.Model(model_fn=op.join(modeldir, iterfn))
     moo.read_model_file()
 
 # get grid centres
