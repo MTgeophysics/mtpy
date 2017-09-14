@@ -1,10 +1,6 @@
 #!/usr/bin/env python
 """
-ModEM: Generate data file for ModEM
-
-
-by Fei.Zhang@ga.gov.au 2016
-
+    Create Phase Tensor Map from the ModEM's output Resistivity model
 """
 import os
 import os.path as op
