@@ -10,10 +10,9 @@ References:
     https://gajira.atlassian.net/browse/ALAMP-31
 
 CreationDate:   8/09/2017
-CreatedBy:      SysUser='u25656'
-
 Developer:      fei.zhang@ga.gov.au
-LastUpdate:     8/09/2017
+
+LastUpdate:     15/09/2017   FZ
 """
 
 import os
