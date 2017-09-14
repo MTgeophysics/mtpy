@@ -284,9 +284,10 @@ class PlotResponse(object):
             fig = plt.figure(station, self.fig_size, dpi=self.fig_dpi)
             plt.clf()
             fig.suptitle(str(station), fontdict=fontdict)
-
+            
             # set the grid of subplots
             tipper_zero = (np.round(abs(t_obj.tipper.mean()), 4) == 0.0)
+            
             if tipper_zero == False:
                 # makes more sense if plot_tipper is True to plot tipper
                 plot_tipper = True
