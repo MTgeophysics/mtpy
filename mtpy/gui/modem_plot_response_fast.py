@@ -21,8 +21,8 @@ from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
 from matplotlib.figure import Figure
 
+import legacy.modem as modem
 import mtpy.imaging.mtplottools as mtplottools
-import mtpy.legacy.modem as modem
 
 try:
     _fromUtf8 = QtCore.QString.fromUtf8

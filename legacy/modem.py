@@ -201,7 +201,7 @@ class Data(object):
     :Example 1 --> create inversion period list: ::
 
         >>> import os
-        >>> import mtpy.legacy.modem as modem
+        >>> import legacy.modem as modem
         >>> edi_path = r"/home/mt/edi_files"
         >>> edi_list = [os.path.join(edi_path, edi) \
                         for edi in os.listdir(edi_path)\
@@ -213,7 +213,7 @@ class Data(object):
     :Example 2 --> set inverions period list from data: ::
 
         >>> import os
-        >>> import mtpy.legacy.modem as modem
+        >>> import legacy.modem as modem
         >>> edi_path = r"/home/mt/edi_files"
         >>> edi_list = [os.path.join(edi_path, edi) \
                         for edi in os.listdir(edi_path)\
@@ -229,7 +229,7 @@ class Data(object):
 
     :Example 3 --> change error values: ::
 
-        >>> import mtpy.legacy.modem as modem
+        >>> import legacy.modem as modem
         >>> mdr = modem.Data()
         >>> mdr.read_data_file(r"/home/modem/inv1/ModEM_Data.dat")
         >>> mdr.error_type = 'floor'
@@ -239,7 +239,7 @@ class Data(object):
 
     :Example 4 --> change inversion type: ::
 
-        >>> import mtpy.legacy.modem as modem
+        >>> import legacy.modem as modem
         >>> mdr = modem.Data()
         >>> mdr.read_data_file(r"/home/modem/inv1/ModEM_Data.dat")
         >>> mdr.inv_mode = '3'
@@ -247,7 +247,7 @@ class Data(object):
 
     :Example 5 --> create mesh first then data file: ::
 
-        >>> import mtpy.legacy.modem as modem
+        >>> import legacy.modem as modem
         >>> import os
         >>> #1) make a list of all .edi files that will be inverted for
         >>> edi_path = r"/home/EDI_Files"
@@ -957,7 +957,7 @@ class Data(object):
         :Example: ::
 
             >>> import os
-            >>> import mtpy.legacy.modem as modem
+            >>> import legacy.modem as modem
             >>> edi_path = r"/home/mt/edi_files"
             >>> edi_list = [os.path.join(edi_path, edi) \
                             for edi in os.listdir(edi_path)\
@@ -1181,7 +1181,7 @@ class Data(object):
 
         :Example: ::
 
-            >>> import mtpy.legacy.modem as modem
+            >>> import legacy.modem as modem
             >>> mdr = modem.Data()
             >>> mdr.convert_ws3dinv_data_file(r"/home/ws3dinv/inv1/WSData.dat",
                     station_fn=r"/home/ws3dinv/inv1/WS_Station_Locations.txt")
@@ -1717,7 +1717,7 @@ class Model(object):
 
     :Example 1 --> create data file first then model file: ::
 
-        >>> import mtpy.legacy.modem as modem
+        >>> import legacy.modem as modem
         >>> import os
         >>> #1) make a list of all .edi files that will be inverted for 
         >>> edi_path = r"/home/EDI_Files"
@@ -4638,7 +4638,7 @@ class PlotSlices(object):
 
     :Example: ::
 
-        >>> import mtpy.legacy.modem as modem
+        >>> import legacy.modem as modem
         >>> mfn = r"/home/modem/Inv1/Modular_NLCG_100.rho"
         >>> dfn = r"/home/modem/Inv1/ModEM_data.dat"       
         >>> pds = ws.PlotSlices(model_fn=mfn, data_fn=dfn)

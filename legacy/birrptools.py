@@ -7,15 +7,17 @@ Created on %(date)s
 @author: %(Jared Peacock)s
 """
 
-import numpy as np
-import os
-import fnmatch
 import datetime
-from scipy import interpolate
-import time
-import mtpy.legacy.mttools as mt
+import fnmatch
+import os
 import shutil
 import subprocess
+import time
+
+import numpy as np
+
+import legacy.mttools as mt
+
 #import winsound as ws
 
 # short spaces 3 spaces

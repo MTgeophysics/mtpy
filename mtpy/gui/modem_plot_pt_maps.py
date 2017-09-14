@@ -25,11 +25,11 @@ from matplotlib.colors import Normalize
 from matplotlib.figure import Figure
 from matplotlib.patches import Ellipse
 
+import legacy.modem as modem
 import mtpy.analysis.niblettbostick as mtnb
 import mtpy.analysis.pt as mtpt
 import mtpy.imaging.mtcolors as mtcl
 import mtpy.imaging.mtplottools as mtplottools
-import mtpy.legacy.modem as modem
 import mtpy.utils.exceptions as mtex
 
 try:
