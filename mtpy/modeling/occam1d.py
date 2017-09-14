@@ -241,7 +241,7 @@ class Data(object):
             #read in edifile
             mt_obj = mt.MT(edi_file)  
             z_obj = mt_obj.Z
-            z_obj._compute_res_phase()
+            z_obj.compute_resistivity_phase()
             
             # get frequencies to invert
             freq = z_obj.freq
@@ -250,9 +250,6 @@ class Data(object):
             #rotate if necessary
             if thetar != 0:
                 z_obj.rotate(thetar)
-            
-            # be sure to compute resistivity and phase
-            z_obj._compute_res_phase()
                 
             # get the data requested by the given mode
             if self.mode == 'te':
@@ -271,16 +268,15 @@ class Data(object):
                 data_2_err = z_obj.phase_err[:, 1, 0]
             
             elif self.mode == 'det':  
-                zdet, zdet_err = z_obj.det
-                zdet_err = np.abs(zdet_err)
                                    
-                data_1 = .2/freq*abs(zdet)
-                data_2 = np.rad2deg(np.arctan2((zdet**0.5).imag, 
-                                               (zdet**0.5).real))
+                data_1 = .2/freq*abs(z_obj.det)
+                data_2 = np.rad2deg(np.arctan2((z_obj.det**0.5).imag, 
+                                               (z_obj.det**0.5).real))
                 
                 data_1_err = np.zeros_like(data_1, dtype=np.float)                               
                 data_2_err = np.zeros_like(data_2, dtype=np.float)
-                for zd, ze, ii in zip(zdet, zdet_err, range(len(zdet))):                               
+                for zd, ze, ii in zip(z_obj.det, z_obj.det_err, 
+                                      range(len(z_obj.det))):                               
                     de1, de2 = mtcc.z_error2r_phi_error(zd.real, 
                                                        ze,
                                                        zd.imag,
@@ -289,11 +285,11 @@ class Data(object):
                     data_2_err[ii] = de2
                 
             elif self.mode == 'zdet':
-                data_1 = (zdet**0.5).real*np.pi*4e-4 
-                data_1_err = zdet_err**0.5*np.pi*4e-4
+                data_1 = (z_obj.det**0.5).real*np.pi*4e-4 
+                data_1_err = z_obj.det_err**0.5*np.pi*4e-4
                 
-                data_2 = (zdet**0.5).imag*np.pi*4e-4 
-                data_2_err =  zdet_err**0.5*np.pi*4e-4
+                data_2 = (z_obj.det**0.5).imag*np.pi*4e-4 
+                data_2_err =  z_obj.det_err**0.5*np.pi*4e-4
                 
             elif self.mode == 'tez':
                 data_1 = z_obj.z[:, 0, 1].real*np.pi*4e-4 

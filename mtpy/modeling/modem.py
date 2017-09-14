@@ -2563,7 +2563,7 @@ class Model(object):
                                   on the extension .vtr
         """
         
-        if vtk_save_path is not None:
+        if vtk_save_path is None:
             vtk_fn = os.path.join(self.save_path, vtk_fn_basename)
         else:
             vtk_fn = os.path.join(vtk_save_path, vtk_fn_basename)
@@ -3571,12 +3571,15 @@ class Covariance(object):
             self.mask_arr = np.ones((self.grid_dimensions[0],
                                      self.grid_dimensions[1],
                                      self.grid_dimensions[2]))
+          
+        # need to flip north and south.                           
+        write_mask_arr = self.mask_arr[::-1, :, :].copy()
         for zz in range(self.mask_arr.shape[2]):
             clines.append(' {0:<8.0f}{0:<8.0f}\n'.format(zz+1))
             for nn in range(self.mask_arr.shape[0]):
                 cline = ''
                 for ee in range(self.mask_arr.shape[1]):
-                    cline += '{0:^3.0f}'.format(self.mask_arr[nn, ee, zz])
+                    cline += '{0:^3.0f}'.format(write_mask_arr[nn, ee, zz])
                 clines.append(cline+'\n')
         
         cfid = file(self.cov_fn, 'w')
