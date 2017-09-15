@@ -249,7 +249,7 @@ class PlotSettings(object):
         self.fig_size = None
         
         self.font_size = 7
-        self.marker_size = 7
+        self.marker_size = 4
         self.lw = 1
         self.plot_title = None
         
