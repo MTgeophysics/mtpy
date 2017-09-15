@@ -363,7 +363,8 @@ class Model(object):
                 continue
 
         # =================================  begin to make vertical mesh
-        (z_nodes, z_grid) = self.make_z_mesh3()
+        (z_nodes, z_grid) = self.make_z_mesh2()
+        #(z_nodes, z_grid) = self.make_z_mesh3()
 
         # Need to make an array of the individual cell dimensions for modem
         east_nodes = east_gridr[1:] - east_gridr[:-1]

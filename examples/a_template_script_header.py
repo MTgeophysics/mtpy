@@ -46,5 +46,5 @@ def main():
 # ---------------------------------------------
 if __name__ == "__main__":
 
-    # call main funtion
+    # call main function
     main()
