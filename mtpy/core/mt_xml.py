@@ -1,17 +1,31 @@
 # -*- coding: utf-8 -*-
 """
+========
+MT XML
+========
+
+Container to read and write MT xml files
+
 Created on Wed Jan 11 16:39:40 2017
 
 @author: jpeacock
 """
 
+#==============================================================================
+# Imports
+#==============================================================================
 import os
-import mtpy.core.edi as mtedi
-import xml.etree.cElementTree as ET
 import datetime
+
+import numpy as np
+import xml.etree.cElementTree as ET
 from xml.dom import minidom
 
+import mtpy.core.z as mtz
+
+
 dt_fmt = '%Y-%m-%d %H:%M:%S'
+
 #==============================================================================
 # Generic object to hold information
 #==============================================================================
@@ -621,8 +635,9 @@ class MT_XML(XML_Config):
         self.cfg_fn = None
         
         self.parent_element = None
-        
-        self.edi_obj = None
+
+        self._Z = mtz.Z()
+        self._Tipper = mtz.Tipper()
         
         self._order_list = ['Description',
                             'ProductId',
@@ -648,15 +663,13 @@ class MT_XML(XML_Config):
         
         for key in kwargs.keys():
             setattr(self, key, kwargs[key])
-            
-
-        
-    def read_edi(self, edi_fn=None):
-        if edi_fn is not None:
-            self.edi_fn = edi_fn
-            
-        self.edi_obj = mtedi.Edi(self.edi_fn)
-        self.get_edi_info()
+                
+#    def read_edi(self, edi_fn=None):
+#        if edi_fn is not None:
+#            self.edi_fn = edi_fn
+#            
+#        self.edi_obj = mtedi.Edi(self.edi_fn)
+#        self.get_edi_info()
         
     def read_cfg(self, cfg_fn=None):
         if cfg_fn is not None:
@@ -781,9 +794,6 @@ class MT_XML(XML_Config):
                        (0, 1):('Zxy', 'Hy', 'Ex'), 
                        (1, 0):('Zyx', 'Hx', 'Ey'),
                        (1, 1):('Zyy', 'Hy', 'Ey')}
-                            
-        comp_dict_t = {(0, 0):('Tx', 'Hx', 'Hz'),
-                       (0, 1):('Ty', 'Hy', 'Hz')}
                        
         header_dict = {}
         header_dict['Z'] = XML_element('Z',{'units':'[mV/km]/[nT]', 
@@ -791,23 +801,28 @@ class MT_XML(XML_Config):
                                       'size':'2 2'}, None)
         header_dict['Z.VAR'] = XML_element('Z.VAR', {'type':'real', 'size':'2 2'},
                                      None)
+        header_dict['Z.INVSIGCOV'] = XML_element('Z.INVSIGCOV',{'type':'complex', 
+                                                                'size':'2 2'}, 
+                                                 None)
+        header_dict['Z.RESIDCOV'] = XML_element('Z.RESIDCOV',{'type':'complex', 
+                                                                'size':'2 2'}, 
+                                                 None)
         header_dict['T'] = XML_element('T', {'units':'[]', 
                                        'type':'complex',
                                        'size':'1 2'}, None)
         header_dict['T.VAR'] = XML_element('T.VAR', {'type':'real', 
                                                'size':'1 2'}, None)
-        
-        attr_dict = {}
-        attr_dict['z'] = 'z'
-        attr_dict['z.var'] = 'z_err'
-        attr_dict['t'] = 'tipper'
-        attr_dict['t.var'] = 'tipper_err'
-
-        nf = self.edi_obj.Z.freq.size 
+        header_dict['T.INVSIGCOV'] = XML_element('T.INVSIGCOV',{'type':'complex', 
+                                                                'size':'2 2'}, 
+                                                 None)
+        header_dict['T.RESIDCOV'] = XML_element('T.RESIDCOV',{'type':'complex', 
+                                                                'size':'1 1'}, 
+                                                 None)
+        nf = self.Z.freq.size 
         
         # determine whether to write tipper data or not
-        if self.edi_obj.Tipper.tipper is not None:
-            nz_tipper = mtedi.np.any(self.edi_obj.Tipper.tipper) == 0
+        if self.Tipper.tipper is not None:
+            nz_tipper = np.any(self.Tipper.tipper) == 0
             if nz_tipper == True:
                 write_tipper = False
             else:
@@ -817,15 +832,16 @@ class MT_XML(XML_Config):
             
         # set the estimates to write out
         if write_tipper == True:
-            estimates = ['Z', 'Z.VAR',  'T', 'T.VAR']
+            estimates = ['Z', 'Z.VAR', 'Z.INVSIGCOV', 'Z.RESIDCOV',
+                         'T', 'T.VAR', 'T.INVSIGCOV', 'T.RESIDCOV']
         else:
-            estimates = ['Z', 'Z.VAR']
+            estimates = ['Z', 'Z.VAR', 'Z.INVSIGCOV', 'Z.RESIDCOV']
 
         # make the data element
         self.Data = XML_element('Data', {'count':str(nf)}, None)  
         
         # loop through each period and add appropriate information
-        for f_index, freq in enumerate(self.edi_obj.Z.freq):
+        for f_index, freq in enumerate(self.Z.freq):
             f_name = 'Period_{0:02}'.format(f_index)
             # set attribute period name with the index value
             # we are setting _name to have the necessary information so
@@ -833,52 +849,74 @@ class MT_XML(XML_Config):
             setattr(self.Data, f_name,
                     XML_element('Period', {'value':'{0:.6g}'.format(1./freq),
                                      'units':'seconds'}, None))
-            d_attr = getattr(self.Data, f_name)      
+            d_attr = getattr(self.Data, f_name)
             # Get information from data
             for estimate in estimates:
-                estimate_name = estimate.replace('.', '_')
+                attr_name = estimate.replace('.', '_').replace('VAR', 'err').lower()
+                estimate_name = estimate.replace('.', '')
                 setattr(d_attr, estimate_name, header_dict[estimate])
                 c_attr = getattr(d_attr, estimate_name)
-                if 'z' in estimate.lower():
+                if 'z' in attr_name:
                     count = 0
+                    try:
+                        z_arr = getattr(self.Z, attr_name)
+                    except AttributeError:
+                        print 'No {0} information'.format(attr_name)
+                        continue
                     for e_index in range(2):
                         for h_index in range(2):
                             c = comp_dict_z[(e_index, h_index)]
                             c_dict = {'name':c[0], 'input':c[1], 'output':c[2]}
-                            
-                            if estimate.lower() == 'z':
-                                z_value = self.edi_obj.Z.z[f_index, e_index, h_index]                            
-                                c_value = '{0:<+.8e} {1:<+.8e}'.format(z_value.real, 
-                                                                         z_value.imag)
-                            elif estimate.lower() == 'z.var':
-                                z_value = self.edi_obj.Z.z_err[f_index, e_index, h_index]                            
+                            z_value = z_arr[f_index, e_index, h_index]
+                            if attr_name == 'z_err':
                                 c_value = '{0:<+.8e}'.format(z_value)
+                            else:
+                                c_value = '{0:<+.8e} {1:<+.8e}'.format(z_value.real, 
+                                                                       z_value.imag)
                             
                             setattr(c_attr, 
                                     'value_{0:02}'.format(count),
-                                    XML_element('value', c_dict, c_value)) 
+                                    XML_element('value', c_dict, str(c_value))) 
+
                             count += 1
+                    print self.Data.Period_00.Z.value_00.value
                             
-                if 't' in estimate.lower() and write_tipper == True:
+                if 't' in attr_name and write_tipper == True:
+                    attr_name = attr_name.replace('t', 'tipper')
                     count = 0
-                    for e_index in range(1):
-                        for h_index in range(2):
+                    if attr_name.lower() in ['tipper', 'tipper_err']:
+                        tx = 1
+                        ty = 2
+                        comp_dict_t = {(0, 0):('Tx', 'Hx', 'Hz'),
+                                       (0, 1):('Ty', 'Hy', 'Hz')}
+                    elif attr_name.lower() == 'tipper_invsigcov':
+                        tx = 2
+                        ty = 2
+                        comp_dict_t = {(0, 0):('', 'Hx', 'Hx'),
+                                       (0, 1):('', 'Hx', 'Hy'),
+                                       (1, 0):('', 'Hy', 'Hx'),
+                                       (1, 1):('', 'Hy', 'Hy')}
+                    elif attr_name.lower() == 'tipper_residcov':
+                        tx = 1
+                        ty = 1
+                        comp_dict_t = {(0, 0):('', 'Hz', 'Hz')}
+                        
+                    for e_index in range(tx):
+                        for h_index in range(ty):
                             c = comp_dict_t[(e_index, h_index)]
                             c_dict = {'name':c[0], 'input':c[1], 'output':c[2]}
-                            
-                            if estimate.lower() == 't':
-                                z_value = self.edi_obj.Tipper.tipper[f_index, e_index, h_index]                            
-                                c_value = '{0:<+.8e} {1:<+.8e}'.format(z_value.real, 
-                                                                         z_value.imag)
-                            elif estimate.lower() == 't.var':
-                                z_value = self.edi_obj.Tipper.tipper_err[f_index, e_index, h_index]                            
-                                c_value = '{0:<+.8e}'.format(z_value)
-                                                                      
+                            t_arr = getattr(self.Tipper, attr_name)
+                            t_value = t_arr[f_index, e_index, h_index]
+                            if attr_name ==  'tipper_err': 
+                                c_value = '{0:<+.8e}'.format(t_value)
+                            else:
+                                c_value = '{0:<+.8e} {1:<+.8e}'.format(t_value.real, 
+                                                                       t_value.imag)
+                                    
                             setattr(c_attr, 
                                     'value_{0:02}'.format(count),
                                     XML_element('value', c_dict, c_value)) 
                             count += 1
-        
         
     def write_element(self, parent_et, XML_element_obj):
         """
@@ -891,6 +929,71 @@ class MT_XML(XML_Config):
         new_element = ET.SubElement(parent_et, XML_element_obj._name, XML_element_obj._attr)
         new_element.text = XML_element_obj._value
         return new_element
+
+    def write_xml(self, xml_fn, cfg_fn=None):
+        """
+        write xml from edi
+        """
+        if xml_fn is not None:
+            self.xml_fn = xml_fn
+        if cfg_fn is not None:
+            self.cfg_fn = cfg_fn
+        
+        self.xml_fn = xml_fn
+        
+        if self.cfg_fn is not None:
+            self.read_cfg_file()
+
+        self.format_data()
+
+        # make the top of the tree element        
+        emtf = ET.Element('EM_TF')
+        
+        # loop over the important information sections
+        for element in self._order_list:
+            # get the information for the given element
+            d_00_obj = getattr(self, element)
+            
+            element_00 = self.write_element(emtf, d_00_obj)
+
+            key_00_list = self._get_attr_keys(d_00_obj)
+            if len(key_00_list) !=0:
+                for key_00 in key_00_list:
+                    d_01_obj = getattr(d_00_obj, key_00)
+                    element_01 = self.write_element(element_00, d_01_obj)
+                    
+                    key_01_list = self._get_attr_keys(d_01_obj)
+                    if len(key_01_list) !=0:
+                        for key_01 in key_01_list:
+                            d_02_obj = getattr(d_01_obj, key_01)
+                            element_02 = self.write_element(element_01, d_02_obj)
+                            
+                            key_02_list = self._get_attr_keys(d_02_obj)
+                            if len(key_02_list) !=0:
+                                for key_02 in key_02_list:
+                                    d_03_obj = getattr(d_02_obj, key_02)
+                                    element_03 = self.write_element(element_02, d_03_obj)
+                                    
+                                    key_03_list = self._get_attr_keys(d_03_obj)
+                                    if len(key_03_list) !=0:
+                                        for key_03 in key_03_list:
+                                            d_04_obj = getattr(d_03_obj, key_03)
+                                            element_04 = self.write_element(element_03, d_04_obj)
+                                    
+                                            key_04_list = self._get_attr_keys(d_04_obj)
+                                            if len(key_04_list) !=0:
+                                                for key_04 in key_04_list:
+                                                    d_05_obj = getattr(d_04_obj, key_04)
+                                                    element_05 = self.write_element(element_04, d_05_obj)
+                
+  
+        #--> write xml file
+        with open(self.xml_fn, 'w') as fid:
+            fid.write(ET.tostring(emtf))
+        
+        print '-'*50
+        print '    Wrote xml file to: {0}'.format(self.xml_fn)
+        print '-'*50
        
     def write_xml_from_edi(self, edi_fn=None, xml_fn=None, cfg_fn=None):
         """
@@ -984,6 +1087,131 @@ class MT_XML(XML_Config):
         for element_00 in root.getchildren():
             setattr(self, element_00.tag, self._read_element(element_00))
             
+        # set Z and Tipper
+        nf = int(self.Data.attr['count'])
+        period = np.zeros(nf, dtype=np.float)
+        z = np.zeros((nf, 2, 2), dtype=np.complex)
+        z_err = np.zeros((nf, 2, 2), dtype=np.float)
+        
+        self._Z = mtz.Z(z_array=z, z_err_array=z_err, freq=period)
+        self._Z.z_invsigcov =  np.zeros((nf, 2, 2), dtype=np.complex)
+        self._Z.z_residcov = np.zeros((nf, 2, 2), dtype=np.complex)
+        
+        input_dict = {'hx': 0, 'hy': 1, 'ex': 0, 'ey': 1}
+        output_dict = input_dict
+        
+        p_count = 0
+        for per_attr in dir(self.Data):
+            if 'period' in per_attr.lower():
+                p_obj = getattr(self.Data, per_attr)
+                period[p_count] = 1./float(p_obj.attr['value'])
+                
+                if hasattr(p_obj, 'Z'):
+                    z_block = getattr(p_obj, 'Z')
+                    for z_attr in dir(z_block):
+                        if 'value_' in z_attr:
+                            z_comp = getattr(z_block, z_attr)
+                            ii = output_dict[z_comp.attr['output'].lower()]
+                            jj = input_dict[z_comp.attr['input'].lower()]
+                            z_value = [float(zz) for zz in z_comp.value.strip().split()]
+                            z_value = complex(z_value[0], z_value[1])
+                            self._Z.z[p_count, ii, jj] = z_value
+                
+                if hasattr(p_obj, 'ZVAR'):
+                    z_block = getattr(p_obj, 'ZVAR')
+                    for z_attr in dir(z_block):
+                        if 'value_' in z_attr:
+                            z_comp = getattr(z_block, z_attr)
+                            ii = output_dict[z_comp.attr['output'].lower()]
+                            jj = input_dict[z_comp.attr['input'].lower()]
+                            z_value = float(z_comp.value)
+                            self._Z.z_err[p_count, ii, jj] = z_value
+                
+                if hasattr(p_obj, 'ZINVSIGCOV'):
+                    z_block = getattr(p_obj, 'ZINVSIGCOV')
+                    for z_attr in dir(z_block):
+                        if 'value_' in z_attr:
+                            z_comp = getattr(z_block, z_attr)
+                            ii = output_dict[z_comp.attr['output'].lower()]
+                            jj = input_dict[z_comp.attr['input'].lower()]
+                            z_value = [float(zz) for zz in z_comp.value.strip().split()]
+                            z_value = complex(z_value[0], z_value[1])
+                            self._Z.z_invsigcov[p_count, ii, jj] = z_value
+                            
+                if hasattr(p_obj, 'ZRESIDCOV'):
+                    z_block = getattr(p_obj, 'ZRESIDCOV')
+                    for z_attr in dir(z_block):
+                        if 'value_' in z_attr:
+                            z_comp = getattr(z_block, z_attr)
+                            ii = output_dict[z_comp.attr['output'].lower()]
+                            jj = input_dict[z_comp.attr['input'].lower()]
+                            z_value = [float(zz) for zz in z_comp.value.strip().split()]
+                            z_value = complex(z_value[0], z_value[1])
+                            self._Z.z_residcov[p_count, ii, jj] = z_value
+                p_count += 1
+                
+        # Fill Tipper
+        t = np.zeros((nf, 1, 2), dtype=np.complex)
+        t_err = np.zeros((nf, 1, 2), dtype=np.float) 
+        
+        self._Tipper = mtz.Tipper(tipper_array=t, tipper_err_array=t_err, freq=period)
+        self._Tipper.tipper_invsigcov = np.zeros((nf, 2, 2), dtype=np.complex)
+        self._Tipper.tipper_residcov = np.zeros((nf, 1, 1), dtype=np.complex)
+        
+        input_dict = {'hz':0, 'hx': 0, 'hy': 1}
+        output_dict = {'hz':0, 'hx':0, 'hy':1}
+        
+        p_count = 0
+        for per_attr in dir(self.Data):
+            if 'period' in per_attr.lower():
+                p_obj = getattr(self.Data, per_attr)
+                period[p_count] = p_obj.attr['value']
+                
+                if hasattr(p_obj, 'T'):
+                    t_block = getattr(p_obj, 'T')
+                    for t_attr in dir(t_block):
+                        if 'value_' in t_attr:
+                            t_comp = getattr(t_block, t_attr)
+                            ii = output_dict[t_comp.attr['output'].lower()]
+                            jj = input_dict[t_comp.attr['input'].lower()]
+                            t_value = [float(tt) for tt in t_comp.value.strip().split()]
+                            t_value = complex(t_value[0], t_value[1])
+                            self._Tipper.tipper[p_count, ii, jj] = t_value
+                
+                if hasattr(p_obj, 'TVAR'):
+                    t_block = getattr(p_obj, 'TVAR')
+                    for t_attr in dir(t_block):
+                        if 'value_' in t_attr:
+                            t_comp = getattr(t_block, t_attr)
+                            ii = output_dict[t_comp.attr['output'].lower()]
+                            jj = input_dict[t_comp.attr['input'].lower()]
+                            t_value = float(t_comp.value)
+                            self._Tipper.tipper_err[p_count, ii, jj] = t_value
+                
+                if hasattr(p_obj, 'TINVSIGCOV'):
+                    t_block = getattr(p_obj, 'TINVSIGCOV')
+                    for t_attr in dir(t_block):
+                        if 'value_' in t_attr:
+                            t_comp = getattr(t_block, t_attr)
+                            ii = output_dict[t_comp.attr['output'].lower()]
+                            jj = input_dict[t_comp.attr['input'].lower()]
+                            t_value = [float(tt) for tt in t_comp.value.strip().split()]
+                            t_value = complex(t_value[0], t_value[1])
+                            self._Tipper.tipper_invsigcov[p_count, ii, jj] = t_value
+
+                if hasattr(p_obj, 'TRESIDCOV'):
+                    t_block = getattr(p_obj, 'TRESIDCOV')
+                    for t_attr in dir(t_block):
+                        if 'value_' in t_attr:
+                            t_comp = getattr(t_block, t_attr)
+                            ii = output_dict[t_comp.attr['output'].lower()]
+                            jj = input_dict[t_comp.attr['input'].lower()]
+                            t_value = [float(tt) for tt in t_comp.value.strip().split()]
+                            t_value = complex(t_value[0], t_value[1])
+                            self._Tipper.tipper_residcov[p_count, ii, jj] = t_value
+
+                p_count += 1
+            
     def _get_info_from_element(self, element):
         """
         Get information from an element, including name, attr, value
@@ -1013,8 +1241,19 @@ class MT_XML(XML_Config):
         
         ex. attribute_01
         """
+        attr_name = attr_name.replace('.', '')
+        if attr_name == 'Period':
+            if not hasattr(parent, 'Period_00'):
+                return 'Period_00'
+            else:
+                for ii in range(0, 100):
+                    new_attr_name = '{0}_{1:02}'.format(attr_name, ii)
+                    if not hasattr(parent, new_attr_name):
+                        break
+                return new_attr_name
+            
         if hasattr(parent, attr_name):
-            for ii in range(1, 10):
+            for ii in range(0, 100):
                 new_attr_name = '{0}_{1:02}'.format(attr_name, ii)
                 if not hasattr(parent, new_attr_name):
                     break
@@ -1072,7 +1311,43 @@ class MT_XML(XML_Config):
                         
         
         return child 
+    
+    @property
+    def Z(self):
+        """
+        get z information
+        """
+        return self._Z
+                 
+    @Z.setter
+    def Z(self, z_object):
+        """
+        set z object
+        """
         
+        if type(z_object) is not mtz.Z:
+            raise MT_XML_Error('To set Z, input needs to be an mtpy.core.z.Z object')
+        
+        self._Z = z_object
+        
+    @property
+    def Tipper(self):
+        """
+        get Tipper information
+        """        
+        return self._Tipper
+                    
+    @Tipper.setter
+    def Tipper(self, t_object):
+        """
+        set z object
+        """
+        
+        if type(t_object) is not mtz.Tipper:
+            raise MT_XML_Error('To set Z, input needs to be an mtpy.core.z.Z object')
+        
+        self._Tipper = t_object
+
 #==============================================================================
 # exceptions
 #==============================================================================
