@@ -1,3 +1,4 @@
+#!/bin/env python
 """
 Description:
     Example template python script structure.
@@ -25,6 +26,9 @@ def fun1():
     define my function1
     :return:
     """
+    print("begin fun1")
+
+    return
 
 
 def main():
@@ -34,10 +38,13 @@ def main():
     """
     print("Template main()")
 
+    return
+
 
 # =============================================
-# Sectoin for quick test of this script
+# Section for quick test of this script
+# ---------------------------------------------
 if __name__ == "__main__":
-    # call main funtion
 
+    # call main funtion
     main()
