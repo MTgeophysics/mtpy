@@ -969,14 +969,14 @@ class Data(object):
                 dlines.append('> exp({0}i\omega t)\n'.format(
                     self.wave_sign_impedance))
                 dlines.append('> {0}\n'.format(self.units))
-                nper = len(np.nonzero(np.abs(self.data_array['z']).sum(axis=(1,2,3)))[0])
-                nsta = len(np.nonzero(np.abs(self.data_array['z']).sum(axis=(0,2,3)))[0])
+                nsta = len(np.nonzero(np.abs(self.data_array['z']).sum(axis=(1,2,3)))[0])
+                nper = len(np.nonzero(np.abs(self.data_array['z']).sum(axis=(0,2,3)))[0])
             elif inv_mode.find('Vertical') >= 0:
                 dlines.append('> exp({0}i\omega t)\n'.format(
                     self.wave_sign_tipper))
                 dlines.append('> []\n')
-                nper = len(np.nonzero(np.abs(self.data_array['tip']).sum(axis=(1,2,3)))[0])
-                nsta = len(np.nonzero(np.abs(self.data_array['tip']).sum(axis=(0,2,3)))[0])
+                nsta = len(np.nonzero(np.abs(self.data_array['tip']).sum(axis=(1,2,3)))[0])
+                nper = len(np.nonzero(np.abs(self.data_array['tip']).sum(axis=(0,2,3)))[0])
             dlines.append('> 0.00\n')  # oriention, need to add at some point
             dlines.append('> {0: >10.6f} {1:>10.6f}\n'.format(
                 self.center_position[1], self.center_position[0]))  # (lat,long) correct order
@@ -1111,11 +1111,13 @@ class Data(object):
 
         # write epsg and center position to a file, if they exist
         if hasattr(self,'center_position_EN'):
-            np.savetxt(op.join(self.save_path, 'center_position.txt'),
-                       self.center_position_EN, fmt='%.1f')
+            if self.center_position_EN is not None:
+                np.savetxt(op.join(self.save_path, 'center_position.txt'),
+                           self.center_position_EN, fmt='%.1f')
         if hasattr(self,'epsg'):
-            np.savetxt(op.join(self.save_path, 'epsg.txt'),
-                       np.array([self.epsg]), fmt='%1i')
+            if self.epsg is not None:
+                np.savetxt(op.join(self.save_path, 'epsg.txt'),
+                           np.array([self.epsg]), fmt='%1i')
 
         logger.debug('Wrote ModEM data file to %s', self.data_fn)
 

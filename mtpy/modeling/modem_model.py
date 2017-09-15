@@ -260,7 +260,7 @@ class Model(object):
         """
 
         # find the edges of the grid: bounding box of the survey area.
-        nc_extra = 20  # extra cells around the stations area
+        nc_extra = 7  # extra cells around the stations area
         if self.cell_number_ew is None:
             west = self.station_locations['rel_east'].min() - self.cell_size_east * nc_extra
             east = self.station_locations['rel_east'].max() + self.cell_size_east * nc_extra
@@ -310,8 +310,8 @@ class Model(object):
         for ii in range(1, self.pad_east + 1):
             east_0 = float(east_gridr[-1])
             west_0 = float(east_gridr[0])
-            # add_size = np.round(self.cell_size_east * self.pad_stretch_h * ii, -2) # -2 round to decimal left
-            add_size = np.round(self.cell_size_east * self.pad_stretch_h ** ii, 2)
+            add_size = np.round(self.cell_size_east * self.pad_stretch_h * ii, -2) # -2 round to decimal left
+#            add_size = np.round(self.cell_size_east * self.pad_stretch_h ** ii, 2)
             pad_w = west_0 - add_size
             pad_e = east_0 + add_size
             east_gridr = np.insert(east_gridr, 0, pad_w)
@@ -343,8 +343,8 @@ class Model(object):
         for ii in range(1, self.pad_north + 1):
             south_0 = float(north_gridr[0])
             north_0 = float(north_gridr[-1])
-            # add_size = np.round(self.cell_size_north *self.pad_stretch_h * ii, -2)
-            add_size = np.round(self.cell_size_north * self.pad_stretch_h ** ii, 2)
+            add_size = np.round(self.cell_size_north *self.pad_stretch_h * ii, -2)
+#            add_size = np.round(self.cell_size_north * self.pad_stretch_h ** ii, 2)
             pad_s = south_0 - add_size
             pad_n = north_0 + add_size
             north_gridr = np.insert(north_gridr, 0, pad_s)
