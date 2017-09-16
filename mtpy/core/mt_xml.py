@@ -838,7 +838,8 @@ class MT_XML(XML_Config):
             estimates = ['Z', 'Z.VAR', 'Z.INVSIGCOV', 'Z.RESIDCOV']
 
         # make the data element
-        self.Data = XML_element('Data', {'count':str(nf)}, None)  
+        
+        data_element = XML_element('Data', {'count':str(nf)}, None)  
         
         # loop through each period and add appropriate information
         for f_index, freq in enumerate(self.Z.freq):
@@ -846,10 +847,10 @@ class MT_XML(XML_Config):
             # set attribute period name with the index value
             # we are setting _name to have the necessary information so
             # we can name the attribute whatever we want.
-            setattr(self.Data, f_name,
+            setattr(data_element, f_name,
                     XML_element('Period', {'value':'{0:.6g}'.format(1./freq),
                                      'units':'seconds'}, None))
-            d_attr = getattr(self.Data, f_name)
+            d_attr = getattr(data_element, f_name)
             # Get information from data
             for estimate in estimates:
                 attr_name = estimate.replace('.', '_').replace('VAR', 'err').lower()
@@ -876,10 +877,11 @@ class MT_XML(XML_Config):
                             
                             setattr(c_attr, 
                                     'value_{0:02}'.format(count),
-                                    XML_element('value', c_dict, str(c_value))) 
+                                    XML_element('value', c_dict, c_value)) 
+                            print c_value, 'value_{0:02}'.format(count), c_attr.name, d_attr.name, f_name
 
                             count += 1
-                    print self.Data.Period_00.Z.value_00.value
+                    print data_element.Period_00.Z.value_00.value
                             
                 if 't' in attr_name and write_tipper == True:
                     attr_name = attr_name.replace('t', 'tipper')
@@ -912,11 +914,16 @@ class MT_XML(XML_Config):
                             else:
                                 c_value = '{0:<+.8e} {1:<+.8e}'.format(t_value.real, 
                                                                        t_value.imag)
-                                    
+                             
                             setattr(c_attr, 
                                     'value_{0:02}'.format(count),
                                     XML_element('value', c_dict, c_value)) 
                             count += 1
+                            
+        return data_element
+                            
+    def _make_data_element(self, name, attr, value):
+        return XML_element(name, attr, value)
         
     def write_element(self, parent_et, XML_element_obj):
         """
