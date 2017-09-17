@@ -820,6 +820,7 @@ class Data(object):
 
             if len(interp_periods) > 0:  # not empty
                 interp_z, interp_t = mt_obj.interpolate_impedance_tensor(1. / interp_periods)  # ,bounds_error=False)
+#                interp_z, interp_t = mt_obj.interpolate(1./interp_periods)
                 for kk, ff in enumerate(interp_periods):
                     jj = np.where(self.period_list == ff)[0][0]
                     self.data_array[ii]['z'][jj] = interp_z.z[kk, :, :]
@@ -906,7 +907,7 @@ class Data(object):
 
     def write_data_file(self, save_path=None, fn_basename=None,
                         rotation_angle=None, compute_error=True,
-                        fill=True):
+                        fill=True, use_original_freq=True):
         """
         write data file for ModEM
         will save file as save_path/fn_basename
@@ -949,16 +950,13 @@ class Data(object):
             new_edi_dir = os.path.join(self.save_path, 'new_edis')  # output edi files according to selected periods
             if not os.path.exists(new_edi_dir):
                 os.mkdir(new_edi_dir)
-            self._fill_data_array(new_edi_dir=new_edi_dir)
+            self._fill_data_array(new_edi_dir=new_edi_dir, use_original_freq=use_original_freq)
             # get relative station locations in grid coordinates
             self.get_relative_station_locations()
 
         # reset the header string to be informational
         self._set_header_string()
 
-        # number of periods - subtract periods with all zero components
-        nper = len(np.where(np.mean(
-            np.mean(np.mean(np.abs(self.data_array['z']), axis=0), axis=1), axis=1) > 0)[0])
 
         dlines = []
         for inv_mode in self.inv_mode_dict[self.inv_mode]:
@@ -971,15 +969,19 @@ class Data(object):
                 dlines.append('> exp({0}i\omega t)\n'.format(
                     self.wave_sign_impedance))
                 dlines.append('> {0}\n'.format(self.units))
+                nper = len(np.nonzero(np.abs(self.data_array['z']).sum(axis=(1,2,3)))[0])
+                nsta = len(np.nonzero(np.abs(self.data_array['z']).sum(axis=(0,2,3)))[0])
             elif inv_mode.find('Vertical') >= 0:
                 dlines.append('> exp({0}i\omega t)\n'.format(
                     self.wave_sign_tipper))
                 dlines.append('> []\n')
+                nper = len(np.nonzero(np.abs(self.data_array['tip']).sum(axis=(1,2,3)))[0])
+                nsta = len(np.nonzero(np.abs(self.data_array['tip']).sum(axis=(0,2,3)))[0])
             dlines.append('> 0.00\n')  # oriention, need to add at some point
             dlines.append('> {0: >10.6f} {1:>10.6f}\n'.format(
                 self.center_position[1], self.center_position[0]))  # (lat,long) correct order
             dlines.append('> {0} {1}\n'.format(nper,
-                                               self.data_array['z'].shape[0]))
+                                               nsta))
 
             # YG: create new list for sorting data
             data_lines = []
@@ -1108,10 +1110,12 @@ class Data(object):
         dfid.close()
 
         # write epsg and center position to a file, if they exist
-        np.savetxt(op.join(self.save_path, 'center_position.txt'),
-                   self.center_position_EN, fmt='%.1f')
-        np.savetxt(op.join(self.save_path, 'epsg.txt'),
-                   np.array([self.epsg]), fmt='%1i')
+        if hasattr(self,'center_position_EN'):
+            np.savetxt(op.join(self.save_path, 'center_position.txt'),
+                       self.center_position_EN, fmt='%.1f')
+        if hasattr(self,'epsg'):
+            np.savetxt(op.join(self.save_path, 'epsg.txt'),
+                       np.array([self.epsg]), fmt='%1i')
 
         logger.debug('Wrote ModEM data file to %s', self.data_fn)
 

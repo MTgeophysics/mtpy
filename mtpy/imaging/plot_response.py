@@ -12,7 +12,7 @@ import numpy as np
 from matplotlib.ticker import FormatStrFormatter
 
 import mtpy.imaging.mtplottools as mtplottools
-from mtpy.modeling.modem import Data
+from mtpy.modeling.modem_data import Data
 
 try:
     from pyevtk.hl import gridToVTK, pointsToVTK
@@ -284,9 +284,10 @@ class PlotResponse(object):
             fig = plt.figure(station, self.fig_size, dpi=self.fig_dpi)
             plt.clf()
             fig.suptitle(str(station), fontdict=fontdict)
-
+            
             # set the grid of subplots
             tipper_zero = (np.round(abs(t_obj.tipper.mean()), 4) == 0.0)
+            
             if tipper_zero == False:
                 # makes more sense if plot_tipper is True to plot tipper
                 plot_tipper = True

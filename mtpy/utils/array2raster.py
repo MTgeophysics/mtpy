@@ -10,7 +10,7 @@ except ImportError:
     raise ImportError('Did not find GDAL, be sure it is installed correctly and '
                       'all the paths are correct')
 import numpy as np
-import mtpy.modeling.modem as modem
+import mtpy.modeling.modem_model as mm
 import mtpy.modeling.ws3dinv as ws
 import os
 import scipy.interpolate as interpolate
@@ -52,7 +52,7 @@ class ModEM_to_Raster(object):
         get model to put into array
         """
 
-        model_obj = modem.Model()
+        model_obj = mm.Model()
         model_obj.model_fn = self.model_fn
         model_obj.read_model_file()
 
@@ -74,7 +74,7 @@ class ModEM_to_Raster(object):
 
         """
 
-        model_obj = modem.Model()
+        model_obj = mm.Model()
         model_obj.model_fn = self.model_fn
         model_obj.read_model_file()
 

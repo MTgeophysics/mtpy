@@ -10,10 +10,9 @@ References:
     https://gajira.atlassian.net/browse/ALAMP-31
 
 CreationDate:   8/09/2017
-CreatedBy:      SysUser='u25656'
-
 Developer:      fei.zhang@ga.gov.au
-LastUpdate:     8/09/2017
+
+LastUpdate:     15/09/2017   FZ
 """
 
 import os
@@ -25,8 +24,8 @@ import numpy as np
 from matplotlib.ticker import MultipleLocator
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
-from mtpy.modeling.modem import Data
-from mtpy.modeling.modem import Model
+from mtpy.modeling.modem_data import Data
+from mtpy.modeling.modem_model import Model
 
 from mtpy.utils.mtpylog import MtPyLog
 
@@ -193,7 +192,7 @@ class ModemSlices():
 
         return
 
-    def make_plot(self,slice_location=1000):
+    def plot_a_slice(self, slice_location=1000):
         """ create a plot based on the input data and parameters
         :return:
         """
@@ -280,15 +279,53 @@ class ModemSlices():
 
         return
 
+    def plot_multi_slices(self, slice_list=None):
+        """
+        Visualize multiple slices specified by slice_list. If it is None then will plot every slice at the cell-centres.
+        :param slice_list:
+        :return:
+        """
+
+        if slice_list is None:
+            slice_number = 100  # number of evenly spaced slices
+            if self.plot_orientation == 'ns':
+                slice_locs = np.linspace(self.ns_lim[0], self.ns_lim[1], num=slice_number)
+
+                # or at cell centre
+                slice_locs = np.mean([self.modObj.grid_north[:-1], self.modObj.grid_north[1:]], axis=0)
+            if self.plot_orientation == 'ew':
+                slice_locs = np.linspace(self.ew_lim[0], self.ew_lim[1], num=slice_number)
+                slice_locs = np.mean([self.modObj.grid_east[:-1], self.modObj.grid_east[1:]], axis=0)
+            if self.plot_orientation == 'z':
+                slice_locs = np.linspace(self.zlim[1], self.zlim[0], num=slice_number)
+                slice_locs = np.mean([self.modObj.grid_z[:-1], self.modObj.grid_z[1:]], axis=0)
+        else:
+            slice_locs = slice_list
+
+        logger.debug("Slice locations= %s", slice_locs)
+        logger.debug("Number of slices to be visualised %s", len(slice_locs))
+
+        for dist in slice_locs:
+            sdist = int(dist)
+
+            print("**** plotting slice at location: ****", sdist)
+            print("**** actual location will be at the nearest cell centre ****")
+
+            # plot resistivity image at slices in three orientations at a given slice_location=sdist
+
+            self.plot_a_slice(slice_location=sdist)  # actual location will be nearest cell centre
+
+            plt.show()
+
 
 #########################################################################
 if __name__ == "__main__":
     """ Usage:
-    python mtpy/modeling/modem_outfiles_to_csv.py
-    /e/Data/Modeling/Isa/100hs_flat_BB/Isa_run3_NLCG_048.dat /e/Data/Modeling/Isa/100hs_flat_BB/Isa_run3_NLCG_048.rho 20
+    python mtpy/modeling/modem_outfiles_to_csv.py /e/Data/Modeling/Isa/100hs_flat_BB/Isa_run3_NLCG_048.dat
+    /e/Data/Modeling/Isa/100hs_flat_BB/Isa_run3_NLCG_048.rho 20
 
     python mtpy/modeling/modem_outfiles_to_csv.py
-    /e/tmp/GA_UA_edited_10s-10000s_16/ModEM_Data.dat  /e/tmp/GA_UA_edited_10s-10000s_16/ModEM_Model.ws 5000
+    /e/tmp/GA_UA_edited_10s-10000s_16/ModEM_Data.dat  /e/tmp/GA_UA_edited_10s-10000s_16/ModEM_Model.ws -1000 1000
     """
 
     # Take commandline input
@@ -314,7 +351,7 @@ if __name__ == "__main__":
         rhof = sys.argv[2]
 
     # construct plot object
-    #myObj = ModemSlices(datf, rhof)  # default  map_scale='m')
+    #self = ModemSlices(datf, rhof)  # default  map_scale='m')
     myObj = ModemSlices(datf, rhof, map_scale='km')
 
     myObj.create_csv()
@@ -332,29 +369,6 @@ if __name__ == "__main__":
         #             0, 20, 50, 80, 100,150, 200, 400, 600,800,1000,
         #             2000,3000,4000,5000,6000,7000,8000,9000,10000]
     else:
-        slice_number = 10  # 10 evenly spaced slices
-        if myObj.plot_orientation == 'ns':
-            slice_locs = np.linspace(myObj.ns_lim[0], myObj.ns_lim[1], num=slice_number)
-        if myObj.plot_orientation == 'ew':
-            slice_locs = np.linspace(myObj.ew_lim[0], myObj.ew_lim[1], num=slice_number)
-        if myObj.plot_orientation == 'z':
-            slice_locs = np.linspace(myObj.zlim[1], myObj.zlim[0], num=slice_number)
+        slice_locs= None
 
-
-    for dist in slice_locs:
-        sdist=int(dist)
-
-        print("**** plotting slice at location: ****", sdist)
-        print("**** actual location will be at the nearest cell centre ****")
-
-        # plot resistivity image at slices in three orientations at a given slice_location=sdist
-
-        myObj.make_plot(slice_location=sdist)  # actual location will be nearest cell centre
-
-        # myObj.set_plot_orientation('ew')
-        # myObj.make_plot(slice_location=sdist)
-        #
-        # myObj.set_plot_orientation('ns')
-        # myObj.make_plot(slice_location=sdist)
-
-        plt.show()
+    myObj.plot_multi_slices(slice_list=slice_locs)

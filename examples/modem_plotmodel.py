@@ -5,7 +5,8 @@ Created on Tue Oct 04 13:13:29 2016
 @author: u64125
 """
 
-import mtpy.modeling.modem as mtmn
+import mtpy.modeling.modem_data as md
+import mtpy.modeling.modem_model as mm
 import os.path as op
 import os
 import matplotlib.pyplot as plt
@@ -14,19 +15,13 @@ import numpy as np
 workdir = r'C:\Git\mtpy\examples\data'
 modeldir = op.join(workdir, 'ModEM_files')
 
-# ptmap= mtmn.PlotPTMaps(data_fn=op.join(modeldir,'ModEM_Data_noise10inv.dat'),
-# period_list=[1000],
-#                       ellipse_size=40,
-#                resp_fn=op.join(modeldir,'ModEM_pred.dat'),
-# model_fn=op.join(modeldir,'ModEM_Model_forward.ws')
-#                )
 read_data = True
 iterfn = max([ff for ff in os.listdir(modeldir) if ff.endswith('.rho')])
 
 if read_data:
-    doo = mtmn.Data()
+    doo = md.Data()
     doo.read_data_file(op.join(modeldir, 'ModEM_Data.dat'))
-    moo = mtmn.Model(model_fn=op.join(modeldir, iterfn))
+    moo = mm.Model(model_fn=op.join(modeldir, iterfn))
     moo.read_model_file()
 
 snoew = 10

@@ -11,25 +11,26 @@ JP 2014
 """
 #
 #==============================================================================
+import os
+
+import matplotlib.colorbar as mcb
+import matplotlib.colors as colors
+import matplotlib.gridspec as gridspec
+import matplotlib.pyplot as plt
+import numpy as np
 from PyQt4 import QtCore, QtGui
-import mtpy.modeling.modem as modem
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
-#from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
 from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as NavigationToolbar
+from matplotlib.colors import Normalize
 from matplotlib.figure import Figure
 from matplotlib.patches import Ellipse
-import mtpy.imaging.mtplottools as mtplottools
-import matplotlib.gridspec as gridspec
-import matplotlib.colors as colors
-import numpy as np
-import matplotlib.pyplot as plt
-import os
-import mtpy.analysis.pt as mtpt
-import mtpy.utils.exceptions as mtex
-from matplotlib.colors import Normalize
-import matplotlib.colorbar as mcb
-import mtpy.imaging.mtcolors as mtcl
+
+import legacy.modem as modem
 import mtpy.analysis.niblettbostick as mtnb
+import mtpy.analysis.pt as mtpt
+import mtpy.imaging.mtcolors as mtcl
+import mtpy.imaging.mtplottools as mtplottools
+import mtpy.utils.exceptions as mtex
 
 try:
     _fromUtf8 = QtCore.QString.fromUtf8

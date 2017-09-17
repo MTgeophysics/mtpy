@@ -1,10 +1,6 @@
 #!/usr/bin/env python
 """
-ModEM: Generate data file for ModEM
-
-Refactored from modem.py
-by Fei.Zhang@ga.gov.au 2016
-
+    Create Phase Tensor Map from the ModEM's output Resistivity model
 """
 import os
 import os.path as op
@@ -21,8 +17,8 @@ import mtpy.imaging.mtcolors as mtcl
 import mtpy.imaging.mtplottools as mtplottools
 import mtpy.modeling.ws3dinv as ws
 import mtpy.utils.exceptions as mtex
-from mtpy.modeling.modem import Data
-from mtpy.modeling.modem import Model
+from mtpy.modeling.modem_data import Data
+from mtpy.modeling.modem_model import Model
 
 try:
     from pyevtk.hl import gridToVTK, pointsToVTK
