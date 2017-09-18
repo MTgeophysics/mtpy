@@ -16,10 +16,10 @@ Created on Wed Jan 11 16:39:40 2017
 #==============================================================================
 import os
 import datetime
+import copy
 
 import numpy as np
 import xml.etree.cElementTree as ET
-from xml.dom import minidom
 
 import mtpy.core.z as mtz
 
@@ -839,7 +839,7 @@ class MT_XML(XML_Config):
 
         # make the data element
         
-        data_element = XML_element('Data', {'count':str(nf)}, None)  
+        self.Data = XML_element('Data', {'count':str(nf)}, None)  
         
         # loop through each period and add appropriate information
         for f_index, freq in enumerate(self.Z.freq):
@@ -847,15 +847,18 @@ class MT_XML(XML_Config):
             # set attribute period name with the index value
             # we are setting _name to have the necessary information so
             # we can name the attribute whatever we want.
-            setattr(data_element, f_name,
+            setattr(self.Data, f_name,
                     XML_element('Period', {'value':'{0:.6g}'.format(1./freq),
                                      'units':'seconds'}, None))
-            d_attr = getattr(data_element, f_name)
+            d_attr = getattr(self.Data, f_name)
             # Get information from data
             for estimate in estimates:
                 attr_name = estimate.replace('.', '_').replace('VAR', 'err').lower()
                 estimate_name = estimate.replace('.', '')
-                setattr(d_attr, estimate_name, header_dict[estimate])
+                # need to make sure the attribute value is a copy otherwise it
+                # will continue to rewrite itself.
+                setattr(d_attr, estimate_name,
+                        copy.deepcopy(header_dict[estimate]))
                 c_attr = getattr(d_attr, estimate_name)
                 if 'z' in attr_name:
                     count = 0
@@ -870,18 +873,16 @@ class MT_XML(XML_Config):
                             c_dict = {'name':c[0], 'input':c[1], 'output':c[2]}
                             z_value = z_arr[f_index, e_index, h_index]
                             if attr_name == 'z_err':
-                                c_value = '{0:<+.8e}'.format(z_value)
+                                c_value = '{0:<+.6e}'.format(z_value)
                             else:
-                                c_value = '{0:<+.8e} {1:<+.8e}'.format(z_value.real, 
+                                c_value = '{0:<+.6e} {1:<+.6e}'.format(z_value.real, 
                                                                        z_value.imag)
                             
                             setattr(c_attr, 
                                     'value_{0:02}'.format(count),
                                     XML_element('value', c_dict, c_value)) 
-                            print c_value, 'value_{0:02}'.format(count), c_attr.name, d_attr.name, f_name
 
                             count += 1
-                    print data_element.Period_00.Z.value_00.value
                             
                 if 't' in attr_name and write_tipper == True:
                     attr_name = attr_name.replace('t', 'tipper')
@@ -910,20 +911,15 @@ class MT_XML(XML_Config):
                             t_arr = getattr(self.Tipper, attr_name)
                             t_value = t_arr[f_index, e_index, h_index]
                             if attr_name ==  'tipper_err': 
-                                c_value = '{0:<+.8e}'.format(t_value)
+                                c_value = '{0:<+.6e}'.format(t_value)
                             else:
-                                c_value = '{0:<+.8e} {1:<+.8e}'.format(t_value.real, 
+                                c_value = '{0:<+.6e} {1:<+.6e}'.format(t_value.real, 
                                                                        t_value.imag)
                              
                             setattr(c_attr, 
                                     'value_{0:02}'.format(count),
                                     XML_element('value', c_dict, c_value)) 
                             count += 1
-                            
-        return data_element
-                            
-    def _make_data_element(self, name, attr, value):
-        return XML_element(name, attr, value)
         
     def write_element(self, parent_et, XML_element_obj):
         """
