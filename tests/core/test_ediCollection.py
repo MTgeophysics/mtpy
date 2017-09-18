@@ -109,6 +109,20 @@ class _BaseTest(object):
             os.mkdir(path)
         self.edi_collection.create_measurement_csv(path)
 
+    def test_create_phase_tensor_csv(self):
+        path = os.path.join(self._temp_dir, self.__class__.__name__ + "_phase_tensor_csv")
+        if not os.path.exists(path):
+            os.mkdir(path)
+        self.edi_collection.create_phase_tensor_csv(path)
+
+        # create using PlotPhaseTensorMaps
+        path2 = os.path.join(self._temp_dir, self.__class__.__name__ + "_phase_tensor_csv_with_image")
+        if not os.path.exists(path2):
+            os.mkdir(path2)
+        self.edi_collection.create_phase_tensor_csv_with_image(path2)
+
+        # compare the differences
+
 
 class TsetFromFile(_BaseTest):
     def setUp(self):

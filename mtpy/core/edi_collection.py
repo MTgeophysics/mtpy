@@ -25,6 +25,7 @@ from shapely.geometry import Point  # , Polygon, LineString, LinearRing
 # from mpl_toolkits.axes_grid1 import make_axes_locatable
 import mtpy.core.mt as mt
 import mtpy.imaging.mtplottools as mtplottools
+from mtpy.utils.decorator import deprecated
 from mtpy.utils.mtpylog import MtPyLog
 
 logger = MtPyLog().get_mtpy_logger(__name__)
@@ -255,6 +256,83 @@ class EdiCollection(object):
 
         return myax2
 
+    def create_phase_tensor_csv(self, dest_dir, file_name="phase_tensor.csv"):
+        """
+        create phase tensor ellipse and tipper properties.
+        reimplemented based on mtpy.utils.shapefiles_creator.ShapeFilesCreator.create_csv_files
+        :param dest_dir: output directory
+        :param file_name: output file name
+        :return:
+        """
+        csvfname = os.path.join(dest_dir, file_name)
+
+        pt_dict = {}
+
+        csv_header = ['station', 'freq', 'lon', 'lat', 'phi_min', 'phi_max', 'azimuth', 'skew',
+                      'n_skew', 'elliptic', 'tip_mag_re', 'tip_mag_im', 'tip_ang_re', 'tip_ang_im']
+
+        with open(csvfname, "wb") as csvf:
+            writer = csv.writer(csvf)
+            writer.writerow(csv_header)
+
+            for freq in self.all_frequencies:
+                ptlist = []
+                for mt_obj in self.mt_obj_list:
+                    freq_min = freq * (1 - self.ptol)
+                    freq_max = freq * (1 + self.ptol)
+                    f_index_list = [ff for ff, f2 in enumerate(mt_obj.Z.freq)
+                                    if (f2 > freq_min) and (f2 < freq * freq_max)]
+                    if len(f_index_list) > 1:
+                        logger.warn("more than one freq found %s", f_index_list)
+                    if len(f_index_list) >= 1:
+                        p_index = f_index_list[0]
+                        # geographic coord lat long and elevation
+                        # long, lat, elev = (mt_obj.lon, mt_obj.lat, 0)
+                        station, lon, lat = (mt_obj.station, mt_obj.lon, mt_obj.lat)
+
+                        pt_stat = [station, freq, lon, lat,
+                                   mt_obj.pt.phimin[0][p_index],
+                                   mt_obj.pt.phimax[0][p_index],
+                                   mt_obj.pt.azimuth[0][p_index],
+                                   mt_obj.pt.beta[0][p_index],
+                                   2 * mt_obj.pt.beta[0][p_index],
+                                   mt_obj.pt.ellipticity[0][p_index],  # FZ: get ellipticity begin here
+                                   mt_obj.Tipper.mag_real[p_index],
+                                   mt_obj.Tipper.mag_imag[p_index],
+                                   mt_obj.Tipper.angle_real[p_index],
+                                   mt_obj.Tipper.angle_imag[p_index]]
+
+                        ptlist.append(pt_stat)
+                    else:
+                        logger.warn("Freq %s NOT found for this station %s", freq, mt_obj.station)
+
+                csv_freq_file = os.path.join(dest_dir,
+                                             '{name[0]}_{freq}Hz{name[1]}'.format(
+                                                 freq=str(freq), name=os.path.splitext(file_name)))
+                with open(csv_freq_file, "wb") as freq_csvf:
+                    writer_freq = csv.writer(freq_csvf)
+                    writer_freq.writerow(csv_header)
+                    writer_freq.writerows(ptlist)
+
+                writer.writerows(ptlist)
+
+                pt_dict[freq] = ptlist
+
+        return pt_dict
+
+    @deprecated("This function is more expensive compared with create_phase_tensor_csv()")
+    def create_phase_tensor_csv_with_image(self, dest_dir):
+        """
+        Using PlotPhaseTensorMaps class to generate csv file of phase tensor attributes, etc.
+        Only for comparison. This method is more expensive because it will create plot object first.
+        :return:
+        """
+        from mtpy.imaging.phase_tensor_maps import PlotPhaseTensorMaps
+        for freq in self.all_frequencies:
+            ptm = PlotPhaseTensorMaps(fn_list=self.edifiles, plot_freq=freq)
+            ptm.export_params_to_file(save_path=dest_dir)
+        return
+
     def create_measurement_csv(self, dest_dir='/e/tmp'):
         """
         create csv file from the data of EDI files: IMPEDANCE, APPARENT RESISTIVITIES AND PHASES
@@ -392,13 +470,6 @@ class EdiCollection(object):
 
         # self.display_folium()
 
-        return
-
-    def create_phase_tensor_csv(self):
-        """
-        create phase tensor ellipse and tipper properties.
-        :return:
-        """
         return
 
 
