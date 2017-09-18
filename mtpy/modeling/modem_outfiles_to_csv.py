@@ -18,6 +18,7 @@ LastUpdate:     15/09/2017   FZ
 import os
 import sys
 import glob
+import csv
 import logging
 import matplotlib.pyplot as plt
 import numpy as np
@@ -121,17 +122,27 @@ class ModemSlices():
           # distance from slice to grid centre locations
         if self.plot_orientation == 'ew':
             sdist = np.abs(gcnorth - slice_location)
+            snos = np.where(sdist == np.amin(sdist))
+            sno = snos[0][0]
+            actual_location = gcnorth[sno]
         elif self.plot_orientation == 'ns':
             sdist = np.abs(gceast - slice_location)
+            snos = np.where(sdist == np.amin(sdist))
+            sno = snos[0][0]
+            actual_location = gceast[sno]
         elif self.plot_orientation == 'z':
             sdist = np.abs(gcz - slice_location)
         # find the closest slice index to specified location
-        snos = np.where(sdist == np.amin(sdist))
+            snos = np.where(sdist == np.amin(sdist))
+            sno = snos[0][0]
+            actual_location = gcz[sno]
+
         print (type(snos), len(snos))  # ((index1), (index2), (index3))
 
         # unpack the index tupple, and get the integer value as index number
-        sno=snos[0][0]
-        print("the slice index number=", sno)
+        # sno=snos[0][0]
+
+        logger.debug("the slice index number= %s and the actual location is %s", sno, actual_location)
         # get data for plotting
         if self.plot_orientation == 'ew':
             X, Y, res = self.modObj.grid_east, self.modObj.grid_z, np.log10(
@@ -160,44 +171,62 @@ class ModemSlices():
                         self.modObj.pad_north], self.modObj.grid_north[-self.modObj.pad_north - 1])
             ylim = self.zlim
             title = 'North-south slice at {} meters east'.format(gceast[sno])
-        elif self.plot_orientation == 'z':
-            X, Y, res = self.modObj.grid_east, self.modObj.grid_north, np.log10(
-                self.modObj.res_model[:, :, sno])
-            sX, sY = self.datObj.station_locations[
-                         'rel_east'], self.datObj.station_locations['rel_north']
-            xlim = (self.modObj.grid_east[
-                        self.modObj.pad_east], self.modObj.grid_east[-self.modObj.pad_east - 1])
-            ylim = (self.modObj.grid_north[
-                        self.modObj.pad_north], self.modObj.grid_north[-self.modObj.pad_north - 1])
+        elif self.plot_orientation == 'z':  #for plotting X == EW  Y == NS
+            Y, X, res =  self.modObj.grid_north, self.modObj.grid_east, np.log10(self.modObj.res_model[:, :, sno])
+            sY, sX = self.datObj.station_locations['rel_north'],self.datObj.station_locations['rel_east']
+            ylim = (self.modObj.grid_north[self.modObj.pad_north], self.modObj.grid_north[-self.modObj.pad_north - 1])
+            xlim = (self.modObj.grid_east[self.modObj.pad_east], self.modObj.grid_east[-self.modObj.pad_east - 1])
+
             title = 'Horizontal Slice at Depth {} meters'.format(gcz[sno])
 
 
-        return (X,Y,res,sX,sY,xlim,ylim,title)
+        return (X,Y,res,sX,sY,xlim,ylim,title, actual_location)
 
 
-    def create_csv(self):
+    def create_csv(self, csvfile='E:/tmp/Resistivity.csv'):
         """
-        dump into CSV file with the output columns:
+        write ressitivity into the csvfile with the output columns:
             StationName, Lat, Long, X, Y, Z, Log(Resistivity)
         where (X,Y,Z) are relative distances in meters from the mesh's origin.
         Projection/Coordinate system must be known in order to associate (Lat, Long) to (X, Y)
         :return:
         """
         self.set_plot_orientation('z')
+        z_cell_centres = np.mean([self.modObj.grid_z[:-1], self.modObj.grid_z[1:]], axis=0)
 
-        (X, Y, res, sX, sY, xlim, ylim, title) = self.get_slice_data(1000)
+        #csv_header = ['Station', 'Lat', 'Long', 'X', 'Y', 'Z',  'Log_Resisitivity']
+        csv_header = ['X', 'Y', 'Z',  'Log_Resisitivity']
 
-        print (X,Y,res)
-        #print(sX,sY)
+        csvrows = []
+        for zslice in z_cell_centres:
+            (X, Y, res, sX, sY, xlim, ylim, title, Z_location) = self.get_slice_data(zslice)
 
-        return
+            #print (X,Y,res)
+            #print(sX,sY)
+
+            print(len(X),len(Y), Z_location, res.shape, len(sX), len(sY))
+
+
+            for i in xrange(len(X)-1):
+                for j in xrange(len(Y)-1):
+                    arow=[X[i], Y[j], Z_location, res[j,i]]
+                    csvrows.append(arow)
+
+        with open(csvfile, "wb") as csvf:
+            writer = csv.writer(csvf)
+            writer.writerow(csv_header)
+            writer.writerows(csvrows)
+
+        logger.debug("Wrote data into CSV file %s", csvfile)
+
+        return csvfile
 
     def plot_a_slice(self, slice_location=1000):
         """ create a plot based on the input data and parameters
         :return:
         """
 
-        (X, Y, res, sX, sY, xlim, ylim, title)= self.get_slice_data(slice_location)
+        (X, Y, res, sX, sY, xlim, ylim, title, actual_location)= self.get_slice_data(slice_location)
 
         # make the plot
 
@@ -287,17 +316,14 @@ class ModemSlices():
         """
 
         if slice_list is None:
-            slice_number = 100  # number of evenly spaced slices
+            # slice_number = 100  # number of evenly spaced slices
             if self.plot_orientation == 'ns':
-                slice_locs = np.linspace(self.ns_lim[0], self.ns_lim[1], num=slice_number)
-
-                # or at cell centre
+                #slice_locs = np.linspace(self.ns_lim[0], self.ns_lim[1], num=slice_number
+                # It's better to use cell centres
                 slice_locs = np.mean([self.modObj.grid_north[:-1], self.modObj.grid_north[1:]], axis=0)
             if self.plot_orientation == 'ew':
-                slice_locs = np.linspace(self.ew_lim[0], self.ew_lim[1], num=slice_number)
                 slice_locs = np.mean([self.modObj.grid_east[:-1], self.modObj.grid_east[1:]], axis=0)
             if self.plot_orientation == 'z':
-                slice_locs = np.linspace(self.zlim[1], self.zlim[0], num=slice_number)
                 slice_locs = np.mean([self.modObj.grid_z[:-1], self.modObj.grid_z[1:]], axis=0)
         else:
             slice_locs = slice_list
@@ -308,8 +334,8 @@ class ModemSlices():
         for dist in slice_locs:
             sdist = int(dist)
 
-            print("**** plotting slice at location: ****", sdist)
-            print("**** actual location will be at the nearest cell centre ****")
+            print("**** The user-input slice location is: ****", sdist)
+            print("**** The actual location will be at the nearest cell centre ****")
 
             # plot resistivity image at slices in three orientations at a given slice_location=sdist
 
@@ -321,8 +347,7 @@ class ModemSlices():
 #########################################################################
 if __name__ == "__main__":
     """ Usage:
-    python mtpy/modeling/modem_outfiles_to_csv.py /e/Data/Modeling/Isa/100hs_flat_BB/Isa_run3_NLCG_048.dat
-    /e/Data/Modeling/Isa/100hs_flat_BB/Isa_run3_NLCG_048.rho 20
+    python mtpy/modeling/modem_outfiles_to_csv.py /e/Data/Modeling/Isa/100hs_flat_BB/Isa_run3_NLCG_048.dat /e/Data/Modeling/Isa/100hs_flat_BB/Isa_run3_NLCG_048.rho 20
 
     python mtpy/modeling/modem_outfiles_to_csv.py
     /e/tmp/GA_UA_edited_10s-10000s_16/ModEM_Data.dat  /e/tmp/GA_UA_edited_10s-10000s_16/ModEM_Model.ws -1000 1000
