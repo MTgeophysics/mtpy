@@ -1015,7 +1015,7 @@ class Data(object):
                                 nor = '{0:> 12.3f}'.format(
                                     self.data_array[ss]['rel_north'])
                                 ele = '{0:> 12.3f}'.format(
-                                    -self.data_array[ss]['elev'])
+                                    self.data_array[ss]['elev'])
                                 com = '{0:>4}'.format(comp.upper())
                                 if self.units == 'ohm':
                                     rea = '{0:> 14.6e}'.format(zz.real / 796.)
@@ -1037,7 +1037,7 @@ class Data(object):
                                 nor = '{0:> 15.3f}'.format(
                                     self.data_array[ss]['rel_north'])
                                 ele = '{0:> 10.3f}'.format(
-                                    -self.data_array[ss]['elev'])
+                                    self.data_array[ss]['elev'])
                                 com = '{0:>12}'.format(comp.upper())
                                 if self.units == 'ohm':
                                     rea = '{0:> 17.6e}'.format(zz.real / 796.)

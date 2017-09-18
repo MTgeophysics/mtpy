@@ -260,7 +260,7 @@ class Model(object):
         """
 
         # find the edges of the grid: bounding box of the survey area.
-        nc_extra = 7  # extra cells around the stations area
+        nc_extra = 15/2.  # extra cells around the stations area
         if self.cell_number_ew is None:
             west = self.station_locations['rel_east'].min() - self.cell_size_east * nc_extra
             east = self.station_locations['rel_east'].max() + self.cell_size_east * nc_extra
@@ -363,8 +363,8 @@ class Model(object):
                 continue
 
         # =================================  begin to make vertical mesh
-        (z_nodes, z_grid) = self.make_z_mesh2()
-        #(z_nodes, z_grid) = self.make_z_mesh3()
+#        (z_nodes, z_grid) = self.make_z_mesh2()
+        (z_nodes, z_grid) = self.make_z_mesh3()
 
         # Need to make an array of the individual cell dimensions for modem
         east_nodes = east_gridr[1:] - east_gridr[:-1]
@@ -706,29 +706,29 @@ class Model(object):
 
             # print (stop_here_for_debug)
 
-        elif self.n_airlayers < 0:  # keep the old logic of re-define the first few layers! not sure if wrong
-            # cell size is topomax/n_airlayers, rounded to nearest 1 s.f.
-            cs = np.amax(self.surface_dict['topography']) / float(self.n_airlayers)
-            #  cs = np.ceil(0.1*cs/10.**int(np.log10(cs)))*10.**(int(np.log10(cs))+1)
-            cs = np.ceil(cs)
-
-            # add air layers
-            new_airlayers = np.linspace(
-                0, self.n_airlayers, self.n_airlayers + 1) * cs
-            add_z = new_airlayers[-1] - self.grid_z[self.n_airlayers]
-            self.grid_z[self.n_airlayers + 1:] += add_z
-            self.grid_z[:self.n_airlayers + 1] = new_airlayers
-
-            # adjust the nodes, which is simply the diff of adjacent grid lines
-            self.nodes_z = self.grid_z[1:] - self.grid_z[:-1]
-
-            # adjust sea level
-            # wrong? self.sea_level = self.grid_z[self.n_airlayers]
-            self.sea_level = self.grid_z[self.n_airlayers]
-            logger.debug("FZ:***2 sea_level = %s", self.sea_level)
-
-            # assign topography
-            # self.assign_resistivity_from_surfacedata('topography', air_resistivity, where='above')
+#        elif self.n_airlayers < 0:  # keep the old logic of re-define the first few layers! not sure if wrong
+#            # cell size is topomax/n_airlayers, rounded to nearest 1 s.f.
+#            cs = np.amax(self.surface_dict['topography']) / float(self.n_airlayers)
+#            #  cs = np.ceil(0.1*cs/10.**int(np.log10(cs)))*10.**(int(np.log10(cs))+1)
+#            cs = np.ceil(cs)
+#
+#            # add air layers
+#            new_airlayers = np.linspace(
+#                0, self.n_airlayers, self.n_airlayers + 1) * cs
+#            add_z = new_airlayers[-1] - self.grid_z[self.n_airlayers]
+#            self.grid_z[self.n_airlayers + 1:] += add_z
+#            self.grid_z[:self.n_airlayers + 1] = new_airlayers
+#
+#            # adjust the nodes, which is simply the diff of adjacent grid lines
+#            self.nodes_z = self.grid_z[1:] - self.grid_z[:-1]
+#
+#            # adjust sea level
+#            # wrong? self.sea_level = self.grid_z[self.n_airlayers]
+#            self.sea_level = self.grid_z[self.n_airlayers]
+#            logger.debug("FZ:***2 sea_level = %s", self.sea_level)
+#
+#            # assign topography
+#            # self.assign_resistivity_from_surfacedata('topography', air_resistivity, where='above')
         else:
             pass
 
