@@ -727,7 +727,7 @@ class Data(object):
 
         self.get_relative_station_locations()
 
-    def _fill_data_array(self, new_edi_dir=None, use_original_freq=True):
+    def _fill_data_array(self, new_edi_dir=None, use_original_freq=False):
         """
         fill the data array from mt_dict
 
@@ -798,7 +798,7 @@ class Data(object):
                     # find nearest data period
                     difference = np.abs(iperiod - dperiods)
                     nearestdperiod = dperiods[difference == np.amin(difference)][0]
-                    if max(nearestdperiod / iperiod, iperiod / nearestdperiod) < self.period_buffer:
+                    if max(nearestdperiod / iperiod, iperiod / nearestdperiod) < self.period_buffer + 1.:
                         interp_periods_new.append(iperiod)
 
                 interp_periods = np.array(interp_periods_new)
@@ -907,7 +907,7 @@ class Data(object):
 
     def write_data_file(self, save_path=None, fn_basename=None,
                         rotation_angle=None, compute_error=True,
-                        fill=True, use_original_freq=True):
+                        fill=True, use_original_freq=False):
         """
         write data file for ModEM
         will save file as save_path/fn_basename

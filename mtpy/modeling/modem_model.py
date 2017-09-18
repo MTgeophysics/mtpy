@@ -961,19 +961,21 @@ class Model(object):
             # print("FZ:*** szi=", szi)
             # FZ: debug here to assign topography value for .dat file.
 
-            # topoval = self.grid_z[szi]
-            # self.station_locations['elev'][ss] = topoval # + 1.  # why +1 in elev ???
-            # self.Data.data_array['elev'][ss] = topoval # + 1.
+            topoval = self.grid_z[szi]
 
             station_index_x.append(sxi)
             station_index_y.append(syi)
 
-            # use topo elevation directly in modem.dat file
-            topoval = self.surface_dict['topography'][syi, sxi]
+#            # use topo elevation directly in modem.dat file
+#            !!! can't use topo elevation directly from topography file as the 
+#                elevation needs to sit on the model mesh!
+#            topoval = self.surface_dict['topography'][syi, sxi]
             logger.debug("sname,ss, sxi, syi, szi, topoval: %s,%s,%s,%s,%s,%s", sname, ss, sxi, syi, szi, topoval)
 
-            self.station_locations['elev'][ss] = topoval  # + 1.  # why +1 in elev ???
-            self.Data.data_array['elev'][ss] = topoval  # + 1.
+            # update elevation in station locations and data array, +1 m as 
+            # data elevation needs to be below the topography (as advised by Naser)
+            self.station_locations['elev'][ss] = topoval + 1.
+            self.Data.data_array['elev'][ss] = topoval + 1.
 
         # This will shift stations' location to be relative to the defined mesh-grid centre
         self.Data.station_locations = self.station_locations
