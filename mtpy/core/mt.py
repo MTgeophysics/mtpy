@@ -1046,6 +1046,24 @@ class MT(object):
                 
                 setattr(self.Processing, name, value)
                 
+    def _xml_set_site(self, xml_obj):
+        
+        xml_obj.Site.Project.value = self.Site.project
+        xml_obj.Site.Survey.value = self.Site.survey
+        xml_obj.Site.Id.value = self.Site.id
+        xml_obj.Site.AcquiredBy.value = self.Site.acquired_by
+        xml_obj.Site.Start.value = self.Site.start_date
+        xml_obj.Site.End.value = self.Site.end_date
+        xml_obj.Site.RunList.value = self.Site.run_list
+        xml_obj.Site.Location.Latitude.value = self.lat
+        xml_obj.Site.Location.Longitude.value = self.lon
+        xml_obj.Site.Location.Elevation.value = self.elev
+        xml_obj.Site.Location.Elevation.attr = {'units':self.Site.Location.elev_units}
+        xml_obj.Site.Location.Declination.value = self.Site.Location.declination
+        xml_obj.Site.Location.Declination.attr = {'epoch':self.Site.Location.declination_epoch}
+        
+        return xml_obj
+                
     def read_cfg_file(self, cfg_fn):
         """
         read in a configuration file and populate properties
