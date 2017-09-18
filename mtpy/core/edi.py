@@ -1472,7 +1472,7 @@ class DefineMeasurement(object):
                 elif m_obj.chtype.lower().find('e') >= 0:
                     head = 'emeas'                
                 else:
-                    head = None
+                    head = 'None'
                 
                 m_list = ['>{0}'.format(head.upper())]
 
@@ -1545,9 +1545,12 @@ class HMeasurement(object):
         
         self._kw_list = ['id', 'chtype', 'x', 'y', 'azm', 'acqchan']
         self._fmt_list = ['<4','<3', '<4.1f', '<4.1f', '<4.1f', '<4']
-        for key in self._kw_list:
-            setattr(self, key, 0.0)
-        
+        for key, fmt in zip(self._kw_list, self._fmt_list):
+            if 'f' in fmt:
+                setattr(self, key, 0.0)
+            else:
+                setattr(self, key, '0.0')
+                
         for key in kwargs.keys():
             try:
                 setattr(self, key, float(kwargs[key]))
@@ -1596,8 +1599,11 @@ class EMeasurement(object):
         self._kw_list = ['id', 'chtype', 'x', 'y', 'x2', 'y2', 'acqchan']
         self._fmt_list = ['<4.4g', '<3', '<4.1f', '<4.1f', '<4.1f', '<4.1f',
                           '<4']
-        for key in self._kw_list:
-            setattr(self, key, 0.0)
+        for key, fmt in zip(self._kw_list, self._fmt_list):
+            if 'f' in fmt:
+                setattr(self, key, 0.0)
+            else:
+                setattr(self, key, '0.0')
         
         for key in kwargs.keys():
             try:

@@ -164,8 +164,10 @@ class MT(object):
         self._edi_obj = MTedi.Edi()
         
         self.fn = fn
+        self.original_file_type = None
         if self.fn is not None:
             self.read_mt_file(self.fn)
+        
         
         #provide key words to fill values if an edi file does not exist
         for key in kwargs.keys():
@@ -336,7 +338,7 @@ class MT(object):
         """
         read an MT response file.
         
-        .. note:: Currently only .edi and .j files are supported
+        .. note:: Currently only .edi, .xml, and .j files are supported
         
         Arguments
         -----------
@@ -344,39 +346,67 @@ class MT(object):
                      full path to input file
                      
             **file_type** : string
-                            ['edi' | 'j' | ...]
+                            ['edi' | 'j' | 'xml' | ... ]
                             if None, automatically detects file type by 
                             the extension.
                             
         
         """
-        self.fn = fn
         
         if file_type is None:
             if fn.endswith('.edi'):
-                self.read_edi_file()
+                self.read_edi_file(fn)
+                self.original_file_type = 'edi'
             elif fn.endswith('.j'):
-                self.read_j_file()
+                self.read_j_file(fn)
+                self.original_file_type = 'j'
+            elif fn.endswith('.xml'):
+                self.read_xml_file(fn)
+                self.original_file_type = 'xml'
             else:
                 raise MT_Error('File type not supported yet')
                 
         else:
-            if file_type in '.edi':
-                self.read_edi_file()
-            elif file_type in '.j':
-                self.read_j_file()
+            if file_type.lower() in 'edi':
+                self.read_edi_file(fn)
+                self.original_file_type = 'edi'
+            elif file_type.lower() in 'j':
+                self.read_j_file(fn)
+                self.original_file_type = 'j'
+            elif file_type.lower() in 'xml':
+                self.read_j_file(fn)
+                self.original_file_type = 'xml'
             else:
                 raise MT_Error('File type not supported yet')
                 
     #--> read in edi file                                                    
-    def read_edi_file(self):
+    def read_edi_file(self, edi_fn):
         """
         read in edi file and set attributes accordingly
         
         """        
-        edi_obj = MTedi.Edi(edi_fn=self.fn)
-
-        # read in site information from the header
+            
+        edi_obj = MTedi.Edi(edi_fn=edi_fn)
+        
+        self._edi_get_site(edi_obj)
+        self._edi_get_field_notes(edi_obj)
+        
+        # get info 
+        self.Notes = edi_obj.Info
+        self._parse_notes()
+        
+        self.Z = edi_obj.Z
+        self.Tipper = edi_obj.Tipper
+        self.station = edi_obj.station
+        
+        #--> make sure things are ordered from high frequency to low
+        self._check_freq_order()
+        
+    def _edi_get_site(self, edi_obj):
+        """
+        Get Site information
+        """
+        
         self.lat = edi_obj.lat
         self.lon = edi_obj.lon
         self.elev = edi_obj.elev
@@ -387,6 +417,8 @@ class MT(object):
         self.Site.Location.datum = edi_obj.Header.datum
         self.Site.Location.elev_units = edi_obj.Define_measurement.units
         self.Site.Location.coordinate_system = edi_obj.Header.coordinate_system
+        
+    def _edi_get_field_notes(self, edi_obj):
         
         # get information about different sensors
         try:
@@ -424,10 +456,7 @@ class MT(object):
                         edi_obj.Define_measurement.meas_ey.__dict__[key])
         except AttributeError:
             pass
-        
-        # get info 
-        self.Notes = edi_obj.Info
-        self._parse_notes()
+    
         
         try: 
             self.FieldNotes.Magnetometer_hx.id = self.Notes.hx
@@ -459,17 +488,7 @@ class MT(object):
             self.FieldNotes.DataLogger = self.Notes.b_logger_type
         except AttributeError:
             pass
-                
         
-        self.Z = edi_obj.Z
-        self.Tipper = edi_obj.Tipper
-        self.station = edi_obj.station
-        
-        #--> make sure things are ordered from high frequency to low
-        self._check_freq_order()
-        
-        # keep the edi object around, should be able to deprecate this later
-        self._edi_obj = edi_obj
         
     def _parse_notes(self):
         """
@@ -509,7 +528,7 @@ class MT(object):
                 self.Notes.info_dict.pop(a_key)
         
     #--> write edi file 
-    def write_edi_file(self, new_fn=None, new_Z=None, new_Tipper=None):
+    def write_edi_file(self, new_edi_fn, new_Z=None, new_Tipper=None):
         """
         write a new edi file if things have changed.  Note if new_Z or
         new_Tipper are not None, they are not changed in MT object, you
@@ -532,17 +551,17 @@ class MT(object):
         
         # get header information, mostly from site
         self._edi_obj = MTedi.Edi()
-        self._edi_obj.Header = self._set_edi_header()
+        self._edi_obj.Header = self._edi_set_header()
         
         # get information 
         self._edi_obj.Info = MTedi.Information()
-        self._edi_obj.Info.info_list = self._set_edi_info_list()
+        self._edi_obj.Info.info_list = self._edi_set_info_list()
         
         # get define measurement
-        self._edi_obj.Define_measurement = self._set_edi_define_measurement()
+        self._edi_obj.Define_measurement = self._edi_set_define_measurement()
         
         # get mtsec
-        self._edi_obj.Data_sect = self._set_edi_data_sect()
+        self._edi_obj.Data_sect = self._edi_set_data_sect()
         
         if new_Z is not None:
             self._edi_obj.Z = new_Z
@@ -555,13 +574,10 @@ class MT(object):
             self._edi_obj.Tipper = self._Tipper
             
         self._edi_obj.zrot = self.rotation_angle
-        
-        if new_fn is None:
-            new_fn = self.fn[:-4]+'_RW'+'.edi'
             
-        self._edi_obj.write_edi_file(new_edi_fn=new_fn)
+        self._edi_obj.write_edi_file(new_edi_fn=new_edi_fn)
         
-    def _set_edi_header(self):
+    def _edi_set_header(self):
         """
         make an edi header class
         """
@@ -584,7 +600,7 @@ class MT(object):
         return header
         
     #--> get information list for edi
-    def _set_edi_info_list(self):
+    def _edi_set_info_list(self):
         """
         get the information for an edi file
         """
@@ -621,6 +637,20 @@ class MT(object):
                     else:
                         l_key = 'processing.software.{0}'.format(s_key)       
                         l_value = getattr(self.Processing.Software, s_key)
+                        info_list.append('{0} = {1}'.format(l_key,
+                                                            l_value))
+            elif p_key.lower() == 'remotesite':
+                for s_key in sorted(self.Processing.RemoteSite.__dict__.keys()):
+                    if s_key == 'Location':
+                        for a_key in sorted(self.Processing.RemoteSite.Location.__dict__.keys()):
+                            l_key = 'processing.remote_site.location.{0}'.format(a_key)
+                            l_value = getattr(self.Processing.RemoteSite.Location,
+                                              a_key)
+                            info_list.append('{0} = {1}'.format(l_key,
+                                                                l_value))
+                    else:
+                        l_key = 'processing.remote_site.{0}'.format(s_key)       
+                        l_value = getattr(self.Processing.RemoteSite, s_key)
                         info_list.append('{0} = {1}'.format(l_key,
                                                             l_value))
             else:
@@ -660,7 +690,7 @@ class MT(object):
         return info_list
     
     # get edi define measurement
-    def _set_edi_define_measurement(self):
+    def _edi_set_define_measurement(self):
         """
         get define measurement block for an edi file
         """       
@@ -706,7 +736,7 @@ class MT(object):
             
         return define_meas
     
-    def _set_edi_data_sect(self):
+    def _edi_set_data_sect(self):
         """
         get mt data section for edi file
         """
@@ -751,14 +781,12 @@ class MT(object):
                 self.Tipper.tipper_err = self.Tipper.tipper_err.copy()[::-1]
                 self.Tipper.freq = self.Tipper.freq.copy()[::-1]
                 
-    def read_j_file(self, j_fn=None):
+    def read_j_file(self, j_fn):
         """
         read j file
         """
-        if j_fn is not None:
-            self.fn = j_fn
-        
-        j_obj = MTj.JFile(self.fn)
+
+        j_obj = MTj.JFile(j_fn)
         
         self.Z = j_obj.Z
         self.Tipper = j_obj.Tipper
@@ -773,20 +801,21 @@ class MT(object):
         """
         read xml file
         """
-        
-        self.fn = xml_fn
-        
+
         xml_obj = MTxml.MT_XML()
-        xml_obj.read_xml_file(self.fn)
+        xml_obj.read_xml_file(xml_fn)
+       
         
         self.Z = xml_obj.Z
         self.Tipper = xml_obj.Tipper
         
         # get information and fill attributes
         self._xml_get_site(xml_obj)
+        self._xml_get_notes(xml_obj)
         self._xml_get_field_notes(xml_obj)
         self._xml_get_copyright(xml_obj)
         self._xml_get_provenance(xml_obj)
+        self._xml_get_processing(xml_obj)
         
         
     def _xml_get_site(self, xml_obj):
@@ -830,6 +859,19 @@ class MT(object):
                     setattr(self.Site.Location, name, value)
             else:
                 setattr(self.Site, name, value)
+                
+    def _xml_get_notes(self, xml_obj):
+        """
+        get notes and set in a dictionary that is similar to edi notes
+        """
+        
+        self.Notes = MTedi.Information()
+        self.Notes.info_dict = {}
+        self.Notes.info_list = []
+        
+        self.Notes.info_dict['notes'] = str(xml_obj.Notes.value)
+        self.Notes.info_list = ['notes = {0}'.format(str(xml_obj.Notes.value))]
+        
                 
     def _xml_get_field_notes(self, xml_obj):
         """
@@ -880,6 +922,13 @@ class MT(object):
                         name = 'good_from_period'
                     elif name == 'goodtoperiod':
                         name = 'good_to_period'
+                    elif name == 'comments':
+                        setattr(self.FieldNotes.DataQuality,
+                                'author', 
+                                d_obj.attr['author'])
+                    if name == 'comments' and \
+                         f_attr.lower() == 'dataqualitywarnings':
+                        name = 'warnings_'+name
                     value = d_obj.value
                     
                     setattr(self.FieldNotes.DataQuality, name, value)
@@ -944,11 +993,11 @@ class MT(object):
         get processing info
         """
         
-        for f_attr in xml_obj.Processing.__dict__.keys():
+        for f_attr in xml_obj.ProcessingInfo.__dict__.keys():
             if f_attr in ['_name', '_attr', '_value']:
                 continue
             if 'software' in f_attr.lower():
-                obj = getattr(xml_obj.Processing, f_attr)
+                obj = getattr(xml_obj.ProcessingInfo, f_attr)
                 for i_attr in obj.__dict__.keys():
                     if i_attr in ['_name', '_attr', '_value']:
                         continue 
@@ -957,9 +1006,12 @@ class MT(object):
                     if name == 'lastmod':
                         name = 'last_modified'
                     value = i_obj.value
+                    if name == 'author':
+                        value = Person()
+                        value.name = i_obj.value
                     setattr(self.Processing.Software, name, value)
             elif 'remoteinfo' in f_attr.lower():
-                obj = getattr(xml_obj.Processing, f_attr)
+                obj = getattr(xml_obj.ProcessingInfo, f_attr)
                 for i_attr in obj.__dict__.keys():
                     if i_attr in ['_name', '_attr', '_value']:
                         continue 
@@ -980,15 +1032,19 @@ class MT(object):
                     value = i_obj.value
                     setattr(self.Processing.RemoteSite, name, value)
             else:
-                obj = getattr(xml_obj.Provenance, f_attr)
+                obj = getattr(xml_obj.ProcessingInfo, f_attr)
                 name = obj.name.lower()
                 if name == 'signconvention':
                     name = 'sign_convention'
                 elif name == 'remoteref':
                     name = 'remote_ref'
+                elif name == 'processedby':
+                    name = 'processed_by'
+                elif name == 'processingtag':
+                    name = 'processing_tag'
                 value = obj.value
                 
-                setattr(self.Provenance, name, value)
+                setattr(self.Processing, name, value)
                 
     def read_cfg_file(self, cfg_fn):
         """
@@ -1506,11 +1562,19 @@ class FieldNotes(object):
         self.DataQuality = DataQuality()
         self.DataLogger = Instrument()
         self.Electrode_ex = Instrument(**null_emeas.__dict__)
+        
         self.Electrode_ey = Instrument(**null_emeas.__dict__)
+        
         self.Magnetometer_hx = Instrument(**null_hmeas.__dict__)
         self.Magnetometer_hy = Instrument(**null_hmeas.__dict__)
         self.Magnetometer_hz = Instrument(**null_hmeas.__dict__)
-
+        
+        self.Electrode_ex.chtype = 'ex'
+        self.Electrode_ey.chtype = 'ey'
+        self.Magnetometer_hx.chtype = 'hx'
+        self.Magnetometer_hy.chtype = 'hy'
+        self.Magnetometer_hz.chtype = 'hz'
+        
         for key in kwargs.keys():
             setattr(self, key, kwargs[key])
             
