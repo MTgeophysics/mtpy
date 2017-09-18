@@ -779,11 +779,15 @@ class MT(object):
         xml_obj = MTxml.MT_XML()
         xml_obj.read_xml_file(self.fn)
         
+        self.Z = xml_obj.Z
+        self.Tipper = xml_obj.Tipper
+        
         # get information and fill attributes
         self._xml_get_site(xml_obj)
         self._xml_get_field_notes(xml_obj)
         self._xml_get_copyright(xml_obj)
         self._xml_get_provenance(xml_obj)
+        
         
     def _xml_get_site(self, xml_obj):
         """
@@ -985,9 +989,7 @@ class MT(object):
                 value = obj.value
                 
                 setattr(self.Provenance, name, value)
-        
-        
-        
+                
     def read_cfg_file(self, cfg_fn):
         """
         read in a configuration file and populate properties

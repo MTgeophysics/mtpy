@@ -600,14 +600,35 @@ class MT_XML(XML_Config):
     A configuration file can be read in that might make it easier to write
     multiple files for the same survey.  
     
-   .. seealso:: mtpy.core.mt_xml.XML_Config
+    .. seealso:: mtpy.core.mt_xml.XML_Config
    
-   =============== ============================================================
-   Methods         Description
-   =============== ============================================================ 
-   read_cfg
-   =============== ============================================================
+    =============== ===========================================================
+    Attributes      Description
+    =============== ===========================================================
+    Z               object of type mtpy.core.z.Z 
+    Tipper          object of type mtpy.core.z.Tipper
+    =============== ===========================================================
+   
+    .. note:: All other attributes are of the same name and of type XML_element,
+              where attributes are name, value and attr.  Attr contains any 
+              tag information.  This is left this way so that mtpy.core.mt.MT
+              can read in the information.  **Use mtpy.core.mt.MT for 
+              conversion between data formats.**
+   
+    =============== ===========================================================
+    Methods         Description
+    =============== =========================================================== 
+    read_cfg_file   Read a configuration file in the format of XML_Config
+    read_xml_file   Read an xml file
+    write_xml_file  Write an xml file
+    =============== ===========================================================
     
+    :Example: ::
+        >>> import mtpy.core.mt_xml as mtxml
+        >>> x = mtxml.read_xml_file(r"/home/mt_data/mt01.xml")
+        >>> x.read_cfg_file(r"/home/mt_data/survey_xml.cfg")
+        >>> x.write_xml_file(r"/home/mt_data/xml/mt01.xml")
+        
     """
     
     def __init__(self, **kwargs):
