@@ -392,6 +392,7 @@ class Ui_Wizard_esport_modem(object):
         self.radioButton_format_1.setObjectName(_fromUtf8("radioButton_format_1"))
         self.verticalLayout_7.addWidget(self.radioButton_format_1)
         self.radioButton_format_2 = QtGui.QRadioButton(self.groupBox_5)
+        self.radioButton_format_2.setEnabled(False)
         self.radioButton_format_2.setObjectName(_fromUtf8("radioButton_format_2"))
         self.verticalLayout_7.addWidget(self.radioButton_format_2)
         self.verticalLayout_11.addWidget(self.groupBox_5)
@@ -487,10 +488,12 @@ class Ui_Wizard_esport_modem(object):
         self.doubleSpinBox_target_depth.setProperty("value", 50000.0)
         self.doubleSpinBox_target_depth.setObjectName(_fromUtf8("doubleSpinBox_target_depth"))
         self.formLayout_2.setWidget(3, QtGui.QFormLayout.FieldRole, self.doubleSpinBox_target_depth)
-        self.label_14 = QtGui.QLabel(self.groupBox_8)
-        self.label_14.setObjectName(_fromUtf8("label_14"))
-        self.formLayout_2.setWidget(4, QtGui.QFormLayout.LabelRole, self.label_14)
+        self.label_bottom = QtGui.QLabel(self.groupBox_8)
+        self.label_bottom.setEnabled(False)
+        self.label_bottom.setObjectName(_fromUtf8("label_bottom"))
+        self.formLayout_2.setWidget(4, QtGui.QFormLayout.LabelRole, self.label_bottom)
         self.doubleSpinBox_bottom = QtGui.QDoubleSpinBox(self.groupBox_8)
+        self.doubleSpinBox_bottom.setEnabled(False)
         self.doubleSpinBox_bottom.setMaximum(6371000.0)
         self.doubleSpinBox_bottom.setProperty("value", 300000.0)
         self.doubleSpinBox_bottom.setObjectName(_fromUtf8("doubleSpinBox_bottom"))
@@ -563,11 +566,11 @@ class Ui_Wizard_esport_modem(object):
         sizePolicy.setHeightForWidth(self.label_17.sizePolicy().hasHeightForWidth())
         self.label_17.setSizePolicy(sizePolicy)
         self.label_17.setObjectName(_fromUtf8("label_17"))
-        self.gridLayout.addWidget(self.label_17, 0, 0, 1, 1)
+        self.gridLayout.addWidget(self.label_17, 1, 0, 1, 1)
         self.comboBox_topography_file = QtGui.QComboBox(self.wizardPage_topography)
         self.comboBox_topography_file.setEditable(True)
         self.comboBox_topography_file.setObjectName(_fromUtf8("comboBox_topography_file"))
-        self.gridLayout.addWidget(self.comboBox_topography_file, 0, 1, 1, 1)
+        self.gridLayout.addWidget(self.comboBox_topography_file, 1, 1, 1, 1)
         self.pushButton_browse_topography_file = QtGui.QPushButton(self.wizardPage_topography)
         sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Fixed, QtGui.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
@@ -575,7 +578,7 @@ class Ui_Wizard_esport_modem(object):
         sizePolicy.setHeightForWidth(self.pushButton_browse_topography_file.sizePolicy().hasHeightForWidth())
         self.pushButton_browse_topography_file.setSizePolicy(sizePolicy)
         self.pushButton_browse_topography_file.setObjectName(_fromUtf8("pushButton_browse_topography_file"))
-        self.gridLayout.addWidget(self.pushButton_browse_topography_file, 0, 2, 1, 1)
+        self.gridLayout.addWidget(self.pushButton_browse_topography_file, 1, 2, 1, 1)
         self.horizontalLayout = QtGui.QHBoxLayout()
         self.horizontalLayout.setObjectName(_fromUtf8("horizontalLayout"))
         self.groupBox_9 = QtGui.QGroupBox(self.wizardPage_topography)
@@ -664,7 +667,12 @@ class Ui_Wizard_esport_modem(object):
         self.spinBox_smoothing_number.setObjectName(_fromUtf8("spinBox_smoothing_number"))
         self.formLayout_4.setWidget(3, QtGui.QFormLayout.FieldRole, self.spinBox_smoothing_number)
         self.horizontalLayout.addWidget(self.groupBox_11)
-        self.gridLayout.addLayout(self.horizontalLayout, 1, 0, 1, 3)
+        self.gridLayout.addLayout(self.horizontalLayout, 2, 0, 1, 3)
+        self.label_14 = QtGui.QLabel(self.wizardPage_topography)
+        self.label_14.setWordWrap(True)
+        self.label_14.setOpenExternalLinks(True)
+        self.label_14.setObjectName(_fromUtf8("label_14"))
+        self.gridLayout.addWidget(self.label_14, 0, 0, 1, 3)
         Wizard_esport_modem.addPage(self.wizardPage_topography)
         self.wizardPage_output = QtGui.QWizardPage()
         self.wizardPage_output.setObjectName(_fromUtf8("wizardPage_output"))
@@ -741,7 +749,7 @@ class Ui_Wizard_esport_modem(object):
         self.label_10.setBuddy(self.lineEdit_full_output)
 
         self.retranslateUi(Wizard_esport_modem)
-        self.comboBox_error_type.setCurrentIndex(2)
+        self.comboBox_error_type.setCurrentIndex(3)
         self.comboBox_error_type_zxx.setCurrentIndex(2)
         self.comboBox_error_type_zxy.setCurrentIndex(2)
         self.comboBox_error_type_zyx.setCurrentIndex(2)
@@ -920,6 +928,9 @@ class Ui_Wizard_esport_modem(object):
         self.wizardPage_data.setTitle(_translate("Wizard_esport_modem", "Other Data Settings", None))
         self.groupBox_5.setTitle(_translate("Wizard_esport_modem", "Data File Format", None))
         self.radioButton_format_1.setText(_translate("Wizard_esport_modem", "ModEM Data Format", None))
+        self.radioButton_format_2.setToolTip(_translate("Wizard_esport_modem",
+                                                        "<html><head/><body><p>This option is currently disabled due to its campatiblity issues.</p></body></html>",
+                                                        None))
         self.radioButton_format_2.setText(_translate("Wizard_esport_modem", "Type 2 (Possibly Compatible with WSINV3DMT)", None))
         self.groupBox_12.setTitle(_translate("Wizard_esport_modem", "EPSG", None))
         self.wizardPage_mesh.setTitle(_translate("Wizard_esport_modem", "Mesh Settings", None))
@@ -961,8 +972,10 @@ class Ui_Wizard_esport_modem(object):
         self.label_13.setText(_translate("Wizard_esport_modem", "Target Depth", None))
         self.doubleSpinBox_target_depth.setToolTip(_translate("Wizard_esport_modem", "<html><head/><body><p>depth of deepest target</p></body></html>", None))
         self.doubleSpinBox_target_depth.setSuffix(_translate("Wizard_esport_modem", "m", None))
-        self.label_14.setToolTip(_translate("Wizard_esport_modem", "<html><head/><body><p>absolute bottom of the model</p></body></html>", None))
-        self.label_14.setText(_translate("Wizard_esport_modem", "Bottom", None))
+        self.label_bottom.setToolTip(
+            _translate("Wizard_esport_modem", "<html><head/><body><p>absolute bottom of the model</p></body></html>",
+                       None))
+        self.label_bottom.setText(_translate("Wizard_esport_modem", "Bottom", None))
         self.doubleSpinBox_bottom.setToolTip(_translate("Wizard_esport_modem", "<html><head/><body><p>absolute bottom of the model</p></body></html>", None))
         self.doubleSpinBox_bottom.setSuffix(_translate("Wizard_esport_modem", "m", None))
         self.groupBox_6.setTitle(_translate("Wizard_esport_modem", "Paddings", None))
@@ -1056,6 +1069,9 @@ class Ui_Wizard_esport_modem(object):
         self.spinBox_smoothing_number.setToolTip(_translate("Wizard_esport_modem", "<html><head/><body><p>Number of times the smoothing should be applied\n"
 "                      (1 interger &gt;= 0)</p></body></html>\n"
 "                  ", None))
+        self.label_14.setText(_translate("Wizard_esport_modem",
+                                         "<html><head/><body><p>Please select a ETOPO1 .asc file, which can be download from <a href=\"https://maps.ngdc.noaa.gov/viewers/wcs-client/\"><span style=\" text-decoration: underline; color:#0000ff;\">https://maps.ngdc.noaa.gov/viewers/wcs-client/</span></a></p></body></html>",
+                                         None))
         self.wizardPage_output.setTitle(_translate("Wizard_esport_modem", "Output", None))
         self.wizardPage_output.setSubTitle(_translate("Wizard_esport_modem", "Plsease select the output directry and the new folder that will be created to save all the data files for\n"
 "           ModEM.\n"

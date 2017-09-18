@@ -88,6 +88,10 @@ class ExportDialogModEm(QtGui.QWizard):
         # hide error percents
         self._component_error_type_changed()
 
+        # hide bottom in vertical mesh as it is not used in mesh gen
+        self.ui.doubleSpinBox_bottom.hide()
+        self.ui.label_bottom.hide()
+
         # epsg
         self.ui.comboBox_epsg.addItems(
             [str(epsg) for epsg in sorted(epsg_dict.keys())]
