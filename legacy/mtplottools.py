@@ -4,19 +4,20 @@ This module contains functions to plot different MT things.
 J Peacock
 '''
 
-import matplotlib.pyplot as plt
-import matplotlib.pylab as pylab
-import numpy as np
-import mtpy.legacy.birrptools as brp
 import os
-import mtpy.legacy.mttools as mt
+
+import matplotlib.pylab as pylab
+import matplotlib.pyplot as plt
+import numpy as np
 from matplotlib.ticker import MultipleLocator, FormatStrFormatter
-import mtpy.legacy.old_z as Z
+
+import legacy.birrptools as brp
+import legacy.mttools as mt
+import legacy.old_z as Z
+
 reload(Z)
 import mtpy.utils.latlon_utm_conversion as utm2ll
 from matplotlib import colors
-from matplotlib import patches
-import matplotlib.colorbar as mcb
 from matplotlib import gridspec
 
 np.random.seed(101)

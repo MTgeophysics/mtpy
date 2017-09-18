@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.ticker import MultipleLocator, FormatStrFormatter
 
-from mtpy.modeling.modem import Data
+from mtpy.modeling.modem_data import Data
 
 try:
     from pyevtk.hl import gridToVTK, pointsToVTK
@@ -98,8 +98,6 @@ class PlotRMSMaps(object):
 
 
     :Example: ::
-
-        >>> import mtpy.modeling.modem as modem
         >>> rms_plot = Plot_RMS_Maps(r"/home/ModEM/Inv1/mb_NLCG_030.res")
         >>> # change some attributes
         >>> rms_plot.fig_size = [6, 4]

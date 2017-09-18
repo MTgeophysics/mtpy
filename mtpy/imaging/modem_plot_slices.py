@@ -16,8 +16,8 @@ import numpy as np
 from matplotlib.ticker import MultipleLocator
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
-from mtpy.modeling.modem import Data
-from mtpy.modeling.modem import Model
+from mtpy.modeling.modem_data import Data
+from mtpy.modeling.modem_model import Model
 
 class ModemPlotSlices():
 
@@ -237,8 +237,7 @@ class ModemPlotSlices():
 #   python mtpy/imaging/modem_plot_slices.py  path2datfile path2rhofile [slice_locations]
 # python mtpy/imaging/modem_plot_slices.py \
 #     /e/Data/Modeling/Isa/100hs_flat_BB/Isa_run3_NLCG_048.dat /e/Data/Modeling/Isa/100hs_flat_BB/Isa_run3_NLCG_048.rho 2000 5000
-#   python mtpy/imaging/modem_plot_slices.py /e/tmp/GA_UA_edited_10s-10000s_20/ModEM_Data.dat
-#       /e/tmp/GA_UA_edited_10s-10000s_20/ModEM_Model.ws
+#   python mtpy/imaging/modem_plot_slices.py /e/tmp/GA_UA_edited_10s-10000s_20/ModEM_Data.dat /e/tmp/GA_UA_edited_10s-10000s_20/ModEM_Model.ws
 # -----------------------------------------------------------------------
 if __name__ == "__main__":
     # INPUTS #
@@ -288,10 +287,11 @@ if __name__ == "__main__":
     # construct plot object
     myObj = ModemPlotSlices(datf, rhof)  # ,map_scale='m')
 
-    # horizontal at a given depth
+    # # horizontal at a given depth
+    # myObj.set_plot_orientation('ns')
+    # myObj.set_plot_orientation('ew')
     myObj.set_plot_orientation('z')
-    myObj.set_plot_orientation('ns')
-    myObj.set_plot_orientation('ew')
+
 
     for dist in slice_locs:
         sdist=int(dist)

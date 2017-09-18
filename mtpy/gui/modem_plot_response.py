@@ -11,16 +11,18 @@ JP 2014
 """
 #
 
+import os
+
+import matplotlib.gridspec as gridspec
+import matplotlib.pyplot as plt
+import numpy as np
 from PyQt4 import QtCore, QtGui
-import mtpy.modeling.modem as modem
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure
+
+import legacy.modem as modem
 import mtpy.imaging.mtplottools as mtplottools
-import matplotlib.gridspec as gridspec
-import numpy as np
-import matplotlib.pyplot as plt
-import os
 
 try:
     _fromUtf8 = QtCore.QString.fromUtf8

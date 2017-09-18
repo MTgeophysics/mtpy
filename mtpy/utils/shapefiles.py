@@ -13,12 +13,12 @@ except ImportError:
     raise ImportError('Did not find GDAL, be sure it is installed correctly and '
                       'all the paths are correct')
 import os
-
 import numpy as np
 
 import mtpy.analysis.pt as mtpt
 import mtpy.core.mt as mt
-import mtpy.modeling.modem as modem
+import mtpy.modeling.modem_data as md
+
 
 ogr.UseExceptions()
 
@@ -368,7 +368,7 @@ class PTShapeFile(object):
 
         """
 
-        modem_obj = modem.Data()
+        modem_obj = md.Data()
         modem_obj.read_data_file(modem_data_fn)
 
         self.plot_period = modem_obj.period_list.copy()
@@ -388,7 +388,7 @@ class PTShapeFile(object):
         """
 
         # first get the data and response and place them in array for later use
-        modem_data_obj = modem.Data()
+        modem_data_obj = md.Data()
         modem_data_obj.read_data_file(modem_data_fn)
 
         self.plot_period = modem_data_obj.period_list.copy()
@@ -398,7 +398,7 @@ class PTShapeFile(object):
 
         self._set_rotation_angle(rotation_angle)
 
-        modem_resp_obj = modem.Data()
+        modem_resp_obj = md.Data()
         modem_resp_obj.read_data_file(modem_resp_fn)
 
         # rotate model response
@@ -575,7 +575,7 @@ class PTShapeFile(object):
         """
 
         # first get the data and response and place them in array for later use
-        modem_data_obj = modem.Data()
+        modem_data_obj = md.Data()
         modem_data_obj.read_data_file(modem_data_fn)
 
         self.plot_period = modem_data_obj.period_list.copy()
@@ -585,7 +585,7 @@ class PTShapeFile(object):
 
         self._set_rotation_angle(rotation_angle)
 
-        modem_resp_obj = modem.Data()
+        modem_resp_obj = md.Data()
         modem_resp_obj.read_data_file(modem_resp_fn)
 
         # rotate model response
@@ -1101,7 +1101,7 @@ class TipperShapeFile(object):
 
             data_source.Destroy()
 
-            print 'Wrote shape file to {0}'.format(shape_fn)
+            print ('Wrote shape file to {0}'.format(shape_fn))
 
     def write_imag_shape_files(self):
         """
@@ -1242,7 +1242,7 @@ class TipperShapeFile(object):
 
             data_source.Destroy()
 
-            print 'Wrote shape file to {0}'.format(shape_fn)
+            print ('Wrote shape file to {0}'.format(shape_fn))
 
     def write_tip_shape_files_modem(self, modem_data_fn, rotation_angle=0.0):
         """
@@ -1250,7 +1250,7 @@ class TipperShapeFile(object):
 
         """
 
-        modem_obj = modem.Data()
+        modem_obj = md.Data()
         modem_obj.read_data_file(modem_data_fn)
 
         self.plot_period = modem_obj.period_list.copy()
@@ -1269,10 +1269,10 @@ class TipperShapeFile(object):
         write residual tipper files for modem
 
         """
-        modem_data_obj = modem.Data()
+        modem_data_obj = md.Data()
         modem_data_obj.read_data_file(modem_data_fn)
 
-        modem_resp_obj = modem.Data()
+        modem_resp_obj = md.Data()
         modem_resp_obj.read_data_file(modem_resp_fn)
 
         self.plot_period = modem_data_obj.period_list.copy()

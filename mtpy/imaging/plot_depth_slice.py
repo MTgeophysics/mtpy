@@ -8,8 +8,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.ticker import MultipleLocator
 
-from mtpy.modeling.modem import Data
-from mtpy.modeling.modem import Model
+from mtpy.modeling.modem_data import Data
+from mtpy.modeling.modem_model import Model
 
 try:
     from pyevtk.hl import gridToVTK, pointsToVTK
@@ -148,8 +148,8 @@ class PlotDepthSlice(object):
 
         self.plot_grid = kwargs.pop('plot_grid', 'n')
 
-        self.fig_size = kwargs.pop('fig_size', [6, 6])
-        self.fig_dpi = kwargs.pop('dpi', 300)
+        self.fig_size = kwargs.pop('fig_size', [5, 5])
+        self.fig_dpi = kwargs.pop('dpi', 200)
         self.fig_aspect = kwargs.pop('fig_aspect', 1)
         self.title = kwargs.pop('title', 'on')
         self.fig_list = []
