@@ -160,6 +160,9 @@ class Ui_SmartMT_MainWindow(object):
         self.actionCreate_Phase_Tensor_csv_file = QtGui.QAction(SmartMT_MainWindow)
         self.actionCreate_Phase_Tensor_csv_file.setEnabled(False)
         self.actionCreate_Phase_Tensor_csv_file.setObjectName(_fromUtf8("actionCreate_Phase_Tensor_csv_file"))
+        self.actionCreate_Measurement_csv_file = QtGui.QAction(SmartMT_MainWindow)
+        self.actionCreate_Measurement_csv_file.setEnabled(False)
+        self.actionCreate_Measurement_csv_file.setObjectName(_fromUtf8("actionCreate_Measurement_csv_file"))
         self.menuFile.addAction(self.actionNew_Project)
         self.menuFile.addAction(self.actionOpen_Project)
         self.menuFile.addAction(self.actionSave_Project)
@@ -173,6 +176,7 @@ class Ui_SmartMT_MainWindow(object):
         self.menuFile.addAction(self.actionExport_ModEM_Data)
         self.menuFile.addAction(self.actionCreate_Shape_File_From_Stations)
         self.menuFile.addAction(self.actionCreate_Phase_Tensor_csv_file)
+        self.menuFile.addAction(self.actionCreate_Measurement_csv_file)
         self.menuFile.addSeparator()
         self.menuFile.addAction(self.actionExit)
         self.menuView.addAction(self.actionShow_Data_Collection)
@@ -248,3 +252,8 @@ class Ui_SmartMT_MainWindow(object):
             _translate("SmartMT_MainWindow", "Create Phase Tensor .csv file...", None))
         self.actionCreate_Phase_Tensor_csv_file.setToolTip(
             _translate("SmartMT_MainWindow", "create phase tensor ellipse and tipper properties.", None))
+        self.actionCreate_Measurement_csv_file.setText(
+            _translate("SmartMT_MainWindow", "Create Measurement .csv file...", None))
+        self.actionCreate_Measurement_csv_file.setToolTip(_translate("SmartMT_MainWindow",
+                                                                     "Create .csv file from the selected stationss. the file will include Impedance, Apparent Resistivities and Phases",
+                                                                     None))

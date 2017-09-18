@@ -73,6 +73,14 @@
     <property name="title">
      <string>File</string>
     </property>
+       <widget class="QMenu" name="menuOther_Exports">
+           <property name="title">
+               <string>Other Exports...</string>
+           </property>
+           <addaction name="actionCreate_Shape_File_From_Stations"/>
+           <addaction name="actionCreate_Phase_Tensor_csv_file"/>
+           <addaction name="actionCreate_Measurement_csv_file"/>
+       </widget>
     <addaction name="actionNew_Project"/>
     <addaction name="actionOpen_Project"/>
     <addaction name="actionSave_Project"/>
@@ -84,8 +92,7 @@
     <addaction name="separator"/>
     <addaction name="actionExport"/>
     <addaction name="actionExport_ModEM_Data"/>
-       <addaction name="actionCreate_Shape_File_From_Stations"/>
-       <addaction name="actionCreate_Phase_Tensor_csv_file"/>
+       <addaction name="menuOther_Exports"/>
     <addaction name="separator"/>
     <addaction name="actionExit"/>
    </widget>
@@ -386,6 +393,19 @@
          </property>
          <property name="toolTip">
              <string>create phase tensor ellipse and tipper properties.</string>
+         </property>
+     </action>
+     <action name="actionCreate_Measurement_csv_file">
+         <property name="enabled">
+             <bool>false</bool>
+         </property>
+         <property name="text">
+             <string>Create Measurement .csv file...</string>
+         </property>
+         <property name="toolTip">
+             <string>Create .csv file from the selected stationss. the file will include Impedance, Apparent
+                 Resistivities and Phases
+             </string>
          </property>
      </action>
  </widget>
