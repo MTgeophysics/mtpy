@@ -588,42 +588,25 @@ class XML_Config(object):
     def _get_attr_keys(self, attribute):
         return [a_key for a_key in sorted(attribute.__dict__.keys()) 
                 if a_key not in ['_name', '_value', '_attr']]
-        
-#==============================================================================
-# Site
-#==============================================================================
-#class XML_Site(object):
-#    """
-#    Site
-#    """
-#
-#    def __init__(self, **kwargs):
-#        self.project = XML_element('Project', None, None)
-#        self.end_date = XML_element('End', None, None)
-#        self.id = XML_element('Id', None, None)
-#        self.Location = XML_Location()
-#        self.run_list = XML_element('RunList', None, None)
-#        self.start_date = XML_element('Start', None, None)
-#        self.survey = XML_element('Survey', None, None)
-#        self.year_collected = XML_element('YearCollected', None, None)
-#        self.acqby = XML_element('AcquiredBy', None, None)
-#
-#
-#class XML_Location(object):
-#    
-#    def __init__(self, **kwargs):
-#        self.latitude = XML_element('Latitude', None, None)
-#        self.longitude = XML_element('Longitude', None, None)
-#        self.elevation = XML_element('Elevation', {'units':'meters'}, None),
-#        self.declination = XML_element('Declination', {'epoch':'1995'}, None)
-#
-#class XML
 #==============================================================================
 #  EDI to XML
 #==============================================================================
 class MT_XML(XML_Config):
     """
-    convert an EDI file to XML format
+    Class to read and write MT information from XML format.  This tries to 
+    follow the format put forward by Anna Kelbert for archiving MT response 
+    data.
+    
+    A configuration file can be read in that might make it easier to write
+    multiple files for the same survey.  
+    
+   .. seealso:: mtpy.core.mt_xml.XML_Config
+   
+   =============== ============================================================
+   Methods         Description
+   =============== ============================================================ 
+   read_cfg
+   =============== ============================================================
     
     """
     
@@ -663,19 +646,6 @@ class MT_XML(XML_Config):
         
         for key in kwargs.keys():
             setattr(self, key, kwargs[key])
-                
-#    def read_edi(self, edi_fn=None):
-#        if edi_fn is not None:
-#            self.edi_fn = edi_fn
-#            
-#        self.edi_obj = mtedi.Edi(self.edi_fn)
-#        self.get_edi_info()
-        
-    def read_cfg(self, cfg_fn=None):
-        if cfg_fn is not None:
-            self.cfg_fn = cfg_fn
-
-        self.read_cfg_file(self.cfg_fn)
         
     def _get_name(self, name):
         if name.find('(') > 0:
@@ -690,102 +660,7 @@ class MT_XML(XML_Config):
         
         return name, meta_dict
         
-
-    
-    def get_edi_info(self, cfg_fn=None, edi_fn=None):
-        """
-        get information from config file and edi file
-        """
-        
-        if cfg_fn is not None:
-            self.cfg_fn = cfg_fn
-        if edi_fn is not None:
-            self.edi_fn = edi_fn
-            
-        if self.cfg_fn is not None:
-            self.read_cfg_file()
-        
-        # --> extract information from EDI files
-        # Site information
-        self.Site.DateCollected = XML_element('DateCollected', None, 
-                                        self.edi_obj.Header.acqdate)
-        self.Site.Id._value = self.edi_obj.station
-        self.Site.AcquiredBy._value = self.edi_obj.Header.acqby
-        self.Site.Start._value = self.edi_obj.Header.acqdate
-        self.Site.End._value = self.edi_obj.Header.acqdate
-        self.Site.RunList._value = '1'
-        self.Site.Location.Latitude._value = '{0:.6f}'.format(self.edi_obj.Header.lat)
-        self.Site.Location.Longitude._value = '{0:.6f}'.format(self.edi_obj.Header.lon)
-        self.Site.Location.Elevation._value = '{0:.3f}'.format(self.edi_obj.Header.elev)
-
-       
-        # processing information
-        self.ProcessingInfo.RemoteInfo.Project._value = self.Project._value       
-        self.ProcessingInfo.RemoteInfo.Survey._value = self.Survey._value
-        self.ProcessingInfo.RemoteInfo.YearCollected._value = self.Site.DateCollected._value
-        
-       
-        # Field Notes
-        self.FieldNotes.Magnetometer.HX = XML_element('HX', None, 
-                                                str(self.edi_obj.Define_measurement.meas_hx.id))
-        self.FieldNotes.Magnetometer.HY = XML_element('HY', None, 
-                                                str(self.edi_obj.Define_measurement.meas_hy.id))
-        try:        
-            self.cfg_obj.FieldNotes.Magnetometer.HZ = XML_element('HZ', None,
-                                                            str(self.edi_obj.Define_measurement.meas_hz.id))
-        except AttributeError:
-            pass
-        #TODO: need to fill in more information on dipoles and magnetometers        
-        
-        # Input Channels
-        attr_dict = {'name':'hx', 
-                     'z': '{0:.1f}'.format(0),
-                     'y':'{0:.1f}'.format(self.edi_obj.Define_measurement.meas_hx.y),
-                     'x':'{0:.1f}'.format(self.edi_obj.Define_measurement.meas_hx.x),
-                     'orientation':'{0:.1f}'.format(self.edi_obj.Define_measurement.meas_hx.azm)}
-        self.InputChannels.Magnetic_HX = XML_element('Magnetic', attr_dict, None)
-        
-        attr_dict = {'name':'hy', 
-                     'z': '{0:.1f}'.format(0),
-                     'y':'{0:.1f}'.format(self.edi_obj.Define_measurement.meas_hy.y),
-                     'x':'{0:.1f}'.format(self.edi_obj.Define_measurement.meas_hy.x),
-                     'orientation':'{0:.1f}'.format(self.edi_obj.Define_measurement.meas_hy.azm)}
-        self.InputChannels.Magnetic_HY = XML_element('Magnetic', attr_dict, None)
-        
-        # Output Channels
-        try:
-            attr_dict = {'name':'hz', 
-                         'z': '{0:.1f}'.format(0),
-                         'y':'{0:.1f}'.format(self.edi_obj.Define_measurement.meas_hz.y),
-                         'x':'{0:.1f}'.format(self.edi_obj.Define_measurement.meas_hz.x),
-                         'orientation':'{0:.1f}'.format(self.edi_obj.Define_measurement.meas_hz.azm)}
-            self.OutputChannels.Magnetic_HZ = XML_element('Magnetic', attr_dict, None)
-        except AttributeError:
-            print 'No HZ Information'
-        
-        attr_dict = {'name':'ex', 
-                     'z': '{0:.1f}'.format(0),
-                     'y':'{0:.1f}'.format(self.edi_obj.Define_measurement.meas_ex.y),
-                     'x':'{0:.1f}'.format(self.edi_obj.Define_measurement.meas_ex.x),
-                     'x2':'{0:.1f}'.format(self.edi_obj.Define_measurement.meas_ex.y2),
-                     'y2':'{0:.1f}'.format(self.edi_obj.Define_measurement.meas_ex.x2)}
-        self.OutputChannels.Electric_EX = XML_element('Electric', attr_dict, None)
-                                                       
-        attr_dict = {'name':'ey', 
-                     'z': '{0:.1f}'.format(0),
-                     'y':'{0:.1f}'.format(self.edi_obj.Define_measurement.meas_ey.y),
-                     'x':'{0:.1f}'.format(self.edi_obj.Define_measurement.meas_ey.x),
-                     'x2':'{0:.1f}'.format(self.edi_obj.Define_measurement.meas_ey.y2),
-                     'y2':'{0:.1f}'.format(self.edi_obj.Define_measurement.meas_ey.x2)}
-        self.OutputChannels.Electric_EY = XML_element('Electric', attr_dict, None)
-   
-        self.PeriodRange._attr = {'min':'{0:.5g}'.format(1./self.edi_obj.Z.freq.max()),
-                                  'max':'{0:.5g}'.format(1./self.edi_obj.Z.freq.min()),
-                                  'units':'seconds'}
-
-        self.format_data()
-        
-    def format_data(self):
+    def _format_data(self):
         """
         format the Z and tipper data apporpriately
         """
@@ -921,7 +796,7 @@ class MT_XML(XML_Config):
                                     XML_element('value', c_dict, c_value)) 
                             count += 1
         
-    def write_element(self, parent_et, XML_element_obj):
+    def _write_element(self, parent_et, XML_element_obj):
         """
         make a new element 
         """
@@ -933,21 +808,18 @@ class MT_XML(XML_Config):
         new_element.text = XML_element_obj._value
         return new_element
 
-    def write_xml(self, xml_fn, cfg_fn=None):
+    def write_xml_file(self, xml_fn, cfg_fn=None):
         """
         write xml from edi
         """
-        if xml_fn is not None:
-            self.xml_fn = xml_fn
         if cfg_fn is not None:
             self.cfg_fn = cfg_fn
+            self.read_cfg_file()
         
         self.xml_fn = xml_fn
-        
-        if self.cfg_fn is not None:
-            self.read_cfg_file()
 
-        self.format_data()
+        # get data inot xml format
+        self._format_data()
 
         # make the top of the tree element        
         emtf = ET.Element('EM_TF')
@@ -957,121 +829,47 @@ class MT_XML(XML_Config):
             # get the information for the given element
             d_00_obj = getattr(self, element)
             
-            element_00 = self.write_element(emtf, d_00_obj)
+            element_00 = self._write_element(emtf, d_00_obj)
 
             key_00_list = self._get_attr_keys(d_00_obj)
             if len(key_00_list) !=0:
                 for key_00 in key_00_list:
                     d_01_obj = getattr(d_00_obj, key_00)
-                    element_01 = self.write_element(element_00, d_01_obj)
+                    element_01 = self._write_element(element_00, d_01_obj)
                     
                     key_01_list = self._get_attr_keys(d_01_obj)
                     if len(key_01_list) !=0:
                         for key_01 in key_01_list:
                             d_02_obj = getattr(d_01_obj, key_01)
-                            element_02 = self.write_element(element_01, d_02_obj)
+                            element_02 = self._write_element(element_01, d_02_obj)
                             
                             key_02_list = self._get_attr_keys(d_02_obj)
                             if len(key_02_list) !=0:
                                 for key_02 in key_02_list:
                                     d_03_obj = getattr(d_02_obj, key_02)
-                                    element_03 = self.write_element(element_02, d_03_obj)
+                                    element_03 = self._write_element(element_02, d_03_obj)
                                     
                                     key_03_list = self._get_attr_keys(d_03_obj)
                                     if len(key_03_list) !=0:
                                         for key_03 in key_03_list:
                                             d_04_obj = getattr(d_03_obj, key_03)
-                                            element_04 = self.write_element(element_03, d_04_obj)
+                                            element_04 = self._write_element(element_03, d_04_obj)
                                     
                                             key_04_list = self._get_attr_keys(d_04_obj)
                                             if len(key_04_list) !=0:
                                                 for key_04 in key_04_list:
                                                     d_05_obj = getattr(d_04_obj, key_04)
-                                                    element_05 = self.write_element(element_04, d_05_obj)
+                                                    element_05 = self._write_element(element_04, d_05_obj)
                 
   
         #--> write xml file
         with open(self.xml_fn, 'w') as fid:
             fid.write(ET.tostring(emtf))
         
-        print '-'*50
+        print '-'*72
         print '    Wrote xml file to: {0}'.format(self.xml_fn)
-        print '-'*50
+        print '-'*72
        
-    def write_xml_from_edi(self, edi_fn=None, xml_fn=None, cfg_fn=None):
-        """
-        write xml from edi
-        """
-        if edi_fn is not None:
-            self.edi_fn = edi_fn
-        if xml_fn is not None:
-            self.xml_fn = xml_fn
-        if edi_fn is not None:
-            self.cfg_fn = cfg_fn
-        
-        if self.xml_fn is None:
-            self.xml_fn = '{0}.xml'.format(self.edi_fn[0:-4])
-        
-        if self.cfg_fn is not None:
-            self.read_cfg_file()
-            
-        if self.edi_fn is not None:
-            self.read_edi()
-        else:
-            raise MT_XML_Error('Need to input an EDI file to convert')
-
-        # make the top of the tree element        
-        emtf = ET.Element('EM_TF')
-        
-        # loop over the important information sections
-        for element in self._order_list:
-            # get the information for the given element
-            d_00_obj = getattr(self, element)
-            
-            element_00 = self.write_element(emtf, d_00_obj)
-
-            key_00_list = self._get_attr_keys(d_00_obj)
-            if len(key_00_list) !=0:
-                for key_00 in key_00_list:
-                    d_01_obj = getattr(d_00_obj, key_00)
-                    element_01 = self.write_element(element_00, d_01_obj)
-                    
-                    key_01_list = self._get_attr_keys(d_01_obj)
-                    if len(key_01_list) !=0:
-                        for key_01 in key_01_list:
-                            d_02_obj = getattr(d_01_obj, key_01)
-                            element_02 = self.write_element(element_01, d_02_obj)
-                            
-                            key_02_list = self._get_attr_keys(d_02_obj)
-                            if len(key_02_list) !=0:
-                                for key_02 in key_02_list:
-                                    d_03_obj = getattr(d_02_obj, key_02)
-                                    element_03 = self.write_element(element_02, d_03_obj)
-                                    
-                                    key_03_list = self._get_attr_keys(d_03_obj)
-                                    if len(key_03_list) !=0:
-                                        for key_03 in key_03_list:
-                                            d_04_obj = getattr(d_03_obj, key_03)
-                                            element_04 = self.write_element(element_03, d_04_obj)
-                                    
-                                            key_04_list = self._get_attr_keys(d_04_obj)
-                                            if len(key_04_list) !=0:
-                                                for key_04 in key_04_list:
-                                                    d_05_obj = getattr(d_04_obj, key_04)
-                                                    element_05 = self.write_element(element_04, d_05_obj)
-                
-  
-        #--> write xml file
-        with open(self.xml_fn, 'w') as fid:
-            fid.write(ET.tostring(emtf))
-        
-        print '-'*50
-        print '    Wrote xml file to: {0}'.format(self.xml_fn)
-        print '-'*50
-#        # make a nice print out
-#        reparsed = minidom.parseString(ET.tostring(emtf, 'utf-8'))
-#        print(reparsed.toprettyxml(indent='    ')) 
-        
     def read_xml_file(self, xml_fn):
         """
         read in an xml file and set attributes appropriately.
