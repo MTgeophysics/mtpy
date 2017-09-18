@@ -22,9 +22,11 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 import mtpy.modeling.elevation_util as elev_util
 import mtpy.modeling.ws3dinv as ws
 import mtpy.utils.gocad as mtgocad
+import mtpy.utils.calculator as mtcc
 import mtpy.utils.latlon_utm_conversion as utm2ll
 from mtpy.modeling.modem_data import Data
 from mtpy.utils.mtpylog import MtPyLog
+
 
 try:
     from evtk.hl import gridToVTK, pointsToVTK
@@ -323,8 +325,9 @@ class Model(object):
         for ii in range(1, pad_east + 1):
             east_0 = float(east_gridr[-1])
             west_0 = float(east_gridr[0])
-            add_size = np.round(self.cell_size_east * self.pad_stretch_h * ii, -2) # -2 round to decimal left
-#            add_size = np.round(self.cell_size_east * self.pad_stretch_h ** ii, 2)
+#            add_size = np.round(self.cell_size_east * self.pad_stretch_h * ii, -2) # -2 round to decimal left
+            # round to the nearest 2 significant figures
+            add_size = mtcc.roundsf(self.cell_size_east * self.pad_stretch_h ** ii, 2)
             pad_w = west_0 - add_size
             pad_e = east_0 + add_size
             east_gridr = np.insert(east_gridr, 0, pad_w)
@@ -356,8 +359,9 @@ class Model(object):
         for ii in range(1, pad_north + 1):
             south_0 = float(north_gridr[0])
             north_0 = float(north_gridr[-1])
-            add_size = np.round(self.cell_size_north *self.pad_stretch_h * ii, -2)
-#            add_size = np.round(self.cell_size_north * self.pad_stretch_h ** ii, 2)
+#            add_size = np.round(self.cell_size_north *self.pad_stretch_h * ii, -2)
+            # round to the nearest 2 significant figures
+            add_size = mtcc.roundsf(self.cell_size_north * self.pad_stretch_h ** ii, 2)
             pad_s = south_0 - add_size
             pad_n = north_0 + add_size
             north_gridr = np.insert(north_gridr, 0, pad_s)
@@ -584,6 +588,7 @@ class Model(object):
             counter += 1
             if counter > 1e6:
                 break
+
         
         z_nodes = np.around(log_z[log_z<100],decimals=-int(np.floor(np.log10(self.z1_layer))))
         z_nodes = np.append(z_nodes, np.around(log_z[log_z >= 100],decimals=-2))
@@ -595,13 +600,13 @@ class Model(object):
         #padding cells in the vertical direction
         for ii in range(1, self.pad_z+1):
             z_0 = np.float(z_nodes[itp])
-            pad_d = np.round(z_0*self.pad_stretch_v*ii, -2)
+            pad_d = np.round(z_0*self.pad_stretch_v**ii, -2)
             z_nodes = np.append(z_nodes, pad_d)                  
         
         # add air layers and define ground surface level.
         # initial layer thickness is same as z1_layer
         z_nodes = np.hstack([[self.z1_layer]*self.n_airlayers,z_nodes])
-        
+
         #make an array of absolute values
         z_grid = np.array([z_nodes[:ii].sum() for ii in range(z_nodes.shape[0]+1)])
         
@@ -705,7 +710,7 @@ class Model(object):
             print("self.grid_z[0:2]", self.grid_z[0:2])
 
             # add new air layers, cut_off some tailing layers to preserve array size.
-            self.grid_z = np.concatenate([new_airlayers, self.grid_z[:-self.n_airlayers]], axis=0)
+            self.grid_z = np.concatenate([new_airlayers, self.grid_z[self.n_airlayers:] - self.grid_z[self.n_airlayers]], axis=0)
             print(" NEW self.grid_z shape and values = ", self.grid_z.shape, self.grid_z)
 
             # adjust the nodes, which is simply the diff of adjacent grid lines
