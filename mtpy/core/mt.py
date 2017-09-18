@@ -888,28 +888,97 @@ class MT(object):
                     value = i_obj.value
                     setattr(self.FieldNotes.DataLogger, name, value)
                     
-            elif f_attr.lower() == 'electrode':
-                for e_attr in xml_obj.FieldNotes.Electrode.__dict__.keys():
+            elif 'dipole' in f_attr.lower():
+                xml_d_obj = getattr(xml_obj.FieldNotes, f_attr)
+                azm = 0.0
+                length = 0.0
+                try:
+                    comp = xml_d_obj.attr['name'].lower()
+                except KeyError:
+                    comp = 'ex'
+                try:
+                    t = xml_d_obj.attr['type'].lower()
+                    if comp == 'ex':
+                        setattr(self.FieldNotes.Electrode_ex, 'type', t)
+                    elif comp == 'ey':
+                        setattr(self.FieldNotes.Electrode_ey, 'type', t)
+                except KeyError:
+                    pass
+                    
+                for e_attr in xml_d_obj.__dict__.keys():
                     if e_attr in ['_name', '_attr', '_value']:
                         continue
-                    e_obj = getattr(xml_obj.FieldNotes.Electrode, e_attr)
+                    e_obj = getattr(xml_d_obj, e_attr)
                     name = e_obj.name.lower()
                     value = e_obj.value
                     
-                    setattr(self.FieldNotes.Electrode_ex, name, value)
-                    setattr(self.FieldNotes.Electrode_ey, name, value)
+                    if name ==  'azimuth':
+                        azm = float(value)
+                        
+                    if name == 'length':
+                        length = float(value)
+                    
+                    if comp == 'ex':
+                        setattr(self.FieldNotes.Electrode_ex, name, value)
+                    elif comp == 'ey':
+                        setattr(self.FieldNotes.Electrode_ey, name, value)
+                        
+                # need to set x, y, x2, y2
+                x = 0
+                y = 0
+                x2 = length*np.cos(np.deg2rad(azm))
+                y2 = length*np.sin(np.deg2rad(azm)) 
+                
+                for name, value in zip(['x', 'y', 'x2', 'y2'], [x, y, x2, y2]):
+                    if comp == 'ex':
+                        setattr(self.FieldNotes.Electrode_ex, name, value)
+                    elif comp == 'ey':
+                        setattr(self.FieldNotes.Electrode_ey, name, value)
             
-            elif f_attr.lower() == 'magnetometer':
-                for m_attr in xml_obj.FieldNotes.Magnetometer.__dict__.keys():
+            elif 'magnetometer' in f_attr.lower():
+                xml_d_obj = getattr(xml_obj.FieldNotes, f_attr)
+                try:
+                    comp = xml_d_obj.attr['name'].lower()
+                except KeyError:
+                    try:
+                        comp = xml_d_obj.attr['type'].lower()
+                    except KeyError:
+                        comp = 'hx'
+                        
+                try:
+                    t = xml_d_obj.attr['type'].lower()
+                    if comp == 'hx':
+                        setattr(self.FieldNotes.Magnetometer_hx, 'type', t)
+                    elif comp == 'hy':
+                        setattr(self.FieldNotes.Magnetometer_hy, 'type', t)
+                    elif comp == 'hz':
+                        setattr(self.FieldNotes.Magnetometer_hz, 'type', t)
+                    elif comp == 'fluxgate':
+                        setattr(self.FieldNotes.Magnetometer_hx, 'type', t)
+                        setattr(self.FieldNotes.Magnetometer_hy, 'type', t)
+                        setattr(self.FieldNotes.Magnetometer_hz, 'type', t)
+                    else:
+                        pass
+                except KeyError:
+                    pass
+                        
+                for m_attr in xml_d_obj.__dict__.keys():
                     if m_attr in ['_name', '_attr', '_value']:
                         continue
                     m_obj = getattr(xml_obj.FieldNotes.Magnetometer, m_attr)
                     name = m_obj.name.lower()
                     value = m_obj.value
                     
-                    setattr(self.FieldNotes.Magnetometer_hx, name, value)
-                    setattr(self.FieldNotes.Magnetometer_hy, name, value)
-                    setattr(self.FieldNotes.Magnetometer_hz, name, value)
+                    if comp == 'hx':
+                        setattr(self.FieldNotes.Magnetometer_hx, name, value)
+                    elif comp == 'hy':
+                        setattr(self.FieldNotes.Magnetometer_hy, name, value)
+                    elif comp == 'hz':
+                        setattr(self.FieldNotes.Magnetometer_hz, name, value)
+                    elif comp == 'fluxgate':
+                        setattr(self.FieldNotes.Magnetometer_hx, name, value)
+                        setattr(self.FieldNotes.Magnetometer_hy, name, value)
+                        setattr(self.FieldNotes.Magnetometer_hz, name, value)
                     
             elif 'dataquality' in f_attr.lower():
                 obj = getattr(xml_obj.FieldNotes, f_attr)
@@ -1046,24 +1115,116 @@ class MT(object):
                 
                 setattr(self.Processing, name, value)
                 
-    def _xml_set_site(self, xml_obj):
+    def write_xml_file(self, xml_fn):
         
-        xml_obj.Site.Project.value = self.Site.project
-        xml_obj.Site.Survey.value = self.Site.survey
-        xml_obj.Site.Id.value = self.Site.id
-        xml_obj.Site.AcquiredBy.value = self.Site.acquired_by
-        xml_obj.Site.Start.value = self.Site.start_date
-        xml_obj.Site.End.value = self.Site.end_date
-        xml_obj.Site.RunList.value = self.Site.run_list
-        xml_obj.Site.Location.Latitude.value = self.lat
-        xml_obj.Site.Location.Longitude.value = self.lon
-        xml_obj.Site.Location.Elevation.value = self.elev
-        xml_obj.Site.Location.Elevation.attr = {'units':self.Site.Location.elev_units}
-        xml_obj.Site.Location.Declination.value = self.Site.Location.declination
-        xml_obj.Site.Location.Declination.attr = {'epoch':self.Site.Location.declination_epoch}
+        xml_obj = MTxml.MT_XML()
+        
+        xml_obj = self._xml_set_site(xml_obj)
+        xml_obj = self._xml_set_field_notes(xml_obj)
         
         return xml_obj
                 
+    def _xml_set_site(self, xml_obj):
+        
+        xml_obj.Site.Project._value = self.Site.project
+        xml_obj.Site.Survey._value = self.Site.survey
+        xml_obj.Site.Id._value = self.Site.id 
+        xml_obj.Site.AcquiredBy._value = self.Site.acquired_by
+        xml_obj.Site.Start._value = self.Site.start_date
+        xml_obj.Site.End._value = self.Site.end_date
+        xml_obj.Site.RunList._value = self.Site.run_list
+        xml_obj.Site.Location.Latitude._value = self.lat
+        xml_obj.Site.Location.Longitude._value = self.lon
+        xml_obj.Site.Location.Elevation._value = self.elev
+        xml_obj.Site.Location.Elevation._attr = {'units':self.Site.Location.elev_units}
+        xml_obj.Site.Location.Declination._value = self.Site.Location.declination
+        xml_obj.Site.Location.Declination._attr = {'epoch':self.Site.Location.declination_epoch}
+        
+        return xml_obj
+    
+    def _xml_set_field_notes(self, xml_obj):
+        
+        xml_obj.FieldNotes.Instrument.Type._value = self.FieldNotes.DataLogger.type
+        xml_obj.FieldNotes.Instrument.Id._value = self.FieldNotes.DataLogger.id
+        xml_obj.FieldNotes.Instrument.Manufacturer._value = self.FieldNotes.DataLogger.manufacturer
+        
+        # EX
+        xml_obj.FieldNotes.Dipole.Type._value = self.FieldNotes.Electrode_ex.type
+        xml_obj.FieldNotes.Dipole.Id._value = self.FieldNotes.Electrode_ex.id
+        xml_obj.FieldNotes.Dipole.Manufacturer._value = self.FieldNotes.Electrode_ex.manufacturer
+        xml_obj.FieldNotes.Dipole._attr = {'name':'EX'}
+        length = np.sqrt((self.FieldNotes.Electrode_ex.x2-self.FieldNotes.Electrode_ex.x)**2+\
+                         (self.FieldNotes.Electrode_ex.y2-self.FieldNotes.Electrode_ex.y)**2)
+        xml_obj.FieldNotes.Dipole.Length._value = length
+        azm = np.arctan((self.FieldNotes.Electrode_ex.y2-self.FieldNotes.Electrode_ex.y)/\
+                        (self.FieldNotes.Electrode_ex.x2-self.FieldNotes.Electrode_ex.x))
+        xml_obj.FieldNotes.Dipole.Azimuth._value = np.degrees(azm)
+        xml_obj.FieldNotes.Dipole.Channel._value = self.FieldNotes.Electrode_ex.acqchan
+        
+        # EY
+        xml_obj.FieldNotes.Dipole_00.Type._value = self.FieldNotes.Electrode_ey.type
+        xml_obj.FieldNotes.Dipole_00.Id._value = self.FieldNotes.Electrode_ey.id
+        xml_obj.FieldNotes.Dipole_00.Manufacturer._value = self.FieldNotes.Electrode_ey.manufacturer
+        xml_obj.FieldNotes.Dipole_00._attr = {'name':'EY'}
+        length = np.sqrt((self.FieldNotes.Electrode_ey.x2-self.FieldNotes.Electrode_ey.x)**2+\
+                         (self.FieldNotes.Electrode_ey.y2-self.FieldNotes.Electrode_ey.y)**2)
+        xml_obj.FieldNotes.Dipole_00.Length._value = length
+        azm = np.arctan((self.FieldNotes.Electrode_ey.y2-self.FieldNotes.Electrode_ey.y)/\
+                        (self.FieldNotes.Electrode_ey.x2-self.FieldNotes.Electrode_ey.x))
+        xml_obj.FieldNotes.Dipole_00.Azimuth._value = np.degrees(azm)
+        xml_obj.FieldNotes.Dipole_00.Channel._value = self.FieldNotes.Electrode_ey.acqchan
+        
+        # HX
+        xml_obj.FieldNotes.Magnetometer.Type._value = self.FieldNotes.Magnetometer_hx.type
+        xml_obj.FieldNotes.Magnetometer.Id._value = self.FieldNotes.Magnetometer_hx.id
+        xml_obj.FieldNotes.Magnetometer.Manufacturer._value = self.FieldNotes.Magnetometer_hx.manufacturer
+        xml_obj.FieldNotes.Magnetometer._attr = {'name':'HX'}
+        xml_obj.FieldNotes.Magnetometer.Azimuth._value = self.FieldNotes.Magnetometer_hx.azm
+        xml_obj.FieldNotes.Magnetometer.Channel._value = self.FieldNotes.Magnetometer_hx.acqchan
+        
+        # HY
+        xml_obj.FieldNotes.Magnetometer_00.Type._value = self.FieldNotes.Magnetometer_hy.type
+        xml_obj.FieldNotes.Magnetometer_00.Id._value = self.FieldNotes.Magnetometer_hy.id
+        xml_obj.FieldNotes.Magnetometer_00.Manufacturer._value = self.FieldNotes.Magnetometer_hy.manufacturer
+        xml_obj.FieldNotes.Magnetometer_00._attr = {'name':'HY'}
+        xml_obj.FieldNotes.Magnetometer_00.Azimuth._value = self.FieldNotes.Magnetometer_hy.azm
+        xml_obj.FieldNotes.Magnetometer_00.Channel._value = self.FieldNotes.Magnetometer_hy.acqchan
+       
+        # HZ
+        xml_obj.FieldNotes.Magnetometer_01.Type._value = self.FieldNotes.Magnetometer_hz.type
+        xml_obj.FieldNotes.Magnetometer_01.Id._value = self.FieldNotes.Magnetometer_hz.id
+        xml_obj.FieldNotes.Magnetometer_01.Manufacturer._value = self.FieldNotes.Magnetometer_hz.manufacturer
+        xml_obj.FieldNotes.Magnetometer_01._attr = {'name':'HZ'}
+        xml_obj.FieldNotes.Magnetometer_01.Azimuth._value = self.FieldNotes.Magnetometer_hz.azm
+        xml_obj.FieldNotes.Magnetometer_01.Channel._value = self.FieldNotes.Magnetometer_hz.acqchan
+        
+        
+        # Data Quality Notes
+        xml_obj.FieldNotes.DataQualityNotes.Rating._value = self.FieldNotes.DataQuality.rating
+        xml_obj.FieldNotes.DataQualityNotes.GoodFromPeriod._value = self.FieldNotes.DataQuality.good_from_period
+        xml_obj.FieldNotes.DataQualityNotes.GoodToPeriod._value = self.FieldNotes.DataQuality.good_to_period
+        xml_obj.FieldNotes.DataQualityNotes.Comments._value = self.FieldNotes.DataQuality.comments
+        xml_obj.FieldNotes.DataQualityNotes.Comments._attr = {'author':self.FieldNotes.DataQuality.author}
+        # Data Quality Warnings
+        xml_obj.FieldNotes.DataQualityWarnings.Flag._value = self.FieldNotes.DataQuality.warnings_flag
+        xml_obj.FieldNotes.DataQualityWarnings.Comments._value = self.FieldNotes.DataQuality.warnings_comments
+        xml_obj.FieldNotes.DataQualityWarnings.Comments._attr = {'author':self.FieldNotes.DataQuality.author}
+       
+        return xml_obj
+        
+    def _xml_set_processing(self, xml_obj):
+        
+        xml_obj.ProcessingInfo.ProcessedBy._value = self.Processing.processed_by
+        xml_obj.ProcessingInfo.ProcessingSoftware.Name._value = self.Processing.Software.name
+        xml_obj.ProcessingInfo.ProcessingSoftware.Author._value = self.Processing.Software.author
+        xml_obj.ProcessingInfo.ProcessingSoftware.Version._value = self.Processing.Software.version
+        
+        xml_obj.ProcessingInfo.SignConvention._value = self.Processing.sign_convention
+        xml_obj.ProcessingInfo.RemoteInfo._value = self.Processing.RemoteSite.id
+        
+        
+        return xml_obj
+    
     def read_cfg_file(self, cfg_fn):
         """
         read in a configuration file and populate properties
@@ -1659,6 +1820,7 @@ class DataQuality(object):
         self.rating = None
         self.warnings_comments = None
         self.warnings_flag = 0
+        self.author = None
         
         for key in kwargs.keys():
             setattr(self, key, kwargs[key])
@@ -1836,6 +1998,7 @@ class Processing(object):
     def __init__(self, **kwargs):
         self.Software = Software()
         self.notes = None
+        self.processed_by = None
         self.sign_convention = 'exp(+i \omega t)'
         self.remote_reference = None
         self.RemoteSite = Site()
