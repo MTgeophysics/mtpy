@@ -79,6 +79,7 @@ class StartQt4(QtGui.QMainWindow):
         self.ui.actionExport.triggered.connect(self._export_image)
         self.ui.actionExport_ModEM_Data.triggered.connect(self._export_modem)
         self.ui.actionCreate_Shape_File_From_Stations.triggered.connect(self._export_shape_file)
+        self.ui.actionCreate_Phase_Tensor_csv_file.triggered.connect(self._export_phase_tensor_csv)
         # not yet impleneted
         self.ui.actionAbout.triggered.connect(self.dummy_action)
         self.ui.actionClose_Project.triggered.connect(self.dummy_action)
@@ -90,10 +91,38 @@ class StartQt4(QtGui.QMainWindow):
         self.ui.actionSave_as_Project.triggered.connect(self.dummy_action)
         self.ui.actionSave_Project.triggered.connect(self.dummy_action)
 
+    def _export_phase_tensor_csv(self):
+        dialog = QtGui.QFileDialog(self)
+        file_name = None
+        dialog.setWindowTitle("Selecting Output Directory ...")
+        dialog.setNameFilters(["Comma-separated values (*.csv)", "Plain Text (*.txt)", "All files (*.*)"])
+        dialog.selectNameFilter("Comma-separated values (*.csv)")
+        while file_name is None:
+            file_name = dialog.getSaveFileName()
+            file_name = str(file_name)
+            if os.path.exists(file_name):
+                reply = QtGui.QMessageBox.question(
+                    self,
+                    "File Exists",
+                    "File exists, do you want to overwrite it?",
+                    QtGui.QMessageBox.Cancel, QtGui.QMessageBox.Yes
+                )
+                if reply == QtGui.QMessageBox.Cancel:
+                    file_name = None  # will ask another
+        collect = EdiCollection(
+            mt_objs=[
+                self._file_handler.get_MT_obj(self._file_handler.station2ref(station))
+                for station in self._station_viewer.selected_stations
+            ]
+        )
+        dir_name = os.path.dirname(file_name)
+        collect.create_phase_tensor_csv(dir_name, os.path.basename(file_name))
+        webbrowser.open(dir_name)
+
     def _export_shape_file(self, *args, **kwargs):
         dialog = QtGui.QFileDialog(self)
         dir_name = None
-        dialog.setWindowTitle("Select Output Directory ...")
+        dialog.setWindowTitle("Selecting Output Directory ...")
         dialog.setFileMode(QtGui.QFileDialog.DirectoryOnly)
         while dir_name is None:
             if dialog.exec_() == QtGui.QDialog.Accepted:
@@ -275,6 +304,7 @@ class StartQt4(QtGui.QMainWindow):
         self.ui.actionPlot.setEnabled(enable)
         self.ui.actionExport_ModEM_Data.setEnabled(enable)
         self.ui.actionCreate_Shape_File_From_Stations.setEnabled(enable)
+        self.ui.actionCreate_Phase_Tensor_csv_file.setEnabled(enable)
 
     def create_subwindow(self, widget, title, overide=True, tooltip=None):
         subwindow = None

@@ -85,6 +85,7 @@
     <addaction name="actionExport"/>
     <addaction name="actionExport_ModEM_Data"/>
        <addaction name="actionCreate_Shape_File_From_Stations"/>
+       <addaction name="actionCreate_Phase_Tensor_csv_file"/>
     <addaction name="separator"/>
     <addaction name="actionExit"/>
    </widget>
@@ -374,6 +375,17 @@
          </property>
          <property name="text">
              <string>Create Shape File From Stations...</string>
+         </property>
+     </action>
+     <action name="actionCreate_Phase_Tensor_csv_file">
+         <property name="enabled">
+             <bool>false</bool>
+         </property>
+         <property name="text">
+             <string>Create Phase Tensor .csv file...</string>
+         </property>
+         <property name="toolTip">
+             <string>create phase tensor ellipse and tipper properties.</string>
          </property>
      </action>
  </widget>

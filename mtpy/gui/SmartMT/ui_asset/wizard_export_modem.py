@@ -928,9 +928,10 @@ class Ui_Wizard_esport_modem(object):
         self.wizardPage_data.setTitle(_translate("Wizard_esport_modem", "Other Data Settings", None))
         self.groupBox_5.setTitle(_translate("Wizard_esport_modem", "Data File Format", None))
         self.radioButton_format_1.setText(_translate("Wizard_esport_modem", "ModEM Data Format", None))
-        self.radioButton_format_2.setToolTip(_translate("Wizard_esport_modem",
-                                                        "<html><head/><body><p>This option is currently disabled due to its campatiblity issues.</p></body></html>",
-                                                        None))
+        self.radioButton_format_2.setToolTip(
+            _translate("Wizard_esport_modem", "<html><head/><body><p>This option is currently disabled due to its\n"
+                                              "                      campatiblity issues.</p></body></html>\n"
+                                              "                  ", None))
         self.radioButton_format_2.setText(_translate("Wizard_esport_modem", "Type 2 (Possibly Compatible with WSINV3DMT)", None))
         self.groupBox_12.setTitle(_translate("Wizard_esport_modem", "EPSG", None))
         self.wizardPage_mesh.setTitle(_translate("Wizard_esport_modem", "Mesh Settings", None))
@@ -1069,9 +1070,11 @@ class Ui_Wizard_esport_modem(object):
         self.spinBox_smoothing_number.setToolTip(_translate("Wizard_esport_modem", "<html><head/><body><p>Number of times the smoothing should be applied\n"
 "                      (1 interger &gt;= 0)</p></body></html>\n"
 "                  ", None))
-        self.label_14.setText(_translate("Wizard_esport_modem",
-                                         "<html><head/><body><p>Please select a ETOPO1 .asc file, which can be download from <a href=\"https://maps.ngdc.noaa.gov/viewers/wcs-client/\"><span style=\" text-decoration: underline; color:#0000ff;\">https://maps.ngdc.noaa.gov/viewers/wcs-client/</span></a></p></body></html>",
-                                         None))
+        self.label_14.setText(
+            _translate("Wizard_esport_modem", "<html><head/><body><p>Please select a ETOPO1 .asc file, which can be\n"
+                                              "                       download from <a href=\"https://maps.ngdc.noaa.gov/viewers/wcs-client/\"><span\n"
+                                              "                       style=\" text-decoration: underline; color:#0000ff;\">https://maps.ngdc.noaa.gov/viewers/wcs-client/</span></a></p></body></html>\n"
+                                              "                   ", None))
         self.wizardPage_output.setTitle(_translate("Wizard_esport_modem", "Output", None))
         self.wizardPage_output.setSubTitle(_translate("Wizard_esport_modem", "Plsease select the output directry and the new folder that will be created to save all the data files for\n"
 "           ModEM.\n"
