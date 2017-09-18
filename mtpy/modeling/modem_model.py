@@ -138,7 +138,15 @@ class Model(object):
 
         # padding cells on either side
         self.pad_east = kwargs.pop('pad_east', 7)
-        self.pad_north = kwargs.pop('pad_north', 7)
+        # set a default value
+        if type(self.pad_east) in [float,int]:
+            self.pad_east = [7.5, self.pad_east]
+            
+        self.pad_north = kwargs.pop('pad_north', [7.5, 7])
+        # set a default value
+        if type(self.pad_north) in [float,int]:
+            self.pad_north = [7.5, self.pad_north]
+            
         self.pad_z = kwargs.pop('pad_z', 4)
 
         # root of padding cells
@@ -260,10 +268,15 @@ class Model(object):
         """
 
         # find the edges of the grid: bounding box of the survey area.
-        nc_extra = 15/2.  # extra cells around the stations area
+        # first define some parameters. nc_extra_east and nc_extra_north is the number of cells outside the station
+        # area (but with same cell size as inner cells - not padding). pad_east and pad_north is
+        # number of padding cells, that increase with distance outward.
+        nc_extra_east, pad_east = self.pad_east
+        nc_extra_north, pad_north = self.pad_north
+        
         if self.cell_number_ew is None:
-            west = self.station_locations['rel_east'].min() - self.cell_size_east * nc_extra
-            east = self.station_locations['rel_east'].max() + self.cell_size_east * nc_extra
+            west = self.station_locations['rel_east'].min() - self.cell_size_east * nc_extra_east
+            east = self.station_locations['rel_east'].max() + self.cell_size_east * nc_extra_east
         else:
             logger.debug("user specified cell number in east-west mesh %s", self.cell_number_ew)
             center_ew= 0.5*(self.station_locations['rel_east'].min() + self.station_locations['rel_east'].max())
@@ -272,8 +285,8 @@ class Model(object):
             east = center_ew + self.cell_size_east *cellnumb
 
         if self.cell_number_ns is None:
-            south = self.station_locations['rel_north'].min() - self.cell_size_north * nc_extra
-            north = self.station_locations['rel_north'].max() + self.cell_size_north * nc_extra
+            south = self.station_locations['rel_north'].min() - self.cell_size_north * nc_extra_north
+            north = self.station_locations['rel_north'].max() + self.cell_size_north * nc_extra_north
         else:
             logger.debug("user specified cell number in north-south mesh %s", self.cell_number_ns)
             center_ns = self.station_locations['rel_north'].min() + self.station_locations['rel_north'].max()
@@ -307,7 +320,7 @@ class Model(object):
         logger.debug("FZ: east_gridr_2 shifted centre = %s", east_gridr)
 
         # padding cells in the east-west direction
-        for ii in range(1, self.pad_east + 1):
+        for ii in range(1, pad_east + 1):
             east_0 = float(east_gridr[-1])
             west_0 = float(east_gridr[0])
             add_size = np.round(self.cell_size_east * self.pad_stretch_h * ii, -2) # -2 round to decimal left
@@ -340,7 +353,7 @@ class Model(object):
             self.station_locations['rel_north'] += np.mean(north_gridr)
         north_gridr -= np.mean(north_gridr)
         # padding cells in the east-west direction
-        for ii in range(1, self.pad_north + 1):
+        for ii in range(1, pad_north + 1):
             south_0 = float(north_gridr[0])
             north_0 = float(north_gridr[-1])
             add_size = np.round(self.cell_size_north *self.pad_stretch_h * ii, -2)
