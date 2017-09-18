@@ -154,6 +154,9 @@ class Ui_SmartMT_MainWindow(object):
         icon6.addPixmap(QtGui.QPixmap(_fromUtf8(":/Tango/export_modem")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.actionExport_ModEM_Data.setIcon(icon6)
         self.actionExport_ModEM_Data.setObjectName(_fromUtf8("actionExport_ModEM_Data"))
+        self.actionCreate_Shape_File_From_Stations = QtGui.QAction(SmartMT_MainWindow)
+        self.actionCreate_Shape_File_From_Stations.setEnabled(False)
+        self.actionCreate_Shape_File_From_Stations.setObjectName(_fromUtf8("actionCreate_Shape_File_From_Stations"))
         self.menuFile.addAction(self.actionNew_Project)
         self.menuFile.addAction(self.actionOpen_Project)
         self.menuFile.addAction(self.actionSave_Project)
@@ -165,6 +168,7 @@ class Ui_SmartMT_MainWindow(object):
         self.menuFile.addSeparator()
         self.menuFile.addAction(self.actionExport)
         self.menuFile.addAction(self.actionExport_ModEM_Data)
+        self.menuFile.addAction(self.actionCreate_Shape_File_From_Stations)
         self.menuFile.addSeparator()
         self.menuFile.addAction(self.actionExit)
         self.menuView.addAction(self.actionShow_Data_Collection)
@@ -234,5 +238,5 @@ class Ui_SmartMT_MainWindow(object):
         self.actionTabbed_View.setText(_translate("SmartMT_MainWindow", "Tabbed View", None))
         self.actionClose_All_Images.setText(_translate("SmartMT_MainWindow", "Close All Images", None))
         self.actionExport_ModEM_Data.setText(_translate("SmartMT_MainWindow", "Generate ModEM Input Files...", None))
-
-import icons_rc
+        self.actionCreate_Shape_File_From_Stations.setText(
+            _translate("SmartMT_MainWindow", "Create Shape File From Stations...", None))

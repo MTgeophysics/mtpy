@@ -84,7 +84,7 @@ class EdiCollection(object):
             self.mt_obj_list = [mt.MT(edi) for edi in self.edifiles]
         elif mt_objs is not None:
             # use the supplied mt_objs
-            self.mt_obj_list = mt_objs
+            self.mt_obj_list = list(mt_objs)
         else:
             logger.error("None Edi file set")
 

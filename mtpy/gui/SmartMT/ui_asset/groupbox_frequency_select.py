@@ -123,3 +123,4 @@ class Ui_GroupBox_frequency_select(object):
         self.label_tolerance.setText(_translate("GroupBox_frequency_select", "Selection Tolerance", None))
         self.doubleSpinBox_tolerance.setSuffix(_translate("GroupBox_frequency_select", "%", None))
         self.checkBox_x_log_scale.setText(_translate("GroupBox_frequency_select", "Use log-scale on x-axes", None))
+

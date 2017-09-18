@@ -84,6 +84,7 @@
     <addaction name="separator"/>
     <addaction name="actionExport"/>
     <addaction name="actionExport_ModEM_Data"/>
+       <addaction name="actionCreate_Shape_File_From_Stations"/>
     <addaction name="separator"/>
     <addaction name="actionExit"/>
    </widget>
@@ -367,6 +368,14 @@
     <string>Generate ModEM Input Files...</string>
    </property>
   </action>
+     <action name="actionCreate_Shape_File_From_Stations">
+         <property name="enabled">
+             <bool>false</bool>
+         </property>
+         <property name="text">
+             <string>Create Shape File From Stations...</string>
+         </property>
+     </action>
  </widget>
  <resources>
   <include location="icons.qrc"/>

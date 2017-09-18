@@ -12,11 +12,13 @@
 import inspect
 import os
 import sys
+import webbrowser
 
 import sip
 from PyQt4 import QtCore, QtGui
 from PyQt4.QtCore import QString
 
+from mtpy.core.edi_collection import EdiCollection
 from mtpy.gui.SmartMT.gui.busy_indicators import ProgressBar
 from mtpy.gui.SmartMT.gui.export_dialog import ExportDialog
 from mtpy.gui.SmartMT.gui.export_dialog_modem import ExportDialogModEm
@@ -55,7 +57,6 @@ class StartQt4(QtGui.QMainWindow):
         self.ui.mdiArea.subWindowActivated.connect(self._subwindow_activated)
         self.setWindowState(QtCore.Qt.WindowMaximized)
 
-
     def _subwindow_activated(self, subwindow):
         if subwindow and isinstance(subwindow.widget(), MPLCanvasWidget):
             self.ui.actionExport.setEnabled(True)
@@ -77,6 +78,7 @@ class StartQt4(QtGui.QMainWindow):
         self.ui.actionClose_All_Images.triggered.connect(self._close_all_images)
         self.ui.actionExport.triggered.connect(self._export_image)
         self.ui.actionExport_ModEM_Data.triggered.connect(self._export_modem)
+        self.ui.actionCreate_Shape_File_From_Stations.triggered.connect(self._export_shape_file)
         # not yet impleneted
         self.ui.actionAbout.triggered.connect(self.dummy_action)
         self.ui.actionClose_Project.triggered.connect(self.dummy_action)
@@ -87,6 +89,29 @@ class StartQt4(QtGui.QMainWindow):
         self.ui.actionOptions.triggered.connect(self.dummy_action)
         self.ui.actionSave_as_Project.triggered.connect(self.dummy_action)
         self.ui.actionSave_Project.triggered.connect(self.dummy_action)
+
+    def _export_shape_file(self, *args, **kwargs):
+        dialog = QtGui.QFileDialog(self)
+        dir_name = None
+        dialog.setWindowTitle("Select Output Directory ...")
+        dialog.setFileMode(QtGui.QFileDialog.DirectoryOnly)
+        while dir_name is None:
+            if dialog.exec_() == QtGui.QDialog.Accepted:
+                dir_name = dialog.selectedFiles()[0]
+                dir_name = str(dir_name)
+                if not os.path.isdir(dir_name):
+                    QtGui.QMessageBox.information(self, "NOTE",
+                                                  "Please select a directory to save the created shape files.")
+                    dir_name = None  # will read again
+        collect = EdiCollection(
+            mt_objs=[
+                self._file_handler.get_MT_obj(self._file_handler.station2ref(station))
+                for station in self._station_viewer.selected_stations
+            ]
+        )
+        collect.create_mt_station_gdf(dir_name)
+        QtGui.QMessageBox.information(self, "Creation Completed", "Output written to %s" % dir_name)
+        webbrowser.open(dir_name)
 
     def _export_image(self, *args, **kwargs):
         subwindow = self.ui.mdiArea.activeSubWindow()
@@ -246,8 +271,10 @@ class StartQt4(QtGui.QMainWindow):
         self._station_viewer.update_view()
 
     def _selected_station_changed(self):
-        self.ui.actionPlot.setEnabled(bool(self._station_viewer.selected_stations))
-        self.ui.actionExport_ModEM_Data.setEnabled(bool(self._station_viewer.selected_stations))
+        enable = bool(self._station_viewer.selected_stations)
+        self.ui.actionPlot.setEnabled(enable)
+        self.ui.actionExport_ModEM_Data.setEnabled(enable)
+        self.ui.actionCreate_Shape_File_From_Stations.setEnabled(enable)
 
     def create_subwindow(self, widget, title, overide=True, tooltip=None):
         subwindow = None
