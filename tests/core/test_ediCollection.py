@@ -121,8 +121,6 @@ class _BaseTest(object):
             os.mkdir(path2)
         self.edi_collection.create_phase_tensor_csv_with_image(path2)
 
-        # compare the differences
-
 
 class TsetFromFile(_BaseTest):
     def setUp(self):

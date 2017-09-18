@@ -74,7 +74,7 @@ class EdiCollection(object):
         assert len(self.edifiles) > 0
 
         self.num_of_edifiles = len(self.edifiles)  # number of stations
-        print ("number of stations/edifiles = %s" % self.num_of_edifiles)
+        print("number of stations/edifiles = %s" % self.num_of_edifiles)
 
         self.ptol = ptol
 
@@ -111,7 +111,7 @@ class EdiCollection(object):
         for mt_obj in self.mt_obj_list:
             all_freqs.extend(list(mt_obj.Z.freq))
 
-        self.mt_periods = 1.0/np.array(all_freqs)
+        self.mt_periods = 1.0 / np.array(all_freqs)
 
         # sort all frequencies so that they are in ascending order,
         # use set to remove repeats and make an array
@@ -120,9 +120,9 @@ class EdiCollection(object):
         logger.debug("Number of MT Frequencies: %s", len(self.all_frequencies))
 
         all_periods = 1.0 / \
-            np.array(sorted(self.all_frequencies, reverse=True))
+                      np.array(sorted(self.all_frequencies, reverse=True))
 
-        #logger.debug("Type of the all_periods %s", type(all_periods))
+        # logger.debug("Type of the all_periods %s", type(all_periods))
         logger.info("Number of MT Periods: %s", len(all_periods))
         logger.debug(all_periods)
 
@@ -146,7 +146,7 @@ class EdiCollection(object):
 
             if (100.0 * acount) / self.num_of_edifiles >= percentage:
                 adict.update({aper: acount})
-                #print (aper, acount)
+                # print (aper, acount)
             else:
                 logger.info("Period=%s is excluded. it is from stations: %s ", aper, station_list)
 
@@ -174,7 +174,7 @@ class EdiCollection(object):
 
         pdf = pd.DataFrame(mt_stations, columns=['StationId', 'Lon', 'Lat', 'Elev', 'UtmZone'])
 
-        #print (pdf.head())
+        # print (pdf.head())
 
         mt_points = [Point(xy) for xy in zip(pdf.Lon, pdf.Lat)]
         # OR pdf['geometry'] = pdf.apply(lambda z: Point(z.Lon, z.Lat), axis=1)
@@ -348,15 +348,15 @@ class EdiCollection(object):
 
         # summary csv file
         csv_basename = "edi_measurement"
-        csvfname = os.path.join(dest_dir, "%s.csv"%csv_basename)
+        csvfname = os.path.join(dest_dir, "%s.csv" % csv_basename)
 
         pt_dict = {}
 
         csv_header = [
-            'FREQ','STATION', 'LAT', 'LON',  'ZXXre','ZXXim',
-            'ZXYre', 'ZXYim', 'ZYXre', 'ZYXim', 'ZYYre', 'ZYYim','TXre', 'TXim', 'TYre', 'TYim',
+            'FREQ', 'STATION', 'LAT', 'LON', 'ZXXre', 'ZXXim',
+            'ZXYre', 'ZXYim', 'ZYXre', 'ZYXim', 'ZYYre', 'ZYYim', 'TXre', 'TXim', 'TYre', 'TYim',
             'RHOxx', 'RHOxy', 'RHOyx', 'RHOyy', 'PHSxx', 'PHSxy', 'PHSyx', 'PHSyy'
-                      ]
+        ]
 
         with open(csvfname, "wb") as csvf:
             writer = csv.writer(csvf)
@@ -382,20 +382,20 @@ class EdiCollection(object):
                     station, lat, lon = (
                         mt_obj.station, mt_obj.lat, mt_obj.lon)
 
-                    resist_phase =  mtplottools.ResPhase(z_object=mt_obj.Z)
+                    resist_phase = mtplottools.ResPhase(z_object=mt_obj.Z)
                     # resist_phase.compute_res_phase()
 
                     mt_stat = [freq, station, lat, lon,
-                               mt_obj.Z.z[p_index,0,0].real,
-                               mt_obj.Z.z[p_index,0,0].imag,
-                               mt_obj.Z.z[p_index,0,1].real,
-                               mt_obj.Z.z[p_index,0,1].imag,
-                               mt_obj.Z.z[p_index,1,0].real,
-                               mt_obj.Z.z[p_index,1,0].imag,
-                               mt_obj.Z.z[p_index,1,1].real,
-                               mt_obj.Z.z[p_index,1,1].imag,
-                               mt_obj.Tipper.tipper[p_index,0,0].real,
-                               mt_obj.Tipper.tipper[p_index,0,0].imag,
+                               mt_obj.Z.z[p_index, 0, 0].real,
+                               mt_obj.Z.z[p_index, 0, 0].imag,
+                               mt_obj.Z.z[p_index, 0, 1].real,
+                               mt_obj.Z.z[p_index, 0, 1].imag,
+                               mt_obj.Z.z[p_index, 1, 0].real,
+                               mt_obj.Z.z[p_index, 1, 0].imag,
+                               mt_obj.Z.z[p_index, 1, 1].real,
+                               mt_obj.Z.z[p_index, 1, 1].imag,
+                               mt_obj.Tipper.tipper[p_index, 0, 0].real,
+                               mt_obj.Tipper.tipper[p_index, 0, 0].imag,
                                mt_obj.Tipper.tipper[p_index, 0, 1].real,
                                mt_obj.Tipper.tipper[p_index, 0, 1].imag,
                                resist_phase.resxx[p_index], resist_phase.resxy[p_index],
@@ -413,7 +413,7 @@ class EdiCollection(object):
                 writer = csv.writer(csvf)
                 writer.writerows(mtlist)
 
-            csv_basename2 = "%s_%sHz.csv" %(csv_basename, str(freq))
+            csv_basename2 = "%s_%sHz.csv" % (csv_basename, str(freq))
             csvfile2 = os.path.join(dest_dir, csv_basename2)
 
             with open(csvfile2, "wb") as csvf:  # individual csvfile for each freq
@@ -452,15 +452,14 @@ class EdiCollection(object):
         show all properties
         :return:
         """
-        print (len(self.all_unique_periods), 'unique periods (s)', self.all_unique_periods)
-        print (len(self.all_frequencies),
-               'unique frequencies (Hz)', self.all_frequencies)
+        print(len(self.all_unique_periods), 'unique periods (s)', self.all_unique_periods)
+        print(len(self.all_frequencies),
+              'unique frequencies (Hz)', self.all_frequencies)
 
         myper = obj.get_periods_by_stats(percentage=20)
         print(myper)
 
-
-        print (self.bound_box_dict)
+        print(self.bound_box_dict)
 
         self.plot_stations(savefile='/e/tmp/edi_collection_test.jpg')
 
@@ -475,11 +474,11 @@ class EdiCollection(object):
 
 if __name__ == "__main__":
 
-# python mtpy/core/edi_collection.py examples/data/edi2/ /e/tmp3/edi2_csv
-# python mtpy/core/edi_collection.py /e/Data/MT_Datasets/GA_UA_edited_10s-10000s /e/tmp3/GA_UA_edited_10s-10000s_csv
+    # python mtpy/core/edi_collection.py examples/data/edi2/ /e/tmp3/edi2_csv
+    # python mtpy/core/edi_collection.py /e/Data/MT_Datasets/GA_UA_edited_10s-10000s /e/tmp3/GA_UA_edited_10s-10000s_csv
 
     if len(sys.argv) < 2:
-        print ("\n  USAGE: %s edi_dir OR edi_list " % sys.argv[0])
+        print("\n  USAGE: %s edi_dir OR edi_list " % sys.argv[0])
         sys.exit(1)
     else:
         argv1 = sys.argv[1]
@@ -494,11 +493,10 @@ if __name__ == "__main__":
         else:
             sys.exit(2)
 
+        # obj.show_prop()
 
-        #obj.show_prop()
+        # print(obj.get_bounding_box(epsgcode=28353))
 
-        #print(obj.get_bounding_box(epsgcode=28353))
-
-        #obj.create_mt_station_gdf(outshpfile='/e/tmp/edi_collection_test.shp')
+        # obj.create_mt_station_gdf(outshpfile='/e/tmp/edi_collection_test.shp')
 
         obj.create_measurement_csv(dest_dir=sys.argv[2])
