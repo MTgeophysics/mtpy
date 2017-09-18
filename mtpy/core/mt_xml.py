@@ -20,6 +20,8 @@ import copy
 
 import numpy as np
 import xml.etree.cElementTree as ET
+from xml.dom import minidom
+
 
 import mtpy.core.z as mtz
 
@@ -827,6 +829,7 @@ class MT_XML(XML_Config):
             
         new_element = ET.SubElement(parent_et, XML_element_obj._name, XML_element_obj._attr)
         new_element.text = XML_element_obj._value
+        #new_element.tail = '\n'
         return new_element
 
     def write_xml_file(self, xml_fn, cfg_fn=None):
@@ -884,8 +887,9 @@ class MT_XML(XML_Config):
                 
   
         #--> write xml file
+        xmlstr = minidom.parseString(ET.tostring(emtf)).toprettyxml(indent="   ")
         with open(self.xml_fn, 'w') as fid:
-            fid.write(ET.tostring(emtf))
+            fid.write(xmlstr)
         
         print '-'*72
         print '    Wrote xml file to: {0}'.format(self.xml_fn)
@@ -908,6 +912,22 @@ class MT_XML(XML_Config):
         root = et_xml.getroot()
         for element_00 in root.getchildren():
             setattr(self, element_00.tag, self._read_element(element_00))
+            
+        try:
+            setattr(self.FieldNotes,
+                    'DataQualityNotes',
+                    self.Site.DataQualityNotes)
+            delattr(self.Site, 'DataQualityNotes')
+        except AttributeError:
+            pass
+        
+        try:
+            setattr(self.FieldNotes,
+                    'DataQualityWarnings',
+                    self.Site.DataQualityWarnings)
+            delattr(self.Site, 'DataQualityWarnings')
+        except AttributeError:
+            pass
             
         # set Z and Tipper
         nf = int(self.Data.attr['count'])
