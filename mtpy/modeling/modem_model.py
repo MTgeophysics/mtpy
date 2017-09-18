@@ -138,7 +138,15 @@ class Model(object):
 
         # padding cells on either side
         self.pad_east = kwargs.pop('pad_east', 7)
-        self.pad_north = kwargs.pop('pad_north', 7)
+        # set a default value
+        if type(self.pad_east) in [float,int]:
+            self.pad_east = [7.5, self.pad_east]
+            
+        self.pad_north = kwargs.pop('pad_north', [7.5, 7])
+        # set a default value
+        if type(self.pad_north) in [float,int]:
+            self.pad_north = [7.5, self.pad_north]
+            
         self.pad_z = kwargs.pop('pad_z', 4)
 
         # root of padding cells
@@ -260,10 +268,15 @@ class Model(object):
         """
 
         # find the edges of the grid: bounding box of the survey area.
-        nc_extra = 20  # extra cells around the stations area
+        # first define some parameters. nc_extra_east and nc_extra_north is the number of cells outside the station
+        # area (but with same cell size as inner cells - not padding). pad_east and pad_north is
+        # number of padding cells, that increase with distance outward.
+        nc_extra_east, pad_east = self.pad_east
+        nc_extra_north, pad_north = self.pad_north
+        
         if self.cell_number_ew is None:
-            west = self.station_locations['rel_east'].min() - self.cell_size_east * nc_extra
-            east = self.station_locations['rel_east'].max() + self.cell_size_east * nc_extra
+            west = self.station_locations['rel_east'].min() - self.cell_size_east * nc_extra_east
+            east = self.station_locations['rel_east'].max() + self.cell_size_east * nc_extra_east
         else:
             logger.debug("user specified cell number in east-west mesh %s", self.cell_number_ew)
             center_ew= 0.5*(self.station_locations['rel_east'].min() + self.station_locations['rel_east'].max())
@@ -272,8 +285,8 @@ class Model(object):
             east = center_ew + self.cell_size_east *cellnumb
 
         if self.cell_number_ns is None:
-            south = self.station_locations['rel_north'].min() - self.cell_size_north * nc_extra
-            north = self.station_locations['rel_north'].max() + self.cell_size_north * nc_extra
+            south = self.station_locations['rel_north'].min() - self.cell_size_north * nc_extra_north
+            north = self.station_locations['rel_north'].max() + self.cell_size_north * nc_extra_north
         else:
             logger.debug("user specified cell number in north-south mesh %s", self.cell_number_ns)
             center_ns = self.station_locations['rel_north'].min() + self.station_locations['rel_north'].max()
@@ -307,11 +320,11 @@ class Model(object):
         logger.debug("FZ: east_gridr_2 shifted centre = %s", east_gridr)
 
         # padding cells in the east-west direction
-        for ii in range(1, self.pad_east + 1):
+        for ii in range(1, pad_east + 1):
             east_0 = float(east_gridr[-1])
             west_0 = float(east_gridr[0])
-            # add_size = np.round(self.cell_size_east * self.pad_stretch_h * ii, -2) # -2 round to decimal left
-            add_size = np.round(self.cell_size_east * self.pad_stretch_h ** ii, 2)
+            add_size = np.round(self.cell_size_east * self.pad_stretch_h * ii, -2) # -2 round to decimal left
+#            add_size = np.round(self.cell_size_east * self.pad_stretch_h ** ii, 2)
             pad_w = west_0 - add_size
             pad_e = east_0 + add_size
             east_gridr = np.insert(east_gridr, 0, pad_w)
@@ -340,11 +353,11 @@ class Model(object):
             self.station_locations['rel_north'] += np.mean(north_gridr)
         north_gridr -= np.mean(north_gridr)
         # padding cells in the east-west direction
-        for ii in range(1, self.pad_north + 1):
+        for ii in range(1, pad_north + 1):
             south_0 = float(north_gridr[0])
             north_0 = float(north_gridr[-1])
-            # add_size = np.round(self.cell_size_north *self.pad_stretch_h * ii, -2)
-            add_size = np.round(self.cell_size_north * self.pad_stretch_h ** ii, 2)
+            add_size = np.round(self.cell_size_north *self.pad_stretch_h * ii, -2)
+#            add_size = np.round(self.cell_size_north * self.pad_stretch_h ** ii, 2)
             pad_s = south_0 - add_size
             pad_n = north_0 + add_size
             north_gridr = np.insert(north_gridr, 0, pad_s)
@@ -363,8 +376,8 @@ class Model(object):
                 continue
 
         # =================================  begin to make vertical mesh
-        (z_nodes, z_grid) = self.make_z_mesh2()
-        #(z_nodes, z_grid) = self.make_z_mesh3()
+#        (z_nodes, z_grid) = self.make_z_mesh2()
+        (z_nodes, z_grid) = self.make_z_mesh3()
 
         # Need to make an array of the individual cell dimensions for modem
         east_nodes = east_gridr[1:] - east_gridr[:-1]
@@ -706,29 +719,29 @@ class Model(object):
 
             # print (stop_here_for_debug)
 
-        elif self.n_airlayers < 0:  # keep the old logic of re-define the first few layers! not sure if wrong
-            # cell size is topomax/n_airlayers, rounded to nearest 1 s.f.
-            cs = np.amax(self.surface_dict['topography']) / float(self.n_airlayers)
-            #  cs = np.ceil(0.1*cs/10.**int(np.log10(cs)))*10.**(int(np.log10(cs))+1)
-            cs = np.ceil(cs)
-
-            # add air layers
-            new_airlayers = np.linspace(
-                0, self.n_airlayers, self.n_airlayers + 1) * cs
-            add_z = new_airlayers[-1] - self.grid_z[self.n_airlayers]
-            self.grid_z[self.n_airlayers + 1:] += add_z
-            self.grid_z[:self.n_airlayers + 1] = new_airlayers
-
-            # adjust the nodes, which is simply the diff of adjacent grid lines
-            self.nodes_z = self.grid_z[1:] - self.grid_z[:-1]
-
-            # adjust sea level
-            # wrong? self.sea_level = self.grid_z[self.n_airlayers]
-            self.sea_level = self.grid_z[self.n_airlayers]
-            logger.debug("FZ:***2 sea_level = %s", self.sea_level)
-
-            # assign topography
-            # self.assign_resistivity_from_surfacedata('topography', air_resistivity, where='above')
+#        elif self.n_airlayers < 0:  # keep the old logic of re-define the first few layers! not sure if wrong
+#            # cell size is topomax/n_airlayers, rounded to nearest 1 s.f.
+#            cs = np.amax(self.surface_dict['topography']) / float(self.n_airlayers)
+#            #  cs = np.ceil(0.1*cs/10.**int(np.log10(cs)))*10.**(int(np.log10(cs))+1)
+#            cs = np.ceil(cs)
+#
+#            # add air layers
+#            new_airlayers = np.linspace(
+#                0, self.n_airlayers, self.n_airlayers + 1) * cs
+#            add_z = new_airlayers[-1] - self.grid_z[self.n_airlayers]
+#            self.grid_z[self.n_airlayers + 1:] += add_z
+#            self.grid_z[:self.n_airlayers + 1] = new_airlayers
+#
+#            # adjust the nodes, which is simply the diff of adjacent grid lines
+#            self.nodes_z = self.grid_z[1:] - self.grid_z[:-1]
+#
+#            # adjust sea level
+#            # wrong? self.sea_level = self.grid_z[self.n_airlayers]
+#            self.sea_level = self.grid_z[self.n_airlayers]
+#            logger.debug("FZ:***2 sea_level = %s", self.sea_level)
+#
+#            # assign topography
+#            # self.assign_resistivity_from_surfacedata('topography', air_resistivity, where='above')
         else:
             pass
 
@@ -962,19 +975,21 @@ class Model(object):
             # print("FZ:*** szi=", szi)
             # FZ: debug here to assign topography value for .dat file.
 
-            # topoval = self.grid_z[szi]
-            # self.station_locations['elev'][ss] = topoval # + 1.  # why +1 in elev ???
-            # self.Data.data_array['elev'][ss] = topoval # + 1.
+            topoval = self.grid_z[szi]
 
             station_index_x.append(sxi)
             station_index_y.append(syi)
 
-            # use topo elevation directly in modem.dat file
-            topoval = self.surface_dict['topography'][syi, sxi]
+#            # use topo elevation directly in modem.dat file
+#            !!! can't use topo elevation directly from topography file as the 
+#                elevation needs to sit on the model mesh!
+#            topoval = self.surface_dict['topography'][syi, sxi]
             logger.debug("sname,ss, sxi, syi, szi, topoval: %s,%s,%s,%s,%s,%s", sname, ss, sxi, syi, szi, topoval)
 
-            self.station_locations['elev'][ss] = topoval  # + 1.  # why +1 in elev ???
-            self.Data.data_array['elev'][ss] = topoval  # + 1.
+            # update elevation in station locations and data array, +1 m as 
+            # data elevation needs to be below the topography (as advised by Naser)
+            self.station_locations['elev'][ss] = topoval + 1.
+            self.Data.data_array['elev'][ss] = topoval + 1.
 
         # This will shift stations' location to be relative to the defined mesh-grid centre
         self.Data.station_locations = self.station_locations
