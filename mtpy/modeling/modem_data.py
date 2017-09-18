@@ -727,7 +727,7 @@ class Data(object):
 
         self.get_relative_station_locations()
 
-    def _fill_data_array(self, new_edi_dir=None, use_original_freq=True):
+    def _fill_data_array(self, new_edi_dir=None, use_original_freq=False):
         """
         fill the data array from mt_dict
 
@@ -798,7 +798,7 @@ class Data(object):
                     # find nearest data period
                     difference = np.abs(iperiod - dperiods)
                     nearestdperiod = dperiods[difference == np.amin(difference)][0]
-                    if max(nearestdperiod / iperiod, iperiod / nearestdperiod) < self.period_buffer:
+                    if max(nearestdperiod / iperiod, iperiod / nearestdperiod) < self.period_buffer + 1.:
                         interp_periods_new.append(iperiod)
 
                 interp_periods = np.array(interp_periods_new)
@@ -907,7 +907,7 @@ class Data(object):
 
     def write_data_file(self, save_path=None, fn_basename=None,
                         rotation_angle=None, compute_error=True,
-                        fill=True, use_original_freq=True):
+                        fill=True, use_original_freq=False):
         """
         write data file for ModEM
         will save file as save_path/fn_basename
@@ -969,14 +969,14 @@ class Data(object):
                 dlines.append('> exp({0}i\omega t)\n'.format(
                     self.wave_sign_impedance))
                 dlines.append('> {0}\n'.format(self.units))
-                nper = len(np.nonzero(np.abs(self.data_array['z']).sum(axis=(1,2,3)))[0])
-                nsta = len(np.nonzero(np.abs(self.data_array['z']).sum(axis=(0,2,3)))[0])
+                nsta = len(np.nonzero(np.abs(self.data_array['z']).sum(axis=(1,2,3)))[0])
+                nper = len(np.nonzero(np.abs(self.data_array['z']).sum(axis=(0,2,3)))[0])
             elif inv_mode.find('Vertical') >= 0:
                 dlines.append('> exp({0}i\omega t)\n'.format(
                     self.wave_sign_tipper))
                 dlines.append('> []\n')
-                nper = len(np.nonzero(np.abs(self.data_array['tip']).sum(axis=(1,2,3)))[0])
-                nsta = len(np.nonzero(np.abs(self.data_array['tip']).sum(axis=(0,2,3)))[0])
+                nsta = len(np.nonzero(np.abs(self.data_array['tip']).sum(axis=(1,2,3)))[0])
+                nper = len(np.nonzero(np.abs(self.data_array['tip']).sum(axis=(0,2,3)))[0])
             dlines.append('> 0.00\n')  # oriention, need to add at some point
             dlines.append('> {0: >10.6f} {1:>10.6f}\n'.format(
                 self.center_position[1], self.center_position[0]))  # (lat,long) correct order
@@ -1111,11 +1111,13 @@ class Data(object):
 
         # write epsg and center position to a file, if they exist
         if hasattr(self,'center_position_EN'):
-            np.savetxt(op.join(self.save_path, 'center_position.txt'),
-                       self.center_position_EN, fmt='%.1f')
+            if self.center_position_EN is not None:
+                np.savetxt(op.join(self.save_path, 'center_position.txt'),
+                           self.center_position_EN, fmt='%.1f')
         if hasattr(self,'epsg'):
-            np.savetxt(op.join(self.save_path, 'epsg.txt'),
-                       np.array([self.epsg]), fmt='%1i')
+            if self.epsg is not None:
+                np.savetxt(op.join(self.save_path, 'epsg.txt'),
+                           np.array([self.epsg]), fmt='%1i')
 
         logger.debug('Wrote ModEM data file to %s', self.data_fn)
 
