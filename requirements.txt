@@ -1,6 +1,7 @@
 matplotlib
 numpy
 PyYAML>=3.11
+geopandas
 
 # matplotlib==1.5.3
 # scipy==0.18.1
