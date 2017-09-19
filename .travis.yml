@@ -10,5 +10,5 @@ install:
   - pip install -r requirements.txt
 # command to run tests
 #script: nosetests
-script: travis_wait 30 py.test tests/core   # extends this test suite to 30 minutes timeout
+script: py.test tests/core
 
