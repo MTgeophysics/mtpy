@@ -862,8 +862,8 @@ class MT_XML(XML_Config):
                                     XML_element('value', c_dict, c_value)) 
                             count += 1
                             
-        self.PeriodRange._attr = {'min':'{0:.6e}'.format(1./self.Z.freq.max()),
-                                  'max':'{0:.6e}'.format(1./self.Z.freq.min())}
+        self.PeriodRange._attr = {'min':'{0:.6e}'.format(1./self.Z.freq.min()),
+                                  'max':'{0:.6e}'.format(1./self.Z.freq.max())}
         
     def _write_element(self, parent_et, XML_element_obj):
         """
@@ -992,8 +992,8 @@ class MT_XML(XML_Config):
         for per_attr in dir(self.Data):
             if 'period' in per_attr.lower():
                 p_obj = getattr(self.Data, per_attr)
-                period[p_count] = 1./float(p_obj.attr['value'])
-                
+                p1 = 1./float(p_obj.attr['value'])
+                self._Z.freq[p_count] = 1./p1
                 if hasattr(p_obj, 'Z'):
                     z_block = getattr(p_obj, 'Z')
                     for z_attr in dir(z_block):
@@ -1053,8 +1053,8 @@ class MT_XML(XML_Config):
         for per_attr in dir(self.Data):
             if 'period' in per_attr.lower():
                 p_obj = getattr(self.Data, per_attr)
-                period[p_count] = p_obj.attr['value']
-                
+                p1 = float(p_obj.attr['value'])
+                self._Tipper.freq[p_count] = 1./p1
                 if hasattr(p_obj, 'T'):
                     t_block = getattr(p_obj, 'T')
                     for t_attr in dir(t_block):
