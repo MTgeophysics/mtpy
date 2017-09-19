@@ -3,12 +3,17 @@ import os
 import unittest
 from unittest import TestCase
 
-import matplotlib
-
 if os.name == "posix" and 'DISPLAY' not in os.environ:
     print("MATPLOTLIB: No Display found, using non-interactive Agg backend")
-    matplotlib.use('Agg')
-import matplotlib.pyplot as plt
+    # matplotlib.use('Agg')
+    test_image = False
+    import matplotlib.pyplot as plt
+else:
+    test_image = True
+    # matplotlib.use('Agg')
+    import matplotlib.pyplot as plt
+
+    plt.ion()
 
 import numpy as np
 from geopandas import GeoDataFrame
@@ -16,15 +21,13 @@ from geopandas import GeoDataFrame
 from mtpy.core.edi_collection import is_num_in_seq, EdiCollection
 from mtpy.core.mt import MT
 
-plt.ion()
-
 edi_paths = [
     "tests/data/edifiles",
     "examples/data/edi2",
     "examples/data/edi_files",
     "../MT_Datasets/3D_MT_data_edited_fromDuanJM/",
-    # "../MT_Datasets/GA_UA_edited_10s-10000s/",
-    # "tests/data/edifiles2"
+    "../MT_Datasets/GA_UA_edited_10s-10000s/",
+    "tests/data/edifiles2"
 ]
 
 
@@ -89,16 +92,25 @@ class _BaseTest(object):
             periods.append(new_periods)
 
     def test_plot_stations(self):
-        self.edi_collection.plot_stations()
-        plt.pause(1)
+        if test_image:
+            self.edi_collection.plot_stations()
+            plt.pause(1)
+        else:
+            self.skipTest("Skipped due to matplotlib issues")
 
     def test_display_on_basemap(self):
-        self.edi_collection.display_on_basemap()
-        plt.pause(1)
+        if test_image:
+            self.edi_collection.display_on_basemap()
+            plt.pause(1)
+        else:
+            self.skipTest("Skipped due to matplotlib issues")
 
     def test_display_on_image(self):
-        self.edi_collection.display_on_image()
-        plt.pause(1)
+        if test_image:
+            self.edi_collection.display_on_image()
+            plt.pause(1)
+        else:
+            self.skipTest("Skipped due to matplotlib issues")
 
     def test_create_mt_station_gdf(self):
         path = os.path.join(self._temp_dir, self.__class__.__name__ + "_mt_station_gdf")
@@ -119,10 +131,13 @@ class _BaseTest(object):
         self.edi_collection.create_phase_tensor_csv(path)
 
     def test_create_phase_tensor_csv_with_image(self):
-        path2 = os.path.join(self._temp_dir, self.__class__.__name__ + "_phase_tensor_csv_with_image")
-        if not os.path.exists(path2):
-            os.mkdir(path2)
-        self.edi_collection.create_phase_tensor_csv_with_image(path2)
+        if test_image:
+            path2 = os.path.join(self._temp_dir, self.__class__.__name__ + "_phase_tensor_csv_with_image")
+            if not os.path.exists(path2):
+                os.mkdir(path2)
+            self.edi_collection.create_phase_tensor_csv_with_image(path2)
+        else:
+            self.skipTest("Skipped due to matplotlib issues")
 
 
 class TsetFromFile(_BaseTest):
