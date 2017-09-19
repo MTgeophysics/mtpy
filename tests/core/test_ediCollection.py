@@ -3,7 +3,13 @@ import os
 import unittest
 from unittest import TestCase
 
+import matplotlib as mpl
+
+if os.name == "posix" and 'DISPLAY' not in os.environ:
+    print("MATPLOTLIB: No Display found, using non-interactive Agg backend")
+    mpl.use('Agg')
 import matplotlib.pyplot as plt
+
 import numpy as np
 from geopandas import GeoDataFrame
 
@@ -115,7 +121,7 @@ class _BaseTest(object):
             os.mkdir(path)
         self.edi_collection.create_phase_tensor_csv(path)
 
-        # create using PlotPhaseTensorMaps
+    def test_create_phase_tensor_csv_with_image(self):
         path2 = os.path.join(self._temp_dir, self.__class__.__name__ + "_phase_tensor_csv_with_image")
         if not os.path.exists(path2):
             os.mkdir(path2)
