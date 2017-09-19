@@ -3,11 +3,11 @@ import os
 import unittest
 from unittest import TestCase
 
-import matplotlib as mpl
+import matplotlib
 
 if os.name == "posix" and 'DISPLAY' not in os.environ:
     print("MATPLOTLIB: No Display found, using non-interactive Agg backend")
-    mpl.use('Agg')
+    matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 import numpy as np
@@ -49,10 +49,7 @@ class TestUtilities(TestCase):
 
 class _BaseTest(object):
     def setUp(self):
-        if os.path.isdir(self.edi_path):
-            self.edi_files = glob.glob(os.path.join(self.edi_path, "*.edi"))
-        else:
-            self.skipTest("edi path not exist")
+        self.edi_files = glob.glob(os.path.join(self.edi_path, "*.edi"))
 
     @classmethod
     def setUpClass(cls):
@@ -142,11 +139,12 @@ class TestFromMTObj(_BaseTest):
 
 
 for edi_path in edi_paths:
-    cls_name = "TestEdiCollectionFromFile_%s" % (os.path.basename(edi_path))
-    globals()[cls_name] = type(cls_name, (TsetFromFile, unittest.TestCase), {
-        "edi_path": edi_path
-    })
-    cls_name = "TestEdiCollectionFromMTObj_%s" % (os.path.basename(edi_path))
-    globals()[cls_name] = type(cls_name, (TestFromMTObj, unittest.TestCase), {
-        "edi_path": edi_path
-    })
+    if os.path.isdir(edi_path):
+        cls_name = "TestEdiCollectionFromFile_%s" % (os.path.basename(edi_path))
+        globals()[cls_name] = type(cls_name, (TsetFromFile, unittest.TestCase), {
+            "edi_path": edi_path
+        })
+        cls_name = "TestEdiCollectionFromMTObj_%s" % (os.path.basename(edi_path))
+        globals()[cls_name] = type(cls_name, (TestFromMTObj, unittest.TestCase), {
+            "edi_path": edi_path
+        })

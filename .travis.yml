@@ -7,7 +7,8 @@ python:
 # command to install dependencies
 install:
   - pip install .
-  - pip install -r requirements.txt 
+  - pip install -r requirements.txt
+  - travis_wait 30 mvn install   # set up waiting time
 # command to run tests
 #script: nosetests
 script: py.test tests/core
