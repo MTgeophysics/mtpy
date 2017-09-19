@@ -7,12 +7,12 @@ import matplotlib
 
 if os.name == "posix" and 'DISPLAY' not in os.environ:
     print("MATPLOTLIB: No Display found, using non-interactive Agg backend")
-    matplotlib.use('Agg')
-    test_image = False
+    matplotlib.use('svg')
+    test_image = True
     import matplotlib.pyplot as plt
 else:
     test_image = True
-    # matplotlib.use('Agg')
+    # matplotlib.use('svg')
     import matplotlib.pyplot as plt
     plt.ion()
 
