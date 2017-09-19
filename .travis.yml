@@ -6,7 +6,7 @@ python:
   # - "pypy"
 # command to install dependencies
 install:
-  - sudo apt -y install libgdal-dev
+  - sudo apt -y install libgdal-dev libgdal1h  # dependencies of dgal
   - pip install .
   - pip install -r requirements.txt
 # command to run tests
