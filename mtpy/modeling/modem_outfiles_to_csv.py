@@ -86,11 +86,11 @@ class ModemSlices():
         self.modObj = Model(model_fn=self.rhofile)
         self.modObj.read_model_file()
 
-        self.ew_lim = (self.modObj.grid_east[self.modObj.pad_east], self.modObj.grid_east[-self.modObj.pad_east - 1])
-        self.ns_lim = (self.modObj.grid_north[self.modObj.pad_north], self.modObj.grid_north[-self.modObj.pad_north - 1])
+        self.ew_lim = (self.modObj.grid_east[self.modObj.pad_east[1]], self.modObj.grid_east[-self.modObj.pad_east[1] - 1])
+        self.ns_lim = (self.modObj.grid_north[self.modObj.pad_north[1]], self.modObj.grid_north[-self.modObj.pad_north[1]-1])
 
-        logger.debug("ns-limit %s", self.ns_lim)
-        logger.debug("ew-limit %s", self.ew_lim)
+        # logger.debug("ns-limit %s", self.ns_lim)
+        # logger.debug("ew-limit %s", self.ew_lim)
         logger.info("z-limit %s", self.zlim)
 
         return
@@ -153,7 +153,7 @@ class ModemSlices():
             sX, sY = self.datObj.station_locations['rel_east'][
                          ss], self.datObj.station_locations['elev'][ss]
             xlim = (self.modObj.grid_east[
-                        self.modObj.pad_east], self.modObj.grid_east[-self.modObj.pad_east - 1])
+                        self.modObj.pad_east[1]], self.modObj.grid_east[-self.modObj.pad_east[1] - 1])
             ylim = self.zlim
             title = 'East-west slice at {} meters north'.format(gcnorth[sno])
         elif self.plot_orientation == 'ns':
@@ -168,14 +168,14 @@ class ModemSlices():
             sX, sY = self.datObj.station_locations['rel_north'][
                          ss], self.datObj.station_locations['elev'][ss]
             xlim = (self.modObj.grid_north[
-                        self.modObj.pad_north], self.modObj.grid_north[-self.modObj.pad_north - 1])
+                        self.modObj.pad_north[1]], self.modObj.grid_north[-self.modObj.pad_north[1] - 1])
             ylim = self.zlim
             title = 'North-south slice at {} meters east'.format(gceast[sno])
         elif self.plot_orientation == 'z':  #for plotting X == EW  Y == NS
             Y, X, res =  self.modObj.grid_north, self.modObj.grid_east, np.log10(self.modObj.res_model[:, :, sno])
             sY, sX = self.datObj.station_locations['rel_north'],self.datObj.station_locations['rel_east']
-            ylim = (self.modObj.grid_north[self.modObj.pad_north], self.modObj.grid_north[-self.modObj.pad_north - 1])
-            xlim = (self.modObj.grid_east[self.modObj.pad_east], self.modObj.grid_east[-self.modObj.pad_east - 1])
+            ylim = (self.modObj.grid_north[self.modObj.pad_north[1]], self.modObj.grid_north[-self.modObj.pad_north[1] - 1])
+            xlim = (self.modObj.grid_east[self.modObj.pad_east[1]], self.modObj.grid_east[-self.modObj.pad_east[1] - 1])
 
             title = 'Horizontal Slice at Depth {} meters'.format(gcz[sno])
 
@@ -349,8 +349,7 @@ if __name__ == "__main__":
     """ Usage:
     python mtpy/modeling/modem_outfiles_to_csv.py /e/Data/Modeling/Isa/100hs_flat_BB/Isa_run3_NLCG_048.dat /e/Data/Modeling/Isa/100hs_flat_BB/Isa_run3_NLCG_048.rho 20
 
-    python mtpy/modeling/modem_outfiles_to_csv.py
-    /e/tmp/GA_UA_edited_10s-10000s_16/ModEM_Data.dat  /e/tmp/GA_UA_edited_10s-10000s_16/ModEM_Model.ws -1000 1000
+    python mtpy/modeling/modem_outfiles_to_csv.py /e/tmp/GA_UA_edited_10s-10000s_16/ModEM_Data.dat  /e/tmp/GA_UA_edited_10s-10000s_16/ModEM_Model.ws -1000 1000
     """
 
     # Take commandline input
