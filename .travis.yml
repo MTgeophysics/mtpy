@@ -10,7 +10,7 @@ install:
 #  - export CPLUS_INCLUDE_PATH=/usr/include/gdal
 #  - export C_INCLUDE_PATH=/usr/include/gdal
   # manually build and install gdal
-  - pip install GDAL==$(gdal-config --version | awk -F'[.]' '{print $1"."$2}')
+  - pip install GDAL==$(gdal-config --version | awk -F'[.]' '{print $1"."$2}') --global-option=build_ext --global-option="-I/usr/include/gdal/" --install-option="--include-dirs=/usr/include/gdal/"
   - pip install .
   - pip install -r requirements.txt
 # command to run tests
