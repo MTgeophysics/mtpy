@@ -577,7 +577,7 @@ class Model(object):
         nair = max(0, self.n_airlayers)        
         
         
-        log_z = make_log_increasing_cells(self.z1_layer, self.z_target_depth, 
+        log_z = _make_log_increasing_cells(self.z1_layer, self.z_target_depth, 
                                           self.n_layers - self.pad_z - nair)
 
         z_nodes = np.around(log_z[log_z<100],decimals=-int(np.floor(np.log10(self.z1_layer))))
@@ -602,31 +602,7 @@ class Model(object):
         
         return (z_nodes, z_grid)
 
-    
-    def _make_log_increasing_cells(z1_layer, target_depth, n_layers, increment_factor=0.9):
-        """
-        create depth array with log increasing cells, down to target depth,
-        inputs are z1_layer thickness, target depth, number of layers (n_layers)
-        """        
-        
-        # make initial guess for maximum cell thickness
-        max_cell_thickness = target_depth
-        # make initial guess for log_z
-        log_z = np.logspace(np.log10(z1_layer), 
-                            np.log10(max_cell_thickness),
-                            num=n_layers)
-        counter = 0
-        
-        while np.sum(log_z) > self.z_target_depth:
-            max_cell_thickness *= increment_factor
-            log_z = np.logspace(np.log10(z1_layer), 
-                                np.log10(max_cell_thickness),
-                                num=n_layers) 
-            counter += 1
-            if counter > 1e6:
-                break        
 
-        return log_z
         
 
     def add_topography_2mesh(self, topographyfile=None, topographyarray=None, interp_method='nearest',
@@ -742,7 +718,7 @@ class Model(object):
 
             # print (stop_here_for_debug)
 
-#        elif self.n_airlayers < 0: # if number of air layers < 0, auto calculate
+#        elif self.n_airlayers < 0: # if number of air layers < 0, auto calculate number of air layers required
 #        
 #            # compute the air cell size to be added = topomax/n_airlayers, rounded to nearest 1 s.f.
 #            cs = np.amax(self.surface_dict['topography']) / float(self.n_airlayers)
@@ -766,8 +742,8 @@ class Model(object):
 #
 #            # assign topography
 #            # self.assign_resistivity_from_surfacedata('topography', air_resistivity, where='above')
-        else:
-            pass
+#        else:
+#            pass
 
         # update the z-centre as the top air layer
         self.grid_center[2] = self.grid_z[0]
