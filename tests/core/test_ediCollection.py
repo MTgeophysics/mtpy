@@ -3,16 +3,17 @@ import os
 import unittest
 from unittest import TestCase
 
+import matplotlib
+
 if os.name == "posix" and 'DISPLAY' not in os.environ:
     print("MATPLOTLIB: No Display found, using non-interactive Agg backend")
-    # matplotlib.use('Agg')
+    matplotlib.use('Agg')
     test_image = False
     import matplotlib.pyplot as plt
 else:
     test_image = True
     # matplotlib.use('Agg')
     import matplotlib.pyplot as plt
-
     plt.ion()
 
 import numpy as np
