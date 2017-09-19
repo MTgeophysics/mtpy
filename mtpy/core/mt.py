@@ -1025,6 +1025,8 @@ class MT(object):
                     name = 'release_status'
                 elif name == 'conditionsofuse':
                     name = 'conditions_of_use'
+                elif name == 'additionalinfo':
+                    name = 'additional_info'
                 value = obj.value
                 
                 setattr(self.Copyright, name, value)
@@ -1119,111 +1121,161 @@ class MT(object):
         
         xml_obj = MTxml.MT_XML()
         
+        xml_obj.Z = self.Z
+        xml_obj.Tipper = self.Tipper
+        
         xml_obj = self._xml_set_site(xml_obj)
         xml_obj = self._xml_set_field_notes(xml_obj)
+        xml_obj = self._xml_set_processing(xml_obj)
+        xml_obj = self._xml_set_provenance(xml_obj)
+        xml_obj = self._xml_set_copyright(xml_obj)
         
-        return xml_obj
+        xml_obj.write_xml_file(xml_fn)
                 
     def _xml_set_site(self, xml_obj):
         
-        xml_obj.Site.Project._value = self.Site.project
-        xml_obj.Site.Survey._value = self.Site.survey
-        xml_obj.Site.Id._value = self.Site.id 
-        xml_obj.Site.AcquiredBy._value = self.Site.acquired_by
-        xml_obj.Site.Start._value = self.Site.start_date
-        xml_obj.Site.End._value = self.Site.end_date
-        xml_obj.Site.RunList._value = self.Site.run_list
-        xml_obj.Site.Location.Latitude._value = self.lat
-        xml_obj.Site.Location.Longitude._value = self.lon
-        xml_obj.Site.Location.Elevation._value = self.elev
-        xml_obj.Site.Location.Elevation._attr = {'units':self.Site.Location.elev_units}
-        xml_obj.Site.Location.Declination._value = self.Site.Location.declination
-        xml_obj.Site.Location.Declination._attr = {'epoch':self.Site.Location.declination_epoch}
+        xml_obj.Site.Project.value = self.Site.project
+        xml_obj.Site.Survey.value = self.Site.survey
+        xml_obj.Site.Id.value = self.Site.id 
+        xml_obj.Site.AcquiredBy.value = self.Site.acquired_by
+        xml_obj.Site.Start.value = self.Site.start_date
+        xml_obj.Site.End.value = self.Site.end_date
+        xml_obj.Site.RunList.value = self.Site.run_list
+        xml_obj.Site.Location.Latitude.value = self.lat
+        xml_obj.Site.Location.Longitude.value = self.lon
+        xml_obj.Site.Location.Elevation.value = self.elev
+        xml_obj.Site.Location.Elevation.attr = {'units':self.Site.Location.elev_units}
+        xml_obj.Site.Location.Declination.value = self.Site.Location.declination
+        xml_obj.Site.Location.Declination.attr = {'epoch':self.Site.Location.declination_epoch}
         
         return xml_obj
     
     def _xml_set_field_notes(self, xml_obj):
         
-        xml_obj.FieldNotes.Instrument.Type._value = self.FieldNotes.DataLogger.type
-        xml_obj.FieldNotes.Instrument.Id._value = self.FieldNotes.DataLogger.id
-        xml_obj.FieldNotes.Instrument.Manufacturer._value = self.FieldNotes.DataLogger.manufacturer
+        xml_obj.FieldNotes.Instrument.Type.value = self.FieldNotes.DataLogger.type
+        xml_obj.FieldNotes.Instrument.Id.value = self.FieldNotes.DataLogger.id
+        xml_obj.FieldNotes.Instrument.Manufacturer.value = self.FieldNotes.DataLogger.manufacturer
         
         # EX
-        xml_obj.FieldNotes.Dipole.Type._value = self.FieldNotes.Electrode_ex.type
-        xml_obj.FieldNotes.Dipole.Id._value = self.FieldNotes.Electrode_ex.id
-        xml_obj.FieldNotes.Dipole.Manufacturer._value = self.FieldNotes.Electrode_ex.manufacturer
-        xml_obj.FieldNotes.Dipole._attr = {'name':'EX'}
+        xml_obj.FieldNotes.Dipole.Type.value = self.FieldNotes.Electrode_ex.type
+        xml_obj.FieldNotes.Dipole.Id.value = self.FieldNotes.Electrode_ex.id
+        xml_obj.FieldNotes.Dipole.Manufacturer.value = self.FieldNotes.Electrode_ex.manufacturer
+        xml_obj.FieldNotes.Dipole.attr = {'name':'EX'}
         length = np.sqrt((self.FieldNotes.Electrode_ex.x2-self.FieldNotes.Electrode_ex.x)**2+\
                          (self.FieldNotes.Electrode_ex.y2-self.FieldNotes.Electrode_ex.y)**2)
-        xml_obj.FieldNotes.Dipole.Length._value = length
+        xml_obj.FieldNotes.Dipole.Length.value = length
         azm = np.arctan((self.FieldNotes.Electrode_ex.y2-self.FieldNotes.Electrode_ex.y)/\
                         (self.FieldNotes.Electrode_ex.x2-self.FieldNotes.Electrode_ex.x))
-        xml_obj.FieldNotes.Dipole.Azimuth._value = np.degrees(azm)
-        xml_obj.FieldNotes.Dipole.Channel._value = self.FieldNotes.Electrode_ex.acqchan
+        xml_obj.FieldNotes.Dipole.Azimuth.value = np.degrees(azm)
+        xml_obj.FieldNotes.Dipole.Channel.value = self.FieldNotes.Electrode_ex.acqchan
         
         # EY
-        xml_obj.FieldNotes.Dipole_00.Type._value = self.FieldNotes.Electrode_ey.type
-        xml_obj.FieldNotes.Dipole_00.Id._value = self.FieldNotes.Electrode_ey.id
-        xml_obj.FieldNotes.Dipole_00.Manufacturer._value = self.FieldNotes.Electrode_ey.manufacturer
-        xml_obj.FieldNotes.Dipole_00._attr = {'name':'EY'}
+        xml_obj.FieldNotes.Dipole_00.Type.value = self.FieldNotes.Electrode_ey.type
+        xml_obj.FieldNotes.Dipole_00.Id.value = self.FieldNotes.Electrode_ey.id
+        xml_obj.FieldNotes.Dipole_00.Manufacturer.value = self.FieldNotes.Electrode_ey.manufacturer
+        xml_obj.FieldNotes.Dipole_00.attr = {'name':'EY'}
         length = np.sqrt((self.FieldNotes.Electrode_ey.x2-self.FieldNotes.Electrode_ey.x)**2+\
                          (self.FieldNotes.Electrode_ey.y2-self.FieldNotes.Electrode_ey.y)**2)
-        xml_obj.FieldNotes.Dipole_00.Length._value = length
+        xml_obj.FieldNotes.Dipole_00.Length.value = length
         azm = np.arctan((self.FieldNotes.Electrode_ey.y2-self.FieldNotes.Electrode_ey.y)/\
                         (self.FieldNotes.Electrode_ey.x2-self.FieldNotes.Electrode_ey.x))
-        xml_obj.FieldNotes.Dipole_00.Azimuth._value = np.degrees(azm)
-        xml_obj.FieldNotes.Dipole_00.Channel._value = self.FieldNotes.Electrode_ey.acqchan
+        xml_obj.FieldNotes.Dipole_00.Azimuth.value = np.degrees(azm)
+        xml_obj.FieldNotes.Dipole_00.Channel.value = self.FieldNotes.Electrode_ey.acqchan
         
         # HX
-        xml_obj.FieldNotes.Magnetometer.Type._value = self.FieldNotes.Magnetometer_hx.type
-        xml_obj.FieldNotes.Magnetometer.Id._value = self.FieldNotes.Magnetometer_hx.id
-        xml_obj.FieldNotes.Magnetometer.Manufacturer._value = self.FieldNotes.Magnetometer_hx.manufacturer
-        xml_obj.FieldNotes.Magnetometer._attr = {'name':'HX'}
-        xml_obj.FieldNotes.Magnetometer.Azimuth._value = self.FieldNotes.Magnetometer_hx.azm
-        xml_obj.FieldNotes.Magnetometer.Channel._value = self.FieldNotes.Magnetometer_hx.acqchan
+        xml_obj.FieldNotes.Magnetometer.Type.value = self.FieldNotes.Magnetometer_hx.type
+        xml_obj.FieldNotes.Magnetometer.Id.value = self.FieldNotes.Magnetometer_hx.id
+        xml_obj.FieldNotes.Magnetometer.Manufacturer.value = self.FieldNotes.Magnetometer_hx.manufacturer
+        xml_obj.FieldNotes.Magnetometer.attr = {'name':'HX'}
+        xml_obj.FieldNotes.Magnetometer.Azimuth.value = self.FieldNotes.Magnetometer_hx.azm
+        xml_obj.FieldNotes.Magnetometer.Channel.value = self.FieldNotes.Magnetometer_hx.acqchan
         
         # HY
-        xml_obj.FieldNotes.Magnetometer_00.Type._value = self.FieldNotes.Magnetometer_hy.type
-        xml_obj.FieldNotes.Magnetometer_00.Id._value = self.FieldNotes.Magnetometer_hy.id
-        xml_obj.FieldNotes.Magnetometer_00.Manufacturer._value = self.FieldNotes.Magnetometer_hy.manufacturer
-        xml_obj.FieldNotes.Magnetometer_00._attr = {'name':'HY'}
-        xml_obj.FieldNotes.Magnetometer_00.Azimuth._value = self.FieldNotes.Magnetometer_hy.azm
-        xml_obj.FieldNotes.Magnetometer_00.Channel._value = self.FieldNotes.Magnetometer_hy.acqchan
+        xml_obj.FieldNotes.Magnetometer_00.Type.value = self.FieldNotes.Magnetometer_hy.type
+        xml_obj.FieldNotes.Magnetometer_00.Id.value = self.FieldNotes.Magnetometer_hy.id
+        xml_obj.FieldNotes.Magnetometer_00.Manufacturer.value = self.FieldNotes.Magnetometer_hy.manufacturer
+        xml_obj.FieldNotes.Magnetometer_00.attr = {'name':'HY'}
+        xml_obj.FieldNotes.Magnetometer_00.Azimuth.value = self.FieldNotes.Magnetometer_hy.azm
+        xml_obj.FieldNotes.Magnetometer_00.Channel.value = self.FieldNotes.Magnetometer_hy.acqchan
        
         # HZ
-        xml_obj.FieldNotes.Magnetometer_01.Type._value = self.FieldNotes.Magnetometer_hz.type
-        xml_obj.FieldNotes.Magnetometer_01.Id._value = self.FieldNotes.Magnetometer_hz.id
-        xml_obj.FieldNotes.Magnetometer_01.Manufacturer._value = self.FieldNotes.Magnetometer_hz.manufacturer
-        xml_obj.FieldNotes.Magnetometer_01._attr = {'name':'HZ'}
-        xml_obj.FieldNotes.Magnetometer_01.Azimuth._value = self.FieldNotes.Magnetometer_hz.azm
-        xml_obj.FieldNotes.Magnetometer_01.Channel._value = self.FieldNotes.Magnetometer_hz.acqchan
+        xml_obj.FieldNotes.Magnetometer_01.Type.value = self.FieldNotes.Magnetometer_hz.type
+        xml_obj.FieldNotes.Magnetometer_01.Id.value = self.FieldNotes.Magnetometer_hz.id
+        xml_obj.FieldNotes.Magnetometer_01.Manufacturer.value = self.FieldNotes.Magnetometer_hz.manufacturer
+        xml_obj.FieldNotes.Magnetometer_01.attr = {'name':'HZ'}
+        xml_obj.FieldNotes.Magnetometer_01.Azimuth.value = self.FieldNotes.Magnetometer_hz.azm
+        xml_obj.FieldNotes.Magnetometer_01.Channel.value = self.FieldNotes.Magnetometer_hz.acqchan
         
         
         # Data Quality Notes
-        xml_obj.FieldNotes.DataQualityNotes.Rating._value = self.FieldNotes.DataQuality.rating
-        xml_obj.FieldNotes.DataQualityNotes.GoodFromPeriod._value = self.FieldNotes.DataQuality.good_from_period
-        xml_obj.FieldNotes.DataQualityNotes.GoodToPeriod._value = self.FieldNotes.DataQuality.good_to_period
-        xml_obj.FieldNotes.DataQualityNotes.Comments._value = self.FieldNotes.DataQuality.comments
-        xml_obj.FieldNotes.DataQualityNotes.Comments._attr = {'author':self.FieldNotes.DataQuality.author}
+        xml_obj.FieldNotes.DataQualityNotes.Rating.value = self.FieldNotes.DataQuality.rating
+        xml_obj.FieldNotes.DataQualityNotes.GoodFromPeriod.value = self.FieldNotes.DataQuality.good_from_period
+        xml_obj.FieldNotes.DataQualityNotes.GoodToPeriod.value = self.FieldNotes.DataQuality.good_to_period
+        xml_obj.FieldNotes.DataQualityNotes.Comments.value = self.FieldNotes.DataQuality.comments
+        xml_obj.FieldNotes.DataQualityNotes.Comments.attr = {'author':self.FieldNotes.DataQuality.author}
         # Data Quality Warnings
-        xml_obj.FieldNotes.DataQualityWarnings.Flag._value = self.FieldNotes.DataQuality.warnings_flag
-        xml_obj.FieldNotes.DataQualityWarnings.Comments._value = self.FieldNotes.DataQuality.warnings_comments
-        xml_obj.FieldNotes.DataQualityWarnings.Comments._attr = {'author':self.FieldNotes.DataQuality.author}
+        xml_obj.FieldNotes.DataQualityWarnings.Flag.value = self.FieldNotes.DataQuality.warnings_flag
+        xml_obj.FieldNotes.DataQualityWarnings.Comments.value = self.FieldNotes.DataQuality.warnings_comments
+        xml_obj.FieldNotes.DataQualityWarnings.Comments.attr = {'author':self.FieldNotes.DataQuality.author}
        
         return xml_obj
         
     def _xml_set_processing(self, xml_obj):
         
-        xml_obj.ProcessingInfo.ProcessedBy._value = self.Processing.processed_by
-        xml_obj.ProcessingInfo.ProcessingSoftware.Name._value = self.Processing.Software.name
-        xml_obj.ProcessingInfo.ProcessingSoftware.Author._value = self.Processing.Software.author
-        xml_obj.ProcessingInfo.ProcessingSoftware.Version._value = self.Processing.Software.version
+        xml_obj.ProcessingInfo.ProcessedBy.value = self.Processing.processed_by
+        xml_obj.ProcessingInfo.ProcessingSoftware.Name.value = self.Processing.Software.name
+        xml_obj.ProcessingInfo.ProcessingSoftware.Author.value = self.Processing.Software.author
+        xml_obj.ProcessingInfo.ProcessingSoftware.Version.value = self.Processing.Software.version
         
-        xml_obj.ProcessingInfo.SignConvention._value = self.Processing.sign_convention
-        xml_obj.ProcessingInfo.RemoteInfo._value = self.Processing.RemoteSite.id
+        # TODO: Need to find a way to put in processing parameters.
         
+        xml_obj.ProcessingInfo.SignConvention.value = self.Processing.sign_convention
+        
+        xml_obj.ProcessingInfo.RemoteRef.value = self.Processing.remote_reference
+        xml_obj.ProcessingInfo.RemoteInfo.Project.value = self.Processing.RemoteSite.project
+        xml_obj.ProcessingInfo.RemoteInfo.Survey.value = self.Processing.RemoteSite.survey
+        xml_obj.ProcessingInfo.RemoteInfo.ID.value = self.Processing.RemoteSite.id
+        xml_obj.ProcessingInfo.RemoteInfo.YearCollected.value = self.Processing.RemoteSite.year_collected
+        xml_obj.ProcessingInfo.RemoteInfo.AcquiredBy.value = self.Processing.RemoteSite.acquired_by
+        xml_obj.ProcessingInfo.RemoteInfo.Location.Latitude.value = self.Processing.RemoteSite.Location.latitude
+        xml_obj.ProcessingInfo.RemoteInfo.Location.Longitude.value = self.Processing.RemoteSite.Location.longitude
+        xml_obj.ProcessingInfo.RemoteInfo.Location.Elevation.value = self.Processing.RemoteSite.Location.elevation
+        xml_obj.ProcessingInfo.RemoteInfo.Location.Elevation.attr = {'units':self.Processing.RemoteSite.Location.elev_units}
+        xml_obj.ProcessingInfo.RemoteInfo.Location.attr = {'datum':self.Processing.RemoteSite.Location.datum}
+
+        return xml_obj
+    
+    def _xml_set_provenance(self, xml_obj):
+        
+        xml_obj.Provenance.CreatingApplication.value = 'MTpy.core.mt.MT'
+        
+        xml_obj.Provenance.Submitter.Name.value = self.Provenance.Submitter.name
+        xml_obj.Provenance.Submitter.Email.value = self.Provenance.Submitter.email
+        xml_obj.Provenance.Submitter.Org.value = self.Provenance.Submitter.organization
+        xml_obj.Provenance.Submitter.OrgURL.value = self.Provenance.Submitter.organization_url
+        
+        xml_obj.Provenance.Creator.Name.value = self.Provenance.Creator.name
+        xml_obj.Provenance.Creator.Email.value = self.Provenance.Creator.email
+        xml_obj.Provenance.Creator.Org.value = self.Provenance.Creator.organization
+        xml_obj.Provenance.Creator.OrgURL.value = self.Provenance.Creator.organization_url
         
         return xml_obj
+    
+    def _xml_set_copyright(self, xml_obj):
+        
+        xml_obj.Copyright.Citation.Authors.value = self.Copyright.Citation.author
+        xml_obj.Copyright.Citation.Title.value = self.Copyright.Citation.title
+        xml_obj.Copyright.Citation.Year.value = self.Copyright.Citation.year
+        xml_obj.Copyright.Citation.Journal.value = self.Copyright.Citation.journal
+        xml_obj.Copyright.Citation.Volume.value = self.Copyright.Citation.volume
+        xml_obj.Copyright.Citation.DOI.value = self.Copyright.Citation.doi
+        
+        xml_obj.Copyright.ConditionsOfUse.value = self.Copyright.conditions_of_use
+        xml_obj.Copyright.ReleaseStatus.value = self.Copyright.release_status
+        xml_obj.Copyright.AdditionalInfo.value = self.Copyright.additional_info
+    
+        return xml_obj
+        
     
     def read_cfg_file(self, cfg_fn):
         """
@@ -1903,6 +1955,7 @@ class Copyright(object):
                                           'metadata, as obtained from the author(s), are ',
                                           'included for informational purposes only.'])
         self.release_status = None
+        self.additional_info = None
         for key in kwargs.keys():
             setattr(self, key, kwargs[key])
             

@@ -53,9 +53,26 @@ class XML_element(object):
     @property
     def value(self):
         return self._value
+    
+    @value.setter
+    def value(self, value):
+        try:
+            self._value = str(value)
+        except ValueError:
+            print 'Cannot set {0} to string, set to None'.format(value)
+            self._value = None
+            
     @property
     def attr(self):
         return self._attr
+    
+    @attr.setter
+    def attr(self, attr):
+        if type(attr) is not dict:
+            raise ValueError('attr needs to be a dictionary, not {0}'.format(type(attr)))
+        else:
+            self._attr = attr
+            
     @property
     def name(self):
         return self._name
@@ -264,7 +281,8 @@ class XML_Config(object):
                                                       'Volume':XML_element('Volume', None, None),
                                                       'DOI':XML_element('DOI', None, None)}),
                                   'ReleaseStatus':XML_element('ReleaseStatus', None, 'Closed'),
-                                  'ConditionsOfUse':XML_element('ConditionsOfUse', None, conditions_of_use)})
+                                  'ConditionsOfUse':XML_element('ConditionsOfUse', None, conditions_of_use),
+                                  'AdditionalInfo':XML_element('AdditionalInfo', None, None)})
 
         self.Site = XML_element('Site', None, None,
                           **{'Project':XML_element('Project', None, None),
@@ -341,6 +359,7 @@ class XML_Config(object):
                                                            **{'Project':XML_element('Project', None, None),
                                                               'Survey':XML_element('Survey', None, None),
                                                               'ID':XML_element('ID', None, None),
+                                                              'AcquiredBy':XML_element('AcquiredBy', None, None),
                                                               'Name':XML_element('Name', None, None),
                                                               'YearCollected':XML_element('YearCollected', None, None),
                                                               'Location':XML_element('Location', {'datum':'WGS84'}, None,
@@ -842,6 +861,9 @@ class MT_XML(XML_Config):
                                     'value_{0:02}'.format(count),
                                     XML_element('value', c_dict, c_value)) 
                             count += 1
+                            
+        self.PeriodRange._attr = {'min':'{0:.6e}'.format(1./self.Z.freq.max()),
+                                  'max':'{0:.6e}'.format(1./self.Z.freq.min())}
         
     def _write_element(self, parent_et, XML_element_obj):
         """
