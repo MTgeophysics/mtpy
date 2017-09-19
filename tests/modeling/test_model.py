@@ -1,9 +1,7 @@
 import glob
-from unittest import TestCase
-
 import os
 import shutil
-import matplotlib.pyplot as plt
+from unittest import TestCase
 
 from examples.create_modem_input import select_periods
 from mtpy.modeling.modem_data import Data
@@ -38,10 +36,10 @@ class TestModel(TestCase):
 
 
 edi_paths = [
-    "tests\\data\\edifiles",
-    "examples\\data\\edi2",
-    "examples\\data\\edi_files",
-    "tests\\data\\edifiles2",
+    "tests/data/edifiles",
+    "examples/data/edi2",
+    "examples/data/edi_files",
+    "tests/data/edifiles2",
     "../MT_Datasets/3D_MT_data_edited_fromDuanJM",
     "../MT_Datasets/GA_UA_edited_10s-10000s",
 ]

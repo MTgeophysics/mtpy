@@ -4,18 +4,19 @@ import unittest
 from unittest import TestCase
 
 import matplotlib.pyplot as plt
+
 from mtpy.imaging.plotnresponses import PlotMultipleResponses
 
 plt.ion()
 
 edi_paths = [
     "",
-    "tests\\data\\edifiles",
-    "examples\\data\\edi2",
-    "examples\\data\\edi_files",
+    "tests/data/edifiles",
+    "examples/data/edi2",
+    "1examples/data/edi_files",
     "../MT_Datasets/3D_MT_data_edited_fromDuanJM/",
     "../MT_Datasets/GA_UA_edited_10s-10000s/",
-    "tests\\data\\edifiles2"
+    "tests/data/edifiles2"
 ]
 
 

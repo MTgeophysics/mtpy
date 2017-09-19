@@ -1,11 +1,10 @@
 import glob
 import inspect
-import unittest
+import os
 from unittest import TestCase
 
 # configure matplotlib for testing
 import matplotlib.pyplot as plt
-import os
 
 from mtpy.imaging.plotresidualptps import PlotResidualPTps
 
@@ -13,12 +12,12 @@ plt.ion()
 
 edi_paths = [
     "",
-    "tests\\data\\edifiles",
-    "examples\\data\\edi2",
-    "examples\\data\\edi_files",
+    "tests/data/edifiles",
+    "examples/data/edi2",
+    "examples/data/edi_files",
     "../MT_Datasets/3D_MT_data_edited_fromDuanJM/",
     "../MT_Datasets/GA_UA_edited_10s-10000s/",
-    "tests\\data\\edifiles2"
+    "tests/data/edifiles2"
 ]
 
 

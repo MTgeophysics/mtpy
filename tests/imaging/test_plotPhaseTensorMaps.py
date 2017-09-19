@@ -13,10 +13,10 @@ from mtpy.imaging.phase_tensor_maps import PlotPhaseTensorMaps
 
 edi_paths = [
     "",
-    "tests\\data\\edifiles",
+    "tests/data/edifiles",
     "../MT_Datasets/3D_MT_data_edited_fromDuanJM/",
     "../MT_Datasets/GA_UA_edited_10s-10000s/",
-    "tests\\data\\edifiles2"
+    "tests/data/edifiles2"
 ]
 
 

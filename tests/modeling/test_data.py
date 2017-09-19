@@ -74,10 +74,10 @@ class TestData(TestCase):
 
 
 edi_paths = [
-    "tests\\data\\edifiles",
-    "examples\\data\\edi2",
-    "examples\\data\\edi_files",
-    "tests\\data\\edifiles2",
+    "tests/data/edifiles",
+    "examples/data/edi2",
+    "examples/data/edi_files",
+    "tests/data/edifiles2",
     "../MT_Datasets/3D_MT_data_edited_fromDuanJM",
     "../MT_Datasets/GA_UA_edited_10s-10000s",
 ]
