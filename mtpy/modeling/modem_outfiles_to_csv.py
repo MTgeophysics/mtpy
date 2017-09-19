@@ -91,7 +91,9 @@ class ModemSlices():
 
         # logger.debug("ns-limit %s", self.ns_lim)
         # logger.debug("ew-limit %s", self.ew_lim)
-        logger.info("z-limit %s", self.zlim)
+        # logger.info("station name list %s", self.datObj.station_locations['station'])
+        # logger.info("station Lat list %s", self.datObj.station_locations['lat'])
+
 
         return
 
@@ -104,9 +106,11 @@ class ModemSlices():
         """
 
         station_dict={}
-        X, Y = self.modObj.grid_east, self.modObj.grid_north
+
         sX, sY = self.datObj.station_locations['rel_east'], self.datObj.station_locations['rel_north']
-        # station_names[n_stations]
+        station_names = self.datObj.station_locations['station']
+        station_lats = self.datObj.station_locations['lat']
+        station_lons = self.datObj.station_locations['lon']
 
         # get grid centres (finite element cells centres)
         gceast, gcnorth = [np.mean([arr[:-1], arr[1:]], axis=0) for arr in
@@ -122,7 +126,7 @@ class ModemSlices():
 
             logger.debug("Station Index: (%s, %s)", ix, iy)
 
-            station_dict[(ix, iy)]=["VIC00N", sX[n], sY[n]]   # Todo: get (station_name, lat, long)[n]
+            station_dict[(ix, iy)]=[station_names[n], sX[n], sY[n], station_lats[n], station_lons[n] ]   # Todo: get (station_name, lat, long)[n]
 
         print (station_dict)
 
@@ -246,7 +250,7 @@ class ModemSlices():
                 for j in xrange(len(Y)-1):
                     st = stationd.get((i,j), None)  # filter and subset for station location meshgrids
                     if st is not None:
-                        arow=[X[i], Y[j], Z_location, res[j,i], st[0],st[1],st[2], i, j]
+                        arow=[X[i], Y[j], Z_location, res[j,i], st[0],st[1],st[2], st[3], st[4],i,j]
                         csvrows.append(arow)
 
         with open(csvfile, "wb") as csvf:
