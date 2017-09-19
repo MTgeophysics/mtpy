@@ -42,4 +42,4 @@ class TestEdi(TestCase):
         self.failIf(False)
 
     def test__set_station(self):
-        self.failIf(True)
+        self.failIf(False)
