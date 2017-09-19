@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 """
 Description:
-   This module is refactored from modem.py which is too big to manage edit
-    Define the Data class
+   This module defines the ModEM Data class.
+   It is refactored from modem.py which is too big to manage edit
+
 
 Author: fei.zhang@ga.gov.au
 

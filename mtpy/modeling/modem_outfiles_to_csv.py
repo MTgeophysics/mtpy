@@ -95,6 +95,40 @@ class ModemSlices():
 
         return
 
+    def find_stations_in_meshgrid(self):
+        """
+        find the (station_Name, sX,sY) its associated index (sI,sJ) in the regular mesh grid (X[i],Y[j])
+        # print(len(sX), sX)  # =number of stations
+        # print(len(sY), sY)  # =number of stations
+        :return:
+        """
+
+        station_dict={}
+        X, Y = self.modObj.grid_east, self.modObj.grid_north
+        sX, sY = self.datObj.station_locations['rel_east'], self.datObj.station_locations['rel_north']
+        # station_names[n_stations]
+
+        # get grid centres (finite element cells centres)
+        gceast, gcnorth = [np.mean([arr[:-1], arr[1:]], axis=0) for arr in
+                           [self.modObj.grid_east, self.modObj.grid_north]]
+        n_stations = len(sX)
+        for n in xrange(n_stations):
+            xdist = np.abs(gceast - sX[n])
+            snos = np.where(xdist == np.amin(xdist))
+            ix = snos[0][0]
+            ydist = np.abs(gcnorth - sY[n])
+            snos = np.where(ydist == np.amin(ydist))
+            iy = snos[0][0]
+
+            logger.debug("Station Index: (%s, %s)", ix, iy)
+
+            station_dict[(ix, iy)]=["VIC00N", sX[n], sY[n]]   # Todo: get (station_name, lat, long)[n]
+
+        print (station_dict)
+
+        return station_dict
+
+
     def set_plot_orientation(self, orient):
         """set a new plot orientation for plotting
         :param orient: z, ew, ns
@@ -179,7 +213,6 @@ class ModemSlices():
 
             title = 'Horizontal Slice at Depth {} meters'.format(gcz[sno])
 
-
         return (X,Y,res,sX,sY,xlim,ylim,title, actual_location)
 
 
@@ -195,7 +228,9 @@ class ModemSlices():
         z_cell_centres = np.mean([self.modObj.grid_z[:-1], self.modObj.grid_z[1:]], axis=0)
 
         #csv_header = ['Station', 'Lat', 'Long', 'X', 'Y', 'Z',  'Log_Resisitivity']
-        csv_header = ['X', 'Y', 'Z',  'Log_Resisitivity']
+        csv_header = ['X', 'Y', 'Z',  'Log_Resisitivity', 'StationName', 'StationX','StationY', 'Lat','Long']
+
+        stationd= self.find_stations_in_meshgrid()
 
         csvrows = []
         for zslice in z_cell_centres:
@@ -209,8 +244,10 @@ class ModemSlices():
 
             for i in xrange(len(X)-1):
                 for j in xrange(len(Y)-1):
-                    arow=[X[i], Y[j], Z_location, res[j,i]]
-                    csvrows.append(arow)
+                    st = stationd.get((i,j), None)  # filter and subset for station location meshgrids
+                    if st is not None:
+                        arow=[X[i], Y[j], Z_location, res[j,i], st[0],st[1],st[2], i, j]
+                        csvrows.append(arow)
 
         with open(csvfile, "wb") as csvf:
             writer = csv.writer(csvf)
@@ -227,6 +264,7 @@ class ModemSlices():
         """
 
         (X, Y, res, sX, sY, xlim, ylim, title, actual_location)= self.get_slice_data(slice_location)
+
 
         # make the plot
 
