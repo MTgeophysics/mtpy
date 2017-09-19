@@ -6,10 +6,11 @@ python:
   # - "pypy"
 # command to install dependencies
 install:
-#  - sudo apt -y install libgdal-dev  # dependencies of dgal
+  - sudo apt -y install libgdal-dev  # dependencies of dgal
 #  - export CPLUS_INCLUDE_PATH=/usr/include/gdal
 #  - export C_INCLUDE_PATH=/usr/include/gdal
-  - sudo apt -y install python-gdal
+  # install gdal
+  - pip install gdal --global-option=build_ext --global-option="-I/usr/include/gdal/"
   - pip install .
   - pip install -r requirements.txt
 # command to run tests

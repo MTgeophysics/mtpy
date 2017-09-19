@@ -5,15 +5,19 @@ import shutil
 import sys
 from unittest import TestCase
 
+import matplotlib
+
+if os.name == "posix" and 'DISPLAY' not in os.environ:
+    print("MATPLOTLIB: No Display found, using non-interactive Agg backend")
+    matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+from matplotlib.testing.decorators import image_comparison
 
 from examples.create_modem_input import select_periods
 from mtpy.modeling.modem_data import Data
 
 # patch that changes the matplotlib behaviour
 plt.ion()  # enable interactive
-
-
 # plt.ioff()  # disable interactive, which will also disable this patch
 
 
@@ -105,6 +109,7 @@ def _test_gen(index, edi_path, error_type, comp_error_type):
     :return:
     """
 
+    @image_comparison(baseline_images=[], extensions='svg')
     def test_func(self):
         if not os.path.isdir(edi_path):
             # input file does not exist, skip test after remove the output dir
