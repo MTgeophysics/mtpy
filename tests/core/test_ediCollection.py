@@ -148,3 +148,8 @@ for edi_path in edi_paths:
         globals()[cls_name] = type(cls_name, (TestFromMTObj, unittest.TestCase), {
             "edi_path": edi_path
         })
+
+if 'TsetFromFile' in globals():
+    del globals()['TsetFromFile']
+if 'TestFromMTObj' in globals():
+    del globals()['TestFromMTObj']
