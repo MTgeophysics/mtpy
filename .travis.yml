@@ -18,4 +18,4 @@ install:
 script:
   - py.test tests/core
   - py.test tests/imaging
-
+  - py.test tests/modeling
