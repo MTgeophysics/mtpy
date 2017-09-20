@@ -32,7 +32,10 @@ def show_patcher(show_func):
             # if canvas.figure.stale:
             #     canvas.draw()
             # show(block=False)
-            canvas.start_event_loop(1)  # wait time = 1
+            try:
+                canvas.start_event_loop(1)  # wait time = 1
+            finally:
+                pass
         plt.close()
         return stuff
 
