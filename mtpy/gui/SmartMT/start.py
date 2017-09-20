@@ -137,7 +137,7 @@ class StartQt4(QtGui.QMainWindow):
         # show files
         msg = QtGui.QMessageBox()
         msg.setIcon(QtGui.QMessageBox.Information)
-        msg.setText("You are about to create measurement .csv files.")
+        msg.setText("You are about to create phase tensor .csv files.")
         msg.setInformativeText("Please select an output directory after click \"OK\"\n"
                                "For the list of .edi files (stations) included in the creation, please click \"Show Details\"")
         msg.setWindowTitle("Note")
@@ -178,7 +178,7 @@ class StartQt4(QtGui.QMainWindow):
         # show files
         msg = QtGui.QMessageBox()
         msg.setIcon(QtGui.QMessageBox.Information)
-        msg.setText("You are about to create measurement .csv files.")
+        msg.setText("You are about to create shape files.")
         msg.setInformativeText("Please select an output directory after click \"OK\"\n"
                                "For the list of .edi files (stations) included in the creation, please click \"Show Details\"")
         msg.setWindowTitle("Note")
