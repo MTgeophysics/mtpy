@@ -777,7 +777,7 @@ class PlotStrike(object):
                                           'W', '', '',
                                           'S', '', ''])
 
-                # set invariant axes properties
+                # set invariant axes propertiesz
                 if aa == 0:
                     axh.set_ylim(0, invhist[0].max())
 

@@ -622,8 +622,11 @@ class PlotStrike2D(object):
 
                 # set tipper color from dark blue (low) to light blue (high)
                 for cc, bar in enumerate(self.bartr):
-                    fc = float(trhist[0][cc]) / trhist[0].max() * .9
-                    bar.set_facecolor((0, 1 - fc / 2, fc))
+                    try:
+                        fc = float(trhist[0][cc]) / trhist[0].max() * .9
+                        bar.set_facecolor((0, 1 - fc / 2, fc))
+                    except ZeroDivisionError:
+                        pass
 
             # make axis look correct with N to the top at 90.
             for aa, axh in enumerate(axlist):
