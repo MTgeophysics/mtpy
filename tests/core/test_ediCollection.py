@@ -8,10 +8,8 @@ import matplotlib
 if os.name == "posix" and 'DISPLAY' not in os.environ:
     print("MATPLOTLIB: No Display found, using non-interactive Agg backend")
     matplotlib.use('svg')
-    test_image = True
     import matplotlib.pyplot as plt
 else:
-    test_image = True
     # matplotlib.use('svg')
     import matplotlib.pyplot as plt
     plt.ion()
@@ -93,25 +91,16 @@ class _BaseTest(object):
             periods.append(new_periods)
 
     def test_plot_stations(self):
-        if test_image:
-            self.edi_collection.plot_stations()
-            plt.pause(1)
-        else:
-            self.skipTest("Skipped due to matplotlib issues")
+        self.edi_collection.plot_stations()
+        plt.pause(1)
 
     def test_display_on_basemap(self):
-        if test_image:
-            self.edi_collection.display_on_basemap()
-            plt.pause(1)
-        else:
-            self.skipTest("Skipped due to matplotlib issues")
+        self.edi_collection.display_on_basemap()
+        plt.pause(1)
 
     def test_display_on_image(self):
-        if test_image:
-            self.edi_collection.display_on_image()
-            plt.pause(1)
-        else:
-            self.skipTest("Skipped due to matplotlib issues")
+        self.edi_collection.display_on_image()
+        plt.pause(1)
 
     def test_create_mt_station_gdf(self):
         path = os.path.join(self._temp_dir, self.__class__.__name__ + "_mt_station_gdf")
@@ -132,13 +121,10 @@ class _BaseTest(object):
         self.edi_collection.create_phase_tensor_csv(path)
 
     def test_create_phase_tensor_csv_with_image(self):
-        if test_image:
-            path2 = os.path.join(self._temp_dir, self.__class__.__name__ + "_phase_tensor_csv_with_image")
-            if not os.path.exists(path2):
-                os.mkdir(path2)
-            self.edi_collection.create_phase_tensor_csv_with_image(path2)
-        else:
-            self.skipTest("Skipped due to matplotlib issues")
+        path2 = os.path.join(self._temp_dir, self.__class__.__name__ + "_phase_tensor_csv_with_image")
+        if not os.path.exists(path2):
+            os.mkdir(path2)
+        self.edi_collection.create_phase_tensor_csv_with_image(path2)
 
 
 class TsetFromFile(_BaseTest):
