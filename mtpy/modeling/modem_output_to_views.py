@@ -1,6 +1,6 @@
 """
 Description:
-    Extract data from modem output files (.dat and .rho) and produce csv files for further visualization
+    Extract data from modem output files (.dat and .rho) and produce views: csv files and visualization plots
     The output look like: StationName, Lat, Long, X, Y, Z, Log(Resistivity)
     where (X,Y,Z) are relative distances in meters from the mesh's origin.
     Projection/Coordinate system must be known in order to associate (Lat, Long) to (X, Y)
@@ -387,12 +387,12 @@ class ModemSlices():
 
 
 #########################################################################
+# How to call the create csv function
+# Usage:
+#  python mtpy/modeling/modem_output_to_views.py /e/Data/Modeling/Isa/100hs_flat_BB/Isa_run3_NLCG_048.dat /e/Data/Modeling/Isa/100hs_flat_BB/Isa_run3_NLCG_048.rho 20
+#  python mtpy/modeling/modem_output_to_views.py /e/tmp/GA_UA_edited_10s-10000s_16/ModEM_Data.dat  /e/tmp/GA_UA_edited_10s-10000s_16/ModEM_Model.ws -1000 1000
+#---------------------------------------------------------------------------
 if __name__ == "__main__":
-    """ Usage:
-    python mtpy/modeling/modem_outfiles_to_csv.py /e/Data/Modeling/Isa/100hs_flat_BB/Isa_run3_NLCG_048.dat /e/Data/Modeling/Isa/100hs_flat_BB/Isa_run3_NLCG_048.rho 20
-
-    python mtpy/modeling/modem_outfiles_to_csv.py /e/tmp/GA_UA_edited_10s-10000s_16/ModEM_Data.dat  /e/tmp/GA_UA_edited_10s-10000s_16/ModEM_Model.ws -1000 1000
-    """
 
     # Take commandline input
     if (len(sys.argv) == 2):  # A model dir provided
@@ -422,19 +422,4 @@ if __name__ == "__main__":
 
     myObj.create_csv()
 
-#--------------------- visualize slices:
-    # myObj.set_plot_orientation('ew')
-    # myObj.set_plot_orientation('ns')
-    # horizontal at a given depth z
-    myObj.set_plot_orientation('z')
-
-
-    if len(sys.argv) >= 4:
-        slice_locs = sys.argv[3:] # a list of depth where h-slice to be visualized
-        # slice_locs=[-2000, -1900, -1700, -1500, -1200, -1000, -800, -600, -400, -200,
-        #             0, 20, 50, 80, 100,150, 200, 400, 600,800,1000,
-        #             2000,3000,4000,5000,6000,7000,8000,9000,10000]
-    else:
-        slice_locs= None
-
-    myObj.plot_multi_slices(slice_list=slice_locs)
+# To visualize slices, see also the script  mtpy/imaging/modem_plot_slices.py
