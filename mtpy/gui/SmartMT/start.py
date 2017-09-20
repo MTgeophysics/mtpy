@@ -93,82 +93,127 @@ class StartQt4(QtGui.QMainWindow):
         self.ui.actionSave_Project.triggered.connect(self.dummy_action)
 
     def _export_measurement_csv(self):
-        dialog = QtGui.QFileDialog(self)
-        dir_name = None
-        dialog.setWindowTitle("Selecting Output Directory ...")
-        dialog.setFileMode(QtGui.QFileDialog.DirectoryOnly)
-        while dir_name is None:
-            if dialog.exec_() == QtGui.QDialog.Accepted:
-                dir_name = dialog.selectedFiles()[0]
-                dir_name = str(dir_name)
-                if not os.path.isdir(dir_name):
-                    QtGui.QMessageBox.information(self, "NOTE",
-                                                  "Please select a directory to save the created .csv files.")
-                    dir_name = None  # will read again
-            else:
-                break
-        if dir_name is not None:
-            collect = EdiCollection(
-                mt_objs=[
-                    self._file_handler.get_MT_obj(self._file_handler.station2ref(station))
-                    for station in self._station_viewer.selected_stations
-                ]
-            )
-            collect.create_measurement_csv(dir_name)
-            QtGui.QMessageBox.information(self, "Creation Completed", "Output written to %s" % dir_name)
-            webbrowser.open(dir_name)
+        # show files
+        msg = QtGui.QMessageBox()
+        msg.setIcon(QtGui.QMessageBox.Information)
+        msg.setText("You are about to create measurement .csv files.")
+        msg.setInformativeText("Please select an output directory after click \"OK\"\n"
+                               "For the list of .edi files (stations) included in the creation, please click \"Show Details\"")
+        msg.setWindowTitle("Note")
+        msg.setDetailedText(
+            "\n".join(["{station} ({fn})".format(
+                station=station, fn=self._file_handler.station2ref(station)
+            ) for station in self._station_viewer.selected_stations])
+        )
+        msg.setStandardButtons(QtGui.QMessageBox.Ok | QtGui.QMessageBox.Cancel)
+
+        if msg.exec_() == QtGui.QMessageBox.Ok:
+            dialog = QtGui.QFileDialog(self)
+            dir_name = None
+            dialog.setWindowTitle("Selecting Output Directory ...")
+            dialog.setFileMode(QtGui.QFileDialog.DirectoryOnly)
+            while dir_name is None:
+                if dialog.exec_() == QtGui.QDialog.Accepted:
+                    dir_name = dialog.selectedFiles()[0]
+                    dir_name = str(dir_name)
+                    if not os.path.isdir(dir_name):
+                        QtGui.QMessageBox.information(self, "NOTE",
+                                                      "Please select a directory to save the created .csv files.")
+                        dir_name = None  # will read again
+                else:
+                    break
+            if dir_name is not None:
+                collect = EdiCollection(
+                    mt_objs=[
+                        self._file_handler.get_MT_obj(self._file_handler.station2ref(station))
+                        for station in self._station_viewer.selected_stations
+                    ]
+                )
+                collect.create_measurement_csv(dir_name)
+                QtGui.QMessageBox.information(self, "Creation Completed", "Output written to %s" % dir_name)
+                webbrowser.open(dir_name)
 
     def _export_phase_tensor_csv(self):
-        dialog = QtGui.QFileDialog(self)
-        dir_name = None
-        dialog.setWindowTitle("Selecting Output Directory ...")
-        dialog.setFileMode(QtGui.QFileDialog.DirectoryOnly)
-        while dir_name is None:
-            if dialog.exec_() == QtGui.QDialog.Accepted:
-                dir_name = dialog.selectedFiles()[0]
-                dir_name = str(dir_name)
-                if not os.path.isdir(dir_name):
-                    QtGui.QMessageBox.information(self, "NOTE",
-                                                  "Please select a directory to save the created .csv files.")
-                    dir_name = None  # will read again
-            else:
-                break
-        if dir_name is not None:
-            collect = EdiCollection(
-                mt_objs=[
-                    self._file_handler.get_MT_obj(self._file_handler.station2ref(station))
-                    for station in self._station_viewer.selected_stations
-                ]
-            )
-            collect.create_phase_tensor_csv(dir_name)
-            QtGui.QMessageBox.information(self, "Creation Completed", "Output written to %s" % dir_name)
-            webbrowser.open(dir_name)
+        # show files
+        msg = QtGui.QMessageBox()
+        msg.setIcon(QtGui.QMessageBox.Information)
+        msg.setText("You are about to create measurement .csv files.")
+        msg.setInformativeText("Please select an output directory after click \"OK\"\n"
+                               "For the list of .edi files (stations) included in the creation, please click \"Show Details\"")
+        msg.setWindowTitle("Note")
+        msg.setDetailedText(
+            "\n".join(["{station} ({fn})".format(
+                station=station, fn=self._file_handler.station2ref(station)
+            ) for station in self._station_viewer.selected_stations])
+        )
+        msg.setStandardButtons(QtGui.QMessageBox.Ok | QtGui.QMessageBox.Cancel)
+
+        if msg.exec_() == QtGui.QMessageBox.Ok:
+            dialog = QtGui.QFileDialog(self)
+            dir_name = None
+            dialog.setWindowTitle("Selecting Output Directory ...")
+            dialog.setFileMode(QtGui.QFileDialog.DirectoryOnly)
+            while dir_name is None:
+                if dialog.exec_() == QtGui.QDialog.Accepted:
+                    dir_name = dialog.selectedFiles()[0]
+                    dir_name = str(dir_name)
+                    if not os.path.isdir(dir_name):
+                        QtGui.QMessageBox.information(self, "NOTE",
+                                                      "Please select a directory to save the created .csv files.")
+                        dir_name = None  # will read again
+                else:
+                    break
+            if dir_name is not None:
+                collect = EdiCollection(
+                    mt_objs=[
+                        self._file_handler.get_MT_obj(self._file_handler.station2ref(station))
+                        for station in self._station_viewer.selected_stations
+                    ]
+                )
+                collect.create_phase_tensor_csv(dir_name)
+                QtGui.QMessageBox.information(self, "Creation Completed", "Output written to %s" % dir_name)
+                webbrowser.open(dir_name)
 
     def _export_shape_file(self, *args, **kwargs):
-        dialog = QtGui.QFileDialog(self)
-        dir_name = None
-        dialog.setWindowTitle("Selecting Output Directory ...")
-        dialog.setFileMode(QtGui.QFileDialog.DirectoryOnly)
-        while dir_name is None:
-            if dialog.exec_() == QtGui.QDialog.Accepted:
-                dir_name = dialog.selectedFiles()[0]
-                dir_name = str(dir_name)
-                if not os.path.isdir(dir_name):
-                    QtGui.QMessageBox.information(self, "NOTE",
-                                                  "Please select a directory to save the created shape files.")
-                    dir_name = None  # will read again
-            else:
-                break
-        if dir_name is not None:
-            collect = EdiCollection(
-                mt_objs=[
-                    self._file_handler.get_MT_obj(self._file_handler.station2ref(station))
-                    for station in self._station_viewer.selected_stations
-                ]
-            )
-            collect.create_mt_station_gdf(dir_name)
-            QtGui.QMessageBox.information(self, "Creation Completed", "Output written to %s" % dir_name)
-            webbrowser.open(dir_name)
+        # show files
+        msg = QtGui.QMessageBox()
+        msg.setIcon(QtGui.QMessageBox.Information)
+        msg.setText("You are about to create measurement .csv files.")
+        msg.setInformativeText("Please select an output directory after click \"OK\"\n"
+                               "For the list of .edi files (stations) included in the creation, please click \"Show Details\"")
+        msg.setWindowTitle("Note")
+        msg.setDetailedText(
+            "\n".join(["{station} ({fn})".format(
+                station=station, fn=self._file_handler.station2ref(station)
+            ) for station in self._station_viewer.selected_stations])
+        )
+        msg.setStandardButtons(QtGui.QMessageBox.Ok | QtGui.QMessageBox.Cancel)
+
+        if msg.exec_() == QtGui.QMessageBox.Ok:
+            dialog = QtGui.QFileDialog(self)
+            dir_name = None
+            dialog.setWindowTitle("Selecting Output Directory ...")
+            dialog.setFileMode(QtGui.QFileDialog.DirectoryOnly)
+            while dir_name is None:
+                if dialog.exec_() == QtGui.QDialog.Accepted:
+                    dir_name = dialog.selectedFiles()[0]
+                    dir_name = str(dir_name)
+                    if not os.path.isdir(dir_name):
+                        QtGui.QMessageBox.information(self, "NOTE",
+                                                      "Please select a directory to save the created shape files.")
+                        dir_name = None  # will read again
+                else:
+                    break
+            if dir_name is not None:
+                collect = EdiCollection(
+                    mt_objs=[
+                        self._file_handler.get_MT_obj(self._file_handler.station2ref(station))
+                        for station in self._station_viewer.selected_stations
+                    ]
+                )
+                collect.create_mt_station_gdf(dir_name)
+                QtGui.QMessageBox.information(self, "Creation Completed", "Output written to %s" % dir_name)
+                webbrowser.open(dir_name)
 
     def _export_image(self, *args, **kwargs):
         subwindow = self.ui.mdiArea.activeSubWindow()
