@@ -22,9 +22,11 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 import mtpy.modeling.elevation_util as elev_util
 import mtpy.modeling.ws3dinv as ws
 import mtpy.utils.gocad as mtgocad
+import mtpy.utils.calculator as mtcc
 import mtpy.utils.latlon_utm_conversion as utm2ll
 from mtpy.modeling.modem_data import Data
 from mtpy.utils.mtpylog import MtPyLog
+
 
 try:
     from evtk.hl import gridToVTK, pointsToVTK
@@ -323,13 +325,15 @@ class Model(object):
         for ii in range(1, pad_east + 1):
             east_0 = float(east_gridr[-1])
             west_0 = float(east_gridr[0])
-            add_size = np.round(self.cell_size_east * self.pad_stretch_h * ii, -2) # -2 round to decimal left
-#            add_size = np.round(self.cell_size_east * self.pad_stretch_h ** ii, 2)
+#            add_size = np.round(self.cell_size_east * self.pad_stretch_h * ii, -2) # -2 round to decimal left
+            # round to the nearest 2 significant figures
+            add_size = mtcc.roundsf(self.cell_size_east * self.pad_stretch_h ** ii,2)
             pad_w = west_0 - add_size
             pad_e = east_0 + add_size
             east_gridr = np.insert(east_gridr, 0, pad_w)
             east_gridr = np.append(east_gridr, pad_e)
 
+        
         # --> For some inversion code, need to make sure none of the stations lie on the nodes
         # this section would make the cell-sizes become unequal
         shift_station = 0.0  # originally = 0.02
@@ -356,8 +360,8 @@ class Model(object):
         for ii in range(1, pad_north + 1):
             south_0 = float(north_gridr[0])
             north_0 = float(north_gridr[-1])
-            add_size = np.round(self.cell_size_north *self.pad_stretch_h * ii, -2)
-#            add_size = np.round(self.cell_size_north * self.pad_stretch_h ** ii, 2)
+#            add_size = np.round(self.cell_size_north *self.pad_stretch_h * ii, -2)
+            add_size = mtcc.roundsf(self.cell_size_north * self.pad_stretch_h ** ii,2)
             pad_s = south_0 - add_size
             pad_n = north_0 + add_size
             north_gridr = np.insert(north_gridr, 0, pad_s)
@@ -569,22 +573,13 @@ class Model(object):
         """
         
         #--> make depth grid
-        # make initial guess for maximum cell thickness
-        max_cell_thickness = self.z_target_depth
+        # if n_airlayers < 0; set to 0
+        nair = max(0, self.n_airlayers)        
         
-        log_z = np.logspace(np.log10(self.z1_layer), 
-                            np.log10(max_cell_thickness),
-                            num=self.n_layers-self.pad_z-self.n_airlayers)
-        counter = 0                    
-        while np.sum(log_z) > self.z_target_depth:
-            max_cell_thickness *= 0.9
-            log_z = np.logspace(np.log10(self.z1_layer), 
-                                np.log10(max_cell_thickness),
-                                num=self.n_layers-self.pad_z-self.n_airlayers) 
-            counter += 1
-            if counter > 1e6:
-                break
         
+        log_z = _make_log_increasing_cells(self.z1_layer, self.z_target_depth, 
+                                          self.n_layers - self.pad_z - nair)
+
         z_nodes = np.around(log_z[log_z<100],decimals=-int(np.floor(np.log10(self.z1_layer))))
         z_nodes = np.append(z_nodes, np.around(log_z[log_z >= 100],decimals=-2))
 
@@ -595,18 +590,20 @@ class Model(object):
         #padding cells in the vertical direction
         for ii in range(1, self.pad_z+1):
             z_0 = np.float(z_nodes[itp])
-            pad_d = np.round(z_0*self.pad_stretch_v*ii, -2)
+            pad_d = np.round(z_0*self.pad_stretch_v**ii, -2)
             z_nodes = np.append(z_nodes, pad_d)                  
         
         # add air layers and define ground surface level.
         # initial layer thickness is same as z1_layer
         z_nodes = np.hstack([[self.z1_layer]*self.n_airlayers,z_nodes])
-        
+
         #make an array of absolute values
         z_grid = np.array([z_nodes[:ii].sum() for ii in range(z_nodes.shape[0]+1)])
         
         return (z_nodes, z_grid)
 
+
+        
 
     def add_topography_2mesh(self, topographyfile=None, topographyarray=None, interp_method='nearest',
                              air_resistivity=1e17, sea_resistivity=0.3):
@@ -690,8 +687,10 @@ class Model(object):
         if self.n_airlayers is None or self.n_airlayers == 0:
             print("No air layers specified, so will not add air/topography !!!")
             print("Only bathymetry will be added below according to the topofile: sea-water low resistivity!!!")
+                
 
         elif self.n_airlayers > 0:  # FZ: new logic, add equal blocksize air layers on top of the simple flat-earth grid
+        
             # compute the air cell size to be added = topomax/n_airlayers, rounded to nearest 1 s.f.
             cs = np.amax(self.surface_dict['topography']) / float(self.n_airlayers)
             #  cs = np.ceil(0.1*cs/10.**int(np.log10(cs)))*10.**(int(np.log10(cs))+1)
@@ -705,9 +704,9 @@ class Model(object):
             print("self.grid_z[0:2]", self.grid_z[0:2])
 
             # add new air layers, cut_off some tailing layers to preserve array size.
-            self.grid_z = np.concatenate([new_airlayers, self.grid_z[:-self.n_airlayers]], axis=0)
+            self.grid_z = np.concatenate([new_airlayers, self.grid_z[self.n_airlayers:] - self.grid_z[self.n_airlayers]], axis=0)
             print(" NEW self.grid_z shape and values = ", self.grid_z.shape, self.grid_z)
-
+                        
             # adjust the nodes, which is simply the diff of adjacent grid lines
             self.nodes_z = self.grid_z[1:] - self.grid_z[:-1]
 
@@ -719,8 +718,9 @@ class Model(object):
 
             # print (stop_here_for_debug)
 
-#        elif self.n_airlayers < 0:  # keep the old logic of re-define the first few layers! not sure if wrong
-#            # cell size is topomax/n_airlayers, rounded to nearest 1 s.f.
+#        elif self.n_airlayers < 0: # if number of air layers < 0, auto calculate number of air layers required
+#        
+#            # compute the air cell size to be added = topomax/n_airlayers, rounded to nearest 1 s.f.
 #            cs = np.amax(self.surface_dict['topography']) / float(self.n_airlayers)
 #            #  cs = np.ceil(0.1*cs/10.**int(np.log10(cs)))*10.**(int(np.log10(cs))+1)
 #            cs = np.ceil(cs)
@@ -742,8 +742,8 @@ class Model(object):
 #
 #            # assign topography
 #            # self.assign_resistivity_from_surfacedata('topography', air_resistivity, where='above')
-        else:
-            pass
+#        else:
+#            pass
 
         # update the z-centre as the top air layer
         self.grid_center[2] = self.grid_z[0]

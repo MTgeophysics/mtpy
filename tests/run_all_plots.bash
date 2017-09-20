@@ -108,13 +108,15 @@ python examples/modem_plot_models.py /e/Data/Modeling/Isa/100hs_flat_BB/ DepthSl
 python mtpy/imaging/plot_depth_slice.py /e/Data/Modeling/Isa/100hs_flat_BB/Isa_run3_NLCG_048.rho 20
 python mtpy/imaging/plot_depth_slice.py /e/tmp/GA_UA_edited_10s-10000s_16/ModEM_Model.ws
 
-# View multiple horizontal slices of an inverted output model
-python mtpy/imaging/modem_plot_slices.py /e/Data/Modeling/Isa/100hs_flat_BB/Isa_run3_NLCG_048.dat /e/Data/Modeling/Isa/100hs_flat_BB/Isa_run3_NLCG_048.rho
-# View multiple horizontal slices of an initial model
+# View all or selected multiple horizontal slices of an inverted output model
+python mtpy/imaging/modem_plot_slices.py /e/Data/Modeling/Isa/100hs_flat_BB/Isa_run3_NLCG_048.dat /e/Data/Modeling/Isa/100hs_flat_BB/Isa_run3_NLCG_048.rho 300
+# View all or selected horizontal slices of an initial model
 python mtpy/imaging/modem_plot_slices.py /e/tmp/GA_UA_edited_10s-10000s_16/ModEM_Data.dat  /e/tmp/GA_UA_edited_10s-10000s_16/ModEM_Model.ws
+python mtpy/imaging/modem_plot_slices.py /e/tmp/GA_UA_edited_10s-10000s_16/ModEM_Data.dat  /e/tmp/GA_UA_edited_10s-10000s_16/ModEM_Model.ws -1000 1000
 
 python examples/phase_tensor_from_data.py examples/data/ModEM_files/Modular_MPI_NLCG_028.dat
 python examples/phase_tensor_from_data.py /e/tmp/GA_UA_edited_10s-10000s_16/ModEM_Data.dat
 
-python mtpy/modeling/modem_outfiles_to_csv.py /e/Data/Modeling/Isa/100hs_flat_BB/Isa_run3_NLCG_048.dat  /e/Data/Modeling/Isa/100hs_flat_BB/Isa_run3_NLCG_048.rho 20
-python mtpy/modeling/modem_outfiles_to_csv.py  /e/tmp/GA_UA_edited_10s-10000s_16/ModEM_Data.dat  /e/tmp/GA_UA_edited_10s-10000s_16/ModEM_Model.ws
+# create CSV files
+python mtpy/modeling/modem_output_to_views.py /e/Data/Modeling/Isa/100hs_flat_BB/Isa_run3_NLCG_048.dat /e/Data/Modeling/Isa/100hs_flat_BB/Isa_run3_NLCG_048.rho 20
+python mtpy/modeling/modem_output_to_views.py /e/tmp/GA_UA_edited_10s-10000s_16/ModEM_Data.dat  /e/tmp/GA_UA_edited_10s-10000s_16/ModEM_Model.ws -1000 1000

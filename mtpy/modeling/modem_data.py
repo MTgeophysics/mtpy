@@ -1,18 +1,14 @@
 #!/usr/bin/env python
 """
 Description:
-   This module is refactored from modem.py which is too big to manage edit
-    Define the Data class
-
-Author: fei.zhang@ga.gov.au
+   This module defines the ModEM Data class.
+   It is refactored from modem.py which is too big to manage and edit
 
 Date: 2017-06-05
 """
 
-__author__ = 'fei.zhang@ga.gov.au'
-
-import glob
 # from __future__ import print_function
+import glob
 import os
 import os.path as op
 import sys
@@ -1514,6 +1510,7 @@ class Data(object):
             self.data_array['north'] = self.data_array[
                                            'rel_north'] + center_utm[1]
 
+
     def write_vtk_station_file(self, vtk_save_path=None,
                                vtk_fn_basename='ModEM_stations'):
         """
@@ -1553,6 +1550,7 @@ def select_periods(edifiles_list, percent=10.0):
     :param edifiles:
     :return:
     """
+
     import matplotlib.pyplot as plt
 
     edis_obj = EdiCollection(edifiles_list)
