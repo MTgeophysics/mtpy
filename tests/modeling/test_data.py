@@ -5,11 +5,6 @@ import shutil
 import sys
 from unittest import TestCase
 
-import matplotlib
-
-if os.name == "posix" and 'DISPLAY' not in os.environ:
-    print("MATPLOTLIB: No Display found, using non-interactive Agg backend")
-    matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 from examples.create_modem_input import select_periods
