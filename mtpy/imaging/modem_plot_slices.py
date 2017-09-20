@@ -1,5 +1,5 @@
+#!/bin/env python
 # -*- coding: utf-8 -*-
-# !/bin/env python
 """
 Description:
     Visualize Horizontal and Vertical Slices of the ModEM's output Model: *.dat and *.rho (same as *.ws) files
