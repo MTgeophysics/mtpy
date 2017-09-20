@@ -21,8 +21,7 @@
   </property>
   <property name="windowIcon">
    <iconset resource="icons.qrc">
-       <normaloff>:/Tango/main_window_icon</normaloff>:/Tango/main_window_icon
-   </iconset>
+    <normaloff>:/Tango/main_window_icon</normaloff>:/Tango/main_window_icon</iconset>
   </property>
   <widget class="QWidget" name="centralwidget">
    <property name="sizePolicy">
@@ -73,14 +72,14 @@
     <property name="title">
      <string>File</string>
     </property>
-       <widget class="QMenu" name="menuOther_Exports">
-           <property name="title">
-               <string>Other Exports...</string>
-           </property>
-           <addaction name="actionCreate_Shape_File_From_Stations"/>
-           <addaction name="actionCreate_Phase_Tensor_csv_file"/>
-           <addaction name="actionCreate_Measurement_csv_file"/>
-       </widget>
+    <widget class="QMenu" name="menuOther_Exports">
+     <property name="title">
+      <string>Other Exports...</string>
+     </property>
+     <addaction name="actionCreate_Shape_File_From_Stations"/>
+     <addaction name="actionCreate_Phase_Tensor_csv_file"/>
+     <addaction name="actionCreate_Measurement_csv_file"/>
+    </widget>
     <addaction name="actionNew_Project"/>
     <addaction name="actionOpen_Project"/>
     <addaction name="actionSave_Project"/>
@@ -92,7 +91,7 @@
     <addaction name="separator"/>
     <addaction name="actionExport"/>
     <addaction name="actionExport_ModEM_Data"/>
-       <addaction name="menuOther_Exports"/>
+    <addaction name="menuOther_Exports"/>
     <addaction name="separator"/>
     <addaction name="actionExit"/>
    </widget>
@@ -197,8 +196,7 @@
   <action name="actionOpen_edi_File">
    <property name="icon">
     <iconset resource="icons.qrc">
-        <normaloff>:/Tango/open_edi</normaloff>:/Tango/open_edi
-    </iconset>
+     <normaloff>:/Tango/open_edi</normaloff>:/Tango/open_edi</iconset>
    </property>
    <property name="text">
     <string>Open .edi File...</string>
@@ -207,8 +205,7 @@
   <action name="actionOpen_edi_Folder">
    <property name="icon">
     <iconset resource="icons.qrc">
-        <normaloff>:/Tango/open_edi_dir</normaloff>:/Tango/open_edi_dir
-    </iconset>
+     <normaloff>:/Tango/open_edi_dir</normaloff>:/Tango/open_edi_dir</iconset>
    </property>
    <property name="text">
     <string>Open .edi Folder...</string>
@@ -247,8 +244,7 @@
    </property>
    <property name="icon">
     <iconset resource="icons.qrc">
-        <normaloff>:/Tango/export</normaloff>:/Tango/export
-    </iconset>
+     <normaloff>:/Tango/export</normaloff>:/Tango/export</iconset>
    </property>
    <property name="text">
     <string>Export Image...</string>
@@ -300,8 +296,7 @@
    </property>
    <property name="icon">
     <iconset resource="icons.qrc">
-        <normaloff>:/Tango/plot</normaloff>:/Tango/plot
-    </iconset>
+     <normaloff>:/Tango/plot</normaloff>:/Tango/plot</iconset>
    </property>
    <property name="text">
     <string>Plot...</string>
@@ -356,8 +351,7 @@
   <action name="actionClose_All_Images">
    <property name="icon">
     <iconset resource="icons.qrc">
-        <normaloff>:/Tango/close_all_images</normaloff>:/Tango/close_all_images
-    </iconset>
+     <normaloff>:/Tango/close_all_images</normaloff>:/Tango/close_all_images</iconset>
    </property>
    <property name="text">
     <string>Close All Images</string>
@@ -369,45 +363,44 @@
    </property>
    <property name="icon">
     <iconset resource="icons.qrc">
-        <normaloff>:/Tango/export_modem</normaloff>:/Tango/export_modem
-    </iconset>
+     <normaloff>:/Tango/export_modem</normaloff>:/Tango/export_modem</iconset>
    </property>
    <property name="text">
     <string>Generate ModEM Input Files...</string>
    </property>
   </action>
-     <action name="actionCreate_Shape_File_From_Stations">
-         <property name="enabled">
-             <bool>false</bool>
-         </property>
-         <property name="text">
-             <string>Create Shape File From Stations...</string>
-         </property>
-     </action>
-     <action name="actionCreate_Phase_Tensor_csv_file">
-         <property name="enabled">
-             <bool>false</bool>
-         </property>
-         <property name="text">
-             <string>Create Phase Tensor .csv file...</string>
-         </property>
-         <property name="toolTip">
-             <string>create phase tensor ellipse and tipper properties.</string>
-         </property>
-     </action>
-     <action name="actionCreate_Measurement_csv_file">
-         <property name="enabled">
-             <bool>false</bool>
-         </property>
-         <property name="text">
-             <string>Create Measurement .csv file...</string>
-         </property>
-         <property name="toolTip">
-             <string>Create .csv file from the selected stationss. the file will include Impedance, Apparent
+  <action name="actionCreate_Shape_File_From_Stations">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Create Shape File From Selected Stations...</string>
+   </property>
+  </action>
+  <action name="actionCreate_Phase_Tensor_csv_file">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Create Phase Tensor .csv Files from Selected Stations...</string>
+   </property>
+   <property name="toolTip">
+    <string>create phase tensor ellipse and tipper properties.</string>
+   </property>
+  </action>
+  <action name="actionCreate_Measurement_csv_file">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Create Measurement .csv files from Selected Stations...</string>
+   </property>
+   <property name="toolTip">
+    <string>Create .csv file from the selected stationss. the file will include Impedance, Apparent
                  Resistivities and Phases
              </string>
-         </property>
-     </action>
+   </property>
+  </action>
  </widget>
  <resources>
   <include location="icons.qrc"/>

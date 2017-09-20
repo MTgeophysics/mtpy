@@ -250,10 +250,10 @@ class Ui_SmartMT_MainWindow(object):
         self.actionTabbed_View.setText(_translate("SmartMT_MainWindow", "Tabbed View", None))
         self.actionClose_All_Images.setText(_translate("SmartMT_MainWindow", "Close All Images", None))
         self.actionExport_ModEM_Data.setText(_translate("SmartMT_MainWindow", "Generate ModEM Input Files...", None))
-        self.actionCreate_Shape_File_From_Stations.setText(_translate("SmartMT_MainWindow", "Create Shape File From Stations...", None))
-        self.actionCreate_Phase_Tensor_csv_file.setText(_translate("SmartMT_MainWindow", "Create Phase Tensor .csv file...", None))
+        self.actionCreate_Shape_File_From_Stations.setText(_translate("SmartMT_MainWindow", "Create Shape File From Selected Stations...", None))
+        self.actionCreate_Phase_Tensor_csv_file.setText(_translate("SmartMT_MainWindow", "Create Phase Tensor .csv Files from Selected Stations...", None))
         self.actionCreate_Phase_Tensor_csv_file.setToolTip(_translate("SmartMT_MainWindow", "create phase tensor ellipse and tipper properties.", None))
-        self.actionCreate_Measurement_csv_file.setText(_translate("SmartMT_MainWindow", "Create Measurement .csv file...", None))
+        self.actionCreate_Measurement_csv_file.setText(_translate("SmartMT_MainWindow", "Create Measurement .csv files from Selected Stations...", None))
         self.actionCreate_Measurement_csv_file.setToolTip(_translate("SmartMT_MainWindow", "Create .csv file from the selected stationss. the file will include Impedance, Apparent\n"
 "                 Resistivities and Phases\n"
 "             ", None))
