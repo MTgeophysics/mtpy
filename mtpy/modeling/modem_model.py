@@ -577,8 +577,8 @@ class Model(object):
         nair = max(0, self.n_airlayers)        
         
         
-        log_z = _make_log_increasing_cells(self.z1_layer, self.z_target_depth, 
-                                          self.n_layers - self.pad_z - nair)
+        log_z = mtcc.make_log_increasing_array(self.z1_layer, self.z_target_depth, 
+                                               self.n_layers - self.pad_z - nair)
 
         z_nodes = np.around(log_z[log_z<100],decimals=-int(np.floor(np.log10(self.z1_layer))))
         z_nodes = np.append(z_nodes, np.around(log_z[log_z >= 100],decimals=-2))
@@ -599,6 +599,7 @@ class Model(object):
 
         #make an array of absolute values
         z_grid = np.array([z_nodes[:ii].sum() for ii in range(z_nodes.shape[0]+1)])
+        
         
         return (z_nodes, z_grid)
 
@@ -669,7 +670,7 @@ class Model(object):
         return
 
     def add_topography(self, topographyfile=None, topographyarray=None, interp_method='nearest',
-                       air_resistivity=1e17, sea_resistivity=0.3):
+                       air_resistivity=1e17, sea_resistivity=0.3, airlayer_cellsize=None):
         """
         if air_layers is non-zero, will add topo: read in topograph file, make a surface model.
         Call project_stations_on_topography in the end, which will re-write the .dat file.
@@ -690,14 +691,16 @@ class Model(object):
                 
 
         elif self.n_airlayers > 0:  # FZ: new logic, add equal blocksize air layers on top of the simple flat-earth grid
-        
+
             # compute the air cell size to be added = topomax/n_airlayers, rounded to nearest 1 s.f.
             cs = np.amax(self.surface_dict['topography']) / float(self.n_airlayers)
             #  cs = np.ceil(0.1*cs/10.**int(np.log10(cs)))*10.**(int(np.log10(cs))+1)
             cs = np.ceil(cs)
 
+
             # add air layers
             new_airlayers = np.linspace(-self.n_airlayers, -1, self.n_airlayers) * cs
+            # new airlayers - easier to create positive array then update level later
 
             print("new_airlayers", new_airlayers)
 
@@ -706,6 +709,8 @@ class Model(object):
             # add new air layers, cut_off some tailing layers to preserve array size.
             self.grid_z = np.concatenate([new_airlayers, self.grid_z[self.n_airlayers:] - self.grid_z[self.n_airlayers]], axis=0)
             print(" NEW self.grid_z shape and values = ", self.grid_z.shape, self.grid_z)
+            
+            
                         
             # adjust the nodes, which is simply the diff of adjacent grid lines
             self.nodes_z = self.grid_z[1:] - self.grid_z[:-1]
@@ -718,7 +723,7 @@ class Model(object):
 
             # print (stop_here_for_debug)
 
-#        elif self.n_airlayers < 0: # if number of air layers < 0, auto calculate number of air layers required
+#        elif self.n_airlayers < 0: # if number of air layers < 0, auto calculate number of air layers required in air
 #        
 #            # compute the air cell size to be added = topomax/n_airlayers, rounded to nearest 1 s.f.
 #            cs = np.amax(self.surface_dict['topography']) / float(self.n_airlayers)
