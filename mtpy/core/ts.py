@@ -187,6 +187,7 @@ class MT_TS(object):
                               ', ts needs to be a numpy.ndarray or pandas DataFrame')
     
         self._n_samples = self.ts.data.size
+        
     ##--> Latitude
     @property
     def lat(self):
@@ -514,7 +515,7 @@ class MT_TS(object):
         read the header of an ascii file
         """
         if not os.path.isfile(fn_ascii):
-            raise NameError('Could not find {0}, check path'.format(fn_ascii))
+            raise MT_TS_Error('Could not find {0}, check path'.format(fn_ascii))
         self.fn_ascii = fn_ascii
         
         with open(self.fn_ascii, 'r') as fid:
