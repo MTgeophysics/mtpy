@@ -1716,21 +1716,14 @@ class PlotResponse(object):
 
 
         if save2file is not None:
-            plt.savefig(save2file)
+            #plt.savefig(save2file)
+            self._save_figure(save2file)
         else:
             pass
 
         plt.show()   # --> BE SURE TO SHOW THE PLOT
 
-       # the figure need to be closed (X) then the following code save it to a
-        # file.
-        # if save2file is not None:
-        #     # fig.savefig(save2file, dpi=self.fig_dpi, bbox_inches='tight')
-        #     #figfile = self.save_figure0(save2file)
-        #     plt.savefig(save2file)
-        #
-        #
-        # return save2file
+        return save2file
 
     def redraw_plot(self):
         """
@@ -1752,10 +1745,11 @@ class PlotResponse(object):
             plt.close(fig)
         self.plot()
 
-    def save_figure_not_work(self, save_fn, file_format='png', orientation='portrait',
-                    fig_dpi=None, close_fig='y'):
+    def _save_figure(self, save_fn, orientation='portrait',
+                    fig_dpi=200, close_fig='n'):
         """
-        save_plot will save the figure to save_fn.
+        Internal function to save the plotted figure to a file: save_fn.
+        The file format will be automatically determined by save_fn suffix: pdf | eps | jpg | png | svg ]
 
         Arguments:
         -----------
@@ -1789,21 +1783,19 @@ class PlotResponse(object):
 
         """
 
-        fig = plt.gcf()
 
-        fig.savefig(save_fn)
-        #, dpi=fig_dpi, format=file_format, orientation=orientation, bbox_inches='tight')
+        #plt.savefig(save_fn, dpi=fig_dpi, format=file_format, orientation=orientation, bbox_inches='tight')
+        plt.savefig(save_fn, dpi=fig_dpi, orientation=orientation, bbox_inches='tight')
 
         if close_fig == 'y':
             plt.clf()
-            plt.close(fig)
+            plt.close()
         else:
             pass
 
-        self.fig_fn = save_fn
-        print 'Saved figure to: ' + self.fig_fn
+        print ('Saved figure to: ' + save_fn)
 
-        return self.fig_fn
+        return save_fn
 
     def update_plot(self):
         """
