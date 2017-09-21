@@ -279,7 +279,8 @@ class MT_TS(object):
                                                           self._date_time_fmt)
          
         # make a time series that the data can be indexed by
-        self._set_dt_index(self._start_time_utc)
+        if hasattr(self.ts, 'data'):
+            self._set_dt_index(self._start_time_utc)
         
     ## epoch seconds
     @property
@@ -532,7 +533,20 @@ class MT_TS(object):
                     except AttributeError:
                         if key not in ['n_samples', 'start_time_epoch_sec']:
                             print 'Could not set {0} to {1}'.format(key, value)
-                            
+                # read old format of time series
+                else:
+                    line_list = line[1:].strip().split()
+                    if len(line_list) == 9:
+                        print 'Reading old MT TS format'
+                        self.station = line_list[0]
+                        self.component = line_list[1]
+                        self.sampling_rate = float(line_list[2])
+                        self.start_time_epoch_sec = float(line_list[3])
+                        # skip setting number of samples
+                        self.units = line_list[5]
+                        self.lat = float(line_list[6])
+                        self.lon = float(line_list[7])
+                        self.elev = float(line_list[8])
                 count +=1
                 line = fid.readline()
         return count
