@@ -913,8 +913,10 @@ class Zen3D(object):
         self.ts_obj = mtts.MT_TS()
         self.ts_obj.ts = data[np.nonzero(data)]
         
+        # convert data to mV
+        self.convert_counts_to_mv() 
+        
         # fill time series object metadata
-        self.ts_obj.ts = self.convert_counts()
         self.ts_obj.station = self.station
         self.ts_obj.sampling_rate = float(self.df)
         self.ts_obj.start_time_utc = self.zen_schedule
@@ -927,7 +929,7 @@ class Zen3D(object):
         self.ts_obj.lon = self.header.long
         self.ts_obj.datum = 'WGS84'
         self.ts_obj.data_logger = 'Zonge Zen'
-        self.ts_obj.instrument_num = None
+        self.ts_obj.instrument_id = self.header.box_number
         self.ts_obj.calibration_fn = None
         self.ts_obj.declination = 0.0
         self.ts_obj.conversion = self._counts_to_mv_conversion
@@ -942,7 +944,7 @@ class Zen3D(object):
         self.check_start_time()
         
         print '    found {0} GPS time stamps'.format(self.gps_stamps.shape[0])
-        print '    found {0} data points'.format(self.time_series_len)
+        print '    found {0} data points'.format(self.ts_obj.ts.data.size)
         
     #=================================================
     def trim_data(self):
@@ -1046,23 +1048,22 @@ class Zen3D(object):
         self.gps_stamps['time'][:] = time_conv 
             
     #==================================================    
-    def convert_counts(self):
+    def convert_counts_to_mv(self):
         """
         convert the time series from counts to millivolts
 
         """
         
-        return self.ts_obj.ts.data*self._counts_to_mv_conversion
+        self.ts_obj.ts.data *= self._counts_to_mv_conversion
     
     #==================================================    
-    def convert_mV(self):
+    def convert_mv_to_counts(self):
         """
         convert millivolts to counts assuming no other scaling has been applied
         
         """
         
-        return self.ts_obj.ts.data/self._counts_to_mv_conversion
-        
+        self.ts_obj.ts.data /= self._counts_to_mv_conversion
     #==================================================        
     def get_gps_time(self, gps_int, gps_week=0):
         """
@@ -1191,8 +1192,8 @@ class Zen3D(object):
                     mtfilt.adaptive_notch_filter(self.time_series, **kwargs) 
         
     #==================================================
-    def write_ascii_mt_file(self, save_fn=None, fmt='%.8e',
-                            ex=100., ey=100., notch_dict=None, dec=1):
+    def write_ascii_mt_file(self, save_fn=None, fmt='%.8e', notch_dict=None,
+                            dec=1):
         """
         write an mtpy time series data file
         
@@ -1243,7 +1244,6 @@ class Zen3D(object):
         if self.metadata.rx_xyz0 is None:
             self.read_all_info()
             
-
         if dec > 1:
             print 'Decimating data by factor of {0}'.format(dec)
             self.df = self.df/dec
@@ -1253,18 +1253,21 @@ class Zen3D(object):
             svfn_directory = os.path.join(os.path.dirname(self.fn), 'TS')
             if not os.path.exists(svfn_directory):
                 os.mkdir(svfn_directory)
-                
+            
             svfn_date = ''.join(self.schedule.Date.split('-'))
             svfn_time = ''.join(self.schedule.Time.split(':'))
-            svfn_station = self.metadata.line_name+\
-                                    self.metadata.rx_xyz0.split(':')[0]
-            save_fn = os.path.join(svfn_directory, 
-                                   '{0}_{1}_{2}_{3}.{4}'.format(svfn_station,
-                                                   svfn_date,
-                                                   svfn_time,
-                                                   int(self.df),
-                                                   self.metadata.ch_cmp.upper()))
-        self.fn_mt_ascii = save_fn
+            self.fn_mt_ascii = os.path.join(svfn_directory, 
+                                       '{0}_{1}_{2}_{3}.{4}'.format(self.station,
+                                                       svfn_date,
+                                                       svfn_time,
+                                                       int(self.df),
+                                                       self.metadata.ch_cmp.upper()))
+
+
+                
+
+        else:
+            self.fn_mt_ascii = save_fn
         # if the file already exists skip it
         if os.path.isfile(self.fn_mt_ascii) == True:
             print '   ************'
@@ -1281,14 +1284,6 @@ class Zen3D(object):
         # read in time series data if haven't yet.
         if self.ts_obj is None:
             self.read_z3d()
-            svfn_date = ''.join(self.schedule.Date.split('-'))
-            svfn_time = ''.join(self.schedule.Time.split(':'))
-            self.save_fn = os.path.join(svfn_directory, 
-                                   '{0}_{1}_{2}_{3}.{4}'.format(self.station,
-                                                   svfn_date,
-                                                   svfn_time,
-                                                   int(self.df),
-                                                   self.metadata.ch_cmp.upper()))
             
         # decimate the data.  try resample at first, see how that goes
         # make the attribute time series equal to the decimated data.
@@ -1305,17 +1300,17 @@ class Zen3D(object):
                     print '{0}{1:.2f} Hz'.format(' '*4, nfilt[0])
         
         # convert counts to mV and scale accordingly    
-        self.convert_counts()
+        # self.convert_counts() #--> data is already converted to mV
         # calibrate electric channels should be in mV/km
         # I have no idea why this works but it does
-        if self.metadata.ch_cmp.lower() == 'ex':
-            self.ts_obj.ts.data /= ((ex/100)*2*np.pi)
-            print 'Using scales EX = {0} m'.format(ex)
-        elif self.metadata.ch_cmp.lower() == 'ey':
-            self.ts_obj.ts.data /= ((ey/100)*2*np.pi)
-            print 'Using scales EY = {0} m'.format(ey)
-        
-        self.ts_obj.write_ascii(self.save_fn)                                         
+        if self.metadata.ch_cmp.lower() in ['ex', 'ey']:
+            e_scale = float(self.metadata.ch_length)
+            self.ts_obj.ts.data /= ((e_scale/100)*2*np.pi)
+            print 'Using scales {0} = {1} m'.format(self.metadata.ch_cmp.upper(),
+                                                    e_scale)
+            self.ts_obj.units = 'mV/km'
+
+        self.ts_obj.write_ascii_file(fn_ascii=self.fn_mt_ascii)                                         
 #        header_tuple = ('# {0}{1}'.format(self.metadata.line_name,
 #                                          self.metadata.rx_xyz0.split(':')[0]), 
 #                        self.metadata.ch_cmp.lower(), 
