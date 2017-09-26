@@ -172,7 +172,7 @@ class Sgrid():
             data,
             header=datahdr,
             comments='*',
-            fmt=['%10.3f'] *
+            fmt=['%10.6f'] *
             4 +
             ['%10i'] *
             3)

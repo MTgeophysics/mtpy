@@ -470,6 +470,7 @@ class PlotResponse(object):
 
                     if self.plot_z == False:
                         # plot resistivity
+                        print("plotting resistivity")
                         erxx = mtplottools.plot_errorbar(axrxx,
                                                          period[nzxx],
                                                          rp.resxx[nzxx],
@@ -623,17 +624,17 @@ class PlotResponse(object):
                 # set axis properties
                 for aa, ax in enumerate(ax_list):
                     ax.tick_params(axis='y', pad=self.ylabel_pad)
-                    #                    ylabels = ax.get_yticks().tolist()
-                    #                    ylabels[-1] = ''
-                    #                    ylabels[0] = ''
-                    #                    ax.set_yticklabels(ylabels)
-                    #                    print ylabels
-
-                    #                    dy = abs(ax.yaxis.get_ticklocs()[1]-
-                    #                             ax.yaxis.get_ticklocs()[0])
-                    #                    ylim = ax.get_ylim()
-                    #                    ax.set_ylim(ylim[0]-.25*dy, ylim[1]+1.25*dy)
-                    #                    ax.yaxis.set_major_locator(MultipleLocator(dy))
+#                                        ylabels = ax.get_yticks().tolist()
+#                                        ylabels[-1] = ''
+#                                        ylabels[0] = ''
+#                                        ax.set_yticklabels(ylabels)
+#                                        print ylabels
+#                    
+#                                        dy = abs(ax.yaxis.get_ticklocs()[1]-
+#                                                 ax.yaxis.get_ticklocs()[0])
+#                                        ylim = ax.get_ylim()
+#                                        ax.set_ylim(ylim[0]-.25*dy, ylim[1]+1.25*dy)
+#                                        ax.yaxis.set_major_locator(MultipleLocator(dy))
 
                     if len(ax_list) == 4:
                         #                        ax.yaxis.set_major_formatter(FormatStrFormatter('%.0f'))
@@ -1658,7 +1659,7 @@ class PlotResponse(object):
                                                   'rms={0:.2f}'.format(rms_tx),
                                                   '$T^m_{y}$' +
                                                   'rms={0:.2f}'.format(rms_ty)]
-
+ 
             # make legends
             if self.plot_style == 1:
                 legend_ax_list = ax_list[0:self.plot_component]
@@ -1714,7 +1715,6 @@ class PlotResponse(object):
                                   borderpad=self.legend_border_pad,
                                   prop={'size': max([self.font_size / (nr + 1), 5])})
 
-
         if save2file is not None:
             #plt.savefig(save2file)
             self._save_figure(save2file)
@@ -1723,7 +1723,15 @@ class PlotResponse(object):
 
         plt.show()   # --> BE SURE TO SHOW THE PLOT
 
-        return save2file
+       # the figure need to be closed (X) then the following code save it to a
+        # file.
+        # if save2file is not None:
+        #     # fig.savefig(save2file, dpi=self.fig_dpi, bbox_inches='tight')
+        #     #figfile = self.save_figure0(save2file)
+        #     plt.savefig(save2file)
+        #
+        #
+        # return save2file
 
     def redraw_plot(self):
         """
