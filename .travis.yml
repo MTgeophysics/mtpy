@@ -13,9 +13,10 @@ install:
   - pip install GDAL==$(gdal-config --version | awk -F'[.]' '{print $1"."$2}') --global-option=build_ext --global-option="-I/usr/include/gdal/"
   - pip install .
   - pip install -r requirements.txt
+  - pip install pytest-xdist  # add xdist for distributing tests
 # command to run tests
 #script: nosetests
 script:
-  - py.test -v tests/core
-  - py.test -v tests/imaging
-  - py.test -v tests/modeling
+  - py.test -n 4 -v tests/core
+  - py.test -n 4 -v tests/imaging
+  - py.test -n 4 -v tests/modeling
