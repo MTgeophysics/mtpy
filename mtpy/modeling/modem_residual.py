@@ -142,7 +142,54 @@ class Residual():
                                                           fieldname,
                                                           np.zeros(len(resObj.station_locations)),
                                                           usemask=False)
+
+    def calculate_residual_from_data(self,data_fn=None,resp_fn=None):
         
+        dataObj = self._read_data_file(data_fn=data_fn)
+        respObj = self._read_resp_file(resp_fn=resp_fn)
+        
+        self.residual_array = dataObj.data_array
+        for comp in ['z','tip']:
+            self.residual_array[comp] = self.residual_array[comp] - respObj.data_array[comp]
+        
+        dataObj.fn_basename = respObj.fn_basename[:-3]+'res'
+        
+        dataObj.write_data_file(fill=False,compute_error=False)
+        
+        
+    def _read_data_file(self,data_fn=None):
+        if data_fn is not None:
+            self.data_fn = data_fn
+            dataObj = Data()
+            dataObj.read_data_file(self.data_fn)
+        else:
+            print "Cannot read data, please provide data_fn"
+            return
+        
+        # pass relevant arguments through residual object
+        for att in ['center_position_EN','data_period_list',
+                    'wave_sign_impedance','wave_sign_tipper']:
+            if hasattr(dataObj,att):
+                setattr(self,att,getattr(dataObj,att))        
+        
+        return dataObj
+
+    def _read_resp_file(self,resp_fn=None):
+        if resp_fn is not None:
+            self.resp_fn = resp_fn
+            respObj = Data()
+            respObj.read_data_file(self.resp_fn)
+        else:
+            print "Cannot read data, please provide data_fn"
+            return
+        
+        # pass relevant arguments through residual object
+        for att in ['center_position_EN','data_period_list',
+                    'wave_sign_impedance','wave_sign_tipper']:
+            if hasattr(respObj,att):
+                setattr(self,att,getattr(respObj,att))
+
+        return respObj       
         
     def get_rms(self,residual_fn=None):
         
