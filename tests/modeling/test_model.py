@@ -98,3 +98,6 @@ for index, edi_path in enumerate(edi_paths):
     test_func = _test_gen(index, edi_path)
     test_func.__name__ = "test_{}_{}".format(index+1, os.path.basename(edi_path))
     setattr(TestModel, test_func.__name__, test_func)
+
+if 'test_func' in globals():
+    del globals()['test_func']

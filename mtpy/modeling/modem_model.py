@@ -577,8 +577,8 @@ class Model(object):
         nair = max(0, self.n_airlayers)        
         
         
-        log_z = _make_log_increasing_cells(self.z1_layer, self.z_target_depth, 
-                                          self.n_layers - self.pad_z - nair)
+        log_z = mtcc.make_log_increasing_array(self.z1_layer, self.z_target_depth,
+                                               self.n_layers - self.pad_z - nair)
 
         z_nodes = np.around(log_z[log_z<100],decimals=-int(np.floor(np.log10(self.z1_layer))))
         z_nodes = np.append(z_nodes, np.around(log_z[log_z >= 100],decimals=-2))
