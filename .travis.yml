@@ -16,6 +16,6 @@ install:
 # command to run tests
 #script: nosetests
 script:
-  - py.test tests/core
-  - py.test tests/imaging
-  - py.test tests/modeling
+  - py.test -v tests/core
+  - py.test -v tests/imaging
+  - py.test -v tests/modeling

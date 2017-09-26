@@ -34,6 +34,8 @@ def show_patcher(show_func):
             # show(block=False)
             try:
                 canvas.start_event_loop(1)  # wait time = 1
+            except NotImplementedError:
+                pass
             finally:
                 pass
         plt.close()
@@ -160,3 +162,6 @@ for index, edi_path in enumerate(edi_paths):
         test_func = _test_gen(index, edi_path, error_type, comp_error_type)
         test_func.__name__ = "test_{}_{}_{}".format(index + 1, os.path.basename(edi_path), name)
         setattr(TestData, test_func.__name__, test_func)
+
+if 'test_func' in globals():
+    del globals()['test_func']
