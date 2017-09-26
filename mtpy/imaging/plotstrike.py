@@ -754,8 +754,11 @@ class PlotStrike(object):
 
                 # set tipper color from dark blue (low) to light blue (high)
                 for cc, bar in enumerate(self.bartr):
-                    fc = float(trhist[0][cc]) / trhist[0].max() * .9
-                    bar.set_facecolor((0, 1 - fc / 2, fc))
+                    try:
+                        fc = float(trhist[0][cc]) / trhist[0].max() * .9
+                        bar.set_facecolor((0, 1 - fc / 2, fc))
+                    except ZeroDivisionError:
+                        pass
 
             # make axis look correct with N to the top at 90.
             for aa, axh in enumerate(axlist):
@@ -774,7 +777,7 @@ class PlotStrike(object):
                                           'W', '', '',
                                           'S', '', ''])
 
-                # set invariant axes properties
+                # set invariant axes propertiesz
                 if aa == 0:
                     axh.set_ylim(0, invhist[0].max())
 
@@ -877,7 +880,7 @@ class PlotStrike(object):
                     print '   *Tipper Stike:  median={0:.1f} mode={1:.1f} mean={2:.1f}\n'.format(
                         tpmedian,
                         tpmode,
-                        tpmode)
+                        tpmean)
 
                     axh.set_title('Tipper Strike', fontdict=fd,
                                   bbox={'facecolor': (0, .1, .9), 'alpha': 0.25})

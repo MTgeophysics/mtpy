@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>300</width>
-    <height>244</height>
+       <height>270</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -92,7 +92,7 @@
     </widget>
    </item>
    <item row="8" column="0" colspan="3">
-    <widget class="QCheckBox" name="checkBox_log_scale">
+       <widget class="QCheckBox" name="checkBox_y_log_scale">
      <property name="text">
       <string>Use log-scale on y-axes</string>
      </property>
@@ -166,6 +166,13 @@
      </property>
     </widget>
    </item>
+      <item row="3" column="0" colspan="3">
+          <widget class="QCheckBox" name="checkBox_x_log_scale">
+              <property name="text">
+                  <string>Use log-scale on x-axes</string>
+              </property>
+          </widget>
+      </item>
   </layout>
  </widget>
  <resources/>

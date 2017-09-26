@@ -8,38 +8,42 @@ InitDate: 2017-04-20
 """
 
 from __future__ import print_function
-import sys
-import os
+
+import csv
 import glob
 import logging
-import csv
-import numpy as np
-import pandas as pd
+import os
+import sys
+
 import geopandas as gpd
 import matplotlib.pyplot as plt
-from shapely.geometry import Point #, Polygon, LineString, LinearRing
+import numpy as np
+import pandas as pd
+from shapely.geometry import Point  # , Polygon, LineString, LinearRing
+
 # import matplotlib as mpl
 # from mpl_toolkits.axes_grid1 import make_axes_locatable
 import mtpy.core.mt as mt
 import mtpy.imaging.mtplottools as mtplottools
-
+from mtpy.utils.decorator import deprecated
 from mtpy.utils.mtpylog import MtPyLog
 
 logger = MtPyLog().get_mtpy_logger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
-def is_num_in_seq(anum, aseq, tolerance=0.0001):
+def is_num_in_seq(anum, aseq, atol=0.0001):
     """
     check if anum is in a sequence by a small tolerance
     :param anum:
     :param aseq:
-    :param tolerance:
+    :param atol: absolute tolerance
     :return: True | False
     """
-
+    # print(np.isclose(anum, aseq, atol=atol))
+    # return np.isclose(anum, aseq, atol=atol).any()
     for an_number in aseq:
-        if abs(anum - an_number) < tolerance:
+        if abs(anum - an_number) < atol:
             return True
         else:
             pass
@@ -52,7 +56,7 @@ class EdiCollection(object):
     A super class to encapsulate the properties pertinent to a set of EDI files
     """
 
-    def __init__(self, edilist, ptol=0.05):
+    def __init__(self, edilist=None, mt_objs=None, ptol=0.05):
         """ constructor
         :param edilist: a list of edifiles with full path, for read-only
         :param ptol: period tolerance considered as equal, default 0.05 means 5 percent
@@ -61,25 +65,32 @@ class EdiCollection(object):
         eg: E:/Data/MT_Datasets/WenPingJiang_EDI 18528 rows vs 14654 rows
         """
 
-        self.edifiles = edilist
-        logger.info("number of edi files in this collection: %s",
-                    len(self.edifiles))
+        if edilist is not None:
+            self.edifiles = edilist
+            logger.info("number of edi files in this collection: %s",
+                        len(self.edifiles))
+        elif mt_objs is not None:
+            self.edifiles = [mt_obj.fn for mt_obj in mt_objs]
         assert len(self.edifiles) > 0
 
         self.num_of_edifiles = len(self.edifiles)  # number of stations
-        print ("number of stations/edifiles = %s" % self.num_of_edifiles)
+        print("number of stations/edifiles = %s" % self.num_of_edifiles)
 
         self.ptol = ptol
 
-        if self.edifiles is not None:
-            logger.debug("contructing MT objects from edi files")
+        if edilist is not None:
+            # if edilist is provided, always create MT objects from the list
+            logger.debug("constructing MT objects from edi files")
             self.mt_obj_list = [mt.MT(edi) for edi in self.edifiles]
+        elif mt_objs is not None:
+            # use the supplied mt_objs
+            self.mt_obj_list = list(mt_objs)
         else:
             logger.error("None Edi file set")
 
         # get all frequencies from all edi files
         self.all_frequencies = None
-        self.mt_periods=None
+        self.mt_periods = None
         self.all_unique_periods = self._get_all_periods()
 
         self.geopdf = self.create_mt_station_gdf()
@@ -100,7 +111,7 @@ class EdiCollection(object):
         for mt_obj in self.mt_obj_list:
             all_freqs.extend(list(mt_obj.Z.freq))
 
-        self.mt_periods = 1.0/np.array(all_freqs)
+        self.mt_periods = 1.0 / np.array(all_freqs)
 
         # sort all frequencies so that they are in ascending order,
         # use set to remove repeats and make an array
@@ -109,9 +120,9 @@ class EdiCollection(object):
         logger.debug("Number of MT Frequencies: %s", len(self.all_frequencies))
 
         all_periods = 1.0 / \
-            np.array(sorted(self.all_frequencies, reverse=True))
+                      np.array(sorted(self.all_frequencies, reverse=True))
 
-        #logger.debug("Type of the all_periods %s", type(all_periods))
+        # logger.debug("Type of the all_periods %s", type(all_periods))
         logger.info("Number of MT Periods: %s", len(all_periods))
         logger.debug(all_periods)
 
@@ -135,7 +146,7 @@ class EdiCollection(object):
 
             if (100.0 * acount) / self.num_of_edifiles >= percentage:
                 adict.update({aper: acount})
-                #print (aper, acount)
+                # print (aper, acount)
             else:
                 logger.info("Period=%s is excluded. it is from stations: %s ", aper, station_list)
 
@@ -163,7 +174,7 @@ class EdiCollection(object):
 
         pdf = pd.DataFrame(mt_stations, columns=['StationId', 'Lon', 'Lat', 'Elev', 'UtmZone'])
 
-        #print (pdf.head())
+        # print (pdf.head())
 
         mt_points = [Point(xy) for xy in zip(pdf.Lon, pdf.Lat)]
         # OR pdf['geometry'] = pdf.apply(lambda z: Point(z.Lon, z.Lat), axis=1)
@@ -245,6 +256,83 @@ class EdiCollection(object):
 
         return myax2
 
+    def create_phase_tensor_csv(self, dest_dir, file_name="phase_tensor.csv"):
+        """
+        create phase tensor ellipse and tipper properties.
+        reimplemented based on mtpy.utils.shapefiles_creator.ShapeFilesCreator.create_csv_files
+        :param dest_dir: output directory
+        :param file_name: output file name
+        :return:
+        """
+        csvfname = os.path.join(dest_dir, file_name)
+
+        pt_dict = {}
+
+        csv_header = ['station', 'freq', 'lon', 'lat', 'phi_min', 'phi_max', 'azimuth', 'skew',
+                      'n_skew', 'elliptic', 'tip_mag_re', 'tip_mag_im', 'tip_ang_re', 'tip_ang_im']
+
+        with open(csvfname, "wb") as csvf:
+            writer = csv.writer(csvf)
+            writer.writerow(csv_header)
+
+            for freq in self.all_frequencies:
+                ptlist = []
+                for mt_obj in self.mt_obj_list:
+                    freq_min = freq * (1 - self.ptol)
+                    freq_max = freq * (1 + self.ptol)
+                    f_index_list = [ff for ff, f2 in enumerate(mt_obj.Z.freq)
+                                    if (f2 > freq_min) and (f2 < freq * freq_max)]
+                    if len(f_index_list) > 1:
+                        logger.warn("more than one freq found %s", f_index_list)
+                    if len(f_index_list) >= 1:
+                        p_index = f_index_list[0]
+                        # geographic coord lat long and elevation
+                        # long, lat, elev = (mt_obj.lon, mt_obj.lat, 0)
+                        station, lon, lat = (mt_obj.station, mt_obj.lon, mt_obj.lat)
+
+                        pt_stat = [station, freq, lon, lat,
+                                   mt_obj.pt.phimin[0][p_index],
+                                   mt_obj.pt.phimax[0][p_index],
+                                   mt_obj.pt.azimuth[0][p_index],
+                                   mt_obj.pt.beta[0][p_index],
+                                   2 * mt_obj.pt.beta[0][p_index],
+                                   mt_obj.pt.ellipticity[0][p_index],  # FZ: get ellipticity begin here
+                                   mt_obj.Tipper.mag_real[p_index],
+                                   mt_obj.Tipper.mag_imag[p_index],
+                                   mt_obj.Tipper.angle_real[p_index],
+                                   mt_obj.Tipper.angle_imag[p_index]]
+
+                        ptlist.append(pt_stat)
+                    else:
+                        logger.warn("Freq %s NOT found for this station %s", freq, mt_obj.station)
+
+                csv_freq_file = os.path.join(dest_dir,
+                                             '{name[0]}_{freq}Hz{name[1]}'.format(
+                                                 freq=str(freq), name=os.path.splitext(file_name)))
+                with open(csv_freq_file, "wb") as freq_csvf:
+                    writer_freq = csv.writer(freq_csvf)
+                    writer_freq.writerow(csv_header)
+                    writer_freq.writerows(ptlist)
+
+                writer.writerows(ptlist)
+
+                pt_dict[freq] = ptlist
+
+        return pt_dict
+
+    @deprecated("This function is more expensive compared with create_phase_tensor_csv()")
+    def create_phase_tensor_csv_with_image(self, dest_dir):
+        """
+        Using PlotPhaseTensorMaps class to generate csv file of phase tensor attributes, etc.
+        Only for comparison. This method is more expensive because it will create plot object first.
+        :return:
+        """
+        from mtpy.imaging.phase_tensor_maps import PlotPhaseTensorMaps
+        for freq in self.all_frequencies:
+            ptm = PlotPhaseTensorMaps(fn_list=self.edifiles, plot_freq=freq)
+            ptm.export_params_to_file(save_path=dest_dir)
+        return
+
     def create_measurement_csv(self, dest_dir='/e/tmp'):
         """
         create csv file from the data of EDI files: IMPEDANCE, APPARENT RESISTIVITIES AND PHASES
@@ -260,15 +348,15 @@ class EdiCollection(object):
 
         # summary csv file
         csv_basename = "edi_measurement"
-        csvfname = os.path.join(dest_dir, "%s.csv"%csv_basename)
+        csvfname = os.path.join(dest_dir, "%s.csv" % csv_basename)
 
         pt_dict = {}
 
         csv_header = [
-            'FREQ','STATION', 'LAT', 'LON',  'ZXXre','ZXXim',
-            'ZXYre', 'ZXYim', 'ZYXre', 'ZYXim', 'ZYYre', 'ZYYim','TXre', 'TXim', 'TYre', 'TYim',
+            'FREQ', 'STATION', 'LAT', 'LON', 'ZXXre', 'ZXXim',
+            'ZXYre', 'ZXYim', 'ZYXre', 'ZYXim', 'ZYYre', 'ZYYim', 'TXre', 'TXim', 'TYre', 'TYim',
             'RHOxx', 'RHOxy', 'RHOyx', 'RHOyy', 'PHSxx', 'PHSxy', 'PHSyx', 'PHSyy'
-                      ]
+        ]
 
         with open(csvfname, "wb") as csvf:
             writer = csv.writer(csvf)
@@ -294,20 +382,20 @@ class EdiCollection(object):
                     station, lat, lon = (
                         mt_obj.station, mt_obj.lat, mt_obj.lon)
 
-                    resist_phase =  mtplottools.ResPhase(z_object=mt_obj.Z)
+                    resist_phase = mtplottools.ResPhase(z_object=mt_obj.Z)
                     # resist_phase.compute_res_phase()
 
                     mt_stat = [freq, station, lat, lon,
-                               mt_obj.Z.z[p_index,0,0].real,
-                               mt_obj.Z.z[p_index,0,0].imag,
-                               mt_obj.Z.z[p_index,0,1].real,
-                               mt_obj.Z.z[p_index,0,1].imag,
-                               mt_obj.Z.z[p_index,1,0].real,
-                               mt_obj.Z.z[p_index,1,0].imag,
-                               mt_obj.Z.z[p_index,1,1].real,
-                               mt_obj.Z.z[p_index,1,1].imag,
-                               mt_obj.Tipper.tipper[p_index,0,0].real,
-                               mt_obj.Tipper.tipper[p_index,0,0].imag,
+                               mt_obj.Z.z[p_index, 0, 0].real,
+                               mt_obj.Z.z[p_index, 0, 0].imag,
+                               mt_obj.Z.z[p_index, 0, 1].real,
+                               mt_obj.Z.z[p_index, 0, 1].imag,
+                               mt_obj.Z.z[p_index, 1, 0].real,
+                               mt_obj.Z.z[p_index, 1, 0].imag,
+                               mt_obj.Z.z[p_index, 1, 1].real,
+                               mt_obj.Z.z[p_index, 1, 1].imag,
+                               mt_obj.Tipper.tipper[p_index, 0, 0].real,
+                               mt_obj.Tipper.tipper[p_index, 0, 0].imag,
                                mt_obj.Tipper.tipper[p_index, 0, 1].real,
                                mt_obj.Tipper.tipper[p_index, 0, 1].imag,
                                resist_phase.resxx[p_index], resist_phase.resxy[p_index],
@@ -325,7 +413,7 @@ class EdiCollection(object):
                 writer = csv.writer(csvf)
                 writer.writerows(mtlist)
 
-            csv_basename2 = "%s_%sHz.csv" %(csv_basename, str(freq))
+            csv_basename2 = "%s_%sHz.csv" % (csv_basename, str(freq))
             csvfile2 = os.path.join(dest_dir, csv_basename2)
 
             with open(csvfile2, "wb") as csvf:  # individual csvfile for each freq
@@ -364,15 +452,14 @@ class EdiCollection(object):
         show all properties
         :return:
         """
-        print (len(self.all_unique_periods), 'unique periods (s)', self.all_unique_periods)
-        print (len(self.all_frequencies),
-               'unique frequencies (Hz)', self.all_frequencies)
+        print(len(self.all_unique_periods), 'unique periods (s)', self.all_unique_periods)
+        print(len(self.all_frequencies),
+              'unique frequencies (Hz)', self.all_frequencies)
 
         myper = obj.get_periods_by_stats(percentage=20)
         print(myper)
 
-
-        print (self.bound_box_dict)
+        print(self.bound_box_dict)
 
         self.plot_stations(savefile='/e/tmp/edi_collection_test.jpg')
 
@@ -384,21 +471,14 @@ class EdiCollection(object):
 
         return
 
-    def create_phase_tensor_csv(self):
-        """
-        create phase tensor ellipse and tipper properties.
-        :return:
-        """
-        return
-
 
 if __name__ == "__main__":
 
-# python mtpy/core/edi_collection.py examples/data/edi2/ /e/tmp3/edi2_csv
-# python mtpy/core/edi_collection.py /e/Data/MT_Datasets/GA_UA_edited_10s-10000s /e/tmp3/GA_UA_edited_10s-10000s_csv
+    # python mtpy/core/edi_collection.py examples/data/edi2/ /e/tmp3/edi2_csv
+    # python mtpy/core/edi_collection.py /e/Data/MT_Datasets/GA_UA_edited_10s-10000s /e/tmp3/GA_UA_edited_10s-10000s_csv
 
     if len(sys.argv) < 2:
-        print ("\n  USAGE: %s edi_dir OR edi_list " % sys.argv[0])
+        print("\n  USAGE: %s edi_dir OR edi_list " % sys.argv[0])
         sys.exit(1)
     else:
         argv1 = sys.argv[1]
@@ -413,11 +493,10 @@ if __name__ == "__main__":
         else:
             sys.exit(2)
 
+        # obj.show_prop()
 
-        #obj.show_prop()
+        # print(obj.get_bounding_box(epsgcode=28353))
 
-        #print(obj.get_bounding_box(epsgcode=28353))
-
-        #obj.create_mt_station_gdf(outshpfile='/e/tmp/edi_collection_test.shp')
+        # obj.create_mt_station_gdf(outshpfile='/e/tmp/edi_collection_test.shp')
 
         obj.create_measurement_csv(dest_dir=sys.argv[2])

@@ -16,16 +16,15 @@ import sys
 import geopandas as gpd
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-import mtpy.core.mt as mt
-import mtpy.core.edi_collection 
 import numpy as np
 import pandas as pd
-
-from mtpy.utils.mtpylog import MtPyLog
-
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 from shapely.geometry import Point, Polygon, LineString, LinearRing
 
-from mpl_toolkits.axes_grid1 import make_axes_locatable
+import mtpy.core.edi_collection
+import mtpy.core.mt as mt
+from mtpy.utils.decorator import deprecated
+from mtpy.utils.mtpylog import MtPyLog
 
 mpl.rcParams['lines.linewidth'] = 2
 # mpl.rcParams['lines.color'] = 'r'
@@ -35,6 +34,7 @@ logger = MtPyLog().get_mtpy_logger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
+@deprecated("This class is deprecated, please use mtpy.core.edi_collection.EdiCollection instead.")
 class ShapeFilesCreator(object):
     """
     create shape files for a list of MT edifiles
@@ -101,6 +101,7 @@ class ShapeFilesCreator(object):
 
         return all_periods
 
+    @deprecated("This function is replaced by mtpy.core.edi_collection.EdiCollection.create_phase_tensor_csv()")
     def create_csv_files(self, dest_dir=None):
         """
         create csv file
@@ -169,6 +170,8 @@ class ShapeFilesCreator(object):
 
         return pt_dict
 
+    @deprecated("This function is replaced by "
+                "mtpy.core.edi_collection.EdiCollection.create_phase_tensor_csv_with_image()")
     def create_csv_files2(self):
         """
         Using PlotPhaseTensorMaps class to generate csv file of phase tensor attributes, etc.
@@ -261,7 +264,7 @@ def create_ellipse_shp(csvfile, esize=0.03, target_epsg_code=None):
     if target_epsg_code is None:
         target_epsg_code = '4326'  # EDI original lat/lon epsg 4326 or GDA94
     else:
-        pdf.to_crs(epsg=target_epsg_code,inplace=True)
+        pdf.to_crs(epsg=target_epsg_code, inplace=True)
         # world = world.to_crs({'init': 'epsg:3395'})
         # world.to_crs(epsg=3395) would also work
 
@@ -273,7 +276,6 @@ def create_ellipse_shp(csvfile, esize=0.03, target_epsg_code=None):
 
 
 def plot_geopdf(pdf, bbox, out_file_name, target_epsg_code, showfig=False):
-
     if target_epsg_code is None:
         p = pdf
         target_epsg_code = '4326'  # EDI orginal lat/lon epsg 4326 or GDA94
@@ -283,18 +285,18 @@ def plot_geopdf(pdf, bbox, out_file_name, target_epsg_code, showfig=False):
         # world.to_crs(epsg=3395) would also work
 
     # bounds = p.total_bounds  # lat-lon bounds for this csv dataframe
-    
+
     # plot and save
     jpg_fname = out_file_name.replace('.csv', '_epsg%s.jpg' % target_epsg_code)
-    fig_title=os.path.basename(jpg_fname)
-    logger.info('saving figure to file %s',jpg_fname)
+    fig_title = os.path.basename(jpg_fname)
+    logger.info('saving figure to file %s', jpg_fname)
 
     colorby = 'phi_min'
     my_cmap_r = 'jet'
 
     if int(target_epsg_code) == 4326:
 
-        myax = p.plot(figsize=[10, 10], linewidth=2.0, column=colorby, cmap=my_cmap_r) #, marker='o', markersize=10)
+        myax = p.plot(figsize=[10, 10], linewidth=2.0, column=colorby, cmap=my_cmap_r)  # , marker='o', markersize=10)
 
         # add colorbar
         divider = make_axes_locatable(myax)
@@ -333,7 +335,8 @@ def plot_geopdf(pdf, bbox, out_file_name, target_epsg_code, showfig=False):
         myax.set_ylabel('Latitude')
         myax.set_title(fig_title)
     else:
-        myax = p.plot(figsize=[10, 8], linewidth=2.0, column=colorby, cmap=my_cmap_r)  # simple plot need to have details added
+        myax = p.plot(figsize=[10, 8], linewidth=2.0, column=colorby,
+                      cmap=my_cmap_r)  # simple plot need to have details added
 
         myax.set_xlabel('East-West (KM)')
         myax.set_ylabel('North-South (KM)')
@@ -376,10 +379,10 @@ def plot_geopdf(pdf, bbox, out_file_name, target_epsg_code, showfig=False):
         plt.show()
 
     # cleanup memory now
-    plt.close() # this will make prog faster and not too many plot obj kept.
-    del(p)
-    del(pdf)
-    del(fig)
+    plt.close()  # this will make prog faster and not too many plot obj kept.
+    del (p)
+    del (pdf)
+    del (fig)
 
 
 def create_tipper_real_shp(csvfile, arr_size=0.03, target_epsg_code=None):
@@ -411,7 +414,7 @@ def create_tipper_real_shp(csvfile, arr_size=0.03, target_epsg_code=None):
     if target_epsg_code is None:
         target_epsg_code = '4326'  # EDI original lat/lon epsg 4326 or GDA94
     else:
-        pdf.to_crs(epsg=target_epsg_code,inplace=True)
+        pdf.to_crs(epsg=target_epsg_code, inplace=True)
         # world = world.to_crs({'init': 'epsg:3395'})
         # world.to_crs(epsg=3395) would also work
 
@@ -420,6 +423,7 @@ def create_tipper_real_shp(csvfile, arr_size=0.03, target_epsg_code=None):
     pdf.to_file(shp_fname, driver='ESRI Shapefile')
 
     return pdf
+
 
 def create_tipper_imag_shp(csvfile, arr_size=0.03, target_epsg_code=None):
     """ create imagery tipper lines shape from a csv file
@@ -450,7 +454,7 @@ def create_tipper_imag_shp(csvfile, arr_size=0.03, target_epsg_code=None):
     if target_epsg_code is None:
         target_epsg_code = '4326'  # EDI original lat/lon epsg 4326 or GDA94
     else:
-        pdf.to_crs(epsg=target_epsg_code,inplace=True)
+        pdf.to_crs(epsg=target_epsg_code, inplace=True)
         # world = world.to_crs({'init': 'epsg:3395'})
         # world.to_crs(epsg=3395) would also work
 
@@ -476,20 +480,21 @@ def process_csv_folder(csv_folder, bbox_dict, target_epsg_code=None):
     # filter the csv files if you do not want to plot all of them
     print(len(csvfiles))
 
-    #for acsv in csvfiles[:2]:
+    # for acsv in csvfiles[:2]:
     for acsv in csvfiles:
+        # tip_re_gdf = create_tipper_real_shp(acsv, target_epsg_code=target_epsg_code)
 
-        #tip_re_gdf = create_tipper_real_shp(acsv, target_epsg_code=target_epsg_code)
+        # tip_im_gdf = create_tipper_imag_shp(acsv, target_epsg_code=target_epsg_code)
 
-        #tip_im_gdf = create_tipper_imag_shp(acsv, target_epsg_code=target_epsg_code)
-
-        ellip_gdf = create_ellipse_shp(acsv, esize=0.06,target_epsg_code=target_epsg_code)
+        ellip_gdf = create_ellipse_shp(acsv, esize=0.06, target_epsg_code=target_epsg_code)
 
         # visualize and make image file output of the above 3 geopandas df.
         my_gdf = ellip_gdf
         plot_geopdf(my_gdf, bbox_dict, acsv, target_epsg_code)
 
     return
+
+
 # ==================================================================
 # python mtpy/utils/shapefiles_creator.py tests/data/edifiles /e/tmp
 # ==================================================================
@@ -514,7 +519,7 @@ if __name__ == "__main__":
 
     edisobj = mtpy.core.edi_collection.EdiCollection(edifiles)
     bbox_dict = edisobj.bound_box_dict
-    print (bbox_dict)
+    print(bbox_dict)
     # shp_maker.create_mt_sites_shp()
 
     # create shapefiles and plots

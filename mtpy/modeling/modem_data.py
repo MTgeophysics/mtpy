@@ -1044,7 +1044,7 @@ class Data(object):
                             if compute_error:
                                 # compute relative error
                                 if comp.find('t') == 0:
-                                    abs_err = self._vertical_components_error_floor(ff, c_key, ss, z_ii)
+                                    abs_err = self._vertical_components_error_floor(ff, c_key, ss, z_ii, z_jj)
                                 elif comp.find('z') == 0:
                                     comp_error_type = self.comp_error_type[comp] if self.comp_error_type is not None \
                                                                                     and comp in self.comp_error_type \
@@ -1171,11 +1171,6 @@ class Data(object):
                   self.error_egbert / 100.
         return abs_err
 
-    def _impedance_components_error_value(self, zz):
-        abs_err = abs(zz) * \
-                  self.error_value / 100.
-        return abs_err
-
     def _impedance_components_error_floor_egbert(self, c_key, ff, ss, z_ii, z_jj):
         # abs_err = self.data_array[ss][
         #     c_key + '_err'][ff, z_ii, z_jj]
@@ -1190,6 +1185,13 @@ class Data(object):
         )
         return abs_err
 
+    def _impedance_components_error_value(self, zz):
+        abs_err = abs(zz) * \
+                  self.error_value / 100.
+        # YG: This looks wrong, according to error_floor, it should be
+        # abs_err = self.data_array[ss][c_key + '_err'][ff, z_ii, z_jj]
+        return abs_err
+
     def _impedance_components_error_floor(self, c_key, ff, ss, z_ii, z_jj, zz):
         rel_err = max(
             self.error_floor / 100.,
@@ -1200,10 +1202,11 @@ class Data(object):
         abs_err = rel_err * abs(zz)
         return abs_err
 
-    def _vertical_components_error_floor(self, ff, c_key, ss, z_ii):
+    def _vertical_components_error_floor(self, ff, c_key, ss, z_ii, z_jj):
         if 'floor' in self.error_type:
-            abs_err = max(self.error_tipper,
-                          self.data_array[ss][c_key + '_err'][ff, 0, z_ii])  # this may be wrong as z_ii is always 0
+            # abs_err = max(self.error_tipper,
+            #               self.data_array[ss][c_key + '_err'][ff, 0, z_ii])  # this may be wrong as z_ii is always 0
+            abs_err = max(self.error_tipper, self.data_array[ss][c_key + '_err'][ff, z_ii, z_jj])
         else:
             abs_err = self.error_tipper
         return abs_err

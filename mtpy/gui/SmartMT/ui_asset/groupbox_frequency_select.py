@@ -25,7 +25,7 @@ except AttributeError:
 class Ui_GroupBox_frequency_select(object):
     def setupUi(self, GroupBox_frequency_select):
         GroupBox_frequency_select.setObjectName(_fromUtf8("GroupBox_frequency_select"))
-        GroupBox_frequency_select.resize(300, 244)
+        GroupBox_frequency_select.resize(300, 270)
         sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -60,9 +60,9 @@ class Ui_GroupBox_frequency_select(object):
         self.radioButton_period = QtGui.QRadioButton(GroupBox_frequency_select)
         self.radioButton_period.setObjectName(_fromUtf8("radioButton_period"))
         self.gridLayout.addWidget(self.radioButton_period, 2, 2, 1, 2)
-        self.checkBox_log_scale = QtGui.QCheckBox(GroupBox_frequency_select)
-        self.checkBox_log_scale.setObjectName(_fromUtf8("checkBox_log_scale"))
-        self.gridLayout.addWidget(self.checkBox_log_scale, 8, 0, 1, 3)
+        self.checkBox_y_log_scale = QtGui.QCheckBox(GroupBox_frequency_select)
+        self.checkBox_y_log_scale.setObjectName(_fromUtf8("checkBox_y_log_scale"))
+        self.gridLayout.addWidget(self.checkBox_y_log_scale, 8, 0, 1, 3)
         self.pushButton_delete = QtGui.QPushButton(GroupBox_frequency_select)
         sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
@@ -98,6 +98,9 @@ class Ui_GroupBox_frequency_select(object):
         self.doubleSpinBox_tolerance.setProperty("value", 10.0)
         self.doubleSpinBox_tolerance.setObjectName(_fromUtf8("doubleSpinBox_tolerance"))
         self.gridLayout.addWidget(self.doubleSpinBox_tolerance, 1, 2, 1, 1)
+        self.checkBox_x_log_scale = QtGui.QCheckBox(GroupBox_frequency_select)
+        self.checkBox_x_log_scale.setObjectName(_fromUtf8("checkBox_x_log_scale"))
+        self.gridLayout.addWidget(self.checkBox_x_log_scale, 3, 0, 1, 3)
 
         self.retranslateUi(GroupBox_frequency_select)
         QtCore.QMetaObject.connectSlotsByName(GroupBox_frequency_select)
@@ -114,9 +117,10 @@ class Ui_GroupBox_frequency_select(object):
         self.radioButton_frequency.setText(_translate("GroupBox_frequency_select", "Show Frequency", None))
         self.checkBox_show_existing.setText(_translate("GroupBox_frequency_select", "Show Existing Frequencies/Periods", None))
         self.radioButton_period.setText(_translate("GroupBox_frequency_select", "Show Period", None))
-        self.checkBox_log_scale.setText(_translate("GroupBox_frequency_select", "Use log-scale on y-axes", None))
+        self.checkBox_y_log_scale.setText(_translate("GroupBox_frequency_select", "Use log-scale on y-axes", None))
         self.pushButton_delete.setText(_translate("GroupBox_frequency_select", "Delete", None))
         self.pushButton_clear.setText(_translate("GroupBox_frequency_select", "Clear", None))
         self.label_tolerance.setText(_translate("GroupBox_frequency_select", "Selection Tolerance", None))
         self.doubleSpinBox_tolerance.setSuffix(_translate("GroupBox_frequency_select", "%", None))
+        self.checkBox_x_log_scale.setText(_translate("GroupBox_frequency_select", "Use log-scale on x-axes", None))
 

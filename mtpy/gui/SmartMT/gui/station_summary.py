@@ -57,10 +57,14 @@ class StationSummary(QtGui.QWidget):
     def _update_station_detail(self, mt_obj):
         self._clear_station_detail()
         # set text
-        self.ui.lineEditStation.setText(mt_obj.station)
-        self.ui.lineEditFile_Ref.setText(mt_obj.fn)
-        self.ui.lineEditAcquired_by.setText(mt_obj.edi_object.Header.acqby)
-        self.ui.lineEditLocation.setText(mt_obj.edi_object.Header.loc)
+        if mt_obj.station:
+            self.ui.lineEditStation.setText(mt_obj.station)
+        if mt_obj.fn:
+            self.ui.lineEditFile_Ref.setText(mt_obj.fn)
+        if mt_obj.edi_object.Header.acqby:
+            self.ui.lineEditAcquired_by.setText(mt_obj.edi_object.Header.acqby)
+        if mt_obj.edi_object.Header.loc:
+            self.ui.lineEditLocation.setText(mt_obj.edi_object.Header.loc)
         if mt_obj.elev:
             self.ui.lineEditElev.setText('%.5f' % mt_obj.elev)
         if mt_obj.lat:
@@ -71,7 +75,6 @@ class StationSummary(QtGui.QWidget):
             self.ui.lineEditDate_Acq.setText(mt_obj.edi_object.Header.filedate)
         with open(mt_obj.fn, 'r') as edi_file:
             self.ui.plainTextEdit_edi_text.setPlainText(edi_file.read())
-
 
     def _clear_station_detail(self):
         # clear text

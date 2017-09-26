@@ -543,7 +543,7 @@
        </sizepolicy>
       </property>
       <property name="currentIndex">
-       <number>2</number>
+          <number>3</number>
       </property>
       <item>
        <property name="text">
@@ -890,6 +890,14 @@
          </item>
          <item>
           <widget class="QRadioButton" name="radioButton_format_2">
+              <property name="enabled">
+                  <bool>false</bool>
+              </property>
+              <property name="toolTip">
+                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;This option is currently disabled due to its
+                      campatiblity issues.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
+                  </string>
+              </property>
            <property name="text">
             <string>Type 2 (Possibly Compatible with WSINV3DMT)</string>
            </property>
@@ -1137,7 +1145,10 @@
         </widget>
        </item>
        <item row="4" column="0">
-        <widget class="QLabel" name="label_14">
+           <widget class="QLabel" name="label_bottom">
+               <property name="enabled">
+                   <bool>false</bool>
+               </property>
          <property name="toolTip">
           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;absolute bottom of the model&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
@@ -1148,6 +1159,9 @@
        </item>
        <item row="4" column="1">
         <widget class="QDoubleSpinBox" name="doubleSpinBox_bottom">
+            <property name="enabled">
+                <bool>false</bool>
+            </property>
          <property name="toolTip">
           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;absolute bottom of the model&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
@@ -1331,7 +1345,7 @@
     <string>After creating the mesh grid, the topography file is used to define resistivity model.</string>
    </property>
    <layout class="QGridLayout" name="gridLayout">
-    <item row="0" column="0">
+       <item row="1" column="0">
      <widget class="QLabel" name="label_17">
       <property name="sizePolicy">
        <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
@@ -1347,7 +1361,7 @@
       </property>
      </widget>
     </item>
-    <item row="0" column="1">
+       <item row="1" column="1">
      <widget class="QComboBox" name="comboBox_topography_file">
       <property name="toolTip">
        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Directory to save the file&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
@@ -1357,7 +1371,7 @@
       </property>
      </widget>
     </item>
-    <item row="0" column="2">
+       <item row="1" column="2">
      <widget class="QPushButton" name="pushButton_browse_topography_file">
       <property name="sizePolicy">
        <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
@@ -1373,7 +1387,7 @@
       </property>
      </widget>
     </item>
-    <item row="1" column="0" colspan="3">
+       <item row="2" column="0" colspan="3">
      <layout class="QHBoxLayout" name="horizontalLayout">
       <item>
        <widget class="QGroupBox" name="groupBox_9">
@@ -1623,7 +1637,23 @@
        </widget>
       </item>
      </layout>
-    </item>
+       </item>
+       <item row="0" column="0" colspan="3">
+           <widget class="QLabel" name="label_14">
+               <property name="text">
+                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Please select a ETOPO1 .asc file, which can be
+                       download from &lt;a href=&quot;https://maps.ngdc.noaa.gov/viewers/wcs-client/&quot;&gt;&lt;span
+                       style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;https://maps.ngdc.noaa.gov/viewers/wcs-client/&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
+                   </string>
+               </property>
+               <property name="wordWrap">
+                   <bool>true</bool>
+               </property>
+               <property name="openExternalLinks">
+                   <bool>true</bool>
+               </property>
+           </widget>
+       </item>
    </layout>
   </widget>
   <widget class="QWizardPage" name="wizardPage_output">

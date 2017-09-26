@@ -109,14 +109,14 @@ class TestPenetration_depth1d(TestCase):
         except ZComponentError:
             pass
 
-    def test_plot_edi_file_save_inage(self):
+    def test_plot_edi_file_save_image(self):
         """
         testing saving plot of a single edi file
         :return:
         """
-        fname = os.path.join(self._temp_dir,"TestPenetration_depth1d.jpg")
+        fname = os.path.join(self._temp_dir, "TestPenetration_depth1d.jpg")
         if os.path.isfile(fname):
-            os.remove(fname)    # remove test file if already exist
+            os.remove(fname)  # remove test file if already exist
         plot_edi_file("tests/data/edifiles/15125A.edi", savefile=fname)
         assert (os.path.isfile(fname))
         pass

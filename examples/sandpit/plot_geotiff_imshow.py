@@ -26,7 +26,9 @@ from osgeo import gdal, osr
 
 from gdalconst import *
 import numpy as np
-import cartopy.crs as ccrs
+
+
+# import cartopy.crs as ccrs
 
 
 def plot_geotiff(geofile='/e/Data/uncoverml/GA-cover2/PM_Gravity.tif', show=True):
