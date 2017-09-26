@@ -2148,7 +2148,7 @@ def plot_errorbar(ax, x_array, y_array, y_error=None, x_error=None,
         y_err = y_error
     else:
         y_err = None
-
+        
     errorbar_object = ax.errorbar(x_array,
                                   y_array,
                                   marker=marker,
