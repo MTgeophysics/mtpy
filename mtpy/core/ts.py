@@ -17,6 +17,7 @@ import pandas as pd
 import scipy.signal as signal
 
 import mtpy.utils.gis_tools as gis_tools
+import mtpy.processing.filter as mtfilter
 
 import matplotlib.pyplot as plt
 
@@ -385,6 +386,42 @@ class MT_TS(object):
         dt_time = dt_struct.timetuple()
         
         return calendar.timegm(dt_time)+dt_struct.microsecond*1E-6
+        
+    def apply_addaptive_notch_filter(self, notches=None, notch_radius=0.5,
+                                     freq_rad=0.5, rp=0.1):
+        """
+        apply notch filter to the data that finds the peak around each 
+        frequency.
+        
+        see mtpy.processing.filter.adaptive_notch_filter
+        
+        Arguments
+        -------------
+            **notch_dict** : dictionary
+                             dictionary of filter parameters.
+                             if an empty dictionary is input the filter looks
+                             for 60 Hz and harmonics to filter out.
+        """
+        if notches is None:        
+            notches = list(np.arange(60, 1860, 120))
+        
+        kwargs = {'df':self.sampling_rate,
+                  'notches':notches,
+                  'notchradius':notch_radius,
+                  'freqrad':freq_rad,
+                  'rp':rp}
+        
+        ts, filt_list = mtfilter.adaptive_notch_filter(self.ts.data, **kwargs)
+        
+        self.ts.data = ts
+        
+        print '\t Filtered frequency with bandstop:'
+        for ff in filt_list:
+            try:
+                print '\t\t{0:>6.5g} Hz  {1:>6.2f} db'.format(np.nan_to_num(ff[0]),
+                                                             np.nan_to_num(ff[1]))
+            except ValueError:
+                pass
         
     # decimate data
     def decimate(self, dec_factor=1):

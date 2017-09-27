@@ -1181,15 +1181,14 @@ class Zen3D(object):
         except AttributeError:
             self.read_3d()
         
-        notches = notch_dict.pop('notches', list(np.arange(60, 2048, 60)))
+        notches = notch_dict.pop('notches', list(np.arange(60, 1860, 120)))
         notchradius = notch_dict.pop('notchradius', 0.5)
         freqrad = notch_dict.pop('freqrad', 0.5)
         rp = notch_dict.pop('rp', 0.1)
         kwargs = {'df':self.df, 'notches':notches, 'notchradius':notchradius,
                   'freqrad':freqrad, 'rp':rp}
                   
-        self.time_series, self.filt_list = \
-                    mtfilt.adaptive_notch_filter(self.time_series, **kwargs) 
+        self.ts_obj.apply_addaptive_notch_filter(**kwargs) 
         
     #==================================================
     def write_ascii_mt_file(self, save_fn=None, fmt='%.8e', notch_dict=None,

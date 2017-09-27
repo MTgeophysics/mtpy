@@ -21,7 +21,7 @@ reload(mtpl)
 
 #============================================================================
 
-class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
+class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse, mtpl.PlotSettings):
     """
     plots multiple MT responses simultaneously either in single plots or in 
     one plot of subfigures or in a single plot with subfigures for each 
@@ -279,26 +279,24 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
         """
         Initialize parameters
         """
+        super(PlotMultipleResponses, self).__init__()
+        
         fn_list = kwargs.pop('fn_list', None)
         z_object_list = kwargs.pop('z_object_list', None)
         tipper_object_list = kwargs.pop('tipper_object_list', None)
         mt_object_list = kwargs.pop('mt_object_list', None)
-        res_object_list = kwargs.pop('res_object_list', None)
         
         #--> get the inputs into a list of mt objects
-        self.mt_list = mtpl.get_mtlist(fn_list=fn_list, 
-                                     res_object_list=res_object_list,
+        self.mt_list = mtpl.get_mtlist(fn_list=fn_list,
                                      z_object_list=z_object_list, 
                                      tipper_object_list=tipper_object_list, 
                                      mt_object_list=mt_object_list)
         
         #set some of the properties as attributes much to Lars' discontent
-        self.fig_num = kwargs.pop('fig_num', 1)
         self.plot_num = kwargs.pop('plot_num', 1)
         self.plot_style = kwargs.pop('plot_style', '1')
         self.plot_title = kwargs.pop('plot_title', None)
-        self.fig_dpi = kwargs.pop('fig_dpi', 300)
-        self.fig_size = kwargs.pop('fig_size', None)
+
         
         #if rotation angle is an int or float make an array the length of 
         #mt_list for plotting purposes
@@ -317,32 +315,6 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
 
         self._set_rot_z(self._rot_z)
         
-        #-->line properties
-        #line style between points
-        self.xy_ls = kwargs.pop('xy_ls', 'None')        
-        self.yx_ls = kwargs.pop('yx_ls', 'None')
-        self.det_ls = kwargs.pop('det_ls', 'None')
-        
-        #outline color
-        self.xy_color = kwargs.pop('xy_color', 'b')
-        self.yx_color = kwargs.pop('yx_color', 'r')
-        self.det_color = kwargs.pop('det_color', 'g')
-        
-        #face color
-        self.xy_mfc = kwargs.pop('xy_mfc', 'None')
-        self.yx_mfc = kwargs.pop('yx_mfc', 'None')
-        self.det_mfc = kwargs.pop('det_mfc', 'None')
-        
-        #maker
-        self.xy_marker = kwargs.pop('xy_marker', 's')
-        self.yx_marker = kwargs.pop('yx_marker', 'o')
-        self.det_marker = kwargs.pop('det_marker', 'd')
-        
-        #size
-        self.marker_size = kwargs.pop('marker_size', 2)
-        
-        #marker line width
-        self.marker_lw = kwargs.pop('marker_lw', 100./self.fig_dpi)
         
         #set plot limits
         self.xlimits = kwargs.pop('xlimits', None)
@@ -380,34 +352,16 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                                                             self._plot_skew])])
         
         #set arrow properties
-        self._arrow_dict = kwargs.pop('arrow_dict', {'color' : ('k', 'b'),
-                                                     'direction' : 0,
-                                                     'head_length' : 0.03,
-                                                     'head_width' : 0.03,
-                                                     'lw' : .5})
-                           
-        self._read_arrow_dict()
+        self.arrow_head_length = 0.03
+        self.arrow_head_width = 0.03
+        self.arrow_lw = .5
         
         #ellipse_properties
-        self._ellipse_dict = kwargs.pop('ellipse_dict', {'size':.25})
-        self._read_ellipse_dict()
+        self.ellipse_size = 0.25
         self.ellipse_spacing = kwargs.pop('ellipse_spacing', 1)
         if self.ellipse_size == 2 and self.ellipse_spacing == 1:
             self.ellipse_size = 0.25
-        
-        #skew properties
-        self.skew_color = kwargs.pop('skew_color', (.85, .35, 0))
-        self.skew_marker = kwargs.pop('skew_marker', 'd')
-        
-        #strike properties
-        self.strike_inv_marker = kwargs.pop('strike_inv_marker', '^')
-        self.strike_inv_color = kwargs.pop('strike_inv_color', (.2, .2, .7))
-        
-        self.strike_pt_marker = kwargs.pop('strike_pt_marker', 'v')
-        self.strike_pt_color = kwargs.pop('strike_pt_color', (.7, .2, .2))
-        
-        self.strike_tip_marker = kwargs.pop('strike_tip_marker', '>')
-        self.strike_tip_color = kwargs.pop('strike_tip_color', (.2, .7, .2))
+
         
         #--> set text box parameters
         self.text_location = kwargs.pop('text_location', None)
@@ -542,8 +496,8 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
             
             #--> plot from edi's if given, don't need to rotate because
             #    data has already been rotated by the funcion _set_rot_z
-            if self.fig_size is None:
-                self.fig_size = [6, 6]
+#            if self.fig_size is None:
+#                self.fig_size = [6, 6]
             for ii, mt in enumerate(self.mt_list, 1):
                 p1 = plotresponse(mt_object=mt, 
                                   fig_num=ii,
@@ -666,11 +620,11 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                     
                 if self.res_limits == None:
                     self.res_limits = (10**(np.floor(
-                                            np.log10(min([rp.resxy.min(),
-                                                          rp.resyx.min()])))),
+                                            np.log10(min([mt.Z.res_xy.min(),
+                                                          mt.Z.res_yx.min()])))),
                                       10**(np.ceil(
-                                          np.log10(max([rp.resxy.max(),
-                                                        rp.resyx.max()])))))
+                                          np.log10(max([mt.Z.res_xy.max(),
+                                                        mt.Z.res_yx.max()])))))
 
                 # create a grid to place the figures into, set to have 2 rows 
                 # and 2 columns to put any of the 4 components.  Make the phase
@@ -740,28 +694,28 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                 #--> plot as error bars and just as points xy-blue, yx-red
                 #res_xy
                 ebxyr = axr.errorbar(mt.period, 
-                                     rp.resxy, 
+                                     mt.Z.res_xy, 
                                      marker=self.xy_marker, 
                                      ms=self.marker_size, 
                                      mfc=self.xy_mfc, 
                                      mec=self.xy_color, 
                                      mew=self.marker_lw, 
                                      ls=self.xy_ls, 
-                                     yerr=rp.resxy_err, 
+                                     yerr=mt.Z.res_err_xy, 
                                      ecolor=self.xy_color,
                                      capsize=self.marker_size,
                                      elinewidth=self.marker_lw)
                 
                 #res_yx                              
                 ebyxr = axr.errorbar(mt.period, 
-                                     rp.resyx, 
+                                     mt.Z.res_yx, 
                                      marker=self.yx_marker, 
                                      ms=self.marker_size, 
                                      mfc=self.yx_mfc,
                                      mec=self.yx_color, 
                                      mew=self.marker_lw,
                                      ls=self.yx_ls, 
-                                     yerr=rp.resyx_err, 
+                                     yerr=mt.Z.res_err_yx, 
                                      ecolor=self.yx_color,
                                      capsize=self.marker_size,
                                      elinewidth=self.marker_lw)
@@ -793,45 +747,45 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                 #-----Plot the phase----------------------------------------
                 #phase_xy
                 ebxyp = axp.errorbar(mt.period, 
-                                     rp.phasexy, 
+                                     mt.Z.phase_xy, 
                                      marker=self.xy_marker, 
                                      ms=self.marker_size, 
                                      mfc=self.xy_mfc,
                                      mec=self.xy_color, 
                                      mew=self.marker_lw,
                                      ls=self.xy_ls,
-                                     yerr=rp.phasexy_err, 
+                                     yerr=mt.Z.phase_err_xy, 
                                      ecolor=self.xy_color,
                                      capsize=self.marker_size,
                                      elinewidth=self.marker_lw)
                                               
                 #phase_yx:
                 ebyxp = axp.errorbar(mt.period, 
-                                     rp.phaseyx, 
+                                     mt.Z.phase_yx, 
                                      marker=self.yx_marker, 
                                      ms=self.marker_size, 
                                      mfc=self.yx_mfc, 
                                      mec=self.yx_color, 
                                      mew=self.marker_lw,
                                      ls=self.yx_ls, 
-                                     yerr=rp.phaseyx_err, 
+                                     yerr=mt.Z.phase_err_yx, 
                                      ecolor=self.yx_color,
                                      capsize=self.marker_size,
                                      elinewidth=self.marker_lw)
         
                 #check the phase to see if any point are outside of [0:90]
                 if self.phase_limits == None:
-                    if min(rp.phasexy)<0 or min(rp.phaseyx)<0:
-                        pymin = min([min(rp.phasexy), 
-                                     min(rp.phaseyx)])
+                    if min(mt.Z.phase_xy)<0 or min(mt.Z.phase_yx)<0:
+                        pymin = min([min(mt.Z.phase_xy), 
+                                     min(mt.Z.phase_yx)])
                         if pymin > 0:
                             pymin = 0
                     else:
                         pymin = 0
                     
-                    if max(rp.phasexy) > 90 or max(rp.phaseyx)  >90:
-                        pymax = min([max(rp.phasexy), 
-                                     max(rp.phaseyx)])
+                    if max(mt.Z.phase_xy) > 90 or max(mt.Z.phase_yx)  >90:
+                        pymax = min([max(mt.Z.phase_xy), 
+                                     max(mt.Z.phase_yx)])
                         if pymax < 91:
                             pymax = 89.9
                     else:
@@ -1330,28 +1284,28 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                         
                         #res_xx
                         ebxxr = axr2.errorbar(mt.period, 
-                                              rp.resxx, 
+                                              mt.Z.res_xx, 
                                               marker=self.xy_marker, 
                                               ms=self.marker_size, 
                                               mfc=self.xy_mfc,
                                               mec=self.xy_color, 
                                               mew=self.marker_lw,
                                               ls=self.xy_ls, 
-                                              yerr=rp.resxx_err, 
+                                              yerr=mt.Z.res_err_xx, 
                                               ecolor=self.xy_color,
                                               capsize=self.marker_size,
                                               elinewidth=self.marker_lw)
                         
                         #res_yy                              
                         ebyyr = axr2.errorbar(mt.period, 
-                                              rp.resyy, 
+                                              mt.Z.res_yy, 
                                               marker=self.yx_marker, 
                                               ms=self.marker_size, 
                                               mfc=self.yx_mfc, 
                                               mec=self.yx_color, 
                                               mew=self.marker_lw, 
                                               ls=self.yx_ls, 
-                                              yerr=rp.resyy_err, 
+                                              yerr=mt.Z.res_err_yy, 
                                               ecolor=self.yx_color,
                                               capsize=self.marker_size,
                                               elinewidth=self.marker_lw)
@@ -1384,28 +1338,28 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                         
                         #phase_xx
                         ebxxp = axp2.errorbar(mt.period, 
-                                              rp.phasexx, 
+                                              mt.Z.phase_xx, 
                                               marker=self.xy_marker, 
                                               ms=self.marker_size, 
                                               mfc=self.xy_mfc, 
                                               mec=self.xy_color, 
                                               mew=self.marker_lw, 
                                               ls=self.xy_ls, 
-                                              yerr=rp.phasexx_err,
+                                              yerr=mt.Z.phase_err_xx,
                                               ecolor=self.xy_color,
                                               capsize=self.marker_size,
                                               elinewidth=self.marker_lw)
                                                         
                         #phase_yy
                         ebyyp = axp2.errorbar(mt.period,
-                                              rp.phaseyy, 
+                                              mt.Z.phase_yy, 
                                               marker=self.yx_marker,
                                               ms=self.marker_size, 
                                               mfc=self.yx_mfc,
                                               mec=self.yx_color, 
                                               mew=self.marker_lw, 
                                               ls=self.yx_ls, 
-                                              yerr=rp.phaseyy_err, 
+                                              yerr=mt.Z.phase_err_yy, 
                                               ecolor=self.yx_color,
                                               capsize=self.marker_size,
                                               elinewidth=self.marker_lw)
@@ -1629,7 +1583,6 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
     
             for ii, mt in enumerate(self.mt_list): 
                 #get the reistivity and phase object
-                rp = mt.get_ResPhase()
                 
                 #set x-axis limits from short period to long period
                 if self.xlimits is None:
@@ -1651,28 +1604,30 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                     #--> plot as error bars and just as points xy-blue, yx-red
                     #res_xy
                     ebxyr = self.axrxy.errorbar(mt.period, 
-                                                rp.resxy, 
+                                                mt.Z.res_xy,
+                                                color=cxy[ii],
                                                 marker=mxy[ii], 
                                                 ms=self.marker_size, 
                                                 mfc='None', 
                                                 mec=cxy[ii], 
                                                 mew=self.marker_lw, 
                                                 ls=self.xy_ls, 
-                                                yerr=rp.resxy_err, 
+                                                yerr=mt.Z.res_err_xy, 
                                                 ecolor=cxy[ii],
                                                 capsize=self.marker_size,
                                                 elinewidth=self.marker_lw)
                     
                     #res_yx                              
                     ebyxr = self.axryx.errorbar(mt.period, 
-                                                rp.resyx, 
+                                                mt.Z.res_yx, 
+                                                color=cyx[ii],
                                                 marker=myx[ii], 
                                                 ms=self.marker_size, 
                                                 mfc='None',
                                                 mec=cyx[ii], 
                                                 mew=self.marker_lw,
                                                 ls=self.yx_ls, 
-                                                yerr=rp.resyx_err, 
+                                                yerr=mt.Z.res_err_yx, 
                                                 ecolor=cyx[ii],
                                                 capsize=self.marker_size,
                                                 elinewidth=self.marker_lw)
@@ -1681,14 +1636,15 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                     #-----Plot the phase---------------------------------------
                     #phase_xy
                     self.axpxy.errorbar(mt.period, 
-                                        rp.phasexy, 
+                                        mt.Z.phase_xy,
+                                        color=cxy[ii],
                                         marker=mxy[ii], 
                                         ms=self.marker_size, 
                                         mfc='None',
                                         mec=cxy[ii], 
                                         mew=self.marker_lw,
                                         ls=self.xy_ls,
-                                        yerr=rp.phasexy_err, 
+                                        yerr=mt.Z.phase_err_xy, 
                                         ecolor=cxy[ii],
                                         capsize=self.marker_size,
                                         elinewidth=self.marker_lw)
@@ -1696,14 +1652,15 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                     #phase_yx: Note add 180 to place it in same quadrant as
                     #phase_xy
                     self.axpyx.errorbar(mt.period, 
-                                        rp.phaseyx, 
+                                        mt.Z.phase_yx,
+                                        color=cyx[ii],
                                         marker=myx[ii], 
                                         ms=self.marker_size, 
                                         mfc='None',
                                         mec=cyx[ii], 
                                         mew=self.marker_lw,
                                         ls=self.yx_ls, 
-                                        yerr=rp.phaseyx_err, 
+                                        yerr=mt.Z.phase_err_yx, 
                                         ecolor=cyx[ii],
                                         capsize=self.marker_size,
                                         elinewidth=self.marker_lw)
@@ -1723,28 +1680,30 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                         
                         #res_xx
                         ebxxr = self.axr2xx.errorbar(mt.period, 
-                                                  rp.resxx, 
+                                                  mt.Z.res_xx,
+                                                  color=cxy[ii],
                                                   marker=mxy[ii], 
                                                   ms=self.marker_size, 
                                                   mfc='None',
                                                   mec=cxy[ii], 
                                                   mew=self.marker_lw,
                                                   ls=self.xy_ls, 
-                                                  yerr=rp.resxx_err, 
+                                                  yerr=mt.Z.res_err_xx, 
                                                   ecolor=cxy[ii],
                                                   capsize=self.marker_size,
                                                   elinewidth=self.marker_lw)
                         
                         #res_yy                              
                         ebyyr = self.axr2yy.errorbar(mt.period, 
-                                                  rp.resyy, 
+                                                  mt.Z.res_yy, 
+                                                  color=cyx[ii],
                                                   marker=myx[ii], 
                                                   ms=self.marker_size, 
                                                   mfc='None', 
                                                   mec=cyx[ii], 
                                                   mew=self.marker_lw, 
                                                   ls=self.yx_ls, 
-                                                  yerr=rp.resyy_err, 
+                                                  yerr=mt.Z.res_err_yy, 
                                                   ecolor=cyx[ii],
                                                   capsize=self.marker_size,
                                                   elinewidth=self.marker_lw)
@@ -1759,28 +1718,30 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                         
                         #phase_xx
                         ebxxp = self.axp2xx.errorbar(mt.period, 
-                                                  rp.phasexx, 
+                                                  mt.Z.phase_xx,
+                                                  color=cxy[ii],
                                                   marker=mxy[ii], 
                                                   ms=self.marker_size, 
                                                   mfc='None', 
                                                   mec=cxy[ii], 
                                                   mew=self.marker_lw, 
                                                   ls=self.xy_ls, 
-                                                  yerr=rp.phasexx_err,
+                                                  yerr=mt.Z.phase_err_xx,
                                                   ecolor=cxy[ii],
                                                   capsize=self.marker_size,
                                                   elinewidth=self.marker_lw)
                                                         
                         #phase_yy
                         ebyyp = self.axp2yy.errorbar(mt.period,
-                                                  rp.phaseyy, 
+                                                  mt.Z.phase_yy,
+                                                  color=cyx[ii],
                                                   marker=myx[ii],
                                                   ms=self.marker_size, 
                                                   mfc='None',
                                                   mec=cyx[ii], 
                                                   mew=self.marker_lw, 
                                                   ls=self.yx_ls, 
-                                                  yerr=rp.phaseyy_err, 
+                                                  yerr=mt.Z.phase_err_yy, 
                                                   ecolor=cyx[ii],
                                                   capsize=self.marker_size,
                                                   elinewidth=self.marker_lw)
@@ -1793,7 +1754,8 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                         
                     #res_det
                     ebdetr = self.axrxy.errorbar(mt.period, 
-                                              rp.resdet, 
+                                              rp.resdet,
+                                              color=cxy[ii],
                                               marker=mxy[ii], 
                                               ms=self.marker_size, 
                                               mfc='None',
@@ -1808,6 +1770,7 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                     #phase_det
                     ebdetp = self.axpxy.errorbar(mt.period, 
                                               rp.phasedet, 
+                                              color=cyx[ii],
                                               marker=mxy[ii], 
                                               ms=self.marker_size, 
                                               mfc='None', 

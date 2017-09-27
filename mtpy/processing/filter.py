@@ -266,9 +266,9 @@ def adaptive_notch_filter(bx, df=100, notches=[50, 100], notchradius=.5,
                 filtlst.append([freq[nspot], dbstop])
                 ws = 2*np.array([freq[nspot]-fn, freq[nspot]+fn])/df
                 wp = 2*np.array([freq[nspot]-2*fn, freq[nspot]+2*fn])/df
-                ford, wn = SS.cheb1ord(wp, ws, 1, dbstop)
-                b, a = SS.cheby1(1, .5, wn, btype='bandstop')
-                bx = SS.filtfilt(b, a, bx)
+                ford, wn = signal.cheb1ord(wp, ws, 1, dbstop)
+                b, a = signal.cheby1(1, .5, wn, btype='bandstop')
+                bx = signal.filtfilt(b, a, bx)
     
     return bx, filtlst
 
