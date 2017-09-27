@@ -53,8 +53,8 @@ class deprecated(object):
 
 class ImageCompare(object):
     def __init__(self, *args, **kwargs):
-        self.baseline_dir = kwargs.pop('baseline_dir', 'baseline_images')
-        self.result_dir = kwargs.pop('result_dir', 'result_images')
+        self.baseline_dir = kwargs.pop('baseline_dir', 'tests/baseline_images')
+        self.result_dir = kwargs.pop('result_dir', 'tests/result_images')
         self.filename = kwargs.pop('filename', None)
         self.extensions = kwargs.pop('extensions', ['png'])
         self.savefig_kwargs = kwargs.pop('savefig_kwargs', {})
@@ -100,7 +100,8 @@ class ImageCompare(object):
                         pytest.fail(msg, pytrace=False)
                     else:
                         # clearup the image as they are the same with the baseline
-                        os.remove(test_image)
+                        import shutil
+                        shutil.rmtree(os.path.dirname(test_image))
                 else:
                     pytest.skip("Image file not found for comparison test."
                                 "(This is expected for new tests.)\nGenerated Image: "
