@@ -104,7 +104,7 @@ class ImageCompare(object):
                 else:
                     pytest.skip("Image file not found for comparison test."
                                 "(This is expected for new tests.)\nGenerated Image: "
-                                "\n\t{test}".format(test=test_image), pytrace=False)
+                                "\n\t{test}".format(test=test_image))
 
             return result
 
