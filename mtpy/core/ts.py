@@ -127,6 +127,7 @@ class MT_TS(object):
         self.fn_ascii = None
         self.conversion = None
         self.gain = None
+        self._end_header_line = 0
         
         self._date_time_fmt = '%Y-%m-%d %H:%M:%S.%f'
         self._attr_list = ['station',
@@ -534,13 +535,15 @@ class MT_TS(object):
                     except AttributeError:
                         if key not in ['n_samples', 'start_time_epoch_sec']:
                             print 'Could not set {0} to {1}'.format(key, value)
-                # read old format of time series
+                # skip the header lines
+                elif line.find('***') > 0:
+                    pass
                 else:
                     line_list = line[1:].strip().split()
                     if len(line_list) == 9:
                         print 'Reading old MT TS format'
                         self.station = line_list[0]
-                        self.component = line_list[1]
+                        self.component = line_list[1].lower()
                         self.sampling_rate = float(line_list[2])
                         self.start_time_epoch_sec = float(line_list[3])
                         # skip setting number of samples
@@ -550,17 +553,20 @@ class MT_TS(object):
                         self.elev = float(line_list[8])
                 count +=1
                 line = fid.readline()
-        return count
+        self._end_header_line = count
 
     def read_ascii(self, fn_ascii):
         """
         Read in an ascii
         """
         
-        count = self.read_ascii_header(fn_ascii)
+        self.read_ascii_header(fn_ascii)
         
-        self.ts = pd.read_csv(self.fn_ascii, sep='\n', skiprows=count,
-                              memory_map=True, names=['data'])
+        self.ts = pd.read_csv(self.fn_ascii, 
+                              sep='\n', 
+                              skiprows=self._end_header_line,
+                              memory_map=True,
+                              names=['data'])
         
         print 'Read in {0}'.format(self.fn_ascii)
         
