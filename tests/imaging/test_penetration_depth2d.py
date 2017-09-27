@@ -4,6 +4,8 @@ from unittest import TestCase
 # configure matplotlib for testing
 import matplotlib.pyplot as plt
 
+from mtpy.utils.decorator import ImageCompare
+
 plt.ion()
 
 from mtpy.imaging.penetration_depth2d import plot2Dprofile
@@ -25,6 +27,7 @@ class TestPenetration_depth2d(TestCase):
     def tearDown(self):
         plt.pause(1)
 
+    @ImageCompare()
     def test_plot2Dprofile_no_period_index_list(self):
         """
         testing plot2Dprofile without period index list
@@ -36,12 +39,15 @@ class TestPenetration_depth2d(TestCase):
         except Exception:
             pass
 
+    @ImageCompare()
     def test_plot2Dprofile_det(self):
         plot2Dprofile(self._edifiles, self._period_index_list, 'det')
 
+    @ImageCompare()
     def test_plot2Dprofile_zxy(self):
         plot2Dprofile(self._edifiles, self._period_index_list, 'zxy')
 
+    @ImageCompare()
     def test_plot2Dprofile_zyx(self):
         plot2Dprofile(self._edifiles, self._period_index_list, 'zyx')
 
