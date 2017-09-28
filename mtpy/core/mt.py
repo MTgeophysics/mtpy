@@ -46,63 +46,63 @@ except ImportError:
 
 class MT(object):
     """
-    Basic object containing all information necessary for a single MT station
-    including
+    Basic MT container to hold all information necessary for a MT station
+    including the following parameters.
     
-    Attributes
-    ------------
+        * Site --> information on site details (lat, lon, name, etc)
+        * FieldNotes --> information on instruments, setup, etc.
+        * Copyright --> information on how the data can be used and citations
+        * Provenance --> where the data come from and how they are stored
+        * Processing --> how the data were processed.
+        
+    The most used attributes are made available from MT, namely the following.
+    
     ===================== =====================================================
     Attribute             Description
     ===================== =====================================================
-    name                  station name
+    station               station name
     lat                   station latitude in decimal degrees
     lon                   station longitude in decimal degrees
     elev                  station elevation in meters
     Z                     mtpy.core.z.Z object for impedance tensor
     Tipper                mtpy.core.z.Tipper object for tipper
-    date                  date collected
+    pt                    mtpy.analysis.pt.PhaseTensor for phase tensor
     east                  station location in UTM coordinates assuming WGS-84
     north                 station location in UTM coordinates assuming WGS-84 
     utm_zone              zone of UTM coordinates assuming WGS-84
+    rotation_angle        rotation angle of the data
     ===================== =====================================================
         
+    Other information is contained with in the different class attributes. For
+    instance survey name is in MT.Site.survey
+    
     .. note:: 
-        * can change the utm grid by changing _utm_ellipsoid.  See 
-          mtpy.utils.latlongutmconversion for details on reference 
-          ellipsoids
         
-        * currently the information is assumed to come from an edi file
-          but can be extended later to .j files or something else or can
-          be input by hand
+        * The best way to see what all the information is and where it is
+          contained would be to write out a configuration file ::
               
-        * if you set the coordinates east, north or utm_zone, be sure to 
-          run _get_ll() to recalculate the latitude and longitude.
+              >>> import mtpy.core.mt as mt
+              >>> mt_obj = mt.MT()
+              >>> mt_obj.write_cfg_file(r"/home/mt/generic.cfg")
+        * Currently EDI, XML, and j file are supported to read in information,
+          and can write out EDI and XML formats.  Will be extending to j and 
+          Egberts Z format.
           
-        * can input the following key words to fill values in Z and Tipper:
-            - z_object        --> mtpy.core.z.Z object
-            - z_array         --> np.ndarray(n_freq, 2, 2, dtype='complex')
-            - z_err_array      --> np.ndarray(n_freq, 2, 2)
-            - freq            --> np.ndarray(n_freq)
-            - resistivity     --> np.ndarray(n_freq, 2, 2) (linear scale)
-            - resistivity_err --> np.ndarray(n_freq, 2, 2) 
-            - phase           --> np.ndarray(n_freq, 2, 2)           
-            - phase_err       --> np.ndarray(n_freq, 2, 2) 
-            - tipper_object   --> mtpy.core.z.Tipper object
-            - tipper          --> np.ndarray(n_freq, 1, 2, dtype='complex') 
-            - tipper_err       --> np.ndarray(n_freq, 1, 2)
         
     Methods
     ------------
     ===================== =====================================================
     Methods               Description
     ===================== =====================================================
-    write_edi_file        write an edi_file from the MT data
+    read_mt_file          read in a MT file [ EDI | XML | j ]
+    write_mt_file         write a MT file [ EDI | XML ]
+    read_cfg_file         read a configuration file
+    write_cfg_file        write a configuration file
     remove_distortion     remove distortion from the data following 
                           Bibby et al. [2005]
     remove_static_shift   Shifts apparent resistivity curves up or down
     interpolate           interpolates the impedance tensor and induction
                           vectors onto a specified frequency array.
-    plot_mt_response      plots the MT response using mtpy.imaging.plotresponse
     ===================== =====================================================
     
 
@@ -112,30 +112,20 @@ class MT(object):
         
         >>> import mtpy.core.mt as mt
         >>> mt_obj = mt.MT(r"/home/edi_files/s01.edi")
-    
-    :Plot MT response: ::
-
-        >>> # plot all components of mt response and phase tensor
-        >>> plot_obj = mt_obj.plot_mt_response(plot_num=2, plot_pt='y')        
-        >>> # plot the tipper as well
-        >>> plot_obj.plot_tipper = 'yri'
-        >>> plot_obj.redraw_plot()
       
     :Remove Distortion: ::
          
-        >>> D, new_z = mt_obj.remove_distortion()
-        >>> print D
-        >>> np.array([[0.1, .9],
-        >>> ...       [0.98, .43]])
-        >>> # write a new edi file
-        >>> mt_obj.write_edi_file(new_Z=new_z)
-        >>> wrote file to: /home/edi_files/s01_RW.edi
+        >>> import mtpy.core.mt as mt
+        >>> mt1 = mt.MT(fn=r"/home/mt/edi_files/mt01.edi")
+        >>> D, new_z = mt1.remove_distortion()
+        >>> mt1.write_mt_file(new_fn=r"/home/mt/edi_files/mt01_dr.edi",\
+        >>>                    new_Z=new_z)
     
     :Remove Static Shift: ::
          
         >>> new_z_obj = mt_obj.remove_static_shift(ss_x=.78, ss_y=1.1)
         >>> # write a new edi file
-        >>> mt_obj.write_edi_file(new_fn=r"/home/edi_files/s01_ss.edi",
+        >>> mt_obj.write_mt_file(new_fn=r"/home/edi_files/s01_ss.edi",
         >>>                       new_Z=new_z)
         >>> wrote file to: /home/edi_files/s01_ss.edi
         
@@ -143,7 +133,7 @@ class MT(object):
     
         >>> new_freq = np.logspace(-3, 3, num=24)
         >>> new_z_obj, new_tipper_obj = mt_obj.interpolate(new_freq)
-        >>> mt_obj.write_edi_file(new_Z=new_z_obj, new_Tipper=new_tipper_obj)
+        >>> mt_obj.write_mt_file(new_Z=new_z_obj, new_Tipper=new_tipper_obj)
         >>> wrote file to: /home/edi_files/s01_RW.edi
     """
     
@@ -333,21 +323,24 @@ class MT(object):
     #==========================================================================
     def read_mt_file(self, fn, file_type=None):
         """
-        read an MT response file.
+        Read an MT response file.
         
         .. note:: Currently only .edi, .xml, and .j files are supported
         
-        Arguments
-        -----------
-            **fn** : string
-                     full path to input file
-                     
-            **file_type** : string
-                            ['edi' | 'j' | 'xml' | ... ]
-                            if None, automatically detects file type by 
-                            the extension.
-                            
-        
+        :param fn: full path to input file
+        :type fn: string
+                 
+        :param file_type: ['edi' | 'j' | 'xml' | ... ]
+                          if None, automatically detects file type by 
+                          the extension.
+        :type file_type: string
+
+        :Example: ::
+            
+            >>> import mtpy.core.mt as mt
+            >>> mt_obj = mt.MT()
+            >>> mt_obj.read_mt_file(r"/home/mt/mt01.xml")
+            
         """
         
         if file_type is None:
@@ -362,23 +355,36 @@ class MT(object):
         else:
             raise MT_Error('File type not supported yet')
                 
-    def write_mt_file(self, save_dir=None, fn_basename=None, file_type='edi'):
+    def write_mt_file(self, save_dir=None, fn_basename=None, file_type='edi',
+                      new_Z_obj=None, new_Tipper_obj=None):
         """
         Write an mt file, the supported file types are EDI and XML.
         
         .. todo:: jtype and Gary Egberts z format 
         
-        Arguments
-        ---------------
-            **mt_fn** : string
-                        full path to new mt file with extension
-                        
-            **file_type** : [ 'edi' | 'xml' ]
+        :param save_dir: full path save directory
+        :type save_dir: string
+                    
+        :param fn_basename: name of file with or without extension
+        :type fn_basename: string
+        
+        :param file_type: [ 'edi' | 'xml' ]
+        :type file_type: string
+        
+        :param new_Z_obj: new Z object
+        :type new_Z_obj: mtpy.core.z.Z
+        
+        :param new_Tipper_obj: new Tipper object
+        :type new_Tipper_obj: mtpy.core.z.Tipper
+        
+
+        :returns mt_fn: full path to file
+        :rtype mt_fn: string
+        
+        :Example: ::
             
-        Returns
-        -----------
-            **mt_fn** : string
-                        full path to file.
+            >>> mt_obj.write_mt_file(file_type='xml')
+            
         """
         
         if save_dir is not None:
@@ -399,9 +405,13 @@ class MT(object):
         fn = os.path.join(self.save_dir, fn_basename)
             
         if file_type == 'edi':
-            fn = self._write_edi_file(fn)
+            fn = self._write_edi_file(fn,
+                                      new_Z=new_Z_obj,
+                                      new_Tipper=new_Tipper_obj)
         elif file_type == 'xml':
-            fn = self._write_xml_file(fn)
+            fn = self._write_xml_file(fn,
+                                      new_Z=new_Z_obj,
+                                      new_Tipper=new_Tipper_obj)
         
         return fn
     
@@ -453,6 +463,9 @@ class MT(object):
         self.Site.Location.coordinate_system = edi_obj.Header.coordinate_system
         
     def _edi_get_field_notes(self, edi_obj):
+        """
+        get FieldNotes attributes from edi 
+        """
         
         # get information about different sensors
         try:
@@ -570,17 +583,17 @@ class MT(object):
         Similarly, the new function name does not change the MT objecte fn
         attribute but does change MT.edi_object.fn attribute.
         
-        Arguments
-        --------------
-            
-            *new_fn* : string
-                       full path to new file name
-                       
-            *new_Z* : mtpy.core.Z object
-                      a new impedance tensor object to be written
-                      
-            *new_Tipper* : mtpy.core.Z.Tipper object
-                           a new Tipper object to be written
+        :param new_edi_fn: full path to new edi file
+        :type new_edi_fn: string
+        
+        :param new_Z: new Z object
+        :type new_Z: mtpy.core.z.Z
+        
+        :param new_Tipper: new Tipper object
+        :type new_Tipper: mtpy.core.z.Tipper
+        
+        :returns edi_fn: full path to edi file written
+        :rtype edi_fn: string
         """
         
         # get header information, mostly from site
@@ -797,8 +810,7 @@ class MT(object):
             sect.hz = self.FieldNotes.Magnetometer_hz.acqchan
             
         return sect
-            
-        
+             
     #--> check the order of frequencies
     def _check_freq_order(self):
         """
@@ -1168,8 +1180,16 @@ class MT(object):
                 
                 setattr(self.Processing, name, value)
                 
-    def _write_xml_file(self, xml_fn):
+    def _write_xml_file(self, xml_fn, new_Z=None, new_Tipper=None):
+        """
+        Write a xml file.
+        """
         
+        if new_Z is not None:
+            self.Z = new_Z
+        if new_Tipper is not None:
+            self.Tipper = new_Tipper
+            
         xml_obj = MTxml.MT_XML()
         
         xml_obj.Z = self.Z
@@ -1184,7 +1204,9 @@ class MT(object):
         xml_obj.write_xml_file(xml_fn)
                 
     def _xml_set_site(self, xml_obj):
-        
+        """
+        set the Site attributes in the xml object
+        """
         xml_obj.Site.Project.value = self.Site.project
         xml_obj.Site.Survey.value = self.Site.survey
         xml_obj.Site.Id.value = self.Site.id 
@@ -1202,6 +1224,9 @@ class MT(object):
         return xml_obj
     
     def _xml_set_field_notes(self, xml_obj):
+        """
+        Set the FieldNotes attributes of the xml object
+        """
         
         xml_obj.FieldNotes.Instrument.Type.value = self.FieldNotes.DataLogger.type
         xml_obj.FieldNotes.Instrument.Id.value = self.FieldNotes.DataLogger.id
@@ -1272,6 +1297,9 @@ class MT(object):
         return xml_obj
         
     def _xml_set_processing(self, xml_obj):
+        """
+        Set the Processing attributes of the xml object
+        """
         
         xml_obj.ProcessingInfo.ProcessedBy.value = self.Processing.processed_by
         xml_obj.ProcessingInfo.ProcessingSoftware.Name.value = self.Processing.Software.name
@@ -1297,6 +1325,9 @@ class MT(object):
         return xml_obj
     
     def _xml_set_provenance(self, xml_obj):
+        """
+        Set the Provenance attributes of the xml object
+        """
         
         xml_obj.Provenance.CreatingApplication.value = 'MTpy.core.mt.MT'
         
@@ -1313,6 +1344,9 @@ class MT(object):
         return xml_obj
     
     def _xml_set_copyright(self, xml_obj):
+        """
+        Set the Copyright attributes of the xml object
+        """
         
         xml_obj.Copyright.Citation.Authors.value = self.Copyright.Citation.author
         xml_obj.Copyright.Citation.Title.value = self.Copyright.Citation.title
@@ -1330,7 +1364,38 @@ class MT(object):
     
     def read_cfg_file(self, cfg_fn):
         """
-        read in a configuration file and populate properties
+        Read in a configuration file and populate attributes accordingly.
+        
+        The configuration file should be in the form:
+            | Site.Location.latitude = 46.5
+            | Site.Location.longitude = 122.7
+            | Site.Location.datum = 'WGS84'
+            |
+            | Processing.Software.name = BIRRP
+            | Processing.Software.version = 5.2.1
+            | 
+            | Provenance.Creator.name = L. Cagniard
+            | Provenance.Submitter.name = I. Larionov
+            
+
+        :param cfg_fn: full path to configuration file
+        :type cfg_fn: string
+            
+        .. note:: The best way to make a configuration file would be to save 
+                  a configuration file first from MT, then filling in the 
+                  fields.
+                  
+        :Make configuration file: ::
+            
+            >>> import mtpy.core.mt as mt
+            >>> mt_obj = mt.MT()
+            >>> mt_obj.write_cfg_file(r"/mt/generic_config.cfg")
+            
+        :Read in configuration file: ::
+            
+            >>> import mtpy.core.mt as mt
+            >>> mt_obj = mt.MT()
+            >>> mt_obj.read_cfg_file(r"/home/mt/survey_config.cfg")
         """
         
         with open(cfg_fn, 'r') as fid:
@@ -1390,6 +1455,20 @@ class MT(object):
     def write_cfg_file(self, cfg_fn):
         """
         Write a configuration file for the MT sections
+
+        :param cfg_fn: full path to configuration file to write to
+        :type cfg_fn: string
+        
+        :return cfg_fn: full path to configuration file
+        :rtype cfg_fn: string
+                         
+        :Write configuration file: ::
+            
+            >>> import mtpy.core.mt as mt
+            >>> mt_obj = mt.MT()
+            >>> mt_obj.read_mt_file(r"/home/mt/edi_files/mt01.edi")
+            >>> mt_obj.write_cfg_file(r"/home/mt/survey_config.cfg")
+            
         """
             
         cfg_lines = []
@@ -1432,23 +1511,33 @@ class MT(object):
             fid.write('\n'.join(cfg_lines))
             
         print '--> Wrote MT configuration file to {0}'.format(cfg_fn)
+        
+        return cfg_fn
             
-    
-        
-        
     def remove_distortion(self, num_freq=None):
         """
         remove distortion following Bibby et al. [2005].
         
+        :param num_freq: number of frequencies to look for distortion from the
+                         highest frequency
+        :type num_freq: int
+        
+        :returns D: Distortion matrix
+        :rtype D: np.ndarray(2, 2, dtype=real)
+        
+        :returns new_z_object: Z with distortion removed
+        :rtype new_z_object: mtpy.core.z.Z
+        
         Example
         ----------
-        :Remove Distortion and Write New .edi: ::
+        :Remove distortion and write new .edi file: ::
         
             >>> import mtpy.core.mt as mt
             >>> mt1 = mt.MT(fn=r"/home/mt/edi_files/mt01.edi")
             >>> D, new_z = mt1.remove_distortion()
-            >>> mt1.write_edi_file(new_fn=r"/home/mt/edi_files/mt01_dr.edi",\
+            >>> mt1.write_mt_file(new_fn=r"/home/mt/edi_files/mt01_dr.edi",\
             >>>                    new_Z=new_z)
+            
         """
         dummy_z_obj = MTz.copy.deepcopy(self.Z)
         D, new_z_object = MTdistortion.remove_distortion(z_object=dummy_z_obj,
@@ -1469,26 +1558,19 @@ class MT(object):
             * Z0 = S^(-1) * Z
             
         
-        Arguments
-        ------------
+        :param ss_x: correction factor for x component
+        :type ss_x: float
+
+        :param ss_y: correction factor for y component
+        :type ss_y: float
         
-            *ss_x* : float
-                    correction factor for x component
-            
-            *ss_y* : float
-                   correction factor for y component
+        :returns new_Z_obj: new Z object with static shift removed
+        :rtype new_Z_obj: mtpy.core.z.Z
                    
         .. note:: The factors are in resistivity scale, so the
                   entries of  the matrix "S" need to be given by their
                   square-roots!
-                   
-        Returns
-        ------------
-           
-           *new_z* : new z array
-           
-
-                  
+   
         Examples
         ----------
         :Remove Static Shift: ::
@@ -1496,8 +1578,8 @@ class MT(object):
             >>> import mtpy.core.mt as mt
             >>> mt_obj = mt.MT(r"/home/mt/mt01.edi")
             >>> new_z_obj = mt.remove_static_shift(ss_x=.5, ss_y=1.2)
-            >>> mt_obj.write_edi_file(new_fn=r"/home/mt/mt01_ss.edi",
-            >>> ...                   new_Z=new_z_obj)
+            >>> mt_obj.write_mt_file(new_fn=r"/home/mt/mt01_ss.edi",
+            >>> ...                   new_Z_obj=new_z_obj)
         """
         
         s_array, new_z = self.Z.remove_ss(reduce_res_factor_x=ss_x,
@@ -1513,28 +1595,20 @@ class MT(object):
         """
         Interpolate the impedance tensor onto different frequencies
         
-        
-        Arguments
-        ------------
-        
-            *new_freq_array* : np.ndarray 
-                               a 1-d array of frequencies to interpolate on
+        :param new_freq_array: a 1-d array of frequencies to interpolate on
                                to.  Must be with in the bounds of the existing
                                frequency range, anything outside and an error
                                will occur.
-                               
-        Returns
-        -----------
+        :type new_freq_array: np.ndarray
         
-            *new_z_object* : mtpy.core.z.Z object
-                             a new impedance object with the corresponding
-                             frequencies and components.
-                             
-            *new_tipper_object* : mtpy.core.z.Tipper object
-                             a new tipper object with the corresponding
-                             frequencies and components.
-                             
-       
+        :returns new_z_object: a new impedance object with the corresponding
+                               frequencies and components.
+        :rtype new_z_object: mtpy.core.z.Z
+        
+        :returns new_tipper_object: a new tipper object with the corresponding
+                                    frequencies and components.
+        :rtype new_tipper_object: mtpy.core.z.Tipper
+
         Examples
         ----------
        
@@ -1546,9 +1620,9 @@ class MT(object):
             >>> # create a new frequency range to interpolate onto
             >>> new_freq = np.logspace(-3, 3, 24)
             >>> new_z_object, new_tipper_obj = mt_obj.interpolate(new_freq)
-            >>> mt_obj.write_edi_file(new_fn=r"/home/edi_files/mt_01_interp.edi",
-            >>> ...                   new_Z=new_z_object,
-            >>> ...                   new_Tipper=new_tipper_object)
+            >>> mt_obj.write_mt_file(new_fn=r"/home/edi_files/mt_01_interp.edi",
+            >>> ...                   new_Z_obj=new_z_object,
+            >>> ...                   new_Tipper_obj=new_tipper_object)
             
         """
         # if the interpolation module has not been loaded return
@@ -2124,7 +2198,7 @@ class Software(object):
     def __init__(self, **kwargs):
         self.name = None
         self.version = None
-        self.author = Person()
+        self.Author = Person()
         
         for key in kwargs:
             setattr(self, key, kwargs[key])
