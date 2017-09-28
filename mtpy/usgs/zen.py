@@ -1158,7 +1158,8 @@ class Zen3D(object):
         return date_time
         
     #==================================================    
-    def apply_adaptive_notch_filter(self, notch_dict):
+    def apply_adaptive_notch_filter(self, notches=list(np.arange(60, 1860, 120)),
+                                    notch_radius=0.5, freq_rad=0.5, rp=0.1):
         """
         apply notch filter to the data that finds the peak around each 
         frequency.
@@ -1174,19 +1175,15 @@ class Zen3D(object):
         
         
         """
-        if notch_dict == None:
+        if notches == None:
             return
         try:
-            self.time_series
+            self.ts_obj.ts.data
         except AttributeError:
             self.read_3d()
         
-        notches = notch_dict.pop('notches', list(np.arange(60, 1860, 120)))
-        notchradius = notch_dict.pop('notchradius', 0.5)
-        freqrad = notch_dict.pop('freqrad', 0.5)
-        rp = notch_dict.pop('rp', 0.1)
-        kwargs = {'df':self.df, 'notches':notches, 'notchradius':notchradius,
-                  'freqrad':freqrad, 'rp':rp}
+        kwargs = {'notches':notches, 'notch_radius':notch_radius,
+                  'freq_rad':freq_rad, 'rp':rp}
                   
         self.ts_obj.apply_addaptive_notch_filter(**kwargs) 
         
@@ -1310,35 +1307,6 @@ class Zen3D(object):
             self.ts_obj.units = 'mV/km'
 
         self.ts_obj.write_ascii_file(fn_ascii=self.fn_mt_ascii)                                         
-#        header_tuple = ('# {0}{1}'.format(self.metadata.line_name,
-#                                          self.metadata.rx_xyz0.split(':')[0]), 
-#                        self.metadata.ch_cmp.lower(), 
-#                        '{0:.1f}'.format(self.df),
-#                        '{0:.1f}'.format(time.mktime(time.strptime(self.zen_schedule,
-#                                                  datetime_fmt ))), 
-#                        '{0:.0f}'.format(time_series.shape[0]), 
-#                        'mV/km', 
-#                        '{0:.5f}'.format(np.median(np.rad2deg(self.gps_stamps['lat']))), 
-#                        '{0:.5f}'.format(np.median(np.rad2deg(self.gps_stamps['lon']))), 
-#                        '{0:.3f}\n'.format(self.header.alt)) 
-#                        
-#                        
-#        #-->  this is a much faster way to write the ascii files (~4x)
-#        # first make the time series strings, this conversion is basic, there
-#        # is no formatting of the string, just a conversion from float to str
-#        # this is only really valid for numbers with significan digits with
-#        # in a few decimal places of 0.  need to a string of length 18 to be
-#        # sure that all exponential numbers are accounted for, makes files a 
-#        # little bit bigger, but still much faster than np.savetxt
-#        ts = time_series.astype('S18')
-#
-#        # write the file
-#        with open(self.fn_mt_ascii, 'w') as fid:
-#            fid.write(' '.join(list(header_tuple)))
-#            fid.write('\n'.join(list(ts)))
-#            
-#        #self.fn_mt_ascii = mtfh.write_ts_file_from_tuple(save_fn, header_tuple,
-#        #                                                 fmt=fmt)
         
         print 'Wrote mtpy timeseries file to {0}'.format(self.fn_mt_ascii)
     
@@ -1348,22 +1316,7 @@ class Zen3D(object):
         plots the time series
         """                                                               
         
-        time_series = self.convert_counts()
-        fig = plt.figure(fig_num )
-        ax = fig.add_subplot(1,1,1)
-        ax.plot(time_series)
-        
-        #ax.xaxis.set_minor_locator(MultipleLocator(self.df))
-        #ax.xaxis.set_major_locator(MultipleLocator(self.df*15))
-        #ax.xaxis.set_ticklabels([self.date_time[ii] 
-        #                        for ii in range(0,len(self.date_time), 15)])
-        
-        ax.set_xlabel('Time (s)')
-        ax.set_ylabel('Amplitude (mV)')
-        plt.show()
-        
-        self.convert_mV()
-        return fig, ax
+        self.ts_obj.ts.plot(x_compat=True)
     
     #==================================================    
     def plot_spectrogram(self, time_window=2**8, time_step=2**6, s_window=11,
@@ -1416,26 +1369,7 @@ class Zen3D(object):
         """
         plot the spectra of time series
         """
-        if self.time_series is None:
-            self.read_3d()
-            
-        time_series = self.convert_counts()
-            
-        spect = np.fft.fft(mtfilt.zero_pad(time_series))
-        plot_freq = np.fft.fftfreq(spect.shape[0], 1./self.df)
-        
-        fig = plt.figure(fig_num, [4,4], dpi=200)
-        ax = fig.add_subplot(1,1,1)
-        ax.loglog(plot_freq, abs(spect)**2, lw=.5)
-        ax.grid(which='both', lw=.25)
-        
-        ax.set_xlabel('Frequency (Hz)')
-        #ax.set_xlim(1./plot_freq.max(), 1./plot_freq.min())
-        ax.set_ylabel('Amplitude')
-        
-        plt.show()
-        
-        return fig, ax
+        self.ts_obj.estimate_spectra()
         
 
 #==============================================================================

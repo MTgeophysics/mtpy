@@ -875,7 +875,7 @@ class PlotWidget(QtGui.QWidget):
         save_fn = str(save_dialog.getSaveFileName(caption='Choose EDI file',
                                                   directory=self.dir_path,
                                                   filter='*.edi'))
-        self.mt_obj.write_edi_file(new_fn=save_fn)
+        self.mt_obj.write_edi_file(save_fn)
         
     @QtCore.pyqtSlot(str)
     def normal_output(self, message):
