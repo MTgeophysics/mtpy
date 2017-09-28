@@ -160,13 +160,11 @@ class MT(object):
         self._Z = MTz.Z()
         self._Tipper = MTz.Tipper()
         self._rotation_angle = 0
-        self._fn = None
-        
-        self.fn = fn
+
+        self.save_dir = os.getcwd()
         self.original_file_type = None
-        if self.fn is not None:
-            self.read_mt_file(self.fn)
-        
+        if fn is not None:
+            self.read_mt_file(fn)
         
         #provide key words to fill values if an edi file does not exist
         for key in kwargs.keys():
@@ -353,36 +351,22 @@ class MT(object):
         """
         
         if file_type is None:
-            if fn.endswith('.edi'):
-                self.read_edi_file(fn)
-                self.original_file_type = 'edi'
-            elif fn.endswith('.j'):
-                self.read_j_file(fn)
-                self.original_file_type = 'j'
-            elif fn.endswith('.xml'):
-                self.read_xml_file(fn)
-                self.original_file_type = 'xml'
-            else:
-                raise MT_Error('File type not supported yet')
-                
+            file_type = os.path.splitext(fn)[1][1:].lower()
+
+        if file_type.lower() == 'edi':
+            self._read_edi_file(fn)
+        elif file_type.lower() == 'j':
+            self._read_j_file(fn)
+        elif file_type.lower() == 'xml':
+            self._read_xml_file(fn)
         else:
-            if file_type.lower() in 'edi':
-                self.read_edi_file(fn)
-                self.original_file_type = 'edi'
-            elif file_type.lower() in 'j':
-                self.read_j_file(fn)
-                self.original_file_type = 'j'
-            elif file_type.lower() in 'xml':
-                self.read_j_file(fn)
-                self.original_file_type = 'xml'
-            else:
-                raise MT_Error('File type not supported yet')
+            raise MT_Error('File type not supported yet')
                 
-    def write_mt_file(self, mt_fn, file_type='edi'):
+    def write_mt_file(self, save_dir=None, fn_basename=None, file_type='edi'):
         """
         Write an mt file, the supported file types are EDI and XML.
         
-        TODO: jtype and Gary Egberts z format 
+        .. todo:: jtype and Gary Egberts z format 
         
         Arguments
         ---------------
@@ -396,14 +380,42 @@ class MT(object):
             **mt_fn** : string
                         full path to file.
         """
-                
+        
+        if save_dir is not None:
+            self.save_dir = save_dir
+            
+        if fn_basename is not None:
+            ext = os.path.splitext(fn_basename)[1][1:].lower()
+            if ext == '':
+                fn_basename = '{0}.{1}'.format(fn_basename, file_type.lower())
+            elif ext in ['xml', 'edi']:
+                fn_basename = '{0}.{1}'.format(fn_basename, ext)
+                file_type = ext
+            else:
+                raise MT_Error('File type {0} not supported yet.'.format(ext))
+        else:
+            fn_basename = '{0}.{1}'.format(self.station, file_type)
+            
+        fn = os.path.join(self.save_dir, fn_basename)
+            
+        if file_type == 'edi':
+            fn = self._write_edi_file(fn)
+        elif file_type == 'xml':
+            fn = self._write_xml_file(fn)
+        
+        return fn
+    
     #--> read in edi file                                                    
-    def read_edi_file(self, edi_fn):
+    def _read_edi_file(self, edi_fn):
         """
         read in edi file and set attributes accordingly
         
         """        
+        if not os.path.isfile(edi_fn):
+            raise MT_Error('Could not find {0}, check path.'.format(edi_fn))
             
+        self.save_dir = os.path.dirname(edi_fn)
+        
         edi_obj = MTedi.Edi(edi_fn=edi_fn)
         
         self._edi_get_site(edi_obj)
@@ -419,6 +431,10 @@ class MT(object):
         
         #--> make sure things are ordered from high frequency to low
         self._check_freq_order()
+        
+        print '-'*72
+        print '\t Read {0}'.format(edi_fn)
+        print '-'*72
         
     def _edi_get_site(self, edi_obj):
         """
@@ -546,7 +562,7 @@ class MT(object):
                 self.Notes.info_dict.pop(a_key)
         
     #--> write edi file 
-    def write_edi_file(self, new_edi_fn, new_Z=None, new_Tipper=None):
+    def _write_edi_file(self, new_edi_fn, new_Z=None, new_Tipper=None):
         """
         write a new edi file if things have changed.  Note if new_Z or
         new_Tipper are not None, they are not changed in MT object, you
@@ -804,7 +820,7 @@ class MT(object):
                 self.Tipper.tipper_err = self.Tipper.tipper_err.copy()[::-1]
                 self.Tipper.freq = self.Tipper.freq.copy()[::-1]
                 
-    def read_j_file(self, j_fn):
+    def _read_j_file(self, j_fn):
         """
         read j file
         """
@@ -820,17 +836,24 @@ class MT(object):
         self.Site.Location.longitude = j_obj.metadata_dict['longitude']
         self.Site.Location.elevation = j_obj.metadata_dict['elevation']
         
-    def read_xml_file(self, xml_fn):
+    def _read_xml_file(self, xml_fn):
         """
         read xml file
         """
 
+        if not os.path.isfile(xml_fn):
+            raise MT_Error('Could not find {0}, check path.'.format(xml_fn))
+            
+        self.save_dir = os.path.dirname(xml_fn)
+        
         xml_obj = MTxml.MT_XML()
         xml_obj.read_xml_file(xml_fn)
-       
         
         self.Z = xml_obj.Z
         self.Tipper = xml_obj.Tipper
+        
+        # check order
+        self._check_freq_order()
         
         # get information and fill attributes
         self._xml_get_site(xml_obj)
@@ -840,6 +863,9 @@ class MT(object):
         self._xml_get_provenance(xml_obj)
         self._xml_get_processing(xml_obj)
         
+        print '-'*72
+        print '\t Read {0}'.format(xml_fn)
+        print '-'*72
         
     def _xml_get_site(self, xml_obj):
         """
@@ -1052,7 +1078,7 @@ class MT(object):
                     name = 'conditions_of_use'
                 elif name == 'additionalinfo':
                     name = 'additional_info'
-                value = obj.value
+                value = obj.value.replace('\n', '')
                 
                 setattr(self.Copyright, name, value)
                 
@@ -1142,7 +1168,7 @@ class MT(object):
                 
                 setattr(self.Processing, name, value)
                 
-    def write_xml_file(self, xml_fn):
+    def _write_xml_file(self, xml_fn):
         
         xml_obj = MTxml.MT_XML()
         
@@ -1325,6 +1351,8 @@ class MT(object):
                 cl_obj = getattr(self, cl_name)
                 cl_attr = name_list[-1]
                 cl_value = line_list[1].strip()
+                if cl_value in ['None', 'none']:
+                    cl_value = None
                 try:
                     cl_value = float(cl_value)
                 except ValueError:
@@ -1335,6 +1363,8 @@ class MT(object):
                             cl_value = [float(vv) for vv in cl_value]
                         except ValueError:
                             pass
+                except TypeError:
+                    cl_value = None
                         
                 count = 1
                 while count < len(name_list)-1:
@@ -1343,6 +1373,8 @@ class MT(object):
                         cl_name = 'DataQuality'
                     elif cl_name == 'datalogger':
                         cl_name = 'DataLogger'
+                    elif cl_name == 'remotesite':
+                        cl_name = 'RemoteSite'
                     try:
                         cl_obj = getattr(cl_obj, cl_name)
                     except AttributeError:

@@ -209,7 +209,9 @@ class Edi(object):
             self.Header.elev = self.Define_measurement.refelev
             print 'Got elevation from refelev for {0}'.format(self.Header.dataid)
         
-        print "Read in edi file for station {0}".format(self.Header.dataid)
+        print '-'*72
+        print "    Read in edi file for station {0}".format(self.Header.dataid)
+        print '-'*72
         
     def _read_data(self):
         """
@@ -629,7 +631,10 @@ class Edi(object):
         with open(new_edi_fn, 'w') as fid:
             fid.write(''.join(edi_lines))
 
-        print 'Wrote {0}'.format(new_edi_fn)            
+        print '-'*72
+        print '    Wrote {0}'.format(new_edi_fn) 
+        print '-'*72           
+        
         return new_edi_fn
         
     def _write_data_block(self, data_comp_arr, data_key):
