@@ -161,7 +161,6 @@ class MT(object):
         self._Tipper = MTz.Tipper()
         self._rotation_angle = 0
         self._fn = None
-        self._edi_obj = MTedi.Edi()
         
         self.fn = fn
         self.original_file_type = None
@@ -379,6 +378,25 @@ class MT(object):
             else:
                 raise MT_Error('File type not supported yet')
                 
+    def write_mt_file(self, mt_fn, file_type='edi'):
+        """
+        Write an mt file, the supported file types are EDI and XML.
+        
+        TODO: jtype and Gary Egberts z format 
+        
+        Arguments
+        ---------------
+            **mt_fn** : string
+                        full path to new mt file with extension
+                        
+            **file_type** : [ 'edi' | 'xml' ]
+            
+        Returns
+        -----------
+            **mt_fn** : string
+                        full path to file.
+        """
+                
     #--> read in edi file                                                    
     def read_edi_file(self, edi_fn):
         """
@@ -550,32 +568,37 @@ class MT(object):
         """
         
         # get header information, mostly from site
-        self._edi_obj = MTedi.Edi()
-        self._edi_obj.Header = self._edi_set_header()
+        edi_obj = MTedi.Edi()
+        edi_obj.Header = self._edi_set_header()
         
         # get information 
-        self._edi_obj.Info = MTedi.Information()
-        self._edi_obj.Info.info_list = self._edi_set_info_list()
+        edi_obj.Info = MTedi.Information()
+        edi_obj.Info.info_list = self._edi_set_info_list()
         
         # get define measurement
-        self._edi_obj.Define_measurement = self._edi_set_define_measurement()
+        edi_obj.Define_measurement = self._edi_set_define_measurement()
         
         # get mtsec
-        self._edi_obj.Data_sect = self._edi_set_data_sect()
+        edi_obj.Data_sect = self._edi_set_data_sect()
         
+        # set Z and T data
         if new_Z is not None:
-            self._edi_obj.Z = new_Z
+            edi_obj.Z = new_Z
         else:
-            self._edi_obj.Z = self._Z
+            edi_obj.Z = self._Z
        
         if new_Tipper is not None:
-            self._edi_obj.Tipper = new_Tipper
+            edi_obj.Tipper = new_Tipper
         else:
-            self._edi_obj.Tipper = self._Tipper
-            
-        self._edi_obj.zrot = self.rotation_angle
-            
-        self._edi_obj.write_edi_file(new_edi_fn=new_edi_fn)
+            edi_obj.Tipper = self._Tipper
+        
+        # set rotation angle
+        edi_obj.zrot = self.rotation_angle
+        
+        # --> write edi file
+        edi_fn = edi_obj.write_edi_file(new_edi_fn=new_edi_fn)
+        
+        return edi_fn
         
     def _edi_set_header(self):
         """
@@ -878,6 +901,7 @@ class MT(object):
         get field notes information
         """
         
+        acq_count = 1
         for f_attr in xml_obj.FieldNotes.__dict__.keys():
             if f_attr.lower() == 'instrument':
                 for i_attr in xml_obj.FieldNotes.Instrument.__dict__.keys():
@@ -948,9 +972,9 @@ class MT(object):
                 try:
                     t = xml_d_obj.attr['type'].lower()
                     if comp == 'hx':
-                        setattr(self.FieldNotes.Magnetometer_hx, 'type', t)
+                        setattr(self.FieldNotes.Magnetometer_hx, 'type', t) 
                     elif comp == 'hy':
-                        setattr(self.FieldNotes.Magnetometer_hy, 'type', t)
+                        setattr(self.FieldNotes.Magnetometer_hy, 'type', t)                    
                     elif comp == 'hz':
                         setattr(self.FieldNotes.Magnetometer_hz, 'type', t)
                     elif comp == 'fluxgate':
@@ -979,6 +1003,7 @@ class MT(object):
                         setattr(self.FieldNotes.Magnetometer_hx, name, value)
                         setattr(self.FieldNotes.Magnetometer_hy, name, value)
                         setattr(self.FieldNotes.Magnetometer_hz, name, value)
+                        
                     
             elif 'dataquality' in f_attr.lower():
                 obj = getattr(xml_obj.FieldNotes, f_attr)
@@ -1351,7 +1376,7 @@ class MT(object):
                             continue
                         obj_attr_01 = getattr(obj_attr, a_key)
                         l_key = '{0}.{1}.{2}'.format(obj_name, obj_key, a_key)
-                        if type(obj_attr_01) not in [str, float, int, list] and \
+                        if type(obj_attr_01) not in [str, float, int, list, np.float64] and \
                            obj_attr_01 is not None:
                             for b_key in sorted(obj_attr_01.__dict__.keys()):
                                 obj_attr_02 = getattr(obj_attr_01, b_key)
