@@ -211,7 +211,6 @@ class Edi(object):
         
         print '-'*72
         print "    Read in edi file for station {0}".format(self.Header.dataid)
-        print '-'*72
         
     def _read_data(self):
         """
