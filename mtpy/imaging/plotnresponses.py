@@ -16,12 +16,10 @@ import matplotlib.colorbar as mcb
 import matplotlib.gridspec as gridspec
 import mtpy.imaging.mtplottools as mtpl
 import mtpy.imaging.mtcolors as mtcl
-from mtpy.imaging.plotresponse import PlotResponse as plotresponse
-reload(mtpl)
 
 #============================================================================
 
-class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse, mtpl.PlotSettings):
+class PlotMultipleResponses(mtpl.PlotSettings):
     """
     plots multiple MT responses simultaneously either in single plots or in 
     one plot of subfigures or in a single plot with subfigures for each 
@@ -279,7 +277,9 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse, mtpl.PlotSettings):
         """
         Initialize parameters
         """
+        
         super(PlotMultipleResponses, self).__init__()
+
         
         fn_list = kwargs.pop('fn_list', None)
         z_object_list = kwargs.pop('z_object_list', None)
@@ -491,85 +491,85 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse, mtpl.PlotSettings):
         #set height ratios of the subplots
         hr = [2, 1.5]+[1]*(len(pdict.keys())-2)
         
-        if self.plot_style == '1':
-            self.plotlist = []
-            
-            #--> plot from edi's if given, don't need to rotate because
-            #    data has already been rotated by the funcion _set_rot_z
-#            if self.fig_size is None:
-#                self.fig_size = [6, 6]
-            for ii, mt in enumerate(self.mt_list, 1):
-                p1 = plotresponse(mt_object=mt, 
-                                  fig_num=ii,
-                                  fig_size=self.fig_size,
-                                  plot_num=self.plot_num, 
-                                  fig_dpi=self.fig_dpi,  
-                                  plot_yn='n',
-                                  plot_tipper=self._plot_tipper,
-                                  plot_strike=self._plot_strike,
-                                  plot_skew=self._plot_skew,
-                                  plot_pt=self._plot_pt)
-                
-                #make sure all the properties are set to match the users
-                #line style between points
-                p1.xy_ls = self.xy_ls        
-                p1.yx_ls = self.yx_ls        
-                p1.det_ls = self.det_ls        
-                
-                #outline color
-                p1.xy_color = self.xy_color 
-                p1.yx_color = self.yx_color 
-                p1.det_color = self.det_color
-                
-                #face color
-                p1.xy_mfc = self.xy_mfc
-                p1.yx_mfc = self.yx_mfc
-                p1.det_mfc = self.det_mfc
-                
-                #maker
-                p1.xy_marker = self.xy_marker
-                p1.yx_marker = self.yx_marker
-                p1.det_marker = self.det_marker 
-                
-                #size
-                p1.marker_size = 2
-                
-                #set plot limits
-                p1.xlimits = self.xlimits
-                p1.res_limits = self.res_limits
-                p1.phase_limits = self.phase_limits
-
-                #set font parameters
-                p1.font_size = self.font_size
-                
-                #set arrow properties
-                p1.arrow_lw = self.arrow_lw
-                p1.arrow_head_width = self.arrow_head_width 
-                p1.arrow_head_length = self.arrow_head_length
-                p1.arrow_color_real = self.arrow_color_real 
-                p1.arrow_color_imag = self.arrow_color_imag 
-                p1.arrow_direction = self.arrow_direction
-                p1.tipper_limits = self.tipper_limits 
-                
-                #skew properties
-                p1.skew_color = self.skew_color
-                p1.skew_marker = self.skew_marker
-                
-                #strike properties
-                p1.strike_inv_marker = self.strike_inv_marker
-                p1.strike_inv_color = self.strike_inv_color
-                
-                p1.strike_pt_marker = self.strike_pt_marker
-                p1.strike_pt_color = self.strike_pt_color
-                
-                p1.strike_tip_marker = self.strike_tip_marker
-                p1.strike_tip_color = self.strike_tip_color
-                
-                #--> plot the apparent resistivity and phase
-                self.plotlist.append(p1)
-                
-                p1.plot()
-                    
+#        if self.plot_style == '1':
+#            self.plotlist = []
+#            
+#            #--> plot from edi's if given, don't need to rotate because
+#            #    data has already been rotated by the funcion _set_rot_z
+##            if self.fig_size is None:
+##                self.fig_size = [6, 6]
+#            for ii, mt in enumerate(self.mt_list, 1):
+#                p1 = plotresponse(mt_object=mt, 
+#                                  fig_num=ii,
+#                                  fig_size=self.fig_size,
+#                                  plot_num=self.plot_num, 
+#                                  fig_dpi=self.fig_dpi,  
+#                                  plot_yn='n',
+#                                  plot_tipper=self._plot_tipper,
+#                                  plot_strike=self._plot_strike,
+#                                  plot_skew=self._plot_skew,
+#                                  plot_pt=self._plot_pt)
+#                
+#                #make sure all the properties are set to match the users
+#                #line style between points
+#                p1.xy_ls = self.xy_ls        
+#                p1.yx_ls = self.yx_ls        
+#                p1.det_ls = self.det_ls        
+#                
+#                #outline color
+#                p1.xy_color = self.xy_color 
+#                p1.yx_color = self.yx_color 
+#                p1.det_color = self.det_color
+#                
+#                #face color
+#                p1.xy_mfc = self.xy_mfc
+#                p1.yx_mfc = self.yx_mfc
+#                p1.det_mfc = self.det_mfc
+#                
+#                #maker
+#                p1.xy_marker = self.xy_marker
+#                p1.yx_marker = self.yx_marker
+#                p1.det_marker = self.det_marker 
+#                
+#                #size
+#                p1.marker_size = 2
+#                
+#                #set plot limits
+#                p1.xlimits = self.xlimits
+#                p1.res_limits = self.res_limits
+#                p1.phase_limits = self.phase_limits
+#
+#                #set font parameters
+#                p1.font_size = self.font_size
+#                
+#                #set arrow properties
+#                p1.arrow_lw = self.arrow_lw
+#                p1.arrow_head_width = self.arrow_head_width 
+#                p1.arrow_head_length = self.arrow_head_length
+#                p1.arrow_color_real = self.arrow_color_real 
+#                p1.arrow_color_imag = self.arrow_color_imag 
+#                p1.arrow_direction = self.arrow_direction
+#                p1.tipper_limits = self.tipper_limits 
+#                
+#                #skew properties
+#                p1.skew_color = self.skew_color
+#                p1.skew_marker = self.skew_marker
+#                
+#                #strike properties
+#                p1.strike_inv_marker = self.strike_inv_marker
+#                p1.strike_inv_color = self.strike_inv_color
+#                
+#                p1.strike_pt_marker = self.strike_pt_marker
+#                p1.strike_pt_color = self.strike_pt_color
+#                
+#                p1.strike_tip_marker = self.strike_tip_marker
+#                p1.strike_tip_color = self.strike_tip_color
+#                
+#                #--> plot the apparent resistivity and phase
+#                self.plotlist.append(p1)
+#                
+#                p1.plot()
+#                    
         
         #-----Plot All in one figure with each plot as a subfigure------------        
         if self.plot_style == 'all':
@@ -761,7 +761,7 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse, mtpl.PlotSettings):
                                               
                 #phase_yx:
                 ebyxp = axp.errorbar(mt.period, 
-                                     mt.Z.phase_yx, 
+                                     mt.Z.phase_yx+180, 
                                      marker=self.yx_marker, 
                                      ms=self.marker_size, 
                                      mfc=self.yx_mfc, 
@@ -1495,10 +1495,9 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse, mtpl.PlotSettings):
             #set figure size according to what the plot will be.
             if self.fig_size is None:
                 if self.plot_num == 1 or self.plot_num == 3:
-                    self.fig_size = [5, 7]
+                    pass
                     
                 elif self.plot_num == 2:
-                    self.fig_size = [6, 6]
                     nrows += 1
                 
             #make a figure instance
@@ -1652,7 +1651,7 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse, mtpl.PlotSettings):
                     #phase_yx: Note add 180 to place it in same quadrant as
                     #phase_xy
                     self.axpyx.errorbar(mt.period, 
-                                        mt.Z.phase_yx,
+                                        mt.Z.phase_yx+180,
                                         color=cyx[ii],
                                         marker=myx[ii], 
                                         ms=self.marker_size, 

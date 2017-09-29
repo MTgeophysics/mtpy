@@ -84,6 +84,7 @@ class MT(object):
               >>> import mtpy.core.mt as mt
               >>> mt_obj = mt.MT()
               >>> mt_obj.write_cfg_file(r"/home/mt/generic.cfg")
+              
         * Currently EDI, XML, and j file are supported to read in information,
           and can write out EDI and XML formats.  Will be extending to j and
           Egberts Z format.
@@ -450,10 +451,6 @@ class MT(object):
 
         #--> make sure things are ordered from high frequency to low
         self._check_freq_order()
-
-        print '-' * 72
-        print '\t Read {0}'.format(edi_fn)
-        print '-' * 72
 
     def _edi_get_site(self, edi_obj):
         """
@@ -889,10 +886,6 @@ class MT(object):
         self._xml_get_copyright(xml_obj)
         self._xml_get_provenance(xml_obj)
         self._xml_get_processing(xml_obj)
-
-        print '-' * 72
-        print '\t Read {0}'.format(xml_fn)
-        print '-' * 72
 
     def _xml_get_site(self, xml_obj):
         """

@@ -20,7 +20,6 @@ import matplotlib.colors as colors
 import matplotlib.patches as patches
 import matplotlib.colorbar as mcb
 import matplotlib.gridspec as gridspec
-import mtpy.utils.exceptions as mtex
 import mtpy.imaging.mtcolors as mtcl
 import mtpy.imaging.mtplottools as mtpl
 
@@ -30,7 +29,7 @@ import mtpy.imaging.mtplottools as mtpl
 #==============================================================================
 #  Plot apparent resistivity and phase
 #==============================================================================
-class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse, mtpl.PlotSettings):
+class PlotResponse(mtpl.PlotSettings):
     """
     Plots Resistivity and phase for the different modes of the MT response.  At
     the moment is supports the input of an .edi file. Other formats that will
@@ -344,9 +343,8 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse, mtpl.PlotSettings):
     """   
     
     def __init__(self, **kwargs):
-        
         super(PlotResponse, self).__init__()
-        
+
         fn = kwargs.pop('fn', None)
         z_object = kwargs.pop('z_object', None)
         tipper_object = kwargs.pop('tipper_object', None)
@@ -403,6 +401,10 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse, mtpl.PlotSettings):
             self.ellipse_size = 0.25
 
         self.plot_yn = kwargs.pop('plot_yn', 'y')
+        
+        for key in kwargs.keys():
+            setattr(self, key, kwargs[key])
+            
         #plot on initializing
         if self.plot_yn == 'y':
             self.plot()
