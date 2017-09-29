@@ -940,6 +940,8 @@ class MT_XML(XML_Config):
         print '-'*72
         print '    Wrote xml file to: {0}'.format(self.xml_fn)
         print '-'*72
+        
+        return self.xml_fn
        
     def read_xml_file(self, xml_fn):
         """

@@ -360,4 +360,5 @@ class JFile(object):
         # put the results into mtpy objects
         freq = 1./all_periods    
         self.Z = mtz.Z(z_arr, z_err_arr, freq)
-        self.Tipper = mtz.Tipper(t_arr, t_err_arr, freq)    
+        self.Tipper = mtz.Tipper(t_arr, t_err_arr, freq) 
+        
