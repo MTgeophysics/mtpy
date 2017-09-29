@@ -144,7 +144,7 @@ class Model(object):
         if type(self.pad_east) in [float,int]:
             self.pad_east = [7.5, self.pad_east]
             
-        self.pad_north = kwargs.pop('pad_north', [7.5, 7])
+        self.pad_north = kwargs.pop('pad_north', 7)
         # set a default value
         if type(self.pad_north) in [float,int]:
             self.pad_north = [7.5, self.pad_north]
@@ -325,7 +325,7 @@ class Model(object):
         for ii in range(1, pad_east + 1):
             east_0 = float(east_gridr[-1])
             west_0 = float(east_gridr[0])
-#            add_size = np.round(self.cell_size_east * self.pad_stretch_h * ii, -2) # -2 round to decimal left
+#            add_size = mtcc.roundsf(self.cell_size_east * self.pad_stretch_h * ii, -2) # -2 round to decimal left
             # round to the nearest 2 significant figures
             add_size = mtcc.roundsf(self.cell_size_east * self.pad_stretch_h ** ii,2)
             pad_w = west_0 - add_size
@@ -360,7 +360,7 @@ class Model(object):
         for ii in range(1, pad_north + 1):
             south_0 = float(north_gridr[0])
             north_0 = float(north_gridr[-1])
-#            add_size = np.round(self.cell_size_north *self.pad_stretch_h * ii, -2)
+#            add_size = mtcc.roundsf(self.cell_size_north *self.pad_stretch_h * ii, -2)
             add_size = mtcc.roundsf(self.cell_size_north * self.pad_stretch_h ** ii,2)
             pad_s = south_0 - add_size
             pad_n = north_0 + add_size
@@ -690,25 +690,39 @@ class Model(object):
                 
 
         elif self.n_airlayers > 0:  # FZ: new logic, add equal blocksize air layers on top of the simple flat-earth grid
-
-            # compute the air cell size to be added = topomax/n_airlayers, rounded to nearest 1 s.f.
-            cs = np.amax(self.surface_dict['topography']) / float(self.n_airlayers)
-            #  cs = np.ceil(0.1*cs/10.**int(np.log10(cs)))*10.**(int(np.log10(cs))+1)
-            cs = np.ceil(cs)
-
-
-            # add air layers
-            new_airlayers = np.linspace(-self.n_airlayers, -1, self.n_airlayers) * cs
-            # new airlayers - easier to create positive array then update level later
+            # build air layers based on the inner core area
+            padE = int(sum(self.pad_east))
+            padN = int(sum(self.pad_north))
+            topo_core = self.surface_dict['topography'][padN:-padN,padE:-padE]
+            
+            
+#            # compute the air cell size to be added = (topomax-topomin)/n_airlayers, rounded up to nearest whole number
+#            # use only the inner core area
+#            cs = (topo_core.max() - topo_core.min()) / float(self.n_airlayers) 
+#            cs = np.ceil(cs)
+#            # define the bottom elevation of the bottom air layer, rounded to nearest whole number
+#            bottom_airlayer = int(round(topo_core.min()))
+#            # new air layers
+#            new_airlayers = -np.linspace(self.n_airlayers, 1, self.n_airlayers)*cs - bottom_airlayer
+            
+            
+            # log increasing airlayers, in reversed order
+            new_air_nodes = mtcc.make_log_increasing_array(self.z1_layer,
+                                                           topo_core.max() - topo_core.min(), 
+                                                           self.n_airlayers, 
+                                                           increment_factor=0.999)[::-1]
+            # sum to get grid cell locations
+            new_airlayers = np.array([new_air_nodes[:ii].sum() for ii in range(len(new_air_nodes)+1)])
+            # round to nearest whole number and reverse the order
+            new_airlayers = np.around(new_airlayers - topo_core.max())
 
             print("new_airlayers", new_airlayers)
 
             print("self.grid_z[0:2]", self.grid_z[0:2])
 
             # add new air layers, cut_off some tailing layers to preserve array size.
-            self.grid_z = np.concatenate([new_airlayers, self.grid_z[self.n_airlayers:] - self.grid_z[self.n_airlayers]], axis=0)
+            self.grid_z = np.concatenate([new_airlayers, self.grid_z[self.n_airlayers+1:] - self.grid_z[self.n_airlayers] + new_airlayers[-1]], axis=0)
             print(" NEW self.grid_z shape and values = ", self.grid_z.shape, self.grid_z)
-            
             
                         
             # adjust the nodes, which is simply the diff of adjacent grid lines
@@ -920,21 +934,23 @@ class Model(object):
             # second, check topography isn't the surface we're trying to assign
             # resistivity for
             if surfacename == 'topography':
-                topo = np.zeros_like(surfacedata)
+            # if it is, we need to define the upper limit as the top of the model
+                top = np.zeros_like(surfacedata) + np.amin(self.grid_z)
             else:
-                topo = self.sea_level - self.surface_dict['topography']
+            # if not, upper limit of resistivity assignment is the topography
+                top = self.sea_level - self.surface_dict['topography']
         # if no topography, assign zeros
         else:
-            topo = self.sea_level + np.zeros_like(surfacedata)
+            top = self.sea_level + np.zeros_like(surfacedata)
 
         # assign resistivity value
         for j in range(len(self.res_model)):
             for i in range(len(self.res_model[j])):
                 if where == 'above':
-                    # ii = np.where((gcz <= surfacedata[j, i]) & ( gcz > topo[j, i]))[0]
-                    ii = np.where((gcz <= surfacedata[j, i]) & (gcz < topo[j, i]))[0]
+                    # needs to be above the surface but below the top (as defined before)
+                    ii = np.where((gcz <= surfacedata[j, i]) & ( gcz > top[j, i]))[0]
 
-                else:  # for below the surface?
+                else:  # for below the surface
                     ii = np.where(gcz > surfacedata[j, i])[0]
                 self.res_model[j, i, ii] = resistivity_value
 
