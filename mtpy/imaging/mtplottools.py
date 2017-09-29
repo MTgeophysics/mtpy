@@ -260,11 +260,11 @@ class PlotSettings(MTArrows, MTEllipse):
         self.plot_title = None
         
         # line styles:
-        self.xy_ls = None
-        self.yx_ls = None
-        self.det_ls = None 
-        self.skew_ls = None
-        self.strike_ls = None
+        self.xy_ls = 'dashed'
+        self.yx_ls = 'dashed'
+        self.det_ls = 'dashed' 
+        self.skew_ls = 'dashed'
+        self.strike_ls = 'dashed'
         
         # marker styles:
         self.xy_marker = 's'

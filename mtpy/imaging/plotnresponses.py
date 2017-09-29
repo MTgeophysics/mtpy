@@ -1753,7 +1753,7 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                         
                     #res_det
                     ebdetr = self.axrxy.errorbar(mt.period, 
-                                              rp.resdet,
+                                              mt.Z.res_det,
                                               color=cxy[ii],
                                               marker=mxy[ii], 
                                               ms=self.marker_size, 
@@ -1761,14 +1761,14 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                                               mec=cdet[ii], 
                                               mew=self.marker_lw, 
                                               ls=self.det_ls, 
-                                              yerr=rp.resdet_err, 
+                                              yerr=mt.Z.res_det_err, 
                                               ecolor=cdet[ii],
                                               capsize=self.marker_size,
                                               elinewidth=self.marker_lw)
                 
                     #phase_det
                     ebdetp = self.axpxy.errorbar(mt.period, 
-                                              rp.phasedet, 
+                                              mt.Z.phase_det, 
                                               color=cyx[ii],
                                               marker=mxy[ii], 
                                               ms=self.marker_size, 
@@ -1776,7 +1776,7 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                                               mec=cdet[ii], 
                                               mew=self.marker_lw, 
                                               ls=self.det_ls, 
-                                              yerr=rp.phasedet_err, 
+                                              yerr=mt.Z.phase_det_err, 
                                               ecolor=cdet[ii],
                                               capsize=self.marker_size,
                                               elinewidth=self.marker_lw)
@@ -1785,17 +1785,15 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                     
                 #-----plot tipper----------------------------------------------              
                 if self._plot_tipper.find('y') == 0:
-                    
-                    tp = mt.get_Tipper()
-                    
-                    txr = tp.mag_real*np.sin(tp.ang_real*np.pi/180+\
+
+                    txr = mt.Tipper.mag_real*np.sin(tp.ang_real*np.pi/180+\
                                              np.pi*self.arrow_direction)
-                    tyr = tp.mag_real*np.cos(tp.ang_real*np.pi/180+\
+                    tyr = mt.Tipper.mag_real*np.cos(tp.ang_real*np.pi/180+\
                                              np.pi*self.arrow_direction)
             
-                    txi = tp.mag_imag*np.sin(tp.ang_imag*np.pi/180+\
+                    txi = mt.Tipper.mag_imag*np.sin(tp.ang_imag*np.pi/180+\
                                              np.pi*self.arrow_direction)
-                    tyi = tp.mag_imag*np.cos(tp.ang_imag*np.pi/180+\
+                    tyi = mt.Tipper.mag_imag*np.cos(tp.ang_imag*np.pi/180+\
                                              np.pi*self.arrow_direction)
                     
                     nt = len(txr)
@@ -1854,36 +1852,36 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                 #------plot strike angles----------------------------------------------
                 if self._plot_strike.find('y') == 0:
                     
-                    if self._plot_strike.find('i') > 0:
-                        #strike from invariants
-                        zinv = mt.get_Zinvariants()
-                        s1 = zinv.strike
-                        
-                        #fold angles so go from -90 to 90
-                        s1[np.where(s1>90)] -= -180
-                        s1[np.where(s1<-90)] += 180
-                        
-                        #plot strike with error bars
-                        ps1 = self.axst.errorbar(mt.period, 
-                                                s1, 
-                                                marker=mxy[ii], 
-                                                ms=self.marker_size, 
-                                                mfc=cst[ii], 
-                                                mec=cst[ii], 
-                                                mew=self.marker_lw,
-                                                ls='none', 
-                                                yerr=zinv.strike_err, 
-                                                ecolor=cst[ii],
-                                                capsize=self.marker_size,
-                                                elinewidth=self.marker_lw)
-                                                
-                        stlist.append(ps1[0])
+#                    if self._plot_strike.find('i') > 0:
+#                        #strike from invariants
+#                        zinv = mt.get_Zinvariants()
+#                        s1 = zinv.strike
+#                        
+#                        #fold angles so go from -90 to 90
+#                        s1[np.where(s1>90)] -= -180
+#                        s1[np.where(s1<-90)] += 180
+#                        
+#                        #plot strike with error bars
+#                        ps1 = self.axst.errorbar(mt.period, 
+#                                                s1, 
+#                                                marker=mxy[ii], 
+#                                                ms=self.marker_size, 
+#                                                mfc=cst[ii], 
+#                                                mec=cst[ii], 
+#                                                mew=self.marker_lw,
+#                                                ls='none', 
+#                                                yerr=zinv.strike_err, 
+#                                                ecolor=cst[ii],
+#                                                capsize=self.marker_size,
+#                                                elinewidth=self.marker_lw)
+#                                                
+#                        stlist.append(ps1[0])
                                                 
                     if self._plot_strike.find('p') > 0:
                         
                         #strike from phase tensor
-                        pt = mt.get_PhaseTensor()
-                        s2, s2_err = pt.azimuth
+                        s2 = mt.pt.azimuth
+                        s2_err = mt.pt.azimuth_err
                         
                         #fold angles to go from -90 to 90
                         s2[np.where(s2>90)] -= 180
@@ -1907,8 +1905,7 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                     
                     if self._plot_strike.find('t') > 0:
                         #strike from tipper
-                        tp = mt.get_Tipper()
-                        s3 = tp.ang_real+90
+                        s3 = mt.Tipper.ang_real+90
                         
                         #fold to go from -90 to 90
                         s3[np.where(s3 > 90)] -= 180
@@ -1933,8 +1930,8 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                 #------plot skew angle---------------------------------------------
                 if self._plot_skew == 'y':
                     #strike from phase tensor
-                    pt = mt.get_PhaseTensor()
-                    sk, sk_err = pt.beta
+                    sk = mt.pt.beta
+                    sk_err = mt.pt.beta_err
                     
                     ps4 = self.axsk.errorbar(mt.period, 
                                             sk, 
@@ -1953,7 +1950,6 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                 #----plot phase tensor ellipse---------------------------------------    
                 if self._plot_pt == 'y':        
                     #get phase tensor instance
-                    pt = mt.get_PhaseTensor()
                     
                     cmap = self.ellipse_cmap
                     ckmin = self.ellipse_range[0]
@@ -1970,19 +1966,19 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                     #get the properties to color the ellipses by
                     if self.ellipse_colorby == 'phiminang' or \
                        self.ellipse_colorby == 'phimin':
-                        colorarray = pt.phimin[0]
+                        colorarray = mt.pt.phimin
                 
                                                        
                     elif self.ellipse_colorby == 'phidet':
-                        colorarray = np.sqrt(abs(pt.det[0]))*(180/np.pi)
+                        colorarray = np.sqrt(abs(mt.pt.det))*(180/np.pi)
                          
                         
                     elif self.ellipse_colorby == 'skew' or\
                          self.ellipse_colorby == 'skew_seg':
-                        colorarray = pt.beta[0]
+                        colorarray = mt.pt.beta
                         
                     elif self.ellipse_colorby == 'ellipticity':
-                        colorarray = pt.ellipticity[0]
+                        colorarray = mt.pt.ellipticity
                         
                     else:
                         raise NameError(self.ellipse_colorby+' is not supported')
@@ -1990,10 +1986,10 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                     #-------------plot ellipses-----------------------------------
                     for kk, ff in enumerate(mt.period):
                         #make sure the ellipses will be visable
-                        eheight = pt.phimin[0][kk]/pt.phimax[0][kk]*\
-                                                                    self.ellipse_size
-                        ewidth = pt.phimax[0][kk]/pt.phimax[0][kk]*\
-                                                                    self.ellipse_size
+                        eheight = mt.pt.phimin[kk]/mt.pt.phimax[kk]*\
+                                                            self.ellipse_size
+                        ewidth = mt.pt.phimax[kk]/mt.pt.phimax[kk]*\
+                                                            self.ellipse_size
                     
                         #create an ellipse scaled by phimin and phimax and oriented 
                         #along the azimuth which is calculated as clockwise but needs 
