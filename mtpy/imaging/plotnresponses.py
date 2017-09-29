@@ -1786,14 +1786,14 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                 #-----plot tipper----------------------------------------------              
                 if self._plot_tipper.find('y') == 0:
 
-                    txr = mt.Tipper.mag_real*np.sin(mt.Tipper.ang_real*np.pi/180+\
+                    txr = mt.Tipper.mag_real*np.sin(mt.Tipper.angle_real*np.pi/180+\
                                              np.pi*self.arrow_direction)
-                    tyr = mt.Tipper.mag_real*np.cos(mt.Tipper.ang_real*np.pi/180+\
+                    tyr = mt.Tipper.mag_real*np.cos(mt.Tipper.angle_real*np.pi/180+\
                                              np.pi*self.arrow_direction)
             
-                    txi = mt.Tipper.mag_imag*np.sin(mt.Tipper.ang_imag*np.pi/180+\
+                    txi = mt.Tipper.mag_imag*np.sin(mt.Tipper.angle_imag*np.pi/180+\
                                              np.pi*self.arrow_direction)
-                    tyi = mt.Tipper.mag_imag*np.cos(mt.Tipper.ang_imag*np.pi/180+\
+                    tyi = mt.Tipper.mag_imag*np.cos(mt.Tipper.angle_imag*np.pi/180+\
                                              np.pi*self.arrow_direction)
                     
                     nt = len(txr)

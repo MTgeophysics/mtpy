@@ -899,6 +899,8 @@ class Z3D_to_edi(object):
         for fn in os.listdir(self.station_dir):
             fn = os.path.join(self.station_dir, fn)
             f_arr, count = self._make_ts_arr_entry(fn)
+            if f_arr is None:
+                continue
             fn_arr[fn_count] = f_arr
             fn_count += count
 
@@ -936,7 +938,10 @@ class Z3D_to_edi(object):
         """
         make ts_arr entries
         """
-
+        fn_ext = os.path.splitext(fn)[1][1:].lower()
+        if fn_ext not in ['ex', 'ey', 'hx', 'hy', 'hz']:
+            return None, 0
+            
         return_fn_arr = np.zeros(1, dtype=self._ts_fn_dtype)
         
         ts_obj = mtts.MT_TS()
@@ -1252,7 +1257,7 @@ class Z3D_to_edi(object):
             
             # get station name
             ex_find = np.where(birrp_fn_arr[0]['comp']) == 'ex'
-            station = os.path.basename(birrp_fn_arr[0][ex_find]['fn'])[0:4]
+            station = os.path.splitext(os.path.basename(birrp_fn_arr[0][ex_find]['fn']))[0]
             
             # add parameters to birrp_params_dict 
             birrp_params_dict['deltat'] = -1*df_key

@@ -2209,7 +2209,7 @@ class Processing(object):
 
     More attributes can be added by inputing a key word dictionary
 
-    >>> Person(**{'phone':'650-888-6666'})
+    >>> Person(**{'phone':'888-867-5309'})
     """
 
     def __init__(self, **kwargs):
