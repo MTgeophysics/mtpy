@@ -669,7 +669,7 @@ class MT(object):
             info_list.append(
                 '{0} = {1}'.format(
                     l_key.strip(),
-                    l_value.strip()))
+                    str(l_value).strip()))
 
         # get field notes information includes data quality
         for f_key in sorted(self.FieldNotes.__dict__.keys()):
@@ -850,6 +850,9 @@ class MT(object):
         """
 
         j_obj = MTj.JFile(j_fn)
+        
+        self.save_dir = os.path.dirname(j_fn)
+        self.station = os.path.splitext(os.path.basename(j_fn))[0]
 
         self.Z = j_obj.Z
         self.Tipper = j_obj.Tipper
@@ -859,6 +862,8 @@ class MT(object):
         self.Site.Location.latitude = j_obj.metadata_dict['latitude']
         self.Site.Location.longitude = j_obj.metadata_dict['longitude']
         self.Site.Location.elevation = j_obj.metadata_dict['elevation']
+        
+        self.Notes.info_dict = j_obj.header_dict
 
     def _read_xml_file(self, xml_fn):
         """

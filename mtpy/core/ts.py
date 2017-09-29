@@ -446,6 +446,15 @@ class MT_TS(object):
             self.ts = signal.decimate(self.ts.data, dec_factor, n=8)
             self.sampling_rate /= float(dec_factor)
             
+    def low_pass_filter(self, low_pass_freq=15, cutoff_freq=55):
+        """
+        low pass the data
+        """
+        
+        self.ts = mtfilter.low_pass(self.ts.data, 
+                                    low_pass_freq,
+                                    cutoff_freq,
+                                    self.sampling_rate)
     
     ###------------------------------------------------------------------
     ### read and write file types
