@@ -255,16 +255,16 @@ class PlotSettings(MTArrows, MTEllipse):
         
         self.font_size = 7
         self.marker_size = 4
-        self.marker_lw = 1
+        self.marker_lw = .75
         self.lw = 1
         self.plot_title = None
         
         # line styles:
-        self.xy_ls = 'dashed'
-        self.yx_ls = 'dashed'
-        self.det_ls = 'dashed' 
-        self.skew_ls = 'dashed'
-        self.strike_ls = 'dashed'
+        self.xy_ls = ':'
+        self.yx_ls = ':'
+        self.det_ls = ':' 
+        self.skew_ls = ':'
+        self.strike_ls = ':'
         
         # marker styles:
         self.xy_marker = 's'

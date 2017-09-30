@@ -538,7 +538,7 @@ class PhaseTensor(object):
 
         """
         if self.pt is None:
-            return None, None
+            return None
        
         return np.array([i[0,1] - i[1,0] for i in self.pt])
         
@@ -570,7 +570,7 @@ class PhaseTensor(object):
         """
 
         if self.pt is None:
-            return None, None
+            return None
             
         return self.alpha - self.beta
         
@@ -600,7 +600,7 @@ class PhaseTensor(object):
         """
         
         if self.pt is None:
-            return None, None
+            return None
             
         return (self.phimax-self.phimin)/(self.phimax+self.phimin)
         
@@ -627,9 +627,9 @@ class PhaseTensor(object):
 
         """
         if self.pt is None:
-            return None, None
+            return None
 
-        return np.array( [np.linalg.det(i) for i in self.pt])
+        return np.array([np.linalg.det(pt_arr) for pt_arr in self.pt])
         
     @property
     def det_err(self):
@@ -662,10 +662,10 @@ class PhaseTensor(object):
         pi1err = None
 
         if self.pt_err is not None:
-            pi1err = 1./ pi1 * np.sqrt( (self.pt[:,0,0] - self.pt[:,1,1] )**2 *\
-                              (self.pt_err[:,0,0]**2 + self.pt_err[:,1,1]**2)  +\
-                              (self.pt[:,0,1] + self.pt[:,1,0] )**2 * \
-                              (self.pt_err[:,0,1]**2 + self.pt_err[:,1,0]**2) )
+            pi1err = 1./ pi1 * np.sqrt((self.pt[:,0,0] - self.pt[:,1,1])**2*\
+                              (self.pt_err[:,0,0]**2 + self.pt_err[:,1,1]**2)+\
+                              (self.pt[:,0,1] + self.pt[:,1,0])**2 *\
+                              (self.pt_err[:,0,1]**2 + self.pt_err[:,1,0]**2))
         return pi1, pi1err
         
     #---principle component 2----------------------------------------------
@@ -689,9 +689,9 @@ class PhaseTensor(object):
 
         if self.pt_err is not None:
             pi2err = 1./ pi2 * np.sqrt( (self.pt[:,0,0] + self.pt[:,1,1] )**2*\
-                    (self.pt_err[:,0,0]**2 + self.pt_err[:,1,1]**2)  +\
-                    (self.pt[:,0,1] - self.pt[:,1,0] )**2 *\
-                    (self.pt_err[:,0,1]**2 + self.pt_err[:,1,0]**2) )
+                        (self.pt_err[:,0,0]**2 + self.pt_err[:,1,1]**2) +\
+                        (self.pt[:,0,1] - self.pt[:,1,0])**2*\
+                        (self.pt_err[:,0,1]**2 + self.pt_err[:,1,0]**2))
 
 
         return pi2, pi2err
@@ -715,7 +715,7 @@ class PhaseTensor(object):
         if self.pt is None:
             return None
 
-        return np.degrees(self._pi2()[0] - self._pi1()[0])
+        return np.degrees(np.arctan(self._pi2()[0] - self._pi1()[0]))
 
     @property
     def phimin_err(self):
@@ -744,7 +744,7 @@ class PhaseTensor(object):
         if self.pt is None:
             return None
 
-        return np.degrees(self._pi2()[0] + self._pi1()[0])
+        return np.degrees(np.arctan(self._pi2()[0] + self._pi1()[0]))
 
     @property
     def phimax_err(self):
@@ -874,8 +874,8 @@ class PhaseTensor(object):
             pt2d[i,0,1] = 0
             pt2d[i,1,0] = 0
             
-            pt2d[i,0,0] = self.phimax[0][i]
-            pt2d[i,1,1] = self.phimin[0][i]
+            pt2d[i,0,0] = self.phimax[i]
+            pt2d[i,1,1] = self.phimin[i]
             
         return pt2d
 
