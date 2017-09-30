@@ -243,7 +243,7 @@ class PTShapeFile(object):
             layer.CreateField(field_normalized_skew)
             
             poly_list = []
-            phimax = self.pt_dict[plot_per]['phimax'].max()
+            phimax = min([self.pt_dict[plot_per]['phimax'].max(), 90])
             for pt_array in self.pt_dict[plot_per]:
                 
                 #need to make an ellipse first using the parametric equation
