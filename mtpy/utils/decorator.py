@@ -57,7 +57,7 @@ class ImageCompare(object):
         self.result_dir = kwargs.pop('result_dir', 'tests/result_images')
         self.filename = kwargs.pop('filename', None)
         self.extensions = kwargs.pop('extensions', ['png'])
-        self.savefig_kwargs = kwargs.pop('savefig_kwargs', {})
+        self.savefig_kwargs = kwargs.pop('savefig_kwargs', {'dpi': 80})
         self.tolerance = kwargs.pop('tolerance', 2)
 
         if self.result_dir and not os.path.exists(self.result_dir):
