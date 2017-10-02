@@ -1497,7 +1497,7 @@ class Data(object):
                                   on the extension .vtu
         """
         
-        if vtk_save_path is not None:
+        if vtk_save_path is None:
             vtk_fn = os.path.join(self.save_path, vtk_fn_basename)
         else:
             vtk_fn = os.path.join(vtk_save_path, vtk_fn_basename)

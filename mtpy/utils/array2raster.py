@@ -163,7 +163,6 @@ class ModEM_to_Raster(object):
                                 new_east.size,
                                 model_obj.nodes_z.size))
                                 
-        print new_east.shape, new_north.shape, model_n.shape, model_e.shape, new_res_arr.shape, model_obj.res_model.shape
         for z_index in range(model_obj.grid_z.shape[0]-1):
             res = model_obj.res_model[:, :, z_index]
             new_res_arr[:, :, z_index] = interpolate.griddata(
