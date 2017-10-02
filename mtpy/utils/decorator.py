@@ -92,20 +92,21 @@ class ImageCompare(object):
             ):
                 # save image
                 fig = plt.gcf()
-                fig.savefig(test_image, **self.savefig_kwargs)
-                import pytest
-                if os.path.exists(baseline_image):
-                    msg = compare_images(baseline_image, test_image, tol=self.tolerance)
-                    if msg is not None:
-                        pytest.fail(msg, pytrace=False)
+                if fig is not None:
+                    fig.savefig(test_image, **self.savefig_kwargs)
+                    import pytest
+                    if os.path.exists(baseline_image):
+                        msg = compare_images(baseline_image, test_image, tol=self.tolerance)
+                        if msg is not None:
+                            pytest.fail(msg, pytrace=False)
+                        else:
+                            # clearup the image as they are the same with the baseline
+                            import shutil
+                            shutil.rmtree(os.path.dirname(test_image))
                     else:
-                        # clearup the image as they are the same with the baseline
-                        import shutil
-                        shutil.rmtree(os.path.dirname(test_image))
-                else:
-                    pytest.skip("Image file not found for comparison test."
-                                "(This is expected for new tests.)\nGenerated Image: "
-                                "\n\t{test}".format(test=test_image))
+                        pytest.skip("Image file not found for comparison test."
+                                    "(This is expected for new tests.)\nGenerated Image: "
+                                    "\n\t{test}".format(test=test_image))
 
             return result
 

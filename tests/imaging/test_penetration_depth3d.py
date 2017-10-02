@@ -4,9 +4,12 @@ from unittest import TestCase
 # configure matplotlib for testing
 import matplotlib.pyplot as plt
 
+from mtpy.utils.decorator import ImageCompare
+
 plt.ion()
 
 from mtpy.imaging.penetration_depth3d import plot_latlon_depth_profile
+
 
 class TestPenetration_depth3d(TestCase):
     @classmethod
@@ -26,6 +29,7 @@ class TestPenetration_depth3d(TestCase):
     def tearDown(self):
         plt.pause(1)
 
+    @ImageCompare()
     def test_plot_latlon_depth_profile_period_index(self):
         plot_latlon_depth_profile(self._edifiles_small, 10, 'det', savefig=False)
 
@@ -37,5 +41,6 @@ class TestPenetration_depth3d(TestCase):
             print (ex)
             assert(True)
 
+    @ImageCompare()
     def test_plot_latlon_depth_profile_period(self):
         plot_latlon_depth_profile(self._edifiles_small, 2.857, savefig=False)

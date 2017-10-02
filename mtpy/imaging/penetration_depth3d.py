@@ -82,8 +82,8 @@ def plot_latlon_depth_profile(edi_dir, period, zcomponent='det', showfig=True, s
         image.export_image(path2savefile, dpi=200, bbox_inches='tight')
 
     # may want to remove the following 2 lines
-    plt.clf()
-    plt.close()
+    # plt.clf()
+    # plt.close()
     return
 
 
