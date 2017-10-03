@@ -102,6 +102,11 @@ class ImageCompare(object):
                     if os.path.exists(baseline_image):
                         msg = compare_images(baseline_image, test_image, tol=self.tolerance)
                         if msg is not None:
+                            # print image in base64
+                            print("Expected Image:")
+                            self._print_image_base64(baseline_image)
+                            print("Actual Image:")
+                            self._print_image_base64(test_image)
                             pytest.fail(msg, pytrace=False)
                         else:
                             # clearup the image as they are the same with the baseline
@@ -142,3 +147,8 @@ class ImageCompare(object):
                     name
                 )
             )
+
+    def _print_image_base64(self, image_file):
+        with open(image_file, "rb") as image_file:
+            image_data = image_file.read()
+            print(image_data.encode("base64"))
