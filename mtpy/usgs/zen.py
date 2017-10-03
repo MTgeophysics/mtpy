@@ -1349,10 +1349,9 @@ class Zen3D(object):
         plots the time series
         """                                                               
         
-        time_series = self.convert_counts()
         fig = plt.figure(fig_num )
         ax = fig.add_subplot(1,1,1)
-        ax.plot(time_series)
+        ax.plot(self.ts_obj.ts.data)
         
         #ax.xaxis.set_minor_locator(MultipleLocator(self.df))
         #ax.xaxis.set_major_locator(MultipleLocator(self.df*15))
@@ -1362,8 +1361,7 @@ class Zen3D(object):
         ax.set_xlabel('Time (s)')
         ax.set_ylabel('Amplitude (mV)')
         plt.show()
-        
-        self.convert_mV()
+
         return fig, ax
     
     #==================================================    

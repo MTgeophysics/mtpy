@@ -757,11 +757,8 @@ class Z3D_to_edi(object):
         zd = zen.Zen3D(fn)
         zd.read_all_info()
 
-        ex = float(zd.metadata.ch_length)
-        ey = float(zd.metadata.ch_length)
         #write mtpy mt file
-        zd.write_ascii_mt_file(notch_dict=notch_dict, 
-                               ex=ex, ey=ey, dec=dec)
+        zd.write_ascii_mt_file(notch_dict=notch_dict, dec=dec)
         
         #create lines to write to a log file                       
         station_num = zd.metadata.rx_xyz0.split(':')[0]
