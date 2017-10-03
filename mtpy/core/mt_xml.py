@@ -22,9 +22,7 @@ import numpy as np
 import xml.etree.cElementTree as ET
 from xml.dom import minidom
 
-
 import mtpy.core.z as mtz
-
 
 dt_fmt = '%Y-%m-%d %H:%M:%S'
 

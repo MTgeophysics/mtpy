@@ -24,7 +24,7 @@ import mtpy.analysis.pt as MTpt
 import mtpy.analysis.distortion as MTdistortion
 import mtpy.core.jfile as MTj
 import mtpy.core.mt_xml as MTxml
-#import mtpy.imaging.plotresponse as plotresponse
+import mtpy.imaging.plot_mt_response as plot_mt_response
 
 try:
     import scipy
@@ -247,7 +247,7 @@ class MT(object):
         """
         set elevation, should be input as meters
         """
-        self._elev = self.Site.Location.elevation = elevation
+        self.Site.Location.elevation = elevation
 
     @east.setter
     def east(self, easting):
@@ -689,7 +689,7 @@ class MT(object):
                     if s_key == 'author':
                         for a_key in sorted(
                                 self.Processing.Software.author.__dict__.keys()):
-                            l_key = 'processing.software.author.{0}'.format(
+                            l_key = 'processing.software.Author.{0}'.format(
                                 a_key)
                             l_value = getattr(self.Processing.Software.author,
                                               a_key)
@@ -1743,26 +1743,28 @@ class MT(object):
 
         return new_Z, new_Tipper
 
-#    def plot_mt_response(self, **kwargs):
-#        """
-#        Returns a mtpy.imaging.plotresponse.PlotResponse object
-#
-#        Examples
-#        ------------
-#        :Plot Response: ::
-#
-#            >>> mt_obj = mt.MT(edi_file)
-#            >>> pr = mt.plot_mt_response()
-#            >>> # if you need more infor on plot_mt_response
-#            >>> help(pr)
-#
-#        """
-#
-#        plot_obj = plotresponse.PlotResponse(z_object=self.Z,
-#                                             tipper_object=self.Tipper,
-#                                             **kwargs)
-#
-#        return plot_obj
+    def plot_mt_response(self, **kwargs):
+        """
+        Returns a mtpy.imaging.plotresponse.PlotResponse object
+
+        Examples
+        ------------
+        :Plot Response: ::
+
+            >>> mt_obj = mt.MT(edi_file)
+            >>> pr = mt.plot_mt_response()
+            >>> # if you need more infor on plot_mt_response
+            >>> help(pr)
+
+        """
+
+        plot_obj = plot_mt_response.PlotMTResponse(z_object=self.Z,
+                                                   t_object=self.Tipper,
+                                                   pt_obj=self.pt,
+                                                   station=self.station,
+                                                   **kwargs)
+
+        return plot_obj
 
 #==============================================================================
 # Site details
