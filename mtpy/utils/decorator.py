@@ -151,4 +151,4 @@ class ImageCompare(object):
     def _print_image_base64(self, image_file):
         with open(image_file, "rb") as image_file:
             image_data = image_file.read()
-            print(image_data.encode("base64"))
+            print("<img src=\"data:image/png;base64,{}\" style=\"display:block; max-width:800px; width: auto; height: auto;\" />".format(image_data.encode("base64")))
