@@ -6,22 +6,23 @@ plot_mt_response
 
 Plots the resistivity and phase for different modes and components
 
-Created on Thu May 30 16:54:08 2013
+Created 2017
 
-@author: jpeacock-pr
+@author: jpeacock
 """
 #==============================================================================
+import os
+
+import numpy as np
 
 import matplotlib.pyplot as plt
-import numpy as np
-import os
 from matplotlib.ticker import MultipleLocator
 import matplotlib.colors as colors
 import matplotlib.patches as patches
 import matplotlib.colorbar as mcb
 import matplotlib.gridspec as gridspec
-import mtpy.imaging.mtcolors as mtcl
 
+import mtpy.imaging.mtcolors as mtcl
 #==============================================================================
 
 
@@ -688,7 +689,7 @@ class PlotMTResponse(object):
         self.axp.grid(True, alpha=.25, which='both', color=(.25, .25, .25),
                       lw=.25)
         #set th xaxis tick labels to invisible
-        if pdict['phase'] != nrows-1:
+        if self.plot_tipper.find('y') >= 0 or self.plot_pt == 'y':
             plt.setp(self.axp.xaxis.get_ticklabels(), visible=False)
             self.axp.set_xlabel('')
             
@@ -788,7 +789,7 @@ class PlotMTResponse(object):
             self.axt.yaxis.set_major_locator(MultipleLocator(.2))               
             self.axt.yaxis.set_minor_locator(MultipleLocator(.1))               
             self.axt.set_xlabel('Period (s)', fontdict=fontdict)
-            self.axt.set_ylabel('Tipper', fontdict=fontdict)    
+            self.axt.set_ylabel('Tipper', fontdict=fontdict)
             
             #self.axt.set_xscale('log')
             if self.tipper_limits is None:
@@ -807,8 +808,9 @@ class PlotMTResponse(object):
                           lw=.25)
             
             #set th xaxis tick labels to invisible
-            if pdict['tip'] != nrows-1:
+            if self.plot_pt == 'y':
                 plt.setp(self.axt.xaxis.get_ticklabels(), visible=False)
+                self.axt.set_xlabel('')
         
         #----plot phase tensor ellipse---------------------------------------    
         if self.plot_pt == 'y':        
