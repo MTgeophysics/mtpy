@@ -96,6 +96,7 @@ class ImageCompare(object):
                 if fig is not None:
                     if self.fig_size is not None:
                         fig.set_size_inches(self.fig_size)
+                        fig.set_tight_layout(True)
                     fig.savefig(test_image, **self.savefig_kwargs)
                     import pytest
                     if os.path.exists(baseline_image):
