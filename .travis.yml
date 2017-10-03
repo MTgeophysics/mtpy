@@ -18,5 +18,5 @@ install:
 #script: nosetests
 script:
   - py.test -n 4 -v tests/core
-  - py.test -n 4 -v tests/imaging
+  - py.test -v tests/imaging
   - py.test -n 4 -v tests/modeling
