@@ -1180,7 +1180,7 @@ class Zen3D(object):
         try:
             self.ts_obj.ts.data
         except AttributeError:
-            self.read_3d()
+            self.read_z3d()
         
         kwargs = {'notches':notches, 'notch_radius':notch_radius,
                   'freq_rad':freq_rad, 'rp':rp}
@@ -1278,7 +1278,7 @@ class Zen3D(object):
             return
         
         # read in time series data if haven't yet.
-        if self.ts_obj is None:
+        if not hasattr(self.ts_obj.ts, 'data'):
             self.read_z3d()
             
         # decimate the data.  try resample at first, see how that goes
@@ -1290,10 +1290,6 @@ class Zen3D(object):
         # apply notch filter if desired
         if notch_dict is not None:
             self.apply_adaptive_notch_filter(notch_dict)
-            print 'Filtered notches: '
-            for nfilt in self.filt_list:
-                if type(nfilt[0]) != str:
-                    print '{0}{1:.2f} Hz'.format(' '*4, nfilt[0])
         
         # convert counts to mV and scale accordingly    
         # self.convert_counts() #--> data is already converted to mV
@@ -1315,7 +1311,7 @@ class Zen3D(object):
         """
         plots the time series
         """                                                               
-        
+
         self.ts_obj.ts.plot(x_compat=True)
     
     #==================================================    
