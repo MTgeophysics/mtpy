@@ -6,6 +6,7 @@ from unittest import TestCase
 import matplotlib.pyplot as plt
 
 from mtpy.imaging.plotnresponses import PlotMultipleResponses
+from mtpy.utils.decorator import ImageCompare
 
 plt.ion()
 
@@ -13,7 +14,7 @@ edi_paths = [
     "",
     "tests/data/edifiles",
     "examples/data/edi2",
-    "1examples/data/edi_files",
+    "examples/data/edi_files",
     "../MT_Datasets/3D_MT_data_edited_fromDuanJM/",
     "../MT_Datasets/GA_UA_edited_10s-10000s/",
     "tests/data/edifiles2"
@@ -34,26 +35,31 @@ class TestPlotMultipleResponses(TestCase):
     def setUp(self):
         plt.clf()
 
-    def test_plot_1(self):
+    @ImageCompare()
+    def test_plot_01(self):
         edi_path = edi_paths[1]
         self._plot(edi_path)
 
     @unittest.skipUnless(os.path.isdir(edi_paths[2]), "data file not found")
+    @ImageCompare()
     def test_plot_02(self):
         edi_path = edi_paths[2]
         self._plot(edi_path)
 
     @unittest.skipUnless(os.path.isdir(edi_paths[3]), "data file not found")
+    @ImageCompare()
     def test_plot_03(self):
         edi_path = edi_paths[3]
         self._plot(edi_path)
 
     @unittest.skipUnless(os.path.isdir(edi_paths[4]), "data file not found")
+    @ImageCompare()
     def test_plot_04(self):
         edi_path = edi_paths[4]
         self._plot(edi_path)
 
     @unittest.skipUnless(os.path.isdir(edi_paths[5]), "data file not found")
+    @ImageCompare()
     def test_plot_05(self):
         edi_path = edi_paths[5]
         self._plot(edi_path)

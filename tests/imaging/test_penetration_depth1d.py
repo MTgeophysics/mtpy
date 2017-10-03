@@ -37,7 +37,7 @@ class TestPenetration_depth1d(TestCase):
         # plt.pause(1)
         pass
 
-    @ImageCompare()
+    @ImageCompare(fig_size=(8, 6))
     def test_plot_edi_dir(self):
         """
         testing plotting all edi files in a given dir
@@ -47,7 +47,7 @@ class TestPenetration_depth1d(TestCase):
         plot_edi_dir("tests/data/edifiles")
         # plt.close()
 
-    @ImageCompare()
+    @ImageCompare(fig_size=(8, 6))
     def test_plot_edi_file(self):
         """
         testing plotting a single edi file
@@ -55,7 +55,7 @@ class TestPenetration_depth1d(TestCase):
         """
         plot_edi_file("tests/data/edifiles/15125A.edi")
 
-    @ImageCompare()
+    @ImageCompare(fig_size=(8, 6))
     def test_plot_edi_file_zxy(self):
         """
         testing ploting zxy of a single edi file
@@ -63,7 +63,7 @@ class TestPenetration_depth1d(TestCase):
         """
         plot_edi_file("tests/data/edifiles/15125A.edi", ['zxy'])
 
-    @ImageCompare()
+    @ImageCompare(fig_size=(8, 6))
     def test_plot_edi_file_zyx(self):
         """
         testing plotting zyx of a single edi file
@@ -71,7 +71,7 @@ class TestPenetration_depth1d(TestCase):
         """
         plot_edi_file("tests/data/edifiles/15125A.edi", ['zyx'])
 
-    @ImageCompare()
+    @ImageCompare(fig_size=(8, 6))
     def test_plot_edi_file_det(self):
         """
         testing plotting det of a single edi file
@@ -79,7 +79,7 @@ class TestPenetration_depth1d(TestCase):
         """
         plot_edi_file("tests/data/edifiles/15125A.edi", ['det'])
 
-    @ImageCompare()
+    @ImageCompare(fig_size=(8, 6))
     def test_plot_edi_file_zxy_zyx(self):
         """
         testing plotting zxy & zyx of a single edi file
@@ -87,7 +87,7 @@ class TestPenetration_depth1d(TestCase):
         """
         plot_edi_file("tests/data/edifiles/15125A.edi", ['zxy', 'zyx'])
 
-    @ImageCompare()
+    @ImageCompare(fig_size=(8, 6))
     def test_plot_edi_file_zxy_det(self):
         """
         testing plotting zxy & det of a single edi file
@@ -95,7 +95,7 @@ class TestPenetration_depth1d(TestCase):
         """
         plot_edi_file("tests/data/edifiles/15125A.edi", ['zxy', 'det'])
 
-    @ImageCompare()
+    @ImageCompare(fig_size=(8, 6))
     def test_plot_edi_file_zyx_det(self):
         """
         testing plotting zyx & det of a single edi file
@@ -103,7 +103,7 @@ class TestPenetration_depth1d(TestCase):
         """
         plot_edi_file("tests/data/edifiles/15125A.edi", ['zyx', 'det'])
 
-    @ImageCompare()
+    @ImageCompare(fig_size=(8, 6))
     def test_plot_edi_file_unknown_type(self):
         """
         testing plotting zyx and an unknown of a single edi file
@@ -111,7 +111,7 @@ class TestPenetration_depth1d(TestCase):
         """
         plot_edi_file("tests/data/edifiles/15125A.edi", ['zyx', 'dat'])
 
-    @ImageCompare()
+    @ImageCompare(fig_size=(8, 6))
     def test_plot_edi_file_empty_rholist(self):
         """
         testing plotting an empty rholist of a single edi file

@@ -29,7 +29,7 @@ class TestPenetration_depth3d(TestCase):
     def tearDown(self):
         plt.pause(1)
 
-    @ImageCompare()
+    @ImageCompare(fig_size=(8, 6))
     def test_plot_latlon_depth_profile_period_index(self):
         plot_latlon_depth_profile(self._edifiles_small, 10, 'det', savefig=False)
 
@@ -41,6 +41,6 @@ class TestPenetration_depth3d(TestCase):
             print (ex)
             assert(True)
 
-    @ImageCompare()
+    @ImageCompare(fig_size=(8, 6))
     def test_plot_latlon_depth_profile_period(self):
         plot_latlon_depth_profile(self._edifiles_small, 2.857, savefig=False)

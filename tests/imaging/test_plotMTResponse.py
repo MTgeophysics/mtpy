@@ -35,31 +35,31 @@ class TestPlotMTResponse(TestCase):
     def setUp(self):
         plt.clf()
 
-    @ImageCompare(savefig_kwargs={'dpi': 200})
+    @ImageCompare(fig_size=(8, 6), savefig_kwargs={'dpi': 200})
     def test_plot_01(self):
         edi_path = edi_paths[1]
         self._plot(edi_path)
 
     @unittest.skipUnless(os.path.isdir(edi_paths[2]), "data file not found")
-    @ImageCompare(savefig_kwargs={'dpi': 200})
+    @ImageCompare(fig_size=(8, 6), savefig_kwargs={'dpi': 200})
     def test_plot_02(self):
         edi_path = edi_paths[2]
         self._plot(edi_path)
 
     @unittest.skipUnless(os.path.isdir(edi_paths[3]), "data file not found")
-    @ImageCompare(savefig_kwargs={'dpi': 200})
+    @ImageCompare(fig_size=(8, 6), savefig_kwargs={'dpi': 200})
     def test_plot_03(self):
         edi_path = edi_paths[3]
         self._plot(edi_path)
 
     @unittest.skipUnless(os.path.isdir(edi_paths[4]), "data file not found")
-    @ImageCompare(savefig_kwargs={'dpi': 200})
+    @ImageCompare(fig_size=(8, 6), savefig_kwargs={'dpi': 200})
     def test_plot_04(self):
         edi_path = edi_paths[4]
         self._plot(edi_path)
 
     @unittest.skipUnless(os.path.isdir(edi_paths[5]), "data file not found")
-    @ImageCompare(savefig_kwargs={'dpi': 200})
+    @ImageCompare(fig_size=(8, 6), savefig_kwargs={'dpi': 200})
     def test_plot_05(self):
         edi_path = edi_paths[5]
         self._plot(edi_path)

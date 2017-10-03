@@ -59,6 +59,7 @@ class ImageCompare(object):
         self.extensions = kwargs.pop('extensions', ['png'])
         self.savefig_kwargs = kwargs.pop('savefig_kwargs', {'dpi': 80})
         self.tolerance = kwargs.pop('tolerance', 2)
+        self.fig_size = kwargs.pop('fig_size', None)
 
         if self.result_dir and not os.path.exists(self.result_dir):
             os.mkdir(self.result_dir)
@@ -93,6 +94,8 @@ class ImageCompare(object):
                 # save image
                 fig = plt.gcf()
                 if fig is not None:
+                    if self.fig_size is not None:
+                        fig.set_size_inches(self.fig_size)
                     fig.savefig(test_image, **self.savefig_kwargs)
                     import pytest
                     if os.path.exists(baseline_image):
@@ -101,8 +104,9 @@ class ImageCompare(object):
                             pytest.fail(msg, pytrace=False)
                         else:
                             # clearup the image as they are the same with the baseline
-                            import shutil
-                            shutil.rmtree(os.path.dirname(test_image))
+                            os.remove(test_image)
+                            if not os.listdir(os.path.dirname(test_image)):
+                                os.rmdir(os.path.dirname(test_image))
                     else:
                         pytest.skip("Image file not found for comparison test."
                                     "(This is expected for new tests.)\nGenerated Image: "
