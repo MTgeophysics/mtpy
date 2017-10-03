@@ -21,7 +21,7 @@ import mtpy.core.z as mtz
 import mtpy.utils.configfile as mtcfg
 import mtpy.utils.filehandling as mtfh
 import mtpy.utils.exceptions as mtex
-import mtpy.core.edi as mtedi
+import mtpy.core.mt as mt
 
 #==============================================================================
 class BIRRP_Parameters(object):
@@ -752,329 +752,6 @@ def run(birrp_exe, script_file):
     os.chdir(current_dir)
 
     print '\n{0} DONE !!! {0}\n'.format('='*20)
-#==============================================================================
-# Class to read j_file
-#==============================================================================
-class JFile(object):
-    """
-    be able to read and write a j-file
-    """
-    
-    def __init__(self, j_fn=None):
-        self._j_lines = None
-        self._set_j_fn(j_fn)
-        
-        self.header_dict = None
-        self.metadata_dict = None
-        self.Z = None
-        self.Tipper = None
-        
-        
-    def _set_j_fn(self, j_fn):
-        self._j_fn = j_fn
-        self._get_j_lines()
-        
-    def _get_j_fn(self):
-        return self._j_fn
-        
-    j_fn = property(_get_j_fn, _set_j_fn)
-
-        
-    def _get_j_lines(self):
-        """
-        read in the j_file as a list of lines, put the lines in attribute
-        _j_lines
-        """
-        if self.j_fn is None:
-            print 'j_fn is None'
-            return
-            
-        if os.path.isfile(os.path.abspath(self.j_fn)) is False:
-            raise IOError('Could not find {0}, check path'.format(self.j_fn))
-        
-        self._validate_j_file()
-        
-        with open(self.j_fn, 'r') as fid:
-            self._j_lines = fid.readlines()
-        print 'read in {0}'.format(self.j_fn)
-        
-    def _validate_j_file(self):
-        """
-        change the lat, lon, elev lines to something machine readable,
-        if they are not.
-        """
-        
-        # need to remove any weird characters in lat, lon, elev
-        with open(self.j_fn, 'r') as fid:
-            j_str = fid.read()
-            
-        # change lat
-        j_str = self._rewrite_line('latitude', j_str)
-        
-        # change lon
-        j_str = self._rewrite_line('longitude', j_str)
-        
-        # change elev
-        j_str = self._rewrite_line('elevation', j_str)
-        
-        with open(self.j_fn, 'w') as fid:
-            fid.write(j_str)
-            
-        print 'rewrote j-file {0} to make lat, lon, elev float values'.format(self.j_fn)
-        
-    def _get_str_value(self, string):
-
-        value = string.split('=')[1].strip()
-        try:
-            value = float(value)
-        except ValueError:
-            value = 0.0
-            
-        return value
-        
-    def _rewrite_line(self, variable, file_str):
-        variable_str = '>'+variable.upper()
-        index_begin = file_str.find(variable_str)
-        index_end = index_begin+file_str[index_begin:].find('\n')
-        
-        value = self._get_str_value(file_str[index_begin:index_end])
-        print 'Changed {0} to {1}'.format(variable.upper(), value)
-       
-        new_line = '{0} = {1:<.2f}'.format(variable_str, value)
-        file_str = file_str[0:index_begin]+new_line+file_str[index_end:]        
-         
-        return file_str
-        
-    def read_header(self):
-        """
-        Parsing the header lines of a j-file to extract processing information.
-    
-        Input:
-        - j-file as list of lines (output of readlines())
-    
-        Output:
-        - Dictionary with all parameters found
-
-        """
-            
-        if self._j_lines is None:
-            print "specify a file with jfile.j_fn = path/to/j/file"
-            
-        header_lines = [j_line for j_line in self._j_lines if '#' in j_line]
-        header_dict = {'title':header_lines[0][1:].strip()}
-        
-        fn_count = 0
-        theta_count = 0
-        # put the information into a dictionary 
-        for h_line in header_lines[1:]:
-            # replace '=' with a ' ' to be sure that when split is called there is a
-            # split, especially with filenames
-            h_list = h_line[1:].strip().replace('=', ' ').split()
-            # skip if there is only one element in the list
-            if len(h_list) == 1:
-                continue
-            # get the key and value for each parameter in the given line
-            for h_index in range(0, len(h_list), 2):
-                h_key = h_list[h_index]
-                # if its the file name, make the dictionary value be a list so that 
-                # we can append nread and nskip to it, and make the name unique by
-                # adding a counter on the end
-                if h_key == 'filnam':
-                    h_key = '{0}_{1:02}'.format(h_key, fn_count)
-                    fn_count += 1
-                    h_value = [h_list[h_index+1]]
-                    header_dict[h_key] = h_value
-                    continue
-                elif h_key == 'nskip' or h_key == 'nread':
-                    h_key = 'filnam_{0:02}'.format(fn_count-1)
-                    h_value = int(h_list[h_index+1])
-                    header_dict[h_key].append(h_value)
-                    
-                # if its the line of angles, put them all in a list with a unique key
-                elif h_key == 'theta1':
-                    h_key = '{0}_{1:02}'.format(h_key, theta_count)
-                    theta_count += 1
-                    h_value = float(h_list[h_index+1])
-                    header_dict[h_key] = [h_value]
-                elif h_key == 'theta2' or h_key == 'phi':
-                    h_key = '{0}_{1:02}'.format('theta1', theta_count-1)
-                    h_value = float(h_list[h_index+1])
-                    header_dict[h_key].append(h_value)
-                    
-                else:
-                    try:
-                        h_value = float(h_list[h_index+1])
-                    except ValueError:
-                        h_value = h_list[h_index+1]
-                    
-                    header_dict[h_key] = h_value
-            
-        self.header_dict = header_dict
-        
-    def read_metadata(self, j_lines=None, j_fn=None):
-        """
-        read in the metadata of the station, or information of station 
-        logistics like: lat, lon, elevation
-        
-        Not really needed for a birrp output since all values are nan's
-        """
-        
-        if self._j_lines is None:
-            print "specify a file with jfile.j_fn = path/to/j/file"
-        
-        metadata_lines = [j_line for j_line in self._j_lines if '>' in j_line]
-    
-        metadata_dict = {}
-        for m_line in metadata_lines:
-            m_list = m_line.strip().split('=')
-            m_key = m_list[0][1:].strip().lower()
-            try:
-                m_value = float(m_list[0].strip())
-            except ValueError:
-                m_value = 0.0
-                
-            metadata_dict[m_key] = m_value
-            
-        self.metadata_dict = metadata_dict
-        
-    def read_j_file(self):
-        """
-        read_j_file will read in a *.j file output by BIRRP (better than reading lots of *.<k>r<l>.rf files)
-    
-        Input:
-        j-filename
-    
-        Output: 4-tuple
-        - periods : N-array
-        - Z_array : 2-tuple - values and errors
-        - tipper_array : 2-tuple - values and errors
-        - processing_dict : parsed processing parameters from j-file header
-    
-        """   
-    
-        # read data
-        z_index_dict = {'zxx':(0, 0),
-                        'zxy':(0, 1),
-                        'zyx':(1, 0),
-                        'zyy':(1, 1)}
-        t_index_dict = {'tzx':(0, 0),
-                        'tzy':(0, 1)}
-                        
-        if self._j_lines is None:
-            print "specify a file with jfile.j_fn = path/to/j/file"
-            
-        self.read_header()
-        self.read_metadata()       
-        
-        data_lines = [j_line for j_line in self._j_lines 
-                      if not '>' in j_line and not '#' in j_line][1:]
-                          
-        # sometimes birrp outputs some missing periods, so the best way to deal with 
-        # this that I could come up with was to get things into dictionaries with 
-        # key words that are the period values, then fill in Z and T from there
-        # leaving any missing values as 0
-        
-        # make empty dictionary that have keys as the component 
-        z_dict = dict([(z_key, {}) for z_key in z_index_dict.keys()])
-        t_dict = dict([(t_key, {}) for t_key in t_index_dict.keys()])
-        for d_line in data_lines:
-            # check to see if we are at the beginning of a component block, if so 
-            # set the dictionary key to that value
-            if 'z' in d_line.lower():
-                d_key = d_line.strip().split()[0].lower()
-            # if we are at the number of periods line, skip it
-            elif len(d_line.strip().split()) == 1 and 'r' not in d_line.lower():
-                continue
-            elif 'r' in d_line.lower():
-                break
-            # get the numbers into the correct dictionary with a key as period and
-            # for now we will leave the numbers as a list, which we will parse later
-            else:
-                # split the line up into each number
-                d_list = d_line.strip().split()
-                
-                # make a copy of the list to be sure we don't rewrite any values,
-                # not sure if this is necessary at the moment
-                d_value_list = list(d_list)
-                for d_index, d_value in enumerate(d_list):
-                    # check to see if the column number can be converted into a float
-                    # if it can't, then it will be set to 0, which is assumed to be
-                    # a masked number when writing to an .edi file
-                                       
-                    try:
-                        d_value = float(d_value)
-                        # need to check for masked points represented by
-                        # birrp as -999, apparently
-                        if d_value == -999 or np.isnan(d_value):
-                            d_value_list[d_index] = 0.0
-                        else:
-                            d_value_list[d_index] = d_value
-                    except ValueError:
-                        d_value_list[d_index] = 0.0
-                
-                # put the numbers in the correct dictionary as:
-                # key = period, value = [real, imaginary, error]
-                if d_key in z_index_dict.keys():
-                    z_dict[d_key][d_value_list[0]] = d_value_list[1:4]
-                elif d_key in t_index_dict.keys():
-                    t_dict[d_key][d_value_list[0]] = d_value_list[1:4]
-        
-        # --> now we need to get the set of periods for all components  
-        # check to see if there is any tipper data output          
-
-        all_periods = []            
-        for z_key in z_index_dict.keys():
-            for f_key in z_dict[z_key].keys():
-                all_periods.append(f_key)
-        
-        if len(t_dict['tzx'].keys()) == 0:
-            print 'Could not find any Tipper data in {0}'.format(self.j_fn)
-            find_tipper = False
-  
-        else:
-            for t_key in t_index_dict.keys():
-                for f_key in t_dict[t_key].keys():
-                    all_periods.append(f_key)
-            find_tipper = True
-        
-        all_periods = np.array(sorted(list(set(all_periods))))
-        all_periods = all_periods[np.nonzero(all_periods)]
-        num_per = len(all_periods)
-        
-        # fill arrays using the period key from all_periods
-        z_arr = np.zeros((num_per, 2, 2), dtype=np.complex)
-        z_err_arr = np.zeros((num_per, 2, 2), dtype=np.float)
-        
-        t_arr = np.zeros((num_per, 1, 2), dtype=np.complex)
-        t_err_arr = np.zeros((num_per, 1, 2), dtype=np.float)
-        
-        for p_index, per in enumerate(all_periods):
-            for z_key in sorted(z_index_dict.keys()):
-                kk = z_index_dict[z_key][0]
-                ll = z_index_dict[z_key][1]
-                try:
-                    z_value = z_dict[z_key][per][0]+1j*z_dict[z_key][per][1]
-                    z_arr[p_index, kk, ll] = z_value
-                    z_err_arr[p_index, kk, ll] = z_dict[z_key][per][2]
-                except KeyError:
-                    print 'No value found for period {0:.4g}'.format(per)
-                    print 'For component {0}'.format(z_key)
-            if find_tipper is True:
-                for t_key in sorted(t_index_dict.keys()):
-                    kk = t_index_dict[t_key][0]
-                    ll = t_index_dict[t_key][1]
-                    try:
-                        t_value = t_dict[t_key][per][0]+1j*t_dict[t_key][per][1]
-                        t_arr[p_index, kk, ll] = t_value
-                        t_err_arr[p_index, kk, ll] = t_dict[t_key][per][2]
-                    except KeyError:
-                        print 'No value found for period {0:.4g}'.format(per)
-                        print 'For component {0}'.format(t_key)
-        
-        # put the results into mtpy objects
-        freq = 1./all_periods    
-        self.Z = mtz.Z(z_arr, z_err_arr, freq)
-        self.Tipper = mtz.Tipper(t_arr, t_err_arr, freq)    
 
 #==============================================================================
 # Write edi file from birrp outputs
@@ -1144,8 +821,7 @@ class J_To_Edi(object):
     
         self.station = None
         self.j_fn = None
-        self.j_obj = None
-        self.edi_obj = None
+        self.mt_obj = mt.MT()
                 
         for key in kwargs.keys():
             setattr(self, key, kwargs[key])
@@ -1221,144 +897,112 @@ class J_To_Edi(object):
             print 'Could not find a .j file in {0}, check path.'.format(self.birrp_dir)
             self.j_fn = None
             
-    def _fill_header(self):
+    def _fill_site(self):
         """
         fill header data
         """
-        self.edi_obj.Header.lat = self.survey_config_dict['latitude']
-        self.edi_obj.Header.lon = self.survey_config_dict['longitude']
-        self.edi_obj.Header.acqdate = self.survey_config_dict['date']
-        self.edi_obj.Header.loc = self.survey_config_dict['location']
-        self.edi_obj.Header.dataid = self.survey_config_dict['station']
-        self.edi_obj.Header.elev = self.survey_config_dict['elevation']
-        self.edi_obj.Header.filedate = datetime.utcnow().strftime('%Y-%m-%d')
-        self.edi_obj.Header.acqby = self.survey_config_dict['network']
+        self.mt_obj.lat = self.survey_config_dict['latitude']
+        self.mt_obj.lon = self.survey_config_dict['longitude']
+        self.mt_obj.Site.start_date = self.survey_config_dict['date']
+        self.mt_obj.Site.survey = self.survey_config_dict['location']
+        self.mt_obj.station = self.survey_config_dict['station']
+        self.mt_obj.elev = self.survey_config_dict['elevation']
+        self.mt_obj.Site.acquired_by = self.survey_config_dict['network']
         
     def _fill_info(self):
         """
         fill information section
         """
-        self.edi_obj.Info.info_list = ['    edi file generated with MTpy',
-                                       '    Processing done with BIRRP 5.3.2',
-                                       '    Z_units = [mV/km]/[nT]']
-        self.edi_obj.Info.info_list.append('***Station Parameters***')
-        for key in sorted(self.survey_config_dict.keys()):
-            self.edi_obj.Info.info_list.append('    {0}: {1}'.format(key.lower(), 
-                                               self.survey_config_dict[key]))
-        self.edi_obj.Info.info_list.append('\n***BIRRP Parameters***')
+        self.mt_obj.Notes.info_dict = {}
+
         for key in sorted(self.birrp_dict.keys()):
-            self.edi_obj.Info.info_list.append('    {0}: {1}'.format(key.lower(),
-                                               self.birrp_dict[key]))
+            setattr(self.mt_obj.Processing, 'birrp_'+key, self.birrp_dict[key])
+
             
-    def _fill_define_meas(self):
+    def _fill_field_notes(self):
         """
         get define measurement blocks
         """
-        
-        # fill in define measurement
-        self.edi_obj.Define_measurement.reflat = self.survey_config_dict['latitude'] 
-        self.edi_obj.Define_measurement.reflon = self.survey_config_dict['longitude'] 
-        self.edi_obj.Define_measurement.refelev = self.survey_config_dict['elevation']
 
         # --> hx        
-        self.edi_obj.Define_measurement.meas_hx = mtedi.HMeasurement()
-        self.edi_obj.Define_measurement.meas_hx.id = 1
-        self.edi_obj.Define_measurement.meas_hx.chtype = 'hx'
-        self.edi_obj.Define_measurement.meas_hx.x = 0
-        self.edi_obj.Define_measurement.meas_hx.y = 0
-        self.edi_obj.Define_measurement.meas_hx.azm = float(self.survey_config_dict['b_xaxis_azimuth'])
-        self.edi_obj.Define_measurement.meas_hx.acqchan = self.survey_config_dict['hx']
+        self.mt_obj.FieldNotes.Magnetometer_hx.id = 1
+        self.mt_obj.FieldNotes.Magnetometer_hx.chtype = 'hx'
+        self.mt_obj.FieldNotes.Magnetometer_hx.x = 0
+        self.mt_obj.FieldNotes.Magnetometer_hx.y = 0
+        self.mt_obj.FieldNotes.Magnetometer_hx.azm = float(self.survey_config_dict['b_xaxis_azimuth'])
+        self.mt_obj.FieldNotes.Magnetometer_hx.acqchan = self.survey_config_dict['hx']
         
         
         #--> hy
-        self.edi_obj.Define_measurement.meas_hy = mtedi.HMeasurement()
-        self.edi_obj.Define_measurement.meas_hy.id = 2
-        self.edi_obj.Define_measurement.meas_hy.chtype = 'hy'
-        self.edi_obj.Define_measurement.meas_hy.x = 0
-        self.edi_obj.Define_measurement.meas_hy.y = 0
-        self.edi_obj.Define_measurement.meas_hy.azm = float(self.survey_config_dict['b_yaxis_azimuth']) 
-        self.edi_obj.Define_measurement.meas_hy.acqchan = self.survey_config_dict['hy']
+        self.mt_obj.FieldNotes.Magnetometer_hy.id = 2
+        self.mt_obj.FieldNotes.Magnetometer_hy.chtype = 'hy'
+        self.mt_obj.FieldNotes.Magnetometer_hy.x = 0
+        self.mt_obj.FieldNotes.Magnetometer_hy.y = 0
+        self.mt_obj.FieldNotes.Magnetometer_hy.azm = float(self.survey_config_dict['b_yaxis_azimuth']) 
+        self.mt_obj.FieldNotes.Magnetometer_hy.acqchan = self.survey_config_dict['hy']
         
         ch_count = 2
         #--> hz
         try:
             int(self.survey_config_dict['hz'])
-            self.edi_obj.Define_measurement.meas_hz = mtedi.HMeasurement()
-            self.edi_obj.Define_measurement.meas_hz.id = 3
-            self.edi_obj.Define_measurement.meas_hz.chtype = 'hz'
-            self.edi_obj.Define_measurement.meas_hz.x = 0
-            self.edi_obj.Define_measurement.meas_hz.y = 0
-            self.edi_obj.Define_measurement.meas_hz.azm = 90 
-            self.edi_obj.Define_measurement.meas_hz.acqchan = self.survey_config_dict['hz']
+            self.mt_obj.FieldNotes.Magnetometer_hz.id = 3
+            self.mt_obj.FieldNotes.Magnetometer_hz.chtype = 'hz'
+            self.mt_obj.FieldNotes.Magnetometer_hz.x = 0
+            self.mt_obj.FieldNotes.Magnetometer_hz.y = 0
+            self.mt_obj.FieldNotes.Magnetometer_hz.azm = 90 
+            self.mt_obj.FieldNotes.Magnetometer_hz.acqchan = self.survey_config_dict['hz']
             ch_count += 1
         except ValueError:
             pass
         
         #--> ex
-        self.edi_obj.Define_measurement.meas_ex = mtedi.EMeasurement()
-        self.edi_obj.Define_measurement.meas_ex.id = ch_count+1
-        self.edi_obj.Define_measurement.meas_ex.chtype = 'ex'
-        self.edi_obj.Define_measurement.meas_ex.x = 0
-        self.edi_obj.Define_measurement.meas_ex.y = 0
-        self.edi_obj.Define_measurement.meas_ex.x2 = float(self.survey_config_dict['e_xaxis_length'])
-        self.edi_obj.Define_measurement.meas_ex.y2 = 0
-        self.edi_obj.Define_measurement.meas_ex.azm = float(self.survey_config_dict['e_xaxis_azimuth'])
-        self.edi_obj.Define_measurement.meas_ex.acqchan = ch_count+1
+        self.mt_obj.FieldNotes.Electrode_ex.id = ch_count+1
+        self.mt_obj.FieldNotes.Electrode_ex.chtype = 'ex'
+        self.mt_obj.FieldNotes.Electrode_ex.x = 0
+        self.mt_obj.FieldNotes.Electrode_ex.y = 0
+        self.mt_obj.FieldNotes.Electrode_ex.x2 = float(self.survey_config_dict['e_xaxis_length'])
+        self.mt_obj.FieldNotes.Electrode_ex.y2 = 0
+        self.mt_obj.FieldNotes.Electrode_ex.azm = float(self.survey_config_dict['e_xaxis_azimuth'])
+        self.mt_obj.FieldNotes.Electrode_ex.acqchan = ch_count+1
         
         #--> ex
-        self.edi_obj.Define_measurement.meas_ey = mtedi.EMeasurement()
-        self.edi_obj.Define_measurement.meas_ey.id = ch_count+2
-        self.edi_obj.Define_measurement.meas_ey.chtype = 'ey'
-        self.edi_obj.Define_measurement.meas_ey.x = 0
-        self.edi_obj.Define_measurement.meas_ey.y = 0
-        self.edi_obj.Define_measurement.meas_ey.x2 = 0
-        self.edi_obj.Define_measurement.meas_ey.y2 = float(self.survey_config_dict['e_yaxis_length'])
-        self.edi_obj.Define_measurement.meas_ey.azm = float(self.survey_config_dict['e_yaxis_azimuth']) 
-        self.edi_obj.Define_measurement.meas_ey.acqchan = ch_count+2
+        self.mt_obj.FieldNotes.Electrode_ey.id = ch_count+2
+        self.mt_obj.FieldNotes.Electrode_ey.chtype = 'ey'
+        self.mt_obj.FieldNotes.Electrode_ey.x = 0
+        self.mt_obj.FieldNotes.Electrode_ey.y = 0
+        self.mt_obj.FieldNotes.Electrode_ey.x2 = 0
+        self.mt_obj.FieldNotes.Electrode_ey.y2 = float(self.survey_config_dict['e_yaxis_length'])
+        self.mt_obj.FieldNotes.Electrode_ey.azm = float(self.survey_config_dict['e_yaxis_azimuth']) 
+        self.mt_obj.FieldNotes.Electrode_ey.acqchan = ch_count+2
 
-        #--> rhx
-        ch_count += 2
-        try:
-            self.edi_obj.Define_measurement.meas_rhx = mtedi.HMeasurement()
-            self.edi_obj.Define_measurement.meas_rhx.id = ch_count+1
-            self.edi_obj.Define_measurement.meas_rhx.chtype = 'rhx'
-            self.edi_obj.Define_measurement.meas_rhx.x = 0
-            self.edi_obj.Define_measurement.meas_rhx.y = 0
-            self.edi_obj.Define_measurement.meas_rhx.azm = 0 
-            self.edi_obj.Define_measurement.meas_rhx.acqchan = self.survey_config_dict['rr_hx']
-            ch_count += 1
-        except KeyError:
-            pass
-        
-        #--> rhy
-        try:
-            self.edi_obj.Define_measurement.meas_rhy = mtedi.HMeasurement()
-            self.edi_obj.Define_measurement.meas_rhy.id = ch_count+1
-            self.edi_obj.Define_measurement.meas_rhy.chtype = 'rhy'
-            self.edi_obj.Define_measurement.meas_rhy.x = 0
-            self.edi_obj.Define_measurement.meas_rhy.y = 0
-            self.edi_obj.Define_measurement.meas_rhy.azm = 90 
-            self.edi_obj.Define_measurement.meas_rhy.acqchan = self.survey_config_dict['rr_hy']
-            ch_count += 1
-        except KeyError:
-            pass
-        
-        self.edi_obj.Define_measurement.maxchan = ch_count
-        
-    def _fill_data_sect(self):
-        """
-        fill in data sect block
-        """
-        self.edi_obj.Data_sect.hx = 1    
-        self.edi_obj.Data_sect.hy = 2    
-        self.edi_obj.Data_sect.hz = 3
-        self.edi_obj.Data_sect.ex = 4
-        self.edi_obj.Data_sect.ey = 5
-        self.edi_obj.Data_sect.rhx = 6
-        self.edi_obj.Data_sect.rhy = 7
-        self.edi_obj.Data_sect.nfreq = self.j_obj.Z.freq.size
-        self.edi_obj.Data_sect.sectid = self.station
-        self.edi_obj.Data_sect.maxblks = 999
+#        #--> rhx
+#        ch_count += 2
+#        try:
+#            self.mt_obj.Define_measurement.meas_rhx = mtedi.HMeasurement()
+#            self.mt_obj.Define_measurement.meas_rhx.id = ch_count+1
+#            self.mt_obj.Define_measurement.meas_rhx.chtype = 'rhx'
+#            self.mt_obj.Define_measurement.meas_rhx.x = 0
+#            self.mt_obj.Define_measurement.meas_rhx.y = 0
+#            self.mt_obj.Define_measurement.meas_rhx.azm = 0 
+#            self.mt_obj.Define_measurement.meas_rhx.acqchan = self.survey_config_dict['rr_hx']
+#            ch_count += 1
+#        except KeyError:
+#            pass
+#        
+#        #--> rhy
+#        try:
+#            self.mt_obj.Define_measurement.meas_rhy = mtedi.HMeasurement()
+#            self.mt_obj.Define_measurement.meas_rhy.id = ch_count+1
+#            self.mt_obj.Define_measurement.meas_rhy.chtype = 'rhy'
+#            self.mt_obj.Define_measurement.meas_rhy.x = 0
+#            self.mt_obj.Define_measurement.meas_rhy.y = 0
+#            self.mt_obj.Define_measurement.meas_rhy.azm = 90 
+#            self.mt_obj.Define_measurement.meas_rhy.acqchan = self.survey_config_dict['rr_hy']
+#            ch_count += 1
+#        except KeyError:
+#            pass
+#        
+#        self.mt_obj.Define_measurement.maxchan = ch_count
     
     def write_edi_file(self, station=None, birrp_dir=None, 
                        survey_config_fn=None, birrp_config_fn=None,
@@ -1471,12 +1115,12 @@ class J_To_Edi(object):
             self.birrp_config_fn = birrp_config_fn
         self.read_birrp_config_fn()  
         
-        # get .j file first
+        # get .j file first\
         self.get_j_file()
             
         # read in .j file
-        self.j_obj = JFile(self.j_fn)
-        self.j_obj.read_j_file()
+        self.mt_obj = mt.MT()
+        self.mt_obj.read_mt_file(self.j_fn)
         
         # get birrp parameters from .j file if birrp dictionary is None
         if self.birrp_dict is None:
@@ -1485,23 +1129,17 @@ class J_To_Edi(object):
                 if 'filnam' in b_key:
                     self.birrp_dict.pop(b_key)
                     
-        #--> make edi file
-        self.edi_obj = mtedi.Edi()
         
         # fill in different blocks of the edi file
-        self._fill_header()
+        self._fill_site()
         self._fill_info()
-        self._fill_define_meas()
-        self._fill_data_sect()                                                  
-
-        #--> Z and Tipper
-        self.edi_obj.Z = self.j_obj.Z
-        self.edi_obj.Tipper = self.j_obj.Tipper
+        self._fill_field_notes()                                                 
         
+        # write edi file
         edi_fn = mtfh.make_unique_filename(os.path.join(self.birrp_dir,
                                                         '{0}.edi'.format(self.station)))
                                                         
-        edi_fn = self.edi_obj.write_edi_file(new_edi_fn=edi_fn)
+        edi_fn = self.mt_obj._write_edi_file(new_edi_fn=edi_fn)
         
         return edi_fn
     

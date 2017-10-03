@@ -7,7 +7,7 @@ Created on Wed May 03 19:01:42 2017
 
 import sys
 from PyQt5 import QtWidgets, QtGui, QtCore
-from mtpy.core import mt_new as mt
+import mtpy.core.mt as mt
 
 # header label font
 label_font = QtGui.QFont()

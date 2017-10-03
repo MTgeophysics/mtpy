@@ -94,7 +94,9 @@ class MTArrows(object):
     """
     
     def __init__(self, **kwargs):
-        super(MTArrows, self).__init__()
+        self.as_super = super(MTArrows, self)
+        self.as_super.__init__(**kwargs)
+        
         self.arrow_size = 2.5
         self.arrow_head_length = .15*self.arrow_size
         self.arrow_head_width = .1*self.arrow_size
@@ -182,7 +184,9 @@ class MTEllipse(object):
     """
     
     def __init__(self, **kwargs):
-        super(MTEllipse, self).__init__()
+        self.as_super = super(MTEllipse, self)
+        self.as_super.__init__(**kwargs)
+        
         self.ellipse_size = 2
         self.ellipse_colorby = 'phimin'
         self.ellipse_range = (0, 90, 10)
@@ -236,13 +240,14 @@ class MTEllipse(object):
 #==============================================================================
 # Plot settings
 #==============================================================================
-class PlotSettings(object):
+class PlotSettings(MTArrows, MTEllipse):
     """
     Hold all the plot settings that one might need
     """               
     
     def __init__(self, **kwargs):
         super(PlotSettings, self).__init__()
+        
         # figure properties:
         self.fig_num = 1
         self.fig_dpi = 150
@@ -250,15 +255,16 @@ class PlotSettings(object):
         
         self.font_size = 7
         self.marker_size = 4
+        self.marker_lw = .75
         self.lw = 1
         self.plot_title = None
         
         # line styles:
-        self.xy_ls = None
-        self.yx_ls = None
-        self.det_ls = None 
-        self.skew_ls = None
-        self.strike_ls = None
+        self.xy_ls = ':'
+        self.yx_ls = ':'
+        self.det_ls = ':' 
+        self.skew_ls = ':'
+        self.strike_ls = ':'
         
         # marker styles:
         self.xy_marker = 's'

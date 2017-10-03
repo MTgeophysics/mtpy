@@ -21,13 +21,14 @@ import sys
 from cStringIO import StringIO
 
 import mtpy.utils.filehandling as mtfh
-import mtpy.processing.new_birrp as birrp
+import mtpy.processing.birrp as birrp
 import mtpy.utils.configfile as mtcfg
 import mtpy.utils.exceptions as mtex
 import mtpy.imaging.plotnresponses as plotnresponses
 import mtpy.imaging.plotresponse as plotresponse
 import mtpy.usgs.zen as zen
 import mtpy.core.edi as mtedi
+import mtpy.core.ts as mtts
 
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
@@ -756,6 +757,9 @@ class Z3D_to_edi(object):
         return_fn_arr = np.zeros(1, dtype=self._ts_fn_dtype)
         zd = zen.Zen3D(fn)
         zd.read_all_info()
+        
+        if dec != 1:
+            zd.read_z3d()
 
         #write mtpy mt file
         zd.write_ascii_mt_file(notch_dict=notch_dict, dec=dec)
@@ -766,7 +770,7 @@ class Z3D_to_edi(object):
         station = '{0}{1}'.format(station_label, station_num) 
         
         return_fn_arr['station'] = station
-        return_fn_arr['npts'] = zd.time_series_len
+        return_fn_arr['npts'] = zd.ts_obj.n_samples
         return_fn_arr['df'] = zd.df
         return_fn_arr['start_dt'] = zd.zen_schedule
         return_fn_arr['comp'] = zd.metadata.ch_cmp.lower()
@@ -895,6 +899,8 @@ class Z3D_to_edi(object):
         for fn in os.listdir(self.station_dir):
             fn = os.path.join(self.station_dir, fn)
             f_arr, count = self._make_ts_arr_entry(fn)
+            if f_arr is None:
+                continue
             fn_arr[fn_count] = f_arr
             fn_count += count
 
@@ -932,24 +938,29 @@ class Z3D_to_edi(object):
         """
         make ts_arr entries
         """
-
+        fn_ext = os.path.splitext(fn)[1][1:].lower()
+        if fn_ext not in ['ex', 'ey', 'hx', 'hy', 'hz']:
+            return None, 0
+            
         return_fn_arr = np.zeros(1, dtype=self._ts_fn_dtype)
         
+        ts_obj = mtts.MT_TS()
         try:
-            header_dict = mtfh.read_ts_header(fn)
+            ts_obj.read_ascii_header(fn)
+
             if remote == True:
-                if header_dict['channel'] not in ['hx', 'hy']:
+                if ts_obj.component.lower() not in ['hx', 'hy']:
                     return None, 0
                     
-            if header_dict['samplingrate'] in self.df_list:
+            if ts_obj.sampling_rate in self.df_list:
                 return_fn_arr['fn'] = fn
-                return_fn_arr['npts'] = header_dict['nsamples']
-                return_fn_arr['df'] = header_dict['samplingrate']
-                return_fn_arr['comp'] = header_dict['channel']
+                return_fn_arr['npts'] = ts_obj.n_samples
+                return_fn_arr['df'] = ts_obj.sampling_rate
+                return_fn_arr['comp'] = ts_obj.component.lower()
                     
-                start_sec = header_dict['t_min']
-                num_sec = float(header_dict['nsamples'])/\
-                                                   header_dict['samplingrate']
+                start_sec = ts_obj.start_time_epoch_sec
+                
+                num_sec = float(ts_obj.n_samples)/ts_obj.sampling_rate
                 return_fn_arr['start_dt'] = time.strftime(datetime_fmt, 
                                                 time.localtime(start_sec)) 
                 return_fn_arr['end_dt'] = time.strftime(datetime_fmt, 
@@ -958,10 +969,7 @@ class Z3D_to_edi(object):
                 count = 1
             else:
                 count = 0
-        except mtex.MTpyError_ts_data:
-            print '  Skipped {0}'.format(fn)
-            count = 0
-        except mtex.MTpyError_inputarguments:
+        except mtts.MT_TS_Error:
             print '  Skipped {0}'.format(fn)
             count = 0
             
@@ -1190,7 +1198,7 @@ class Z3D_to_edi(object):
         # fill array with data
         s_fn_birrp_arr['fn'][:] = fn_arr['fn']
         s_fn_birrp_arr['nread'][:] = fn_arr['npts'].min()
-        s_fn_birrp_arr['nskip'][:] = 1
+        s_fn_birrp_arr['nskip'][:] = 22
         s_fn_birrp_arr['start_dt'][:] = fn_arr['start_dt']
         s_fn_birrp_arr['comp'][:] = fn_arr['comp']
         
@@ -1249,7 +1257,7 @@ class Z3D_to_edi(object):
             
             # get station name
             ex_find = np.where(birrp_fn_arr[0]['comp']) == 'ex'
-            station = os.path.basename(birrp_fn_arr[0][ex_find]['fn'])[0:4]
+            station = os.path.splitext(os.path.basename(birrp_fn_arr[0][ex_find]['fn']))[0]
             
             # add parameters to birrp_params_dict 
             birrp_params_dict['deltat'] = -1*df_key

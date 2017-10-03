@@ -17,6 +17,7 @@ import pandas as pd
 import scipy.signal as signal
 
 import mtpy.utils.gis_tools as gis_tools
+import mtpy.processing.filter as mtfilter
 
 import matplotlib.pyplot as plt
 
@@ -127,6 +128,7 @@ class MT_TS(object):
         self.fn_ascii = None
         self.conversion = None
         self.gain = None
+        self._end_header_line = 0
         
         self._date_time_fmt = '%Y-%m-%d %H:%M:%S.%f'
         self._attr_list = ['station',
@@ -385,6 +387,42 @@ class MT_TS(object):
         
         return calendar.timegm(dt_time)+dt_struct.microsecond*1E-6
         
+    def apply_addaptive_notch_filter(self, notches=None, notch_radius=0.5,
+                                     freq_rad=0.5, rp=0.1):
+        """
+        apply notch filter to the data that finds the peak around each 
+        frequency.
+        
+        see mtpy.processing.filter.adaptive_notch_filter
+        
+        Arguments
+        -------------
+            **notch_dict** : dictionary
+                             dictionary of filter parameters.
+                             if an empty dictionary is input the filter looks
+                             for 60 Hz and harmonics to filter out.
+        """
+        if notches is None:        
+            notches = list(np.arange(60, 1860, 120))
+        
+        kwargs = {'df':self.sampling_rate,
+                  'notches':notches,
+                  'notchradius':notch_radius,
+                  'freqrad':freq_rad,
+                  'rp':rp}
+        
+        ts, filt_list = mtfilter.adaptive_notch_filter(self.ts.data, **kwargs)
+        
+        self.ts.data = ts
+        
+        print '\t Filtered frequency with bandstop:'
+        for ff in filt_list:
+            try:
+                print '\t\t{0:>6.5g} Hz  {1:>6.2f} db'.format(np.nan_to_num(ff[0]),
+                                                             np.nan_to_num(ff[1]))
+            except ValueError:
+                pass
+        
     # decimate data
     def decimate(self, dec_factor=1):
         """
@@ -408,6 +446,15 @@ class MT_TS(object):
             self.ts = signal.decimate(self.ts.data, dec_factor, n=8)
             self.sampling_rate /= float(dec_factor)
             
+    def low_pass_filter(self, low_pass_freq=15, cutoff_freq=55):
+        """
+        low pass the data
+        """
+        
+        self.ts = mtfilter.low_pass(self.ts.data, 
+                                    low_pass_freq,
+                                    cutoff_freq,
+                                    self.sampling_rate)
     
     ###------------------------------------------------------------------
     ### read and write file types
@@ -534,13 +581,15 @@ class MT_TS(object):
                     except AttributeError:
                         if key not in ['n_samples', 'start_time_epoch_sec']:
                             print 'Could not set {0} to {1}'.format(key, value)
-                # read old format of time series
+                # skip the header lines
+                elif line.find('***') > 0:
+                    pass
                 else:
                     line_list = line[1:].strip().split()
                     if len(line_list) == 9:
                         print 'Reading old MT TS format'
                         self.station = line_list[0]
-                        self.component = line_list[1]
+                        self.component = line_list[1].lower()
                         self.sampling_rate = float(line_list[2])
                         self.start_time_epoch_sec = float(line_list[3])
                         # skip setting number of samples
@@ -550,17 +599,20 @@ class MT_TS(object):
                         self.elev = float(line_list[8])
                 count +=1
                 line = fid.readline()
-        return count
+        self._end_header_line = count
 
     def read_ascii(self, fn_ascii):
         """
         Read in an ascii
         """
         
-        count = self.read_ascii_header(fn_ascii)
+        self.read_ascii_header(fn_ascii)
         
-        self.ts = pd.read_csv(self.fn_ascii, sep='\n', skiprows=count,
-                              memory_map=True, names=['data'])
+        self.ts = pd.read_csv(self.fn_ascii, 
+                              sep='\n', 
+                              skiprows=self._end_header_line,
+                              memory_map=True,
+                              names=['data'])
         
         print 'Read in {0}'.format(self.fn_ascii)
         

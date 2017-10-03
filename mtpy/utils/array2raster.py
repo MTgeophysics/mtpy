@@ -132,22 +132,24 @@ class ModEM_to_Raster(object):
             self.pad_east = pad_east
             
         if self.pad_east is None:
-            self.pad_east = np.where(model_obj.nodes_east[0:10] > 
+            self.pad_east = np.where(model_obj.nodes_east[0:25] > 
                                      self.cell_size_east*1.1)[0][-1]
         if pad_north is not None:
             self.pad_north = pad_north
         if self.pad_north is None:
-            self.pad_north = np.where(model_obj.nodes_north[0:10] > 
+            self.pad_north = np.where(model_obj.nodes_north[0:25] > 
                                     self.cell_size_north*1.1)[0][-1]
         
         print 'Pad north = {0}'.format(self.pad_north)    
         print 'Pad east  = {0}'.format(self.pad_east) 
         
+        
+        
         new_east = np.arange(model_obj.grid_east[self.pad_east],
-                             model_obj.grid_east[-self.pad_east-1],
+                             model_obj.grid_east[-self.pad_east-2],
                              self.cell_size_east)
         new_north = np.arange(model_obj.grid_north[self.pad_north],
-                             model_obj.grid_north[-self.pad_north-1],
+                             model_obj.grid_north[-self.pad_north-2],
                              self.cell_size_north)
             
         # needs to be -1 because the grid is n+1 as it is the edges of the
@@ -155,11 +157,13 @@ class ModEM_to_Raster(object):
         model_n, model_e = np.broadcast_arrays(model_obj.grid_north[:-1, None], 
                                                model_obj.grid_east[None, :-1])
 
-                                             
-        new_res_arr = np.zeros((new_north.shape[0],
-                                new_east.shape[0],
-                                model_obj.grid_z.shape[0]))
+          
+                                          
+        new_res_arr = np.zeros((new_north.size,
+                                new_east.size,
+                                model_obj.nodes_z.size))
                                 
+        print new_east.shape, new_north.shape, model_n.shape, model_e.shape, new_res_arr.shape, model_obj.res_model.shape
         for z_index in range(model_obj.grid_z.shape[0]-1):
             res = model_obj.res_model[:, :, z_index]
             new_res_arr[:, :, z_index] = interpolate.griddata(
@@ -339,7 +343,7 @@ class WS3D_to_Raster(object):
                          self.lower_left_corner, 
                          self.cell_size_east, 
                          self.cell_size_north, 
-                         np.log10(self.res_array[:,:,ii]),
+                         np.log10(self.res_array[:, :, ii]),
                          projection=self.projection,
                          rotation_angle=self.rotation_angle)            
         

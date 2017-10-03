@@ -172,11 +172,11 @@ class PTShapeFile(object):
                         east, north, elev = utm_point
 
                     pt_tuple = (mt_obj.station, east, north,
-                                mt_obj.pt.phimin[0][p_index],
-                                mt_obj.pt.phimax[0][p_index],
-                                mt_obj.pt.azimuth[0][p_index],
-                                mt_obj.pt.beta[0][p_index],
-                                2*mt_obj.pt.beta[0][p_index])           
+                                mt_obj.pt.phimin[p_index],
+                                mt_obj.pt.phimax[p_index],
+                                mt_obj.pt.azimuth[p_index],
+                                mt_obj.pt.beta[p_index],
+                                2*mt_obj.pt.beta[p_index])           
                     self.pt_dict[plot_per].append(pt_tuple)
                 except IndexError:
                     pass
@@ -243,7 +243,7 @@ class PTShapeFile(object):
             layer.CreateField(field_normalized_skew)
             
             poly_list = []
-            phimax = self.pt_dict[plot_per]['phimax'].max()
+            phimax = min([self.pt_dict[plot_per]['phimax'].max(), 90])
             for pt_array in self.pt_dict[plot_per]:
                 
                 #need to make an ellipse first using the parametric equation
@@ -381,11 +381,11 @@ class PTShapeFile(object):
                     mpt = modem_resp_obj.mt_dict[key].pt
                 
                     pt_tuple = (mt_obj.station, east, north,
-                                mpt.phimin[0][p_index],
-                                mpt.phimax[0][p_index],
-                                mpt.azimuth[0][p_index],
-                                mpt.beta[0][p_index],
-                                2*mpt.beta[0][p_index])
+                                mpt.phimin[p_index],
+                                mpt.phimax[p_index],
+                                mpt.azimuth[p_index],
+                                mpt.beta[p_index],
+                                2*mpt.beta[p_index])
                 except KeyError:
                     pt_tuple = (mt_obj.station, east, north,
                                 0,
@@ -578,10 +578,10 @@ class PTShapeFile(object):
 #                                          abs(rpt.pt[p_index, 1, 0])**2+
 #                                          abs(rpt.pt[p_index, 1, 1])**2)
                     pt_tuple = (mt_obj.station, east, north,
-                                rpt.phimin[0][p_index],
-                                rpt.phimax[0][p_index],
-                                rpt.azimuth[0][p_index],
-                                rpt.beta[0][p_index],
+                                rpt.phimin[p_index],
+                                rpt.phimax[p_index],
+                                rpt.azimuth[p_index],
+                                rpt.beta[p_index],
                                 rpt_mean)
 #                                np.sqrt(abs(rpt.phimin[0][p_index]*
 #                                            rpt.phimax[0][p_index])))           

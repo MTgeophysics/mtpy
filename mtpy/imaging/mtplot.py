@@ -99,8 +99,6 @@ import mtpy.imaging.plotstrike as plotstrike
 import mtpy.imaging.plotstations as plotstations
 import mtpy.imaging.plotresidualptmaps as plotresidualptmaps
 import mtpy.imaging.plotresidualptps as plotresidualptps
-reload(plotpt)
-reload(plotptmaps)
 
 #==============================================================================
 
