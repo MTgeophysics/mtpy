@@ -128,4 +128,5 @@ target/
 
 # jupyther notebooks
 .ipynb_checkpoints
-*.png
+#*.png
+tests/result_images/
