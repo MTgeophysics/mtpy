@@ -674,9 +674,9 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                     self.res_limits = (10 ** (np.floor(
                         np.log10(min([rp.resxy.min(),
                                       rp.resyx.min()])))),
-                        10 ** (np.ceil(
-                            np.log10(max([rp.resxy.max(),
-                                          rp.resyx.max()])))))
+                                       10 ** (np.ceil(
+                                           np.log10(max([rp.resxy.max(),
+                                                         rp.resyx.max()])))))
 
                 # create a grid to place the figures into, set to have 2 rows
                 # and 2 columns to put any of the 4 components.  Make the phase
@@ -849,7 +849,7 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                     plt.setp(axp.get_yticklabels(), visible=False)
 
                 if self.plot_tipper == 'n' and self.plot_skew == 'n' and \
-                        self.plot_strike == 'n':
+                                self.plot_strike == 'n':
                     axp.set_xlabel('Period (s)', fontdict)
 
                 axp.set_xscale('log')
@@ -1180,14 +1180,14 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
 
                     # get the properties to color the ellipses by
                     if self.ellipse_colorby == 'phiminang' or \
-                            self.ellipse_colorby == 'phimin':
+                                    self.ellipse_colorby == 'phimin':
                         colorarray = pt.phimin[0]
 
                     elif self.ellipse_colorby == 'phidet':
                         colorarray = np.sqrt(abs(pt.det[0])) * (180 / np.pi)
 
                     elif self.ellipse_colorby == 'skew' or \
-                            self.ellipse_colorby == 'skew_seg':
+                                    self.ellipse_colorby == 'skew_seg':
                         colorarray = pt.beta[0]
 
                     elif self.ellipse_colorby == 'ellipticity':
@@ -1201,9 +1201,9 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                     for kk, ff in enumerate(mt.period):
                         # make sure the ellipses will be visable
                         eheight = pt.phimin[0][kk] / pt.phimax[0][kk] * \
-                            self.ellipse_size
+                                  self.ellipse_size
                         ewidth = pt.phimax[0][kk] / pt.phimax[0][kk] * \
-                            self.ellipse_size
+                                 self.ellipse_size
 
                         # create an ellipse scaled by phimin and phimax and
                         # oriented along the azimuth which is calculated as
@@ -1516,8 +1516,8 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
             cst = [(.5 * cc / ns, 0, .5 * cc / ns) for cc in range(ns)]
 
             # make marker lists for the different components
-            mxy = ['s', 'D', 'x', '+', '*', '1', '3', '4'] * 5
-            myx = ['o', 'h', '8', 'p', 'H', 7, 4, 6] * 5
+            mxy = ['s', 'D', 'x', '+', '*', '1', '3', '4']
+            myx = ['o', 'h', '8', 'p', 'H', 7, 4, 6]
 
             legendlistxy = []
             legendlistyx = []
@@ -1644,7 +1644,7 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                     # res_xy
                     ebxyr = self.axrxy.errorbar(mt.period,
                                                 rp.resxy,
-                                                marker=mxy[ii],
+                                                marker=mxy[ii % len(mxy)],
                                                 ms=self.marker_size,
                                                 mfc='None',
                                                 mec=cxy[ii],
@@ -1658,7 +1658,7 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                     # res_yx
                     ebyxr = self.axryx.errorbar(mt.period,
                                                 rp.resyx,
-                                                marker=myx[ii],
+                                                marker=myx[ii % len(myx)],
                                                 ms=self.marker_size,
                                                 mfc='None',
                                                 mec=cyx[ii],
@@ -1673,7 +1673,7 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                     # phase_xy
                     self.axpxy.errorbar(mt.period,
                                         rp.phasexy,
-                                        marker=mxy[ii],
+                                        marker=mxy[ii % len(mxy)],
                                         ms=self.marker_size,
                                         mfc='None',
                                         mec=cxy[ii],
@@ -1688,7 +1688,7 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                     # phase_xy
                     self.axpyx.errorbar(mt.period,
                                         rp.phaseyx,
-                                        marker=myx[ii],
+                                        marker=myx[ii % len(myx)],
                                         ms=self.marker_size,
                                         mfc='None',
                                         mec=cyx[ii],
@@ -1714,7 +1714,7 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                         # res_xx
                         ebxxr = self.axr2xx.errorbar(mt.period,
                                                      rp.resxx,
-                                                     marker=mxy[ii],
+                                                     marker=mxy[ii % len(mxy)],
                                                      ms=self.marker_size,
                                                      mfc='None',
                                                      mec=cxy[ii],
@@ -1728,7 +1728,7 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                         # res_yy
                         ebyyr = self.axr2yy.errorbar(mt.period,
                                                      rp.resyy,
-                                                     marker=myx[ii],
+                                                     marker=myx[ii % len(myx)],
                                                      ms=self.marker_size,
                                                      mfc='None',
                                                      mec=cyx[ii],
@@ -1749,7 +1749,7 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                         # phase_xx
                         ebxxp = self.axp2xx.errorbar(mt.period,
                                                      rp.phasexx,
-                                                     marker=mxy[ii],
+                                                     marker=mxy[ii % len(mxy)],
                                                      ms=self.marker_size,
                                                      mfc='None',
                                                      mec=cxy[ii],
@@ -1763,7 +1763,7 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                         # phase_yy
                         ebyyp = self.axp2yy.errorbar(mt.period,
                                                      rp.phaseyy,
-                                                     marker=myx[ii],
+                                                     marker=myx[ii % len(myx)],
                                                      ms=self.marker_size,
                                                      mfc='None',
                                                      mec=cyx[ii],
@@ -1779,7 +1779,7 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                     # res_det
                     ebdetr = self.axrxy.errorbar(mt.period,
                                                  rp.resdet,
-                                                 marker=mxy[ii],
+                                                 marker=mxy[ii % len(mxy)],
                                                  ms=self.marker_size,
                                                  mfc='None',
                                                  mec=cdet[ii],
@@ -1793,7 +1793,7 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                     # phase_det
                     ebdetp = self.axpxy.errorbar(mt.period,
                                                  rp.phasedet,
-                                                 marker=mxy[ii],
+                                                 marker=mxy[ii % len(mxy)],
                                                  ms=self.marker_size,
                                                  mfc='None',
                                                  mec=cdet[ii],
@@ -1869,7 +1869,7 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                         # plot strike with error bars
                         ps1 = self.axst.errorbar(mt.period,
                                                  s1,
-                                                 marker=mxy[ii],
+                                                 marker=mxy[ii % len(mxy)],
                                                  ms=self.marker_size,
                                                  mfc=cst[ii],
                                                  mec=cst[ii],
@@ -1894,7 +1894,7 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                         # plot strike with error bars
                         ps2 = self.axst.errorbar(mt.period,
                                                  s2,
-                                                 marker=myx[ii],
+                                                 marker=myx[ii % len(myx)],
                                                  ms=self.marker_size,
                                                  mfc=cxy[ii],
                                                  mec=cxy[ii],
@@ -1919,7 +1919,7 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                         # plot strike with error bars
                         ps3 = self.axst.errorbar(mt.period,
                                                  s3,
-                                                 marker=mxy[ii],
+                                                 marker=mxy[ii % len(mxy)],
                                                  ms=self.marker_size,
                                                  mfc=ctipr[ii],
                                                  mec=ctipr[ii],
@@ -1940,7 +1940,7 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
 
                     ps4 = self.axsk.errorbar(mt.period,
                                              sk,
-                                             marker=mxy[ii],
+                                             marker=mxy[ii % len(mxy)],
                                              ms=self.marker_size,
                                              mfc=cxy[ii],
                                              mec=cxy[ii],
@@ -1971,14 +1971,14 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
 
                     # get the properties to color the ellipses by
                     if self.ellipse_colorby == 'phiminang' or \
-                            self.ellipse_colorby == 'phimin':
+                                    self.ellipse_colorby == 'phimin':
                         colorarray = pt.phimin[0]
 
                     elif self.ellipse_colorby == 'phidet':
                         colorarray = np.sqrt(abs(pt.det[0])) * (180 / np.pi)
 
                     elif self.ellipse_colorby == 'skew' or \
-                            self.ellipse_colorby == 'skew_seg':
+                                    self.ellipse_colorby == 'skew_seg':
                         colorarray = pt.beta[0]
 
                     elif self.ellipse_colorby == 'ellipticity':
@@ -1992,9 +1992,9 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                     for kk, ff in enumerate(mt.period):
                         # make sure the ellipses will be visable
                         eheight = pt.phimin[0][kk] / pt.phimax[0][kk] * \
-                            self.ellipse_size
+                                  self.ellipse_size
                         ewidth = pt.phimax[0][kk] / pt.phimax[0][kk] * \
-                            self.ellipse_size
+                                 self.ellipse_size
 
                         # create an ellipse scaled by phimin and phimax and oriented
                         # along the azimuth which is calculated as clockwise but needs
