@@ -11,6 +11,7 @@
 
 import abc
 import inspect
+import traceback
 
 import matplotlib.pyplot as plt
 from PyQt4 import QtGui, QtCore
@@ -158,9 +159,9 @@ class VisualizationBase(QtCore.QThread):
         except Exception as e:
             frm = inspect.trace()[-1]
             mod = inspect.getmodule(frm[0])
-            self.plotting_error.emit("{}: {}".format(mod.__name__, e.message))
+            self.plotting_error.emit("{}: {}".format(mod.__name__, e.message), traceback.format_exc())
 
-    plotting_error = pyqtSignal(str)
+    plotting_error = pyqtSignal(str, str)
     plotting_completed = pyqtSignal(Figure)
 
     def get_fig(self):

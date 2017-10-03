@@ -112,10 +112,17 @@ class PlotOption(QtGui.QWidget):
         self.ui.pushButton_cancel.setHidden(not self.ui.pushButton_cancel.isHidden())
         self.ui.pushButton_plot.setHidden(not self.ui.pushButton_plot.isHidden())
 
-    def _plotting_error(self, msg):
-        QtGui.QMessageBox.critical(self,
-                                   'Plotting Error', msg,
-                                   QtGui.QMessageBox.Close)
+    def _plotting_error(self, msg, trace):
+        msg_box = QtGui.QMessageBox(self)
+        msg_box.setIcon(QtGui.QMessageBox.Critical)
+        msg_box.setText('Plotting Error')
+        msg_box.setInformativeText(msg)
+        msg_box.setDetailedText(trace)
+        msg_box.setStandardButtons(QtGui.QMessageBox.Close)
+        msg_box.exec_()
+        # QtGui.QMessageBox.critical(self,
+        #                            'Plotting Error', msg,
+        #                            QtGui.QMessageBox.Close)
 
     def _show_plot(self):
         fig = self._current_plot.get_fig()

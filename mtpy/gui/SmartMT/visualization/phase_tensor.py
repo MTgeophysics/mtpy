@@ -104,13 +104,14 @@ class PhaseTensorMap(VisualizationBase):
         # set up ui
         self._scale_ui = Scale(self._parameter_ui)
         self._frequency_ui = FrequencySelect(self._parameter_ui,
-                                             show_frequency=False,
+                                             show_frequency=True,
+                                             show_period=False,
                                              allow_range_select=False,
                                              select_multiple=False)
-        self._scale_ui.ui.comboBox_time.currentIndexChanged.connect(
-            lambda index: self._frequency_ui.show_period() if index == 0
-            else self._frequency_ui.show_frequency()
-        )
+        # self._scale_ui.ui.comboBox_time.currentIndexChanged.connect(
+        #     lambda index: self._frequency_ui.show_period() if index == 0
+        #     else self._frequency_ui.show_frequency()
+        # )
         self._parameter_ui.add_parameter_groupbox(self._scale_ui)
         self._parameter_ui.add_parameter_groupbox(self._frequency_ui)
 
