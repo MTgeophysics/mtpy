@@ -148,9 +148,9 @@ class ImageCompare(object):
                 )
             )
 
-    def _print_image_base64(self, image_file):
-        with open(image_file, "rb") as image_file:
+    def _print_image_base64(self, image_file_name):
+        with open(image_file_name, "rb") as image_file:
             image_data = image_file.read()
             print("<img src=\"data:image/{};base64,{}\" style=\"display:block; max-width:800px; width: auto; height: auto;\" />".format(
-                os.path.splitext(image_file)[1].strip(" ."),
+                os.path.splitext(image_file_name)[1].strip(" ."),
                 image_data.encode("base64")))
