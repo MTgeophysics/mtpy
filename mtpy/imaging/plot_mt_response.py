@@ -390,9 +390,9 @@ class PlotMTResponse(object):
         self.fig_size = None
         
         self.font_size = 7
-        self.marker_size = 4
+        self.marker_size = 7
         self.marker_lw = .75
-        self.lw = 1
+        self.lw = .5
         self.plot_title = None
         
         # line styles:
