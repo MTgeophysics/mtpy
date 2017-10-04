@@ -12,8 +12,8 @@ import matplotlib.pyplot as plt
 
 from mtpy.utils.decorator import ImageCompare
 
+matplotlib.rcParams.update(matplotlib.rcParamsDefault)  # reset matplotlib params
 plt.ion()
-# plt.ioff()
 
 from mtpy.imaging.penetration import ZComponentError
 from mtpy.imaging.penetration_depth1d import plot_edi_dir
@@ -23,7 +23,6 @@ from mtpy.imaging.penetration_depth1d import plot_edi_file
 class TestPenetration_depth1d(TestCase):
     @classmethod
     def setUpClass(cls):
-        matplotlib.rcParams.update(matplotlib.rcParamsDefault)  # reset matplotlib params
         cls._temp_dir = "tests/temp"
         if not os.path.isdir(cls._temp_dir):
             os.mkdir(cls._temp_dir)

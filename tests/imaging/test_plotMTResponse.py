@@ -6,10 +6,13 @@ from unittest import TestCase
 import matplotlib
 import matplotlib.pyplot as plt
 
+matplotlib.rcParams.update(matplotlib.rcParamsDefault)  # reset matplotlib params
+plt.ion()
+
 from mtpy.imaging.plot_mt_response import PlotMTResponse
 from mtpy.utils.decorator import ImageCompare
 
-plt.ion()
+
 
 edi_paths = [
     "",
@@ -25,7 +28,6 @@ edi_paths = [
 class TestPlotMTResponse(TestCase):
     @classmethod
     def setUpClass(cls):
-        matplotlib.rcParams.update(matplotlib.rcParamsDefault)  # reset matplotlib params
         cls._temp_dir = "tests/temp"
         if not os.path.isdir(cls._temp_dir):
             os.mkdir(cls._temp_dir)
