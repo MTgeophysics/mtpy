@@ -9,11 +9,13 @@
     Author: YingzhiGou
     Date: 20/06/2017
 """
+from __future__ import print_function
 import functools
 import inspect
 import os
 
 import matplotlib
+import sys
 
 
 class deprecated(object):
@@ -113,7 +115,7 @@ class ImageCompare(object):
                             # self._print_image_base64(baseline_image)
                             # print("Actual Image:")
                             # self._print_image_base64(test_image)
-                            self.print_image_testing_note()
+                            self.print_image_testing_note(file=sys.stderr)
                             pytest.fail(msg, pytrace=False)
                         else:
                             # clearup the image as they are the same with the baseline
@@ -121,7 +123,7 @@ class ImageCompare(object):
                             if not os.listdir(os.path.dirname(test_image)):
                                 os.rmdir(os.path.dirname(test_image))
                     else:
-                        self.print_image_testing_note()
+                        self.print_image_testing_note(file=sys.stderr)
                         pytest.skip("Image file not found for comparison test."
                                     "(This is expected for new tests.)\nGenerated Image: "
                                     "\n\t{test}".format(test=test_image))
@@ -159,13 +161,14 @@ class ImageCompare(object):
     def _print_image_base64(self, image_file_name):
         with open(image_file_name, "rb") as image_file:
             image_data = image_file.read()
-            print("<img src=\"data:image/{};base64,{}\" style=\"display:block; max-width:800px; width: auto; height: auto;\" />".format(
-                os.path.splitext(image_file_name)[1].strip(" ."),
-                image_data.encode("base64")))
+            print(
+                "<img src=\"data:image/{};base64,{}\" style=\"display:block; max-width:800px; width: auto; height: auto;\" />".format(
+                    os.path.splitext(image_file_name)[1].strip(" ."),
+                    image_data.encode("base64")))
 
     @staticmethod
-    def print_image_testing_note():
-        print("====================")
-        print("matplotlib Version: " + matplotlib.__version__)
-        print("NOTE: The test result may be different in different versions of matplotlib.")
-        print("====================")
+    def print_image_testing_note(file=sys.stdout):
+        print("====================", file=file)
+        print("matplotlib Version: " + matplotlib.__version__, file=file)
+        print("NOTE: The test result may be different in different versions of matplotlib.", file=file)
+        print("====================", file=file)
