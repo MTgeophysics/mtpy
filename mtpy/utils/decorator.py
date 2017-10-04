@@ -13,6 +13,8 @@ import functools
 import inspect
 import os
 
+import matplotlib
+
 
 class deprecated(object):
     def __init__(self, reason):
@@ -53,8 +55,12 @@ class deprecated(object):
 
 class ImageCompare(object):
     def __init__(self, *args, **kwargs):
-        self.baseline_dir = kwargs.pop('baseline_dir', 'tests/baseline_images')
-        self.result_dir = kwargs.pop('result_dir', 'tests/result_images')
+        self.baseline_dir = kwargs.pop(
+            'baseline_dir',
+            'tests/baseline_images/matplotlib_{ver}'.format(matplotlib.__version__.replace('.', '_')))
+        self.result_dir = kwargs.pop(
+            'result_dir',
+            'tests/result_images')
         self.filename = kwargs.pop('filename', None)
         self.extensions = kwargs.pop('extensions', ['png'])
         self.savefig_kwargs = kwargs.pop('savefig_kwargs', {'dpi': 80})
@@ -107,6 +113,7 @@ class ImageCompare(object):
                             # self._print_image_base64(baseline_image)
                             # print("Actual Image:")
                             # self._print_image_base64(test_image)
+                            self.print_image_testing_note()
                             pytest.fail(msg, pytrace=False)
                         else:
                             # clearup the image as they are the same with the baseline
@@ -154,3 +161,10 @@ class ImageCompare(object):
             print("<img src=\"data:image/{};base64,{}\" style=\"display:block; max-width:800px; width: auto; height: auto;\" />".format(
                 os.path.splitext(image_file_name)[1].strip(" ."),
                 image_data.encode("base64")))
+
+    @staticmethod
+    def print_image_testing_note():
+        print("====================")
+        print("matplotlib Version: " + matplotlib.__version__)
+        print("NOTE: The test result may be different in different versions of matplotlib.")
+        print("====================")
