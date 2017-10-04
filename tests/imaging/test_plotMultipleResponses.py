@@ -3,6 +3,7 @@ import os
 import unittest
 from unittest import TestCase
 
+import matplotlib
 import matplotlib.pyplot as plt
 
 from mtpy.imaging.plotnresponses import PlotMultipleResponses
@@ -24,6 +25,7 @@ edi_paths = [
 class TestPlotMultipleResponses(TestCase):
     @classmethod
     def setUpClass(cls):
+        matplotlib.rcParams.update(matplotlib.rcParamsDefault)  # reset matplotlib params
         cls._temp_dir = "tests/temp"
         if not os.path.isdir(cls._temp_dir):
             os.mkdir(cls._temp_dir)

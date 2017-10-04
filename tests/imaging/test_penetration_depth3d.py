@@ -2,6 +2,7 @@ import os
 from unittest import TestCase
 
 # configure matplotlib for testing
+import matplotlib
 import matplotlib.pyplot as plt
 
 from mtpy.utils.decorator import ImageCompare
@@ -14,6 +15,7 @@ from mtpy.imaging.penetration_depth3d import plot_latlon_depth_profile
 class TestPenetration_depth3d(TestCase):
     @classmethod
     def setUpClass(cls):
+        matplotlib.rcParams.update(matplotlib.rcParamsDefault)  # reset matplotlib params
         cls._temp_dir = "tests/temp"
         if not os.path.isdir(cls._temp_dir):
             os.mkdir(cls._temp_dir)

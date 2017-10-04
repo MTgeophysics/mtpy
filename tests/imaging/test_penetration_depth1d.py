@@ -7,6 +7,7 @@ import os.path
 from unittest import TestCase
 
 # matplotlib.use('Qt4Agg')  # comment out this line if you want to see the plots 1-by-1 on screen.
+import matplotlib
 import matplotlib.pyplot as plt
 
 from mtpy.utils.decorator import ImageCompare
@@ -22,6 +23,7 @@ from mtpy.imaging.penetration_depth1d import plot_edi_file
 class TestPenetration_depth1d(TestCase):
     @classmethod
     def setUpClass(cls):
+        matplotlib.rcParams.update(matplotlib.rcParamsDefault)  # reset matplotlib params
         cls._temp_dir = "tests/temp"
         if not os.path.isdir(cls._temp_dir):
             os.mkdir(cls._temp_dir)
