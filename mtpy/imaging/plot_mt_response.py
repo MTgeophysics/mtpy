@@ -390,7 +390,7 @@ class PlotMTResponse(object):
         self.fig_size = None
         
         self.font_size = 7
-        self.marker_size = 7
+        self.marker_size = 5
         self.marker_lw = .75
         self.lw = .5
         self.plot_title = None
@@ -663,7 +663,7 @@ class PlotMTResponse(object):
 
         #check the phase to see if any point are outside of [0:90]
         if self.phase_limits == None:
-            if min(self.Z.phase_xy) < 0 or min(self.Z.phase_yx_180) < 0:
+            if min(self.Z.phase_xy) < 0 or min(self.Z.phase_yx+180) < 0:
                 pymin = min([min(self.Z.phase_xy), min(self.Z.phase_yx)])
                 if pymin > 0:
                    pymin = 0
