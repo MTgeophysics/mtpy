@@ -1402,8 +1402,8 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
             path2savefile=save_fn
             self.fig.savefig(path2savefile, dpi=fig_dpi, format=file_format,
                              orientation=orientation, bbox_inches='tight')
-            plt.clf()
-            plt.close(self.fig)
+            # plt.clf()
+            # plt.close(self.fig)
 
         if close_plot == 'y':
             plt.clf()
