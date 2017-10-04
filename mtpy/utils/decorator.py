@@ -57,7 +57,7 @@ class ImageCompare(object):
     def __init__(self, *args, **kwargs):
         self.baseline_dir = kwargs.pop(
             'baseline_dir',
-            'tests/baseline_images/matplotlib_{ver}'.format(matplotlib.__version__.replace('.', '_')))
+            'tests/baseline_images/matplotlib_{ver}'.format(ver=matplotlib.__version__).replace('.', '_'))
         self.result_dir = kwargs.pop(
             'result_dir',
             'tests/result_images')
