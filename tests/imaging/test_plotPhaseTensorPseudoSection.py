@@ -4,11 +4,11 @@ import os
 import unittest
 from unittest import TestCase
 
+import matplotlib
 import matplotlib.pyplot as plt
 
-plt.ion()
-
 from mtpy.imaging.phase_tensor_pseudosection import PlotPhaseTensorPseudoSection
+from mtpy.utils.decorator import ImageCompare
 
 edi_paths = [
     "",
@@ -20,9 +20,12 @@ edi_paths = [
     "tests/data/edifiles2"
 ]
 
+
 class TestPlotPhaseTensorPseudoSection(TestCase):
     @classmethod
     def setUpClass(cls):
+        matplotlib.rcdefaults()  # reset rcparams to default
+        plt.ion()
         cls._temp_dir = "tests/temp"
         if not os.path.isdir(cls._temp_dir):
             os.mkdir(cls._temp_dir)
@@ -31,27 +34,36 @@ class TestPlotPhaseTensorPseudoSection(TestCase):
     def tearDownClass(cls):
         plt.close('all')
 
-    def setUp(self):
+    # def setUp(self):
+    #     plt.clf()
+
+    def tearDown(self):
+        plt.pause(1)
+        plt.close('all')
         plt.clf()
 
+    @ImageCompare(fig_size=(8, 8), savefig_kwargs={'dpi': 100})
     def test_plot_01(self):
         edi_path = edi_paths[1]
         self._plot(edi_path,
                    "%s.png" % inspect.currentframe().f_code.co_name)
 
     @unittest.skipUnless(os.path.isdir(edi_paths[2]), "data file not found")
+    @ImageCompare(fig_size=(5, 8), savefig_kwargs={'dpi': 100})
     def test_plot_02(self):
         edi_path = edi_paths[2]
         self._plot(edi_path,
-                       "%s.png" % inspect.currentframe().f_code.co_name)
+                   "%s.png" % inspect.currentframe().f_code.co_name)
 
     @unittest.skipUnless(os.path.isdir(edi_paths[3]), "data file not found")
+    @ImageCompare(fig_size=(8, 6), savefig_kwargs={'dpi': 100})
     def test_plot_03(self):
         edi_path = edi_paths[3]
         self._plot(edi_path,
                    "%s.png" % inspect.currentframe().f_code.co_name)
 
     @unittest.skipUnless(os.path.isdir(edi_paths[4]), "data file not found")
+    @ImageCompare(fig_size=(8, 6), savefig_kwargs={'dpi': 100})
     def test_plot_04(self):
         edi_path = edi_paths[4]
         self._plot(edi_path,
@@ -88,4 +100,5 @@ class TestPlotPhaseTensorPseudoSection(TestCase):
                                               dpi=300)
         ptpObj.plot()
         plt.pause(1)
-        ptpObj.save_figure2(save_fn=save_figure_path)
+        ptpObj.save_figure2(save_fn=save_figure_path, close_plot='n')
+        assert(os.path.isfile(save_figure_path))
