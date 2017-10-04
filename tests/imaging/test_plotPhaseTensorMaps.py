@@ -2,16 +2,14 @@ import glob
 import inspect
 import os.path
 import unittest
-from unittest import TestCase
 
 # configure matplotlib for testing
-import matplotlib
 import matplotlib.pyplot as plt
-import shutil
 
 from mtpy.imaging.penetration import load_edi_files
 from mtpy.imaging.phase_tensor_maps import PlotPhaseTensorMaps
 from mtpy.utils.decorator import ImageCompare
+from tests.imaging import ImageTestCase
 
 edi_paths = [
     "",
@@ -22,16 +20,10 @@ edi_paths = [
 ]
 
 
-class TestPlotPhaseTensorMaps(TestCase):
+class TestPlotPhaseTensorMaps(ImageTestCase):
     @classmethod
     def setUpClass(cls):
-        matplotlib.rcdefaults()  # reset the rcparams to default
-        plt.ion()
-        cls._temp_dir = "tests/temp/{}".format(cls.__name__.split('.')[-1])
-        if os.path.isdir(cls._temp_dir):
-            shutil.rmtree(cls._temp_dir)
-        os.mkdir(cls._temp_dir)
-
+        super(TestPlotPhaseTensorMaps, cls).setUpClass()
         # 1) Define plots params
         # parameters describing ellipses, differ for different map scales: deg, m, km
         # Try different size to find a suitable value for your case. as a
@@ -58,10 +50,6 @@ class TestPlotPhaseTensorMaps(TestCase):
         #                      'fontpad': 0.0025,
         #                      'xborderpad': 0.07,
         #                      'yborderpad': 0.015}
-
-    @classmethod
-    def tearDownClass(cls):
-        plt.close('all')
 
     def tearDown(self):
         plt.pause(1)

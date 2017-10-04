@@ -1,15 +1,13 @@
 import glob
 import inspect
+import os
 import unittest
-from unittest import TestCase
 
 # configure matplotlib for testing
 import matplotlib.pyplot as plt
 
-plt.ion()
-import os
-
 from mtpy.imaging.plotpseudosection import PlotResPhasePseudoSection
+from tests.imaging import ImageTestCase
 
 edi_paths = [
     "",
@@ -22,56 +20,85 @@ edi_paths = [
 ]
 
 
-class TestPlotResPhasePseudoSection(TestCase):
-    @classmethod
-    def setUpClass(cls):
-        cls._temp_dir = "tests/temp"
-        if not os.path.isdir(cls._temp_dir):
-            os.mkdir(cls._temp_dir)
+class TestPlotResPhasePseudoSection(ImageTestCase):
+    # def setUp(self):
+    #     plt.clf()
 
-    @classmethod
-    def tearDownClass(cls):
-        plt.close('all')
-
-    def setUp(self):
+    def tearDown(self):
+        plt.pause(1)
+        plt.close()
         plt.clf()
 
-    def test_plot_01(self):
+    @unittest.skipUnless(os.path.isdir(edi_paths[1]), "data file not found")
+    def test_plot_01_imshow(self):
         edi_path = edi_paths[1]
-        self._plot(edi_path, "%s.png" % inspect.currentframe().f_code.co_name)
+        self._plot_imshow(edi_path, "%s.png" % inspect.currentframe().f_code.co_name)
+
+    @unittest.skipUnless(os.path.isdir(edi_paths[1]), "data file not found")
+    def test_plot_01_pcolormesh(self):
+        edi_path = edi_paths[1]
+        self._plot_pcolormesh(edi_path, "%s.png" % inspect.currentframe().f_code.co_name)
 
     @unittest.skipUnless(os.path.isdir(edi_paths[2]), "data file not found")
-    def test_plot_02(self):
+    def test_plot_02_imshow(self):
         edi_path = edi_paths[2]
-        self._plot(edi_path,
-                   "%s.png" % inspect.currentframe().f_code.co_name)
+        self._plot_imshow(edi_path,
+                          "%s.png" % inspect.currentframe().f_code.co_name)
+
+    @unittest.skipUnless(os.path.isdir(edi_paths[2]), "data file not found")
+    def test_plot_02_pcolormesh(self):
+        edi_path = edi_paths[2]
+        self._plot_pcolormesh(edi_path,
+                              "%s.png" % inspect.currentframe().f_code.co_name)
 
     @unittest.skipUnless(os.path.isdir(edi_paths[3]), "data file not found")
-    def test_plot_03(self):
+    def test_plot_03_imshow(self):
         edi_path = edi_paths[3]
-        self._plot(edi_path,
-                   "%s.png" % inspect.currentframe().f_code.co_name)
+        self._plot_imshow(edi_path,
+                          "%s.png" % inspect.currentframe().f_code.co_name)
+
+    @unittest.skipUnless(os.path.isdir(edi_paths[3]), "data file not found")
+    def test_plot_03_pcolormesh(self):
+        edi_path = edi_paths[3]
+        self._plot_pcolormesh(edi_path,
+                              "%s.png" % inspect.currentframe().f_code.co_name)
 
     @unittest.skipUnless(os.path.isdir(edi_paths[4]), "data file not found")
-    def test_plot_04(self):
+    def test_plot_04_imshow(self):
         edi_path = edi_paths[4]
-        self._plot(edi_path,
-                   "%s.png" % inspect.currentframe().f_code.co_name)
+        self._plot_imshow(edi_path,
+                          "%s.png" % inspect.currentframe().f_code.co_name)
+
+    @unittest.skipUnless(os.path.isdir(edi_paths[4]), "data file not found")
+    def test_plot_04_pcolormesh(self):
+        edi_path = edi_paths[4]
+        self._plot_pcolormesh(edi_path,
+                          "%s.png" % inspect.currentframe().f_code.co_name)
 
     @unittest.skipUnless(os.path.isdir(edi_paths[5]), "data file not found")
-    def test_plot_05(self):
+    def test_plot_05_imshow(self):
         edi_path = edi_paths[5]
-        self._plot(edi_path,
-                   "%s.png" % inspect.currentframe().f_code.co_name)
+        self._plot_imshow(edi_path,
+                          "%s.png" % inspect.currentframe().f_code.co_name)
 
-    def _plot(self, edi_path, save_figure_path):
+    @unittest.skipUnless(os.path.isdir(edi_paths[5]), "data file not found")
+    def test_plot_05_pcolormesh(self):
+        edi_path = edi_paths[5]
+        self._plot_pcolormesh(edi_path,
+                          "%s.png" % inspect.currentframe().f_code.co_name)
+
+    def _plot_imshow(self, edi_path, save_figure_path):
         edi_file_list = glob.glob(os.path.join(edi_path, "*.edi"))
         save_figure_path = os.path.join(self._temp_dir, save_figure_path)
         pt_obj = PlotResPhasePseudoSection(fn_list=edi_file_list, plot_yn='n', plot_style='imshow')
         pt_obj.plot()
-        # pt_obj.save_plot(save_figure_path)
-        plt.pause(1)
+        pt_obj.save_plot(save_figure_path, close_plot='n')
+        assert(os.path.isfile(save_figure_path))
+
+    def _plot_pcolormesh(self, edi_path, save_figure_path):
+        edi_file_list = glob.glob(os.path.join(edi_path, "*.edi"))
+        save_figure_path = os.path.join(self._temp_dir, save_figure_path)
         pt_obj = PlotResPhasePseudoSection(fn_list=edi_file_list, plot_yn='n', plot_style='pcolormesh')
         pt_obj.plot()
-        # pt_obj.save_plot(save_figure_path)
-        plt.pause(1)
+        pt_obj.save_plot(save_figure_path, close_plot='n')
+        assert(os.path.isfile(save_figure_path))

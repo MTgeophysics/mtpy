@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import shutil
 
 from mtpy.imaging.plot_mt_response import PlotMTResponse
+from tests.imaging import reset_matplotlib, ImageTestCase
 
 edi_paths = [
     "",
@@ -20,20 +21,7 @@ edi_paths = [
 ]
 
 
-class TestPlotMTResponse(TestCase):
-    @classmethod
-    def setUpClass(cls):
-        matplotlib.rcdefaults()  # reset the rcparams to default
-        plt.ion()
-        cls._temp_dir = "tests/temp/{}".format(cls.__name__.split('.')[-1])
-        if os.path.isdir(cls._temp_dir):
-            shutil.rmtree(cls._temp_dir)
-        os.mkdir(cls._temp_dir)
-
-    @classmethod
-    def tearDownClass(cls):
-        plt.close('all')
-
+class TestPlotMTResponse(ImageTestCase):
     def setUp(self):
         plt.clf()
 

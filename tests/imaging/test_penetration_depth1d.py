@@ -4,33 +4,17 @@ $   cd u25656@PC /e/Githubz/mtpy2 (develop)
 $   nosetests tests/imaging/
 """
 import os.path
-from unittest import TestCase
 
-import matplotlib
 import matplotlib.pyplot as plt
-import shutil
-
-from mtpy.utils.decorator import ImageCompare
 
 from mtpy.imaging.penetration import ZComponentError
 from mtpy.imaging.penetration_depth1d import plot_edi_dir
 from mtpy.imaging.penetration_depth1d import plot_edi_file
+from mtpy.utils.decorator import ImageCompare
+from tests.imaging import ImageTestCase
 
 
-class TestPenetration_depth1d(TestCase):
-    @classmethod
-    def setUpClass(cls):
-        matplotlib.rcdefaults()  # reset the rcparams to default
-        plt.ion()
-        cls._temp_dir = "tests/temp/{}".format(cls.__name__.split('.')[-1])
-        if os.path.isdir(cls._temp_dir):
-            shutil.rmtree(cls._temp_dir)
-        os.mkdir(cls._temp_dir)
-
-    @classmethod
-    def tearDownClass(cls):
-        plt.close('all')
-
+class TestPenetration_depth1d(ImageTestCase):
     # def setUp(self):
     #     plt.clf()
 

@@ -1,32 +1,15 @@
-import os
-from unittest import TestCase
-
 # configure matplotlib for testing
-import matplotlib
 import matplotlib.pyplot as plt
-import shutil
-
-from mtpy.utils.decorator import ImageCompare
 
 from mtpy.imaging.penetration_depth3d import plot_latlon_depth_profile
+from mtpy.utils.decorator import ImageCompare
+from tests.imaging import ImageTestCase
 
 
-class TestPenetration_depth3d(TestCase):
+class TestPenetration_depth3d(ImageTestCase):
     @classmethod
     def setUpClass(cls):
-        matplotlib.rcdefaults()  # reset the rcparams to default
-        plt.ion()
-        cls._temp_dir = "tests/temp/{}".format(cls.__name__.split('.')[-1])
-        if os.path.isdir(cls._temp_dir):
-            shutil.rmtree(cls._temp_dir)
-        os.mkdir(cls._temp_dir)
-
-    # def test_plot_many_periods(self):
-    #     plot_many_periods(self._edifiles_small)
-
-    @classmethod
-    def tearDownClass(cls):
-        plt.close('all')
+        cls._edifiles_small = "tests/data/edifiles"
 
     def tearDown(self):
         plt.pause(1)

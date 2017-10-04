@@ -1,25 +1,16 @@
-import os.path
-from unittest import TestCase
-
 # configure matplotlib for testing
-import matplotlib
 import matplotlib.pyplot as plt
-import shutil
-
-from mtpy.utils.decorator import ImageCompare
 
 from mtpy.imaging.penetration_depth2d import plot2Dprofile
+from mtpy.utils.decorator import ImageCompare
+from tests.imaging import ImageTestCase
 
 
-class TestPenetration_depth2d(TestCase):
+class TestPenetration_depth2d(ImageTestCase):
     @classmethod
     def setUpClass(cls):
-        matplotlib.rcdefaults()  # reset the rcparams to default
-        plt.ion()
-        cls._temp_dir = "tests/temp/{}".format(cls.__name__.split('.')[-1])
-        if os.path.isdir(cls._temp_dir):
-            shutil.rmtree(cls._temp_dir)
-        os.mkdir(cls._temp_dir)
+        super(TestPenetration_depth2d, cls).setUpClass()
+
         cls._edifiles = "tests/data/edifiles"
         cls._period_index_list = [0, 1, 10, 20, 30, 40, 50, 59]
 
