@@ -38,7 +38,6 @@ class TestPenetration_depth1d(TestCase):
         # plt.clf()
         # pass
 
-    @ImageCompare(fig_size=(8, 6))
     def test_plot_edi_dir(self):
         """
         testing plotting all edi files in a given dir
