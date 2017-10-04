@@ -1,18 +1,11 @@
 #!/usr/bin/env python
 
 """
-=============
-z module
-=============
+.. module:: Z
+   :synopsis: Deal with MT responses Z and Tipper
 
-Classes
----------
-    * **Z** : deals with impedance tesnsor.
-    * **Tipper** : deals with Tipper matrix.
-    * **ResPhase** : container for resistivity and phase
-
-LK, JP 2013
-Updated 2017 JP
+.. moduleauthor:: Jared Peacock <jpeacock@usgs.gov> 
+.. moduleauthor:: Lars Krieger
 """
 
 #=================================================================

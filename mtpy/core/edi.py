@@ -1,18 +1,12 @@
 # -*- coding: utf-8 -*-
 """
-===========
-EDI Class
-===========
+.. module:: EDI
+   :synopsis: Deal with EDI files.  The Edi class can read and write an .edi
+             file, the 'standard format' of magnetotellurics.  Each section
+             of the .edi file is given its own class, so the elements of each 
+             section are attributes for easy access. 
 
-The Edi class can read and write an .edi file, the 'standard format' of
-magnetotellurics.  Each section of the .edi file is given its own class,
-so the elements of each section are attributes for easy access.
-
-
-Created on Tue Dec 22 16:03:31 2015
-Updated 2017
-
-@author: jpeacock
+.. moduleauthor:: Jared Peacock <jpeacock@usgs.gov>
 """
 
 #==============================================================================

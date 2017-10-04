@@ -1,15 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-===============
-MT
-===============
+.. module:: MT
+   :synopsis: The main container for MT response functions. 
 
-    * Basic MT-object containing the very basic and necessary information for a
-      single MT station
-
-Created on Tue Jan 07 12:42:34 2014
-
-@author: jpeacock-pr
+.. moduleauthor:: Jared Peacock <jpeacock@usgs.gov>
 """
 
 #==============================================================================

@@ -1,14 +1,12 @@
 # -*- coding: utf-8 -*-
 """
-========
-MT XML
-========
+.. module:: mt_xml
+   :synopsis: Deal with XML MT files 
 
-Container to read and write MT xml files
+.. moduleauthor:: Jared Peacock <jpeacock@usgs.gov>
 
-Created on Wed Jan 11 16:39:40 2017
-
-@author: jpeacock
+.. note:: This module is written to align with the tools written by
+          Anna Kelbert <akelbert@usgs.gov>
 """
 
 #==============================================================================
