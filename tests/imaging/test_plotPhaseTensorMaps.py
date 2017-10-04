@@ -5,11 +5,12 @@ import unittest
 from unittest import TestCase
 
 # configure matplotlib for testing
+import matplotlib
 import matplotlib.pyplot as plt
 
-plt.ion()
 from mtpy.imaging.penetration import load_edi_files
 from mtpy.imaging.phase_tensor_maps import PlotPhaseTensorMaps
+from mtpy.utils.decorator import ImageCompare
 
 edi_paths = [
     "",
@@ -23,6 +24,8 @@ edi_paths = [
 class TestPlotPhaseTensorMaps(TestCase):
     @classmethod
     def setUpClass(cls):
+        matplotlib.rcdefaults()  # reset rcparams to default
+        plt.ion()
         cls._temp_dir = "tests/temp"
         if not os.path.isdir(cls._temp_dir):
             os.mkdir(cls._temp_dir)
@@ -58,9 +61,12 @@ class TestPlotPhaseTensorMaps(TestCase):
     def tearDownClass(cls):
         plt.close('all')
 
-    def setUp(self):
+    def tearDown(self):
+        plt.pause(1)
+        plt.close('all')
         plt.clf()
 
+    @ImageCompare(fig_size=(7, 8), savefig_kwargs={'dpi': 100})
     def test_plot_01(self):
         edi_path = edi_paths[1]
         freq = 1
@@ -69,6 +75,7 @@ class TestPlotPhaseTensorMaps(TestCase):
                        "params_%s" % inspect.currentframe().f_code.co_name)
 
     @unittest.skipUnless(os.path.isdir(edi_paths[2]), "data file not found")
+    @ImageCompare(fig_size=(7, 8), savefig_kwargs={'dpi': 100})
     def test_plot_02(self):
         edi_path = edi_paths[2]
         freq = 10
@@ -77,6 +84,7 @@ class TestPlotPhaseTensorMaps(TestCase):
                        "params_%s" % inspect.currentframe().f_code.co_name)
 
     @unittest.skipUnless(os.path.isdir(edi_paths[3]), "data file not found")
+    @ImageCompare(fig_size=(8, 5), savefig_kwargs={'dpi': 150})
     def test_plot_03_01(self):
         edi_path = edi_paths[3]
         freq = 0.025
@@ -85,6 +93,7 @@ class TestPlotPhaseTensorMaps(TestCase):
                        "params_%s" % inspect.currentframe().f_code.co_name)
 
     @unittest.skipUnless(os.path.isdir(edi_paths[3]), "data file not found")
+    @ImageCompare(fig_size=(8, 7), savefig_kwargs={'dpi': 100})
     def test_plot_03_02(self):
         edi_path = edi_paths[3]
         freq = 0.01
@@ -93,6 +102,7 @@ class TestPlotPhaseTensorMaps(TestCase):
                        "params_%s" % inspect.currentframe().f_code.co_name)
 
     @unittest.skipUnless(os.path.isdir(edi_paths[3]), "data file not found")
+    @ImageCompare(fig_size=(8, 5), savefig_kwargs={'dpi': 150})
     def test_plot_03_03(self):
         edi_path = edi_paths[3]
         freq = 0.0625
@@ -101,6 +111,7 @@ class TestPlotPhaseTensorMaps(TestCase):
                        "params_%s" % inspect.currentframe().f_code.co_name)
 
     @unittest.skipUnless(os.path.isdir(edi_paths[3]), "data file not found")
+    @ImageCompare(fig_size=(8, 5), savefig_kwargs={'dpi': 150})
     def test_plot_03_04(self):
         edi_path = edi_paths[3]
         freq = 0.0005
@@ -109,6 +120,7 @@ class TestPlotPhaseTensorMaps(TestCase):
                        "params_%s" % inspect.currentframe().f_code.co_name)
 
     @unittest.skipUnless(os.path.isdir(edi_paths[3]), "data file not found")
+    @ImageCompare(fig_size=(7, 8), savefig_kwargs={'dpi': 100})
     def test_plot_04_01(self):
         edi_path = edi_paths[4]
         freq = 1
@@ -117,6 +129,7 @@ class TestPlotPhaseTensorMaps(TestCase):
                        "params_%s" % inspect.currentframe().f_code.co_name)
 
     @unittest.skipUnless(os.path.isdir(edi_paths[3]), "data file not found")
+    @unittest.expectedFailure
     def test_plot_04_02(self):
         """
         testing to use Z and tipper objects as input
@@ -147,9 +160,10 @@ class TestPlotPhaseTensorMaps(TestCase):
                                      # may distort figure
                                      save_fn=save_figure_path)
         path2figure = pt_obj.plot()
-        plt.pause(1)
         pt_obj.save_figure(save_figure_path)
+        assert(os.path.isfile(save_figure_path))
         pt_obj.export_params_to_file(save_path=save_param_path)
+        assert(os.path.isdir(save_param_path))
 
     def _plot_gen(self, edi_path, freq, save_figure_path=None, save_param_path=None):
         edi_file_list = glob.glob(os.path.join(edi_path, "*.edi"))
@@ -171,6 +185,7 @@ class TestPlotPhaseTensorMaps(TestCase):
                                      save_fn=save_figure_path)
         # 3) do the plot and save figure - if the param save_path provided
         path2figure = pt_obj.plot(show=True)
-        plt.pause(1)
-        pt_obj.save_figure(save_figure_path)
+        pt_obj.save_figure(save_figure_path, close_plot='n')
+        assert(os.path.isfile(save_figure_path))
         pt_obj.export_params_to_file(save_path=save_param_path)
+        assert(os.path.isdir(save_param_path))
