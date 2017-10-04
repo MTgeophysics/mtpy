@@ -89,9 +89,6 @@ class MT(object):
           and can write out EDI and XML formats.  Will be extending to j and
           Egberts Z format.
 
-
-    Methods
-    ------------
     ===================== =====================================================
     Methods               Description
     ===================== =====================================================
@@ -99,11 +96,9 @@ class MT(object):
     write_mt_file         write a MT file [ EDI | XML ]
     read_cfg_file         read a configuration file
     write_cfg_file        write a configuration file
-    remove_distortion     remove distortion from the data following
-                          Bibby et al. [2005]
+    remove_distortion     remove distortion  following Bibby et al. [2005]
     remove_static_shift   Shifts apparent resistivity curves up or down
-    interpolate           interpolates the impedance tensor and induction
-                          vectors onto a specified frequency array.
+    interpolate           interpolates Z and T onto specified frequency array.
     ===================== =====================================================
 
 
@@ -388,8 +383,8 @@ class MT(object):
         :type new_Tipper_obj: mtpy.core.z.Tipper
 
 
-        :returns mt_fn: full path to file
-        :rtype mt_fn: string
+        :returns: full path to file
+        :rtype: string
 
         :Example: ::
 
@@ -1536,14 +1531,12 @@ class MT(object):
                          highest frequency
         :type num_freq: int
 
-        :returns D: Distortion matrix
-        :rtype D: np.ndarray(2, 2, dtype=real)
+        :returns: Distortion matrix
+        :rtype: np.ndarray(2, 2, dtype=real)
 
-        :returns new_z_object: Z with distortion removed
-        :rtype new_z_object: mtpy.core.z.Z
+        :returns: Z with distortion removed
+        :rtype: mtpy.core.z.Z
 
-        Example
-        ----------
         :Remove distortion and write new .edi file: ::
 
             >>> import mtpy.core.mt as mt
@@ -1578,15 +1571,13 @@ class MT(object):
         :param ss_y: correction factor for y component
         :type ss_y: float
 
-        :returns new_Z_obj: new Z object with static shift removed
-        :rtype new_Z_obj: mtpy.core.z.Z
+        :returns: new Z object with static shift removed
+        :rtype: mtpy.core.z.Z
 
         .. note:: The factors are in resistivity scale, so the
                   entries of  the matrix "S" need to be given by their
                   square-roots!
 
-        Examples
-        ----------
         :Remove Static Shift: ::
 
             >>> import mtpy.core.mt as mt
@@ -1614,16 +1605,13 @@ class MT(object):
                                will occur.
         :type new_freq_array: np.ndarray
 
-        :returns new_z_object: a new impedance object with the corresponding
+        :returns: a new impedance object with the corresponding
                                frequencies and components.
-        :rtype new_z_object: mtpy.core.z.Z
+        :rtype: mtpy.core.z.Z
 
-        :returns new_tipper_object: a new tipper object with the corresponding
+        :returns: a new tipper object with the corresponding
                                     frequencies and components.
-        :rtype new_tipper_object: mtpy.core.z.Tipper
-
-        Examples
-        ----------
+        :rtype: mtpy.core.z.Tipper
 
         :Interpolate: ::
 
@@ -1747,8 +1735,6 @@ class MT(object):
         """
         Returns a mtpy.imaging.plotresponse.PlotResponse object
 
-        Examples
-        ------------
         :Plot Response: ::
 
             >>> mt_obj = mt.MT(edi_file)

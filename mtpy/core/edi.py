@@ -50,17 +50,11 @@ class Edi(object):
     
     Frequency and components are ordered from highest to lowest frequency.
 
-    Arguments
-    ---------------
+    :param edi_fn: full path to .edi file to be read in.
+                  *default* is None. If an .edi file is input, it is
+                  automatically read in and attributes of Edi are filled
+    :type edi_fn: string
 
-        :param edi_fn: full path to .edi file to be read in.
-                      *default* is None. If an .edi file is input, it is
-                      automatically read in and attributes of Edi are filled
-        :type edi_fn: string
-
-
-    Methods
-    ---------------
     ===================== =====================================================
     Methods               Description
     ===================== =====================================================
@@ -77,9 +71,6 @@ class Edi(object):
     _read_spectra         Reads in spectra data and converts it to impedance
                           and Tipper data.
     ===================== =====================================================
-
-    Attributes
-    ---------------
 
     ===================== ========================================== ==========
     Attributes            Description                                default
@@ -109,8 +100,6 @@ class Edi(object):
     _z_labels             labels for impedance blocks
     ===================== ========================================== ==========
 
-    Examples
-    ---------------------
     :Change Latitude: ::
 
         >>> import mtpy.core.edi as mtedi
@@ -161,17 +150,10 @@ class Edi(object):
             .. note:: Automatically detects if data is in spectra format.  All
                   data read in is converted to impedance and Tipper.
 
-        Arguments
-        -------------
 
-            :param edi_fn: full path to .edi file to be read in
-                           *default* is None
-            :type edi_fn: string
-
-
-
-        Examples
-        -------------
+        :param edi_fn: full path to .edi file to be read in
+                       *default* is None
+        :type edi_fn: string
 
         :Read edi: ::
 
@@ -541,22 +523,16 @@ class Edi(object):
         Write a new edi file from either an existing .edi file or from data
         input by the user into the attributes of Edi.
 
-        Arguments
-        -----------
 
-            :param new_edi_fn: full path to new edi file.
-                               *default* is None, which will write to the same
-                               file as the input .edi with as:
-                               r"/home/mt/mt01_1.edi"
-            :type new_edi_fn: string
+        :param new_edi_fn: full path to new edi file.
+                           *default* is None, which will write to the same
+                           file as the input .edi with as:
+                           r"/home/mt/mt01_1.edi"
+        :type new_edi_fn: string
 
-        Returns
-        ---------
-            :returns new_edi_fn: full path to new edi file
-            :rtype new_edi_fn: string
 
-        Examples
-        -----------
+        :returns: full path to new edi file
+        :rtype: string
 
         :Write EDI file: ::
 
@@ -671,8 +647,8 @@ class Edi(object):
         :param data_key: the component to write out
         :type data_key: string
 
-        :returns block_lines: list of lines to write to edi file
-        :rtype block_lines: list
+        :returns: list of lines to write to edi file
+        :rtype: list
         """
         if data_key.lower().find('z') >= 0 and \
                 data_key.lower() not in ['zrot', 'trot']:
@@ -804,16 +780,11 @@ class Header(object):
             PROGDATE=2002-04-22
             PROGVERS=WINGLINK EDI 1.0.22
 
-    Arguments
-    -------------
 
-        :param edi_fn: full path to .edi file to be read in.
-                       *default* is None. If an .edi file is input attributes
-                       of Header are filled.
-        :type edi_fn: string
-
-    Attributes
-    -------------
+    :param edi_fn: full path to .edi file to be read in.
+                   *default* is None. If an .edi file is input attributes
+                   of Header are filled.
+    :type edi_fn: string
 
     Many of the attributes are needed in the .edi file.  They are marked with
     a yes for 'In .edi'
@@ -843,7 +814,6 @@ class Header(object):
                    header block.                                    no
     ============== ======================================= ======== ===========
 
-    .. rubric:: footnotes
     .. [1] Internally everything is converted to decimal degrees.  Output is
           written as HH:MM:SS.ss so Winglink can read them in.
     .. [2] If you want to change what metadata is written into the .edi file
@@ -861,8 +831,6 @@ class Header(object):
                * progdate
                * progvers
 
-    Methods
-    -------------
 
     ====================== ====================================================
     Methods                Description
@@ -871,10 +839,6 @@ class Header(object):
     read_header            read in header information from header_lines
     write_header           write header lines, returns a list of lines to write
     ====================== ====================================================
-
-
-    Examples
-    --------------
 
     :Read Header: ::
 
@@ -979,15 +943,9 @@ class Header(object):
         read a header information from either edi file or a list of lines
         containing header information.
 
-        Arguments
-        -----------
-
-            :param header_list: should be read from an .edi file or input as
-                                ['key_01=value_01', 'key_02=value_02']
-            :type header_list: list
-
-        Examples
-        ----------
+        :param header_list: should be read from an .edi file or input as
+                            ['key_01=value_01', 'key_02=value_02']
+        :type header_list: list
 
         :Input header_list: ::
 
@@ -1048,24 +1006,21 @@ class Header(object):
         """
         Write header information to a list of lines.
 
-        Arguments
-        -------------
 
-            :param header_list: should be read from an .edi file or input as
-                                ['key_01=value_01', 'key_02=value_02']
-            :type header_list: list
+        :param header_list: should be read from an .edi file or input as
+                            ['key_01=value_01', 'key_02=value_02']
+        :type header_list: list
 
-        Returns
-        ---------------
 
-            :returns header_lines: list of lines containing header information
-                                   will be of the form
-                                   ['>HEAD\n',
-                                    '    key_01=value_01\n']
-                                    if None is input then reads from input .edi
-                                    file or uses attribute information to write
-                                    metadata.
-            :rtype header_lines: list
+        :returns header_lines: list of lines containing header information
+                               will be of the form::
+                                   
+                               ['>HEAD\n',
+                                '    key_01=value_01\n']
+                                if None is input then reads from input .edi
+                                file or uses attribute information to write
+                                metadata.
+                                
         """
 
         if header_list is not None:
@@ -1282,14 +1237,8 @@ class DefineMeasurement(object):
         >HMEAS ID=1006.001 CHTYPE=HX X=0.0 Y=0.0 Z=0.0 AZM=0.0
         >HMEAS ID=1007.001 CHTYPE=HY X=0.0 Y=0.0 Z=0.0 AZM=90.0
 
-    Arguments
-    -------------
-
-        :param edi_fn: full path to .edi file to read in.
-        :type edi_fn: string
-
-    Attributes
-    -------------
+    :param edi_fn: full path to .edi file to read in.
+    :type edi_fn: string
 
     ================= ==================================== ======== ===========
     Attributes        Description                          Default  In .edi
@@ -1310,7 +1259,6 @@ class DefineMeasurement(object):
                       section.
     ================= ==================================== ======== ===========
 
-    .. rubric:: footnotes
     .. [1] Each channel with have its own define measurement and depending on
            whether it is an E or H channel the metadata will be different.
            the #### correspond to the channel number.
@@ -1558,9 +1506,6 @@ class HMeasurement(object):
     """
     HMeasurement contains metadata for a magnetic field measurement
 
-    Attributes
-    ------------
-
     ====================== ====================================================
     Attributes             Description
     ====================== ====================================================
@@ -1571,9 +1516,6 @@ class HMeasurement(object):
     azm                    angle of sensor relative to north = 0
     acqchan                name of the channel acquired usually same as chtype
     ====================== ====================================================
-
-    Example
-    ------------
 
     :Fill Metadata: ::
 
@@ -1606,9 +1548,6 @@ class EMeasurement(object):
     """
     EMeasurement contains metadata for an electric field measurement
 
-    Attributes
-    ------------
-
     ====================== ====================================================
     Attributes             Description
     ====================== ====================================================
@@ -1624,9 +1563,6 @@ class EMeasurement(object):
                            other electrode of the dipole
     acqchan                name of the channel acquired usually same as chtype
     ====================== ====================================================
-
-    Example
-    ------------
 
     :Fill Metadata: ::
 
@@ -1674,13 +1610,10 @@ class DataSection(object):
             nchan=None
             maxblks=None
 
-    Arguments
-    -------------
-        :param edi_fn: full path to .edi file to read in.
-        :type edi_fn: string
 
-    Attributes
-    -------------
+    :param edi_fn: full path to .edi file to read in.
+    :type edi_fn: string
+
 
     ================= ==================================== ======== ===========
     Attributes        Description                          Default  In .edi
@@ -1697,8 +1630,7 @@ class DataSection(object):
     nchan             number of channels                   None     yes
     _kw_list          list of key words to put in metadata [1]_     no
     ================= ==================================== ======== ===========
-
-    .. rubric:: Footnotes
+    
     .. [1] Changes these values to change what is written to edi file
     """
 
@@ -1874,8 +1806,8 @@ def _validate_edi_lines(edi_lines):
     :param edi_lines: list of edi lines
     :type edi_lines: list
 
-    :returns edi_lines: list of edi lines
-    :rtype edi_lines: list
+    :returns: list of edi lines
+    :rtype: list
     """
 
     if len(edi_lines) == 1:
