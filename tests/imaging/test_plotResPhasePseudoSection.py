@@ -7,6 +7,7 @@ import unittest
 import matplotlib.pyplot as plt
 
 from mtpy.imaging.plotpseudosection import PlotResPhasePseudoSection
+from mtpy.utils.decorator import ImageCompare
 from tests.imaging import ImageTestCase
 
 edi_paths = [
@@ -30,58 +31,68 @@ class TestPlotResPhasePseudoSection(ImageTestCase):
         plt.clf()
 
     @unittest.skipUnless(os.path.isdir(edi_paths[1]), "data file not found")
+    @ImageCompare(fig_size=(8, 6))
     def test_plot_01_imshow(self):
         edi_path = edi_paths[1]
         self._plot_imshow(edi_path, "%s.png" % inspect.currentframe().f_code.co_name)
 
     @unittest.skipUnless(os.path.isdir(edi_paths[1]), "data file not found")
+    @ImageCompare(fig_size=(8, 6))
     def test_plot_01_pcolormesh(self):
         edi_path = edi_paths[1]
         self._plot_pcolormesh(edi_path, "%s.png" % inspect.currentframe().f_code.co_name)
 
     @unittest.skipUnless(os.path.isdir(edi_paths[2]), "data file not found")
+    @ImageCompare(fig_size=(8, 6))
     def test_plot_02_imshow(self):
         edi_path = edi_paths[2]
         self._plot_imshow(edi_path,
                           "%s.png" % inspect.currentframe().f_code.co_name)
 
     @unittest.skipUnless(os.path.isdir(edi_paths[2]), "data file not found")
+    @ImageCompare(fig_size=(8, 6))
     def test_plot_02_pcolormesh(self):
         edi_path = edi_paths[2]
         self._plot_pcolormesh(edi_path,
                               "%s.png" % inspect.currentframe().f_code.co_name)
 
     @unittest.skipUnless(os.path.isdir(edi_paths[3]), "data file not found")
+    @ImageCompare(fig_size=(8, 6))
     def test_plot_03_imshow(self):
         edi_path = edi_paths[3]
         self._plot_imshow(edi_path,
                           "%s.png" % inspect.currentframe().f_code.co_name)
 
     @unittest.skipUnless(os.path.isdir(edi_paths[3]), "data file not found")
+    @ImageCompare(fig_size=(8, 6))
     def test_plot_03_pcolormesh(self):
         edi_path = edi_paths[3]
         self._plot_pcolormesh(edi_path,
                               "%s.png" % inspect.currentframe().f_code.co_name)
 
     @unittest.skipUnless(os.path.isdir(edi_paths[4]), "data file not found")
+    @ImageCompare(fig_size=(8, 6))
     def test_plot_04_imshow(self):
         edi_path = edi_paths[4]
         self._plot_imshow(edi_path,
                           "%s.png" % inspect.currentframe().f_code.co_name)
 
     @unittest.skipUnless(os.path.isdir(edi_paths[4]), "data file not found")
+    @ImageCompare(fig_size=(8, 6))
     def test_plot_04_pcolormesh(self):
         edi_path = edi_paths[4]
         self._plot_pcolormesh(edi_path,
                           "%s.png" % inspect.currentframe().f_code.co_name)
 
     @unittest.skipUnless(os.path.isdir(edi_paths[5]), "data file not found")
+    @ImageCompare(fig_size=(8, 6))
     def test_plot_05_imshow(self):
         edi_path = edi_paths[5]
         self._plot_imshow(edi_path,
                           "%s.png" % inspect.currentframe().f_code.co_name)
 
     @unittest.skipUnless(os.path.isdir(edi_paths[5]), "data file not found")
+    @ImageCompare(fig_size=(8, 6))
     def test_plot_05_pcolormesh(self):
         edi_path = edi_paths[5]
         self._plot_pcolormesh(edi_path,
