@@ -22,6 +22,6 @@ install:
 #  - "sh -e /etc/init.d/xvfb start"
 #  - sleep 3 # give xvfb some time to start
 script:
-  - py.test -n 4 -v tests/core
-  - py.test -v tests/imaging
-  - py.test -n 4 -v tests/modeling
+  - py.test -n 4 -v -x tests/core
+  - py.test -v -x tests/imaging
+  - py.test -n 4 -v -x tests/modeling
