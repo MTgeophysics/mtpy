@@ -34,8 +34,10 @@ class TestPenetration_depth1d(TestCase):
     #     plt.clf()
 
     def tearDown(self):
-        # plt.pause(1)
-        pass
+        plt.pause(1)
+        plt.close('all')
+        # plt.clf()
+        # pass
 
     @ImageCompare(fig_size=(8, 6))
     def test_plot_edi_dir(self):
@@ -111,7 +113,6 @@ class TestPenetration_depth1d(TestCase):
         """
         plot_edi_file("tests/data/edifiles/15125A.edi", ['zyx', 'dat'])
 
-    @ImageCompare(fig_size=(8, 6))
     def test_plot_edi_file_empty_rholist(self):
         """
         testing plotting an empty rholist of a single edi file

@@ -28,6 +28,7 @@ class TestPenetration_depth3d(TestCase):
 
     def tearDown(self):
         plt.pause(1)
+        plt.close('all')
 
     @ImageCompare(fig_size=(8, 6))
     def test_plot_latlon_depth_profile_period_index(self):

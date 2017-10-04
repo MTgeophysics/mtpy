@@ -121,6 +121,7 @@ class ImageCompare(object):
                             if not os.listdir(os.path.dirname(test_image)):
                                 os.rmdir(os.path.dirname(test_image))
                     else:
+                        self.print_image_testing_note()
                         pytest.skip("Image file not found for comparison test."
                                     "(This is expected for new tests.)\nGenerated Image: "
                                     "\n\t{test}".format(test=test_image))

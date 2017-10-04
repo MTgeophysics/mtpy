@@ -24,10 +24,14 @@ class TestPenetration_depth2d(TestCase):
     def tearDownClass(cls):
         plt.close('all')
 
+    # def setUp(self):
+    #     plt.clf()
+
     def tearDown(self):
         plt.pause(1)
+        plt.close('all')
+        # plt.clf()
 
-    @ImageCompare(fig_size=(8, 6))
     def test_plot2Dprofile_no_period_index_list(self):
         """
         testing plot2Dprofile without period index list
