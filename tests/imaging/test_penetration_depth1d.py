@@ -6,7 +6,6 @@ $   nosetests tests/imaging/
 import os.path
 from unittest import TestCase
 
-# matplotlib.use('Qt4Agg')  # comment out this line if you want to see the plots 1-by-1 on screen.
 import matplotlib
 import matplotlib.pyplot as plt
 

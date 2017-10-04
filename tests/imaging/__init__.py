@@ -8,8 +8,8 @@ import sys
 from mtpy.utils.decorator import ImageCompare
 
 if os.name == "posix" and 'DISPLAY' not in os.environ:
-    print("MATPLOTLIB: No Display found, using non-interactive agg backend", sys.stderr)
-    matplotlib.use('agg')
+    print("MATPLOTLIB: No Display found, using non-interactive svg backend", sys.stderr)
+    matplotlib.use('svg')
     import matplotlib.pyplot as plt
 else:
     # matplotlib.use('svg')

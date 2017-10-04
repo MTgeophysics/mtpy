@@ -4,6 +4,7 @@ python:
   # does not have headers provided, please ask https://launchpad.net/~pypy/+archive/ppa
   # maintainers to fix their pypy-dev package.
   # - "pypy"
+
 # command to install dependencies
 install:
   - sudo apt -y install libgdal-dev  # dependencies of dgal
@@ -14,13 +15,15 @@ install:
   - pip install .
   - pip install -r requirements.txt
   - pip install pytest-xdist  # add xdist for distributing tests
-# command to run tests
+  - pip list  # show installed packages
 #script: nosetests
 #before_script:
 ## setting up display
 #  - "export DISPLAY=:99.0"
 #  - "sh -e /etc/init.d/xvfb start"
 #  - sleep 3 # give xvfb some time to start
+
+# command to run tests
 script:
   - py.test -n 4 -v -x tests/core
   - py.test -v -x tests/imaging
