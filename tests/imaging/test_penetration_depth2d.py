@@ -7,15 +7,14 @@ import matplotlib.pyplot as plt
 
 from mtpy.utils.decorator import ImageCompare
 
-matplotlib.rcParams.update(matplotlib.rcParamsDefault)  # reset matplotlib params
-plt.ion()
-
 from mtpy.imaging.penetration_depth2d import plot2Dprofile
 
 
 class TestPenetration_depth2d(TestCase):
     @classmethod
     def setUpClass(cls):
+        matplotlib.rcdefaults()  # reset matplotlib params
+        plt.ion()
         cls._temp_dir = "tests/temp"
         if not os.path.isdir(cls._temp_dir):
             os.mkdir(cls._temp_dir)
