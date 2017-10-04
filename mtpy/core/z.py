@@ -1,17 +1,11 @@
 #!/usr/bin/env python
 
 """
-=============
-z module
-=============
+.. module:: Z
+   :synopsis: Deal with MT responses Z and Tipper
 
-Classes
----------
-    * Z --> deals with impedance tesnsor.
-    * Tipper --> deals with Tipper matrix.
-
-
-LK, JP 2013
+.. moduleauthor:: Jared Peacock <jpeacock@usgs.gov> 
+.. moduleauthor:: Lars Krieger
 """
 
 #=================================================================
@@ -22,7 +16,6 @@ import copy
 import mtpy.utils.calculator as MTcc
 import mtpy.utils.exceptions as MTex
 
-#=================================================================
 #==============================================================================
 # Resistivity and phase object
 #==============================================================================
@@ -125,22 +118,22 @@ class ResPhase(object):
         Set values for resistivity (res - in Ohm m) and phase
         (phase - in degrees), including error propagation.
 
-        Arguments
-        ------------
-            **res_array** : np.ndarray(num_freq, 2, 2)
-                            resistivity array in Ohm-m
-            
-            **phase_arr** : np.ndarray(num_freq, 2, 2)
-                            phase array in degrees
-            
-            **freq** : np.ndarray(num_freq)
-                       frequency array in Hz
-                       
-            **res_err_array** : np.ndarray(num_freq, 2, 2)
-                               resistivity error array in Ohm-m
-            
-            **phase_err_arr** : np.ndarray(num_freq, 2, 2)
-                               phase error array in degrees
+
+        :param res_array: resistivity array in Ohm-m
+        :type res_array: np.ndarray(num_freq, 2, 2)
+ 
+        :param phase_array: phase array in degrees
+        :type phase_array: np.ndarray(num_freq, 2, 2)
+ 
+        :param freq: frequency array in Hz 
+        :type freq: np.ndarray(num_freq)
+        
+        :param res_err_array: resistivity error array in Ohm-m
+        :type res_err_array: np.ndarray(num_freq, 2, 2)
+
+        :param phase_err_array: phase error array in degrees 
+        :type phase_err_array: np.ndarray(num_freq, 2, 2)
+                           
 
         """
         
@@ -298,18 +291,18 @@ class Z(ResPhase):
 
     All errors are given as standard deviations (sqrt(VAR))
 
-    Arguments
-    ------------
+    :param z_array: array containing complex impedance values
+    :type z_array: numpy.ndarray(n_freq, 2, 2)
+                
 
-        **z_array** : numpy.ndarray(n_freq, 2, 2)
-                    array containing complex impedance values
-
-        **z_err_array** : numpy.ndarray(n_freq, 2, 2)
-                       array containing error values (standard deviation)
-                       of impedance tensor elements
-        **freq** : np.ndarray(n_freq)
-                 array of frequency values corresponding to impedance tensor
-                 elements.
+    :param z_err_array: array containing error values (standard deviation)
+                        of impedance tensor elements
+    :type z_err_array: numpy.ndarray(n_freq, 2, 2)
+                   
+    :param freq: array of frequency values corresponding to impedance tensor
+                 elements. 
+    :type freq: np.ndarray(n_freq)
+             
 
     =============== ===========================================================
     Attributes      Description
@@ -345,9 +338,8 @@ class Z(ResPhase):
     trace                calculates the trace of z
     =================== =======================================================
 
-    Example
-    -----------
-
+    :Example: ::
+        
         >>> import mtpy.core.z as mtz
         >>> import numpy as np
         >>> z_test = np.array([[0+0j, 1+1j], [-1-1j, 0+0j]])
@@ -362,18 +354,16 @@ class Z(ResPhase):
         """
         Initialise an instance of the Z class.
 
-        Arguments
+        :param z_array: array containing complex impedance values
+        :type z_array: numpy.ndarray(n_freq, 2, 2)
 
-            **z_array** : numpy.ndarray(n_freq, 2, 2)
-                        array containing complex impedance values
+        :param z_err_array: array containing error values (standard deviation)
+                            of impedance tensor elements
+        :type z_err_array: numpy.ndarray(n_freq, 2, 2)
 
-            **z_err_array** : numpy.ndarray(n_freq, 2, 2)
-                           array containing error values (standard deviation)
-                           of impedance tensor elements
-
-            **freq** : np.ndarray(n_freq)
-                     array of frequency values corresponding to impedance
+        :param freq: array of frequency values corresponding to impedance
                      tensor elements.
+        :type freq: np.ndarray(n_freq)
 
         Initialises the attributes with None
         """
@@ -418,12 +408,8 @@ class Z(ResPhase):
         """
         Set the array of freq.
 
-        Arguments
-		-------------
-
-            **lo_freq** : list or array of frequnecies (Hz)
-
-        No test for consistency!
+        :param freq_arr: array of frequnecies (Hz)
+        :type freq_arr: np.ndarray
         """
 
         if freq_arr is not None:
@@ -459,16 +445,13 @@ class Z(ResPhase):
         """
         Set the attribute 'z'.
 
-        Arguments
-		-------------
 
-            **z_array** : np.ndarray(nfreq, 2, 2)
-                        complex impedance tensor array
-
+        :param z_array: complex impedance tensor array
+        :type z_array: np.ndarray(nfreq, 2, 2)
+        
         Test for shape, but no test for consistency!
 
         Nulling the rotation_angle
-
         """
 
         try:
@@ -507,14 +490,9 @@ class Z(ResPhase):
         """
         Set the attribute z_err
 
-        Arguments
-		  ------------
-
-            **z_err_array** : np.ndarray(nfreq, 2, 2)
-                           error of impedance tensor array as standard deviation
-
-        Test for shape, but no test for consistency!
-
+        :param z_err_array: error of impedance tensor array as standard 
+                            deviation
+        :type z_err_array: np.ndarray(nfreq, 2, 2)
         """
         if z_err_array.shape != self.z.shape:
             print 'z_err_array shape {0} is not same shape as z {1}'.format(
@@ -655,26 +633,22 @@ class Z(ResPhase):
         therefore the correct Z will be :
             * Z0 = S^(-1) * Z
 
-        Arguments
-        ------------
 
-            **reduce_res_factor_x** : float or iterable list or array
-                                    static shift factor to be applied to x
-                                    components (ie z[:, 0, 1]).  This is
+        :param reduce_res_factor_x: static shift factor to be applied to x
+                                    components (ie z[:, 0, :]).  This is
                                     assumed to be in resistivity scale
-
-            **reduce_res_factor_y** : float or iterable list or array
-                                    static shift factor to be applied to y
-                                    components (ie z[:, 1, 0]).  This is
+        :type reduce_res_factor_x: float or iterable list or array
+        
+        :param reduce_res_factor_y: static shift factor to be applied to y
+                                    components (ie z[:, 1, :]).  This is
                                     assumed to be in resistivity scale
+        :type reduce_res_factor_y: float or iterable list or array
 
-        Returns
-		--------------
-
-            **S** : np.ndarray ((2, 2))
-                    static shift matrix,
-
-            **Z0**: corrected Z   (over all freq)
+        :returns: static shift matrix, 
+        :rtype: np.ndarray ((2, 2))
+                    
+        :returns: corrected Z
+        :rtype: mtpy.core.z.Z
 
         .. note:: The factors are in resistivity scale, so the
                   entries of  the matrix "S" need to be given by their
@@ -771,29 +745,30 @@ class Z(ResPhase):
 
         Propagation of errors/uncertainties included
 
-		Arguments
-		------------
-			**distortion_tensor** : np.ndarray(2, 2, dtype=real)
-			                      real distortion tensor as a 2x2
 
-			**distortion_err_tensor** : np.ndarray(2, 2, dtype=real),
-									  default is None
+        :param distortion_tensor: real distortion tensor as a 2x2
+        :type distortion_tensor: np.ndarray(2, 2, dtype=real)
+			                         
 
-		Returns
-		-----------
-			**distortion_tensor** :  np.ndarray(2, 2, dtype='real')
-			                       input distortion tensor
-			**z_corrected** : np.ndarray(num_freq, 2, 2, dtype='complex')
-			                impedance tensor with distorion removed
+        :param distortion_err_tensor: default is None
+        :type distortion_err_tensor: np.ndarray(2, 2, dtype=real),
 
-			**z_corrected_err** : np.ndarray(num_freq, 2, 2, dtype='complex')
-							    impedance tensor error after distortion is removed
+			:returns: input distortion tensor
+        :rtype: np.ndarray(2, 2, dtype='real')
+			                       
+			:returns: impedance tensor with distorion removed
+        :rtype: np.ndarray(num_freq, 2, 2, dtype='complex')
+			                
 
-		Example
-		----------
-			>>> import mtpy.core.z as mtz
-			>>> distortion = np.array([[1.2, .5],[.35, 2.1]])
-			>>> d, new_z, new_z_err = z_obj.remove_distortion(distortion)
+			:returns: impedance tensor error after distortion is removed
+        :rtype: np.ndarray(num_freq, 2, 2, dtype='complex')
+							    
+
+    		:Example: ::
+                
+    			>>> import mtpy.core.z as mtz
+    			>>> distortion = np.array([[1.2, .5],[.35, 2.1]])
+    			>>> d, new_z, new_z_err = z_obj.remove_distortion(distortion)
         """
 
         if distortion_err_tensor is None:
@@ -903,10 +878,9 @@ class Z(ResPhase):
         """
         Return the trace of Z
 
-        Returns
-	     -------------
-            **tr** : np.ndarray(nfreq, 2, 2)
-                    Trace(z)
+        :returns: Trace(z)
+        :rtype: np.ndarray(nfreq, 2, 2)
+                    
         """
 
         tr = np.array( [np.trace(ii) for ii in self.z])
@@ -918,10 +892,9 @@ class Z(ResPhase):
         """
         Return the trace of Z
 
-        Returns
-	     -------------
-            **tr** : np.ndarray(nfreq, 2, 2)
-                    Trace(z)
+        :returns: Trace(z)
+        :rtype: np.ndarray(nfreq, 2, 2)
+                    
         """
         
         tr_err = None
@@ -938,9 +911,9 @@ class Z(ResPhase):
         
         .. note:: This is not the MT skew, but simply the linear algebra skew
 
-        Returns
-	    -----------
-            **skew**: np.ndarray(nfreq, 2, 2)
+
+        :returns: skew
+        :rtype: np.ndarray(nfreq, 2, 2)
         """
 
         skew = np.array([ii[0, 1]-ii[1, 0] for ii in self.z])
@@ -954,9 +927,8 @@ class Z(ResPhase):
         
         .. note:: This is not the MT skew, but simply the linear algebra skew
 
-        Returns
-	     -----------
-            **skew_err**: np.ndarray(nfreq, 2, 2)
+        :returns: skew_err
+        :rtype: np.ndarray(nfreq, 2, 2)
         """
 
         skew_err = None
@@ -971,10 +943,8 @@ class Z(ResPhase):
         """
         Return the determinant of Z
 
-        Returns
-		  ----------
-            **det_Z** : np.ndarray(nfreq)
-                      det(z)
+        :returns: det_Z
+        :rtype: np.ndarray(nfreq)
         """
 
         det_Z = np.array([np.linalg.det(ii) for ii in self.z])
@@ -986,11 +956,10 @@ class Z(ResPhase):
         """
         Return the determinant of Z error
 
-        Returns
-		  ----------
-            **det_Z_err** : np.ndarray(nfreq)
-                      det(z)
+        :returns: det_Z_err
+        :rtype: np.ndarray(nfreq)
         """
+        
         det_Z_err = None
         if self.z_err is not None:
             det_Z_err = np.zeros_like(self.det, dtype=np.float)
@@ -1006,11 +975,8 @@ class Z(ResPhase):
         """
         Return the 2-/Frobenius-norm of Z 
 
-        Returns
-		  ---------
-            **norm** : np.ndarray(nfreq)
-                       norm(z)
-
+        :returns: norm
+        :rtype: np.ndarray(nfreq)
         """
 
         norm = np.array([np.linalg.norm(ii) for ii in self.z])
@@ -1022,10 +988,8 @@ class Z(ResPhase):
         """
         Return the 2-/Frobenius-norm of Z  error
 
-        Returns
-		  ---------
-            **norm_err** : np.ndarray(nfreq)
-                           norm(z)
+        :returns: norm_err
+        :rtype: np.ndarray(nfreq)
         """
         norm_err = None
 
@@ -1052,16 +1016,16 @@ class Z(ResPhase):
         Return a dictionary of Z-invariants.
 
         Contains
-		-----------
-			* z1
-			* det
-			* det_real
-			* det_imag
-			* trace
-			* skew
-			* norm
-			* lambda_plus/minus,
-			* sigma_plus/minus
+    		-----------
+    			* z1
+    			* det
+    			* det_real
+    			* det_imag
+    			* trace
+    			* skew
+    			* norm
+    			* lambda_plus/minus,
+    			* sigma_plus/minus
         """
 
         invariants_dict = {}
@@ -1114,24 +1078,24 @@ class Tipper(object):
     Tipper class --> generates a Tipper-object.
 
     Errors are given as standard deviations (sqrt(VAR))
+    
+    :param tipper_array: tipper array in the shape of [Tx, Ty]
+                         *default* is None
+    :type tipper_array: np.ndarray((nf, 1, 2), dtype='complex')
+                      
 
-    Arguments
-	-----------
+    :param tipper_err_array: array of estimated tipper errors
+                             in the shape of [Tx, Ty].
+                             Must be the same shape as tipper_array.
+                             *default* is None
+    :type tipper_err_array: np.ndarray((nf, 1, 2))
+                         
 
-        **tipper_array** : np.ndarray((nf, 1, 2), dtype='complex')
-                          tipper array in the shape of [Tx, Ty]
-                          *default* is None
-
-        **tipper_err_array** : np.ndarray((nf, 1, 2))
-                             array of estimated tipper errors
-                               in the shape of [Tx, Ty].
-                               Must be the same shape as tipper_array.
-                               *default* is None
-
-        **freq** : np.ndarray(nf)
-                   array of frequencies corresponding to the tipper elements.
-                   Must be same length as tipper_array.
-                   *default* is None
+    :param freq: array of frequencies corresponding to the tipper elements.
+                 Must be same length as tipper_array.
+                 *default* is None
+    :type freq: np.ndarray(nf)
+               
 
     =============== ===========================================================
     Attributes      Description
@@ -1151,35 +1115,12 @@ class Tipper(object):
     amp_phase       computes amplitude and phase of Tx and Ty.
     rotate          rotates the data by the given angle
     =============== ===========================================================
-
-
-
     """
 
     def __init__(self, tipper_array=None, tipper_err_array=None,
                  freq=None):
         """
-        Initialise an instance of the Tipper class.
-
-        Arguments
-		--------------
-
-            **tipper_array** : np.ndarray((nf, 1, 2), dtype='complex')
-                               tipper array in the shape of [Tx, Ty]
-                               *default* is None
-
-            **tipper_err_array** : np.ndarray((nf, 1, 2))
-                                   array of estimated tipper errors
-                                   in the shape of [Tx, Ty].
-                                   Must be the same shape as tipper_array.
-                                   *default* is None
-
-            **freq** : np.ndarray(nf)
-                       array of frequencies corresponding to the tipper
-                       elements.
-                       Must be same length as tipper_array.
-                       *default* is None
-
+        initialize
         """
 
         self._tipper = tipper_array
@@ -1219,12 +1160,8 @@ class Tipper(object):
         """
         Set the array of freq.
 
-        Arguments
-		-----------
-
-            **lo_freq** : list or array of frequnecies (Hz)
-
-        No test for consistency!
+        :param freq_arr: array of frequnecies (Hz)
+        :type freq_arr: np.ndarray(num_frequencies)
         """
         if freq_arr is not None:
             self._freq = np.array(freq_arr)
@@ -1247,15 +1184,9 @@ class Tipper(object):
         """
         Set the attribute *tipper*
 
-        Arguments
-		-------------
-
-            **tipper_array** : np.ndarray((nf, 1, 2), dtype='complex')
-                               tipper array in the shape of [Tx, Ty]
-                               *default* is None
-
-        Test for shape, but no test for consistency!
-
+        :param tipper_array: tipper array in the shape of [Tx, Ty]
+                             *default* is None
+        :type tipper_array: np.ndarray((nf, 1, 2), dtype='complex')
         """
         
         #check to see if the new tipper array is the same shape as the old
@@ -1290,16 +1221,11 @@ class Tipper(object):
         """
         Set the attribute *tipper_err*.
 
-        Arguments
-		--------------
-            **tipper_err_array** : np.ndarray((nf, 1, 2))
-                                   array of estimated tipper errors
-                                   in the shape of [Tx, Ty].
-                                   Must be the same shape as tipper_array.
-                                   *default* is None
-
-        Test for shape, but no test for consistency!
-
+        :param tipper_err_array: array of estimated tipper errors
+                                 in the shape of [Tx, Ty].
+                                 Must be the same shape as tipper_array.
+                                 *default* is None
+        :type tipper_err_array: np.ndarray((nf, 1, 2))
         """
         if (self.tipper_err != None) and \
                             (self._tipper_err.shape != tipper_err_array.shape):
@@ -1325,11 +1251,11 @@ class Tipper(object):
     #----amplitude and phase
     def _compute_amp_phase(self):
         """
-        Sets attributes
-			* *amplitude*
-			* *phase*
-			* *amplitude_err*
-			* *phase_err*
+        Sets attributes:
+    			* *amplitude*
+    			* *phase*
+    			* *amplitude_err*
+    			* *phase_err*
 
         values for resistivity are in in Ohm m and phase in degrees.
         """
@@ -1364,9 +1290,9 @@ class Tipper(object):
         """
         Set values for amplitude(r) and argument (phi - in degrees).
 
-        Updates the attributes
-			* tipper
-			* tipper_err
+        Updates the attributes:
+    			* tipper
+    			* tipper_err
 
         """
 
@@ -1437,26 +1363,6 @@ class Tipper(object):
         """
         computes the magnitude and direction of the real and imaginary
         induction vectors.
-
-        Returns
-		------------
-
-            **mag_real** : np.array(nf)
-                           magnitude of the real induction vector
-
-            **ang_real** : np.array(nf)
-                           angle (deg) of the real induction vector assuming
-                           that North is 0 and angle is positive clockwise
-
-            **mag_imag** : np.array(nf)
-                           magnitude of the imaginary induction vector
-
-            **ang_imag** : np.array(nf)
-                           angle (deg) of the imaginary induction vector
-                           assuming that North is 0 and angle is positive
-                           clockwise
-
-
         """
 
 
@@ -1545,10 +1451,10 @@ class Tipper(object):
 
         In non-rotated state, 'X' refs to North and 'Y' to East direction.
 
-        Updates the attributes
-			* *tipper*
-			* *tipper_err*
-			* *rotation_angle*
+        Updates the attributes:
+    			* *tipper*
+    			* *tipper_err*
+    			* *rotation_angle*
 
         """
 
@@ -1655,39 +1561,37 @@ def correct4sensor_orientation(Z_prime, Bx=0, By=90, Ex=0, Ey=90,
                  => E = T * Z' * U^(-1) * B
                  => Z = T * Z' * U^(-1)
 
+    :param Z_prime: impedance tensor to be adjusted
+    :dtype Z_prime: np.ndarray(num_freq, 2, 2, dtype='complex')
+					  
 
-    Arguments
-	---------------
-		**Z_prime** : np.ndarray(num_freq, 2, 2, dtype='complex')
-					  impedance tensor to be adjusted
-
-		**Bx** : float (angle in degrees)
-		         orientation of Bx relative to geographic north (0)
-				 *default* is 0
-		**By** : float (angle in degrees)
+    :param Bx: orientation of Bx relative to geographic north (0)
+				   *default* is 0
+    :type Bx: float (angle in degrees)
+		         
+    :param By:
+    :type By: float (angle in degrees)
 		         orientation of By relative to geographic north (0)
 				 *default* is 90
-		**Ex** : float (angle in degrees)
-		         orientation of Ex relative to geographic north (0)
-				 *default* is 0
-		**Ey** : float (angle in degrees)
-		         orientation of Ey relative to geographic north (0)
-				 *default* is 90
-
-		Z_prime_error : np.ndarray(Z_prime.shape)
-		                impedance tensor error (std)
-						*default* is None
-
-	Returns
-	-------------
-		**Z** : np.ndarray(Z_prime.shape, dtype='complex')
-		        adjusted impedance tensor
-
-		**Z_err** : np.ndarray(Z_prime.shape, dtype='real')
-		            impedance tensor standard deviation in
+                    
+    :param Ex: orientation of Ex relative to geographic north (0)
+				   *default* is 0
+    :type Ex: float (angle in degrees)
+		         
+    :param Ey: orientation of Ey relative to geographic north (0)
+				  *default* is 90
+    :type Ey: float (angle in degrees)
+    
+    :param Z_prime_error: impedance tensor error (std)
+            					 *default* is None
+    :type Z_prime_error: np.ndarray(Z_prime.shape)
+		                
+    :returns: adjusted impedance tensor
+    :rtype: np.ndarray(Z_prime.shape, dtype='complex')
+	 
+    :returns: impedance tensor standard deviation in
 					default orientation
-
-
+    :rtype: np.ndarray(Z_prime.shape, dtype='real')
     """
     try:
         if len(Z_prime.shape) != 2:

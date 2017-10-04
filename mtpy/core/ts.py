@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-Created on Thu Jul 06 14:24:18 2017
+.. module:: TS
+   :synopsis: Deal with MT time series 
 
-@author: jpeacock
+.. moduleauthor:: Jared Peacock <jpeacock@usgs.gov>
 """
 
 #==============================================================================
@@ -46,48 +47,42 @@ class MT_TS(object):
         >>> MT_TS.ts['2017-05-04 12:32:00.0078125':'2017-05-05 12:35:00]
     
     Input ts as a numpy.ndarray or Pandas DataFrame
-    
-    Metadata
-    -----------
-    
-        ==================== ==================================================
-        Name                 Description        
-        ==================== ==================================================
-        azimuth              clockwise angle from coordinate system N (deg)
-        calibration_fn       file name for calibration data
-        component            component name [ 'ex' | 'ey' | 'hx' | 'hy' | 'hz']
-        coordinate_system    [ geographic | geomagnetic ]
-        datum                datum of geographic location ex. WGS84
-        declination          geomagnetic declination (deg)
-        dipole_length        length of dipole (m)
-        data_logger          data logger type
-        instrument_id        ID number of instrument for calibration
-        lat                  latitude of station in decimal degrees
-        lon                  longitude of station in decimal degrees
-        n_samples            number of samples in time series
-        sampling_rate        sampling rate in samples/second
-        start_time_epoch_sec start time in epoch seconds
-        start_time_utc       start time in UTC
-        station              station name
-        units                units of time series
-        ==================== ==================================================
+
+    ==================== ==================================================
+    Metadata              Description        
+    ==================== ==================================================
+    azimuth              clockwise angle from coordinate system N (deg)
+    calibration_fn       file name for calibration data
+    component            component name [ 'ex' | 'ey' | 'hx' | 'hy' | 'hz']
+    coordinate_system    [ geographic | geomagnetic ]
+    datum                datum of geographic location ex. WGS84
+    declination          geomagnetic declination (deg)
+    dipole_length        length of dipole (m)
+    data_logger          data logger type
+    instrument_id        ID number of instrument for calibration
+    lat                  latitude of station in decimal degrees
+    lon                  longitude of station in decimal degrees
+    n_samples            number of samples in time series
+    sampling_rate        sampling rate in samples/second
+    start_time_epoch_sec start time in epoch seconds
+    start_time_utc       start time in UTC
+    station              station name
+    units                units of time series
+    ==================== ==================================================
     
     .. note:: Currently only supports hdf5 and text files
-    
-    Methods
-    ------------
-    
-        ======================= ===============================================
-        Method                  Description        
-        ======================= ===============================================
-        read_hdf5               read an hdf5 file
-        write_hdf5              write an hdf5 file
-        write_ascii_file        write an ascii file
-        read_ascii_file         read an ascii file
-        ======================= ===============================================
+
+    ======================= ===============================================
+    Method                  Description        
+    ======================= ===============================================
+    read_hdf5               read an hdf5 file
+    write_hdf5              write an hdf5 file
+    write_ascii_file        write an ascii file
+    read_ascii_file         read an ascii file
+    ======================= ===============================================
         
     
-    .. example:: 
+    :Example: :: 
     
         >>> import mtpy.core.ts as ts
         >>> import numpy as np
@@ -124,8 +119,7 @@ class MT_TS(object):
         self.calibration_fn = None
         self.declination = 0.0
         self._ts = pd.DataFrame() 
-        self.fn_hdf5 = None
-        self.fn_ascii = None
+        self.fn = None
         self.conversion = None
         self.gain = None
         self._end_header_line = 0
@@ -193,6 +187,7 @@ class MT_TS(object):
     ##--> Latitude
     @property
     def lat(self):
+        """Latitude in decimal degrees"""
         return self._lat
         
     @lat.setter
@@ -205,6 +200,7 @@ class MT_TS(object):
     ##--> Longitude
     @property
     def lon(self):
+        """Longitude in decimal degrees"""
         return self._lon
         
     @lon.setter
@@ -217,24 +213,29 @@ class MT_TS(object):
     ##--> elevation
     @property
     def elev(self):
+        """elevation in elevation units"""
         return self._elev
         
     @elev.setter
     def elev(self, elevation):
+        """elevation in elevation units"""
         self._elev = gis_tools.assert_elevation_value(elevation)
         
     #--> number of samples just to make sure there is consistency
     @property
     def n_samples(self):
+        """number of samples"""
         return int(self._n_samples)
         
     @n_samples.setter
     def n_samples(self, num_samples):
+        """number of samples (int)"""
         self._n_samples = int(num_samples)
         
     #--> sampling rate
     @property
     def sampling_rate(self):
+        """sampling rate in samples/second"""
         return self._sampling_rate
     
     @sampling_rate.setter
@@ -259,6 +260,7 @@ class MT_TS(object):
     ## set time and set index
     @property
     def start_time_utc(self):
+        """start time in UTC given in time format"""
         return self._start_time_utc
     
     @start_time_utc.setter
@@ -288,6 +290,7 @@ class MT_TS(object):
     ## epoch seconds
     @property
     def start_time_epoch_sec(self):
+        """start time in epoch seconds"""
         if self.start_time_utc is None:
             return None
         else:
@@ -322,16 +325,11 @@ class MT_TS(object):
         .. note:: Pandas wants yyyy-mm-dd HH:MM:SS.ss, which is what is set
                   as the default.
                   
-        Arguments
-        --------------
-            **date_time_str** : string
-                                date time string
+            
+        :param date_time_str: date time string
+        :type date_time_str: string
                                 
-        Returns
-        -------------
-            **validated_dt_str** : string
-                                   validated date time string
-        
+        :returns: validated date time string
         """
         
         validated_dt_str = date_time_str.replace(',', ' ')
@@ -350,6 +348,9 @@ class MT_TS(object):
     def _set_dt_index(self, start_time):
         """
         get the date time index from the data
+        
+        :param start_time: start time in time format
+        :type start_time: string
         """
         
         if start_time is None:
@@ -369,16 +370,11 @@ class MT_TS(object):
         """
         convert date time string to epoch seconds
         
-        Arguments
-        --------------
-            **date_time_str** : string
-                                format is defined by self._date_time_fmt
-                                *default* is YYYY-MM-DD hh:mm:ss
-                                
-        Returns
-        --------------
-            **epoch_seconds** : float
-                                time in epoch seconds
+        :param date_time_str: format is defined by self._date_time_fmt
+                              *default* is YYYY-MM-DD hh:mm:ss
+        :type date_time_str: string
+
+        :returns: time in epoch seconds
                                       
         """
         dt_struct = datetime.datetime.strptime(date_time_str, 
@@ -394,13 +390,12 @@ class MT_TS(object):
         frequency.
         
         see mtpy.processing.filter.adaptive_notch_filter
-        
-        Arguments
-        -------------
-            **notch_dict** : dictionary
-                             dictionary of filter parameters.
-                             if an empty dictionary is input the filter looks
-                             for 60 Hz and harmonics to filter out.
+
+        :param notch_dict: dictionary of filter parameters.
+                           if an empty dictionary is input the filter looks
+                           for 60 Hz and harmonics to filter out. 
+        :type notch_dict: dictionary
+                             
         """
         if notches is None:        
             notches = list(np.arange(60, 1860, 120))
@@ -427,16 +422,11 @@ class MT_TS(object):
     def decimate(self, dec_factor=1):
         """
         decimate the data by using scipy.signal.decimate
-        
-        Arguments
-        -------------
-            **dec_factor** : int
-                             decimation factor
-                             
-        Outputs
-        -----------
-        
-            * refills ts.data with decimated data and replaces sampling_rate
+
+        :param dec_factor: decimation factor
+        :type dec_factor: int
+
+        * refills ts.data with decimated data and replaces sampling_rate
             
         """
         # be sure the decimation factor is an integer
@@ -449,6 +439,14 @@ class MT_TS(object):
     def low_pass_filter(self, low_pass_freq=15, cutoff_freq=55):
         """
         low pass the data
+        
+        :param low_pass_freq: low pass corner in Hz
+        :type low_pass_freq: float
+        
+        :param cutoff_freq: cut off frequency in Hz
+        :type cutoff_freq: float
+        
+        * filters ts.data
         """
         
         self.ts = mtfilter.low_pass(self.ts.data, 
@@ -460,12 +458,23 @@ class MT_TS(object):
     ### read and write file types
     def write_hdf5(self, fn_hdf5, compression_level=0, compression_lib='blosc'):
         """
-        use pandas to write the hdf5 file
+        Write an hdf5 file with metadata using pandas to write the file.
+        
+        :param fn_hdf5: full path to hdf5 file, has .h5 extension
+        :type fn_hdf5: string
+        
+        :param compression_level: compression level of file [ 0-9 ]
+        :type compression_level: int
+        
+        :param compression_lib: compression library *default* is blosc
+        :type compression_lib: string
+        
+        :returns: fn_hdf5
+        
+        .. seealso:: Pandas.HDf5Store
         """        
         
-        self.fn_hdf5 = fn_hdf5
-        
-        hdf5_store = pd.HDFStore(self.fn_hdf5, 'w', 
+        hdf5_store = pd.HDFStore(fn_hdf5, 'w', 
                                  complevel=compression_level,
                                  complib=compression_lib)
         
@@ -484,14 +493,28 @@ class MT_TS(object):
         hdf5_store.flush()
         hdf5_store.close()
         
+        return fn_hdf5
+        
     def read_hdf5(self, fn_hdf5, compression_level=0, compression_lib='blosc'):
         """
-        read using pandas
-        """
+        Read an hdf5 file with metadata using Pandas.
         
-        self.fn_hdf5 = fn_hdf5
-
-        hdf5_store = pd.HDFStore(self.fn_hdf5, 'r', complib=compression_lib)
+        :param fn_hdf5: full path to hdf5 file, has .h5 extension
+        :type fn_hdf5: string
+        
+        :param compression_level: compression level of file [ 0-9 ]
+        :type compression_level: int
+        
+        :param compression_lib: compression library *default* is blosc
+        :type compression_lib: string
+        
+        :returns: fn_hdf5
+        
+        .. seealso:: Pandas.HDf5Store
+        """
+        self.fn = fn_hdf5
+        
+        hdf5_store = pd.HDFStore(fn_hdf5, 'r', complib=compression_lib)
         
         self.ts = hdf5_store['time_series']
         
@@ -501,21 +524,23 @@ class MT_TS(object):
             
         hdf5_store.close()  
         
-    def write_ascii_file(self, fn_ascii=None, chunk_size=4096):
+    def write_ascii_file(self, fn_ascii, chunk_size=4096):
         """
-        write an ascii format file
+        Write an ascii format file with metadata
+        
+        :param fn_ascii: full path to ascii file
+        :type fn_ascii: string
+        
+        :param chunk_size: read in file by chunks for efficiency
+        :type chunk_size: int
+        
+        :Example: ::
+            
+            >>> ts_obj.write_ascii_file(r"/home/ts/mt01.EX")
+        
         """
         
         st = datetime.datetime.utcnow()
-        
-        if fn_ascii is not None:
-            self.fn_ascii = fn_ascii
-        
-        if self.fn_ascii is None:
-            self.fn_ascii = self.fn_hdf5[:-2]+'txt'
-            
-        if self.ts is None:
-            self.read_hdf5(self.fn_hdf5)
 
         # get the number of chunks to write        
         chunks = self.ts.shape[0]/chunk_size
@@ -526,7 +551,7 @@ class MT_TS(object):
                         for attr in sorted(self._attr_list)]
 
         # write to file in chunks
-        with open(self.fn_ascii, 'w') as fid:
+        with open(fn_ascii, 'w') as fid:
             # write header lines first
             fid.write('\n'.join(header_lines))
     
@@ -554,18 +579,25 @@ class MT_TS(object):
         et = datetime.datetime.utcnow()
         time_diff = et-st
         
-        print '--> Wrote {0}'.format(self.fn_ascii)
+        print '--> Wrote {0}'.format(fn_ascii)
         print '    Took {0:.2f} seconds'.format(time_diff.seconds+time_diff.microseconds*1E-6)
 
     def read_ascii_header(self, fn_ascii):
         """
-        read the header of an ascii file
+        Read an ascii metadata
+        
+        :param fn_ascii: full path to ascii file
+        :type fn_ascii: string
+        
+        :Example: ::
+            
+            >>> ts_obj.read_ascii_header(r"/home/ts/mt01.EX")
         """
         if not os.path.isfile(fn_ascii):
             raise MT_TS_Error('Could not find {0}, check path'.format(fn_ascii))
-        self.fn_ascii = fn_ascii
+        self.fn = fn_ascii
         
-        with open(self.fn_ascii, 'r') as fid:
+        with open(self.fn, 'r') as fid:
             line = fid.readline()
             count = 0
             while line.find('#') == 0:
@@ -603,7 +635,14 @@ class MT_TS(object):
 
     def read_ascii(self, fn_ascii):
         """
-        Read in an ascii
+        Read an ascii format file with metadata
+        
+        :param fn_ascii: full path to ascii file
+        :type fn_ascii: string
+        
+        :Example: ::
+            
+            >>> ts_obj.read_ascii(r"/home/ts/mt01.EX")
         """
         
         self.read_ascii_header(fn_ascii)
@@ -616,8 +655,20 @@ class MT_TS(object):
         
         print 'Read in {0}'.format(self.fn_ascii)
         
-    def estimate_spectra(self, spectra_type='welch', **kwargs):
+    def plot_spectra(self, spectra_type='welch', **kwargs):
         """
+        Plot spectra using the spectral type
+        
+        .. note:: Only spectral type supported is welch
+        
+        :param spectra_type: [ 'welch' ]
+        :type spectral_type: string
+        
+        :Example: ::
+            
+            >>> ts_obj = mtts.MT_TS()
+            >>> ts_obj.read_hdf5(r"/home/MT/mt01.h5")
+            >>> ts_obj.plot_spectra()
         
         """
         

@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-Created on Fri Aug 18 15:47:52 2017
+.. module:: JFile
+   :synopsis: Deal with J-Files of the format propsed by Alan Jones 
 
-@author: jrpeacock
+.. moduleauthor:: Jared Peacock <jpeacock@usgs.gov>
 """
 
 #==============================================================================
