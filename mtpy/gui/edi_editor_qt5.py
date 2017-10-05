@@ -118,6 +118,7 @@ class EDI_Editor_Window(QtWidgets.QMainWindow):
         self.plot_widget.dir_path = os.path.dirname(fn)
                                            
         self.plot_widget.mt_obj = mt.MT(fn)
+        self.plot_widget.mt_obj._edi_obj = mt.MTedi.Edi()
         if self.plot_widget.mt_obj.elev is None:
             self.plot_widget.mt_obj.elev = 0.0
         self.plot_widget._mt_obj = copy.deepcopy(self.plot_widget.mt_obj)
