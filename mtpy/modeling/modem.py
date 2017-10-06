@@ -265,7 +265,7 @@ class Stations(object):
         self.station_locations['rel_north'][:] = new_coords[1, :]
         
         print 'Rotated stations by {0:.1f} deg clockwise from N'.format(
-                                                self.mesh_rotation_angle)
+                                                                rotation_angle)
         
     def check_utm_crossing(self):
         """
@@ -708,12 +708,9 @@ class Data(object):
                                     self._rotation_angle, rotation_angle)
         self._rotation_angle = rotation_angle
         
-            
-        if self.data_array is None:
-            return
         if self.mt_dict is None:
-            return
-            
+            self.get_mt_dict()
+
         for mt_key in sorted(self.mt_dict.keys()):
             mt_obj = self.mt_dict[mt_key]
             mt_obj.Z.rotate(self._rotation_angle)
@@ -721,13 +718,6 @@ class Data(object):
             
         print 'Data rotated to align with {0:.1f} deg clockwise from N'.format(
                                                         self._rotation_angle)
-                 
-        print '*'*70                                       
-        print '   If you want to rotate station locations as well use the'
-        print '   command Data.get_relative_station_locations() '
-        print '   if stations have not already been rotated in Model'
-        print '*'*70
-        
         self.fill_data_array()
                 
     def _get_rotation_angle(self):
@@ -2618,7 +2608,7 @@ class Model(object):
     
     #--> read in ascii dem file
     def read_dem_ascii(self, ascii_fn, cell_size=500, model_center=(0, 0),
-                       rot_90=0):
+                       rot_90=0, dem_rotation_angle=0):
         """
         read in dem which is ascii format
         
@@ -2704,11 +2694,22 @@ class Model(object):
         # need to rotate cause I think I wrote the dem backwards
         if rot_90 == 1 or rot_90 == 3:
             elevation = np.rot90(elevation, rot_90)
-            return new_north, new_east, elevation
+
         else:
             elevation = np.rot90(elevation, rot_90)
     
-            return new_east, new_north, elevation
+        if dem_rotation_angle != 0.0:
+            cos_ang = np.cos(np.deg2rad(dem_rotation_angle))
+            sin_ang = np.sin(np.deg2rad(dem_rotation_angle))
+            rot_matrix = np.matrix(np.array([[cos_ang, sin_ang], 
+                                             [-sin_ang, cos_ang]]))
+            
+            new_coords = np.dot(rot_matrix, np.array([new_east, new_north]))
+            new_east = new_coords[0]
+            new_north = new_coords[1]
+            
+        return new_east, new_north, elevation
+    
     
     def interpolate_elevation(self, elev_east, elev_north, elevation,
                               model_east, model_north, pad=3,
@@ -2897,7 +2898,8 @@ class Model(object):
         return elevation_model, new_nodes_z    
             
     def add_topography_to_model(self, dem_ascii_fn, write_file=True, 
-                                model_center=(0,0), rot_90=0, cell_size=500, 
+                                model_center=(0,0), rot_90=0, 
+                                dem_rotation_angle=0, cell_size=500, 
                                 elev_cell=30, pad=1, elev_max=None):
         """
         Add topography to an existing model from a dem in ascii format.      
@@ -2915,7 +2917,7 @@ class Model(object):
         V
         S
         
-        Arguments:
+        Arguments
         -------------
             **dem_ascii_fn** : string
                              full path to ascii dem file
@@ -2933,6 +2935,9 @@ class Model(object):
                        the elevation model is flipped depending on your coordinate
                        system.
                        
+            **dem_rotation_angle: float (degrees from North)
+                                  rotation angle to rotate station locations
+                                              
             **cell_size** : float (meters)
                           horizontal cell size of grid to interpolate elevation
                           onto.  This should be smaller or equal to the input
@@ -2942,7 +2947,7 @@ class Model(object):
                           vertical size of each elevation cell.  This value should
                           be about 1/10th the smalles skin depth.
                           
-        Returns:
+        Returns
         ---------------
             **new_model_fn** : string
                              full path to model file that contains topography
@@ -2952,7 +2957,8 @@ class Model(object):
         e_east, e_north, elevation = self.read_dem_ascii(dem_ascii_fn, 
                                                          cell_size=cell_size, 
                                                          model_center=model_center, 
-                                                         rot_90=rot_90)
+                                                         rot_90=rot_90,
+                                                         dem_rotation_angle=dem_rotation_angle)
             
         ### 2.) interpolate the elevation model onto the model grid
         m_elev = self.interpolate_elevation(e_east, e_north, elevation, 

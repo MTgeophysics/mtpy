@@ -1227,7 +1227,7 @@ class Tipper(object):
                                  *default* is None
         :type tipper_err_array: np.ndarray((nf, 1, 2))
         """
-        if (self.tipper_err != None) and \
+        if self.tipper_err is not None and \
                             (self._tipper_err.shape != tipper_err_array.shape):
             raise MT_Z_Error('Shape of new "tipper_err" array does not match old'+\
                              'new shape {0} != old shape {1}'.format(tipper_err_array.shape),

@@ -560,7 +560,8 @@ class MT(object):
                         try:
                             obj = getattr(obj, cl_attr.capitalize())
                         except AttributeError:
-                            print 'Could not get {0}'.format(cl_attr)
+                            # print 'Could not get {0}'.format(cl_attr)
+                            pass
 
                     count += 1
 
