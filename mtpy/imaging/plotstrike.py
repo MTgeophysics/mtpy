@@ -949,8 +949,8 @@ class PlotStrike(object):
             file_format = save_fn[-3:]
             self.fig.savefig(save_fn, dpi=fig_dpi, format=file_format,
                              orientation=orientation)
-            plt.clf()
-            plt.close(self.fig)
+            # plt.clf()
+            # plt.close(self.fig)
 
         else:
             if not os.path.exists(save_fn):
