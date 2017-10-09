@@ -49,6 +49,7 @@ class TestPlotPhaseTensorPseudoSection(ImageTestCase):
                    "%s.png" % inspect.currentframe().f_code.co_name)
 
     @unittest.skipUnless(os.path.isdir(edi_paths[5]), "data file not found")
+    @ImageCompare(fig_size=(8, 6), savefig_kwargs={'dpi': 100})
     def test_plot_05(self):
         edi_path = edi_paths[5]
         self._plot(edi_path,

@@ -49,6 +49,7 @@ class TestPlotMTResponse(ImageTestCase):
     def _plot(self, edi_path):
         edi_file_list = glob.glob(os.path.join(edi_path, '*.edi'))
         for edi_file in edi_file_list:
+            plt.clf()
             pt_obj = PlotMTResponse(
                 fn=edi_file
             )
