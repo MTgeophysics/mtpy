@@ -65,6 +65,7 @@ test_params = [
         {
             'style_all': {
                 "fig_size": (32, 6),
+                "tolerance": 10,
                 "savefig_kwargs": {'dpi': 200}
             },
             'style_compare': {
