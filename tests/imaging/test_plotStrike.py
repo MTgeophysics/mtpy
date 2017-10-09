@@ -21,6 +21,7 @@ edi_paths = [
 class TestPlotStrike(ImageTestCase):
     pass
 
+
 def test_gen(edi_path):
     def default(self):
         edi_file_list = glob.glob(os.path.join(edi_path, "*.edi"))

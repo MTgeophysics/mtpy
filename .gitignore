@@ -132,16 +132,6 @@ target/
 
 # image testing files
 tests/result_images/
-tests/baseline_images/*/test_plotMTResponse/test_plot_04*
-tests/baseline_images/*/test_plotMTResponse/test_plot_05*
-tests/baseline_images/*/test_plotMultipleResponses/test_plot_04*
-tests/baseline_images/*/test_plotMultipleResponses/test_plot_05*
-tests/baseline_images/*/test_plotPhaseTensorMaps/test_plot_02*
-tests/baseline_images/*/test_plotPhaseTensorMaps/test_plot_03*
-tests/baseline_images/*/test_plotPhaseTensorPseudoSection/test_plot_04*
-tests/baseline_images/*/test_plotPhaseTensorPseudoSection/test_plot_05*
-tests/baseline_images/*/test_plotResPhasePseudoSection/test_plot_04*
-tests/baseline_images/*/test_plotResPhasePseudoSection/test_plot_05*
 tests/baseline_images/**/test_GA_UA_edited*
 tests/baseline_images/**/test_3D_MT_data_edited*
 tests/baseline_images/**/test_GA_UA_edited*

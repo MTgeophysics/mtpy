@@ -70,9 +70,9 @@ class ImageCompare(object):
         self.fig_size = kwargs.pop('fig_size', None)
 
         if self.result_dir and not os.path.exists(self.result_dir):
-            os.mkdir(self.result_dir)
+            os.makedirs(self.result_dir)
         if self.baseline_dir and not os.path.exists(self.baseline_dir):
-            os.mkdir(self.baseline_dir)
+            os.makedirs(self.baseline_dir)
 
     def __call__(self, original):
         import matplotlib.pyplot as plt
@@ -142,9 +142,9 @@ class ImageCompare(object):
             baseline = os.path.join(self.baseline_dir, test_suite_name)
             result = os.path.join(self.result_dir, test_suite_name)
             if not os.path.exists(baseline):
-                os.mkdir(baseline)
+                os.makedirs(baseline)
             if not os.path.exists(result):
-                os.mkdir(result)
+                os.makedirs(result)
 
         for ext in extensions:
             name = '{fname}.{ext}'.format(fname=fname, ext=ext)
