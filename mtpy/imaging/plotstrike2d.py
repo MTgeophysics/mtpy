@@ -343,8 +343,8 @@ class PlotStrike2D(object):
             tiprlist.append(tiprdict)
 
         #--> get min and max period
-        maxper = np.max([np.max(mm.keys()) for mm in ptlist])
-        minper = np.min([np.min(mm.keys()) for mm in ptlist])
+        maxper = np.max([np.max(mm.keys()) for mm in ptlist if mm.keys()])
+        minper = np.min([np.min(mm.keys()) for mm in ptlist if mm.keys()])
 
         # make empty arrays to put data into for easy manipulation
         medpt = np.zeros((nt, nc))
