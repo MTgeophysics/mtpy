@@ -22,14 +22,6 @@ edi_paths = [
 
 
 class TestPlotResPhasePseudoSection(ImageTestCase):
-    # def setUp(self):
-    #     plt.clf()
-
-    def tearDown(self):
-        plt.pause(1)
-        plt.close()
-        plt.clf()
-
     @unittest.skipUnless(os.path.isdir(edi_paths[1]), "data file not found")
     @ImageCompare(fig_size=(8, 6))
     def test_plot_01_imshow(self):

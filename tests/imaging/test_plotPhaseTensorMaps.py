@@ -51,11 +51,6 @@ class TestPlotPhaseTensorMaps(ImageTestCase):
         #                      'xborderpad': 0.07,
         #                      'yborderpad': 0.015}
 
-    def tearDown(self):
-        plt.pause(1)
-        plt.close('all')
-        plt.clf()
-
     @ImageCompare(fig_size=(7, 8), savefig_kwargs={'dpi': 100})
     def test_plot_01(self):
         edi_path = edi_paths[1]

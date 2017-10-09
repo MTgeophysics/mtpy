@@ -20,10 +20,6 @@ edi_paths = [
 
 
 class TestPlotMultipleResponses(ImageTestCase):
-
-    def setUp(self):
-        plt.clf()
-
     @ImageCompare(fig_size=(16, 6),  savefig_kwargs={'dpi': 200})
     def test_plot_01_all(self):
         edi_path = edi_paths[1]

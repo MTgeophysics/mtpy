@@ -49,3 +49,11 @@ class ImageTestCase(TestCase):
     @classmethod
     def tearDownClass(cls):
         plt.close('all')
+
+    def setUp(self):
+        plt.clf()
+
+    def tearDown(self):
+        if plt.isinteractive():
+            plt.pause(1)
+        plt.close("all")

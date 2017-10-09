@@ -8,8 +8,6 @@ from mtpy.imaging.plotstrike import PlotStrike
 from mtpy.utils.decorator import ImageCompare
 from tests.imaging import ImageTestCase
 
-plt.ion()
-
 edi_paths = [
     "tests/data/edifiles",
     "examples/data/edi2",
@@ -21,9 +19,7 @@ edi_paths = [
 
 
 class TestPlotStrike(ImageTestCase):
-    def setUp(self):
-        plt.clf()
-
+    pass
 
 def test_gen(edi_path):
     def default(self):

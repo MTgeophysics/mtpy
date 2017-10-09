@@ -22,9 +22,6 @@ edi_paths = [
 
 
 class TestPlotMTResponse(ImageTestCase):
-    def setUp(self):
-        plt.clf()
-
     def test_plot_01(self):
         edi_path = edi_paths[1]
         self._plot(edi_path)

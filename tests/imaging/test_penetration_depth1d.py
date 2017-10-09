@@ -15,15 +15,6 @@ from tests.imaging import ImageTestCase
 
 
 class TestPenetration_depth1d(ImageTestCase):
-    # def setUp(self):
-    #     plt.clf()
-
-    def tearDown(self):
-        plt.pause(1)
-        plt.close('all')
-        # plt.clf()
-        # pass
-
     def test_plot_edi_dir(self):
         """
         testing plotting all edi files in a given dir

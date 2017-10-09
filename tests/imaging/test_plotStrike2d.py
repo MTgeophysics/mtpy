@@ -1,7 +1,5 @@
 import glob
-import inspect
 import os
-import unittest
 
 # configure matplotlib for testing
 import matplotlib.pyplot as plt
@@ -9,8 +7,6 @@ import matplotlib.pyplot as plt
 from mtpy.imaging.plotstrike2d import PlotStrike2D
 from mtpy.utils.decorator import ImageCompare
 from tests.imaging import ImageTestCase
-
-plt.ion()
 
 edi_paths = [
     "tests/data/edifiles",
@@ -23,8 +19,7 @@ edi_paths = [
 
 
 class TestPlotStrike2D(ImageTestCase):
-    def setUp(self):
-        plt.clf()
+    pass
 
 
 def test_gen(edi_path):

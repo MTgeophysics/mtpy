@@ -21,14 +21,6 @@ edi_paths = [
 
 
 class TestPlotPhaseTensorPseudoSection(ImageTestCase):
-    # def setUp(self):
-    #     plt.clf()
-
-    def tearDown(self):
-        plt.pause(1)
-        plt.close('all')
-        plt.clf()
-
     @ImageCompare(fig_size=(8, 8), savefig_kwargs={'dpi': 100})
     def test_plot_01(self):
         edi_path = edi_paths[1]

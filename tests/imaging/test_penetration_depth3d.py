@@ -11,10 +11,6 @@ class TestPenetration_depth3d(ImageTestCase):
     def setUpClass(cls):
         cls._edifiles_small = "tests/data/edifiles"
 
-    def tearDown(self):
-        plt.pause(1)
-        plt.close('all')
-
     @ImageCompare(fig_size=(8, 6))
     def test_plot_latlon_depth_profile_period_index(self):
         plot_latlon_depth_profile(self._edifiles_small, 10, 'det', savefig=False)
