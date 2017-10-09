@@ -815,8 +815,8 @@ class Model(object):
         self.iter_fn = None
         
         self.n_layers = kwargs.pop('n_layers', 100)
-        self.bottom_layer = kwargs.pop('bottom_layer', 50000)
-        self.target_depth = kwargs.pop('target_layer', 10000)
+        self.bottom_layer = kwargs.pop('bottom_layer', None)
+        self.target_depth = kwargs.pop('target_depth', None)
         self.pad_z = kwargs.pop('pad_z', 5)
         self.z1_layer = kwargs.pop('z1_layer', 10)
         self.air_layer_height = kwargs.pop('zir_layer_height', 10000)
@@ -834,6 +834,35 @@ class Model(object):
         self.model_prefernce = None
         self.model_preference_penalty = None
         self.num_params = None
+
+
+    def _set_layerdepth_defaults(self,z1_threshold=3.,bottomlayer_threshold=2.):
+        """
+        set target depth, bottom layer and z1 layer, making sure all the layers
+        are consistent with each other and will work in the inversion
+        (e.g. check target depth is not deeper than bottom layer)
+        """
+        
+        if self.target_depth is None:
+            if self.bottom_layer is None:
+                # if neither target_depth nor bottom_layer are set, set defaults
+                self.target_depth = 10000.
+            else:
+                self.target_depth = mtcc.roundsf(self.bottom_layer/5., 1.)
+                
+        if self.bottom_layer is None:
+            self.bottom_layer = 5.*self.target_depth
+        # if bottom layer less than a factor of 2 greater than target depth then adjust deeper
+        elif float(self.bottom_layer)/self.target_depth < bottomlayer_threshold:
+            self.bottom_layer = bottomlayer_threshold*self.target_depth
+            print "bottom layer not deep enough for target depth, set to {} m".format(self.bottom_layer)
+        
+        if self.z1_layer is None:
+            self.z1_layer = mtcc.roundsf(self.target_depth/1000.,0)
+        elif self.target_depth/self.z1_layer < z1_threshold:
+            self.z1_layer = self.target_depth/z1_threshold
+            print "z1 layer not deep enough for target depth, set to {} m".format(self.z1_layer)
+            
     
     def write_model_file(self,save_path=None, **kwargs):
         """
