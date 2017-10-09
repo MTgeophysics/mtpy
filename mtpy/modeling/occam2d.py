@@ -43,7 +43,7 @@ import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 import scipy.interpolate as spi
 import mtpy.core.mt as mt
-import mtpy.modeling.winglinktools as MTwl
+import mtpy.modeling.winglink as MTwl
 import mtpy.analysis.geometry as MTgy
 from mtpy.imaging.mtplottools import plot_errorbar
 import mtpy.utils.calculator as mtcc
@@ -314,8 +314,8 @@ class Mesh():
 
 
         #round the layers to be whole numbers
-        ztarget = np.array([zz-zz%10**np.floor(np.log10(zz)) for zz in 
-                           log_z])
+        ztarget = np.array([mtcc.roundsf(zz,1) for zz in 
+                           log_z])#zz-zz%10**np.floor(np.log10(zz))
         
         #--> create padding cells past target depth
 #        log_zpad = np.logspace(np.log10(self.z_target_depth), 
@@ -328,9 +328,9 @@ class Mesh():
                                                self.z_bottom,
                                                self.num_z_pad_cells,
                                                increment_factor=0.99)  
-        #round the layers to be whole numbers
-        zpadding = np.array([zz-zz%10**np.floor(np.log10(zz)) for zz in 
-                               log_zpad])
+        #round the layers to 1 sf 
+        zpadding = np.array([mtcc.roundsf(zz,1) for zz in 
+                               log_zpad])#zz-zz%10**np.floor(np.log10(zz))
                                
         #create the vertical nodes
         self.z_nodes = np.append(ztarget, zpadding)
@@ -1503,9 +1503,12 @@ class Regularization(Mesh):
         model_widths = [pad_width]+station_widths+[pad_width]
         num_cols = len(model_cols)
         
-        model_thickness = np.append(self.z_nodes[0:self.z_nodes.shape[0]-
-                                                        self.num_z_pad_cells], 
-                                    self.z_nodes[-self.num_z_pad_cells:].sum())
+#        model_thickness = np.append(self.z_nodes[0:self.z_nodes.shape[0]-
+#                                                        self.num_z_pad_cells], 
+#                                    self.z_nodes[-self.num_z_pad_cells:].sum())
+        model_thickness = np.hstack([[self.z_nodes[:2].sum()],
+                                      self.z_nodes[2:-self.num_z_pad_cells],
+                                     [self.z_nodes[-self.num_z_pad_cells:].sum()]])
         
         self.num_param = 0
         #--> now need to calulate model blocks to the bottom of the model
