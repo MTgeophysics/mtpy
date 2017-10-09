@@ -21,6 +21,7 @@ else:
 
 MtPyLog().get_mtpy_logger(__name__).info("Testing using matplotlib backend {}".format(matplotlib.rcParams['backend']))
 
+
 def reset_matplotlib():
     # save some important params
     interactive = matplotlib.rcParams['interactive']

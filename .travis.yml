@@ -25,6 +25,6 @@ install:
 
 # command to run tests
 script:
-  - py.test -n 4 -v -x tests/core
-  - py.test -v -x tests/imaging
-  - py.test -n 4 -v -x tests/modeling
+  - py.test -n 4 -x tests/core
+  - py.test -x tests/imaging
+  - py.test -n 4 -x tests/modeling

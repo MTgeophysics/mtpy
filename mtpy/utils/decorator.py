@@ -111,12 +111,12 @@ class ImageCompare(object):
                         msg = compare_images(baseline_image, test_image, tol=self.tolerance)
                         if msg is not None:
                             # print image in base64
-                            print("====================")
-                            print("Expected Image:")
-                            self._print_image_base64(baseline_image)
-                            print("Actual Image:")
-                            self._print_image_base64(test_image)
-                            print("====================")
+                            # print("====================")
+                            # print("Expected Image:")
+                            # self._print_image_base64(baseline_image)
+                            # print("Actual Image:")
+                            # self._print_image_base64(test_image)
+                            # print("====================")
                             self.print_image_testing_note(file=sys.stderr)
                             pytest.fail(msg, pytrace=False)
                         else:
