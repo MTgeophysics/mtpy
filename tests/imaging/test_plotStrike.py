@@ -1,12 +1,8 @@
 import glob
-import inspect
 import os
-import unittest
-from unittest import TestCase
 
 # configure matplotlib for testing
 import matplotlib.pyplot as plt
-import pytest
 
 from mtpy.imaging.plotstrike import PlotStrike
 from mtpy.utils.decorator import ImageCompare
