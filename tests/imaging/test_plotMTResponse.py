@@ -20,7 +20,7 @@ class TestPlotMTResponse(ImageTestCase):
     pass
 
 
-def test_gen(edi_path):
+def _test_gen(edi_path):
     def default(self):
         edi_file_list = glob.glob(os.path.join(edi_path, '*.edi'))
         for edi_file in edi_file_list:
@@ -41,15 +41,10 @@ def test_gen(edi_path):
 for edi_path in edi_paths:
     if os.path.isdir(edi_path):
         test_name = os.path.basename(edi_path)
-        test_func = test_gen(edi_path)
-        test_func.__name__ = "test_{test_name}_{plot_name}".format(
-            test_name=test_name, plot_name=test_func.__name__)
+        _test_func = _test_gen(edi_path)
+        _test_func.__name__ = "test_{test_name}_{plot_name}".format(
+            test_name=test_name, plot_name=_test_func.__name__)
         setattr(
             TestPlotMTResponse,
-            test_func.__name__,
-            test_func)
-
-if 'test_gen' in globals():
-    del globals()['test_gen']
-if 'test_func' in globals():
-    del globals()['test_func']
+            _test_func.__name__,
+            _test_func)

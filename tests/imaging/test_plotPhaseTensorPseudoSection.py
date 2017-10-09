@@ -19,7 +19,8 @@ test_params = [
 class TestPlotPhaseTensorPseudoSection(ImageTestCase):
     pass
 
-def test_gen(edi_path):
+
+def _test_gen(edi_path):
     def default(self):
         edi_file_list = glob.glob(os.path.join(edi_path, "*.edi"))
         freq = 1
@@ -47,7 +48,7 @@ def test_gen(edi_path):
         save_figure_name = "{}.png".format(default.__name__)
         save_figure_path = os.path.join(self._temp_dir, save_figure_name)
         ptpObj.save_figure2(save_fn=save_figure_path, close_plot='n')
-        assert(os.path.isfile(save_figure_path))
+        assert (os.path.isfile(save_figure_path))
 
     return default,
 
@@ -56,15 +57,10 @@ def test_gen(edi_path):
 for edi_path, img_kwargs in test_params:
     if os.path.isdir(edi_path):
         test_name = os.path.basename(edi_path)
-        for test_func in test_gen(edi_path):
-            test_func.__name__ = "test_{test_name}_{plot_name}".format(
-                test_name=test_name, plot_name=test_func.__name__)
+        for _test_func in _test_gen(edi_path):
+            _test_func.__name__ = "test_{test_name}_{plot_name}".format(
+                test_name=test_name, plot_name=_test_func.__name__)
             setattr(
                 TestPlotPhaseTensorPseudoSection,
-                test_func.__name__,
-                ImageCompare(**img_kwargs).__call__(test_func))
-
-if 'test_gen' in globals():
-    del globals()['test_gen']
-if 'test_func' in globals():
-    del globals()['test_func']
+                _test_func.__name__,
+                ImageCompare(**img_kwargs).__call__(_test_func))

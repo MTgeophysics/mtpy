@@ -81,7 +81,7 @@ class TestPlotMultipleResponses(ImageTestCase):
     pass
 
 
-def test_gen(edi_path):
+def _test_gen(edi_path):
     def style_all(self):
         edi_file_list = glob.glob(os.path.join(edi_path, '*.edi'))
         pt_obj = PlotMultipleResponses(
@@ -114,16 +114,11 @@ def test_gen(edi_path):
 for edi_path, img_kwargs in test_params:
     if os.path.isdir(edi_path):
         test_name = os.path.basename(edi_path)
-        for test_func in test_gen(edi_path):
-            plot_name = test_func.__name__
-            test_func.__name__ = "test_{test_name}_{plot_name}".format(
+        for _test_func in _test_gen(edi_path):
+            plot_name = _test_func.__name__
+            _test_func.__name__ = "test_{test_name}_{plot_name}".format(
                 test_name=test_name, plot_name=plot_name)
             setattr(
                 TestPlotMultipleResponses,
-                test_func.__name__,
-                ImageCompare(**img_kwargs[plot_name]).__call__(test_func))
-
-if 'test_gen' in globals():
-    del globals()['test_gen']
-if 'test_func' in globals():
-    del globals()['test_func']
+                _test_func.__name__,
+                ImageCompare(**img_kwargs[plot_name]).__call__(_test_func))

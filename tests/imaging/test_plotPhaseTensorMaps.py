@@ -90,7 +90,7 @@ class TestPlotPhaseTensorMaps(ImageTestCase):
         assert (os.path.isdir(save_param_path))
 
 
-def test_gen(edi_path, freq):
+def _test_gen(edi_path, freq):
     def default(self):
         save_figure_path = os.path.join(self._temp_dir, "%s.png" % default.__name__)
         save_param_path = os.path.join(self._temp_dir, "params_%s" % default.__name__)
@@ -123,16 +123,11 @@ def test_gen(edi_path, freq):
 for edi_path, freq, img_kwargs in test_params:
     if os.path.isdir(edi_path):
         test_name = os.path.basename(edi_path)
-        for test_func in test_gen(edi_path, freq):
-            plot_name = test_func.__name__
-            test_func.__name__ = "test_{test_name}_{freq}_{plot_name}".format(
+        for _test_func in _test_gen(edi_path, freq):
+            plot_name = _test_func.__name__
+            _test_func.__name__ = "test_{test_name}_{freq}_{plot_name}".format(
                 test_name=test_name, freq=str(freq).replace('.', '_'), plot_name=plot_name)
             setattr(
                 TestPlotPhaseTensorMaps,
-                test_func.__name__,
-                ImageCompare(**img_kwargs).__call__(test_func))
-
-if 'test_gen' in globals():
-    del globals()['test_gen']
-if 'test_func' in globals():
-    del globals()['test_func']
+                _test_func.__name__,
+                ImageCompare(**img_kwargs).__call__(_test_func))

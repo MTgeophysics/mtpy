@@ -23,7 +23,7 @@ class TestPlotResPhasePseudoSection(ImageTestCase):
     pass
 
 
-def test_gen(edi_path):
+def _test_gen(edi_path):
     def imshow(self):
         edi_file_list = glob.glob(os.path.join(edi_path, "*.edi"))
         pt_obj = PlotResPhasePseudoSection(fn_list=edi_file_list, plot_yn='n', plot_style='imshow')
@@ -51,15 +51,10 @@ def test_gen(edi_path):
 for edi_path in edi_paths:
     if os.path.isdir(edi_path):
         test_name = os.path.basename(edi_path)
-        for test_func in test_gen(edi_path):
-            test_func.__name__ = "test_{test_name}_{plot_name}".format(
-                test_name=test_name, plot_name=test_func.__name__)
+        for _test_func in _test_gen(edi_path):
+            _test_func.__name__ = "test_{test_name}_{plot_name}".format(
+                test_name=test_name, plot_name=_test_func.__name__)
             setattr(
                 TestPlotResPhasePseudoSection,
-                test_func.__name__,
-                ImageCompare(fig_size=(8, 6)).__call__(test_func))
-
-if 'test_gen' in globals():
-    del globals()['test_gen']
-if 'test_func' in globals():
-    del globals()['test_func']
+                _test_func.__name__,
+                ImageCompare(fig_size=(8, 6)).__call__(_test_func))
