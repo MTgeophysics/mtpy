@@ -820,7 +820,8 @@ class Model(object):
         self.pad_z = kwargs.pop('pad_z', 5)
         self.z1_layer = kwargs.pop('z1_layer', 10)
         self.air_layer_height = kwargs.pop('zir_layer_height', 10000)
-        
+        self._set_layerdepth_defaults()       
+ 
         self.save_path = kwargs.pop('save_path', None)
         if self.model_fn is not None and self.save_path is None:
             self.save_path = os.path.dirname(self.model_fn)
