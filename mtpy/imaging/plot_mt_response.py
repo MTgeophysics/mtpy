@@ -1459,8 +1459,8 @@ class PlotMTResponse(mtpl.MTArrows, mtpl.MTEllipse):
             file_format = save_fn[-3:]
             self.fig.savefig(save_fn, fig_dpi=fig_dpi, format=file_format,
                              orientation=orientation)
-            plt.clf()
-            plt.close(self.fig)
+            # plt.clf()
+            # plt.close(self.fig)
 
         else:
             save_fn = os.path.join(save_fn, self._mt.station + '_ResPhase.' +
