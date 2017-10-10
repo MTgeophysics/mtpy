@@ -10,13 +10,14 @@ if [ ! -d "$BUILDING_DIR" ]; then
     mkdir "$BUILDING_DIR"
 fi
 pushd "$BUILDING_DIR"
-if [ ! -f "gdal-$GDAL_VERSION.tar.gz" ]; then
+if [ ! -d "gdal-$GDAL_VERSION" ]; then
     wget "http://download.osgeo.org/gdal/CURRENT/gdal-$GDAL_VERSION.tar.gz" -O "gdal-$GDAL_VERSION.tar.gz"
+    tar xfz "gdal-$GDAL_VERSION.tar.gz"
 fi
-tar xvfz "gdal-$GDAL_VERSION.tar.gz"
 pushd "gdal-$GDAL_VERSION"
-./configure --with-python
+./configure --with-python --prefix=/usr/local/gdal
 make
 sudo make install
 popd
 popd
+ldconfig
