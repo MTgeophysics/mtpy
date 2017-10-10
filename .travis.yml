@@ -13,20 +13,17 @@ cache: pip  # make cache for pip dependencies
 env:
   - MATPLOTLIB_VERSION=2.0.2
   - MATPLOTLIB_VERSION=2.1.0
-  - TEST_SUITE="-n 4 tests/core"
-  - TEST_SUITE="tests/imaging"
-  - TEST_SUITE="-n 4 tests/modeling"
 
 before_install:
   - sudo apt update -qq
   - sudo apt -y install -qq libgdal-dev  # dependencies of dgal
-  - export CPLUS_INCLUDE_PATH=/usr/include/gdal
-  - export C_INCLUDE_PATH=/usr/include/gdal
+#  - export CPLUS_INCLUDE_PATH=/usr/include/gdal
+#  - export C_INCLUDE_PATH=/usr/include/gdal
 
 # command to install dependencies
 install:
   # manually build and install gdal
-#  - pip install GDAL==$(gdal-config --version | awk -F'[.]' '{print $1"."$2}') --global-option=build_ext --global-option="-I/usr/include/gdal/"
+  - pip install GDAL==$(gdal-config --version | awk -F'[.]' '{print $1"."$2}') --global-option=build_ext --global-option="-I/usr/include/gdal/"
   - pip install -q matplotlib==$MATPLOTLIB_VERSION
   - pip install -q -r requirements.txt
 
@@ -41,11 +38,12 @@ before_script:
 #  - pip install .
 
 script:
-  - py.test
+  - py.test -n 4 tests/core
+  - py.test tests/imaging
+  - py.test -n 4 tests/modeling
 
 matrix:
   fast_finish: true
-  exclude:
-    - env: MATPLOTLIB_VERSION=2.0.2 TEST_SUITE="-n 4 tests/core"
-    - env: MATPLOTLIB_VERSION=2.0.2 TEST_SUITE="-n 4 tests/modeling"
+  allow_failures:
+    - env: MATPLOTLIB_VERSION=2.0.2
 
