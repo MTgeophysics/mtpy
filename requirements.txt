@@ -2,7 +2,7 @@ matplotlib
 numpy
 PyYAML>=3.11
 geopandas
-gdal
+GDAL
 scipy
 pillow
 
