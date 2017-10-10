@@ -16,14 +16,19 @@ env:
 
 before_install:
   - sudo apt update -qq
-  - sudo apt -y install -qq libgdal-dev  # dependencies of dgal
-#  - export CPLUS_INCLUDE_PATH=/usr/include/gdal
-#  - export C_INCLUDE_PATH=/usr/include/gdal
+#  - sudo apt -y install -qq libgdal-dev=2.2.2  # dependencies of dgal
+  # build gdal from source as the one on ubuntu trusty is out-of-date
+  - sudo apt-get install build-essential python-all-dev
+  - wget http://download.osgeo.org/gdal/gdal-1.9.0.tar.gz -O /tmp/gdal-1.9.0.tar.gz
+  - tar xvfz /tmp/gdal-1.9.0.tar.gz
+  - pushd gdal-1.9.0 && ./configure --with-python && make && sudo make install
+  - export CPLUS_INCLUDE_PATH=/usr/include/gdal
+  - export C_INCLUDE_PATH=/usr/include/gdal
 
 # command to install dependencies
 install:
   # manually build and install gdal
-  - pip install GDAL==$(gdal-config --version | awk -F'[.]' '{print $1"."$2}') --global-option=build_ext --global-option="-I/usr/include/gdal/"
+#  - pip install GDAL==$(gdal-config --version | awk -F'[.]' '{print $1"."$2}') --global-option=build_ext --global-option="-I/usr/include/gdal/"
   - pip install -q matplotlib==$MATPLOTLIB_VERSION
   - pip install -q -r requirements.txt
 
