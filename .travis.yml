@@ -8,7 +8,10 @@ python:
   # maintainers to fix their pypy-dev package.
   # - "pypy"
 
-cache: pip  # make cache for pip dependencies
+cache:
+  pip: true  # make cache for pip dependencies
+  directories:
+    - cache  # cached files
 
 env:
   - MATPLOTLIB_VERSION=2.0.2
@@ -18,10 +21,7 @@ before_install:
   - sudo apt update -qq
 #  - sudo apt -y install -qq libgdal-dev=2.2.2  # dependencies of dgal
   # build gdal from source as the one on ubuntu trusty is out-of-date
-  - sudo apt-get install build-essential python-all-dev
-  - wget http://download.osgeo.org/gdal/gdal-1.9.0.tar.gz -O /tmp/gdal-1.9.0.tar.gz
-  - tar xvfz /tmp/gdal-1.9.0.tar.gz
-  - pushd gdal-1.9.0 && ./configure --with-python && make && sudo make install && popd
+  - ./bin/install_libgdal.sh
   - export CPLUS_INCLUDE_PATH=/usr/include/gdal
   - export C_INCLUDE_PATH=/usr/include/gdal
 
