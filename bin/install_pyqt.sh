@@ -33,7 +33,7 @@ if [ $QT_VERSION == 4 ]; then
         tar xzf PyQt4_gpl_x11-4.12.1.tar.gz
     fi
     pushd PyQt4_gpl_x11-4.12.1
-    python configure.py -c --confirm-license --no-designer-plugin -e QtCore -e QtGui
+    python configure.py -c --confirm-license --no-designer-plugin -e QtCore -e QtGui -e QtTest
     make
     sudo make install
 #    make install
