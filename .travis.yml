@@ -16,6 +16,7 @@ cache:
 env:
   - MATPLOTLIB_VERSION=2.0.2
   - MATPLOTLIB_VERSION=2.1.0
+  - MATPLOTLIB_VERSION=1.5.3
 
 before_install:
   - sudo apt update -qq
@@ -53,4 +54,5 @@ matrix:
   fast_finish: true
   allow_failures:
     - env: MATPLOTLIB_VERSION=2.0.2
+    - env: MATPLOTLIB_VERSION=1.5.3
 

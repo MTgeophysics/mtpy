@@ -62,10 +62,14 @@ class ImageCompare(object):
     def __init__(self, *args, **kwargs):
         self.baseline_dir = kwargs.pop(
             'baseline_dir',
-            'tests/baseline_images/matplotlib_{ver}'.format(ver=matplotlib.__version__).replace('.', '_'))
+            # 'tests/baseline_images/matplotlib_{ver}'.format(ver=matplotlib.__version__).replace('.', '_')
+            'tests/baseline_images'
+        )
         self.result_dir = kwargs.pop(
             'result_dir',
-            'tests/result_images/matplotlib_{ver}'.format(ver=matplotlib.__version__).replace('.', '_'))
+            # 'tests/result_images/matplotlib_{ver}'.format(ver=matplotlib.__version__).replace('.', '_')
+            'tests/result_images'
+        )
         self.filename = kwargs.pop('filename', None)
         self.extensions = kwargs.pop('extensions', ['png'])
         self.savefig_kwargs = kwargs.pop('savefig_kwargs', {'dpi': 80})
@@ -74,8 +78,8 @@ class ImageCompare(object):
 
         if self.result_dir and not os.path.exists(self.result_dir):
             os.makedirs(self.result_dir)
-        if self.baseline_dir and not os.path.exists(self.baseline_dir):
-            os.makedirs(self.baseline_dir)
+        # if self.baseline_dir and not os.path.exists(self.baseline_dir):
+        #     os.makedirs(self.baseline_dir)
 
     def __call__(self, original):
         import matplotlib.pyplot as plt
@@ -136,8 +140,8 @@ class ImageCompare(object):
                         if np.any(actual_image):
                             self.print_image_testing_note(file=sys.stderr)
                             pytest.xfail("Image file not found for comparison test "
-                                        "(This is expected for new tests.)\nGenerated Image: "
-                                        "\n\t{test}".format(test=test_image))
+                                         "(This is expected for new tests.)\nGenerated Image: "
+                                         "\n\t{test}".format(test=test_image))
                         else:
                             # empty image created
                             pytest.fail("Image file not found for comparison test "
@@ -177,7 +181,8 @@ class ImageCompare(object):
         with open(image_file_name, "rb") as image_file:
             image_data = image_file.read()
             print(
-                "<img src=\"data:image/{};base64,{}\" style=\"display:block; max-width:800px; width: auto; height: auto;\" />".format(
+                "<img src=\"data:image/{};base64,{}\" style=\"display:block; max-width:800px; width: auto; height: "
+                "auto;\" />".format(
                     os.path.splitext(image_file_name)[1].strip(" ."),
                     image_data.encode("base64")))
 
