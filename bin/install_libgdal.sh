@@ -11,7 +11,7 @@ if [ ! -d "$BUILDING_DIR" ]; then
 fi
 pushd "$BUILDING_DIR"
 if [ ! -d "gdal-$GDAL_VERSION" ]; then
-    wget "http://download.osgeo.org/gdal/CURRENT/gdal-$GDAL_VERSION.tar.gz" -O "gdal-$GDAL_VERSION.tar.gz"
+    wget "http://download.osgeo.org/gdal/$GDAL_VERSION/gdal-$GDAL_VERSION.tar.gz" -O "gdal-$GDAL_VERSION.tar.gz"
     tar xfz "gdal-$GDAL_VERSION.tar.gz"
 fi
 pushd "gdal-$GDAL_VERSION"
