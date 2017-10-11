@@ -1,3 +1,4 @@
+from PyQt4 import QtCore
 from unittest import TestCase
 
 import sys
@@ -16,13 +17,13 @@ class MainWindow(QMainWindow):
         self.editor.setPlainText("0123456789" * 100)
         layout = QGridLayout(widget)
         layout.addWidget(self.editor, 0, 0, 1, 3)
-        button = QPushButton("Wait")
-        layout.addWidget(button, 1, 1, 1, 1)
+        self.button = QPushButton("Wait")
+        layout.addWidget(self.button, 1, 1, 1, 1)
 
         self.setCentralWidget(widget)
         self.overlay = BusyOverlay(self.centralWidget())
         self.overlay.hide()
-        button.clicked.connect(self.overlay.show)
+        self.button.clicked.connect(self.overlay.show)
 
     def resizeEvent(self, event):
         self.overlay.resize(event.size())
@@ -35,5 +36,6 @@ class TestBusyOverlay(TestCase):
         window = MainWindow()
         window.show()
         QTest.qWaitForWindowShown(window)
-        # QTest.qWait(10000)
-        app.exec_()
+        QTest.mouseClick(window.button, QtCore.Qt.LeftButton)
+        QTest.qWait(5000)
+        window.overlay.hide()
