@@ -26,6 +26,7 @@ class ResPhase(object):
     
     def __init__(self, z_array=None, z_err_array=None, freq=None, **kwargs):
         
+        
         self._z = z_array
         self._z_err = z_err_array 
         
@@ -367,6 +368,8 @@ class Z(ResPhase):
 
         Initialises the attributes with None
         """
+        
+        ResPhase.__init__(self)        
 
         self._z = z_array
         self._z_err = z_err_array

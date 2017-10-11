@@ -456,7 +456,9 @@ class Data(object):
             elif self.mode == 'tm':
                 self.res_tm = data_1
                 self.phase_tm = data_2
-                
+            self.res_err = data_1_err
+            self.phase_err = data_2_err
+            
         self.freq = freq
         
     def _remove_outofquadrant_phase(self, freq, d1, d1_err, d2, d2_err):
@@ -1102,7 +1104,7 @@ class Model(object):
                         model.append(float(kk))
                 except ValueError:
                     pass
-        
+
         #put the model values into the model dictionary into the res array
         #for easy manipulation and access.       
         model = np.array(model)
