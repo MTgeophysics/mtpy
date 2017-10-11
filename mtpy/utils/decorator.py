@@ -13,9 +13,12 @@ from __future__ import print_function
 import functools
 import inspect
 import os
+from matplotlib import _png
 
 import matplotlib
 import sys
+
+from matplotlib.testing.compare import verify
 
 
 class deprecated(object):
@@ -125,11 +128,21 @@ class ImageCompare(object):
                             if not os.listdir(os.path.dirname(test_image)):
                                 os.rmdir(os.path.dirname(test_image))
                     else:
-                        self.print_image_testing_note(file=sys.stderr)
-                        pytest.skip("Image file not found for comparison test."
-                                    "(This is expected for new tests.)\nGenerated Image: "
-                                    "\n\t{test}".format(test=test_image))
-
+                        # checking if the created image is empty
+                        verify(test_image)
+                        actual_image = _png.read_png_int(test_image)
+                        actual_image = actual_image[:, :, :3]  # remove the alpha channel (if exists)
+                        import numpy as np
+                        if np.any(actual_image):
+                            self.print_image_testing_note(file=sys.stderr)
+                            pytest.xfail("Image file not found for comparison test "
+                                        "(This is expected for new tests.)\nGenerated Image: "
+                                        "\n\t{test}".format(test=test_image))
+                        else:
+                            # empty image created
+                            pytest.fail("Image file not found for comparison test "
+                                        "(This is expected for new tests.),"
+                                        " but the new image created is empty.")
             return result
 
         return new_test_func
