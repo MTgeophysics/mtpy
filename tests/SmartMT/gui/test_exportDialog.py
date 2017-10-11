@@ -243,7 +243,7 @@ class TestExportDialog(TestCase):
 
 
 def _transparent_test_gen(index, ext, description):
-    def test_transparent(self):
+    def _test_transparent(self):
         # set to save to tmp dir
         _rewrite_text(self.dialog.ui.comboBox_directory,
                       os.path.abspath(self._temp_dir))
@@ -267,11 +267,11 @@ def _transparent_test_gen(index, ext, description):
                             "testing save to {0[1]} (.{0[0]}) without transparent".format(
                                 self.dialog.get_file_format()))
 
-    return test_transparent
+    return _test_transparent
 
 
 # generate tests
 for index, (ext, description) in enumerate(IMAGE_FORMATS):
-    test = _transparent_test_gen(index, ext, description)
-    test.__name__ = "test_transparent_{}".format(ext)
-    setattr(TestExportDialog, test.__name__, test)
+    _test = _transparent_test_gen(index, ext, description)
+    _test.__name__ = "test_transparent_{}".format(ext)
+    setattr(TestExportDialog, _test.__name__, _test)
