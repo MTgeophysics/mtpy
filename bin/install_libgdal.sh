@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # building gdal from source
 
+set -ex
+
 BUILDING_DIR=cache
 GDAL_VERSION=2.2.2
-
-set -ex
 
 if [ ! -d "$BUILDING_DIR" ]; then
     mkdir "$BUILDING_DIR"
