@@ -46,7 +46,7 @@ script:
   - py.test -n 4 tests/core
   - py.test tests/imaging
   - py.test -n 4 tests/modeling
-  - ./bin/travis_set_display.sh  # enable display on travis
+  - chmod +x ./bin/travis_set_display.sh && ./bin/travis_set_display.sh  # enable display on travis
   - py.test tests/SmartMT
 
 matrix:
