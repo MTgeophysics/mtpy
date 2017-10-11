@@ -18,6 +18,6 @@ pushd "gdal-$GDAL_VERSION"
 ./configure --with-python --prefix=/usr/local/gdal
 make
 sudo make install
+sudo ldconfig
 popd
 popd
-ldconfig
