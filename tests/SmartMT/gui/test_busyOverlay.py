@@ -6,6 +6,7 @@ from PyQt4.QtGui import QMainWindow, QWidget, QTextEdit, QGridLayout, QPushButto
 from PyQt4.QtTest import QTest
 
 from mtpy.gui.SmartMT.gui.busy_indicators import BusyOverlay
+from tests.SmartMT.gui import _click_area
 
 
 class MainWindow(QMainWindow):
@@ -36,6 +37,7 @@ class TestBusyOverlay(TestCase):
         window = MainWindow()
         window.show()
         QTest.qWaitForWindowShown(window)
-        QTest.mouseClick(window.button, QtCore.Qt.LeftButton)
+        _click_area(window.button)
+        # QTest.mouseClick(window.button, QtCore.Qt.LeftButton)
         QTest.qWait(5000)
         window.overlay.hide()
