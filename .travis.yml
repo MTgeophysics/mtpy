@@ -11,7 +11,7 @@ python:
 cache:
   pip: true  # make cache for pip dependencies
   directories:
-    - cache  # cached files
+    - builds  # cached files
 
 env:
   - MATPLOTLIB_VERSION=2.1.0 QT_VERSION=4
@@ -19,10 +19,14 @@ env:
   - MATPLOTLIB_VERSION=1.5.3 QT_VERSION=4
 
 before_install:
+  - chmod -vR +x ./bin/*
   - sudo apt update -qq
-#  - sudo apt -y install -qq libgdal-dev=2.2.2  # dependencies of dgal
+  # install qt4 and dependencies
+  - sudo apt -y install -qq "libqt$QT_VERSION-dev"  # install pyqt dependencies
+  - ./bin/install_pyqt.sh
   # build gdal from source as the one on ubuntu trusty is out-of-date
-  - chmod +x ./bin/install_libgdal.sh && ./bin/install_libgdal.sh
+#  - sudo apt -y install -qq libgdal-dev=2.2.2  # dependencies of dgal
+  - ./bin/install_libgdal.sh
   - export CPLUS_INCLUDE_PATH=/usr/include/gdal
   - export C_INCLUDE_PATH=/usr/include/gdal
   - export LD_LIBRARY_PATH="/usr/local/gdal/lib:$LD_LIBRARY_PATH"
@@ -32,7 +36,6 @@ before_install:
 install:
   # manually build and install gdal
 #  - pip install GDAL==$(gdal-config --version | awk -F'[.]' '{print $1"."$2}') --global-option=build_ext --global-option="-I/usr/include/gdal/"
-  - sudo apt install python-qt$QT_VERSION
   - pip install -q matplotlib==$MATPLOTLIB_VERSION
   - pip install -q -r requirements.txt
 
@@ -46,7 +49,7 @@ script:
   - py.test -n 4 tests/core
   - py.test tests/imaging
   - py.test -n 4 tests/modeling
-  - chmod +x ./bin/travis_set_display.sh && ./bin/travis_set_display.sh  # enable display on travis
+  - ./bin/travis_set_display.sh  # enable display on travis
   - py.test tests/SmartMT
 
 matrix:
