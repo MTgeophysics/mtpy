@@ -962,14 +962,20 @@ class Z(ResPhase):
         :returns: det_Z_err
         :rtype: np.ndarray(nfreq)
         """
-        
+        print "calculating det_err 1"
         det_Z_err = None
         if self.z_err is not None:
             det_Z_err = np.zeros_like(self.det, dtype=np.float)
-            det_Z_err[:] = np.abs(self.z[:, 1, 1] * self.z_err[:, 0, 0]) +\
-                           np.abs(self.z[:, 0, 0] * self.z_err[:, 1, 1]) +\
-                           np.abs(self.z[:, 0, 1] * self.z_err[:, 1, 0]) +\
-                           np.abs(self.z[:, 1, 0] * self.z_err[:, 0, 1])
+            # components of the impedance tensor are not independent variables 
+            # so can't use standard error propagation
+            # calculate manually:
+            # difference of determinant of z + z_err and z - z_err then divide by 2
+            det_Z_err[:] = np.abs(np.linalg.det(self.z + self.z_err) -\
+                                  np.linalg.det(self.z - self.z_err))/2.
+#            det_Z_err[:] = np.abs(self.z[:, 1, 1] * self.z_err[:, 0, 0]) +\
+#                           np.abs(self.z[:, 0, 0] * self.z_err[:, 1, 1]) +\
+#                           np.abs(self.z[:, 0, 1] * self.z_err[:, 1, 0]) +\
+#                           np.abs(self.z[:, 1, 0] * self.z_err[:, 0, 1])
 
         return det_Z_err
     
