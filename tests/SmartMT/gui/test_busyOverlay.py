@@ -1,8 +1,6 @@
-from PyQt4 import QtCore
 from unittest import TestCase
 
-import sys
-from PyQt4.QtGui import QMainWindow, QWidget, QTextEdit, QGridLayout, QPushButton, QApplication
+from PyQt4.QtGui import QMainWindow, QWidget, QTextEdit, QGridLayout, QPushButton
 from PyQt4.QtTest import QTest
 
 from mtpy.gui.SmartMT.gui.busy_indicators import BusyOverlay
@@ -33,7 +31,6 @@ class MainWindow(QMainWindow):
 
 class TestBusyOverlay(TestCase):
     def test(self):
-        app = QApplication(sys.argv)
         window = MainWindow()
         window.show()
         QTest.qWaitForWindowShown(window)
@@ -41,3 +38,4 @@ class TestBusyOverlay(TestCase):
         # QTest.mouseClick(window.button, QtCore.Qt.LeftButton)
         QTest.qWait(5000)
         window.overlay.hide()
+        window.close()

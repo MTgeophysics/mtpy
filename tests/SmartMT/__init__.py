@@ -4,9 +4,15 @@ import os
 import sys
 
 import matplotlib
+import sip
+from PyQt4.QtGui import QApplication
 
 from mtpy.utils.decorator import ImageCompare
 from mtpy.utils.mtpylog import MtPyLog
+
+sip.setdestroyonexit(False)
+
+app = QApplication(sys.argv)
 
 if os.name == "posix" and 'DISPLAY' not in os.environ:
     print("MATPLOTLIB: No Display found, using non-interactive svg backend", sys.stderr)

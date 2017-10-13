@@ -1,17 +1,14 @@
 import glob
 import os
-import sys
 from unittest import TestCase
 
 from PyQt4.QtCore import QPoint
-from PyQt4.QtGui import QApplication, QMainWindow, QWidget, QVBoxLayout
+from PyQt4.QtGui import QMainWindow, QWidget, QVBoxLayout
 from PyQt4.QtTest import QTest
 
 from mtpy.core import mt
 from mtpy.gui.SmartMT.gui.plot_parameter_guis import FrequencySelect
 from tests.SmartMT.gui import _click_area
-
-app = QApplication(sys.argv)
 
 edi_paths = [
     "tests/data/edifiles",

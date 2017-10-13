@@ -3,17 +3,13 @@ from __future__ import print_function
 import glob
 import os
 import pprint
-import sys
 from unittest import TestCase
 
 from PyQt4 import QtGui, QtCore
-from PyQt4.QtGui import QApplication
 from PyQt4.QtTest import QTest
 
 from mtpy.core import mt
 from mtpy.gui.SmartMT.gui.export_dialog_modem import ExportDialogModEm
-
-app = QApplication(sys.argv)
 
 
 def _fake_exec_accept():
@@ -31,7 +27,6 @@ def _rewrite_text(widget, text):
 
 
 edi_paths = [
-    "",
     "tests/data/edifiles",
     "examples/data/edi2",
     "examples/data/edi_files",
@@ -59,12 +54,14 @@ class TestExportDialogModEm(TestCase):
         self.dialog.close()
 
     def test_defaults(self):
-        edi_files = glob.glob(os.path.join(edi_paths[1], '*.edi'))
+        edi_files = glob.glob(os.path.join(edi_paths[0], '*.edi'))
         mt_objs = [mt.MT(os.path.abspath(file_name)) for file_name in edi_files]
         self.dialog.set_data(mt_objs)
-        if self.dialog.exec_() == QtGui.QWizard.Accepted:
-            print(self.dialog.get_save_file_path())
-            pprint.pprint(self.dialog.get_data_kwargs())
-            pprint.pprint(self.dialog.get_model_kwargs())
+        # if self.dialog.exec_() == QtGui.QWizard.Accepted:
+        #     print(self.dialog.get_save_file_path())
+        #     pprint.pprint(self.dialog.get_data_kwargs())
+        #     pprint.pprint(self.dialog.get_model_kwargs())
+        #
+        #     self.dialog.export_data()
 
-            self.dialog.export_data()
+        self.dialog.close()

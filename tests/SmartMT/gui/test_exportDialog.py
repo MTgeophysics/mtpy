@@ -1,17 +1,12 @@
-import sys
-
-from PyQt4 import QtCore, QtGui
+import os
 from unittest import TestCase
+
 import matplotlib.pyplot as plt
 import numpy as np
-import os
-
-from PyQt4.QtGui import QApplication
+from PyQt4 import QtCore, QtGui
 from PyQt4.QtTest import QTest
 
 from mtpy.gui.SmartMT.gui.export_dialog import ExportDialog, IMAGE_FORMATS
-
-app = QApplication(sys.argv)
 
 
 def _fake_exec_accept():
