@@ -7,7 +7,6 @@ import matplotlib
 import sip
 from PyQt4.QtGui import QApplication
 
-from mtpy.utils.decorator import ImageCompare
 from mtpy.utils.mtpylog import MtPyLog
 
 sip.setdestroyonexit(False)
