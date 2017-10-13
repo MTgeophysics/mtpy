@@ -15,11 +15,12 @@ Developer:      fei.zhang@ga.gov.au
 LastUpdate:     15/09/2017   FZ
 """
 
+import csv
+import glob
+import logging
 import os
 import sys
-import glob
-import csv
-import logging
+
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.ticker import MultipleLocator
@@ -27,14 +28,13 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 from mtpy.modeling.modem_data import Data
 from mtpy.modeling.modem_model import Model
-
 from mtpy.utils.mtpylog import MtPyLog
 
 logger = MtPyLog().get_mtpy_logger(__name__)
 logger.setLevel(logging.DEBUG)
 
-class ModemSlices():
 
+class ModemSlices():
     def __init__(self, filedat, filerho, plot_orient='ew', **kwargs):
         """Constructor
         :param filedat: path2file.dat
@@ -86,8 +86,10 @@ class ModemSlices():
         self.modObj = Model(model_fn=self.rhofile)
         self.modObj.read_model_file()
 
-        self.ew_lim = (self.modObj.grid_east[self.modObj.pad_east[1]], self.modObj.grid_east[-self.modObj.pad_east[1] - 1])
-        self.ns_lim = (self.modObj.grid_north[self.modObj.pad_north[1]], self.modObj.grid_north[-self.modObj.pad_north[1]-1])
+        self.ew_lim = (
+        self.modObj.grid_east[self.modObj.pad_east[1]], self.modObj.grid_east[-self.modObj.pad_east[1] - 1])
+        self.ns_lim = (
+        self.modObj.grid_north[self.modObj.pad_north[1]], self.modObj.grid_north[-self.modObj.pad_north[1] - 1])
 
         # logger.debug("ns-limit %s", self.ns_lim)
         # logger.debug("ew-limit %s", self.ew_lim)
@@ -102,10 +104,10 @@ class ModemSlices():
         find the (station_Name, sX,sY) its associated index (sI,sJ) in the regular mesh grid (X[i],Y[j])
         # print(len(sX), sX)  # =number of stations
         # print(len(sY), sY)  # =number of stations
-        :return:
+        :return: station_dict
         """
 
-        station_dict={}
+        station_dict = {}
 
         sX, sY = self.datObj.station_locations['rel_east'], self.datObj.station_locations['rel_north']
         station_names = self.datObj.station_locations['station']
@@ -126,23 +128,22 @@ class ModemSlices():
 
             logger.debug("Station Index: (%s, %s)", ix, iy)
 
-            station_dict[(ix, iy)]=[station_names[n], sX[n], sY[n], station_lats[n], station_lons[n] ]   # Todo: get (station_name, lat, long)[n]
+            station_dict[(ix, iy)] = [station_names[n], sX[n], sY[n], station_lats[n],
+                                      station_lons[n]]  # Todo: get (station_name, lat, long)[n]
 
-        print (station_dict)
+        logger.debug(station_dict)
 
         return station_dict
-
 
     def set_plot_orientation(self, orient):
         """set a new plot orientation for plotting
         :param orient: z, ew, ns
         :return:
         """
-        if orient in ['z','ew','ns']:
+        if orient in ['z', 'ew', 'ns']:
             self.plot_orientation = orient
         else:
-            raise Exception("Error: unknown orientation value= %s"%orient)
-
+            raise Exception("Error: unknown orientation value= %s" % orient)
 
     def get_slice_data(self, slice_location):
         """
@@ -157,7 +158,7 @@ class ModemSlices():
         gceast, gcnorth = [np.mean([arr[:-1], arr[1:]], axis=0) for arr in
                            [self.modObj.grid_east, self.modObj.grid_north]]
 
-          # distance from slice to grid centre locations
+        # distance from slice to grid centre locations
         if self.plot_orientation == 'ew':
             sdist = np.abs(gcnorth - slice_location)
             snos = np.where(sdist == np.amin(sdist))
@@ -170,7 +171,7 @@ class ModemSlices():
             actual_location = gceast[sno]
         elif self.plot_orientation == 'z':
             sdist = np.abs(gcz - slice_location)
-        # find the closest slice index to specified location
+            # find the closest slice index to specified location
             snos = np.where(sdist == np.amin(sdist))
             sno = snos[0][0]
             actual_location = gcz[sno]
@@ -209,16 +210,16 @@ class ModemSlices():
                         self.modObj.pad_north[1]], self.modObj.grid_north[-self.modObj.pad_north[1] - 1])
             ylim = self.zlim
             title = 'North-south slice at {} meters east'.format(gceast[sno])
-        elif self.plot_orientation == 'z':  #for plotting X == EW  Y == NS
-            Y, X, res =  self.modObj.grid_north, self.modObj.grid_east, np.log10(self.modObj.res_model[:, :, sno])
-            sY, sX = self.datObj.station_locations['rel_north'],self.datObj.station_locations['rel_east']
-            ylim = (self.modObj.grid_north[self.modObj.pad_north[1]], self.modObj.grid_north[-self.modObj.pad_north[1] - 1])
+        elif self.plot_orientation == 'z':  # for plotting X == EW  Y == NS
+            Y, X, res = self.modObj.grid_north, self.modObj.grid_east, np.log10(self.modObj.res_model[:, :, sno])
+            sY, sX = self.datObj.station_locations['rel_north'], self.datObj.station_locations['rel_east']
+            ylim = (
+            self.modObj.grid_north[self.modObj.pad_north[1]], self.modObj.grid_north[-self.modObj.pad_north[1] - 1])
             xlim = (self.modObj.grid_east[self.modObj.pad_east[1]], self.modObj.grid_east[-self.modObj.pad_east[1] - 1])
 
             title = 'Horizontal Slice at Depth {} meters'.format(gcz[sno])
 
-        return (X,Y,res,sX,sY,xlim,ylim,title, actual_location)
-
+        return (X, Y, res, sX, sY, xlim, ylim, title, actual_location)
 
     def create_csv(self, csvfile='E:/tmp/Resistivity.csv'):
         """
@@ -231,26 +232,25 @@ class ModemSlices():
         self.set_plot_orientation('z')
         z_cell_centres = np.mean([self.modObj.grid_z[:-1], self.modObj.grid_z[1:]], axis=0)
 
-        #csv_header = ['Station', 'Lat', 'Long', 'X', 'Y', 'Z',  'Log_Resisitivity']
-        csv_header = ['X', 'Y', 'Z',  'Log_Resisitivity', 'StationName', 'StationX','StationY', 'Lat','Long']
+        # csv_header = ['Station', 'Lat', 'Long', 'X', 'Y', 'Z',  'Log_Resisitivity']
+        csv_header = ['X', 'Y', 'Z', 'Log_Resisitivity', 'StationName', 'StationX', 'StationY', 'Lat', 'Long']
 
-        stationd= self.find_stations_in_meshgrid()
+        stationd = self.find_stations_in_meshgrid()
 
         csvrows = []
         for zslice in z_cell_centres:
             (X, Y, res, sX, sY, xlim, ylim, title, Z_location) = self.get_slice_data(zslice)
 
-            #print (X,Y,res)
-            #print(sX,sY)
+            # print (X,Y,res)
+            # print(sX,sY)
 
-            print(len(X),len(Y), Z_location, res.shape, len(sX), len(sY))
+            print(len(X), len(Y), Z_location, res.shape, len(sX), len(sY))
 
-
-            for i in xrange(len(X)-1):
-                for j in xrange(len(Y)-1):
-                    st = stationd.get((i,j), None)  # filter and subset for station location meshgrids
+            for i in xrange(len(X) - 1):
+                for j in xrange(len(Y) - 1):
+                    st = stationd.get((i, j), None)  # filter and subset for station location meshgrids
                     if st is not None:
-                        arow=[X[i], Y[j], Z_location, res[j,i], st[0],st[1],st[2], st[3], st[4],i,j]
+                        arow = [X[i], Y[j], Z_location, res[j, i], st[0], st[1], st[2], st[3], st[4], i, j]
                         csvrows.append(arow)
 
         with open(csvfile, "wb") as csvf:
@@ -267,8 +267,7 @@ class ModemSlices():
         :return:
         """
 
-        (X, Y, res, sX, sY, xlim, ylim, title, actual_location)= self.get_slice_data(slice_location)
-
+        (X, Y, res, sX, sY, xlim, ylim, title, actual_location) = self.get_slice_data(slice_location)
 
         # make the plot
 
@@ -293,8 +292,8 @@ class ModemSlices():
         # set title
         plt.title(title, fontdict=fdict)
 
-        #if self.plot_orientation == 'z':
-        #plt.gca().set_aspect('equal') # an axis may be too small to view
+        # if self.plot_orientation == 'z':
+        # plt.gca().set_aspect('equal') # an axis may be too small to view
         plt.gca().set_aspect('auto')
 
         plt.clim(*self.clim)
@@ -332,7 +331,7 @@ class ModemSlices():
         # pad = separation from figure to colorbar
         cax = divider.append_axes("right", size="5%", pad=0.2)
 
-        mycb = plt.colorbar( mesh_plot,cax=cax)
+        mycb = plt.colorbar(mesh_plot, cax=cax)
         mycb.outline.set_linewidth(self.border_linewidth)
         mycb.set_label('Resistivity ($\Omega \cdot$m)', fontdict=fdict)
 
@@ -360,7 +359,7 @@ class ModemSlices():
         if slice_list is None:
             # slice_number = 100  # number of evenly spaced slices
             if self.plot_orientation == 'ns':
-                #slice_locs = np.linspace(self.ns_lim[0], self.ns_lim[1], num=slice_number
+                # slice_locs = np.linspace(self.ns_lim[0], self.ns_lim[1], num=slice_number
                 # It's better to use cell centres
                 slice_locs = np.mean([self.modObj.grid_north[:-1], self.modObj.grid_north[1:]], axis=0)
             if self.plot_orientation == 'ew':
@@ -391,7 +390,7 @@ class ModemSlices():
 # Usage:
 #  python mtpy/modeling/modem_output_to_views.py /e/Data/Modeling/Isa/100hs_flat_BB/Isa_run3_NLCG_048.dat /e/Data/Modeling/Isa/100hs_flat_BB/Isa_run3_NLCG_048.rho 20
 #  python mtpy/modeling/modem_output_to_views.py /e/tmp/GA_UA_edited_10s-10000s_16/ModEM_Data.dat  /e/tmp/GA_UA_edited_10s-10000s_16/ModEM_Model.ws -1000 1000
-#---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 if __name__ == "__main__":
 
     # Take commandline input
@@ -417,9 +416,9 @@ if __name__ == "__main__":
         rhof = sys.argv[2]
 
     # construct plot object
-    #self = ModemSlices(datf, rhof)  # default  map_scale='m')
+    # self = ModemSlices(datf, rhof)  # default  map_scale='m')
     myObj = ModemSlices(datf, rhof, map_scale='km')
 
     myObj.create_csv()
 
-# To visualize slices, see also the script  mtpy/imaging/modem_plot_slices.py
+# To visualize slices, see also the script:  mtpy/imaging/modem_plot_slices.py

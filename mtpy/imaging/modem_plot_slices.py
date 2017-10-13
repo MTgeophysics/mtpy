@@ -3,17 +3,18 @@
 """
 Description:
     Visualize Horizontal and Vertical Slices of the ModEM's output Model: *.dat and *.rho (same as *.ws) files
-
-Usage:
+References:
+    https://gajira.atlassian.net/browse/ALAMP-31
+Usage Examples:
     python mtpy/imaging/modem_plot_slices.py /e/Data/Modeling/Isa/100hs_flat_BB/Isa_run3_NLCG_048.dat /e/Data/Modeling/Isa/100hs_flat_BB/Isa_run3_NLCG_048.rho 300
-    python mtpy/imaging/modem_plot_slices.py /e/tmp/GA_UA_edited_10s-10000s_16/ModEM_Data.dat  /e/tmp/GA_UA_edited_10s-10000s_16/ModEM_Model.ws -1000 1000
+    python mtpy/imaging/modem_plot_slices.py /e/tmp/GA_UA_edited_10s-10000s_16/ModEM_Data.dat /e/tmp/GA_UA_edited_10s-10000s_16/ModEM_Model.ws -1000 1000
 
 CreationDate:   20/09/2017
 Developer:      fei.zhang@ga.gov.au
 
-Revision History:
-    LastUpdate:     8/09/2017   FZ
-    LastUpdate:     dd/mm/yyyy  Who     Optional description
+LastUpdate:     13/10/2017   FZ
+
+
 """
 
 import os
@@ -54,7 +55,7 @@ if __name__ == "__main__":
     # myObj.set_plot_orientation('ew')
     # myObj.set_plot_orientation('ns')
     # horizontal at a given depth z
-    myObj.set_plot_orientation('z')
+    myObj.set_plot_orientation('ns')
 
 
     if len(sys.argv) >= 4:
