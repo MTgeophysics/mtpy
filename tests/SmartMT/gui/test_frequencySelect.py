@@ -59,6 +59,9 @@ class TestFrequencySelect(TestCase):
         # test frequency selection
         _click_area(self.app.frequency_select.histogram, offset=self.app.frequency_select.histogram.geometry().topLeft())
         _click_area(self.app.frequency_select.histogram, offset=self.app.frequency_select.histogram.geometry().topLeft())
+        _click_area(self.app.frequency_select.histogram, offset=self.app.frequency_select.histogram.geometry().topLeft())
+        _click_area(self.app.frequency_select.histogram, offset=self.app.frequency_select.histogram.geometry().topLeft())
+        _click_area(self.app.frequency_select.histogram, offset=self.app.frequency_select.histogram.geometry().topLeft())
         QTest.qWait(1000)
         self.assertTrue(self.app.frequency_select.model_selected.rowCount() > 0)
 
@@ -88,6 +91,9 @@ class TestFrequencySelect(TestCase):
         QTest.qWait(1000)
         self.assertTrue(self.app.frequency_select.model_selected.rowCount() == 0)
         # test delete
+        _click_area(self.app.frequency_select.histogram, offset=self.app.frequency_select.histogram.geometry().topLeft())
+        _click_area(self.app.frequency_select.histogram, offset=self.app.frequency_select.histogram.geometry().topLeft())
+        _click_area(self.app.frequency_select.histogram, offset=self.app.frequency_select.histogram.geometry().topLeft())
         _click_area(self.app.frequency_select.histogram, offset=self.app.frequency_select.histogram.geometry().topLeft())
         _click_area(self.app.frequency_select.histogram, offset=self.app.frequency_select.histogram.geometry().topLeft())
         QTest.qWait(1000)
