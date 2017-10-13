@@ -27,15 +27,15 @@ class TestPenetration_depth3d(TestCase):
         plt.pause(1)
 
     def test_plot_latlon_depth_profile_period_index(self):
-        plot_latlon_depth_profile(self._edifiles_small, 10, 'det', savefig=False)
+        plot_latlon_depth_profile(self._edifiles_small, 10, 'det',showfig=False, savefig=False)
 
     def test_plot_latlon_depth_profile_no_period(self):
         try:
-            plot_latlon_depth_profile(self._edifiles_small, savefig=False)
+            plot_latlon_depth_profile(self._edifiles_small, showfig=False, savefig=False)
             assert(False)  # if this statement reached, it is wrong
         except Exception as ex:
             print (ex)
             assert(True)
 
     def test_plot_latlon_depth_profile_period(self):
-        plot_latlon_depth_profile(self._edifiles_small, 2.857, savefig=False)
+        plot_latlon_depth_profile(self._edifiles_small, 2.857, showfig=False, savefig=False)
