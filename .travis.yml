@@ -49,7 +49,9 @@ script:
   - py.test -n 4 tests/core
   - py.test tests/imaging
   - py.test -n 4 tests/modeling
-  - ./bin/travis_set_display.sh  # enable display on travis
+  - "export DISPLAY=:99.0"  # enable display on travis
+  - "sh -e /etc/init.d/xvfb start"
+  - sleep 3 # give xvfb some time to start
   - py.test tests/SmartMT
 
 matrix:
