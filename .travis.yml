@@ -46,7 +46,7 @@ before_script:
 #  - pip install .
 
 script:
-  - py.test -n 4 tests/core
+  - py.test -n 4 --cov tests/core
   - py.test tests/imaging
   - py.test -n 4 tests/modeling
   - "export DISPLAY=:99.0"  # enable display on travis
