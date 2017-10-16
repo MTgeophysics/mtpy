@@ -169,11 +169,14 @@ class Data(object):
                          rotation angle to rotate Z. Clockwise positive and N=0
                          *default* = 0
             
-            **mode** : [ 'TE' | 'TM' | 'det']
+            **mode** : [ 'te' | 'tm' | 'det']
                               mode to model can be (*default*='both'):
-                                - 'TE' for just TE mode
-                                - 'TM' for just TM mode
-                                - 'det' for the determinant of Z.
+                                - 'te' for just TE mode (res/phase)
+                                - 'tm' for just TM mode (res/phase)
+                                - 'det' for the determinant of Z (converted to 
+                                        res/phase)
+                              add 'z' to any of these options to model
+                              impedance tensor values instead of res/phase
                                 
                             
             **res_err** : float
@@ -222,7 +225,7 @@ class Data(object):
         elif self.mode == 'det':
             d1_str = 'RhoZxy'
             d2_str = 'PhsZxy'
-        elif self.mode == 'zdet':
+        elif self.mode == 'detz':
             d1_str = 'RealZxy'
             d2_str = 'ImagZxy'
         elif self.mode == 'tez':
@@ -267,31 +270,45 @@ class Data(object):
                 data_2 = z_obj.phase[:, 1, 0]%180
                 data_2_err = z_obj.phase_err[:, 1, 0]
             
-            elif self.mode == 'det':  
-                                   
-                data_1 = .2/freq*abs(z_obj.det)
-                data_2 = np.rad2deg(np.arctan2((z_obj.det**0.5).imag, 
-                                               (z_obj.det**0.5).real))
+            elif self.mode.startswith('det'):
                 
-                data_1_err = np.zeros_like(data_1, dtype=np.float)                               
-                data_2_err = np.zeros_like(data_2, dtype=np.float)
-                for zd, ze, ii in zip(z_obj.det, z_obj.det_err, 
-                                      range(len(z_obj.det))):                               
-                    de1, de2 = mtcc.z_error2r_phi_error(zd.real, 
-                                                       ze,
-                                                       zd.imag,
-                                                       ze)
-                    data_1_err[ii] = de1
-                    data_2_err[ii] = de2
+                # take square root as determinant is similar to z squared
+                zdetreal = (z_obj.det**0.5).real
+                zdetimag = (z_obj.det**0.5).imag
                 
-            elif self.mode == 'zdet':
-                data_1 = (z_obj.det**0.5).real*np.pi*4e-4 
-                data_1_err = z_obj.det_err**0.5*np.pi*4e-4
+                # error propagation - new error is 0.5 * relative error in zdet
+                # then convert back to absolute error
+                zereal = np.abs(zdetreal) * 0.5*z_obj.det_err/np.abs(z_obj.det)
+                zeimag = np.abs(zdetimag) * 0.5*z_obj.det_err/np.abs(z_obj.det)                
                 
-                data_2 = (z_obj.det**0.5).imag*np.pi*4e-4 
-                data_2_err =  z_obj.det_err**0.5*np.pi*4e-4
+                if self.mode.endswith('z'):
+                    # convert to si units if we are modelling impedance tensor
+                    data_1 = zdetreal*np.pi*4e-4
+                    data_1_err = zereal*np.pi*4e-4
+                    data_2 = zdetimag*np.pi*4e-4
+                    data_2_err = zeimag*np.pi*4e-4
+                else:
+                    # convert to res/phase                   
+                    data_1 = .2/freq*np.abs(z_obj.det)
+                    data_2 = np.rad2deg(np.arctan2(zdetimag,zdetreal))
+                    
+                    # initialise error arrays
+                    data_1_err = np.zeros_like(data_1, dtype=np.float)                               
+                    data_2_err = np.zeros_like(data_2, dtype=np.float)
+                    
+                    # assign errors
+                    for zdr, zdi, zer, zei, ii in zip(zdetreal ,zdetimag, 
+                                                      zereal, zeimag, 
+                                                      range(len(z_obj.det))): 
+                    
+                        # now we can convert errors to polar coordinates
+                        de1, de2 = mtcc.z_error2r_phi_error(zdr, zer, zdi, zei)
+                        data_1_err[ii] = de1
+                        data_2_err[ii] = de2
+                
                 
             elif self.mode == 'tez':
+                # convert to si units
                 data_1 = z_obj.z[:, 0, 1].real*np.pi*4e-4 
                 data_1_err = z_obj.z_err[:, 0, 1]*np.pi*4e-4
                 
@@ -299,6 +316,7 @@ class Data(object):
                 data_2_err =  z_obj.z_err[:, 0, 1]*np.pi*4e-4
                 
             elif self.mode == 'tmz':
+                # convert to si units
                 data_1 = z_obj.z[:, 1, 0].real*np.pi*4e-4 
                 data_1_err = z_obj.z_err[:, 1, 0]*np.pi*4e-4
                 
@@ -336,7 +354,7 @@ class Data(object):
                 data_2 = phi[:, 0, 1]
                 data_2_err = phi_err[:, 0, 1]
 
-        if remove_outofquadrant == True:
+        if remove_outofquadrant:
             freq, data_1, data_1_err, data_2, data_2_err = self._remove_outofquadrant_phase(
                                                            freq, 
                                                            data_1, 

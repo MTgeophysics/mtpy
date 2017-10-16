@@ -962,7 +962,6 @@ class Z(ResPhase):
         :returns: det_Z_err
         :rtype: np.ndarray(nfreq)
         """
-        print "calculating det_err 1"
         det_Z_err = None
         if self.z_err is not None:
             det_Z_err = np.zeros_like(self.det, dtype=np.float)
