@@ -351,7 +351,8 @@ class ModemSlices():
 
     def plot_multi_slices(self, slice_list=None):
         """
-        Visualize multiple slices specified by slice_list. If it is None then will plot every slice at the cell-centres.
+        Visualize multiple slices specified by slice_list.
+        If it is None then will plot every slice at the cell-centres.
         :param slice_list:
         :return:
         """
