@@ -364,6 +364,8 @@ class Depth3D(ImagingBase):
             # from mtpy.imaging.penetration_depth3d import reverse_colourmap
             # my_cmap = reverse_colourmap(my_cmap)
 
+            # since matplotlib v2.0 the default interpolation is changed to nearest, use "bilinear" to restore the default behaviour in 1.5.3
+            # imgplot = plt.imshow(grid_z, origin='upper', cmap=my_cmap, interpolation='bilinear', resample=False)
             imgplot = plt.imshow(grid_z, origin='upper', cmap=my_cmap)
 
             # the stations sample point 1-lon-j, 0-lat-i
@@ -435,7 +437,7 @@ class Depth3D(ImagingBase):
             divider = make_axes_locatable(ax)
             # pad = separation from figure to colorbar
             cax = divider.append_axes("right", size="3%", pad=0.2)
-            mycb = plt.colorbar(imgplot, cax=cax)  # cmap=my_cmap_r, does not work!!
+            mycb = plt.colorbar(imgplot, cax=cax, use_gridspec=True)  # cmap=my_cmap_r, does not work!!
             mycb.outline.set_linewidth(2)
             mycb.set_label(label='Penetration Depth ({})'.format(z_unit), size=ftsize)
             mycb.set_cmap(my_cmap)

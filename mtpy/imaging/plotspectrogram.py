@@ -484,7 +484,8 @@ class PlotTF(object):
                                    orientation=self.cb_orientation,
                                    shrink=self.cb_shrink,
                                    pad=self.cb_pad,
-                                   aspect=self.cb_aspect_ratio)
+                                   aspect=self.cb_aspect_ratio,
+                                   use_gridspec=True)
         else:
             cbp = self.axtf.imshow(plottfarray,
                                    extent=(self.time_list[0] / tinc + self.start_time,
@@ -500,7 +501,8 @@ class PlotTF(object):
             self.cb = plt.colorbar(orientation=self.cb_orientation,
                                    shrink=self.cb_shrink,
                                    pad=self.cb_pad,
-                                   aspect=self.cb_aspect_ratio)
+                                   aspect=self.cb_aspect_ratio,
+                                   use_gridspec=True)
 
         #--> make the plot look nice
         self.axtf.set_xlabel('time({0})'.format(self.time_units),

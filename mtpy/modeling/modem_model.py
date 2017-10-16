@@ -1358,7 +1358,7 @@ class Model(object):
         divider = make_axes_locatable(ax)
         # pad = separation from figure to colorbar
         cax = divider.append_axes("right", size="3%", pad=0.2)
-        mycb = plt.colorbar(imgplot, cax=cax)  # cmap=my_cmap_r, does not work!!
+        mycb = plt.colorbar(imgplot, cax=cax, use_gridspec=True)  # cmap=my_cmap_r, does not work!!
         mycb.outline.set_linewidth(2)
         mycb.set_label(label='Elevation (metre)', size=12)
         # make a rotation matrix to rotate data

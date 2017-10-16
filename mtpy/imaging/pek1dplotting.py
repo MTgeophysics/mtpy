@@ -421,7 +421,7 @@ class Plot_fit():
                         levels=levels)
         else:
             plt.contour(xi[:, :, 0], xi[:, :, 1], f1, cmap=cmap)
-        plt.colorbar()
+        plt.colorbar(use_gridspec=True)
 
         if draw_threshold:
             plt.contour(xi[:, :, 0], xi[:, :, 1], f1,
@@ -914,7 +914,7 @@ class Plot_map():
             cbo = 'vertical'
         ax = plt.axes(self.cbar_ax)
         ax.set_visible(False)
-        cbar = plt.colorbar(fraction=0.8, orientation=cbo)
+        cbar = plt.colorbar(fraction=0.8, orientation=cbo, use_gridspec=True)
         cbar.set_label("Depth (km)")
         cticks = range(int(self.levels[0]), int(self.levels[-1] + 1))
         cbar.set_ticks(cticks)

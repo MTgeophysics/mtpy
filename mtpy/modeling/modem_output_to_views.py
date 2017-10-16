@@ -331,7 +331,7 @@ class ModemSlices():
         # pad = separation from figure to colorbar
         cax = divider.append_axes("right", size="5%", pad=0.2)
 
-        mycb = plt.colorbar(mesh_plot, cax=cax)
+        mycb = plt.colorbar(mesh_plot, cax=cax, use_gridspec=True)
         mycb.outline.set_linewidth(self.border_linewidth)
         mycb.set_label('Resistivity ($\Omega \cdot$m)', fontdict=fdict)
 
