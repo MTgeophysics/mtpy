@@ -46,13 +46,16 @@ before_script:
 #  - pip install .
 
 script:
-  - py.test -n 4 --cov tests/core
+  - py.test tests/core -n4 --cov coveralls --cov-report term-missing
   - py.test tests/imaging
   - py.test -n 4 tests/modeling
   - "export DISPLAY=:99.0"  # enable display on travis
   - "sh -e /etc/init.d/xvfb start"
   - sleep 3 # give xvfb some time to start
   - py.test tests/SmartMT
+
+after_success:
+  - coveralls
 
 matrix:
   fast_finish: true
