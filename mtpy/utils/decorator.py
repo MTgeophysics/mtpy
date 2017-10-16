@@ -179,7 +179,8 @@ class ImageCompare(object):
                 )
             )
 
-    def _print_image_base64(self, image_file_name):
+    @staticmethod
+    def _print_image_base64(image_file_name):
         with open(image_file_name, "rb") as image_file:
             image_data = image_file.read()
             print(
