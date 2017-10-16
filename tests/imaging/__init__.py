@@ -59,5 +59,5 @@ class ImageTestCase(TestCase):
     def tearDown(self):
         if plt.isinteractive():
             plt.pause(1)
-        # if plt.get_fignums():
-        #     plt.close("all")
+        if plt.get_fignums():
+            plt.close("all")

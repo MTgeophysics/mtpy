@@ -74,7 +74,7 @@ class ImageCompare(object):
         self.extensions = kwargs.pop('extensions', ['png'])
         self.savefig_kwargs = kwargs.pop('savefig_kwargs', {'dpi': 80})
         self.tolerance = kwargs.pop('tolerance', 2)
-        self.fig_size = kwargs.pop('fig_size', (8, 6))
+        self.fig_size = kwargs.pop('fig_size', None)
 
         if self.result_dir and not os.path.exists(self.result_dir):
             os.makedirs(self.result_dir)
@@ -109,12 +109,10 @@ class ImageCompare(object):
                 # save image
                 fig = plt.gcf()
                 if fig is not None:
-                    fig.set_size_inches(self.fig_size)
-                    fig.set_tight_layout({'pad': 1.08})
-                    fig.savefig(test_image,
-                                # bbox_inches='tight',
-                                # pad_inches=0,
-                                **self.savefig_kwargs)
+                    if self.fig_size is not None:
+                        fig.set_size_inches(self.fig_size)
+                        fig.set_tight_layout(True)
+                    fig.savefig(test_image, **self.savefig_kwargs)
                     import pytest
                     if os.path.exists(baseline_image):
                         msg = compare_images(baseline_image, test_image, tol=self.tolerance)
