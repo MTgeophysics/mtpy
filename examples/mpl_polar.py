@@ -2,6 +2,9 @@
 import matplotlib
 import matplotlib.pyplot as plt
 
+print(matplotlib.__version__)  # print version
+print(matplotlib.get_backend())  # print backend
+
 fig = plt.figure()
 ax = fig.add_subplot(111, polar=True)
 
@@ -14,3 +17,6 @@ fig.show()
 
 fig.savefig("polar.png")
 
+# prints alpha of one major gridline of each axis
+print(ax.xaxis.majorTicks[0].gridline._alpha)
+print(ax.yaxis.majorTicks[0].gridline._alpha)
