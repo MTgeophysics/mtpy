@@ -5,8 +5,7 @@ import os
 import matplotlib.pyplot as plt
 
 from mtpy.imaging.plotstrike2d import PlotStrike2D
-from mtpy.utils.decorator import ImageCompare
-from tests.imaging import ImageTestCase
+from tests.imaging import ImageTestCase, ImageCompare
 
 edi_paths = [
     "tests/data/edifiles",

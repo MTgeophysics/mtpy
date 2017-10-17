@@ -5,8 +5,7 @@ import unittest
 
 from mtpy.imaging.penetration import load_edi_files
 from mtpy.imaging.phase_tensor_maps import PlotPhaseTensorMaps
-from mtpy.utils.decorator import ImageCompare
-from tests.imaging import ImageTestCase
+from tests.imaging import ImageTestCase, ImageCompare
 
 # configure matplotlib for testing
 

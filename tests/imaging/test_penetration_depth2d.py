@@ -2,8 +2,7 @@
 import matplotlib.pyplot as plt
 
 from mtpy.imaging.penetration_depth2d import plot2Dprofile
-from mtpy.utils.decorator import ImageCompare
-from tests.imaging import ImageTestCase
+from tests.imaging import ImageTestCase, ImageCompare
 
 
 class TestPenetration_depth2d(ImageTestCase):

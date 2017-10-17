@@ -4,8 +4,7 @@ import os
 import matplotlib.pyplot as plt
 
 from mtpy.imaging.plotnresponses import PlotMultipleResponses
-from mtpy.utils.decorator import ImageCompare
-from tests.imaging import ImageTestCase
+from tests.imaging import ImageTestCase, ImageCompare
 
 test_params = [
     (
