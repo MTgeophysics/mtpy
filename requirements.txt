@@ -5,6 +5,8 @@ geopandas
 GDAL
 scipy
 pillow
+pytest-cov
+python-coveralls
 
 # matplotlib==1.5.3
 # scipy==0.18.1

@@ -48,13 +48,16 @@ before_script:
 #  - pip install .
 
 script:
-  - py.test -n 4 tests/core
+  - py.test -n 4 --cov mtpy tests/core
   - MTPY_TEST_COMPARE_IMAGE=True py.test tests/imaging  # save and compare images
   - py.test -n 4 tests/modeling
   - "export DISPLAY=:99.0"  # enable display on travis
   - "sh -e /etc/init.d/xvfb start"
   - sleep 3 # give xvfb some time to start
   - py.test tests/SmartMT
+
+after_success:
+  - coveralls
 
 matrix:
   fast_finish: true
