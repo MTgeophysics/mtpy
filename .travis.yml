@@ -15,6 +15,7 @@ cache:
 
 env:
   - MATPLOTLIB_VERSION=2.1.0 QT_VERSION=4
+#  - MATPLOTLIB_VERSION=2.1.0 QT_VERSION=5
   - MATPLOTLIB_VERSION=2.0.2 QT_VERSION=4
   - MATPLOTLIB_VERSION=1.5.3 QT_VERSION=4
 
@@ -22,7 +23,8 @@ before_install:
   - chmod -vR +x ./bin/*
   - sudo apt update -qq
   # install qt4 and dependencies
-  - sudo apt -y install -qq "libqt$QT_VERSION-dev"  # install pyqt dependencies
+  - [ QT_VERSION == 4 ] && sudo apt -y install -qq "libqt4-dev"  # install pyqt dependencies
+  - [ QT_VERSION == 5 ] && sudo apt -y install -qq qtbase5-dev
   - ./bin/install_pyqt.sh
   # build gdal from source as the one on ubuntu trusty is out-of-date
 #  - sudo apt -y install -qq libgdal-dev=2.2.2  # dependencies of dgal
@@ -47,7 +49,7 @@ before_script:
 
 script:
   - py.test -n 4 tests/core
-  - py.test tests/imaging
+  - MTPY_TEST_COMPARE_IMAGE=True py.test tests/imaging  # save and compare images
   - py.test -n 4 tests/modeling
   - "export DISPLAY=:99.0"  # enable display on travis
   - "sh -e /etc/init.d/xvfb start"
@@ -56,7 +58,8 @@ script:
 
 matrix:
   fast_finish: true
-  allow_failures:
+  allow_failures:]
+    - env: MATPLOTLIB_VERSION=2.1.0 QT_VERSION=5
     - env: MATPLOTLIB_VERSION=2.0.2 QT_VERSION=4
     - env: MATPLOTLIB_VERSION=1.5.3 QT_VERSION=4
 
