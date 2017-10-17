@@ -41,8 +41,7 @@ def _test_gen(edi_path):
                                                           'head_width': 0.1, 'lw': 0.5},
                                               # arrow parameters, adjust as
                                               # necessary. lw = linewidth
-                                              font_size=4,
-                                              dpi=300)
+                                              font_size=4, fig_size=(8, 6), fig_dpi=100)
         ptpObj.plot()
         plt.pause(1)
         save_figure_name = "{}.png".format(default.__name__)

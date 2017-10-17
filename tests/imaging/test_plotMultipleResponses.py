@@ -89,7 +89,7 @@ def _test_gen(edi_path):
             plot_num=1,
             plot_tipper='yr',
             plot_style='all',
-            plot_yn='n'
+            plot_yn='n', fig_size=(8, 6), fig_dpi=100
         )
         pt_obj.plot()
         plt.pause(0.5)
@@ -102,7 +102,7 @@ def _test_gen(edi_path):
             plot_num=1,
             plot_tipper='yr',
             plot_style='compare',
-            plot_yn='n'
+            plot_yn='n', fig_size=(8, 6), fig_dpi=100
         )
         pt_obj.plot()
         plt.pause(0.5)

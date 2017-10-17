@@ -26,7 +26,7 @@ def _test_gen(edi_path):
         for edi_file in edi_file_list:
             plt.clf()
             pt_obj = PlotMTResponse(
-                fn=edi_file
+                fn=edi_file, fig_size=(8, 6), fig_dpi=100
             )
             pt_obj.plot()
             plt.pause(.5)

@@ -82,7 +82,7 @@ class TestPlotPhaseTensorMaps(ImageTestCase):
                                      # fig_spython examples/plot_phase_tensor_map.py tests/data/edifiles/ 10 /e/MTPY2_Outputs/ptmap3deg.pngize=(6, 5),
                                      # fig_dpi=300, the default is OK. Higher dpi
                                      # may distort figure
-                                     save_fn=save_figure_path)
+                                     save_fn=save_figure_path, fig_size=(8, 6), fig_dpi=100)
         path2figure = pt_obj.plot()
         pt_obj.save_figure(save_figure_path)
         assert (os.path.isfile(save_figure_path))

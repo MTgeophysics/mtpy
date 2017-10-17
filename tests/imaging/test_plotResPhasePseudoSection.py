@@ -26,7 +26,7 @@ class TestPlotResPhasePseudoSection(ImageTestCase):
 def _test_gen(edi_path):
     def imshow(self):
         edi_file_list = glob.glob(os.path.join(edi_path, "*.edi"))
-        pt_obj = PlotResPhasePseudoSection(fn_list=edi_file_list, plot_yn='n', plot_style='imshow')
+        pt_obj = PlotResPhasePseudoSection(fn_list=edi_file_list, plot_yn='n', plot_style='imshow', fig_size=(8, 6), fig_dpi=100)
         pt_obj.plot()
         plt.pause(1)
         save_figure_name = "{}.png".format(imshow.__name__)
@@ -36,7 +36,7 @@ def _test_gen(edi_path):
 
     def pcolormesh(self):
         edi_file_list = glob.glob(os.path.join(edi_path, "*.edi"))
-        pt_obj = PlotResPhasePseudoSection(fn_list=edi_file_list, plot_yn='n', plot_style='pcolormesh')
+        pt_obj = PlotResPhasePseudoSection(fn_list=edi_file_list, plot_yn='n', plot_style='pcolormesh', fig_size=(8, 6), fig_dpi=100)
         pt_obj.plot()
         plt.pause(1)
         save_figure_name = "{}.png".format(imshow.__name__)
