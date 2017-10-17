@@ -4,8 +4,7 @@ import os
 import matplotlib.pyplot as plt
 
 from mtpy.imaging.phase_tensor_pseudosection import PlotPhaseTensorPseudoSection
-from mtpy.utils.decorator import ImageCompare
-from tests.imaging import ImageTestCase
+from tests.imaging import ImageTestCase, ImageCompare
 
 test_params = [
     ("tests/data/edifiles", {"fig_size": (8, 8), "savefig_kwargs": {'dpi': 100}}),
