@@ -742,25 +742,25 @@ class Data(object):
                         self.data['zxy'][0, jj] = dvalue/(np.pi*4e-4)
                         self.data['zxy'][1, jj] = derr/(np.pi*4e-4)
                         self.data['zxy'][2, jj] = rvalue/(np.pi*4e-4)
-                        self.data['zxy'][3, jj] = rerr/(np.pi*4e-4)
+                        self.data['zxy'][3, jj] = rerr
                     if dlst[0] == 'ImagZxy' or dlst[0] == '114':
                         self.mode ='TEz'
                         self.data['zxy'][0, jj] += 1j*dvalue/(np.pi*4e-4)
                         self.data['zxy'][1, jj] = derr/(np.pi*4e-4)
                         self.data['zxy'][2, jj] += 1j*rvalue/(np.pi*4e-4)
-                        self.data['zxy'][3, jj] = rerr/(np.pi*4e-4)                       
+                        self.data['zxy'][3, jj] = rerr                       
                     if dlst[0] == 'RealZyx' or dlst[0] == '115':
                         self.mode ='TMz'
                         self.data['zyx'][0, jj] = dvalue/(np.pi*4e-4)
                         self.data['zyx'][1, jj] = derr/(np.pi*4e-4)
                         self.data['zyx'][2, jj] = rvalue/(np.pi*4e-4)
-                        self.data['zyx'][3, jj] = rerr/(np.pi*4e-4)
+                        self.data['zyx'][3, jj] = rerr
                     if dlst[0] == 'ImagZyx' or dlst[0] == '116':
                         self.mode ='TMz'
                         self.data['zyx'][0, jj] += 1j*dvalue/(np.pi*4e-4)
                         self.data['zyx'][1, jj] = derr/(np.pi*4e-4)
                         self.data['zyx'][2, jj] += 1j*rvalue/(np.pi*4e-4)
-                        self.data['zyx'][3, jj] = rerr/(np.pi*4e-4)                        
+                        self.data['zyx'][3, jj] = rerr                      
         if 'z' in self.mode:
             if 'TE' in self.mode:
                 pol='xy'
