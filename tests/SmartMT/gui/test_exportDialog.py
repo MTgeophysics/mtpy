@@ -54,6 +54,7 @@ class TestExportDialog(TestCase):
 
     def tearDown(self):
         self.dialog.close()
+        plt.close('all')
         plt.clf()
 
     def test_defaults(self):
