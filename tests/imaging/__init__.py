@@ -4,7 +4,6 @@ import os
 import sys
 import shutil
 from unittest import TestCase
-
 import matplotlib
 
 from mtpy.utils.decorator import ImageCompare
@@ -55,9 +54,11 @@ class ImageTestCase(TestCase):
         if plt.get_fignums():
             plt.clf()
         reset_matplotlib()
+        if plt.isinteractive():
+            plt.show(block=False)  # show an empty window first for drawing
 
     def tearDown(self):
-        if plt.isinteractive():
+        if plt.isinteractive() and plt.get_fignums():
             plt.pause(1)
         if plt.get_fignums():
             plt.close("all")

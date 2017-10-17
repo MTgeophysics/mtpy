@@ -93,10 +93,8 @@ class TestPenetration_depth1d(ImageTestCase):
         testing plotting an empty rholist of a single edi file
         :return:
         """
-        try:
+        with self.assertRaises(ZComponentError):
             plot_edi_file("tests/data/edifiles/15125A.edi", [])
-        except ZComponentError:
-            pass
 
     def test_plot_edi_file_save_image(self):
         """
