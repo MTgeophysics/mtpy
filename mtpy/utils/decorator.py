@@ -20,6 +20,8 @@ import sys
 
 from matplotlib.testing.compare import verify
 
+from mtpy.utils.mtpylog import MtPyLog
+
 
 class deprecated(object):
     def __init__(self, reason):
@@ -59,6 +61,13 @@ class deprecated(object):
 
 
 class ImageCompare(object):
+    """
+    - to enable the image comparison tests in the code, add @ImageCompare(**kwargs)
+    to the function that generates image with matplotlib, by default, the new image
+    will be saved and check if the image is an empty image. to
+    - enable the image comparison tests against the baseline image stored, set environment variable
+    MTPY_TEST_COMPARE_IMAGE = True
+    """
     def __init__(self, *args, **kwargs):
         self.baseline_dir = kwargs.pop(
             'baseline_dir',
@@ -75,11 +84,16 @@ class ImageCompare(object):
         self.savefig_kwargs = kwargs.pop('savefig_kwargs', {'dpi': 80})
         self.tolerance = kwargs.pop('tolerance', 2)
         self.fig_size = kwargs.pop('fig_size', None)
+        self.is_compare_image = self.to_bool(os.getenv('MTPY_TEST_COMPARE_IMAGE', False))
+        self._logger = MtPyLog().get_mtpy_logger(__name__)
+        self._logger.info(
+            "Image Comparison Test: {stat}".format(stat="ENABLED" if self.is_compare_image else "DISABLED")
+        )
 
         if self.result_dir and not os.path.exists(self.result_dir):
             os.makedirs(self.result_dir)
-        # if self.baseline_dir and not os.path.exists(self.baseline_dir):
-        #     os.makedirs(self.baseline_dir)
+            # if self.baseline_dir and not os.path.exists(self.baseline_dir):
+            #     os.makedirs(self.baseline_dir)
 
     def __call__(self, original):
         import matplotlib.pyplot as plt
@@ -101,7 +115,7 @@ class ImageCompare(object):
                 result = original.__func__(*args, **kwargs)
             else:
                 result = original(*args, **kwargs)
-            for baseline_image, test_image in self._get_baseline_result_pairs(
+            for baseline_image, test_image, baseline_rcparams, test_rcparams in self._get_baseline_result_pairs(
                     test_suite_name,
                     filename,
                     self.extensions
@@ -113,10 +127,18 @@ class ImageCompare(object):
                         fig.set_size_inches(self.fig_size)
                         fig.set_tight_layout(True)
                     fig.savefig(test_image, **self.savefig_kwargs)
+                    # save rcParams
+                    with open(test_rcparams, "w") as rcfile:
+                        from pprint import pprint
+                        rc = matplotlib.rcParams.copy()
+                        rc.pop("datapath")  # hide datapath
+                        pprint(rc, rcfile)
                     import pytest
-                    if os.path.exists(baseline_image):
+                    if self.is_compare_image and os.path.exists(baseline_image):
                         msg = compare_images(baseline_image, test_image, tol=self.tolerance)
                         if msg is not None:
+                            msg += "\n"
+                            msg += self.compare_rcParam(baseline_rcparams, test_rcparams)
                             # print image in base64
                             # print("====================")
                             # print("Expected Image:")
@@ -129,6 +151,7 @@ class ImageCompare(object):
                         else:
                             # clearup the image as they are the same with the baseline
                             os.remove(test_image)
+                            os.remove(test_rcparams)
                             if not os.listdir(os.path.dirname(test_image)):
                                 os.rmdir(os.path.dirname(test_image))
                     else:
@@ -139,9 +162,12 @@ class ImageCompare(object):
                         import numpy as np
                         if np.any(actual_image):
                             self.print_image_testing_note(file=sys.stderr)
-                            pytest.xfail("Image file not found for comparison test "
-                                         "(This is expected for new tests.)\nGenerated Image: "
-                                         "\n\t{test}".format(test=test_image))
+                            if self.is_compare_image:
+                                pytest.xfail("Image file not found for comparison test "
+                                             "(This is expected for new tests.)\nGenerated Image: "
+                                             "\n\t{test}".format(test=test_image))
+                            else:
+                                self._logger.info("\nGenerated Image: {test}".format(test=test_image))
                         else:
                             # empty image created
                             pytest.fail("Image file not found for comparison test "
@@ -165,6 +191,7 @@ class ImageCompare(object):
 
         for ext in extensions:
             name = '{fname}.{ext}'.format(fname=fname, ext=ext)
+            rc_name = '{fname}_rcParams.txt'.format(fname=fname)
             yield os.path.normpath(
                 os.path.join(
                     baseline,
@@ -174,6 +201,16 @@ class ImageCompare(object):
                 os.path.join(
                     result,
                     name
+                )
+            ), os.path.normpath(
+                os.path.join(
+                    baseline,
+                    rc_name
+                )
+            ), os.path.normpath(
+                os.path.join(
+                    result,
+                    rc_name
                 )
             )
 
@@ -193,3 +230,35 @@ class ImageCompare(object):
         print("matplotlib Version: " + matplotlib.__version__, file=file)
         print("NOTE: The test result may be different in different versions of matplotlib.", file=file)
         print("====================", file=file)
+
+    @staticmethod
+    def compare_rcParam(baseline_rcparams, test_rcparams):
+        # check if the rcParams are different
+        msg = "Comparing matplotlib.rcParam:\n"
+        if os.path.isfile(baseline_rcparams):
+            with open(baseline_rcparams, "r") as fbaserc:
+                with open(test_rcparams, "r") as ftestrc:
+                    import difflib
+                    lines = [line for line in difflib.unified_diff(
+                        fbaserc.readlines(),
+                        ftestrc.readlines(),
+                        fromfile="baseline",
+                        tofile="test",
+                        n=0)]
+                    if lines:
+                        msg += "  Found differences:\n    " + "    ".join(lines)
+                    else:
+                        msg += " NO differences found."
+        else:
+            msg += "  Baseline rcParams file not found."
+        return msg
+
+    def to_bool(self, param):
+        if isinstance(param, str) and param:
+            param = param.lower()
+            if param in ('true', '1', 't'):
+                return True
+            elif param in ('false', 'f', '0'):
+                return False
+        else:
+            return bool(param)
