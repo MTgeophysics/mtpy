@@ -33,6 +33,9 @@ before_install:
   - export C_INCLUDE_PATH=/usr/include/gdal
   - export LD_LIBRARY_PATH="/usr/local/gdal/lib:$LD_LIBRARY_PATH"
   - export PATH="/usr/local/gdal/bin:$PATH"
+  - pip install pytest-xdist  # add xdist for distributing tests
+  - pip install pytest-cov  # code coverage
+  - pip install coveralls
 
 # command to install dependencies
 install:
@@ -42,19 +45,18 @@ install:
   - pip install -q -r requirements.txt
 
 before_script:
-  - pip install pytest-xdist  # add xdist for distributing tests
   - pip freeze  # show installed packages
 #  # install mtpy2 in dev mode
 #  - pip install .
 
 script:
-  - py.test -n 4 --cov mtpy tests/core
-  - MTPY_TEST_COMPARE_IMAGE=True py.test tests/imaging  # save and compare images
-  - py.test -n 4 tests/modeling
+  - py.test -n 4 --cov=mtpy --cov-report term:skip-covered tests/core
+  - MTPY_TEST_COMPARE_IMAGE=True py.test --cov=mtpy --cov-append --cov-report term:skip-covered tests/imaging  # save and compare images
+  - py.test -n 4 --cov=mtpy --cov-append --cov-report term:skip-covered tests/modeling
   - "export DISPLAY=:99.0"  # enable display on travis
   - "sh -e /etc/init.d/xvfb start"
   - sleep 3 # give xvfb some time to start
-  - py.test tests/SmartMT
+  - py.test --cov=mtpy --cov-append --cov-report term:skip-covered tests/SmartMT
 
 after_success:
   - coveralls
