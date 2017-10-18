@@ -50,10 +50,10 @@ class PlotResponses():
         component = diagonals or offdiagonals, 1 for diags, 0 for offdiags
         """
         ax = plt.gca()
-        plt.xscale('log')
+        plt.xscale('log', nonposx='clip')
 
         if parameter == 'resistivity':
-            plt.yscale('log')
+            plt.yscale('log', nonposy='clip')
 
         plt.xlim(self.xlim)
         plt.ylim(self.ylim[parameter][component])

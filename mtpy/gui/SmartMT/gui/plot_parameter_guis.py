@@ -437,9 +437,9 @@ class FrequencySelect(QtGui.QGroupBox):
                 bins = gen_hist_bins(self._unique_frequencies)
                 self._axes.hist(self._frequencies, bins=bins)  # , 50, normed=1)
                 if self._y_log_scale:
-                    self._axes.set_yscale('log')
+                    self._axes.set_yscale('log', nonposy='clip')
                 if self._x_log_scale:
-                    self._axes.set_xscale('log')
+                    self._axes.set_xscale('log', nonposx='clip')
                 if self._show_existing:
                     for freq in self._unique_frequencies:
                         self._axes.axvline(freq, linewidth=1, color='black', alpha=0.2)

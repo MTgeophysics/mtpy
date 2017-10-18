@@ -1913,9 +1913,9 @@ class Plot1DResponse(object):
                 pass
 
         #--> set axis properties-----------------------------------------------
-        self.axr.set_xscale('log')
-        self.axp.set_xscale('log')
-        self.axr.set_yscale('log')
+        self.axr.set_xscale('log', nonposx='clip')
+        self.axp.set_xscale('log', nonposx='clip')
+        self.axr.set_yscale('log', nonposy='clip')
         self.axr.grid(True, alpha=self.grid_alpha, which='both',
                       color=self.grid_color)
         plt.setp(self.axr.xaxis.get_ticklabels(), visible=False)
@@ -2018,7 +2018,7 @@ class Plot1DResponse(object):
             self.axm.set_ylim(ymin=max(self.depth_limits),
                               ymax=min(self.depth_limits))
             if self.depth_scale == 'log':
-                self.axm.set_yscale('log')
+                self.axm.set_yscale('log', nonposy='clip')
             self.axm.set_ylabel('Depth ({0})'.format(self.depth_units),
                                 fontdict={'size': self.font_size, 'weight': 'bold'})
             self.axm.set_xlabel('Resistivity ($\Omega \cdot m$)',

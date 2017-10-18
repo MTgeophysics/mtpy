@@ -150,7 +150,7 @@ class Plot_model():
                              self.linedict['colour'][c % nlc], ls=ls, lw=lw)
                     p, = plt.plot(model[:, 2], model[:, 1],
                                   self.linedict['colour'][(c + 1) % nlc], ls=ls, lw=lw)
-                    plt.xscale('log')
+                    plt.xscale('log', nonposx='clip')
                 c += 2
                 ax = plt.gca()
                 ax = self._set_axis_params(ax, 'minmax')
@@ -162,7 +162,7 @@ class Plot_model():
                 for modelvals in models_to_plot:
                     p, = plt.plot(modelvals[:, 3] / modelvals[:, 2], modelvals[:, 1],
                                   self.linedict['colour'][c % nlc], ls=ls, lw=lw)
-                    plt.xscale('log')
+                    plt.xscale('log', nonposx='clip')
 #                    if not twin:
                     ax = plt.gca()
                     twin = True
@@ -258,7 +258,7 @@ class Plot_model():
                             :, 2], modelvals[
                             :, 1], self.linecolours[ci], ls=ls, lw=lw)
                     ci += 1
-                    plt.xscale('log')
+                    plt.xscale('log', nonposx='clip')
                     lw *= 0.5
                     ax = self._set_axis_params(ax, 'minmax')
                 axes.append([ax, p])
@@ -275,7 +275,7 @@ class Plot_model():
 
                     p, = plt.plot(modelvals[:, 3] / modelvals[:, 2], modelvals[:, 1],
                                   'k-', ls=ls, lw=lw)
-                    plt.xscale('log')
+                    plt.xscale('log', nonposx='clip')
                     lw *= 0.5
                     ax = self._set_axis_params(ax, 'aniso')
                 axes.append([ax, p])
@@ -558,9 +558,9 @@ class Plot_responses():
                 for i, j in sequence:
                     plt.errorbar(T, mode[:, i, j], err[:, i, j], fmt='--')
                     plt.plot(T, model[:, i, j], 'k--')
-                    plt.xscale('log')
+                    plt.xscale('log', nonposx='clip')
                 if ii <= 2:
-                    plt.yscale('log')
+                    plt.yscale('log', nonposy='clip')
                 plt.grid()
                 ii += 1
 

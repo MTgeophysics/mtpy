@@ -84,7 +84,7 @@ def plotcoh(fn, saveplot=False):
         except:
             pass
 
-        xscale('log')
+        xscale('log', nonposx='clip')
         ylim([-.1, 1.1])
         xlim(0.5 * min(periods), 2 * max(periods))
         autoscale(False)

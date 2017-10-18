@@ -1085,9 +1085,9 @@ class OccamPlot(QtGui.QWidget):
         x_limits = (10**np.floor(np.log10(1. / self.data_obj.freq.max())),
                     10**np.ceil(np.log10(1. / self.data_obj.freq.min())))
 
-        self.axr.set_xscale('log')
-        self.axp.set_xscale('log')
-        self.axr.set_yscale('log')
+        self.axr.set_xscale('log', nonposx='clip')
+        self.axp.set_xscale('log', nonposx='clip')
+        self.axr.set_yscale('log', nonposy='clip')
         self.axr.set_xlim(x_limits)
         self.axp.set_xlim(x_limits)
         self.axr.grid(True, alpha=.75, which='both',
@@ -1157,7 +1157,7 @@ class OccamPlot(QtGui.QWidget):
                                       ymax=min(self.depth_limits))
 
         if self.depth_scale == 'log':
-            self.axm.set_yscale('log')
+            self.axm.set_yscale('log', nonposy='clip')
         self.axm.set_ylabel('Depth ({0})'.format(self.depth_units),
                             fontdict={'size': self.font_size, 'weight': 'bold'})
         self.axm.set_xlabel('Resistivity ($\Omega \cdot m$)',

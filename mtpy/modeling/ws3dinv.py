@@ -3318,7 +3318,7 @@ class PlotResponse(object):
                         if aa < 2:
                             plt.setp(ax.get_xticklabels(), visible=False)
                             if self.plot_z == False:
-                                ax.set_yscale('log')
+                                ax.set_yscale('log', nonposy='clip')
                             if self.res_limits is not None:
                                 ax.set_ylim(self.res_limits)
                         else:
@@ -3346,7 +3346,7 @@ class PlotResponse(object):
                         if aa < 4:
                             plt.setp(ax.get_xticklabels(), visible=False)
                             if self.plot_z == False:
-                                ax.set_yscale('log')
+                                ax.set_yscale('log', nonposy='clip')
                             if self.res_limits is not None:
                                 ax.set_ylim(self.res_limits)
                         else:
@@ -3370,7 +3370,7 @@ class PlotResponse(object):
 #                        else:
 #                            plt.setp(ax.yaxis.get_ticklabels(), visible=False)
 
-                    ax.set_xscale('log')
+                    ax.set_xscale('log', nonposx='clip')
                     ax.set_xlim(xmin=10**(np.floor(np.log10(period[0]))) * 1.01,
                                 xmax=10**(np.ceil(np.log10(period[-1]))) * .99)
                     ax.grid(True, alpha=.25)
@@ -3548,7 +3548,7 @@ class PlotResponse(object):
                         if aa == 0:
                             plt.setp(ax.get_xticklabels(), visible=False)
                             if self.plot_z == False:
-                                ax.set_yscale('log')
+                                ax.set_yscale('log', nonposy='clip')
                                 ax.set_ylabel('App. Res. ($\mathbf{\Omega \cdot m}$)',
                                               fontdict=fontdict)
                             elif self.plot_z == True:
@@ -3568,7 +3568,7 @@ class PlotResponse(object):
                         if aa < 2:
                             plt.setp(ax.get_xticklabels(), visible=False)
                             if self.plot_z == False:
-                                ax.set_yscale('log')
+                                ax.set_yscale('log', nonposy='clip')
                             if self.res_limits is not None:
                                 ax.set_ylim(self.res_limits)
                         else:
@@ -3591,7 +3591,7 @@ class PlotResponse(object):
 #                        else:
 #                            plt.setp(ax.yaxis.get_ticklabels(), visible=False)
 
-                    ax.set_xscale('log')
+                    ax.set_xscale('log', nonposx='clip')
                     ax.set_xlim(xmin=10**(np.floor(np.log10(period[0]))) * 1.01,
                                 xmax=10**(np.ceil(np.log10(period[-1]))) * .99)
                     ax.grid(True, alpha=.25)

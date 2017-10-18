@@ -465,7 +465,7 @@ class Ui_MainWindow(object):
                     plt.setp(ax.get_xticklabels(), visible=False)
                 if aa < 4:
                     if self.plot_z == False:
-                        ax.set_yscale('log')
+                        ax.set_yscale('log', nonposy='clip')
 
                 if aa > 5:
                     ax.set_xlabel('Period (s)', fontdict=self.font_dict)
@@ -474,7 +474,7 @@ class Ui_MainWindow(object):
                 ax.set_ylim(-1.1, 1.1)
 
             ax.set_xlim(xmin=10**(-3), xmax=10**(3))
-            ax.set_xscale('log')
+            ax.set_xscale('log', nonposx='clip')
 
             ax.grid(True, alpha=.25)
 
@@ -678,7 +678,7 @@ class Ui_MainWindow(object):
 #            self.line_tyi_d.set_xdata(period[nty])
 #            self.line_tyi_d.set_ydata(t_obj.tipper[nty, 0, 1].imag)
 
-# self.axrxx.set_xscale('log')
+# self.axrxx.set_xscale('log', nonposx='clip')
         for ax in self.ax_list:
             ax.draw_artist(ax.patch)
 
@@ -886,7 +886,7 @@ class Ui_MainWindow(object):
 #                if aa < 2:
 #                    plt.setp(ax.get_xticklabels(), visible=False)
 #                    if self.plot_z == False:
-#                        ax.set_yscale('log')
+#                        ax.set_yscale('log', nonposy='clip')
 #                else:
 #                    ax.set_xlabel('Period (s)', fontdict=fontdict)
 #
@@ -910,7 +910,7 @@ class Ui_MainWindow(object):
 #                if aa < 4:
 #                    plt.setp(ax.get_xticklabels(), visible=False)
 #                    if self.plot_z == False:
-#                        ax.set_yscale('log')
+#                        ax.set_yscale('log', nonposy='clip')
 #                else:
 #                    if aa == 8 or aa == 10:
 #                        plt.setp(ax.get_xticklabels(), visible=False)
@@ -935,7 +935,7 @@ class Ui_MainWindow(object):
 #            if aa > 7:
 #                ax.set_ylim(-1.1, 1.1)
 #
-#            ax.set_xscale('log')
+#            ax.set_xscale('log', nonposx='clip')
 #            ax.set_xlim(xmin=10**(np.floor(np.log10(period[0])))*1.01,
 #                     xmax=10**(np.ceil(np.log10(period[-1])))*.99)
 #            ax.grid(True, alpha=.25)

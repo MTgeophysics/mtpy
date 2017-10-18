@@ -582,7 +582,7 @@ class PlotResPhasePseudoSection(object):
                     axr.set_xticks(self.offset_list, minor=True)
                 plt.setp(axr.get_xticklabels(), visible=False)
                 axr.grid(which='major', alpha=.25)
-                axr.set_yscale('log')
+                axr.set_yscale('log', nonposy='clip')
                 axr.set_xlim(
                     self.offset_list.min(),
                     self.offset_list.max() * 1.1)
@@ -616,7 +616,7 @@ class PlotResPhasePseudoSection(object):
                                      for st in range(0, ns, self.xtickspace)])
                 if self.xtickspace != 1:
                     axp.set_xticks(self.offset_list, minor=True)
-                axp.set_yscale('log')
+                axp.set_yscale('log', nonposy='clip')
                 axp.set_xlim(
                     self.offset_list.min(),
                     self.offset_list.max() * 1.1)
