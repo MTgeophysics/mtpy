@@ -696,8 +696,8 @@ class PlotStrike(object):
             plt.clf()
             # make subplots for invariants and phase tensor azimuths
             if self.plot_tipper == 'n':
-                self.axhinv = self.fig.add_subplot(1, 2, 1, polar=True)
-                self.axhpt = self.fig.add_subplot(1, 2, 2, polar=True)
+                self.axhinv = self.fig.add_subplot(1, 2, 1, projection='polar') # polar=True)
+                self.axhpt = self.fig.add_subplot(1, 2, 2, projection='polar') # polar=True)
                 axlist = [self.axhinv, self.axhpt]
             else:
                 self.axhinv = self.fig.add_subplot(1, 3, 1, polar=True)
@@ -766,10 +766,10 @@ class PlotStrike(object):
                 axh.xaxis.set_major_locator(MultipleLocator(2 * np.pi / 12))
 
                 # set a light grid
-                axh.grid(alpha=0.25)
+                axh.grid(alpha=0.25)  # works in 2.0.2 not 2.1.0
 
                 # set tick labels to be invisible
-                plt.setp(axh.yaxis.get_ticklabels(), visible=False)
+                plt.setp(axh.yaxis.get_ticklabels(), visible=False)  # works in 2.0.2 not 2.1.0
 
                 # place the correct label at the cardinal directions
                 axh.xaxis.set_ticklabels(['', 'E', '', '',

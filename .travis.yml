@@ -21,6 +21,7 @@ env:
 
 before_install:
   - chmod -vR +x ./bin/*
+  - sudo rm /etc/apt/sources.list.d/mongodb-3.2.list  # temp fix for issue travis-ci/travis-ci#8554
   - sudo apt update -qq
   # install qt4 and dependencies
   - if [ $QT_VERSION == 4 ]; then sudo apt -y install -qq "libqt4-dev"; fi  # install pyqt dependencies
@@ -65,6 +66,6 @@ matrix:
   fast_finish: true
   allow_failures:
     - env: MATPLOTLIB_VERSION=2.1.0 QT_VERSION=5
-    - env: MATPLOTLIB_VERSION=2.0.2 QT_VERSION=4
+    - env: MATPLOTLIB_VERSION=2.1.0 QT_VERSION=4
     - env: MATPLOTLIB_VERSION=1.5.3 QT_VERSION=4
 

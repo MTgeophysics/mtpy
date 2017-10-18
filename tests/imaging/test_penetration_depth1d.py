@@ -10,8 +10,7 @@ import matplotlib.pyplot as plt
 from mtpy.imaging.penetration import ZComponentError
 from mtpy.imaging.penetration_depth1d import plot_edi_dir
 from mtpy.imaging.penetration_depth1d import plot_edi_file
-from mtpy.utils.decorator import ImageCompare
-from tests.imaging import ImageTestCase
+from tests.imaging import ImageTestCase, ImageCompare
 
 
 class TestPenetration_depth1d(ImageTestCase):

@@ -1,8 +1,7 @@
 import pytest
 from mtpy.imaging.penetration_depth3d import plot_latlon_depth_profile
 from mtpy.imaging.penetration_depth3d import plot_many_periods
-from mtpy.utils.decorator import ImageCompare
-from tests.imaging import ImageTestCase
+from tests.imaging import ImageTestCase, ImageCompare
 
 
 class TestPenetration_depth3d(ImageTestCase):
