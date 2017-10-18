@@ -173,7 +173,7 @@ def get_utm_zone(latitude, longitude):
     
     return zone_number, is_northern, '{0:02.0f}{1}'.format(zone_number, n_str) 
 
-def project_point_ll2utm(lat, lon, datum='WGS84'):
+def project_point_ll2utm(lat, lon, datum='WGS84', utm_zone=None, epsg=None):
     """
     Project a point that is in Lat, Lon (will be converted to decimal degrees)
     into UTM coordinates.
@@ -203,12 +203,21 @@ def project_point_ll2utm(lat, lon, datum='WGS84'):
         return None, None, None
     
     # get zone number, north and zone name
-    zone_number, is_northern, utm_zone = get_utm_zone(lat, lon)
+    if utm_zone is None:
+        zone_number, is_northern, utm_zone = get_utm_zone(lat, lon)
+    else:
+        # get zone number and is_northern from utm_zone string
+        zone_number = int(filter(str.isdigit,utm_zone))
+        is_northern = min(1,utm_zone.count('S'))
     
     ## set utm coordinate system
     utm_cs = osr.SpatialReference()
     utm_cs.SetWellKnownGeogCS(datum)
-    utm_cs.SetUTM(zone_number, is_northern);
+    
+    if type(epsg) is not int:
+        utm_cs.SetUTM(zone_number, is_northern);
+    else:
+        utm_cs.ImportFromEPSG(epsg)
        
     ## set lat, lon coordinate system
     ll_cs = utm_cs.CloneGeogCS()
