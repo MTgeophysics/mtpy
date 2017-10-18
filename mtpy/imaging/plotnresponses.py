@@ -667,16 +667,26 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                 if self.xlimits is None:
                     self.xlimits = (10 ** (np.floor(np.log10(mt.period[0]))),
                                     10 ** (np.ceil(np.log10((mt.period[-1])))))
-                if self.phase_limits is None:
-                    pass
+                # if self.phase_limits is None:
+                #     pass
 
                 if self.res_limits is None:
-                    self.res_limits = (10 ** (np.floor(
-                        np.log10(min([rp.resxy.min(),
-                                      rp.resyx.min()])))),
-                                       10 ** (np.ceil(
-                                           np.log10(max([rp.resxy.max(),
-                                                         rp.resyx.max()])))))
+                    self.res_limits = (
+                        10 ** (
+                            np.floor(
+                                np.log10(
+                                    min([rp.resxy.min(), rp.resyx.min()])
+                                )
+                            )
+                        ),
+                        10 ** (
+                            np.ceil(
+                                np.log10(
+                                    max([rp.resxy.max(), rp.resyx.max()])
+                                )
+                            )
+                        )
+                    )
 
                 # create a grid to place the figures into, set to have 2 rows
                 # and 2 columns to put any of the 4 components.  Make the phase
@@ -824,23 +834,30 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
 
                 # check the phase to see if any point are outside of [0:90]
                 if self.phase_limits is None:
-                    if min(rp.phasexy) < 0 or min(rp.phaseyx) < 0:
-                        pymin = min([min(rp.phasexy),
-                                     min(rp.phaseyx)])
-                        if pymin > 0:
-                            pymin = 0
-                    else:
-                        pymin = 0
-
-                    if max(rp.phasexy) > 90 or max(rp.phaseyx) > 90:
-                        pymax = min([max(rp.phasexy),
-                                     max(rp.phaseyx)])
-                        if pymax < 91:
-                            pymax = 89.9
-                    else:
-                        pymax = 89.9
-
+                    pymin = min(0, min(min(rp.phasexy), min(rp.phaseyx)))
+                    pymax = max(89.9, max(max(rp.phasexy), max(rp.phaseyx)))
                     self.phase_limits = (pymin, pymax)
+                # else:
+                #     self.phase_limits = (min(self.phase_limits[0], pymin),
+                #                          max(self.phase_limits[1], pymax))
+                # if self.phase_limits is None:
+                #     if min(rp.phasexy) < 0 or min(rp.phaseyx) < 0:
+                #         pymin = min([min(rp.phasexy),
+                #                      min(rp.phaseyx)])
+                #         if pymin > 0:
+                #             pymin = 0
+                #     else:
+                #         pymin = 0
+                #
+                #     if max(rp.phasexy) > 90 or max(rp.phaseyx) > 90:
+                #         pymax = min([max(rp.phasexy),
+                #                      max(rp.phaseyx)])
+                #         if pymax < 91:
+                #             pymax = 89.9
+                #     else:
+                #         pymax = 89.9
+                #
+                #     self.phase_limits = (pymin, pymax)
 
                 # --> set axes properties
                 if ii == 0:
