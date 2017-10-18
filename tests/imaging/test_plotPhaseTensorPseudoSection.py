@@ -7,8 +7,11 @@ import pytest
 from mtpy.imaging.phase_tensor_pseudosection import PlotPhaseTensorPseudoSection
 from tests.imaging import ImageTestCase, ImageCompare
 
-_expected_compare_fail = lambda: pytest.xfail(
-    "expected the image to be different on different platform, please check the image manually.")
+
+def _expected_compare_fail():
+    pytest.xfail(
+        "expected the image to be different on different platform, please check the image manually.")
+
 
 test_params = [
     ("tests/data/edifiles", {"fig_size": (8, 8), "savefig_kwargs": {'dpi': 100},

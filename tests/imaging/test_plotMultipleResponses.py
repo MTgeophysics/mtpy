@@ -6,7 +6,12 @@ import pytest
 
 from mtpy.imaging.plotnresponses import PlotMultipleResponses
 from tests.imaging import ImageTestCase, ImageCompare
-_expected_compare_fail = lambda: pytest.xfail("expected to be different, check the result image manually")
+
+
+def _expected_compare_fail():
+    pytest.xfail("expected to be different, check the result image manually")
+
+
 test_params = [
     (
         "tests/data/edifiles",

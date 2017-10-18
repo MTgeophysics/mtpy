@@ -9,9 +9,13 @@ from mtpy.imaging.penetration import load_edi_files
 from mtpy.imaging.phase_tensor_maps import PlotPhaseTensorMaps
 from tests.imaging import ImageTestCase, ImageCompare
 
+
 # configure matplotlib for testing
-_expected_compare_fail = lambda: pytest.xfail(
-    "expected the image to be different on different platform, please check the image manually.")
+def _expected_compare_fail():
+    pytest.xfail(
+        "expected the image to be different on different platform, please check the image manually.")
+
+
 test_params = [
     ("tests/data/edifiles", 1, {"fig_size": (7, 8), "savefig_kwargs": {'dpi': 100},
                                 "on_compare_fail": _expected_compare_fail}),

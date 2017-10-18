@@ -61,5 +61,5 @@ for edi_path in edi_paths:
                 _test_func.__name__,
                 ImageCompare(fig_size=(8, 6),
                              on_compare_fail=lambda: pytest.xfail(
-                                 "expacted to be different, check the image manually")
+                                 "expected to be different, check the image manually")
                              ).__call__(_test_func))
