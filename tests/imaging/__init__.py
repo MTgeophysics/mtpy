@@ -67,6 +67,9 @@ class ImageCompare(object):
         self._logger.info(
             "Image Comparison Test: {stat}".format(stat="ENABLED" if self.is_compare_image else "DISABLED")
         )
+        self.on_fail = kwargs.pop('on_fail', None)
+        self.on_compare_fail = kwargs.pop("on_compare_fail", None)
+        self.on_empty_image = kwargs.pop("on_empty_image", None)
 
         if self.result_dir and not os.path.exists(self.result_dir):
             os.makedirs(self.result_dir)
@@ -125,6 +128,10 @@ class ImageCompare(object):
                             # self._print_image_base64(test_image)
                             # print("====================")
                             self.print_image_testing_note(file=sys.stderr)
+                            if self.on_compare_fail is not None:
+                                self.on_compare_fail()
+                            if self.on_fail is not None:
+                                self.on_fail()
                             pytest.fail(msg, pytrace=False)
                         else:
                             # clearup the image as they are the same with the baseline
@@ -148,6 +155,10 @@ class ImageCompare(object):
                                 self._logger.info("\nGenerated Image: {test}".format(test=test_image))
                         else:
                             # empty image created
+                            if self.on_empty_image is not None:
+                                self.on_empty_image()
+                            if self.on_fail is not None:
+                                self.on_fail()
                             pytest.fail("Image file not found for comparison test "
                                         "(This is expected for new tests.),"
                                         " but the new image created is empty.")

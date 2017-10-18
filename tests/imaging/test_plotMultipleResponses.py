@@ -2,21 +2,24 @@ import glob
 import os
 
 import matplotlib.pyplot as plt
+import pytest
 
 from mtpy.imaging.plotnresponses import PlotMultipleResponses
 from tests.imaging import ImageTestCase, ImageCompare
-
+_expected_compare_fail = lambda: pytest.xfail("expected to be different, check the result image manually")
 test_params = [
     (
         "tests/data/edifiles",
         {
             'style_all': {
                 "fig_size": (16, 6),
-                "savefig_kwargs": {'dpi': 200}
+                "savefig_kwargs": {'dpi': 200},
+                "on_compare_fail": _expected_compare_fail
             },
             'style_compare': {
                 "fig_size": (8, 6),
-                "savefig_kwargs": {'dpi': 200}
+                "savefig_kwargs": {'dpi': 200},
+                "on_compare_fail": _expected_compare_fail
             }
         }
     ),
@@ -25,11 +28,13 @@ test_params = [
         {
             'style_all': {
                 "fig_size": (16, 6),
-                "savefig_kwargs": {'dpi': 200}
+                "savefig_kwargs": {'dpi': 200},
+                "on_compare_fail": _expected_compare_fail
             },
             'style_compare': {
                 "fig_size": (8, 6),
-                "savefig_kwargs": {'dpi': 200}
+                "savefig_kwargs": {'dpi': 200},
+                "on_compare_fail": _expected_compare_fail
             }
         }
     ),
@@ -38,11 +43,13 @@ test_params = [
         {
             'style_all': {
                 "fig_size": (16, 6),
-                "savefig_kwargs": {'dpi': 200}
+                "savefig_kwargs": {'dpi': 200},
+                "on_compare_fail": _expected_compare_fail
             },
             'style_compare': {
                 "fig_size": (8, 6),
-                "savefig_kwargs": {'dpi': 200}
+                "savefig_kwargs": {'dpi': 200},
+                "on_compare_fail": _expected_compare_fail
             }
         }
     ),
