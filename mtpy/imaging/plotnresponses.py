@@ -834,9 +834,10 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
 
                 # check the phase to see if any point are outside of [0:90]
                 if self.phase_limits is None:
-                    pymin = min(0, min(min(rp.phasexy), min(rp.phaseyx)))
-                    pymax = max(89.9, max(max(rp.phasexy), max(rp.phaseyx)))
+                    pymin = min(0, min([min(rp.phasexy), min(rp.phaseyx)]))
+                    pymax = max(89.9, max([max(rp.phasexy), max(rp.phaseyx)]))
                     self.phase_limits = (pymin, pymax)
+                #     self.phase_limits = (pymin, pymax)
                 # else:
                 #     self.phase_limits = (min(self.phase_limits[0], pymin),
                 #                          max(self.phase_limits[1], pymax))
@@ -850,10 +851,10 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                 #         pymin = 0
                 #
                 #     if max(rp.phasexy) > 90 or max(rp.phaseyx) > 90:
-                #         pymax = min([max(rp.phasexy),
+                #         pymax = min([max(rp.phasexy),  # YG: should use max instead ??
                 #                      max(rp.phaseyx)])
                 #         if pymax < 91:
-                #             pymax = 89.9
+                #             pymax = 89.9  # YG: why??
                 #     else:
                 #         pymax = 89.9
                 #
