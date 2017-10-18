@@ -12,7 +12,7 @@ fig = plt.figure()
 ax = fig.add_subplot(1, 1, 1)
 ax.errorbar(x, y, yerr=yerr)
 
-ax.set_yscale('log')
+ax.set_yscale('log', nonposy='clip')
 # ax.set_xscale('log')
 # ax.set_ylim((10, 100))
 
