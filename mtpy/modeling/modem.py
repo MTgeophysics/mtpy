@@ -129,7 +129,7 @@ class Stations(object):
             else:
                 raise ModEMError('file {0} not supported yet'.format(input_list[0][-4:]))
         
-    def get_station_locations(self, input_list):
+    def get_station_locations(self, input_list, epsg=None, utm_zone=None):
         """
         get station locations from a list of edi files
         
@@ -166,10 +166,20 @@ class Stations(object):
             self.station_locations[ii]['lat'] = mt_obj.lat
             self.station_locations[ii]['lon'] = mt_obj.lon
             self.station_locations[ii]['station'] = mt_obj.station
-            self.station_locations[ii]['east'] = mt_obj.east
-            self.station_locations[ii]['north'] = mt_obj.north
             self.station_locations[ii]['elev'] = mt_obj.elev
-            self.station_locations[ii]['zone'] = mt_obj.utm_zone
+            
+            if ((epsg is not None) or (utm_zone is not None)):
+                east,north,utm_zone = gis_tools.project_point_ll2utm(mt_obj.lat,
+                                                                     mt_obj.lon,
+                                                                     utm_zone=utm_zone,
+                                                                     epsg=epsg)
+                self.station_locations[ii]['east'] = east
+                self.station_locations[ii]['north'] = north               
+                self.station_locations[ii]['zone'] = utm_zone
+            else:
+                self.station_locations[ii]['east'] = mt_obj.east
+                self.station_locations[ii]['north'] = mt_obj.north
+                self.station_locations[ii]['zone'] = mt_obj.utm_zone
         
         # get relative station locations
         self.calculate_rel_locations()
@@ -378,6 +388,13 @@ class Data(object):
 
     inv_mode_dict          dictionary for inversion modes
     max_num_periods        maximum number of periods
+    model_epsg             epsg code for model projection, provide this to
+                           project model to non-utm coordinates. Find the epsg
+                           code for your projection on 
+                           http://spatialreference.org/ref/ or google search
+                           epsg "your projection"
+    model_utm_zone         alternative to model_epsg, choose a utm zone to
+                           project all sites to (e.g. '55S')
     mt_dict                dictionary of mtpy.core.mt.MT objects with keys 
                            being station names
     period_dict            dictionary of period index for period_list
@@ -496,6 +513,9 @@ class Data(object):
         
         self.data_fn = 'ModEM_Data.dat'
         self.save_path = os.getcwd()
+        
+        self.model_epsg = None
+        self.model_utm_zone = None
         self.formatting = '1'
         
         self._rotation_angle = 0.0
@@ -554,7 +574,8 @@ class Data(object):
        
         
         for key in kwargs.keys():
-            setattr(self, key, kwargs[key])        
+            setattr(self, key, kwargs[key])    
+            
         
     def _set_dtype(self, z_shape, t_shape):
         """
@@ -617,8 +638,8 @@ class Data(object):
         stations_obj = Stations()
         mt_list = [self.mt_dict[s_key] for s_key in sorted(self.mt_dict.keys())]
         
-        stations_obj.get_station_locations(mt_list)
-        
+        stations_obj.get_station_locations(mt_list, epsg=self.model_epsg, 
+                                           utm_zone=self.model_utm_zone)
         # rotate locations if needed
         if self._rotation_angle != 0:
             stations_obj.rotate_stations(self._rotation_angle)
@@ -632,6 +653,7 @@ class Data(object):
         self.data_array[:]['elev'] = stations_obj.elev
         self.data_array[:]['rel_east'] = stations_obj.rel_east
         self.data_array[:]['rel_north'] = stations_obj.rel_north
+
         
         # get center point
         self.center_point = stations_obj.center_point
@@ -797,6 +819,7 @@ class Data(object):
         if rel_distance is False:
             self.get_relative_station_locations()
             
+            
     def _set_station_locations(self, station_obj=None):
         """
         take a station_locations array and populate data_array
@@ -847,7 +870,7 @@ class Data(object):
             
         station_locations = self.data_array[['station', 'lat', 'lon', 
                                              'north', 'east', 'elev',
-                                             'rel_north', 'rel_east']]
+                                             'rel_north', 'rel_east','zone']]
         station_obj = Stations()
         station_obj.station_locations = station_locations
         
@@ -964,9 +987,9 @@ class Data(object):
         if save_path is not None:
             self.save_path = save_path
         if fn_basename is not None:
-            self.fn_basename = fn_basename
+            self.data_fn = fn_basename
             
-        self.data_fn = os.path.join(self.save_path, self.fn_basename)
+        self.data_fn = os.path.join(self.save_path, self.data_fn)
         
         self.get_period_list()
         

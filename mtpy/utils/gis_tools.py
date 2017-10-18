@@ -188,7 +188,15 @@ def project_point_ll2utm(lat, lon, datum='WGS84', utm_zone=None, epsg=None):
         
         **datum** : string
                     well known datum ex. WGS84, NAD27, NAD83, etc.
-                    
+
+        **utm_zone** : string
+                       zone number and 'S' or 'N' e.g. '55S'
+                       
+        **epsg** : int
+                   epsg number defining projection (see 
+                   http://spatialreference.org/ref/ for moreinfo)
+                   Overrides utm_zone if both are provided
+
     Returns:
     --------------
         **proj_point**: tuple(easting, northing, zone)
