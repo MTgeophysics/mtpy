@@ -513,7 +513,7 @@ class PlotPhaseTensor(mtpl.MTEllipse):
             self.strike_limits = (-89.99, 89.99)
 
         self.ax2.set_yscale('linear')
-        self.ax2.set_xscale('log')
+        self.ax2.set_xscale('log', nonposx='clip')
         self.ax2.set_xlim(xmax=10**xlimits[-1], xmin=10**xlimits[0])
         self.ax2.set_ylim(self.strike_limits)
         self.ax2.yaxis.set_major_locator(MultipleLocator(20))
@@ -567,7 +567,7 @@ class PlotPhaseTensor(mtpl.MTEllipse):
             if self.pt_limits[1] > 100:
                 self.pt_limits[1] = 99.99
 
-        self.ax3.set_xscale('log')
+        self.ax3.set_xscale('log', nonposx='clip')
         self.ax3.set_yscale('linear')
 
         self.ax3.legend((ermin[0], ermax[0]),
@@ -625,7 +625,7 @@ class PlotPhaseTensor(mtpl.MTEllipse):
                       color=self.skew_color,
                       lw=1)
 
-        self.ax4.set_xscale('log')
+        self.ax4.set_xscale('log', nonposx='clip')
         self.ax4.set_yscale('linear')
         self.ax4.yaxis.set_major_locator(MultipleLocator(ckstep))
 
@@ -663,7 +663,7 @@ class PlotPhaseTensor(mtpl.MTEllipse):
                       color=self.ellip_color,
                       lw=1)
 
-        self.ax5.set_xscale('log')
+        self.ax5.set_xscale('log', nonposx='clip')
         self.ax5.set_yscale('linear')
 
         self.ax5.yaxis.set_major_locator(MultipleLocator(.1))

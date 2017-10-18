@@ -185,7 +185,7 @@ def plot_merging(periods, merge_threshold, no_periods=None, t_min=None,
     ax = subplot2grid((1, 1), (0, 0), colspan=1)
     orig = ax.scatter(periods, zeros(len(periods)), label='original periods')
     # ax.set_xlim([10**(-rng),10**(rng)])
-    ax.set_xscale('log')
+    ax.set_xscale('log', nonposx='clip')
 
     hold(True)
 

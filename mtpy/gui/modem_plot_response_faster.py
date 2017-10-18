@@ -553,7 +553,7 @@ class Ui_MainWindow(object):
 
             if aa < 2:
                 if self.plot_z == False:
-                    ax.set_yscale('log')
+                    ax.set_yscale('log', nonposy='clip')
 
             if aa < 4:
                 plt.setp(ax.get_xticklabels(), visible=False)
@@ -606,7 +606,7 @@ class Ui_MainWindow(object):
             elif aa == 5:
                 ax.set_ylabel(r'W$_y$', fontdict=fontdict)
 
-            ax.set_xscale('log')
+            ax.set_xscale('log', nonposx='clip')
             ax.set_xlim(xmin=10**(np.floor(np.log10(period[0]))) * 1.01,
                         xmax=10**(np.ceil(np.log10(period[-1]))) * .99)
             ax.grid(True, alpha=.25)

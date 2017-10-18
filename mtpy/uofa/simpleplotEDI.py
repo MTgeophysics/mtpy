@@ -97,8 +97,8 @@ def plotedi(fn, saveplot=False, component=None):
     if 'e' in lo_comps:
         resplotelement_yx = errorbar(
             periods, res_tm, reserr_tm, marker='x', c='r', fmt='x')
-    xscale('log')
-    yscale('log')
+    xscale('log', nonposx='clip')
+    yscale('log', nonposy='clip')
     minval = min(min(res_te, res_tm))
     maxval = max(max(res_te, res_tm))
     xlim(0.5 * min(periods), 2 * max(periods))

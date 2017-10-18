@@ -4094,7 +4094,7 @@ class Occam2DData:
             # set the axes properties for each subplot
             for nn, xx in enumerate(axplst):
                 # set xscale to logarithmic in period
-                xx.set_xscale('log')
+                xx.set_xscale('log', nonposx='clip')
 
                 # if apparent resistivity
                 if nn == 0 or nn == 1:
@@ -4103,7 +4103,7 @@ class Occam2DData:
 
                     # set apparent resistivity scale to logarithmic
                     try:
-                        xx.set_yscale('log')
+                        xx.set_yscale('log', nonposy='clip')
                     except ValueError:
                         pass
 
@@ -4792,8 +4792,8 @@ class Occam2DData:
                 # set the axis properties
                 for aa, axr in enumerate([axrte, axrtm]):
                     # set both axes to logarithmic scale
-                    axr.set_xscale('log')
-                    axr.set_yscale('log')
+                    axr.set_xscale('log', nonposx='clip')
+                    axr.set_yscale('log', nonposy='clip')
 
                     # put on a grid
                     axr.grid(True, alpha=.3, which='both')
@@ -4872,7 +4872,7 @@ class Occam2DData:
                 # set Properties for the phase axes
                 for aa, axp in enumerate([axpte, axptm]):
                     # set the x-axis to log scale
-                    axp.set_xscale('log')
+                    axp.set_xscale('log', nonposx='clip')
 
                     # set the phase limits
                     axp.set_ylim(phaselimits)
@@ -5132,8 +5132,8 @@ class Occam2DData:
                 # set the axis properties
                 for aa, axr in enumerate([axrte, axrtm]):
                     # set both axes to logarithmic scale
-                    axr.set_xscale('log')
-                    axr.set_yscale('log')
+                    axr.set_xscale('log', nonposx='clip')
+                    axr.set_yscale('log', nonposy='clip')
 
                     # put on a grid
                     axr.grid(True, alpha=.3, which='both')
@@ -5201,7 +5201,7 @@ class Occam2DData:
 
                 for aa, axp in enumerate([axpte, axptm]):
                     # set the x-axis to log scale
-                    axp.set_xscale('log')
+                    axp.set_xscale('log', nonposx='clip')
 
                     # set the phase limits
                     axp.set_ylim(phaselimits)

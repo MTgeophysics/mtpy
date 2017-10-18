@@ -1096,8 +1096,8 @@ class PlotWidget(QtGui.QWidget):
             if aa == 0:
                 ax.set_ylabel('App. Res. ($\mathbf{\Omega \cdot m}$)',
                               fontdict=font_dict)
-            ax.set_yscale('log')
-            ax.set_xscale('log')
+            ax.set_yscale('log', nonposy='clip')
+            ax.set_xscale('log', nonposx='clip')
             ax.set_xlim(self.plot_properties.xlimits)
 
             ax.grid(True, alpha=.25, which='both', color=(.25, .25, .25),
@@ -1160,7 +1160,7 @@ class PlotWidget(QtGui.QWidget):
             self.ax_phase_d.set_ylim(self.plot_properties.phase_limits_d)
         for aa, ax in enumerate([self.ax_phase_od, self.ax_phase_d]):
             ax.set_xlabel('Period (s)', font_dict)
-            ax.set_xscale('log')
+            ax.set_xscale('log', nonposx='clip')
             if aa == 0:
                 ax.set_ylabel('Phase (deg)', font_dict)
                 # ax.yaxis.set_major_locator(MultipleLocator(15))
@@ -1250,7 +1250,7 @@ class PlotWidget(QtGui.QWidget):
             if aa == 0:
                 ax.set_ylabel('Magnitude', fontdict=font_dict)
 
-            ax.set_xscale('log')
+            ax.set_xscale('log', nonposx='clip')
             ax.grid(True, alpha=.25, which='both', color=(.25, .25, .25),
                     lw=.25)
 

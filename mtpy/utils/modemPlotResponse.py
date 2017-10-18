@@ -316,7 +316,7 @@ def plotZ(data_dictionary, no_comps=4, step=1):
                 ls='none',
             )
 
-            ax.set_xscale('log')
+            ax.set_xscale('log', nonposx='clip')
 
             if subfig_index_vertical == 0:
                 ax.set_title(comp)

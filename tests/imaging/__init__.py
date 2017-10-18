@@ -20,6 +20,7 @@ if os.name == "posix" and 'DISPLAY' not in os.environ:
 else:
     # matplotlib.use('svg')
     import matplotlib.pyplot as plt
+
     plt.ion()
 
 MtPyLog().get_mtpy_logger(__name__).info("Testing using matplotlib backend {}".format(matplotlib.rcParams['backend']))
@@ -46,6 +47,7 @@ class ImageCompare(object):
     - enable the image comparison tests against the baseline image stored, set environment variable
     MTPY_TEST_COMPARE_IMAGE = True
     """
+
     def __init__(self, *args, **kwargs):
         self.baseline_dir = kwargs.pop(
             'baseline_dir',
@@ -149,8 +151,8 @@ class ImageCompare(object):
                             self.print_image_testing_note(file=sys.stderr)
                             if self.is_compare_image:
                                 pytest.skip("Image file not found for comparison test "
-                                             "(This is expected for new tests.)\nGenerated Image: "
-                                             "\n\t{test}".format(test=test_image))
+                                            "(This is expected for new tests.)\nGenerated Image: "
+                                            "\n\t{test}".format(test=test_image))
                             else:
                                 self._logger.info("\nGenerated Image: {test}".format(test=test_image))
                         else:

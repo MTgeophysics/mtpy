@@ -729,7 +729,7 @@ class PlotResponse(object):
                         if aa < 4:
                             plt.setp(ax.get_xticklabels(), visible=False)
                             if self.plot_z == False:
-                                ax.set_yscale('log')
+                                ax.set_yscale('log', nonposy='clip')
                                 ylim = ax.get_ylim()
                                 ylimits = (10 ** np.floor(np.log10(ylim[0])),
                                            10 ** np.ceil(np.log10(ylim[1])))
@@ -764,7 +764,7 @@ class PlotResponse(object):
                                 ax.set_ylabel('|Im[Z]| (mV/km nT)',
                                               fontdict=fontdict)
 
-                    ax.set_xscale('log')
+                    ax.set_xscale('log', nonposx='clip')
                     ax.set_xlim(xmin=10 ** (np.floor(np.log10(period[0]))) * 1.01,
                                 xmax=10 ** (np.ceil(np.log10(period[-1]))) * .99)
                     ax.grid(True, alpha=.25)
@@ -1052,7 +1052,7 @@ class PlotResponse(object):
                     if len(ax_list) == 2:
                         ax.set_xlabel('Period (s)', fontdict=fontdict)
                         if self.plot_z == True:
-                            ax.set_yscale('log')
+                            ax.set_yscale('log', nonposy='clip')
                             ylim = ax.get_ylim()
                             ylimits = (10 ** np.floor(np.log10(ylim[0])),
                                        10 ** np.ceil(np.log10(ylim[1])))
@@ -1066,7 +1066,7 @@ class PlotResponse(object):
                         if aa == 0:
                             plt.setp(ax.get_xticklabels(), visible=False)
                             if self.plot_z == False:
-                                ax.set_yscale('log')
+                                ax.set_yscale('log', nonposy='clip')
                                 ax.set_ylabel('App. Res. ($\mathbf{\Omega \cdot m}$)',
                                               fontdict=fontdict)
                             elif self.plot_z == True:
@@ -1084,11 +1084,11 @@ class PlotResponse(object):
                                               fontdict=fontdict)
                     elif len(ax_list) == 4 and plot_tipper == False:
                         if self.plot_z == True:
-                            ax.set_yscale('log')
+                            ax.set_yscale('log', nonposy='clip')
                         if aa < 2:
                             plt.setp(ax.get_xticklabels(), visible=False)
                             if self.plot_z == False:
-                                ax.set_yscale('log')
+                                ax.set_yscale('log', nonposy='clip')
                             if self.res_limits is not None:
                                 ax.set_ylim(self.res_limits)
                         else:
@@ -1114,7 +1114,7 @@ class PlotResponse(object):
                         if aa == 0 or aa == 2:
                             plt.setp(ax.get_xticklabels(), visible=False)
                             if self.plot_z == False:
-                                ax.set_yscale('log')
+                                ax.set_yscale('log', nonposy='clip')
                             if self.res_limits is not None:
                                 ax.set_ylim(self.res_limits)
                         else:
@@ -1138,11 +1138,11 @@ class PlotResponse(object):
                             ax.yaxis.set_major_formatter(
                                 FormatStrFormatter('%.0f'))
                             if self.plot_z == True:
-                                ax.set_yscale('log')
+                                ax.set_yscale('log', nonposy='clip')
                                 #                        else:
                                 #                            plt.setp(ax.yaxis.get_ticklabels(), visible=False)
 
-                    ax.set_xscale('log')
+                    ax.set_xscale('log', nonposx='clip')
                     ax.set_xlim(xmin=10 ** (np.floor(np.log10(period[0]))) * 1.01,
                                 xmax=10 ** (np.ceil(np.log10(period[-1]))) * .99)
                     ax.grid(True, alpha=.25)
