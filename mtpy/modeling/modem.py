@@ -1763,6 +1763,10 @@ class Model(object):
                          *default* is 7
     pad_num              number of cells with cell_size with outside of 
                          station area.  *default* is 3
+    pad_method           method to use to create padding:
+                         extent1, extent2 - calculate based on ew_ext and 
+                         ns_ext
+                         stretch - calculate based on pad_stretch factors
     pad_stretch_h        multiplicative number for padding in horizontal
                          direction.  
     pad_stretch_v        padding cells N & S will be pad_root_north**(x) 
@@ -1817,6 +1821,9 @@ class Model(object):
         #root of padding cells
         self.pad_stretch_h = 1.2
         self.pad_stretch_v = 1.2
+        
+        # method to use to create padding
+        self.pad_method = 'extent1'
         
         self.z1_layer = 10
         self.z_target_depth = 50000
@@ -1933,6 +1940,7 @@ class Model(object):
                           array of padding cells for one side
         
         """
+
         # compute scaling factor
         scaling = ((max_distance)/(cell_width*stretch))**(1./(num_cells-1)) 
         
@@ -1949,6 +1957,40 @@ class Model(object):
             padding[ii] = max([exp_pad, mult_pad])
 
         return padding
+
+    
+    def get_padding_from_stretch(self, cell_width, pad_stretch, num_cells):
+        """
+        get padding cells using pad stretch factor
+        
+        """
+        nodes = np.around((np.ones(num_cells)*cell_width)**pad_stretch,-2)
+        
+        return np.array([nodes[:i].sum() for i in range(1,len(nodes)+1)])
+        
+        
+
+    def get_padding_cells2(self, cell_width, core_max, max_distance, num_cells):
+        """
+        get padding cells, which are exponentially increasing to a given 
+        distance.  Make sure that each cell is larger than the one previously.
+        """
+        # check max distance is large enough to accommodate padding
+        max_distance = max(cell_width*num_cells, max_distance)
+
+        cells = np.around(np.logspace(np.log10(core_max),np.log10(max_distance),num_cells), -2)
+        cells -= core_max
+        
+        # check if first padding cell is at least as big as cell width
+        if cells[1] - cells[0] < cell_width:
+            pad_stretch = (core_max + cell_width)/core_max
+            cells = self.get_padding_from_stretch(cell_width, pad_stretch, num_cells)
+            print "Provided model extent not wide enough to contain padding, "+\
+            "expanding model to {} m".format((cells[-1] + core_max)*2)
+            
+        return cells
+
+
 
     def make_mesh(self):
         """ 
@@ -1986,22 +2028,45 @@ class Model(object):
         north = np.round(north, -2)
         
         #-------make a grid around the stations from the parameters above------
+        
+        # adjust the edges so we have a whole number of cells
+        add_ew = ((east - west)%self.cell_size_east)/2.
+        add_ns = ((north - south)%self.cell_size_north)/2.
+        
         #--> make the inner grid first
-        inner_east = np.arange(west,
-                               east+self.cell_size_east,
+        inner_east = np.arange(west + add_ew - self.cell_size_east,
+                               east - add_ew + 2*self.cell_size_east,
                                self.cell_size_east)
-        inner_north = np.arange(south,
-                                north+self.cell_size_north,
+        inner_north = np.arange(south + add_ns + self.cell_size_north,
+                                north - add_ns + 2*self.cell_size_north,
                                 self.cell_size_north)
+
         ## compute padding cells
-        padding_east = self.get_padding_cells(self.cell_size_east,
-                                              self.ew_ext/2-east, 
-                                              self.pad_east,
-                                              self.pad_stretch_h)
-        padding_north = self.get_padding_cells(self.cell_size_north,
-                                               self.ns_ext/2-north, 
-                                               self.pad_north,
-                                               self.pad_stretch_h)
+        if self.pad_method == 'extent1':
+            padding_east = self.get_padding_cells(self.cell_size_east,
+                                                  self.ew_ext/2-east, 
+                                                  self.pad_east,
+                                                  self.pad_stretch_h)
+            padding_north = self.get_padding_cells(self.cell_size_north,
+                                                   self.ns_ext/2-north, 
+                                                   self.pad_north,
+                                                   self.pad_stretch_h)
+        elif self.pad_method == 'extent2':
+            padding_east = self.get_padding_cells2(self.cell_size_east,
+                                                   inner_east[-1],
+                                                   self.ew_ext/2.,
+                                                   self.pad_east)
+            padding_north = self.get_padding_cells2(self.cell_size_north,
+                                                    inner_north[-1],
+                                                   self.ns_ext/2.,
+                                                   self.pad_north)
+        elif self.pad_method == 'stretch':
+            padding_east = self.get_padding_from_stretch(self.cell_size_east,
+                                                         self.pad_stretch_h,
+                                                         self.pad_east)
+            padding_north = self.get_padding_from_stretch(self.cell_size_north,
+                                                         self.pad_stretch_h,
+                                                         self.pad_north)
    
         # make the horizontal grid                                    
         self.grid_east = np.append(np.append(-1*padding_east[::-1]+inner_east.min(), 
@@ -3214,7 +3279,6 @@ class Model(object):
         if len(x.shape) == 1:
             x, y = np.meshgrid(x, y)
 
-        epsg_to = self.Data.model_epsg
         xs, ys, utm_zone = gis_tools.project_points_ll2utm(y,x,
                                                            epsg=self.Data.model_epsg,
                                                            utm_zone=self.Data.model_utm_zone
