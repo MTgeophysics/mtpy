@@ -76,6 +76,12 @@ class Stations(object):
                        ('north', np.float),
                        ('zone', 'S4')]
         self.station_locations = np.zeros(0, dtype=self.dtype)
+        self.model_epsg = None
+        self.model_utm_zone = None
+        
+        for key in kwargs.keys():
+            if hasattr(self,key):
+                setattr(self,key,kwargs[key])
     
     ## --> define properties that can only be returned and not set    
     @property
@@ -132,7 +138,7 @@ class Stations(object):
             else:
                 raise ModEMError('file {0} not supported yet'.format(input_list[0][-4:]))
         
-    def get_station_locations(self, input_list, epsg=None, utm_zone=None):
+    def get_station_locations(self, input_list):
         """
         get station locations from a list of edi files
         
@@ -171,11 +177,11 @@ class Stations(object):
             self.station_locations[ii]['station'] = mt_obj.station
             self.station_locations[ii]['elev'] = mt_obj.elev
             
-            if ((epsg is not None) or (utm_zone is not None)):
+            if ((self.model_epsg is not None) or (self.model_utm_zone is not None)):
                 east,north,utm_zone = gis_tools.project_point_ll2utm(mt_obj.lat,
                                                                      mt_obj.lon,
-                                                                     utm_zone=utm_zone,
-                                                                     epsg=epsg)
+                                                                     utm_zone=self.model_utm_zone,
+                                                                     epsg=self.model_epsg)
                 self.station_locations[ii]['east'] = east
                 self.station_locations[ii]['north'] = north               
                 self.station_locations[ii]['zone'] = utm_zone
@@ -196,18 +202,26 @@ class Stations(object):
         (-) shift left or down
         
         """
+#
+#        #remove the average distance to get coordinates in a relative space
+#        self.station_locations['rel_east'] = self.east-self.east.mean()
+#        self.station_locations['rel_north'] = self.north-self.north.mean()
+#        
+#        #translate the stations so they are relative to 0,0
+#        east_center = (self.rel_east.max()-np.abs(self.rel_east.min()))/2.
+#        north_center = (self.rel_north.max()-np.abs(self.rel_north.min()))/2.
+#
+#
+#        #remove the average distance to get coordinates in a relative space
+#        self.station_locations['rel_east'] -= east_center+shift_east
+#        self.station_locations['rel_north'] -= north_center+shift_north
 
-        #remove the average distance to get coordinates in a relative space
-        self.station_locations['rel_east'] = self.east-self.east.mean()
-        self.station_locations['rel_north'] = self.north-self.north.mean()
-        
         #translate the stations so they are relative to 0,0
-        east_center = (self.rel_east.max()-np.abs(self.rel_east.min()))/2
-        north_center = (self.rel_north.max()-np.abs(self.rel_north.min()))/2
-
-        #remove the average distance to get coordinates in a relative space
-        self.station_locations['rel_east'] -= east_center+shift_east
-        self.station_locations['rel_north'] -= north_center+shift_north
+        east_center = (self.east.max()+self.east.min())/2.
+        north_center = (self.north.max()+self.north.min())/2.
+        
+        self.station_locations['rel_east'] = self.east - east_center
+        self.station_locations['rel_north'] = self.north - north_center
         
                                                    
     # make center point a get method, can't set it.
@@ -223,28 +237,38 @@ class Stations(object):
                                   dtype includes (east, north, zone, lat, lon)
         """
         center_location = np.recarray(1, dtype=self.dtype)
-        center_point = np.array([self.east.mean(), self.north.mean()])
+#        AK - using the mean here but in get_relative_locations used (max + min)/2, why???
         
-        #translate the stations so they are relative to 0,0
-        east_center = (self.rel_east.max()-np.abs(self.rel_east.min()))/2
-        north_center = (self.rel_north.max()-np.abs(self.rel_north.min()))/2
-        
-        center_point[0] -= east_center
-        center_point[1] -= north_center
-        
-        # calculate center point in lat, lon, easting, northing        
+#        center_point = np.array([self.east.mean(), self.north.mean()])
+#        
+#        #translate the stations so they are relative to 0,0
+#        east_center = (self.rel_east.max()-np.abs(self.rel_east.min()))/2
+#        north_center = (self.rel_north.max()-np.abs(self.rel_north.min()))/2
+#        
+#        center_point[0] -= east_center
+#        center_point[1] -= north_center
+#        
+#        # calculate center point in lat, lon, easting, northing        
+#        center_location['east'] = center_point[0]
+#        center_location['north'] = center_point[1]
+
+        center_point = np.array([self.east.max() + self.east.min(),
+                                 self.north.max() + self.north.min()])/2.
         center_location['east'] = center_point[0]
         center_location['north'] = center_point[1]
+        
         center_location['zone'] = self.utm_zone[0]
 
         center_ll = gis_tools.project_point_utm2ll(float(center_point[0]),
                                                    float(center_point[1]),
-                                                   self.utm_zone[0])
+                                                   self.utm_zone[0],
+                                                   epsg=self.model_epsg)
                                                    
         center_location['lat'] = center_ll[0]
         center_location['lon'] = center_ll[1]
         
         return center_location
+        
         
     def rotate_stations(self, rotation_angle):
         """
@@ -270,7 +294,7 @@ class Stations(object):
                                          
         coords = np.array([self.station_locations['rel_east'],
                            self.station_locations['rel_north']])
-        
+
         #rotate the relative station locations
         new_coords = np.array(np.dot(rot_matrix, coords))
         
@@ -517,8 +541,6 @@ class Data(object):
         self.data_fn = 'ModEM_Data.dat'
         self.save_path = os.getcwd()
         
-        self.model_epsg = None
-        self.model_utm_zone = None
         self.formatting = '1'
         
         self._rotation_angle = 0.0
@@ -528,6 +550,8 @@ class Data(object):
         
         self.data_array = None
         self.mt_dict = None
+        self.model_utm_zone = None
+        self.model_epsg = None
         
         self._z_shape = (1, 2, 2)
         self._t_shape = (1, 1, 2)
@@ -577,8 +601,11 @@ class Data(object):
        
         
         for key in kwargs.keys():
-            setattr(self, key, kwargs[key])    
+            setattr(self, key, kwargs[key])
             
+            
+        
+                    
         
     def _set_dtype(self, z_shape, t_shape):
         """
@@ -638,11 +665,11 @@ class Data(object):
         get station locations from edi files
         """
         
-        stations_obj = Stations()
+        stations_obj = Stations(model_epsg=self.model_epsg,
+                                model_utm_zone=self.model_utm_zone)
         mt_list = [self.mt_dict[s_key] for s_key in sorted(self.mt_dict.keys())]
         
-        stations_obj.get_station_locations(mt_list, epsg=self.model_epsg, 
-                                           utm_zone=self.model_utm_zone)
+        stations_obj.get_station_locations(mt_list)
         # rotate locations if needed
         if self._rotation_angle != 0:
             stations_obj.rotate_stations(self._rotation_angle)
@@ -656,7 +683,7 @@ class Data(object):
         self.data_array[:]['elev'] = stations_obj.elev
         self.data_array[:]['rel_east'] = stations_obj.rel_east
         self.data_array[:]['rel_north'] = stations_obj.rel_north
-
+        self.data_array[:]['zone'] = stations_obj.utm_zone
         
         # get center point
         self.center_point = stations_obj.center_point
@@ -786,6 +813,7 @@ class Data(object):
                     self.data_array[ii]['elev'] = d_arr_copy[d_index]['elev']
                     self.data_array[ii]['rel_east'] = d_arr_copy[d_index]['rel_east']
                     self.data_array[ii]['rel_north'] = d_arr_copy[d_index]['rel_north']
+                    self.data_array[:]['zone'] = d_arr_copy[d_index]['zone']
                 except IndexError:
                     print 'Could not find {0} in data_array'.format(s_key)
             else:
@@ -874,7 +902,8 @@ class Data(object):
         station_locations = self.data_array[['station', 'lat', 'lon', 
                                              'north', 'east', 'elev',
                                              'rel_north', 'rel_east','zone']]
-        station_obj = Stations()
+        station_obj = Stations(model_epsg=self.model_epsg,
+                                model_utm_zone=self.model_utm_zone)
         station_obj.station_locations = station_locations
         
         return station_obj
@@ -3127,12 +3156,11 @@ class Model(object):
 
 
     def interpolate_elevation2(self, surfacefile=None, surface=None, surfacename=None,
-                                  surface_epsg=4326, method='nearest'):
+                                  method='nearest'):
         """
         project a surface to the model grid and add resulting elevation data 
         to a dictionary called surface_dict. Assumes the surface is in lat/long
-        coordinates (wgs84), if not, need to supply the epsg of the surface xy 
-        points
+        coordinates (wgs84)
 
         **returns**
         nothing returned, but surface data are added to surface_dict under
@@ -3186,8 +3214,11 @@ class Model(object):
         if len(x.shape) == 1:
             x, y = np.meshgrid(x, y)
 
-        epsg_from, epsg_to = surface_epsg, self.Data.epsg
-        xs, ys = utm2ll.project(x, y, epsg_from, epsg_to)
+        epsg_to = self.Data.model_epsg
+        xs, ys, utm_zone = gis_tools.project_points_ll2utm(y,x,
+                                                           epsg=self.Data.model_epsg,
+                                                           utm_zone=self.Data.model_utm_zone
+                                                 )
 
         # get centre position of model grid in real world coordinates
         x0, y0 = [np.median(self.station_locations[dd] - self.station_locations['rel_' + dd]) for dd in
