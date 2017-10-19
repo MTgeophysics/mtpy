@@ -20,7 +20,7 @@ import mtpy.imaging.mtplottools as mtpl
 
 #==============================================================================
 
-class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
+class PlotPhaseTensorMaps(mtpl.PlotSettings):
 
     """  
     Plots phase tensor ellipses in map view from a list of edifiles with full 
@@ -389,6 +389,8 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
     
     def __init__(self, **kwargs):
         
+        super(PlotPhaseTensorMaps, self).__init__()
+        
         fn_list = kwargs.pop('fn_list', None)
         z_object_list = kwargs.pop('z_object_list', None)
         tipper_object_list = kwargs.pop('tipper_object_list', None)
@@ -412,35 +414,31 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
         #--> set the ellipse properties -------------------
         #set default size to 2
         if self.mapscale == 'deg': 
-            self._ellipse_dict = kwargs.pop('ellipse_dict', {'size':.05})
-            self._arrow_dict = kwargs.pop('arrow_dict', 
-                                          {'size':.05,
-                                           'head_length':.005,
-                                           'head_width':.005,
-                                           'lw':.75})
-        
+            self.ellipse_size = .05
+            self.arrow_size = .05
+            self.arrow_head_length = .005
+            self.arrow_head_width = .005
+            self.arrow_lw = .75
             self.xpad = kwargs.pop('xpad',.05)
             self.ypad = kwargs.pop('xpad',.05)
+            
         elif self.mapscale == 'm':
-            self._ellipse_dict = kwargs.pop('ellipse_dict', {'size':500})
-            self._arrow_dict = kwargs.pop('arrow_dict', 
-                                          {'size':500,
-                                           'head_length':50,
-                                           'head_width':50,
-                                           'lw':.75})
+            self.ellipse_size = 500
+            self.arrow_size = 500
+            self.arrow_head_length = 50
+            self.arrow_head_width = 50
+            self.arrow_lw = .75
             self.xpad = kwargs.pop('xpad',500)
             self.ypad = kwargs.pop('xpad',500)
+            
         elif self.mapscale == 'km':
-            self._ellipse_dict = kwargs.pop('ellipse_dict', {'size':.5})
-            self._arrow_dict = kwargs.pop('arrow_dict', 
-                                          {'size':.5,
-                                           'head_length':.05,
-                                           'head_width':.05,
-                                           'lw':.75})
+            self.ellipse_size = .5
+            self.arrow_size = .5
+            self.arrow_head_length = .05
+            self.arrow_head_width = .05
+            self.arrow_lw = .75
             self.xpad = kwargs.pop('xpad',.5)
             self.ypad = kwargs.pop('xpad',.5)
-        self._read_ellipse_dict()
-        self._read_arrow_dict()
             
         #--> set colorbar properties---------------------------------
         #set orientation to horizontal
@@ -672,16 +670,15 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
         
         for ii,mt in enumerate(self.mt_list):
             #try to find the freq in the freq list of each file
-            freqfind = [ff for ff,f2 in enumerate(mt.freq) 
-                         if (f2>self.plot_freq*(1-self.ftol)) and
-                            (f2<self.plot_freq*(1+self.ftol))]
+            freqfind = np.where((mt.Z.freq >= self.plot_freq*(1-self.ftol)) &
+                                (mt.Z.freq <= self.plot_freq*(1+self.ftol)))
 
             try:
-                self.jj = freqfind[0]
+                self.jj = freqfind[0][0]
                 jj = self.jj
 
                 #get phase tensor
-                pt = mt.get_PhaseTensor()
+                pt = mt.pt
                 
                 #if map scale is lat lon set parameters                
                 if self.mapscale == 'deg':
@@ -758,9 +755,9 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
                 self.plot_yarr[ii] = ploty
                 
                 #--> set local variables
-                phimin = np.nan_to_num(pt.phimin[0][jj])
-                phimax = np.nan_to_num(pt.phimax[0][jj])
-                eangle = np.nan_to_num(pt.azimuth[0][jj])
+                phimin = np.nan_to_num(pt.phimin[jj])
+                phimax = np.nan_to_num(pt.phimax[jj])
+                eangle = np.nan_to_num(pt.azimuth[jj])
                 
                 if cmap == 'mt_seg_bl2wh2rd':
                     bounds = np.arange(ckmin, ckmax+ckstep, ckstep)
@@ -769,25 +766,25 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
                 #get the properties to color the ellipses by
                 if self.ellipse_colorby == 'phiminang' or \
                    self.ellipse_colorby == 'phimin':
-                    colorarray = pt.phimin[0][jj]
+                    colorarray = pt.phimin[jj]
 
                 elif self.ellipse_colorby == 'phimax':
-                    colorarray = pt.phimax[0][jj]                                                   
+                    colorarray = pt.phimax[jj]                                                   
                                                    
                 elif self.ellipse_colorby == 'phidet':
-                     colorarray = np.sqrt(abs(pt.det[0][jj]))*(180/np.pi)
+                     colorarray = np.sqrt(abs(pt.det[jj]))*(180/np.pi)
                      
                     
                 elif self.ellipse_colorby == 'skew' or\
                      self.ellipse_colorby == 'skew_seg':
-                    colorarray = pt.beta[0][jj]
+                    colorarray = pt.beta[jj]
                     
                 elif self.ellipse_colorby == 'normalized_skew' or\
                      self.ellipse_colorby == 'normalized_skew_seg':
-                    colorarray = 2*pt.beta[0][jj]
+                    colorarray = 2*pt.beta[jj]
                     
                 elif self.ellipse_colorby == 'ellipticity':
-                    colorarray = pt.ellipticity[0][jj]
+                    colorarray = pt.ellipticity[jj]
                     
                 else:
                     raise NameError(self.ellipse_colorby+' is not supported')
@@ -832,11 +829,10 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
                 if self.plot_tipper.find('y') == 0:
                     
                     #get tipper
-                    tip = mt.get_Tipper()
-                    if tip._Tipper.tipper is None:
-                        tip._Tipper.tipper = np.zeros((len(mt.period), 1, 2), 
+                    
+                    if mt.Tipper.tipper is None:
+                        mt.Tipper.tipper = np.zeros((len(mt.period), 1, 2), 
                                                        dtype='complex')
-                        tip.compute_components()
                     
                     #make some local parameters for easier typing                    
                     ascale = self.arrow_size
@@ -844,11 +840,11 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
                     
                     #plot real tipper
                     if self.plot_tipper == 'yri' or self.plot_tipper == 'yr':
-                        if tip.mag_real[jj] <= self.arrow_threshold:
-                            txr = tip.mag_real[jj]*ascale*\
-                                  np.sin((tip.ang_real[jj])*np.pi/180+adir)
-                            tyr=tip.mag_real[jj]*ascale*\
-                                np.cos((tip.ang_real[jj])*np.pi/180+adir)
+                        if mt.Tipper.mag_real[jj] <= self.arrow_threshold:
+                            txr = mt.Tipper.mag_real[jj]*ascale*\
+                                  np.sin((mt.Tipper.angle_real[jj])*np.pi/180+adir)
+                            tyr=mt.Tipper.mag_real[jj]*ascale*\
+                                np.cos((mt.Tipper.angle_real[jj])*np.pi/180+adir)
         
                             self.ax.arrow(plotx,
                                           ploty,
@@ -865,11 +861,11 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
                         
                     #plot imaginary tipper
                     if self.plot_tipper == 'yri' or self.plot_tipper == 'yi':
-                        if tip.mag_imag[jj] <= self.arrow_threshold:
-                            txi = tip.mag_imag[jj]*ascale*\
-                                 np.sin((tip.ang_imag[jj])*np.pi/180+adir)
-                            tyi = tip.mag_imag[jj]*ascale*\
-                                 np.cos((tip.ang_imag[jj])*np.pi/180+adir)
+                        if mt.Tipper.mag_imag[jj] <= self.arrow_threshold:
+                            txi = mt.Tipper.mag_imag[jj]*ascale*\
+                                 np.sin((mt.Tipper.angle_imag[jj])*np.pi/180+adir)
+                            tyi = mt.Tipper.mag_imag[jj]*ascale*\
+                                 np.cos((mt.Tipper.angle_imag[jj])*np.pi/180+adir)
         
                             self.ax.arrow(plotx,
                                           ploty,
@@ -1025,7 +1021,8 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
                          fontdict={'size':self.font_size,'weight':'bold'})
         
         #make a grid with gray lines
-        self.ax.grid(alpha=.25)
+        self.ax.grid(alpha=.25, zorder=0)
+        self.ax.set_axisbelow(True)
         
         #==> make a colorbar with appropriate colors
         if self.cb_position == None:

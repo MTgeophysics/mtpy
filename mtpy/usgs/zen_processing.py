@@ -1258,6 +1258,7 @@ class Z3D_to_edi(object):
             # get station name
             ex_find = np.where(birrp_fn_arr[0]['comp']) == 'ex'
             station = os.path.splitext(os.path.basename(birrp_fn_arr[0][ex_find]['fn']))[0]
+            station = station.split('_')[0]
             
             # add parameters to birrp_params_dict 
             birrp_params_dict['deltat'] = -1*df_key
