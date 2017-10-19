@@ -43,10 +43,10 @@ import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 import scipy.interpolate as spi
 import mtpy.core.mt as mt
-import mtpy.modeling.winglinktools as MTwl
+import mtpy.modeling.winglink as MTwl
 import mtpy.analysis.geometry as MTgy
 from mtpy.imaging.mtplottools import plot_errorbar
-
+import mtpy.utils.calculator as mtcc
 #==============================================================================
 
 class Mesh():
@@ -161,7 +161,7 @@ class Mesh():
     
     """
 
-    def __init__(self, station_locations=None, **kwargs):
+    def __init__(self, station_locations=None, **kwargs):     
         
         self.station_locations = station_locations
         self.rel_station_locations = None
@@ -300,27 +300,37 @@ class Mesh():
 
         #2) make vertical nodes so that they increase with depth
         #--> make depth grid
-        log_z = np.logspace(np.log10(self.z1_layer), 
-                            np.log10(self.z_target_depth-\
-                                     np.logspace(np.log10(self.z1_layer), 
-                            np.log10(self.z_target_depth), 
-                            num=self.n_layers)[-2]), 
-                            num=self.n_layers-self.num_z_pad_cells)
-        
+#        log_z = np.logspace(np.log10(self.z1_layer), 
+#                            np.log10(self.z_target_depth-\
+#                                     np.logspace(np.log10(self.z1_layer), 
+#                            np.log10(self.z_target_depth), 
+#                            num=self.n_layers)[-2]), 
+#                            num=self.n_layers-self.num_z_pad_cells)
+ 
+        log_z = mtcc.make_log_increasing_array(self.z1_layer,
+                                               self.z_target_depth,
+                                               self.n_layers-self.num_z_pad_cells,
+                                               increment_factor=0.99)  
+
+
         #round the layers to be whole numbers
-        ztarget = np.array([zz-zz%10**np.floor(np.log10(zz)) for zz in 
-                           log_z])
+        ztarget = np.array([mtcc.roundsf(zz,1) for zz in 
+                           log_z])#zz-zz%10**np.floor(np.log10(zz))
         
         #--> create padding cells past target depth
-        log_zpad = np.logspace(np.log10(self.z_target_depth), 
-                            np.log10(self.z_bottom-\
-                                    np.logspace(np.log10(self.z_target_depth), 
-                            np.log10(self.z_bottom), 
-                            num=self.num_z_pad_cells)[-2]), 
-                            num=self.num_z_pad_cells)
-        #round the layers to be whole numbers
-        zpadding = np.array([zz-zz%10**np.floor(np.log10(zz)) for zz in 
-                               log_zpad])
+#        log_zpad = np.logspace(np.log10(self.z_target_depth), 
+#                            np.log10(self.z_bottom-\
+#                                    np.logspace(np.log10(self.z_target_depth), 
+#                            np.log10(self.z_bottom), 
+#                            num=self.num_z_pad_cells)[-2]), 
+#                            num=self.num_z_pad_cells)
+        log_zpad = mtcc.make_log_increasing_array(log_z[-1],
+                                               self.z_bottom,
+                                               self.num_z_pad_cells,
+                                               increment_factor=0.99)  
+        #round the layers to 1 sf 
+        zpadding = np.array([mtcc.roundsf(zz,1) for zz in 
+                               log_zpad])#zz-zz%10**np.floor(np.log10(zz))
                                
         #create the vertical nodes
         self.z_nodes = np.append(ztarget, zpadding)
@@ -1493,9 +1503,12 @@ class Regularization(Mesh):
         model_widths = [pad_width]+station_widths+[pad_width]
         num_cols = len(model_cols)
         
-        model_thickness = np.append(self.z_nodes[0:self.z_nodes.shape[0]-
-                                                        self.num_z_pad_cells], 
-                                    self.z_nodes[-self.num_z_pad_cells:].sum())
+#        model_thickness = np.append(self.z_nodes[0:self.z_nodes.shape[0]-
+#                                                        self.num_z_pad_cells], 
+#                                    self.z_nodes[-self.num_z_pad_cells:].sum())
+        model_thickness = np.hstack([[self.z_nodes[:2].sum()],
+                                      self.z_nodes[2:-self.num_z_pad_cells],
+                                     [self.z_nodes[-self.num_z_pad_cells:].sum()]])
         
         self.num_param = 0
         #--> now need to calulate model blocks to the bottom of the model
@@ -2376,7 +2389,8 @@ class Data(Profile):
                                                (self.freq <= station_freq.max()))]
                 # interpolate data onto given frequency list
                 z_interp, t_interp = edi.interpolate(interp_freq)
-                z_interp._compute_res_phase()
+#                z_interp._compute_res_phase()
+                z_interp.compute_resistivity_phase()
                 
                 rho = z_interp.resistivity
                 phi = z_interp.phase

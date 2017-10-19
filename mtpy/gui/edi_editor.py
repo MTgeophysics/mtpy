@@ -109,6 +109,7 @@ class EDI_Editor_Window(QtGui.QMainWindow):
         self.plot_widget.dir_path = os.path.dirname(fn)
                                            
         self.plot_widget.mt_obj = mt.MT(fn)
+        self.plot_widget.mt_obj._edi_obj = mt.MTedi.Edi()
         if self.plot_widget.mt_obj.elev is None:
             self.plot_widget.mt_obj.elev = 0.0
         self.plot_widget._mt_obj = copy.deepcopy(self.plot_widget.mt_obj)
@@ -167,6 +168,7 @@ class PlotWidget(QtGui.QWidget):
 
         self.mt_obj = mt.MT()
         self._mt_obj = mt.MT()
+        self.mt_obj._edi_obj = mt.MTedi.Edi()
         self.static_shift_x = 1.0
         self.static_shift_y = 1.0
         self.rotate_z_angle = 0
@@ -875,7 +877,7 @@ class PlotWidget(QtGui.QWidget):
         save_fn = str(save_dialog.getSaveFileName(caption='Choose EDI file',
                                                   directory=self.dir_path,
                                                   filter='*.edi'))
-        self.mt_obj.write_edi_file(save_fn)
+        self.mt_obj._write_edi_file(save_fn)
         
     @QtCore.pyqtSlot(str)
     def normal_output(self, message):

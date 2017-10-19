@@ -1,15 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-===============
-MT
-===============
+.. module:: MT
+   :synopsis: The main container for MT response functions. 
 
-    * Basic MT-object containing the very basic and necessary information for a
-      single MT station
-
-Created on Tue Jan 07 12:42:34 2014
-
-@author: jpeacock-pr
+.. moduleauthor:: Jared Peacock <jpeacock@usgs.gov>
 """
 
 #==============================================================================
@@ -24,7 +18,8 @@ import mtpy.analysis.pt as MTpt
 import mtpy.analysis.distortion as MTdistortion
 import mtpy.core.jfile as MTj
 import mtpy.core.mt_xml as MTxml
-#import mtpy.imaging.plotresponse as plotresponse
+import mtpy.imaging.plot_mt_response as plot_mt_response
+reload(MTz)
 
 try:
     import scipy
@@ -89,9 +84,6 @@ class MT(object):
           and can write out EDI and XML formats.  Will be extending to j and
           Egberts Z format.
 
-
-    Methods
-    ------------
     ===================== =====================================================
     Methods               Description
     ===================== =====================================================
@@ -99,11 +91,9 @@ class MT(object):
     write_mt_file         write a MT file [ EDI | XML ]
     read_cfg_file         read a configuration file
     write_cfg_file        write a configuration file
-    remove_distortion     remove distortion from the data following
-                          Bibby et al. [2005]
+    remove_distortion     remove distortion  following Bibby et al. [2005]
     remove_static_shift   Shifts apparent resistivity curves up or down
-    interpolate           interpolates the impedance tensor and induction
-                          vectors onto a specified frequency array.
+    interpolate           interpolates Z and T onto specified frequency array.
     ===================== =====================================================
 
 
@@ -247,7 +237,7 @@ class MT(object):
         """
         set elevation, should be input as meters
         """
-        self._elev = self.Site.Location.elevation = elevation
+        self.Site.Location.elevation = elevation
 
     @east.setter
     def east(self, easting):
@@ -388,8 +378,8 @@ class MT(object):
         :type new_Tipper_obj: mtpy.core.z.Tipper
 
 
-        :returns mt_fn: full path to file
-        :rtype mt_fn: string
+        :returns: full path to file
+        :rtype: string
 
         :Example: ::
 
@@ -571,7 +561,8 @@ class MT(object):
                         try:
                             obj = getattr(obj, cl_attr.capitalize())
                         except AttributeError:
-                            print 'Could not get {0}'.format(cl_attr)
+                            # print 'Could not get {0}'.format(cl_attr)
+                            pass
 
                     count += 1
 
@@ -689,7 +680,7 @@ class MT(object):
                     if s_key == 'author':
                         for a_key in sorted(
                                 self.Processing.Software.author.__dict__.keys()):
-                            l_key = 'processing.software.author.{0}'.format(
+                            l_key = 'processing.software.Author.{0}'.format(
                                 a_key)
                             l_value = getattr(self.Processing.Software.author,
                                               a_key)
@@ -1536,14 +1527,12 @@ class MT(object):
                          highest frequency
         :type num_freq: int
 
-        :returns D: Distortion matrix
-        :rtype D: np.ndarray(2, 2, dtype=real)
+        :returns: Distortion matrix
+        :rtype: np.ndarray(2, 2, dtype=real)
 
-        :returns new_z_object: Z with distortion removed
-        :rtype new_z_object: mtpy.core.z.Z
+        :returns: Z with distortion removed
+        :rtype: mtpy.core.z.Z
 
-        Example
-        ----------
         :Remove distortion and write new .edi file: ::
 
             >>> import mtpy.core.mt as mt
@@ -1578,15 +1567,13 @@ class MT(object):
         :param ss_y: correction factor for y component
         :type ss_y: float
 
-        :returns new_Z_obj: new Z object with static shift removed
-        :rtype new_Z_obj: mtpy.core.z.Z
+        :returns: new Z object with static shift removed
+        :rtype: mtpy.core.z.Z
 
         .. note:: The factors are in resistivity scale, so the
                   entries of  the matrix "S" need to be given by their
                   square-roots!
 
-        Examples
-        ----------
         :Remove Static Shift: ::
 
             >>> import mtpy.core.mt as mt
@@ -1614,16 +1601,13 @@ class MT(object):
                                will occur.
         :type new_freq_array: np.ndarray
 
-        :returns new_z_object: a new impedance object with the corresponding
+        :returns: a new impedance object with the corresponding
                                frequencies and components.
-        :rtype new_z_object: mtpy.core.z.Z
+        :rtype: mtpy.core.z.Z
 
-        :returns new_tipper_object: a new tipper object with the corresponding
+        :returns: a new tipper object with the corresponding
                                     frequencies and components.
-        :rtype new_tipper_object: mtpy.core.z.Tipper
-
-        Examples
-        ----------
+        :rtype: mtpy.core.z.Tipper
 
         :Interpolate: ::
 
@@ -1743,26 +1727,26 @@ class MT(object):
 
         return new_Z, new_Tipper
 
-#    def plot_mt_response(self, **kwargs):
-#        """
-#        Returns a mtpy.imaging.plotresponse.PlotResponse object
-#
-#        Examples
-#        ------------
-#        :Plot Response: ::
-#
-#            >>> mt_obj = mt.MT(edi_file)
-#            >>> pr = mt.plot_mt_response()
-#            >>> # if you need more infor on plot_mt_response
-#            >>> help(pr)
-#
-#        """
-#
-#        plot_obj = plotresponse.PlotResponse(z_object=self.Z,
-#                                             tipper_object=self.Tipper,
-#                                             **kwargs)
-#
-#        return plot_obj
+    def plot_mt_response(self, **kwargs):
+        """
+        Returns a mtpy.imaging.plotresponse.PlotResponse object
+
+        :Plot Response: ::
+
+            >>> mt_obj = mt.MT(edi_file)
+            >>> pr = mt.plot_mt_response()
+            >>> # if you need more infor on plot_mt_response
+            >>> help(pr)
+
+        """
+
+        plot_obj = plot_mt_response.PlotMTResponse(z_object=self.Z,
+                                                   t_object=self.Tipper,
+                                                   pt_obj=self.pt,
+                                                   station=self.station,
+                                                   **kwargs)
+
+        return plot_obj
 
 #==============================================================================
 # Site details

@@ -41,6 +41,63 @@ lo_headerelements = ['station', 'channel','samplingrate','t_min',
 
 #=================================================================
 
+
+
+def read_surface_ascii(ascii_fn):
+    """
+    read in surface which is ascii format ()
+    unlike original function, returns list of lat, long and elevation (no projections)
+
+    The ascii format is assumed to be:
+    ncols        2743
+    nrows        2019
+    xllcorner    111.791666666667 (lon of lower left)
+    yllcorner    -45.341666666667 (lat of lower left)
+    cellsize     0.016666666667
+    NODATA_value  -9999
+    elevation data origin (0,0) is NW upper left.
+    NW --------------> E
+    |
+    |
+    |
+    |
+    S
+    """
+    dfid = file(ascii_fn, 'r')
+    d_dict = {}
+    skiprows = 0
+    for ii in range(6):
+        dline = dfid.readline()
+        dline = dline.strip().split()
+        key = dline[0].strip().lower()
+        value = float(dline[1].strip())
+        d_dict[key] = value
+        # check if key is an integer
+        try:
+            int(key)
+        except:
+            skiprows += 1
+    dfid.close()
+
+    x0 = d_dict['xllcorner']
+    y0 = d_dict['yllcorner']
+    nx = int(d_dict['ncols'])
+    ny = int(d_dict['nrows'])
+    cs = d_dict['cellsize']
+
+    elevation = np.loadtxt(ascii_fn, skiprows=skiprows)[::-1]  # ::-1 reverse an axis to put the southern line first
+
+    # create lat and lon arrays from the dem file
+    lon = np.arange(x0, x0 + cs * (nx), cs)
+    lat = np.arange(y0, y0 + cs * (ny), cs)
+    lon = np.linspace(x0, x0 + cs * (nx - 1), nx)
+    lat = np.linspace(y0, y0 + cs * (ny - 1), ny)
+
+
+    return lon, lat, elevation   # this appears correct
+
+
+
 def read1columntext(textfile):
     """
     read a list from a one column text file

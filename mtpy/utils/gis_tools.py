@@ -9,6 +9,7 @@ Created on Fri Apr 14 14:47:48 2017
 # Imports
 #==============================================================================
 from osgeo import osr
+import numpy as np
 
 #==============================================================================
 # Make sure lat and lon are in decimal degrees
@@ -159,6 +160,19 @@ def convert_position_float2str(position):
 #==============================================================================
 # Project a point
 #==============================================================================
+def get_utm_string_from_sr(spatialreference):
+    """
+    return utm zone string from spatial reference instance
+    """
+    zone_number = spatialreference.GetUTMZone()
+    if zone_number > 0:
+        return str(zone_number) + 'N'
+    elif zone_number < 0:
+        return str(abs(zone_number)) + 'S'
+    else:
+        return str(zone_number)
+    
+
 def get_utm_zone(latitude, longitude):
     """
     Get utm zone from a given latitude and longitude
@@ -173,7 +187,7 @@ def get_utm_zone(latitude, longitude):
     
     return zone_number, is_northern, '{0:02.0f}{1}'.format(zone_number, n_str) 
 
-def project_point_ll2utm(lat, lon, datum='WGS84'):
+def project_point_ll2utm(lat, lon, datum='WGS84', utm_zone=None, epsg=None):
     """
     Project a point that is in Lat, Lon (will be converted to decimal degrees)
     into UTM coordinates.
@@ -188,7 +202,15 @@ def project_point_ll2utm(lat, lon, datum='WGS84'):
         
         **datum** : string
                     well known datum ex. WGS84, NAD27, NAD83, etc.
-                    
+
+        **utm_zone** : string
+                       zone number and 'S' or 'N' e.g. '55S'
+                       
+        **epsg** : int
+                   epsg number defining projection (see 
+                   http://spatialreference.org/ref/ for moreinfo)
+                   Overrides utm_zone if both are provided
+
     Returns:
     --------------
         **proj_point**: tuple(easting, northing, zone)
@@ -203,12 +225,22 @@ def project_point_ll2utm(lat, lon, datum='WGS84'):
         return None, None, None
     
     # get zone number, north and zone name
-    zone_number, is_northern, utm_zone = get_utm_zone(lat, lon)
+    if utm_zone is None:
+        zone_number, is_northern, utm_zone = get_utm_zone(lat, lon)
+    else:
+        # get zone number and is_northern from utm_zone string
+        zone_number = int(filter(str.isdigit,utm_zone))
+        is_northern = min(1,utm_zone.lower().count('s'))
     
     ## set utm coordinate system
     utm_cs = osr.SpatialReference()
     utm_cs.SetWellKnownGeogCS(datum)
-    utm_cs.SetUTM(zone_number, is_northern);
+    
+    if type(epsg) is not int:
+        utm_cs.SetUTM(zone_number, is_northern);
+    else:
+        utm_cs.ImportFromEPSG(epsg)
+        utm_zone = get_utm_string_from_sr(utm_cs)
        
     ## set lat, lon coordinate system
     ll_cs = utm_cs.CloneGeogCS()
@@ -216,12 +248,15 @@ def project_point_ll2utm(lat, lon, datum='WGS84'):
        
     ## set the transform wgs84_to_utm and do the transform
     ll2utm = osr.CoordinateTransformation(ll_cs, utm_cs)
+    
+    ## return different results depending on if lat/lon are iterable
     easting, northing, elev = list(ll2utm.TransformPoint(lon, lat))
     projected_point = (easting, northing, utm_zone)    
 
     return projected_point
     
-def project_point_utm2ll(easting, northing, utm_zone, datum='WGS84'):
+    
+def project_point_utm2ll(easting, northing, utm_zone, datum='WGS84', epsg=None):
     """
     Project a point that is in Lat, Lon (will be converted to decimal degrees)
     into UTM coordinates.
@@ -255,25 +290,31 @@ def project_point_utm2ll(easting, northing, utm_zone, datum='WGS84'):
     try:
         northing = float(northing)
     except ValueError:
-        raise ValueError("easting is not a float")
+        raise ValueError("northing is not a float")
 
-    
-    assert len(utm_zone) == 3, 'UTM zone should be imput as ##N or ##S'
-    
-    try:
-        zone_number = int(utm_zone[0:2])
-    except ValueError:
-        raise ValueError('Zone number {0} is not a number'.format(utm_zone[0:2]))
-        
-    is_northern = 1
-    if 's' in utm_zone.lower():
-        is_northern = 0
-    
     ## set utm coordinate system
     utm_cs = osr.SpatialReference()
     utm_cs.SetWellKnownGeogCS(datum)
-    utm_cs.SetUTM(zone_number, is_northern);
-       
+
+    if ((utm_zone is None) or (len(utm_zone) == 0) or (utm_zone=='0')):
+        if epsg is None:
+            raise ValueError('Please provide either utm_zone or epsg')
+        else:
+            utm_cs.ImportFromEPSG(epsg)
+            utm_zone = get_utm_string_from_sr(utm_cs)
+    else:
+        assert len(utm_zone) == 3, 'UTM zone should be imput as ##N or ##S'
+        
+        try:
+            zone_number = int(utm_zone[0:2])
+        except ValueError:
+            raise ValueError('Zone number {0} is not a number'.format(utm_zone[0:2]))
+        is_northern = 1
+        if 's' in utm_zone.lower():
+            is_northern = 0
+        
+        utm_cs.SetUTM(zone_number, is_northern);
+
     ## set lat, lon coordinate system
     ll_cs = utm_cs.CloneGeogCS()
     ll_cs.ExportToPrettyWkt()
@@ -286,3 +327,87 @@ def project_point_utm2ll(easting, northing, utm_zone, datum='WGS84'):
     return (round(ll_point[1], 6), round(ll_point[0], 6))
   
 
+def project_points_ll2utm(lat, lon, datum='WGS84', utm_zone=None, epsg=None):
+    """
+    Project a list of points that is in Lat, Lon (will be converted to decimal 
+    degrees) into UTM coordinates.
+    
+    Arguments:
+    ---------------
+        **lat** : float or string (DD:MM:SS.ms)
+                  latitude of point
+                  
+        **lon** : float or string (DD:MM:SS.ms)
+                  longitude of point
+        
+        **datum** : string
+                    well known datum ex. WGS84, NAD27, NAD83, etc.
+
+        **utm_zone** : string
+                       zone number and 'S' or 'N' e.g. '55S'. Defaults to the
+                       centre point of the provided points
+                       
+        **epsg** : int
+                   epsg number defining projection (see 
+                   http://spatialreference.org/ref/ for moreinfo)
+                   Overrides utm_zone if both are provided
+
+    Returns:
+    --------------
+        **proj_point**: tuple(easting, northing, zone)
+                        projected point in UTM in Datum
+                    
+    """
+
+    # check length of arrays
+    if len(lat) != len(lon):
+        raise ValueError("latitude and longitude arrays are of different lengths")
+      
+    # check lat/lon values
+    for ii in range(len(lat)):
+        lat[ii] = assert_lat_value(lat[ii])
+        lon[ii] = assert_lon_value(lon[ii])
+
+    if lat is None or lon is None:
+        return None, None, None
+
+    ## set utm coordinate system
+    utm_cs = osr.SpatialReference()
+    utm_cs.SetWellKnownGeogCS(datum)
+
+    # get zone number, north and zone name
+    use_epsg = False
+    if utm_zone is None:
+        if epsg is None:
+            # get centre point and get zone from that
+            latc = (np.amax(lat) + np.amin(lat))/2.
+            lonc = (np.amax(lon) + np.amin(lon))/2.
+            zone_number, is_northern, utm_zone = get_utm_zone(latc, lonc)
+        else:
+            use_epsg = True
+    else:
+        # get zone number and is_northern from utm_zone string
+        zone_number = int(filter(str.isdigit,utm_zone))
+        is_northern = min(1,utm_zone.count('S'))
+    
+    # set projection info
+    if use_epsg:
+        utm_cs.ImportFromEPSG(epsg)
+        # get utm zone (for information) if applicable
+        utm_zone = get_utm_string_from_sr(utm_cs)
+    else:
+        utm_cs.SetUTM(zone_number, is_northern);
+        
+    ## set lat, lon coordinate system
+    ll_cs = utm_cs.CloneGeogCS()
+    ll_cs.ExportToPrettyWkt()
+       
+    ## set the transform wgs84_to_utm and do the transform
+    ll2utm = osr.CoordinateTransformation(ll_cs, utm_cs)
+    
+    ## return different results depending on if lat/lon are iterable
+    easting, northing, elev = np.array(ll2utm.TransformPoints(np.array([lon, lat]).T)).T
+    projected_point = (easting, northing, utm_zone)    
+
+    return projected_point
+    

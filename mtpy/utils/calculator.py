@@ -30,6 +30,44 @@ mu0 = 4e-7*math.pi
 
 #=================================================================
 
+def roundsf(number, sf):
+    """
+    round a number to a specified number of significant figures (sf)
+    """
+    # can't have < 1 s.f.
+    sf = max(sf, 1.)
+    rounding = int(np.ceil(-np.log10(number) + sf - 1.))
+
+    return np.round(number, rounding)
+
+
+    
+def make_log_increasing_array(z1_layer, target_depth, n_layers, increment_factor=0.9):
+    """
+    create depth array with log increasing cells, down to target depth,
+    inputs are z1_layer thickness, target depth, number of layers (n_layers)
+    """        
+    
+    # make initial guess for maximum cell thickness
+    max_cell_thickness = target_depth
+    # make initial guess for log_z
+    log_z = np.logspace(np.log10(z1_layer), 
+                        np.log10(max_cell_thickness),
+                        num=n_layers)
+    counter = 0
+    
+    while np.sum(log_z) > target_depth:
+        max_cell_thickness *= increment_factor
+        log_z = np.logspace(np.log10(z1_layer), 
+                            np.log10(max_cell_thickness),
+                            num=n_layers) 
+        counter += 1
+        if counter > 1e6:
+            break        
+
+    return log_z
+
+
 
 def invertmatrix_incl_errors(inmatrix, inmatrix_err = None):
 

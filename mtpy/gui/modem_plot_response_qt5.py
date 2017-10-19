@@ -201,7 +201,8 @@ class ModEMPlotResponse(QtWidgets.QMainWindow):
         self.modem_data.write_data_file(save_path=os.path.dirname(save_fn),
                                         fn_basename=os.path.basename(save_fn),
                                         compute_error=False,
-                                        fill=False)
+                                        fill=False,
+                                        elevation=True)
         
     def get_resp_fn(self):
         """
@@ -426,7 +427,8 @@ class PlotResponses(QtWidgets.QWidget):
         self.modem_data.write_data_file(save_path=os.path.dirname(save_fn),
                                         fn_basename=os.path.basename(save_fn),
                                         compute_error=False,
-                                        fill=False)
+                                        fill=False,
+                                        elevation=True)
         
     def apply_edits(self):
         self.plot()
@@ -927,8 +929,11 @@ class PlotResponses(QtWidgets.QWidget):
         data_value = data_point.get_ydata()[event.ind]
         
         # get the indicies where the data point has been edited
-        p_index = np.where(self.modem_data.period_list==data_period)[0][0]
-        s_index = np.where(self.modem_data.data_array['station']==self.station)[0][0]
+        try:
+            p_index = np.where(self.modem_data.period_list==data_period)[0][0]
+            s_index = np.where(self.modem_data.data_array['station']==self.station)[0][0]
+        except IndexError:
+            return
 
         if self._key == 'tip':
             data_value_2 = self.modem_data.mt_dict[self.station].Tipper.tipper[p_index,
@@ -1006,11 +1011,15 @@ class PlotResponses(QtWidgets.QWidget):
                         self._comp_index_x, self._comp_index_y] = err
 
             # make error bar array
-            eb = self._err_list[self._ax_index][2].get_paths()[p_index].vertices
+            try:
+                e_index = event.ind[0]
+                eb = self._err_list[self._ax_index][2].get_paths()[e_index].vertices
+            except IndexError:
+                return
             
             # make ecap array
-            ecap_l = self._err_list[self._ax_index][0].get_data()[1][p_index]
-            ecap_u = self._err_list[self._ax_index][1].get_data()[1][p_index]
+            ecap_l = self._err_list[self._ax_index][0].get_data()[1][e_index]
+            ecap_u = self._err_list[self._ax_index][1].get_data()[1][e_index]
             
             # change apparent resistivity error
             if self._key == 'tip':
@@ -1031,13 +1040,13 @@ class PlotResponses(QtWidgets.QWidget):
             #reset the error bars and caps
             ncap_l = self._err_list[self._ax_index][0].get_data()
             ncap_u = self._err_list[self._ax_index][1].get_data()
-            ncap_l[1][p_index] = ecap_l
-            ncap_u[1][p_index] = ecap_u
+            ncap_l[1][e_index] = ecap_l
+            ncap_u[1][e_index] = ecap_u
             
             #set the values 
             self._err_list[self._ax_index][0].set_data(ncap_l)
             self._err_list[self._ax_index][1].set_data(ncap_u)
-            self._err_list[self._ax_index][2].get_paths()[p_index].vertices = eb
+            self._err_list[self._ax_index][2].get_paths()[e_index].vertices = eb
                                        
             # need to redraw the figure
             self._ax.figure.canvas.draw()

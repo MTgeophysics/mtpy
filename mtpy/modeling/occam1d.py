@@ -169,11 +169,14 @@ class Data(object):
                          rotation angle to rotate Z. Clockwise positive and N=0
                          *default* = 0
             
-            **mode** : [ 'TE' | 'TM' | 'det']
+            **mode** : [ 'te' | 'tm' | 'det']
                               mode to model can be (*default*='both'):
-                                - 'TE' for just TE mode
-                                - 'TM' for just TM mode
-                                - 'det' for the determinant of Z.
+                                - 'te' for just TE mode (res/phase)
+                                - 'tm' for just TM mode (res/phase)
+                                - 'det' for the determinant of Z (converted to 
+                                        res/phase)
+                              add 'z' to any of these options to model
+                              impedance tensor values instead of res/phase
                                 
                             
             **res_err** : float
@@ -222,7 +225,7 @@ class Data(object):
         elif self.mode == 'det':
             d1_str = 'RhoZxy'
             d2_str = 'PhsZxy'
-        elif self.mode == 'zdet':
+        elif self.mode == 'detz':
             d1_str = 'RealZxy'
             d2_str = 'ImagZxy'
         elif self.mode == 'tez':
@@ -267,31 +270,45 @@ class Data(object):
                 data_2 = z_obj.phase[:, 1, 0]%180
                 data_2_err = z_obj.phase_err[:, 1, 0]
             
-            elif self.mode == 'det':  
-                                   
-                data_1 = .2/freq*abs(z_obj.det)
-                data_2 = np.rad2deg(np.arctan2((z_obj.det**0.5).imag, 
-                                               (z_obj.det**0.5).real))
+            elif self.mode.startswith('det'):
                 
-                data_1_err = np.zeros_like(data_1, dtype=np.float)                               
-                data_2_err = np.zeros_like(data_2, dtype=np.float)
-                for zd, ze, ii in zip(z_obj.det, z_obj.det_err, 
-                                      range(len(z_obj.det))):                               
-                    de1, de2 = mtcc.z_error2r_phi_error(zd.real, 
-                                                       ze,
-                                                       zd.imag,
-                                                       ze)
-                    data_1_err[ii] = de1
-                    data_2_err[ii] = de2
+                # take square root as determinant is similar to z squared
+                zdetreal = (z_obj.det**0.5).real
+                zdetimag = (z_obj.det**0.5).imag
                 
-            elif self.mode == 'zdet':
-                data_1 = (z_obj.det**0.5).real*np.pi*4e-4 
-                data_1_err = z_obj.det_err**0.5*np.pi*4e-4
+                # error propagation - new error is 0.5 * relative error in zdet
+                # then convert back to absolute error
+                zereal = np.abs(zdetreal) * 0.5*z_obj.det_err/np.abs(z_obj.det)
+                zeimag = np.abs(zdetimag) * 0.5*z_obj.det_err/np.abs(z_obj.det)                
                 
-                data_2 = (z_obj.det**0.5).imag*np.pi*4e-4 
-                data_2_err =  z_obj.det_err**0.5*np.pi*4e-4
+                if self.mode.endswith('z'):
+                    # convert to si units if we are modelling impedance tensor
+                    data_1 = zdetreal*np.pi*4e-4
+                    data_1_err = zereal*np.pi*4e-4
+                    data_2 = zdetimag*np.pi*4e-4
+                    data_2_err = zeimag*np.pi*4e-4
+                else:
+                    # convert to res/phase                   
+                    data_1 = .2/freq*np.abs(z_obj.det)
+                    data_2 = np.rad2deg(np.arctan2(zdetimag,zdetreal))
+                    
+                    # initialise error arrays
+                    data_1_err = np.zeros_like(data_1, dtype=np.float)                               
+                    data_2_err = np.zeros_like(data_2, dtype=np.float)
+                    
+                    # assign errors
+                    for zdr, zdi, zer, zei, ii in zip(zdetreal ,zdetimag, 
+                                                      zereal, zeimag, 
+                                                      range(len(z_obj.det))): 
+                    
+                        # now we can convert errors to polar coordinates
+                        de1, de2 = mtcc.z_error2r_phi_error(zdr, zer, zdi, zei)
+                        data_1_err[ii] = de1
+                        data_2_err[ii] = de2
+                
                 
             elif self.mode == 'tez':
+                # convert to si units
                 data_1 = z_obj.z[:, 0, 1].real*np.pi*4e-4 
                 data_1_err = z_obj.z_err[:, 0, 1]*np.pi*4e-4
                 
@@ -299,6 +316,7 @@ class Data(object):
                 data_2_err =  z_obj.z_err[:, 0, 1]*np.pi*4e-4
                 
             elif self.mode == 'tmz':
+                # convert to si units
                 data_1 = z_obj.z[:, 1, 0].real*np.pi*4e-4 
                 data_1_err = z_obj.z_err[:, 1, 0]*np.pi*4e-4
                 
@@ -336,7 +354,7 @@ class Data(object):
                 data_2 = phi[:, 0, 1]
                 data_2_err = phi_err[:, 0, 1]
 
-        if remove_outofquadrant == True:
+        if remove_outofquadrant:
             freq, data_1, data_1_err, data_2, data_2_err = self._remove_outofquadrant_phase(
                                                            freq, 
                                                            data_1, 
@@ -456,7 +474,9 @@ class Data(object):
             elif self.mode == 'tm':
                 self.res_tm = data_1
                 self.phase_tm = data_2
-                
+            self.res_err = data_1_err
+            self.phase_err = data_2_err
+            
         self.freq = freq
         
     def _remove_outofquadrant_phase(self, freq, d1, d1_err, d2, d2_err):
@@ -722,25 +742,25 @@ class Data(object):
                         self.data['zxy'][0, jj] = dvalue/(np.pi*4e-4)
                         self.data['zxy'][1, jj] = derr/(np.pi*4e-4)
                         self.data['zxy'][2, jj] = rvalue/(np.pi*4e-4)
-                        self.data['zxy'][3, jj] = rerr/(np.pi*4e-4)
+                        self.data['zxy'][3, jj] = rerr
                     if dlst[0] == 'ImagZxy' or dlst[0] == '114':
                         self.mode ='TEz'
                         self.data['zxy'][0, jj] += 1j*dvalue/(np.pi*4e-4)
                         self.data['zxy'][1, jj] = derr/(np.pi*4e-4)
                         self.data['zxy'][2, jj] += 1j*rvalue/(np.pi*4e-4)
-                        self.data['zxy'][3, jj] = rerr/(np.pi*4e-4)                       
+                        self.data['zxy'][3, jj] = rerr                       
                     if dlst[0] == 'RealZyx' or dlst[0] == '115':
                         self.mode ='TMz'
                         self.data['zyx'][0, jj] = dvalue/(np.pi*4e-4)
                         self.data['zyx'][1, jj] = derr/(np.pi*4e-4)
                         self.data['zyx'][2, jj] = rvalue/(np.pi*4e-4)
-                        self.data['zyx'][3, jj] = rerr/(np.pi*4e-4)
+                        self.data['zyx'][3, jj] = rerr
                     if dlst[0] == 'ImagZyx' or dlst[0] == '116':
                         self.mode ='TMz'
                         self.data['zyx'][0, jj] += 1j*dvalue/(np.pi*4e-4)
                         self.data['zyx'][1, jj] = derr/(np.pi*4e-4)
                         self.data['zyx'][2, jj] += 1j*rvalue/(np.pi*4e-4)
-                        self.data['zyx'][3, jj] = rerr/(np.pi*4e-4)                        
+                        self.data['zyx'][3, jj] = rerr                      
         if 'z' in self.mode:
             if 'TE' in self.mode:
                 pol='xy'
@@ -815,12 +835,13 @@ class Model(object):
         self.iter_fn = None
         
         self.n_layers = kwargs.pop('n_layers', 100)
-        self.bottom_layer = kwargs.pop('bottom_layer', 50000)
-        self.target_depth = kwargs.pop('target_layer', 10000)
+        self.bottom_layer = kwargs.pop('bottom_layer', None)
+        self.target_depth = kwargs.pop('target_depth', None)
         self.pad_z = kwargs.pop('pad_z', 5)
         self.z1_layer = kwargs.pop('z1_layer', 10)
         self.air_layer_height = kwargs.pop('zir_layer_height', 10000)
-        
+        self._set_layerdepth_defaults()       
+ 
         self.save_path = kwargs.pop('save_path', None)
         if self.model_fn is not None and self.save_path is None:
             self.save_path = os.path.dirname(self.model_fn)
@@ -834,6 +855,35 @@ class Model(object):
         self.model_prefernce = None
         self.model_preference_penalty = None
         self.num_params = None
+
+
+    def _set_layerdepth_defaults(self,z1_threshold=3.,bottomlayer_threshold=2.):
+        """
+        set target depth, bottom layer and z1 layer, making sure all the layers
+        are consistent with each other and will work in the inversion
+        (e.g. check target depth is not deeper than bottom layer)
+        """
+        
+        if self.target_depth is None:
+            if self.bottom_layer is None:
+                # if neither target_depth nor bottom_layer are set, set defaults
+                self.target_depth = 10000.
+            else:
+                self.target_depth = mtcc.roundsf(self.bottom_layer/5., 1.)
+                
+        if self.bottom_layer is None:
+            self.bottom_layer = 5.*self.target_depth
+        # if bottom layer less than a factor of 2 greater than target depth then adjust deeper
+        elif float(self.bottom_layer)/self.target_depth < bottomlayer_threshold:
+            self.bottom_layer = bottomlayer_threshold*self.target_depth
+            print "bottom layer not deep enough for target depth, set to {} m".format(self.bottom_layer)
+        
+        if self.z1_layer is None:
+            self.z1_layer = mtcc.roundsf(self.target_depth/1000.,0)
+        elif self.target_depth/self.z1_layer < z1_threshold:
+            self.z1_layer = self.target_depth/z1_threshold
+            print "z1 layer not deep enough for target depth, set to {} m".format(self.z1_layer)
+            
     
     def write_model_file(self,save_path=None, **kwargs):
         """
@@ -1072,7 +1122,7 @@ class Model(object):
                         model.append(float(kk))
                 except ValueError:
                     pass
-        
+
         #put the model values into the model dictionary into the res array
         #for easy manipulation and access.       
         model = np.array(model)
@@ -2418,6 +2468,9 @@ def parse_arguments(arguments):
     parser.add_argument('-nl','--n_layers',
                         help='number of layers in the inversion',
                         type=int,default=80)
+    parser.add_argument('-td','--target_depth',
+                        help='target depth for the inversion in metres',
+                        type=int,default=10000)
     parser.add_argument('-s','--master_savepath',
                         help = 'master directory to save suite of runs into',
                         default = 'inversion_suite')
