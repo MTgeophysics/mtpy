@@ -134,9 +134,10 @@ class EDI_Editor_Window(QtWidgets.QMainWindow):
         save_fn_dialog = QtWidgets.QFileDialog()
         save_fn = str(save_fn_dialog.getSaveFileName(caption='Choose EDI File',
                                                      directory=self.plot_widget.dir_path,
-                                                     filter='*.edi'))
+                                                     filter='*.edi')[0])
         
-        self.plot_widget.mt_obj.write_edi_file(new_fn=save_fn)
+        self.mt_obj.write_mt_file(save_dir=os.path.dirname(save_fn),
+                                  fn_basename=os.path.basename(save_fn))
     
     def edit_plot_properties(self):
         self.plot_widget.plot_properties.setup_ui()
@@ -884,8 +885,9 @@ class PlotWidget(QtWidgets.QWidget):
         save_dialog = QtWidgets.QFileDialog()
         save_fn = str(save_dialog.getSaveFileName(caption='Choose EDI file',
                                                   directory=self.dir_path,
-                                                  filter='*.edi'))
-        self.mt_obj.write_edi_file(new_fn=save_fn)
+                                                  filter='*.edi')[0])
+        self.mt_obj.write_mt_file(save_dir=os.path.dirname(save_fn),
+                                  fn_basename=os.path.basename(save_fn))
         
     @QtCore.pyqtSlot(str)
     def normal_output(self, message):
@@ -1295,10 +1297,12 @@ class PlotWidget(QtWidgets.QWidget):
     def on_pick(self, event):
         """
         mask a data point when it is clicked on.  
-        """         
+        """
+       
         data_point = event.artist
         data_period = data_point.get_xdata()[event.ind]
         data_value = data_point.get_ydata()[event.ind]
+
         
         # modify Z
         if event.mouseevent.button == 3:
@@ -1331,11 +1335,22 @@ class PlotWidget(QtWidgets.QWidget):
                 
             # mask phase points
             elif self._ax_index == 2 or self._ax_index == 3:
+                d_index = np.where(self.mt_obj.Z.phase == data_value)
                 try:
-                    d_index = np.where(self.mt_obj.Z.phase == data_value)
+                    d_index[0][0]
                 except IndexError:
-                    d_index = np.where(self.mt_obj.Z.phase == data_value-180)    
-                
+                    d_index = np.where(self.mt_obj.Z.phase-180 == data_value)
+                    try:
+                        d_index[0][0]
+                    except IndexError:
+                        f_index = np.where(self.mt_obj.Z.freq == 1./data_period)
+                        d_index = (f_index,
+                                   np.array([1]),
+                                   np.array([0]))
+                        print d_index
+#                        print 'Did not pick a valid point'
+#                        return
+
                 # mask point in impedance object
                 self.mt_obj.Z.z[d_index] = 0.0+0.0*1j            
                 self.mt_obj.Z.z_err[d_index] = 0.0            
@@ -1345,9 +1360,13 @@ class PlotWidget(QtWidgets.QWidget):
                 
                 # mask resistivity as well
                 if self._ax_index == 2:
-                    self.ax_res_od.plot(data_period, 
-                                        self.mt_obj.Z.resistivity[d_index],
-                                        **self.mask_kw)
+                    try:
+                        self.ax_res_od.plot(data_period, 
+                                            self.mt_obj.Z.resistivity[d_index],
+                                            **self.mask_kw)
+                    except ValueError:
+                        print d_index
+                        
                 elif self._ax_index == 3:
                     self.ax_res_d.plot(data_period, 
                                        self.mt_obj.Z.resistivity[d_index],

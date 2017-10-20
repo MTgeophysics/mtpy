@@ -392,6 +392,7 @@ class MT(object):
 
         if fn_basename is not None:
             ext = os.path.splitext(fn_basename)[1][1:].lower()
+            fn_basename = os.path.splitext(fn_basename)[0]
             if ext == '':
                 fn_basename = '{0}.{1}'.format(fn_basename, file_type.lower())
             elif ext in ['xml', 'edi']:
@@ -555,6 +556,8 @@ class MT(object):
                     cl_attr = a_list[count]
                     if cl_attr == 'dataquality':
                         cl_attr = 'DataQuality'
+                    if cl_attr == 'datalogger':
+                        cl_attr = 'DataLogger'
                     try:
                         obj = getattr(obj, cl_attr)
                     except AttributeError:
