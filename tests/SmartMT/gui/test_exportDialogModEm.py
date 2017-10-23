@@ -2,10 +2,10 @@ from __future__ import print_function
 
 import glob
 import os
-import pprint
 from unittest import TestCase
 
-from PyQt4 import QtGui, QtCore
+from qtpy import QtCore
+from qtpy.QtWidgets import QFileDialog
 from PyQt4.QtTest import QTest
 
 from mtpy.core import mt
@@ -13,11 +13,11 @@ from mtpy.gui.SmartMT.gui.export_dialog_modem import ExportDialogModEm
 
 
 def _fake_exec_accept():
-    return QtGui.QFileDialog.Accepted
+    return QFileDialog.Accepted
 
 
 def _fake_exec_reject():
-    return QtGui.QFileDialog.Rejected
+    return QFileDialog.Rejected
 
 
 def _rewrite_text(widget, text):

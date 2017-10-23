@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 import numpy as np
-from PyQt4 import QtGui, QtCore
-from PyQt4.QtCore import pyqtSignal
+from qtpy import QtCore
+from qtpy.QtWidgets import QGroupBox, QStyledItemDelegate
+from qtpy.QtGui import QStandardItemModel, QStandardItem
+from qtpy.QtCore import Signal
 
 from mtpy.gui.SmartMT.gui.matplotlib_imabedding import MPLCanvas, Cursor
 from mtpy.gui.SmartMT.gui.plot_parameter import COLORS, SIMPLE_COLORS
@@ -23,9 +25,9 @@ from mtpy.gui.SmartMT.ui_asset.groupbox_z_unit import Ui_GroupBox_z_unit
 from mtpy.gui.SmartMT.utils.matplotlib_utils import gen_hist_bins
 
 
-class ZComponentMultiple(QtGui.QGroupBox):
+class ZComponentMultiple(QGroupBox):
     def __init__(self, parent):
-        QtGui.QGroupBox.__init__(self, parent)
+        QGroupBox.__init__(self, parent)
         self.ui = Ui_groupBoxZ_Component_Multiple()
         self.ui.setupUi(self)
         # z-component checkbox logic
@@ -63,9 +65,9 @@ class ZComponentMultiple(QtGui.QGroupBox):
         return zcomponent
 
 
-class ZComponentSingle(QtGui.QGroupBox):
+class ZComponentSingle(QGroupBox):
     def __init__(self, parent):
-        QtGui.QGroupBox.__init__(self, parent)
+        QGroupBox.__init__(self, parent)
         self.ui = Ui_groupBoxZ_Component_Single()
         self.ui.setupUi(self)
 
@@ -78,14 +80,14 @@ class ZComponentSingle(QtGui.QGroupBox):
             return 'zyx'
 
 
-class FrequencySelect(QtGui.QGroupBox):
+class FrequencySelect(QGroupBox):
     """
     frequency selection
     """
 
     def __init__(self, parent, show_period=True, show_frequency=True, allow_range_select=True,
                  select_multiple=True):
-        QtGui.QGroupBox.__init__(self, parent)
+        QGroupBox.__init__(self, parent)
         self._mt_objs = None
         self._unique_periods = None
         self._unique_frequencies = None
@@ -97,7 +99,7 @@ class FrequencySelect(QtGui.QGroupBox):
         self.ui.setupUi(self)
 
         self.ui.label_place_holder.hide()
-        self.model_selected = QtGui.QStandardItemModel()
+        self.model_selected = QStandardItemModel()
         self.ui.listView_selected.setModel(self.model_selected)
         self.frequency_delegate = FrequencySelect.FrequencyDelegate(self.ui.listView_selected)
         self.ui.listView_selected.setItemDelegate(self.frequency_delegate)
@@ -236,7 +238,7 @@ class FrequencySelect(QtGui.QGroupBox):
             self.frequency_delegate.freqs = self._unique_periods if self.ui.radioButton_period.isChecked() else self._unique_frequencies
             self.histogram.update_figure()
 
-    class FrequencyItem(QtGui.QStandardItem):
+    class FrequencyItem(QStandardItem):
         def __lt__(self, other):
             value = self.data(QtCore.Qt.DisplayRole).toPyObject()
             other_value = other.data(QtCore.Qt.DisplayRole).toPyObject()
@@ -246,7 +248,7 @@ class FrequencySelect(QtGui.QGroupBox):
                 other_value = other_value[0]
             return value < other_value
 
-    class FrequencyDelegate(QtGui.QStyledItemDelegate):
+    class FrequencyDelegate(QStyledItemDelegate):
         _prec = 5  # decimal places
 
         def get_prec(self):
@@ -372,8 +374,8 @@ class FrequencySelect(QtGui.QGroupBox):
             self._x_log_scale = isChecked
             self.update_figure()
 
-        frequency_selected = pyqtSignal(float)
-        frequency_range_selected = pyqtSignal(tuple)
+        frequency_selected = Signal(float)
+        frequency_range_selected = Signal(tuple)
 
         def _get_valid_cursor_loc(self, event):
             if not event.inaxes:
@@ -477,7 +479,7 @@ class FrequencySelect(QtGui.QGroupBox):
             return self._axes.axvspan(x1, x2, alpha=0.5, color='red')
 
 
-class Ellipse(QtGui.QGroupBox):
+class Ellipse(QGroupBox):
     """
     ellipse_dict defined for mtpy.imagining.phase_tensor_maps.PlogPhaseTensorMaps
     """
@@ -486,7 +488,7 @@ class Ellipse(QtGui.QGroupBox):
     _cmap = ['mt_yl2rd', 'mt_bl2yl2rd', 'mt_wh2bl', 'mt_rd2bl', 'mt_bl2wh2rd', 'mt_seg_bl2wh2rd', 'mt_rd2gr2bl']
 
     def __init__(self, parent):
-        QtGui.QGroupBox.__init__(self, parent)
+        QGroupBox.__init__(self, parent)
         self.ui = Ui_GroupBoxEllipse()
         self.ui.setupUi(self)
         # set tooltips for color by and cmap
@@ -520,9 +522,9 @@ class Ellipse(QtGui.QGroupBox):
         return ellipse_dict
 
 
-class FrequencyTolerance(QtGui.QGroupBox):
+class FrequencyTolerance(QGroupBox):
     def __init__(self, parent):
-        QtGui.QGroupBox.__init__(self, parent)
+        QGroupBox.__init__(self, parent)
         self.ui = Ui_GroupBoxTolerance()
         self.ui.setupUi(self)
 
@@ -530,9 +532,9 @@ class FrequencyTolerance(QtGui.QGroupBox):
         return self.ui.doubleSpinBox.value() / 100.0
 
 
-class Arrow(QtGui.QGroupBox):
+class Arrow(QGroupBox):
     def __init__(self, parent, simple_color=True):
-        QtGui.QGroupBox.__init__(self, parent)
+        QGroupBox.__init__(self, parent)
         self.ui = Ui_GroupBox_Arrow()
         self.ui.setupUi(self)
         self._simple_color = simple_color
@@ -605,9 +607,9 @@ class Arrow(QtGui.QGroupBox):
             return 'n'
 
 
-class Padding(QtGui.QGroupBox):
+class Padding(QGroupBox):
     def __init__(self, parent):
-        QtGui.QGroupBox.__init__(self, parent)
+        QGroupBox.__init__(self, parent)
         self.ui = Ui_GroupBox_Padding()
         self.ui.setupUi(self)
 
@@ -618,9 +620,9 @@ class Padding(QtGui.QGroupBox):
         return self.ui.doubleSpinBox_y.value()
 
 
-class Scale(QtGui.QGroupBox):
+class Scale(QGroupBox):
     def __init__(self, parent):
-        QtGui.QGroupBox.__init__(self, parent)
+        QGroupBox.__init__(self, parent)
         self.ui = Ui_GroupBox_Scale()
         self.ui.setupUi(self)
 
@@ -638,9 +640,9 @@ class Scale(QtGui.QGroupBox):
         return self._mapscale[self.ui.comboBox_map.currentIndex()]
 
 
-class Stretch(QtGui.QGroupBox):
+class Stretch(QGroupBox):
     def __init__(self, parent, simple_color=True):
-        QtGui.QGroupBox.__init__(self, parent)
+        QGroupBox.__init__(self, parent)
         self.ui = Ui_GroupBox_Stretch()
         self.ui.setupUi(self)
         self.ui.checkBox_x_range.stateChanged.connect(self._x_range_state_change)
@@ -672,9 +674,9 @@ class Stretch(QtGui.QGroupBox):
         return self.ui.doubleSpinBox_y_min.value(), self.ui.doubleSpinBox_y_max.value()
 
 
-class LineDir(QtGui.QGroupBox):
+class LineDir(QGroupBox):
     def __init__(self, parent, simple_color=True):
-        QtGui.QGroupBox.__init__(self, parent)
+        QGroupBox.__init__(self, parent)
         self.ui = Ui_GroupBox_Linedir()
         self.ui.setupUi(self)
 
@@ -687,14 +689,14 @@ class LineDir(QtGui.QGroupBox):
             return None
 
 
-class FrequencyIndex(QtGui.QGroupBox):
+class FrequencyIndex(QGroupBox):
     _unit_period = 'second'
     _unit_frequency = 'Hz'
     _title_period = 'Period'
     _title_frequency = 'Frequency'
 
     def __init__(self, parent, use_period=False):
-        QtGui.QGroupBox.__init__(self, parent)
+        QGroupBox.__init__(self, parent)
         self.ui = Ui_GroupBox_Frequency_Period_Index()
         self.ui.setupUi(self)
         self._mt_objs = None
@@ -777,9 +779,9 @@ class UniqueFrequencies(FrequencyIndex):
             reverse=False)
 
 
-class StationSelection(QtGui.QGroupBox):
+class StationSelection(QGroupBox):
     def __init__(self, parent):
-        QtGui.QGroupBox.__init__(self, parent)
+        QGroupBox.__init__(self, parent)
         self.ui = Ui_GroupBox_Station_Select()
         self.ui.setupUi(self)
         self.mt_objs = None
@@ -789,7 +791,7 @@ class StationSelection(QtGui.QGroupBox):
     def _current_station_changed(self):
         self.station_changed.emit()
 
-    station_changed = pyqtSignal()
+    station_changed = Signal()
 
     def set_data(self, mt_objs):
         self.ui.comboBox_station.clear()
@@ -803,9 +805,9 @@ class StationSelection(QtGui.QGroupBox):
         return self.mt_objs[index]
 
 
-class Rotation(QtGui.QGroupBox):
+class Rotation(QGroupBox):
     def __init__(self, parent):
-        QtGui.QGroupBox.__init__(self, parent)
+        QGroupBox.__init__(self, parent)
         self.ui = Ui_GroupBox_Rotation()
         self.ui.setupUi(self)
         self.ui.dial_rotation.valueChanged.connect(self._dial_value_changed)
@@ -824,9 +826,9 @@ class Rotation(QtGui.QGroupBox):
         return self.ui.doubleSpinBox_rotation.value()
 
 
-class MeshGrid(QtGui.QGroupBox):
+class MeshGrid(QGroupBox):
     def __init__(self, parent):
-        QtGui.QGroupBox.__init__(self, parent)
+        QGroupBox.__init__(self, parent)
         self.ui = Ui_GroupBox_mash_grid()
         self.ui.setupUi(self)
 
@@ -863,9 +865,9 @@ class MeshGrid(QtGui.QGroupBox):
             return None
 
 
-class ZUnit(QtGui.QGroupBox):
+class ZUnit(QGroupBox):
     def __init__(self, parent):
-        QtGui.QGroupBox.__init__(self, parent)
+        QGroupBox.__init__(self, parent)
         self.ui = Ui_GroupBox_z_unit()
         self.ui.setupUi(self)
 

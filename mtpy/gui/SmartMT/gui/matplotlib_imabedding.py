@@ -11,16 +11,12 @@
     Date: 20/06/2017
 """
 from matplotlib import patches
-from matplotlib.backends import qt_compat
 from matplotlib.widgets import AxesWidget
 
-use_pyside = qt_compat.QT_API == qt_compat.QT_API_PYSIDE
-if use_pyside:
-    from PySide import QtGui
-else:
-    from PyQt4 import QtGui
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
+
+from qtpy.QtWidgets import QSizePolicy, QWidget, QVBoxLayout, QApplication
 
 
 class MPLCanvas(FigureCanvas):
@@ -37,7 +33,7 @@ class MPLCanvas(FigureCanvas):
         FigureCanvas.__init__(self, self._fig)
         self.setParent(parent)
 
-        FigureCanvas.setSizePolicy(self, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
+        FigureCanvas.setSizePolicy(self, QSizePolicy.Expanding, QSizePolicy.Expanding)
         FigureCanvas.updateGeometry(self)
 
     def compute_initial_figure(self):
@@ -180,11 +176,11 @@ class Cursor(AxesWidget):
         return False
 
 
-class MathTextLabel(QtGui.QWidget):
+class MathTextLabel(QWidget):
     def __init__(self, parent=None, math_text=None, horizontalalignment='left', verticalalignment='top', **kwargs):
-        QtGui.QWidget.__init__(self, parent, **kwargs)
+        QWidget.__init__(self, parent, **kwargs)
 
-        layout = QtGui.QVBoxLayout(self)
+        layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
 
         r, g, b, a = self.palette().base().color().getRgbF()
@@ -200,7 +196,7 @@ class MathTextLabel(QtGui.QWidget):
                                                    y=1.0,
                                                    horizontalalignment=horizontalalignment,
                                                    verticalalignment=verticalalignment,
-                                                   size=QtGui.QApplication.font().pointSize() * 2)
+                                                   size=QApplication.font().pointSize() * 2)
         self._canvas.draw()
 
         (x0, y0), (x1, y1) = self._display_text.get_window_extent().get_points()

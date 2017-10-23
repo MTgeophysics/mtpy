@@ -15,8 +15,9 @@ import webbrowser
 
 import matplotlib.pyplot as plt
 import numpy as np
-from PyQt4 import QtGui, QtCore
-from PyQt4.QtCore import pyqtSignal
+from qtpy.QtWidgets import QWizard, QFileDialog, QDialog, QMessageBox
+from qtpy import QtCore
+from qtpy.QtGui import QDoubleValidator
 from matplotlib.figure import Figure
 
 from examples.create_modem_input import select_periods
@@ -33,9 +34,9 @@ from mtpy.modeling.modem_model import Model
 from mtpy.utils.mtpylog import MtPyLog
 
 
-class ExportDialogModEm(QtGui.QWizard):
+class ExportDialogModEm(QWizard):
     def __init__(self, parent=None):
-        QtGui.QDialog.__init__(self, parent)
+        QWizard.__init__(self, parent)
         self.ui = Ui_Wizard_esport_modem()
         self.ui.setupUi(self)
 
@@ -98,8 +99,8 @@ class ExportDialogModEm(QtGui.QWizard):
         )
 
         # set validators
-        self._double_validator = QtGui.QDoubleValidator(-np.inf, np.inf, 1000)
-        self._double_validator.setNotation(QtGui.QDoubleValidator.ScientificNotation)
+        self._double_validator = QDoubleValidator(-np.inf, np.inf, 1000)
+        self._double_validator.setNotation(QDoubleValidator.ScientificNotation)
         self.ui.lineEdit_resistivity_init.setValidator(self._double_validator)
         self.ui.lineEdit_resistivity_air.setValidator(self._double_validator)
         self.ui.lineEdit_resistivity_sea.setValidator(self._double_validator)
@@ -111,7 +112,7 @@ class ExportDialogModEm(QtGui.QWizard):
         self.ui.comboBox_directory.lineEdit().setValidator(self._dir_validator)
 
         # setup directory and dir dialog
-        self._dir_dialog = QtGui.QFileDialog(self)
+        self._dir_dialog = QFileDialog(self)
         # self._dir_dialog.setDirectory(os.path.expanduser("~"))
         self.ui.comboBox_directory.addItem(os.path.expanduser("~"))
         self._update_full_output()
@@ -334,9 +335,9 @@ class ExportDialogModEm(QtGui.QWizard):
         self.ui.lineEdit_full_output.setText(full_output)
 
     def _browse(self, *args, **kwargs):
-        self._dir_dialog.setFileMode(QtGui.QFileDialog.DirectoryOnly)
+        self._dir_dialog.setFileMode(QFileDialog.DirectoryOnly)
         self._dir_dialog.setWindowTitle("Save to ...")
-        if self._dir_dialog.exec_() == QtGui.QDialog.Accepted:
+        if self._dir_dialog.exec_() == QDialog.Accepted:
             directory = str(self._dir_dialog.selectedFiles()[0])
             self.ui.comboBox_directory.setEditText(directory)
             self._output_dir_changed()
@@ -353,9 +354,9 @@ class ExportDialogModEm(QtGui.QWizard):
         )
 
     def _browse_topography_file(self, *args, **kwargs):
-        self._dir_dialog.setFileMode(QtGui.QFileDialog.AnyFile)
+        self._dir_dialog.setFileMode(QFileDialog.AnyFile)
         self._dir_dialog.setWindowTitle("Find Topography File...")
-        if self._dir_dialog.exec_() == QtGui.QDialog.Accepted:
+        if self._dir_dialog.exec_() == QDialog.Accepted:
             file_path = str(self._dir_dialog.selectedFiles()[0])
             self.ui.comboBox_topography_file.setEditText(file_path)
             self._topography_file_changed()
@@ -562,13 +563,14 @@ class ExportDialogModEm(QtGui.QWizard):
         # self._plot_opened.emit(False)
 
     def _export_error(self, message):
-        QtGui.QMessageBox.critical(self,
-                                   'Export Error', message,
-                                   QtGui.QMessageBox.Close)
+        QMessageBox.critical(self,
+                             'Export Error', message,
+                             QMessageBox.Close)
 
 
 class ModEMWorker(QtCore.QThread):
-    def __init__(self, parent, edi_list, select_period_kwargs, data_kwargs, mesh_kwargs, topo_args, covariance_kwargs, show=False):
+    def __init__(self, parent, edi_list, select_period_kwargs, data_kwargs, mesh_kwargs, topo_args, covariance_kwargs,
+                 show=False):
         QtCore.QThread.__init__(self, parent)
         self._logger = MtPyLog().get_mtpy_logger(__name__)
 
@@ -583,9 +585,9 @@ class ModEMWorker(QtCore.QThread):
 
         self.show = show
 
-    status_updated = pyqtSignal(str)
-    figure_updated = pyqtSignal(str, Figure)
-    export_error = pyqtSignal(str)
+    status_updated = QtCore.Signal(str)
+    figure_updated = QtCore.Signal(str, Figure)
+    export_error = QtCore.Signal(str)
 
     _period_image_name = "periods.png"
     _mesh_image_name = "mesh.png"
@@ -728,6 +730,7 @@ class ModEMWorker(QtCore.QThread):
             outf.write("## Appendix III - Covariance Parameter Definition\n")
             outf.write(Covariance.__doc__)  # todo update Covariance class document
             outf.write("\n")
+
 
 def _fake_plt_show(*args, **kwargs):
     # print "suppressed show"
