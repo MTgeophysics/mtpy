@@ -15,9 +15,9 @@ from matplotlib.widgets import AxesWidget
 from qtpy import QT_VERSION
 
 if QT_VERSION.startswith('4'):
-    from matplotlib.backends.backend_qt4agg import FigureCanvas
+    from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 else:
-    from matplotlib.backends.backend_qt5agg import FigureCanvas
+    from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 
 from qtpy.QtWidgets import QSizePolicy, QWidget, QVBoxLayout, QApplication

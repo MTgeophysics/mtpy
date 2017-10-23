@@ -16,9 +16,9 @@ from PIL import Image
 from qtpy import QtCore, QT_VERSION
 from qtpy.QtWidgets import QDialog, QFileDialog, QMessageBox
 if QT_VERSION.startswith('4'):
-    from matplotlib.backends.backend_qt4agg import FigureCanvas
+    from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 else:
-    from matplotlib.backends.backend_qt5agg import FigureCanvas
+    from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 
 from mtpy.gui.SmartMT.ui_asset.dialog_export import Ui_Dialog_Export
 from mtpy.gui.SmartMT.ui_asset.dialog_preview import Ui_Dialog_preview

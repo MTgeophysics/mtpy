@@ -14,9 +14,9 @@ import inspect
 import traceback
 
 import matplotlib.pyplot as plt
-from qtpy import QtCore
+from qtpy import QtCore, QT_VERSION
 from qtpy.QtWidgets import QWidget, QVBoxLayout
-from qtpy.QtCore import Signal, QT_VERSION
+from qtpy.QtCore import Signal
 
 if QT_VERSION.startswith('4'):
     from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
