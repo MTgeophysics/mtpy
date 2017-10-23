@@ -12,8 +12,9 @@
 from itertools import cycle
 
 import pandas as pd
-from PyQt4 import QtGui, QtCore
-from PyQt4.QtCore import pyqtSignal
+from qtpy import QtCore
+from qtpy.QtWidgets import QWidget, QMessageBox, QInputDialog, QMenu, QAction, QTreeWidgetItem
+from qtpy.QtCore import Signal
 from matplotlib import artist
 
 from mtpy.gui.SmartMT.gui.matplotlib_imabedding import MPLCanvas
@@ -23,11 +24,11 @@ MARKERS = ['*', 'D', 'H', '^']
 COLORS = ['g', 'r', 'c', 'm', 'y', 'k', 'b']
 
 
-class StationViewer(QtGui.QWidget):
+class StationViewer(QWidget):
     """
     signal when the selected station changed
     """
-    selection_changed = pyqtSignal()
+    selection_changed = Signal()
 
     def __init__(self, parent, file_handler):
         """
@@ -37,7 +38,7 @@ class StationViewer(QtGui.QWidget):
         :param file_handler
         :type file_handler.FileHandler
         """
-        QtGui.QWidget.__init__(self, parent)
+        QWidget.__init__(self, parent)
         # self._ignore_selection_change = False  # guard that used to ignore the selection change processing
         self.file_handler = file_handler
         self.ui = Ui_StationViewer()
@@ -96,10 +97,10 @@ class StationViewer(QtGui.QWidget):
         # just use the container from the figure
         selected_stations = self.selected_stations.copy()
         if selected_stations:
-            reply = QtGui.QMessageBox.question(self, "Unload Selected Stations",
+            reply = QMessageBox.question(self, "Unload Selected Stations",
                                                "Are you sure you want to unload/remove the selected stations?\n(You can always load them back again.)",
-                                               QtGui.QMessageBox.Yes, QtGui.QMessageBox.No)
-            if reply == QtGui.QMessageBox.Yes:
+                                               QMessageBox.Yes, QMessageBox.No)
+            if reply == QMessageBox.Yes:
                 # for station, ref in selected_stations:
                 #     self.file_handler.unload(ref)
                 for station in selected_stations:
@@ -116,7 +117,7 @@ class StationViewer(QtGui.QWidget):
         # if selected:
         if self.selected_stations:
             groups = self.file_handler.get_groups()
-            group_id, ok = QtGui.QInputDialog.getItem(self, "Add Selected Items to Group", "Please select one group:",
+            group_id, ok = QInputDialog.getItem(self, "Add Selected Items to Group", "Please select one group:",
                                                       groups, 0, False)
             if ok and group_id:
                 group_id = str(group_id)
@@ -240,7 +241,7 @@ class StationViewer(QtGui.QWidget):
                 # add new children
                 for ref in self.file_handler.get_group_members(group_id):
                     if ref not in refs:
-                        child_node = QtGui.QTreeWidgetItem(group_item)
+                        child_node = QTreeWidgetItem(group_item)
                         child_node.setText(0, self.file_handler.get_MT_obj(ref).station)
                         child_node.setText(1, ref)
             else:
@@ -252,10 +253,10 @@ class StationViewer(QtGui.QWidget):
         for group_id in existing_groups:
             if group_id not in groups:
                 # create new node
-                node = QtGui.QTreeWidgetItem(self.ui.treeWidget_stations)
+                node = QTreeWidgetItem(self.ui.treeWidget_stations)
                 node.setText(0, group_id)
                 for ref in self.file_handler.get_group_members(group_id):
-                    child_node = QtGui.QTreeWidgetItem(node)
+                    child_node = QTreeWidgetItem(node)
                     child_node.setText(0, self.file_handler.get_MT_obj(ref).station)
                     child_node.setText(1, ref)
         # self.ui.treeWidget_stations.updateGeometry()
@@ -289,14 +290,14 @@ class StationViewer(QtGui.QWidget):
     def create_new_group(self, *args, **kwargs):
         ok = False
         while not ok:
-            text, ok = QtGui.QInputDialog.getText(self, 'New Group', 'Enter a New Group Name:')
+            text, ok = QInputDialog.getText(self, 'New Group', 'Enter a New Group Name:')
             if ok:
                 text = str(text)
                 ok = self.file_handler.create_group(text)
                 if ok:
                     self.update_view()
                 else:
-                    QtGui.QMessageBox.information(self, "NOTE",
+                    QMessageBox.information(self, "NOTE",
                                                   "Group %s already exits" % text)
             else:
                 # cancelled
@@ -316,7 +317,7 @@ class StationViewer(QtGui.QWidget):
         """
         signal when the selected station changed
         """
-        selection_changed = pyqtSignal()
+        selection_changed = Signal()
 
         def __init__(self, parent=None, file_handler=None, width=5, hight=4, dpi=100):
             """
@@ -413,35 +414,35 @@ class StationViewer(QtGui.QWidget):
                 pass
             return True
 
-    class TreeViewMenu(QtGui.QMenu):
+    class TreeViewMenu(QMenu):
         def __init__(self, *args):
-            QtGui.QMenu.__init__(self, *args)
+            QMenu.__init__(self, *args)
             # create new group action
-            self.actionCreate_New_Group = QtGui.QAction(self)
+            self.actionCreate_New_Group = QAction(self)
             self.actionCreate_New_Group.setEnabled(True)
             self.actionCreate_New_Group.setObjectName(_fromUtf8("actionCreate_New_Group"))
             self.addAction(self.actionCreate_New_Group)
 
-            self.actionDismiss_Group = QtGui.QAction(self)
+            self.actionDismiss_Group = QAction(self)
             self.actionDismiss_Group.setEnabled(True)
             self.actionDismiss_Group.setObjectName(_fromUtf8("actionDismiss_Group"))
             self.addAction(self.actionDismiss_Group)
 
-            self.actionAdd_To_Group = QtGui.QAction(self)
+            self.actionAdd_To_Group = QAction(self)
             self.actionAdd_To_Group.setEnabled(True)
             self.actionAdd_To_Group.setObjectName(_fromUtf8("actionAdd_To_Group"))
             self.addAction(self.actionAdd_To_Group)
 
             self.addSeparator()
             # item operations
-            self.actionRemove_Station = QtGui.QAction(self)
+            self.actionRemove_Station = QAction(self)
             self.actionRemove_Station.setEnabled(True)
             self.actionRemove_Station.setObjectName(_fromUtf8("actionRemove_Station"))
             self.addAction(self.actionRemove_Station)
 
             self.addSeparator()
             # plot menu action
-            self.actionPlot = QtGui.QAction(self)
+            self.actionPlot = QAction(self)
             self.actionPlot.setEnabled(False)
             self.actionPlot.setObjectName(_fromUtf8("actionPlot"))
             self.addAction(self.actionPlot)

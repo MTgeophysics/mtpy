@@ -9,7 +9,8 @@
     Date: 20/06/2017
 """
 import six
-from PyQt4 import QtGui, QtCore
+from qtpy import QtCore
+from qtpy.QtWidgets import QGroupBox
 from matplotlib import colors as mcolors
 
 from mtpy.gui.SmartMT.ui_asset.plot_parameters import Ui_GroupBoxParameters
@@ -33,13 +34,13 @@ SIMPLE_COLORS = ['b',  # blue
                  ]
 
 
-class PlotParameter(QtGui.QGroupBox):
+class PlotParameter(QGroupBox):
     _slider_tick_size = 10.0
     _slider_min = 0.0
     _slider_max = 100.0
 
     def __init__(self, parent):
-        QtGui.QGroupBox.__init__(self, parent)
+        QGroupBox.__init__(self, parent)
         self.ui = Ui_GroupBoxParameters()
         self.ui.setupUi(self)
 
