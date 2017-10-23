@@ -43,7 +43,7 @@ if [ $QT_VERSION == 4 ]; then
 elif [ $QT_VERSION == 5 ]; then
     if [ ! -d "PyQt5_gpl-5.9" ]; then
 	    curl -L -o PyQt5_gpl-5.9.tar.gz https://sourceforge.net/projects/pyqt/files/PyQt5/PyQt-5.9/PyQt5_gpl-5.9.tar.gz
-	    echo "a409ac0d65ead9178b90c2822759a84b PyQt5_gpl-5.9" | md5sum -c -
+	    echo "a409ac0d65ead9178b90c2822759a84b PyQt5_gpl-5.9.tar.gz" | md5sum -c -
 	    tar xzf PyQt5_gpl-5.9.tar.gz
     fi
     pushd PyQt5_gpl-5.9
