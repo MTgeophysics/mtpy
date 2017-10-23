@@ -141,7 +141,7 @@ class FrequencySelect(QGroupBox):
         self._update_frequency()
 
     def get_frequencies(self):
-        frequencies = [self.model_selected.item(index).data(QtCore.Qt.DisplayRole).toPyObject()
+        frequencies = [self.model_selected.item(index).data(QtCore.Qt.DisplayRole)
                        for index in range(self.model_selected.rowCount())]
         if self._allow_range:
             frequencies = [(freq[0], freq[1]) if isinstance(freq, tuple) else freq for freq in frequencies]
@@ -163,7 +163,7 @@ class FrequencySelect(QGroupBox):
 
     def _delete_selected(self):
         for item in [self.model_selected.item(index.row()) for index in self.ui.listView_selected.selectedIndexes()]:
-            x = item.data(QtCore.Qt.DisplayRole).toPyObject()
+            x = item.data(QtCore.Qt.DisplayRole)
             self.model_selected.removeRow(self.model_selected.indexFromItem(item).row())
             self.histogram.remove_marker(x)
 
@@ -172,7 +172,7 @@ class FrequencySelect(QGroupBox):
             self.histogram.clear_all_drawing()
             self.model_selected.clear()
         for item in [self.model_selected.item(index) for index in range(self.model_selected.rowCount())]:
-            value = item.data(QtCore.Qt.DisplayRole).toPyObject()
+            value = item.data(QtCore.Qt.DisplayRole)
             if value == x:
                 return
             elif isinstance(value, tuple) and isinstance(x, float) and value[0] <= x <= value[1]:
@@ -240,8 +240,8 @@ class FrequencySelect(QGroupBox):
 
     class FrequencyItem(QStandardItem):
         def __lt__(self, other):
-            value = self.data(QtCore.Qt.DisplayRole).toPyObject()
-            other_value = other.data(QtCore.Qt.DisplayRole).toPyObject()
+            value = self.data(QtCore.Qt.DisplayRole)
+            other_value = other.data(QtCore.Qt.DisplayRole)
             if isinstance(value, tuple):
                 value = value[0]
             if isinstance(other_value, tuple):
@@ -260,20 +260,19 @@ class FrequencySelect(QGroupBox):
         prec = property(get_prec, set_prec)
 
         def displayText(self, value, locale):
-            py_obj = value.toPyObject()
-            if isinstance(py_obj, float):
-                return '{:.{prec}f}'.format(py_obj, prec=self._prec)
-            elif isinstance(py_obj, tuple) and len(py_obj) == 3:  # (min, max, num)
+            if isinstance(value, float):
+                return '{:.{prec}f}'.format(value, prec=self._prec)
+            elif isinstance(value, tuple) and len(value) == 3:  # (min, max, num)
                 return '{}{}, {}{} ({num} selected)'.format(
-                    '(' if py_obj[0] == -np.inf else '[',
-                    '{:.{prec}f}'.format(py_obj[0], prec=self._prec),
-                    '{:.{prec}f}'.format(py_obj[1], prec=self._prec),
-                    ')' if py_obj[1] == np.inf else ']',
-                    num=py_obj[2]
+                    '(' if value[0] == -np.inf else '[',
+                    '{:.{prec}f}'.format(value[0], prec=self._prec),
+                    '{:.{prec}f}'.format(value[1], prec=self._prec),
+                    ')' if value[1] == np.inf else ']',
+                    num=value[2]
                 )
-            elif len(py_obj) == 5:  # (min, max, num, freq, tol)
+            elif len(value) == 5:  # (min, max, num, freq, tol)
                 return u'{:.{prec}f} ±{tol}% ({num} selected)'.format(
-                    py_obj[3], prec=self._prec, tol=py_obj[4], num=py_obj[2])
+                    value[3], prec=self._prec, tol=value[4], num=value[2])
             # elif isinstance(py_obj, set):
             #     return '{{}}'.format(','.join(['{:.{prec}f}'.format(f, prec=self._prec) for f in py_obj if isinstance(f, float)]))
             return value
