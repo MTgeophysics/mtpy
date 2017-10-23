@@ -6,7 +6,7 @@ from unittest import TestCase
 
 from qtpy import QtCore
 from qtpy.QtWidgets import QFileDialog
-from PyQt4.QtTest import QTest
+from qtpy.QtTest import QTest
 
 from mtpy.core import mt
 from mtpy.gui.SmartMT.gui.export_dialog_modem import ExportDialogModEm

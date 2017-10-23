@@ -4,7 +4,7 @@ from unittest import TestCase
 
 from qtpy.QtCore import QPoint
 from qtpy.QtWidgets import QMainWindow, QWidget, QVBoxLayout
-from PyQt4.QtTest import QTest
+from qtpy.QtTest import QTest
 
 from mtpy.core import mt
 from mtpy.gui.SmartMT.gui.plot_parameter_guis import FrequencySelect
