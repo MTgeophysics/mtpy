@@ -12,9 +12,9 @@ class FileValidator(QValidator):
         if os.path.isfile(QString):
             return QValidator.Acceptable, p_int
         elif dir == "" or (os.path.isdir(dir) and any([item.startswith(basename) for item in os.listdir(dir)])):
-            return QValidator.Intermediate, p_int
+            return QValidator.Intermediate, QString, p_int
         else:
-            return QValidator.Invalid, p_int
+            return QValidator.Invalid, QString, p_int
 
 
 class DirectoryValidator(QValidator):
@@ -23,13 +23,13 @@ class DirectoryValidator(QValidator):
         basename = os.path.basename(QString)
         dir = os.path.dirname(QString)
         if os.path.isdir(QString):
-            return QValidator.Acceptable, p_int
+            return QValidator.Acceptable, QString, p_int
         elif dir == "" or (os.path.isdir(dir) and any([item.startswith(basename)
                                                        for item in os.listdir(dir)
                                                        if os.path.isdir(os.path.join(dir, item))])):
-            return QValidator.Intermediate, p_int
+            return QValidator.Intermediate, QString, p_int
         else:
-            return QValidator.Invalid, p_int
+            return QValidator.Invalid, QString, p_int
 
 
 class FloatValidator(QValidator):
@@ -42,7 +42,7 @@ class FloatValidator(QValidator):
             state = QValidator.Intermediate
         else:
             state = QValidator.Invalid
-        return state, position
+        return state, string, position
 
     def fixup(self, text):
         text = str(text)
