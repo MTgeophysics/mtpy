@@ -5,6 +5,7 @@ geopandas
 GDAL
 scipy
 pillow
+qtpy
 # pytest-cov
 # python-coveralls
 
