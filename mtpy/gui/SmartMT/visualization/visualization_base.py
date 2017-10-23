@@ -14,10 +14,16 @@ import inspect
 import traceback
 
 import matplotlib.pyplot as plt
-from PyQt4 import QtGui, QtCore
-from PyQt4.QtCore import pyqtSignal
-from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as NavigationToolbar
+from qtpy import QtCore
+from qtpy.QtWidgets import QWidget, QVBoxLayout
+from qtpy.QtCore import Signal, QT_VERSION
+
+if QT_VERSION.startswith('4'):
+    from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
+    from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as NavigationToolbar
+else:
+    from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+    from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure
 
 from mtpy.gui.SmartMT.gui.plot_parameter import PlotParameter
@@ -161,18 +167,18 @@ class VisualizationBase(QtCore.QThread):
             mod = inspect.getmodule(frm[0])
             self.plotting_error.emit("{}: {}".format(mod.__name__, e.message), traceback.format_exc())
 
-    plotting_error = pyqtSignal(str, str)
-    plotting_completed = pyqtSignal(Figure)
+    plotting_error = Signal(str, str)
+    plotting_completed = Signal(Figure)
 
     def get_fig(self):
         return self._fig
 
 
-class MPLCanvasWidget(QtGui.QWidget):
+class MPLCanvasWidget(QWidget):
     def __init__(self, fig):
-        QtGui.QWidget.__init__(self)
+        QWidget.__init__(self)
         self._fig = fig
-        self._layout = QtGui.QVBoxLayout()
+        self._layout = QVBoxLayout()
         self._canvas = FigureCanvas(self._fig)
         self._toolbar = NavigationToolbar(self._canvas, self)
         self._layout.addWidget(self._toolbar)

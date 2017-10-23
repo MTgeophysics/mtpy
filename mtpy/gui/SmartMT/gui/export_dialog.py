@@ -13,9 +13,9 @@ import webbrowser
 
 import matplotlib.pyplot as plt
 from PIL import Image
-from qtpy import QtCore, PYQT_VERSION
+from qtpy import QtCore, QT_VERSION
 from qtpy.QtWidgets import QDialog, QFileDialog, QMessageBox
-if PYQT_VERSION.startswith('4'):
+if QT_VERSION.startswith('4'):
     from matplotlib.backends.backend_qt4agg import FigureCanvas
 else:
     from matplotlib.backends.backend_qt5agg import FigureCanvas
