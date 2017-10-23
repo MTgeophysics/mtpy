@@ -13,8 +13,12 @@ import webbrowser
 
 import matplotlib.pyplot as plt
 from PIL import Image
-from PyQt4 import QtGui, QtCore
-from matplotlib.backends.backend_qt4agg import FigureCanvas
+from qtpy import QtCore, PYQT_VERSION
+from qtpy.QtWidgets import QDialog, QFileDialog, QMessageBox
+if PYQT_VERSION.startswith('4'):
+    from matplotlib.backends.backend_qt4agg import FigureCanvas
+else:
+    from matplotlib.backends.backend_qt5agg import FigureCanvas
 
 from mtpy.gui.SmartMT.ui_asset.dialog_export import Ui_Dialog_Export
 from mtpy.gui.SmartMT.ui_asset.dialog_preview import Ui_Dialog_preview
@@ -26,9 +30,9 @@ for type, description in filetypes.iteritems():
     IMAGE_FORMATS.append((type, description))
 
 
-class ExportDialog(QtGui.QDialog):
+class ExportDialog(QDialog):
     def __init__(self, parent=None):
-        QtGui.QDialog.__init__(self, parent)
+        QDialog.__init__(self, parent)
         self.ui = Ui_Dialog_Export()
         self.ui.setupUi(self)
         self._fig = None
@@ -40,9 +44,9 @@ class ExportDialog(QtGui.QDialog):
         self._file_name_changed()  # select the default format
 
         # setup directory and dir dialog
-        self._dir_dialog = QtGui.QFileDialog(self)
+        self._dir_dialog = QFileDialog(self)
         # self._dir_dialog.setDirectory(os.path.expanduser("~"))
-        self._dir_dialog.setFileMode(QtGui.QFileDialog.DirectoryOnly)
+        self._dir_dialog.setFileMode(QFileDialog.DirectoryOnly)
         self._dir_dialog.setWindowTitle("Save to ...")
         self.ui.comboBox_directory.addItem(os.path.expanduser("~"))
         self.ui.pushButton_browse.clicked.connect(self._browse)
@@ -73,11 +77,11 @@ class ExportDialog(QtGui.QDialog):
         self.ui.spinBox_height_pixels.valueChanged.connect(self._height_pixels_changed)
 
         # message box for when the file already exist
-        self._msg_box = QtGui.QMessageBox(self)
+        self._msg_box = QMessageBox(self)
         self._msg_box.setWindowTitle("Export...")
-        self._msg_box_button_overwrite = self._msg_box.addButton(self.tr("Overwrite"), QtGui.QMessageBox.AcceptRole)
-        self._msg_box_button_save_as = self._msg_box.addButton(self.tr("Save As"), QtGui.QMessageBox.ActionRole)
-        self._msg_box_button_cancel = self._msg_box.addButton(QtGui.QMessageBox.Cancel)
+        self._msg_box_button_overwrite = self._msg_box.addButton(self.tr("Overwrite"), QMessageBox.AcceptRole)
+        self._msg_box_button_save_as = self._msg_box.addButton(self.tr("Save As"), QMessageBox.ActionRole)
+        self._msg_box_button_cancel = self._msg_box.addButton(QMessageBox.Cancel)
         self._msg_box.setDefaultButton(self._msg_box_button_save_as)
 
     _orientation = ['portrait', 'landscape']
@@ -178,7 +182,7 @@ class ExportDialog(QtGui.QDialog):
             pass
 
     def _browse(self, *args, **kwargs):
-        if self._dir_dialog.exec_() == QtGui.QDialog.Accepted:
+        if self._dir_dialog.exec_() == QDialog.Accepted:
             directory = str(self._dir_dialog.selectedFiles()[0])
             # update directory
             index = self.ui.comboBox_directory.findText(directory)
@@ -197,7 +201,7 @@ class ExportDialog(QtGui.QDialog):
             self.ui.doubleSpinBox_width_inches.setValue(fig.get_figwidth())
             self.ui.doubleSpinBox_height_inches.setValue(fig.get_figheight())
             response = self.exec_()
-            if response == QtGui.QDialog.Accepted:
+            if response == QDialog.Accepted:
                 # saving files
                 fname = self.get_save_file_name()
 
@@ -301,9 +305,9 @@ class ExportDialog(QtGui.QDialog):
         #     super(ExportDialog, self).closeEvent(event)
 
 
-class PreviewDialog(QtGui.QDialog):
+class PreviewDialog(QDialog):
     def __init__(self, parent, fig):
-        QtGui.QDialog.__init__(self, parent)
+        QDialog.__init__(self, parent)
         self.ui = Ui_Dialog_preview()
         self.ui.setupUi(self)
         self._canvas = FigureCanvas(fig)
