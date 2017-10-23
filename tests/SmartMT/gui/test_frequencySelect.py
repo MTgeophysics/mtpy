@@ -2,8 +2,8 @@ import glob
 import os
 from unittest import TestCase
 
-from PyQt4.QtCore import QPoint
-from PyQt4.QtGui import QMainWindow, QWidget, QVBoxLayout
+from qtpy.QtCore import QPoint
+from qtpy.QtWidgets import QMainWindow, QWidget, QVBoxLayout
 from PyQt4.QtTest import QTest
 
 from mtpy.core import mt
