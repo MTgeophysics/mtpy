@@ -26,7 +26,7 @@ before_install:
   - sudo apt update -qq
   # install qt4 and dependencies
   - if [ $QT_VERSION == 4 ]; then sudo apt -y install -qq "libqt4-dev"; fi  # install pyqt dependencies
-  - if [ $QT_VERSION == 5 ]; then sudo apt -y install -qq qtbase5-dev; fi
+  - if [ $QT_VERSION == 5 ]; then sudo apt -y install -qq qtbase5-dev && source /opt/qt55/bin/qt55-env.sh; fi  # install qt5 and switch to qt5 env
   - ./bin/install_pyqt.sh
   # build gdal from source as the one on ubuntu trusty is out-of-date
 #  - sudo apt -y install -qq libgdal-dev=2.2.2  # dependencies of dgal
