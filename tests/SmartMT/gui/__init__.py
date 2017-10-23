@@ -1,7 +1,7 @@
 import random
 
-from PyQt4 import QtCore
-from PyQt4.QtTest import QTest
+from qtpy import QtCore
+from qtpy.QtTest import QTest
 
 
 def _click_area(qobj, pos=None, offset=None):

@@ -5,7 +5,7 @@ import sys
 
 import matplotlib
 import sip
-from PyQt4.QtGui import QApplication
+from qtpy.QtWidgets import QApplication
 
 from mtpy.utils.mtpylog import MtPyLog
 
