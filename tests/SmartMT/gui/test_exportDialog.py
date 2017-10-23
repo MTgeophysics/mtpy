@@ -51,7 +51,7 @@ class TestExportDialog(TestCase):
         # create GUI
         self.dialog = ExportDialog()
         self.dialog.show()
-        QTest.qWaitForWindowShown(self.dialog)
+        QTest.qWaitForWindowActive(self.dialog)
 
     def tearDown(self):
         self.dialog.close()
@@ -214,19 +214,19 @@ class TestExportDialog(TestCase):
 
     def _fake_msg_dialog_exec_overwrite(self):
         self.dialog._msg_box.show()
-        QTest.qWaitForWindowShown(self.dialog._msg_box)
+        QTest.qWaitForWindowActive(self.dialog._msg_box)
         QTest.mouseClick(self.dialog._msg_box_button_overwrite, QtCore.Qt.LeftButton)
         return QMessageBox.Accepted
 
     def _fake_msg_dialog_exec_save_as(self):
         self.dialog._msg_box.show()
-        QTest.qWaitForWindowShown(self.dialog._msg_box)
+        QTest.qWaitForWindowActive(self.dialog._msg_box)
         QTest.mouseClick(self.dialog._msg_box_button_save_as, QtCore.Qt.LeftButton)
         return QMessageBox.Accepted
 
     def _fake_msg_dialog_exec_cancel(self):
         self.dialog._msg_box.show()
-        QTest.qWaitForWindowShown(self.dialog._msg_box)
+        QTest.qWaitForWindowActive(self.dialog._msg_box)
         QTest.mouseClick(self.dialog._msg_box_button_cancel, QtCore.Qt.LeftButton)
         return QMessageBox.Cancel
 
