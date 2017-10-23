@@ -19,7 +19,6 @@ import mtpy.analysis.distortion as MTdistortion
 import mtpy.core.jfile as MTj
 import mtpy.core.mt_xml as MTxml
 import mtpy.imaging.plot_mt_response as plot_mt_response
-reload(MTz)
 
 try:
     import scipy
