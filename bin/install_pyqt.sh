@@ -47,7 +47,7 @@ elif [ $QT_VERSION == 5 ]; then
 	    tar xzf PyQt5_gpl-5.9.tar.gz
     fi
     pushd PyQt5_gpl-5.9
-    python configure.py -c --confirm-license --no-designer-plugin -e QtCore -e QtGui -e QWidgets -e QtTest --qmake=/usr/lib/x86_64-linux-gnu/qt5/bin/qmake
+    python configure.py -c --confirm-license --no-designer-plugin -e QtCore -e QtGui -e QtWidgets -e QtTest --qmake=/usr/lib/x86_64-linux-gnu/qt5/bin/qmake
     make
     sudo make install
     popd
