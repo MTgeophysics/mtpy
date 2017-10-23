@@ -48,7 +48,7 @@ class TestExportDialogModEm(TestCase):
         # create gui
         self.dialog = ExportDialogModEm()
         self.dialog.show()
-        QTest.qWaitForWindowShown(self.dialog)
+        QTest.qWaitForWindowActive(self.dialog)
 
     def tearDown(self):
         self.dialog.close()

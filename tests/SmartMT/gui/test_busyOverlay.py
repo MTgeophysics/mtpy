@@ -33,7 +33,7 @@ class TestBusyOverlay(TestCase):
     def test(self):
         window = MainWindow()
         window.show()
-        QTest.qWaitForWindowShown(window)
+        QTest.qWaitForWindowActive(window)
         _click_area(window.button)
         # QTest.mouseClick(window.button, QtCore.Qt.LeftButton)
         QTest.qWait(5000)

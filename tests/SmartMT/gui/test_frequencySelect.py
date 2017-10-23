@@ -43,7 +43,7 @@ class TestFrequencySelect(TestCase):
         # create gui
         self.app = MainWindow()
         self.app.show()
-        QTest.qWaitForWindowShown(self.app)
+        QTest.qWaitForWindowActive(self.app)
 
 
     def _std_function_tests(self):
