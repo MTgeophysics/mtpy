@@ -31,7 +31,6 @@ class ExportDialog(QtGui.QDialog):
         QtGui.QDialog.__init__(self, parent)
         self.ui = Ui_Dialog_Export()
         self.ui.setupUi(self)
-
         self._fig = None
 
         # setup file types
