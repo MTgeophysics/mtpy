@@ -1,7 +1,7 @@
 from unittest import TestCase
 
-from PyQt4.QtGui import QMainWindow, QWidget, QTextEdit, QGridLayout, QPushButton
-from PyQt4.QtTest import QTest
+from qtpy.QtWidgets import QMainWindow, QWidget, QTextEdit, QGridLayout, QPushButton
+from qtpy.QtTest import QTest
 
 from mtpy.gui.SmartMT.gui.busy_indicators import BusyOverlay
 from tests.SmartMT.gui import _click_area
