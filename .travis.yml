@@ -30,7 +30,7 @@ before_install:
   - if [ $QT_VERSION == 5 ]; then sudo apt -y install -qq qtdeclarative5-dev libqt5svg5-dev qtmultimedia5-dev && export QMAKE=/usr/lib/x86_64-linux-gnu/qt5/bin/qmake; fi  # install qt5 and switch to qt5 env
   - ./bin/install_pyqt.sh
   # build gdal from source as the one on ubuntu trusty is out-of-date
-#  - sudo apt -y install -qq libgdal-dev=2.2.2  # dependencies of dgal
+#  - sudo apt -y install -qq libgdal-dev=2.2.2  # dependencies of gdal
   - ./bin/install_libgdal.sh
   - export CPLUS_INCLUDE_PATH=/usr/include/gdal
   - export C_INCLUDE_PATH=/usr/include/gdal
@@ -54,7 +54,7 @@ before_script:
 
 script:
   - py.test -n 4 --cov=mtpy --cov-report term:skip-covered tests/core
-  - MTPY_TEST_COMPARE_IMAGE=True py.test --cov=mtpy --cov-append --cov-report term:skip-covered tests/imaging  # save and compare images
+  - MTPY_TEST_COMPARE_IMAGE=True; py.test --cov=mtpy --cov-append --cov-report term:skip-covered tests/imaging  # save and compare images
   - py.test -n 4 --cov=mtpy --cov-append --cov-report term:skip-covered tests/modeling
   - "export DISPLAY=:99.0"  # enable display on travis
   - "sh -e /etc/init.d/xvfb start"
