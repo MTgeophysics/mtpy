@@ -1,6 +1,7 @@
 import glob
 import os
 import unittest
+from Tkinter import TclError
 from unittest import TestCase
 
 import matplotlib
@@ -91,15 +92,18 @@ class _BaseTest(object):
 
     def test_plot_stations(self):
         self.edi_collection.plot_stations()
-        plt.pause(1)
+        if plt.isinteractive():
+            plt.pause(1)
 
     def test_display_on_basemap(self):
         self.edi_collection.display_on_basemap()
-        plt.pause(1)
+        if plt.isinteractive():
+            plt.pause(1)
 
     def test_display_on_image(self):
         self.edi_collection.display_on_image()
-        plt.pause(1)
+        if plt.isinteractive():
+            plt.pause(1)
 
     def test_create_mt_station_gdf(self):
         path = os.path.join(self._temp_dir, self.__class__.__name__ + "_mt_station_gdf")
@@ -126,13 +130,13 @@ class _BaseTest(object):
         self.edi_collection.create_phase_tensor_csv_with_image(path2)
 
 
-class TsetFromFile(_BaseTest):
+class _TsetFromFile(_BaseTest):
     def setUp(self):
         _BaseTest.setUp(self)
         self.edi_collection = EdiCollection(self.edi_files)
 
 
-class TestFromMTObj(_BaseTest):
+class _TestFromMTObj(_BaseTest):
     def setUp(self):
         _BaseTest.setUp(self)
         mt_objs = [MT(edi_file) for edi_file in self.edi_files]
@@ -142,15 +146,10 @@ class TestFromMTObj(_BaseTest):
 for edi_path in edi_paths:
     if os.path.isdir(edi_path):
         cls_name = "TestEdiCollectionFromFile_%s" % (os.path.basename(edi_path))
-        globals()[cls_name] = type(cls_name, (TsetFromFile, unittest.TestCase), {
+        globals()[cls_name] = type(cls_name, (_TsetFromFile, unittest.TestCase), {
             "edi_path": edi_path
         })
         cls_name = "TestEdiCollectionFromMTObj_%s" % (os.path.basename(edi_path))
-        globals()[cls_name] = type(cls_name, (TestFromMTObj, unittest.TestCase), {
+        globals()[cls_name] = type(cls_name, (_TestFromMTObj, unittest.TestCase), {
             "edi_path": edi_path
         })
-
-if 'TsetFromFile' in globals():
-    del globals()['TsetFromFile']
-if 'TestFromMTObj' in globals():
-    del globals()['TestFromMTObj']
