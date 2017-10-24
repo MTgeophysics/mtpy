@@ -14,11 +14,14 @@ cache:
     - builds  # cached files
 
 env:
-  - MATPLOTLIB_VERSION=2.1.0 QT_VERSION=4
-#  - MATPLOTLIB_VERSION=2.1.0 QT_VERSION=5
-  - MATPLOTLIB_VERSION=2.0.2 QT_VERSION=4
-  - MATPLOTLIB_VERSION=2.0.2 QT_VERSION=5
-  - MATPLOTLIB_VERSION=1.5.3 QT_VERSION=4
+  global:
+    - COVERALLS_PARALLEL=true
+  matrix:
+    - MATPLOTLIB_VERSION=2.1.0 QT_VERSION=4
+#    - MATPLOTLIB_VERSION=2.1.0 QT_VERSION=5
+    - MATPLOTLIB_VERSION=2.0.2 QT_VERSION=4
+    - MATPLOTLIB_VERSION=2.0.2 QT_VERSION=5
+    - MATPLOTLIB_VERSION=1.5.3 QT_VERSION=4
 
 before_install:
   - chmod -vR +x ./bin/*
@@ -72,3 +75,5 @@ matrix:
     - env: MATPLOTLIB_VERSION=2.1.0 QT_VERSION=4
     - env: MATPLOTLIB_VERSION=1.5.3 QT_VERSION=4
 
+notifications:
+  webhooks: https://coveralls.io/webhook?repo_token=cAPLOTdLM6wuguwHgdUsBqtDprbhVZfRp
