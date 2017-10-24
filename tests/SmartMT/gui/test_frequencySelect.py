@@ -3,11 +3,11 @@ import os
 from unittest import TestCase
 
 from qtpy.QtCore import QPoint
-from qtpy.QtWidgets import QMainWindow, QWidget, QVBoxLayout
 from qtpy.QtTest import QTest
+from qtpy.QtWidgets import QMainWindow, QWidget, QVBoxLayout
 
 from mtpy.core import mt
-from mtpy.gui.SmartMT.gui.plot_parameter_guis import FrequencySelect
+from mtpy.gui.SmartMT.Components.PlotParameter import FrequencySelection
 from tests.SmartMT.gui import _click_area
 
 edi_paths = [
@@ -26,7 +26,7 @@ class MainWindow(QMainWindow):
 
         widget = QWidget(self)
         layout = QVBoxLayout(widget)
-        self.frequency_select = FrequencySelect(self)
+        self.frequency_select = FrequencySelection(self)
         layout.addWidget(self.frequency_select)
         widget.setLayout(layout)
         self.setCentralWidget(widget)

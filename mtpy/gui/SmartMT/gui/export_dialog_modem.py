@@ -15,17 +15,17 @@ import webbrowser
 
 import matplotlib.pyplot as plt
 import numpy as np
-from qtpy.QtWidgets import QWizard, QFileDialog, QDialog, QMessageBox
+from matplotlib.figure import Figure
 from qtpy import QtCore
 from qtpy.QtGui import QDoubleValidator
-from matplotlib.figure import Figure
+from qtpy.QtWidgets import QWizard, QFileDialog, QDialog, QMessageBox
 
 from examples.create_modem_input import select_periods
 from mtpy.constants import epsg_dict
+from mtpy.gui.SmartMT.Components.PlotParameter import FrequencySelection, Rotation
 from mtpy.gui.SmartMT.gui.busy_indicators import ProgressBar
 from mtpy.gui.SmartMT.gui.export_dialog import PreviewDialog
 from mtpy.gui.SmartMT.gui.matplotlib_imabedding import MathTextLabel
-from mtpy.gui.SmartMT.gui.plot_parameter_guis import Rotation, FrequencySelect
 from mtpy.gui.SmartMT.ui_asset.wizard_export_modem import Ui_Wizard_esport_modem
 from mtpy.gui.SmartMT.utils.validator import FileValidator, DirectoryValidator
 from mtpy.modeling.modem_covariance import Covariance
@@ -67,7 +67,7 @@ class ExportDialogModEm(QWizard):
         self.ui.verticalLayout_error_types.addWidget(self._math_label_elbert)
 
         # add period selection
-        self._period_select_ui = FrequencySelect(
+        self._period_select_ui = FrequencySelection(
             self.ui.wizardPage_period,
             show_period=True,
             show_frequency=False,

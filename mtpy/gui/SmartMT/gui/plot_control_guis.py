@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Description:
-This file contains GUI parts for plot parameter configuration that cannot be implemented to a generalized modules (in plot_parameter_guis.py)
+This file contains GUI parts for plot parameter configuration that cannot be implemented to a generalized modules (in z_unit.py)
 """
 import numpy as np
 from qtpy.QtWidgets import QGroupBox
