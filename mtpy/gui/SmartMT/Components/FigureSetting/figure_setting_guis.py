@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from qtpy.QtWidgets import QGroupBox
 
-from mtpy.gui.SmartMT.gui.plot_parameter import COLORS, SIMPLE_COLORS
+from mtpy.gui.SmartMT.Components import COLORS, SIMPLE_COLORS
 from mtpy.gui.SmartMT.ui_asset.groupbox_aspect import Ui_GroupBox_aspect
 from mtpy.gui.SmartMT.ui_asset.groupbox_color_bar import Ui_GroupBox_ColorBar
 from mtpy.gui.SmartMT.ui_asset.groupbox_common import Ui_GroupBox_common_settings

@@ -10,7 +10,7 @@
 """
 import numpy as np
 
-from mtpy.gui.SmartMT.gui.figure_setting_guis import ColorBar, Font, AspectRatio, TextBox
+from mtpy.gui.SmartMT.Components.FigureSetting.figure_setting_guis import ColorBar, Font, AspectRatio, TextBox
 from mtpy.gui.SmartMT.gui.plot_control_guis import PlotControlResistivityPhasePseudoSection
 from mtpy.gui.SmartMT.gui.plot_parameter_guis import Ellipse, FrequencyTolerance, Arrow, Padding, \
     Scale, Stretch, LineDir, MeshGrid, UniqueFrequencies, FrequencySelect

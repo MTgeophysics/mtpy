@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 import numpy as np
 from qtpy import QtCore
-from qtpy.QtWidgets import QGroupBox, QStyledItemDelegate
-from qtpy.QtGui import QStandardItemModel, QStandardItem
 from qtpy.QtCore import Signal
+from qtpy.QtGui import QStandardItemModel, QStandardItem
+from qtpy.QtWidgets import QGroupBox, QStyledItemDelegate
 
+from mtpy.gui.SmartMT.Components import COLORS, SIMPLE_COLORS
 from mtpy.gui.SmartMT.gui.matplotlib_imabedding import MPLCanvas, Cursor
-from mtpy.gui.SmartMT.gui.plot_parameter import COLORS, SIMPLE_COLORS
 from mtpy.gui.SmartMT.ui_asset.groupbox_arrow import Ui_GroupBox_Arrow
 from mtpy.gui.SmartMT.ui_asset.groupbox_ellipse import Ui_GroupBoxEllipse
 from mtpy.gui.SmartMT.ui_asset.groupbox_frequency_period_index import Ui_GroupBox_Frequency_Period_Index

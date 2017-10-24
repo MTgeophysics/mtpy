@@ -8,30 +8,10 @@
     Author: YingzhiGou
     Date: 20/06/2017
 """
-import six
 from qtpy import QtCore
 from qtpy.QtWidgets import QGroupBox
-from matplotlib import colors as mcolors
 
 from mtpy.gui.SmartMT.ui_asset.plot_parameters import Ui_GroupBoxParameters
-
-COLORS = list(six.iteritems(mcolors.cnames))
-# # add the single letter colors
-# for name, rgb in six.iteritems(mcolors.ColorConverter.colors):
-#     hex_ = mcolors.rgb2hex(rgb)
-#     COLORS.append((name, hex_))
-# sort by name
-COLORS.sort(key=lambda c: c[0])
-
-SIMPLE_COLORS = ['b',  # blue
-                 'g',  # green
-                 'r',  # red
-                 'c',  # cyan
-                 'm',  # magenta
-                 'y',  # yellow
-                 'k',  # black
-                 'w'  # white
-                 ]
 
 
 class PlotParameter(QGroupBox):
@@ -171,5 +151,3 @@ class PlotParameter(QGroupBox):
 
     _horizontalalignment = ['right', 'center', 'left']
     _verticalalignment = ['top', 'center', 'bottom', 'baseline']
-
-
