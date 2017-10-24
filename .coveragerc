@@ -16,9 +16,9 @@ exclude_lines =
     if self\.debug
 
     # Don't complain if tests don't hit defensive assertion code:
-    raise AssertionError
-    raise NotImplementedError
+    raise NotImplemented.*
     raise .*Exception.*
+    raise .*Error.*
 
     # Don't complain if non-runnable code isn't run:
     if 0:

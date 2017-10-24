@@ -12,7 +12,12 @@ This repository was forked (2016-11-16) from https://github.com/geophysics/mtpy/
 Contact Us
 ========
 
-If you want to contribute, or have any questions please contact fei.zhang@ga.gov.au
+We are planning to merge this repo fork with the geophysics/mtpy beta-branch to establish a new repo.
+In the short term, if you want to contribute/collaborate, or have any questions please contact:
+
+| **Fei Zhang**
+| *Lead Developer*
+| fei.zhang@ga.gov.au
 
 Documentation
 =============
