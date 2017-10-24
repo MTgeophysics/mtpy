@@ -1,3 +1,13 @@
+# -*- coding: utf-8 -*-
+"""
+    Description:
+
+
+    Usage:
+
+    Author: YingzhiGou
+    Date: 20/06/2017
+"""
 from qtpy.QtWidgets import QGroupBox
 
 from mtpy.gui.SmartMT.ui_asset.groupbox_common import Ui_GroupBox_common_settings

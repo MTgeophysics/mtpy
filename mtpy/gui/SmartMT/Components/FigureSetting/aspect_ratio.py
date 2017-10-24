@@ -1,5 +1,15 @@
 from qtpy.QtWidgets import QGroupBox
 
+# -*- coding: utf-8 -*-
+"""
+    Description:
+
+
+    Usage:
+
+    Author: YingzhiGou
+    Date: 20/06/2017
+"""
 from mtpy.gui.SmartMT.ui_asset.groupbox_aspect import Ui_GroupBox_aspect
 
 

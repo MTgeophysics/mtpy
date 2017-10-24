@@ -1,6 +1,17 @@
 from qtpy.QtWidgets import QGroupBox
 
 from mtpy.gui.SmartMT.Components import COLORS, SIMPLE_COLORS
+
+# -*- coding: utf-8 -*-
+"""
+    Description:
+
+
+    Usage:
+
+    Author: YingzhiGou
+    Date: 20/06/2017
+"""
 from mtpy.gui.SmartMT.ui_asset.groupbox_font import Ui_GroupBox_Font
 
 
