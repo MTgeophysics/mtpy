@@ -9,7 +9,6 @@ import mtpy.core.edi as MTedi
 
 
 def main():
-
     fn = sys.argv[1]
 
     if not op.isfile(fn):
@@ -25,7 +24,6 @@ def main():
 
 
 def plotedi(fn, saveplot=False, component=None):
-
     edi = MTedi.Edi()
     try:
         edi.readfile(fn)
@@ -37,7 +35,7 @@ def plotedi(fn, saveplot=False, component=None):
         import matplotlib
         matplotlib.use('Agg')
 
-    from pylab import *
+    import pylab
 
     lo_comps = []
     if component is not None:
@@ -72,7 +70,7 @@ def plotedi(fn, saveplot=False, component=None):
         phi_te.append(p[0, 1] % 90)
         phi_tm.append(p[1, 0] % 90)
 
-    if np.mean(phi_te) > 90 and np.mean(phi_tm) > 90:
+    if pylab.np.mean(phi_te) > 90 and pylab.np.mean(phi_tm) > 90:
         phi_te = [i % 90 for i in phi_te]
         phi_tm = [i % 90 for i in phi_tm]
 
@@ -88,59 +86,59 @@ def plotedi(fn, saveplot=False, component=None):
     resplotelement_xy = None
     resplotelement_yx = None
 
-    axes = figure('EDI ' + fn)
-    ax1 = subplot(211)
+    axes = pylab.figure('EDI ' + fn)
+    ax1 = pylab.subplot(211)
 
     if 'n' in lo_comps:
-        resplotelement_xy = errorbar(
+        resplotelement_xy = pylab.errorbar(
             periods, res_te, reserr_te, marker='x', c='b', fmt='x')
     if 'e' in lo_comps:
-        resplotelement_yx = errorbar(
+        resplotelement_yx = pylab.errorbar(
             periods, res_tm, reserr_tm, marker='x', c='r', fmt='x')
-    xscale('log', nonposx='clip')
-    yscale('log', nonposy='clip')
-    minval = min(min(res_te, res_tm))
-    maxval = max(max(res_te, res_tm))
-    xlim(0.5 * min(periods), 2 * max(periods))
+    pylab.xscale('log', nonposx='clip')
+    pylab.yscale('log', nonposy='clip')
+    minval = pylab.min(pylab.min(res_te, res_tm))
+    maxval = pylab.max(pylab.max(res_te, res_tm))
+    pylab.xlim(0.5 * pylab.min(periods), 2 * pylab.max(periods))
 
     # ylim([0.1,100])
-    ylim([minval / 10, maxval * 10])
+    pylab.ylim([minval / 10, maxval * 10])
 
-    autoscale(False)
+    pylab.autoscale(False)
 
-    ylabel(r' $\rho$ (in $\Omega m$)')
-    setp(ax1.get_xticklabels(), visible=False)
+    pylab.ylabel(r' $\rho$ (in $\Omega m$)')
+    pylab.setp(ax1.get_xticklabels(), visible=False)
     # share x only
-    ax2 = subplot(212, sharex=ax1)
-    autoscale(False)
+    ax2 = pylab.subplot(212, sharex=ax1)
+    pylab.autoscale(False)
 
     # ylim(-45,135)
     if 'n' in lo_comps:
-        errorbar(periods, phi_te, phierr_te, marker='x', c='b', fmt='x')
+        pylab.errorbar(periods, phi_te, phierr_te, marker='x', c='b', fmt='x')
     if 'e' in lo_comps:
-        errorbar(periods, phi_tm, phierr_tm, marker='x', c='r', fmt='x')
-    ylabel('Phase angle ($\degree$)')
-    xlabel('Period (in s)')
-    plot([xlim()[0], xlim()[1]], [45, 45], '-.', c='0.7')
-    ylim([-0, 90])
+        pylab.errorbar(periods, phi_tm, phierr_tm, marker='x', c='r', fmt='x')
+    pylab.ylabel('Phase angle ($\degree$)')
+    pylab.xlabel('Period (in s)')
+    pylab.plot([pylab.xlim()[0], pylab.xlim()[1]], [45, 45], '-.', c='0.7')
+    pylab.ylim([-0, 90])
 
     ax1.legend([resplotelement_xy, resplotelement_yx], ['$E_{X}/B_Y$', '$E_Y/B_X$'], loc=2, ncol=1,
                numpoints=1, markerscale=0.8, frameon=True, labelspacing=0.3,
                prop={'size': 8}, fancybox=True, shadow=False)
 
-    tight_layout()
+    pylab.tight_layout()
     if saveplot is True:
 
-        ioff()
+        pylab.ioff()
         outfn = op.splitext(fn)[0] + '.png'
-        savefig(outfn, bbox_inches='tight')
-        close('all')
-        ion()
+        pylab.savefig(outfn, bbox_inches='tight')
+        pylab.close('all')
+        pylab.ion()
         return outfn
 
     else:
-        ion()
-        show(block=True)
+        pylab.ion()
+        pylab.show(block=True)
 
         return None
 
