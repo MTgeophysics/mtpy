@@ -4,7 +4,7 @@ from mtpy.gui.SmartMT.ui_asset.groupbox_common import Ui_GroupBox_common_setting
 from mtpy.utils.decorator import deprecated
 
 
-@deprecated
+@deprecated("no longer relevant, more detailed setting options are provided by other components")
 class CommonSettings(QGroupBox):
     def __init__(self, parent):
         QGroupBox.__init__(self, parent)
