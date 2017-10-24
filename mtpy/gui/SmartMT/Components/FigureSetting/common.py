@@ -15,7 +15,7 @@ from mtpy.utils.decorator import deprecated
 
 
 @deprecated("no longer relevant, more detailed setting options are provided by other components")
-class CommonSettings(QGroupBox):
+class CommonSettings(QGroupBox):  # pragma: no cover
     def __init__(self, parent):
         QGroupBox.__init__(self, parent)
         self.ui = Ui_GroupBox_common_settings()
