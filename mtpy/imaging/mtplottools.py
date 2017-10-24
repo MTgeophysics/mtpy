@@ -772,6 +772,7 @@ class MTplot(mt.MT):
     def __init__(self, fn=None, z_object=None, tipper_object=None, **kwargs):
                      
         super(MTplot, self).__init__()
+        
         self.fn = fn
         if self.fn is not None:
             self.read_mt_file(self.fn)
@@ -1551,6 +1552,7 @@ def get_rp_arrays(mt_list, plot_period, sort_by='line', line_direction='ew',
         for ii, mt in enumerate(mt_list):
             #get resisitivity and phase in a dictionary and append to a list
             rp = mt.get_ResPhase()
+#            rp = mt.Z
             
             for rr, rper in enumerate(plot_period):
                 jj = None

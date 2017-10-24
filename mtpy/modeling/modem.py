@@ -31,6 +31,7 @@ import mtpy.analysis.pt as mtpt
 import mtpy.imaging.mtcolors as mtcl
 import mtpy.utils.configfile as mtcfg
 import mtpy.utils.filehandling as mtfh
+import mtpy.utils.mesh_tools as mtmesh
 
 # Plotting tools
 import matplotlib.pyplot as plt
@@ -1913,82 +1914,7 @@ class Model(object):
         self.grid_z = np.array([nodes[0:ii].sum() for ii in range(nodes.size)]+\
                                 [nodes.sum()])
         
-    def get_padding_cells(self, cell_width, max_distance, num_cells, stretch):
-        """
-        get padding cells, which are exponentially increasing to a given 
-        distance.  Make sure that each cell is larger than the one previously.
-        
-        Arguments
-        -------------
-        
-            **cell_width** : float
-                             width of grid cell (m)
-                             
-            **max_distance** : float
-                               maximum distance the grid will extend (m)
-                               
-            **num_cells** : int
-                            number of padding cells
-                            
-            **stretch** : float
-                          base geometric factor
-                            
-        Returns
-        ----------------
-        
-            **padding** : np.ndarray
-                          array of padding cells for one side
-        
-        """
 
-        # compute scaling factor
-        scaling = ((max_distance)/(cell_width*stretch))**(1./(num_cells-1)) 
-        
-        # make padding cell
-        padding = np.zeros(num_cells)
-        for ii in range(num_cells):
-            # calculate the cell width for an exponential increase
-            exp_pad = np.round((cell_width*stretch)*scaling**ii, -2)
-            
-            # calculate the cell width for a geometric increase by 1.2
-            mult_pad = np.round((cell_width*stretch)*((1-stretch**(ii+1))/(1-stretch)), -2)
-            
-            # take the maximum width for padding
-            padding[ii] = max([exp_pad, mult_pad])
-
-        return padding
-
-    
-    def get_padding_from_stretch(self, cell_width, pad_stretch, num_cells):
-        """
-        get padding cells using pad stretch factor
-        
-        """
-        nodes = np.around((np.ones(num_cells)*cell_width)**pad_stretch,-2)
-        
-        return np.array([nodes[:i].sum() for i in range(1,len(nodes)+1)])
-        
-        
-
-    def get_padding_cells2(self, cell_width, core_max, max_distance, num_cells):
-        """
-        get padding cells, which are exponentially increasing to a given 
-        distance.  Make sure that each cell is larger than the one previously.
-        """
-        # check max distance is large enough to accommodate padding
-        max_distance = max(cell_width*num_cells, max_distance)
-
-        cells = np.around(np.logspace(np.log10(core_max),np.log10(max_distance),num_cells), -2)
-        cells -= core_max
-        
-        # check if first padding cell is at least as big as cell width
-        if cells[1] - cells[0] < cell_width:
-            pad_stretch = (core_max + cell_width)/core_max
-            cells = self.get_padding_from_stretch(cell_width, pad_stretch, num_cells)
-            print "Provided model extent not wide enough to contain padding, "+\
-            "expanding model to {} m".format((cells[-1] + core_max)*2)
-            
-        return cells
 
 
 
@@ -2043,28 +1969,28 @@ class Model(object):
 
         ## compute padding cells
         if self.pad_method == 'extent1':
-            padding_east = self.get_padding_cells(self.cell_size_east,
+            padding_east = mtmesh.get_padding_cells(self.cell_size_east,
                                                   self.ew_ext/2-east, 
                                                   self.pad_east,
                                                   self.pad_stretch_h)
-            padding_north = self.get_padding_cells(self.cell_size_north,
+            padding_north = mtmesh.get_padding_cells(self.cell_size_north,
                                                    self.ns_ext/2-north, 
                                                    self.pad_north,
                                                    self.pad_stretch_h)
         elif self.pad_method == 'extent2':
-            padding_east = self.get_padding_cells2(self.cell_size_east,
+            padding_east = mtmesh.get_padding_cells2(self.cell_size_east,
                                                    inner_east[-1],
                                                    self.ew_ext/2.,
                                                    self.pad_east)
-            padding_north = self.get_padding_cells2(self.cell_size_north,
+            padding_north = mtmesh.get_padding_cells2(self.cell_size_north,
                                                     inner_north[-1],
                                                    self.ns_ext/2.,
                                                    self.pad_north)
         elif self.pad_method == 'stretch':
-            padding_east = self.get_padding_from_stretch(self.cell_size_east,
+            padding_east = mtmesh.get_padding_from_stretch(self.cell_size_east,
                                                          self.pad_stretch_h,
                                                          self.pad_east)
-            padding_north = self.get_padding_from_stretch(self.cell_size_north,
+            padding_north = mtmesh.get_padding_from_stretch(self.cell_size_north,
                                                          self.pad_stretch_h,
                                                          self.pad_north)
    
@@ -2112,7 +2038,7 @@ class Model(object):
                            log_z])
                            
         #padding cells in the vertical
-        z_padding = self.get_padding_cells(z_nodes[-1],
+        z_padding = mtmesh.get_padding_cells(z_nodes[-1],
                                            self.z_bottom-z_nodes.sum(),
                                            self.pad_z,
                                            self.pad_stretch_v)
@@ -3353,7 +3279,7 @@ class Model(object):
             topo_core = self.surface_dict['topography'][padN:-padN,padE:-padE]            
             
             # log increasing airlayers, in reversed order
-            new_air_nodes = mtcc.make_log_increasing_array(self.z1_layer,
+            new_air_nodes = mtmesh.make_log_increasing_array(self.z1_layer,
                                                            topo_core.max() - topo_core.min(), 
                                                            self.n_airlayers, 
                                                            increment_factor=0.999)[::-1]
