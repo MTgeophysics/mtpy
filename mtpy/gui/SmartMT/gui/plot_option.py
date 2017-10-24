@@ -6,7 +6,8 @@
     Author: YingzhiGou
     Date: 20/06/2017
 """
-from PyQt4 import QtGui, QtCore
+from qtpy import QtCore
+from qtpy.QtWidgets import QWidget, QMessageBox
 
 from mtpy.gui.SmartMT.gui.busy_indicators import BusyOverlay
 from mtpy.gui.SmartMT.ui_asset.plot_options import Ui_PlotOption
@@ -15,7 +16,7 @@ from mtpy.gui.SmartMT.visualization.visualization_base import MPLCanvasWidget
 from mtpy.utils.mtpylog import MtPyLog
 
 
-class PlotOption(QtGui.QWidget):
+class PlotOption(QWidget):
     def __init__(self, parent, file_handler, selected_files):
         """
 
@@ -26,7 +27,7 @@ class PlotOption(QtGui.QWidget):
         :param selected_files:
         :type selected_files: set
         """
-        QtGui.QWidget.__init__(self, parent)
+        QWidget.__init__(self, parent)
         self._parent = parent
         self._logger = MtPyLog().get_mtpy_logger(__name__)
         self.file_handler = file_handler
@@ -113,12 +114,12 @@ class PlotOption(QtGui.QWidget):
         self.ui.pushButton_plot.setHidden(not self.ui.pushButton_plot.isHidden())
 
     def _plotting_error(self, msg, trace):
-        msg_box = QtGui.QMessageBox(self)
-        msg_box.setIcon(QtGui.QMessageBox.Critical)
+        msg_box = QMessageBox(self)
+        msg_box.setIcon(QMessageBox.Critical)
         msg_box.setText('Plotting Error')
         msg_box.setInformativeText(msg)
         msg_box.setDetailedText(trace)
-        msg_box.setStandardButtons(QtGui.QMessageBox.Close)
+        msg_box.setStandardButtons(QMessageBox.Close)
         msg_box.exec_()
         # QtGui.QMessageBox.critical(self,
         #                            'Plotting Error', msg,

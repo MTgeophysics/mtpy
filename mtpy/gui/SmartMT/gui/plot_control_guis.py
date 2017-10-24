@@ -4,7 +4,9 @@ Description:
 This file contains GUI parts for plot parameter configuration that cannot be implemented to a generalized modules (in plot_parameter_guis.py)
 """
 import numpy as np
-from PyQt4 import QtGui
+from qtpy.QtWidgets import QGroupBox
+from qtpy.QtGui import QDoubleValidator
+
 
 from mtpy.gui.SmartMT.ui_asset.groupbox_plot_control_mt_response import Ui_GroupBox_plot_control_mt_response
 from mtpy.gui.SmartMT.ui_asset.groupbox_plot_control_resistivity_phase_pseudo_section import \
@@ -13,9 +15,9 @@ from mtpy.gui.SmartMT.ui_asset.groupbox_plot_control_strike import Ui_GroupBox_p
 from mtpy.imaging.mtcolors import cmapdict
 
 
-class PlotControlMTResponse(QtGui.QGroupBox):
+class PlotControlMTResponse(QGroupBox):
     def __init__(self, parent):
-        QtGui.QGroupBox.__init__(self, parent)
+        QGroupBox.__init__(self, parent)
         self.ui = Ui_GroupBox_plot_control_mt_response()
         self.ui.setupUi(self)
 
@@ -64,13 +66,13 @@ class PlotControlMTResponse(QtGui.QGroupBox):
         self.ui.groupBox_plot_style.hide()
 
 
-class PlotControlResistivityPhasePseudoSection(QtGui.QGroupBox):
+class PlotControlResistivityPhasePseudoSection(QGroupBox):
     """
     plot settings for resistivity phase pseudo section that cannot be standardized
     """
 
     def __init__(self, parent):
-        QtGui.QGroupBox.__init__(self, parent)
+        QGroupBox.__init__(self, parent)
         self.ui = Ui_GroupBox_plot_control_resistivity_phase_pseudo_section()
         # set up gui
         self.ui.setupUi(self)
@@ -188,15 +190,15 @@ class PlotControlResistivityPhasePseudoSection(QtGui.QGroupBox):
         return self.ui.spinBox_tickspace.value()
 
 
-class PlotControlStrike(QtGui.QGroupBox):
+class PlotControlStrike(QGroupBox):
     def __init__(self, parent):
-        QtGui.QGroupBox.__init__(self, parent)
+        QGroupBox.__init__(self, parent)
         self.ui = Ui_GroupBox_plot_control_strike()
         self.ui.setupUi(self)
 
         # setup ui
         # format validator
-        self._double_validator = QtGui.QDoubleValidator(-np.inf, np.inf, 1000)
+        self._double_validator = QDoubleValidator(-np.inf, np.inf, 1000)
         self.ui.lineEdit_min.setValidator(self._double_validator)
         self.ui.lineEdit_max.setValidator(self._double_validator)
 

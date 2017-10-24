@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from PyQt4 import QtGui
+from qtpy.QtWidgets import QGroupBox
 
 from mtpy.gui.SmartMT.gui.plot_parameter import COLORS, SIMPLE_COLORS
 from mtpy.gui.SmartMT.ui_asset.groupbox_aspect import Ui_GroupBox_aspect
@@ -9,9 +9,9 @@ from mtpy.gui.SmartMT.ui_asset.groupbox_font import Ui_GroupBox_Font
 from mtpy.gui.SmartMT.ui_asset.groupbox_text_box import Ui_GroupBox_text_box
 
 
-class ColorBar(QtGui.QGroupBox):
+class ColorBar(QGroupBox):
     def __init__(self, parent):
-        QtGui.QGroupBox.__init__(self, parent)
+        QGroupBox.__init__(self, parent)
         self.ui = Ui_GroupBox_ColorBar()
         self.ui.setupUi(self)
 
@@ -82,9 +82,9 @@ class ColorBar(QtGui.QGroupBox):
             return None
 
 
-class Font(QtGui.QGroupBox):
+class Font(QGroupBox):
     def __init__(self, parent, simple_color=True, point_size=True, key_size=False):
-        QtGui.QGroupBox.__init__(self, parent)
+        QGroupBox.__init__(self, parent)
         self.ui = Ui_GroupBox_Font()
         self.ui.setupUi(self)
         self.ui.checkBox_size.stateChanged.connect(self.size_state_changed)
@@ -158,9 +158,9 @@ class Font(QtGui.QGroupBox):
             return COLORS[self.ui.comboBox_color.currentIndex()][1]
 
 
-class CommonSettings(QtGui.QGroupBox):
+class CommonSettings(QGroupBox):
     def __init__(self, parent):
-        QtGui.QGroupBox.__init__(self, parent)
+        QGroupBox.__init__(self, parent)
         self.ui = Ui_GroupBox_common_settings()
         self.ui.setupUi(self)
 
@@ -281,9 +281,9 @@ class CommonSettings(QtGui.QGroupBox):
     _verticalalignment = ['top', 'center', 'bottom', 'baseline']
 
 
-class AspectRatio(QtGui.QGroupBox):
+class AspectRatio(QGroupBox):
     def __init__(self, parent):
-        QtGui.QGroupBox.__init__(self, parent)
+        QGroupBox.__init__(self, parent)
         self.ui = Ui_GroupBox_aspect()
         self.ui.setupUi(self)
 
@@ -302,9 +302,9 @@ class AspectRatio(QtGui.QGroupBox):
             return self.ui.doubleSpinBox_aspect_float.value()
 
 
-class TextBox(QtGui.QGroupBox):
+class TextBox(QGroupBox):
     def __init__(self, parent, point_size=True, key_size=False):
-        QtGui.QGroupBox.__init__(self, parent)
+        QGroupBox.__init__(self, parent)
         self.ui = Ui_GroupBox_text_box()
         self.ui.setupUi(self)
 

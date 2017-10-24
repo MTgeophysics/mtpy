@@ -2,22 +2,22 @@ from __future__ import print_function
 
 import glob
 import os
-import pprint
 from unittest import TestCase
 
-from PyQt4 import QtGui, QtCore
-from PyQt4.QtTest import QTest
+from qtpy import QtCore
+from qtpy.QtWidgets import QFileDialog
+from qtpy.QtTest import QTest
 
 from mtpy.core import mt
 from mtpy.gui.SmartMT.gui.export_dialog_modem import ExportDialogModEm
 
 
 def _fake_exec_accept():
-    return QtGui.QFileDialog.Accepted
+    return QFileDialog.Accepted
 
 
 def _fake_exec_reject():
-    return QtGui.QFileDialog.Rejected
+    return QFileDialog.Rejected
 
 
 def _rewrite_text(widget, text):
@@ -48,7 +48,7 @@ class TestExportDialogModEm(TestCase):
         # create gui
         self.dialog = ExportDialogModEm()
         self.dialog.show()
-        QTest.qWaitForWindowShown(self.dialog)
+        QTest.qWaitForWindowActive(self.dialog)
 
     def tearDown(self):
         self.dialog.close()

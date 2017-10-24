@@ -3,23 +3,24 @@ from unittest import TestCase
 
 import matplotlib.pyplot as plt
 import numpy as np
-from PyQt4 import QtCore, QtGui
-from PyQt4.QtTest import QTest
+from qtpy import QtCore
+from qtpy.QtWidgets import QFileDialog, QMessageBox, QDialog
+from qtpy.QtTest import QTest
 
 from mtpy.gui.SmartMT.gui.export_dialog import ExportDialog, IMAGE_FORMATS
 
 
 def _fake_exec_accept():
-    return QtGui.QFileDialog.Accepted
+    return QFileDialog.Accepted
 
 
 def _fake_exec_reject():
-    return QtGui.QFileDialog.Rejected
+    return QFileDialog.Rejected
 
 
-def _rewrite_text(widget, text):
+def _rewrite_text(widget, text, modifier=QtCore.Qt.NoModifier):
     QTest.keyEvent(QTest.Click, widget, QtCore.Qt.Key_A, QtCore.Qt.ControlModifier)
-    QTest.keyClicks(widget, text)
+    QTest.keyClicks(widget, text, modifier=modifier)
     QTest.keyEvent(QTest.Click, widget, QtCore.Qt.Key_Enter)
 
 
@@ -50,7 +51,7 @@ class TestExportDialog(TestCase):
         # create GUI
         self.dialog = ExportDialog()
         self.dialog.show()
-        QTest.qWaitForWindowShown(self.dialog)
+        QTest.qWaitForWindowActive(self.dialog)
 
     def tearDown(self):
         self.dialog.close()
@@ -213,29 +214,29 @@ class TestExportDialog(TestCase):
 
     def _fake_msg_dialog_exec_overwrite(self):
         self.dialog._msg_box.show()
-        QTest.qWaitForWindowShown(self.dialog._msg_box)
+        QTest.qWaitForWindowActive(self.dialog._msg_box)
         QTest.mouseClick(self.dialog._msg_box_button_overwrite, QtCore.Qt.LeftButton)
-        return QtGui.QMessageBox.Accepted
+        return QMessageBox.Accepted
 
     def _fake_msg_dialog_exec_save_as(self):
         self.dialog._msg_box.show()
-        QTest.qWaitForWindowShown(self.dialog._msg_box)
+        QTest.qWaitForWindowActive(self.dialog._msg_box)
         QTest.mouseClick(self.dialog._msg_box_button_save_as, QtCore.Qt.LeftButton)
-        return QtGui.QMessageBox.Accepted
+        return QMessageBox.Accepted
 
     def _fake_msg_dialog_exec_cancel(self):
         self.dialog._msg_box.show()
-        QTest.qWaitForWindowShown(self.dialog._msg_box)
+        QTest.qWaitForWindowActive(self.dialog._msg_box)
         QTest.mouseClick(self.dialog._msg_box_button_cancel, QtCore.Qt.LeftButton)
-        return QtGui.QMessageBox.Cancel
+        return QMessageBox.Cancel
 
     def _fake_export_dialog_exec_cancel(self):
         QTest.mouseClick(self.dialog.ui.pushButton_cancel, QtCore.Qt.LeftButton)
-        return QtGui.QDialog.Rejected
+        return QDialog.Rejected
 
     def _fake_export_dialog_exec_export(self):
         QTest.mouseClick(self.dialog.ui.pushButton_export, QtCore.Qt.LeftButton)
-        return QtGui.QDialog.Accepted
+        return QDialog.Accepted
 
 
 def _transparent_test_gen(index, ext, description):

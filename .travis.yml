@@ -17,18 +17,20 @@ env:
   - MATPLOTLIB_VERSION=2.1.0 QT_VERSION=4
 #  - MATPLOTLIB_VERSION=2.1.0 QT_VERSION=5
   - MATPLOTLIB_VERSION=2.0.2 QT_VERSION=4
+  - MATPLOTLIB_VERSION=2.0.2 QT_VERSION=5
   - MATPLOTLIB_VERSION=1.5.3 QT_VERSION=4
 
 before_install:
   - chmod -vR +x ./bin/*
   - sudo rm /etc/apt/sources.list.d/mongodb-3.2.list  # temp fix for issue travis-ci/travis-ci#8554
+  - sudo add-apt-repository --yes ppa:ubuntu-sdk-team/ppa  # qt5 source
   - sudo apt update -qq
   # install qt4 and dependencies
   - if [ $QT_VERSION == 4 ]; then sudo apt -y install -qq "libqt4-dev"; fi  # install pyqt dependencies
-  - if [ $QT_VERSION == 5 ]; then sudo apt -y install -qq qtbase5-dev; fi
+  - if [ $QT_VERSION == 5 ]; then sudo apt -y install -qq qtdeclarative5-dev libqt5svg5-dev qtmultimedia5-dev && export QMAKE=/usr/lib/x86_64-linux-gnu/qt5/bin/qmake; fi  # install qt5 and switch to qt5 env
   - ./bin/install_pyqt.sh
   # build gdal from source as the one on ubuntu trusty is out-of-date
-#  - sudo apt -y install -qq libgdal-dev=2.2.2  # dependencies of dgal
+#  - sudo apt -y install -qq libgdal-dev=2.2.2  # dependencies of gdal
   - ./bin/install_libgdal.sh
   - export CPLUS_INCLUDE_PATH=/usr/include/gdal
   - export C_INCLUDE_PATH=/usr/include/gdal

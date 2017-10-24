@@ -2,9 +2,9 @@ import glob
 import os
 from unittest import TestCase
 
-from PyQt4.QtCore import QPoint
-from PyQt4.QtGui import QMainWindow, QWidget, QVBoxLayout
-from PyQt4.QtTest import QTest
+from qtpy.QtCore import QPoint
+from qtpy.QtWidgets import QMainWindow, QWidget, QVBoxLayout
+from qtpy.QtTest import QTest
 
 from mtpy.core import mt
 from mtpy.gui.SmartMT.gui.plot_parameter_guis import FrequencySelect
@@ -43,7 +43,7 @@ class TestFrequencySelect(TestCase):
         # create gui
         self.app = MainWindow()
         self.app.show()
-        QTest.qWaitForWindowShown(self.app)
+        QTest.qWaitForWindowActive(self.app)
 
 
     def _std_function_tests(self):
