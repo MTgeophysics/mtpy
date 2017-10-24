@@ -15,8 +15,9 @@ import sys
 import webbrowser
 
 import sip
-from PyQt4 import QtCore, QtGui
-from PyQt4.QtCore import QString
+from qtpy import QtCore
+from qtpy.QtWidgets import QMainWindow, QWidget, qApp, QMessageBox, QFileDialog, QDialog, QWizard, QMdiArea, QAction, \
+    QMdiSubWindow, QApplication
 
 from mtpy.core.edi_collection import EdiCollection
 from mtpy.gui.SmartMT.gui.busy_indicators import ProgressBar
@@ -34,9 +35,9 @@ from mtpy.utils.mtpylog import MtPyLog
 DEFAULT_GROUP_NAME = str(_translate("SmartMT_MainWindow", "Default Group", None))
 
 
-class StartQt4(QtGui.QMainWindow):
+class StartQt4(QMainWindow):
     def __init__(self, parent=None):
-        QtGui.QWidget.__init__(self, parent)
+        QWidget.__init__(self, parent)
         self._logger = MtPyLog().get_mtpy_logger(__name__)
         self._is_file_dialog_opened = False
         self.ui = Ui_SmartMT_MainWindow()
@@ -65,7 +66,7 @@ class StartQt4(QtGui.QMainWindow):
 
     def setup_menu(self):
         # connect exit menu
-        self.ui.actionExit.triggered.connect(QtGui.qApp.quit)
+        self.ui.actionExit.triggered.connect(qApp.quit)
         self.ui.actionOpen_edi_File.triggered.connect(self.file_dialog)
         self.ui.actionOpen_edi_Folder.triggered.connect(self.folder_dialog)
         self.ui.actionShow_Data_Collection.triggered.connect(self._toggle_tree_view)
@@ -94,8 +95,8 @@ class StartQt4(QtGui.QMainWindow):
 
     def _export_measurement_csv(self):
         # show files
-        msg = QtGui.QMessageBox()
-        msg.setIcon(QtGui.QMessageBox.Information)
+        msg = QMessageBox()
+        msg.setIcon(QMessageBox.Information)
         msg.setText("You are about to create measurement .csv files.")
         msg.setInformativeText("Please select an output directory after click \"OK\"\n"
                                "For the list of .edi files (stations) included in the creation, please click \"Show Details\"")
@@ -105,19 +106,19 @@ class StartQt4(QtGui.QMainWindow):
                 station=station, fn=self._file_handler.station2ref(station)
             ) for station in self._station_viewer.selected_stations])
         )
-        msg.setStandardButtons(QtGui.QMessageBox.Ok | QtGui.QMessageBox.Cancel)
+        msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
 
-        if msg.exec_() == QtGui.QMessageBox.Ok:
-            dialog = QtGui.QFileDialog(self)
+        if msg.exec_() == QMessageBox.Ok:
+            dialog = QFileDialog(self)
             dir_name = None
             dialog.setWindowTitle("Selecting Output Directory ...")
-            dialog.setFileMode(QtGui.QFileDialog.DirectoryOnly)
+            dialog.setFileMode(QFileDialog.DirectoryOnly)
             while dir_name is None:
-                if dialog.exec_() == QtGui.QDialog.Accepted:
+                if dialog.exec_() == QDialog.Accepted:
                     dir_name = dialog.selectedFiles()[0]
                     dir_name = str(dir_name)
                     if not os.path.isdir(dir_name):
-                        QtGui.QMessageBox.information(self, "NOTE",
+                        QMessageBox.information(self, "NOTE",
                                                       "Please select a directory to save the created .csv files.")
                         dir_name = None  # will read again
                 else:
@@ -130,13 +131,13 @@ class StartQt4(QtGui.QMainWindow):
                     ]
                 )
                 collect.create_measurement_csv(dir_name)
-                QtGui.QMessageBox.information(self, "Creation Completed", "Output written to %s" % dir_name)
+                QMessageBox.information(self, "Creation Completed", "Output written to %s" % dir_name)
                 webbrowser.open(dir_name)
 
     def _export_phase_tensor_csv(self):
         # show files
-        msg = QtGui.QMessageBox()
-        msg.setIcon(QtGui.QMessageBox.Information)
+        msg = QMessageBox()
+        msg.setIcon(QMessageBox.Information)
         msg.setText("You are about to create phase tensor .csv files.")
         msg.setInformativeText("Please select an output directory after click \"OK\"\n"
                                "For the list of .edi files (stations) included in the creation, please click \"Show Details\"")
@@ -146,19 +147,19 @@ class StartQt4(QtGui.QMainWindow):
                 station=station, fn=self._file_handler.station2ref(station)
             ) for station in self._station_viewer.selected_stations])
         )
-        msg.setStandardButtons(QtGui.QMessageBox.Ok | QtGui.QMessageBox.Cancel)
+        msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
 
-        if msg.exec_() == QtGui.QMessageBox.Ok:
-            dialog = QtGui.QFileDialog(self)
+        if msg.exec_() == QMessageBox.Ok:
+            dialog = QFileDialog(self)
             dir_name = None
             dialog.setWindowTitle("Selecting Output Directory ...")
-            dialog.setFileMode(QtGui.QFileDialog.DirectoryOnly)
+            dialog.setFileMode(QFileDialog.DirectoryOnly)
             while dir_name is None:
-                if dialog.exec_() == QtGui.QDialog.Accepted:
+                if dialog.exec_() == QDialog.Accepted:
                     dir_name = dialog.selectedFiles()[0]
                     dir_name = str(dir_name)
                     if not os.path.isdir(dir_name):
-                        QtGui.QMessageBox.information(self, "NOTE",
+                        QMessageBox.information(self, "NOTE",
                                                       "Please select a directory to save the created .csv files.")
                         dir_name = None  # will read again
                 else:
@@ -171,13 +172,13 @@ class StartQt4(QtGui.QMainWindow):
                     ]
                 )
                 collect.create_phase_tensor_csv(dir_name)
-                QtGui.QMessageBox.information(self, "Creation Completed", "Output written to %s" % dir_name)
+                QMessageBox.information(self, "Creation Completed", "Output written to %s" % dir_name)
                 webbrowser.open(dir_name)
 
     def _export_shape_file(self, *args, **kwargs):
         # show files
-        msg = QtGui.QMessageBox()
-        msg.setIcon(QtGui.QMessageBox.Information)
+        msg = QMessageBox()
+        msg.setIcon(QMessageBox.Information)
         msg.setText("You are about to create shape files.")
         msg.setInformativeText("Please select an output directory after click \"OK\"\n"
                                "For the list of .edi files (stations) included in the creation, please click \"Show Details\"")
@@ -187,19 +188,19 @@ class StartQt4(QtGui.QMainWindow):
                 station=station, fn=self._file_handler.station2ref(station)
             ) for station in self._station_viewer.selected_stations])
         )
-        msg.setStandardButtons(QtGui.QMessageBox.Ok | QtGui.QMessageBox.Cancel)
+        msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
 
-        if msg.exec_() == QtGui.QMessageBox.Ok:
-            dialog = QtGui.QFileDialog(self)
+        if msg.exec_() == QMessageBox.Ok:
+            dialog = QFileDialog(self)
             dir_name = None
             dialog.setWindowTitle("Selecting Output Directory ...")
-            dialog.setFileMode(QtGui.QFileDialog.DirectoryOnly)
+            dialog.setFileMode(QFileDialog.DirectoryOnly)
             while dir_name is None:
-                if dialog.exec_() == QtGui.QDialog.Accepted:
+                if dialog.exec_() == QDialog.Accepted:
                     dir_name = dialog.selectedFiles()[0]
                     dir_name = str(dir_name)
                     if not os.path.isdir(dir_name):
-                        QtGui.QMessageBox.information(self, "NOTE",
+                        QMessageBox.information(self, "NOTE",
                                                       "Please select a directory to save the created shape files.")
                         dir_name = None  # will read again
                 else:
@@ -212,7 +213,7 @@ class StartQt4(QtGui.QMainWindow):
                     ]
                 )
                 collect.create_mt_station_gdf(dir_name)
-                QtGui.QMessageBox.information(self, "Creation Completed", "Output written to %s" % dir_name)
+                QMessageBox.information(self, "Creation Completed", "Output written to %s" % dir_name)
                 webbrowser.open(dir_name)
 
     def _export_image(self, *args, **kwargs):
@@ -224,10 +225,10 @@ class StartQt4(QtGui.QMainWindow):
             except Exception as e:
                 frm = inspect.trace()[-1]
                 mod = inspect.getmodule(frm[0])
-                QtGui.QMessageBox.critical(self,
+                QMessageBox.critical(self,
                                            'Exporting Error',
                                            "{}: {}".format(mod.__name__, e.message),
-                                           QtGui.QMessageBox.Close)
+                                           QMessageBox.Close)
 
     def _export_modem(self, *args, **kwargs):
         mt_objs = []
@@ -237,7 +238,7 @@ class StartQt4(QtGui.QMainWindow):
             mt_objs.append(mt_obj)
         self._export_dialog_modem.set_data(mt_objs)
         self._export_dialog_modem.restart()
-        if self._export_dialog_modem.exec_() == QtGui.QWizard.Accepted:
+        if self._export_dialog_modem.exec_() == QWizard.Accepted:
             self._export_dialog_modem.export_data()
 
     def _tile_windows(self, *args, **kwargs):
@@ -263,25 +264,25 @@ class StartQt4(QtGui.QMainWindow):
             self.ui.actionWindowed_View.setChecked(False)
             self.ui.actionTile_Windows.setEnabled(False)
             self.ui.actionCascade_Windows.setEnabled(False)
-            self.ui.mdiArea.setViewMode(QtGui.QMdiArea.TabbedView)
+            self.ui.mdiArea.setViewMode(QMdiArea.TabbedView)
         elif self.ui.actionWindowed_View.isEnabled() and self.ui.actionWindowed_View.isChecked():
             self.ui.actionWindowed_View.setEnabled(False)
             self.ui.actionTabbed_View.setEnabled(True)
             self.ui.actionTabbed_View.setChecked(False)
             self.ui.actionTile_Windows.setEnabled(True)
             self.ui.actionCascade_Windows.setEnabled(True)
-            self.ui.mdiArea.setViewMode(QtGui.QMdiArea.SubWindowView)
+            self.ui.mdiArea.setViewMode(QMdiArea.SubWindowView)
 
     def file_dialog(self, *args, **kwargs):
-        dialog = QtGui.QFileDialog(self)
+        dialog = QFileDialog(self)
         if not self._is_file_dialog_opened:
             # set the initial directory to HOME
             dialog.setDirectory(os.path.expanduser("~"))
             self._is_file_dialog_opened = True
         dialog.setWindowTitle('Open .edi Files...')
         dialog.setNameFilter('.edi files (*.edi)')
-        dialog.setFileMode(QtGui.QFileDialog.ExistingFiles)
-        if dialog.exec_() == QtGui.QDialog.Accepted:
+        dialog.setFileMode(QFileDialog.ExistingFiles)
+        if dialog.exec_() == QDialog.Accepted:
             file_list = dialog.selectedFiles()
             self._progress_bar.setMaximumValue(len(file_list))
             self._progress_bar.onStart()
@@ -310,22 +311,22 @@ class StartQt4(QtGui.QMainWindow):
             self._logger.info("nothing to plot")
 
     def folder_dialog(self, *args, **kwargs):
-        dialog = QtGui.QFileDialog(self)
+        dialog = QFileDialog(self)
         if not self._is_file_dialog_opened:
             # set the initial directory to HOME
             dialog.setDirectory(os.path.expanduser("~"))
             self._is_file_dialog_opened = True
         dir_name = None
         dialog.setWindowTitle("Open .edi Directory...")
-        dialog.setFileMode(QtGui.QFileDialog.DirectoryOnly)
+        dialog.setFileMode(QFileDialog.DirectoryOnly)
         while dir_name is None:
-            if dialog.exec_() == QtGui.QDialog.Accepted:
+            if dialog.exec_() == QDialog.Accepted:
                 dir_name = dialog.selectedFiles()[0]
                 dir_name = str(dir_name)
                 file_list = [os.path.join(dir_name, edi) for edi in os.listdir(dir_name) if edi.endswith("edi")]
                 if not file_list:
                     # empty list
-                    QtGui.QMessageBox.information(self, "NOTE",
+                    QMessageBox.information(self, "NOTE",
                                                   "Directory does not contain any .edi file, please select again.")
                     dir_name = None  # will read again
                 else:
@@ -402,13 +403,13 @@ class StartQt4(QtGui.QMainWindow):
         subwindow = StartQt4.MDISubWindow(self)
         subwindow.setWindowTitle(title)
         if tooltip:
-            subwindow.setToolTip(QString("<p>" + tooltip + "</p>"))
+            subwindow.setToolTip("<p>" + tooltip + "</p>")
         subwindow.setWidget(widget)
         subwindow.resize(widget.size())
         self.ui.mdiArea.addSubWindow(subwindow)
 
         # create menu action
-        new_window_action = QtGui.QAction(self)
+        new_window_action = QAction(self)
         new_window_action.setObjectName(_fromUtf8("actionSubwindow%d" % self._subwindow_counter))
         new_window_action.setText(_translate("SmartMT_MainWindow", title, None))
         new_window_action.triggered.connect(subwindow.show_and_focus)
@@ -421,7 +422,7 @@ class StartQt4(QtGui.QMainWindow):
 
         return subwindow, new_window_action
 
-    class MDISubWindow(QtGui.QMdiSubWindow):
+    class MDISubWindow(QMdiSubWindow):
         def __init__(self, main_ui, parent=None, flags=0):
             """
 
@@ -430,7 +431,7 @@ class StartQt4(QtGui.QMainWindow):
             :param parent:
             :param flags:
             """
-            super(QtGui.QMdiSubWindow, self).__init__(parent)
+            super(QMdiSubWindow, self).__init__(parent)
             self._main_ui = main_ui
 
         def show_and_focus(self):
@@ -462,7 +463,7 @@ class StartQt4(QtGui.QMainWindow):
 
 
 if __name__ == "__main__":
-    app = QtGui.QApplication(sys.argv)
+    app = QApplication(sys.argv)
     smartMT = StartQt4()
     smartMT.show()
 

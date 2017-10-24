@@ -26,7 +26,6 @@ coh Ey : col 5
 #=================================================================
 
 
-import numpy as np
 import os.path as op
 import sys
 
@@ -51,7 +50,7 @@ def plotcoh(fn, saveplot=False):
         import matplotlib
         matplotlib.use('Agg')
 
-    from pylab import *
+    import pylab
 
     periods = data[:, 0]
     if data.shape[1] != 99:
@@ -61,35 +60,35 @@ def plotcoh(fn, saveplot=False):
         coh1 = data[:, 2]
         coh2 = data[:, 4]
 
-        ax1 = figure('coherence')
+        ax1 = pylab.figure('coherence')
 
         cohplotelement1 = None
         cohplotelement2 = None
         cohplotelement3 = None
         cohplotelement4 = None
 
-        plot(periods, coh1)
-        cohplotelement1 = scatter(periods, coh1, marker='x', c='b')
+        pylab.plot(periods, coh1)
+        cohplotelement1 = pylab.scatter(periods, coh1, marker='x', c='b')
 
-        plot(periods, coh2)
-        cohplotelement2 = scatter(periods, coh2, marker='x', c='r')
+        pylab.plot(periods, coh2)
+        cohplotelement2 = pylab.scatter(periods, coh2, marker='x', c='r')
         try:
-            plot(periods, data[:, 6], 'g:')
-            cohplotelement3 = scatter(periods, data[:, 6], marker='d', c='g')
+            pylab.plot(periods, data[:, 6], 'g:')
+            cohplotelement3 = pylab.scatter(periods, data[:, 6], marker='d', c='g')
         except:
             pass
         try:
-            plot(periods, data[:, 8], 'y:')
-            cohplotelement4 = scatter(periods, data[:, 8], marker='d', c='y')
+            pylab.plot(periods, data[:, 8], 'y:')
+            cohplotelement4 = pylab.scatter(periods, data[:, 8], marker='d', c='y')
         except:
             pass
 
-        xscale('log', nonposx='clip')
-        ylim([-.1, 1.1])
-        xlim(0.5 * min(periods), 2 * max(periods))
-        autoscale(False)
-        xlabel('Period (in s)')
-        ylabel('Coherence$^2$')
+        pylab.xscale('log', nonposx='clip')
+        pylab.ylim([-.1, 1.1])
+        pylab.xlim(0.5 * pylab.min(periods), 2 * pylab.max(periods))
+        pylab.autoscale(False)
+        pylab.xlabel('Period (in s)')
+        pylab.ylabel('Coherence$^2$')
 
         eps = 0.05
         if (cohplotelement3 is not None) and (cohplotelement4 is not None):
@@ -105,17 +104,17 @@ def plotcoh(fn, saveplot=False):
                        prop={'size': 9}, fancybox=True, shadow=False)
 
         if saveplot is True:
-            ioff()
+            pylab.ioff()
             outfn = op.splitext(fn)[0] + '.coh.png'
-            savefig(outfn, bbox_inches='tight')
-            close('all')
-            ion()
+            pylab.savefig(outfn, bbox_inches='tight')
+            pylab.close('all')
+            pylab.ion()
             return outfn
 
         else:
-            tight_layout()
-            ion()
-            show(block=True)
+            pylab.tight_layout()
+            pylab.ion()
+            pylab.show(block=True)
 
             return None
 

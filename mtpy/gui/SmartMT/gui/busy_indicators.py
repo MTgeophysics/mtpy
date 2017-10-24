@@ -1,8 +1,10 @@
 import numpy as np
-from PyQt4 import QtGui, QtCore
+from qtpy import QtCore
+from qtpy.QtWidgets import QWidget, QGridLayout, QProgressBar, QLabel, QSizePolicy
+from qtpy.QtGui import QPalette, QPainter, QColor, QBrush, QPen
 
 
-class ProgressBar(QtGui.QWidget):
+class ProgressBar(QWidget):
     style = """
     QProgressBar
     {
@@ -11,20 +13,21 @@ class ProgressBar(QtGui.QWidget):
         text-align: center;
     }
     """
+
     def __init__(self, parent=None, title=None, minimum=0, maximum=1, value=0):
         super(ProgressBar, self).__init__(parent)
-        layout = QtGui.QGridLayout(self)
+        layout = QGridLayout(self)
 
-        self.progressbar = QtGui.QProgressBar(self)
+        self.progressbar = QProgressBar(self)
         self.progressbar.setMinimum(minimum)
         self.progressbar.setMaximum(maximum)
         self.progressbar.setValue(value)
         self.progressbar.setStyleSheet(self.style)
-        self.label = QtGui.QLabel("")
+        self.label = QLabel("")
         self.label.setStyleSheet("Qlabel { font-size: 20px }")
         self.label.setAlignment(QtCore.Qt.AlignCenter)
 
-        self.setSizePolicy(QtGui.QSizePolicy.Fixed, QtGui.QSizePolicy.Fixed)
+        self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         self.setFixedSize(256, 64)
         # self.progressbar.setValue(1)
         layout.addWidget(self.progressbar, 0, 0)
@@ -55,31 +58,31 @@ class ProgressBar(QtGui.QWidget):
         self.label.setText(string)
 
 
-class BusyOverlay(QtGui.QWidget):
+class BusyOverlay(QWidget):
     """
     display an overlay to the window to indicate busy status
     this code is based on https://wiki.python.org/moin/PyQt/A%20full%20widget%20waiting%20indicator
     """
 
     def __init__(self, parent=None):
-        QtGui.QWidget.__init__(self, parent)
-        palette = QtGui.QPalette(self.palette())
+        QWidget.__init__(self, parent)
+        palette = QPalette(self.palette())
         palette.setColor(palette.Background, QtCore.Qt.transparent)
         self.setPalette(palette)
         self.timer = None
 
     def paintEvent(self, event):
-        painter = QtGui.QPainter()
+        painter = QPainter()
         painter.begin(self)
-        painter.setRenderHint(QtGui.QPainter.Antialiasing)
-        painter.fillRect(event.rect(), QtGui.QBrush(QtGui.QColor(255, 255, 255, 127)))
-        painter.setPen(QtGui.QPen(QtCore.Qt.NoPen))
+        painter.setRenderHint(QPainter.Antialiasing)
+        painter.fillRect(event.rect(), QBrush(QColor(255, 255, 255, 127)))
+        painter.setPen(QPen(QtCore.Qt.NoPen))
 
         for i in range(6):
             if (self.counter / 5) % 6 == i:
-                painter.setBrush(QtGui.QBrush(QtGui.QColor(127 + (self.counter % 5) * 32, 127, 127)))
+                painter.setBrush(QBrush(QColor(127 + (self.counter % 5) * 32, 127, 127)))
             else:
-                painter.setBrush(QtGui.QBrush(QtGui.QColor(127, 127, 127)))
+                painter.setBrush(QBrush(QColor(127, 127, 127)))
             painter.drawEllipse(
                 self.width() / 2 + 30 * np.cos(2 * np.pi * i / 6.0) - 10,
                 self.height() / 2 + 30 * np.sin(2 * np.pi * i / 6.0) - 10,

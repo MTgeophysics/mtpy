@@ -9,12 +9,13 @@
     Author: YingzhiGou
     Date: 20/06/2017
 """
-from PyQt4 import QtGui, QtCore
+from qtpy import QtCore
+from qtpy.QtWidgets import QWidget
 
 from mtpy.gui.SmartMT.ui_asset.station_status import Ui_StationStatus
 
 
-class StationSummary(QtGui.QWidget):
+class StationSummary(QWidget):
     def __init__(self, parent, file_handler, selected_files):
         """
 
@@ -25,7 +26,7 @@ class StationSummary(QtGui.QWidget):
         :param selected_files:
         :type selected_files: set
         """
-        QtGui.QWidget.__init__(self, parent)
+        QWidget.__init__(self, parent)
         self.file_handler = file_handler
         self.selected_stations = selected_files
         self.ui = Ui_StationStatus()
