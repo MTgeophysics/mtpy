@@ -1,1 +1,2 @@
 repo_token: cAPLOTdLM6wuguwHgdUsBqtDprbhVZfRp
+parallel: true  # merge the result from parallel build on travis
