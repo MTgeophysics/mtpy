@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from qtpy.QtWidgets import QGroupBox
 
 from mtpy.gui.SmartMT.ui_asset.groupbox_text_box import Ui_GroupBox_text_box
