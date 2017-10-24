@@ -1165,7 +1165,7 @@ class Zen3D(object):
         return date_time
         
     #==================================================    
-    def apply_adaptive_notch_filter(self, notches=list(np.arange(60, 1860, 120)),
+    def apply_adaptive_notch_filter(self, notches=np.arange(60, 1860, 60),
                                     notch_radius=0.5, freq_rad=0.5, rp=0.1):
         """
         apply notch filter to the data that finds the peak around each 
@@ -1182,7 +1182,7 @@ class Zen3D(object):
         
         
         """
-        if notches == None:
+        if notches is None:
             return
         try:
             self.ts_obj.ts.data
