@@ -472,8 +472,12 @@ class Z3D_Metadata(object):
                     setattr(self, t_key.lower(), t_list[1])
                     for t_str in t_list[2:]:
                         t_str = t_str.replace('\x00', '').replace('|', '')
-                        self.board_cal.append([float(tt.strip()) 
-                                           for tt in t_str.strip().split(':')])
+                        try:
+                            self.board_cal.append([float(tt.strip()) 
+                                               for tt in t_str.strip().split(':')])
+                        except ValueError:
+                            self.board_cal.append([tt.strip() 
+                                               for tt in t_str.strip().split(':')])
                 # some times the coil calibration does not start on its own line
                 # so need to parse the line up and I'm not sure what the calibration
                 # version is for so I have named it odd
@@ -516,10 +520,13 @@ class Z3D_Metadata(object):
             self.coil_cal = np.core.records.fromrecords(self.coil_cal, 
                                            names='frequency, amplitude, phase',
                                            formats='f8, f8, f8')
-        if len(self.board_cal) > 0:  
-            self.board_cal = np.core.records.fromrecords(self.board_cal, 
-                                   names='frequency, rate, amplitude, phase',
-                                   formats='f8, f8, f8, f8')
+        if len(self.board_cal) > 0: 
+            try:
+                self.board_cal = np.core.records.fromrecords(self.board_cal, 
+                                                             names='frequency, rate, amplitude, phase',
+                                                             formats='f8, f8, f8, f8')
+            except ValueError:
+                self.board_cal = None
                                    
         self.station = '{0}{1}'.format(self.line_name,
                                        self.rx_xyz0.split(':')[0])
