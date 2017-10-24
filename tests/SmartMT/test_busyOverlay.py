@@ -4,7 +4,7 @@ from qtpy.QtWidgets import QMainWindow, QWidget, QTextEdit, QGridLayout, QPushBu
 from qtpy.QtTest import QTest
 
 from mtpy.gui.SmartMT.gui.busy_indicators import BusyOverlay
-from tests.SmartMT.gui import _click_area
+from tests.SmartMT import _click_area
 
 
 class MainWindow(QMainWindow):

@@ -8,7 +8,7 @@ from qtpy.QtTest import QTest
 
 from mtpy.core import mt
 from mtpy.gui.SmartMT.gui.plot_parameter_guis import FrequencySelect
-from tests.SmartMT.gui import _click_area
+from tests.SmartMT import _click_area
 
 edi_paths = [
     "tests/data/edifiles",
