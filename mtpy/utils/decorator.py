@@ -16,12 +16,12 @@ import inspect
 
 
 class deprecated(object):
-    def __init__(self, reason):
+    def __init__(self, reason):  # pragma: no cover
         if inspect.isclass(reason) or inspect.isfunction(reason):
             raise TypeError("Reason for deprecation must be supplied")
         self.reason = reason
 
-    def __call__(self, cls_or_func):
+    def __call__(self, cls_or_func):  # pragma: no cover
         if inspect.isfunction(cls_or_func):
             if hasattr(cls_or_func, 'func_code'):
                 _code = cls_or_func.func_code
@@ -42,7 +42,7 @@ class deprecated(object):
         msg = fmt.format(name=cls_or_func.__name__, reason=self.reason)
 
         @functools.wraps(cls_or_func)
-        def new_func(*args, **kwargs):
+        def new_func(*args, **kwargs):  # pragma: no cover
             import warnings
             warnings.simplefilter('always', DeprecationWarning)  # turn off filter
             warnings.warn_explicit(msg, category=DeprecationWarning, filename=filename, lineno=lineno)

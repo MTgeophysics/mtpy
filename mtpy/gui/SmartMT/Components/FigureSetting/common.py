@@ -1,8 +1,10 @@
 from qtpy.QtWidgets import QGroupBox
 
 from mtpy.gui.SmartMT.ui_asset.groupbox_common import Ui_GroupBox_common_settings
+from mtpy.utils.decorator import deprecated
 
 
+@deprecated
 class CommonSettings(QGroupBox):
     def __init__(self, parent):
         QGroupBox.__init__(self, parent)
