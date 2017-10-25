@@ -17,14 +17,13 @@ import matplotlib.pyplot as plt
 from qtpy import QtCore, QT_VERSION
 from qtpy.QtWidgets import QWidget, QVBoxLayout
 from qtpy.QtCore import Signal
-
-if QT_VERSION.startswith('4'):
-    from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
-    from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as NavigationToolbar
-else:
-    from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-    from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure
+if QT_VERSION.startswith('4'):
+    from matplotlib.backends.backend_qt4agg import FigureCanvas
+    from matplotlib.backends.backend_qt4 import NavigationToolbar2QT as NavigationToolbar
+else:
+    from matplotlib.backends.backend_qt5agg import FigureCanvas
+    from matplotlib.backends.backend_qt5 import NavigationToolbar2QT as NavigationToolbar
 
 from mtpy.gui.SmartMT.gui.plot_parameter import PlotParameter
 from mtpy.utils.mtpylog import MtPyLog

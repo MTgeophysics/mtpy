@@ -11,15 +11,14 @@
     Date: 20/06/2017
 """
 from matplotlib import patches
+from matplotlib.figure import Figure
 from matplotlib.widgets import AxesWidget
 from qtpy import QT_VERSION
 
 if QT_VERSION.startswith('4'):
-    from matplotlib.backends.backend_qt4agg import Figure
-    from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
+    from matplotlib.backends.backend_qt4agg import FigureCanvas
 else:
-    from matplotlib.backends.backend_qt5agg import Figure
-    from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+    from matplotlib.backends.backend_qt5agg import FigureCanvas
 
 from qtpy.QtWidgets import QSizePolicy, QWidget, QVBoxLayout, QApplication
 
