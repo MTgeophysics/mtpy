@@ -18,7 +18,9 @@ from qtpy.QtCore import Signal
 from matplotlib import artist
 
 from mtpy.gui.SmartMT.gui.matplotlib_imabedding import MPLCanvas
-from mtpy.gui.SmartMT.ui_asset.station_viewer import Ui_StationViewer, _translate, _fromUtf8
+from mtpy.gui.SmartMT.ui_asset.station_viewer import Ui_StationViewer
+
+_translate = QtCore.QCoreApplication.translate
 
 MARKERS = ['*', 'D', 'H', '^']
 COLORS = ['g', 'r', 'c', 'm', 'y', 'k', 'b']
@@ -420,31 +422,31 @@ class StationViewer(QWidget):
             # create new group action
             self.actionCreate_New_Group = QAction(self)
             self.actionCreate_New_Group.setEnabled(True)
-            self.actionCreate_New_Group.setObjectName(_fromUtf8("actionCreate_New_Group"))
+            self.actionCreate_New_Group.setObjectName("actionCreate_New_Group")
             self.addAction(self.actionCreate_New_Group)
 
             self.actionDismiss_Group = QAction(self)
             self.actionDismiss_Group.setEnabled(True)
-            self.actionDismiss_Group.setObjectName(_fromUtf8("actionDismiss_Group"))
+            self.actionDismiss_Group.setObjectName("actionDismiss_Group")
             self.addAction(self.actionDismiss_Group)
 
             self.actionAdd_To_Group = QAction(self)
             self.actionAdd_To_Group.setEnabled(True)
-            self.actionAdd_To_Group.setObjectName(_fromUtf8("actionAdd_To_Group"))
+            self.actionAdd_To_Group.setObjectName("actionAdd_To_Group")
             self.addAction(self.actionAdd_To_Group)
 
             self.addSeparator()
             # item operations
             self.actionRemove_Station = QAction(self)
             self.actionRemove_Station.setEnabled(True)
-            self.actionRemove_Station.setObjectName(_fromUtf8("actionRemove_Station"))
+            self.actionRemove_Station.setObjectName("actionRemove_Station")
             self.addAction(self.actionRemove_Station)
 
             self.addSeparator()
             # plot menu action
             self.actionPlot = QAction(self)
             self.actionPlot.setEnabled(False)
-            self.actionPlot.setObjectName(_fromUtf8("actionPlot"))
+            self.actionPlot.setObjectName("actionPlot")
             self.addAction(self.actionPlot)
 
             self.retranslateUi()

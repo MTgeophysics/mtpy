@@ -26,16 +26,17 @@ from mtpy.gui.SmartMT.gui.export_dialog_modem import ExportDialogModEm
 from mtpy.gui.SmartMT.gui.plot_option import PlotOption
 from mtpy.gui.SmartMT.gui.station_summary import StationSummary
 from mtpy.gui.SmartMT.gui.station_viewer import StationViewer
-from mtpy.gui.SmartMT.ui_asset.main_window import Ui_SmartMT_MainWindow, _fromUtf8, _translate
+from mtpy.gui.SmartMT.ui_asset.main_window import Ui_SmartMT_MainWindow
 from mtpy.gui.SmartMT.utils.file_handler import FileHandler, FileHandlingException
 from mtpy.gui.SmartMT.visualization.visualization_base import MPLCanvasWidget
 from mtpy.utils.decorator import deprecated
 from mtpy.utils.mtpylog import MtPyLog
 
+_translate = QtCore.QCoreApplication.translate
 DEFAULT_GROUP_NAME = str(_translate("SmartMT_MainWindow", "Default Group", None))
 
 
-class StartQt4(QMainWindow):
+class StartGUI(QMainWindow):
     def __init__(self, parent=None):
         QWidget.__init__(self, parent)
         self._logger = MtPyLog().get_mtpy_logger(__name__)
@@ -400,7 +401,7 @@ class StartQt4(QMainWindow):
                 title = new_title
 
         widget.setAttribute(QtCore.Qt.WA_DeleteOnClose, True)
-        subwindow = StartQt4.MDISubWindow(self)
+        subwindow = StartGUI.MDISubWindow(self)
         subwindow.setWindowTitle(title)
         if tooltip:
             subwindow.setToolTip("<p>" + tooltip + "</p>")
@@ -410,7 +411,7 @@ class StartQt4(QMainWindow):
 
         # create menu action
         new_window_action = QAction(self)
-        new_window_action.setObjectName(_fromUtf8("actionSubwindow%d" % self._subwindow_counter))
+        new_window_action.setObjectName("actionSubwindow%d" % self._subwindow_counter)
         new_window_action.setText(_translate("SmartMT_MainWindow", title, None))
         new_window_action.triggered.connect(subwindow.show_and_focus)
 
@@ -427,7 +428,7 @@ class StartQt4(QMainWindow):
             """
 
             :param main_ui:
-            :type main_ui: StartQt4
+            :type main_ui: StartGUI
             :param parent:
             :param flags:
             """
@@ -464,7 +465,7 @@ class StartQt4(QMainWindow):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    smartMT = StartQt4()
+    smartMT = StartGUI()
     smartMT.show()
 
     # hack to fix the "python has stopped working" error,
