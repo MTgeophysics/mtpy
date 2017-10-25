@@ -1,3 +1,7 @@
+"""
+This file is responsible for dynamic generation of ui_asset/*.py and ui_asset/*.pyc
+when the start.py is first run. It will pick pyqt4 or pyqt5 whichever is installed.
+"""
 import os
 import sys
 from qtpy.uic import compileUiDir
