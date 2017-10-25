@@ -440,20 +440,33 @@ class FrequencySelectionFromFile(QGroupBox):
     def __init__(self, parent):
         QGroupBox.__init__(self, parent)
         self._mt_objs = None
-        self._selected_periods = QStandardItemModel()
-        self._selected_frequencies = None
-        self.ui = Ui_GroupBox_select_from_files()
+        self.model_stations = QStandardItemModel()
+        self.model_selected_frequencies = QStandardItemModel()
 
         # setup ui
         self.ui.setupUi(self)
+        self.ui.listView_selected.setModel(self.model_selected_frequencies)
+        self.ui.listWidget_stations.setModel(self.model_stations)
 
         # connect signals
 
     def set_data(self, mt_objs):
         self._mt_objs = mt_objs
-        self._selected_frequencies = None
-        self._selected_periods = None
+        self.model_selected_frequencies.clear()
+
+        self._update_stations()
+
         self.data_changed.emit()
+
+    def _update_stations(self):
+        if self._mt_objs is not None:
+            self.model_stations.clear()
+            for mt_obj in self._mt_objs:
+                new_item = QStandardItem()
+                new_item.setData(mt_obj.station, QtCore.Qt.DisplayRole)
+                new_item.setData(mt_obj.fn, QtCore.Qt.ToolTipRole)
+                self.model_stations.appendRow(new_item)
+
 
 
 
