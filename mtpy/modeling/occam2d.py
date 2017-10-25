@@ -47,6 +47,7 @@ import mtpy.modeling.winglink as MTwl
 import mtpy.analysis.geometry as MTgy
 from mtpy.imaging.mtplottools import plot_errorbar
 import mtpy.utils.calculator as mtcc
+import mtpy.utils.mesh_tools as mtmesh
 #==============================================================================
 
 class Mesh():
@@ -307,7 +308,7 @@ class Mesh():
 #                            num=self.n_layers)[-2]), 
 #                            num=self.n_layers-self.num_z_pad_cells)
  
-        log_z = mtcc.make_log_increasing_array(self.z1_layer,
+        log_z = mtmesh.make_log_increasing_array(self.z1_layer,
                                                self.z_target_depth,
                                                self.n_layers-self.num_z_pad_cells,
                                                increment_factor=0.99)  
@@ -324,7 +325,7 @@ class Mesh():
 #                            np.log10(self.z_bottom), 
 #                            num=self.num_z_pad_cells)[-2]), 
 #                            num=self.num_z_pad_cells)
-        log_zpad = mtcc.make_log_increasing_array(log_z[-1],
+        log_zpad = mtmesh.make_log_increasing_array(log_z[-1],
                                                self.z_bottom,
                                                self.num_z_pad_cells,
                                                increment_factor=0.99)  

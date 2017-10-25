@@ -31,6 +31,7 @@ import mtpy.analysis.pt as mtpt
 import mtpy.imaging.mtcolors as mtcl
 import mtpy.utils.configfile as mtcfg
 import mtpy.utils.filehandling as mtfh
+import mtpy.utils.mesh_tools as mtmesh
 
 # Plotting tools
 import matplotlib.pyplot as plt
@@ -1030,7 +1031,7 @@ class Data(object):
             self.rotation_angle = rotation_angle
         
         #be sure to fill in data array
-        if fill is True:
+        if fill:
             self.fill_data_array()
             # get relative station locations in grid coordinates
             self.get_relative_station_locations()
@@ -1675,6 +1676,68 @@ class Data(object):
             s_index = np.where(self.data_array['station']==s_arr['station'])[0][0]
             self.data_array[s_index]['elev'] = m_obj.grid_z[z_index]
 
+
+    def project_stations_on_topography(self, model_object, air_resistivity=1e12):
+        """
+        This method is used in add_topography().
+        It will Re-write the data file to change the elevation column.
+        And update covariance mask according topo elevation model.
+        :param air_resistivity:
+        :return:
+        """
+
+        sx = self.station_locations.station_locations['rel_east']
+        sy = self.station_locations.station_locations['rel_north']
+
+        # find index of each station on grid
+        station_index_x = []
+        station_index_y = []
+        for sname in self.station_locations.station_locations['station']:
+            ss = np.where(self.station_locations.station_locations['station'] == sname)[0][0]
+            # relative locations of stations
+            sx, sy = self.station_locations.station_locations['rel_east'][ss], \
+                     self.station_locations.station_locations['rel_north'][ss]
+            # indices of stations on model grid
+            sxi = np.where((sx <= model_object.grid_east[1:]) & (
+                sx > model_object.grid_east[:-1]))[0][0]
+            syi = np.where((sy <= model_object.grid_north[1:]) & (
+                sy > model_object.grid_north[:-1]))[0][0]
+
+            # first check if the site is in the sea
+            if np.any(model_object.covariance_mask[::-1][syi, sxi] == 9):
+                szi = np.amax(
+                    np.where(model_object.covariance_mask[::-1][syi, sxi] == 9)[0])
+            # second, check if there are any air cells
+            elif np.any(model_object.res_model[syi, sxi] > 0.95 * air_resistivity):
+                szi = np.amin(
+                    np.where((model_object.res_model[syi, sxi] < 0.95 * air_resistivity))[0])
+            # otherwise place station at the top of the model
+            else:
+                szi = 0
+
+            # print("FZ:*** szi=", szi)
+            # FZ: debug here to assign topography value for .dat file.
+            
+            topoval = model_object.grid_z[szi]
+
+            station_index_x.append(sxi)
+            station_index_y.append(syi)
+
+            # update elevation in station locations and data array, +1 m as 
+            # data elevation needs to be below the topography (as advised by Naser)
+            self.station_locations.station_locations['elev'][ss] = topoval + 0.1
+            self.data_array['elev'][ss] = topoval + 0.1
+            print self.data_array['elev'][ss]
+
+
+#        logger.debug("Re-write data file after adding topo")
+        self.write_data_file(fill=False,elevation=True)  # (Xi, Yi, Zi) of each station-i may be shifted
+
+        # debug self.Data.write_data_file(save_path='/e/tmp', fill=False)
+
+        return (station_index_x, station_index_y)
+
+
 #==============================================================================
 # mesh class
 #==============================================================================
@@ -1913,82 +1976,7 @@ class Model(object):
         self.grid_z = np.array([nodes[0:ii].sum() for ii in range(nodes.size)]+\
                                 [nodes.sum()])
         
-    def get_padding_cells(self, cell_width, max_distance, num_cells, stretch):
-        """
-        get padding cells, which are exponentially increasing to a given 
-        distance.  Make sure that each cell is larger than the one previously.
-        
-        Arguments
-        -------------
-        
-            **cell_width** : float
-                             width of grid cell (m)
-                             
-            **max_distance** : float
-                               maximum distance the grid will extend (m)
-                               
-            **num_cells** : int
-                            number of padding cells
-                            
-            **stretch** : float
-                          base geometric factor
-                            
-        Returns
-        ----------------
-        
-            **padding** : np.ndarray
-                          array of padding cells for one side
-        
-        """
 
-        # compute scaling factor
-        scaling = ((max_distance)/(cell_width*stretch))**(1./(num_cells-1)) 
-        
-        # make padding cell
-        padding = np.zeros(num_cells)
-        for ii in range(num_cells):
-            # calculate the cell width for an exponential increase
-            exp_pad = np.round((cell_width*stretch)*scaling**ii, -2)
-            
-            # calculate the cell width for a geometric increase by 1.2
-            mult_pad = np.round((cell_width*stretch)*((1-stretch**(ii+1))/(1-stretch)), -2)
-            
-            # take the maximum width for padding
-            padding[ii] = max([exp_pad, mult_pad])
-
-        return padding
-
-    
-    def get_padding_from_stretch(self, cell_width, pad_stretch, num_cells):
-        """
-        get padding cells using pad stretch factor
-        
-        """
-        nodes = np.around((np.ones(num_cells)*cell_width)**pad_stretch,-2)
-        
-        return np.array([nodes[:i].sum() for i in range(1,len(nodes)+1)])
-        
-        
-
-    def get_padding_cells2(self, cell_width, core_max, max_distance, num_cells):
-        """
-        get padding cells, which are exponentially increasing to a given 
-        distance.  Make sure that each cell is larger than the one previously.
-        """
-        # check max distance is large enough to accommodate padding
-        max_distance = max(cell_width*num_cells, max_distance)
-
-        cells = np.around(np.logspace(np.log10(core_max),np.log10(max_distance),num_cells), -2)
-        cells -= core_max
-        
-        # check if first padding cell is at least as big as cell width
-        if cells[1] - cells[0] < cell_width:
-            pad_stretch = (core_max + cell_width)/core_max
-            cells = self.get_padding_from_stretch(cell_width, pad_stretch, num_cells)
-            print "Provided model extent not wide enough to contain padding, "+\
-            "expanding model to {} m".format((cells[-1] + core_max)*2)
-            
-        return cells
 
 
 
@@ -2043,28 +2031,28 @@ class Model(object):
 
         ## compute padding cells
         if self.pad_method == 'extent1':
-            padding_east = self.get_padding_cells(self.cell_size_east,
+            padding_east = mtmesh.get_padding_cells(self.cell_size_east,
                                                   self.ew_ext/2-east, 
                                                   self.pad_east,
                                                   self.pad_stretch_h)
-            padding_north = self.get_padding_cells(self.cell_size_north,
+            padding_north = mtmesh.get_padding_cells(self.cell_size_north,
                                                    self.ns_ext/2-north, 
                                                    self.pad_north,
                                                    self.pad_stretch_h)
         elif self.pad_method == 'extent2':
-            padding_east = self.get_padding_cells2(self.cell_size_east,
+            padding_east = mtmesh.get_padding_cells2(self.cell_size_east,
                                                    inner_east[-1],
                                                    self.ew_ext/2.,
                                                    self.pad_east)
-            padding_north = self.get_padding_cells2(self.cell_size_north,
+            padding_north = mtmesh.get_padding_cells2(self.cell_size_north,
                                                     inner_north[-1],
                                                    self.ns_ext/2.,
                                                    self.pad_north)
         elif self.pad_method == 'stretch':
-            padding_east = self.get_padding_from_stretch(self.cell_size_east,
+            padding_east = mtmesh.get_padding_from_stretch(self.cell_size_east,
                                                          self.pad_stretch_h,
                                                          self.pad_east)
-            padding_north = self.get_padding_from_stretch(self.cell_size_north,
+            padding_north = mtmesh.get_padding_from_stretch(self.cell_size_north,
                                                          self.pad_stretch_h,
                                                          self.pad_north)
    
@@ -2112,7 +2100,7 @@ class Model(object):
                            log_z])
                            
         #padding cells in the vertical
-        z_padding = self.get_padding_cells(z_nodes[-1],
+        z_padding = mtmesh.get_padding_cells(z_nodes[-1],
                                            self.z_bottom-z_nodes.sum(),
                                            self.pad_z,
                                            self.pad_stretch_v)
@@ -3126,7 +3114,7 @@ class Model(object):
 
 #        logger.debug("gcz is the cells centre coordinates: %s, %s", len(gcz), gcz)
         # convert to positive down, relative to the top of the grid
-        surfacedata = self.sea_level - self.surface_dict[surfacename]
+        surfacedata = - self.surface_dict[surfacename]
         # surfacedata = self.surface_dict[surfacename] - self.sea_level
 
         # define topography, so that we don't overwrite cells above topography
@@ -3138,11 +3126,11 @@ class Model(object):
             # if it is, we need to define the upper limit as the top of the model
                 top = np.zeros_like(surfacedata) + np.amin(self.grid_z)
             else:
-            # if not, upper limit of resistivity assignment is the topography
-                top = self.sea_level - self.surface_dict['topography']
-        # if no topography, assign zeros
+            # if not, upper limit of resistivity assignment is the topography, note positive downwards
+                top = -self.surface_dict['topography']
+        # if no topography, use top of model
         else:
-            top = self.sea_level + np.zeros_like(surfacedata)
+            top = self.grid_z[0] + np.zeros_like(surfacedata)
 
         # assign resistivity value
         for j in range(len(self.res_model)):
@@ -3157,66 +3145,8 @@ class Model(object):
 
 
 
-    def project_stations_on_topography(self, air_resistivity=1e17):
-        """
-        This method is used in add_topography().
-        It will Re-write the data file to change the elevation column.
-        And update covariance mask according topo elevation model.
-        :param air_resistivity:
-        :return:
-        """
 
-        sx = self.station_locations['rel_east']
-        sy = self.station_locations['rel_north']
 
-        # find index of each station on grid
-        station_index_x = []
-        station_index_y = []
-        for sname in self.station_locations['station']:
-            ss = np.where(self.station_locations['station'] == sname)[0][0]
-            # relative locations of stations
-            sx, sy = self.station_locations['rel_east'][ss], \
-                     self.station_locations['rel_north'][ss]
-            # indices of stations on model grid
-            sxi = np.where((sx <= self.grid_east[1:]) & (
-                sx > self.grid_east[:-1]))[0][0]
-            syi = np.where((sy <= self.grid_north[1:]) & (
-                sy > self.grid_north[:-1]))[0][0]
-
-            # first check if the site is in the sea
-            if np.any(self.covariance_mask[::-1][syi, sxi] == 9):
-                szi = np.amax(
-                    np.where(self.covariance_mask[::-1][syi, sxi] == 9)[0])
-            # second, check if there are any air cells
-            elif np.any(self.res_model[syi, sxi] > 0.95 * air_resistivity):
-                szi = np.amin(
-                    np.where((self.res_model[syi, sxi] < 0.95 * air_resistivity))[0])
-            # otherwise place station at the top of the model
-            else:
-                szi = 0
-
-            # print("FZ:*** szi=", szi)
-            # FZ: debug here to assign topography value for .dat file.
-
-            topoval = self.grid_z[szi]
-
-            station_index_x.append(sxi)
-            station_index_y.append(syi)
-
-            # update elevation in station locations and data array, +1 m as 
-            # data elevation needs to be below the topography (as advised by Naser)
-            self.station_locations['elev'][ss] = topoval + 1.
-            self.Data.data_array['elev'][ss] = topoval + 1.
-
-        # This will shift stations' location to be relative to the defined mesh-grid centre
-        self.Data.station_locations = self.station_locations
-
-#        logger.debug("Re-write data file after adding topo")
-        self.Data.write_data_file(fill=False)  # (Xi, Yi, Zi) of each station-i may be shifted
-
-        # debug self.Data.write_data_file(save_path='/e/tmp', fill=False)
-
-        return (station_index_x, station_index_y)
 
 
 
@@ -3280,12 +3210,12 @@ class Model(object):
             x, y = np.meshgrid(x, y)
 
         xs, ys, utm_zone = gis_tools.project_points_ll2utm(y,x,
-                                                           epsg=self.Data.model_epsg,
-                                                           utm_zone=self.Data.model_utm_zone
+                                                           epsg=self.station_locations.model_epsg,
+                                                           utm_zone=self.station_locations.model_utm_zone
                                                  )
 
         # get centre position of model grid in real world coordinates
-        x0, y0 = [np.median(self.station_locations[dd] - self.station_locations['rel_' + dd]) for dd in
+        x0, y0 = [np.median(self.station_locations.station_locations[dd] - self.station_locations.station_locations['rel_' + dd]) for dd in
                   ['east', 'north']]
 
         # centre points of model grid in real world coordinates
@@ -3326,7 +3256,7 @@ class Model(object):
 
 
     def add_topography_to_model2(self, topographyfile=None, topographyarray=None, interp_method='nearest',
-                                 air_resistivity=1e17, sea_resistivity=0.3, airlayer_cellsize=None):
+                                 air_resistivity=1e12, sea_resistivity=0.3, airlayer_cellsize=None):
         """
         if air_layers is non-zero, will add topo: read in topograph file, make a surface model.
         Call project_stations_on_topography in the end, which will re-write the .dat file.
@@ -3348,12 +3278,12 @@ class Model(object):
 
         elif self.n_airlayers > 0:  # FZ: new logic, add equal blocksize air layers on top of the simple flat-earth grid
             # build air layers based on the inner core area
-            padE = int(sum(self.pad_east))
-            padN = int(sum(self.pad_north))
+            padE = self.pad_east
+            padN = self.pad_north
             topo_core = self.surface_dict['topography'][padN:-padN,padE:-padE]            
             
             # log increasing airlayers, in reversed order
-            new_air_nodes = mtcc.make_log_increasing_array(self.z1_layer,
+            new_air_nodes = mtmesh.make_log_increasing_array(self.z1_layer,
                                                            topo_core.max() - topo_core.min(), 
                                                            self.n_airlayers, 
                                                            increment_factor=0.999)[::-1]
@@ -3368,15 +3298,9 @@ class Model(object):
 
             # add new air layers, cut_off some tailing layers to preserve array size.
             self.grid_z = np.concatenate([new_airlayers, self.grid_z[self.n_airlayers+1:] - self.grid_z[self.n_airlayers] + new_airlayers[-1]], axis=0)
-            print(" NEW self.grid_z shape and values = ", self.grid_z.shape, self.grid_z)
-            
-                        
-            # adjust the nodes, which is simply the diff of adjacent grid lines
-            self.nodes_z = self.grid_z[1:] - self.grid_z[:-1]
+#            print(" NEW self.grid_z shape and values = ", self.grid_z.shape, self.grid_z)
+#            print self.grid_z
 
-            # adjust sea level
-            self.sea_level = 0  # keep as zero
-#            logger.debug("FZ:***2 sea_level = %s", self.sea_level)
 
         # update the z-centre as the top air layer
         self.grid_center[2] = self.grid_z[0]
@@ -3393,7 +3317,7 @@ class Model(object):
         gcz = np.mean([self.grid_z[:-1], self.grid_z[1:]], axis=0)
 
         # convert topography to local grid coordinates
-        topo = self.sea_level - self.surface_dict['topography']
+        topo = self.grid_z[0] - self.surface_dict['topography']
         # assign values
         for j in range(len(self.res_model)):
             for i in range(len(self.res_model[j])):
@@ -3403,14 +3327,14 @@ class Model(object):
                     self.covariance_mask[j, i, ii1[0]] = 0.
                 # assign sea water to covariance and model res arrays
                 ii = np.where(
-                    np.all([gcz > self.sea_level, gcz <= topo[j, i]], axis=0))
+                    np.all([gcz > self.grid_z[0], gcz <= topo[j, i]], axis=0))
                 if len(ii) > 0:
                     self.covariance_mask[j, i, ii[0]] = 9.
                     self.res_model[j, i, ii[0]] = sea_resistivity
 
         self.covariance_mask = self.covariance_mask[::-1]
 
-        self.station_grid_index = self.project_stations_on_topography()
+#        self.station_grid_index = self.project_stations_on_topography()
 
 #        logger.debug("NEW res_model and cov_mask shapes: %s, %s", self.res_model.shape, self.covariance_mask.shape)
 
