@@ -17,6 +17,13 @@
    <string>Select Periods from Files</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
+   <item row="2" column="0" colspan="2">
+    <widget class="QLabel" name="label_2">
+     <property name="text">
+      <string>Stations:</string>
+     </property>
+    </widget>
+   </item>
    <item row="2" column="2">
     <widget class="QLabel" name="label_3">
      <property name="text">
@@ -55,14 +62,7 @@
     </widget>
    </item>
    <item row="4" column="0" colspan="2">
-    <widget class="QListWidget" name="listWidget"/>
-   </item>
-   <item row="2" column="0" colspan="2">
-    <widget class="QLabel" name="label_2">
-     <property name="text">
-      <string>Stations:</string>
-     </property>
-    </widget>
+    <widget class="QListView" name="listView_stations"/>
    </item>
   </layout>
  </widget>

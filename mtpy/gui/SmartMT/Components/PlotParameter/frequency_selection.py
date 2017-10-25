@@ -9,10 +9,10 @@
     Date: 24/10/2017
 """
 import numpy as np
-from qtpy.QtCore import Signal
-from qtpy.QtWidgets import QGroupBox, QStyledItemDelegate
-from qtpy.QtGui import QStandardItemModel, QStandardItem
 from qtpy import QtCore
+from qtpy.QtCore import Signal
+from qtpy.QtGui import QStandardItemModel, QStandardItem
+from qtpy.QtWidgets import QGroupBox, QStyledItemDelegate
 
 from mtpy.gui.SmartMT.gui.matplotlib_imabedding import MPLCanvas, Cursor
 from mtpy.gui.SmartMT.ui_asset.groupbox_frequency_select import Ui_GroupBox_frequency_select
@@ -444,11 +444,14 @@ class FrequencySelectionFromFile(QGroupBox):
         self.model_selected_frequencies = QStandardItemModel()
 
         # setup ui
+        self.ui = Ui_GroupBox_select_from_files()
         self.ui.setupUi(self)
-        self.ui.listView_selected.setModel(self.model_selected_frequencies)
-        self.ui.listWidget_stations.setModel(self.model_stations)
+        self.ui.columnView_selected.setModel(self.model_selected_frequencies)
+        self.ui.listView_stations.setModel(self.model_stations)
 
         # connect signals
+
+    data_changed = Signal()
 
     def set_data(self, mt_objs):
         self._mt_objs = mt_objs
