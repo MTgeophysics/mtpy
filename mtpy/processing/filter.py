@@ -126,9 +126,9 @@ def zero_pad(input_array, power=2, pad_fill=0):
 
     len_array = input_array.shape[0]
     if power == 2:
-        npow = np.ceil(np.log2(len_array))
+        npow = int(np.ceil(np.log2(len_array)))
     if power == 10:
-        npow = np.ceil(np.log10(len_array))
+        npow = int(np.ceil(np.log10(len_array)))
     
     if npow > 32:
         print 'Exceeding memory allocation inherent in your computer 2**32'
@@ -229,8 +229,10 @@ def adaptive_notch_filter(bx, df=100, notches=[50, 100], notchradius=.5,
     
     bx = np.array(bx)
     
-    if type(notches) != list:
-        notches = [notches]
+    if type(notches) is list:
+        notches = np.array(notches)
+    elif type(notches) in [float, int]:
+        notches = np.array([notches], dtype=np.float)
     
     df = float(df)         #make sure df is a float
     dt = 1./df             #sampling rate
@@ -240,14 +242,14 @@ def adaptive_notch_filter(bx, df=100, notches=[50, 100], notchradius=.5,
     BX = np.fft.fft(zero_pad(bx))
     n = len(BX)            #length of array
     dfn = df/n             #frequency step
-    dfnn = freqrad/dfn          #radius of frequency search
+    dfnn = int(freqrad/dfn)          #radius of frequency search
     fn = notchradius               #filter radius
     freq = np.fft.fftfreq(n,dt)
     
     filtlst = []
     for notch in notches:
         if notch > freq.max():
-            pass
+            break
             #print 'Frequency too high, skipping {0}'.format(notch)
         else:
             fspot = int(round(notch/dfn))
