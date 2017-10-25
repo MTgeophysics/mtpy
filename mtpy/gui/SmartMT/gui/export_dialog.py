@@ -16,9 +16,9 @@ from PIL import Image
 from qtpy import QtCore, QT_VERSION
 from qtpy.QtWidgets import QDialog, QFileDialog, QMessageBox
 if QT_VERSION.startswith('4'):
-    from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
+    from matplotlib.backends.backend_qt4agg import FigureCanvas
 else:
-    from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+    from matplotlib.backends.backend_qt5agg import FigureCanvas
 
 from mtpy.gui.SmartMT.ui_asset.dialog_export import Ui_Dialog_Export
 from mtpy.gui.SmartMT.ui_asset.dialog_preview import Ui_Dialog_preview
@@ -183,7 +183,8 @@ class ExportDialog(QDialog):
 
     def _browse(self, *args, **kwargs):
         if self._dir_dialog.exec_() == QDialog.Accepted:
-            directory = str(self._dir_dialog.selectedFiles()[0])
+            dirs = self._dir_dialog.selectedFiles()  # behave differently in pyqt4 and pyqt5
+            directory = str(dirs[0] if dirs else self._dir_dialog.directory().absolutePath())  # this makes the behave the same
             # update directory
             index = self.ui.comboBox_directory.findText(directory)
             if index == -1:
