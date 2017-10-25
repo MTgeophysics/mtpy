@@ -1165,8 +1165,8 @@ class Zen3D(object):
         return date_time
         
     #==================================================    
-    def apply_adaptive_notch_filter(self, notches=np.arange(60, 1860, 60),
-                                    notch_radius=0.5, freq_rad=0.5, rp=0.1):
+    def apply_adaptive_notch_filter(self, notch_dict={'notches':np.arange(60, 1860, 60),
+                                    'notch_radius':0.5, 'freq_rad':0.5, 'rp':0.1}):
         """
         apply notch filter to the data that finds the peak around each 
         frequency.
@@ -1182,17 +1182,16 @@ class Zen3D(object):
         
         
         """
-        if notches is None:
+        try:
+            notch_dict['notches']
+        except KeyError:
             return
         try:
             self.ts_obj.ts.data
         except AttributeError:
             self.read_z3d()
-        
-        kwargs = {'notches':notches, 'notch_radius':notch_radius,
-                  'freq_rad':freq_rad, 'rp':rp}
                   
-        self.ts_obj.apply_addaptive_notch_filter(**kwargs) 
+        self.ts_obj.apply_addaptive_notch_filter(**notch_dict) 
         
     #==================================================
     def write_ascii_mt_file(self, save_fn=None, fmt='%.8e', notch_dict=None,

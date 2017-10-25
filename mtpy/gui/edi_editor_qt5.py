@@ -1316,7 +1316,7 @@ class PlotWidget(QtWidgets.QWidget):
                     d_index = (f_index,
                                np.array([1]),
                                np.array([0]))
-                    print d_index
+                    print '***Picked Invalid Point***', d_index
                     return
                     
                 comp_jj = d_index[1][0]
@@ -1336,11 +1336,14 @@ class PlotWidget(QtWidgets.QWidget):
                                                   self.mt_obj.Z.phase[d_index]+180,
                                                   **self.mask_kw)
                         except ValueError:
-                            print d_index
+                            print '***Picked Invalid Point***', d_index
                     else:
-                        self.ax_phase_od.plot(data_period, 
-                                              self.mt_obj.Z.phase[d_index],
-                                              **self.mask_kw)
+                        try:
+                            self.ax_phase_od.plot(data_period, 
+                                                  self.mt_obj.Z.phase[d_index],
+                                                  **self.mask_kw)
+                        except ValueError:
+                            print '***Picked Invalid Point***', d_index
                 elif self._ax_index == 1:
                     try:
                         self.ax_phase_d.plot(data_period, 
@@ -1363,7 +1366,7 @@ class PlotWidget(QtWidgets.QWidget):
                         d_index = (f_index,
                                    np.array([1]),
                                    np.array([0]))
-                        print d_index
+                        print '***Picked Invalid Point***', d_index
 #                        print 'Did not pick a valid point'
 #                        return
 
@@ -1381,7 +1384,7 @@ class PlotWidget(QtWidgets.QWidget):
                                             self.mt_obj.Z.resistivity[d_index],
                                             **self.mask_kw)
                     except ValueError:
-                        print d_index
+                        print '***Picked Invalid Point***', d_index
                         
                 elif self._ax_index == 3:
                     try:
@@ -1389,7 +1392,7 @@ class PlotWidget(QtWidgets.QWidget):
                                            self.mt_obj.Z.resistivity[d_index],
                                            **self.mask_kw)
                     except ValueError:
-                        print d_index
+                        print '***Picked Invalid Point***', d_index
             
             # mask tipper Tx
             elif self._ax_index == 4 or self._ax_index == 5:
@@ -1402,7 +1405,7 @@ class PlotWidget(QtWidgets.QWidget):
                 try:
                     self._ax.plot(data_period, data_value, **self.mask_kw)
                 except ValueError:
-                    print d_index
+                    print '***Picked Invalid Point***', d_index
                 
                 # set tipper data to 0
                 self.mt_obj.Tipper.tipper[d_index] = 0.0+0.0j
@@ -1507,7 +1510,11 @@ class PlotWidget(QtWidgets.QWidget):
         x1 = eclick.xdata
         x2 = erelease.xdata
         
-        f_idx = self._get_frequency_range(x1, x2)
+        try:
+            f_idx = self._get_frequency_range(x1, x2)
+        except ZeroDivisionError:
+            print '***Picked Invalid Points***'
+            return
         
         for ff in f_idx:
             data_period = 1./self.mt_obj.Z.freq[ff]
