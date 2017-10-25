@@ -89,7 +89,7 @@ def get_padding_from_stretch(cell_width, pad_stretch, num_cells):
     get padding cells using pad stretch factor
     
     """
-    nodes = np.around((np.ones(num_cells)*cell_width)**pad_stretch,-2)
+    nodes = np.around(cell_width * (np.ones(num_cells)*pad_stretch)**np.arange(num_cells),-2)
     
     return np.array([nodes[:i].sum() for i in range(1,len(nodes)+1)])
     
