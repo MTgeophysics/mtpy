@@ -7,7 +7,7 @@ from qtpy.QtTest import QTest
 from qtpy.QtWidgets import QMainWindow, QWidget, QVBoxLayout
 
 from mtpy.core import mt
-from mtpy.gui.SmartMT.gui.plot_parameter_guis import FrequencySelection
+from mtpy.gui.SmartMT.Components.PlotParameter import FrequencySelection
 from tests.SmartMT import _click_area
 
 edi_paths = [
