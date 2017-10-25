@@ -21,6 +21,7 @@ class MTMainWindow(QtWidgets.QMainWindow):
     def __init__(self):
         super(MTMainWindow, self).__init__()
         self.setWindowTitle('MT File Editor')
+        self.mt_obj = mt.MT()
  
         self.setup_ui()
         
@@ -31,12 +32,20 @@ class MTMainWindow(QtWidgets.QMainWindow):
         screen_size = QtWidgets.QDesktopWidget().availableGeometry()
         width = screen_size.width()
         
+        self.menu_file = self.menuBar().addMenu("&File")
+        
+        self.action_open_file = self.menu_file.addAction("&Open")
+        self.action_open_file.triggered.connect(self.get_mt_file)
+        
+        self.action_save_file = self.menu_file.addAction("&Save")
+        self.action_save_file.triggered.connect(self.save_mt_file)
+        
         self.setWindowState(QtCore.Qt.WindowMaximized)
         
         self.central_widget = QtWidgets.QWidget()
         self.setCentralWidget(self.central_widget)
     
-        self.tab_widget = MTTabWidget(self)
+        self.tab_widget = MTTabWidget(self, self.mt_obj)
         
         self.text_label = QtWidgets.QLabel("File Preview")
         self.text_label.setFont(label_font)
@@ -55,11 +64,21 @@ class MTMainWindow(QtWidgets.QMainWindow):
         self.central_widget.setLayout(layout)
         #self.centeral_widget = self.setCentralWidget(self.tab_widget)
         
+    def get_mt_file(self):
+        fn_dialog = QtWidgets.QFileDialog()
+        fn = str(fn_dialog.getOpenFileName(caption='Choose MT file',
+                                           directory=self.plot_widget.dir_path,
+                                           filter='*.edi;*.xml;*.j')[0])
+        self.mt_obj = mt.MT()
+        self.mt_obj.read_mt_file(fn)
+        self.tab_widget.mt_obj = self.mt_obj
+        
  
 class MTTabWidget(QtWidgets.QTabWidget):        
  
-    def __init__(self, parent=None):   
+    def __init__(self, mt_obj, parent=None):   
         super(MTTabWidget, self).__init__(parent)
+        self.mt_obj = mt_obj
         
         self.setup_ui()
         
