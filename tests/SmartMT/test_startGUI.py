@@ -17,7 +17,7 @@ class TestStartGUI(TestCase):
 
     def test_main(self):
         self.assertTrue(self.smartMT.isVisible())
-        self.assertTrue(self.smartMT.isFullScreen())
+        self.assertTrue(self.smartMT.isMaximized())
 
     def tearDown(self):
         self.smartMT.close()
