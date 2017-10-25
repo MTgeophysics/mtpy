@@ -314,29 +314,29 @@ class FieldNotesTab(QtWidgets.QWidget):
         self.data_logger_label.setFont(label_font)
         
         self.data_logger_id_label = QtWidgets.QLabel('ID')
-        self.data_logger_id_edit = QtWidgets.QLineEdit(self.FieldNotes.data_logger.id)
+        self.data_logger_id_edit = QtWidgets.QLineEdit(self.FieldNotes.DataLogger.id)
         self.data_logger_id_edit.editingFinished.connect(self.set_dl_id)
         
         self.data_logger_man_label = QtWidgets.QLabel('Manufacturer')
-        self.data_logger_man_edit = QtWidgets.QLineEdit(self.FieldNotes.data_logger.manufacturer)
+        self.data_logger_man_edit = QtWidgets.QLineEdit(self.FieldNotes.DataLogger.manufacturer)
         self.data_logger_man_edit.editingFinished.connect(self.set_dl_man)
         
         self.data_logger_type_label = QtWidgets.QLabel('Type')
-        self.data_logger_type_edit = QtWidgets.QLineEdit(self.FieldNotes.data_logger.type)
+        self.data_logger_type_edit = QtWidgets.QLineEdit(self.FieldNotes.DataLogger.type)
         self.data_logger_type_edit.editingFinished.connect(self.set_dl_type)
         
         
         #--> Instrument information
-        self.ex_widget = Electrode_Widget(self.FieldNotes.electrode_ex,
+        self.ex_widget = Electrode_Widget(self.FieldNotes.Electrode_ex,
                                           comp='EX')
-        self.ey_widget = Electrode_Widget(self.FieldNotes.electrode_ey,
+        self.ey_widget = Electrode_Widget(self.FieldNotes.Electrode_ey,
                                           comp='EY')
     
-        self.hx_widget = Magnetometer_Widget(self.FieldNotes.magnetometer_hx,
+        self.hx_widget = Magnetometer_Widget(self.FieldNotes.Magnetometer_hx,
                                              comp='HX')
-        self.hy_widget = Magnetometer_Widget(self.FieldNotes.magnetometer_hy,
+        self.hy_widget = Magnetometer_Widget(self.FieldNotes.Magnetometer_hy,
                                              comp='HY')
-        self.hz_widget = Magnetometer_Widget(self.FieldNotes.magnetometer_hz,
+        self.hz_widget = Magnetometer_Widget(self.FieldNotes.Magnetometer_hz,
                                              comp='HZ')
 
 
@@ -399,33 +399,33 @@ class FieldNotesTab(QtWidgets.QWidget):
         
         
     def set_dl_id(self):
-        self.FieldNotes.data_logger.id = self.data_logger_id_edit.text()
+        self.FieldNotes.DataLogger.id = self.data_logger_id_edit.text()
   
     def set_dl_man(self):
-        self.FieldNotes.data_logger.manufacturer = self.data_logger_man_edit.text()
+        self.FieldNotes.DataLogger.manufacturer = self.data_logger_man_edit.text()
         
     def set_dl_type(self):
-        self.FieldNotes.data_logger.type = self.data_logger_type_edit.text()
+        self.FieldNotes.DataLogger.type = self.data_logger_type_edit.text()
         
     def set_dq_period_min(self):
-        self.FieldNotes.data_quality.good_from_period = _check_float(self.dq_good_periods_min.text())
-        self.dq_good_periods_min.setText('{0:.5g}'.format(self.FieldNotes.data_quality.good_from_period))
+        self.FieldNotes.DataQuality.good_from_period = _check_float(self.dq_good_periods_min.text())
+        self.dq_good_periods_min.setText('{0:.5g}'.format(self.FieldNotes.DataQuality.good_from_period))
         
     def set_dq_period_max(self):
-        self.FieldNotes.data_quality.good_to_period = _check_float(self.dq_good_periods_max.text())
-        self.dq_good_periods_max.setText('{0:.5g}'.format(self.FieldNotes.data_quality.good_to_period))
+        self.FieldNotes.DataQuality.good_to_period = _check_float(self.dq_good_periods_max.text())
+        self.dq_good_periods_max.setText('{0:.5g}'.format(self.FieldNotes.DataQuality.good_to_period))
         
     def set_dq_rating(self):
-        self.FieldNotes.data_quality.rating = self.dq_rating_combo.currentIndex()
+        self.FieldNotes.DataQuality.rating = self.dq_rating_combo.currentIndex()
         
     def set_dq_flag(self):
-        self.FieldNotes.data_quality.warnings_flag = self.dq_warning_flag_combo.currentIndex()
+        self.FieldNotes.DataQuality.warnings_flag = self.dq_warning_flag_combo.currentIndex()
         
     def set_dq_warning_comments(self):
-        self.FieldNotes.data_quality.warnings_comments = self.dq_warning_comments_edit.text()
+        self.FieldNotes.DataQuality.warnings_comments = self.dq_warning_comments_edit.text()
         
     def set_dq_comments(self):
-        self.FieldNotes.data_quality.comments = self.dq_comments.toPlainText()
+        self.FieldNotes.DataQuality.comments = self.dq_comments.toPlainText()
         
 #==============================================================================
 # Electrode        
