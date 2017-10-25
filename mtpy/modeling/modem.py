@@ -1031,7 +1031,7 @@ class Data(object):
             self.rotation_angle = rotation_angle
         
         #be sure to fill in data array
-        if fill is True:
+        if fill:
             self.fill_data_array()
             # get relative station locations in grid coordinates
             self.get_relative_station_locations()
@@ -1675,6 +1675,68 @@ class Data(object):
             z_index = np.where(m_obj.res_model[n_index, e_index, :] < res_air*.9)[0][0]
             s_index = np.where(self.data_array['station']==s_arr['station'])[0][0]
             self.data_array[s_index]['elev'] = m_obj.grid_z[z_index]
+
+
+    def project_stations_on_topography(self, model_object, air_resistivity=1e12):
+        """
+        This method is used in add_topography().
+        It will Re-write the data file to change the elevation column.
+        And update covariance mask according topo elevation model.
+        :param air_resistivity:
+        :return:
+        """
+
+        sx = self.station_locations.station_locations['rel_east']
+        sy = self.station_locations.station_locations['rel_north']
+
+        # find index of each station on grid
+        station_index_x = []
+        station_index_y = []
+        for sname in self.station_locations.station_locations['station']:
+            ss = np.where(self.station_locations.station_locations['station'] == sname)[0][0]
+            # relative locations of stations
+            sx, sy = self.station_locations.station_locations['rel_east'][ss], \
+                     self.station_locations.station_locations['rel_north'][ss]
+            # indices of stations on model grid
+            sxi = np.where((sx <= model_object.grid_east[1:]) & (
+                sx > model_object.grid_east[:-1]))[0][0]
+            syi = np.where((sy <= model_object.grid_north[1:]) & (
+                sy > model_object.grid_north[:-1]))[0][0]
+
+            # first check if the site is in the sea
+            if np.any(model_object.covariance_mask[::-1][syi, sxi] == 9):
+                szi = np.amax(
+                    np.where(model_object.covariance_mask[::-1][syi, sxi] == 9)[0])
+            # second, check if there are any air cells
+            elif np.any(model_object.res_model[syi, sxi] > 0.95 * air_resistivity):
+                szi = np.amin(
+                    np.where((model_object.res_model[syi, sxi] < 0.95 * air_resistivity))[0])
+            # otherwise place station at the top of the model
+            else:
+                szi = 0
+
+            # print("FZ:*** szi=", szi)
+            # FZ: debug here to assign topography value for .dat file.
+            
+            topoval = model_object.grid_z[szi]
+
+            station_index_x.append(sxi)
+            station_index_y.append(syi)
+
+            # update elevation in station locations and data array, +1 m as 
+            # data elevation needs to be below the topography (as advised by Naser)
+            self.station_locations.station_locations['elev'][ss] = topoval + 0.1
+            self.data_array['elev'][ss] = topoval + 0.1
+            print self.data_array['elev'][ss]
+
+
+#        logger.debug("Re-write data file after adding topo")
+        self.write_data_file(fill=False,elevation=True)  # (Xi, Yi, Zi) of each station-i may be shifted
+
+        # debug self.Data.write_data_file(save_path='/e/tmp', fill=False)
+
+        return (station_index_x, station_index_y)
+
 
 #==============================================================================
 # mesh class
@@ -3052,7 +3114,7 @@ class Model(object):
 
 #        logger.debug("gcz is the cells centre coordinates: %s, %s", len(gcz), gcz)
         # convert to positive down, relative to the top of the grid
-        surfacedata = self.sea_level - self.surface_dict[surfacename]
+        surfacedata = - self.surface_dict[surfacename]
         # surfacedata = self.surface_dict[surfacename] - self.sea_level
 
         # define topography, so that we don't overwrite cells above topography
@@ -3064,11 +3126,11 @@ class Model(object):
             # if it is, we need to define the upper limit as the top of the model
                 top = np.zeros_like(surfacedata) + np.amin(self.grid_z)
             else:
-            # if not, upper limit of resistivity assignment is the topography
-                top = self.sea_level - self.surface_dict['topography']
-        # if no topography, assign zeros
+            # if not, upper limit of resistivity assignment is the topography, note positive downwards
+                top = -self.surface_dict['topography']
+        # if no topography, use top of model
         else:
-            top = self.sea_level + np.zeros_like(surfacedata)
+            top = self.grid_z[0] + np.zeros_like(surfacedata)
 
         # assign resistivity value
         for j in range(len(self.res_model)):
@@ -3083,66 +3145,8 @@ class Model(object):
 
 
 
-    def project_stations_on_topography(self, air_resistivity=1e17):
-        """
-        This method is used in add_topography().
-        It will Re-write the data file to change the elevation column.
-        And update covariance mask according topo elevation model.
-        :param air_resistivity:
-        :return:
-        """
 
-        sx = self.station_locations['rel_east']
-        sy = self.station_locations['rel_north']
 
-        # find index of each station on grid
-        station_index_x = []
-        station_index_y = []
-        for sname in self.station_locations['station']:
-            ss = np.where(self.station_locations['station'] == sname)[0][0]
-            # relative locations of stations
-            sx, sy = self.station_locations['rel_east'][ss], \
-                     self.station_locations['rel_north'][ss]
-            # indices of stations on model grid
-            sxi = np.where((sx <= self.grid_east[1:]) & (
-                sx > self.grid_east[:-1]))[0][0]
-            syi = np.where((sy <= self.grid_north[1:]) & (
-                sy > self.grid_north[:-1]))[0][0]
-
-            # first check if the site is in the sea
-            if np.any(self.covariance_mask[::-1][syi, sxi] == 9):
-                szi = np.amax(
-                    np.where(self.covariance_mask[::-1][syi, sxi] == 9)[0])
-            # second, check if there are any air cells
-            elif np.any(self.res_model[syi, sxi] > 0.95 * air_resistivity):
-                szi = np.amin(
-                    np.where((self.res_model[syi, sxi] < 0.95 * air_resistivity))[0])
-            # otherwise place station at the top of the model
-            else:
-                szi = 0
-
-            # print("FZ:*** szi=", szi)
-            # FZ: debug here to assign topography value for .dat file.
-
-            topoval = self.grid_z[szi]
-
-            station_index_x.append(sxi)
-            station_index_y.append(syi)
-
-            # update elevation in station locations and data array, +1 m as 
-            # data elevation needs to be below the topography (as advised by Naser)
-            self.station_locations['elev'][ss] = topoval + 1.
-            self.Data.data_array['elev'][ss] = topoval + 1.
-
-        # This will shift stations' location to be relative to the defined mesh-grid centre
-        self.Data.station_locations = self.station_locations
-
-#        logger.debug("Re-write data file after adding topo")
-        self.Data.write_data_file(fill=False)  # (Xi, Yi, Zi) of each station-i may be shifted
-
-        # debug self.Data.write_data_file(save_path='/e/tmp', fill=False)
-
-        return (station_index_x, station_index_y)
 
 
 
@@ -3206,12 +3210,12 @@ class Model(object):
             x, y = np.meshgrid(x, y)
 
         xs, ys, utm_zone = gis_tools.project_points_ll2utm(y,x,
-                                                           epsg=self.Data.model_epsg,
-                                                           utm_zone=self.Data.model_utm_zone
+                                                           epsg=self.station_locations.model_epsg,
+                                                           utm_zone=self.station_locations.model_utm_zone
                                                  )
 
         # get centre position of model grid in real world coordinates
-        x0, y0 = [np.median(self.station_locations[dd] - self.station_locations['rel_' + dd]) for dd in
+        x0, y0 = [np.median(self.station_locations.station_locations[dd] - self.station_locations.station_locations['rel_' + dd]) for dd in
                   ['east', 'north']]
 
         # centre points of model grid in real world coordinates
@@ -3252,7 +3256,7 @@ class Model(object):
 
 
     def add_topography_to_model2(self, topographyfile=None, topographyarray=None, interp_method='nearest',
-                                 air_resistivity=1e17, sea_resistivity=0.3, airlayer_cellsize=None):
+                                 air_resistivity=1e12, sea_resistivity=0.3, airlayer_cellsize=None):
         """
         if air_layers is non-zero, will add topo: read in topograph file, make a surface model.
         Call project_stations_on_topography in the end, which will re-write the .dat file.
@@ -3274,8 +3278,8 @@ class Model(object):
 
         elif self.n_airlayers > 0:  # FZ: new logic, add equal blocksize air layers on top of the simple flat-earth grid
             # build air layers based on the inner core area
-            padE = int(sum(self.pad_east))
-            padN = int(sum(self.pad_north))
+            padE = self.pad_east
+            padN = self.pad_north
             topo_core = self.surface_dict['topography'][padN:-padN,padE:-padE]            
             
             # log increasing airlayers, in reversed order
@@ -3294,15 +3298,9 @@ class Model(object):
 
             # add new air layers, cut_off some tailing layers to preserve array size.
             self.grid_z = np.concatenate([new_airlayers, self.grid_z[self.n_airlayers+1:] - self.grid_z[self.n_airlayers] + new_airlayers[-1]], axis=0)
-            print(" NEW self.grid_z shape and values = ", self.grid_z.shape, self.grid_z)
-            
-                        
-            # adjust the nodes, which is simply the diff of adjacent grid lines
-            self.nodes_z = self.grid_z[1:] - self.grid_z[:-1]
+#            print(" NEW self.grid_z shape and values = ", self.grid_z.shape, self.grid_z)
+#            print self.grid_z
 
-            # adjust sea level
-            self.sea_level = 0  # keep as zero
-#            logger.debug("FZ:***2 sea_level = %s", self.sea_level)
 
         # update the z-centre as the top air layer
         self.grid_center[2] = self.grid_z[0]
@@ -3319,7 +3317,7 @@ class Model(object):
         gcz = np.mean([self.grid_z[:-1], self.grid_z[1:]], axis=0)
 
         # convert topography to local grid coordinates
-        topo = self.sea_level - self.surface_dict['topography']
+        topo = self.grid_z[0] - self.surface_dict['topography']
         # assign values
         for j in range(len(self.res_model)):
             for i in range(len(self.res_model[j])):
@@ -3329,14 +3327,14 @@ class Model(object):
                     self.covariance_mask[j, i, ii1[0]] = 0.
                 # assign sea water to covariance and model res arrays
                 ii = np.where(
-                    np.all([gcz > self.sea_level, gcz <= topo[j, i]], axis=0))
+                    np.all([gcz > self.grid_z[0], gcz <= topo[j, i]], axis=0))
                 if len(ii) > 0:
                     self.covariance_mask[j, i, ii[0]] = 9.
                     self.res_model[j, i, ii[0]] = sea_resistivity
 
         self.covariance_mask = self.covariance_mask[::-1]
 
-        self.station_grid_index = self.project_stations_on_topography()
+#        self.station_grid_index = self.project_stations_on_topography()
 
 #        logger.debug("NEW res_model and cov_mask shapes: %s, %s", self.res_model.shape, self.covariance_mask.shape)
 
