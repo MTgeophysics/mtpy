@@ -67,13 +67,13 @@ class TestFrequencySelect(TestCase):
         _click_area(self.app.frequency_select.histogram,
                     offset=self.app.frequency_select.histogram.geometry().topLeft())
         QTest.qWait(1000)
-        self.assertTrue(self.app.frequency_select.model_selected.rowCount(, > 0)
+        self.assertTrue(self.app.frequency_select.model_selected.rowCount() > 0)
 
         _click_area(self.app.frequency_select.ui.checkBox_existing_only, pos_check_box)
         QTest.qWait(2000)
         self.assertTrue(self.app.frequency_select.ui.checkBox_existing_only.isChecked())
         self.assertTrue(self.app.frequency_select.histogram._select_existing_only)
-        self.assertTrue(self.app.frequency_select.model_selected.rowCount(, == 0)
+        self.assertTrue(self.app.frequency_select.model_selected.rowCount() == 0)
 
         _click_area(self.app.frequency_select.ui.checkBox_show_existing, pos_check_box)
         QTest.qWait(2000)
@@ -93,7 +93,7 @@ class TestFrequencySelect(TestCase):
         # test clear
         _click_area(self.app.frequency_select.ui.pushButton_clear)
         QTest.qWait(1000)
-        self.assertTrue(self.app.frequency_select.model_selected.rowCount(, == 0)
+        self.assertTrue(self.app.frequency_select.model_selected.rowCount() == 0)
         # test delete
         _click_area(self.app.frequency_select.histogram,
                     offset=self.app.frequency_select.histogram.geometry().topLeft())
@@ -106,11 +106,11 @@ class TestFrequencySelect(TestCase):
         _click_area(self.app.frequency_select.histogram,
                     offset=self.app.frequency_select.histogram.geometry().topLeft())
         QTest.qWait(1000)
-        self.assertTrue(self.app.frequency_select.model_selected.rowCount(, > 0)
+        self.assertTrue(self.app.frequency_select.model_selected.rowCount() > 0)
         self.app.frequency_select.ui.listView_selected.selectAll()
         _click_area(self.app.frequency_select.ui.pushButton_delete)
         QTest.qWait(1000)
-        self.assertTrue(self.app.frequency_select.model_selected.rowCount(, == 0)
+        self.assertTrue(self.app.frequency_select.model_selected.rowCount() == 0)
 
 
 def _generate_tests(edi_path):

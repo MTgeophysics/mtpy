@@ -28,7 +28,7 @@ else:
 MtPyLog().get_mtpy_logger(__name__).info("Testing using matplotlib backend {}".format(matplotlib.rcParams['backend']))
 
 
-def _click_area(qobj, pos=None, offset=None):
+def _click_area(qobj, pos=None, offset=None, modifier=QtCore.Qt.NoModifier):
     geom = qobj.geometry()
     if pos is None:
         x = int(geom.width() * random.uniform(0.2, 0.8))  # avid to click on the edge of widgets
@@ -36,5 +36,5 @@ def _click_area(qobj, pos=None, offset=None):
         pos = QtCore.QPoint(x, y)
     if offset is not None:
         pos += offset
-    QTest.mouseClick(qobj, QtCore.Qt.LeftButton, pos=pos)
-    print(pos.x(), pos.y())
+    QTest.mouseClick(qobj, QtCore.Qt.LeftButton, modifier=modifier, pos=pos)
+    # print(pos.x(), pos.y())

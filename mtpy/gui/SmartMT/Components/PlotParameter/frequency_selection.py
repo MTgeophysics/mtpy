@@ -10,9 +10,9 @@
 """
 import numpy as np
 from qtpy import QtCore
-from qtpy.QtCore import Signal, QVariant, QAbstractTableModel
+from qtpy.QtCore import Signal
 from qtpy.QtGui import QStandardItemModel, QStandardItem
-from qtpy.QtWidgets import QGroupBox, QStyledItemDelegate
+from qtpy.QtWidgets import QGroupBox, QStyledItemDelegate, QTableWidgetItem
 
 from mtpy.gui.SmartMT.gui.matplotlib_imabedding import MPLCanvas, Cursor
 from mtpy.gui.SmartMT.ui_asset.groupbox_frequency_select import Ui_GroupBox_frequency_select
@@ -473,7 +473,7 @@ class FrequencySelectionFromFile(QGroupBox):
         self.model_stations.sort(0)
 
     def _update_selection(self):
-        self.ui.tableWidget_selected.clear()
+        self.ui.tableWidget_selected.clearContents()
         unique_frequencies = set()
         # combine frequencies from all selected stations
         for index in self.ui.listView_stations.selectedIndexes():
@@ -484,6 +484,28 @@ class FrequencySelectionFromFile(QGroupBox):
             freq = [freq for freq in list(mt_obj.Z.freq)]
             unique_frequencies.update(freq)
         # order !
-        unique_frequencies = list(unique_frequencies).sort()
-        unique_periods = list(1./np.array(unique_frequencies))
+        unique_frequencies = sorted(list(unique_frequencies))
+        unique_periods = list(1. / np.array(unique_frequencies))
+
+        # update widget
+        self.ui.tableWidget_selected.setRowCount(len(unique_frequencies))
+        for index, freq_period in enumerate(zip(unique_frequencies, unique_periods)):
+            for i in [0, 1]:
+                newItem = QTableWidgetItem(str(freq_period[i]))
+                newItem.setData(QtCore.Qt.UserRole, freq_period[i])
+                newItem.setFlags(QtCore.Qt.ItemIsEnabled)
+                self.ui.tableWidget_selected.setItem(index, i, newItem)
+
+    def get_selected_frequencies(self):
+        return self.get_data(0)
+
+    def get_selected_periods(self):
+        return self.get_data(1)
+
+    def get_data(self, column_index):
+        data = [
+            self.ui.tableWidget_selected.item(index, column_index).data(QtCore.Qt.UserRole)
+            for index in range(self.ui.tableWidget_selected.rowCount())
+        ]
+        return data
 
