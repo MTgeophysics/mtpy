@@ -10,7 +10,7 @@
 """
 import numpy as np
 from qtpy import QtCore
-from qtpy.QtCore import Signal
+from qtpy.QtCore import Signal, QVariant, QAbstractTableModel
 from qtpy.QtGui import QStandardItemModel, QStandardItem
 from qtpy.QtWidgets import QGroupBox, QStyledItemDelegate
 
@@ -134,7 +134,8 @@ class FrequencySelection(QGroupBox):
                     uniques = self._unique_frequencies \
                         if self.ui.radioButton_frequency.isChecked() \
                         else self._unique_periods
-                    num = len([freq for freq in uniques if mi <= freq <= ma])  # num of existing freqs in the new interval
+                    num = len(
+                        [freq for freq in uniques if mi <= freq <= ma])  # num of existing freqs in the new interval
                     x = (mi, ma, num)
                     # remove old interval
                     self.model_selected.removeRow(self.model_selected.indexFromItem(item).row())
@@ -367,7 +368,7 @@ class FrequencySelection(QGroupBox):
                     x = self._find_closest(x)
                     self.frequency_selected.emit(x)
                 else:  # emit (min, max, num, freq, tol)
-                    tol = x * self._tol/100.
+                    tol = x * self._tol / 100.
                     min = x - tol
                     max = x + tol
                     self.frequency_range_selected.emit(
@@ -437,39 +438,52 @@ class FrequencySelectionFromFile(QGroupBox):
     """
     select frequencies/periods from the selected edi files
     """
+
     def __init__(self, parent):
         QGroupBox.__init__(self, parent)
-        self._mt_objs = None
+        self._mt_obj_dict = {}
         self.model_stations = QStandardItemModel()
-        self.model_selected_frequencies = QStandardItemModel()
 
         # setup ui
         self.ui = Ui_GroupBox_select_from_files()
         self.ui.setupUi(self)
-        self.ui.columnView_selected.setModel(self.model_selected_frequencies)
         self.ui.listView_stations.setModel(self.model_stations)
 
         # connect signals
+        self.ui.listView_stations.selectionModel().selectionChanged.connect(self._update_selection)
 
     data_changed = Signal()
 
     def set_data(self, mt_objs):
-        self._mt_objs = mt_objs
-        self.model_selected_frequencies.clear()
+        self._mt_obj_dict.clear()
+        for mt_obj in mt_objs:
+            self._mt_obj_dict[mt_obj.station] = mt_obj
 
         self._update_stations()
 
         self.data_changed.emit()
 
     def _update_stations(self):
-        if self._mt_objs is not None:
-            self.model_stations.clear()
-            for mt_obj in self._mt_objs:
-                new_item = QStandardItem()
-                new_item.setData(mt_obj.station, QtCore.Qt.DisplayRole)
-                new_item.setData(mt_obj.fn, QtCore.Qt.ToolTipRole)
-                self.model_stations.appendRow(new_item)
+        self.model_stations.clear()
+        for mt_obj in self._mt_obj_dict.values():
+            new_item = QStandardItem()
+            new_item.setData(mt_obj.station, QtCore.Qt.DisplayRole)
+            new_item.setData(mt_obj.fn, QtCore.Qt.ToolTipRole)
+            self.model_stations.appendRow(new_item)
+        self.model_stations.sort(0)
 
-
-
+    def _update_selection(self):
+        self.ui.tableWidget_selected.clear()
+        unique_frequencies = set()
+        # combine frequencies from all selected stations
+        for index in self.ui.listView_stations.selectedIndexes():
+            item = self.model_stations.item(index.row())
+            station = item.data(QtCore.Qt.DisplayRole)
+            mt_obj = self._mt_obj_dict[station]
+            # get frequencies
+            freq = [freq for freq in list(mt_obj.Z.freq)]
+            unique_frequencies.update(freq)
+        # order !
+        unique_frequencies = list(unique_frequencies).sort()
+        unique_periods = list(1./np.array(unique_frequencies))
 
