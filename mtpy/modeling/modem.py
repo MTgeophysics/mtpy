@@ -3280,12 +3280,12 @@ class Model(object):
             # build air layers based on the inner core area
             padE = self.pad_east
             padN = self.pad_north
-            topo_core = self.surface_dict['topography'][padN:-padN,padE:-padE]            
+            topo_core = self.surface_dict['topography'][padN:-padN,padE:-padE]
             
             # log increasing airlayers, in reversed order
             new_air_nodes = mtmesh.make_log_increasing_array(self.z1_layer,
                                                            topo_core.max() - topo_core.min(), 
-                                                           self.n_airlayers, 
+                                                           self.n_airlayers + 1, 
                                                            increment_factor=0.999)[::-1]
             # sum to get grid cell locations
             new_airlayers = np.array([new_air_nodes[:ii].sum() for ii in range(len(new_air_nodes)+1)])
@@ -3297,13 +3297,22 @@ class Model(object):
             print("self.grid_z[0:2]", self.grid_z[0:2])
 
             # add new air layers, cut_off some tailing layers to preserve array size.
-            self.grid_z = np.concatenate([new_airlayers, self.grid_z[self.n_airlayers+1:] - self.grid_z[self.n_airlayers] + new_airlayers[-1]], axis=0)
+#            self.grid_z = np.concatenate([new_airlayers, self.grid_z[self.n_airlayers+1:] - self.grid_z[self.n_airlayers] + new_airlayers[-1]], axis=0)
+            self.grid_z = np.concatenate([new_airlayers[:-1], self.grid_z + new_airlayers[-1]], axis=0)
+
 #            print(" NEW self.grid_z shape and values = ", self.grid_z.shape, self.grid_z)
 #            print self.grid_z
 
 
         # update the z-centre as the top air layer
         self.grid_center[2] = self.grid_z[0]
+
+        # update the resistivity model
+        new_res_model = np.ones((self.nodes_north.size,
+                                   self.nodes_east.size,
+                                   self.nodes_z.size))*self.res_starting_value
+        new_res_model[:,:,self.n_airlayers+1:] = self.res_model
+        self.res_model = new_res_model
 
 #        logger.info("begin to self.assign_resistivity_from_surfacedata(...)")
         self.assign_resistivity_from_surfacedata('topography', air_resistivity, where='above')
@@ -3874,13 +3883,18 @@ class Covariance(object):
         if model_fn is not None:
             mod_obj = Model()
             mod_obj.read_model_file(model_fn)
+            
+            # update save_path from model path if not provided separately
+            if save_path is None:
+                save_path = os.path.dirname(model_fn)
+            
             print 'Reading {0}'.format(model_fn)
             self.grid_dimensions = mod_obj.res_model.shape
             self.mask_arr = np.ones_like(mod_obj.res_model)
             self.mask_arr[np.where(mod_obj.res_model >= air*.9)] = 0
             self.mask_arr[np.where((mod_obj.res_model <= sea_water*1.1) & 
                               (mod_obj.res_model >= sea_water*.9))] = 9
-            
+        
         
         if self.grid_dimensions is None:
             raise ModEMError('Grid dimensions are None, input as (Nx, Ny, Nz)')
@@ -3905,13 +3919,13 @@ class Covariance(object):
         
         #--> smoothing in north direction        
         n_smooth_line = ''
-        for zz in range(self.grid_dimensions[0]):
+        for zz in range(self.grid_dimensions[2]):
             n_smooth_line += ' {0:<5.1f}'.format(self.smoothing_north)
         clines.append(n_smooth_line+'\n')
 
         #--> smoothing in east direction
         e_smooth_line = ''
-        for zz in range(self.grid_dimensions[1]):
+        for zz in range(self.grid_dimensions[2]):
             e_smooth_line += ' {0:<5.1f}'.format(self.smoothing_east)
         clines.append(e_smooth_line+'\n')
         
