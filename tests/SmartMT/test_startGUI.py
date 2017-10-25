@@ -13,7 +13,7 @@ class TestStartGUI(TestCase):
     def setUp(self):
         self.smartMT = StartGUI()
         self.smartMT.show()
-        QTest.qWaitForWindowActive(self.app)
+        QTest.qWaitForWindowActive(self.smartMT)
 
     def test_main(self):
         self.assertTrue(self.smartMT.isVisible())
