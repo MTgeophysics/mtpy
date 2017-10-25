@@ -137,4 +137,6 @@ tests/baseline_images/**/test_3D_MT_data_edited*
 tests/baseline_images/**/test_GA_UA_edited*
 tests/baseline_images/**/test_3D_MT_data_edited*
 mtpy/gui/SmartMT/ui_asset/*.py
+!mtpy/gui/SmartMT/ui_asset/__init__.py
+!mtpy/gui/SmartMT/ui_asset/icons_*_rc.py
 coverage_html_report
