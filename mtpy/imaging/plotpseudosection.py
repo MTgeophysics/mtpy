@@ -473,37 +473,38 @@ class PlotResPhasePseudoSection(object):
                              
         for ii, mt in enumerate(self.mt_list_sort):
             #get resisitivity and phase in a dictionary and append to a list
-            rp = mt.get_ResPhase()
+#            rp = mt.get_ResPhase()
+            rp = mt.Z
             
             for rr, rper in enumerate(self.plot_period):
                 jj = None
                 for kk, iper in enumerate(mt.period):
                     if iper == rper:
                         jj = period_dict[rper]
-                        self.resxx[jj, ii] = np.log10(rp.resxx[kk])
-                        self.resxy[jj, ii] = np.log10(rp.resxy[kk])
-                        self.resyx[jj, ii] = np.log10(rp.resyx[kk])
-                        self.resyy[jj, ii] = np.log10(rp.resyy[kk])
+                        self.resxx[jj, ii] = np.log10(rp.res_xx[kk])
+                        self.resxy[jj, ii] = np.log10(rp.res_xy[kk])
+                        self.resyx[jj, ii] = np.log10(rp.res_yx[kk])
+                        self.resyy[jj, ii] = np.log10(rp.res_yy[kk])
                         
-                        self.phasexx[jj, ii] = rp.phasexx[kk]
-                        self.phasexy[jj, ii] = rp.phasexy[kk]
-                        self.phaseyx[jj, ii] = rp.phaseyx[kk]
-                        self.phaseyy[jj, ii] = rp.phaseyy[kk]
+                        self.phasexx[jj, ii] = rp.phase_xx[kk]
+                        self.phasexy[jj, ii] = rp.phase_xy[kk]
+                        self.phaseyx[jj, ii] = rp.phase_yx[kk]
+                        self.phaseyy[jj, ii] = rp.phase_yy[kk]
                         
                         break
                         
                     elif rper*(1-self.ftol) <= iper and \
                          iper <= rper*(1+self.ftol):
                              jj = period_dict[rper]
-                             self.resxx[jj, ii] = np.log10(rp.resxx[kk])
-                             self.resxy[jj, ii] = np.log10(rp.resxy[kk])
-                             self.resyx[jj, ii] = np.log10(rp.resyx[kk])
-                             self.resyy[jj, ii] = np.log10(rp.resyy[kk])
+                             self.resxx[jj, ii] = np.log10(rp.res_xx[kk])
+                             self.resxy[jj, ii] = np.log10(rp.res_xy[kk])
+                             self.resyx[jj, ii] = np.log10(rp.res_yx[kk])
+                             self.resyy[jj, ii] = np.log10(rp.res_yy[kk])
                             
-                             self.phasexx[jj, ii] = rp.phasexx[kk]
-                             self.phasexy[jj, ii] = rp.phasexy[kk]
-                             self.phaseyx[jj, ii] = rp.phaseyx[kk]
-                             self.phaseyy[jj, ii] = rp.phaseyy[kk]
+                             self.phasexx[jj, ii] = rp.phase_xx[kk]
+                             self.phasexy[jj, ii] = rp.phase_xy[kk]
+                             self.phaseyx[jj, ii] = rp.phase_yx[kk]
+                             self.phaseyy[jj, ii] = rp.phase_yy[kk]
                              
                              break
                     else:

@@ -360,8 +360,16 @@ def project_points_ll2utm(lat, lon, datum='WGS84', utm_zone=None, epsg=None):
     """
 
     # check length of arrays
-    if len(lat) != len(lon):
+    if np.shape(lat) != np.shape(lon):
         raise ValueError("latitude and longitude arrays are of different lengths")
+        
+    # flatten, if necessary
+    flattened = False
+    if np.shape(lat) > 1:
+        flattened = True
+        llshape = np.shape(lat)
+        lat = np.array(lat).flatten()
+        lon = np.array(lon).flatten()
       
     # check lat/lon values
     for ii in range(len(lat)):
@@ -380,8 +388,8 @@ def project_points_ll2utm(lat, lon, datum='WGS84', utm_zone=None, epsg=None):
     if utm_zone is None:
         if epsg is None:
             # get centre point and get zone from that
-            latc = (np.amax(lat) + np.amin(lat))/2.
-            lonc = (np.amax(lon) + np.amin(lon))/2.
+            latc = (np.nanmax(lat) + np.nanmin(lat))/2.
+            lonc = (np.nanmax(lon) + np.nanmin(lon))/2.
             zone_number, is_northern, utm_zone = get_utm_zone(latc, lonc)
         else:
             use_epsg = True
@@ -408,6 +416,11 @@ def project_points_ll2utm(lat, lon, datum='WGS84', utm_zone=None, epsg=None):
     ## return different results depending on if lat/lon are iterable
     easting, northing, elev = np.array(ll2utm.TransformPoints(np.array([lon, lat]).T)).T
     projected_point = (easting, northing, utm_zone)    
+    
+    # reshape back into original shape
+    if flattened:
+        lat = lat.reshape(*llshape)
+        lon = lon.reshape(*llshape)
 
     return projected_point
     
