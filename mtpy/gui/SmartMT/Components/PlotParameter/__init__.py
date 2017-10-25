@@ -17,7 +17,7 @@ from mesh_grid import MeshGrid
 from padding import Padding
 from rotation import Rotation
 from scale import Scale
-from frequency_selection import FrequencySelection
+from frequency_selection import FrequencySelection, FrequencySelectionFromFile
 from station_selection import StationSelection
 from stretch import Stretch
 from z_component import ZComponentMultiple, ZComponentSingle
