@@ -1,6 +1,6 @@
 #! /usr/bin/env bash
 #######################################
-# test-runing all python scripts.
+# test-running all python scripts.
 #WinPC: python examples/plot_phase_tensor_map.py  E:/Datasets/MT_Datasets/GA_UA_edited_10s-10000s 0.0625 E:/MTPY2_Outputs/
 #######################################
 

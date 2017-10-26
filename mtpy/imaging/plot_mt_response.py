@@ -513,10 +513,10 @@ class PlotMTResponse(mtpl.MTArrows, mtpl.MTEllipse):
         # set figure size according to what the plot will be.
         if self.fig_size is None:
             if self.plot_num == 1 or self.plot_num == 3:
-                self.fig_size = [5, 7]
+                self.fig_size = [5, 3]
 
             elif self.plot_num == 2:
-                self.fig_size = [7, 7]
+                self.fig_size = [6, 3]
 
         #--> rotate the impedance tensor if desired
         if self.rot_z != 0:
