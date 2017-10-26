@@ -15,50 +15,23 @@ python -V
 
 cd $MTPYPATH
 
-echo "-----------Test running Alison's scripts---------"
 echo "-----------in mtpy2 develop branch---------"
 
 python examples/modem_plotptresidual.py
 
+# plot the response from edi files
 python examples/plot_edis.py examples/data/edi_files/
 python examples/plot_edis.py examples/data/edi_files/georgina
 
 # phase tensor map
-python examples/plot_phase_tensor_map.py tests/data/edifiles/
-
-python examples/plot_phase_tensor_map.py examples/data/edi_files/georgina
-# python examples/plot_phase_tensor_map.py examples/data/edi_files
-# python examples/plot_phase_tensor_map.py ./examples/data/edi_files/georgina ./localdir/abc.png
+python examples/plot_phase_tensor_map.py tests/data/edifiles/ 1
+python examples/plot_phase_tensor_map.py examples/data/edi_files/georgina 1
 
 #phase tensor psuedo section
 python examples/plot_phase_tensor_section.py examples/data/edi_files
 python examples/plot_phase_tensor_section.py examples/data/edi_files/georgina
 python examples/plot_phase_tensor_section.py tests/data/edifiles/
 
-
-####################################
-# Change log
-# 2016-12-01
-
-# PTMap works by a single index instead of loop-over all [0,1,2,,...18]
-# could not save figure, but now can save figure.
-# python examples/modem_plotmodel2.py examples/data/ModEM_files/VicSynthetic07 PTMap 8
-
-# changed ticks default, colorbar better positioned, depth_index => depth in KM? how to get values?
-# one plot each time for a given depth tested OK.  All plots (0-80) not sure.
-# python examples/modem_plotmodel2.py ./examples/data/ModEM_files/VicSynthetic07 DepthSlice
-
-# save figure not working, Now OK.
-# python examples/modem_plotmodel2.py ./examples/data/ModEM_files/VicSynthetic07 Response
-
-# will loop over all periods,
-# save to a png file for each period.
-# python examples/modem_plotmodel2.py ./examples/data/ModEM_files/VicSynthetic07 RMSMap
-
-# fix github issue #12: plt show in commandline run.
-# python examples/modem_plotmodel_vertical.py
-
-python mtpy/imaging/modem_plot_vertical_slice.py examples/data/ModEM_files/VicSynthetic07/
 
 echo "Finished running the script $0"
 
