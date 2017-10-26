@@ -14,7 +14,7 @@ import mtpy.modeling.modem as modem
 import mtpy.modeling.ws3dinv as ws
 import os
 import scipy.interpolate as interpolate
-import mtpy.utils.latlongutmconversion as utm2ll
+import mtpy.utils.gis_tools as gis_tools
 
 ogr.UseExceptions()
 
@@ -87,7 +87,7 @@ class ModEM_to_Raster(object):
         model_obj.read_model_file()
         
         if model_center:                                      
-            center_zone, center_east, center_north = utm2ll.LLtoUTM(23, 
+            center_zone, center_east, center_north = gis_tools.project_point_ll2utm( 
                                                                     model_center[1],
                                                                     model_center[0]) 
                                              
@@ -99,10 +99,9 @@ class ModEM_to_Raster(object):
                                 model_obj.nodes_north[0:pad_north].sum()+\
                                 model_obj.nodes_north[pad_north]/2
             
-            ll_lat, ll_lon = utm2ll.UTMtoLL(23, 
-                                            lower_left_north, 
-                                            lower_left_east,
-                                            center_zone)
+            ll_lat, ll_lon = gis_tools.project_point_utm2ll(lower_left_north, 
+                                                            lower_left_east,
+                                                            center_zone)
             
             print 'Lower Left Coordinates should be ({0:.5f}, {1:.5f})'.format(ll_lon, ll_lat)
             return (ll_lon, ll_lat)
@@ -393,7 +392,7 @@ def array2raster(raster_fn, origin, cell_width, cell_height, res_array,
 
     ncols = res_array.shape[1]
     nrows = res_array.shape[0]
-    
+
     utm_cs, utm_point = transform_ll_to_utm(origin[0], origin[1], projection)
     
     origin_east = utm_point[0]
@@ -402,7 +401,8 @@ def array2raster(raster_fn, origin, cell_width, cell_height, res_array,
     # set drive to make a geo tiff
     driver = gdal.GetDriverByName('GTiff')
 
-    # make a raster with the shape of the array to be written    
+    # make a raster with the shape of the array to be written 
+    print raster_fn, ncols, nrows
     out_raster = driver.Create(raster_fn, ncols, nrows, 1, gdal.GDT_Float32)
     
     # geotransform:
@@ -465,7 +465,6 @@ def transform_ll_to_utm(lon, lat, reference_ellipsoid='WGS84'):
     ll_to_utm_geo_transform = osr.CoordinateTransformation(ll_coordinate_system, 
                                                           utm_coordinate_system)
                                                                                   
-    
     utm_point = ll_to_utm_geo_transform.TransformPoint(lon, lat, 0)
         
     # returns easting, northing, altitude  
