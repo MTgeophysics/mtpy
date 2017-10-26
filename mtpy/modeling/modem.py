@@ -1045,10 +1045,14 @@ class Data(object):
                 dlines.append(self.get_header_string(self.error_type_z,
                                                      self.error_value_z,
                                                      self.rotation_angle))
+                nsta = len(np.nonzero(np.abs(self.data_array['z']).sum(axis=(1,2,3)))[0])
+                nper = len(np.nonzero(np.abs(self.data_array['z']).sum(axis=(0,2,3)))[0])
             elif 'vertical' in inv_mode.lower():
                 dlines.append(self.get_header_string(self.error_type_tipper,
                                                      self.error_value_tipper,
                                                      self.rotation_angle))
+                nsta = len(np.nonzero(np.abs(self.data_array['tip']).sum(axis=(1,2,3)))[0])
+                nper = len(np.nonzero(np.abs(self.data_array['tip']).sum(axis=(0,2,3)))[0])
             dlines.append(self.header_string)
             dlines.append('> {0}\n'.format(inv_mode))
             
@@ -1061,8 +1065,7 @@ class Data(object):
             dlines.append('> 0\n') #oriention, need to add at some point
             dlines.append('> {0:>10.6f} {1:>10.6f}\n'.format(
                           self.center_point.lat[0], self.center_point.lon[0]))
-            dlines.append('> {0} {1}\n'.format(self.data_array['z'].shape[1],
-                                               self.data_array['z'].shape[0]))
+            dlines.append('> {0} {1}\n'.format(nper,nsta))
                                                
             if compute_error == True:
                 self.compute_inv_error()
