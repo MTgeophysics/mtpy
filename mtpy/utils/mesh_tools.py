@@ -114,3 +114,24 @@ def get_padding_cells2(cell_width, core_max, max_distance, num_cells):
         "expanding model to {} m".format((cells[-1] + core_max)*2)
         
     return cells
+    
+    
+def get_station_buffer(grid_east,grid_north,station_east,station_north,buf=10e3):
+    """
+    get cells within a specified distance (buf) of the stations
+    returns a 2D boolean (True/False) array
+    
+    """
+    first = True
+    for xs,ys in np.vstack([station_east,station_north]).T:
+        xgrid,ygrid = np.meshgrid(grid_east,grid_north)
+        station_distance = ((xs - xgrid)**2 + (ys - ygrid)**2)**0.5
+        if first:
+            where = station_distance < buf
+            first = False
+        else:
+            where = np.any([where,station_distance < buf],axis=0)
+            
+    return where
+    
+    

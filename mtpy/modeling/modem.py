@@ -3126,14 +3126,15 @@ class Model(object):
             # second, check topography isn't the surface we're trying to assign
             # resistivity for
             if surfacename == 'topography':
-            # if it is, we need to define the upper limit as the top of the model
-                top = np.zeros_like(surfacedata) + np.amin(self.grid_z)
+            # if it is, we need to define the upper limit as the highest point in the surface
+                top = np.zeros_like(surfacedata) + np.amin(surfacedata) - 1.
             else:
             # if not, upper limit of resistivity assignment is the topography, note positive downwards
                 top = -self.surface_dict['topography']
         # if no topography, use top of model
         else:
             top = self.grid_z[0] + np.zeros_like(surfacedata)
+        
 
         # assign resistivity value
         for j in range(len(self.res_model)):
@@ -3141,13 +3142,13 @@ class Model(object):
                 if where == 'above':
                     # needs to be above the surface but below the top (as defined before)
                     ii = np.where((gcz <= surfacedata[j, i]) & ( gcz > top[j, i]))[0]
-
+#                    iisea = np.where((gcz <= surfacedata[j, i]) & ( gcz > 0.))[0]
                 else:  # for below the surface
                     ii = np.where(gcz > surfacedata[j, i])[0]
+                    
                 self.res_model[j, i, ii] = resistivity_value
-
-
-
+#                self.res_model[j, i, ii] = 0.3
+                print j,i,ii
 
 
 
@@ -3283,7 +3284,13 @@ class Model(object):
             # build air layers based on the inner core area
             padE = self.pad_east
             padN = self.pad_north
-            topo_core = self.surface_dict['topography'][padN:-padN,padE:-padE]
+#            topo_core = self.surface_dict['topography'][padN:-padN,padE:-padE]
+            core_cells = mtmesh.get_station_buffer(self.grid_east,
+                                                   self.grid_north,
+                                                   self.station_locations.station_locations['rel_east'],
+                                                   self.station_locations.station_locations['rel_north'],
+                                                   buf = 5*(self.cell_size_east*2 + self.cell_size_north**2)**0.5)
+            topo_core = topo_core = self.surface_dict['topography'][core_cells]
             
             # log increasing airlayers, in reversed order
             new_air_nodes = mtmesh.make_log_increasing_array(self.z1_layer,
@@ -3329,20 +3336,21 @@ class Model(object):
         gcz = np.mean([self.grid_z[:-1], self.grid_z[1:]], axis=0)
 
         # convert topography to local grid coordinates
-        topo = self.grid_z[0] - self.surface_dict['topography']
+        topo = -self.surface_dict['topography']
         # assign values
         for j in range(len(self.res_model)):
             for i in range(len(self.res_model[j])):
                 # assign all sites above the topography to air
-                ii1 = np.where(gcz <= topo[j, i])
+                ii1 = np.where(gcz <= topo[j, i])[0]
                 if len(ii1) > 0:
-                    self.covariance_mask[j, i, ii1[0]] = 0.
+                    self.covariance_mask[j, i, ii1] = 0.
                 # assign sea water to covariance and model res arrays
                 ii = np.where(
-                    np.all([gcz > self.grid_z[0], gcz <= topo[j, i]], axis=0))
+                    np.all([gcz > 0., gcz <= topo[j, i]], axis=0))[0]
                 if len(ii) > 0:
-                    self.covariance_mask[j, i, ii[0]] = 9.
-                    self.res_model[j, i, ii[0]] = sea_resistivity
+                    self.covariance_mask[j, i, ii] = 9.
+                    self.res_model[j, i, ii] = sea_resistivity
+                    print "assigning sea", j, i, ii
 
         self.covariance_mask = self.covariance_mask[::-1]
 
