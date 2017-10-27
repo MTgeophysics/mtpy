@@ -1706,21 +1706,15 @@ class Data(object):
             syi = np.where((sy <= model_object.grid_north[1:]) & (
                 sy > model_object.grid_north[:-1]))[0][0]
 
-            # first check if the site is in the sea
-            if np.any(model_object.covariance_mask[::-1][syi, sxi] == 9):
-                szi = np.amax(
-                    np.where(model_object.covariance_mask[::-1][syi, sxi] == 9)[0])
-            # second, check if there are any air cells
-            elif np.any(model_object.res_model[syi, sxi] > 0.95 * air_resistivity):
+            # first, check if there are any air cells
+            if np.any(model_object.res_model[syi, sxi] > 0.95 * air_resistivity):
                 szi = np.amin(
                     np.where((model_object.res_model[syi, sxi] < 0.95 * air_resistivity))[0])
             # otherwise place station at the top of the model
             else:
                 szi = 0
 
-            # print("FZ:*** szi=", szi)
-            # FZ: debug here to assign topography value for .dat file.
-            
+            # get relevant grid point elevation
             topoval = model_object.grid_z[szi]
 
             station_index_x.append(sxi)
@@ -3142,12 +3136,14 @@ class Model(object):
                 if where == 'above':
                     # needs to be above the surface but below the top (as defined before)
                     ii = np.where((gcz <= surfacedata[j, i]) & ( gcz > top[j, i]))[0]
-#                    iisea = np.where((gcz <= surfacedata[j, i]) & ( gcz > 0.))[0]
                 else:  # for below the surface
                     ii = np.where(gcz > surfacedata[j, i])[0]
                     
                 self.res_model[j, i, ii] = resistivity_value
-#                self.res_model[j, i, ii] = 0.3
+                
+                if surfacename == 'topography':
+                    iisea = np.where((gcz <= surfacedata[j, i]) & ( gcz > 0.))[0]
+                    self.res_model[j, i, iisea] = 0.3
                 print j,i,ii
 
 
@@ -3327,32 +3323,32 @@ class Model(object):
 #        logger.info("begin to self.assign_resistivity_from_surfacedata(...)")
         self.assign_resistivity_from_surfacedata('topography', air_resistivity, where='above')
 
-#        logger.info("begin to assign sea water resistivity")
-        # first make a mask for all-land =1, which will be modified later according to air, water
-        self.covariance_mask = np.ones_like(self.res_model)  # of grid size (xc, yc, zc)
-
-        # assign model areas below sea level but above topography, as seawater
-        # get grid node centres
-        gcz = np.mean([self.grid_z[:-1], self.grid_z[1:]], axis=0)
-
-        # convert topography to local grid coordinates
-        topo = -self.surface_dict['topography']
-        # assign values
-        for j in range(len(self.res_model)):
-            for i in range(len(self.res_model[j])):
-                # assign all sites above the topography to air
-                ii1 = np.where(gcz <= topo[j, i])[0]
-                if len(ii1) > 0:
-                    self.covariance_mask[j, i, ii1] = 0.
-                # assign sea water to covariance and model res arrays
-                ii = np.where(
-                    np.all([gcz > 0., gcz <= topo[j, i]], axis=0))[0]
-                if len(ii) > 0:
-                    self.covariance_mask[j, i, ii] = 9.
-                    self.res_model[j, i, ii] = sea_resistivity
-                    print "assigning sea", j, i, ii
-
-        self.covariance_mask = self.covariance_mask[::-1]
+##        logger.info("begin to assign sea water resistivity")
+#        # first make a mask for all-land =1, which will be modified later according to air, water
+#        self.covariance_mask = np.ones_like(self.res_model)  # of grid size (xc, yc, zc)
+#
+#        # assign model areas below sea level but above topography, as seawater
+#        # get grid node centres
+#        gcz = np.mean([self.grid_z[:-1], self.grid_z[1:]], axis=0)
+#
+#        # convert topography to local grid coordinates
+#        topo = -self.surface_dict['topography']
+#        # assign values
+#        for j in range(len(self.res_model)):
+#            for i in range(len(self.res_model[j])):
+#                # assign all sites above the topography to air
+#                ii1 = np.where(gcz <= topo[j, i])[0]
+#                if len(ii1) > 0:
+#                    self.covariance_mask[j, i, ii1] = 0.
+#                # assign sea water to covariance and model res arrays
+#                ii = np.where(
+#                    np.all([gcz > 0., gcz <= topo[j, i]], axis=0))[0]
+#                if len(ii) > 0:
+#                    self.covariance_mask[j, i, ii] = 9.
+#                    self.res_model[j, i, ii] = sea_resistivity
+#                    print "assigning sea", j, i, ii
+#
+#        self.covariance_mask = self.covariance_mask[::-1]
 
 #        self.station_grid_index = self.project_stations_on_topography()
 
