@@ -2,10 +2,10 @@ matplotlib
 numpy
 PyYAML>=3.11
 geopandas
-GDAL
 scipy
 pillow
 qtpy
+GDAL
 # pytest-cov
 # python-coveralls
 
