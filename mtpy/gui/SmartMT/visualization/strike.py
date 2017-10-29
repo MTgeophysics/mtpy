@@ -8,9 +8,9 @@
     Author: YingzhiGou
     Date: 21/08/2017
 """
-from mtpy.gui.SmartMT.gui.figure_setting_guis import Font
+from mtpy.gui.SmartMT.Components.FigureSetting import Font
+from mtpy.gui.SmartMT.Components.PlotParameter import FrequencyTolerance, Rotation
 from mtpy.gui.SmartMT.gui.plot_control_guis import PlotControlStrike
-from mtpy.gui.SmartMT.gui.plot_parameter_guis import Rotation, FrequencyTolerance
 from mtpy.gui.SmartMT.utils.matplotlib_utils import get_next_fig_num
 from mtpy.gui.SmartMT.visualization import VisualizationBase
 from mtpy.imaging.plotstrike import PlotStrike

@@ -10,8 +10,8 @@
 """
 
 import mtpy.imaging.penetration
-from mtpy.gui.SmartMT.gui.plot_parameter_guis import ZComponentMultiple, ZComponentSingle, \
-    FrequencyTolerance, FrequencyIndex, StationSelection, ZUnit, FrequencySelect
+from mtpy.gui.SmartMT.Components.PlotParameter import ZComponentMultiple, ZComponentSingle, FrequencyTolerance, \
+    FrequencySelection, FrequencyIndex, StationSelection, ZUnit
 from mtpy.gui.SmartMT.visualization.visualization_base import VisualizationBase
 
 
@@ -136,8 +136,8 @@ class Depth3D(VisualizationBase):
         self._parameter_ui.add_parameter_groupbox(self._z_component_ui)
 
         # self._frequency_period_ui = FrequencySingle(self._parameter_ui, use_period=True)
-        self._frequency_period_ui = FrequencySelect(self._parameter_ui, show_frequency=False, allow_range_select=False,
-                                                    select_multiple=False)
+        self._frequency_period_ui = FrequencySelection(self._parameter_ui, show_frequency=False, allow_range_select=False,
+                                                       select_multiple=False)
         self._parameter_ui.add_parameter_groupbox(self._frequency_period_ui)
 
         self._tolerance_ui = FrequencyTolerance(self._parameter_ui)

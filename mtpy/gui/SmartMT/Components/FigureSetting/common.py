@@ -8,40 +8,17 @@
     Author: YingzhiGou
     Date: 20/06/2017
 """
-import six
-from qtpy import QtCore
 from qtpy.QtWidgets import QGroupBox
-from matplotlib import colors as mcolors
 
-from mtpy.gui.SmartMT.ui_asset.plot_parameters import Ui_GroupBoxParameters
-
-COLORS = list(six.iteritems(mcolors.cnames))
-# # add the single letter colors
-# for name, rgb in six.iteritems(mcolors.ColorConverter.colors):
-#     hex_ = mcolors.rgb2hex(rgb)
-#     COLORS.append((name, hex_))
-# sort by name
-COLORS.sort(key=lambda c: c[0])
-
-SIMPLE_COLORS = ['b',  # blue
-                 'g',  # green
-                 'r',  # red
-                 'c',  # cyan
-                 'm',  # magenta
-                 'y',  # yellow
-                 'k',  # black
-                 'w'  # white
-                 ]
+from mtpy.gui.SmartMT.ui_asset.groupbox_common import Ui_GroupBox_common_settings
+from mtpy.utils.decorator import deprecated
 
 
-class PlotParameter(QGroupBox):
-    _slider_tick_size = 10.0
-    _slider_min = 0.0
-    _slider_max = 100.0
-
+@deprecated("no longer relevant, more detailed setting options are provided by other components")
+class CommonSettings(QGroupBox):  # pragma: no cover
     def __init__(self, parent):
         QGroupBox.__init__(self, parent)
-        self.ui = Ui_GroupBoxParameters()
+        self.ui = Ui_GroupBox_common_settings()
         self.ui.setupUi(self)
 
         # dpi
@@ -58,18 +35,6 @@ class PlotParameter(QGroupBox):
         # y
         self.ui.horizontalSlider_y.valueChanged.connect(self._y_slider_changed)
         self.ui.doubleSpinBox_y.valueChanged.connect(self._y_spinbox_changed)
-
-    def add_parameter_groupbox(self, groupbox):
-        self.ui.verticalLayout_plot.addWidget(groupbox, QtCore.Qt.AlignLeft)
-        self.resize(self.sizeHint())
-
-    def end_of_parameter_components(self):
-        self.ui.verticalLayout_plot.addStretch()
-        self.ui.verticalLayout_figure.addStretch()
-
-    def add_figure_groupbox(self, groupbox):
-        self.ui.verticalLayout_figure.addWidget(groupbox, QtCore.Qt.AlignLeft)
-        self.resize(self.sizeHint())
 
     def get_title(self):
         return str(self.ui.lineEdit_title.text())
@@ -171,5 +136,3 @@ class PlotParameter(QGroupBox):
 
     _horizontalalignment = ['right', 'center', 'left']
     _verticalalignment = ['top', 'center', 'bottom', 'baseline']
-
-

@@ -9,8 +9,8 @@
     Date: 20/06/2017
 """
 
+from mtpy.gui.SmartMT.Components.PlotParameter import Ellipse, Arrow, StationSelection, Rotation
 from mtpy.gui.SmartMT.gui.plot_control_guis import PlotControlMTResponse
-from mtpy.gui.SmartMT.gui.plot_parameter_guis import Ellipse, Arrow, StationSelection, Rotation
 from mtpy.gui.SmartMT.utils.matplotlib_utils import get_next_fig_num
 from mtpy.gui.SmartMT.visualization.visualization_base import VisualizationBase
 from mtpy.imaging.plot_mt_response import PlotMTResponse
