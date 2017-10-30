@@ -50,8 +50,8 @@ do.write_data_file(fill=False)
 
 # create model file
 mo = Model(station_locations=do.station_locations,
-                cell_size_east=10000,
-                cell_size_north=10000,
+                cell_size_east=500,
+                cell_size_north=500,
                 pad_north=7, # number of padding cells in each of the north and south directions
                 pad_east=7,# number of east and west padding cells
                 pad_z=6, # number of vertical padding cells
@@ -68,7 +68,7 @@ mo.make_mesh()
 mo.write_model_file(save_path=workdir)
 
 # add topography to res model
-mo.add_topography_to_model2(r'U:\Software\mtpy\development\AussieContinent_etopo1.asc')
+mo.add_topography_to_model2(r'C:\Git\mtpy\examples\data\AussieContinent_etopo1.asc')
 mo.write_model_file(save_path=workdir)
 
 do.project_stations_on_topography(mo)
