@@ -11,10 +11,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # working directory
-wd = r'M:\Presentation\Cover thickness workshop_MT\Occam1d\occam1d_files\model01'
-
-# inversion directory
-idir = wd
+idir = r'C:\Git\mtpy\examples\model_files\Occam1d'
+savepath = r'C:\Git\mtpy\examples\plots\Occam1d'
 
 # model and data file names
 modelfn=op.join(idir,'Model1D')
@@ -26,8 +24,8 @@ fn_list = np.array([ff for ff in os.listdir(idir)])
 #go to model results directory and find the latest iteration file
 #iterfile = 'ITER_135.iter'
 #respfile = 'ITER_135.resp'
-iterfile = 'Smooth_156.iter'
-respfile = 'Smooth_156.resp'
+iterfile = 'ITER_97.iter'
+respfile = 'ITER_97.resp'
 
 
 # get maximum iteration
@@ -55,4 +53,5 @@ pr = mtoc1d.Plot1DResponse(data_te_fn = datafn,
 
                            )
 pr.axm.set_xlim(1e-1,1e3)
-plt.savefig(op.join(idir,'occam1d_07-E1_minRMS.png'),dpi=300)
+pr.axr.set_ylim(1,100)
+#pr.save_figure(op.join(savepath,'occam1dplot.png'))
