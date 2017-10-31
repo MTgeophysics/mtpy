@@ -33,8 +33,9 @@ from unittest import TestCase
 class TestOccam1D(TestCase):
 
     def setUp(self):
-        # for each test, setup a different output dir
-        self._output_dir = r'E:/Githubz/mtpy/tests/Occam1d'
+
+        # directory to save created input files
+        self._output_dir = r'E:/Githubz/mtpy/tests/beta/Occam1d'
         if os.path.exists(self._output_dir):
         # clear dir if it already exist
             shutil.rmtree(self._output_dir)
@@ -48,19 +49,11 @@ class TestOccam1D(TestCase):
             self._expected_output_dir = None
 
 
-    def test_all(self, path2edifile = r'E:/Githubz/mtpy/examples/data/edi_files/pb23c.edi',
-                 savepath = r'E:/Githubz/mtpy/tests/Occam1d'):
+    def test_all(self, path2edifile = r'E:/Githubz/mtpy/examples/data/edi_files/pb23c.edi'):
         """
         test function
         :return:
         """
-
-        # directory to save created input files
-        # savepath = r'C:\Git\mtpy\examples\model_files\Occam1d'
-        # savepath = r'E:/Githubz/mtpy/examples/model_files/Occam1d'
-
-        if not os.path.exists(savepath):
-            os.mkdir(savepath)
 
         # create data file
         ocd = mtoc1d.Data()  # create an object and assign values to arguments
@@ -68,7 +61,7 @@ class TestOccam1D(TestCase):
         ocd.write_data_file(edi_file=path2edifile,
                             mode='det',
                             # mode, can be te, tm, det (for res/phase) or tez, tmz, zdet for real/imag impedance tensor values
-                            save_path=savepath,
+                            save_path=self._output_dir,
                             res_errorfloor=5,  # percent error floor
                             phase_errorfloor=1,  # error floor in degrees
                             z_errorfloor=2.5,
@@ -79,7 +72,7 @@ class TestOccam1D(TestCase):
                            target_depth=10000,  # target depth in metres, before padding
                            z1_layer=10  # first layer thickness in metres
                            )
-        ocm.write_model_file(save_path=savepath)
+        ocm.write_model_file(save_path= self._output_dir)
 
         # create startup file
         ocs = mtoc1d.Startup(data_fn=ocd.data_fn,  # basename of data file *default* is Occam1DDataFile
@@ -89,33 +82,47 @@ class TestOccam1D(TestCase):
 
         ocs.write_startup_file()
 
-    # Wrote Data File to : E:/Githubz/mtpy/tests/Occam1d\Occam1d_DataFile_DET.dat
-    # Wrote Model file: E:/Githubz/mtpy/tests/Occam1d\Model1D
-    # Wrote Input File: E:/Githubz/mtpy/tests/Occam1d\OccamStartup1D
 
-        output_data_file = os.path.normpath(os.path.join(savepath, "Occam1d_DataFile_DET.dat"))
-        self.assertTrue(os.path.isfile(output_data_file), "output data file does not exist")
-        expected_data_file = os.path.normpath(os.path.join(self._expected_output_dir,
-                                                           "Occam1d_DataFile_DET.dat"))
-        self.assertTrue(
-            os.path.isfile(expected_data_file),
-            "expected output data file does not exist, nothing to compare"
-        )
+        for afile in ("Model1D", "Occam1d_DataFile_DET.dat",  "OccamStartup1D"):
 
-        print ("comparing", output_data_file, "and", expected_data_file)
+            output_data_file = os.path.normpath(os.path.join(self._output_dir, afile))
+            self.assertTrue(os.path.isfile(output_data_file), "output data file not found")
 
-        # with open(output_data_file, 'r') as output:
-        #     with open(expected_data_file, 'r') as expected:
-        #         diff = difflib.unified_diff(
-        #             expected.readlines(),
-        #             output.readlines(),
-        #             fromfile='expected',
-        #             tofile='output'
-        #         )
-        # count = 0
-        # for line in diff:
-        #     sys.stdout.write(line)
-        #     count += 1
-        # self.assertTrue(count == 0, "output different!")
+            expected_data_file = os.path.normpath(os.path.join(self._expected_output_dir, afile))
+
+            self.assertTrue(os.path.isfile(expected_data_file),
+                "Ref output data file does not exist, nothing to compare with"
+            )
+
+            print ("Comparing", output_data_file, "and", expected_data_file)
+
+            count = diffiles(output_data_file,expected_data_file)
+            if afile == "OccamStartup1D":
+                self.assertTrue(count==1, "The output files different in %s lines"%count)
+            else:
+                self.assertTrue(count==0, "The output files different in %s lines"%count)
+
+
+
+def diffiles(f1, f2):
+    """
+    compare two files
+    :param f1:
+    :param f2:
+    :return: the number count of different lines
+    """
+    test_lines = open(f1).readlines()
+    correct_lines = open(f2).readlines()
+
+    count=0
+    for test, correct in zip(test_lines, correct_lines):
+        if test != correct:
+            print ("Diffiles() Failure@: Expected %r; BUT Got %r." % (correct, test))
+            count= count+1
+        else:
+            pass
+
+    return count
+
 
 
