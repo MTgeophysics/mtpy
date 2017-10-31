@@ -1,0 +1,317 @@
+>HEAD
+
+    ACQBY=
+    ACQDATE=01/01/15
+    COORDINATE_SYSTEM=Geomagnetic North
+    DATAID=Synth01
+    DATUM=WGS84
+    ELEV=192.000
+    EMPTY=1e+32
+    FILEBY=
+    FILEDATE=2017/10/31 04:56:30 UTC
+    LAT=-19:07:16.00
+    LOC=None
+    LON=136:09:29.33
+    PROGDATE=mtpy
+    PROGVERS=mtpy
+    PROJECT=None
+    SURVEY=Synthetic
+
+>INFO
+
+    area = Area Name
+    client co = 
+    maxinfo = 999
+    rotation = FIX
+    survey co = 
+    survey id = Synthetic
+    fieldnotes.datalogger.id = None
+    fieldnotes.datalogger.manufacturer = None
+    fieldnotes.datalogger.type = None
+    fieldnotes.dataquality.author = None
+    fieldnotes.dataquality.comments = None
+    fieldnotes.dataquality.good_from_period = None
+    fieldnotes.dataquality.good_to_period = None
+    fieldnotes.dataquality.rating = None
+    fieldnotes.dataquality.warnings_comments = None
+    fieldnotes.dataquality.warnings_flag = 0
+    fieldnotes.electrode_ex.acqchan = 0.0
+    fieldnotes.electrode_ex.chtype = EX
+    fieldnotes.electrode_ex.id = 104.001
+    fieldnotes.electrode_ex.manufacturer = None
+    fieldnotes.electrode_ex.type = None
+    fieldnotes.electrode_ex.x = 0.0
+    fieldnotes.electrode_ex.x2 = 0.0
+    fieldnotes.electrode_ex.y = 0.0
+    fieldnotes.electrode_ex.y2 = 0.0
+    fieldnotes.electrode_ex.z = 0.0
+    fieldnotes.electrode_ex.z2 = 0.0
+    fieldnotes.electrode_ey.acqchan = 0.0
+    fieldnotes.electrode_ey.chtype = EY
+    fieldnotes.electrode_ey.id = 105.001
+    fieldnotes.electrode_ey.manufacturer = None
+    fieldnotes.electrode_ey.type = None
+    fieldnotes.electrode_ey.x = 0.0
+    fieldnotes.electrode_ey.x2 = 0.0
+    fieldnotes.electrode_ey.y = 0.0
+    fieldnotes.electrode_ey.y2 = 0.0
+    fieldnotes.electrode_ey.z = 0.0
+    fieldnotes.electrode_ey.z2 = 0.0
+    fieldnotes.magnetometer_hx.acqchan = 0.0
+    fieldnotes.magnetometer_hx.azm = 0.0
+    fieldnotes.magnetometer_hx.chtype = HX
+    fieldnotes.magnetometer_hx.id = 106.001
+    fieldnotes.magnetometer_hx.manufacturer = None
+    fieldnotes.magnetometer_hx.type = None
+    fieldnotes.magnetometer_hx.x = 0.0
+    fieldnotes.magnetometer_hx.y = 0.0
+    fieldnotes.magnetometer_hx.z = 0.0
+    fieldnotes.magnetometer_hy.acqchan = 0.0
+    fieldnotes.magnetometer_hy.azm = 90.0
+    fieldnotes.magnetometer_hy.chtype = HY
+    fieldnotes.magnetometer_hy.id = 107.001
+    fieldnotes.magnetometer_hy.manufacturer = None
+    fieldnotes.magnetometer_hy.type = None
+    fieldnotes.magnetometer_hy.x = 0.0
+    fieldnotes.magnetometer_hy.y = 0.0
+    fieldnotes.magnetometer_hy.z = 0.0
+    fieldnotes.magnetometer_hz.acqchan = 0.0
+    fieldnotes.magnetometer_hz.azm = 0.0
+    fieldnotes.magnetometer_hz.chtype = HZ
+    fieldnotes.magnetometer_hz.id = 103.001
+    fieldnotes.magnetometer_hz.manufacturer = None
+    fieldnotes.magnetometer_hz.type = None
+    fieldnotes.magnetometer_hz.x = 0.0
+    fieldnotes.magnetometer_hz.y = 0.0
+    fieldnotes.magnetometer_hz.z = 0.0
+    processing.remote_site.location._easting = None
+    processing.remote_site.location._elevation = None
+    processing.remote_site.location._latitude = None
+    processing.remote_site.location._longitude = None
+    processing.remote_site.location._northing = None
+    processing.remote_site.location.coordinate_system = Geographic North
+    processing.remote_site.location.datum = WGS84
+    processing.remote_site.location.declination = None
+    processing.remote_site.location.declination_epoch = None
+    processing.remote_site.location.elev_units = m
+    processing.remote_site.location.utm_zone = None
+    processing.remote_site.acquired_by = None
+    processing.remote_site.end_date = None
+    processing.remote_site.id = None
+    processing.remote_site.project = None
+    processing.remote_site.run_list = None
+    processing.remote_site.start_date = None
+    processing.remote_site.survey = None
+    processing.remote_site.year_collected = None
+    processing.software.Author = <mtpy.core.mt.Person object at 0x000000001012E048>
+    processing.software.name = None
+    processing.software.version = None
+    processing.notes = None
+    processing.processed_by = None
+    processing.remote_reference = None
+    processing.sign_convention = exp(+i \omega t)
+    copyright.citation.author = None
+    copyright.citation.doi = None
+    copyright.citation.journal = None
+    copyright.citation.title = None
+    copyright.citation.volume = None
+    copyright.citation.year = None
+    copyright.additional_info = None
+    copyright.conditions_of_use = These data are fictional and should not be used for any purpose except software testing
+    copyright.release_status = None
+    provenance.creator.organization = None
+    provenance.creator.organization_url = None
+    provenance.creator.email = None
+    provenance.creator.name = None
+    provenance.submitter.organization = None
+    provenance.submitter.organization_url = None
+    provenance.submitter.email = None
+    provenance.submitter.name = None
+    provenance.creating_application = MTpy
+    provenance.creation_time = 2017-10-31 04:56:29
+
+>=DEFINEMEAS
+
+    MAXCHAN=7
+    MAXRUN=999
+    MAXMEAS=7
+    REFLAT=-19:07:16.00
+    REFLON=136:09:29.33
+    REFELEV=192.000
+    REFTYPE=Geomagnetic North
+    UNITS=M
+
+>EMEAS ID=104  CHTYPE=EX  X=0.0  Y=0.0  X2=0.0  Y2=0.0  ACQCHAN=0.0 
+>EMEAS ID=105  CHTYPE=EY  X=0.0  Y=0.0  X2=0.0  Y2=0.0  ACQCHAN=0.0 
+>HMEAS ID=106.001 CHTYPE=HX  X=0.0  Y=0.0  AZM=0.0  ACQCHAN=0.0 
+>HMEAS ID=107.001 CHTYPE=HY  X=0.0  Y=0.0  AZM=90.0 ACQCHAN=0.0 
+
+>=MTSECT
+    NFREQ=57
+    SECTID=Synth01
+    NCHAN=4
+    MAXBLKS=999
+    HZ=None
+    EX=0.0
+    EY=0.0
+    HX=0.0
+    HY=0.0
+
+!****FREQUENCIES****!
+>FREQ // 57
+   1.256500e+04   9.751601e+03   7.876300e+03   6.188500e+03   5.250801e+03   4.265799e+03
+   6.914800e+02   4.922399e+02   3.203099e+02   2.148400e+02   1.728900e+02   1.367200e+02
+   1.015600e+02   7.421900e+01   5.761700e+01   4.101600e+01   2.636700e+01   1.757800e+01
+   1.367200e+01   1.025400e+01   8.056600e+00   6.591801e+00   5.371100e+00   4.394500e+00
+   3.418000e+00   2.563500e+00   1.914100e+00   1.601600e+00   1.328100e+00   1.074200e+00
+   8.789100e-01   6.835900e-01   5.078100e-01   3.710900e-01   2.880900e-01   2.050800e-01
+   1.318400e-01   8.789098e-02   6.835900e-02   5.127000e-02   4.028299e-02   3.295900e-02
+   2.685500e-02   2.197300e-02   1.709000e-02   1.281700e-02   1.007100e-02   8.239700e-03
+   6.713900e-03   5.493201e-03   4.272499e-03   2.822900e-03   2.059900e-03   1.373300e-03
+   1.068100e-03   5.340601e-04   3.051799e-04
+!****IMPEDANCE ROTATION ANGLES****!
+>ZROT // 57
+   0.000000e+00   0.000000e+00   0.000000e+00   0.000000e+00   0.000000e+00   0.000000e+00
+   0.000000e+00   0.000000e+00   0.000000e+00   0.000000e+00   0.000000e+00   0.000000e+00
+   0.000000e+00   0.000000e+00   0.000000e+00   0.000000e+00   0.000000e+00   0.000000e+00
+   0.000000e+00   0.000000e+00   0.000000e+00   0.000000e+00   0.000000e+00   0.000000e+00
+   0.000000e+00   0.000000e+00   0.000000e+00   0.000000e+00   0.000000e+00   0.000000e+00
+   0.000000e+00   0.000000e+00   0.000000e+00   0.000000e+00   0.000000e+00   0.000000e+00
+   0.000000e+00   0.000000e+00   0.000000e+00   0.000000e+00   0.000000e+00   0.000000e+00
+   0.000000e+00   0.000000e+00   0.000000e+00   0.000000e+00   0.000000e+00   0.000000e+00
+   0.000000e+00   0.000000e+00   0.000000e+00   0.000000e+00   0.000000e+00   0.000000e+00
+   0.000000e+00   0.000000e+00   0.000000e+00
+!****IMPEDANCES****!
+>ZXXR ROT=ZROT // 57
+  -2.613486e+01  -2.644701e+01  -2.343955e+01  -1.746865e+01  -1.069980e+01  -1.496221e+01
+  -1.959884e+01  -7.535551e+00  -6.501017e+00  -5.020090e+00  -2.968016e+00  -3.376181e+00
+  -2.579880e+00  -1.762442e+00  -1.181726e+00  -4.494835e-01  -9.057209e-01  -8.271472e-01
+  -7.619144e-01  -6.929201e-01  -5.792058e-01  -4.855381e-01  -4.187263e-01  -3.371483e-01
+  -1.960516e-01  -1.102744e-01  -1.639975e-01  -1.966677e-01  -1.553026e-01  -1.465851e-01
+  -1.778371e-01  -1.815888e-01  -1.125213e-01  -1.324144e-01  -1.427834e-01  -4.105039e-02
+   1.025961e-01  -1.029754e-01  -1.497980e-02  -4.676916e-02  -1.349955e-02  -1.433318e-02
+  -1.789380e-02  -1.078546e-03   2.711520e-02   4.972734e-02   8.581220e-02   7.809404e-02
+   9.518898e-02   6.521903e-02   7.744192e-02   3.277209e-02  -6.695982e-02  -7.402973e-02
+  -1.363119e-01  -7.980177e-02  -1.239831e-01
+>ZXXI ROT=ZROT // 57
+  -1.890690e+01  -2.062408e+01  -1.945727e+01  -1.888198e+01  -1.237385e+01  -1.231478e+01
+  -4.175179e+00  -4.668114e+00  -8.569614e+00  -6.118319e+00  -3.455059e+00  -4.728194e+00
+  -4.157930e+00  -3.302332e+00  -2.959471e+00  -2.480712e+00  -1.668294e+00  -1.280320e+00
+  -1.160943e+00  -9.909181e-01  -8.435425e-01  -8.460559e-01  -7.513342e-01  -6.290841e-01
+  -5.534439e-01  -6.101045e-01  -3.592498e-01  -2.990459e-01  -2.472071e-01  -2.095826e-01
+  -1.076373e-01  -1.294738e-01  -1.371095e-01  -1.071354e-01  -3.512516e-02  -1.113652e-01
+   3.580175e-03  -8.601138e-03  -9.034103e-03  -5.935896e-02  -6.369120e-02  -6.570183e-02
+  -5.919277e-02  -6.452963e-02  -6.934957e-02  -6.137042e-02  -4.190737e-02  -2.659811e-02
+   3.333533e-02   6.474908e-02   9.826116e-02   1.391964e-01   1.183028e-01   4.026086e-02
+   3.433391e-02  -2.117678e-02   2.800778e-03
+>ZXX.VAR ROT=ZROT // 57
+   1.680357e-01   5.090316e-02   1.119153e-01   8.081571e-01   1.207394e+01   1.108405e+00
+   3.481880e+01   1.811384e+00   8.161425e-03   1.528145e-02   8.037866e-02   4.954177e-04
+   8.110050e-04   1.041068e-03   1.282097e-03   1.872768e-03   3.554350e-04   2.103897e-04
+   1.719396e-04   1.038092e-04   5.484574e-05   1.268129e-04   4.087430e-04   5.790939e-04
+   5.474701e-04   9.411380e-04   6.823758e-05   1.155849e-04   5.152185e-05   8.934735e-05
+   1.050327e-04   7.434078e-05   4.213070e-05   5.745961e-05   1.238009e-04   1.973971e-03
+   1.517503e-02   1.627773e-03   3.555446e-04   1.063529e-04   8.294683e-05   5.361714e-05
+   5.708330e-05   5.106289e-05   4.559493e-05   4.136248e-05   3.517552e-05   3.886318e-05
+   7.391715e-05   9.485771e-05   9.340955e-05   1.742437e-04   1.377021e-04   2.653246e-04
+   1.340541e-04   2.203651e-04   2.029519e-04
+>ZXYR ROT=ZROT // 57
+   3.548308e+02   3.321178e+02   3.136842e+02   2.901140e+02   2.661384e+02   2.363076e+02
+   9.652013e+01   7.607893e+01   5.537678e+01   4.783131e+01   4.140937e+01   3.589370e+01
+   3.155068e+01   2.697029e+01   2.313003e+01   1.954655e+01   1.561515e+01   1.272000e+01
+   1.132086e+01   9.749179e+00   8.694007e+00   7.994370e+00   7.153907e+00   6.556584e+00
+   5.720989e+00   4.588911e+00   3.612136e+00   3.464429e+00   3.281156e+00   3.118490e+00
+   3.037328e+00   2.952686e+00   2.818693e+00   2.813752e+00   2.857643e+00   2.697079e+00
+   2.415675e+00   2.875337e+00   2.719989e+00   2.651079e+00   2.592808e+00   2.526611e+00
+   2.569251e+00   2.527749e+00   2.463255e+00   2.353348e+00   2.200127e+00   2.109796e+00
+   1.959364e+00   1.819374e+00   1.566105e+00   1.140375e+00   9.601166e-01   7.578395e-01
+   7.023222e-01   4.961725e-01   3.516189e-01
+>ZXYI ROT=ZROT // 57
+   3.954387e+02   3.393252e+02   3.011845e+02   2.723877e+02   2.501605e+02   2.270394e+02
+   9.860222e+01   8.574045e+01   7.291382e+01   5.467869e+01   4.883107e+01   4.210832e+01
+   3.713494e+01   3.154681e+01   2.663193e+01   2.170804e+01   1.688460e+01   1.345071e+01
+   1.186974e+01   1.011899e+01   9.002788e+00   8.353499e+00   7.553179e+00   6.845961e+00
+   6.070215e+00   5.186450e+00   4.084764e+00   3.432087e+00   2.880651e+00   2.381248e+00
+   1.934687e+00   1.573014e+00   1.180414e+00   9.456829e-01   7.017358e-01   5.392034e-01
+   3.603987e-01   2.347547e-01   2.905753e-01   3.801346e-01   3.844770e-01   4.489735e-01
+   4.668551e-01   5.536326e-01   6.102119e-01   7.210687e-01   8.187400e-01   9.039655e-01
+   9.649613e-01   1.028841e+00   1.008557e+00   9.347321e-01   8.480712e-01   7.116750e-01
+   6.285194e-01   4.725009e-01   3.533828e-01
+>ZXY.VAR ROT=ZROT // 57
+   8.928455e-02   3.071468e-02   6.985649e-02   5.149230e-01   7.551371e+00   7.253302e-01
+   1.165894e+01   5.903809e-01   4.552430e-03   7.957838e-03   3.509768e-02   3.056451e-04
+   5.430467e-04   8.144178e-04   1.025444e-03   1.651988e-03   4.583750e-04   3.771601e-04
+   3.521156e-04   2.300426e-04   1.384958e-04   2.249402e-04   6.200289e-04   8.539562e-04
+   7.343513e-04   1.146223e-03   7.054922e-05   1.186384e-04   4.867320e-05   8.714721e-05
+   9.997113e-05   7.529570e-05   7.007633e-05   1.471266e-04   2.525723e-04   1.589491e-03
+   8.880085e-03   2.649672e-03   6.802168e-04   1.600449e-04   2.083472e-04   1.072149e-04
+   1.366792e-04   1.122520e-04   8.280516e-05   1.168191e-04   1.098153e-04   7.390648e-05
+   1.156812e-04   1.254632e-04   1.354834e-04   2.821869e-04   2.500152e-04   2.449284e-04
+   2.226707e-04   4.185192e-04   2.047111e-04
+>ZYXR ROT=ZROT // 57
+  -3.663938e+02  -3.373005e+02  -3.112654e+02  -2.888170e+02  -2.634724e+02  -2.375763e+02
+  -7.009858e+01  -7.001797e+01  -5.410759e+01  -4.757413e+01  -4.008836e+01  -3.555710e+01
+  -3.147162e+01  -2.723506e+01  -2.364930e+01  -2.015054e+01  -1.569566e+01  -1.270251e+01
+  -1.152854e+01  -9.872154e+00  -8.906709e+00  -8.332209e+00  -7.308816e+00  -6.477020e+00
+  -5.623224e+00  -4.719224e+00  -3.691808e+00  -3.450781e+00  -3.295164e+00  -3.120313e+00
+  -2.991955e+00  -2.828176e+00  -2.837859e+00  -2.751894e+00  -2.727038e+00  -2.650808e+00
+  -2.473246e+00  -2.469402e+00  -2.412321e+00  -2.304116e+00  -2.333137e+00  -2.270401e+00
+  -2.192122e+00  -2.158020e+00  -2.044462e+00  -1.926980e+00  -1.830816e+00  -1.699319e+00
+  -1.577961e+00  -1.408518e+00  -1.266240e+00  -9.364833e-01  -6.990910e-01  -5.232360e-01
+  -3.874084e-01  -2.008641e-01  -1.508506e-01
+>ZYXI ROT=ZROT // 57
+  -3.899995e+02  -3.382455e+02  -3.035359e+02  -2.714037e+02  -2.470316e+02  -2.202226e+02
+  -1.136853e+02  -8.693133e+01  -7.062417e+01  -5.325810e+01  -4.723280e+01  -4.085041e+01
+  -3.585707e+01  -3.059030e+01  -2.601782e+01  -2.103137e+01  -1.649790e+01  -1.302174e+01
+  -1.169771e+01  -9.975583e+00  -8.944010e+00  -8.239384e+00  -7.313002e+00  -6.618743e+00
+  -5.716030e+00  -4.659734e+00  -4.151976e+00  -3.487517e+00  -2.880585e+00  -2.378728e+00
+  -2.006782e+00  -1.564635e+00  -1.196237e+00  -9.899654e-01  -8.092317e-01  -6.228070e-01
+  -5.898749e-01  -5.044667e-01  -4.725614e-01  -4.474300e-01  -5.172220e-01  -5.388136e-01
+  -5.881178e-01  -6.283690e-01  -7.067957e-01  -7.645513e-01  -7.940931e-01  -8.838013e-01
+  -9.106712e-01  -9.285019e-01  -9.590066e-01  -8.972961e-01  -8.264087e-01  -6.872723e-01
+  -6.218393e-01  -4.374838e-01  -2.983586e-01
+>ZYX.VAR ROT=ZROT // 57
+   1.428607e-01   4.906401e-02   1.163479e-01   8.378693e-01   1.190566e+01   1.014240e+00
+   3.386283e+01   1.706160e+00   8.630923e-03   1.676545e-02   8.192890e-02   5.448832e-04
+   8.996910e-04   1.170363e-03   1.451873e-03   2.059677e-03   3.908028e-04   2.424321e-04
+   1.977153e-04   1.225503e-04   6.557426e-05   1.478280e-04   4.725680e-04   6.639178e-04
+   6.212933e-04   1.043726e-03   7.288724e-05   1.257205e-04   5.579379e-05   9.366577e-05
+   1.046159e-04   7.147420e-05   3.810482e-05   5.056142e-05   1.056236e-04   1.696561e-03
+   1.010802e-02   1.297880e-03   2.850278e-04   7.417092e-05   5.131397e-05   3.830500e-05
+   4.233476e-05   3.947551e-05   3.424019e-05   2.742531e-05   2.633821e-05   3.105271e-05
+   5.294958e-05   7.676019e-05   8.663442e-05   2.305088e-04   1.718423e-04   3.093669e-04
+   2.378239e-04   5.821203e-04   6.323893e-04
+>ZYYR ROT=ZROT // 57
+   7.271195e+00  -8.351272e-01  -9.872980e+00  -1.267423e+01  -1.986239e+01  -1.303523e+01
+  -1.635473e+01  -7.860384e+00  -5.976775e+00  -4.850554e+00  -3.352345e+00  -4.031677e+00
+  -3.726341e+00  -3.377842e+00  -3.107107e+00  -2.992652e+00  -2.244609e+00  -1.833405e+00
+  -1.470579e+00  -1.280625e+00  -1.169932e+00  -9.371865e-01  -9.929254e-01  -1.155118e+00
+  -1.171253e+00  -8.021424e-01  -5.783243e-01  -5.778558e-01  -5.267222e-01  -5.020332e-01
+  -5.054703e-01  -5.279388e-01  -3.938535e-01  -4.749388e-01  -4.881600e-01  -4.375228e-01
+  -6.397622e-01  -5.411249e-01  -6.403640e-01  -7.034368e-01  -6.829224e-01  -6.578169e-01
+  -7.151617e-01  -7.164143e-01  -7.529457e-01  -7.666193e-01  -7.340554e-01  -8.134810e-01
+  -7.976113e-01  -7.883551e-01  -7.472992e-01  -6.202739e-01  -5.954663e-01  -4.281492e-01
+  -4.414818e-01  -3.280663e-01  -1.788400e-01
+>ZYYI ROT=ZROT // 57
+  -2.572419e+01  -1.285835e+01  -9.061752e+00  -8.865859e+00  -1.423310e+01  -1.150264e+01
+   3.767821e+00  -3.470404e+00  -5.892085e+00  -4.364508e+00  -3.222360e+00  -3.725641e+00
+  -3.521150e+00  -3.075562e+00  -2.399229e+00  -2.055780e+00  -1.699585e+00  -1.420042e+00
+  -1.212696e+00  -9.736730e-01  -8.635643e-01  -9.408737e-01  -9.332380e-01  -9.503006e-01
+  -1.022372e+00  -9.665619e-01  -4.889930e-01  -3.950320e-01  -3.699796e-01  -3.294817e-01
+  -2.298907e-01  -2.006529e-01  -1.146361e-01  -3.747138e-02   1.561015e-02   4.953986e-02
+   1.980111e-02   2.431036e-03   1.001797e-01   6.893833e-02   7.082251e-02   5.757951e-02
+   4.413819e-02   3.302918e-02   3.246662e-02   1.546863e-02  -2.974948e-02  -4.663756e-02
+  -8.441767e-02  -1.193304e-01  -1.850385e-01  -2.414911e-01  -3.045407e-01  -2.493011e-01
+  -2.375170e-01  -2.024164e-01  -2.389788e-01
+>ZYY.VAR ROT=ZROT // 57
+   7.590801e-02   2.960494e-02   7.262325e-02   5.338544e-01   7.446121e+00   6.637092e-01
+   1.133884e+01   5.560853e-01   4.814316e-03   8.730633e-03   3.577460e-02   3.361626e-04
+   6.024306e-04   9.155640e-04   1.161234e-03   1.816863e-03   5.039859e-04   4.346018e-04
+   4.049015e-04   2.715733e-04   1.655873e-04   2.622166e-04   7.168461e-04   9.790411e-04
+   8.333743e-04   1.271166e-03   7.535639e-05   1.290418e-04   5.270894e-05   9.135930e-05
+   9.957446e-05   7.239229e-05   6.338004e-05   1.294636e-04   2.154880e-04   1.366114e-03
+   5.914988e-03   2.112676e-03   5.453061e-04   1.116159e-04   1.288913e-04   7.659612e-05
+   1.013656e-04   8.677934e-05   6.218376e-05   7.745664e-05   8.222592e-05   5.905323e-05
+   8.286671e-05   1.015266e-04   1.256566e-04   3.733080e-04   3.120011e-04   2.855851e-04
+   3.950378e-04   1.105568e-03   6.378710e-04
+>END
