@@ -1,49 +1,47 @@
 #! /usr/bin/env python
 """
 Description:
-    Example template python script structure.
-    .......
-    .......
-    
-References: 
-    https://gajira.atlassian.net/browse/ALAMP-49
+    Utility functions for unit-testing suite
+
 
 CreationDate:   2/11/2017
 Developer:      fei.zhang@ga.gov.au
 
 Revision History:
     LastUpdate:     2/11/2017   FZ
-    LastUpdate:     dd/mm/yyyy  Who     Optional description
 """
 
 # import section
 import os
+import shutil
 
-
-# Section to define functions or class
-def fun1():
+def diffiles(f1, f2):
     """
-    define my function1
-    :return:
+    compare two files line-by-line
+    :param f1:
+    :param f2:
+    :return: the number count of different lines
     """
-    print("begin fun1")
 
-    return
+    count = 0
 
+    with open(f1) as f1p:
+        test_lines = f1p.readlines()
+    with open(f2) as f2p:
+        correct_lines = f2p.readlines()
 
-def main():
-    """
-    define my main function
-    :return:
-    """
-    print("Template main()")
+    for test, correct in zip(test_lines, correct_lines):
+        if test != correct:
+            # print ("Diffiles() Failure@: Expected %r; BUT Got %r." % (correct, test))
+            count = count + 1
+        else:
+            pass
 
-    return
+    return count
 
+def clean_recreate(adir):
+    if os.path.exists(adir):
+        # clear dir if it already exist
+        shutil.rmtree(adir)
 
-# =============================================
-# Section for quick test of this script
-# ---------------------------------------------
-if __name__ == "__main__":
-    # call main function
-    main()
+    os.mkdir(adir)

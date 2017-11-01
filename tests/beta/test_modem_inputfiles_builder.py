@@ -18,7 +18,7 @@ Revision History:
 # import section
 
 import os
-import os.path as op
+import tests.util_functions as ufun
 from mtpy.modeling.modem import Model
 from mtpy.modeling.modem import Data
 from mtpy.modeling.modem import Covariance
@@ -118,30 +118,5 @@ class TestModemInputFilesBuilder(TestCase):
 
             print ("Comparing", output_data_file, "and", expected_data_file)
 
-            count = diffiles(output_data_file,expected_data_file)
-            if afile == "OccamStartup1D":
-                self.assertTrue(count==1, "The output files different in %s lines"%count)
-            else:
-                self.assertTrue(count==0, "The output files different in %s lines"%count)
-
-
-
-def diffiles(f1, f2):
-    """
-    compare two files
-    :param f1:
-    :param f2:
-    :return: the number count of different lines
-    """
-    test_lines = open(f1).readlines()
-    correct_lines = open(f2).readlines()
-
-    count=0
-    for test, correct in zip(test_lines, correct_lines):
-        if test != correct:
-            print ("Diffiles() Fail_at_Line: Expected %r; BUT Got %r." % (correct, test))
-            count= count+1
-        else:
-            pass
-
-    return count
+            count = ufun.diffiles(output_data_file,expected_data_file)
+            self.assertTrue(count == 0, "The output files have %s different lines!!!" % count)

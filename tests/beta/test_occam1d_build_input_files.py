@@ -24,23 +24,15 @@ Revision History:
 # import section
 
 import os
-import sys
-import difflib
-import mtpy.modeling.occam1d as mtoc1d  # Wrapper class to interact with Occam1D
 import shutil
+import tests.util_functions as ufun
 from unittest import TestCase
 
+import mtpy.modeling.occam1d as mtoc1d  # Wrapper class to interact with Occam1D
+
+
 class TestOccam1D(TestCase):
-
     def setUp(self):
-
-        # directory to save created input files
-        self._output_dir = r'E:/Githubz/mtpy/tests/beta/Occam1d'
-        if os.path.exists(self._output_dir):
-        # clear dir if it already exist
-            shutil.rmtree(self._output_dir)
-
-        os.mkdir(self._output_dir)
 
         # set the dir to the output from the previously correct run
         self._expected_output_dir = r'E:/Githubz/mtpy/examples/model_files/Occam1d'
@@ -48,12 +40,19 @@ class TestOccam1D(TestCase):
         if not os.path.isdir(self._expected_output_dir):
             self._expected_output_dir = None
 
+        # directory to save created input files
+        self._output_dir = r'E:/Githubz/mtpy/tests/beta/Occam1d'
+        ufun.clean_recreate(self._output_dir)
 
-    def test_all(self, path2edifile = r'E:/Githubz/mtpy/examples/data/edi_files/pb23c.edi'):
+    def _main_func(self, path2edifile):
         """
-        test function
+        test function should be successful with a default path2edifile
         :return:
         """
+        edifile_name = os.path.basename(path2edifile)
+        tmpdir = edifile_name[:-4]  + "_dir" # remove the trailing .edi
+        tmp_save_path = os.path.join(self._output_dir, tmpdir)
+        ufun.clean_recreate(tmp_save_path)
 
         # create data file
         ocd = mtoc1d.Data()  # create an object and assign values to arguments
@@ -61,7 +60,7 @@ class TestOccam1D(TestCase):
         ocd.write_data_file(edi_file=path2edifile,
                             mode='det',
                             # mode, can be te, tm, det (for res/phase) or tez, tmz, zdet for real/imag impedance tensor values
-                            save_path=self._output_dir,
+                            save_path= tmp_save_path,
                             res_errorfloor=5,  # percent error floor
                             phase_errorfloor=1,  # error floor in degrees
                             z_errorfloor=2.5,
@@ -72,7 +71,7 @@ class TestOccam1D(TestCase):
                            target_depth=10000,  # target depth in metres, before padding
                            z1_layer=10  # first layer thickness in metres
                            )
-        ocm.write_model_file(save_path= self._output_dir)
+        ocm.write_model_file(save_path = tmp_save_path)
 
         # create startup file
         ocs = mtoc1d.Startup(data_fn=ocd.data_fn,  # basename of data file *default* is Occam1DDataFile
@@ -82,47 +81,53 @@ class TestOccam1D(TestCase):
 
         ocs.write_startup_file()
 
+        return tmp_save_path
 
-        for afile in ("Model1D", "Occam1d_DataFile_DET.dat",  "OccamStartup1D"):
+    def test_fun1(self):
+        """ use the same pb23c.edi to reproduce previous run results"""
 
-            output_data_file = os.path.normpath(os.path.join(self._output_dir, afile))
+        outdir = self._main_func(r'E:/Githubz/mtpy/examples/data/edi_files/pb23c.edi')
+
+        for afile in ("Model1D", "Occam1d_DataFile_DET.dat", "OccamStartup1D"):
+
+            output_data_file =  os.path.join(outdir, afile)
             self.assertTrue(os.path.isfile(output_data_file), "output data file not found")
 
-            expected_data_file = os.path.normpath(os.path.join(self._expected_output_dir, afile))
+            expected_data_file = os.path.join(self._expected_output_dir, afile)
 
             self.assertTrue(os.path.isfile(expected_data_file),
-                "Ref output data file does not exist, nothing to compare with"
-            )
+                            "Ref output data file does not exist, nothing to compare with"
+                            )
 
             print ("Comparing", output_data_file, "and", expected_data_file)
 
-            count = diffiles(output_data_file,expected_data_file)
+            count = ufun.diffiles(output_data_file, expected_data_file)
             if afile == "OccamStartup1D":
-                self.assertTrue(count==1, "The output files different in %s lines"%count)
+                self.assertTrue(count == 1, "Only-1 different line in for this file %s" % afile)
             else:
-                self.assertTrue(count==0, "The output files different in %s lines"%count)
+                self.assertTrue(count == 0, "The output files different in %s lines" % count)
 
+    def test_fun2(self):
+        """ another test edi case: The output files should be different !!!"""
 
+        outdir = self._main_func(r'E:/Githubz/mtpy/examples/data/edi_files/pb25c.edi')
 
-def diffiles(f1, f2):
-    """
-    compare two files
-    :param f1:
-    :param f2:
-    :return: the number count of different lines
-    """
-    test_lines = open(f1).readlines()
-    correct_lines = open(f2).readlines()
+        #for afile in ("Model1D", "Occam1d_DataFile_DET.dat", "OccamStartup1D"):
+        for afile in [ "Occam1d_DataFile_DET.dat", ]:  # only one file is different, the other 2 files same?
 
-    count=0
-    for test, correct in zip(test_lines, correct_lines):
-        if test != correct:
-            print ("Diffiles() Failure@: Expected %r; BUT Got %r." % (correct, test))
-            count= count+1
-        else:
-            pass
+            output_data_file = os.path.join(outdir, afile)
+            self.assertTrue(os.path.isfile(output_data_file), "output data file not found")
 
-    return count
+            expected_data_file = os.path.join(self._expected_output_dir, afile)
 
+            self.assertTrue(os.path.isfile(expected_data_file),
+                            "Ref output data file does not exist, nothing to compare with"
+                            )
+
+            print ("Comparing", output_data_file, "and", expected_data_file)
+
+            count = ufun.diffiles(output_data_file, expected_data_file)
+
+            self.assertTrue(count > 0, "The output files should be different !!!")
 
 
