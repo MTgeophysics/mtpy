@@ -42,7 +42,9 @@ class TestOccam1D(TestCase):
 
         # directory to save created input files
         self._output_dir = r'E:/Githubz/mtpy/tests/beta/Occam1d'
-        ufun.clean_recreate(self._output_dir)
+        # ufun.clean_recreate(self._output_dir) # this may remove other test functions' output
+        if not os.path.exists(self._output_dir):
+            os.mkdir(self._output_dir)
 
     def _main_func(self, path2edifile):
         """
