@@ -18,13 +18,11 @@ Developer:      fei.zhang@ga.gov.au
 
 Revision History:
     LastUpdate:     31/10/2017   FZ
-    LastUpdate:     dd/mm/yyyy  Who     Optional description
 """
 
 # import section
 
 import os
-import shutil
 import tests.util_functions as ufun
 from unittest import TestCase
 
