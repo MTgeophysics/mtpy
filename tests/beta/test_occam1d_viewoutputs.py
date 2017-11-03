@@ -9,6 +9,9 @@ import os.path as op
 
 import numpy as np
 import matplotlib.pyplot as plt
+plt.ion() # make figure disappear automatically
+#plt.ioff()  # make figure show normally and need to click to close the figure to continue the proc
+
 
 
 def test_fun():
