@@ -7,19 +7,30 @@ Created on Wed Sep 18 15:35:39 2013
 plots resistivity and phase as a coloured pseudo section (distance along profile vs period) 
 """
 import os
-os.chdir(r'C:\Git\mtpy')
+
 from mtpy.imaging.plotpseudosection import PlotResPhasePseudoSection
 import os.path as op
 import matplotlib.pyplot as plt
-
-# path to edis
-epath = r'C:\Git\mtpy\examples\data\edi_files_2'
-
-save_path = r'C:\Git\mtpy\examples\plots\edi_plots\resphase_2.png'
-
-elst=[op.join(epath,edi) for edi in os.listdir(epath) if edi.endswith('.edi')][::4]
+plt.ion() # make figure disappear automatically:
+#plt.ioff()  # make figure show normally and need to click to close the figure to continue the proc
 
 
-resphase = PlotResPhasePseudoSection(fn_list=elst)
+def test_func():
 
-resphase.save_plot(save_path)
+    # path to edis
+    epath = r'E:\Githubz\mtpy\examples\data\edi_files_2'
+
+    save_path = r'E:\Githubz\mtpy\temp\resphase_2.png'
+
+    elst=[op.join(epath,edi) for edi in os.listdir(epath) if edi.endswith('.edi')][::4]
+
+
+    resphase = PlotResPhasePseudoSection(fn_list=elst)
+
+    resphase.save_plot(save_path)
+
+
+    assert (os.path.exists(save_path))
+
+if __name__ == "__main__":
+    test_func()
