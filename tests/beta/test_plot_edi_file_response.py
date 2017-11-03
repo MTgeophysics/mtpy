@@ -39,3 +39,6 @@ def test_func():
         assert (os.path.exists(figfile))
 
 
+if __name__ == "__main__":
+    test_func()
+
