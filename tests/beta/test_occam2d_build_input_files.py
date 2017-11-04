@@ -18,6 +18,7 @@ Revision History:
 
 import os
 import mtpy.modeling.occam2d as occam2d
+from tests.beta import *
 
 import tests.util_functions as ufun
 from unittest import TestCase
@@ -30,13 +31,13 @@ class TestOccam2D(TestCase):
     def setUp(self):
 
         # set the dir to the output from the previously correct run
-        self._expected_output_dir = r'E:/Githubz/mtpy/examples/model_files/Occam2d'
+        self._expected_output_dir = os.path.join(SAMPLE_DIR,'Occam2d')
 
         if not os.path.isdir(self._expected_output_dir):
             self._expected_output_dir = None
 
         # directory to save created input files
-        self._output_dir = r'E:/Githubz/mtpy/tests/beta/Occam2d'
+        self._output_dir = os.path.join(TEMP_OUT_DIR,'Occam2d')
         # ufun.clean_recreate(self._output_dir) # this may remove other test functions' output
         if not os.path.exists(self._output_dir):
             os.mkdir(self._output_dir)
@@ -122,7 +123,7 @@ class TestOccam2D(TestCase):
 
         :return:
         """
-        outdir = self._main_func(edipath = r"E:/Githubz/mtpy/examples/data/edi_files")
+        outdir = self._main_func(edipath =EDI_DATA_DIR)
 
         for afile in ('Occam2DMesh',    'Occam2DModel',    'Occam2DStartup'):
 
@@ -142,3 +143,39 @@ class TestOccam2D(TestCase):
                 self.assertTrue(count == 1, "Only-1 different line in for this file %s" % afile)
             else:
                 self.assertTrue(count == 0, "The output files different in %s lines" % count)
+
+
+"""
+/usr/bin/python2.7 /Softlab/Tools/pycharm-2016.2.3/helpers/pycharm/noserunner.py /Softlab/Githubz/mtpy/tests/beta/test_occam2d_build_input_files.py::TestOccam2D
+Testing started at 2:34 PM ...
+
+
+
+Error
+Traceback (most recent call last):
+  File "/usr/lib/python2.7/unittest/case.py", line 329, in run
+    testMethod()
+  File "/Softlab/Githubz/mtpy/tests/beta/test_occam2d_build_input_files.py", line 126, in test_fun
+    outdir = self._main_func(edipath =EDI_DATA_DIR)
+  File "/Softlab/Githubz/mtpy/tests/beta/test_occam2d_build_input_files.py", line 80, in _main_func
+    ocd.write_data_file()
+  File "/Softlab/Githubz/mtpy/mtpy/modeling/occam2d.py", line 2640, in write_data_file
+    self._fill_data()
+  File "/Softlab/Githubz/mtpy/mtpy/modeling/occam2d.py", line 2392, in _fill_data
+    z_interp, t_interp = edi.interpolate(interp_freq)
+  File "/Softlab/Githubz/mtpy/mtpy/core/mt.py", line 1690, in interpolate
+    new_f) + 1j * z_func_imag(new_f)
+  File "/usr/local/lib/python2.7/dist-packages/scipy/interpolate/interpolate.py", line 394, in __call__
+    out_of_bounds = self._check_bounds(x_new)
+  File "/usr/local/lib/python2.7/dist-packages/scipy/interpolate/interpolate.py", line 449, in _check_bounds
+    raise ValueError("A value in x_new is below the interpolation "
+ValueError: A value in x_new is below the interpolation range.
+-------------------- >> begin captured stdout << ---------------------
+Could not find any Tipper data.
+------------------------------------------------------------------------
+    Read in edi file for station pb32
+Could not find any Tipper data.
+------------------------------------------------------------------------
+    Read in edi file for station pb40
+Could not find any Tipper data.
+"""

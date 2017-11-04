@@ -8,11 +8,12 @@ plots the resistivity model and/or the responses from 2D occam inversions
 
 """
 import os
-#not needed os.chdir(r'C:/Git/mtpy')
-import matplotlib.pyplot as plt
+import os.path as op
+
 import mtpy.modeling.occam2d as o2d
 #import mtpy.modeling.occamtools as ot
-import os.path as op
+from tests.beta import *
+
 
 import matplotlib.pyplot as plt
 plt.ion() # make figure disappear automatically
@@ -26,10 +27,10 @@ def test_fun():
     """
 
     # path to directory containing inversion files
-    idir = r'E:\Githubz\mtpy\examples\model_files\Occam2d'
+    idir = os.path.join(SAMPLE_DIR,'Occam2d')
 
     # save path, to save plots to
-    savepath = r'E:\Githubz\mtpy\temp'
+    savepath = TEMP_OUT_DIR
     offset = 0
 
 
@@ -82,3 +83,27 @@ def test_fun():
 ############################################
 if __name__ == "__main__":
     test_fun()
+
+
+"""
+/usr/bin/python2.7 /Softlab/Githubz/mtpy/tests/beta/test_occam2d_plotmodel_and_responses.py
+Note: need scipy version 0.14.0 or higher or interpolation might not work.
+Reading from /Softlab/Githubz/mtpy/examples/model_files/Occam2d/OccamDataFile.dat
+    profile_angle = 97.0
+    geoelectric_strike = 7.0
+    number of sites = 15
+    number of frequencies = 19
+Saved figure to: /Softlab/Githubz/mtpy/temp/ITER05_resmodel.png
+Reading from /Softlab/Githubz/mtpy/examples/model_files/Occam2d/OccamDataFile.dat
+    profile_angle = 97.0
+    geoelectric_strike = 7.0
+    number of sites = 15
+    number of frequencies = 19
+Traceback (most recent call last):
+  File "/Softlab/Githubz/mtpy/tests/beta/test_occam2d_plotmodel_and_responses.py", line 85, in <module>
+    test_fun()
+  File "/Softlab/Githubz/mtpy/tests/beta/test_occam2d_plotmodel_and_responses.py", line 77, in test_fun
+    plot_type = ['pb35','pb40']
+  File "/Softlab/Githubz/mtpy/mtpy/modeling/occam2d.py", line 3389, in __init__
+    self.plot()
+    """

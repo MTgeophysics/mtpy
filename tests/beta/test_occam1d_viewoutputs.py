@@ -3,11 +3,13 @@ Script to visualise the 1D model output.
 
 """
 import os
-#os.chdir(r'C:\Users\alktrt\Documents\Git\mtpy')
-import mtpy.modeling.occam1d as mtoc1d
 import os.path as op
-
 import numpy as np
+
+import mtpy.modeling.occam1d as mtoc1d
+from tests.beta import *
+
+
 import matplotlib.pyplot as plt
 plt.ion() # make figure disappear automatically
 #plt.ioff()  # make figure show normally and need to click to close the figure to continue the proc
@@ -24,8 +26,8 @@ def test_fun():
     # savepath = r'C:\Git\mtpy\examples\plots\Occam1d'
 
     #FZ's workdir
-    idir = r'E:\Githubz\mtpy\examples\model_files\Occam1d'
-    savepath = r'E:\Githubz\mtpy\temp'
+    idir = os.path.join(SAMPLE_DIR,'Occam1d')
+    savepath = TEMP_OUT_DIR
 
     # model and data file names
     modelfn=op.join(idir,'Model1D')

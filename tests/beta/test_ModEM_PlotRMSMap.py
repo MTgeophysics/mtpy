@@ -11,6 +11,7 @@ import os
 
 # not needed os.chdir(r'C:\Git\mtpy')
 from mtpy.modeling.modem import Plot_RMS_Maps
+from tests.beta import *
 
 import matplotlib.pyplot as plt
 plt.ion() # make figure disappear automatically
@@ -24,10 +25,10 @@ def test_fun():
     """
 
     # directory where files are located
-    wd = r'E:\Githubz\mtpy\examples\model_files\ModEM'
+    wd =  os.path.join(SAMPLE_DIR,'ModEM')
 
     # directory to save to
-    save_path = r'E:\Githubz\mtpy\temp'
+    save_path = TEMP_OUT_DIR
 
     # file stem for inversion result
     filestem = 'Modular_MPI_NLCG_004'

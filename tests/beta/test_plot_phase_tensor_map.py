@@ -14,11 +14,10 @@ phase_tensor_map object then set the properties then run redraw_plot.
 import os
 import os.path as op
 
-import matplotlib.pyplot as plt
-
 import mtpy.imaging.plotptmaps as pptmaps
 from mtpy.core.mt import MT
-
+from tests.beta import *
+import matplotlib.pyplot as plt
 plt.ion()  # make figure disappear automatically:
 
 
@@ -30,12 +29,12 @@ def test_func():
     :return:
     """
     # directory containing edis
-    edipath = r'E:\Githubz\mtpy\examples\data\edi_files'
+    edipath =EDI_DATA_DIR
     # whether or not to save the figure to file
     save = True
 
     # full path to file to save to
-    savepath = r'E:\Githubz\mtpy\temp\phase_tensor_map.png'
+    savepath = os.path.join(TEMP_OUT_DIR,'phase_tensor_map.png')
 
     # frequency to plot
     plot_freq = 1e-2

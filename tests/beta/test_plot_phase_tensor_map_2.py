@@ -20,6 +20,7 @@ import os.path as op
 
 import mtpy.imaging.plotptmaps as pptmaps
 from mtpy.core.mt import MT
+from tests.beta import *
 import matplotlib.pyplot as plt
 plt.ion() # make figure disappear automatically:
 #plt.ioff()  # make figure show normally and need to click to close the figure to continue the proc
@@ -31,12 +32,12 @@ def test_func():
     """
 
     # directory containing edis
-    edipath = r'E:\Githubz\mtpy\examples\data\edi_files_2'
+    edipath = EDI_DATA_DIR2
     # whether or not to save the figure to file
     save = True
 
     # full path to file to save to
-    savepath = r'E:\Githubz\mtpy\temp\phase_tensor_map_2.png'
+    savepath = os.path.join(TEMP_OUT_DIR,'phase_tensor_map_2.png')
 
     # frequency to plot
     plot_freq = 1.318400e-01
@@ -75,5 +76,6 @@ def test_func():
         phase_tensor_map.save_figure(savepath)
         assert (os.path.exists(savepath))
 
+###################################
 if __name__ == "__main__":
     test_func()

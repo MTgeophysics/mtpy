@@ -24,6 +24,7 @@ from mtpy.modeling.modem import Data
 from mtpy.modeling.modem import Covariance
 import mtpy.core.edi as mtedi
 import numpy as np
+from tests.beta import *
 import matplotlib.pyplot as plt
 
 import shutil
@@ -34,7 +35,7 @@ class TestModemInputFilesBuilder(TestCase):
     def setUp(self):
 
         # directory to save created input files
-        self._output_dir = r'E:/Githubz/mtpy/tests/beta/ModEM'
+        self._output_dir = os.path.join(TEMP_OUT_DIR,'ModEM')
         if os.path.exists(self._output_dir):
         # clear dir if it already exist
             shutil.rmtree(self._output_dir)
@@ -42,14 +43,14 @@ class TestModemInputFilesBuilder(TestCase):
         os.mkdir(self._output_dir)
 
         # set the dir to the output from the previously correct run
-        self._expected_output_dir = r'E:/Githubz/mtpy/examples/model_files/ModEM'
+        self._expected_output_dir = os.path.join(SAMPLE_DIR,'ModEM')
 
         if not os.path.isdir(self._expected_output_dir):
             self._expected_output_dir = None
 
     def test_fun(self):
 
-        edipath = r'E:\Githubz\mtpy\examples\data\edi_files' # path where edi files are located
+        edipath = EDI_DATA_DIR # path where edi files are located
 
         # period list (will not include periods outside of the range of the edi file)
         start_period = -2
@@ -94,7 +95,7 @@ class TestModemInputFilesBuilder(TestCase):
         mo.write_model_file(save_path=self._output_dir)
 
         # add topography to res model
-        mo.add_topography_to_model2(r'E:\Githubz\mtpy\examples\data\AussieContinent_etopo1.asc')
+        mo.add_topography_to_model2(AUS_TOPO_FILE)
         #mo.add_topography_to_model2(r'E:/Data/MT_Datasets/concurry_topo/AussieContinent_etopo1.asc')
         mo.write_model_file(save_path=self._output_dir)
 
@@ -120,3 +121,34 @@ class TestModemInputFilesBuilder(TestCase):
 
             count = ufun.diffiles(output_data_file,expected_data_file)
             self.assertTrue(count == 0, "The output files have %s different lines!!!" % count)
+
+
+""" test run failed in ubnuntu
+Error
+Traceback (most recent call last):
+  File "/usr/lib/python2.7/unittest/case.py", line 329, in run
+    testMethod()
+  File "/Softlab/Githubz/mtpy/tests/beta/test_modem_inputfiles_builder.py", line 74, in test_fun
+    do.write_data_file()
+  File "/Softlab/Githubz/mtpy/mtpy/modeling/modem.py", line 1035, in write_data_file
+    self.fill_data_array()
+  File "/Softlab/Githubz/mtpy/mtpy/modeling/modem.py", line 840, in fill_data_array
+    interp_z, interp_t = mt_obj.interpolate(1./interp_periods)
+  File "/Softlab/Githubz/mtpy/mtpy/core/mt.py", line 1690, in interpolate
+    new_f) + 1j * z_func_imag(new_f)
+  File "/usr/local/lib/python2.7/dist-packages/scipy/interpolate/interpolate.py", line 394, in __call__
+    out_of_bounds = self._check_bounds(x_new)
+  File "/usr/local/lib/python2.7/dist-packages/scipy/interpolate/interpolate.py", line 449, in _check_bounds
+    raise ValueError("A value in x_new is below the interpolation "
+ValueError: A value in x_new is below the interpolation range.
+-------------------- >> begin captured stdout << ---------------------
+Could not find any Tipper data.
+------------------------------------------------------------------------
+    Read in edi file for station pb32
+Could not find any Tipper data.
+------------------------------------------------------------------------
+    Read in edi file for station pb40
+Could not find any Tipper data.
+------------------------------------------------------------------------
+
+"""

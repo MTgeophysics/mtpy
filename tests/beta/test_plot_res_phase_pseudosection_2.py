@@ -7,9 +7,11 @@ Created on Wed Sep 18 15:35:39 2013
 plots resistivity and phase as a coloured pseudo section (distance along profile vs period) 
 """
 import os
-
-from mtpy.imaging.plotpseudosection import PlotResPhasePseudoSection
 import os.path as op
+from mtpy.imaging.plotpseudosection import PlotResPhasePseudoSection
+
+from tests.beta import *
+
 import matplotlib.pyplot as plt
 plt.ion() # make figure disappear automatically:
 #plt.ioff()  # make figure show normally and need to click to close the figure to continue the proc
@@ -18,9 +20,9 @@ plt.ion() # make figure disappear automatically:
 def test_func():
 
     # path to edis
-    epath = r'E:\Githubz\mtpy\examples\data\edi_files_2'
+    epath = EDI_DATA_DIR2
 
-    save_path = r'E:\Githubz\mtpy\temp\resphase_2.png'
+    save_path = os.path.join(TEMP_OUT_DIR,'resphase_2.png')
 
     elst=[op.join(epath,edi) for edi in os.listdir(epath) if edi.endswith('.edi')][::4]
 
@@ -32,5 +34,6 @@ def test_func():
 
     assert (os.path.exists(save_path))
 
+###########################
 if __name__ == "__main__":
     test_func()

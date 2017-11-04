@@ -8,9 +8,7 @@ plots edi files (res/phase vs period) for all edis in a directory and saves out 
 """
 
 import os
-
-# not needed os.chdir(r'C:\Git\mtpy')
-
+from tests.beta import *
 import mtpy.imaging.plotresponse as mtpr
 import matplotlib.pyplot as plt
 plt.ion() # make figure disappear automatically:
@@ -19,9 +17,9 @@ plt.ion() # make figure disappear automatically:
 
 def test_func():
     # path to edis
-    epath = r'E:\Githubz\mtpy\examples\data\edi_files'
+    epath = EDI_DATA_DIR
 
-    svdir = r'E:\Githubz\mtpy\temp'
+    svdir = TEMP_OUT_DIR
 
     elst=[os.path.join(epath,edi) for edi in os.listdir(epath) if (edi.endswith('.edi'))]
 

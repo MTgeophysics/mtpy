@@ -15,6 +15,8 @@ import matplotlib.pyplot as plt
 
 from mtpy.modeling.modem import PlotDepthSlice
 
+from tests.beta import *
+
 def test_fun():
     """
     test function
@@ -22,10 +24,10 @@ def test_fun():
     """
 
     # directory where files are located
-    wd = r'E:\Githubz\mtpy\examples\model_files\ModEM'
+    wd = os.path.join(SAMPLE_DIR,'ModEM')  # r'E:\Githubz\mtpy\examples\model_files\ModEM'
 
     # directory to save to
-    save_path = r'E:\Githubz\mtpy\temp'
+    save_path =  TEMP_OUT_DIR  # r'E:\Githubz\mtpy\temp'
 
     # file stem for inversion result
     filestem = 'Modular_MPI_NLCG_004'

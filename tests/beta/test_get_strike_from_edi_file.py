@@ -6,10 +6,11 @@ Created on Tue Oct 31 13:19:35 2017
 
 Fei.zhang@ga.gov.au
 """
-
+import os
+import numpy as np
 from mtpy.core.mt import MT
 import mtpy.analysis.geometry as mtg
-import numpy as np
+from tests.beta import MTPY_ROOT
 
 def test_fun():
     """
@@ -17,7 +18,9 @@ def test_fun():
     :return: T/F
     """
     # mtObj = MT(r'C:\Git\mtpy\examples\data\edi_files\pb42c.edi')
-    mtObj = MT(r'E:/Githubz/mtpy/examples/data/edi_files/pb42c.edi')
+    # mtObj = MT(r'E:/Githubz/mtpy/examples/data/edi_files/pb42c.edi')
+    edifile = os.path.join(MTPY_ROOT, 'examples/data/edi_files/pb42c.edi')
+    mtObj = MT( edifile)
 
     strike_angle_pb42c = np.array([[np.nan, np.nan],
                                     [np.nan, np.nan],

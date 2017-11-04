@@ -24,6 +24,8 @@ Revision History:
 
 import os
 import tests.util_functions as ufun
+from tests.beta import *
+
 from unittest import TestCase
 
 import mtpy.modeling.occam1d as mtoc1d  # Wrapper class to interact with Occam1D
@@ -33,13 +35,13 @@ class TestOccam1D(TestCase):
     def setUp(self):
 
         # set the dir to the output from the previously correct run
-        self._expected_output_dir = r'E:/Githubz/mtpy/examples/model_files/Occam1d'
+        self._expected_output_dir = os.path.join(SAMPLE_DIR,'Occam1d')
 
         if not os.path.isdir(self._expected_output_dir):
             self._expected_output_dir = None
 
         # directory to save created input files
-        self._output_dir = r'E:/Githubz/mtpy/tests/beta/Occam1d'
+        self._output_dir = os.path.join(TEMP_OUT_DIR, 'Occam1d')
         # ufun.clean_recreate(self._output_dir) # this may remove other test functions' output
         if not os.path.exists(self._output_dir):
             os.mkdir(self._output_dir)
@@ -86,7 +88,7 @@ class TestOccam1D(TestCase):
     def test_fun1(self):
         """ use the same pb23c.edi to reproduce previous run results"""
 
-        outdir = self._main_func(r'E:/Githubz/mtpy/examples/data/edi_files/pb23c.edi')
+        outdir = self._main_func(os.path.join(EDI_DATA_DIR,'pb23c.edi') )
 
         for afile in ("Model1D", "Occam1d_DataFile_DET.dat", "OccamStartup1D"):
 
@@ -110,7 +112,9 @@ class TestOccam1D(TestCase):
     def test_fun2(self):
         """ another test edi case: The output files should be different !!!"""
 
-        outdir = self._main_func(r'E:/Githubz/mtpy/examples/data/edi_files/pb25c.edi')
+        #outdir = self._main_func(r'E:/Githubz/mtpy/examples/data/edi_files/pb25c.edi')
+        outdir = self._main_func(os.path.join(EDI_DATA_DIR,'pb25c.edi') )
+
 
         #for afile in ("Model1D", "Occam1d_DataFile_DET.dat", "OccamStartup1D"):
         for afile in [ "Occam1d_DataFile_DET.dat", ]:  # only one file is different, the other 2 files same?
