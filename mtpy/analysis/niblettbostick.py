@@ -205,14 +205,14 @@ def calculate_depth_nb(z_object=None, z_array=None, periods=None):
 
     # deal with inputs
     if z_object is not None:
-        z = z_object.z
-        periods = 1. / z_object.freq
+        z_obj = z_object
+        periods = 1./z_object.freq
     else:
-        z = z_array
+        z_obj = MTz.Z(z_array=z_array, freq=1./periods)
         periods = periods
 
-    dimensions = MTge.dimensionality(z_array=z)
-    angles = MTge.strike_angle(z_array=z)
+    dimensions = MTge.dimensionality(z_array=z_obj.z)
+    angles = MTge.strike_angle(z_array=z_obj.z)
 
     # reduce actual Z by the 3D layers:
     #    z_2d = z[np.where(dimensions != 3)[0]]
@@ -227,11 +227,11 @@ def calculate_depth_nb(z_object=None, z_array=None, periods=None):
     strike_angles = strike_interp(periods)
 
     # rotate z to be along the interpolated strike angles
-    z_rot = MTz.rotate_z(z, strike_angles)[0]
-
-    #    angles_incl1D = interpolate_strike_angles(angles_2d, periods_2d)
-
-    #    z3 = MTz.rotate_z(z_2d, -angles_incl1D)[0]
+    z_obj.rotate(strike_angles)
+    
+#    angles_incl1D = interpolate_strike_angles(angles_2d, periods_2d)
+	
+#    z3 = MTz.rotate_z(z_2d, -angles_incl1D)[0]
 
     # at this point we assume that the two modes are the off-diagonal elements!!
     # TE is element (1,2), TM at (2,1)
@@ -245,15 +245,15 @@ def calculate_depth_nb(z_object=None, z_array=None, periods=None):
                                   ('rho_min', np.float),
                                   ('rho_max', np.float)])
 
-    #    app_res, app_res_err, phase, phase_err = MTz.z2resphi(z3, periods_2d)
-    app_res, app_res_err, phase, phase_err = MTz.z2resphi(z_rot, periods)
+##    app_res, app_res_err, phase, phase_err = MTz.z2resphi(z3, periods_2d)
+#    app_res, app_res_err, phase, phase_err = MTz.z2resphi(z_rot, periods)
 
     for ii, per in enumerate(periods):
-        te_rho, te_depth = rhophi2rhodepth(app_res[ii, 0, 1],
-                                           phase[ii, 0, 1],
+        te_rho, te_depth = rhophi2rhodepth(z_obj.resistivity[ii, 0, 1],
+                                           z_obj.phase[ii, 0, 1],
                                            per)
-        tm_rho, tm_depth = rhophi2rhodepth(app_res[ii, 1, 0],
-                                           phase[ii, 1, 0],
+        tm_rho, tm_depth = rhophi2rhodepth(z_obj.resistivity[ii, 1, 0],
+                                           z_obj.phase[ii, 1, 0],
                                            per)
         depth_array[ii]['period'] = per
         depth_array[ii]['depth_min'] = min([te_depth, tm_depth])

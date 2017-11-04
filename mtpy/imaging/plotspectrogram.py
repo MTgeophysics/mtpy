@@ -20,7 +20,7 @@ from matplotlib.ticker import MultipleLocator
 import mtpy.processing.tf as mttf
 import os
 
-import mtpy.utils.exceptions as mtex
+import  mtpy.utils.exceptions as mtex
 
 #=================================================================
 
@@ -56,9 +56,10 @@ class PlotTF(object):
         self.tf_thresh = kwargs.pop('thresh', None)
         self.tf_robust_type = kwargs.pop('robusttype', 'median')
 
+
         self.fig_num = kwargs.pop('fig_num', 1)
         self.fig_dpi = kwargs.pop('fig_dpi', 300)
-        self.fig_size = kwargs.pop('fig_size', [6, 6])
+        self.fig_size = kwargs.pop('fig_size', [6,6])
 
         self.font_size = kwargs.pop('font_size', 7)
 
@@ -117,16 +118,16 @@ class PlotTF(object):
         """
         #--> short time fourier transform
         if self.tf_type == 'stft':
-            if self.tf_nh is None:
+            if self.tf_nh == None:
                 self.tf_nh = 2**8
-            if self.tf_ng is None:
+            if self.tf_ng == None:
                 self.tf_ng = 1
 
-            kwargs = {'nh': self.tf_nh,
+            kwargs = {'nh':self.tf_nh,
                       'tstep': self.tf_tstep,
-                      'ng': self.tf_ng,
-                      'nfbins': self.tf_nfbins,
-                      'df': self.df}
+                      'ng':self.tf_ng,
+                      'nfbins':self.tf_nfbins,
+                      'df':self.df}
 
             tf_tuple = mttf.stft(self.time_series, **kwargs)
             self.tf_array = tf_tuple[0]
@@ -135,19 +136,19 @@ class PlotTF(object):
 
        #--> reassigned stft
         elif self.tf_type == 'reassigned_stft':
-            if self.tf_nh is None:
-                self.tf_nh = 2**6 - 1
-            if self.tf_alpha is None:
+            if self.tf_nh == None:
+                self.tf_nh = 2**6-1
+            if self.tf_alpha == None:
                 self.tf_alpha = 4.0
-            if self.tf_thresh is None:
+            if self.tf_thresh == None:
                 pass
 
-            kwargs = {'nh': self.tf_nh,
+            kwargs = {'nh':self.tf_nh,
                       'tstep': self.tf_tstep,
-                      'nfbins': self.tf_nfbins,
-                      'alpha': self.tf_alpha,
-                      'threshold': self.tf_thresh,
-                      'df': self.df}
+                      'nfbins':self.tf_nfbins,
+                      'alpha':self.tf_alpha,
+                      'threshold':self.tf_thresh,
+                      'df':self.df}
 
             tf_tuple = mttf.reassigned_stft(self.time_series, **kwargs)
             self.tf_array = tf_tuple[0]
@@ -156,13 +157,13 @@ class PlotTF(object):
 
         #--> Wigner-ville distribution
         elif self.tf_type == 'wvd':
-            if self.tf_nh is None:
-                self.tf_nh = 2**8 - 1
+            if self.tf_nh == None:
+                self.tf_nh = 2**8-1
 
-            kwargs = {'nh': self.tf_nh,
+            kwargs = {'nh':self.tf_nh,
                       'tstep': self.tf_tstep,
-                      'nfbins': self.tf_nfbins,
-                      'df': self.df}
+                      'nfbins':self.tf_nfbins,
+                      'df':self.df}
 
             tf_tuple = mttf.wvd(self.time_series, **kwargs)
             self.tf_array = tf_tuple[0]
@@ -171,13 +172,13 @@ class PlotTF(object):
 
         #--> smoothe pseudo wigner-ville distribution
         elif self.tf_type == 'spwvd':
-            kwargs = {'nh': self.tf_nh,
-                      'ng': self.tf_ng,
-                      'sigmat': self.tf_sigmat,
-                      'sigmaf': self.tf_sigmaf,
+            kwargs = {'nh':self.tf_nh,
+                      'ng':self.tf_ng,
+                      'sigmat':self.tf_sigmat,
+                      'sigmaf':self.tf_sigmaf,
                       'tstep': self.tf_tstep,
-                      'nfbins': self.tf_nfbins,
-                      'df': self.df}
+                      'nfbins':self.tf_nfbins,
+                      'df':self.df}
 
             tf_tuple = mttf.spwvd(self.time_series, **kwargs)
             self.tf_array = tf_tuple[0]
@@ -186,18 +187,18 @@ class PlotTF(object):
 
         #--> robust wigner ville-distribution
         elif self.tf_type == 'robust_wvd':
-            if self.tf_nh is None:
-                self.tf_nh = 2**7 - 1
-            if self.tf_ng is None:
-                self.tf_ng = 2**4 - 1
+            if self.tf_nh == None:
+                self.tf_nh = 2**7-1
+            if self.tf_ng == None:
+                self.tf_ng = 2**4-1
 
-            kwargs = {'nh': self.tf_nh,
-                      'ng': self.tf_ng,
-                      'sigmat': self.tf_sigmat,
-                      'sigmaf': self.tf_sigmaf,
+            kwargs = {'nh':self.tf_nh,
+                      'ng':self.tf_ng,
+                      'sigmat':self.tf_sigmat,
+                      'sigmaf':self.tf_sigmaf,
                       'tstep': self.tf_tstep,
-                      'nfbins': self.tf_nfbins,
-                      'df': self.df}
+                      'nfbins':self.tf_nfbins,
+                      'df':self.df}
             tf_tuple = mttf.robust_wvd(self.time_series, **kwargs)
             self.tf_array = tf_tuple[0]
             self.time_list = tf_tuple[1]
@@ -205,21 +206,21 @@ class PlotTF(object):
 
         #--> robust wigner ville-distribution
         elif self.tf_type == 'specwv':
-            if self.tf_nh is None:
+            if self.tf_nh == None:
                 self.tf_nh = 2**8
-            if self.tf_nhwv is None:
-                self.tf_nhwv = 2**9 - 1
-            if self.tf_ngwv is None:
-                self.tf_ngwv = 2**3 - 1
+            if self.tf_nhwv == None:
+                self.tf_nhwv = 2**9-1
+            if self.tf_ngwv == None:
+                self.tf_ngwv = 2**3-1
 
-            kwargs = {'nhs': self.tf_nh,
-                      'nhwv': self.tf_nh,
-                      'ngwv': self.tf_ng,
-                      'sigmat': self.tf_sigmat,
-                      'sigmaf': self.tf_sigmaf,
+            kwargs = {'nhs':self.tf_nh,
+                      'nhwv':self.tf_nh,
+                      'ngwv':self.tf_ng,
+                      'sigmat':self.tf_sigmat,
+                      'sigmaf':self.tf_sigmaf,
                       'tstep': self.tf_tstep,
-                      'nfbins': self.tf_nfbins,
-                      'df': self.df}
+                      'nfbins':self.tf_nfbins,
+                      'df':self.df}
 
             tf_tuple = mttf.specwv(self.time_series, **kwargs)
             self.tf_array = tf_tuple[0]
@@ -228,14 +229,14 @@ class PlotTF(object):
 
         #--> modified b
         elif self.tf_type == 'modifiedb':
-            if self.tf_nh is None:
-                self.tf_nh = 2**8 - 1
+            if self.tf_nh == None:
+                self.tf_nh = 2**8-1
 
-            kwargs = {'nh': self.tf_nh,
-                      'beta': self.tf_beta,
+            kwargs = {'nh':self.tf_nh,
+                      'beta':self.tf_beta,
                       'tstep': self.tf_tstep,
-                      'nfbins': self.tf_nfbins,
-                      'df': self.df}
+                      'nfbins':self.tf_nfbins,
+                      'df':self.df}
 
             tf_tuple = mttf.modifiedb(self.time_series, **kwargs)
             self.tf_array = tf_tuple[0]
@@ -244,13 +245,13 @@ class PlotTF(object):
 
         #--> robust stft with vector median filter
         elif self.tf_type == 'robust_stft_median':
-            if self.tf_nh is None:
+            if self.tf_nh == None:
                 self.tf_nh = 2**8
 
-            kwargs = {'nh': self.tf_nh,
+            kwargs = {'nh':self.tf_nh,
                       'tstep': self.tf_tstep,
-                      'nfbins': self.tf_nfbins,
-                      'df': self.df}
+                      'nfbins':self.tf_nfbins,
+                      'df':self.df}
 
             tf_tuple = mttf.robust_stft_median(self.time_series, **kwargs)
             self.tf_array = tf_tuple[0]
@@ -259,16 +260,16 @@ class PlotTF(object):
 
         #--> robust stft with L-distribution
         elif self.tf_type == 'robust_stft_L':
-            if self.tf_nh is None:
+            if self.tf_nh == None:
                 self.tf_nh = 2**8
-            if self.tf_alpha is None:
+            if self.tf_alpha == None:
                 self.tf_alpha = 0.325
 
-            kwargs = {'nh': self.tf_nh,
-                      'alpha': self.tf_alpha,
+            kwargs = {'nh':self.tf_nh,
+                      'alpha':self.tf_alpha,
                       'tstep': self.tf_tstep,
-                      'nfbins': self.tf_nfbins,
-                      'df': self.df}
+                      'nfbins':self.tf_nfbins,
+                      'df':self.df}
 
             tf_tuple = mttf.robust_stft_L(self.time_series, **kwargs)
             self.tf_array = tf_tuple[0]
@@ -277,19 +278,19 @@ class PlotTF(object):
 
         #--> smethod
         elif self.tf_type == 'smethod':
-            if self.tf_nh is None:
+            if self.tf_nh == None:
                 self.tf_nh = 2**8
-            if self.tf_ng is None:
+            if self.tf_ng == None:
                 self.tf_ng = 1
-            if self.tf_alpha is None:
+            if self.tf_alpha == None:
                 self.tf_alpha = 0.325
 
-            kwargs = {'nh': self.tf_nh,
-                      'L': self.tf_L,
+            kwargs = {'nh':self.tf_nh,
+                      'L':self.tf_L,
                       'tstep': self.tf_tstep,
-                      'nfbins': self.tf_nfbins,
-                      'sigmaL': self.tf_sigmaL,
-                      'df': self.df}
+                      'nfbins':self.tf_nfbins,
+                      'sigmaL':self.tf_sigmaL,
+                      'df':self.df}
 
             tf_tuple = mttf.smethod(self.time_series, **kwargs)
             self.tf_array = tf_tuple[0]
@@ -298,21 +299,22 @@ class PlotTF(object):
 
         #--> robust smethod
         elif self.tf_type == 'robust_smethod':
-            if self.tf_nh is None:
+            if self.tf_nh == None:
                 self.tf_nh = 2**8
-            if self.tf_ng is None:
+            if self.tf_ng == None:
                 self.tf_ng = 1
-            if self.tf_alpha is None:
+            if self.tf_alpha == None:
                 self.tf_alpha = 0.325
 
-            kwargs = {'nh': self.tf_nh,
-                      'L': self.tf_L,
-                      'alpha': self.tf_alpha,
+
+            kwargs = {'nh':self.tf_nh,
+                      'L':self.tf_L,
+                      'alpha':self.tf_alpha,
                       'tstep': self.tf_tstep,
-                      'nfbins': self.tf_nfbins,
-                      'sigmaL': self.tf_sigmaL,
-                      'robusttype': self.tf_robust_type,
-                      'df': self.df}
+                      'nfbins':self.tf_nfbins,
+                      'sigmaL':self.tf_sigmaL,
+                      'robusttype':self.tf_robust_type,
+                      'df':self.df}
 
             tf_tuple = mttf.robust_smethod(self.time_series, **kwargs)
             self.tf_array = tf_tuple[0]
@@ -321,23 +323,24 @@ class PlotTF(object):
 
         #--> reassigned smethod
         elif self.tf_type == 'reassigned_smethod':
-            if self.tf_nh is None:
-                self.tf_nh = 2**8 - 1
-            if self.tf_ng is None:
+            if self.tf_nh == None:
+                self.tf_nh = 2**8-1
+            if self.tf_ng == None:
                 self.tf_ng = 1
-            if self.tf_alpha is None:
+            if self.tf_alpha == None:
                 self.tf_alpha = 4.0
-            if self.tf_thresh is None:
+            if self.tf_thresh == None:
                 self.tf_thresh = .01
 
-            kwargs = {'nh': self.tf_nh,
-                      'L': self.tf_L,
-                      'alpha': self.tf_alpha,
+
+            kwargs = {'nh':self.tf_nh,
+                      'L':self.tf_L,
+                      'alpha':self.tf_alpha,
                       'tstep': self.tf_tstep,
-                      'nfbins': self.tf_nfbins,
-                      'threshold': self.tf_thresh,
-                      'robusttype': self.tf_robust_type,
-                      'df': self.df}
+                      'nfbins':self.tf_nfbins,
+                      'threshold':self.tf_thresh,
+                      'robusttype':self.tf_robust_type,
+                      'df':self.df}
 
             tf_tuple = mttf.reassigned_smethod(self.time_series, **kwargs)
             self.tf_array = tf_tuple[0]
@@ -345,67 +348,67 @@ class PlotTF(object):
             self.freq_list = tf_tuple[2]
 
         else:
-            raise mtex.MTpyError_inputarguments('{0}'.format(self.tf_type) +
-                                                ' is not definded see mtpy.processing.tf for options')
+            raise mtex.MTpyError_inputarguments('{0}'.format(self.tf_type)+
+                        ' is not definded see mtpy.processing.tf for options')
 
-        # print information for user
-        print '{0} tf parameters {0}'.format('-' * 5)
+        #print information for user
+        print '{0} tf parameters {0}'.format('-'*5)
         for kw in sorted(kwargs.keys()):
-            print '{0}{1} = {2}'.format(' ' * 4, kw, kwargs[kw])
+            print '{0}{1} = {2}'.format(' '*4, kw, kwargs[kw])
 
     def plot(self):
         """
         plot the time frequency distribution
 
         """
-        # get the requested time-frequency distribution
+        #get the requested time-frequency distribution
         self._get_tf()
 
-        # time increment
+        #time increment
         if self.time_units == 'hrs':
-            tinc = 3600 * self.df
-            if self.x_major_tick is None:
+            tinc = 3600*self.df
+            if self.x_major_tick == None:
                 x_major_tick = 1
-            if self.x_minor_tick is None:
+            if self.x_minor_tick == None:
                 x_minor_tick = .15
         elif self.time_units == 'min':
-            tinc = 60 * self.df
-            if self.x_major_tick is None:
+            tinc = 60*self.df
+            if self.x_major_tick == None:
                 x_major_tick = 5
-            if self.x_minor_tick is None:
+            if self.x_minor_tick == None:
                 x_minor_tick = 1
         elif self.time_units == 'sec':
-            tinc = 1 * self.df
-            if self.x_major_tick is None:
+            tinc = 1*self.df
+            if self.x_major_tick == None:
                 x_major_tick = 60
-            if self.x_minor_tick is None:
+            if self.x_minor_tick == None:
                 x_minor_tick = 15
         else:
             raise mtex.MTpyError_inputarguments('{0} is not defined'.format(
                                                 self.time_units))
 
-        # scale time-frequency
+        #scale time-frequency
         if self.tf_scale == 'log':
-            self.tf_array[np.where(abs(self.tf_array) == 0)] = 1.0
+            self.tf_array[np.where(abs(self.tf_array)==0)] = 1.0
             if self.plot_normalize == 'y':
-                plottfarray = 10 * np.log10(abs(self.tf_array /
+                plottfarray = 10*np.log10(abs(self.tf_array/
                                                 np.max(abs(self.tf_array))))
             else:
-                plottfarray = 10 * np.log10(abs(self.tf_array))
+                plottfarray = 10*np.log10(abs(self.tf_array))
         elif self.tf_scale == 'linear':
             if self.plot_normalize == 'y':
-                plottfarray = abs(self.tf_array / np.max(abs(self.tf_array)))
+                plottfarray = abs(self.tf_array/np.max(abs(self.tf_array)))
             else:
                 plottfarray = abs(self.tf_array)
 
         #period or frequency
         if self.freq_units == 'y':
-            self.freq_list[1:] = 1. / self.freq_list[1:]
-            self.freq_list[0] = 2 * self.freq_list[1]
+            self.freq_list[1:] = 1./self.freq_list[1:]
+            self.freq_list[0] = 2*self.freq_list[1]
         elif self.freq_units == 'n':
             pass
 
-        # set properties for the plot
+        #set properties for the plot
         plt.rcParams['font.size'] = self.font_size
         plt.rcParams['figure.subplot.left'] = self.subplot_left
         plt.rcParams['figure.subplot.right'] = self.subplot_right
@@ -414,15 +417,15 @@ class PlotTF(object):
         plt.rcParams['figure.subplot.wspace'] = self.subplot_wspace
         plt.rcParams['figure.subplot.hspace'] = self.subplot_hspace
 
-        # set the font dictionary
-        fdict = {'size': self.font_size + 2, 'weight': 'bold'}
+        #set the font dictionary
+        fdict={'size':self.font_size+2, 'weight':'bold'}
 
-        # make a meshgrid if yscale is logarithmic
+        #make a meshgrid if yscale is logarithmic
         if self.freq_scale == 'log':
-            logt, logf = np.meshgrid(self.time_list / tinc, self.freq_list)
+            logt, logf = np.meshgrid(self.time_list/tinc, self.freq_list)
 
-        # make figure
-        self.fig = plt.figure(self.fig_num, self.fig_size, dpi=self.fig_dpi)
+        #make figure
+        self.fig = plt.figure(self.fig_num,self.fig_size, dpi=self.fig_dpi)
         self.fig.clf()
 
         if self.plot_type == 'all':
@@ -430,9 +433,12 @@ class PlotTF(object):
             self.axts = self.fig.add_axes([.25, .05, .60, .1])
             self.axtf = self.fig.add_axes([.25, .25, .75, .7])
 
-            # plot time series
-            time_array = np.arange(len(self.time_series)) / self.df +\
-                self.start_time / self.df
+            #plot time series
+            st = self.start_time
+            time_array = np.arange(st,
+                                   st+self.time_series.size/self.df,
+                                   1./self.df)
+
             self.axts.plot(time_array,
                            self.time_series,
                            color=self.line_color_ts,
@@ -440,36 +446,37 @@ class PlotTF(object):
             self.axts.axis('tight')
 
             FX = np.fft.fft(mttf.padzeros(self.time_series))
-            FXfreq = np.fft.fftfreq(len(FX), 1. / self.df)
+            FXfreq = np.fft.fftfreq(len(FX), 1./self.df)
 
-            # plot power spectra
+            #plot power spectra
             if self.freq_scale == 'log':
-                self.axps.loglog(abs(FX[0:len(FX) / 2] / max(abs(FX))),
-                                 FXfreq[0:len(FX) / 2],
-                                 color=self.line_color_ps,
-                                 lw=self.lw)
+                self.axps.loglog(abs(FX[0:len(FX)/2]/max(abs(FX))),
+                                   FXfreq[0:len(FX)/2],
+                                          color=self.line_color_ps,
+                                          lw=self.lw)
             else:
-                self.axps.semilogx(abs(FX[0:len(FX) / 2] / max(abs(FX))),
-                                   FXfreq[0:len(FX) / 2],
+                self.axps.semilogx(abs(FX[0:len(FX)/2]/max(abs(FX))),
+                                   FXfreq[0:len(FX)/2],
                                    color=self.line_color_ps,
                                    lw=self.lw)
             self.axps.axis('tight')
-            self.axps.set_ylim(self.freq_list[1], self.freq_list[-1])
+            self.axps.set_ylim(self.freq_list[1],self.freq_list[-1])
         else:
             self.axtf = self.fig.add_subplot(1, 1, 1,
-                                             aspect=self.plot_aspect_ratio)
+                                         aspect=self.plot_aspect_ratio)
 
         #--> get color limits
-        if self.climits is not None:
+        if self.climits != None:
             vmin = self.climits[0]
             vmax = self.climits[1]
         else:
             vmin = plottfarray.min()
             vmax = plottfarray.max()
 
-        # add in log yscale
+
+        #add in log yscale
         if self.freq_scale == 'log':
-            # need to flip the matrix so that origin is bottom right
+            #need to flip the matrix so that origin is bottom right
             cbp = self.axtf.pcolormesh(logt,
                                        logf,
                                        np.flipud(plottfarray),
@@ -477,7 +484,7 @@ class PlotTF(object):
                                        vmin=vmin,
                                        vmax=vmax)
             self.axtf.semilogy()
-            self.axtf.set_ylim(self.freq_list[1], self.freq_list[-1])
+            self.axtf.set_ylim(self.freq_list[1],self.freq_list[-1])
 
             self.axtf.set_xlim(logt.min(), logt.max())
             self.cb = plt.colorbar(cbp,
@@ -488,15 +495,14 @@ class PlotTF(object):
                                    use_gridspec=True)
         else:
             cbp = self.axtf.imshow(plottfarray,
-                                   extent=(self.time_list[0] / tinc + self.start_time,
-                                           self.time_list[-1] /
-                                           tinc + self.start_time,
-                                           self.freq_list[1], self.freq_list[-1]),
-                                   aspect=self.plot_aspect_ratio,
-                                   vmin=vmin,
-                                   vmax=vmax,
-                                   cmap=self.cmap,
-                                   interpolation=self.plot_interpolation)
+                                 extent=(self.time_list[0]/tinc+self.start_time,
+                                         self.time_list[-1]/tinc+self.start_time,
+                                         self.freq_list[1],self.freq_list[-1]),
+                                aspect=self.plot_aspect_ratio,
+                                vmin=vmin,
+                                vmax=vmax,
+                                cmap=self.cmap,
+                                interpolation=self.plot_interpolation)
 
             self.cb = plt.colorbar(orientation=self.cb_orientation,
                                    shrink=self.cb_shrink,
@@ -506,7 +512,7 @@ class PlotTF(object):
 
         #--> make the plot look nice
         self.axtf.set_xlabel('time({0})'.format(self.time_units),
-                             fontdict=fdict)
+                           fontdict=fdict)
         self.axtf.xaxis.set_major_locator(MultipleLocator(x_major_tick))
         self.axtf.xaxis.set_minor_locator(MultipleLocator(x_minor_tick))
 
@@ -514,7 +520,7 @@ class PlotTF(object):
             self.axtf.set_ylabel('period (s)', fontdict=fdict)
         else:
             self.axtf.set_ylabel('frequency (Hz)', fontdict=fdict)
-        if self.plot_title is not None:
+        if self.plot_title != None:
             self.axtf.set_title(self.plot_title, fontdict=fdict)
 
         plt.show()
@@ -596,7 +602,7 @@ class PlotTF(object):
 
         """
 
-        if fig_dpi is None:
+        if fig_dpi == None:
             fig_dpi = self.fig_dpi
 
         if os.path.isdir(save_fn) == False:
@@ -605,7 +611,7 @@ class PlotTF(object):
                              orientation=orientation, bbox_inches='tight')
 
         else:
-            save_fn = os.path.join(save_fn, 'TF_{0}.'.format(self.tf_type) +
+            save_fn = os.path.join(save_fn, 'TF_{0}.'.format(self.tf_type)+
                                    file_format)
             self.fig.savefig(save_fn, dpi=fig_dpi, format=file_format,
                              orientation=orientation, bbox_inches='tight')

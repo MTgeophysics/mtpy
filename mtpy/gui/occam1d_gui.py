@@ -13,7 +13,7 @@ JP 2015
 from PyQt4 import QtCore, QtGui
 import mtpy.modeling.occam1d as occam1d
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
+from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure
 from matplotlib.ticker import MultipleLocator
 import matplotlib.gridspec as gridspec
@@ -22,32 +22,28 @@ import matplotlib.pyplot as plt
 import os
 import sys
 
-
 class MyStream(QtCore.QObject):
     """
     this class will emit a signal
     """
     message = QtCore.pyqtSignal(str)
-
     def __init__(self, parent=None):
         super(MyStream, self).__init__(parent)
 
     def write(self, message):
         self.message.emit(str(message))
 
-
 class Occam1D_GUI(QtGui.QMainWindow):
-
     def __init__(self):
         super(Occam1D_GUI, self).__init__()
-        self.ms = 5
+        self.ms  = 5
         self.lw = 1.5
         self.data_marker_color = (0, 0, 0)
         self.data_marker = 's'
         self.model_marker_color = (1, 0, 0)
         self.model_marker = 'x'
         self.e_capthick = 1
-        self.e_capsize = 5
+        self.e_capsize =  5
 
         self.res_limits = None
         self.phase_limits = None
@@ -88,24 +84,33 @@ class Occam1D_GUI(QtGui.QMainWindow):
         self.occam_widget = OccamWidget()
         self.central_widget = self.setCentralWidget(self.occam_widget)
 
-        # menu bar
+        ## menu bar
         self.menu_bar = self.menuBar()
-        #self.menu_bar.setGeometry(QtCore.QRect(0, 0, 1920, 40))
 
+        self.menu_data = self.menu_bar.addMenu("Data")
+        self.menu_model = self.menu_bar.addMenu("Model")
         self.menu_help = self.menu_bar.addMenu('Help')
+
         help_action = QtGui.QAction('help doc', self)
         help_action.triggered.connect(self.display_help)
-
         self.menu_help.addAction(help_action)
 
-        #self.menu_model = QtGui.QMenu(self.menu_bar)
-        # self.menu_model.setTitle("Model")
+        self.setMenuBar(self.menu_bar)
+        # set the actions for the data file menu item
+        # set an open option that on click opens an existing occam file
+        self.action_open_data = QtGui.QAction(self)
+        self.action_open_data.setText("&Open")
+        self.action_open_data.triggered.connect(self.get_data_file)
 
-        #self.menu_startup = QtGui.QMenu(self.menu_bar)
-        # self.menu_startup.setTitle('Startup')
+        self.action_open_model = QtGui.QAction(self)
+        self.action_open_model.setText("&Open")
+        self.action_open_model.triggered.connect(self.get_model_file)
 
-        # self.setMenuBar(self.menu_bar)
-        # self.show()
+        # add actions to menu
+        self.menu_data.addAction(self.action_open_data)
+        self.menu_model.addAction(self.action_open_model)
+
+        self.show()
         #--------------------------------------------------------
         # stream the output of occam 1D
         self.my_stream = MyStream()
@@ -139,11 +144,28 @@ class Occam1D_GUI(QtGui.QMainWindow):
         help_string = '\n'.join(ll)
 
         QtGui.QMessageBox.information(self.central_widget, 'Help', help_string)
+
+    def get_data_file(self):
+        fn_dialog = QtGui.QFileDialog()
+        fn = str(fn_dialog.getOpenFileName(caption='Choose Occam 1D data file',
+                                           filter='(*.dat);; (*.data)',
+                                           directory=self.dir_path))
+
+        self.occam_widget.occam_data.read_data_file(fn)
+        self.dir_path = os.path.dirname(fn)
+        self.occam_widget.mpl_widget.plot_data(data_fn=self.occam_widget.occam_data.data_fn)
+        self.occam_widget.save_dir = self.dir_path
+
+    def get_model_file(self):
+        fn_dialog = QtGui.QFileDialog()
+        fn = str(fn_dialog.getOpenFileName(caption='Choose Occam 1D model file',
+                                           directory=self.dir_path))
+
+        self.occam_widget.occam_model.read_model_file(fn)
+        self.dir_path = os.path.dirname(fn)
 #==============================================================================
 # Occam 1D widget
 #==============================================================================
-
-
 class OccamWidget(QtGui.QWidget):
     """
     occam 1D widget
@@ -183,7 +205,7 @@ class OccamWidget(QtGui.QWidget):
         # font type to use for labels
         label_font = QtGui.QFont()
         label_font.setBold = True
-        label_font.setPointSize(16)
+        label_font.setPointSize (16)
 
         #---------------------------------------------------
 
@@ -229,8 +251,7 @@ class OccamWidget(QtGui.QWidget):
         self.data_ss_edit.editingFinished.connect(self.set_ss)
 
         self.data_rotate_label = QtGui.QLabel("Rotation Angle (N=0, E=90)")
-        self.data_rotate_edit = QtGui.QLineEdit(
-            '{0:.2f}'.format(self.rotation_angle))
+        self.data_rotate_edit = QtGui.QLineEdit('{0:.2f}'.format(self.rotation_angle))
         self.data_rotate_edit.editingFinished.connect(self.set_rotation_angle)
 
         # vertical layer parameters
@@ -249,16 +270,12 @@ class OccamWidget(QtGui.QWidget):
 
         self.z_target_label = QtGui.QLabel('Target Depth (m)')
         self.z_target_edit = QtGui.QLineEdit()
-        self.z_target_edit.setText(
-            '{0:.2f}'.format(
-                self.occam_model.target_depth))
+        self.z_target_edit.setText('{0:.2f}'.format(self.occam_model.target_depth))
         self.z_target_edit.editingFinished.connect(self.set_z_target)
 
         self.z_bottom_label = QtGui.QLabel('Bottom of the Model (m)')
         self.z_bottom_edit = QtGui.QLineEdit()
-        self.z_bottom_edit.setText(
-            '{0:.2f}'.format(
-                self.occam_model.bottom_layer))
+        self.z_bottom_edit.setText('{0:.2f}'.format(self.occam_model.bottom_layer))
         self.z_bottom_edit.editingFinished.connect(self.set_z_bottom)
 
         # starting resistivity
@@ -267,45 +284,34 @@ class OccamWidget(QtGui.QWidget):
 
         self.start_rho_label = QtGui.QLabel('Starting rho (Ohmm)')
         self.start_rho_edit = QtGui.QLineEdit()
-        self.start_rho_edit.setText(
-            '{0:.2f}'.format(
-                self.occam_startup.start_rho))
+        self.start_rho_edit.setText('{0:.2f}'.format(self.occam_startup.start_rho))
         self.start_rho_edit.editingFinished.connect(self.set_rho)
 
         self.max_iter_label = QtGui.QLabel('Num of Iterations')
         self.max_iter_edit = QtGui.QLineEdit()
-        self.max_iter_edit.setText(
-            '{0:.0f}'.format(
-                self.occam_startup.max_iter))
+        self.max_iter_edit.setText('{0:.0f}'.format(self.occam_startup.max_iter))
         self.max_iter_edit.editingFinished.connect(self.set_max_iter)
 
         self.target_rms_label = QtGui.QLabel('Target RMS')
         self.target_rms_edit = QtGui.QLineEdit()
-        self.target_rms_edit.setText(
-            '{0:.2f}'.format(
-                self.occam_startup.target_rms))
+        self.target_rms_edit.setText('{0:.2f}'.format(self.occam_startup.target_rms))
         self.target_rms_edit.editingFinished.connect(self.set_target_rms)
 
         self.start_roughness_label = QtGui.QLabel('Starting Roughness')
         self.start_roughness_edit = QtGui.QLineEdit()
-        self.start_roughness_edit.setText(
-            '{0:.2f}'.format(self.occam_startup.start_rough))
+        self.start_roughness_edit.setText('{0:.2f}'.format(self.occam_startup.start_rough))
         self.start_roughness_edit.editingFinished.connect(self.set_start_rough)
 
         self.start_lagrange_label = QtGui.QLabel('Starting Lagrange')
         self.start_lagrange_edit = QtGui.QLineEdit()
-        self.start_lagrange_edit.setText(
-            '{0:.2f}'.format(
-                self.occam_startup.start_lagrange))
-        self.start_lagrange_edit.editingFinished.connect(
-            self.set_start_lagrange)
+        self.start_lagrange_edit.setText('{0:.2f}'.format(self.occam_startup.start_lagrange))
+        self.start_lagrange_edit.editingFinished.connect(self.set_start_lagrange)
 
         self.iter_combo_label = QtGui.QLabel('Plot Iteration')
         self.iter_combo_edit = QtGui.QComboBox()
         self.iter_combo_edit.addItem('1')
         self.iter_combo_edit.activated[str].connect(self.set_iteration)
-        self.iter_combo_edit.setSizeAdjustPolicy(
-            QtGui.QComboBox.AdjustToContents)
+        self.iter_combo_edit.setSizeAdjustPolicy(QtGui.QComboBox.AdjustToContents)
         self.iter_combo_edit.setMinimumWidth(50)
 
         self.output_box = QtGui.QTextEdit()
@@ -347,6 +353,7 @@ class OccamWidget(QtGui.QWidget):
 
         model_grid.addWidget(self.z_bottom_label, 4, 0)
         model_grid.addWidget(self.z_bottom_edit, 4, 1)
+
 
         startup_grid = QtGui.QGridLayout()
         startup_grid.addWidget(self.startup_label, 0, 0)
@@ -421,7 +428,7 @@ class OccamWidget(QtGui.QWidget):
 
         occam_path_dialog = QtGui.QFileDialog()
         fn = str(occam_path_dialog.getOpenFileName(
-            caption='Locate Occam1D executable'))
+                                        caption='Locate Occam1D executable'))
 
         self.occam_exec = os.path.abspath(fn)
         self.get_occam_path_edit.setText(self.occam_exec)
@@ -480,15 +487,16 @@ class OccamWidget(QtGui.QWidget):
                                         thetar=self.rotation_angle)
         self.mpl_widget.plot_data(data_fn=self.occam_data.data_fn)
 
+
     def set_ss(self):
         self.ss = float(str(self.data_ss_edit.text()))
         self.data_ss_edit.setText('{0:.2f}'.format(self.ss))
 
     def apply_ss(self):
-        self.mpl_widget.data_obj.res_te[0] /= 1. / self.ss
-        self.mpl_widget.data_obj.res_tm[0] /= 1. / self.ss
-        self.mpl_widget.data_obj.res_te[1] /= 1. / self.ss
-        self.mpl_widget.data_obj.res_tm[1] /= 1. / self.ss
+        self.mpl_widget.data_obj.res_te[0] /= 1./self.ss
+        self.mpl_widget.data_obj.res_tm[0] /= 1./self.ss
+        self.mpl_widget.data_obj.res_te[1] /= 1./self.ss
+        self.mpl_widget.data_obj.res_tm[1] /= 1./self.ss
 
         self.rewrite_data_file()
         self.mpl_widget.plot_data(data_fn=self.occam_data.data_fn)
@@ -511,71 +519,58 @@ class OccamWidget(QtGui.QWidget):
         self.n_layers_edit.setText('{0:.0f}'.format(self.occam_model.n_layers))
 
     def set_z1_layer(self):
-        self.occam_model.z1_layer = float(str(self.z1_layer_edit.text()))
-        self.z1_layer_edit.setText('{0:.2f}'.format(self.occam_model.z1_layer))
+         self.occam_model.z1_layer = float(str(self.z1_layer_edit.text()))
+         self.z1_layer_edit.setText('{0:.2f}'.format(self.occam_model.z1_layer))
 
     def set_z_target(self):
         self.occam_model.target_depth = float(str(self.z_target_edit.text()))
-        self.z_target_edit.setText(
-            '{0:.2f}'.format(
-                self.occam_model.target_depth))
+        self.z_target_edit.setText('{0:.2f}'.format(self.occam_model.target_depth))
         self.mpl_widget.depth_limits = (0, self.occam_model.target_depth)
 
     def set_z_bottom(self):
         self.occam_model.bottom_layer = float(str(self.z_bottom_edit.text()))
-        self.z_bottom_edit.setText(
-            '{0:.2f}'.format(
-                self.occam_model.bottom_layer))
+        self.z_bottom_edit.setText('{0:.2f}'.format(self.occam_model.bottom_layer))
 
     def set_rho(self):
         self.occam_startup.start_rho = float(str(self.start_rho_edit.text()))
-        self.start_rho_edit.setText(
-            '{0:.2f}'.format(
-                self.occam_startup.start_rho))
+        self.start_rho_edit.setText('{0:.2f}'.format(self.occam_startup.start_rho))
 
     def set_max_iter(self):
         self.occam_startup.max_iter = int(str(self.max_iter_edit.text()))
-        self.max_iter_edit.setText(
-            '{0:.0f}'.format(
-                self.occam_startup.max_iter))
+        self.max_iter_edit.setText('{0:.0f}'.format(self.occam_startup.max_iter))
 
     def set_target_rms(self):
         self.occam_startup.target_rms = float(str(self.target_rms_edit.text()))
-        self.target_rms_edit.setText(
-            '{0:.2f}'.format(
-                self.occam_startup.target_rms))
+        self.target_rms_edit.setText('{0:.2f}'.format(self.occam_startup.target_rms))
 
     def set_start_rough(self):
-        self.occam_startup.start_rough = float(
-            str(self.start_roughness_edit.text()))
-        self.start_rough_edit.setText(
-            '{0:.2f}'.format(
-                self.occam_startup.start_rough))
+        self.occam_startup.start_rough = float(str(self.start_roughness_edit.text()))
+        self.start_rough_edit.setText('{0:.2f}'.format(self.occam_startup.start_rough))
 
     def set_start_lagrange(self):
-        self.occam_startup.start_lagrange = float(
-            str(self.start_lagrange_edit.text()))
-        self.start_lagrange_edit.setText(
-            '{0:.2f}'.format(
-                self.occam_startup.start_lagrange))
+        self.occam_startup.start_lagrange = float(str(self.start_lagrange_edit.text()))
+        self.start_lagrange_edit.setText('{0:.2f}'.format(self.occam_startup.start_lagrange))
 
     def _get_inv_folder(self):
         """
         create an inversion folder for each run
         """
-        dir_path = os.path.join(self.station_dir, self.data_mode)
-        if not os.path.isdir(dir_path):
-            os.mkdir(dir_path)
-            print 'Made directory {0}'.format(dir_path)
 
-        dir_list = []
-        for roots, dirs, files in os.walk(dir_path):
-            dir_list.append(dirs)
+        if self.save_dir is None:
+            dir_path = os.path.join(self.station_dir, self.data_mode)
+            if not os.path.isdir(dir_path):
+                os.mkdir(dir_path)
+                print 'Made directory {0}'.format(dir_path)
 
-        inv_num = len(dir_list[0]) + 1
+            dir_list = []
+            for roots, dirs, files in os.walk(dir_path):
+                dir_list.append(dirs)
 
-        self.save_dir = os.path.join(self.station_dir, self.data_mode,
-                                     'Inv_{0:02}'.format(inv_num))
+            inv_num = len(dir_list[0])+1
+
+            if self.occam_data.data_fn is None:
+                self.save_dir = os.path.join(self.station_dir, self.data_mode,
+                                             'Inv_{0:02}'.format(inv_num))
 
     def run_occam(self):
         """
@@ -589,15 +584,19 @@ class OccamWidget(QtGui.QWidget):
             print 'Made directory {0}'.format(self.save_dir)
 
         # write data file
-        self.occam_data.write_data_file(edi_file=self.edi_fn,
-                                        save_path=self.save_dir,
-                                        mode=self.data_mode,
-                                        res_err=self.res_err,
-                                        phase_err=self.phase_err,
-                                        thetar=self.rotation_angle)
+        if self.occam_data.data_fn is None:
+            self.occam_data.write_data_file(edi_file=self.edi_fn,
+                                            save_path=self.save_dir,
+                                            mode=self.data_mode,
+                                            res_err=self.res_err,
+                                            phase_err=self.phase_err,
+                                            thetar=self.rotation_angle)
+        else:
+            pass
 
         # write model file
-        self.occam_model.write_model_file(save_path=self.save_dir)
+        if self.occam_model.model_fn is None:
+            self.occam_model.write_model_file(save_path=self.save_dir)
 
         # write startup file
         self.occam_startup.data_fn = self.occam_data.data_fn
@@ -628,6 +627,7 @@ class OccamWidget(QtGui.QWidget):
                                   iter_fn=ini_model_fn,
                                   model_fn=self.occam_model.model_fn)
 
+
         self.l2_widget.plot_l2(dir_path=self.save_dir,
                                model_fn=self.occam_model.model_fn)
 
@@ -652,7 +652,7 @@ class OccamWidget(QtGui.QWidget):
                                                          iteration))
         ini_model_fn = os.path.join(self.save_dir,
                                     '{0}_{1}.iter'.format(self.data_mode,
-                                                          iteration))
+                                                         iteration))
 
     def rewrite_data_file(self):
         # write data file
@@ -748,17 +748,17 @@ class OccamWidget(QtGui.QWidget):
 
     def set_iteration(self, text):
         iteration = text
-        rms = self.l2_widget.rms_arr['rms'][int(iteration) - 1]
-        roughness = self.l2_widget.rms_arr['roughness'][int(iteration) - 1]
+        rms = self.l2_widget.rms_arr['rms'][int(iteration)-1]
+        roughness = self.l2_widget.rms_arr['roughness'][int(iteration)-1]
         print 'Iteration {0}, RMS={1:.2f}, Roughnes={2:.2f}'.format(
-            iteration, rms, roughness)
+                iteration, rms, roughness)
 
         ini_resp_fn = os.path.join(self.save_dir,
                                    '{0}_{1}.resp'.format(self.data_mode,
                                                          iteration))
         ini_model_fn = os.path.join(self.save_dir,
                                     '{0}_{1}.iter'.format(self.data_mode,
-                                                          iteration))
+                                                         iteration))
 
         ini_resp_fn = os.path.abspath(ini_resp_fn)
         ini_model_fn = os.path.abspath(ini_model_fn)
@@ -775,8 +775,6 @@ class OccamWidget(QtGui.QWidget):
 #==============================================================================
 # Mesh Plot
 #==============================================================================
-
-
 class OccamPlot(QtGui.QWidget):
     """
     plotting the mesh
@@ -807,7 +805,7 @@ class OccamPlot(QtGui.QWidget):
         self.marker_data_color = 'k'
         self.marker_resp = 'h'
         self.marker_resp_color = 'b'
-        self.marker_size = 2
+        self.marker_size =  2
 
         self.lw = .75
         self.ls = ':'
@@ -830,7 +828,7 @@ class OccamPlot(QtGui.QWidget):
 
         self.figure = Figure(dpi=200)
         self.mpl_widget = FigureCanvas(self.figure)
-        # self.mpl_widget.setParent(self.central_widget)
+        #self.mpl_widget.setParent(self.central_widget)
         self.mpl_widget.setFocusPolicy(QtCore.Qt.ClickFocus)
         self.mpl_widget.setFocus()
 
@@ -845,9 +843,9 @@ class OccamPlot(QtGui.QWidget):
                                     hspace=self.subplot_hspace,
                                     wspace=self.subplot_wspace)
 
-        # make sure the figure takes up the entire plottable space
+        #make sure the figure takes up the entire plottable space
         self.mpl_widget.setSizePolicy(QtGui.QSizePolicy.Expanding,
-                                      QtGui.QSizePolicy.Expanding)
+                                     QtGui.QSizePolicy.Expanding)
 
         # this is the Navigation widget
         # it takes the Canvas widget and a parent
@@ -868,42 +866,42 @@ class OccamPlot(QtGui.QWidget):
         """
         self.figure.clf()
 
-        d_kwargs = {'ls': self.ls,
-                    'marker': self.marker_data,
-                    'ms': self.marker_size,
-                    'mfc': self.marker_data_color,
-                    'mec': self.marker_data_color,
-                    'color': self.marker_data_color,
-                    'ecolor': self.marker_data_color,
-                    'picker': 2,
-                    'lw': self.lw,
-                    'elinewidth': self.lw,
-                    'capsize': self.e_capsize,
-                    'capthick': self.e_capthick}
+        d_kwargs = {'ls':self.ls,
+                    'marker':self.marker_data,
+                    'ms':self.marker_size,
+                    'mfc':self.marker_data_color,
+                    'mec':self.marker_data_color,
+                    'color':self.marker_data_color,
+                    'ecolor':self.marker_data_color,
+                    'picker':2,
+                    'lw':self.lw,
+                    'elinewidth':self.lw,
+                    'capsize':self.e_capsize,
+                    'capthick':self.e_capthick}
 
-        r_kwargs = {'ls': self.ls,
-                    'marker': self.marker_resp,
-                    'ms': self.marker_size,
-                    'mfc': self.marker_resp_color,
-                    'mec': self.marker_resp_color,
-                    'color': self.marker_resp_color,
-                    'ecolor': self.marker_resp_color,
-                    'picker': 2,
-                    'lw': self.lw,
-                    'elinewidth': self.lw,
-                    'capsize': self.e_capsize,
-                    'capthick': self.e_capthick}
+        r_kwargs = {'ls':self.ls,
+                    'marker':self.marker_resp,
+                    'ms':self.marker_size,
+                    'mfc':self.marker_resp_color,
+                    'mec':self.marker_resp_color,
+                    'color':self.marker_resp_color,
+                    'ecolor':self.marker_resp_color,
+                    'picker':2,
+                    'lw':self.lw,
+                    'elinewidth':self.lw,
+                    'capsize':self.e_capsize,
+                    'capthick':self.e_capthick}
 
-        # make a grid of subplots
-        gs = gridspec.GridSpec(6, 5, hspace=self.subplot_hspace,
-                               wspace=self.subplot_wspace)
-        # subplot resistivity
+        #make a grid of subplots
+        gs=gridspec.GridSpec(6, 5, hspace=self.subplot_hspace,
+                             wspace=self.subplot_wspace)
+        #subplot resistivity
         self.axr = self.figure.add_subplot(gs[:4, :4])
 
-        # subplot for phase
-        self.axp = self.figure.add_subplot(gs[4:, :4], sharex=self.axr)
+        #subplot for phase
+        self.axp = self.figure.add_subplot(gs[4:,:4], sharex=self.axr)
 
-        # subplot for model
+        #subplot for model
         self.axm = self.figure.add_subplot(gs[:, 4])
 
         #-----------------------------------------------------------------
@@ -917,12 +915,12 @@ class OccamPlot(QtGui.QWidget):
 
             #--> TE mode Data
             if len(rxy) > 0:
-                rte = self.axr.errorbar(1. / d1.freq[rxy],
+                rte = self.axr.errorbar(1./d1.freq[rxy],
                                         d1.res_te[0][rxy],
                                         yerr=d1.res_te[1][rxy],
                                         **d_kwargs)
-                # legend_marker_list_te.append(rte[0])
-                # legend_label_list_te.append('$Obs_{TE}$')
+                #legend_marker_list_te.append(rte[0])
+                #legend_label_list_te.append('$Obs_{TE}$')
             else:
                 pass
 
@@ -931,35 +929,35 @@ class OccamPlot(QtGui.QWidget):
 
             #--> TE mode Data
             if len(ryx) > 0:
-                rtm = self.axr.errorbar(1. / d1.freq[ryx],
+                rtm = self.axr.errorbar(1./d1.freq[ryx],
                                         d1.res_tm[0][ryx],
                                         yerr=d1.res_tm[1][ryx],
                                         **d_kwargs)
-                # legend_marker_list_te.append(rte[0])
-                # legend_label_list_te.append('$Obs_{TE}$')
+                #legend_marker_list_te.append(rte[0])
+                #legend_label_list_te.append('$Obs_{TE}$')
             else:
                 pass
             #--------------------plot phase--------------------------------
-            # cut out missing data points first
-            pxy = np.where(d1.phase_te[0] != 0)[0]
+            #cut out missing data points first
+            pxy = np.where(d1.phase_te[0]!=0)[0]
 
             #--> TE mode data
             if len(pxy) > 0:
-                self.axp.errorbar(1. / d1.freq[pxy],
-                                  d1.phase_te[0][pxy],
-                                  yerr=d1.phase_te[1][pxy],
-                                  **d_kwargs)
+                self.axp.errorbar(1./d1.freq[pxy],
+                                   d1.phase_te[0][pxy],
+                                   yerr=d1.phase_te[1][pxy],
+                                   **d_kwargs)
             else:
                 pass
 
-            # cut out missing data points first
-            pyx = np.where(d1.phase_tm[0] != 0)[0]
+            #cut out missing data points first
+            pyx = np.where(d1.phase_tm[0]!=0)[0]
 
             #--> TE mode data
             if len(pyx) > 0:
-                self.axp.errorbar(1. / d1.freq[pyx],
-                                  d1.phase_tm[0][pyx],
-                                  yerr=d1.phase_tm[1][pyx],
+                self.axp.errorbar(1./d1.freq[pyx],
+                                   d1.phase_tm[0][pyx],
+                                   yerr=d1.phase_tm[1][pyx],
                                   **d_kwargs)
             else:
                 pass
@@ -971,12 +969,12 @@ class OccamPlot(QtGui.QWidget):
 
             #--> TE mode Data
             if len(rxy) > 0:
-                rte = self.axr.errorbar(1. / self.data_obj.freq[rxy],
+                rte = self.axr.errorbar(1./self.data_obj.freq[rxy],
                                         self.data_obj.res_te[0][rxy],
                                         yerr=self.data_obj.res_te[1][rxy],
                                         **d_kwargs)
-                # legend_marker_list_te.append(rte[0])
-                # legend_label_list_te.append('$Obs_{TE}$')
+                #legend_marker_list_te.append(rte[0])
+                #legend_label_list_te.append('$Obs_{TE}$')
                 self._err_list.append([rte[1][0], rte[1][1], rte[2][0]])
             else:
                 pass
@@ -987,41 +985,41 @@ class OccamPlot(QtGui.QWidget):
 
             #--> TE mode Data
             if len(ryx) > 0:
-                rtm = self.axr.errorbar(1. / self.data_obj.freq[ryx],
+                rtm = self.axr.errorbar(1./self.data_obj.freq[ryx],
                                         self.data_obj.res_tm[0][ryx],
                                         yerr=self.data_obj.res_tm[1][ryx],
                                         **d_kwargs)
-                # legend_marker_list_te.append(rte[0])
-                # legend_label_list_te.append('$Obs_{TE}$')
+                #legend_marker_list_te.append(rte[0])
+                #legend_label_list_te.append('$Obs_{TE}$')
                 self._err_list.append([rtm[1][0], rtm[1][1], rtm[2][0]])
             else:
                 pass
                 #self._err_list.append([None, None, None])
             #--------------------plot phase--------------------------------
-            # cut out missing data points first
-            pxy = np.where(self.data_obj.phase_te[0] != 0)[0]
+            #cut out missing data points first
+            pxy = np.where(self.data_obj.phase_te[0]!=0)[0]
 
             #--> TE mode data
             if len(pxy) > 0:
-                pte = self.axp.errorbar(1. / self.data_obj.freq[pxy],
-                                        self.data_obj.phase_te[0][pxy],
-                                        yerr=self.data_obj.phase_te[1][pxy],
-                                        **d_kwargs)
+                pte =self.axp.errorbar(1./self.data_obj.freq[pxy],
+                                       self.data_obj.phase_te[0][pxy],
+                                       yerr=self.data_obj.phase_te[1][pxy],
+                                       **d_kwargs)
 
                 self._err_list.append([pte[1][0], pte[1][1], pte[2][0]])
             else:
                 pass
                 #self._err_list.append([None, None, None])
 
-            # cut out missing data points first
-            pyx = np.where(self.data_obj.phase_tm[0] != 0)[0]
+            #cut out missing data points first
+            pyx = np.where(self.data_obj.phase_tm[0]!=0)[0]
 
             #--> TE mode data
             if len(pyx) > 0:
-                ptm = self.axp.errorbar(1. / self.data_obj.freq[pyx],
+                ptm = self.axp.errorbar(1./self.data_obj.freq[pyx],
                                         self.data_obj.phase_tm[0][pyx],
-                                        yerr=self.data_obj.phase_tm[1][pyx],
-                                        **d_kwargs)
+                                       yerr=self.data_obj.phase_tm[1][pyx],
+                                      **d_kwargs)
                 self._err_list.append([ptm[1][0], ptm[1][1], ptm[2][0]])
             else:
                 pass
@@ -1039,44 +1037,45 @@ class OccamPlot(QtGui.QWidget):
 
             #--> TE mode Data
             if len(rxy) > 0:
-                rte = self.axr.errorbar(1. / r1.freq[rxy],
+                rte = self.axr.errorbar(1./r1.freq[rxy],
                                         r1.res_te[2][rxy],
-                                        yerr=None,
+                										yerr=None,
                                         **r_kwargs)
             self.resp_obj = occam1d.Data()
             self.resp_obj.read_resp_file(resp_fn, data_fn=data_fn)
+
 
             #--> cut out missing data
             ryx = np.where(self.resp_obj.res_tm[2] != 0)[0]
 
             #--> TE mode Data
             if len(ryx) > 0:
-                rtmr = self.axr.errorbar(1. / self.resp_obj.freq[ryx],
-                                         self.resp_obj.res_tm[2][ryx],
-                                         yerr=None,
-                                         **r_kwargs)
+                rtmr = self.axr.errorbar(1./self.resp_obj.freq[ryx],
+                                        self.resp_obj.res_tm[2][ryx],
+                                        yerr=None,
+                                        **r_kwargs)
 
             #--------------------plot phase--------------------------------
-            # cut out missing data points first
-            pxy = np.where(self.resp_obj.phase_te[2] != 0)[0]
+            #cut out missing data points first
+            pxy = np.where(self.resp_obj.phase_te[2]!=0)[0]
 
             #--> TE mode data
             if len(pxy) > 0:
-                self.axp.errorbar(1. / self.resp_obj.freq[pxy],
-                                  self.resp_obj.phase_te[2][pxy],
-                                  yerr=None,
-                                  **r_kwargs)
+                self.axp.errorbar(1./self.resp_obj.freq[pxy],
+                                   self.resp_obj.phase_te[2][pxy],
+                                   yerr=None,
+                                   **r_kwargs)
             else:
                 pass
 
-            # cut out missing data points first
-            pyx = np.where(self.resp_obj.phase_tm[2] != 0)[0]
+            #cut out missing data points first
+            pyx = np.where(self.resp_obj.phase_tm[2]!=0)[0]
 
             #--> TE mode data
             if len(pyx) > 0:
-                self.axp.errorbar(1. / self.resp_obj.freq[pyx],
-                                  self.resp_obj.phase_tm[2][pyx],
-                                  yerr=None,
+                self.axp.errorbar(1./self.resp_obj.freq[pyx],
+                                   self.resp_obj.phase_tm[2][pyx],
+                                   yerr=None,
                                   **r_kwargs)
             else:
                 pass
@@ -1092,11 +1091,11 @@ class OccamPlot(QtGui.QWidget):
         self.axp.set_xlim(x_limits)
         self.axr.grid(True, alpha=.75, which='both',
                       color=(.75, .75, .75))
-        plt.setp(self.axr.xaxis.get_ticklabels(), visible=False)
+        plt.setp(self.axr.xaxis.get_ticklabels(),visible=False)
         self.axp.grid(True, alpha=.75, which='both',
                       color=(.75, .75, .75))
-        # self.axp.yaxis.set_major_locator(MultipleLocator(15))
-        # self.axp.yaxis.set_minor_locator(MultipleLocator(3))
+        #self.axp.yaxis.set_major_locator(MultipleLocator(15))
+        #self.axp.yaxis.set_minor_locator(MultipleLocator(3))
 
         if self.res_limits is not None:
             self.axr.set_ylim(self.res_limits)
@@ -1105,15 +1104,15 @@ class OccamPlot(QtGui.QWidget):
             self.axp.set_ylim(self.phase_limits)
 
         self.axr.set_ylabel('App. Res. ($\Omega \cdot m$)',
-                            fontdict={'size': self.font_size, 'weight': 'bold'})
+                       fontdict={'size':self.font_size,'weight':'bold'})
         self.axp.set_ylabel('Phase (deg)',
-                            fontdict={'size': self.font_size, 'weight': 'bold'})
+                       fontdict={'size':self.font_size,'weight':'bold'})
         self.axp.set_xlabel('Period (s)',
-                            fontdict={'size': self.font_size, 'weight': 'bold'})
-        # plt.suptitle(self.title_str,fontsize=self.font_size+2,fontweight='bold')
+                            fontdict={'size':self.font_size,'weight':'bold'})
+        #plt.suptitle(self.title_str,fontsize=self.font_size+2,fontweight='bold')
         for ax in [self.axr, self.axp, self.axm]:
             ax.tick_params(axis='both', which='major',
-                           labelsize=self.font_size - 2)
+                           labelsize=self.font_size-2)
 
         #--> plot depth model--------------------------------------------------
         if model_fn is not None:
@@ -1125,8 +1124,8 @@ class OccamPlot(QtGui.QWidget):
             #--> plot te models
             self.model_obj = occam1d.Model()
             self.model_obj.read_iter_file(iter_fn, model_fn)
-            plot_depth = self.model_obj.model_depth[1:] / dscale
-            plot_model = abs(10**self.model_obj.model_res[1:, 1])
+            plot_depth = self.model_obj.model_depth[1:]/dscale
+            plot_model = abs(10**self.model_obj.model_res[1:,1])
 
             self.axm.semilogx(plot_model[::-1],
                               plot_depth[::-1],
@@ -1134,7 +1133,7 @@ class OccamPlot(QtGui.QWidget):
                               color='b',
                               lw=self.lw)
 
-            if self.depth_limits is None:
+            if self.depth_limits == None:
                 dmin = min(plot_depth)
                 if dmin == 0:
                     dmin = 1
@@ -1143,11 +1142,11 @@ class OccamPlot(QtGui.QWidget):
 
             if max(self.depth_limits) > plot_depth.max():
                 if self.depth_scale == 'log':
-                    self.axm.set_ylim(ymin=max(self.depth_limits) / dscale,
-                                      ymax=max([1, min(self.depth_limits) / dscale]))
+                    self.axm.set_ylim(ymin=max(self.depth_limits)/dscale,
+                                      ymax=max([1, min(self.depth_limits)/dscale]))
                 else:
-                    self.axm.set_ylim(ymin=max(self.depth_limits) / dscale,
-                                      ymax=min(self.depth_limits) / dscale)
+                    self.axm.set_ylim(ymin=max(self.depth_limits)/dscale,
+                                      ymax=min(self.depth_limits)/dscale)
             else:
                 if self.depth_scale == 'log':
                     self.axm.set_ylim(ymin=max(self.depth_limits),
@@ -1159,9 +1158,9 @@ class OccamPlot(QtGui.QWidget):
         if self.depth_scale == 'log':
             self.axm.set_yscale('log', nonposy='clip')
         self.axm.set_ylabel('Depth ({0})'.format(self.depth_units),
-                            fontdict={'size': self.font_size, 'weight': 'bold'})
+                            fontdict={'size':self.font_size,'weight':'bold'})
         self.axm.set_xlabel('Resistivity ($\Omega \cdot m$)',
-                            fontdict={'size': self.font_size, 'weight': 'bold'})
+                       fontdict={'size':self.font_size,'weight':'bold'})
         self.axm.grid(True, which='both', alpha=.75, color=(.75, .75, .75))
         self.axm.yaxis.set_label_position('right')
         self.axm.yaxis.tick_right()
@@ -1176,7 +1175,7 @@ class OccamPlot(QtGui.QWidget):
         data_period = data_point.get_xdata()[event.ind]
         data_value = data_point.get_ydata()[event.ind]
 
-        p_index = np.where(1. / self.data_obj.freq == data_period)[0][0]
+        p_index = np.where(1./self.data_obj.freq==data_period)[0][0]
 
         # left click remove a point
         if event.mouseevent.button == 1:
@@ -1191,7 +1190,7 @@ class OccamPlot(QtGui.QWidget):
             self._ax.plot(data_period, data_value,
                           color=(.7, .7, .7),
                           marker=self.marker_data,
-                          ms=self.marker_size * 2)
+                          ms=self.marker_size*2)
 
         # right click change error bars
         if event.mouseevent.button == 3:
@@ -1200,92 +1199,84 @@ class OccamPlot(QtGui.QWidget):
                 te_err = self.data_obj.res_te[1, p_index]
                 tm_err = self.data_obj.res_tm[1, p_index]
 
-                self.data_obj.res_te[1, p_index] = te_err + 0.2 * te_err
-                self.data_obj.res_tm[1, p_index] = tm_err + 0.2 * tm_err
+                self.data_obj.res_te[1, p_index] = te_err+0.2*te_err
+                self.data_obj.res_tm[1, p_index] = tm_err+0.2*tm_err
 
                 if self.data_obj.res_te[1, p_index] != 0:
                     print 'Res err changed to: {0:.2f}'.format(
-                        self.data_obj.res_te[1, p_index])
+                                            self.data_obj.res_te[1, p_index])
                 if self.data_obj.res_tm[1, p_index] != 0:
                     print 'Res err changed to: {0:.2f}'.format(
-                        self.data_obj.res_tm[1, p_index])
+                                            self.data_obj.res_tm[1, p_index])
 
                 # make error bar array
-                eb = self._err_list[self._ax_index][
-                    2].get_paths()[p_index].vertices
+                eb = self._err_list[self._ax_index][2].get_paths()[p_index].vertices
 
                 # make ecap array
-                ecap_l = self._err_list[self._ax_index][0].get_data()[1][
-                    p_index]
-                ecap_u = self._err_list[self._ax_index][1].get_data()[1][
-                    p_index]
+                ecap_l = self._err_list[self._ax_index][0].get_data()[1][p_index]
+                ecap_u = self._err_list[self._ax_index][1].get_data()[1][p_index]
 
                 # change apparent resistivity error
-                neb_u = eb[0, 1] - .1 * abs(eb[0, 1])
-                neb_l = eb[1, 1] + .1 * abs(eb[1, 1])
-                ecap_l = ecap_l - .1 * abs(ecap_l)
-                ecap_u = ecap_u + .1 * abs(ecap_u)
+                neb_u = eb[0,1]-.1*abs(eb[0,1])
+                neb_l = eb[1,1]+.1*abs(eb[1,1])
+                ecap_l = ecap_l-.1*abs(ecap_l)
+                ecap_u = ecap_u+.1*abs(ecap_u)
 
-                # set the new error bar values
-                eb[0, 1] = neb_u
-                eb[1, 1] = neb_l
+                #set the new error bar values
+                eb[0,1] = neb_u
+                eb[1,1] = neb_l
 
-                # reset the error bars and caps
+                #reset the error bars and caps
                 ncap_l = self._err_list[self._ax_index][0].get_data()
                 ncap_u = self._err_list[self._ax_index][1].get_data()
                 ncap_l[1][p_index] = ecap_l
                 ncap_u[1][p_index] = ecap_u
 
-                # set the values
+                #set the values
                 self._err_list[self._ax_index][0].set_data(ncap_l)
                 self._err_list[self._ax_index][1].set_data(ncap_u)
-                self._err_list[self._ax_index][
-                    2].get_paths()[p_index].vertices = eb
+                self._err_list[self._ax_index][2].get_paths()[p_index].vertices = eb
 
             if self._ax_index == 1:
                 te_err = self.data_obj.phase_te[1, p_index]
                 tm_err = self.data_obj.phase_tm[1, p_index]
 
-                self.data_obj.phase_te[1, p_index] = te_err + te_err * .05
-                self.data_obj.phase_tm[1, p_index] = tm_err + tm_err * .05
+                self.data_obj.phase_te[1, p_index] = te_err+te_err*.05
+                self.data_obj.phase_tm[1, p_index] = tm_err+tm_err*.05
 
                 if self.data_obj.phase_te[1, p_index] != 0:
                     print 'Phase err changed to: {0:.2f}'.format(
-                        self.data_obj.phase_te[1, p_index])
+                                            self.data_obj.phase_te[1, p_index])
                 if self.data_obj.phase_tm[1, p_index] != 0:
                     print 'Phase err changed to: {0:.2f}'.format(
-                        self.data_obj.phase_tm[1, p_index])
+                                            self.data_obj.phase_tm[1, p_index])
                 # make error bar array
-                eb = self._err_list[self._ax_index][
-                    2].get_paths()[p_index].vertices
+                eb = self._err_list[self._ax_index][2].get_paths()[p_index].vertices
 
                 # make ecap array
-                ecap_l = self._err_list[self._ax_index][0].get_data()[1][
-                    p_index]
-                ecap_u = self._err_list[self._ax_index][1].get_data()[1][
-                    p_index]
+                ecap_l = self._err_list[self._ax_index][0].get_data()[1][p_index]
+                ecap_u = self._err_list[self._ax_index][1].get_data()[1][p_index]
 
                 # change apparent phase error
-                neb_u = eb[0, 1] - .025 * abs(eb[0, 1])
-                neb_l = eb[1, 1] + .025 * abs(eb[1, 1])
-                ecap_l = ecap_l - .025 * abs(ecap_l)
-                ecap_u = ecap_u + .025 * abs(ecap_u)
+                neb_u = eb[0,1]-.025*abs(eb[0,1])
+                neb_l = eb[1,1]+.025*abs(eb[1,1])
+                ecap_l = ecap_l-.025*abs(ecap_l)
+                ecap_u = ecap_u+.025*abs(ecap_u)
 
-                # set the new error bar values
-                eb[0, 1] = neb_u
-                eb[1, 1] = neb_l
+                #set the new error bar values
+                eb[0,1] = neb_u
+                eb[1,1] = neb_l
 
-                # reset the error bars and caps
+                #reset the error bars and caps
                 ncap_l = self._err_list[self._ax_index][0].get_data()
                 ncap_u = self._err_list[self._ax_index][1].get_data()
                 ncap_l[1][p_index] = ecap_l
                 ncap_u[1][p_index] = ecap_u
 
-                # set the values
+                #set the values
                 self._err_list[self._ax_index][0].set_data(ncap_l)
                 self._err_list[self._ax_index][1].set_data(ncap_u)
-                self._err_list[self._ax_index][
-                    2].get_paths()[p_index].vertices = eb
+                self._err_list[self._ax_index][2].get_paths()[p_index].vertices = eb
 
         # be sure to draw the adjustments
         self._ax.figure.canvas.draw()
@@ -1299,8 +1290,6 @@ class OccamPlot(QtGui.QWidget):
 #==============================================================================
 # plot L2
 #==============================================================================
-
-
 class PlotL2(QtGui.QWidget):
     """
     plot the l2 curve and it will be pickable for each iteration
@@ -1330,7 +1319,7 @@ class PlotL2(QtGui.QWidget):
         self.rough_marker = 's'
         self.rough_color = 'b'
         self.rough_marker_size = 3
-        self.rough_font_size = 8
+        self.rough_font_size =  8
 
         self.int = 1
 
@@ -1351,7 +1340,7 @@ class PlotL2(QtGui.QWidget):
                                     bottom=self.subplot_bottom,
                                     top=self.subplot_top)
 
-        # make sure the figure takes up the entire plottable space
+        #make sure the figure takes up the entire plottable space
         self.l2_widget.setSizePolicy(QtGui.QSizePolicy.Expanding,
                                      QtGui.QSizePolicy.Expanding)
 
@@ -1377,7 +1366,7 @@ class PlotL2(QtGui.QWidget):
 
         iter_list = [os.path.join(self.dir_path, fn)
                      for fn in os.listdir(self.dir_path)
-                     if fn.find('.iter') > 0]
+                     if fn.find('.iter')>0]
 
         self.rms_arr = np.zeros(len(iter_list),
                                 dtype=np.dtype([('iteration', np.int),
@@ -1410,19 +1399,19 @@ class PlotL2(QtGui.QWidget):
         med_rms = np.median(self.rms_arr['rms'][1:])
         mean_rms = np.mean(self.rms_arr['rms'][1:])
 
-        # set the dimesions of the figure
+        #set the dimesions of the figure
         plt.rcParams['font.size'] = self.font_size
         plt.rcParams['figure.subplot.left'] = self.subplot_left
         plt.rcParams['figure.subplot.right'] = self.subplot_right
         plt.rcParams['figure.subplot.bottom'] = self.subplot_bottom
         plt.rcParams['figure.subplot.top'] = self.subplot_top
 
-        # make figure instance
+        #make figure instance
 
-        # make a subplot for RMS vs Iteration
+        #make a subplot for RMS vs Iteration
         self.ax1 = self.figure.add_subplot(1, 1, 1)
 
-        # plot the rms vs iteration
+        #plot the rms vs iteration
         l1, = self.ax1.plot(self.rms_arr['iteration'],
                             self.rms_arr['rms'],
                             '-k',
@@ -1431,19 +1420,19 @@ class PlotL2(QtGui.QWidget):
                             ms=5,
                             picker=3)
 
-        # plot the median of the RMS
+        #plot the median of the RMS
         m1, = self.ax1.plot(self.rms_arr['iteration'],
                             np.repeat(med_rms, nr),
                             ls='--',
                             color=self.rms_median_color,
-                            lw=self.rms_lw * .75)
+                            lw=self.rms_lw*.75)
 
-        # plot the mean of the RMS
+        #plot the mean of the RMS
         m2, = self.ax1.plot(self.rms_arr['iteration'],
                             np.repeat(mean_rms, nr),
                             ls='--',
                             color=self.rms_mean_color,
-                            lw=self.rms_lw * .75)
+                            lw=self.rms_lw*.75)
 
         self.ax2 = self.ax1.twinx()
         l2, = self.ax2.plot(self.rms_arr['iteration'],
@@ -1455,38 +1444,41 @@ class PlotL2(QtGui.QWidget):
                             ms=self.rough_marker_size,
                             mfc=self.rough_color)
 
-        # make a legend
-        self.figure.legend([l1, l2, m1, m2],
-                           ['RMS', 'Roughness',
-                            'Median_RMS={0:.2f}'.format(med_rms),
-                            'Mean_RMS={0:.2f}'.format(mean_rms)],
-                           ncol=4,
-                           loc='upper center',
-                           columnspacing=.25,
-                           markerscale=.75,
-                           handletextpad=.15,
-                           borderaxespad=.02,
-                           prop={'size': self.font_size})
 
-        # set the axis properties for RMS vs iteration
+        #make a legend
+        self.figure.legend([l1, l2, m1, m2],
+                        ['RMS', 'Roughness',
+                         'Median_RMS={0:.2f}'.format(med_rms),
+                         'Mean_RMS={0:.2f}'.format(mean_rms)],
+                         ncol=4,
+                         loc='upper center',
+                         columnspacing=.25,
+                         markerscale=.75,
+                         handletextpad=.15,
+                         borderaxespad=.02,
+                         prop={'size':self.font_size})
+
+        #set the axis properties for RMS vs iteration
 #        self.ax1.yaxis.set_minor_locator(MultipleLocator(.1))
         self.ax1.xaxis.set_minor_locator(MultipleLocator(1))
         self.ax1.set_ylabel('RMS',
-                            fontdict={'size': self.font_size + 2,
-                                      'weight': 'bold'})
+                            fontdict={'size':self.font_size+2,
+                                      'weight':'bold'})
         self.ax1.set_xlabel('Iteration',
-                            fontdict={'size': self.font_size + 2,
-                                      'weight': 'bold'})
+                            fontdict={'size':self.font_size+2,
+                                      'weight':'bold'})
         self.ax1.grid(alpha=.25, which='both', lw=self.rough_lw)
         self.ax2.set_ylabel('Roughness',
-                            fontdict={'size': self.font_size + 2,
-                                      'weight': 'bold',
-                                      'color': self.rough_color})
+                            fontdict={'size':self.font_size+2,
+                                      'weight':'bold',
+                                      'color':self.rough_color})
 
         self.ax1.set_ylim(np.floor(self.rms_arr['rms'][1:].min()),
                           np.ceil(self.rms_arr['rms'][1:].max()))
         self.ax2.set_ylim(np.floor(self.rms_arr['roughness'][1:].min()),
                           np.ceil(self.rms_arr['roughness'][1:].max()))
+
+
 
         for t2 in self.ax2.get_yticklabels():
             t2.set_color(self.rough_color)
@@ -1501,10 +1493,8 @@ class PlotL2(QtGui.QWidget):
 #==============================================================================
 # Main execution
 #==============================================================================
-
-
 def main():
-    # if __name__ == "__main__":
+#if __name__ == "__main__":
     import sys
     app = QtGui.QApplication(sys.argv)
     ui = Occam1D_GUI()

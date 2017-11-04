@@ -101,7 +101,8 @@ import mtpy.imaging.plotstrike as plotstrike
 # reload(plotpt)
 # reload(plotptmaps)
 
-# ==============================================================================
+#==============================================================================
+
 
 
 def plot_mt_response(**kwargs):
@@ -112,7 +113,6 @@ def plot_mt_response(**kwargs):
 
     return plotresponse.PlotMTResponse(**kwargs)
 
-
 def plot_multiple_mt_responses(**kwargs):
     """
     plot multiple MT responses
@@ -120,7 +120,6 @@ def plot_multiple_mt_responses(**kwargs):
     """
 
     return plotnresponses.PlotMultipleResponses(**kwargs)
-
 
 def plot_pt(**kwargs):
     """
@@ -131,7 +130,6 @@ def plot_pt(**kwargs):
 
     return plotpt.PlotPhaseTensor(**kwargs)
 
-
 def plot_pt_pseudosection(**kwargs):
     """
     plots the phase tensor ellipses as a pseudo section.
@@ -140,15 +138,14 @@ def plot_pt_pseudosection(**kwargs):
 
     return plotptps.PlotPhaseTensorPseudoSection(**kwargs)
 
-
 def plot_pt_map(**kwargs):
+
     """
     plots a map of phase tensor ellipses for a given frequency.
 
     """
 
     return plotptmaps.PlotPhaseTensorMaps(**kwargs)
-
 
 def plot_strike(**kwargs):
     """
@@ -158,7 +155,6 @@ def plot_strike(**kwargs):
 
     return plotstrike.PlotStrike(**kwargs)
 
-
 def plot_resphase_pseudosection(**kwargs):
     """
     plots resistivity and phase as a pseudo section
@@ -166,7 +162,6 @@ def plot_resphase_pseudosection(**kwargs):
     """
 
     return plotrpps.PlotResPhasePseudoSection(**kwargs)
-
 
 def plot_station_locations(**kwargs):
     """
@@ -176,7 +171,6 @@ def plot_station_locations(**kwargs):
 
     return plotstations.PlotStations(**kwargs)
 
-
 def plot_residual_pt_maps(fn_list1, fn_list2, **kwargs):
     """
     plot residual pt between two measurements in map view
@@ -184,7 +178,6 @@ def plot_residual_pt_maps(fn_list1, fn_list2, **kwargs):
     """
 
     return plotresidualptmaps.PlotResidualPTMaps(fn_list1, fn_list2, **kwargs)
-
 
 def plot_residual_pt_ps(fn_list1, fn_list2, **kwargs):
     """
@@ -200,13 +193,13 @@ def plot_residual_pt_ps(fn_list1, fn_list2, **kwargs):
 # works
 plot_mt_response.__doc__ = plotresponse.PlotMTResponse.__doc__
 plot_multiple_mt_responses.__doc__ = \
-    plotnresponses.PlotMultipleResponses.__doc__
+                                plotnresponses.PlotMultipleResponses.__doc__
 plot_pt.__doc__ = plotpt.PlotPhaseTensor.__doc__
 plot_pt_pseudosection.__doc__ = plotptps.PlotPhaseTensorPseudoSection.__doc__
 plot_pt_map.__doc__ = plotptmaps.PlotPhaseTensorMaps.__doc__
 plot_strike.__doc__ = plotstrike.PlotStrike.__doc__
 plot_resphase_pseudosection.__doc__ = \
-    plotrpps.PlotResPhasePseudoSection.__doc__
+                                    plotrpps.PlotResPhasePseudoSection.__doc__
 plot_station_locations.__doc__ = plotstations.PlotStations.__doc__
 plot_residual_pt_maps.__doc__ = plotresidualptmaps.PlotResidualPTMaps.__doc__
 plot_residual_pt_ps.__doc__ = plotresidualptps.PlotResidualPTps.__doc__

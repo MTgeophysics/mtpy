@@ -26,7 +26,7 @@ import mtpy.imaging.mtcolors as mtcl
 import mtpy.imaging.mtplottools as mtpl
 import mtpy.utils.exceptions as mtex
 
-reload(mtpl)
+# reload(mtpl)
 
 #==============================================================================
 
@@ -34,7 +34,7 @@ reload(mtpl)
 #==============================================================================
 #  Plot apparent resistivity and phase
 #==============================================================================
-class PlotMTResponse(mtpl.MTArrows, mtpl.MTEllipse):
+class PlotMTResponse(mtpl.MTArrows, mtpl.MTEllipse, mtpl.PlotSettings):
     """
     Plots Resistivity and phase for the different modes of the MT response.  At
     the moment is supports the input of an .edi file. Other formats that will
@@ -131,7 +131,7 @@ class PlotMTResponse(mtpl.MTArrows, mtpl.MTEllipse):
                       impedances.
                       *Default* is 1
 
-        *rot_z*: float
+        *rotation_angle*: float
                    rotation angle of impedance tensor (deg or radians),
                    *Note* : rotaion is clockwise positive
                    *default* is 0
@@ -207,7 +207,7 @@ class PlotMTResponse(mtpl.MTArrows, mtpl.MTEllipse):
         -plot_num        plot type, see arguments for details
         -plot_title      title of the plot, *default* is station name
         -fig_dpi         Dots-per-inch resolution of plot, *default* is 300
-        -rot_z           Rotate impedance tensor by this angle (deg) assuming
+        -rotation_angle           Rotate impedance tensor by this angle (deg) assuming
                          that North is 0 and angle is positive clockwise
 
         -plot_tipper    string to tell the program to plot tipper arrows or
@@ -308,7 +308,7 @@ class PlotMTResponse(mtpl.MTArrows, mtpl.MTEllipse):
                            pointing away from a conductor.
 
 
-        -xlimits        limits on the x-limits (period), *default* is None
+        -x_limits        limits on the x-limits (period), *default* is None
                         which will estimate the min and max from the data,
                         setting the min as the floor(min(period)) and the max
                         as ceil(max(period)).  Input in linear scale if you
@@ -350,156 +350,70 @@ class PlotMTResponse(mtpl.MTArrows, mtpl.MTEllipse):
     """
 
     def __init__(self, **kwargs):
-
+        
+        super(PlotMTResponse, self).__init__()
+        
         fn = kwargs.pop('fn', None)
-        z_array = kwargs.pop('z_array', None)
-        z_err_array = kwargs.pop('z_err_array', None)
         z_object = kwargs.pop('z_object', None)
-        phase_array = kwargs.pop('phase_array', None)
-        phase_err_array = kwargs.pop('phase_err_array', None)
-        res_array = kwargs.pop('res_array', None)
-        res_err_array = kwargs.pop('res_err_array', None)
-        tipper_array = kwargs.pop('tipper_array', None)
-        tipper_err_array = kwargs.pop('tipper_err_array', None)
         tipper_object = kwargs.pop('tipper_object', None)
         mt_object = kwargs.pop('mt_object', None)
-        period = kwargs.pop('period', None)
-        res_phase_object = kwargs.pop('res_phase_object', None)
-        self.phase_quadrant = kwargs.pop('phase_quadrant', 1)
 
         #--> initialize an MTplot object
         if mt_object is None:
-            self._mt = mtpl.MTplot(fn=fn,
-                                   z=z_array,
-                                   z_err=z_err_array,
+            self.mt = mtpl.MTplot(fn=fn,
                                    z_object=z_object,
-                                   phase_array=phase_array,
-                                   res_array=res_array,
-                                   phase_err_array=phase_err_array,
-                                   res_err_array=res_err_array,
-                                   tipper=tipper_array,
-                                   tipper_err=tipper_err_array,
-                                   tipper_object=tipper_object,
-                                   period=period)
+                                   tipper_object=tipper_object)
 
         else:
-            self._mt = mt_object
+            self.mt = mt_object
 
-        # if you have a resistivity and phase object
-        if res_phase_object is not None:
-            if period is None:
-                raise mtex.MTpyError_Z('Need to input period array for ' +
-                                       'plotting')
-            self.rp = res_phase_object
+        self.phase_quadrant =  1
 
-        # set some of the properties as attributes much to Lars' discontent
-        self.fn = fn
-        self.fig_num = kwargs.pop('fig_num', 1)
-        self.fig_size = kwargs.pop('fig_size', None)
+        #mtpl.PlotSettings.__init__(self)
+
         self.plot_num = kwargs.pop('plot_num', 1)
-        self.plot_title = kwargs.pop('plot_title', None)
-        self.fig_dpi = kwargs.pop('fig_dpi', 300)
-        self.rot_z = kwargs.pop('rot_z', 0)
+        self.rotation_angle = kwargs.pop('rotation_angle', 0)
 
-        #-->line properties
-        # line style between points
-        self.xy_ls = kwargs.pop('xy_ls', 'None')
-        self.yx_ls = kwargs.pop('yx_ls', 'None')
-        self.det_ls = kwargs.pop('det_ls', 'None')
-
-        # outline color
-        self.xy_color = kwargs.pop('xy_color', 'b')
-        self.yx_color = kwargs.pop('yx_color', 'r')
-        self.det_color = kwargs.pop('det_color', 'g')
-
-        # face color
-        self.xy_mfc = kwargs.pop('xy_mfc', 'None')
-        self.yx_mfc = kwargs.pop('yx_mfc', 'None')
-        self.det_mfc = kwargs.pop('det_mfc', 'None')
-
-        # maker
-        self.xy_marker = kwargs.pop('xy_marker', 's')
-        self.yx_marker = kwargs.pop('yx_marker', 'o')
-        self.det_marker = kwargs.pop('det_marker', 'd')
-
-        # size
-        self.marker_size = kwargs.pop('marker_size', 2)
-        self.lw = kwargs.pop('lw', .5)
-        # marker line width
-        self.marker_lw = kwargs.pop('marker_lw', 100. / self.fig_dpi)
-
-        # set plot limits
-        self.xlimits = kwargs.pop('xlimits', None)
-        self.res_limits = kwargs.pop('res_limits', None)
-        self.phase_limits = kwargs.pop('phase_limits', None)
-        self.tipper_limits = kwargs.pop('tipper_limits', None)
-        self.strike_limits = kwargs.pop('strike_limits', None)
-        self.skew_limits = kwargs.pop('skew_limits', None)
-        self.pt_limits = kwargs.pop('pt_limits', None)
-
-        # set font parameters
-        self.font_size = kwargs.pop('font_size', 7)
-
-        # set period
-        self.period = self._mt.period
-
-        # set plot tipper or not
+        #set plot tipper or not
         self._plot_tipper = kwargs.pop('plot_tipper', 'n')
 
-        # plot strike angle or not
+        #plot strike angle or not
         self._plot_strike = kwargs.pop('plot_strike', 'n')
 
-        # plot skew angle
+        #plot skew angle
         self._plot_skew = kwargs.pop('plot_skew', 'n')
 
-        # plot phase tensor ellipses
+        #plot phase tensor ellipses
         self._plot_pt = kwargs.pop('plot_pt', 'n')
 
-        # order of plots
+        #order of plots
         self.plot_order = kwargs.pop('plot_order',
-                                     ['tip', 'pt', 'strike', 'skew'])
+                                     ['tip' , 'pt', 'strike', 'skew'])
 
-        self.plot_dict = dict([(kk, vv) for kk, vv in zip(['tip', 'pt',
+        self.plot_dict = dict([(kk, vv) for kk, vv in zip(['tip' , 'pt',
                                                            'strike', 'skew'],
-                                                          [self._plot_tipper,
-                                                           self._plot_pt,
-                                                           self._plot_strike,
-                                                           self._plot_skew])])
+                                                           [self._plot_tipper,
+                                                            self._plot_pt,
+                                                            self._plot_strike,
+                                                            self._plot_skew])])
 
-        # set arrow properties
-        self._arrow_dict = kwargs.pop('arrow_dict', {'color': ('k', 'b'),
-                                                     'direction': 0,
-                                                     'head_length': .03,
-                                                     'head_width': .03,
-                                                     'lw': .5})
+        #set arrow properties
+        self.arrow_head_length = 0.03
+        self.arrow_head_width = 0.03
+        self.arrow_lw = .5
 
-        self._read_arrow_dict()
-
-        # ellipse_properties
-        self._ellipse_dict = kwargs.pop('ellipse_dict', {'size': .25})
-        self._read_ellipse_dict()
+        #ellipse_properties
+        self.ellipse_size = 0.25
         self.ellipse_spacing = kwargs.pop('ellipse_spacing', 1)
         if self.ellipse_size == 2 and self.ellipse_spacing == 1:
             self.ellipse_size = 0.25
 
-        # skew properties
-        self.skew_color = kwargs.pop('skew_color', (.85, .35, 0))
-        self.skew_marker = kwargs.pop('skew_marker', 'd')
+        self.plot_yn = kwargs.pop('plot_yn', 'y')
 
-        # strike properties
-        self.strike_inv_marker = kwargs.pop('strike_inv_marker', '^')
-        self.strike_inv_color = kwargs.pop('strike_inv_color', (.2, .2, .7))
+        for key in kwargs.keys():
+            setattr(self, key, kwargs[key])
 
-        self.strike_pt_marker = kwargs.pop('strike_pt_marker', 'v')
-        self.strike_pt_color = kwargs.pop('strike_pt_color', (.7, .2, .2))
-
-        self.strike_tip_marker = kwargs.pop('strike_tip_marker', '>')
-        self.strike_tip_color = kwargs.pop('strike_tip_color', (.2, .7, .2))
-
-        self.plot_yn = kwargs.pop('plot_yn', 'n')
-
-        # plot on initializing is not a good practice. It's better to call the
-        # plot method separately.
+        #plot on initializing is not a good practice. It's better to call the plot method separately.
         if self.plot_yn == 'y':
             self.plot()
 
@@ -510,7 +424,7 @@ class PlotMTResponse(mtpl.MTArrows, mtpl.MTEllipse):
 
         """
 
-        # set figure size according to what the plot will be.
+        #set figure size according to what the plot will be.
         if self.fig_size is None:
             if self.plot_num == 1 or self.plot_num == 3:
                 self.fig_size = [5, 3]
@@ -519,103 +433,99 @@ class PlotMTResponse(mtpl.MTArrows, mtpl.MTEllipse):
                 self.fig_size = [6, 3]
 
         #--> rotate the impedance tensor if desired
-        if self.rot_z != 0:
-            self._mt.rot_z = self.rot_z
-
-        # get the reistivity and phase object
-        try:
-            self.rp = self._mt.get_ResPhase(phase_quadrant=self.phase_quadrant)
-        except AttributeError:
-            pass
+        if self.rotation_angle != 0:
+            self.mt.rotation_angle = self.rotation_angle
 
         if self._plot_tipper.find('y') == 0:
-            if len(np.nonzero(self._mt.tipper)[0]) == 0:
-                print 'No Tipper data for station {0}'.format(self._mt.station)
+            if np.all(self.mt.Tipper.tipper == 0+0j):
+                print 'No Tipper data for station {0}'.format(self.mt.station)
                 self.plot_tipper = 'n'
 
-        # set x-axis limits from short period to long period
-        if self.xlimits is None:
-            self.xlimits = (10**(np.floor(np.log10(self.period[0]))),
-                            10**(np.ceil(np.log10((self.period[-1])))))
-        if self.phase_limits is None:
+        #set x-axis limits from short period to long period
+        if self.x_limits == None:
+            self.x_limits = (10**(np.floor(np.log10(self.mt.period[0]))),
+                            10**(np.ceil(np.log10((self.mt.period[-1])))))
+        if self.phase_limits == None:
             pass
 
-        if self.res_limits is None:
+        if self.res_limits == None:
             self.res_limits = (10**(np.floor(
-                                    np.log10(min([self.rp.resxy.min(),
-                                                  self.rp.resyx.min()])))),
-                               10**(np.ceil(
-                                   np.log10(max([self.rp.resxy.max(),
-                                                 self.rp.resyx.max()])))))
+                                    np.log10(min([self.mt.Z.res_xy.min(),
+                                                  self.mt.Z.res_yx.min()])))),
+                              10**(np.ceil(
+                                    np.log10(max([self.mt.Z.res_xy.max(),
+                                                  self.mt.Z.res_yx.max()])))))
 
-        # set some parameters of the figure and subplot spacing
+        #set some parameters of the figure and subplot spacing
         plt.rcParams['font.size'] = self.font_size
         plt.rcParams['figure.subplot.bottom'] = .1
         plt.rcParams['figure.subplot.top'] = .93
         plt.rcParams['figure.subplot.left'] = .80
         plt.rcParams['figure.subplot.right'] = .98
 
-        # set the font properties for the axis labels
-        fontdict = {'size': self.font_size + 2, 'weight': 'bold'}
+        #set the font properties for the axis labels
+        fontdict = {'size':self.font_size+2, 'weight':'bold'}
 
-        # create a dictionary for the number of subplots needed
-        pdict = {'res': 0,
-                 'phase': 1}
-        # start the index at 2 because resistivity and phase is permanent for
-        # now
+        #create a dictionary for the number of subplots needed
+        pdict = {'res' : 0,
+                 'phase' : 1}
+        #start the index at 2 because resistivity and phase is permanent for
+        #now
         index = 2
         for key in self.plot_order:
-            if self.plot_dict[key].find('y') == 0:
+            if self.plot_dict[key].find('y')==0:
                 pdict[key] = index
                 index += 1
 
-        # get number of rows needed
+        #get number of rows needed
         nrows = index
 
-        # set height ratios of the subplots
-        hr = [2, 1.5] + [1] * (len(pdict.keys()) - 2)
+        #set height ratios of the subplots
+        hr = [2, 1.5]+[1]*(len(pdict.keys())-2)
 
-        # create a grid to place the figures into, set to have 2 rows and 2
-        # columns to put any of the 4 components.  Make the phase plot
-        # slightly shorter than the apparent resistivity plot and have the two
-        # close to eachother vertically.  If there is tipper add a 3rd row and
-        # if there is strike add another row
-        gs = gridspec.GridSpec(nrows, 2, height_ratios=hr, hspace=.05)
+        #create a grid to place the figures into, set to have 2 rows and 2
+        #columns to put any of the 4 components.  Make the phase plot
+        #slightly shorter than the apparent resistivity plot and have the two
+        #close to eachother vertically.  If there is tipper add a 3rd row and
+        #if there is strike add another row
+        gs = gridspec.GridSpec(nrows, 2, height_ratios=hr,hspace=.05)
 
-        # make figure instance
+        #make figure instance
         self.fig = plt.figure(self.fig_num, self.fig_size, dpi=self.fig_dpi)
 
         #--> make figure for xy,yx components
         if self.plot_num == 1 or self.plot_num == 3:
-            # set label coordinates
+            #set label coordinates
             labelcoords = (-0.075, 0.5)
 
-            # space out the subplots
+            #space out the subplots
             gs.update(hspace=.05, wspace=.15, left=.1)
 
             #--> create the axes instances
-            # apparent resistivity axis
+            #apparent resistivity axis
             self.axr = self.fig.add_subplot(gs[0, :])
 
-            # phase axis that shares period axis with resistivity
+            #phase axis that shares period axis with resistivity
             self.axp = self.fig.add_subplot(gs[1, :], sharex=self.axr)
+
+
 
         #--> make figure for all 4 components
         elif self.plot_num == 2:
-            # set label coordinates
+            #set label coordinates
             labelcoords = (-0.095, 0.5)
 
-            # space out the subplots
+            #space out the subplots
             gs.update(hspace=.05, wspace=.15, left=.07)
 
             #--> create the axes instances
-            # apparent resistivity axis
+            #apparent resistivity axis
             self.axr = self.fig.add_subplot(gs[0, 0])
 
-            # phase axis that shares period axis with resistivity
+            #phase axis that shares period axis with resistivity
             self.axp = self.fig.add_subplot(gs[1, 0], sharex=self.axr)
 
-        # place y coordinate labels in the same location
+        #place y coordinate labels in the same location
         self.axr.yaxis.set_label_coords(labelcoords[0], labelcoords[1])
         self.axp.yaxis.set_label_coords(labelcoords[0], labelcoords[1])
 
@@ -628,7 +538,7 @@ class PlotMTResponse(mtpl.MTArrows, mtpl.MTEllipse):
 
         #--> plot phase tensors
         try:
-            # can't share axis because not on the same scale
+            #can't share axis because not on the same scale
             self.axpt = self.fig.add_subplot(gs[pdict['pt'], :],
                                              aspect='equal')
             self.axpt.yaxis.set_label_coords(labelcoords[0], labelcoords[1])
@@ -651,31 +561,32 @@ class PlotMTResponse(mtpl.MTArrows, mtpl.MTEllipse):
         except KeyError:
             pass
 
+
         #---------plot the apparent resistivity--------------------------------
         #--> plot as error bars and just as points xy, yx
-        # res_xy
+        #res_xy
         self.ebxyr = mtpl.plot_errorbar(self.axr,
-                                        self.period,
-                                        self.rp.resxy,
-                                        marker=self.xy_marker,
-                                        ms=self.marker_size,
-                                        color=self.xy_color,
-                                        ls=self.xy_ls,
-                                        lw=self.lw,
-                                        y_error=self.rp.resxy_err,
-                                        e_capsize=self.marker_size)
+                                       self.mt.period,
+                                       self.mt.Z.res_xy,
+                                       marker=self.xy_marker,
+                                       ms=self.marker_size,
+                                       color = self.xy_color,
+                                       ls=self.xy_ls,
+                                       lw=self.lw,
+                                       y_error=self.mt.Z.res_err_xy,
+                                       e_capsize=self.marker_size)
 
-        # res_yx
+        #res_yx
         self.ebyxr = mtpl.plot_errorbar(self.axr,
-                                        self.period,
-                                        self.rp.resyx,
-                                        marker=self.yx_marker,
-                                        ms=self.marker_size,
-                                        color=self.yx_color,
-                                        ls=self.yx_ls,
-                                        lw=self.lw,
-                                        y_error=self.rp.resyx_err,
-                                        e_capsize=self.marker_size)
+                                       self.mt.period,
+                                       self.mt.Z.res_yx,
+                                       marker=self.yx_marker,
+                                       ms=self.marker_size,
+                                       color=self.yx_color,
+                                       ls=self.yx_ls,
+                                       lw=self.lw,
+                                       y_error=self.mt.Z.res_err_yx,
+                                       e_capsize=self.marker_size)
 
         #--> set axes properties
         plt.setp(self.axr.get_xticklabels(), visible=False)
@@ -683,7 +594,7 @@ class PlotMTResponse(mtpl.MTArrows, mtpl.MTEllipse):
                             fontdict=fontdict)
         self.axr.set_yscale('log', nonposy='clip')
         self.axr.set_xscale('log', nonposx='clip')
-        self.axr.set_xlim(self.xlimits)
+        self.axr.set_xlim(self.x_limits)
         self.axr.set_ylim(self.res_limits)
         self.axr.grid(True, alpha=.25, which='both', color=(.25, .25, .25),
                       lw=.25)
@@ -697,41 +608,41 @@ class PlotMTResponse(mtpl.MTArrows, mtpl.MTEllipse):
                         borderpad=.02)
 
         #-----Plot the phase---------------------------------------------------
-        # phase_xy
+        #phase_xy
         self.ebxyp = mtpl.plot_errorbar(self.axp,
-                                        self.period,
-                                        self.rp.phasexy,
-                                        marker=self.xy_marker,
-                                        ms=self.marker_size,
-                                        color=self.xy_color,
-                                        ls=self.xy_ls,
-                                        lw=self.lw,
-                                        y_error=self.rp.phasexy_err,
-                                        e_capsize=self.marker_size)
+                                       self.mt.period,
+                                       self.mt.Z.phase_xy,
+                                       marker=self.xy_marker,
+                                       ms=self.marker_size,
+                                       color=self.xy_color,
+                                       ls=self.xy_ls,
+                                       lw=self.lw,
+                                       y_error=self.mt.Z.phase_err_xy,
+                                       e_capsize=self.marker_size)
 
-        # phase_yx: Note add 180 to place it in same quadrant as phase_xy
+        #phase_yx: Note add 180 to place it in same quadrant as phase_xy
         self.ebyxp = mtpl.plot_errorbar(self.axp,
-                                        self.period,
-                                        self.rp.phaseyx,
-                                        marker=self.yx_marker,
-                                        ms=self.marker_size,
-                                        color=self.yx_color,
-                                        ls=self.yx_ls,
-                                        lw=self.lw,
-                                        y_error=self.rp.phaseyx_err,
-                                        e_capsize=self.marker_size)
+                                       self.mt.period,
+                                       self.mt.Z.phase_yx+180*self.phase_quadrant,
+                                       marker=self.yx_marker,
+                                       ms=self.marker_size,
+                                       color=self.yx_color,
+                                       ls=self.yx_ls,
+                                       lw=self.lw,
+                                       y_error=self.mt.Z.phase_err_yx,
+                                       e_capsize=self.marker_size)
 
-        # check the phase to see if any point are outside of [0:90]
-        if self.phase_limits is None:
-            if min(self.rp.phasexy) < 0 or min(self.rp.phaseyx) < 0:
-                pymin = min([min(self.rp.phasexy), min(self.rp.phaseyx)])
+        #check the phase to see if any point are outside of [0:90]
+        if self.phase_limits == None:
+            if min(self.mt.Z.phase_xy)<0 or min(self.mt.Z.phase_yx)<0:
+                pymin = min([min(self.mt.Z.phase_xy), min(self.mt.Z.phase_yx)])
                 if pymin > 0:
-                    pymin = 0
+                   pymin = 0
             else:
                 pymin = 0
 
-            if max(self.rp.phasexy) > 90 or max(self.rp.phaseyx) > 90:
-                pymax = min([max(self.rp.phasexy), max(self.rp.phaseyx)])
+            if max(self.mt.Z.phase_xy)>90 or max(self.mt.Z.phase_yx)>90:
+                pymax = min([max(self.mt.Z.phase_xy), max(self.mt.Z.phase_yx)])
                 if pymax < 91:
                     pymax = 89.9
             else:
@@ -748,24 +659,23 @@ class PlotMTResponse(mtpl.MTArrows, mtpl.MTEllipse):
         self.axp.yaxis.set_minor_locator(MultipleLocator(5))
         self.axp.grid(True, alpha=.25, which='both', color=(.25, .25, .25),
                       lw=.25)
-        # set th xaxis tick labels to invisible
-        if pdict['phase'] != nrows - 1:
+        #set th xaxis tick labels to invisible
+        if pdict['phase'] != nrows-1:
             plt.setp(self.axp.xaxis.get_ticklabels(), visible=False)
             self.axp.set_xlabel('')
 
         #-----plot tipper----------------------------------------------------
         if self._plot_tipper.find('y') == 0:
-            tp = self._mt.get_Tipper()
 
-            txr = tp.mag_real * np.sin(tp.ang_real * np.pi / 180 +
-                                       np.pi * self.arrow_direction)
-            tyr = tp.mag_real * np.cos(tp.ang_real * np.pi / 180 +
-                                       np.pi * self.arrow_direction)
+            txr = self.mt.Tipper.mag_real*np.sin(self.mt.Tipper.angle_real*np.pi/180+\
+                                     np.pi*self.arrow_direction)
+            tyr = self.mt.Tipper.mag_real*np.cos(self.mt.Tipper.angle_real*np.pi/180+\
+                                     np.pi*self.arrow_direction)
 
-            txi = tp.mag_imag * np.sin(tp.ang_imag * np.pi / 180 +
-                                       np.pi * self.arrow_direction)
-            tyi = tp.mag_imag * np.cos(tp.ang_imag * np.pi / 180 +
-                                       np.pi * self.arrow_direction)
+            txi = self.mt.Tipper.mag_imag*np.sin(self.mt.Tipper.angle_imag*np.pi/180+\
+                                     np.pi*self.arrow_direction)
+            tyi = self.mt.Tipper.mag_imag*np.cos(self.mt.Tipper.angle_imag*np.pi/180+\
+                                     np.pi*self.arrow_direction)
 
             nt = len(txr)
 
@@ -773,12 +683,12 @@ class PlotMTResponse(mtpl.MTArrows, mtpl.MTEllipse):
             tiplabel = []
 
             for aa in range(nt):
-                xlenr = txr[aa] * np.log10(self.period[aa])
-                xleni = txi[aa] * np.log10(self.period[aa])
+                xlenr = txr[aa]*np.log10(self.mt.period[aa])
+                xleni = txi[aa]*np.log10(self.mt.period[aa])
 
                 #--> plot real arrows
                 if self._plot_tipper.find('r') > 0:
-                    self.axt.arrow(np.log10(self.period[aa]),
+                    self.axt.arrow(np.log10(self.mt.period[aa]),
                                    0,
                                    xlenr,
                                    tyr[aa],
@@ -796,7 +706,7 @@ class PlotMTResponse(mtpl.MTArrows, mtpl.MTEllipse):
 
                 #--> plot imaginary arrows
                 if self._plot_tipper.find('i') > 0:
-                    self.axt.arrow(np.log10(self.period[aa]),
+                    self.axt.arrow(np.log10(self.mt.period[aa]),
                                    0,
                                    xleni,
                                    tyi[aa],
@@ -811,8 +721,9 @@ class PlotMTResponse(mtpl.MTArrows, mtpl.MTEllipse):
                         tiplist.append(line2[0])
                         tiplabel.append('imag')
 
-            # make a line at 0 for reference
-            self.axt.plot(np.log10(self.period), [0] * nt, 'k', lw=.5)
+            #make a line at 0 for reference
+            self.axt.plot(np.log10(self.mt.period), [0]*nt, 'k', lw=.5)
+
 
             self.axt.legend(tiplist, tiplabel,
                             loc='upper left',
@@ -821,12 +732,12 @@ class PlotMTResponse(mtpl.MTArrows, mtpl.MTEllipse):
                             labelspacing=.07,
                             handletextpad=.2,
                             borderpad=.1,
-                            prop={'size': self.font_size})
+                            prop={'size':self.font_size})
 
-            # set axis properties
+            #set axis properties
 
-            self.axt.set_xlim(np.log10(self.xlimits[0]),
-                              np.log10(self.xlimits[1]))
+            self.axt.set_xlim(np.log10(self.x_limits[0]),
+                               np.log10(self.x_limits[1]))
 
             tklabels = []
             xticks = []
@@ -839,12 +750,12 @@ class PlotMTResponse(mtpl.MTArrows, mtpl.MTEllipse):
                     pass
             self.axt.set_xticks(xticks)
             self.axt.set_xticklabels(tklabels,
-                                     fontdict={'size': self.font_size})
+                                      fontdict={'size':self.font_size})
             self.axt.set_xlabel('Period (s)', fontdict=fontdict)
-            # need to reset the xlimits caouse they get reset when calling
-            # set_ticks for some reason
-            self.axt.set_xlim(np.log10(self.xlimits[0]),
-                              np.log10(self.xlimits[1]))
+            #need to reset the x_limits caouse they get reset when calling
+            #set_ticks for some reason
+            self.axt.set_xlim(np.log10(self.x_limits[0]),
+                               np.log10(self.x_limits[1]))
 
             self.axt.yaxis.set_major_locator(MultipleLocator(.2))
             self.axt.yaxis.set_minor_locator(MultipleLocator(.1))
@@ -861,14 +772,14 @@ class PlotMTResponse(mtpl.MTArrows, mtpl.MTEllipse):
                 if tmin < -1:
                     tmin = -.899
 
-                self.tipper_limits = (tmin - .1, tmax + .1)
+                self.tipper_limits = (tmin-.1, tmax+.1)
 
             self.axt.set_ylim(self.tipper_limits)
             self.axt.grid(True, alpha=.25, which='both', color=(.25, .25, .25),
                           lw=.25)
 
-            # set th xaxis tick labels to invisible
-            if pdict['tip'] != nrows - 1:
+            #set th xaxis tick labels to invisible
+            if pdict['tip'] != nrows-1:
                 plt.setp(self.axt.xaxis.get_ticklabels(), visible=False)
 
         #------plot strike angles----------------------------------------------
@@ -879,45 +790,44 @@ class PlotMTResponse(mtpl.MTArrows, mtpl.MTEllipse):
             st_maxlist = []
             st_minlist = []
 
-            if self._plot_strike.find('i') > 0:
-                # strike from invariants
-                zinv = self._mt.get_Zinvariants()
-                s1 = zinv.strike
-
-                # fold angles so go from -90 to 90
-                s1[np.where(s1 > 90)] -= -180
-                s1[np.where(s1 < -90)] += 180
-
-                # plot strike with error bars
-                ps1 = mtpl.plot_errorbar(self.axst,
-                                         self.period,
-                                         s1,
-                                         marker=self.strike_inv_marker,
-                                         ms=self.marker_size,
-                                         color=self.strike_inv_color,
-                                         ls='none',
-                                         lw=self.lw,
-                                         y_error=zinv.strike_err,
-                                         e_capsize=self.marker_size)
-
-                stlist.append(ps1[0])
-                stlabel.append('Z_inv')
-                st_maxlist.append(s1.max())
-                st_minlist.append(s1.min())
+#            if self._plot_strike.find('i') > 0:
+#                #strike from invariants
+#                zinv = self.mt.get_Zinvariants()
+#                s1 = zinv.strike
+#
+#                #fold angles so go from -90 to 90
+#                s1[np.where(s1>90)] -= -180
+#                s1[np.where(s1<-90)] += 180
+#
+#                #plot strike with error bars
+#                ps1 = mtpl.plot_errorbar(self.axst,
+#                                         self.mt.period,
+#                                        s1,
+#                                        marker=self.strike_inv_marker,
+#                                        ms=self.marker_size,
+#                                        color=self.strike_inv_color,
+#                                        ls='none',
+#                                        lw=self.lw,
+#                                        y_error=zinv.strike_err,
+#                                        e_capsize=self.marker_size)
+#
+#                stlist.append(ps1[0])
+#                stlabel.append('Z_inv')
+#                st_maxlist.append(s1.max())
+#                st_minlist.append(s1.min())
 
             if self._plot_strike.find('p') > 0:
 
-                # strike from phase tensor
-                pt = self._mt.get_PhaseTensor()
-                s2, s2_err = pt.azimuth
+                #strike from phase tensor
+                s2 = self.mt.pt.azimuth
+                s2_err = self.mt.pt.azimuth_err
+                #fold angles to go from -90 to 90
+                s2[np.where(s2>90)] -= 180
+                s2[np.where(s2<-90)] += 180
 
-                # fold angles to go from -90 to 90
-                s2[np.where(s2 > 90)] -= 180
-                s2[np.where(s2 < -90)] += 180
-
-                # plot strike with error bars
+                #plot strike with error bars
                 ps2 = mtpl.plot_errorbar(self.axst,
-                                         self.period,
+                                         self.mt.period,
                                          s2,
                                          marker=self.strike_pt_marker,
                                          ms=self.marker_size,
@@ -933,25 +843,24 @@ class PlotMTResponse(mtpl.MTArrows, mtpl.MTEllipse):
                 st_minlist.append(s2.min())
 
             if self._plot_strike.find('t') > 0:
-                # strike from tipper
-                tp = self._mt.get_Tipper()
-                s3 = tp.ang_real + 90
+                #strike from tipper
+                s3 = self.mt.Tipper.angle_real+90
 
-                # fold to go from -90 to 90
+                #fold to go from -90 to 90
                 s3[np.where(s3 > 90)] -= 180
                 s3[np.where(s3 < -90)] += 180
 
-                # plot strike with error bars
+                #plot strike with error bars
                 ps3 = mtpl.plot_errorbar(self.axst,
-                                         self.period,
-                                         s3,
-                                         marker=self.strike_tip_marker,
-                                         ms=self.marker_size,
-                                         color=self.strike_tip_color,
-                                         ls='none',
-                                         lw=self.lw,
-                                         y_error=None,
-                                         e_capsize=self.marker_size)
+                                         self.mt.period,
+                                        s3,
+                                        marker=self.strike_tip_marker,
+                                        ms=self.marker_size,
+                                        color=self.strike_tip_color,
+                                        ls='none',
+                                        lw=self.lw,
+                                        y_error=None,
+                                        e_capsize=self.marker_size)
 
                 stlist.append(ps3[0])
                 stlabel.append('Tip')
@@ -964,7 +873,7 @@ class PlotMTResponse(mtpl.MTArrows, mtpl.MTEllipse):
                     stmin = min(st_minlist)
                 except ValueError:
                     stmin = -89.99
-                if stmin - 3 < -90:
+                if stmin-3 < -90:
                     stmin -= 3
                 else:
                     stmin = -89.99
@@ -973,25 +882,26 @@ class PlotMTResponse(mtpl.MTArrows, mtpl.MTEllipse):
                     stmax = min(st_maxlist)
                 except ValueError:
                     stmax = 89.99
-                if stmax + 3 < 90:
+                if stmax+3 < 90:
                     stmax += 3
                 else:
                     stmax = 89.99
                 self.strike_limits = (-max([abs(stmin), abs(stmax)]),
-                                      max([abs(stmin), abs(stmax)]))
+                                       max([abs(stmin), abs(stmax)]))
+
 
             self.axst.plot(self.axr.get_xlim(), [0, 0], color='k', lw=.5)
 
             self.axst.set_ylabel('Strike',
-                                 fontdict=fontdict)
+                                fontdict=fontdict)
             self.axst.set_xlabel('Period (s)',
-                                 fontdict=fontdict)
+                                fontdict=fontdict)
             self.axst.set_ylim(self.strike_limits)
             self.axst.yaxis.set_major_locator(MultipleLocator(30))
             self.axst.yaxis.set_minor_locator(MultipleLocator(5))
             self.axst.set_xscale('log', nonposx='clip')
             self.axst.grid(True, alpha=.25, which='both', color=(.25, .25, .25),
-                           lw=.25)
+                          lw=.25)
             try:
                 self.axst.legend(stlist,
                                  stlabel,
@@ -1001,35 +911,35 @@ class PlotMTResponse(mtpl.MTArrows, mtpl.MTEllipse):
                                  labelspacing=.07,
                                  handletextpad=.2,
                                  borderpad=.02,
-                                 prop={'size': self.font_size - 1})
+                                 prop={'size':self.font_size-1})
             except:
                 pass
 
-            # set th xaxis tick labels to invisible
-            if pdict['strike'] != nrows - 1:
+            #set th xaxis tick labels to invisible
+            if pdict['strike'] != nrows-1:
                 plt.setp(self.axst.xaxis.get_ticklabels(), visible=False)
 
         #------plot skew angle---------------------------------------------
         if self._plot_skew == 'y':
-            # strike from phase tensor
-            pt = self._mt.get_PhaseTensor()
-            sk, sk_err = pt.beta
+            #strike from phase tensor
+            sk = self.mt.pt.beta
+            sk_err = self.mt.pt.beta_err
 
             ps4 = mtpl.plot_errorbar(self.axsk,
-                                     self.period,
-                                     sk,
-                                     marker=self.skew_marker,
-                                     ms=self.marker_size,
-                                     color=self.skew_color,
-                                     ls='none',
-                                     lw=self.lw,
-                                     y_error=sk_err,
-                                     e_capsize=self.marker_size)
+                                     self.mt.period,
+                                    sk,
+                                    marker=self.skew_marker,
+                                    ms=self.marker_size,
+                                    color=self.skew_color,
+                                    ls='none',
+                                    lw=self.lw,
+                                    y_error=sk_err,
+                                    e_capsize=self.marker_size)
 
-            self.axsk.plot(self.period, [3] * len(self.period), '-k',
-                           lw=self.lw)
-            self.axsk.plot(self.period, [-3] * len(self.period), '-k',
-                           lw=self.lw)
+            self.axsk.plot(self.mt.period, [3]*len(self.mt.period), '-k',
+                           lw = self.lw)
+            self.axsk.plot(self.mt.period, [-3]*len(self.mt.period), '-k',
+                           lw = self.lw)
 
             if self.skew_limits is None:
                 self.skew_limits = (-9, 9)
@@ -1042,14 +952,12 @@ class PlotMTResponse(mtpl.MTArrows, mtpl.MTEllipse):
             self.axsk.set_xlabel('Period (s)', fontdict)
             self.axsk.set_xscale('log', nonposx='clip')
 
-            # set th xaxis tick labels to invisible
-            if pdict['skew'] != nrows - 1:
+            #set th xaxis tick labels to invisible
+            if pdict['skew'] != nrows-1:
                 plt.setp(self.axst.xaxis.get_ticklabels(), visible=False)
 
         #----plot phase tensor ellipse---------------------------------------
         if self._plot_pt == 'y':
-            # get phase tensor instance
-            self.pt = self._mt.get_PhaseTensor()
 
             cmap = self.ellipse_cmap
             ckmin = self.ellipse_range[0]
@@ -1060,69 +968,73 @@ class PlotMTResponse(mtpl.MTArrows, mtpl.MTEllipse):
                 ckstep = 3
 
             if cmap == 'mt_seg_bl2wh2rd':
-                bounds = np.arange(ckmin, ckmax + ckstep, ckstep)
-                nseg = float((ckmax - ckmin) / (2 * ckstep))
+                bounds = np.arange(ckmin, ckmax+ckstep, ckstep)
+                nseg = float((ckmax-ckmin)/(2*ckstep))
 
-            # get the properties to color the ellipses by
+            #get the properties to color the ellipses by
             if self.ellipse_colorby == 'phiminang' or \
                self.ellipse_colorby == 'phimin':
-                colorarray = self.pt.phimin[0]
+                colorarray = self.mt.pt.phimin
 
             elif self.ellipse_colorby == 'phimaxang' or \
-                    self.ellipse_colorby == 'phimax':
-                colorarray = self.pt.phimax[0]
+               self.ellipse_colorby == 'phimax':
+                colorarray = self.mt.pt.phimax
+
 
             elif self.ellipse_colorby == 'phidet':
-                colorarray = np.sqrt(abs(self.pt.det[0])) * (180 / np.pi)
+                colorarray = np.sqrt(abs(self.mt.pt.det))*(180/np.pi)
+
 
             elif self.ellipse_colorby == 'skew' or\
-                    self.ellipse_colorby == 'skew_seg':
-                colorarray = self.pt.beta[0]
+                 self.ellipse_colorby == 'skew_seg':
+                colorarray = self.mt.pt.beta
 
             elif self.ellipse_colorby == 'ellipticity':
-                colorarray = self.pt.ellipticity[0]
+                colorarray = self.mt.pt.ellipticity
 
             else:
-                raise NameError(self.ellipse_colorby + ' is not supported')
+                raise NameError(self.ellipse_colorby+' is not supported')
 
             #-------------plot ellipses-----------------------------------
-            for ii, ff in enumerate(self._mt.period):
-                # make sure the ellipses will be visable
-                eheight = self.pt.phimin[0][ii] / self.pt.phimax[0][ii] *\
-                    self.ellipse_size
-                ewidth = self.pt.phimax[0][ii] / self.pt.phimax[0][ii] *\
-                    self.ellipse_size
+            for ii, ff in enumerate(self.mt.period):
+                #make sure the ellipses will be visable
+                eheight = self.mt.pt.phimin[ii]/self.mt.pt.phimax[ii]*\
+                                                            self.ellipse_size
+                ewidth = self.mt.pt.phimax[ii]/self.mt.pt.phimax[ii]*\
+                                                            self.ellipse_size
 
-                # create an ellipse scaled by phimin and phimax and oriented
-                # along the azimuth which is calculated as clockwise but needs
-                # to be plotted counter-clockwise hence the negative sign.
-                ellipd = patches.Ellipse((np.log10(ff) * self.ellipse_spacing,
+                #create an ellipse scaled by phimin and phimax and oriented
+                #along the azimuth which is calculated as clockwise but needs
+                #to be plotted counter-clockwise hence the negative sign.
+                ellipd = patches.Ellipse((np.log10(ff)*self.ellipse_spacing,
                                           0),
                                          width=ewidth,
                                          height=eheight,
-                                         angle=90 - self.pt.azimuth[0][ii])
+                                         angle=90-self.mt.pt.azimuth[ii])
 
                 self.axpt.add_patch(ellipd)
 
-                # get ellipse color
+
+                #get ellipse color
                 if cmap.find('seg') > 0:
                     ellipd.set_facecolor(mtcl.get_plot_color(colorarray[ii],
-                                                             self.ellipse_colorby,
-                                                             cmap,
-                                                             ckmin,
-                                                             ckmax,
-                                                             bounds=bounds))
+                                                         self.ellipse_colorby,
+                                                         cmap,
+                                                         ckmin,
+                                                         ckmax,
+                                                         bounds=bounds))
                 else:
                     ellipd.set_facecolor(mtcl.get_plot_color(colorarray[ii],
-                                                             self.ellipse_colorby,
-                                                             cmap,
-                                                             ckmin,
-                                                             ckmax))
+                                                         self.ellipse_colorby,
+                                                         cmap,
+                                                         ckmin,
+                                                         ckmax))
 
-            #----set axes properties-------------------------------------------
+
+            #----set axes properties-----------------------------------------------
             #--> set tick labels and limits
-            self.axpt.set_xlim(np.log10(self.xlimits[0]),
-                               np.log10(self.xlimits[1]))
+            self.axpt.set_xlim(np.log10(self.x_limits[0]),
+                               np.log10(self.x_limits[1]))
 
             tklabels = []
             xticks = []
@@ -1134,69 +1046,70 @@ class PlotMTResponse(mtpl.MTArrows, mtpl.MTEllipse):
                     pass
             self.axpt.set_xticks(xticks)
             self.axpt.set_xticklabels(tklabels,
-                                      fontdict={'size': self.font_size})
+                                      fontdict={'size':self.font_size})
             self.axpt.set_xlabel('Period (s)', fontdict=fontdict)
-            self.axpt.set_ylim(ymin=-1.5 * self.ellipse_size,
-                               ymax=1.5 * self.ellipse_size)
-            # need to reset the xlimits caouse they get reset when calling
-            # set_ticks for some reason
-            self.axpt.set_xlim(np.log10(self.xlimits[0]),
-                               np.log10(self.xlimits[1]))
+            self.axpt.set_ylim(ymin=-1.5*self.ellipse_size,
+                               ymax=1.5*self.ellipse_size)
+            #need to reset the x_limits caouse they get reset when calling
+            #set_ticks for some reason
+            self.axpt.set_xlim(np.log10(self.x_limits[0]),
+                               np.log10(self.x_limits[1]))
             self.axpt.grid(True,
-                           alpha=.25,
-                           which='major',
-                           color=(.25, .25, .25),
-                           lw=.25)
+                         alpha=.25,
+                         which='major',
+                         color=(.25,.25,.25),
+                         lw=.25)
 
             plt.setp(self.axpt.get_yticklabels(), visible=False)
-            if pdict['pt'] != nrows - 1:
+            if pdict['pt'] != nrows-1:
                 plt.setp(self.axpt.get_xticklabels(), visible=False)
 
-            # add colorbar for PT
+            #add colorbar for PT
             axpos = self.axpt.get_position()
-            cb_position = (axpos.bounds[0] - .0575,
-                           axpos.bounds[1] + .02,
+            cb_position = (axpos.bounds[0]-.0575,
+                           axpos.bounds[1]+.02,
                            .01,
-                           axpos.bounds[3] * .75)
+                           axpos.bounds[3]*.75)
             self.cbax = self.fig.add_axes(cb_position)
             if cmap == 'mt_seg_bl2wh2rd':
-                # make a color list
+                #make a color list
                 clist = [(cc, cc, 1)
-                         for cc in np.arange(0, 1 + 1. / (nseg), 1. / (nseg))] +\
-                    [(1, cc, cc)
-                        for cc in np.arange(1, -1. / (nseg), -1. / (nseg))]
+                        for cc in np.arange(0,1+1./(nseg),1./(nseg))]+\
+                       [(1, cc, cc)
+                        for cc in np.arange(1,-1./(nseg),-1./(nseg))]
 
-                # make segmented colormap
+                #make segmented colormap
                 mt_seg_bl2wh2rd = colors.ListedColormap(clist)
 
-                # make bounds so that the middle is white
-                bounds = np.arange(ckmin - ckstep, ckmax + 2 * ckstep, ckstep)
+                #make bounds so that the middle is white
+                bounds = np.arange(ckmin-ckstep, ckmax+2*ckstep, ckstep)
 
-                # normalize the colors
+                #normalize the colors
                 norms = colors.BoundaryNorm(bounds, mt_seg_bl2wh2rd.N)
 
-                # make the colorbar
+                #make the colorbar
                 self.cbpt = mcb.ColorbarBase(self.cbax,
-                                             cmap=mt_seg_bl2wh2rd,
-                                             norm=norms,
-                                             orientation='vertical',
-                                             ticks=bounds[1:-1])
+                                           cmap=mt_seg_bl2wh2rd,
+                                           norm=norms,
+                                           orientation='vertical',
+                                           ticks=bounds[1:-1])
             else:
                 self.cbpt = mcb.ColorbarBase(self.cbax,
-                                             cmap=mtcl.cmapdict[cmap],
-                                             norm=colors.Normalize(vmin=ckmin,
-                                                                   vmax=ckmax),
-                                             orientation='vertical')
-            self.cbpt.set_ticks([ckmin, (ckmax - ckmin) / 2, ckmax])
+                                           cmap=mtcl.cmapdict[cmap],
+                                           norm=colors.Normalize(vmin=ckmin,
+                                                                 vmax=ckmax),
+                                            orientation='vertical')
+            self.cbpt.set_ticks([ckmin, (ckmax-ckmin)/2, ckmax])
             self.cbpt.set_ticklabels(['{0:.0f}'.format(ckmin),
-                                      '{0:.0f}'.format((ckmax - ckmin) / 2),
+                                      '{0:.0f}'.format((ckmax-ckmin)/2),
                                       '{0:.0f}'.format(ckmax)])
             self.cbpt.ax.yaxis.set_label_position('left')
             self.cbpt.ax.yaxis.set_label_coords(-1.05, .5)
             self.cbpt.ax.yaxis.tick_right()
             self.cbpt.ax.tick_params(axis='y', direction='in')
             self.cbpt.set_label(mtpl.ckdict[self.ellipse_colorby],
-                                fontdict={'size': self.font_size})
+                                fontdict={'size':self.font_size})
+
 
         #===Plot the xx, yy components if desired==============================
         if self.plot_num == 2:
@@ -1204,75 +1117,75 @@ class PlotMTResponse(mtpl.MTArrows, mtpl.MTEllipse):
             self.axr2 = self.fig.add_subplot(gs[0, 1], sharex=self.axr)
             self.axr2.yaxis.set_label_coords(-.1, 0.5)
 
-            # res_xx
+            #res_xx
             self.ebxxr = mtpl.plot_errorbar(self.axr2,
-                                            self.period,
-                                            self.rp.resxx,
+                                            self.mt.period,
+                                            self.mt.Z.res_xx,
                                             marker=self.xy_marker,
                                             ms=self.marker_size,
                                             color=self.xy_color,
                                             ls=self.xy_ls,
                                             lw=self.lw,
-                                            y_error=self.rp.resxx_err,
+                                            y_error=self.mt.Z.res_err_xx,
                                             e_capsize=self.marker_size)
 
-            # res_yy
+            #res_yy
             self.ebyyr = mtpl.plot_errorbar(self.axr2,
-                                            self.period,
-                                            self.rp.resyy,
+                                            self.mt.period,
+                                            self.mt.Z.res_yy,
                                             marker=self.yx_marker,
                                             ms=self.marker_size,
                                             color=self.yx_color,
                                             ls=self.yx_ls,
                                             lw=self.lw,
-                                            y_error=self.rp.resyy_err,
+                                            y_error=self.mt.Z.res_err_yy,
                                             e_capsize=self.marker_size)
 
             #--> set axes properties
             plt.setp(self.axr2.get_xticklabels(), visible=False)
             self.axr2.set_yscale('log', nonposy='clip')
             self.axr2.set_xscale('log', nonposx='clip')
-            self.axr2.set_xlim(self.xlimits)
+            self.axr2.set_xlim(self.x_limits)
             self.axr2.grid(True, alpha=.25,
                            which='both',
                            color=(.25, .25, .25),
                            lw=.25)
 
             self.axr2.legend((self.ebxxr[0], self.ebyyr[0]),
-                             ('$Z_{xx}$', '$Z_{yy}$'),
-                             loc=3, markerscale=1,
-                             borderaxespad=.01,
-                             labelspacing=.07,
-                             handletextpad=.2,
-                             borderpad=.02)
+                            ('$Z_{xx}$','$Z_{yy}$'),
+                            loc=3, markerscale=1,
+                            borderaxespad=.01,
+                            labelspacing=.07,
+                            handletextpad=.2,
+                            borderpad=.02)
 
             #-----Plot the phase-----------------------------------------------
             self.axp2 = self.fig.add_subplot(gs[1, 1], sharex=self.axr)
 
             self.axp2.yaxis.set_label_coords(-.1, 0.5)
 
-            # phase_xx
+            #phase_xx
             self.ebxxp = mtpl.plot_errorbar(self.axp2,
-                                            self.period,
-                                            self.rp.phasexx,
+                                            self.mt.period,
+                                            self.mt.Z.phase_xx,
                                             marker=self.xy_marker,
                                             ms=self.marker_size,
                                             color=self.xy_color,
                                             ls=self.xy_ls,
                                             lw=self.lw,
-                                            y_error=self.rp.phasexx_err,
+                                            y_error=self.mt.Z.phase_err_xx,
                                             e_capsize=self.marker_size)
 
-            # phase_yy
+            #phase_yy
             self.ebyyp = mtpl.plot_errorbar(self.axp2,
-                                            self.period,
-                                            self.rp.phaseyy,
+                                            self.mt.period,
+                                            self.mt.Z.phase_yy,
                                             marker=self.yx_marker,
                                             ms=self.marker_size,
                                             color=self.yx_color,
                                             ls=self.yx_ls,
                                             lw=self.lw,
-                                            y_error=self.rp.phaseyy_err,
+                                            y_error=self.mt.Z.phase_err_yy,
                                             e_capsize=self.marker_size)
 
             #--> set axes properties
@@ -1286,40 +1199,39 @@ class PlotMTResponse(mtpl.MTArrows, mtpl.MTEllipse):
                            color=(.25, .25, .25),
                            lw=.25)
 
-            if len(pdict.keys()) > 2:
+            if len(pdict.keys())>2:
                 plt.setp(self.axp2.xaxis.get_ticklabels(), visible=False)
                 plt.setp(self.axp2.xaxis.get_label(), visible=False)
 
         #===Plot the Determinant if desired==================================
         if self.plot_num == 3:
 
-            # res_det
+            #res_det
             self.ebdetr = mtpl.plot_errorbar(self.axr,
-                                             self.period,
-                                             self.rp.resdet,
-                                             marker=self.det_marker,
-                                             ms=self.marker_size,
-                                             color=self.det_color,
-                                             ls=self.det_ls,
-                                             lw=self.lw,
-                                             y_error=self.rp.resdet_err,
-                                             e_capsize=self.marker_size)
+                                            self.mt.period,
+                                            self.mt.Z.res_det,
+                                            marker=self.det_marker,
+                                            ms=self.marker_size,
+                                            color=self.det_color,
+                                            ls=self.det_ls,
+                                            lw=self.lw,
+                                            y_error=self.mt.Z.res_det_err,
+                                            e_capsize=self.marker_size)
 
-            # phase_det
+            #phase_det
             self.ebdetp = mtpl.plot_errorbar(self.axp,
-                                             self.period,
-                                             self.rp.phasedet,
-                                             marker=self.det_marker,
-                                             ms=self.marker_size,
-                                             color=self.det_color,
-                                             ls=self.det_ls,
-                                             lw=self.lw,
-                                             y_error=self.rp.phasedet_err,
-                                             e_capsize=self.marker_size)
+                                            self.mt.period,
+                                            self.mt.Z.phase_det,
+                                            marker=self.det_marker,
+                                            ms=self.marker_size,
+                                            color=self.det_color,
+                                            ls=self.det_ls,
+                                            lw=self.lw,
+                                            y_error=self.mt.Z.phase_det_err,
+                                            e_capsize=self.marker_size)
 
             self.axr.legend((self.ebxyr[0], self.ebyxr[0], self.ebdetr[0]),
-                            ('$Z_{xy}$', '$Z_{yx}$',
-                             '$\det(\mathbf{\hat{Z}})$'),
+                            ('$Z_{xy}$','$Z_{yx}$','$\det(\mathbf{\hat{Z}})$'),
                             loc=3,
                             markerscale=1,
                             borderaxespad=.01,
@@ -1327,20 +1239,14 @@ class PlotMTResponse(mtpl.MTArrows, mtpl.MTEllipse):
                             handletextpad=.2,
                             borderpad=.02)
 
-        # make plot_title and show
-        # changed by Yingzhi
-        # ==== before ====
-        # if self.plot_title is not None:
-        #     self.fig.suptitle(self.plot_title, fontdict=fontdict)
-        # else:
-        #     if self._mt.station is not None:
-        #         self.fig.suptitle(self._mt.station, fontdict=fontdict)
-        # ==== after ====
-        self.fig.suptitle(
-            self._mt.station if self.plot_title is None else self.plot_title,
-            fontsize=fontdict['size'] + 4
-        )
-        # ==== end of changes ====
+
+        #make plot_title and show
+        if self.plot_title is None:
+            self.plot_title = self.mt.station
+
+        self.fig.suptitle(self.plot_title, fontdict=fontdict)
+
+        # be sure to show
         if show:
             plt.show()
 
@@ -1391,7 +1297,6 @@ class PlotMTResponse(mtpl.MTArrows, mtpl.MTEllipse):
 
     plot_strike = property(fget=_get_plot_strike, fset=_set_plot_strike,
                            doc="""string to plot strike""")
-
     def _set_plot_skew(self, plot_skew):
         """
         change plot_dict when changing plot_strike
@@ -1406,7 +1311,8 @@ class PlotMTResponse(mtpl.MTArrows, mtpl.MTEllipse):
         return self._plot_skew
 
     plot_skew = property(fget=_get_plot_skew, fset=_set_plot_skew,
-                         doc="""string to plot skew""")
+                           doc="""string to plot skew""")
+
 
     def save_plot(self, save_fn, file_format='pdf', orientation='portrait',
                   fig_dpi=None, close_plot='y'):
@@ -1452,7 +1358,7 @@ class PlotMTResponse(mtpl.MTArrows, mtpl.MTEllipse):
 
         """
 
-        if fig_dpi is None:
+        if fig_dpi == None:
             fig_dpi = self.fig_dpi
 
         if os.path.isdir(save_fn) == False:
@@ -1463,10 +1369,10 @@ class PlotMTResponse(mtpl.MTArrows, mtpl.MTEllipse):
             # plt.close(self.fig)
 
         else:
-            save_fn = os.path.join(save_fn, self._mt.station + '_ResPhase.' +
-                                   file_format)
+            save_fn = os.path.join(save_fn, self.mt.station+'_ResPhase.'+
+                                    file_format)
             self.fig.savefig(save_fn, fig_dpi=fig_dpi, format=file_format,
-                             orientation=orientation)
+                        orientation=orientation)
 
         if close_plot == 'y':
             plt.clf()
@@ -1476,7 +1382,7 @@ class PlotMTResponse(mtpl.MTArrows, mtpl.MTEllipse):
             pass
 
         self.fig_fn = save_fn
-        print 'Saved figure to: ' + self.fig_fn
+        print 'Saved figure to: '+self.fig_fn
 
     def update_plot(self):
         """
@@ -1520,4 +1426,4 @@ class PlotMTResponse(mtpl.MTArrows, mtpl.MTEllipse):
         """
 
         return "Plots Resistivity and phase for the different modes of the" +\
-            "MT response."
+              "MT response."

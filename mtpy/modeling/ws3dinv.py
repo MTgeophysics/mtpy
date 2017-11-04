@@ -103,8 +103,6 @@ except ImportError:
 #==============================================================================
 # Data class
 #==============================================================================
-
-
 class WSData(object):
     """
     Includes tools for reading and writing data files intended to be used with
@@ -210,7 +208,7 @@ class WSData(object):
         self.ptol = kwargs.pop('ptol', 0.15)
         self.z_err = kwargs.pop('z_err', 0.05)
         self.z_err_floor = kwargs.pop('z_err_floor', None)
-        self.z_err_map = kwargs.pop('z_err_map', [10, 1, 1, 10])
+        self.z_err_map = kwargs.pop('z_err_map', [10,1,1,10])
         self.n_z = kwargs.pop('n_z', 8)
         self.period_list = kwargs.pop('period_list', None)
         self.edi_list = kwargs.pop('edi_list', None)
@@ -255,17 +253,19 @@ class WSData(object):
 
         if self.period_list is None:
             raise WSInputError('Need to input a list of periods to extract '
-                               'from the .edi files.')
+                               'from the .edi files.' )
 
-        # get units correctly
+        #get units correctly
         if self.units == 'mv':
-            zconv = 1. / 796.
+            zconv = 1./796.
 
-        # define some lengths
+        self.period_list = np.array(self.period_list)
+
+        #define some lengths
         n_stations = len(self.edi_list)
         n_periods = len(self.period_list)
 
-        # make a structured array to keep things in for convenience
+        #make a structured array to keep things in for convenience
         z_shape = (n_periods, 2, 2)
         data_dtype = [('station', '|S10'),
                       ('east', np.float),
@@ -281,16 +281,16 @@ class WSData(object):
                 raise IOError('Need to input an .out file to get station'
                               'locations, this should be output by Winglink')
 
-            # get x and y locations on a relative grid
+            #get x and y locations on a relative grid
             east_list, north_list, station_list = \
-                wl.get_station_locations(self.wl_site_fn,
-                                         self.wl_out_fn,
-                                         ncol=self.ncol)
+                            wl.get_station_locations(self.wl_site_fn,
+                                                     self.wl_out_fn,
+                                                     ncol=self.ncol)
             self.data['station'] = station_list
             self.data['east'] = east_list
             self.data['north'] = north_list
 
-        # if a station location file is input
+        #if a station location file is input
         if self.station_fn != None:
             stations = WSStation(self.station_fn)
             stations.read_station_file()
@@ -298,7 +298,7 @@ class WSData(object):
             self.data['east'] = stations.east
             self.data['north'] = stations.north
 
-        # if the user made a grid in python or some other fashion
+        #if the user made a grid in python or some other fashion
         if self.station_locations != None:
             try:
                 for dd, sd in enumerate(self.station_locations):
@@ -308,7 +308,7 @@ class WSData(object):
 
                     stations = WSStation()
                     stations.station_fn = os.path.join(self.save_path,
-                                                       'WS_Station_locations.txt')
+                                                    'WS_Station_locations.txt')
                     stations.east = self.data['east']
                     stations.north = self.data['north']
                     stations.names = self.data['station']
@@ -316,76 +316,51 @@ class WSData(object):
 
             except (KeyError, ValueError):
                 self.data['east'] = self.station_locations[:, 0]
-                self.data['north'] = self.station_locations[:, 1]
+                self.data['north']= self.station_locations[:, 1]
 
         #--------find frequencies----------------------------------------------
         for ss, edi in enumerate(self.edi_list):
             if not os.path.isfile(edi):
-                raise IOError('Could not find ' + edi)
+                raise IOError('Could not find '+edi)
 
             mt_obj = mt.MT(edi)
             if self.rotation_angle is not None:
                 mt_obj.rotation_angle = self.rotation_angle
-            print '{0}{1}{0}'.format('-' * 20, mt_obj.station)
+            print '{0}{1}{0}'.format('-'*20, mt_obj.station)
 
             # get only those periods that are within the station data
             interp_periods = self.period_list[np.where(
-                (self.period_list >= 1. / mt_obj.Z.freq.max()) &
-                (self.period_list <= 1. / mt_obj.Z.freq.min()))]
+                                (self.period_list >= 1./mt_obj.Z.freq.max()) &
+                                (self.period_list <= 1./mt_obj.Z.freq.min()))]
 
-            # interpolate over those periods
-            interp_z, interp_t = mt_obj.interpolate_impedance_tensor(1. / interp_periods)
+            #interpolate over those periods
+            interp_z, interp_t = mt_obj.interpolate(1./interp_periods)
 
             for kk, ff in enumerate(interp_periods):
                 jj = np.where(self.period_list == ff)[0][0]
                 print '    {0:.6g} (s)'.format(ff)
 
-                self.data[ss]['z_data'][jj, :] = interp_z.z[kk, :, :] * zconv
-                # get errors
-                if self.z_err == 'data':
-                    self.data[ss]['z_data_err'][
-                        jj, :] = interp_z.z_err[kk, :, :] * zconv
-                else:
-                    self.data[ss]['z_data_err'][
-                        jj, :] = interp_z.z[kk] * self.z_err * zconv
+                self.data[ss]['z_data'][jj, :] = interp_z.z[kk, :, :]*zconv
+                self.data[ss]['z_data_err'][jj, :] = interp_z.z_err[kk, :, :]*zconv
 
-                # if an error floor is set.
-                if self.z_err_floor is not None:
-                    per_err = self.data[ss]['z_data_err'][jj, :] /\
-                        self.data[ss]['z_data'][jj, :]
-                    per_err[np.where(per_err < self.z_err_floor)] = \
-                        self.z_err_floor
-                    self.data[ss]['z_data_err'][jj, : ] = \
-                        self.data[ss]['z_data'][jj, :] * per_err
 
-                self.data[ss]['z_err_map'][jj] = np.reshape(self.z_err_map,
-                                                            (2, 2))
-#            for ff, f1 in enumerate(self.period_list):
-#                for kk,f2 in enumerate(z1.period):
-#                    if f2 >= (1-self.ptol)*f1 and f2 <= (1+self.ptol)*f1:
-#                        self.data[ss]['z_data'][ff, :] = \
-#                                                   zconv*z1.Z.z[kk]
-#                        #get errors
-#                        if self.z_err == 'data':
-#                            self.data[ss]['z_data_err'][ff, :] = \
-#                                                            zconv*z1.Z.z_err[kk]
-#                        else:
-#                            self.data[ss]['z_data_err'][ff, :] = \
-#                                                    zconv*z1.Z.z[kk]*self.z_err
-#                        # if an error floor is set.
-#                        if self.z_err_floor is not None:
-#                            per_err = self.data[ss]['z_data_err'][ff, :]/\
-#                                      self.data[ss]['z_data'][ff, :]
-#                            per_err[np.where(per_err < self.z_err_floor)] = \
-#                                                        self.z_err_floor
-#                            self.data[ss]['z_data_err'][ff, : ] = \
-#                                self.data[ss]['z_data'][ff, :] * per_err
-#
-#                        self.data[ss]['z_err_map'][ff] = \
-#                                    np.reshape(self.z_err_map, (2,2))
-#
-#                        print '   Matched {0:.6g} to {1:.6g}'.format(f1, f2)
-#                        break
+    def compute_errors(self):
+        """
+        compute the errors from the given attributes
+        """
+
+        for d_arr in self.data:
+            if self.z_err == 'data':
+                pass
+            elif self.z_err_floor is None and type(self.z_err) is float:
+                d_arr['z_data_err'][:] = d_arr['z_data'][:]*self.z_err
+            elif self.z_err_floor is not None:
+                ef_idx = np.where(d_arr['z_data_err'] < self.z_err_floor)
+                d_arr['z_data_err'][ef_idx] = d_arr['z_data'][ef_idx]*self.z_err_floor
+
+
+            d_arr['z_err_map'] = np.reshape(len(self.period_list)*self.z_err_map,
+                                           (len(self.period_list), 2, 2))
 
     def write_data_file(self, **kwargs):
         """
@@ -410,13 +385,16 @@ class WSData(object):
         if self.data is None:
             self.build_data()
 
+        # compute errors, this helps when rewriting a data file
+        self.compute_errors()
+            
         for key in ['data_fn', 'save_path', 'data_basename']:
             try:
                 setattr(self, key, kwargs[key])
             except KeyError:
                 pass
 
-        # create the output filename
+        #create the output filename
         if self.save_path == None:
             if self.wl_out_fn is not None:
                 self.save_path = os.path.dirname(self.wl_site_fn)
@@ -436,54 +414,54 @@ class WSData(object):
         ofid.write('{0:d} {1:d} {2:d}\n'.format(n_stations, n_periods,
                                                 self.n_z))
 
-        # write N-S locations
+        #write N-S locations
         ofid.write('Station_Location: N-S \n')
-        for ii in range(n_stations / self.n_z + 1):
+        for ii in range(n_stations/self.n_z+1):
             for ll in range(self.n_z):
-                index = ii * self.n_z + ll
+                index = ii*self.n_z+ll
                 try:
                     ofid.write('{0:+.4e} '.format(self.data['north'][index]))
                 except IndexError:
                     pass
             ofid.write('\n')
 
-        # write E-W locations
+        #write E-W locations
         ofid.write('Station_Location: E-W \n')
-        for ii in range(n_stations / self.n_z + 1):
+        for ii in range(n_stations/self.n_z+1):
             for ll in range(self.n_z):
-                index = ii * self.n_z + ll
+                index = ii*self.n_z+ll
                 try:
                     ofid.write('{0:+.4e} '.format(self.data['east'][index]))
                 except IndexError:
                     pass
             ofid.write('\n')
 
-        # write impedance tensor components
+        #write impedance tensor components
         for ii, p1 in enumerate(self.period_list):
             ofid.write('DATA_Period: {0:3.6f}\n'.format(p1))
             for ss in range(n_stations):
                 zline = self.data[ss]['z_data'][ii].reshape(4,)
-                for jj in range(self.n_z / 2):
+                for jj in range(self.n_z/2):
                     ofid.write('{0:+.4e} '.format(zline[jj].real))
                     ofid.write('{0:+.4e} '.format(-zline[jj].imag))
                 ofid.write('\n')
 
-        # write error as a percentage of Z
+        #write error as a percentage of Z
         for ii, p1 in enumerate(self.period_list):
             ofid.write('ERROR_Period: {0:3.6f}\n'.format(p1))
             for ss in range(n_stations):
                 zline = self.data[ss]['z_data_err'][ii].reshape(4,)
-                for jj in range(self.n_z / 2):
+                for jj in range(self.n_z/2):
                     ofid.write('{0:+.4e} '.format(zline[jj].real))
                     ofid.write('{0:+.4e} '.format(zline[jj].imag))
                 ofid.write('\n')
 
-        # write error maps
+        #write error maps
         for ii, p1 in enumerate(self.period_list):
             ofid.write('ERMAP_Period: {0:3.6f}\n'.format(p1))
             for ss in range(n_stations):
                 zline = self.data[ss]['z_err_map'][ii].reshape(4,)
-                for jj in range(self.n_z / 2):
+                for jj in range(self.n_z/2):
                     ofid.write('{0:.5e} '.format(self.z_err_map[jj]))
                     ofid.write('{0:.5e} '.format(self.z_err_map[jj]))
                 ofid.write('\n')
@@ -494,7 +472,8 @@ class WSData(object):
         self.station_north = self.data['north']
         self.station_names = self.data['station']
         self.z_data = self.data['z_data']
-        self.z_data_err = self.data['z_data_err'] * self.data['z_err_map']
+        self.z_data_err = self.data['z_data_err']*self.data['z_err_map']
+
 
     def read_data_file(self, data_fn=None, wl_sites_fn=None, station_fn=None):
         """
@@ -534,21 +513,21 @@ class WSData(object):
 
         if os.path.isfile(self.data_fn) is False:
             raise WSInputError('Could not find {0}, check path'.format(
-                self.data_fn))
+                                self.data_fn))
 
         self.save_path = os.path.dirname(self.data_fn)
 
         dfid = file(self.data_fn, 'r')
         dlines = dfid.readlines()
 
-        # get size number of stations, number of frequencies,
+        #get size number of stations, number of frequencies,
         # number of Z components
         n_stations, n_periods, nz = np.array(dlines[0].strip().split(),
                                              dtype='int')
         nsstart = 2
 
         self.n_z = nz
-        # make a structured array to keep things in for convenience
+        #make a structured array to keep things in for convenience
         z_shape = (n_periods, 2, 2)
         data_dtype = [('station', '|S10'),
                       ('east', np.float),
@@ -569,7 +548,7 @@ class WSData(object):
 
         ncol = len(dlines[nsstart].strip().split())
 
-        # get site names if entered a sites file
+        #get site names if entered a sites file
         if wl_sites_fn != None:
             self.wl_site_fn = wl_sites_fn
             slist, station_list = wl.read_sites_file(self.wl_sites_fn)
@@ -583,31 +562,32 @@ class WSData(object):
         else:
             self.data['station'] = np.arange(n_stations)
 
-        # get N-S locations
-        for ii, dline in enumerate(dlines[findlist[0] + 1:findlist[1]], 0):
+
+        #get N-S locations
+        for ii, dline in enumerate(dlines[findlist[0]+1:findlist[1]],0):
             dline = dline.strip().split()
             for jj in range(ncol):
                 try:
-                    self.data['north'][ii * ncol + jj] = float(dline[jj])
+                    self.data['north'][ii*ncol+jj] = float(dline[jj])
                 except IndexError:
                     pass
                 except ValueError:
                     break
 
-        # get E-W locations
-        for ii, dline in enumerate(dlines[findlist[1] + 1:findlist[2]], 0):
+        #get E-W locations
+        for ii, dline in enumerate(dlines[findlist[1]+1:findlist[2]],0):
             dline = dline.strip().split()
             for jj in range(self.n_z):
                 try:
-                    self.data['east'][ii * ncol + jj] = float(dline[jj])
+                    self.data['east'][ii*ncol+jj] = float(dline[jj])
                 except IndexError:
                     pass
                 except ValueError:
                     break
-        # make some empty array to put stuff into
+        #make some empty array to put stuff into
         self.period_list = np.zeros(n_periods)
 
-        # get data
+        #get data
         per = 0
         error_find = False
         errmap_find = False
@@ -631,37 +611,37 @@ class WSData(object):
                         errmap_find = True
                         per = 0
 
-                # print '-'*20+dkey+'-'*20
+                #print '-'*20+dkey+'-'*20
                 per += 1
 
             else:
                 if dkey == 'z_err_map':
                     zline = np.array(dl.strip().split(), dtype=np.float)
-                    self.data[st][dkey][per - 1, :] = np.array([[zline[0] - 1j * zline[1],
-                                                                 zline[2] - 1j * zline[3]],
-                                                                [zline[4] - 1j * zline[5],
-                                                                 zline[6] - 1j * zline[7]]])
+                    self.data[st][dkey][per-1,:] = np.array([[zline[0]-1j*zline[1],
+                                                        zline[2]-1j*zline[3]],
+                                                        [zline[4]-1j*zline[5],
+                                                        zline[6]-1j*zline[7]]])
                 else:
-                    zline = np.array(dl.strip().split(),
-                                     dtype=np.float) * zconv
-                    self.data[st][dkey][per - 1, :] = np.array([[zline[0] - 1j * zline[1],
-                                                                 zline[2] - 1j * zline[3]],
-                                                                [zline[4] - 1j * zline[5],
-                                                                 zline[6] - 1j * zline[7]]])
+                    zline = np.array(dl.strip().split(), dtype=np.float)*zconv
+                    self.data[st][dkey][per-1,:] = np.array([[zline[0]-1j*zline[1],
+                                                        zline[2]-1j*zline[3]],
+                                                        [zline[4]-1j*zline[5],
+                                                        zline[6]-1j*zline[7]]])
                 st += 1
+
 
         self.station_east = self.data['east']
         self.station_north = self.data['north']
         self.station_names = self.data['station']
         self.z_data = self.data['z_data']
-        # need to be careful when multiplying complex numbers
+        #need to be careful when multiplying complex numbers
         self.z_data_err = \
-            self.data['z_data_err'].real * self.data['z_err_map'].real + 1j *\
-            self.data['z_data_err'].imag * self.data['z_err_map'].imag
+                self.data['z_data_err'].real*self.data['z_err_map'].real+1j*\
+                self.data['z_data_err'].imag*self.data['z_err_map'].imag
 
-        # make station_locations structure array
+        #make station_locations structure array
         self.station_locations = np.zeros(len(self.station_east),
-                                          dtype=[('station', '|S10'),
+                                          dtype=[('station','|S10'),
                                                  ('east', np.float),
                                                  ('north', np.float),
                                                  ('east_c', np.float),
@@ -673,8 +653,6 @@ class WSData(object):
 #==============================================================================
 # stations
 #==============================================================================
-
-
 class WSStation(object):
     """
     read and write a station file where the locations are relative to the 
@@ -772,7 +750,7 @@ class WSStation(object):
 
         sfid = file(self.station_fn, 'w')
         sfid.write('{0:<14}{1:^14}{2:^14}{3:^14}\n'.format('station', 'east',
-                                                           'north', 'elev'))
+                                                    'north', 'elev'))
         for ee, nn, zz, ss in zip(self.east, self.north, self.elev, self.names):
             ee = '{0:+.4e}'.format(ee)
             nn = '{0:+.4e}'.format(nn)
@@ -813,13 +791,14 @@ class WSStation(object):
         self.station_locations = np.loadtxt(self.station_fn, skiprows=1,
                                             dtype=[('station', '|S10'),
                                                    ('east_c', np.float),
-                                                   ('north_c', np.float),
-                                                   ('elev', np.float)])
+                                                  ('north_c', np.float),
+                                                  ('elev', np.float)])
 
         self.east = self.station_locations['east_c']
         self.north = self.station_locations['north_c']
         self.names = self.station_locations['station']
         self.elev = self.station_locations['elev']
+
 
     def write_vtk_file(self, save_path, vtk_basename='VTKStations'):
         """
@@ -842,7 +821,7 @@ class WSStation(object):
             self.elev = np.zeros_like(self.north)
 
         pointsToVTK(save_fn, self.north, self.east, self.elev,
-                    data={'value': np.ones_like(self.north)})
+                    data={'value':np.ones_like(self.north)})
 
         return save_fn
 
@@ -866,17 +845,15 @@ class WSStation(object):
         """
 
         wl_east, wl_north, wl_station_list = wl.get_station_locations(
-            sites_file,
-            out_file,
-            ncol=ncol)
+                                                                    sites_file,
+                                                                    out_file,
+                                                                    ncol=ncol)
         self.write_station_file(east=wl_east, north=wl_north,
                                 station_list=wl_station_list)
 
 #==============================================================================
 # mesh class
 #==============================================================================
-
-
 class WSMesh(object):
     """
     make and read a FE mesh grid
@@ -962,12 +939,12 @@ class WSMesh(object):
         self.cell_size_east = kwargs.pop('cell_size_east', 500)
         self.cell_size_north = kwargs.pop('cell_size_north', 500)
 
-        # padding cells on either side
+        #padding cells on either side
         self.pad_east = kwargs.pop('pad_east', 5)
         self.pad_north = kwargs.pop('pad_north', 5)
         self.pad_z = kwargs.pop('pad_z', 5)
 
-        # root of padding cells
+        #root of padding cells
         self.pad_root_east = kwargs.pop('pad_root_east', 5)
         self.pad_root_north = kwargs.pop('pad_root_north', 5)
 
@@ -975,36 +952,37 @@ class WSMesh(object):
         self.z_target_depth = kwargs.pop('z_target_depth', 50000)
         self.z_bottom = kwargs.pop('z_bottom', 300000)
 
-        # number of vertical layers
+        #number of vertical layers
         self.n_layers = kwargs.pop('n_layers', 30)
 
         #--> attributes to be calculated
-        # station information
+        #station information
         self.station_locations = kwargs.pop('station_locations', None)
 
-       # grid nodes
+       #grid nodes
         self.nodes_east = None
         self.nodes_north = None
         self.nodes_z = None
 
-        # grid locations
+        #grid locations
         self.grid_east = None
         self.grid_north = None
         self.grid_z = None
 
-        # resistivity model
+        #resistivity model
         self.res_model = None
         self.res_list = None
         self.res_model_int = None
 
-        # rotation angle
-        self.rotation_angle = kwargs.pop('rotation_angle', None)
-
-        # inital file stuff
+        #rotation angle
+        self.rotation_angle = kwargs.pop('rotation_angle', 0.0)
+        
+        #inital file stuff
         self.initial_fn = None
         self.station_fn = None
         self.save_path = kwargs.pop('save_path', None)
         self.title = 'Inital Model File made in MTpy'
+
 
     def make_mesh(self):
         """ 
@@ -1029,7 +1007,7 @@ class WSMesh(object):
                            stop=3, step=3./pad_east))+west 
 
         """
-        # if station locations are not input read from the edi files
+        #if station locations are not input read from the edi files
         if self.station_locations is None:
             if self.edi_list is None:
                 raise AttributeError('edi_list is None, need to input a list of '
@@ -1037,15 +1015,15 @@ class WSMesh(object):
 
             n_stations = len(self.edi_list)
 
-            # make a structured array to put station location information into
+            #make a structured array to put station location information into
             self.station_locations = np.zeros(n_stations,
-                                              dtype=[('station', '|S10'),
+                                              dtype=[('station','|S10'),
                                                      ('east', np.float),
                                                      ('north', np.float),
                                                      ('east_c', np.float),
                                                      ('north_c', np.float),
                                                      ('elev', np.float)])
-            # get station locations in meters
+            #get station locations in meters
             for ii, edi in enumerate(self.edi_list):
                 mt_obj = mt.MT(edi)
                 self.station_locations[ii]['station'] = mt_obj.station
@@ -1053,34 +1031,53 @@ class WSMesh(object):
                 self.station_locations[ii]['north'] = mt_obj.north
                 self.station_locations[ii]['elev'] = mt_obj.elev
 
-            # remove the average distance to get coordinates in a relative
-            # space
-            self.station_locations[
-                'east'] -= self.station_locations['east'].mean()
-            self.station_locations[
-                'north'] -= self.station_locations['north'].mean()
 
-            # translate the stations so they are relative to 0,0
-            east_center = (self.station_locations['east'].max() -
-                           np.abs(self.station_locations['east'].min())) / 2
-            north_center = (self.station_locations['north'].max() -
-                            np.abs(self.station_locations['north'].min())) / 2
 
-            # remove the average distance to get coordinates in a relative
-            # space
+
+            #--> rotate grid if necessary
+            #to do this rotate the station locations because ModEM assumes the
+            #input mesh is a lateral grid.
+            #needs to be 90 - because North is assumed to be 0 but the rotation
+            #matrix assumes that E is 0.
+            if self.rotation_angle != 0:
+                cos_ang = np.cos(np.deg2rad(self.rotation_angle))
+                sin_ang = np.sin(np.deg2rad(self.rotation_angle))
+                rot_matrix = np.matrix(np.array([[cos_ang, sin_ang],
+                                                 [-sin_ang, cos_ang]]))
+
+                coords = np.array([self.station_locations['east'],
+                                   self.station_locations['north']])
+
+                #rotate the relative station locations
+                new_coords = np.array(np.dot(rot_matrix, coords))
+
+                self.station_locations['east'][:] = new_coords[0, :]
+                self.station_locations['north'][:] = new_coords[1, :]
+
+                print 'Rotated stations by {0:.1f} deg clockwise from N'.format(
+                                                        self.rotation_angle)
+            #remove the average distance to get coordinates in a relative space
+            self.station_locations['east'] -= self.station_locations['east'].mean()
+            self.station_locations['north'] -= self.station_locations['north'].mean()
+
+            #translate the stations so they are relative to 0,0
+            east_center = (self.station_locations['east'].max()-
+                            np.abs(self.station_locations['east'].min()))/2
+            north_center = (self.station_locations['north'].max()-
+                            np.abs(self.station_locations['north'].min()))/2
+
+            #remove the average distance to get coordinates in a relative space
             self.station_locations['east'] -= east_center
             self.station_locations['north'] -= north_center
 
-        # pickout the furtherst south and west locations
-        # and put that station as the bottom left corner of the main grid
-        west = self.station_locations['east'].min() - self.cell_size_east / 2
-        east = self.station_locations['east'].max() + self.cell_size_east / 2
-        south = self.station_locations[
-            'north'].min() - self.cell_size_north / 2
-        north = self.station_locations[
-            'north'].max() + self.cell_size_north / 2
+        #pickout the furtherst south and west locations 
+        #and put that station as the bottom left corner of the main grid
+        west = self.station_locations['east'].min()-(1.5*self.cell_size_east)
+        east = self.station_locations['east'].max()+(1.5*self.cell_size_east)
+        south = self.station_locations['north'].min()-(1.5*self.cell_size_north)
+        north = self.station_locations['north'].max()+(1.5*self.cell_size_north)
 
-        # make sure the variable n_stations is initialized
+        #make sure the variable n_stations is initialized
         try:
             n_stations
         except NameError:
@@ -1088,98 +1085,97 @@ class WSMesh(object):
 
         #-------make a grid around the stations from the parameters above------
         #--> make grid in east-west direction
-        # cells within station area
-        midxgrid = np.arange(start=west, stop=east + self.cell_size_east,
+        #cells within station area
+        midxgrid = np.arange(start=west,
+                             stop=east+self.cell_size_east,
                              step=self.cell_size_east)
 
-        # padding cells on the west side
-        pad_west = np.round(-self.cell_size_east *
-                            self.pad_root_east**np.arange(start=.5, stop=3,
-                                                          step=3. / self.pad_east)) + west
+        #padding cells on the west side
+        pad_west = np.round(-self.cell_size_east*\
+                             self.pad_root_east**np.arange(start=.5, stop=3,
+                             step=3./self.pad_east))+west
 
-        # padding cells on east side
-        pad_east = np.round(self.cell_size_east *
-                            self.pad_root_east**np.arange(start=.5, stop=3,
-                                                          step=3. / self.pad_east)) + east
+        #padding cells on east side
+        pad_east = np.round(self.cell_size_east*\
+                             self.pad_root_east**np.arange(start=.5, stop=3,
+                             step=3./self.pad_east))+east
 
-        # make the cells going west go in reverse order and append them to the
-        # cells going east
+        #make the cells going west go in reverse order and append them to the
+        #cells going east
         east_gridr = np.append(np.append(pad_west[::-1], midxgrid), pad_east)
 
         #--> make grid in north-south direction
-        # N-S cells with in station area
-        midygrid = np.arange(start=south, stop=north + self.cell_size_north,
+        #N-S cells with in station area
+        midygrid = np.arange(start=south,
+                             stop=north+self.cell_size_north,
                              step=self.cell_size_north)
 
-        # padding cells on south side
-        south_pad = np.round(-self.cell_size_north *
-                             self.pad_root_north**np.arange(start=.5,
-                                                            stop=3, step=3. / self.pad_north)) + south
+        #padding cells on south side
+        south_pad = np.round(-self.cell_size_north*
+                              self.pad_root_north**np.arange(start=.5,
+                              stop=3, step=3./self.pad_north))+south
 
-        # padding cells on north side
-        north_pad = np.round(self.cell_size_north *
-                             self.pad_root_north**np.arange(start=.5,
-                                                            stop=3, step=3. / self.pad_north)) + north
+        #padding cells on north side
+        north_pad = np.round(self.cell_size_north*
+                              self.pad_root_north**np.arange(start=.5,
+                              stop=3, step=3./self.pad_north))+north
 
-        # make the cells going west go in reverse order and append them to the
-        # cells going east
-        north_gridr = np.append(
-            np.append(south_pad[::-1], midygrid), north_pad)
+        #make the cells going west go in reverse order and append them to the
+        #cells going east
+        north_gridr = np.append(np.append(south_pad[::-1], midygrid), north_pad)
+
 
         #--> make depth grid
         log_z = np.logspace(np.log10(self.z1_layer),
-                            np.log10(self.z_target_depth - np.logspace(np.log10(self.z1_layer),
-                                                                       np.log10(
-                                                                           self.z_target_depth),
-                                                                       num=self.n_layers)[-2]),
-                            num=self.n_layers - self.pad_z)
-        ztarget = np.array([zz - zz % 10**np.floor(np.log10(zz)) for zz in
-                            log_z])
+                            np.log10(self.z_target_depth-np.logspace(np.log10(self.z1_layer),
+                            np.log10(self.z_target_depth),
+                            num=self.n_layers)[-2]),
+                            num=self.n_layers-self.pad_z)
+        ztarget = np.array([zz-zz%10**np.floor(np.log10(zz)) for zz in
+                           log_z])
         log_zpad = np.logspace(np.log10(self.z_target_depth),
-                               np.log10(self.z_bottom - np.logspace(np.log10(self.z_target_depth),
-                                                                    np.log10(
-                                                                        self.z_bottom),
-                                                                    num=self.pad_z)[-2]),
-                               num=self.pad_z)
-        zpadding = np.array([zz - zz % 10**np.floor(np.log10(zz)) for zz in
-                             log_zpad])
+                            np.log10(self.z_bottom-np.logspace(np.log10(self.z_target_depth),
+                            np.log10(self.z_bottom),
+                            num=self.pad_z)[-2]),
+                            num=self.pad_z)
+        zpadding = np.array([zz-zz%10**np.floor(np.log10(zz)) for zz in
+                               log_zpad])
 
         z_nodes = np.append(ztarget, zpadding)
-        z_grid = np.array([z_nodes[:ii + 1].sum()
-                           for ii in range(z_nodes.shape[0])])
+        z_grid = np.array([z_nodes[:ii+1].sum() for ii in range(z_nodes.shape[0])])
 
         #---Need to make an array of the individual cell dimensions for
         #   wsinv3d
         east_nodes = east_gridr.copy()
         nx = east_gridr.shape[0]
-        east_nodes[:nx / 2] = np.array([abs(east_gridr[ii] - east_gridr[ii + 1])
-                                        for ii in range(int(nx / 2))])
-        east_nodes[nx / 2:] = np.array([abs(east_gridr[ii] - east_gridr[ii + 1])
-                                        for ii in range(int(nx / 2) - 1, nx - 1)])
+        east_nodes[:nx/2] = np.array([abs(east_gridr[ii]-east_gridr[ii+1])
+                                          for ii in range(int(nx/2))])
+        east_nodes[nx/2:] = np.array([abs(east_gridr[ii]-east_gridr[ii+1])
+                                          for ii in range(int(nx/2)-1, nx-1)])
 
         north_nodes = north_gridr.copy()
         ny = north_gridr.shape[0]
-        north_nodes[:ny / 2] = np.array([abs(north_gridr[ii] - north_gridr[ii + 1])
-                                         for ii in range(int(ny / 2))])
-        north_nodes[ny / 2:] = np.array([abs(north_gridr[ii] - north_gridr[ii + 1])
-                                         for ii in range(int(ny / 2) - 1, ny - 1)])
+        north_nodes[:ny/2] = np.array([abs(north_gridr[ii]-north_gridr[ii+1])
+                                       for ii in range(int(ny/2))])
+        north_nodes[ny/2:] = np.array([abs(north_gridr[ii]-north_gridr[ii+1])
+                                       for ii in range(int(ny/2)-1, ny-1)])
 
         #--put the grids into coordinates relative to the center of the grid
         east_grid = east_nodes.copy()
-        east_grid[:int(nx / 2)] = -np.array([east_nodes[ii:int(nx / 2)].sum()
-                                             for ii in range(int(nx / 2))])
-        east_grid[int(nx / 2):] = np.array([east_nodes[int(nx / 2):ii + 1].sum()
-                                            for ii in range(int(nx / 2), nx)]) -\
-            east_nodes[int(nx / 2)]
+        east_grid[:int(nx/2)] = -np.array([east_nodes[ii:int(nx/2)].sum()
+                                           for ii in range(int(nx/2))])
+        east_grid[int(nx/2):] = np.array([east_nodes[int(nx/2):ii+1].sum()
+                                         for ii in range(int(nx/2), nx)])-\
+                                         east_nodes[int(nx/2)]
 
         north_grid = north_nodes.copy()
-        north_grid[:int(ny / 2)] = -np.array([north_nodes[ii:int(ny / 2)].sum()
-                                              for ii in range(int(ny / 2))])
-        north_grid[int(ny / 2):] = np.array([north_nodes[int(ny / 2):ii + 1].sum()
-                                             for ii in range(int(ny / 2), ny)]) -\
-            north_nodes[int(ny / 2)]
+        north_grid[:int(ny/2)] = -np.array([north_nodes[ii:int(ny/2)].sum()
+                                            for ii in range(int(ny/2))])
+        north_grid[int(ny/2):] = np.array([north_nodes[int(ny/2):ii+1].sum()
+                                            for ii in range(int(ny/2),ny)])-\
+                                            north_nodes[int(ny/2)]
 
-        # make nodes attributes
+        #make nodes attributes
         self.nodes_east = east_nodes
         self.nodes_north = north_nodes
         self.nodes_z = z_nodes
@@ -1187,37 +1183,37 @@ class WSMesh(object):
         self.grid_north = north_grid
         self.grid_z = z_grid
 
-        # make sure that the stations are in the center of the cell as requested
-        # by the code.
+        #make sure that the stations are in the center of the cell as requested
+        #by the code.
         for ii in range(n_stations):
-            # look for the closest grid line
+            #look for the closest grid line
             xx = [nn for nn, xf in enumerate(east_grid)
-                  if xf > (self.station_locations[ii]['east'] - self.cell_size_east)
-                  and xf < (self.station_locations[ii]['east'] + self.cell_size_east)]
+                if xf>(self.station_locations[ii]['east']-self.cell_size_east)
+                and xf<(self.station_locations[ii]['east']+self.cell_size_east)]
 
-            # shift the station to the center in the east-west direction
+            #shift the station to the center in the east-west direction
             if east_grid[xx[0]] < self.station_locations[ii]['east']:
                 self.station_locations[ii]['east_c'] = \
-                    east_grid[xx[0]] + self.cell_size_east / 2
+                                        east_grid[xx[0]]+self.cell_size_east/2
             elif east_grid[xx[0]] > self.station_locations[ii]['east']:
                 self.station_locations[ii]['east_c'] = \
-                    east_grid[xx[0]] - self.cell_size_east / 2
+                                        east_grid[xx[0]]-self.cell_size_east/2
 
-            # look for closest grid line
+            #look for closest grid line
             yy = [mm for mm, yf in enumerate(north_grid)
-                  if yf > (self.station_locations[ii]['north'] - self.cell_size_north)
-                  and yf < (self.station_locations[ii]['north'] + self.cell_size_north)]
+                 if yf>(self.station_locations[ii]['north']-self.cell_size_north)
+                 and yf<(self.station_locations[ii]['north']+self.cell_size_north)]
 
-            # shift station to center of cell in north-south direction
+            #shift station to center of cell in north-south direction
             if north_grid[yy[0]] < self.station_locations[ii]['north']:
                 self.station_locations[ii]['north_c'] = \
-                    north_grid[yy[0]] + self.cell_size_north / 2
+                                    north_grid[yy[0]]+self.cell_size_north/2
             elif north_grid[yy[0]] > self.station_locations[ii]['north']:
                 self.station_locations[ii]['north_c'] = \
-                    north_grid[yy[0]] - self.cell_size_north / 2
+                                    north_grid[yy[0]]-self.cell_size_north/2
 
         #--> print out useful information
-        print '-' * 15
+        print '-'*15
         print '   Number of stations = {0}'.format(len(self.station_locations))
         print '   Dimensions: '
         print '      e-w = {0}'.format(east_grid.shape[0])
@@ -1227,17 +1223,17 @@ class WSMesh(object):
         print '      e-w = {0:.1f} (m)'.format(east_nodes.__abs__().sum())
         print '      n-s = {0:.1f} (m)'.format(north_nodes.__abs__().sum())
         print '      0-z = {0:.1f} (m)'.format(self.nodes_z.__abs__().sum())
-        print '-' * 15
+        print '-'*15
 
-        # write a station location file for later
+        #write a station location file for later
         stations = WSStation()
         stations.write_station_file(east=self.station_locations['east_c'],
                                     north=self.station_locations['north_c'],
                                     elev=self.station_locations['elev'],
-                                    station_list=self.station_locations[
-                                        'station'],
+                                    station_list=self.station_locations['station'],
                                     save_path=self.save_path)
         self.station_fn = stations.station_fn
+
 
     def plot_mesh(self, east_limits=None, north_limits=None, z_limits=None,
                   **kwargs):
@@ -1286,14 +1282,14 @@ class WSMesh(object):
         #---plot map view
         ax1 = fig.add_subplot(1, 2, 1, aspect='equal')
 
-        # make sure the station is in the center of the cell
+        #make sure the station is in the center of the cell
         ax1.scatter(self.station_locations['east_c'],
                     self.station_locations['north_c'],
                     marker=station_marker,
                     c=marker_color,
                     s=marker_size)
 
-        # plot the grid if desired
+        #plot the grid if desired
         east_line_xlist = []
         east_line_ylist = []
         for xx in self.grid_east:
@@ -1303,9 +1299,9 @@ class WSMesh(object):
                                     self.grid_north.max()])
             east_line_ylist.append(None)
         ax1.plot(east_line_xlist,
-                 east_line_ylist,
-                 lw=line_width,
-                 color=line_color)
+                      east_line_ylist,
+                      lw=line_width,
+                      color=line_color)
 
         north_line_xlist = []
         north_line_ylist = []
@@ -1316,33 +1312,34 @@ class WSMesh(object):
             north_line_ylist.extend([yy, yy])
             north_line_ylist.append(None)
         ax1.plot(north_line_xlist,
-                 north_line_ylist,
-                 lw=line_width,
-                 color=line_color)
+                      north_line_ylist,
+                      lw=line_width,
+                      color=line_color)
 
         if east_limits == None:
-            ax1.set_xlim(self.station_locations['east'].min() -
-                         10 * self.cell_size_east,
-                         self.station_locations['east'].max() +
-                         10 * self.cell_size_east)
+            ax1.set_xlim(self.station_locations['east'].min()-\
+                            10*self.cell_size_east,
+                         self.station_locations['east'].max()+\
+                             10*self.cell_size_east)
         else:
             ax1.set_xlim(east_limits)
 
         if north_limits == None:
-            ax1.set_ylim(self.station_locations['north'].min() -
-                         10 * self.cell_size_north,
-                         self.station_locations['north'].max() +
-                         10 * self.cell_size_east)
+            ax1.set_ylim(self.station_locations['north'].min()-\
+                            10*self.cell_size_north,
+                         self.station_locations['north'].max()+\
+                             10*self.cell_size_east)
         else:
             ax1.set_ylim(north_limits)
 
-        ax1.set_ylabel('Northing (m)', fontdict={'size': 9, 'weight': 'bold'})
-        ax1.set_xlabel('Easting (m)', fontdict={'size': 9, 'weight': 'bold'})
+        ax1.set_ylabel('Northing (m)', fontdict={'size':9,'weight':'bold'})
+        ax1.set_xlabel('Easting (m)', fontdict={'size':9,'weight':'bold'})
 
-        # ----plot depth view
+        ##----plot depth view
         ax2 = fig.add_subplot(1, 2, 2, aspect='auto', sharex=ax1)
 
-        # plot the grid if desired
+
+        #plot the grid if desired
         east_line_xlist = []
         east_line_ylist = []
         for xx in self.grid_east:
@@ -1360,7 +1357,7 @@ class WSMesh(object):
         z_line_ylist = []
         for zz in self.grid_z:
             z_line_xlist.extend([self.grid_east.min(),
-                                 self.grid_east.max()])
+                                     self.grid_east.max()])
             z_line_xlist.append(None)
             z_line_ylist.extend([zz, zz])
             z_line_ylist.append(None)
@@ -1369,12 +1366,14 @@ class WSMesh(object):
                  lw=line_width,
                  color=line_color)
 
+
         #--> plot stations
         ax2.scatter(self.station_locations['east_c'],
-                    [0] * self.station_locations.shape[0],
+                    [0]*self.station_locations.shape[0],
                     marker=station_marker,
                     c=marker_color,
                     s=marker_size)
+
 
         if z_limits == None:
             ax2.set_ylim(self.z_target_depth, -200)
@@ -1382,15 +1381,15 @@ class WSMesh(object):
             ax2.set_ylim(z_limits)
 
         if east_limits == None:
-            ax1.set_xlim(self.station_locations['east'].min() -
-                         10 * self.cell_size_east,
-                         self.station_locations['east'].max() +
-                         10 * self.cell_size_east)
+            ax1.set_xlim(self.station_locations['east'].min()-\
+                            10*self.cell_size_east,
+                         self.station_locations['east'].max()+\
+                             10*self.cell_size_east)
         else:
             ax1.set_xlim(east_limits)
 
-        ax2.set_ylabel('Depth (m)', fontdict={'size': 9, 'weight': 'bold'})
-        ax2.set_xlabel('Easting (m)', fontdict={'size': 9, 'weight': 'bold'})
+        ax2.set_ylabel('Depth (m)', fontdict={'size':9, 'weight':'bold'})
+        ax2.set_xlabel('Easting (m)', fontdict={'size':9, 'weight':'bold'})
 
         plt.show()
 
@@ -1402,7 +1401,7 @@ class WSMesh(object):
         """
 
         self.res_model_int = np.ones_like(self.res_model)
-        # make a dictionary of values to write to file.
+        #make a dictionary of values to write to file.
         self.res_dict = dict([(res, ii)
                               for ii, res in
                               enumerate(sorted(self.res_list), 1)])
@@ -1413,12 +1412,12 @@ class WSMesh(object):
             if ii == 0:
                 indexes = np.where(self.res_model <= res)
                 self.res_model_int[indexes] = self.res_dict[res]
-            elif ii == len(self.res_list) - 1:
+            elif ii == len(self.res_list)-1:
                 indexes = np.where(self.res_model >= res)
                 self.res_model_int[indexes] = self.res_dict[res]
             else:
-                l_index = max([0, ii - 1])
-                h_index = min([len(self.res_list) - 1, ii + 1])
+                l_index = max([0, ii-1])
+                h_index = min([len(self.res_list)-1, ii+1])
                 indexes = np.where((self.res_model > self.res_list[l_index]) &
                                    (self.res_model < self.res_list[h_index]))
                 self.res_model_int[indexes] = self.res_dict[res]
@@ -1507,20 +1506,18 @@ class WSMesh(object):
         if self.initial_fn is None:
             if self.save_path is None:
                 self.save_path = os.getcwd()
-                self.initial_fn = os.path.join(
-                    self.save_path, "WSInitialModel")
+                self.initial_fn = os.path.join(self.save_path, "WSInitialModel")
             elif os.path.isdir(self.save_path) == True:
-                self.initial_fn = os.path.join(
-                    self.save_path, "WSInitialModel")
+                self.initial_fn = os.path.join(self.save_path, "WSInitialModel")
             else:
                 self.save_path = os.path.dirname(self.save_path)
-                self.initial_fn = self.save_path
+                self.initial_fn= self.save_path
 
-        # check to see what resistivity in input
+        #check to see what resistivity in input
         if self.res_list is None:
             nr = 0
         elif type(self.res_list) is not list and \
-                type(self.res_list) is not np.ndarray:
+             type(self.res_list) is not np.ndarray:
             self.res_list = [self.res_list]
             nr = len(self.res_list)
         else:
@@ -1534,31 +1531,31 @@ class WSMesh(object):
                                               self.nodes_z.shape[0],
                                               nr))
 
-        # write S --> N node block
+        #write S --> N node block
         for ii, nnode in enumerate(self.nodes_north):
             ifid.write('{0:>12.1f}'.format(abs(nnode)))
-            if ii != 0 and np.remainder(ii + 1, 5) == 0:
+            if ii != 0 and np.remainder(ii+1, 5) == 0:
                 ifid.write('\n')
-            elif ii == self.nodes_north.shape[0] - 1:
+            elif ii == self.nodes_north.shape[0]-1:
                 ifid.write('\n')
 
-        # write W --> E node block
+        #write W --> E node block
         for jj, enode in enumerate(self.nodes_east):
             ifid.write('{0:>12.1f}'.format(abs(enode)))
-            if jj != 0 and np.remainder(jj + 1, 5) == 0:
+            if jj != 0 and np.remainder(jj+1, 5) == 0:
                 ifid.write('\n')
-            elif jj == self.nodes_east.shape[0] - 1:
+            elif jj == self.nodes_east.shape[0]-1:
                 ifid.write('\n')
 
-        # write top --> bottom node block
+        #write top --> bottom node block
         for kk, zz in enumerate(self.nodes_z):
             ifid.write('{0:>12.1f}'.format(abs(zz)))
-            if kk != 0 and np.remainder(kk + 1, 5) == 0:
+            if kk != 0 and np.remainder(kk+1, 5) == 0:
                 ifid.write('\n')
-            elif kk == self.nodes_z.shape[0] - 1:
+            elif kk == self.nodes_z.shape[0]-1:
                 ifid.write('\n')
 
-        # write the resistivity list
+        #write the resistivity list
         if nr > 0:
             for ff in self.res_list:
                 ifid.write('{0:.1f} '.format(ff))
@@ -1572,33 +1569,33 @@ class WSMesh(object):
             if nr > 0:
                 if self.res_model_int is None:
                     self.convert_model_to_int()
-                # need to flip the array such that the 1st index written is the
-                # northern most value
+                #need to flip the array such that the 1st index written is the
+                #northern most value
                 write_res_model = self.res_model_int[::-1, :, :]
-                # get similar layers
+                #get similar layers
             else:
                 write_res_model = self.res_model[::-1, :, :]
             l1 = 0
             layers = []
-            for zz in range(self.nodes_z.shape[0] - 1):
+            for zz in range(self.nodes_z.shape[0]-1):
                 if (write_res_model[:, :, zz] ==
-                        write_res_model[:, :, zz + 1]).all() == False:
+                    write_res_model[:, :, zz+1]).all() == False:
                     layers.append((l1, zz))
-                    l1 = zz + 1
-            # need to add on the bottom layers
-            layers.append((l1, self.nodes_z.shape[0] - 1))
+                    l1 = zz+1
+            #need to add on the bottom layers
+            layers.append((l1, self.nodes_z.shape[0]-1))
 
-            # write out the layers from resmodel
+            #write out the layers from resmodel
             for ll in layers:
-                ifid.write('{0} {1}\n'.format(ll[0] + 1, ll[1] + 1))
+                ifid.write('{0} {1}\n'.format(ll[0]+1, ll[1]+1))
                 for nn in range(self.nodes_north.shape[0]):
                     for ee in range(self.nodes_east.shape[0]):
                         if nr > 0:
                             ifid.write('{0:>3.0f}'.format(
-                                write_res_model[nn, ee, ll[0]]))
+                                          write_res_model[nn, ee, ll[0]]))
                         else:
                             ifid.write('{0:>8.1f}'.format(
-                                write_res_model[nn, ee, ll[0]]))
+                                          write_res_model[nn, ee, ll[0]]))
                     ifid.write('\n')
             ifid.close()
 
@@ -1644,23 +1641,22 @@ class WSMesh(object):
 
         self.title = ilines[0].strip()
 
-        # get size of dimensions, remembering that x is N-S, y is E-W, z is +
-        # down
+        #get size of dimensions, remembering that x is N-S, y is E-W, z is + down
         nsize = ilines[1].strip().split()
         n_north = int(nsize[0])
         n_east = int(nsize[1])
         n_z = int(nsize[2])
 
-        # initialize empy arrays to put things into
+        #initialize empy arrays to put things into
         self.nodes_north = np.zeros(n_north)
         self.nodes_east = np.zeros(n_east)
         self.nodes_z = np.zeros(n_z)
         self.res_model_int = np.zeros((n_north, n_east, n_z))
         self.res_model = np.zeros((n_north, n_east, n_z))
 
-        # get the grid line locations
-        line_index = 2  # line number in file
-        count_n = 0  # number of north nodes found
+        #get the grid line locations
+        line_index = 2       #line number in file
+        count_n = 0  #number of north nodes found
         while count_n < n_north:
             iline = ilines[line_index].strip().split()
             for north_node in iline:
@@ -1668,7 +1664,7 @@ class WSMesh(object):
                 count_n += 1
             line_index += 1
 
-        count_e = 0  # number of east nodes found
+        count_e = 0  #number of east nodes found
         while count_e < n_east:
             iline = ilines[line_index].strip().split()
             for east_node in iline:
@@ -1676,7 +1672,7 @@ class WSMesh(object):
                 count_e += 1
             line_index += 1
 
-        count_z = 0  # number of vertical nodes
+        count_z = 0  #number of vertical nodes
         while count_z < n_z:
             iline = ilines[line_index].strip().split()
             for z_node in iline:
@@ -1684,34 +1680,32 @@ class WSMesh(object):
                 count_z += 1
             line_index += 1
 
-        # put the grids into coordinates relative to the center of the grid
+        #put the grids into coordinates relative to the center of the grid
         self.grid_north = self.nodes_north.copy()
-        self.grid_north[:int(n_north / 2)] =\
-            -np.array([self.nodes_north[ii:int(n_north / 2)].sum()
-                       for ii in range(int(n_north / 2))])
-        self.grid_north[int(n_north / 2):] = \
-            np.array([self.nodes_north[int(n_north / 2):ii + 1].sum()
-                      for ii in range(int(n_north / 2), n_north)]) -\
-            self.nodes_north[int(n_north / 2)]
+        self.grid_north[:int(n_north/2)] =\
+                        -np.array([self.nodes_north[ii:int(n_north/2)].sum()
+                                   for ii in range(int(n_north/2))])
+        self.grid_north[int(n_north/2):] = \
+                        np.array([self.nodes_north[int(n_north/2):ii+1].sum()
+                                 for ii in range(int(n_north/2), n_north)])-\
+                                 self.nodes_north[int(n_north/2)]
 
         self.grid_east = self.nodes_east.copy()
-        self.grid_east[:int(n_east / 2)] = \
-            -np.array([self.nodes_east[ii:int(n_east / 2)].sum()
-                       for ii in range(int(n_east / 2))])
-        self.grid_east[int(n_east / 2):] = \
-            np.array([self.nodes_east[int(n_east / 2):ii + 1].sum()
-                      for ii in range(int(n_east / 2), n_east)]) -\
-            self.nodes_east[int(n_east / 2)]
+        self.grid_east[:int(n_east/2)] = \
+                            -np.array([self.nodes_east[ii:int(n_east/2)].sum()
+                                       for ii in range(int(n_east/2))])
+        self.grid_east[int(n_east/2):] = \
+                            np.array([self.nodes_east[int(n_east/2):ii+1].sum()
+                                     for ii in range(int(n_east/2),n_east)])-\
+                                     self.nodes_east[int(n_east/2)]
 
-        self.grid_z = np.array([self.nodes_z[:ii + 1].sum()
-                                for ii in range(n_z)])
+        self.grid_z = np.array([self.nodes_z[:ii+1].sum() for ii in range(n_z)])
 
-        # get the resistivity values
-        self.res_list = [float(rr)
-                         for rr in ilines[line_index].strip().split()]
+        #get the resistivity values
+        self.res_list = [float(rr) for rr in ilines[line_index].strip().split()]
         line_index += 1
 
-        # get model
+        #get model
         try:
             iline = ilines[line_index].strip().split()
 
@@ -1728,7 +1722,7 @@ class WSMesh(object):
             while line_index < len(ilines):
                 iline = ilines[line_index].strip().split()
                 if len(iline) == 2:
-                    l1 = int(iline[0]) - 1
+                    l1 = int(iline[0])-1
                     l2 = int(iline[1])
                     if l1 == l2:
                         l2 += 1
@@ -1739,12 +1733,12 @@ class WSMesh(object):
                 else:
                     count_e = 0
                     while count_e < n_east:
-                        # be sure the indes of res list starts at 0 not 1 as
-                        # in ws3dinv
+                        #be sure the indes of res list starts at 0 not 1 as
+                        #in ws3dinv
                         self.res_model[count_n, count_e, l1:l2] =\
-                            self.res_list[int(iline[count_e]) - 1]
+                                        self.res_list[int(iline[count_e])-1]
                         self.res_model_int[count_n, count_e, l1:l2] =\
-                            int(iline[count_e])
+                                            int(iline[count_e])
                         count_e += 1
                     count_n += 1
                     line_index += 1
@@ -1758,8 +1752,6 @@ class WSMesh(object):
 #==============================================================================
 # model class
 #==============================================================================
-
-
 class WSModel(object):
     """
     Reads in model file and fills necessary attributes.
@@ -1824,7 +1816,7 @@ class WSModel(object):
         mlines = mfid.readlines()
         mfid.close()
 
-        # get info at the beggining of file
+        #get info at the beggining of file
         info = mlines[0].strip().split()
         self.iteration_number = int(info[2])
         self.rms = float(info[5])
@@ -1833,19 +1825,19 @@ class WSModel(object):
         except IndexError:
             print 'Did not get Lagrange Multiplier'
 
-        # get lengths of things
+        #get lengths of things
         n_north, n_east, n_z, n_res = np.array(mlines[1].strip().split(),
                                                dtype=np.int)
 
-        # make empty arrays to put stuff into
+        #make empty arrays to put stuff into
         self.nodes_north = np.zeros(n_north)
         self.nodes_east = np.zeros(n_east)
         self.nodes_z = np.zeros(n_z)
         self.res_model = np.zeros((n_north, n_east, n_z))
 
-        # get the grid line locations
-        line_index = 2  # line number in file
-        count_n = 0  # number of north nodes found
+        #get the grid line locations
+        line_index = 2       #line number in file
+        count_n = 0  #number of north nodes found
         while count_n < n_north:
             mline = mlines[line_index].strip().split()
             for north_node in mline:
@@ -1853,7 +1845,7 @@ class WSModel(object):
                 count_n += 1
             line_index += 1
 
-        count_e = 0  # number of east nodes found
+        count_e = 0  #number of east nodes found
         while count_e < n_east:
             mline = mlines[line_index].strip().split()
             for east_node in mline:
@@ -1861,7 +1853,7 @@ class WSModel(object):
                 count_e += 1
             line_index += 1
 
-        count_z = 0  # number of vertical nodes
+        count_z = 0  #number of vertical nodes
         while count_z < n_z:
             mline = mlines[line_index].strip().split()
             for z_node in mline:
@@ -1869,36 +1861,35 @@ class WSModel(object):
                 count_z += 1
             line_index += 1
 
-        # put the grids into coordinates relative to the center of the grid
+        #put the grids into coordinates relative to the center of the grid
         self.grid_north = self.nodes_north.copy()
-        self.grid_north[:int(n_north / 2)] =\
-            -np.array([self.nodes_north[ii:int(n_north / 2)].sum()
-                       for ii in range(int(n_north / 2))])
-        self.grid_north[int(n_north / 2):] = \
-            np.array([self.nodes_north[int(n_north / 2):ii + 1].sum()
-                      for ii in range(int(n_north / 2), n_north)]) -\
-            self.nodes_north[int(n_north / 2)]
+        self.grid_north[:int(n_north/2)] =\
+                        -np.array([self.nodes_north[ii:int(n_north/2)].sum()
+                                   for ii in range(int(n_north/2))])
+        self.grid_north[int(n_north/2):] = \
+                        np.array([self.nodes_north[int(n_north/2):ii+1].sum()
+                                 for ii in range(int(n_north/2), n_north)])-\
+                                 self.nodes_north[int(n_north/2)]
 
         self.grid_east = self.nodes_east.copy()
-        self.grid_east[:int(n_east / 2)] = \
-            -np.array([self.nodes_east[ii:int(n_east / 2)].sum()
-                       for ii in range(int(n_east / 2))])
-        self.grid_east[int(n_east / 2):] = \
-            np.array([self.nodes_east[int(n_east / 2):ii + 1].sum()
-                      for ii in range(int(n_east / 2), n_east)]) -\
-            self.nodes_east[int(n_east / 2)]
+        self.grid_east[:int(n_east/2)] = \
+                            -np.array([self.nodes_east[ii:int(n_east/2)].sum()
+                                       for ii in range(int(n_east/2))])
+        self.grid_east[int(n_east/2):] = \
+                            np.array([self.nodes_east[int(n_east/2):ii+1].sum()
+                                     for ii in range(int(n_east/2),n_east)])-\
+                                     self.nodes_east[int(n_east/2)]
 
-        self.grid_z = np.array([self.nodes_z[:ii + 1].sum()
-                                for ii in range(n_z)])
+        self.grid_z = np.array([self.nodes_z[:ii+1].sum() for ii in range(n_z)])
 
         #--> get resistivity values
-        # need to read in the north backwards so that the first index is
-        # southern most point
+        #need to read in the north backwards so that the first index is
+        #southern most point
         for kk in range(n_z):
             for jj in range(n_east):
                 for ii in range(n_north):
-                    self.res_model[(n_north - 1) - ii, jj, kk] = \
-                        float(mlines[line_index].strip())
+                    self.res_model[(n_north-1)-ii, jj, kk] = \
+                                             float(mlines[line_index].strip())
                     line_index += 1
 
     def write_vtk_file(self, save_fn):
@@ -1912,7 +1903,7 @@ class WSModel(object):
                             self.grid_north,
                             self.grid_east,
                             self.grid_z,
-                            cellData={'resistivity': self.res_model})
+                            cellData={'resistivity':self.res_model})
 
         print 'Wrote vtk file to {0}'.format(save_fn)
 
@@ -2021,22 +2012,22 @@ class WSModelManipulator(object):
         else:
             self.save_path = None
 
-        # grid nodes
+        #grid nodes
         self.nodes_east = None
         self.nodes_north = None
         self.nodes_z = None
 
-        # grid locations
+        #grid locations
         self.grid_east = None
         self.grid_north = None
         self.grid_z = None
 
-        # resistivity model
-        self.res_model_int = None  # model in ints
-        self.res_model = None  # model in floats
+        #resistivity model
+        self.res_model_int = None #model in ints
+        self.res_model = None     #model in floats
         self.res = None
 
-        # station locations in relative coordinates read from data file
+        #station locations in relative coordinates read from data file
         self.station_east = None
         self.station_north = None
 
@@ -2047,12 +2038,12 @@ class WSModelManipulator(object):
         self.m_height = 100
 
         #--> scale the map coordinates
-        if self.map_scale == 'km':
+        if self.map_scale=='km':
             self.dscale = 1000.
-        if self.map_scale == 'm':
+        if self.map_scale=='m':
             self.dscale = 1.
 
-        # figure attributes
+        #figure attributes
         self.fig = None
         self.ax1 = None
         self.ax2 = None
@@ -2062,12 +2053,12 @@ class WSModelManipulator(object):
         self.north_line_xlist = None
         self.north_line_ylist = None
 
-        # make a default resistivity list to change values
+        #make a default resistivity list to change values
         self.res_dict = None
         self.res_list = kwargs.pop('res_list', None)
         if self.res_list is None:
             self.set_res_list(np.array([.3, 1, 10, 50, 100, 500, 1000, 5000],
-                                       dtype=np.float))
+                                      dtype=np.float))
 
         else:
             try:
@@ -2078,10 +2069,11 @@ class WSModelManipulator(object):
                 self.res_list = [self.res_list]
             self.set_res_list(self.res_list)
 
-        # read in model or initial file
+
+        #read in model or initial file
         self.read_file()
 
-        # set initial resistivity value
+        #set initial resistivity value
         self.res_value = self.res_list[0]
 
         #--> set map limits
@@ -2095,11 +2087,11 @@ class WSModelManipulator(object):
         self.cmap = kwargs.pop('cmap', cm.jet_r)
         self.depth_index = kwargs.pop('depth_index', 0)
 
-        self.fdict = {'size': self.font_size + 2, 'weight': 'bold'}
+        self.fdict = {'size':self.font_size+2, 'weight':'bold'}
 
-        # plot on initialization
+        #plot on initialization
         self.plot_yn = kwargs.pop('plot_yn', 'y')
-        if self.plot_yn == 'y':
+        if self.plot_yn=='y':
             self.plot()
 
     def set_res_list(self, res_list):
@@ -2107,12 +2099,13 @@ class WSModelManipulator(object):
         on setting res_list also set the res_dict to correspond
         """
         self.res_list = res_list
-        # make a dictionary of values to write to file.
+        #make a dictionary of values to write to file.
         self.res_dict = dict([(res, ii)
-                              for ii, res in enumerate(self.res_list, 1)])
+                              for ii, res in enumerate(self.res_list,1)])
         if self.fig is not None:
             plt.close()
             self.plot()
+
 
     #---read files-------------------------------------------------------------
     def read_file(self):
@@ -2158,13 +2151,11 @@ class WSModelManipulator(object):
             else:
                 self.set_res_list(wsmesh.res_list)
 
-            # need to convert index values to resistivity values
-            rdict = dict([(ii, res)
-                          for ii, res in enumerate(self.res_list, 1)])
+            #need to convert index values to resistivity values
+            rdict = dict([(ii,res) for ii,res in enumerate(self.res_list,1)])
 
             for ii in range(len(self.res_list)):
-                self.res_model[
-                    np.where(self.res_model_int == ii + 1)] = rdict[ii + 1]
+                self.res_model[np.where(self.res_model_int==ii+1)] = rdict[ii+1]
 
         elif self.initial_fn is None and self.model_fn is None:
             print 'Need to input either an initial file or model file to plot'
@@ -2176,16 +2167,18 @@ class WSModelManipulator(object):
             wsdata = WSData()
             wsdata.read_data_file(self.data_fn)
 
-            # get station locations
+            #get station locations
             self.station_east = wsdata.data['east']
             self.station_north = wsdata.data['north']
 
-        # get cell block sizes
-        self.m_height = np.median(self.nodes_north[5:-5]) / self.dscale
-        self.m_width = np.median(self.nodes_east[5:-5]) / self.dscale
+        #get cell block sizes
+        self.m_height = np.median(self.nodes_north[5:-5])/self.dscale
+        self.m_width = np.median(self.nodes_east[5:-5])/self.dscale
 
-        # make a copy of original in case there are unwanted changes
+        #make a copy of original in case there are unwanted changes
         self.res_copy = self.res_model.copy()
+
+
 
     #---plot model-------------------------------------------------------------
     def plot(self):
@@ -2202,15 +2195,13 @@ class WSModelManipulator(object):
         #-->Plot properties
         plt.rcParams['font.size'] = self.font_size
 
-        # need to add an extra row and column to east and north to make sure
-        # all is plotted see pcolor for details.
-        plot_east = np.append(
-            self.grid_east, self.grid_east[-1] * 1.25) / self.dscale
-        plot_north = np.append(
-            self.grid_north, self.grid_north[-1] * 1.25) / self.dscale
+        #need to add an extra row and column to east and north to make sure
+        #all is plotted see pcolor for details.
+        plot_east = np.append(self.grid_east, self.grid_east[-1]*1.25)/self.dscale
+        plot_north = np.append(self.grid_north, self.grid_north[-1]*1.25)/self.dscale
 
-        # make a mesh grid for plotting
-        # the 'ij' makes sure the resulting grid is in east, north
+        #make a mesh grid for plotting
+        #the 'ij' makes sure the resulting grid is in east, north
         self.mesh_east, self.mesh_north = np.meshgrid(plot_east,
                                                       plot_north,
                                                       indexing='ij')
@@ -2219,8 +2210,8 @@ class WSModelManipulator(object):
         plt.clf()
         self.ax1 = self.fig.add_subplot(1, 1, 1, aspect='equal')
 
-        # transpose to make x--east and y--north
-        plot_res = np.log10(self.res_model[:, :, self.depth_index].T)
+        #transpose to make x--east and y--north
+        plot_res = np.log10(self.res_model[:,:,self.depth_index].T)
 
         self.mesh_plot = self.ax1.pcolormesh(self.mesh_east,
                                              self.mesh_north,
@@ -2229,104 +2220,108 @@ class WSModelManipulator(object):
                                              vmin=self.cmin,
                                              vmax=self.cmax)
 
-        # on plus or minus change depth slice
+        #on plus or minus change depth slice
         self.cid_depth = \
-            self.mesh_plot.figure.canvas.mpl_connect('key_press_event',
-                                                     self._on_key_callback)
+                    self.mesh_plot.figure.canvas.mpl_connect('key_press_event',
+                                                        self._on_key_callback)
 
-        # plot the stations
+
+        #plot the stations
         if self.station_east is not None:
             for ee, nn in zip(self.station_east, self.station_north):
-                self.ax1.text(ee / self.dscale, nn / self.dscale,
+                self.ax1.text(ee/self.dscale, nn/self.dscale,
                               '*',
                               verticalalignment='center',
                               horizontalalignment='center',
-                              fontdict={'size': self.font_size - 2,
-                                        'weight': 'bold'})
+                              fontdict={'size':self.font_size-2,
+                                        'weight':'bold'})
 
-        # set axis properties
+        #set axis properties
         if self.xlimits is not None:
             self.ax1.set_xlim(self.xlimits)
         else:
-            self.ax1.set_xlim(xmin=self.grid_east.min() / self.dscale,
-                              xmax=self.grid_east.max() / self.dscale)
+            self.ax1.set_xlim(xmin=self.grid_east.min()/self.dscale,
+                              xmax=self.grid_east.max()/self.dscale)
 
         if self.ylimits is not None:
             self.ax1.set_ylim(self.ylimits)
         else:
-            self.ax1.set_ylim(ymin=self.grid_north.min() / self.dscale,
-                              ymax=self.grid_north.max() / self.dscale)
+            self.ax1.set_ylim(ymin=self.grid_north.min()/self.dscale,
+                              ymax=self.grid_north.max()/self.dscale)
 
-        # self.ax1.xaxis.set_minor_locator(MultipleLocator(100*1./dscale))
-        # self.ax1.yaxis.set_minor_locator(MultipleLocator(100*1./dscale))
+        #self.ax1.xaxis.set_minor_locator(MultipleLocator(100*1./dscale))
+        #self.ax1.yaxis.set_minor_locator(MultipleLocator(100*1./dscale))
 
-        self.ax1.set_ylabel('Northing (' + self.map_scale + ')',
+        self.ax1.set_ylabel('Northing ('+self.map_scale+')',
                             fontdict=self.fdict)
-        self.ax1.set_xlabel('Easting (' + self.map_scale + ')',
+        self.ax1.set_xlabel('Easting ('+self.map_scale+')',
                             fontdict=self.fdict)
 
-        depth_title = self.grid_z[self.depth_index] / self.dscale
+        depth_title = self.grid_z[self.depth_index]/self.dscale
 
-        self.ax1.set_title('Depth = {:.3f} '.format(depth_title) +
-                           '(' + self.map_scale + ')',
+        self.ax1.set_title('Depth = {:.3f} '.format(depth_title)+\
+                           '('+self.map_scale+')',
                            fontdict=self.fdict)
 
-        # plot the grid if desired
+        #plot the grid if desired
         self.east_line_xlist = []
         self.east_line_ylist = []
         for xx in self.grid_east:
-            self.east_line_xlist.extend([xx / self.dscale, xx / self.dscale])
+            self.east_line_xlist.extend([xx/self.dscale, xx/self.dscale])
             self.east_line_xlist.append(None)
-            self.east_line_ylist.extend([self.grid_north.min() / self.dscale,
-                                         self.grid_north.max() / self.dscale])
+            self.east_line_ylist.extend([self.grid_north.min()/self.dscale,
+                                         self.grid_north.max()/self.dscale])
             self.east_line_ylist.append(None)
         self.ax1.plot(self.east_line_xlist,
                       self.east_line_ylist,
-                      lw=.25,
-                      color='k')
+                       lw=.25,
+                       color='k')
 
         self.north_line_xlist = []
         self.north_line_ylist = []
         for yy in self.grid_north:
-            self.north_line_xlist.extend([self.grid_east.min() / self.dscale,
-                                          self.grid_east.max() / self.dscale])
+            self.north_line_xlist.extend([self.grid_east.min()/self.dscale,
+                                          self.grid_east.max()/self.dscale])
             self.north_line_xlist.append(None)
-            self.north_line_ylist.extend([yy / self.dscale, yy / self.dscale])
+            self.north_line_ylist.extend([yy/self.dscale, yy/self.dscale])
             self.north_line_ylist.append(None)
         self.ax1.plot(self.north_line_xlist,
                       self.north_line_ylist,
                       lw=.25,
                       color='k')
 
-        # plot the colorbar
+        #plot the colorbar
         self.ax2 = mcb.make_axes(self.ax1, orientation='vertical', shrink=.35)
         seg_cmap = cmap_discretize(self.cmap, len(self.res_list))
-        self.cb = mcb.ColorbarBase(self.ax2[0], cmap=seg_cmap,
+        self.cb = mcb.ColorbarBase(self.ax2[0],cmap=seg_cmap,
                                    norm=colors.Normalize(vmin=self.cmin,
                                                          vmax=self.cmax))
 
-        self.cb.set_label('Resistivity ($\Omega \cdot$m)',
-                          fontdict={'size': self.font_size})
-        self.cb.set_ticks(np.arange(self.cmin, self.cmax + 1))
-        self.cb.set_ticklabels([mtplottools.labeldict[cc]
-                                for cc in np.arange(self.cmin, self.cmax + 1)])
 
-        # make a resistivity radio button
-        resrb = self.fig.add_axes([.85, .1, .1, .2])
+        self.cb.set_label('Resistivity ($\Omega \cdot$m)',
+                          fontdict={'size':self.font_size})
+        self.cb.set_ticks(np.arange(self.cmin, self.cmax+1))
+        self.cb.set_ticklabels([mtplottools.labeldict[cc]
+                                for cc in np.arange(self.cmin, self.cmax+1)])
+
+        #make a resistivity radio button
+        resrb = self.fig.add_axes([.85,.1,.1,.2])
         reslabels = ['{0:.4g}'.format(res) for res in self.res_list]
         self.radio_res = widgets.RadioButtons(resrb, reslabels,
-                                              active=self.res_dict[self.res_value])
+                                        active=self.res_dict[self.res_value])
 
-        # make a rectangular selector
+        #make a rectangular selector
         self.rect_selector = widgets.RectangleSelector(self.ax1,
                                                        self.rect_onselect,
                                                        drawtype='box',
                                                        useblit=True)
 
+
         plt.show()
 
-        # needs to go after show()
+        #needs to go after show()
         self.radio_res.on_clicked(self.set_res_value)
+
 
     def redraw_plot(self):
         """
@@ -2338,7 +2333,7 @@ class WSModelManipulator(object):
 
         self.ax1.cla()
 
-        plot_res = np.log10(self.res_model[:, :, self.depth_index].T)
+        plot_res = np.log10(self.res_model[:,:,self.depth_index].T)
 
         self.mesh_plot = self.ax1.pcolormesh(self.mesh_east,
                                              self.mesh_north,
@@ -2347,17 +2342,17 @@ class WSModelManipulator(object):
                                              vmin=self.cmin,
                                              vmax=self.cmax)
 
-        # plot the stations
+         #plot the stations
         if self.station_east is not None:
-            for ee, nn in zip(self.station_east, self.station_north):
-                self.ax1.text(ee / self.dscale, nn / self.dscale,
+            for ee,nn in zip(self.station_east, self.station_north):
+                self.ax1.text(ee/self.dscale, nn/self.dscale,
                               '*',
                               verticalalignment='center',
                               horizontalalignment='center',
-                              fontdict={'size': self.font_size - 2,
-                                        'weight': 'bold'})
+                              fontdict={'size':self.font_size-2,
+                                        'weight':'bold'})
 
-        # set axis properties
+        #set axis properties
         if self.xlimits is not None:
             self.ax1.set_xlim(self.xlimits)
         else:
@@ -2368,29 +2363,30 @@ class WSModelManipulator(object):
         else:
             self.ax1.set_ylim(current_ylimits)
 
-        self.ax1.set_ylabel('Northing (' + self.map_scale + ')',
+        self.ax1.set_ylabel('Northing ('+self.map_scale+')',
                             fontdict=self.fdict)
-        self.ax1.set_xlabel('Easting (' + self.map_scale + ')',
+        self.ax1.set_xlabel('Easting ('+self.map_scale+')',
                             fontdict=self.fdict)
 
-        depth_title = self.grid_z[self.depth_index] / self.dscale
+        depth_title = self.grid_z[self.depth_index]/self.dscale
 
-        self.ax1.set_title('Depth = {:.3f} '.format(depth_title) +
-                           '(' + self.map_scale + ')',
+        self.ax1.set_title('Depth = {:.3f} '.format(depth_title)+\
+                           '('+self.map_scale+')',
                            fontdict=self.fdict)
 
-        # plot finite element mesh
+        #plot finite element mesh
         self.ax1.plot(self.east_line_xlist,
                       self.east_line_ylist,
                       lw=.25,
                       color='k')
+
 
         self.ax1.plot(self.north_line_xlist,
                       self.north_line_ylist,
                       lw=.25,
                       color='k')
 
-        # be sure to redraw the canvas
+        #be sure to redraw the canvas
         self.fig.canvas.draw()
 
     def set_res_value(self, label):
@@ -2398,7 +2394,8 @@ class WSModelManipulator(object):
         print 'set resistivity to ', label
         print self.res_value
 
-    def _on_key_callback(self, event):
+
+    def _on_key_callback(self,event):
         """
         on pressing a key do something
 
@@ -2406,69 +2403,69 @@ class WSModelManipulator(object):
 
         self.event_change_depth = event
 
-        # go down a layer on push of +/= keys
+        #go down a layer on push of +/= keys
         if self.event_change_depth.key == '=':
             self.depth_index += 1
 
-            if self.depth_index > len(self.grid_z) - 1:
-                self.depth_index = len(self.grid_z) - 1
+            if self.depth_index>len(self.grid_z)-1:
+                self.depth_index = len(self.grid_z)-1
                 print 'already at deepest depth'
 
-            print 'Plotting Depth {0:.3f}'.format(self.grid_z[self.depth_index] /
-                                                  self.dscale) + '(' + self.map_scale + ')'
+            print 'Plotting Depth {0:.3f}'.format(self.grid_z[self.depth_index]/\
+                    self.dscale)+'('+self.map_scale+')'
 
             self.redraw_plot()
-        # go up a layer on push of - key
+        #go up a layer on push of - key
         elif self.event_change_depth.key == '-':
             self.depth_index -= 1
 
             if self.depth_index < 0:
                 self.depth_index = 0
 
-            print 'Plotting Depth {0:.3f} '.format(self.grid_z[self.depth_index] /
-                                                   self.dscale) + '(' + self.map_scale + ')'
+            print 'Plotting Depth {0:.3f} '.format(self.grid_z[self.depth_index]/\
+                    self.dscale)+'('+self.map_scale+')'
 
             self.redraw_plot()
 
-        # exit plot on press of q
+        #exit plot on press of q
         elif self.event_change_depth.key == 'q':
             self.event_change_depth.canvas.mpl_disconnect(self.cid_depth)
             plt.close(self.event_change_depth.canvas.figure)
             self.rewrite_initial_file()
 
-        # copy the layer above
+        #copy the layer above
         elif self.event_change_depth.key == 'a':
             try:
                 if self.depth_index == 0:
                     print 'No layers above'
                 else:
                     self.res_model[:, :, self.depth_index] = \
-                        self.res_model[:, :, self.depth_index - 1]
+                                       self.res_model[:, :, self.depth_index-1]
             except IndexError:
                 print 'No layers above'
 
             self.redraw_plot()
 
-        # copy the layer below
+        #copy the layer below
         elif self.event_change_depth.key == 'b':
             try:
                 self.res_model[:, :, self.depth_index] = \
-                    self.res_model[:, :, self.depth_index + 1]
+                                    self.res_model[:, :, self.depth_index+1]
             except IndexError:
                 print 'No more layers below'
 
             self.redraw_plot()
 
-        # undo
+        #undo
         elif self.event_change_depth.key == 'u':
             if type(self.xchange) is int and type(self.ychange) is int:
                 self.res_model[self.ychange, self.xchange, self.depth_index] =\
-                    self.res_copy[self.ychange, self.xchange, self.depth_index]
+                self.res_copy[self.ychange, self.xchange, self.depth_index]
             else:
                 for xx in self.xchange:
                     for yy in self.ychange:
                         self.res_model[yy, xx, self.depth_index] = \
-                            self.res_copy[yy, xx, self.depth_index]
+                        self.res_copy[yy, xx, self.depth_index]
 
             self.redraw_plot()
 
@@ -2496,8 +2493,9 @@ class WSModelManipulator(object):
         self.xchange = self._get_east_index(x1, x2)
         self.ychange = self._get_north_index(y1, y2)
 
-        # reset values of resistivity
+        #reset values of resistivity
         self.change_model_res(self.xchange, self.ychange)
+
 
     def _get_east_index(self, x1, x2):
         """
@@ -2505,23 +2503,22 @@ class WSModelManipulator(object):
 
         """
         if x1 < x2:
-            xchange = np.where((self.grid_east / self.dscale >= x1) &
-                               (self.grid_east / self.dscale <= x2))[0]
+            xchange = np.where((self.grid_east/self.dscale >= x1) & \
+                               (self.grid_east/self.dscale <= x2))[0]
             if len(xchange) == 0:
-                xchange = np.where(
-                    self.grid_east / self.dscale >= x1)[0][0] - 1
+                xchange = np.where(self.grid_east/self.dscale >= x1)[0][0]-1
                 return [xchange]
 
         if x1 > x2:
-            xchange = np.where((self.grid_east / self.dscale <= x1) &
-                               (self.grid_east / self.dscale >= x2))[0]
+            xchange = np.where((self.grid_east/self.dscale <= x1) & \
+                               (self.grid_east/self.dscale >= x2))[0]
             if len(xchange) == 0:
-                xchange = np.where(
-                    self.grid_east / self.dscale >= x2)[0][0] - 1
+                xchange = np.where(self.grid_east/self.dscale >= x2)[0][0]-1
                 return [xchange]
 
-        # check the edges to see if the selection should include the square
-        xchange = np.append(xchange, xchange[0] - 1)
+
+        #check the edges to see if the selection should include the square
+        xchange = np.append(xchange, xchange[0]-1)
         xchange.sort()
 
         return xchange
@@ -2535,25 +2532,24 @@ class WSModelManipulator(object):
         """
 
         if y1 < y2:
-            ychange = np.where((self.grid_north / self.dscale > y1) &
-                               (self.grid_north / self.dscale < y2))[0]
+            ychange = np.where((self.grid_north/self.dscale > y1) & \
+                               (self.grid_north/self.dscale < y2))[0]
             if len(ychange) == 0:
-                ychange = np.where(self.grid_north /
-                                   self.dscale >= y1)[0][0] - 1
+                ychange = np.where(self.grid_north/self.dscale >= y1)[0][0]-1
                 return [ychange]
 
         elif y1 > y2:
-            ychange = np.where((self.grid_north / self.dscale < y1) &
-                               (self.grid_north / self.dscale > y2))[0]
+            ychange = np.where((self.grid_north/self.dscale < y1) & \
+                               (self.grid_north/self.dscale > y2))[0]
             if len(ychange) == 0:
-                ychange = np.where(self.grid_north /
-                                   self.dscale >= y2)[0][0] - 1
+                ychange = np.where(self.grid_north/self.dscale >= y2)[0][0]-1
                 return [ychange]
 
         ychange -= 1
-        ychange = np.append(ychange, ychange[-1] + 1)
+        ychange = np.append(ychange, ychange[-1]+1)
 
         return ychange
+
 
     def convert_model_to_int(self):
         """
@@ -2570,12 +2566,12 @@ class WSModelManipulator(object):
             if ii == 0:
                 indexes = np.where(self.res_model <= res)
                 self.res_model_int[indexes] = self.res_dict[res]
-            elif ii == len(self.res_list) - 1:
+            elif ii == len(self.res_list)-1:
                 indexes = np.where(self.res_model >= res)
                 self.res_model_int[indexes] = self.res_dict[res]
             else:
-                l_index = max([0, ii - 1])
-                h_index = min([len(self.res_list) - 1, ii + 1])
+                l_index = max([0, ii-1])
+                h_index = min([len(self.res_list)-1, ii+1])
                 indexes = np.where((self.res_model > self.res_list[l_index]) &
                                    (self.res_model < self.res_list[h_index]))
                 self.res_model_int[indexes] = self.res_dict[res]
@@ -2589,7 +2585,7 @@ class WSModelManipulator(object):
 
         """
 
-        # make values in model resistivity array a value in res_list
+        #make values in model resistivity array a value in res_list
         self.res_model = np.zeros_like(res_array)
 
         for ii, res in enumerate(self.res_list):
@@ -2598,12 +2594,12 @@ class WSModelManipulator(object):
             if ii == 0:
                 indexes = np.where(res_array <= res)
                 self.res_model[indexes] = res
-            elif ii == len(self.res_list) - 1:
+            elif ii == len(self.res_list)-1:
                 indexes = np.where(res_array >= res)
                 self.res_model[indexes] = res
             else:
-                l_index = max([0, ii - 1])
-                h_index = min([len(self.res_list) - 1, ii + 1])
+                l_index = max([0, ii-1])
+                h_index = min([len(self.res_list)-1, ii+1])
                 indexes = np.where((res_array > self.res_list[l_index]) &
                                    (res_array < self.res_list[h_index]))
                 self.res_model[indexes] = res
@@ -2612,8 +2608,8 @@ class WSModelManipulator(object):
         """
         write an initial file for wsinv3d from the model created.
         """
-        # need to flip the resistivity model so that the first index is the
-        # northern most block in N-S
+        #need to flip the resistivity model so that the first index is the
+        #northern most block in N-S
         #self.res_model = self.res_model[::-1, :, :]
 
         if save_path is not None:
@@ -2622,10 +2618,10 @@ class WSModelManipulator(object):
         self.new_initial_fn = os.path.join(self.save_path,
                                            self.initial_fn_basename)
         wsmesh = WSMesh()
-        # pass attribute to wsmesh
+        #pass attribute to wsmesh
         att_names = ['nodes_north', 'nodes_east', 'nodes_z', 'grid_east',
                      'grid_north', 'grid_z', 'res_model', 'res_list',
-                     'res_dict', 'res_model']
+                     'res_dict', 'res_model' ]
         for name in att_names:
             if hasattr(self, name):
                 value = getattr(self, name)
@@ -2646,20 +2642,18 @@ def cmap_discretize(cmap, N):
          imshow(x, cmap=djet)
     """
 
-    colors_i = np.concatenate((np.linspace(0, 1., N), (0., 0., 0., 0.)))
+    colors_i = np.concatenate((np.linspace(0, 1., N), (0.,0.,0.,0.)))
     colors_rgba = cmap(colors_i)
-    indices = np.linspace(0, 1., N + 1)
+    indices = np.linspace(0, 1., N+1)
     cdict = {}
-    for ki, key in enumerate(('red', 'green', 'blue')):
-        cdict[key] = [(indices[i], colors_rgba[i - 1, ki], colors_rgba[i, ki])
-                      for i in xrange(N + 1)]
+    for ki,key in enumerate(('red','green','blue')):
+        cdict[key] = [(indices[i], colors_rgba[i-1,ki], colors_rgba[i,ki])
+                       for i in xrange(N+1)]
     # Return colormap object.
-    return colors.LinearSegmentedColormap(cmap.name + "_%d" % N, cdict, 1024)
+    return colors.LinearSegmentedColormap(cmap.name + "_%d"%N, cdict, 1024)
 #==============================================================================
 # response
 #==============================================================================
-
-
 class WSResponse(object):
     """
     class to deal with .resp file output by ws3dinv
@@ -2698,8 +2692,8 @@ class WSResponse(object):
     read_resp_file         read response file and fill attributes 
     ====================== ====================================================
     """
-
-    def __init__(self, resp_fn, station_fn=None, wl_station_fn=None):
+    
+    def __init__(self, resp_fn=None, station_fn=None, wl_station_fn=None):
         self.resp_fn = resp_fn
         self.station_fn = station_fn
         self.wl_sites_fn = wl_station_fn
@@ -2716,9 +2710,10 @@ class WSResponse(object):
 
         self.units = 'mv'
         self._zconv = 796.
-
-        if os.path.isfile(self.resp_fn) == True:
+        
+        if self.resp_fn is not None:
             self.read_resp_file()
+
 
     def read_resp_file(self, resp_fn=None, wl_sites_fn=None, station_fn=None):
         """
@@ -2751,17 +2746,20 @@ class WSResponse(object):
         if station_fn is not None:
             self.station_fn = station_fn
 
+        if not os.path.isfile(self.resp_fn):
+            raise WSInputError('Cannot find {0}, check path'.format(self.resp_fn))
+
         dfid = file(self.resp_fn, 'r')
         dlines = dfid.readlines()
 
-        # get size number of stations, number of frequencies,
+        #get size number of stations, number of frequencies,
         # number of Z components
         n_stations, n_periods, nz = np.array(dlines[0].strip().split(),
                                              dtype='int')
         nsstart = 2
 
         self.n_z = nz
-        # make a structured array to keep things in for convenience
+        #make a structured array to keep things in for convenience
         z_shape = (n_periods, 2, 2)
         resp_dtype = [('station', '|S10'),
                       ('east', np.float),
@@ -2781,7 +2779,7 @@ class WSResponse(object):
 
         ncol = len(dlines[nsstart].strip().split())
 
-        # get site names if entered a sites file
+        #get site names if entered a sites file
         if self.wl_sites_fn != None:
             slist, station_list = wl.read_sites_file(self.wl_sites_fn)
             self.resp['station'] = station_list
@@ -2793,31 +2791,32 @@ class WSResponse(object):
         else:
             self.resp['station'] = np.arange(n_stations)
 
-        # get N-S locations
-        for ii, dline in enumerate(dlines[findlist[0] + 1:findlist[1]], 0):
+
+        #get N-S locations
+        for ii, dline in enumerate(dlines[findlist[0]+1:findlist[1]],0):
             dline = dline.strip().split()
             for jj in range(ncol):
                 try:
-                    self.resp['north'][ii * ncol + jj] = float(dline[jj])
+                    self.resp['north'][ii*ncol+jj] = float(dline[jj])
                 except IndexError:
                     pass
                 except ValueError:
                     break
 
-        # get E-W locations
-        for ii, dline in enumerate(dlines[findlist[1] + 1:findlist[2]], 0):
+        #get E-W locations
+        for ii, dline in enumerate(dlines[findlist[1]+1:findlist[2]],0):
             dline = dline.strip().split()
             for jj in range(self.n_z):
                 try:
-                    self.resp['east'][ii * ncol + jj] = float(dline[jj])
+                    self.resp['east'][ii*ncol+jj] = float(dline[jj])
                 except IndexError:
                     pass
                 except ValueError:
                     break
-        # make some empty array to put stuff into
+        #make some empty array to put stuff into
         self.period_list = np.zeros(n_periods)
 
-        # get resp
+        #get resp
         per = 0
         for ii, dl in enumerate(dlines[findlist[2]:]):
             if dl.lower().find('period') > 0:
@@ -2830,12 +2829,11 @@ class WSResponse(object):
             elif dl.lower().find('#iteration') >= 0:
                 break
             else:
-                zline = np.array(dl.strip().split(),
-                                 dtype=np.float) * self._zconv
-                self.resp[st][dkey][per - 1, :] = np.array([[zline[0] - 1j * zline[1],
-                                                             zline[2] - 1j * zline[3]],
-                                                            [zline[4] - 1j * zline[5],
-                                                             zline[6] - 1j * zline[7]]])
+                zline = np.array(dl.strip().split(),dtype=np.float)*self._zconv
+                self.resp[st][dkey][per-1,:] = np.array([[zline[0]-1j*zline[1],
+                                                         zline[2]-1j*zline[3]],
+                                                         [zline[4]-1j*zline[5],
+                                                         zline[6]-1j*zline[7]]])
                 st += 1
 
         self.station_east = self.resp['east']
@@ -2847,16 +2845,12 @@ class WSResponse(object):
 #==============================================================================
 # WSError
 #==============================================================================
-
-
 class WSInputError(Exception):
     pass
 
 #==============================================================================
 # plot response
 #==============================================================================
-
-
 class PlotResponse(object):
     """
     plot data and response
@@ -2946,29 +2940,29 @@ class PlotResponse(object):
         self.e_capthick = kwargs.pop('e_capthick', .5)
         self.e_capsize = kwargs.pop('e_capsize', 2)
 
-        # color mode
+        #color mode
         if self.color_mode == 'color':
-            # color for data
+            #color for data
             self.cted = kwargs.pop('cted', (0, 0, 1))
             self.ctmd = kwargs.pop('ctmd', (1, 0, 0))
             self.mted = kwargs.pop('mted', 's')
             self.mtmd = kwargs.pop('mtmd', 'o')
 
-            # color for occam2d model
+            #color for occam2d model
             self.ctem = kwargs.pop('ctem', (0, .6, .3))
             self.ctmm = kwargs.pop('ctmm', (.9, 0, .8))
             self.mtem = kwargs.pop('mtem', '+')
             self.mtmm = kwargs.pop('mtmm', '+')
 
-        # black and white mode
+        #black and white mode
         elif self.color_mode == 'bw':
-            # color for data
+            #color for data
             self.cted = kwargs.pop('cted', (0, 0, 0))
             self.ctmd = kwargs.pop('ctmd', (0, 0, 0))
             self.mted = kwargs.pop('mted', '*')
             self.mtmd = kwargs.pop('mtmd', 'v')
 
-            # color for occam2d model
+            #color for occam2d model
             self.ctem = kwargs.pop('ctem', (0.6, 0.6, 0.6))
             self.ctmm = kwargs.pop('ctmm', (0.6, 0.6, 0.6))
             self.mtem = kwargs.pop('mtem', '+')
@@ -3040,11 +3034,11 @@ class PlotResponse(object):
         self.data_object.read_data_file(self.data_fn,
                                         station_fn=self.station_fn)
 
-        # get shape of impedance tensors
+        #get shape of impedance tensors
         ns = self.data_object.data['station'].shape[0]
         nf = len(self.data_object.period_list)
 
-        # read in response files
+        #read in response files
         if self.resp_fn != None:
             self.resp_object = []
             if type(self.resp_fn) is not list:
@@ -3053,9 +3047,9 @@ class PlotResponse(object):
             else:
                 for rfile in self.resp_fn:
                     self.resp_object.append(WSResponse(rfile,
-                                                       station_fn=self.station_fn))
+                                                   station_fn=self.station_fn))
 
-        # get number of response files
+        #get number of response files
         nr = len(self.resp_object)
 
         if type(self.plot_type) is list:
@@ -3064,9 +3058,9 @@ class PlotResponse(object):
         #--> set default font size
         plt.rcParams['font.size'] = self.font_size
 
-        fontdict = {'size': self.font_size + 2, 'weight': 'bold'}
+        fontdict = {'size':self.font_size+2, 'weight':'bold'}
         if self.plot_z == True:
-            h_ratio = [1, 1]
+            h_ratio = [1,1]
         elif self.plot_z == False:
             h_ratio = [2, 1.5]
         gs = gridspec.GridSpec(2, 2, height_ratios=h_ratio, hspace=.1)
@@ -3074,6 +3068,7 @@ class PlotResponse(object):
         ax_list = []
         line_list = []
         label_list = []
+
 
         if self.plot_type != '1':
             pstation_list = []
@@ -3098,34 +3093,34 @@ class PlotResponse(object):
             station = self.data_object.station_names[jj]
             print 'Plotting: {0}'.format(station)
 
-            # check for masked points
-            data_z[np.where(data_z == 7.95204E5 - 7.95204E5j)] = 0.0 + 0.0j
-            data_z_err[np.where(data_z_err == 7.95204E5 - 7.95204E5j)] =\
-                1.0 + 1.0j
+            #check for masked points
+            data_z[np.where(data_z == 7.95204E5-7.95204E5j)] = 0.0+0.0j
+            data_z_err[np.where(data_z_err == 7.95204E5-7.95204E5j)] =\
+                                                                1.0+1.0j
 
-            # convert to apparent resistivity and phase
-            z_object = mtz.Z(z_array=data_z, z_err_array=data_z_err,
-                             freq=1. / period)
+            #convert to apparent resistivity and phase
+            z_object =  mtz.Z(z_array=data_z, z_err_array=data_z_err,
+                              freq=1./period)
 
             rp = mtplottools.ResPhase(z_object)
 
-            # find locations where points have been masked
-            nzxx = np.where(rp.resxx != 0)[0]
-            nzxy = np.where(rp.resxy != 0)[0]
-            nzyx = np.where(rp.resyx != 0)[0]
-            nzyy = np.where(rp.resyy != 0)[0]
+            #find locations where points have been masked
+            nzxx = np.where(rp.resxx!=0)[0]
+            nzxy = np.where(rp.resxy!=0)[0]
+            nzyx = np.where(rp.resyx!=0)[0]
+            nzyy = np.where(rp.resyy!=0)[0]
 
             if self.resp_fn != None:
                 plotr = True
             else:
                 plotr = False
 
-            # make figure
+            #make figure
             fig = plt.figure(station, self.fig_size, dpi=self.fig_dpi)
             plt.clf()
             fig.suptitle(str(station), fontdict=fontdict)
 
-            # set the grid of subplots
+            #set the grid of subplots
             gs = gridspec.GridSpec(2, 4,
                                    wspace=self.subplot_wspace,
                                    left=self.subplot_left,
@@ -3134,8 +3129,8 @@ class PlotResponse(object):
                                    right=self.subplot_right,
                                    hspace=self.subplot_hspace,
                                    height_ratios=h_ratio)
-            #---------plot the apparent resistivity----------------------------
-            # plot each component in its own subplot
+            #---------plot the apparent resistivity-----------------------------------
+            #plot each component in its own subplot
             if self.plot_style == 1:
                 if self.plot_component == 2:
                     axrxy = fig.add_subplot(gs[0, 0:2])
@@ -3145,7 +3140,7 @@ class PlotResponse(object):
                     axpyx = fig.add_subplot(gs[1, 2:], sharex=axrxy)
 
                     if self.plot_z == False:
-                        # plot resistivity
+                        #plot resistivity
                         erxy = self.plot_errorbar(axrxy,
                                                   period[nzxy],
                                                   rp.resxy[nzxy],
@@ -3156,7 +3151,7 @@ class PlotResponse(object):
                                                   rp.resyx[nzyx],
                                                   rp.resyx_err[nzyx],
                                                   self.ctmd, self.mtmd)
-                        # plot phase
+                        #plot phase
                         erxy = self.plot_errorbar(axpxy,
                                                   period[nzxy],
                                                   rp.phasexy[nzxy],
@@ -3168,31 +3163,27 @@ class PlotResponse(object):
                                                   rp.phaseyx_err[nzyx],
                                                   self.ctmd, self.mtmd)
                     elif self.plot_z == True:
-                        # plot real
+                        #plot real
                         erxy = self.plot_errorbar(axrxy,
                                                   period[nzxy],
-                                                  z_object.z[nzxy, 0, 1].real,
-                                                  z_object.z_err[
-                                                      nzxy, 0, 1].real,
+                                                  z_object.z[nzxy,0,1].real,
+                                                  z_object.z_err[nzxy,0,1].real,
                                                   self.cted, self.mted)
                         eryx = self.plot_errorbar(axryx,
                                                   period[nzyx],
-                                                  z_object.z[nzyx, 1, 0].real,
-                                                  z_object.z_err[
-                                                      nzyx, 1, 0].real,
+                                                  z_object.z[nzyx,1,0].real,
+                                                  z_object.z_err[nzyx,1,0].real,
                                                   self.ctmd, self.mtmd)
-                        # plot phase
+                        #plot phase
                         erxy = self.plot_errorbar(axpxy,
                                                   period[nzxy],
-                                                  z_object.z[nzxy, 0, 1].imag,
-                                                  z_object.z_err[
-                                                      nzxy, 0, 1].imag,
+                                                  z_object.z[nzxy,0,1].imag,
+                                                  z_object.z_err[nzxy,0,1].imag,
                                                   self.cted, self.mted)
                         eryx = self.plot_errorbar(axpyx,
                                                   period[nzyx],
-                                                  z_object.z[nzyx, 1, 0].imag,
-                                                  z_object.z_err[
-                                                      nzyx, 1, 0].imag,
+                                                  z_object.z[nzyx,1,0].imag,
+                                                  z_object.z_err[nzyx,1,0].imag,
                                                   self.ctmd, self.mtmd)
 
                     ax_list = [axrxy, axryx, axpxy, axpyx]
@@ -3211,8 +3202,8 @@ class PlotResponse(object):
                     axpyy = fig.add_subplot(gs[1, 3], sharex=axrxx)
 
                     if self.plot_z == False:
-                        # plot resistivity
-                        erxx = self.plot_errorbar(axrxx,
+                        #plot resistivity
+                        erxx= self.plot_errorbar(axrxx,
                                                   period[nzxx],
                                                   rp.resxx[nzxx],
                                                   rp.resxx_err[nzxx],
@@ -3232,8 +3223,8 @@ class PlotResponse(object):
                                                   rp.resyy[nzyy],
                                                   rp.resyy_err[nzyy],
                                                   self.ctmd, self.mtmd)
-                        # plot phase
-                        erxx = self.plot_errorbar(axpxx,
+                        #plot phase
+                        erxx= self.plot_errorbar(axpxx,
                                                   period[nzxx],
                                                   rp.phasexx[nzxx],
                                                   rp.phasexx_err[nzxx],
@@ -3254,55 +3245,47 @@ class PlotResponse(object):
                                                   rp.phaseyy_err[nzyy],
                                                   self.ctmd, self.mtmd)
                     elif self.plot_z == True:
-                        # plot real
+                        #plot real
                         erxx = self.plot_errorbar(axrxx,
                                                   period[nzxx],
-                                                  z_object.z[nzxx, 0, 0].real,
-                                                  z_object.z_err[
-                                                      nzxx, 0, 0].real,
+                                                  z_object.z[nzxx,0,0].real,
+                                                  z_object.z_err[nzxx,0,0].real,
                                                   self.cted, self.mted)
                         erxy = self.plot_errorbar(axrxy,
                                                   period[nzxy],
-                                                  z_object.z[nzxy, 0, 1].real,
-                                                  z_object.z_err[
-                                                      nzxy, 0, 1].real,
+                                                  z_object.z[nzxy,0,1].real,
+                                                  z_object.z_err[nzxy,0,1].real,
                                                   self.cted, self.mted)
                         eryx = self.plot_errorbar(axryx,
                                                   period[nzyx],
-                                                  z_object.z[nzyx, 1, 0].real,
-                                                  z_object.z_err[
-                                                      nzyx, 1, 0].real,
+                                                  z_object.z[nzyx,1,0].real,
+                                                  z_object.z_err[nzyx,1,0].real,
                                                   self.ctmd, self.mtmd)
                         eryy = self.plot_errorbar(axryy,
                                                   period[nzyy],
-                                                  z_object.z[nzyy, 1, 1].real,
-                                                  z_object.z_err[
-                                                      nzyy, 1, 1].real,
+                                                  z_object.z[nzyy,1,1].real,
+                                                  z_object.z_err[nzyy,1,1].real,
                                                   self.ctmd, self.mtmd)
-                        # plot phase
+                        #plot phase
                         erxx = self.plot_errorbar(axpxx,
                                                   period[nzxx],
-                                                  z_object.z[nzxx, 0, 0].imag,
-                                                  z_object.z_err[
-                                                      nzxx, 0, 0].imag,
+                                                  z_object.z[nzxx,0,0].imag,
+                                                  z_object.z_err[nzxx,0,0].imag,
                                                   self.cted, self.mted)
                         erxy = self.plot_errorbar(axpxy,
                                                   period[nzxy],
-                                                  z_object.z[nzxy, 0, 1].imag,
-                                                  z_object.z_err[
-                                                      nzxy, 0, 1].imag,
+                                                  z_object.z[nzxy,0,1].imag,
+                                                  z_object.z_err[nzxy,0,1].imag,
                                                   self.cted, self.mted)
                         eryx = self.plot_errorbar(axpyx,
                                                   period[nzyx],
-                                                  z_object.z[nzyx, 1, 0].imag,
-                                                  z_object.z_err[
-                                                      nzyx, 1, 0].imag,
+                                                  z_object.z[nzyx,1,0].imag,
+                                                  z_object.z_err[nzyx,1,0].imag,
                                                   self.ctmd, self.mtmd)
                         eryy = self.plot_errorbar(axpyy,
                                                   period[nzyy],
-                                                  z_object.z[nzyy, 1, 1].imag,
-                                                  z_object.z_err[
-                                                      nzyy, 1, 1].imag,
+                                                  z_object.z[nzyy,1,1].imag,
+                                                  z_object.z_err[nzyy,1,1].imag,
                                                   self.ctmd, self.mtmd)
 
                     ax_list = [axrxx, axrxy, axryx, axryy,
@@ -3311,7 +3294,7 @@ class PlotResponse(object):
                     label_list = [['$Z_{xx}$'], ['$Z_{xy}$'],
                                   ['$Z_{yx}$'], ['$Z_{yy}$']]
 
-                # set axis properties
+                #set axis properties
                 for aa, ax in enumerate(ax_list):
                     ax.tick_params(axis='y', pad=self.ylabel_pad)
                     if len(ax_list) == 4:
@@ -3324,7 +3307,7 @@ class PlotResponse(object):
                         else:
                             ax.set_ylim(self.phase_limits)
                             ax.set_xlabel('Period (s)', fontdict=fontdict)
-                        # set axes labels
+                        #set axes labels
                         if aa == 0:
                             if self.plot_z == False:
                                 ax.set_ylabel('App. Res. ($\mathbf{\Omega \cdot m}$)',
@@ -3352,14 +3335,14 @@ class PlotResponse(object):
                         else:
                             ax.set_ylim(self.phase_limits)
                             ax.set_xlabel('Period (s)', fontdict=fontdict)
-                        # set axes labels
+                        #set axes labels
                         if aa == 0:
                             if self.plot_z == False:
                                 ax.set_ylabel('App. Res. ($\mathbf{\Omega \cdot m}$)',
                                               fontdict=fontdict)
                             elif self.plot_z == True:
                                 ax.set_ylabel('Re[Z (m/s)]',
-                                              fontdict=fontdict)
+                                               fontdict=fontdict)
                         elif aa == 4:
                             if self.plot_z == False:
                                 ax.set_ylabel('Phase (deg)',
@@ -3381,7 +3364,7 @@ class PlotResponse(object):
                     axrxy = fig.add_subplot(gs[0, 0:])
                     axpxy = fig.add_subplot(gs[1, 0:], sharex=axrxy)
                     if self.plot_z == False:
-                        # plot resistivity
+                        #plot resistivity
                         erxy = self.plot_errorbar(axrxy,
                                                   period[nzxy],
                                                   rp.resxy[nzxy],
@@ -3392,7 +3375,7 @@ class PlotResponse(object):
                                                   rp.resyx[nzyx],
                                                   rp.resyx_err[nzyx],
                                                   self.ctmd, self.mtmd)
-                        # plot phase
+                        #plot phase
                         erxy = self.plot_errorbar(axpxy,
                                                   period[nzxy],
                                                   rp.phasexy[nzxy],
@@ -3404,31 +3387,27 @@ class PlotResponse(object):
                                                   rp.phaseyx_err[nzyx],
                                                   self.ctmd, self.mtmd)
                     elif self.plot_z == True:
-                        # plot real
+                        #plot real
                         erxy = self.plot_errorbar(axrxy,
                                                   period[nzxy],
-                                                  z_object.z[nzxy, 0, 1].real,
-                                                  z_object.z_err[
-                                                      nzxy, 0, 1].real,
+                                                  z_object.z[nzxy,0,1].real,
+                                                  z_object.z_err[nzxy,0,1].real,
                                                   self.cted, self.mted)
                         eryx = self.plot_errorbar(axrxy,
                                                   period[nzxy],
-                                                  z_object.z[nzxy, 1, 0].real,
-                                                  z_object.z_err[
-                                                      nzxy, 1, 0].real,
+                                                  z_object.z[nzxy,1,0].real,
+                                                  z_object.z_err[nzxy,1,0].real,
                                                   self.ctmd, self.mtmd)
-                        # plot phase
+                        #plot phase
                         erxy = self.plot_errorbar(axpxy,
                                                   period[nzxy],
-                                                  z_object.z[nzxy, 0, 1].imag,
-                                                  z_object.z_err[
-                                                      nzxy, 0, 1].imag,
+                                                  z_object.z[nzxy,0,1].imag,
+                                                  z_object.z_err[nzxy,0,1].imag,
                                                   self.cted, self.mted)
                         eryx = self.plot_errorbar(axpxy,
                                                   period[nzyx],
-                                                  z_object.z[nzyx, 1, 0].imag,
-                                                  z_object.z_err[
-                                                      nzyx, 1, 0].imag,
+                                                  z_object.z[nzyx,1,0].imag,
+                                                  z_object.z_err[nzyx,1,0].imag,
                                                   self.ctmd, self.mtmd)
 
                     ax_list = [axrxy, axpxy]
@@ -3442,8 +3421,8 @@ class PlotResponse(object):
                     axrxx = fig.add_subplot(gs[0, 2:], sharex=axrxy)
                     axpxx = fig.add_subplot(gs[1, 2:], sharex=axrxy)
                     if self.plot_z == False:
-                        # plot resistivity
-                        erxx = self.plot_errorbar(axrxx,
+                        #plot resistivity
+                        erxx= self.plot_errorbar(axrxx,
                                                   period[nzxx],
                                                   rp.resxx[nzxx],
                                                   rp.resxx_err[nzxx],
@@ -3463,8 +3442,8 @@ class PlotResponse(object):
                                                   rp.resyy[nzyy],
                                                   rp.resyy_err[nzyy],
                                                   self.ctmd, self.mtmd)
-                        # plot phase
-                        erxx = self.plot_errorbar(axpxx,
+                        #plot phase
+                        erxx= self.plot_errorbar(axpxx,
                                                   period[nzxx],
                                                   rp.phasexx[nzxx],
                                                   rp.phasexx_err[nzxx],
@@ -3485,62 +3464,54 @@ class PlotResponse(object):
                                                   rp.phaseyy_err[nzyy],
                                                   self.ctmd, self.mtmd)
                     elif self.plot_z == True:
-                         # plot real
+                         #plot real
                         erxx = self.plot_errorbar(axrxx,
                                                   period[nzxx],
-                                                  z_object.z[nzxx, 0, 0].real,
-                                                  z_object.z_err[
-                                                      nzxx, 0, 0].real,
+                                                  z_object.z[nzxx,0,0].real,
+                                                  z_object.z_err[nzxx,0,0].real,
                                                   self.cted, self.mted)
                         erxy = self.plot_errorbar(axrxy,
                                                   period[nzxy],
-                                                  z_object.z[nzxy, 0, 1].real,
-                                                  z_object.z_err[
-                                                      nzxy, 0, 1].real,
+                                                  z_object.z[nzxy,0,1].real,
+                                                  z_object.z_err[nzxy,0,1].real,
                                                   self.cted, self.mted)
                         eryx = self.plot_errorbar(axrxy,
                                                   period[nzyx],
-                                                  z_object.z[nzyx, 1, 0].real,
-                                                  z_object.z_err[
-                                                      nzyx, 1, 0].real,
+                                                  z_object.z[nzyx,1,0].real,
+                                                  z_object.z_err[nzyx,1,0].real,
                                                   self.ctmd, self.mtmd)
                         eryy = self.plot_errorbar(axrxx,
                                                   period[nzyy],
-                                                  z_object.z[nzyy, 1, 1].real,
-                                                  z_object.z_err[
-                                                      nzyy, 1, 1].real,
+                                                  z_object.z[nzyy,1,1].real,
+                                                  z_object.z_err[nzyy,1,1].real,
                                                   self.ctmd, self.mtmd)
-                        # plot phase
+                        #plot phase
                         erxx = self.plot_errorbar(axpxx,
                                                   period[nzxx],
-                                                  z_object.z[nzxx, 0, 0].imag,
-                                                  z_object.z_err[
-                                                      nzxx, 0, 0].imag,
+                                                  z_object.z[nzxx,0,0].imag,
+                                                  z_object.z_err[nzxx,0,0].imag,
                                                   self.cted, self.mted)
                         erxy = self.plot_errorbar(axpxy,
                                                   period[nzxy],
-                                                  z_object.z[nzxy, 0, 1].imag,
-                                                  z_object.z_err[
-                                                      nzxy, 0, 1].imag,
+                                                  z_object.z[nzxy,0,1].imag,
+                                                  z_object.z_err[nzxy,0,1].imag,
                                                   self.cted, self.mted)
                         eryx = self.plot_errorbar(axpxy,
                                                   period[nzyx],
-                                                  z_object.z[nzyx, 1, 0].imag,
-                                                  z_object.z_err[
-                                                      nzyx, 1, 0].imag,
+                                                  z_object.z[nzyx,1,0].imag,
+                                                  z_object.z_err[nzyx,1,0].imag,
                                                   self.ctmd, self.mtmd)
                         eryy = self.plot_errorbar(axpxx,
                                                   period[nzyy],
-                                                  z_object.z[nzyy, 1, 1].imag,
-                                                  z_object.z_err[
-                                                      nzyy, 1, 1].imag,
+                                                  z_object.z[nzyy,1,1].imag,
+                                                  z_object.z_err[nzyy,1,1].imag,
                                                   self.ctmd, self.mtmd)
 
                     ax_list = [axrxy, axrxx, axpxy, axpxx]
                     line_list = [[erxy[0], eryx[0]], [erxx[0], eryy[0]]]
                     label_list = [['$Z_{xy}$', '$Z_{yx}$'],
                                   ['$Z_{xx}$', '$Z_{yy}$']]
-                # set axis properties
+                #set axis properties
                 for aa, ax in enumerate(ax_list):
                     ax.tick_params(axis='y', pad=self.ylabel_pad)
                     if len(ax_list) == 2:
@@ -3553,7 +3524,7 @@ class PlotResponse(object):
                                               fontdict=fontdict)
                             elif self.plot_z == True:
                                 ax.set_ylabel('Re[Impedance (m/s)]',
-                                              fontdict=fontdict)
+                                               fontdict=fontdict)
                             if self.res_limits is not None:
                                 ax.set_ylim(self.res_limits)
                         else:
@@ -3580,7 +3551,7 @@ class PlotResponse(object):
                                               fontdict=fontdict)
                             elif self.plot_z == True:
                                 ax.set_ylabel('Re[Impedance (m/s)]',
-                                              fontdict=fontdict)
+                                               fontdict=fontdict)
                         elif aa == 2:
                             if self.plot_z == False:
                                 ax.set_ylabel('Phase (deg)',
@@ -3599,20 +3570,17 @@ class PlotResponse(object):
             if plotr == True:
                 for rr in range(nr):
                     if self.color_mode == 'color':
-                        cxy = (0, .4 + float(rr) / (3 * nr), 0)
-                        cyx = (.7 + float(rr) / (4 * nr), .13, .63 -
-                               float(rr) / (4 * nr))
+                        cxy = (0,.4+float(rr)/(3*nr),0)
+                        cyx = (.7+float(rr)/(4*nr),.13,.63-float(rr)/(4*nr))
                     elif self.color_mode == 'bw':
-                        cxy = (1 - 1.25 / (rr + 2.), 1 - 1.25 /
-                               (rr + 2.), 1 - 1.25 / (rr + 2.))
-                        cyx = (1 - 1.25 / (rr + 2.), 1 - 1.25 /
-                               (rr + 2.), 1 - 1.25 / (rr + 2.))
+                        cxy = (1-1.25/(rr+2.),1-1.25/(rr+2.),1-1.25/(rr+2.))
+                        cyx = (1-1.25/(rr+2.),1-1.25/(rr+2.),1-1.25/(rr+2.))
 
                     resp_z = self.resp_object[rr].z_resp[jj]
-                    resp_z_err = (data_z - resp_z) / (data_z_err)
-                    resp_z_object = mtz.Z(z_array=resp_z,
-                                          z_err_array=resp_z_err,
-                                          freq=1. / period)
+                    resp_z_err = (data_z-resp_z)/(data_z_err)
+                    resp_z_object =  mtz.Z(z_array=resp_z,
+                                           z_err_array=resp_z_err,
+                                           freq=1./period)
 
                     rrp = mtplottools.ResPhase(resp_z_object)
 
@@ -3631,370 +3599,310 @@ class PlotResponse(object):
                     if self.plot_style == 1:
                         if self.plot_component == 2:
                             if self.plot_z == False:
-                                # plot resistivity
+                                #plot resistivity
                                 rerxy = self.plot_errorbar(axrxy,
-                                                           period[nzxy],
-                                                           rrp.resxy[nzxy],
-                                                           rrp.resxy_err[nzxy],
-                                                           cxy, self.mted)
+                                                          period[nzxy],
+                                                          rrp.resxy[nzxy],
+                                                          None,
+                                                          cxy, self.mted)
                                 reryx = self.plot_errorbar(axryx,
-                                                           period[nzyx],
-                                                           rrp.resyx[nzyx],
-                                                           rrp.resyx_err[nzyx],
-                                                           cyx, self.mtmd)
-                                # plot phase
+                                                          period[nzyx],
+                                                          rrp.resyx[nzyx],
+                                                          None,
+                                                          cyx, self.mtmd)
+                                #plot phase
                                 rerxy = self.plot_errorbar(axpxy,
-                                                           period[nzxy],
-                                                           rrp.phasexy[nzxy],
-                                                           rrp.phasexy_err[
-                                                               nzxy],
-                                                           cxy, self.mted)
+                                                          period[nzxy],
+                                                          rrp.phasexy[nzxy],
+                                                          None,
+                                                          cxy, self.mted)
                                 reryx = self.plot_errorbar(axpyx,
-                                                           period[nzyx],
-                                                           rrp.phaseyx[nzyx],
-                                                           rrp.phaseyx_err[
-                                                               nzyx],
-                                                           cyx, self.mtmd)
+                                                          period[nzyx],
+                                                          rrp.phaseyx[nzyx],
+                                                          None,
+                                                          cyx, self.mtmd)
                             elif self.plot_z == True:
-                                # plot real
+                                #plot real
                                 rerxy = self.plot_errorbar(axrxy,
-                                                           period[nzxy],
-                                                           resp_z[
-                                                               nzxy, 0, 1].real,
-                                                           resp_z_err[
-                                                               nzxy, 0, 1].real,
-                                                           cxy, self.mted)
+                                                          period[nzxy],
+                                                          resp_z[nzxy,0,1].real,
+                                                          None,
+                                                          cxy, self.mted)
                                 reryx = self.plot_errorbar(axryx,
-                                                           period[nzyx],
-                                                           resp_z[
-                                                               nzyx, 1, 0].real,
-                                                           resp_z_err[
-                                                               nzyx, 1, 0].real,
-                                                           cyx, self.mtmd)
-                                # plot phase
+                                                          period[nzyx],
+                                                          resp_z[nzyx,1,0].real,
+                                                          None,
+                                                          cyx, self.mtmd)
+                                #plot phase
                                 rerxy = self.plot_errorbar(axpxy,
-                                                           period[nzxy],
-                                                           resp_z[
-                                                               nzxy, 0, 1].imag,
-                                                           resp_z_err[
-                                                               nzxy, 0, 1].imag,
-                                                           cxy, self.mted)
+                                                          period[nzxy],
+                                                          resp_z[nzxy,0,1].imag,
+                                                          None,
+                                                          cxy, self.mted)
                                 reryx = self.plot_errorbar(axpyx,
-                                                           period[nzyx],
-                                                           resp_z[
-                                                               nzyx, 1, 0].imag,
-                                                           resp_z_err[
-                                                               nzyx, 1, 0].imag,
-                                                           cyx, self.mtmd)
+                                                          period[nzyx],
+                                                          resp_z[nzyx,1,0].imag,
+                                                          None,
+                                                          cyx, self.mtmd)
 
                             line_list[0] += [rerxy[0]]
                             line_list[1] += [reryx[0]]
-                            label_list[0] += ['$Z^m_{xy}$ ' +
-                                              'rms={0:.2f}'.format(rms_xy)]
-                            label_list[1] += ['$Z^m_{yx}$ ' +
-                                              'rms={0:.2f}'.format(rms_yx)]
+                            label_list[0] += ['$Z^m_{xy}$ '+
+                                               'rms={0:.2f}'.format(rms_xy)]
+                            label_list[1] += ['$Z^m_{yx}$ '+
+                                           'rms={0:.2f}'.format(rms_yx)]
                         elif self.plot_component == 4:
                             if self.plot_z == False:
-                                # plot resistivity
-                                rerxx = self.plot_errorbar(axrxx,
-                                                           period[nzxx],
-                                                           rrp.resxx[nzxx],
-                                                           rrp.resxx_err[nzxx],
-                                                           cxy, self.mted)
+                                #plot resistivity
+                                rerxx= self.plot_errorbar(axrxx,
+                                                          period[nzxx],
+                                                          rrp.resxx[nzxx],
+                                                          None,
+                                                          cxy, self.mted)
                                 rerxy = self.plot_errorbar(axrxy,
-                                                           period[nzxy],
-                                                           rrp.resxy[nzxy],
-                                                           rrp.resxy_err[nzxy],
-                                                           cxy, self.mted)
+                                                          period[nzxy],
+                                                          rrp.resxy[nzxy],
+                                                          None,
+                                                          cxy, self.mted)
                                 reryx = self.plot_errorbar(axryx,
-                                                           period[nzyx],
-                                                           rrp.resyx[nzyx],
-                                                           rrp.resyx_err[nzyx],
-                                                           cyx, self.mtmd)
+                                                          period[nzyx],
+                                                          rrp.resyx[nzyx],
+                                                          None,
+                                                          cyx, self.mtmd)
                                 reryy = self.plot_errorbar(axryy,
-                                                           period[nzyy],
-                                                           rrp.resyy[nzyy],
-                                                           rrp.resyy_err[nzyy],
-                                                           cyx, self.mtmd)
-                                # plot phase
-                                rerxx = self.plot_errorbar(axpxx,
-                                                           period[nzxx],
-                                                           rrp.phasexx[nzxx],
-                                                           rrp.phasexx_err[
-                                                               nzxx],
-                                                           cxy, self.mted)
+                                                          period[nzyy],
+                                                          rrp.resyy[nzyy],
+                                                          None,
+                                                          cyx, self.mtmd)
+                                #plot phase
+                                rerxx= self.plot_errorbar(axpxx,
+                                                          period[nzxx],
+                                                          rrp.phasexx[nzxx],
+                                                          None,
+                                                          cxy, self.mted)
                                 rerxy = self.plot_errorbar(axpxy,
-                                                           period[nzxy],
-                                                           rrp.phasexy[nzxy],
-                                                           rrp.phasexy_err[
-                                                               nzxy],
-                                                           cxy, self.mted)
+                                                          period[nzxy],
+                                                          rrp.phasexy[nzxy],
+                                                          None,
+                                                          cxy, self.mted)
                                 reryx = self.plot_errorbar(axpyx,
-                                                           period[nzyx],
-                                                           rrp.phaseyx[nzyx],
-                                                           rrp.phaseyx_err[
-                                                               nzyx],
-                                                           cyx, self.mtmd)
+                                                          period[nzyx],
+                                                          rrp.phaseyx[nzyx],
+                                                          None,
+                                                          cyx, self.mtmd)
                                 reryy = self.plot_errorbar(axpyy,
-                                                           period[nzyy],
-                                                           rrp.phaseyy[nzyy],
-                                                           rrp.phaseyy_err[
-                                                               nzyy],
-                                                           cyx, self.mtmd)
+                                                          period[nzyy],
+                                                          rrp.phaseyy[nzyy],
+                                                          None,
+                                                          cyx, self.mtmd)
                             elif self.plot_z == True:
-                                # plot real
+                                #plot real
                                 rerxx = self.plot_errorbar(axrxx,
-                                                           period[nzxx],
-                                                           resp_z[
-                                                               nzxx, 0, 0].real,
-                                                           resp_z_err[
-                                                               nzxx, 0, 0].real,
-                                                           cxy, self.mted)
+                                                          period[nzxx],
+                                                          resp_z[nzxx,0,0].real,
+                                                          None,
+                                                          cxy, self.mted)
                                 rerxy = self.plot_errorbar(axrxy,
-                                                           period[nzxy],
-                                                           resp_z[
-                                                               nzxy, 0, 1].real,
-                                                           resp_z_err[
-                                                               nzxy, 0, 1].real,
-                                                           cxy, self.mted)
+                                                          period[nzxy],
+                                                          resp_z[nzxy,0,1].real,
+                                                          None,
+                                                          cxy, self.mted)
                                 reryx = self.plot_errorbar(axryx,
-                                                           period[nzyx],
-                                                           resp_z[
-                                                               nzyx, 1, 0].real,
-                                                           resp_z_err[
-                                                               nzyx, 1, 0].real,
-                                                           cyx, self.mtmd)
+                                                          period[nzyx],
+                                                          resp_z[nzyx,1,0].real,
+                                                          None,
+                                                          cyx, self.mtmd)
                                 reryy = self.plot_errorbar(axryy,
-                                                           period[nzyy],
-                                                           resp_z[
-                                                               nzyy, 1, 1].real,
-                                                           resp_z_err[
-                                                               nzyy, 1, 1].real,
-                                                           cyx, self.mtmd)
-                                # plot phase
+                                                          period[nzyy],
+                                                          resp_z[nzyy,1,1].real,
+                                                          None,
+                                                          cyx, self.mtmd)
+                                #plot phase
                                 rerxx = self.plot_errorbar(axpxx,
-                                                           period[nzxx],
-                                                           resp_z[
-                                                               nzxx, 0, 0].imag,
-                                                           resp_z_err[
-                                                               nzxx, 0, 0].imag,
-                                                           cxy, self.mted)
+                                                          period[nzxx],
+                                                          resp_z[nzxx,0,0].imag,
+                                                          None,
+                                                          cxy, self.mted)
                                 rerxy = self.plot_errorbar(axpxy,
-                                                           period[nzxy],
-                                                           resp_z[
-                                                               nzxy, 0, 1].imag,
-                                                           resp_z_err[
-                                                               nzxy, 0, 1].imag,
-                                                           cxy, self.mted)
+                                                          period[nzxy],
+                                                          resp_z[nzxy,0,1].imag,
+                                                          None,
+                                                          cxy, self.mted)
                                 reryx = self.plot_errorbar(axpyx,
-                                                           period[nzyx],
-                                                           resp_z[
-                                                               nzyx, 1, 0].imag,
-                                                           resp_z_err[
-                                                               nzyx, 1, 0].imag,
-                                                           cyx, self.mtmd)
+                                                          period[nzyx],
+                                                          resp_z[nzyx,1,0].imag,
+                                                          None,
+                                                          cyx, self.mtmd)
                                 reryy = self.plot_errorbar(axpyy,
-                                                           period[nzyy],
-                                                           resp_z[
-                                                               nzyy, 1, 1].imag,
-                                                           resp_z_err[
-                                                               nzyy, 1, 1].imag,
-                                                           cyx, self.mtmd)
+                                                          period[nzyy],
+                                                          resp_z[nzyy,1,1].imag,
+                                                          None,
+                                                          cyx, self.mtmd)
 
                             line_list[0] += [rerxx[0]]
                             line_list[1] += [rerxy[0]]
                             line_list[2] += [reryx[0]]
                             line_list[3] += [reryy[0]]
-                            label_list[0] += ['$Z^m_{xx}$ ' +
-                                              'rms={0:.2f}'.format(rms_xx)]
-                            label_list[1] += ['$Z^m_{xy}$ ' +
-                                              'rms={0:.2f}'.format(rms_xy)]
-                            label_list[2] += ['$Z^m_{yx}$ ' +
-                                              'rms={0:.2f}'.format(rms_yx)]
-                            label_list[3] += ['$Z^m_{yy}$ ' +
-                                              'rms={0:.2f}'.format(rms_yy)]
+                            label_list[0] += ['$Z^m_{xx}$ '+
+                                               'rms={0:.2f}'.format(rms_xx)]
+                            label_list[1] += ['$Z^m_{xy}$ '+
+                                           'rms={0:.2f}'.format(rms_xy)]
+                            label_list[2] += ['$Z^m_{yx}$ '+
+                                           'rms={0:.2f}'.format(rms_yx)]
+                            label_list[3] += ['$Z^m_{yy}$ '+
+                                           'rms={0:.2f}'.format(rms_yy)]
                     elif self.plot_style == 2:
                         if self.plot_component == 2:
                             if self.plot_z == False:
-                                # plot resistivity
+                                #plot resistivity
                                 rerxy = self.plot_errorbar(axrxy,
-                                                           period[nzxy],
-                                                           rrp.resxy[nzxy],
-                                                           rrp.resxy_err[nzxy],
-                                                           cxy, self.mted)
+                                                          period[nzxy],
+                                                          rrp.resxy[nzxy],
+                                                          None,
+                                                          cxy, self.mted)
                                 reryx = self.plot_errorbar(axrxy,
-                                                           period[nzyx],
-                                                           rrp.resyx[nzyx],
-                                                           rrp.resyx_err[nzyx],
-                                                           cyx, self.mtmd)
-                                # plot phase
+                                                          period[nzyx],
+                                                          rrp.resyx[nzyx],
+                                                          None,
+                                                          cyx, self.mtmd)
+                                #plot phase
                                 rerxy = self.plot_errorbar(axpxy,
-                                                           period[nzxy],
-                                                           rrp.phasexy[nzxy],
-                                                           rrp.phasexy_err[
-                                                               nzxy],
-                                                           cxy, self.mted)
+                                                          period[nzxy],
+                                                          rrp.phasexy[nzxy],
+                                                          None,
+                                                          cxy, self.mted)
                                 reryx = self.plot_errorbar(axpxy,
-                                                           period[nzyx],
-                                                           rrp.phaseyx[nzyx],
-                                                           rrp.phaseyx_err[
-                                                               nzyx],
-                                                           cyx, self.mtmd)
+                                                          period[nzyx],
+                                                          rrp.phaseyx[nzyx],
+                                                          None,
+                                                          cyx, self.mtmd)
                             elif self.plot_z == True:
-                                # plot real
+                                #plot real
                                 rerxy = self.plot_errorbar(axrxy,
-                                                           period[nzxy],
-                                                           resp_z[
-                                                               nzxy, 0, 1].real,
-                                                           resp_z_err[
-                                                               nzxy, 0, 1].real,
-                                                           cxy, self.mted)
+                                                          period[nzxy],
+                                                          resp_z[nzxy,0,1].real,
+                                                          None,
+                                                          cxy, self.mted)
                                 reryx = self.plot_errorbar(axrxy,
-                                                           period[nzyx],
-                                                           resp_z[
-                                                               nzyx, 1, 0].real,
-                                                           resp_z_err[
-                                                               nzyx, 1, 0].real,
-                                                           cyx, self.mtmd)
-                                # plot phase
+                                                          period[nzyx],
+                                                          resp_z[nzyx,1,0].real,
+                                                          None,
+                                                          cyx, self.mtmd)
+                                #plot phase
                                 rerxy = self.plot_errorbar(axpxy,
-                                                           period[nzxy],
-                                                           resp_z[
-                                                               nzxy, 0, 1].imag,
-                                                           resp_z_err[
-                                                               nzxy, 0, 1].imag,
-                                                           cyx, self.mted)
+                                                          period[nzxy],
+                                                          resp_z[nzxy,0,1].imag,
+                                                          None,
+                                                          cyx, self.mted)
                                 reryx = self.plot_errorbar(axpxy,
-                                                           period[nzyx],
-                                                           resp_z[
-                                                               nzyx, 1, 0].imag,
-                                                           resp_z_err[
-                                                               nzyx, 1, 0].imag,
-                                                           cyx, self.mtmd)
+                                                          period[nzyx],
+                                                          resp_z[nzyx,1,0].imag,
+                                                          None,
+                                                          cyx, self.mtmd)
                             line_list += [rerxy[0], reryx[0]]
-                            label_list += ['$Z^m_{xy}$ ' +
+                            label_list += ['$Z^m_{xy}$ '+
                                            'rms={0:.2f}'.format(rms_xy),
-                                           '$Z^m_{yx}$ ' +
+                                           '$Z^m_{yx}$ '+
                                            'rms={0:.2f}'.format(rms_yx)]
                         elif self.plot_component == 4:
                             if self.plot_z == False:
-                                # plot resistivity
-                                rerxx = self.plot_errorbar(axrxx,
-                                                           period[nzxx],
-                                                           rrp.resxx[nzxx],
-                                                           rrp.resxx_err[nzxx],
-                                                           cxy, self.mted)
+                                #plot resistivity
+                                rerxx= self.plot_errorbar(axrxx,
+                                                          period[nzxx],
+                                                          rrp.resxx[nzxx],
+                                                          None,
+                                                          cxy, self.mted)
                                 rerxy = self.plot_errorbar(axrxy,
-                                                           period[nzxy],
-                                                           rrp.resxy[nzxy],
-                                                           rrp.resxy_err[nzxy],
-                                                           cxy, self.mted)
+                                                          period[nzxy],
+                                                          rrp.resxy[nzxy],
+                                                          None,
+                                                          cxy, self.mted)
                                 reryx = self.plot_errorbar(axrxy,
-                                                           period[nzyx],
-                                                           rrp.resyx[nzyx],
-                                                           rrp.resyx_err[nzyx],
-                                                           cyx, self.mtmd)
+                                                          period[nzyx],
+                                                          rrp.resyx[nzyx],
+                                                          None,
+                                                          cyx, self.mtmd)
                                 reryy = self.plot_errorbar(axrxx,
-                                                           period[nzyy],
-                                                           rrp.resyy[nzyy],
-                                                           rrp.resyy_err[nzyy],
-                                                           cyx, self.mtmd)
-                                # plot phase
-                                rerxx = self.plot_errorbar(axpxx,
-                                                           period[nzxx],
-                                                           rrp.phasexx[nzxx],
-                                                           rrp.phasexx_err[
-                                                               nzxx],
-                                                           cxy, self.mted)
+                                                          period[nzyy],
+                                                          rrp.resyy[nzyy],
+                                                          None,
+                                                          cyx, self.mtmd)
+                                #plot phase
+                                rerxx= self.plot_errorbar(axpxx,
+                                                          period[nzxx],
+                                                          rrp.phasexx[nzxx],
+                                                          None,
+                                                          cxy, self.mted)
                                 rerxy = self.plot_errorbar(axpxy,
-                                                           period[nzxy],
-                                                           rrp.phasexy[nzxy],
-                                                           rrp.phasexy_err[
-                                                               nzxy],
-                                                           cxy, self.mted)
+                                                          period[nzxy],
+                                                          rrp.phasexy[nzxy],
+                                                          None,
+                                                          cxy, self.mted)
                                 reryx = self.plot_errorbar(axpxy,
-                                                           period[nzyx],
-                                                           rrp.phaseyx[nzyx],
-                                                           rrp.phaseyx_err[
-                                                               nzyx],
-                                                           cyx, self.mtmd)
+                                                          period[nzyx],
+                                                          rrp.phaseyx[nzyx],
+                                                          None,
+                                                          cyx, self.mtmd)
                                 reryy = self.plot_errorbar(axpxx,
-                                                           period[nzyy],
-                                                           rrp.phaseyy[nzyy],
-                                                           rrp.phaseyy_err[
-                                                               nzyy],
-                                                           cyx, self.mtmd)
+                                                          period[nzyy],
+                                                          rrp.phaseyy[nzyy],
+                                                          None,
+                                                          cyx, self.mtmd)
                             elif self.plot_z == True:
-                                # plot real
+                                #plot real
                                 rerxx = self.plot_errorbar(axrxx,
-                                                           period[nzxx],
-                                                           resp_z[
-                                                               nzxx, 0, 0].real,
-                                                           resp_z_err[
-                                                               nzxx, 0, 0].real,
-                                                           cxy, self.mted)
+                                                          period[nzxx],
+                                                          resp_z[nzxx,0,0].real,
+                                                          None,
+                                                          cxy, self.mted)
                                 rerxy = self.plot_errorbar(axrxy,
-                                                           period[nzxy],
-                                                           resp_z[
-                                                               nzxy, 0, 1].real,
-                                                           resp_z_err[
-                                                               nzxy, 0, 1].real,
-                                                           cxy, self.mted)
+                                                          period[nzxy],
+                                                          resp_z[nzxy,0,1].real,
+                                                          None,
+                                                          cxy, self.mted)
                                 reryx = self.plot_errorbar(axrxy,
-                                                           period[nzyx],
-                                                           resp_z[
-                                                               nzyx, 1, 0].real,
-                                                           resp_z_err[
-                                                               nzyx, 1, 0].real,
-                                                           cyx, self.mtmd)
+                                                          period[nzyx],
+                                                          resp_z[nzyx,1,0].real,
+                                                          None,
+                                                          cyx, self.mtmd)
                                 reryy = self.plot_errorbar(axrxx,
-                                                           period[nzyy],
-                                                           resp_z[
-                                                               nzyy, 1, 1].real,
-                                                           resp_z_err[
-                                                               nzyy, 1, 1].real,
-                                                           cyx, self.mtmd)
-                                # plot phase
+                                                          period[nzyy],
+                                                          resp_z[nzyy,1,1].real,
+                                                          None,
+                                                          cyx, self.mtmd)
+                                #plot phase
                                 rerxx = self.plot_errorbar(axpxx,
-                                                           period[nzxx],
-                                                           resp_z[
-                                                               nzxx, 0, 0].imag,
-                                                           resp_z_err[
-                                                               nzxx, 0, 0].imag,
-                                                           cxy, self.mted)
+                                                          period[nzxx],
+                                                          resp_z[nzxx,0,0].imag,
+                                                          None,
+                                                          cxy, self.mted)
                                 rerxy = self.plot_errorbar(axpxy,
-                                                           period[nzxy],
-                                                           resp_z[
-                                                               nzxy, 0, 1].imag,
-                                                           resp_z_err[
-                                                               nzxy, 0, 1].imag,
-                                                           cxy, self.mted)
+                                                          period[nzxy],
+                                                          resp_z[nzxy,0,1].imag,
+                                                          None,
+                                                          cxy, self.mted)
                                 reryx = self.plot_errorbar(axpxy,
-                                                           period[nzyx],
-                                                           resp_z[
-                                                               nzyx, 1, 0].imag,
-                                                           resp_z_err[
-                                                               nzyx, 1, 0].imag,
-                                                           cyx, self.mtmd)
+                                                          period[nzyx],
+                                                          resp_z[nzyx,1,0].imag,
+                                                          None,
+                                                          cyx, self.mtmd)
                                 reryy = self.plot_errorbar(axpxx,
-                                                           period[nzyy],
-                                                           resp_z[
-                                                               nzyy, 1, 1].imag,
-                                                           resp_z_err[
-                                                               nzyy, 1, 1].imag,
-                                                           cyx, self.mtmd)
+                                                          period[nzyy],
+                                                          resp_z[nzyy,1,1].imag,
+                                                          None,
+                                                          cyx, self.mtmd)
                             line_list[0] += [rerxy[0], reryx[0]]
                             line_list[1] += [rerxx[0], reryy[0]]
-                            label_list[0] += ['$Z^m_{xy}$ ' +
-                                              'rms={0:.2f}'.format(rms_xy),
-                                              '$Z^m_{yx}$ ' +
+                            label_list[0] += ['$Z^m_{xy}$ '+
+                                               'rms={0:.2f}'.format(rms_xy),
+                                              '$Z^m_{yx}$ '+
                                               'rms={0:.2f}'.format(rms_yx)]
-                            label_list[1] += ['$Z^m_{xx}$ ' +
-                                              'rms={0:.2f}'.format(rms_xx),
-                                              '$Z^m_{yy}$ ' +
+                            label_list[1] += ['$Z^m_{xx}$ '+
+                                               'rms={0:.2f}'.format(rms_xx),
+                                              '$Z^m_{yy}$ '+
                                               'rms={0:.2f}'.format(rms_yy)]
 
-                # make legends
+                #make legends
                 if self.plot_style == 1:
                     for aa, ax in enumerate(ax_list[0:self.plot_component]):
                         ax.legend(line_list[aa],
@@ -4005,20 +3913,20 @@ class PlotResponse(object):
                                   labelspacing=self.legend_label_spacing,
                                   handletextpad=self.legend_handle_text_pad,
                                   borderpad=self.legend_border_pad,
-                                  prop={'size': max([self.font_size / nr, 5])})
+                                  prop={'size':max([self.font_size/nr, 5])})
                 if self.plot_style == 2:
                     if self.plot_component == 2:
                         axrxy.legend(line_list,
-                                     label_list,
-                                     loc=self.legend_loc,
-                                     markerscale=self.legend_marker_scale,
-                                     borderaxespad=self.legend_border_axes_pad,
-                                     labelspacing=self.legend_label_spacing,
-                                     handletextpad=self.legend_handle_text_pad,
-                                     borderpad=self.legend_border_pad,
-                                     prop={'size': max([self.font_size / nr, 5])})
+                                      label_list,
+                                      loc=self.legend_loc,
+                                      markerscale=self.legend_marker_scale,
+                                      borderaxespad=self.legend_border_axes_pad,
+                                      labelspacing=self.legend_label_spacing,
+                                      handletextpad=self.legend_handle_text_pad,
+                                      borderpad=self.legend_border_pad,
+                                      prop={'size':max([self.font_size/nr, 5])})
                     else:
-                        for aa, ax in enumerate(ax_list[0:self.plot_component / 2]):
+                        for aa, ax in enumerate(ax_list[0:self.plot_component/2]):
                             ax.legend(line_list[aa],
                                       label_list[aa],
                                       loc=self.legend_loc,
@@ -4027,8 +3935,7 @@ class PlotResponse(object):
                                       labelspacing=self.legend_label_spacing,
                                       handletextpad=self.legend_handle_text_pad,
                                       borderpad=self.legend_border_pad,
-                                      prop={'size': max([self.font_size / nr, 5])})
-
+                                      prop={'size':max([self.font_size/nr, 5])})
     def redraw_plot(self):
         """
         redraw plot if parameters were changed
@@ -4050,7 +3957,7 @@ class PlotResponse(object):
         self.plot()
 
     def save_figure(self, save_fn, file_format='pdf', orientation='portrait',
-                    fig_dpi=None, close_fig='y'):
+                  fig_dpi=None, close_fig='y'):
         """
         save_plot will save the figure to save_fn.
 
@@ -4104,10 +4011,10 @@ class PlotResponse(object):
                              orientation=orientation, bbox_inches='tight')
 
         else:
-            save_fn = os.path.join(save_fn, '_L2.' +
-                                   file_format)
+            save_fn = os.path.join(save_fn, '_L2.'+
+                                    file_format)
             self.fig.savefig(save_fn, dpi=fig_dpi, format=file_format,
-                             orientation=orientation, bbox_inches='tight')
+                        orientation=orientation, bbox_inches='tight')
 
         if close_fig == 'y':
             plt.clf()
@@ -4117,7 +4024,7 @@ class PlotResponse(object):
             pass
 
         self.fig_fn = save_fn
-        print 'Saved figure to: ' + self.fig_fn
+        print 'Saved figure to: '+self.fig_fn
 
     def update_plot(self):
         """
@@ -4150,8 +4057,6 @@ class PlotResponse(object):
 #==============================================================================
 # plot depth slices
 #==============================================================================
-
-
 class PlotDepthSlice(object):
     """
     Plots depth slices of resistivity model
@@ -4270,11 +4175,11 @@ class PlotDepthSlice(object):
 
         self.depth_index = kwargs.pop('depth_index', None)
         self.map_scale = kwargs.pop('map_scale', 'km')
-        # make map scale
-        if self.map_scale == 'km':
-            self.dscale = 1000.
-        elif self.map_scale == 'm':
-            self.dscale = 1.
+        #make map scale
+        if self.map_scale=='km':
+            self.dscale=1000.
+        elif self.map_scale=='m':
+            self.dscale=1.
         self.ew_limits = kwargs.pop('ew_limits', None)
         self.ns_limits = kwargs.pop('ns_limits', None)
 
@@ -4289,7 +4194,7 @@ class PlotDepthSlice(object):
         self.xminorticks = kwargs.pop('xminorticks', 1000)
         self.yminorticks = kwargs.pop('yminorticks', 1000)
 
-        self.climits = kwargs.pop('climits', (0, 4))
+        self.climits = kwargs.pop('climits', (0,4))
         self.cmap = kwargs.pop('cmap', 'jet_r')
         self.font_size = kwargs.pop('font_size', 8)
 
@@ -4306,7 +4211,7 @@ class PlotDepthSlice(object):
         self.res_model = None
         self.grid_east = None
         self.grid_north = None
-        self.grid_z = None
+        self.grid_z  = None
 
         self.nodes_east = None
         self.nodes_north = None
@@ -4332,23 +4237,23 @@ class PlotDepthSlice(object):
             if os.path.isfile(self.model_fn) == True:
                 wsmodel = WSModel(self.model_fn)
                 self.res_model = wsmodel.res_model
-                self.grid_east = wsmodel.grid_east / self.dscale
-                self.grid_north = wsmodel.grid_north / self.dscale
-                self.grid_z = wsmodel.grid_z / self.dscale
-                self.nodes_east = wsmodel.nodes_east / self.dscale
-                self.nodes_north = wsmodel.nodes_north / self.dscale
-                self.nodes_z = wsmodel.nodes_z / self.dscale
+                self.grid_east = wsmodel.grid_east/self.dscale
+                self.grid_north = wsmodel.grid_north/self.dscale
+                self.grid_z = wsmodel.grid_z/self.dscale
+                self.nodes_east = wsmodel.nodes_east/self.dscale
+                self.nodes_north = wsmodel.nodes_north/self.dscale
+                self.nodes_z = wsmodel.nodes_z/self.dscale
             else:
                 raise mtex.MTpyError_file_handling(
-                    '{0} does not exist, check path'.format(self.model_fn))
+                        '{0} does not exist, check path'.format(self.model_fn))
 
         #--> read in data file to get station locations
         if self.data_fn is not None:
             if os.path.isfile(self.data_fn) == True:
                 wsdata = WSData()
                 wsdata.read_data_file(self.data_fn)
-                self.station_east = wsdata.data['east'] / self.dscale
-                self.station_north = wsdata.data['north'] / self.dscale
+                self.station_east = wsdata.data['east']/self.dscale
+                self.station_north = wsdata.data['north']/self.dscale
                 self.station_names = wsdata.data['station']
             else:
                 print 'Could not find data file {0}'.format(self.data_fn)
@@ -4358,8 +4263,8 @@ class PlotDepthSlice(object):
             if os.path.isfile(self.station_fn) == True:
                 wsstations = WSStation(self.station_fn)
                 wsstations.read_station_file()
-                self.station_east = wsstations.east / self.dscale
-                self.station_north = wsstations.north / self.dscale
+                self.station_east = wsstations.east/self.dscale
+                self.station_north = wsstations.north/self.dscale
                 self.station_names = wsstations.names
             else:
                 print 'Could not find station file {0}'.format(self.station_fn)
@@ -4369,23 +4274,22 @@ class PlotDepthSlice(object):
             if os.path.isfile(self.initial_fn) == True:
                 wsmesh = WSMesh()
                 wsmesh.read_initial_file(self.initial_fn)
-                self.grid_east = wsmesh.grid_east / self.dscale
-                self.grid_north = wsmesh.grid_north / self.dscale
-                self.grid_z = wsmesh.grid_z / self.dscale
-                self.nodes_east = wsmesh.nodes_east / self.dscale
-                self.nodes_north = wsmesh.nodes_north / self.dscale
-                self.nodes_z = wsmesh.nodes_z / self.dscale
+                self.grid_east = wsmesh.grid_east/self.dscale
+                self.grid_north = wsmesh.grid_north/self.dscale
+                self.grid_z = wsmesh.grid_z/self.dscale
+                self.nodes_east = wsmesh.nodes_east/self.dscale
+                self.nodes_north = wsmesh.nodes_north/self.dscale
+                self.nodes_z = wsmesh.nodes_z/self.dscale
 
-                # need to convert index values to resistivity values
-                rdict = dict([(ii, res)
-                              for ii, res in enumerate(wsmesh.res_list, 1)])
+                #need to convert index values to resistivity values
+                rdict = dict([(ii,res) for ii,res in enumerate(wsmesh.res_list,1)])
 
                 for ii in range(len(wsmesh.res_list)):
-                    self.res_model[np.where(wsmesh.res_model == ii + 1)] = \
-                        rdict[ii + 1]
+                    self.res_model[np.where(wsmesh.res_model==ii+1)] = \
+                                                                    rdict[ii+1]
             else:
                 raise mtex.MTpyError_file_handling(
-                    '{0} does not exist, check path'.format(self.initial_fn))
+                     '{0} does not exist, check path'.format(self.initial_fn))
 
         if self.initial_fn is None and self.model_fn is None:
             raise mtex.MTpyError_inputarguments('Need to input either a model'
@@ -4398,22 +4302,22 @@ class PlotDepthSlice(object):
         #--> get information from files
         self.read_files()
 
-        fdict = {'size': self.font_size + 2, 'weight': 'bold'}
+        fdict = {'size':self.font_size+2, 'weight':'bold'}
 
-        cblabeldict = {-2: '$10^{-3}$', -1: '$10^{-1}$', 0: '$10^{0}$', 1: '$10^{1}$',
-                       2: '$10^{2}$', 3: '$10^{3}$', 4: '$10^{4}$', 5: '$10^{5}$',
-                       6: '$10^{6}$', 7: '$10^{7}$', 8: '$10^{8}$'}
+        cblabeldict={-2:'$10^{-3}$',-1:'$10^{-1}$',0:'$10^{0}$',1:'$10^{1}$',
+                     2:'$10^{2}$',3:'$10^{3}$',4:'$10^{4}$',5:'$10^{5}$',
+                     6:'$10^{6}$',7:'$10^{7}$',8:'$10^{8}$'}
 
-        # create an list of depth slices to plot
+        #create an list of depth slices to plot
         if self.depth_index == None:
             zrange = range(self.grid_z.shape[0])
         elif type(self.depth_index) is int:
             zrange = [self.depth_index]
         elif type(self.depth_index) is list or \
-                type(self.depth_index) is np.ndarray:
+             type(self.depth_index) is np.ndarray:
             zrange = self.depth_index
 
-        # set the limits of the plot
+        #set the limits of the plot
         if self.ew_limits == None:
             if self.station_east is not None:
                 xlimits = (np.floor(self.station_east.min()),
@@ -4432,7 +4336,8 @@ class PlotDepthSlice(object):
         else:
             ylimits = self.ns_limits
 
-        # make a mesh grid of north and east
+
+        #make a mesh grid of north and east
         self.mesh_east, self.mesh_north = np.meshgrid(self.grid_east,
                                                       self.grid_north,
                                                       indexing='ij')
@@ -4442,7 +4347,7 @@ class PlotDepthSlice(object):
         #--> plot depths into individual figures
         for ii in zrange:
             depth = '{0:.3f} ({1})'.format(self.grid_z[ii],
-                                           self.map_scale)
+                                     self.map_scale)
             fig = plt.figure(depth, figsize=self.fig_size, dpi=self.fig_dpi)
             plt.clf()
             ax1 = fig.add_subplot(1, 1, 1, aspect=self.fig_aspect)
@@ -4454,26 +4359,24 @@ class PlotDepthSlice(object):
                                        vmin=self.climits[0],
                                        vmax=self.climits[1])
 
-            # plot the stations
+            #plot the stations
             if self.station_east is not None:
                 for ee, nn in zip(self.station_east, self.station_north):
                     ax1.text(ee, nn, '*',
                              verticalalignment='center',
                              horizontalalignment='center',
-                             fontdict={'size': 5, 'weight': 'bold'})
+                             fontdict={'size':5, 'weight':'bold'})
 
-            # set axis properties
+            #set axis properties
             ax1.set_xlim(xlimits)
             ax1.set_ylim(ylimits)
-            ax1.xaxis.set_minor_locator(
-                MultipleLocator(self.xminorticks / self.dscale))
-            ax1.yaxis.set_minor_locator(
-                MultipleLocator(self.yminorticks / self.dscale))
-            ax1.set_ylabel('Northing (' + self.map_scale + ')', fontdict=fdict)
-            ax1.set_xlabel('Easting (' + self.map_scale + ')', fontdict=fdict)
+            ax1.xaxis.set_minor_locator(MultipleLocator(self.xminorticks/self.dscale))
+            ax1.yaxis.set_minor_locator(MultipleLocator(self.yminorticks/self.dscale))
+            ax1.set_ylabel('Northing ('+self.map_scale+')',fontdict=fdict)
+            ax1.set_xlabel('Easting ('+self.map_scale+')',fontdict=fdict)
             ax1.set_title('Depth = {0}'.format(depth), fontdict=fdict)
 
-            # plot the grid if desired
+            #plot the grid if desired
             if self.plot_grid == 'y':
                 east_line_xlist = []
                 east_line_ylist = []
@@ -4484,9 +4387,9 @@ class PlotDepthSlice(object):
                                             self.grid_north.max()])
                     east_line_ylist.append(None)
                 ax1.plot(east_line_xlist,
-                         east_line_ylist,
-                         lw=.25,
-                         color='k')
+                              east_line_ylist,
+                              lw=.25,
+                              color='k')
 
                 north_line_xlist = []
                 north_line_ylist = []
@@ -4497,19 +4400,20 @@ class PlotDepthSlice(object):
                     north_line_ylist.extend([yy, yy])
                     north_line_ylist.append(None)
                 ax1.plot(north_line_xlist,
-                         north_line_ylist,
-                         lw=.25,
-                         color='k')
+                              north_line_ylist,
+                              lw=.25,
+                              color='k')
 
-            # plot the colorbar
+
+            #plot the colorbar
             if self.cb_location is None:
                 if self.cb_orientation == 'horizontal':
-                    self.cb_location = (ax1.axes.figbox.bounds[3] - .225,
-                                        ax1.axes.figbox.bounds[1] + .05, .3, .025)
+                    self.cb_location = (ax1.axes.figbox.bounds[3]-.225,
+                                        ax1.axes.figbox.bounds[1]+.05,.3,.025)
 
                 elif self.cb_orientation == 'vertical':
-                    self.cb_location = ((ax1.axes.figbox.bounds[2] - .15,
-                                         ax1.axes.figbox.bounds[3] - .21, .025, .3))
+                    self.cb_location = ((ax1.axes.figbox.bounds[2]-.15,
+                                        ax1.axes.figbox.bounds[3]-.21,.025,.3))
 
             ax2 = fig.add_axes(self.cb_location)
 
@@ -4521,20 +4425,21 @@ class PlotDepthSlice(object):
 
             if self.cb_orientation == 'horizontal':
                 cb.ax.xaxis.set_label_position('top')
-                cb.ax.xaxis.set_label_coords(.5, 1.3)
+                cb.ax.xaxis.set_label_coords(.5,1.3)
+
 
             elif self.cb_orientation == 'vertical':
                 cb.ax.yaxis.set_label_position('right')
-                cb.ax.yaxis.set_label_coords(1.25, .5)
+                cb.ax.yaxis.set_label_coords(1.25,.5)
                 cb.ax.yaxis.tick_left()
-                cb.ax.tick_params(axis='y', direction='in')
+                cb.ax.tick_params(axis='y',direction='in')
 
             cb.set_label('Resistivity ($\Omega \cdot$m)',
-                         fontdict={'size': self.font_size + 1})
-            cb.set_ticks(np.arange(self.climits[0], self.climits[1] + 1))
+                         fontdict={'size':self.font_size+1})
+            cb.set_ticks(np.arange(self.climits[0],self.climits[1]+1))
             cb.set_ticklabels([cblabeldict[cc]
-                               for cc in np.arange(self.climits[0],
-                                                   self.climits[1] + 1)])
+                                for cc in np.arange(self.climits[0],
+                                                    self.climits[1]+1)])
 
             self.fig_list.append(fig)
 
@@ -4542,7 +4447,7 @@ class PlotDepthSlice(object):
             if self.save_plots == 'y':
 
                 fig.savefig(os.path.join(self.save_path,
-                                         "Depth_{}_{:.4f}.png".format(ii, self.grid_z[ii])),
+                            "Depth_{}_{:.4f}.png".format(ii, self.grid_z[ii])),
                             dpi=self.fig_dpi, bbox_inches='tight')
                 fig.clear()
                 plt.close()
@@ -4601,8 +4506,6 @@ class PlotDepthSlice(object):
 #==============================================================================
 # plot phase tensors
 #==============================================================================
-
-
 class PlotPTMaps(mtplottools.MTEllipse):
     """
     Plot phase tensor maps including residual pt if response file is input.
@@ -4740,11 +4643,11 @@ class PlotPTMaps(mtplottools.MTEllipse):
         self.plot_period_list = kwargs.pop('plot_period_list', None)
 
         self.map_scale = kwargs.pop('map_scale', 'km')
-        # make map scale
-        if self.map_scale == 'km':
-            self.dscale = 1000.
-        elif self.map_scale == 'm':
-            self.dscale = 1.
+        #make map scale
+        if self.map_scale=='km':
+            self.dscale=1000.
+        elif self.map_scale=='m':
+            self.dscale=1.
         self.ew_limits = kwargs.pop('ew_limits', None)
         self.ns_limits = kwargs.pop('ns_limits', None)
 
@@ -4771,7 +4674,8 @@ class PlotPTMaps(mtplottools.MTEllipse):
         self.cb_pt_pad = kwargs.pop('cb_pt_pad', .90)
         self.cb_res_pad = kwargs.pop('cb_res_pad', 1.22)
 
-        self.res_limits = kwargs.pop('res_limits', (0, 4))
+
+        self.res_limits = kwargs.pop('res_limits', (0,4))
         self.res_cmap = kwargs.pop('res_cmap', 'jet_r')
 
         #--> set the ellipse properties -------------------
@@ -4788,7 +4692,7 @@ class PlotPTMaps(mtplottools.MTEllipse):
         self.res_model = None
         self.grid_east = None
         self.grid_north = None
-        self.grid_z = None
+        self.grid_z  = None
 
         self.nodes_east = None
         self.nodes_north = None
@@ -4821,15 +4725,15 @@ class PlotPTMaps(mtplottools.MTEllipse):
         wsdata.read_data_file(self.data_fn, station_fn=self.station_fn)
         self.data = wsdata.z_data
         self.period_list = wsdata.period_list
-        self.station_east = wsdata.station_east / self.dscale
-        self.station_north = wsdata.station_north / self.dscale
+        self.station_east = wsdata.station_east/self.dscale
+        self.station_north = wsdata.station_north/self.dscale
         self.station_names = wsdata.station_names
 
         if self.plot_period_list is None:
             self.plot_period_list = self.period_list
         else:
             if type(self.plot_period_list) is list:
-                # check if entries are index values or actual periods
+                #check if entries are index values or actual periods
                 if type(self.plot_period_list[0]) is int:
                     self.plot_period_list = [self.period_list[ii]
                                              for ii in self.plot_period_list]
@@ -4842,9 +4746,9 @@ class PlotPTMaps(mtplottools.MTEllipse):
         if self.model_fn is not None:
             wsmodel = WSModel(self.model_fn)
             self.res_model = wsmodel.res_model
-            self.grid_east = wsmodel.grid_east / self.dscale
-            self.grid_north = wsmodel.grid_north / self.dscale
-            self.grid_z = wsmodel.grid_z / self.dscale
+            self.grid_east = wsmodel.grid_east/self.dscale
+            self.grid_north = wsmodel.grid_north/self.dscale
+            self.grid_z = wsmodel.grid_z/self.dscale
             self.mesh_east, self.mesh_north = np.meshgrid(self.grid_east,
                                                           self.grid_north,
                                                           indexing='ij')
@@ -4853,6 +4757,9 @@ class PlotPTMaps(mtplottools.MTEllipse):
         if self.resp_fn is not None:
             wsresp = WSResponse(self.resp_fn)
             self.resp = wsresp.z_resp
+
+
+
 
     def plot(self):
         """
@@ -4893,9 +4800,9 @@ class PlotPTMaps(mtplottools.MTEllipse):
         gs = gridspec.GridSpec(1, 3, hspace=self.subplot_hspace,
                                wspace=self.subplot_wspace)
 
-        font_dict = {'size': self.font_size + 2, 'weight': 'bold'}
+        font_dict = {'size':self.font_size+2, 'weight':'bold'}
         n_stations = self.data.shape[0]
-        # set some local parameters
+        #set some local parameters
         ckmin = float(self.ellipse_range[0])
         ckmax = float(self.ellipse_range[1])
         try:
@@ -4905,23 +4812,23 @@ class PlotPTMaps(mtplottools.MTEllipse):
                 raise ValueError('Need to input range as (min, max, step)')
             else:
                 ckstep = 3
-        nseg = float((ckmax - ckmin) / (2 * ckstep))
+        nseg = float((ckmax-ckmin)/(2*ckstep))
 
         if self.ew_limits == None:
             if self.station_east is not None:
-                self.ew_limits = (np.floor(self.station_east.min()) -
-                                  self.pad_east,
-                                  np.ceil(self.station_east.max()) +
-                                  self.pad_east)
+                self.ew_limits = (np.floor(self.station_east.min())-
+                                                      self.pad_east,
+                                  np.ceil(self.station_east.max())+
+                                                      self.pad_east)
             else:
                 self.ew_limits = (self.grid_east[5], self.grid_east[-5])
 
         if self.ns_limits == None:
             if self.station_north is not None:
-                self.ns_limits = (np.floor(self.station_north.min()) -
-                                  self.pad_north,
-                                  np.ceil(self.station_north.max()) +
-                                  self.pad_north)
+                self.ns_limits = (np.floor(self.station_north.min())-
+                                                        self.pad_north,
+                                  np.ceil(self.station_north.max())+
+                                                        self.pad_north)
             else:
                 self.ns_limits = (self.grid_north[5], self.grid_north[-5])
 
@@ -4941,7 +4848,7 @@ class PlotPTMaps(mtplottools.MTEllipse):
                 axd = fig.add_subplot(gs[0, :], aspect='equal')
                 ax_list = [axd]
 
-            # plot model below the phase tensors
+            #plot model below the phase tensors
             if self.model_fn is not None:
                 approx_depth, d_index = estimate_skin_depth(self.res_model,
                                                             self.grid_z,
@@ -4950,11 +4857,12 @@ class PlotPTMaps(mtplottools.MTEllipse):
                 for ax in ax_list:
                     plot_res = np.log10(self.res_model[:, :, d_index].T)
                     ax.pcolormesh(self.mesh_east,
-                                  self.mesh_north,
-                                  plot_res,
-                                  cmap=self.res_cmap,
-                                  vmin=self.res_limits[0],
-                                  vmax=self.res_limits[1])
+                                   self.mesh_north,
+                                   plot_res,
+                                   cmap=self.res_cmap,
+                                   vmin=self.res_limits[0],
+                                   vmax=self.res_limits[1])
+
 
             #--> get phase tensors
             pt = mtpt.PhaseTensor(z_array=self.data[:, ff],
@@ -4964,16 +4872,16 @@ class PlotPTMaps(mtplottools.MTEllipse):
                                        freq=np.repeat(per, n_stations))
                 rpt = mtpt.ResidualPhaseTensor(pt_object1=pt, pt_object2=mpt)
                 rpt = rpt.residual_pt
-                rcarray = np.sqrt(abs(rpt.phimin[0] * rpt.phimax[0]))
+                rcarray = np.sqrt(abs(rpt.phimin[0]*rpt.phimax[0]))
                 rcmin = np.floor(rcarray.min())
                 rcmax = np.floor(rcarray.max())
 
             #--> get color array
             if self.ellipse_cmap == 'mt_seg_bl2wh2rd':
-                bounds = np.arange(ckmin, ckmax + ckstep, ckstep)
-                nseg = float((ckmax - ckmin) / (2 * ckstep))
+                bounds = np.arange(ckmin, ckmax+ckstep, ckstep)
+                nseg = float((ckmax-ckmin)/(2*ckstep))
 
-            # get the properties to color the ellipses by
+            #get the properties to color the ellipses by
             if self.ellipse_colorby == 'phiminang' or \
                self.ellipse_colorby == 'phimin':
                 colorarray = pt.phimin[0]
@@ -4981,12 +4889,13 @@ class PlotPTMaps(mtplottools.MTEllipse):
                     mcarray = mpt.phimin[0]
 
             elif self.ellipse_colorby == 'phidet':
-                colorarray = np.sqrt(abs(pt.det[0])) * (180 / np.pi)
-                if self.resp is not None:
-                    mcarray = np.sqrt(abs(mpt.det[0])) * (180 / np.pi)
+                 colorarray = np.sqrt(abs(pt.det[0]))*(180/np.pi)
+                 if self.resp is not None:
+                    mcarray = np.sqrt(abs(mpt.det[0]))*(180/np.pi)
+
 
             elif self.ellipse_colorby == 'skew' or\
-                    self.ellipse_colorby == 'skew_seg':
+                 self.ellipse_colorby == 'skew_seg':
                 colorarray = pt.beta[0]
                 if self.resp is not None:
                     mcarray = mpt.beta[0]
@@ -4997,93 +4906,92 @@ class PlotPTMaps(mtplottools.MTEllipse):
                     mcarray = mpt.ellipticity[0]
 
             else:
-                raise NameError(self.ellipse_colorby + ' is not supported')
+                raise NameError(self.ellipse_colorby+' is not supported')
+
 
             #--> plot phase tensor ellipses for each stations
             for jj in range(n_stations):
                 #-----------plot data phase tensors---------------
-                eheight = pt.phimin[0][jj] / \
-                    pt.phimax[0].max() * self.ellipse_size
-                ewidth = pt.phimax[0][jj] / \
-                    pt.phimax[0].max() * self.ellipse_size
+                eheight = pt.phimin[0][jj]/pt.phimax[0].max()*self.ellipse_size
+                ewidth = pt.phimax[0][jj]/pt.phimax[0].max()*self.ellipse_size
 
                 ellipse = Ellipse((self.station_east[jj],
                                    self.station_north[jj]),
-                                  width=ewidth,
-                                  height=eheight,
-                                  angle=90 - pt.azimuth[0][jj])
+                                   width=ewidth,
+                                   height=eheight,
+                                   angle=90-pt.azimuth[0][jj])
 
-                # get ellipse color
-                if self.ellipse_cmap.find('seg') > 0:
+                #get ellipse color
+                if self.ellipse_cmap.find('seg')>0:
                     ellipse.set_facecolor(mtcl.get_plot_color(colorarray[jj],
-                                                              self.ellipse_colorby,
-                                                              self.ellipse_cmap,
-                                                              ckmin,
-                                                              ckmax,
-                                                              bounds=bounds))
+                                                         self.ellipse_colorby,
+                                                         self.ellipse_cmap,
+                                                         ckmin,
+                                                         ckmax,
+                                                         bounds=bounds))
                 else:
                     ellipse.set_facecolor(mtcl.get_plot_color(colorarray[jj],
-                                                              self.ellipse_colorby,
-                                                              self.ellipse_cmap,
-                                                              ckmin,
-                                                              ckmax))
+                                                         self.ellipse_colorby,
+                                                         self.ellipse_cmap,
+                                                         ckmin,
+                                                         ckmax))
 
                 axd.add_artist(ellipse)
                 if self.resp is not None:
                     #-----------plot response phase tensors---------------
-                    eheight = mpt.phimin[0][jj] / mpt.phimax[0].max() *\
-                        self.ellipse_size
-                    ewidth = mpt.phimax[0][jj] / mpt.phimax[0].max() *\
-                        self.ellipse_size
+                    eheight = mpt.phimin[0][jj]/mpt.phimax[0].max()*\
+                              self.ellipse_size
+                    ewidth = mpt.phimax[0][jj]/mpt.phimax[0].max()*\
+                              self.ellipse_size
 
                     ellipsem = Ellipse((self.station_east[jj],
-                                        self.station_north[jj]),
+                                       self.station_north[jj]),
                                        width=ewidth,
                                        height=eheight,
-                                       angle=90 - mpt.azimuth[0][jj])
+                                       angle=90-mpt.azimuth[0][jj])
 
-                    # get ellipse color
-                    if self.ellipse_cmap.find('seg') > 0:
+                    #get ellipse color
+                    if self.ellipse_cmap.find('seg')>0:
                         ellipsem.set_facecolor(mtcl.get_plot_color(mcarray[jj],
-                                                                   self.ellipse_colorby,
-                                                                   self.ellipse_cmap,
-                                                                   ckmin,
-                                                                   ckmax,
-                                                                   bounds=bounds))
+                                                         self.ellipse_colorby,
+                                                         self.ellipse_cmap,
+                                                         ckmin,
+                                                         ckmax,
+                                                         bounds=bounds))
                     else:
                         ellipsem.set_facecolor(mtcl.get_plot_color(mcarray[jj],
-                                                                   self.ellipse_colorby,
-                                                                   self.ellipse_cmap,
-                                                                   ckmin,
-                                                                   ckmax))
+                                                         self.ellipse_colorby,
+                                                         self.ellipse_cmap,
+                                                         ckmin,
+                                                         ckmax))
 
                     axm.add_artist(ellipsem)
                     #-----------plot residual phase tensors---------------
-                    eheight = rpt.phimin[0][jj] / rpt.phimax[0].max() *\
-                        self.ellipse_size
-                    ewidth = rpt.phimax[0][jj] / rpt.phimax[0].max() *\
-                        self.ellipse_size
+                    eheight = rpt.phimin[0][jj]/rpt.phimax[0].max()*\
+                                self.ellipse_size
+                    ewidth = rpt.phimax[0][jj]/rpt.phimax[0].max()*\
+                                self.ellipse_size
 
                     ellipser = Ellipse((self.station_east[jj],
-                                        self.station_north[jj]),
+                                       self.station_north[jj]),
                                        width=ewidth,
                                        height=eheight,
                                        angle=rpt.azimuth[0][jj])
 
-                    # get ellipse color
-                    if self.ellipse_cmap.find('seg') > 0:
+                    #get ellipse color
+                    if self.ellipse_cmap.find('seg')>0:
                         ellipser.set_facecolor(mtcl.get_plot_color(rcarray[jj],
-                                                                   self.ellipse_colorby,
-                                                                   self.residual_cmap,
-                                                                   rcmin,
-                                                                   rcmax,
-                                                                   bounds=bounds))
+                                                     self.ellipse_colorby,
+                                                     self.residual_cmap,
+                                                     rcmin,
+                                                     rcmax,
+                                                     bounds=bounds))
                     else:
                         ellipser.set_facecolor(mtcl.get_plot_color(rcarray[jj],
-                                                                   self.ellipse_colorby,
-                                                                   self.residual_cmap,
-                                                                   rcmin,
-                                                                   rcmax))
+                                                     self.ellipse_colorby,
+                                                     self.residual_cmap,
+                                                     rcmin,
+                                                     rcmax))
 
                     axr.add_artist(ellipser)
 
@@ -5095,13 +5003,13 @@ class PlotPTMaps(mtplottools.MTEllipse):
                            fontdict=font_dict)
             axd.set_ylabel('Northing ({0})'.format(self.map_scale),
                            fontdict=font_dict)
-            # make a colorbar for phase tensors
+            #make a colorbar for phase tensors
             #bb = axd.axes.get_position().bounds
             bb = axd.get_position().bounds
-            y1 = .25 * (2 + (self.ns_limits[1] - self.ns_limits[0]) /
-                        (self.ew_limits[1] - self.ew_limits[0]))
-            cb_location = (3.35 * bb[2] / 5 + bb[0],
-                           y1 * self.cb_pt_pad, .295 * bb[2], .02)
+            y1 = .25*(2+(self.ns_limits[1]-self.ns_limits[0])/
+                     (self.ew_limits[1]-self.ew_limits[0]))
+            cb_location = (3.35*bb[2]/5+bb[0],
+                            y1*self.cb_pt_pad, .295*bb[2], .02)
             cbaxd = fig.add_axes(cb_location)
             cbd = mcb.ColorbarBase(cbaxd,
                                    cmap=mtcl.cmapdict[self.ellipse_cmap],
@@ -5111,16 +5019,16 @@ class PlotPTMaps(mtplottools.MTEllipse):
             cbd.ax.xaxis.set_label_position('top')
             cbd.ax.xaxis.set_label_coords(.5, 1.75)
             cbd.set_label(mtplottools.ckdict[self.ellipse_colorby])
-            cbd.set_ticks(np.arange(ckmin, ckmax + self.cb_tick_step,
+            cbd.set_ticks(np.arange(ckmin, ckmax+self.cb_tick_step,
                                     self.cb_tick_step))
 
-            axd.text(self.ew_limits[0] * .95,
-                     self.ns_limits[1] * .95,
+            axd.text(self.ew_limits[0]*.95,
+                     self.ns_limits[1]*.95,
                      'Data',
                      horizontalalignment='left',
                      verticalalignment='top',
-                     bbox={'facecolor': 'white'},
-                     fontdict={'size': self.font_size + 1})
+                     bbox={'facecolor':'white'},
+                     fontdict={'size':self.font_size+1})
 
             #Model and residual
             if self.resp is not None:
@@ -5128,64 +5036,62 @@ class PlotPTMaps(mtplottools.MTEllipse):
                     ax.set_xlim(self.ew_limits)
                     ax.set_ylim(self.ns_limits)
                     ax.set_xlabel('Easting ({0})'.format(self.map_scale),
-                                  fontdict=font_dict)
+                                   fontdict=font_dict)
                     plt.setp(ax.yaxis.get_ticklabels(), visible=False)
-                    # make a colorbar ontop of axis
+                    #make a colorbar ontop of axis
                     bb = ax.axes.get_position().bounds
-                    y1 = .25 * (2 + (self.ns_limits[1] - self.ns_limits[0]) /
-                                (self.ew_limits[1] - self.ew_limits[0]))
-                    cb_location = (3.35 * bb[2] / 5 + bb[0],
-                                   y1 * self.cb_pt_pad, .295 * bb[2], .02)
+                    y1 = .25*(2+(self.ns_limits[1]-self.ns_limits[0])/
+                     (self.ew_limits[1]-self.ew_limits[0]))
+                    cb_location = (3.35*bb[2]/5+bb[0],
+                                   y1*self.cb_pt_pad, .295*bb[2], .02)
                     cbax = fig.add_axes(cb_location)
                     if aa == 0:
                         cb = mcb.ColorbarBase(cbax,
-                                              cmap=mtcl.cmapdict[
-                                                  self.ellipse_cmap],
+                                              cmap=mtcl.cmapdict[self.ellipse_cmap],
                                               norm=Normalize(vmin=ckmin,
                                                              vmax=ckmax),
-                                              orientation='horizontal')
+                                               orientation='horizontal')
                         cb.ax.xaxis.set_label_position('top')
                         cb.ax.xaxis.set_label_coords(.5, 1.75)
                         cb.set_label(mtplottools.ckdict[self.ellipse_colorby])
-                        cb.set_ticks(np.arange(ckmin, ckmax + self.cb_tick_step,
-                                               self.cb_tick_step))
-                        ax.text(self.ew_limits[0] * .95,
-                                self.ns_limits[1] * .95,
+                        cb.set_ticks(np.arange(ckmin, ckmax+self.cb_tick_step,
+                                    self.cb_tick_step))
+                        ax.text(self.ew_limits[0]*.95,
+                                self.ns_limits[1]*.95,
                                 'Model',
                                 horizontalalignment='left',
                                 verticalalignment='top',
-                                bbox={'facecolor': 'white'},
-                                fontdict={'size': self.font_size + 1})
+                                bbox={'facecolor':'white'},
+                                 fontdict={'size':self.font_size+1})
                     else:
                         cb = mcb.ColorbarBase(cbax,
-                                              cmap=mtcl.cmapdict[
-                                                  self.residual_cmap],
-                                              norm=Normalize(vmin=rcmin,
-                                                             vmax=rcmax),
-                                              orientation='horizontal')
+                                              cmap=mtcl.cmapdict[self.residual_cmap],
+                                               norm=Normalize(vmin=rcmin,
+                                                              vmax=rcmax),
+                                               orientation='horizontal')
                         cb.ax.xaxis.set_label_position('top')
                         cb.ax.xaxis.set_label_coords(.5, 1.75)
                         cb.set_label(r"$\sqrt{\Phi_{min} \Phi_{max}}$")
                         cb_ticks = np.arange(rcmin,
-                                             rcmax + self.cb_residual_tick_step,
+                                             rcmax+self.cb_residual_tick_step,
                                              self.cb_residual_tick_step)
                         cb.set_ticks(cb_ticks)
-                        ax.text(self.ew_limits[0] * .95,
-                                self.ns_limits[1] * .95,
+                        ax.text(self.ew_limits[0]*.95,
+                                self.ns_limits[1]*.95,
                                 'Residual',
                                 horizontalalignment='left',
                                 verticalalignment='top',
-                                bbox={'facecolor': 'white'},
-                                fontdict={'size': self.font_size + 1})
+                                bbox={'facecolor':'white'},
+                                fontdict={'size':self.font_size+1})
 
             if self.model_fn is not None:
                 for ax in ax_list:
                     ax.tick_params(direction='out')
                     bb = ax.axes.get_position().bounds
-                    y1 = .25 * (2 - (self.ns_limits[1] - self.ns_limits[0]) /
-                                (self.ew_limits[1] - self.ew_limits[0]))
-                    cb_position = (3.0 * bb[2] / 5 + bb[0],
-                                   y1 * self.cb_res_pad, .35 * bb[2], .02)
+                    y1 = .25*(2-(self.ns_limits[1]-self.ns_limits[0])/
+                             (self.ew_limits[1]-self.ew_limits[0]))
+                    cb_position = (3.0*bb[2]/5+bb[0],
+                                   y1*self.cb_res_pad, .35*bb[2], .02)
                     cbax = fig.add_axes(cb_position)
                     cb = mcb.ColorbarBase(cbax,
                                           cmap=self.res_cmap,
@@ -5196,10 +5102,11 @@ class PlotPTMaps(mtplottools.MTEllipse):
                     cb.ax.xaxis.set_label_coords(.5, 1.5)
                     cb.set_label('Resistivity ($\Omega \cdot$m)')
                     cb_ticks = np.arange(np.floor(self.res_limits[0]),
-                                         np.ceil(self.res_limits[1] + 1), 1)
+                                         np.ceil(self.res_limits[1]+1), 1)
                     cb.set_ticks(cb_ticks)
-                    cb.set_ticklabels([mtplottools.labeldict[ctk]
-                                       for ctk in cb_ticks])
+                    cb.set_ticklabels([mtplottools.labeldict[ctk] for ctk in cb_ticks])
+
+
 
             plt.show()
             self.fig_list.append(fig)
@@ -5282,7 +5189,7 @@ class PlotPTMaps(mtplottools.MTEllipse):
         for fig in self.fig_list:
             per = fig.canvas.get_window_title()
             save_fn = os.path.join(save_path, 'PT_DepthSlice_{0}s.{1}'.format(
-                per, file_format))
+                                    per, file_format))
             fig.savefig(save_fn, dpi=fig_dpi, format=file_format,
                         orientation=orientation, bbox_inches='tight')
 
@@ -5293,13 +5200,11 @@ class PlotPTMaps(mtplottools.MTEllipse):
                 pass
 
             self.fig_fn = save_fn
-            print 'Saved figure to: ' + self.fig_fn
+            print 'Saved figure to: '+self.fig_fn
 
 #==============================================================================
 # ESTIMATE SKIN DEPTH FOR MODEL
 #==============================================================================
-
-
 def estimate_skin_depth(res_model, grid_z, period, dscale=1000):
     """
     estimate the skin depth from the resistivity model assuming that
@@ -5337,35 +5242,36 @@ def estimate_skin_depth(res_model, grid_z, period, dscale=1000):
     if dscale == 1:
         ms = 'm'
         ds = 500.
-    # find the apparent resisitivity of each depth slice within the station
-    # area
-    apparent_res_xy = np.array([res_model[6:-6, 6:-6, 0:ii + 1].mean()
-                                for ii in range(grid_z.shape[0])])
+    #find the apparent resisitivity of each depth slice within the station area
+    apparent_res_xy = np.array([res_model[6:-6, 6:-6, 0:ii+1].mean()
+                                        for ii in range(grid_z.shape[0])])
 
-    # calculate the period for each skin depth
-    skin_depth_period = np.array([(zz / ds)**2 * (1 / rho_a)
-                                  for zz, rho_a in zip(grid_z, apparent_res_xy)])
+    #calculate the period for each skin depth
+    skin_depth_period = np.array([(zz/ds)**2*(1/rho_a)
+                                for zz, rho_a in zip(grid_z, apparent_res_xy)])
 
-    # match the period
+    #match the period
     try:
         period_index = np.where(skin_depth_period >= period)[0][0]
     except IndexError:
-        period_index = len(skin_depth_period) - 1
+        period_index = len(skin_depth_period)-1
 
-    # get the depth slice
+    #get the depth slice
     depth = grid_z[period_index]
 
-    print '-' * 60
+    print '-'*60
     print ' input period                   {0:.6g} (s)'.format(period)
     print ' estimated skin depth period    {0:.6g} (s)'.format(
-        skin_depth_period[period_index])
+                                               skin_depth_period[period_index])
     print ' estimate apparent resisitivity {0:.0f} (Ohm-m)'.format(
-        apparent_res_xy[period_index].mean())
+           apparent_res_xy[period_index].mean())
     print ' estimated depth                {0:.6g} ({1})'.format(depth, ms)
     print ' index                          {0}'.format(period_index)
-    print '-' * 60
+    print '-'*60
+
 
     return depth, period_index
+
 
 
 #==============================================================================
@@ -5513,11 +5419,11 @@ class PlotSlices(object):
         self.climits = kwargs.pop('climits', (0, 4))
 
         self.map_scale = kwargs.pop('map_scale', 'km')
-        # make map scale
-        if self.map_scale == 'km':
-            self.dscale = 1000.
-        elif self.map_scale == 'm':
-            self.dscale = 1.
+        #make map scale
+        if self.map_scale=='km':
+            self.dscale=1000.
+        elif self.map_scale=='m':
+            self.dscale=1.
         self.ew_limits = kwargs.pop('ew_limits', None)
         self.ns_limits = kwargs.pop('ns_limits', None)
         self.z_limits = kwargs.pop('z_limits', None)
@@ -5525,7 +5431,7 @@ class PlotSlices(object):
         self.res_model = None
         self.grid_east = None
         self.grid_north = None
-        self.grid_z = None
+        self.grid_z  = None
 
         self.nodes_east = None
         self.nodes_north = None
@@ -5553,6 +5459,7 @@ class PlotSlices(object):
         if self.plot_yn == 'y':
             self.plot()
 
+
     def read_files(self):
         """
         read in the files to get appropriate information
@@ -5562,23 +5469,23 @@ class PlotSlices(object):
             if os.path.isfile(self.model_fn) == True:
                 wsmodel = WSModel(self.model_fn)
                 self.res_model = wsmodel.res_model
-                self.grid_east = wsmodel.grid_east / self.dscale
-                self.grid_north = wsmodel.grid_north / self.dscale
-                self.grid_z = wsmodel.grid_z / self.dscale
-                self.nodes_east = wsmodel.nodes_east / self.dscale
-                self.nodes_north = wsmodel.nodes_north / self.dscale
-                self.nodes_z = wsmodel.nodes_z / self.dscale
+                self.grid_east = wsmodel.grid_east/self.dscale
+                self.grid_north = wsmodel.grid_north/self.dscale
+                self.grid_z = wsmodel.grid_z/self.dscale
+                self.nodes_east = wsmodel.nodes_east/self.dscale
+                self.nodes_north = wsmodel.nodes_north/self.dscale
+                self.nodes_z = wsmodel.nodes_z/self.dscale
             else:
                 raise mtex.MTpyError_file_handling(
-                    '{0} does not exist, check path'.format(self.model_fn))
+                        '{0} does not exist, check path'.format(self.model_fn))
 
         #--> read in data file to get station locations
         if self.data_fn is not None:
             if os.path.isfile(self.data_fn) == True:
                 wsdata = WSData()
                 wsdata.read_data_file(self.data_fn)
-                self.station_east = wsdata.data['east'] / self.dscale
-                self.station_north = wsdata.data['north'] / self.dscale
+                self.station_east = wsdata.data['east']/self.dscale
+                self.station_north = wsdata.data['north']/self.dscale
                 self.station_names = wsdata.data['station']
             else:
                 print 'Could not find data file {0}'.format(self.data_fn)
@@ -5588,8 +5495,8 @@ class PlotSlices(object):
             if os.path.isfile(self.station_fn) == True:
                 wsstations = WSStation(self.station_fn)
                 wsstations.read_station_file()
-                self.station_east = wsstations.east / self.dscale
-                self.station_north = wsstations.north / self.dscale
+                self.station_east = wsstations.east/self.dscale
+                self.station_north = wsstations.north/self.dscale
                 self.station_names = wsstations.names
             else:
                 print 'Could not find station file {0}'.format(self.station_fn)
@@ -5599,23 +5506,22 @@ class PlotSlices(object):
             if os.path.isfile(self.initial_fn) == True:
                 wsmesh = WSMesh()
                 wsmesh.read_initial_file(self.initial_fn)
-                self.grid_east = wsmesh.grid_east / self.dscale
-                self.grid_north = wsmesh.grid_north / self.dscale
-                self.grid_z = wsmesh.grid_z / self.dscale
-                self.nodes_east = wsmesh.nodes_east / self.dscale
-                self.nodes_north = wsmesh.nodes_north / self.dscale
-                self.nodes_z = wsmesh.nodes_z / self.dscale
+                self.grid_east = wsmesh.grid_east/self.dscale
+                self.grid_north = wsmesh.grid_north/self.dscale
+                self.grid_z = wsmesh.grid_z/self.dscale
+                self.nodes_east = wsmesh.nodes_east/self.dscale
+                self.nodes_north = wsmesh.nodes_north/self.dscale
+                self.nodes_z = wsmesh.nodes_z/self.dscale
 
-                # need to convert index values to resistivity values
-                rdict = dict([(ii, res)
-                              for ii, res in enumerate(wsmesh.res_list, 1)])
+                #need to convert index values to resistivity values
+                rdict = dict([(ii,res) for ii,res in enumerate(wsmesh.res_list,1)])
 
                 for ii in range(len(wsmesh.res_list)):
-                    self.res_model[np.where(wsmesh.res_model == ii + 1)] = \
-                        rdict[ii + 1]
+                    self.res_model[np.where(wsmesh.res_model==ii+1)] = \
+                                                                    rdict[ii+1]
             else:
                 raise mtex.MTpyError_file_handling(
-                    '{0} does not exist, check path'.format(self.initial_fn))
+                     '{0} does not exist, check path'.format(self.initial_fn))
 
         if self.initial_fn is None and self.model_fn is None:
             raise mtex.MTpyError_inputarguments('Need to input either a model'
@@ -5635,8 +5541,8 @@ class PlotSlices(object):
 
         self.get_station_grid_locations()
 
-        self.font_dict = {'size': self.font_size + 2, 'weight': 'bold'}
-        # set the limits of the plot
+        self.font_dict = {'size':self.font_size+2, 'weight':'bold'}
+        #set the limits of the plot
         if self.ew_limits == None:
             if self.station_east is not None:
                 self.ew_limits = (np.floor(self.station_east.min()),
@@ -5652,8 +5558,9 @@ class PlotSlices(object):
                 self.ns_limits = (self.grid_north[5], self.grid_north[-5])
 
         if self.z_limits == None:
-            self.z_limits = (self.grid_z[0] - 5000 / self.dscale,
-                             self.grid_z[-5])
+                self.z_limits = (self.grid_z[0]-5000/self.dscale,
+                                 self.grid_z[-5])
+
 
         self.fig = plt.figure(self.fig_num, figsize=self.fig_size,
                               dpi=self.fig_dpi)
@@ -5666,13 +5573,13 @@ class PlotSlices(object):
                                right=self.subplot_right,
                                hspace=self.subplot_hspace)
 
-        # make subplots
+        #make subplots
         self.ax_ez = self.fig.add_subplot(gs[0, 0], aspect=self.fig_aspect)
         self.ax_nz = self.fig.add_subplot(gs[1, 1], aspect=self.fig_aspect)
         self.ax_en = self.fig.add_subplot(gs[1, 0], aspect=self.fig_aspect)
         self.ax_map = self.fig.add_subplot(gs[0, 1])
 
-        # make grid meshes being sure the indexing is correct
+        #make grid meshes being sure the indexing is correct
         self.mesh_ez_east, self.mesh_ez_vertical = np.meshgrid(self.grid_east,
                                                                self.grid_z,
                                                                indexing='ij')
@@ -5695,34 +5602,36 @@ class PlotSlices(object):
         #--> plot the grid as a map view
         self._update_map()
 
-        # plot color bar
-        cbx = mcb.make_axes(self.ax_map, fraction=.15, shrink=.75, pad=.1)
+        #plot color bar
+        cbx = mcb.make_axes(self.ax_map, fraction=.15, shrink=.75, pad = .1)
         cb = mcb.ColorbarBase(cbx[0],
                               cmap=self.cmap,
                               norm=Normalize(vmin=self.climits[0],
                                              vmax=self.climits[1]))
 
+
         cb.ax.yaxis.set_label_position('right')
-        cb.ax.yaxis.set_label_coords(1.25, .5)
+        cb.ax.yaxis.set_label_coords(1.25,.5)
         cb.ax.yaxis.tick_left()
-        cb.ax.tick_params(axis='y', direction='in')
+        cb.ax.tick_params(axis='y',direction='in')
 
         cb.set_label('Resistivity ($\Omega \cdot$m)',
-                     fontdict={'size': self.font_size + 1})
+                     fontdict={'size':self.font_size+1})
 
         cb.set_ticks(np.arange(np.ceil(self.climits[0]),
-                               np.floor(self.climits[1] + 1)))
-        cblabeldict = {-2: '$10^{-3}$', -1: '$10^{-1}$', 0: '$10^{0}$', 1: '$10^{1}$',
-                       2: '$10^{2}$', 3: '$10^{3}$', 4: '$10^{4}$', 5: '$10^{5}$',
-                       6: '$10^{6}$', 7: '$10^{7}$', 8: '$10^{8}$'}
+                               np.floor(self.climits[1]+1)))
+        cblabeldict={-2:'$10^{-3}$',-1:'$10^{-1}$',0:'$10^{0}$',1:'$10^{1}$',
+                     2:'$10^{2}$',3:'$10^{3}$',4:'$10^{4}$',5:'$10^{5}$',
+                     6:'$10^{6}$',7:'$10^{7}$',8:'$10^{8}$'}
         cb.set_ticklabels([cblabeldict[cc]
-                           for cc in np.arange(np.ceil(self.climits[0]),
-                                               np.floor(self.climits[1] + 1))])
+                            for cc in np.arange(np.ceil(self.climits[0]),
+                                                np.floor(self.climits[1]+1))])
 
         plt.show()
 
         self.key_press = self.fig.canvas.mpl_connect('key_press_event',
                                                      self.on_key_press)
+
 
     def on_key_press(self, event):
         """
@@ -5792,7 +5701,7 @@ class PlotSlices(object):
                     self.index_vertical = 0
             self._update_ax_en()
             print 'Depth = {0:.5gf} ({1})'.format(self.grid_z[self.index_vertical],
-                                                  self.map_scale)
+                                                 self.map_scale)
 
     def _update_ax_ez(self):
         """
@@ -5806,15 +5715,15 @@ class PlotSlices(object):
                               cmap=self.cmap,
                               vmin=self.climits[0],
                               vmax=self.climits[1])
-        # plot stations
+        #plot stations
         for sx in self.station_dict_north[self.grid_north[self.index_north]]:
             self.ax_ez.text(sx,
                             0,
                             self.station_marker,
                             horizontalalignment='center',
                             verticalalignment='baseline',
-                            fontdict={'size': self.ms,
-                                      'color': self.station_color})
+                            fontdict={'size':self.ms,
+                                      'color':self.station_color})
 
         self.ax_ez.set_xlim(self.ew_limits)
         self.ax_ez.set_ylim(self.z_limits[1], self.z_limits[0])
@@ -5837,15 +5746,15 @@ class PlotSlices(object):
                               cmap=self.cmap,
                               vmin=self.climits[0],
                               vmax=self.climits[1])
-        # plot stations
+        #plot stations
         for sy in self.station_dict_east[self.grid_east[self.index_east]]:
             self.ax_nz.text(sy,
                             0,
                             self.station_marker,
                             horizontalalignment='center',
                             verticalalignment='baseline',
-                            fontdict={'size': self.ms,
-                                      'color': self.station_color})
+                            fontdict={'size':self.ms,
+                                      'color':self.station_color})
         self.ax_nz.set_xlim(self.ns_limits)
         self.ax_nz.set_ylim(self.z_limits[1], self.z_limits[0])
         self.ax_nz.set_xlabel('Northing ({0})'.format(self.map_scale),
@@ -5878,9 +5787,9 @@ class PlotSlices(object):
         if self.station_east is not None:
             for ee, nn in zip(self.station_east, self.station_north):
                 self.ax_en.text(ee, nn, '*',
-                                verticalalignment='center',
-                                horizontalalignment='center',
-                                fontdict={'size': 5, 'weight': 'bold'})
+                                 verticalalignment='center',
+                                 horizontalalignment='center',
+                                 fontdict={'size':5, 'weight':'bold'})
 
         self.fig.canvas.draw()
         self._update_map()
@@ -5927,29 +5836,30 @@ class PlotSlices(object):
                           self.grid_north.max()],
                          lw=1,
                          color='b')
-        #--> plot the stations
+         #--> plot the stations
         if self.station_east is not None:
             for ee, nn in zip(self.station_east, self.station_north):
                 self.ax_map.text(ee, nn, '*',
                                  verticalalignment='center',
                                  horizontalalignment='center',
-                                 fontdict={'size': 5, 'weight': 'bold'})
+                                 fontdict={'size':5, 'weight':'bold'})
 
         self.ax_map.set_xlim(self.ew_limits)
         self.ax_map.set_ylim(self.ns_limits)
         self.ax_map.set_ylabel('Northing ({0})'.format(self.map_scale),
-                               fontdict=self.font_dict)
+                              fontdict=self.font_dict)
         self.ax_map.set_xlabel('Easting ({0})'.format(self.map_scale),
-                               fontdict=self.font_dict)
+                              fontdict=self.font_dict)
 
-        # plot stations
-        self.ax_map.text(self.ew_limits[0] * .95, self.ns_limits[1] * .95,
-                         '{0:.5g} ({1})'.format(self.grid_z[self.index_vertical],
-                                                self.map_scale),
-                         horizontalalignment='left',
-                         verticalalignment='top',
-                         bbox={'facecolor': 'white'},
-                         fontdict=self.font_dict)
+        #plot stations
+        self.ax_map.text(self.ew_limits[0]*.95, self.ns_limits[1]*.95,
+                 '{0:.5g} ({1})'.format(self.grid_z[self.index_vertical],
+                                        self.map_scale),
+                 horizontalalignment='left',
+                 verticalalignment='top',
+                 bbox={'facecolor': 'white'},
+                 fontdict=self.font_dict)
+
 
         self.fig.canvas.draw()
 
@@ -5963,13 +5873,11 @@ class PlotSlices(object):
         if self.station_east is not None:
             for ss, sx in enumerate(self.station_east):
                 gx = np.where(self.grid_east <= sx)[0][-1]
-                self.station_dict_east[self.grid_east[
-                    gx]].append(self.station_north[ss])
+                self.station_dict_east[self.grid_east[gx]].append(self.station_north[ss])
 
             for ss, sy in enumerate(self.station_north):
                 gy = np.where(self.grid_north <= sy)[0][-1]
-                self.station_dict_north[self.grid_north[
-                    gy]].append(self.station_east[ss])
+                self.station_dict_north[self.grid_north[gy]].append(self.station_east[ss])
         else:
             return
 
@@ -6049,10 +5957,10 @@ class PlotSlices(object):
 
         else:
             save_fn = os.path.join(save_fn, '_E{0}_N{1}_Z{2}.{3}'.format(
-                self.index_east, self.index_north,
-                self.index_vertical, file_format))
+                                    self.index_east, self.index_north,
+                                    self.index_vertical, file_format))
             self.fig.savefig(save_fn, dpi=fig_dpi, format=file_format,
-                             orientation=orientation, bbox_inches='tight')
+                        orientation=orientation, bbox_inches='tight')
 
         if close_fig == 'y':
             plt.clf()
@@ -6062,13 +5970,11 @@ class PlotSlices(object):
             pass
 
         self.fig_fn = save_fn
-        print 'Saved figure to: ' + self.fig_fn
+        print 'Saved figure to: '+self.fig_fn
 
 #==============================================================================
 # STARTUP FILES
 #==============================================================================
-
-
 class WSStartup(object):
     """
     read and write startup files
@@ -6128,16 +6034,18 @@ class WSStartup(object):
         self.startup_fn = kwargs.pop('startup_fn', None)
 
         self._startup_keys = ['data_file',
-                              'output_file',
-                              'initial_model_file',
-                              'prior_model_file',
-                              'control_model_index',
-                              'target_rms',
-                              'max_no_iteration',
-                              'model_length_scale',
-                              'lagrange_info',
-                              'error_tol_level',
-                              'static_file']
+                               'output_file',
+                               'initial_model_file',
+                               'prior_model_file',
+                               'control_model_index',
+                               'target_rms',
+                               'max_no_iteration',
+                               'model_length_scale',
+                               'lagrange_info',
+                               'error_tol_level',
+                               'static_file']
+
+
 
     def write_startup_file(self):
         """
@@ -6150,7 +6058,7 @@ class WSStartup(object):
         if self.initial_fn is None:
             raise IOError('Need to input initial model file name')
 
-        # create the output filename
+        #create the output filename
         if self.save_path == None and self.data_fn != None:
             self.startup_fn = os.path.join(os.path.dirname(self.data_fn),
                                            'startup')
@@ -6167,7 +6075,7 @@ class WSStartup(object):
             if len(os.path.basename(self.data_fn)) > 70:
                 print 'Data file is too long, going to get an error at runtime'
         else:
-            slines.append('{0:<20}{1}\n'.format('DATA_FILE', self.data_fn))
+            slines.append('{0:<20}{1}\n'.format('DATA_FILE',self.data_fn))
             if len(self.data_fn) > 70:
                 print 'Data file is too long, going to get an error at runtime'
 
@@ -6175,7 +6083,7 @@ class WSStartup(object):
 
         if os.path.dirname(self.startup_fn) == os.path.dirname(self.initial_fn):
             slines.append('{0:<20}{1}\n'.format('INITIAL_MODEL_FILE',
-                                                os.path.basename(self.initial_fn)))
+                                             os.path.basename(self.initial_fn)))
         else:
             slines.append('{0:<20}{1}\n'.format('INITIAL_MODEL_FILE',
                                                 self.initial_fn))
@@ -6187,11 +6095,11 @@ class WSStartup(object):
         slines.append('{0:<20}{1}\n'.format('MAX_NO_ITERATION',
                                             self.max_iter))
         slines.append('{0:<20}{1:.0f} {2:.1f} {3:.1f} {4:.1f}\n'.format(
-            'MODEL_LENGTH_SCALE',
-            self.model_ls[0],
-            self.model_ls[1],
-            self.model_ls[2],
-            self.model_ls[3]))
+                                                        'MODEL_LENGTH_SCALE',
+                                                        self.model_ls[0],
+                                                        self.model_ls[1],
+                                                        self.model_ls[2],
+                                                        self.model_ls[3]))
 
         slines.append('{0:<20}{1} \n'.format('LAGRANGE_INFO', self.lagrange))
         slines.append('{0:<20}{1} \n'.format('ERROR_TOL_LEVEL',
@@ -6246,10 +6154,14 @@ class WSStartup(object):
         except IndexError:
             print 'Did not find static_fn'
 
-# ==============================================================================
-# WRITE A VTK FILE TO IMAGE IN PARAVIEW OR MAYAVI
-# ==============================================================================
 
+
+
+
+
+#==============================================================================
+# WRITE A VTK FILE TO IMAGE IN PARAVIEW OR MAYAVI
+#==============================================================================
 
 def write_vtk_res_model(res_model, grid_north, grid_east, grid_z, save_fn):
     """
@@ -6266,10 +6178,9 @@ def write_vtk_res_model(res_model, grid_north, grid_east, grid_z, save_fn):
         save_fn = os.path.join(save_fn, 'VTKResistivity_Model')
 
     save_fn = gridToVTK(save_fn, grid_north, grid_east, grid_z,
-                        cellData={'resistivity': res_model})
+                        cellData={'resistivity':res_model})
 
     return save_fn
-
 
 def write_vtk_stations(station_north, station_east, save_fn, station_z=None):
     """
@@ -6288,10 +6199,9 @@ def write_vtk_stations(station_north, station_east, save_fn, station_z=None):
         station_z = np.zeros_like(station_north)
 
     pointsToVTK(save_fn, station_north, station_east, station_z,
-                cellData={'value': np.ones_like(station_north)})
+              cellData={'value':np.ones_like(station_north)})
 
     return save_fn
-
 
 def write_vtk_files(model_fn, station_fn, save_path):
     """
@@ -6336,6 +6246,11 @@ def computeMemoryUsage(nx, ny, nz, n_stations, n_zelements, n_period):
                       approximate memory useage in GB
     """
 
-    mem_req = 1.2 * (8 * (n_stations * n_period * n_zelements)**2 +
-                     8 * (nx * ny * nz * n_stations * n_period * n_zelements))
-    return mem_req * 1E-9
+    mem_req = 1.2*(8*(n_stations*n_period*n_zelements)**2+
+                   8*(nx*ny*nz*n_stations*n_period*n_zelements))
+    return mem_req*1E-9
+
+
+
+
+

@@ -76,7 +76,6 @@ import subprocess
 import string
 #------------------------------------------------------------------------------
 
-
 class Data(object):
     """
     reads and writes occam 1D data files
@@ -128,10 +127,10 @@ class Data(object):
             self.save_path = os.getcwd()
 
         self._string_fmt = '+.6e'
-        self._ss = 6 * ' '
+        self._ss = 6*' '
         self._data_fn = 'Occam1d_DataFile'
-        self._header_line = '!{0}\n'.format('      '.join(['Type', 'Freq#',
-                                                           'TX#', 'Rx#', 'Data',
+        self._header_line = '!{0}\n'.format('      '.join(['Type','Freq#',
+                                                           'TX#', 'Rx#','Data',
                                                            'Std_Error']))
         self.mode = 'det'
         self.data = None
@@ -148,7 +147,7 @@ class Data(object):
 
     def write_data_file(self, rp_tuple=None, edi_file=None, save_path=None,
                         mode='det', res_err='data', phase_err='data', thetar=0,
-                        res_errorfloor=0., phase_errorfloor=0., z_errorfloor=0.,
+                        res_errorfloor = 0., phase_errorfloor = 0., z_errorfloor=0.,
                         remove_outofquadrant=False):
         """
         make1Ddatafile will write a data file for Occam1D
@@ -169,14 +168,17 @@ class Data(object):
             **thetar** : float
                          rotation angle to rotate Z. Clockwise positive and N=0
                          *default* = 0
-
-            **mode** : [ 'TE' | 'TM' | 'det']
+            
+            **mode** : [ 'te' | 'tm' | 'det']
                               mode to model can be (*default*='both'):
-                                - 'TE' for just TE mode
-                                - 'TM' for just TM mode
-                                - 'det' for the determinant of Z.
-
-
+                                - 'te' for just TE mode (res/phase)
+                                - 'tm' for just TM mode (res/phase)
+                                - 'det' for the determinant of Z (converted to
+                                        res/phase)
+                              add 'z' to any of these options to model
+                              impedance tensor values instead of res/phase
+                                
+                            
             **res_err** : float
                         errorbar for resistivity values.  Can be set to (
                         *default* = 'data'): 
@@ -223,7 +225,7 @@ class Data(object):
         elif self.mode == 'det':
             d1_str = 'RhoZxy'
             d2_str = 'PhsZxy'
-        elif self.mode == 'zdet':
+        elif self.mode == 'detz':
             d1_str = 'RealZxy'
             d2_str = 'ImagZxy'
         elif self.mode == 'tez':
@@ -244,64 +246,93 @@ class Data(object):
             #read in edifile
             mt_obj = mt.MT(edi_file)
             z_obj = mt_obj.Z
-            z_obj._compute_res_phase()
-
+            z_obj.compute_resistivity_phase()
+            
             # get frequencies to invert
             freq = z_obj.freq
             nf = len(freq)
 
-            # rotate if necessary
+            #rotate if necessary
             if thetar != 0:
                 z_obj.rotate(thetar)
 
-            # get resistivity and phase
-            rho = z_obj.resistivity
-            rho_err = z_obj.resistivity_err
-            phi = z_obj.phase
-            phi_err = z_obj.phase_err
+            # get the data requested by the given mode
+            if self.mode == 'te':
+                data_1 = z_obj.resistivity[:, 0, 1]
+                data_1_err = z_obj.resistivity_err[:, 0, 1]
 
-            # get z
-            z = z_obj.z
-            z_err = z_obj.z_err
+                data_2 = z_obj.phase[:, 0, 1]
+                data_2_err = z_obj.phase_err[:, 0, 1]
 
-            # put tm mode phase in first quadrant as required by occam1d
-            if 'tm' in mode.lower():
-                phi += 180
+            elif self.mode == 'tm':
+                data_1 = z_obj.resistivity[:, 1, 0]
+                data_1_err = z_obj.resistivity_err[:, 1, 0]
 
-            freq = z_obj.freq
-            nf = len(freq)
+                # need to put the angle in the right quadrant
+                data_2 = z_obj.phase[:, 1, 0]%180
+                data_2_err = z_obj.phase_err[:, 1, 0]
 
-            # get determinant resistivity and phase
-            if 'det' in mode.lower():
-                zdet, zdet_err = z_obj.det
-                zdet_err = np.abs(zdet_err)
+            elif self.mode.startswith('det'):
 
-                rho = .2 / freq * np.abs(zdet)
-                # relative rho error **should** be equal to relative error in zdet
-                # (since determinant has same units as z**2)
-                rho_err = rho * (np.abs(zdet_err) / np.abs(zdet))
-                phi = np.rad2deg(np.arctan2(
-                    (zdet**0.5).imag, (zdet**0.5).real))
-                phi_err = np.rad2deg(
-                    np.arctan(0.5 * np.abs(zdet_err) / np.abs(zdet)))
-                z = zdet**0.5
-                z_err = 0.5 * (zdet_err / zdet) * z
+                # take square root as determinant is similar to z squared
+                zdetreal = (z_obj.det**0.5).real
+                zdetimag = (z_obj.det**0.5).imag
 
-            if 'z' in self.mode:
-                data_1, data_2 = z.real, z.imag
-                data_1_err, data_2_err = z_err, z_err
+                # error propagation - new error is 0.5 * relative error in zdet
+                # then convert back to absolute error
+                zereal = np.abs(zdetreal) * 0.5*z_obj.det_err/np.abs(z_obj.det)
+                zeimag = np.abs(zdetimag) * 0.5*z_obj.det_err/np.abs(z_obj.det)
+
+                if self.mode.endswith('z'):
+                    # convert to si units if we are modelling impedance tensor
+                    data_1 = zdetreal*np.pi*4e-4
+                    data_1_err = zereal*np.pi*4e-4
+                    data_2 = zdetimag*np.pi*4e-4
+                    data_2_err = zeimag*np.pi*4e-4
+                else:
+                    # convert to res/phase
+                    data_1 = .2/freq*np.abs(z_obj.det)
+                    data_2 = np.rad2deg(np.arctan2(zdetimag,zdetreal))
+
+                    # initialise error arrays
+                    data_1_err = np.zeros_like(data_1, dtype=np.float)
+                    data_2_err = np.zeros_like(data_2, dtype=np.float)
+
+                    # assign errors
+                    for zdr, zdi, zer, zei, ii in zip(zdetreal ,zdetimag,
+                                                      zereal, zeimag,
+                                                      range(len(z_obj.det))):
+
+                        # now we can convert errors to polar coordinates
+                        de1, de2 = mtcc.z_error2r_phi_error(zdr, zer, zdi, zei)
+                        data_1_err[ii] = de1
+                        data_2_err[ii] = de2
+
+            elif self.mode == 'zdet':
+                data_1 = (z_obj.det**0.5).real*np.pi*4e-4
+                data_1_err = z_obj.det_err**0.5*np.pi*4e-4
+
+                data_2 = (z_obj.det**0.5).imag*np.pi*4e-4
+                data_2_err =  z_obj.det_err**0.5*np.pi*4e-4
+
+            elif self.mode == 'tez':
+                # convert to si units
+                data_1 = z_obj.z[:, 0, 1].real*np.pi*4e-4
+                data_1_err = z_obj.z_err[:, 0, 1]*np.pi*4e-4
+
+                data_2 = z_obj.z[:, 0, 1].imag*np.pi*4e-4
+                data_2_err =  z_obj.z_err[:, 0, 1]*np.pi*4e-4
+
+            elif self.mode == 'tmz':
+                # convert to si units
+                data_1 = z_obj.z[:, 1, 0].real*np.pi*4e-4
+                data_1_err = z_obj.z_err[:, 1, 0]*np.pi*4e-4
+
+                data_2 = z_obj.z[:, 1, 0].imag*np.pi*4e-4
+                data_2_err =  z_obj.z_err[:, 1, 0]*np.pi*4e-4
+
             else:
-                data_1, data_2 = rho, phi
-                data_1_err, data_2_err = rho_err, phi_err
-
-            if 'te' in mode.lower():
-                pol = 'xy'
-                data_1, data_2, data_1_err, data_2_err = [
-                    dat[:, 0, 1] for dat in [data_1, data_2, data_1_err, data_2_err]]
-            elif 'tm' in mode.lower():
-                pol = 'yx'
-                data_1, data_2, data_1_err, data_2_err = [
-                    dat[:, 1, 0] for dat in [data_1, data_2, data_1_err, data_2_err]]
+                raise IOError('Mode {0} is not supported.'.format(self.mode))
 
         if rp_tuple is not None:
             if len(rp_tuple) != 5:
@@ -321,7 +352,7 @@ class Data(object):
                 data_1 = rho[:, 1, 0]
                 data_1_err = rho_err[:, 1, 0]
 
-                data_2 = phi[:, 1, 0] % 180
+                data_2 = phi[:, 1, 0]%180
                 data_2_err = phi_err[:, 1, 0]
 
             if 'det' in mode.lower():
@@ -333,11 +364,11 @@ class Data(object):
 
         if remove_outofquadrant:
             freq, data_1, data_1_err, data_2, data_2_err = self._remove_outofquadrant_phase(
-                freq,
-                data_1,
-                data_1_err,
-                data_2,
-                data_2_err)
+                                                           freq,
+                                                           data_1,
+                                                           data_1_err,
+                                                           data_2,
+                                                           data_2_err)
             nf = len(freq)
 
         # ---> get errors--------------------------------------
@@ -346,25 +377,23 @@ class Data(object):
 
             if z_errorfloor > 0:
                 data_1_err = np.abs(data_1_err)
-                test = data_1_err / \
-                    np.abs(data_1 + 1j * data_2) < z_errorfloor / 100.
-                data_1_err[test] = np.abs(
-                    data_1 + 1j * data_2)[test] * z_errorfloor / 100.
+                test = data_1_err/np.abs(data_1+1j*data_2) < z_errorfloor/100.
+                data_1_err[test] = np.abs(data_1+1j*data_2)[test]*z_errorfloor/100.
                 data_2_err = data_1_err.copy()
         else:
             if res_errorfloor > 0:
-                test = data_1_err / data_1 < res_errorfloor / 100.
-                data_1_err[test] = data_1[test] * res_errorfloor / 100.
+                test = data_1_err/data_1 < res_errorfloor/100.
+                data_1_err[test] = data_1[test]*res_errorfloor/100.
             if phase_errorfloor > 0:
                 data_2_err[data_2_err < phase_errorfloor] = phase_errorfloor
 
             if res_err != 'data':
-                data_1_err = data_1 * res_err / 100.
+                data_1_err = data_1*res_err/100.
             if phase_err != 'data':
-                data_2_err = np.repeat(phase_err / 100. * (180 / np.pi), nf)
+                data_2_err = np.repeat(phase_err/100.*(180/np.pi), nf)
 
         # --> write file
-        # make sure the savepath exists, if not create it
+        #make sure the savepath exists, if not create it
         if save_path is not None:
             self.save_path = save_path
         if self.save_path == None:
@@ -378,8 +407,9 @@ class Data(object):
         if not os.path.exists(self.save_path):
             os.mkdir(self.save_path)
 
+
         self.data_fn = os.path.join(self.save_path,
-                                    '{0}_{1}.dat'.format(self._data_fn, mode.upper()))
+                                '{0}_{1}.dat'.format(self._data_fn, mode.upper()))
 
         #--> write file as a list of lines
         dlines = []
@@ -388,11 +418,11 @@ class Data(object):
         dlines.append('!mode:   {0}\n'.format(mode.upper()))
         dlines.append('!rotation_angle = {0:.2f}\n'.format(thetar))
 
-        # needs a transmitter to work so put in a dummy one
+        #needs a transmitter to work so put in a dummy one
         dlines.append('# Transmitters: 1\n')
         dlines.append('0 0 0 0 0 \n')
 
-        # write frequencies
+        #write frequencies
         dlines.append('# Frequencies:   {0}\n'.format(nf))
         if freq[0] < freq[1]:
             freq = freq[::-1]
@@ -403,12 +433,12 @@ class Data(object):
         for ff in freq:
             dlines.append('   {0:{1}}\n'.format(ff, self._string_fmt))
 
-        # needs a receiver to work so put in a dummy one
+        #needs a receiver to work so put in a dummy one
         dlines.append('# Receivers: 1 \n')
         dlines.append('0 0 0 0 0 0 \n')
 
-        # write data
-        dlines.append('# Data:{0}{1}\n'.format(self._ss, 2 * nf))
+        #write data
+        dlines.append('# Data:{0}{1}\n'.format(self._ss, 2*nf))
         num_data_line = len(dlines)
 
         dlines.append(self._header_line)
@@ -422,11 +452,11 @@ class Data(object):
         for ii in range(nf):
             if 'te' in mode.lower():
                 pol = 'xy'
-                i1, i2 = 0, 1
+                i1,i2 = 0,1
                 tetm = True
             elif 'tm' in mode.lower():
                 pol = 'yx'
-                i1, i2 = 1, 0
+                i1,i2 = 1,0
                 tetm = True
 #                data1 *= -1
 #                data2 *= -1
@@ -435,31 +465,31 @@ class Data(object):
 
             if tetm:
                 if 'z' in mode.lower():
-                    d1err, d2err = data_1_err[ii], data_2_err[ii]
+                    d1err,d2err = data_1_err[ii, i1, i2],data_2_err[ii, i1, i2]
                 else:
 
                     if res_err == 'data':
-                        d1err = data_1_err[ii]
+                        d1err = data_1_err[ii, i1, i2]
                     else:
-                        d1err = data_1[ii] * res_err / 100.
+                        d1err = data_1[ii, i1, i2]*res_err/100.
 
                     if phase_err == 'data':
-                        d2err = data_2_err[ii]
+                        d2err = data_2_err[ii, i1, i2]
                     else:
-                        d2err = phase_err / 100 * (180 / np.pi)
+                        d2err = phase_err/100*(180/np.pi)
+
+
 
                 # write lines
-                if data_1[ii] != 0.0:
-                    dlines.append(self._ss.join([d1_str, str(ii + 1), '0', '1',
-                                                 '{0:{1}}'.format(
-                                                     data_1[ii], self._string_fmt),
-                                                 '{0:{1}}\n'.format(d1err, self._string_fmt)]))
+                if data_1[ii, i1, i2] != 0.0:
+                    dlines.append(self._ss.join([d1_str+'Z'+pol, str(ii+1), '0', '1',
+                                '{0:{1}}'.format(data_1[ii, i1, i2], self._string_fmt),
+                                '{0:{1}}\n'.format(d1err, self._string_fmt)]))
                     data_count += 1
-                if data_2[ii] != 0.0:
-                    dlines.append(self._ss.join([d2_str, str(ii + 1), '0', '1',
-                                                 '{0:{1}}'.format(
-                                                     data_2[ii], self._string_fmt),
-                                                 '{0:{1}}\n'.format(d2err, self._string_fmt)]))
+                if data_2[ii, i1, i2] != 0.0:
+                    dlines.append(self._ss.join([d2_str+'Z'+pol, str(ii+1), '0', '1',
+                                '{0:{1}}'.format(data_2[ii, i1, i2],self._string_fmt),
+                                '{0:{1}}\n'.format(d2err, self._string_fmt)]))
                     data_count += 1
 
 #            elif mode.lower() == 'tm':
@@ -489,7 +519,7 @@ class Data(object):
                 if 'det' in mode.lower():
                     pol = 'xy'
                     if 'z' in mode.lower():
-                        d1err, d2err = data_1_err[ii], data_2_err[ii]
+                        d1err,d2err = data_1_err[ii], data_2_err[ii]
                     else:
                         if res_err == 'data':
                             if edi_file is not None:
@@ -497,11 +527,11 @@ class Data(object):
 #                                d1err, d2err = mtedi.MTcc.zerror2r_phi_error(zdet[ii].real,
 #                                                                       zdet_err[ii],
 #                                                                       zdet[ii].imag,
-# zdet_err[ii])
+#                                                                       zdet_err[ii])
                             else:
                                 d1err = rho_err[ii]
                         else:
-                            d1err = rho[ii] * res_err / 100.
+                            d1err = rho[ii]*res_err/100.
 
                         if phase_err == 'data':
                             if edi_file is not None:
@@ -509,31 +539,29 @@ class Data(object):
 #                                d1err, d2err = mtedi.MTcc.zerror2r_phi_error(zdet[ii].real,
 #                                                                       zdet_err[ii],
 #                                                                       zdet[ii].imag,
-# zdet_err[ii])
+#                                                                       zdet_err[ii])
                             else:
                                 d2err = phi_err[ii]
                         else:
-                            d2err = phase_err / 100 * (180 / np.pi)
+                            d2err = phase_err/100*(180/np.pi)
+
 
                     # write lines
                     if rho[ii] != 0.0:
-                        dlines.append(self._ss.join([d1_str, str(ii + 1), '0', '1',
-                                                     '{0:{1}}'.format(
-                                                         data_1[ii], self._string_fmt),
-                                                     '{0:{1}}\n'.format(d1err, self._string_fmt)]))
+                        dlines.append(self._ss.join([d1_str+'Z'+pol, str(ii+1), '0', '1',
+                                    '{0:{1}}'.format(data_1[ii], self._string_fmt),
+                                    '{0:{1}}\n'.format(d1err, self._string_fmt)]))
                         data_count += 1
                     if phi[ii] != 0.0:
-                        dlines.append(self._ss.join([d2_str, str(ii + 1), '0', '1',
-                                                     '{0:{1}}'.format(
-                                                         data_2[ii] % 180, self._string_fmt),
-                                                     '{0:{1}}\n'.format(d2err, self._string_fmt)]))
+                        dlines.append(self._ss.join([d2_str+'Z'+pol, str(ii+1), '0', '1',
+                                    '{0:{1}}'.format(data_2[ii] % 180, self._string_fmt),
+                                    '{0:{1}}\n'.format(d2err, self._string_fmt)]))
                         data_count += 1
             d1err_array[ii] = d1err
             d2err_array[ii] = d2err
 
         #--> write file
-        dlines[num_data_line -
-               1] = '# Data:{0}{1}\n'.format(self._ss, data_count)
+        dlines[num_data_line-1] = '# Data:{0}{1}\n'.format(self._ss, data_count)
 
         with open(self.data_fn, 'w') as dfid:
             dfid.writelines(dlines)
@@ -542,19 +570,25 @@ class Data(object):
 
         #--> set attributes
         if 'z' in mode.lower():
-            self.z = data_1 + 1j * data_2
+            self.z = data_1 + 1j*data_2
             self.z_err = data_1_err
         else:
             if 'det' in mode.lower():
-                self.res_det = rho
-                self.phase_det = phi
+                self.res_det = data_1
+                self.phase_det = data_2
+            elif self.mode == 'te':
+                self.res_te = data_1
+                self.phase_te = data_2
+            elif self.mode == 'tm':
+                self.res_tm = data_1
+                self.phase_tm = data_2
             else:
-                self.res_te = rho[:, 0, 1]
-                self.phase_te = phi[:, 0, 1]
-                self.res_tm = rho[:, 1, 0]
-                self.phase_tm = phi[:, 1, 0] % 180
-            self.res_err = d1err_array
-            self.phase_err = d2err_array
+                self.res_te = rho[:,0,1]
+                self.phase_te = phi[:,0,1]
+                self.res_tm = rho[:,1,0]
+                self.phase_tm = phi[:,1,0]%180
+            self.res_err = data_1_err
+            self.phase_err = data_2_err
 
         self.freq = freq
 
@@ -564,13 +598,12 @@ class Data(object):
         """
         # remove data points with phase out of quadrant
         if 'z' in self.mode:
-            include = (d1 / d2 > 0) & (d1 / d2 > 0)
+            include = (d1/d2 > 0) & (d1/d2 > 0)
         elif self.mode in ['det', 'te', 'tm']:
-            include = (d2 % 180 <= 90) & (d2 % 180 >= 0) & (
-                d2 % 180 <= 90) & (d2 % 180 >= 0)
+            include = (d2%180 <= 90) & (d2%180 >= 0) & (d2%180 <= 90) & (d2%180 >= 0)
 
         newfreq, nd1, nd1_err, nd2, nd2_err = [arr[include] for arr in [freq,
-                                                                        d1, d1_err, d2, d2_err]]
+                                               d1, d1_err, d2, d2_err]]
         # fix any zero errors to 100% of the res value or 90 degrees for phase
         nd1_err[nd1_err == 0] = nd1[nd1_err == 0]
         if 'z' in self.mode:
@@ -618,8 +651,7 @@ class Data(object):
         if self.data_fn is None:
             raise IOError('Need to input a data file')
         elif os.path.isfile(self.data_fn) == False:
-            raise IOError(
-                'Could not find {0}, check path'.format(self.data_fn))
+            raise IOError('Could not find {0}, check path'.format(self.data_fn))
 
         self._data_fn = os.path.basename(self.data_fn)
         self.save_path = os.path.dirname(self.data_fn)
@@ -630,94 +662,93 @@ class Data(object):
         dlines = dfid.readlines()
         dfid.close()
 
-        # make a dictionary of all the fields found so can put them into arrays
+        #make a dictionary of all the fields found so can put them into arrays
         finddict = {}
         for ii, dline in enumerate(dlines):
-            if dline.find('#') <= 3:
+            if dline.find('#')<=3:
                 fkey = dline[2:].strip().split(':')[0]
                 fvalue = ii
                 finddict[fkey] = fvalue
 
-        # get number of frequencies
-        nfreq = int(dlines[finddict['Frequencies']][
-                    2:].strip().split(':')[1].strip())
+        #get number of frequencies
+        nfreq = int(dlines[finddict['Frequencies']][2:].strip().split(':')[1].strip())
 
-        # frequency list
-        freq = np.array([float(ff) for ff in dlines[finddict['Frequencies'] + 1:
+        #frequency list
+        freq = np.array([float(ff) for ff in dlines[finddict['Frequencies']+1:
                                                     finddict['Receivers']]])
 
-        # data dictionary to put things into
-        # check to see if there is alread one, if not make a new one
+        #data dictionary to put things into
+        #check to see if there is alread one, if not make a new one
         if self.data is None:
-            self.data = {'freq': freq,
-                         'zxy': np.zeros((4, nfreq), dtype=complex),
-                         'zyx': np.zeros((4, nfreq), dtype=complex),
-                         'resxy': np.zeros((4, nfreq)),
-                         'resyx': np.zeros((4, nfreq)),
-                         'phasexy': np.zeros((4, nfreq)),
-                         'phaseyx': np.zeros((4, nfreq))}
+            self.data = {'freq':freq,
+                         'zxy':np.zeros((4,nfreq),dtype=complex),
+                         'zyx':np.zeros((4,nfreq),dtype=complex),
+                          'resxy':np.zeros((4,nfreq)),
+                          'resyx':np.zeros((4,nfreq)),
+                          'phasexy':np.zeros((4,nfreq)),
+                          'phaseyx':np.zeros((4,nfreq))}
 
-        # get data
-        for dline in dlines[finddict['Data'] + 1:]:
+
+        #get data
+        for dline in dlines[finddict['Data']+1:]:
             if dline.find('!') == 0:
                 pass
             else:
                 dlst = dline.strip().split()
                 dlst = [dd.strip() for dd in dlst]
                 if len(dlst) > 4:
-                    jj = int(dlst[1]) - 1
+                    jj = int(dlst[1])-1
                     dvalue = float(dlst[4])
                     derr = float(dlst[5])
                     if dlst[0] == 'RhoZxy' or dlst[0] == '103':
-                        self.mode = 'TE'
+                        self.mode ='TE'
                         self.data['resxy'][0, jj] = dvalue
                         self.data['resxy'][1, jj] = derr
                     if dlst[0] == 'PhsZxy' or dlst[0] == '104':
-                        self.mode = 'TE'
+                        self.mode ='TE'
                         self.data['phasexy'][0, jj] = dvalue
                         self.data['phasexy'][1, jj] = derr
                     if dlst[0] == 'RhoZyx' or dlst[0] == '105':
-                        self.mode = 'TM'
+                        self.mode ='TM'
                         self.data['resyx'][0, jj] = dvalue
                         self.data['resyx'][1, jj] = derr
                     if dlst[0] == 'PhsZyx' or dlst[0] == '106':
-                        self.mode = 'TM'
+                        self.mode ='TM'
                         self.data['phaseyx'][0, jj] = dvalue
                         self.data['phaseyx'][1, jj] = derr
                     if dlst[0] == 'RealZxy' or dlst[0] == '113':
-                        self.mode = 'TEz'
-                        self.data['zxy'][0, jj] = dvalue / (np.pi * 4e-4)
-                        self.data['zxy'][1, jj] = derr / (np.pi * 4e-4)
+                        self.mode ='TEz'
+                        self.data['zxy'][0, jj] = dvalue/(np.pi*4e-4)
+                        self.data['zxy'][1, jj] = derr/(np.pi*4e-4)
                     if dlst[0] == 'ImagZxy' or dlst[0] == '114':
-                        self.mode = 'TEz'
-                        self.data['zxy'][0, jj] += 1j * dvalue / (np.pi * 4e-4)
-                        self.data['zxy'][1, jj] = derr / (np.pi * 4e-4)
+                        self.mode ='TEz'
+                        self.data['zxy'][0, jj] += 1j*dvalue/(np.pi*4e-4)
+                        self.data['zxy'][1, jj] = derr/(np.pi*4e-4)
                     if dlst[0] == 'RealZyx' or dlst[0] == '115':
-                        self.mode = 'TMz'
-                        self.data['zyx'][0, jj] = dvalue / (np.pi * 4e-4)
-                        self.data['zyx'][1, jj] = derr / (np.pi * 4e-4)
+                        self.mode ='TMz'
+                        self.data['zyx'][0, jj] = dvalue/(np.pi*4e-4)
+                        self.data['zyx'][1, jj] = derr/(np.pi*4e-4)
                     if dlst[0] == 'ImagZyx' or dlst[0] == '116':
-                        self.mode = 'TMz'
-                        self.data['zyx'][0, jj] += 1j * dvalue / (np.pi * 4e-4)
-                        self.data['zyx'][1, jj] = derr / (np.pi * 4e-4)
+                        self.mode ='TMz'
+                        self.data['zyx'][0, jj] += 1j*dvalue/(np.pi*4e-4)
+                        self.data['zyx'][1, jj] = derr/(np.pi*4e-4)
 
         if 'z' in self.mode:
             if 'TE' in self.mode:
-                pol = 'xy'
+                pol='xy'
             elif 'TM' in self.mode:
-                pol = 'yx'
+                pol='yx'
 
-            self.data['res' + pol][0] = 0.2 * \
-                np.abs(self.data['z' + pol][0])**2. / freq
-            self.data['phase' + pol][0] = np.rad2deg(
-                np.arctan(self.data['res' + pol][0].imag / self.data['res' + pol][0].real))
+            self.data['res'+pol][0] = 0.2*np.abs(self.data['z'+pol][0])**2./freq
+            self.data['phase'+pol][0] = np.rad2deg(np.arctan(self.data['res'+pol][0].imag/self.data['res'+pol][0].real))
             for jjj in range(len(freq)):
-                self.data['res' + pol][1, jjj], self.data['phase' + pol][1, jjj] =\
-                    mtcc.z_error2r_phi_error(self.data['z' + pol][0, jjj].real, self.data['z' + pol][1, jjj],
-                                             self.data['z' + pol][0, jjj].imag, self.data['z' + pol][1, jjj])
+                self.data['res'+pol][1,jjj],self.data['phase'+pol][1,jjj] =\
+                mtcc.z_error2r_phi_error(self.data['z'+pol][0,jjj].real,self.data['z'+pol][1,jjj],
+                                        self.data['z'+pol][0,jjj].imag,self.data['z'+pol][1,jjj])
 
-            self.data['resyx'][0] = 0.2 * \
-                np.abs(self.data['zxy'][0])**2. / freq
+
+
+            self.data['resyx'][0] = 0.2*np.abs(self.data['zxy'][0])**2./freq
 
         self.freq = freq
         self.res_te = self.data['resxy']
@@ -779,18 +810,19 @@ class Data(object):
 
         finddict = {}
         for ii, dline in enumerate(dlines):
-            if dline.find('#') <= 3:
+            if dline.find('#')<=3:
                 fkey = dline[2:].strip().split(':')[0]
                 fvalue = ii
                 finddict[fkey] = fvalue
 
-        for dline in dlines[finddict['Data'] + 1:]:
+
+        for dline in dlines[finddict['Data']+1:]:
             if dline.find('!') == 0:
                 pass
             else:
-                dlst = dline.strip().split()
+                dlst=dline.strip().split()
                 if len(dlst) > 4:
-                    jj = int(dlst[1]) - 1
+                    jj = int(dlst[1])-1
                     dvalue = float(dlst[4])
                     derr = float(dlst[5])
                     rvalue = float(dlst[6])
@@ -798,77 +830,72 @@ class Data(object):
                         rerr = float(dlst[7])
                     except ValueError:
                         rerr = 1000.
-                    if dlst[0] == 'RhoZxy' or dlst[0] == '103':
-                        self.res_te[0, jj] = dvalue
-                        self.res_te[1, jj] = derr
-                        self.res_te[2, jj] = rvalue
-                        self.res_te[3, jj] = rerr
-                    if dlst[0] == 'PhsZxy' or dlst[0] == '104':
-                        self.phase_te[0, jj] = dvalue
-                        self.phase_te[1, jj] = derr
-                        self.phase_te[2, jj] = rvalue
-                        self.phase_te[3, jj] = rerr
-                    if dlst[0] == 'RhoZyx' or dlst[0] == '105':
-                        self.res_tm[0, jj] = dvalue
-                        self.res_tm[1, jj] = derr
-                        self.res_tm[2, jj] = rvalue
-                        self.res_tm[3, jj] = rerr
-                    if dlst[0] == 'PhsZyx' or dlst[0] == '106':
-                        self.phase_tm[0, jj] = dvalue
-                        self.phase_tm[1, jj] = derr
-                        self.phase_tm[2, jj] = rvalue
-                        self.phase_tm[3, jj] = rerr
+                    if dlst[0]=='RhoZxy' or dlst[0]=='103':
+                        self.res_te[0,jj] = dvalue
+                        self.res_te[1,jj] = derr
+                        self.res_te[2,jj] = rvalue
+                        self.res_te[3,jj] = rerr
+                    if dlst[0]=='PhsZxy' or dlst[0]=='104':
+                        self.phase_te[0,jj] = dvalue
+                        self.phase_te[1,jj] = derr
+                        self.phase_te[2,jj] = rvalue
+                        self.phase_te[3,jj] = rerr
+                    if dlst[0]=='RhoZyx' or dlst[0]=='105':
+                        self.res_tm[0,jj] = dvalue
+                        self.res_tm[1,jj] = derr
+                        self.res_tm[2,jj] = rvalue
+                        self.res_tm[3,jj] = rerr
+                    if dlst[0]=='PhsZyx' or dlst[0]=='106':
+                        self.phase_tm[0,jj] = dvalue
+                        self.phase_tm[1,jj] = derr
+                        self.phase_tm[2,jj] = rvalue
+                        self.phase_tm[3,jj] = rerr
                     if dlst[0] == 'RealZxy' or dlst[0] == '113':
-                        self.mode = 'TEz'
-                        self.data['zxy'][0, jj] = dvalue / (np.pi * 4e-4)
-                        self.data['zxy'][1, jj] = derr / (np.pi * 4e-4)
-                        self.data['zxy'][2, jj] = rvalue / (np.pi * 4e-4)
-                        self.data['zxy'][3, jj] = rerr / (np.pi * 4e-4)
+                        self.mode ='TEz'
+                        self.data['zxy'][0, jj] = dvalue/(np.pi*4e-4)
+                        self.data['zxy'][1, jj] = derr/(np.pi*4e-4)
+                        self.data['zxy'][2, jj] = rvalue/(np.pi*4e-4)
+                        self.data['zxy'][3, jj] = rerr
                     if dlst[0] == 'ImagZxy' or dlst[0] == '114':
-                        self.mode = 'TEz'
-                        self.data['zxy'][0, jj] += 1j * dvalue / (np.pi * 4e-4)
-                        self.data['zxy'][1, jj] = derr / (np.pi * 4e-4)
-                        self.data['zxy'][2, jj] += 1j * rvalue / (np.pi * 4e-4)
-                        self.data['zxy'][3, jj] = rerr / (np.pi * 4e-4)
+                        self.mode ='TEz'
+                        self.data['zxy'][0, jj] += 1j*dvalue/(np.pi*4e-4)
+                        self.data['zxy'][1, jj] = derr/(np.pi*4e-4)
+                        self.data['zxy'][2, jj] += 1j*rvalue/(np.pi*4e-4)
+                        self.data['zxy'][3, jj] = rerr
                     if dlst[0] == 'RealZyx' or dlst[0] == '115':
-                        self.mode = 'TMz'
-                        self.data['zyx'][0, jj] = dvalue / (np.pi * 4e-4)
-                        self.data['zyx'][1, jj] = derr / (np.pi * 4e-4)
-                        self.data['zyx'][2, jj] = rvalue / (np.pi * 4e-4)
-                        self.data['zyx'][3, jj] = rerr / (np.pi * 4e-4)
+                        self.mode ='TMz'
+                        self.data['zyx'][0, jj] = dvalue/(np.pi*4e-4)
+                        self.data['zyx'][1, jj] = derr/(np.pi*4e-4)
+                        self.data['zyx'][2, jj] = rvalue/(np.pi*4e-4)
+                        self.data['zyx'][3, jj] = rerr
                     if dlst[0] == 'ImagZyx' or dlst[0] == '116':
-                        self.mode = 'TMz'
-                        self.data['zyx'][0, jj] += 1j * dvalue / (np.pi * 4e-4)
-                        self.data['zyx'][1, jj] = derr / (np.pi * 4e-4)
-                        self.data['zyx'][2, jj] += 1j * rvalue / (np.pi * 4e-4)
-                        self.data['zyx'][3, jj] = rerr / (np.pi * 4e-4)
+                        self.mode ='TMz'
+                        self.data['zyx'][0, jj] += 1j*dvalue/(np.pi*4e-4)
+                        self.data['zyx'][1, jj] = derr/(np.pi*4e-4)
+                        self.data['zyx'][2, jj] += 1j*rvalue/(np.pi*4e-4)
+                        self.data['zyx'][3, jj] = rerr
         if 'z' in self.mode:
             if 'TE' in self.mode:
-                pol = 'xy'
+                pol='xy'
             elif 'TM' in self.mode:
-                pol = 'yx'
-            for ii in [0, 2]:
-                self.data['res' + pol][0 + ii] = 0.2 * \
-                    np.abs(self.data['z' + pol][0 + ii])**2. / self.freq
-                self.data['phase' + pol][0 + ii] = np.rad2deg(np.arctan(
-                    self.data['z' + pol][0 + ii].imag / self.data['z' + pol][0 + ii].real))
+                pol='yx'
+            for ii in [0,2]:
+                self.data['res'+pol][0+ii] = 0.2*np.abs(self.data['z'+pol][0+ii])**2./self.freq
+                self.data['phase'+pol][0+ii] = np.rad2deg(np.arctan(self.data['z'+pol][0+ii].imag/ self.data['z'+pol][0+ii].real))
 
-                self.data['res' + pol][1 + ii] = self.data['res' + pol][0 + ii] * \
-                    self.data['z' + pol][1 + ii].real / \
-                    np.abs(self.data['z' + pol][0 + ii])
+                self.data['res'+pol][1+ii] = self.data['res'+pol][0+ii]*self.data['z'+pol][1+ii].real/np.abs(self.data['z'+pol][0+ii])
 
                 for jjj in range(len(self.freq)):
 
-                    self.data['phase' + pol][1 + ii, jjj] =\
-                        mtcc.z_error2r_phi_error(self.data['z' + pol][0 + ii, jjj].real, self.data['z' + pol][1 + ii, jjj].real,
-                                                 self.data['z' + pol][0 + ii, jjj].imag, self.data['z' + pol][1 + ii, jjj].real)[1]
+                    self.data['phase'+pol][1+ii,jjj] =\
+                    mtcc.z_error2r_phi_error(self.data['z'+pol][0+ii,jjj].real,self.data['z'+pol][1+ii,jjj].real,
+                                            self.data['z'+pol][0+ii,jjj].imag,self.data['z'+pol][1+ii,jjj].real)[1]
             if pol == 'xy':
                 self.res_te = self.data['resxy']
                 self.phase_te = self.data['phasexy']
             elif pol == 'yx':
                 self.res_tm = self.data['resyx']
                 self.phase_tm = self.data['phaseyx']
-
 
 class Model(object):
     """
@@ -921,20 +948,19 @@ class Model(object):
         self.iter_fn = None
 
         self.n_layers = kwargs.pop('n_layers', 100)
-        self.bottom_layer = kwargs.pop('bottom_layer', None)  # 50000
-        self.target_depth = kwargs.pop('target_depth', None)  # 10000
+        self.bottom_layer = kwargs.pop('bottom_layer', None)
+        self.target_depth = kwargs.pop('target_depth', None)
         self.pad_z = kwargs.pop('pad_z', 5)
-        self.z1_layer = kwargs.pop('z1_layer', None)  # 10
+        self.z1_layer = kwargs.pop('z1_layer', None)#10
         self.air_layer_height = kwargs.pop('air_layer_height', 10000)
 
-        self._set_layerdepth_defaults(
-            z1_threshold=3., bottomlayer_threshold=2.)
+        self._set_layerdepth_defaults(z1_threshold=3.,bottomlayer_threshold=2.)
 
         self.save_path = kwargs.pop('save_path', None)
         if self.model_fn is not None and self.save_path is None:
             self.save_path = os.path.dirname(self.model_fn)
 
-        self._ss = ' ' * 3
+        self._ss = ' '*3
         self._string_fmt = '.0f'
         self._model_fn = 'Model1D'
         self.model_res = None
@@ -944,7 +970,9 @@ class Model(object):
         self.model_preference_penalty = None
         self.num_params = None
 
-    def _set_layerdepth_defaults(self, z1_threshold=3., bottomlayer_threshold=2.):
+
+
+    def _set_layerdepth_defaults(self,z1_threshold=3.,bottomlayer_threshold=2.):
         """
         set target depth, bottom layer and z1 layer, making sure all the layers
         are consistent with each other and will work in the inversion
@@ -953,27 +981,27 @@ class Model(object):
 
         if self.target_depth is None:
             if self.bottom_layer is None:
-                # if neither target_depth nor bottom_layer are set, set
-                # defaults
+                # if neither target_depth nor bottom_layer are set, set defaults
                 self.target_depth = 10000.
             else:
-                self.target_depth = mtcc.roundsf(self.bottom_layer / 5., 1.)
+                self.target_depth = mtcc.roundsf(self.bottom_layer/5., 1.)
 
         if self.bottom_layer is None:
-            self.bottom_layer = 5. * self.target_depth
-        # if bottom layer less than a factor of 2 greater than target depth
-        # then adjust deeper
-        elif float(self.bottom_layer) / self.target_depth < bottomlayer_threshold:
-            self.bottom_layer = bottomlayer_threshold * self.target_depth
+            self.bottom_layer = 5.*self.target_depth
+        # if bottom layer less than a factor of 2 greater than target depth then adjust deeper
+        elif float(self.bottom_layer)/self.target_depth < bottomlayer_threshold:
+            self.bottom_layer = bottomlayer_threshold*self.target_depth
             print "bottom layer not deep enough for target depth, set to {} m".format(self.bottom_layer)
 
         if self.z1_layer is None:
-            self.z1_layer = mtcc.roundsf(self.target_depth / 1000., 0)
-        elif self.target_depth / self.z1_layer < z1_threshold:
-            self.z1_layer = self.target_depth / z1_threshold
+            self.z1_layer = mtcc.roundsf(self.target_depth/1000.,0)
+        elif self.target_depth/self.z1_layer < z1_threshold:
+            self.z1_layer = self.target_depth/z1_threshold
             print "z1 layer not deep enough for target depth, set to {} m".format(self.z1_layer)
 
-    def write_model_file(self, save_path=None, **kwargs):
+
+
+    def write_model_file(self,save_path=None, **kwargs):
         """
         Makes a 1D model file for Occam1D.  
 
@@ -1019,50 +1047,51 @@ class Model(object):
         for key in kwargs.keys():
             setattr(self, key, kwargs[key])
 
-        #---------create depth layers--------------------
-        log_z = np.logspace(np.log10(self.z1_layer),
-                            np.log10(self.target_depth -
-                                     np.logspace(np.log10(self.z1_layer),
-                                                 np.log10(self.target_depth),
-                                                 num=self.n_layers)[-2]),
-                            num=self.n_layers - self.pad_z)
-        ztarget = np.array([zz - zz % 10**np.floor(np.log10(zz)) for zz in
-                            log_z])
-        log_zpad = np.logspace(np.log10(self.target_depth),
-                               np.log10(self.bottom_layer -
+        if self.model_depth is None:
+            #---------create depth layers--------------------
+            log_z = np.logspace(np.log10(self.z1_layer),
+                                np.log10(self.target_depth-
+                                         np.logspace(np.log10(self.z1_layer),
+                                np.log10(self.target_depth),
+                                num=self.n_layers)[-2]),
+                                num=self.n_layers-self.pad_z)
+            ztarget = np.array([zz-zz%10**np.floor(np.log10(zz)) for zz in
+                               log_z])
+            log_zpad = np.logspace(np.log10(self.target_depth),
+                                np.log10(self.bottom_layer-
                                         np.logspace(np.log10(self.target_depth),
-                                                    np.log10(
-                                                        self.bottom_layer),
-                                                    num=self.pad_z)[-2]),
-                               num=self.pad_z)
-        zpadding = np.array([zz - zz % 10**np.floor(np.log10(zz)) for zz in
-                             log_zpad])
-        z_nodes = np.append(ztarget, zpadding)
-        self.model_depth = np.array([z_nodes[:ii + 1].sum()
-                                     for ii in range(z_nodes.shape[0])])
-        self.num_params = self.n_layers + 2
-        # make the model file
-        modfid = open(self.model_fn, 'w')
-        modfid.write('Format: Resistivity1DMod_1.0' + '\n')
+                                np.log10(self.bottom_layer),
+                                num=self.pad_z)[-2]),
+                                num=self.pad_z)
+            zpadding = np.array([zz-zz%10**np.floor(np.log10(zz)) for zz in
+                                   log_zpad])
+            z_nodes = np.append(ztarget, zpadding)
+            self.model_depth = np.array([z_nodes[:ii+1].sum()
+                                         for ii in range(z_nodes.shape[0])])
+        else:
+            self.n_layers = len(self.model_depth)
+
+        self.num_params = self.n_layers+2
+        #make the model file
+        modfid=open(self.model_fn,'w')
+        modfid.write('Format: Resistivity1DMod_1.0'+'\n')
         modfid.write('#LAYERS:    {0}\n'.format(self.num_params))
         modfid.write('!Set free values to -1 or ? \n')
-        modfid.write('!penalize between 1 and 0,' +
-                     '0 allowing jump between layers and 1 smooth. \n')
-        modfid.write(
-            '!preference is the assumed resistivity on linear scale. \n')
-        modfid.write(
-            '!pref_penalty needs to be put if preference is not 0 [0,1]. \n')
+        modfid.write('!penalize between 1 and 0,'+
+                     '0 allowing jump between layers and 1 smooth. \n' )
+        modfid.write('!preference is the assumed resistivity on linear scale. \n')
+        modfid.write('!pref_penalty needs to be put if preference is not 0 [0,1]. \n')
         modfid.write('! {0}\n'.format(self._ss.join(['top_depth', 'resistivity',
-                                                     'penalty', 'preference',
-                                                     'pref_penalty'])))
+                                                    'penalty','preference',
+                                                    'pref_penalty'])))
         modfid.write(self._ss.join([str(-self.air_layer_height),
-                                    '1d12', '0', '0', '0', '!air layer', '\n']))
-        modfid.write(self._ss.join(['0', '-1', '0', '0', '0',
+                                    '1d12', '0', '0', '0', '!air layer','\n']))
+        modfid.write(self._ss.join([ '0', '-1', '0', '0', '0',
                                     '!first ground layer', '\n']))
         for ll in self.model_depth:
             modfid.write(self._ss.join(['{0:{1}}'.format(np.ceil(ll),
-                                                         self._string_fmt),
-                                        '-1', '1', '0', '0', '\n']))
+                                        self._string_fmt),
+                                        '-1','1','0','0','\n']))
 
         modfid.close()
 
@@ -1101,8 +1130,7 @@ class Model(object):
         if self.model_fn is None:
             raise IOError('Need to input a model file')
         elif os.path.isfile(self.model_fn) == False:
-            raise IOError(
-                'Could not find{0}, check path'.format(self.model_fn))
+            raise IOError('Could not find{0}, check path'.format(self.model_fn))
 
         self._model_fn = os.path.basename(self.model_fn)
         self.save_path = os.path.dirname(self.model_fn)
@@ -1138,16 +1166,16 @@ class Model(object):
                 if mlst[1] == '-1' or mlst[1] == '?':
                     mdict['nparam'] += 1
 
-        # make everything an array
+        #make everything an array
         for key in ['depth', 'res', 'pen', 'pref', 'prefpen']:
-            mdict[key] = np.array(mdict[key])
+                mdict[key] = np.array(mdict[key])
 
-        # create an array with empty columns to put the TE and TM models into
-        mres = np.zeros((len(mdict['res']), 2))
-        mres[:, 0] = mdict['res']
+        #create an array with empty columns to put the TE and TM models into
+        mres = np.zeros((len(mdict['res']),2))
+        mres[:,0] = mdict['res']
         mdict['res'] = mres
 
-        # make attributes
+        #make attributes
         self.model_res = mdict['res']
         self.model_depth = mdict['depth']
         self.model_penalty = mdict['pen']
@@ -1193,14 +1221,13 @@ class Model(object):
 
         freeparams = np.where(self.model_res == -1)[0]
 
-        ifid = file(self.iter_fn, 'r')
-        ilines = ifid.readlines()
-        ifid.close()
+        with open(self.iter_fn, 'r') as ifid:
+            ilines = ifid.readlines()
 
-        self.itdict = {}
-        model = []
-        for ii, iline in enumerate(ilines):
-            if iline.find(':') >= 0:
+        self.itdict={}
+        model=[]
+        for ii,iline in enumerate(ilines):
+            if iline.find(':')>=0:
                 ikey = iline[0:20].strip()
                 ivalue = iline[20:].split('!')[0].strip()
                 self.itdict[ikey[:-1]] = ivalue
@@ -1212,10 +1239,11 @@ class Model(object):
                 except ValueError:
                     pass
 
-        # put the model values into the model dictionary into the res array
-        # for easy manipulation and access.
+        #put the model values into the model dictionary into the res array
+        #for easy manipulation and access.
         model = np.array(model)
         self.model_res[freeparams, 1] = model
+
 
 
 class Startup(object):
@@ -1247,7 +1275,6 @@ class Startup(object):
     target_rms             target rms *default* is 1.0
     ====================== ====================================================
     """
-
     def __init__(self, data_fn=None, model_fn=None, **kwargs):
         self.data_fn = data_fn
         self.model_fn = model_fn
@@ -1271,7 +1298,7 @@ class Startup(object):
         self.min_max_bounds = kwargs.pop('min_max_bounds', None)
         self.model_step = kwargs.pop('model_step', None)
         self._startup_fn = 'OccamStartup1D'
-        self._ss = ' ' * 3
+        self._ss = ' '*3
 
     def write_startup_file(self, save_path=None, **kwargs):
         """
@@ -1359,7 +1386,7 @@ class Startup(object):
             setattr(self, key, kwargs[key])
 
         #--> write input file
-        infid = open(self.startup_fn, 'w')
+        infid=open(self.startup_fn,'w')
         infid.write('{0:<21}{1}\n'.format('Format:', 'OCCAMITER_FLEX'))
         infid.write('{0:<21}{1}\n'.format('Description:', self.description))
         infid.write('{0:<21}{1}\n'.format('Model File:',
@@ -1374,8 +1401,8 @@ class Startup(object):
             infid.write('{0:<21}{1}\n'.format('!Model Bounds:', 'min,max'))
         else:
             infid.write('{0:<21}{1},{2}\n'.format('Model Bounds:',
-                                                  self.min_max_bounds[0],
-                                                  self.min_max_bounds[1]))
+                                              self.min_max_bounds[0],
+                                              self.min_max_bounds[1]))
         if self.model_step == None:
             infid.write('{0:<21}{1}\n'.format('!Model Value Steps:',
                                               'stepsize'))
@@ -1384,10 +1411,8 @@ class Startup(object):
                                               self.model_step))
         infid.write('{0:<21}{1}\n'.format('Debug Level:', self.debug_level))
         infid.write('{0:<21}{1}\n'.format('Iteration:', self.start_iter))
-        infid.write('{0:<21}{1}\n'.format(
-            'Lagrange Value:', self.start_lagrange))
-        infid.write('{0:<21}{1}\n'.format(
-            'Roughness Value:', self.start_rough))
+        infid.write('{0:<21}{1}\n'.format('Lagrange Value:', self.start_lagrange))
+        infid.write('{0:<21}{1}\n'.format('Roughness Value:', self.start_rough))
         infid.write('{0:<21}{1}\n'.format('Misfit Value:', self.start_misfit))
         infid.write('{0:<21}{1}\n'.format('Misfit Reached:', 0))
         infid.write('{0:<21}{1}\n'.format('Param Count:', model.num_params))
@@ -1428,14 +1453,14 @@ class Startup(object):
         self._startup_fn = os.path.basename(self.startup_fn)
         self.save_path = os.path.dirname(self.startup_fn)
 
-        infid = open(self.startup_fn, 'r')
+        infid = open(self.startup_fn,'r')
         ilines = infid.readlines()
         infid.close()
 
         self.indict = {}
         res = []
 
-        # split the keys and values from the header information
+        #split the keys and values from the header information
         for iline in ilines:
             if iline.find(':') >= 0:
                 ikey = iline[0:20].strip()[:-1]
@@ -1451,10 +1476,9 @@ class Startup(object):
                 except ValueError:
                     pass
 
-        # make the resistivity array ready for models to be input
-        self.indict['res'] = np.zeros((len(res), 3))
-        self.indict['res'][:, 0] = res
-
+        #make the resistivity array ready for models to be input
+        self.indict['res']=np.zeros((len(res),3))
+        self.indict['res'][:,0]=res
 
 class Plot1DResponse(object):
     """
@@ -1571,29 +1595,30 @@ class Plot1DResponse(object):
         self.grid_color = kwargs.pop('grid_color', (.25, .25, .25))
         self.grid_alpha = kwargs.pop('grid_alpha', .3)
 
-        # color mode
+        #color mode
         if self.color_mode == 'color':
-            # color for data
+            #color for data
             self.cted = kwargs.pop('cted', (0, 0, 1))
             self.ctmd = kwargs.pop('ctmd', (1, 0, 0))
             self.mted = kwargs.pop('mted', 's')
             self.mtmd = kwargs.pop('mtmd', 'o')
 
-            # color for occam2d model
+            #color for occam2d model
             self.ctem = kwargs.pop('ctem', (0, .6, .3))
             self.ctmm = kwargs.pop('ctmm', (.9, 0, .8))
             self.mtem = kwargs.pop('mtem', '+')
             self.mtmm = kwargs.pop('mtmm', '+')
 
-        # black and white mode
+
+        #black and white mode
         elif self.color_mode == 'bw':
-            # color for data
+            #color for data
             self.cted = kwargs.pop('cted', (0, 0, 0))
             self.ctmd = kwargs.pop('ctmd', (0, 0, 0))
             self.mted = kwargs.pop('mted', '*')
             self.mtmd = kwargs.pop('mtmd', 'v')
 
-            # color for occam2d model
+            #color for occam2d model
             self.ctem = kwargs.pop('ctem', (0.6, 0.6, 0.6))
             self.ctmm = kwargs.pop('ctmm', (0.6, 0.6, 0.6))
             self.mtem = kwargs.pop('mtem', '+')
@@ -1645,28 +1670,28 @@ class Plot1DResponse(object):
         if type(self.iter_tm_fn) is not list:
             self.iter_tm_fn = [self.iter_tm_fn]
 
-        # make a grid of subplots
-        gs = gridspec.GridSpec(6, 5, hspace=self.subplot_hspace,
-                               wspace=self.subplot_wspace)
+        #make a grid of subplots
+        gs=gridspec.GridSpec(6, 5, hspace=self.subplot_hspace,
+                             wspace=self.subplot_wspace)
 
-        # make a figure
+        #make a figure
         self.fig = plt.figure(self.fig_num, self.fig_size, dpi=self.fig_dpi)
         plt.clf()
 
-        # set some plot parameters
+        #set some plot parameters
         plt.rcParams['font.size'] = self.font_size
         plt.rcParams['figure.subplot.left'] = self.subplot_left
         plt.rcParams['figure.subplot.right'] = self.subplot_right
         plt.rcParams['figure.subplot.bottom'] = self.subplot_bottom
         plt.rcParams['figure.subplot.top'] = self.subplot_top
 
-        # subplot resistivity
+        #subplot resistivity
         self.axr = self.fig.add_subplot(gs[:4, :4])
 
-        # subplot for phase
-        self.axp = self.fig.add_subplot(gs[4:, :4], sharex=self.axr)
+        #subplot for phase
+        self.axp = self.fig.add_subplot(gs[4:,:4], sharex=self.axr)
 
-        # subplot for model
+        #subplot for model
         self.axm = self.fig.add_subplot(gs[:, 4])
 
         legend_marker_list_te = []
@@ -1687,6 +1712,7 @@ class Plot1DResponse(object):
                             capsize=self.e_capsize,
                             capthick=self.e_capthick)
 
+
         #--> plot data apparent resistivity and phase-------------------------
         if self.data_te_fn is not None:
             d1 = Data()
@@ -1699,18 +1725,17 @@ class Plot1DResponse(object):
             if len(rxy) > 0:
                 errorbardict['yerr'] = d1.res_te[1][rxy]
                 errorbardict['picker'] = 2
-                for ekey in ['mfc', 'mec', 'color', 'ecolor']:
+                for ekey in ['mfc','mec','color','ecolor']:
                     errorbardict[ekey] = self.cted
                 errorbardict['marker'] = self.mted
                 try:
-                    rte = self.axr.errorbar(1. / d1.freq[rxy],
+                    rte = self.axr.errorbar(1./d1.freq[rxy],
                                             d1.res_te[0][rxy],
                                             **errorbardict)
                 except TypeError:
-                    # it seems old versions of matplotlib don't have attribute
-                    # capthick
+                    # it seems old versions of matplotlib don't have attribute capthick
                     del errorbardict['capthick']
-                    rte = self.axr.errorbar(1. / d1.freq[rxy],
+                    rte = self.axr.errorbar(1./d1.freq[rxy],
                                             d1.res_te[0][rxy],
                                             **errorbardict)
                 legend_marker_list_te.append(rte[0])
@@ -1718,27 +1743,26 @@ class Plot1DResponse(object):
             else:
                 pass
             #--------------------plot phase--------------------------------
-            # cut out missing data points first
-            pxy = np.where(d1.phase_te[0] != 0)[0]
+            #cut out missing data points first
+            pxy = np.where(d1.phase_te[0]!=0)[0]
 
             #--> TE mode data
             if len(pxy) > 0:
                 errorbardict['yerr'] = d1.phase_te[1][pxy]
                 errorbardict['picker'] = 1
-                for ekey in ['mfc', 'mec', 'color', 'ecolor']:
+                for ekey in ['mfc','mec','color','ecolor']:
                     errorbardict[ekey] = self.cted
                 errorbardict['marker'] = self.mted
                 try:
-                    self.axp.errorbar(1. / d1.freq[pxy],
-                                      d1.phase_te[0][pxy],
-                                      **errorbardict)
+                    self.axp.errorbar(1./d1.freq[pxy],
+                                       d1.phase_te[0][pxy],
+                                       **errorbardict)
                 except TypeError:
-                    # it seems old versions of matplotlib don't have attribute
-                    # capthick
+                    # it seems old versions of matplotlib don't have attribute capthick
                     del errorbardict['capthick']
-                    self.axp.errorbar(1. / d1.freq[pxy],
-                                      d1.phase_te[0][pxy],
-                                      **errorbardict)
+                    self.axp.errorbar(1./d1.freq[pxy],
+                                       d1.phase_te[0][pxy],
+                                       **errorbardict)
             else:
                 pass
         #--> plot tm data------------------------------------------------------
@@ -1752,17 +1776,17 @@ class Plot1DResponse(object):
             if len(ryx) > 0:
                 errorbardict['yerr'] = d1.res_tm[1][ryx]
                 errorbardict['picker'] = 2
-                for ekey in ['mfc', 'mec', 'color', 'ecolor']:
+                for ekey in ['mfc','mec','color','ecolor']:
                     errorbardict[ekey] = self.ctmd
                 errorbardict['marker'] = self.mtmd
                 try:
-                    rtm = self.axr.errorbar(1. / d1.freq[ryx],
-                                            d1.res_tm[0][ryx],
+                    rtm = self.axr.errorbar(1./d1.freq[ryx],
+                                            d1.res_tm[0][ryx] ,
                                             **errorbardict)
                 except TypeError:
                     del errorbardict['capthick']
-                    rtm = self.axr.errorbar(1. / d1.freq[ryx],
-                                            d1.res_tm[0][ryx],
+                    rtm = self.axr.errorbar(1./d1.freq[ryx],
+                                            d1.res_tm[0][ryx] ,
                                             **errorbardict)
                 legend_marker_list_tm.append(rtm[0])
                 legend_label_list_tm.append('$Obs_{TM}$')
@@ -1770,25 +1794,25 @@ class Plot1DResponse(object):
                 pass
 
             #--------------------plot phase--------------------------------
-            # cut out missing data points first
-            pyx = np.where(d1.phase_tm[0] != 0)[0]
+            #cut out missing data points first
+            pyx = np.where(d1.phase_tm[0]!=0)[0]
 
             #--> TM mode data
-            if len(pyx) > 0:
+            if len(pyx)>0:
                 errorbardict['yerr'] = d1.phase_tm[1][pyx]
                 errorbardict['picker'] = 1
-                for ekey in ['mfc', 'mec', 'color', 'ecolor']:
+                for ekey in ['mfc','mec','color','ecolor']:
                     errorbardict[ekey] = self.ctmd
                 errorbardict['marker'] = self.mtmd
                 try:
-                    self.axp.errorbar(1. / d1.freq[pyx],
-                                      d1.phase_tm[0][pyx],
-                                      **errorbardict)
+                    self.axp.errorbar(1./d1.freq[pyx],
+                                       d1.phase_tm[0][pyx],
+                                       **errorbardict)
                 except TypeError:
                     del errorbardict['capthick']
-                    self.axp.errorbar(1. / d1.freq[pyx],
-                                      d1.phase_tm[0][pyx],
-                                      **errorbardict)
+                    self.axp.errorbar(1./d1.freq[pyx],
+                                       d1.phase_tm[0][pyx],
+                                       **errorbardict)
             else:
                 pass
 
@@ -1799,60 +1823,59 @@ class Plot1DResponse(object):
                 break
             itnum = rfn[-7:-5]
             if self.color_mode == 'color':
-                cxy = (0, .4 + float(rr) / (3 * nr), 0)
+                cxy = (0,.4+float(rr)/(3*nr),0)
             elif self.color_mode == 'bw':
-                cxy = (1 - 1.25 / (rr + 2.), 1 - 1.25 /
-                       (rr + 2.), 1 - 1.25 / (rr + 2.))
+                cxy = (1-1.25/(rr+2.),1-1.25/(rr+2.),1-1.25/(rr+2.))
 
             d1 = Data()
 
             d1.read_resp_file(rfn, data_fn=self.data_te_fn)
 
-            # get non zero data
+            #get non zero data
             rxy = np.where(d1.res_te[2] != 0)[0]
 
             #--> TE mode Data
             if len(rxy) > 0:
                 errorbardict['yerr'] = d1.res_te[3][rxy]
                 errorbardict['picker'] = 2
-                for ekey in ['mfc', 'mec', 'color', 'ecolor']:
+                for ekey in ['mfc','mec','color','ecolor']:
                     errorbardict[ekey] = self.ctem
                 errorbardict['marker'] = self.mtem
                 try:
-                    rte = self.axr.errorbar(1. / d1.freq[rxy],
+                    rte = self.axr.errorbar(1./d1.freq[rxy],
                                             d1.res_te[2][rxy],
                                             **errorbardict)
                 except TypeError:
                     del errorbardict['capthick']
-                    rte = self.axr.errorbar(1. / d1.freq[rxy],
+                    rte = self.axr.errorbar(1./d1.freq[rxy],
                                             d1.res_te[2][rxy],
                                             **errorbardict)
                 legend_marker_list_te.append(rte[0])
-                legend_label_list_te.append('$Mod_{TE}$' + itnum)
+                legend_label_list_te.append('$Mod_{TE}$'+itnum)
             else:
                 pass
 
             #--------------------plot phase--------------------------------
-            # cut out missing data points first
+            #cut out missing data points first
             #--> data
-            pxy = np.where(d1.phase_te[2] != 0)[0]
+            pxy = np.where(d1.phase_te[2]!=0)[0]
 
             #--> TE mode phase
             if len(pxy) > 0:
                 errorbardict['yerr'] = d1.phase_te[3][pxy]
                 errorbardict['picker'] = 1
-                for ekey in ['mfc', 'mec', 'color', 'ecolor']:
+                for ekey in ['mfc','mec','color','ecolor']:
                     errorbardict[ekey] = self.ctem
                 errorbardict['marker'] = self.mtem
                 try:
-                    self.axp.errorbar(1. / d1.freq[pxy],
-                                      d1.phase_te[2][pxy],
-                                      **errorbardict)
+                    self.axp.errorbar(1./d1.freq[pxy],
+                                       d1.phase_te[2][pxy],
+                                       **errorbardict)
                 except TypeError:
                     del errorbardict['capthick']
-                    self.axp.errorbar(1. / d1.freq[pxy],
-                                      d1.phase_te[2][pxy],
-                                      **errorbardict)
+                    self.axp.errorbar(1./d1.freq[pxy],
+                                       d1.phase_te[2][pxy],
+                                       **errorbardict)
             else:
                 pass
         #---------------plot TM model response---------------------------------
@@ -1862,11 +1885,9 @@ class Plot1DResponse(object):
                 break
             itnum = rfn[-7:-5]
             if self.color_mode == 'color':
-                cyx = (.7 + float(rr) / (4 * nr), .13, .63 -
-                       float(rr) / (4 * nr))
+                cyx = (.7+float(rr)/(4*nr),.13,.63-float(rr)/(4*nr))
             elif self.color_mode == 'bw':
-                cyx = (1 - 1.25 / (rr + 2.), 1 - 1.25 /
-                       (rr + 2.), 1 - 1.25 / (rr + 2.))
+                cyx = (1-1.25/(rr+2.),1-1.25/(rr+2.),1-1.25/(rr+2.))
             d1 = Data()
 
             d1.read_resp_file(rfn, data_fn=self.data_tm_fn)
@@ -1874,41 +1895,41 @@ class Plot1DResponse(object):
             #--> TM mode model
             if len(ryx) > 0:
                 errorbardict['yerr'] = d1.res_tm[3][ryx]
-                for ekey in ['mfc', 'mec', 'color', 'ecolor']:
+                for ekey in ['mfc','mec','color','ecolor']:
                     errorbardict[ekey] = self.ctmm
                 errorbardict['marker'] = self.mtmm
                 try:
-                    rtm = self.axr.errorbar(1. / d1.freq[ryx],
+                    rtm = self.axr.errorbar(1./d1.freq[ryx],
                                             d1.res_tm[2][ryx],
                                             **errorbardict)
                 except TypeError:
                     del errorbardict['capthick']
-                    rtm = self.axr.errorbar(1. / d1.freq[ryx],
+                    rtm = self.axr.errorbar(1./d1.freq[ryx],
                                             d1.res_tm[2][ryx],
                                             **errorbardict)
                 legend_marker_list_tm.append(rtm[0])
-                legend_label_list_tm.append('$Mod_{TM}$' + itnum)
+                legend_label_list_tm.append('$Mod_{TM}$'+itnum)
             else:
                 pass
 
-            pyx = np.where(d1.phase_tm[2] != 0)[0]
+            pyx = np.where(d1.phase_tm[2]!=0)[0]
 
             #--> TM mode model
-            if len(pyx) > 0:
+            if len(pyx)>0:
                 errorbardict['yerr'] = d1.phase_tm[3][pyx]
                 errorbardict['picker'] = 1
-                for ekey in ['mfc', 'mec', 'color', 'ecolor']:
+                for ekey in ['mfc','mec','color','ecolor']:
                     errorbardict[ekey] = self.ctmm
                 errorbardict['marker'] = self.mtmm
                 try:
-                    self.axp.errorbar(1. / d1.freq[pyx],
-                                      d1.phase_tm[0][pyx],
-                                      **errorbardict)
+                    self.axp.errorbar(1./d1.freq[pyx],
+                                       d1.phase_tm[0][pyx],
+                                       **errorbardict)
                 except TypeError:
                     del errorbardict['capthick']
-                    self.axp.errorbar(1. / d1.freq[pyx],
-                                      d1.phase_tm[0][pyx],
-                                      **errorbardict)
+                    self.axp.errorbar(1./d1.freq[pyx],
+                                       d1.phase_tm[0][pyx],
+                                       **errorbardict)
             else:
                 pass
 
@@ -1918,43 +1939,40 @@ class Plot1DResponse(object):
         self.axr.set_yscale('log', nonposy='clip')
         self.axr.grid(True, alpha=self.grid_alpha, which='both',
                       color=self.grid_color)
-        plt.setp(self.axr.xaxis.get_ticklabels(), visible=False)
+        plt.setp(self.axr.xaxis.get_ticklabels(),visible=False)
         self.axp.grid(True, alpha=self.grid_alpha, which='both',
                       color=self.grid_color)
-        self.axp.yaxis.set_major_locator(
-            MultipleLocator(self.phase_major_ticks))
-        self.axp.yaxis.set_minor_locator(
-            MultipleLocator(self.phase_minor_ticks))
+        self.axp.yaxis.set_major_locator(MultipleLocator(self.phase_major_ticks))
+        self.axp.yaxis.set_minor_locator(MultipleLocator(self.phase_minor_ticks))
 
         if self.res_limits is not None:
             self.axr.set_ylim(self.res_limits)
 
         self.axp.set_ylim(self.phase_limits)
         self.axr.set_ylabel('App. Res. ($\Omega \cdot m$)',
-                            fontdict={'size': self.font_size, 'weight': 'bold'})
+                       fontdict={'size':self.font_size,'weight':'bold'})
         self.axp.set_ylabel('Phase (deg)',
-                            fontdict={'size': self.font_size, 'weight': 'bold'})
+                       fontdict={'size':self.font_size,'weight':'bold'})
         self.axp.set_xlabel('Period (s)',
-                            fontdict={'size': self.font_size, 'weight': 'bold'})
-        plt.suptitle(self.title_str, fontsize=self.font_size +
-                     2, fontweight='bold')
+                            fontdict={'size':self.font_size,'weight':'bold'})
+        plt.suptitle(self.title_str,fontsize=self.font_size+2,fontweight='bold')
         if legend_marker_list_te == [] or legend_marker_list_tm == []:
             num_col = 1
         else:
             num_col = 2
-        self.axr.legend(legend_marker_list_te + legend_marker_list_tm,
-                        legend_label_list_te + legend_label_list_tm,
-                        loc=2, markerscale=1,
+        self.axr.legend(legend_marker_list_te+legend_marker_list_tm,
+                        legend_label_list_te+legend_label_list_tm,
+                        loc=2,markerscale=1,
                         borderaxespad=.05,
                         labelspacing=.08,
                         handletextpad=.15,
                         borderpad=.05,
                         ncol=num_col,
-                        prop={'size': self.font_size + 1})
+                        prop={'size':self.font_size+1})
 
         #--> plot depth model--------------------------------------------------
         if self.model_fn is not None:
-            # put axis labels on the right side for clarity
+            #put axis labels on the right side for clarity
             self.axm.yaxis.set_label_position('right')
             self.axm.yaxis.set_tick_params(left='off', right='on',
                                            labelright='on')
@@ -1971,14 +1989,13 @@ class Plot1DResponse(object):
                 if ifn == None:
                     break
                 if self.color_mode == 'color':
-                    cxy = (0, .4 + float(ii) / (3 * nr), 0)
+                    cxy = (0,.4+float(ii)/(3*nr),0)
                 elif self.color_mode == 'bw':
-                    cxy = (1 - 1.25 / (ii + 2.), 1 - 1.25 /
-                           (ii + 2.), 1 - 1.25 / (ii + 2.))
+                    cxy = (1-1.25/(ii+2.),1-1.25/(ii+2.),1-1.25/(ii+2.))
                 m1 = Model()
                 m1.read_iter_file(ifn, self.model_fn)
-                plot_depth = m1.model_depth[1:] / dscale
-                plot_model = abs(10**m1.model_res[1:, 1])
+                plot_depth = m1.model_depth[1:]/dscale
+                plot_model = abs(10**m1.model_res[1:,1])
                 self.axm.semilogx(plot_model[::-1],
                                   plot_depth[::-1],
                                   ls='steps-',
@@ -1991,15 +2008,13 @@ class Plot1DResponse(object):
                 if ifn == None:
                     break
                 if self.color_mode == 'color':
-                    cyx = (.7 + float(ii) / (4 * nr), .13, .63 -
-                           float(ii) / (4 * nr))
+                    cyx = (.7+float(ii)/(4*nr),.13,.63-float(ii)/(4*nr))
                 elif self.color_mode == 'bw':
-                    cyx = (1 - 1.25 / (ii + 2.), 1 - 1.25 /
-                           (ii + 2.), 1 - 1.25 / (ii + 2.))
+                    cyx = (1-1.25/(ii+2.),1-1.25/(ii+2.),1-1.25/(ii+2.))
                 m1 = Model()
                 m1.read_iter_file(ifn, self.model_fn)
-                plot_depth = m1.model_depth[1:] / dscale
-                plot_model = abs(10**m1.model_res[1:, 1])
+                plot_depth = m1.model_depth[1:]/dscale
+                plot_model = abs(10**m1.model_res[1:,1])
                 self.axm.semilogx(plot_model[::-1],
                                   plot_depth[::-1],
                                   ls='steps-',
@@ -2020,10 +2035,11 @@ class Plot1DResponse(object):
             if self.depth_scale == 'log':
                 self.axm.set_yscale('log', nonposy='clip')
             self.axm.set_ylabel('Depth ({0})'.format(self.depth_units),
-                                fontdict={'size': self.font_size, 'weight': 'bold'})
+                                fontdict={'size':self.font_size,'weight':'bold'})
             self.axm.set_xlabel('Resistivity ($\Omega \cdot m$)',
-                                fontdict={'size': self.font_size, 'weight': 'bold'})
+                           fontdict={'size':self.font_size,'weight':'bold'})
             self.axm.grid(True, which='both', alpha=.25)
+
 
         plt.show()
 
@@ -2068,7 +2084,7 @@ class Plot1DResponse(object):
         fig.canvas.draw()
 
     def save_figure(self, save_fn, file_format='pdf', orientation='portrait',
-                    fig_dpi=None, close_plot='y'):
+                  fig_dpi=None, close_plot='y'):
         """
         save_plot will save the figure to save_fn.
 
@@ -2122,10 +2138,10 @@ class Plot1DResponse(object):
                              orientation=orientation, bbox_inches='tight')
 
         else:
-            save_fn = os.path.join(save_fn, 'Occam1d.' +
-                                   file_format)
+            save_fn = os.path.join(save_fn, 'Occam1d.'+
+                                    file_format)
             self.fig.savefig(save_fn, dpi=fig_dpi, format=file_format,
-                             orientation=orientation, bbox_inches='tight')
+                        orientation=orientation, bbox_inches='tight')
 
         if close_plot == 'y':
             plt.clf()
@@ -2135,7 +2151,7 @@ class Plot1DResponse(object):
             pass
 
         self.fig_fn = save_fn
-        print 'Saved figure to: ' + self.fig_fn
+        print 'Saved figure to: '+self.fig_fn
 
     def __str__(self):
         """
@@ -2143,7 +2159,6 @@ class Plot1DResponse(object):
         """
 
         return ("Plots model responses and model for 1D occam inversion")
-
 
 class Run(object):
     """
@@ -2158,7 +2173,6 @@ class Run(object):
         self.mode = kwargs.pop('mode', 'TE')
 
         self.run_occam1d()
-
     def run_occam1d(self):
 
         if self.startup_fn is None:
@@ -2173,7 +2187,6 @@ class Run(object):
         if test == 0:
             print '=========== Ran Inversion =========='
             print '  check {0} for files'.format(os.path.dirname(self.startup_fn))
-
 
 class PlotL2():
     """
@@ -2258,6 +2271,7 @@ class PlotL2():
         self.rough_marker_size = kwargs.pop('rough_marker_size', 7)
         self.rough_font_size = kwargs.pop('rough_font_size', 6)
 
+
         self.plot_yn = kwargs.pop('plot_yn', 'y')
         if self.plot_yn == 'y':
             self.plot()
@@ -2272,7 +2286,7 @@ class PlotL2():
 
         iter_list = [os.path.join(self.dir_path, fn)
                      for fn in os.listdir(self.dir_path)
-                     if fn.find('.iter') > 0]
+                     if fn.find('.iter')>0]
 
         self.rms_arr = np.zeros(len(iter_list),
                                 dtype=np.dtype([('iteration', np.int),
@@ -2296,21 +2310,21 @@ class PlotL2():
         med_rms = np.median(self.rms_arr['rms'])
         mean_rms = np.mean(self.rms_arr['rms'])
 
-        # set the dimesions of the figure
+        #set the dimesions of the figure
         plt.rcParams['font.size'] = self.font_size
         plt.rcParams['figure.subplot.left'] = self.subplot_left
         plt.rcParams['figure.subplot.right'] = self.subplot_right
         plt.rcParams['figure.subplot.bottom'] = self.subplot_bottom
         plt.rcParams['figure.subplot.top'] = self.subplot_top
 
-        # make figure instance
-        self.fig = plt.figure(self.fig_num, self.fig_size, dpi=self.fig_dpi)
+        #make figure instance
+        self.fig = plt.figure(self.fig_num,self.fig_size, dpi=self.fig_dpi)
         plt.clf()
 
-        # make a subplot for RMS vs Iteration
+        #make a subplot for RMS vs Iteration
         self.ax1 = self.fig.add_subplot(1, 1, 1)
 
-        # plot the rms vs iteration
+        #plot the rms vs iteration
         l1, = self.ax1.plot(self.rms_arr['iteration'],
                             self.rms_arr['rms'],
                             '-k',
@@ -2318,21 +2332,21 @@ class PlotL2():
                             marker='d',
                             ms=5)
 
-        # plot the median of the RMS
+        #plot the median of the RMS
         m1, = self.ax1.plot(self.rms_arr['iteration'],
                             np.repeat(med_rms, nr),
                             ls='--',
                             color=self.rms_median_color,
-                            lw=self.rms_lw * .75)
+                            lw=self.rms_lw*.75)
 
-        # plot the mean of the RMS
+        #plot the mean of the RMS
         m2, = self.ax1.plot(self.rms_arr['iteration'],
                             np.repeat(mean_rms, nr),
                             ls='--',
                             color=self.rms_mean_color,
-                            lw=self.rms_lw * .75)
+                            lw=self.rms_lw*.75)
 
-        # make subplot for RMS vs Roughness Plot
+        #make subplot for RMS vs Roughness Plot
         self.ax2 = self.ax1.twiny()
 
         self.ax2.set_xlim(self.rms_arr['roughness'][1:].min(),
@@ -2340,7 +2354,7 @@ class PlotL2():
 
         self.ax1.set_ylim(0, self.rms_arr['rms'][1])
 
-        # plot the rms vs roughness
+        #plot the rms vs roughness
         l2, = self.ax2.plot(self.rms_arr['roughness'],
                             self.rms_arr['rms'],
                             ls='--',
@@ -2350,13 +2364,13 @@ class PlotL2():
                             ms=self.rough_marker_size,
                             mfc='white')
 
-        # plot the iteration number inside the roughness marker
+        #plot the iteration number inside the roughness marker
         for rms, ii, rough in zip(self.rms_arr['rms'], self.rms_arr['iteration'],
-                                  self.rms_arr['roughness']):
-            # need this because if the roughness is larger than this number
-            # matplotlib puts the text out of bounds and a draw_text_image
-            # error is raised and file cannot be saved, also the other
-            # numbers are not put in.
+                           self.rms_arr['roughness']):
+            #need this because if the roughness is larger than this number
+            #matplotlib puts the text out of bounds and a draw_text_image
+            #error is raised and file cannot be saved, also the other
+            #numbers are not put in.
             if rough > 1e8:
                 pass
             else:
@@ -2365,35 +2379,37 @@ class PlotL2():
                               '{0}'.format(ii),
                               horizontalalignment='center',
                               verticalalignment='center',
-                              fontdict={'size': self.rough_font_size,
-                                        'weight': 'bold',
-                                        'color': self.rough_color})
+                              fontdict={'size':self.rough_font_size,
+                                        'weight':'bold',
+                                        'color':self.rough_color})
 
-        # make a legend
+        #make a legend
         self.ax1.legend([l1, l2, m1, m2],
                         ['RMS', 'Roughness',
                          'Median_RMS={0:.2f}'.format(med_rms),
                          'Mean_RMS={0:.2f}'.format(mean_rms)],
-                        ncol=1,
-                        loc='upper right',
-                        columnspacing=.25,
-                        markerscale=.75,
-                        handletextpad=.15)
+                         ncol=1,
+                         loc='upper right',
+                         columnspacing=.25,
+                         markerscale=.75,
+                         handletextpad=.15)
 
-        # set the axis properties for RMS vs iteration
+        #set the axis properties for RMS vs iteration
         self.ax1.yaxis.set_minor_locator(MultipleLocator(.1))
         self.ax1.xaxis.set_minor_locator(MultipleLocator(1))
         self.ax1.set_ylabel('RMS',
-                            fontdict={'size': self.font_size + 2,
-                                      'weight': 'bold'})
+                            fontdict={'size':self.font_size+2,
+                                      'weight':'bold'})
         self.ax1.set_xlabel('Iteration',
-                            fontdict={'size': self.font_size + 2,
-                                      'weight': 'bold'})
+                            fontdict={'size':self.font_size+2,
+                                      'weight':'bold'})
         self.ax1.grid(alpha=.25, which='both', lw=self.rough_lw)
         self.ax2.set_xlabel('Roughness',
-                            fontdict={'size': self.font_size + 2,
-                                      'weight': 'bold',
-                                      'color': self.rough_color})
+                            fontdict={'size':self.font_size+2,
+                                      'weight':'bold',
+                                      'color':self.rough_color})
+
+
 
         for t2 in self.ax2.get_xticklabels():
             t2.set_color(self.rough_color)
@@ -2421,7 +2437,7 @@ class PlotL2():
         self.plot()
 
     def save_figure(self, save_fn, file_format='pdf', orientation='portrait',
-                    fig_dpi=None, close_fig='y'):
+                  fig_dpi=None, close_fig='y'):
         """
         save_plot will save the figure to save_fn.
 
@@ -2475,10 +2491,10 @@ class PlotL2():
                              orientation=orientation, bbox_inches='tight')
 
         else:
-            save_fn = os.path.join(save_fn, '_L2.' +
-                                   file_format)
+            save_fn = os.path.join(save_fn, '_L2.'+
+                                    file_format)
             self.fig.savefig(save_fn, dpi=fig_dpi, format=file_format,
-                             orientation=orientation, bbox_inches='tight')
+                        orientation=orientation, bbox_inches='tight')
 
         if close_fig == 'y':
             plt.clf()
@@ -2488,7 +2504,7 @@ class PlotL2():
             pass
 
         self.fig_fn = save_fn
-        print 'Saved figure to: ' + self.fig_fn
+        print 'Saved figure to: '+self.fig_fn
 
     def update_plot(self):
         """
@@ -2529,64 +2545,63 @@ def parse_arguments(arguments):
 
     import argparse
 
-    parser = argparse.ArgumentParser(
-        description='Set up and run a set of isotropic occam1d model runs')
+    parser = argparse.ArgumentParser(description = 'Set up and run a set of isotropic occam1d model runs')
 
     parser.add_argument('edipath',
                         help='folder containing edi files to use, full path or relative to working directory',
                         type=str)
-    parser.add_argument('-l', '--program_location',
+    parser.add_argument('-l','--program_location',
                         help='path to the inversion program',
-                        type=str, default=r'/home/547/alk547/occam1d/OCCAM1DCSEM')
-    parser.add_argument('-efr', '--resistivity_errorfloor',
+                        type=str,default=r'/home/547/alk547/occam1d/OCCAM1DCSEM')
+    parser.add_argument('-efr','--resistivity_errorfloor',
                         help='error floor in resistivity, percent',
-                        type=float, default=0)
-    parser.add_argument('-efp', '--phase_errorfloor',
+                        type=float,default=0)
+    parser.add_argument('-efp','--phase_errorfloor',
                         help='error floor in phase, degrees',
-                        type=float, default=0)
-    parser.add_argument('-efz', '--z_errorfloor',
+                        type=float,default=0)
+    parser.add_argument('-efz','--z_errorfloor',
                         help='error floor in z, percent',
-                        type=float, default=0)
-    parser.add_argument('-wd', '--working_directory',
+                        type=float,default=0)
+    parser.add_argument('-wd','--working_directory',
                         help='working directory',
-                        type=str, default='.')
-    parser.add_argument('-m', '--modes', nargs='*',
+                        type=str,default='.')
+    parser.add_argument('-m','--modes', nargs='*',
                         help='modes to run, any or all of TE, TM, det (determinant)',
-                        type=str, default=['TE'])
-    parser.add_argument('-r', '--rotation_angle',
+                        type=str,default=['TE'])
+    parser.add_argument('-r','--rotation_angle',
                         help='angle to rotate the data by, in degrees or can define option "strike" to rotate to strike, or "file" to get rotation angle from file',
-                        type=str, default='0')
-    parser.add_argument('-rfile', '--rotation_angle_file',
+                        type=str,default='0')
+    parser.add_argument('-rfile','--rotation_angle_file',
                         help='file containing rotation angles, first column is station name (must match edis) second column is rotation angle',
-                        type=str, default=None)
-    parser.add_argument('-spr', '--strike_period_range', nargs=2,
+                        type=str,default=None)
+    parser.add_argument('-spr','--strike_period_range',nargs=2,
                         help='period range to use for calculation of strike if rotating to strike, two floats',
-                        type=float, default=[1e-3, 1e3])
-    parser.add_argument('-sapp', '--strike_approx',
+                        type=float,default=[1e-3,1e3])
+    parser.add_argument('-sapp','--strike_approx',
                         help='approximate strike angle, the strike closest to this value is chosen',
-                        type=float, default=0.)
-    parser.add_argument('-q', '--remove_outofquadrant',
+                        type=float,default=0.)
+    parser.add_argument('-q','--remove_outofquadrant',
                         help='whether or not to remove points outside of the first or third quadrant, True or False',
-                        type=bool, default=True)
-    parser.add_argument('-itermax', '--iteration_max',
+                        type=bool,default=True)
+    parser.add_argument('-itermax','--iteration_max',
                         help='maximum number of iterations',
-                        type=int, default=100)
-    parser.add_argument('-rf', '--rms_factor',
+                        type=int,default=100)
+    parser.add_argument('-rf','--rms_factor',
                         help='factor to multiply the minimum possible rms by to get the target rms for the second run',
-                        type=float, default=1.05)
-    parser.add_argument('-nl', '--n_layers',
+                        type=float,default=1.05)
+    parser.add_argument('-nl','--n_layers',
                         help='number of layers in the inversion',
-                        type=int, default=80)
-    parser.add_argument('-td', '--target_depth',
-                        help='target depth for the inversion',
-                        type=int, default=12)
-    parser.add_argument('-s', '--master_savepath',
-                        help='master directory to save suite of runs into',
-                        default='inversion_suite')
+                        type=int,default=80)
+    parser.add_argument('-td','--target_depth',
+                        help='target depth for the inversion in metres',
+                        type=int,default=10000)
+    parser.add_argument('-s','--master_savepath',
+                        help = 'master directory to save suite of runs into',
+                        default = 'inversion_suite')
 
     args = parser.parse_args(arguments)
     args.working_directory = os.path.abspath(args.working_directory)
-    if args.rotation_angle not in ['file', 'strike']:
+    if args.rotation_angle not in ['file','strike']:
         try:
             args.rotation_angle = float(args.rotation_angle)
         except:
@@ -2608,10 +2623,9 @@ def update_inputs():
     cline_keys = [i for i in dir(args) if i[0] != '_']
 
     for key in cline_keys:
-        cline_inputs[key] = getattr(args, key)
+        cline_inputs[key] = getattr(args,key)
 
     return cline_inputs
-
 
 def get_strike(mt_object, fmin, fmax, strike_approx=0):
     """
@@ -2623,17 +2637,15 @@ def get_strike(mt_object, fmin, fmax, strike_approx=0):
     """
     fselect = (mt_object.Z.freq > fmin) & (mt_object.Z.freq < fmax)
 
-    # get median strike angles for frequencies needed (two strike angles due
-    # to 90 degree ambiguity)
+    # get median strike angles for frequencies needed (two strike angles due to 90 degree ambiguity)
     zstrike = mtg.strike_angle(z_object=mt_object.Z)[fselect]
     # put both strikes in the same quadrant for averaging
     zstrike = zstrike % 90
-    zstrike = np.median(zstrike[np.isfinite(zstrike[:, 0])], axis=0)
+    zstrike = np.median(zstrike[np.isfinite(zstrike[:,0])],axis=0)
     # add 90 to put one back in the other quadrant
     zstrike[1] += 90
     # choose closest value to approx_strike
-    zstrike = zstrike[np.abs(zstrike - strike_approx) -
-                      np.amin(np.abs(zstrike - strike_approx)) < 1e-3]
+    zstrike = zstrike[np.abs(zstrike-strike_approx) - np.amin(np.abs(zstrike-strike_approx)) < 1e-3]
 
     if len(zstrike) > 0:
         strike = zstrike[0]
@@ -2644,15 +2656,16 @@ def get_strike(mt_object, fmin, fmax, strike_approx=0):
     return strike
 
 
+
 def generate_inputfiles(**input_parameters):
+
     """
     generate all the input files to run occam1d, return the path and the
     startup files to run.
 
     author: Alison Kirkby (2016)
     """
-    edipath = op.join(
-        input_parameters['working_directory'], input_parameters['edipath'])
+    edipath = op.join(input_parameters['working_directory'],input_parameters['edipath'])
     edilist = [ff for ff in os.listdir(edipath) if ff.endswith('.edi')]
 
     wkdir_master = op.join(input_parameters['working_directory'],
@@ -2664,73 +2677,74 @@ def generate_inputfiles(**input_parameters):
 
     for edifile in edilist:
         # read the edi file to get the station name
-        mto = mt.MT(op.join(edipath, edifile))
+        eo = mt.MT(op.join(edipath, edifile))
         if input_parameters['rotation_angle'] == 'strike':
             spr = input_parameters['strike_period_range']
-            fmax, fmin = [1. / np.amin(spr), 1. / np.amax(spr)]
-            rotangle = (get_strike(mto, fmin, fmax,
-                                   strike_approx=input_parameters['strike_approx']) - 90.) % 180
+            fmax,fmin = [1./np.amin(spr), 1./np.amax(spr)]
+            rotangle = (get_strike(eo,fmin,fmax,
+                                   strike_approx=input_parameters['strike_approx'])-90.)%180
         elif input_parameters['rotation_angle'] == 'file':
             with open(op.join(input_parameters['working_directory'], input_parameters['rotation_angle_file'])) as f:
                 line = f.readline().strip().split()
-                while string.upper(line[0]) != string.upper(mto.station):
+                print line, eo.station
+                while string.upper(line[0]) != string.upper(eo.station):
                     line = f.readline().strip().split()
                     if len(line) == 0:
-                        line = ['', '0.0']
+                        line = ['','0.0']
                         break
             rotangle = float(line[1])
         else:
             rotangle = input_parameters['rotation_angle']
-        print "rotation angle", rotangle
+        print "rotation angle",rotangle    
         # create a working directory to store the inversion files in
-        svpath = 'station' + mto.station
-        wd = op.join(wkdir_master, svpath)
+        svpath = 'station'+eo.station
+        wd = op.join(wkdir_master,svpath)
         if not os.path.exists(wd):
             os.mkdir(wd)
         rundirs[svpath] = []
-
+            
         # create the model file
         ocm = Model(n_layers=input_parameters['n_layers'],
                     target_depth=input_parameters['target_depth'],
                     save_path=wd)
         ocm.write_model_file()
-        print "modes", input_parameters['modes']
+        print "modes",input_parameters['modes']
         for mode in input_parameters['modes']:
             # create a data file for each mode
             print "creating a data file"
             print wd
             ocd = Data()
-            ocd._data_fn = 'Occam1d_DataFile_rot%03i' % rotangle
+            ocd._data_fn = 'Occam1d_DataFile_rot%03i'%rotangle
             ocd.write_data_file(
-                res_errorfloor=input_parameters['resistivity_errorfloor'],
-                phase_errorfloor=input_parameters['phase_errorfloor'],
-                z_errorfloor=input_parameters['z_errorfloor'],
-                remove_outofquadrant=input_parameters['remove_outofquadrant'],
-                mode=mode,
-                edi_file=op.join(edipath, edifile),
-                thetar=rotangle,
-                save_path=wd)
+                                res_errorfloor=input_parameters['resistivity_errorfloor'],
+                                phase_errorfloor=input_parameters['phase_errorfloor'],
+                                z_errorfloor=input_parameters['z_errorfloor'],
+                                remove_outofquadrant=input_parameters['remove_outofquadrant'],
+                                mode=mode,
+                                edi_file = op.join(edipath,edifile),
+                                thetar=rotangle,
+                                save_path = wd)
 
-            ocs = Startup(data_fn=ocd.data_fn,
-                          model_fn=ocm.model_fn)
-            startup_fn = 'OccamStartup1D' + mode
+            ocs = Startup(data_fn = ocd.data_fn,
+                          model_fn = ocm.model_fn)
+            startup_fn = 'OccamStartup1D'+mode
             ocs.write_startup_file(save_path=wd,
-                                   startup_fn=op.join(wd, startup_fn),
+                                   startup_fn=op.join(wd,startup_fn),
                                    max_iter=input_parameters['iteration_max'],
                                    target_rms=0.)
             rundirs[svpath].append(startup_fn)
 
-    return wkdir_master, rundirs
+    return wkdir_master,rundirs
 
 
-def divide_inputs(work_to_do, size):
+def divide_inputs(work_to_do,size):
     """
     divide list of inputs into chunks to send to each processor
 
     """
     chunks = [[] for _ in range(size)]
-    for i, d in enumerate(work_to_do):
-        chunks[i % size].append(d)
+    for i,d in enumerate(work_to_do):
+        chunks[i%size].append(d)
 
     return chunks
 
@@ -2754,34 +2768,32 @@ def build_run():
     # create the inputs and get the run directories
     master_wkdir, run_directories = generate_inputfiles(**input_parameters)
 
+
     # run Occam1d on each set of inputs.
     # Occam is run twice. First to get the lowest possible misfit.
     # we then set the target rms to a factor (default 1.05) times the minimum rms achieved
     # and run to get the smoothest model.
     for rundir in run_directories.keys():
-        wd = op.join(master_wkdir, rundir)
+        wd = op.join(master_wkdir,rundir)
         os.chdir(wd)
         for startupfile in run_directories[rundir]:
             # define some parameters
             mode = startupfile[14:]
-            iterstring = 'RMSmin' + mode
+            iterstring = 'RMSmin'+ mode
             # run for minimum rms
             subprocess.call([input_parameters['program_location'],
                              startupfile,
                              iterstring])
             # read the iter file to get minimum rms
-            iterfile = max([ff for ff in os.listdir(wd) if (
-                ff.startswith(iterstring) and ff.endswith('.iter'))])
+            iterfile = max([ff for ff in os.listdir(wd) if (ff.startswith(iterstring) and ff.endswith('.iter'))])
             startup = Startup()
-            startup.read_startup_file(op.join(wd, iterfile))
-            # create a new startup file the same as the previous one but target
-            # rms is factor*minimum_rms
-            startupnew = Startup(data_fn=op.join(wd, startup.data_file),
-                                 model_fn=op.join(wd, startup.model_file),
+            startup.read_startup_file(op.join(wd,iterfile))
+            # create a new startup file the same as the previous one but target rms is factor*minimum_rms
+            startupnew = Startup(data_fn=op.join(wd,startup.data_file),
+                                 model_fn=op.join(wd,startup.model_file),
                                  max_iter=input_parameters['iteration_max'],
-                                 target_rms=float(startup.misfit_value) * input_parameters['rms_factor'])
-            startupnew.write_startup_file(
-                startup_fn=op.join(wd, startupfile), save_path=wd)
+                                 target_rms=float(startup.misfit_value)*input_parameters['rms_factor'])
+            startupnew.write_startup_file(startup_fn=op.join(wd,startupfile),save_path=wd)
             # run occam again
             subprocess.call([input_parameters['program_location'],
                              startupfile,

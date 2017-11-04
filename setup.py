@@ -27,7 +27,8 @@ setup_kwargs['entry_points'] = {'console_scripts':
                      'modem_plot_pt_maps = mtpy.gui.modem_plot_pt_maps:main',
 			    'modem_mesh_builder = mtpy.gui.modem_mesh_builder:main',
                      'modem2vtk = mtpy.utils.modem2vtk:main',
-                     'occam1d_gui = mtpy.gui.occam1d_gui:main']}
+                     'occam1d_gui = mtpy.gui.occam1d_gui:main',
+                     'edi_editor = mtpy.gui.edi_editor:main']}
 
 # But many people will not have setuptools installed, so we need to handle
 # the default Python installation, which only has Distutils:

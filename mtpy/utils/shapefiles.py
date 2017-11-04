@@ -11,17 +11,14 @@ try:
     from osgeo import ogr, gdal, osr
 except ImportError:
     raise ImportError('Did not find GDAL, be sure it is installed correctly and '
-                      'all the paths are correct')
-import os
+          'all the paths are correct')
 import numpy as np
-
-import mtpy.analysis.pt as mtpt
+import os
 import mtpy.core.mt as mt
-import mtpy.modeling.modem_data as md
-
+import mtpy.modeling.modem as modem
+import mtpy.analysis.pt as mtpt
 
 ogr.UseExceptions()
-
 
 class PTShapeFile(object):
     """
@@ -368,7 +365,7 @@ class PTShapeFile(object):
 
         """
 
-        modem_obj = md.Data()
+        modem_obj = modem.Data()
         modem_obj.read_data_file(modem_data_fn)
 
         self.plot_period = modem_obj.period_list.copy()
@@ -388,7 +385,7 @@ class PTShapeFile(object):
         """
 
         # first get the data and response and place them in array for later use
-        modem_data_obj = md.Data()
+        modem_data_obj = modem.Data()
         modem_data_obj.read_data_file(modem_data_fn)
 
         self.plot_period = modem_data_obj.period_list.copy()
@@ -398,7 +395,7 @@ class PTShapeFile(object):
 
         self._set_rotation_angle(rotation_angle)
 
-        modem_resp_obj = md.Data()
+        modem_resp_obj = modem.Data()
         modem_resp_obj.read_data_file(modem_resp_fn)
 
         # rotate model response
@@ -575,7 +572,7 @@ class PTShapeFile(object):
         """
 
         # first get the data and response and place them in array for later use
-        modem_data_obj = md.Data()
+        modem_data_obj = modem.Data()
         modem_data_obj.read_data_file(modem_data_fn)
 
         self.plot_period = modem_data_obj.period_list.copy()
@@ -585,7 +582,7 @@ class PTShapeFile(object):
 
         self._set_rotation_angle(rotation_angle)
 
-        modem_resp_obj = md.Data()
+        modem_resp_obj = modem.Data()
         modem_resp_obj.read_data_file(modem_resp_fn)
 
         # rotate model response
@@ -1101,7 +1098,7 @@ class TipperShapeFile(object):
 
             data_source.Destroy()
 
-            print ('Wrote shape file to {0}'.format(shape_fn))
+            print 'Wrote shape file to {0}'.format(shape_fn)
 
     def write_imag_shape_files(self):
         """
@@ -1242,7 +1239,7 @@ class TipperShapeFile(object):
 
             data_source.Destroy()
 
-            print ('Wrote shape file to {0}'.format(shape_fn))
+            print 'Wrote shape file to {0}'.format(shape_fn)
 
     def write_tip_shape_files_modem(self, modem_data_fn, rotation_angle=0.0):
         """
@@ -1250,7 +1247,7 @@ class TipperShapeFile(object):
 
         """
 
-        modem_obj = md.Data()
+        modem_obj = modem.Data()
         modem_obj.read_data_file(modem_data_fn)
 
         self.plot_period = modem_obj.period_list.copy()
@@ -1269,10 +1266,10 @@ class TipperShapeFile(object):
         write residual tipper files for modem
 
         """
-        modem_data_obj = md.Data()
+        modem_data_obj = modem.Data()
         modem_data_obj.read_data_file(modem_data_fn)
 
-        modem_resp_obj = md.Data()
+        modem_resp_obj = modem.Data()
         modem_resp_obj.read_data_file(modem_resp_fn)
 
         self.plot_period = modem_data_obj.period_list.copy()
@@ -1439,6 +1436,45 @@ def transform_ll_to_utm(lon, lat, reference_ellipsoid='WGS84'):
 
     # returns easting, northing, altitude
     return utm_coordinate_system, utm_point
+
+
+
+#==============================================================================
+# test
+#==============================================================================
+##edipath = r"c:\Users\jrpeacock\Documents\Mendenhall\MonoBasin\EDI_Files\GeographicNorth"
+##edilst = [os.path.join(edipath, edi) for edi in os.listdir(edipath)
+##          if edi.find('.edi') > 0]
+##edilst.remove(os.path.join(edipath, 'mb035.edi'))
+##
+##pts = PTShapeFile(edilst, save_path=r"c:\Users\jrpeacock")
+##pts.projection = 'NAD27'
+##pts.ellipse_size = 1200
+##pts.write_shape_files()
+#
+#
+##tps = TipperShapeFile(edilst, save_path=r"c:\Users\jrpeacock")
+##tps.projection = 'NAD27'
+##tps.arrow_lw = 30
+##tps.arrow_head_height = 100
+##tps.arrow_head_width = 70
+##tps.write_real_shape_files()
+##tps.write_imag_shape_files()
+#
+#mfn = r"c:\Users\jrpeacock\Google Drive\Mono_Basin\Models\Modular_NLCG_110.dat"
+#sv_path = r"c:\Users\jrpeacock\Google Drive\Mono_Basin\Models\GIS_Tip_Response"
+##sv_path = r"c:\Users\jrpeacock\Google Drive\Mono_Basin\Models\GIS_PT_Response"
+##pts = PTShapeFile(save_path=sv_path)
+##pts.projection = 'NAD27'
+##pts.ellipse_size = 1200
+##pts.write_pt_shape_files_modem(mfn)
+#
+#tps = TipperShapeFile(save_path=sv_path)
+#tps.projection = 'NAD27'
+#tps.arrow_lw = 30
+#tps.arrow_head_height = 100
+#tps.arrow_head_width = 70
+#tps.write_tip_shape_files_modem(mfn)
 
 
 def modem_to_shapefiles(mfndat, save_dir):

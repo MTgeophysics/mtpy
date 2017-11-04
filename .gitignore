@@ -1,3 +1,5 @@
+tmp/*
+temp/*
 Session.vim
 MANIFEST
 build
