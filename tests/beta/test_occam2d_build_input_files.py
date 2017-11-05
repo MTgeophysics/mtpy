@@ -23,9 +23,9 @@ from tests.beta import *
 import tests.util_functions as ufun
 from unittest import TestCase
 
-import matplotlib.pyplot as plt
-plt.ion() # make figure disappear automatically:
-#plt.ioff()  # make figure show normally and need to click to close the figure to continue the proc
+# import matplotlib.pyplot as plt
+# plt.ion() # make figure disappear automatically:
+# plt.ioff()  # make figure show normally and need to click to close the figure to continue the proc
 
 class TestOccam2D(TestCase):
     def setUp(self):

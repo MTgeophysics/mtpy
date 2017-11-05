@@ -13,11 +13,6 @@ import os
 from mtpy.modeling.modem import Plot_RMS_Maps
 from tests.beta import *
 
-import matplotlib.pyplot as plt
-plt.ion() # make figure disappear automatically
-
-#plt.ioff()  # to make figure show normally, and require click to close the figure to continue
-
 def test_fun():
     """
     test function

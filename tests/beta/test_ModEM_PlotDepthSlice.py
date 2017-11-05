@@ -9,9 +9,6 @@ Created on Tue Oct 04 13:13:29 2016
 Fei.zhang@ga.gov.au
 """
 
-import os
-import shutil
-import matplotlib.pyplot as plt
 
 from mtpy.modeling.modem import PlotDepthSlice
 

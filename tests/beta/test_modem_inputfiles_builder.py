@@ -25,7 +25,6 @@ from mtpy.modeling.modem import Covariance
 import mtpy.core.edi as mtedi
 import numpy as np
 from tests.beta import *
-import matplotlib.pyplot as plt
 
 import shutil
 from unittest import TestCase

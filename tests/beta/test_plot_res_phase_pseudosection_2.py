@@ -12,9 +12,9 @@ from mtpy.imaging.plotpseudosection import PlotResPhasePseudoSection
 
 from tests.beta import *
 
-import matplotlib.pyplot as plt
-plt.ion() # make figure disappear automatically:
-#plt.ioff()  # make figure show normally and need to click to close the figure to continue the proc
+# import matplotlib.pyplot as plt
+# plt.ion() # make figure disappear automatically:
+# plt.ioff()  # make figure show normally and need to click to close the figure to continue the proc
 
 
 def test_func():
