@@ -1,21 +1,21 @@
 '''A pile contains subpiles which contain tracesfiles which contain traces.'''
 
-import trace
-import io
-import util
-import config
-
-import numpy as num
-import os
-import logging
-import time
-import weakref
+import cPickle as pickle
 import copy
+import logging
+import math
+import operator
+import os
 import re
 import sys
-import operator
-import math
-import cPickle as pickle
+import time
+import weakref
+
+import config
+import util
+
+import io
+import trace
 
 
 def sl(s):
@@ -47,7 +47,6 @@ import avl
 pjoin = os.path.join
 logger = logging.getLogger('pyrocko.pile')
 
-from util import reuse
 from trace import degapper
 
 

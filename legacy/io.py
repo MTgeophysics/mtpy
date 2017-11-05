@@ -30,9 +30,10 @@ ASCII Table  text                                  yes      [#f5]_
 '''
 
 import os
-import trace
 
 import numpy as num
+
+import trace
 
 
 def load(filename, format='mseed', getdata=True, substitutions=None):
