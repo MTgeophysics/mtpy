@@ -1,6 +1,8 @@
 
 # package tests.beta scope global params
 import os
+import matplotlib.pyplot as plt
+plt.ion()
 
 MTPY_ROOT='/Softlab/Githubz/mtpy'    # source code root dir
 

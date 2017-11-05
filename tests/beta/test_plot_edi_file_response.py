@@ -11,7 +11,7 @@ import os
 from tests.beta import *
 import mtpy.imaging.plotresponse as mtpr
 import matplotlib.pyplot as plt
-plt.ion() # make figure disappear automatically:
+#plt.ion() # make figure disappear automatically:
 #plt.ioff()  # make figure show normally and need to click to close the figure to continue the proc
 
 
