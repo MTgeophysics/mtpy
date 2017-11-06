@@ -305,7 +305,7 @@ class PlotStrike2D(object):
                                          skew_threshold=self.skew_threshold)
             index_2d = np.where(dim_2d == 2)[0]
             #------------get strike from phase tensor strike angle-------------
-            pt = mt.get_PhaseTensor()
+            pt = mt.pt
             az = (90 - pt.azimuth[0][index_2d]) % 360
             az_err = pt.azimuth[1][index_2d]
 
@@ -880,8 +880,8 @@ class PlotStrike2D(object):
                     slistpt.append([mt.station])
                     slisttip.append([mt.station])
 
-                zinv = mt.get_Zinvariants()
-                pt = mt.get_PhaseTensor()
+                zinv = mt.Z.invariants
+                pt = mt.pt
                 tp = mt.Tipper
 
                 bnlist = []

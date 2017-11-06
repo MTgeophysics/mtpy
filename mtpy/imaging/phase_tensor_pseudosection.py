@@ -527,7 +527,7 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
 
             # get phase tensor elements and flip so the top is small
             # periods/high frequency
-            pt = mt.get_PhaseTensor()
+            pt = mt.pt
 
             periodlist = mt.period[::-1]
             phimax = pt.phimax[0][::-1]

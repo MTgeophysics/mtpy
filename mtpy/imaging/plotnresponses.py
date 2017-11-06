@@ -990,7 +990,7 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                     if self._plot_strike.find('p') > 0:
 
                         #strike from phase tensor
-                        pt = mt.get_PhaseTensor()
+                        pt = mt.pt
                         s2, s2_err = pt.azimuth
 
                         #fold angles to go from -90 to 90
@@ -1129,7 +1129,7 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                 #----plot phase tensor ellipse---------------------------------------
                 if self._plot_pt == 'y':
                     #get phase tensor instance
-                    pt = mt.get_PhaseTensor()
+                    pt = mt.pt
 
                     cmap = self.ellipse_cmap
                     ckmin = self.ellipse_range[0]

@@ -332,7 +332,7 @@ class PlotStrike(object):
             invlist.append(mdictinv)
 
             #------------get strike from phase tensor strike angle-------------
-            pt = mt.get_PhaseTensor()
+            pt = mt.pt
             az = 90 - pt.azimuth[0]
             az_err = pt.azimuth[1]
 
@@ -1066,7 +1066,7 @@ class PlotStrike(object):
                     slisttip.append([mt.station])
 
                 zinv = mt.get_Zinvariants()
-                pt = mt.get_PhaseTensor()
+                pt = mt.pt
                 tp = mt.Tipper
 
                 bnlist = []

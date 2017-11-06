@@ -261,9 +261,9 @@ class PlotPhaseTensor(mtpl.MTEllipse):
             self.pt
             self.pt.rotate(self.rot_z)
         except AttributeError:
-            self.pt = self._mt.get_PhaseTensor()
+            self.pt = self._mt.pt
             self.pt.rotate(self.rot_z)
-            self.zinv = self._mt.get_Zinvariants()
+            self.zinv = self._mt.Z.invariants
             self.zinv.rotate(self.rot_z)
 
         cmap = self.ellipse_cmap

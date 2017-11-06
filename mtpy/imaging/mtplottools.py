@@ -1680,7 +1680,7 @@ def get_pt_arrays(mt_list, plot_period, sort_by='line', line_direction='ew',
                              
         for ii, mt in enumerate(mt_list_sort):
             #get resisitivity and phase in a dictionary and append to a list
-            pt = mt.get_PhaseTensor()
+            pt = mt.pt
             
             for rr, rper in enumerate(plot_period):
                 jj = None
@@ -1727,7 +1727,7 @@ def get_pt_arrays(mt_list, plot_period, sort_by='line', line_direction='ew',
         
         for ii, mt in enumerate(mt_list):
             #get resisitivity and phase in a dictionary and append to a list
-            pt = mt.get_PhaseTensor()
+            pt = mt.pt
             
             for rr, rper in enumerate(plot_period):
                 jj = None
