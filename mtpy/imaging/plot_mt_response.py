@@ -24,7 +24,6 @@ from matplotlib.ticker import MultipleLocator
 
 import mtpy.imaging.mtcolors as mtcl
 import mtpy.imaging.mtplottools as mtpl
-import mtpy.utils.exceptions as mtex
 
 # reload(mtpl)
 
@@ -34,7 +33,7 @@ import mtpy.utils.exceptions as mtex
 #==============================================================================
 #  Plot apparent resistivity and phase
 #==============================================================================
-class PlotMTResponse(mtpl.MTArrows, mtpl.MTEllipse, mtpl.PlotSettings):
+class PlotMTResponse(object):
     """
     Plots Resistivity and phase for the different modes of the MT response.  At
     the moment is supports the input of an .edi file. Other formats that will

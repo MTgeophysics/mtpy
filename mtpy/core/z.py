@@ -670,24 +670,23 @@ class Z(ResPhase):
                 return
 
             lo_x_factors = np.repeat(x_factor, len(self.z))
+        elif len(reduce_res_factor_x) == 1:
+            try:
+                x_factor = float(reduce_res_factor_x)
+            except ValueError:
+                logger.error('reduce_res_factor_x must be a valid numbers')
+                return
+            lo_x_factors = np.repeat(x_factor, len(self.z))
         else:
-            if len(reduce_res_factor_x) == 1:
-                try:
-                    x_factor = float(reduce_res_factor_x)
-                except ValueError:
-                    logging.error('reduce_res_factor_x must be a valid numbers')
-                    return
-                lo_x_factors = np.repeat(x_factor, len(self.z))
-            else:
-                try:
-                    lo_x_factors = np.repeat(x_factor,
-                                             len(reduce_res_factor_x))
-                except ValueError:
-                    logging.error( '"reduce_res_factor_x" must be valid numbers')
-                    return
+            try:
+                lo_x_factors = np.repeat(x_factor,
+                                         len(reduce_res_factor_x))
+            except ValueError:
+                logger.error('"reduce_res_factor_x" must be valid numbers')
+                return
 
         if len(lo_x_factors) != len(self.z):
-            logging.error('Wrong number Number of reduce_res_factor_x - need {0}'.format(len(self.z)))
+            logger.error('Wrong number Number of reduce_res_factor_x - need {0}'.format(len(self.z)))
             return
 
         #check for iterable list/set of reduce_res_factor_y - if so,
@@ -696,28 +695,27 @@ class Z(ResPhase):
             try:
                 y_factor = float(reduce_res_factor_y)
             except ValueError:
-                logging.error('"reduce_res_factor_y" must be a valid numbers')
+                logger.error('"reduce_res_factor_y" must be a valid numbers')
                 return
 
             lo_y_factors = np.repeat(y_factor, len(self.z))
+        elif len(reduce_res_factor_y) == 1:
+            try:
+                y_factor = float(reduce_res_factor_y)
+            except ValueError:
+                logger.error( '"reduce_res_factor_y" must be a valid numbers')
+                return
+            lo_y_factors = np.repeat(y_factor, len(self.z))
         else:
-            if len(reduce_res_factor_y) == 1:
-                try:
-                    y_factor = float(reduce_res_factor_y)
-                except ValueError:
-                    logging.error( '"reduce_res_factor_y" must be a valid numbers')
-                    return
-                lo_y_factors = np.repeat(y_factor, len(self.z))
-            else:
-                try:
-                    lo_y_factors = np.repeat(y_factor,
-                                             len(reduce_res_factor_y))
-                except ValueError:
-                    logging.error('"reduce_res_factor_y" must be valid numbers')
-                    return
+            try:
+                lo_y_factors = np.repeat(y_factor,
+                                         len(reduce_res_factor_y))
+            except ValueError:
+                logger.error('"reduce_res_factor_y" must be valid numbers')
+                return
 
         if len(lo_y_factors) != len(self.z):
-            logging.error( 'Wrong number Number of "reduce_res_factor_y"' + \
+            logger.error( 'Wrong number Number of "reduce_res_factor_y"' + \
                   '- need {0} '.format(len(self.z)))
             return
 
@@ -1310,13 +1308,13 @@ class Tipper(object):
             tipper_new = copy.copy(self.tipper)
 
             if self.tipper.shape != r_array.shape:
-                logging.error( 'Error - shape of "r" array does not match shape of ' + \
+                logger.error( 'Error - shape of "r" array does not match shape of ' + \
                       'tipper array: %s ; %s' % (str(r_array.shape),
                                                  str(self.tipper.shape)))
                 return
 
             if self.tipper.shape != phi_array.shape:
-                logging.error( 'Error - shape of "phi" array does not match shape of ' + \
+                logger.error( 'Error - shape of "phi" array does not match shape of ' + \
                       'tipper array: %s ; %s' % (str(phi_array.shape),
                                                  str(self.tipper.shape)))
                 return
@@ -1325,17 +1323,17 @@ class Tipper(object):
             tipper_new = np.zeros(r_array.shape, 'complex')
 
             if r_array.shape != phi_array.shape:
-                logging.error( 'Error - shape of "phi" array does not match shape ' + \
+                logger.error( 'Error - shape of "phi" array does not match shape ' + \
                       'of "r" array: %s ; %s' % (str(phi_array.shape),
                                                  str(r_array.shape)))
                 return
 
         #assert real array:
         if np.linalg.norm(np.imag(r_array)) != 0:
-            logging.error( 'Error - array "r" is not real valued !')
+            logger.error( 'Error - array "r" is not real valued !')
             return
         if np.linalg.norm(np.imag(phi_array)) != 0:
-            logging.error( 'Error - array "phi" is not real valued !')
+            logger.error( 'Error - array "phi" is not real valued !')
             return
 
         for idx_f in range(len(r_array)):
@@ -1468,7 +1466,7 @@ class Tipper(object):
         """
 
         if self.tipper is None:
-            logging.error( 'tipper array is "None" - I cannot rotate that')
+            logger.error( 'tipper array is "None" - I cannot rotate that')
             return
 
         #check for iterable list/set of angles - if so, it must have length 1
@@ -1477,32 +1475,31 @@ class Tipper(object):
             try:
                 degreeangle = float(alpha%360)
             except ValueError:
-                logging.error( '"Angle" must be a valid number (in degrees)')
+                logger.error( '"Angle" must be a valid number (in degrees)')
                 return
 
             #make an n long list of identical angles
             lo_angles = [degreeangle for ii in self.tipper]
+        elif len(alpha) == 1:
+            try:
+                degreeangle = float(alpha%360)
+            except ValueError:
+                logger.error( '"Angle" must be a valid number (in degrees)')
+                return
+            #make an n long list of identical angles
+            lo_angles = [degreeangle for ii in self.tipper]
         else:
-            if len(alpha) == 1:
-                try:
-                    degreeangle = float(alpha%360)
-                except ValueError:
-                    logging.error( '"Angle" must be a valid number (in degrees)')
-                    return
-                #make an n long list of identical angles
-                lo_angles = [degreeangle for ii in self.tipper]
-            else:
-                try:
-                    lo_angles = [float(ii%360) for ii in alpha]
-                except ValueError:
-                    logging.error( '"Angles" must be valid numbers (in degrees)')
-                    return
+            try:
+                lo_angles = [float(ii%360) for ii in alpha]
+            except ValueError:
+                logger.error( '"Angles" must be valid numbers (in degrees)')
+                return
 
         self.rotation_angle = np.array([(oldangle+lo_angles[ii])%360
                               for ii, oldangle in enumerate(self.rotation_angle)])
 
         if len(lo_angles) != len(self.tipper):
-            logging.error( 'Wrong number Number of "angles" - need %ii ' % (len(self.tipper)))
+            logger.error( 'Wrong number Number of "angles" - need %ii ' % (len(self.tipper)))
             self.rotation_angle = 0.
             return
 
