@@ -306,8 +306,8 @@ class PlotStrike2D(object):
             index_2d = np.where(dim_2d == 2)[0]
             #------------get strike from phase tensor strike angle-------------
             pt = mt.pt
-            az = (90 - pt.azimuth[0][index_2d]) % 360
-            az_err = pt.azimuth[1][index_2d]
+            az = (90 - pt.azimuth[index_2d]) % 360
+            az_err = pt.azimuth_err[index_2d]
 
             # need to add 90 because pt assumes 0 is north and
             # negative because measures clockwise.
@@ -323,8 +323,8 @@ class PlotStrike2D(object):
 
             #-----------get tipper strike------------------------------------
             tip = mt.Tipper
-            if tip._Tipper.tipper is None:
-                tip._Tipper.tipper = np.zeros((len(mt.period), 1, 2),
+            if tip.tipper is None:
+                tip.tipper = np.zeros((len(mt.period), 1, 2),
                                               dtype='complex')
                 tip.compute_components()
 
