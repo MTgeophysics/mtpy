@@ -18,6 +18,8 @@ Revision History:
 
 import os
 import mtpy.modeling.occam2d as occam2d
+import tests
+import tests.beta
 from tests.beta import *
 
 import tests.util_functions as ufun
@@ -138,7 +140,7 @@ class TestOccam2D(TestCase):
 
             print ("Comparing", output_data_file, "and", expected_data_file)
 
-            count = ufun.diffiles(output_data_file, expected_data_file)
+            count = tests.beta._diffiles(output_data_file, expected_data_file)
             if afile == "Occam2DStartup":
                 self.assertTrue(count == 1, "Only-1 different line in for this file %s" % afile)
             else:

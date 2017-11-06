@@ -18,7 +18,11 @@ Revision History:
 # import section
 
 import os
+
+import tests
 import tests.util_functions as ufun
+
+import tests.beta
 from mtpy.modeling.modem import Model
 from mtpy.modeling.modem import Data
 from mtpy.modeling.modem import Covariance
@@ -118,7 +122,7 @@ class TestModemInputFilesBuilder(TestCase):
 
             print ("Comparing", output_data_file, "and", expected_data_file)
 
-            count = ufun.diffiles(output_data_file,expected_data_file)
+            count = tests.beta._diffiles(output_data_file, expected_data_file)
             self.assertTrue(count == 0, "The output files have %s different lines!!!" % count)
 
 

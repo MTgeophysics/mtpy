@@ -23,7 +23,11 @@ Revision History:
 # import section
 
 import os
+
+import tests
 import tests.util_functions as ufun
+
+import tests.beta
 from tests.beta import *
 
 from unittest import TestCase
@@ -54,7 +58,7 @@ class TestOccam1D(TestCase):
         edifile_name = os.path.basename(path2edifile)
         tmpdir = edifile_name[:-4]  + "_dir" # remove the trailing .edi
         tmp_save_path = os.path.join(self._output_dir, tmpdir)
-        ufun.clean_recreate(tmp_save_path)
+        tests.beta._clean_recreate(tmp_save_path)
 
         # create data file
         ocd = mtoc1d.Data()  # create an object and assign values to arguments
@@ -103,7 +107,7 @@ class TestOccam1D(TestCase):
 
             print ("Comparing", output_data_file, "and", expected_data_file)
 
-            count = ufun.diffiles(output_data_file, expected_data_file)
+            count = tests.beta._diffiles(output_data_file, expected_data_file)
             if afile == "OccamStartup1D":
                 self.assertTrue(count == 1, "Only-1 different line in for this file %s" % afile)
             else:
@@ -130,7 +134,7 @@ class TestOccam1D(TestCase):
 
             print ("Comparing", output_data_file, "and", expected_data_file)
 
-            count = ufun.diffiles(output_data_file, expected_data_file)
+            count = tests.beta._diffiles(output_data_file, expected_data_file)
 
             self.assertTrue(count > 0, "The output files should be different !!!")
 
