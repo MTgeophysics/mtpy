@@ -21,7 +21,7 @@ import mtpy.imaging.mtplottools as mtpl
 
 # ==============================================================================
 
-class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
+class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
     """
     PlotPhaseTensorPseudoSection will plot the phase tensor ellipses in a
     pseudo section format
@@ -328,6 +328,7 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
     """
 
     def __init__(self, **kwargs):
+        mtpl.PlotSettings.__init__(self)
 
         fn_list = kwargs.pop('fn_list', None)
         z_object_list = kwargs.pop('z_object_list', None)
@@ -344,7 +345,7 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
 
         # --> set the ellipse properties
         self._ellipse_dict = kwargs.pop('ellipse_dict', {})
-        self._read_ellipse_dict()
+        self._read_ellipse_dict(self._ellipse_dict)
 
         # --> set colorbar properties
         # set orientation to horizontal
@@ -408,7 +409,7 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
         self.plot_tipper = kwargs.pop('plot_tipper', 'n')
 
         self._arrow_dict = kwargs.pop('arrow_dict', {})
-        self._read_arrow_dict()
+        self._read_arrow_dict(self._arrow_dict)
 
         # This is a constructor of object. It's better not to call plot method here!!
         # self.plot_yn = kwargs.pop('plot_yn', 'y')
@@ -530,9 +531,9 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
             pt = mt.pt
 
             periodlist = mt.period[::-1]
-            phimax = pt.phimax[0][::-1]
-            phimin = pt.phimin[0][::-1]
-            azimuth = pt.azimuth[0][::-1]
+            phimax = pt.phimax[::-1]
+            phimin = pt.phimin[::-1]
+            azimuth = pt.azimuth[::-1]
 
             # if there are induction arrows, flip them as pt
             if self.plot_tipper.find('y') == 0:
@@ -554,24 +555,24 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
 
             # get the properties to color the ellipses by
             if self.ellipse_colorby == 'phimin':
-                colorarray = pt.phimin[0][::-1]
+                colorarray = pt.phimin[::-1]
 
             elif self.ellipse_colorby == 'phimax':
-                colorarray = pt.phimin[0][::-1]
+                colorarray = pt.phimin[::-1]
 
             elif self.ellipse_colorby == 'phidet':
                 colorarray = np.sqrt(abs(pt.det[::-1])) * (180 / np.pi)
 
             elif self.ellipse_colorby == 'skew' or \
                     self.ellipse_colorby == 'skew_seg':
-                colorarray = pt.beta[0][::-1]
+                colorarray = pt.beta[::-1]
 
             elif self.ellipse_colorby == 'normalized_skew' or \
                     self.ellipse_colorby == 'normalized_skew_seg':
-                colorarray = 2 * pt.beta[0][::-1]
+                colorarray = 2 * pt.beta[::-1]
 
             elif self.ellipse_colorby == 'ellipticity':
-                colorarray = pt.ellipticity[0][::-1]
+                colorarray = pt.ellipticity[::-1]
             else:
                 raise NameError(self.ellipse_colorby + ' is not supported')
 
