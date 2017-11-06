@@ -69,7 +69,7 @@ class _BaseTest(object):
         :return:
         """
         edi_files = glob.glob(os.path.join(self.edi_path, "*.edi"))
-        self.assertTrue(edi_files == self.edi_collection.edifiles)
+        self.assertTrue(set(edi_files) == set(self.edi_collection.edifiles))
         self.assertTrue(len(edi_files) == self.edi_collection.num_of_edifiles)
         self.assertTrue(self.edi_collection.ptol == 0.05)  # default
         self.assertTrue(isinstance(self.edi_collection.all_frequencies, list))  # not none and none-empty
