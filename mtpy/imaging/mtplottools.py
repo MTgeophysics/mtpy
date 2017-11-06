@@ -13,20 +13,17 @@ Contains helper functions and classes for plotting
 #==============================================================================
 
 import numpy as np
-import os
-
-import mtpy.core.mt as mt
-import mtpy.core.edi as mtedi
+# import mtpy.core.mt
+from mtpy.core import mt
 import mtpy.core.z as mtz
-import mtpy.analysis.pt as mtpt
-import mtpy.analysis.zinvariants as mtinv
 import mtpy.utils.exceptions as mtex
 import mtpy.utils.gis_tools as gis_tools
 import matplotlib.mlab as mlab
-
 #==============================================================================
 
+
 #define text formating for plotting
+
 ckdict = {'phiminang' : r'$\Phi_{min}$ (deg)',
           'phimin' : r'$\Phi_{min}$ (deg)',
           'phimaxang' : r'$\Phi_{max}$ (deg)',

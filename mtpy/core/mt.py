@@ -8,6 +8,7 @@
 
 # ==============================================================================
 import numpy as np
+import os
 import time
 
 import mtpy.core.edi as MTedi
@@ -17,7 +18,6 @@ import mtpy.analysis.pt as MTpt
 import mtpy.analysis.distortion as MTdistortion
 import mtpy.core.jfile as MTj
 import mtpy.core.mt_xml as MTxml
-import mtpy.imaging.plot_mt_response
 
 reload(MTz)
 
@@ -1765,7 +1765,7 @@ class MT(object):
 
         """
 
-        plot_obj = plot_mt_response.PlotMTResponse(z_object=self.Z,
+        plot_obj = PlotMTResponse(z_object=self.Z,
                                                    t_object=self.Tipper,
                                                    pt_obj=self.pt,
                                                    station=self.station,

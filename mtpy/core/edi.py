@@ -19,7 +19,7 @@ import numpy as np
 import mtpy.utils.gis_tools as gis_tools
 import mtpy.utils.exceptions as MTex
 import mtpy.utils.filehandling as MTfh
-import mtpy.utils.format as MTft
+import mtpy.core.z as MTz
 from mtpy.utils.mtpylog import MtPyLog
 import logging
 
