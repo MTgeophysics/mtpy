@@ -14,7 +14,7 @@ def _expected_compare_fail():
 
 
 test_params = [
-    ("tests/data/edifiles", {"fig_size": (8, 8), "savefig_kwargs": {'dpi': 100},
+    ("data/edifiles", {"fig_size": (8, 8), "savefig_kwargs": {'dpi': 100},
                              "on_compare_fail": _expected_compare_fail}),
     ("examples/data/edi2", {"fig_size": (5, 8), "savefig_kwargs": {'dpi': 100},
                             "on_compare_fail": _expected_compare_fail}),

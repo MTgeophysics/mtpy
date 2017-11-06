@@ -7,7 +7,7 @@ from tests.imaging import ImageTestCase, ImageCompare
 class TestPenetration_depth3d(ImageTestCase):
     @classmethod
     def setUpClass(cls):
-        cls._edifiles_small = "tests/data/edifiles"
+        cls._edifiles_small = "data/edifiles"
 
     @ImageCompare(fig_size=(8, 6))
     def test_plot_latlon_depth_profile_period_index(self):

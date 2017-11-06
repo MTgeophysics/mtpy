@@ -769,7 +769,7 @@ class MTplot(mt.MT):
                      
         super(MTplot, self).__init__()
         
-        self.fn = fn
+        self._fn = fn
         if self.fn is not None:
             self.read_mt_file(self.fn)
             

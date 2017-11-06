@@ -517,9 +517,9 @@ class Edi(object):
         t_err_arr[np.where(t_err_arr == 0.0)] = 1.0
 
         # be sure to fill attributes
+        self.Z.freq = freq_arr
         self.Z.z = z_arr
         self.Z.z_err = z_err_arr
-        self.Z.freq = freq_arr
         self.Z.rotation_angle = np.zeros_like(freq_arr)
         self.Z.compute_resistivity_phase()
 

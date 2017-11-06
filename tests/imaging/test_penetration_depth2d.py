@@ -10,7 +10,7 @@ class TestPenetration_depth2d(ImageTestCase):
     def setUpClass(cls):
         super(TestPenetration_depth2d, cls).setUpClass()
 
-        cls._edifiles = "tests/data/edifiles"
+        cls._edifiles = "data/edifiles"
         cls._period_index_list = [0, 1, 10, 20, 30, 40, 50, 59]
 
     @classmethod

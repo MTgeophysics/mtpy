@@ -21,12 +21,12 @@ from mtpy.core.edi_collection import is_num_in_seq, EdiCollection
 from mtpy.core.mt import MT
 
 edi_paths = [
-    "tests/data/edifiles",
+    "data/edifiles",
     "examples/data/edi2",
     "examples/data/edi_files",
     "../MT_Datasets/3D_MT_data_edited_fromDuanJM/",
     "../MT_Datasets/GA_UA_edited_10s-10000s/",
-    "tests/data/edifiles2"
+    "data/edifiles2"
 ]
 
 

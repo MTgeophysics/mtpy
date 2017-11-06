@@ -479,7 +479,7 @@ class Z(ResPhase):
                                             len(self._z))
 
         #for consistency recalculate resistivity and phase
-        if self._z is not None:
+        if self._z is not None and self._z_err is not None:
             try:
                 self.compute_resistivity_phase()
             except IndexError:

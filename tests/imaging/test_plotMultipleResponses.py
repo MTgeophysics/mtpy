@@ -14,7 +14,7 @@ def _expected_compare_fail():
 
 test_params = [
     (
-        "tests/data/edifiles",
+        "data/edifiles",
         {
             'style_all': {
                 "fig_size": (16, 6),

@@ -17,14 +17,14 @@ def _expected_compare_fail():
 
 
 test_params = [
-    ("tests/data/edifiles", 1, {"fig_size": (7, 8), "savefig_kwargs": {'dpi': 100},
+    ("data/edifiles", 1, {"fig_size": (7, 8), "savefig_kwargs": {'dpi': 100},
                                 "on_compare_fail": _expected_compare_fail}),
     ("../MT_Datasets/3D_MT_data_edited_fromDuanJM", 10, {"fig_size": (7, 8), "savefig_kwargs": {'dpi': 100}}),
     ("../MT_Datasets/GA_UA_edited_10s-10000s", 0.025, {"fig_size": (8, 5), "savefig_kwargs": {'dpi': 150}}),
     ("../MT_Datasets/GA_UA_edited_10s-10000s", 0.01, {"fig_size": (8, 7), "savefig_kwargs": {'dpi': 100}}),
     ("../MT_Datasets/GA_UA_edited_10s-10000s", 0.0625, {"fig_size": (8, 5), "savefig_kwargs": {'dpi': 150}}),
     ("../MT_Datasets/GA_UA_edited_10s-10000s", 0.0005, {"fig_size": (8, 5), "savefig_kwargs": {'dpi': 150}}),
-    ("tests/data/edifiles2", 1, {"fig_size": (7, 8), "savefig_kwargs": {'dpi': 100},
+    ("data/edifiles2", 1, {"fig_size": (7, 8), "savefig_kwargs": {'dpi': 100},
                                  "on_compare_fail": _expected_compare_fail})
 ]
 
@@ -60,7 +60,7 @@ class TestPlotPhaseTensorMaps(ImageTestCase):
         #                      'xborderpad': 0.07,
         #                      'yborderpad': 0.015}
 
-    @unittest.skipUnless(os.path.isdir("tests/data/edifiles2"), "data file not found")
+    @unittest.skipUnless(os.path.isdir("data/edifiles2"), "data file not found")
     @unittest.expectedFailure
     def test_edifiles2_input(self):
         """
@@ -87,7 +87,7 @@ class TestPlotPhaseTensorMaps(ImageTestCase):
                                      plot_tipper='yr',
                                      arrow_dict=self.arrow_dict,
                                      # arrow_legend_dict=arrow_legend_dict,
-                                     # fig_spython examples/plot_phase_tensor_map.py tests/data/edifiles/ 10 /e/MTPY2_Outputs/ptmap3deg.pngize=(6, 5),
+                                     # fig_spython examples/plot_phase_tensor_map.py data/edifiles/ 10 /e/MTPY2_Outputs/ptmap3deg.pngize=(6, 5),
                                      # fig_dpi=300, the default is OK. Higher dpi
                                      # may distort figure
                                      save_fn=save_figure_path, fig_size=(8, 6), fig_dpi=100)
@@ -113,7 +113,7 @@ def _test_gen(edi_path, freq):
                                      plot_tipper='yr',
                                      arrow_dict=self.arrow_dict,
                                      # arrow_legend_dict=arrow_legend_dict,
-                                     # fig_spython examples/plot_phase_tensor_map.py tests/data/edifiles/ 10 /e/MTPY2_Outputs/ptmap3deg.pngize=(6, 5),
+                                     # fig_spython examples/plot_phase_tensor_map.py data/edifiles/ 10 /e/MTPY2_Outputs/ptmap3deg.pngize=(6, 5),
                                      # fig_dpi=300, the default is OK. Higher dpi
                                      # may distort figure
                                      save_fn=save_figure_path)
