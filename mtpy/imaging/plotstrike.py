@@ -12,7 +12,7 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.ticker import MultipleLocator
-
+from mtpy.analysis.zinvariants import Zinvariants
 import mtpy.imaging.mtplottools as mtpl
 
 
@@ -307,7 +307,7 @@ class PlotStrike(object):
                 nt = len(period)
 
             #-----------get strike angle from invariants-----------------------
-            zinv = mt.get_Zinvariants()
+            zinv = Zinvariants(mt.Z)
 
             # add 90 degrees because invariants assume 0 is north, but plotting
             # assumes that 90 is north and measures clockwise, thus the negative
@@ -333,8 +333,8 @@ class PlotStrike(object):
 
             #------------get strike from phase tensor strike angle-------------
             pt = mt.pt
-            az = 90 - pt.azimuth[0]
-            az_err = pt.azimuth[1]
+            az = 90 - pt.azimuth
+            az_err = pt.azimuth_err
 
             # need to add 90 because pt assumes 0 is north and
             # negative because measures clockwise.
@@ -344,7 +344,7 @@ class PlotStrike(object):
                 az[np.where(az_err > self.pt_error_floor)] = 0.0
 
             # fold so the angle goes from 0 to 180
-            if self.fold == True:
+            if self.fold:
                 az[np.where(az > 90)] -= 180
                 az[np.where(az < -90)] += 180
 
@@ -358,8 +358,8 @@ class PlotStrike(object):
 
             #-----------get tipper strike------------------------------------
             tip = mt.Tipper
-            if tip._Tipper.tipper is None:
-                tip._Tipper.tipper = np.zeros((len(mt.period), 1, 2),
+            if tip.tipper is None:
+                tip.tipper = np.zeros((len(mt.period), 1, 2),
                                               dtype='complex')
                 tip.compute_components()
 
@@ -1065,7 +1065,7 @@ class PlotStrike(object):
                     slistpt.append([mt.station])
                     slisttip.append([mt.station])
 
-                zinv = mt.get_Zinvariants()
+                zinv = mt.Z.invariants
                 pt = mt.pt
                 tp = mt.Tipper
 

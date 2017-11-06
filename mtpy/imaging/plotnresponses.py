@@ -961,7 +961,7 @@ class PlotMultipleResponses(mtpl.PlotSettings):
 
                     if self._plot_strike.find('i') > 0:
                         #strike from invariants
-                        zinv = mt.get_Zinvariants()
+                        zinv = mt.Z.invariants
                         s1 = zinv.strike
 
                         #fold angles so go from -90 to 90
@@ -1865,7 +1865,7 @@ class PlotMultipleResponses(mtpl.PlotSettings):
 
 #                    if self._plot_strike.find('i') > 0:
 #                        #strike from invariants
-#                        zinv = mt.get_Zinvariants()
+#                        zinv = mt.Z.invariants
 #                        s1 = zinv.strike
 #
 #                        #fold angles so go from -90 to 90
