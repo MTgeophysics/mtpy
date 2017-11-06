@@ -839,16 +839,16 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                 if self._plot_tipper.find('y') == 0:
                     plt.setp(axp.xaxis.get_ticklabels(), visible=False)
 
-                    tp = mt.get_Tipper()
+                    tp = mt.Tipper
 
-                    txr = tp.mag_real*np.sin(tp.ang_real*np.pi/180+\
+                    txr = tp.mag_real*np.sin(tp.angle_real*np.pi/180+\
                                              np.pi*self.arrow_direction)
-                    tyr = tp.mag_real*np.cos(tp.ang_real*np.pi/180+\
+                    tyr = tp.mag_real*np.cos(tp.angle_real*np.pi/180+\
                                              np.pi*self.arrow_direction)
 
-                    txi = tp.mag_imag*np.sin(tp.ang_imag*np.pi/180+\
+                    txi = tp.mag_imag*np.sin(tp.angle_imag*np.pi/180+\
                                              np.pi*self.arrow_direction)
-                    tyi = tp.mag_imag*np.cos(tp.ang_imag*np.pi/180+\
+                    tyi = tp.mag_imag*np.cos(tp.angle_imag*np.pi/180+\
                                              np.pi*self.arrow_direction)
 
                     nt = len(txr)
@@ -1018,8 +1018,8 @@ class PlotMultipleResponses(mtpl.PlotSettings):
 
                     if self._plot_strike.find('t') > 0:
                         #strike from tipper
-                        tp = mt.get_Tipper()
-                        s3 = tp.ang_real+90
+                        tp = mt.Tipper
+                        s3 = tp.angle_real+90
 
                         #fold to go from -90 to 90
                         s3[np.where(s3 > 90)] -= 180
@@ -1916,7 +1916,7 @@ class PlotMultipleResponses(mtpl.PlotSettings):
 
                     if self._plot_strike.find('t') > 0:
                         #strike from tipper
-                        s3 = mt.Tipper.ang_real+90
+                        s3 = mt.Tipper.angle_real+90
 
                         #fold to go from -90 to 90
                         s3[np.where(s3 > 90)] -= 180

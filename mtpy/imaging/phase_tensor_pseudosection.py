@@ -536,12 +536,12 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
 
             # if there are induction arrows, flip them as pt
             if self.plot_tipper.find('y') == 0:
-                tip = mt.get_Tipper()
+                tip = mt.Tipper
                 if tip.mag_real is not None:
                     tmr = tip.mag_real[::-1]
                     tmi = tip.mag_imag[::-1]
-                    tar = tip.ang_real[::-1]
-                    tai = tip.ang_imag[::-1]
+                    tar = tip.angle_real[::-1]
+                    tai = tip.angle_imag[::-1]
                 else:
                     tmr = np.zeros(len(mt.period))
                     tmi = np.zeros(len(mt.period))
@@ -1005,7 +1005,7 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
         for kk, mt in enumerate(slist, 1):
 
             pt = mt.get_PhaseTensor()
-            tip = mt.get_Tipper()
+            tip = mt.Tipper
 
             if self.tscale == 'period':
                 tlist = mt.period
@@ -1040,9 +1040,9 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
                     azimlist[1:, kk] = pt.azimuth[0]
                 if tip.mag_real is not None:
                     tiplistr[1:, kk] = tip.mag_real
-                    tiplistraz[1:, kk] = tip.ang_real
+                    tiplistraz[1:, kk] = tip.angle_real
                     tiplisti[1:, kk] = tip.mag_imag
-                    tiplistiaz[1:, kk] = tip.ang_imag
+                    tiplistiaz[1:, kk] = tip.angle_imag
 
             # otherwise search the period list to find a cooresponding period
             else:
@@ -1067,9 +1067,9 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
                         # add on the value to the present row
                         if tip.mag_real is not None:
                             tiplistr[mm + 1, kk] = tip.mag_real[mm]
-                            tiplistraz[mm + 1, kk] = tip.ang_real[mm]
+                            tiplistraz[mm + 1, kk] = tip.angle_real[mm]
                             tiplisti[mm + 1, kk] = tip.mag_imag[mm]
-                            tiplistiaz[mm + 1, kk] = tip.ang_imag[mm]
+                            tiplistiaz[mm + 1, kk] = tip.angle_imag[mm]
 
                     elif t1_yn == False:
                         for ff, t2 in enumerate(tlist):
@@ -1086,9 +1086,9 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
                                 # add on the value to the present row
                                 if tip.mag_real is not None:
                                     tiplistr[mm + 1, kk] = tip.mag_real[ff]
-                                    tiplistraz[mm + 1, kk] = tip.ang_real[ff]
+                                    tiplistraz[mm + 1, kk] = tip.angle_real[ff]
                                     tiplisti[mm + 1, kk] = tip.mag_imag[ff]
-                                    tiplistiaz[mm + 1, kk] = tip.ang_imag[ff]
+                                    tiplistiaz[mm + 1, kk] = tip.angle_imag[ff]
                                 t1_yn = True
                                 break
                             else:

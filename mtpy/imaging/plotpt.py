@@ -470,8 +470,8 @@ class PlotPhaseTensor(mtpl.MTEllipse):
 
         if self._mt.tipper is not None:
             # strike from tipper
-            tp = self._mt.get_Tipper()
-            s3 = tp.ang_real + 90
+            tp = self._mt.Tipper
+            s3 = tp.angle_real + 90
 
             # fold to go from -90 to 90
             s3[np.where(s3 > 90)] = s3[np.where(s3 > 90)] - 180

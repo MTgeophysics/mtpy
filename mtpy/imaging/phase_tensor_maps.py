@@ -1305,7 +1305,7 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
                 freq0 = mt1.freq[j2]  # should use the closest freq from this list found within the tolerance range
 
                 pt = mt1.get_PhaseTensor()
-                tp = mt1.get_Tipper()
+                tp = mt1.Tipper
 
                 if pt.phimin[0] is not None:
                     phiminmap[xyloc[ii,0],xyloc[ii,1]] = pt.phimin[0][self.jj]
@@ -1316,9 +1316,9 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
 
                 if tp.mag_real is not None:
                     trmap[xyloc[ii,0],xyloc[ii,1]] = tp.mag_real[self.jj]
-                    trazmap[xyloc[ii,0],xyloc[ii,1]] = tp.ang_real[self.jj]
+                    trazmap[xyloc[ii,0],xyloc[ii,1]] = tp.angle_real[self.jj]
                     timap[xyloc[ii,0],xyloc[ii,1]] = tp.mag_imag[self.jj]
-                    tiazmap[xyloc[ii,0],xyloc[ii,1]] = tp.ang_imag[self.jj]
+                    tiazmap[xyloc[ii,0],xyloc[ii,1]] = tp.angle_imag[self.jj]
                 try:
                     stationmap[xyloc[ii,0],xyloc[ii,1]] = \
                               mt1.station[self.station_id[0]:self.station_id[1]]

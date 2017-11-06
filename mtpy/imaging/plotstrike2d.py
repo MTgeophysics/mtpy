@@ -322,14 +322,14 @@ class PlotStrike2D(object):
             ptlist.append(mdictpt)
 
             #-----------get tipper strike------------------------------------
-            tip = mt.get_Tipper()
+            tip = mt.Tipper
             if tip._Tipper.tipper is None:
                 tip._Tipper.tipper = np.zeros((len(mt.period), 1, 2),
                                               dtype='complex')
                 tip.compute_components()
 
             # needs to be negative because measures clockwise
-            tipr = -tip.ang_real[index_2d]
+            tipr = -tip.angle_real[index_2d]
 
             tipr[np.where(tipr == 180.)] = 0.0
             tipr[np.where(tipr == -180.)] = 0.0
@@ -882,7 +882,7 @@ class PlotStrike2D(object):
 
                 zinv = mt.get_Zinvariants()
                 pt = mt.get_PhaseTensor()
-                tp = mt.get_Tipper()
+                tp = mt.Tipper
 
                 bnlist = []
                 for nn, per in enumerate(mt.period):
@@ -975,7 +975,7 @@ class PlotStrike2D(object):
                                                  dtype='complex')
                     tp.compute_components()
 
-                tipr = -tp.ang_real[bnlist]
+                tipr = -tp.angle_real[bnlist]
 
                 # fold so the angle goes from 0 to 180
                 if self.fold == True:
