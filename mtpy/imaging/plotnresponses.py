@@ -612,7 +612,7 @@ class PlotMultipleResponses(mtpl.PlotSettings):
 
             for ii, mt in enumerate(self.mt_list):
                 #get the reistivity and phase object
-                rp = mt.get_ResPhase()
+                rp = mt.Z
 
                 # set x-axis limits from short period to long period
                 if self.xlimits is None:
@@ -778,25 +778,25 @@ class PlotMultipleResponses(mtpl.PlotSettings):
 
                 #check the phase to see if any point are outside of [0:90]
                 if self.phase_limits is None:
-                    pymin = min(0, min([min(rp.phasexy), min(rp.phaseyx)]))
-                    pymax = max(89.9, max([max(rp.phasexy), max(rp.phaseyx)]))
+                    pymin = min(0, min([min(rp.phase_xy), min(rp.phase_yx)]))
+                    pymax = max(89.9, max([max(rp.phase_xy), max(rp.phase_yx)]))
                     self.phase_limits = (pymin, pymax)
                 #     self.phase_limits = (pymin, pymax)
                 # else:
                 #     self.phase_limits = (min(self.phase_limits[0], pymin),
                 #                          max(self.phase_limits[1], pymax))
                 # if self.phase_limits is None:
-                #     if min(rp.phasexy) < 0 or min(rp.phaseyx) < 0:
-                #         pymin = min([min(rp.phasexy),
-                #                      min(rp.phaseyx)])
+                #     if min(rp.phasexy) < 0 or min(rp.phase_yx) < 0:
+                #         pymin = min([min(rp.phase_xy),
+                #                      min(rp.phase_yx)])
                 #         if pymin > 0:
                 #             pymin = 0
                 #     else:
                 #         pymin = 0
                 #
-                #     if max(rp.phasexy) > 90 or max(rp.phaseyx) > 90:
-                #         pymax = min([max(rp.phasexy),  # YG: should use max instead ??
-                #                      max(rp.phaseyx)])
+                #     if max(rp.phasexy) > 90 or max(rp.phase_yx) > 90:
+                #         pymax = min([max(rp.phase_xy),  # YG: should use max instead ??
+                #                      max(rp.phase_yx)])
                 #         if pymax < 91:
                 #             pymax = 89.9  # YG: why??
                 #     else:
@@ -1394,28 +1394,28 @@ class PlotMultipleResponses(mtpl.PlotSettings):
 
                     #res_det
                     ebdetr = axr.errorbar(mt.period,
-                                          rp.resdet,
+                                          rp.res_det,
                                           marker=self.det_marker,
                                           ms=self.marker_size,
                                           mfc=self.det_mfc,
                                           mec=self.det_color,
                                           mew=self.marker_lw,
                                           ls=self.det_ls,
-                                          yerr=rp.resdet_err,
+                                          yerr=rp.res_det_err,
                                           ecolor=self.det_color,
                                           capsize=self.marker_size,
                                           elinewidth=self.marker_lw)
 
                     #phase_det
                     ebdetp = axp.errorbar(mt.period,
-                                          rp.phasedet,
+                                          rp.phase_det,
                                           marker=self.det_marker,
                                           ms=self.marker_size,
                                           mfc=self.det_mfc,
                                           mec=self.det_color,
                                           mew=self.marker_lw,
                                           ls=self.det_ls,
-                                          yerr=rp.phasedet_err,
+                                          yerr=rp.phase_det_err,
                                           ecolor=self.det_color,
                                           capsize=self.marker_size,
                                           elinewidth=self.marker_lw)

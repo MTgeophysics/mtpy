@@ -1487,37 +1487,37 @@ def get_rp_arrays(mt_list, plot_period, sort_by='line', line_direction='ew',
                              
         for ii, mt in enumerate(mt_list_sort):
             #get resisitivity and phase in a dictionary and append to a list
-            rp = mt.get_ResPhase()
+            rp = mt.Z
             
             for rr, rper in enumerate(plot_period):
                 jj = None
                 for kk, iper in enumerate(mt.period):
                     if iper == rper:
                         jj = period_dict[rper]
-                        resxx[jj, ii] = np.log10(rp.resxx[kk])
-                        resxy[jj, ii] = np.log10(rp.resxy[kk])
-                        resyx[jj, ii] = np.log10(rp.resyx[kk])
-                        resyy[jj, ii] = np.log10(rp.resyy[kk])
+                        resxx[jj, ii] = np.log10(rp.res_xx[kk])
+                        resxy[jj, ii] = np.log10(rp.res_xy[kk])
+                        resyx[jj, ii] = np.log10(rp.res_yx[kk])
+                        resyy[jj, ii] = np.log10(rp.res_yy[kk])
                         
-                        phasexx[jj, ii] = rp.phasexx[kk]
-                        phasexy[jj, ii] = rp.phasexy[kk]
-                        phaseyx[jj, ii] = rp.phaseyx[kk]
-                        phaseyy[jj, ii] = rp.phaseyy[kk]
+                        phasexx[jj, ii] = rp.phase_xx[kk]
+                        phasexy[jj, ii] = rp.phase_xy[kk]
+                        phaseyx[jj, ii] = rp.phase_yx[kk]
+                        phaseyy[jj, ii] = rp.phase_yy[kk]
                         
                         break
                         
                     elif rper*(1-ftol) <= iper and \
                          iper <= rper*(1+ftol):
                              jj = period_dict[rper]
-                             resxx[jj, ii] = np.log10(rp.resxx[kk])
-                             resxy[jj, ii] = np.log10(rp.resxy[kk])
-                             resyx[jj, ii] = np.log10(rp.resyx[kk])
-                             resyy[jj, ii] = np.log10(rp.resyy[kk])
+                             resxx[jj, ii] = np.log10(rp.res_xx[kk])
+                             resxy[jj, ii] = np.log10(rp.res_xy[kk])
+                             resyx[jj, ii] = np.log10(rp.res_yx[kk])
+                             resyy[jj, ii] = np.log10(rp.res_yy[kk])
                             
-                             phasexx[jj, ii] = rp.phasexx[kk]
-                             phasexy[jj, ii] = rp.phasexy[kk]
-                             phaseyx[jj, ii] = rp.phaseyx[kk]
-                             phaseyy[jj, ii] = rp.phaseyy[kk]
+                             phasexx[jj, ii] = rp.phase_xx[kk]
+                             phasexy[jj, ii] = rp.phase_xy[kk]
+                             phaseyx[jj, ii] = rp.phase_yx[kk]
+                             phaseyy[jj, ii] = rp.phase_yy[kk]
                              
                              break
                     else:
@@ -1556,15 +1556,15 @@ def get_rp_arrays(mt_list, plot_period, sort_by='line', line_direction='ew',
                     if iper == rper:
                         jj = period_dict[rper]
                         
-                        resxx[jj, ii] = np.log10(rp.resxx[kk])
-                        resxy[jj, ii] = np.log10(rp.resxy[kk])
-                        resyx[jj, ii] = np.log10(rp.resyx[kk])
-                        resyy[jj, ii] = np.log10(rp.resyy[kk])
+                        resxx[jj, ii] = np.log10(rp.res_xx[kk])
+                        resxy[jj, ii] = np.log10(rp.res_xy[kk])
+                        resyx[jj, ii] = np.log10(rp.res_yx[kk])
+                        resyy[jj, ii] = np.log10(rp.res_yy[kk])
                         
-                        phasexx[jj, ii] = rp.phasexx[kk]
-                        phasexy[jj, ii] = rp.phasexy[kk]
-                        phaseyx[jj, ii] = rp.phaseyx[kk]
-                        phaseyy[jj, ii] = rp.phaseyy[kk]
+                        phasexx[jj, ii] = rp.phase_xx[kk]
+                        phasexy[jj, ii] = rp.phase_xy[kk]
+                        phaseyx[jj, ii] = rp.phase_yx[kk]
+                        phaseyy[jj, ii] = rp.phase_yy[kk]
                         
                         break
                         
@@ -1572,15 +1572,15 @@ def get_rp_arrays(mt_list, plot_period, sort_by='line', line_direction='ew',
                          iper <= rper*(1+ftol):
                         jj = period_dict[rper]
                         
-                        resxx[jj, ii] = np.log10(rp.resxx[kk])
-                        resxy[jj, ii] = np.log10(rp.resxy[kk])
-                        resyx[jj, ii] = np.log10(rp.resyx[kk])
-                        resyy[jj, ii] = np.log10(rp.resyy[kk])
+                        resxx[jj, ii] = np.log10(rp.res_xx[kk])
+                        resxy[jj, ii] = np.log10(rp.res_xy[kk])
+                        resyx[jj, ii] = np.log10(rp.res_yx[kk])
+                        resyy[jj, ii] = np.log10(rp.res_yy[kk])
                         
-                        phasexx[jj, ii] = rp.phasexx[kk]
-                        phasexy[jj, ii] = rp.phasexy[kk]
-                        phaseyx[jj, ii] = rp.phaseyx[kk]
-                        phaseyy[jj, ii] = rp.phaseyy[kk]
+                        phasexx[jj, ii] = rp.phase_xx[kk]
+                        phasexy[jj, ii] = rp.phase_xy[kk]
+                        phaseyx[jj, ii] = rp.phase_yx[kk]
+                        phaseyy[jj, ii] = rp.phase_yy[kk]
                          
                         break
                     else:
