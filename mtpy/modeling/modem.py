@@ -4946,7 +4946,7 @@ class PlotResponse(object):
             print 'Plotting: {0}'.format(station)
 
             # convert to apparent resistivity and phase
-            z_obj._compute_res_phase()
+            z_obj.compute_resistivity_phase()
 
             # find locations where points have been masked
             nzxx = np.nonzero(z_obj.z[:, 0, 0])[0]
@@ -5248,7 +5248,7 @@ class PlotResponse(object):
                 for resp_obj in self.resp_object:
                     resp_z_obj = resp_obj.mt_dict[station].Z
                     resp_z_err = np.nan_to_num((z_obj.z - resp_z_obj.z) / z_obj.z_err)
-                    resp_z_obj._compute_res_phase()
+                    resp_z_obj.compute_resistivity_phase()
 
                     resp_t_obj = resp_obj.mt_dict[station].Tipper
                     resp_t_err = np.nan_to_num((t_obj.tipper - resp_t_obj.tipper) / t_obj.tipper_err)

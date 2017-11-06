@@ -25,28 +25,29 @@ AttributeError: 'Z' object has no attribute '_compute_res_phase'
 """
 import os
 import os.path as op
+from unittest import TestCase
 
 from mtpy.modeling.modem import PlotResponse
-from mtpy.modeling.modem import Data
 
-#### Inputs ####
-wd = r'E:\Githubz\mtpy\examples\model_files\ModEM'
-filestem = 'Modular_MPI_NLCG_004'
-datafn = 'ModEM_Data.dat'
-station = 'pb23'
-plot_z = False
-################
-respfn = filestem+'.dat'
+from tests.beta import SAMPLE_DIR
+from tests.imaging import _plt_wait, _plt_close
 
 
+class Test_ModEM_PlotResponse(TestCase):
+    def tearDown(self):
+        _plt_wait(5)
+        _plt_close()
 
+    def test_modular_MPI_NLCG_004(self):
+        wd = op.normpath(op.join(SAMPLE_DIR, 'ModEM'))
+        filestem = 'Modular_MPI_NLCG_004'
+        datafn = 'ModEM_Data.dat'
+        station = 'pb23'
+        plot_z = False
 
-# plot responses at a station
-ro = PlotResponse(data_fn=op.join(wd,datafn),
-                  resp_fn=op.join(wd,respfn),
-                  plot_type=[station],
-                  plot_z=plot_z,
-#                      ctmm='r',ctem='b',
-#                      res_limits=(.01,1000)
-                  )
-ro.plot()
+        ro = PlotResponse(data_fn=op.join(wd, datafn),
+                          resp_fn=op.join(wd, filestem + '.dat'),
+                          plot_type=[station],
+                          plot_z=plot_z)
+
+        ro.plot()
