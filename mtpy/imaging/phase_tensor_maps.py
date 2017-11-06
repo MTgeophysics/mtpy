@@ -1266,7 +1266,7 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
         # get the indicies of where the values should go in map view of the
         # text file
         nx = self.plot_xarr.shape[0]
-        xyloc = np.zeros((nx, 2))
+        xyloc = np.zeros((nx, 2), np.uint)
         for jj, xx in enumerate(self.plot_xarr):
             xyloc[jj, 0] = np.where(xlist == abs(xx))[0][0]
             xyloc[jj, 1] = np.where(ylist == abs(self.plot_yarr[jj]))[0][0]
@@ -1282,6 +1282,8 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
         timap = np.zeros((xlist.shape[0], ylist.shape[0]))
         tiazmap = np.zeros((xlist.shape[0], ylist.shape[0]))
         stationmap = np.zeros((xlist.shape[0], ylist.shape[0]), dtype='|S8')
+
+        station_location = {}  # a dict to store all MT stations (lan lat)
 
         # put the information into the zeroed arrays
         for ii in range(nx):
@@ -1314,6 +1316,8 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
                         mt1.station[self.station_id[0]:self.station_id[1]]
                 except AttributeError:
                     stationmap[xyloc[ii, 0], xyloc[ii, 1]] = mt1.station
+
+                station_location[stationmap[xyloc[ii, 0], xyloc[ii, 1]]] = (mt1.lon, mt1.lat, mt1.freq[j2])
             except IndexError:
                 logger.warn('Did not find {0:.5g} Hz for station {1}'.format(self.plot_freq, mt1.station))
 
@@ -1347,15 +1351,15 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
                     statnfid.write('{0:^8}'.format(' '))
 
                 else:
-                    ptminfid.write(mtpl._make_value_str(phiminmap[lx, ly]))
-                    ptmaxfid.write(mtpl._make_value_str(phimaxmap[lx, ly]))
-                    ptazmfid.write(mtpl._make_value_str(azimuthmap[lx, ly]))
-                    ptskwfid.write(mtpl._make_value_str(betamap[lx, ly]))
-                    ptellfid.write(mtpl._make_value_str(ellipmap[lx, ly]))
-                    tprmgfid.write(mtpl._make_value_str(trmap[lx, ly]))
-                    tprazfid.write(mtpl._make_value_str(trazmap[lx, ly]))
-                    tpimgfid.write(mtpl._make_value_str(timap[lx, ly]))
-                    tpiazfid.write(mtpl._make_value_str(tiazmap[lx, ly]))
+                    ptminfid.write(mtpl.make_value_str(phiminmap[lx, ly]))
+                    ptmaxfid.write(mtpl.make_value_str(phimaxmap[lx, ly]))
+                    ptazmfid.write(mtpl.make_value_str(azimuthmap[lx, ly]))
+                    ptskwfid.write(mtpl.make_value_str(betamap[lx, ly]))
+                    ptellfid.write(mtpl.make_value_str(ellipmap[lx, ly]))
+                    tprmgfid.write(mtpl.make_value_str(trmap[lx, ly]))
+                    tprazfid.write(mtpl.make_value_str(trazmap[lx, ly]))
+                    tpimgfid.write(mtpl.make_value_str(timap[lx, ly]))
+                    tpiazfid.write(mtpl.make_value_str(tiazmap[lx, ly]))
                     statnfid.write('{0:^8}'.format(stationmap[lx, ly]))
 
             # make sure there is an end of line
@@ -1384,34 +1388,53 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
 
         # --> write the table file
         # write header
-        for ss in ['station', 'phi_min', 'phi_max', 'skew', 'ellipticity',
+        for ss in ['station', 'lon', 'lat', 'phi_min', 'phi_max', 'skew', 'ellipticity',
                    'azimuth', 'tip_mag_re', 'tip_ang_re', 'tip_mag_im',
-                   'tip_ang_im']:
+                   'tip_ang_im', 'frequency']:
             tablefid.write('{0:^12}'.format(ss))
         tablefid.write('\n')
 
         for ii in range(nx):
             xx, yy = xyloc[ii, 0], xyloc[ii, 1]
-            tablefid.write('{0:^12}'.format(stationmap[xx, yy]))
-            tablefid.write(mtpl._make_value_str(phiminmap[xx, yy],
-                                                spacing='{0:^12}'))
-            tablefid.write(mtpl._make_value_str(phimaxmap[xx, yy],
-                                                spacing='{0:^12}'))
-            tablefid.write(mtpl._make_value_str(betamap[xx, yy],
-                                                spacing='{0:^12}'))
-            tablefid.write(mtpl._make_value_str(ellipmap[xx, yy],
-                                                spacing='{0:^12}'))
-            tablefid.write(mtpl._make_value_str(azimuthmap[xx, yy],
-                                                spacing='{0:^12}'))
-            tablefid.write(mtpl._make_value_str(trmap[xx, yy],
-                                                spacing='{0:^12}'))
-            tablefid.write(mtpl._make_value_str(trazmap[xx, yy],
-                                                spacing='{0:^12}'))
-            tablefid.write(mtpl._make_value_str(timap[xx, yy],
-                                                spacing='{0:^12}'))
-            tablefid.write(mtpl._make_value_str(tiazmap[xx, yy],
-                                                spacing='{0:^12}'))
-            tablefid.write('\n')
+            if stationmap[xx, yy] is None or len(stationmap[xx, yy]) < 1:
+                pass  # station not having the freq
+            else:  # only those stations with the given freq
+                # Station
+                tablefid.write('{0:^12}'.format(stationmap[xx, yy]))
+                # lon
+                tablefid.write(mtpl.make_value_str(station_location[stationmap[xx, yy]][0], spacing='{0:^12}'))
+                # lat
+                tablefid.write(mtpl.make_value_str(station_location[stationmap[xx, yy]][1], spacing='{0:^12}'))
+                # phi_min
+                tablefid.write(mtpl.make_value_str(phiminmap[xx, yy],
+                                                   spacing='{0:^12}'))
+                # phi_max
+                tablefid.write(mtpl.make_value_str(phimaxmap[xx, yy],
+                                                   spacing='{0:^12}'))
+                # beta_skew
+                tablefid.write(mtpl.make_value_str(betamap[xx, yy],
+                                                   spacing='{0:^12}'))
+                # ellip
+                tablefid.write(mtpl.make_value_str(ellipmap[xx, yy],
+                                                   spacing='{0:^12}'))
+                # azimuth
+                tablefid.write(mtpl.make_value_str(azimuthmap[xx, yy],
+                                                   spacing='{0:^12}'))
+                # tiprmag
+                tablefid.write(mtpl.make_value_str(trmap[xx, yy],
+                                                   spacing='{0:^12}'))
+                # tiprang
+                tablefid.write(mtpl.make_value_str(trazmap[xx, yy],
+                                                   spacing='{0:^12}'))
+                # tipimag
+                tablefid.write(mtpl.make_value_str(timap[xx, yy],
+                                                   spacing='{0:^12}'))
+                # tipiang
+                tablefid.write(mtpl.make_value_str(tiazmap[xx, yy],
+                                                   spacing='{0:^12}'))
+                # frequency
+                tablefid.write(mtpl.make_value_str(station_location[stationmap[xx, yy]][2], spacing='{0:^12}'))
+                tablefid.write('\n')
 
         tablefid.write('\n')
 

@@ -50,7 +50,7 @@ class TestUtilities(TestCase):
 
 class _BaseTest(object):
     def setUp(self):
-        self.edi_files = glob.glob(os.path.join(self.edi_path, "*.edi"))
+        self.edi_files = glob.glob(os.path.normpath(os.path.abspath(os.path.join(self.edi_path, "*.edi"))))
 
     @classmethod
     def setUpClass(cls):
@@ -68,9 +68,9 @@ class _BaseTest(object):
         test if the EdiCollection is initialized correctly
         :return:
         """
-        edi_files = glob.glob(os.path.join(self.edi_path, "*.edi"))
-        self.assertTrue(set(edi_files) == set(self.edi_collection.edifiles))
+        edi_files = glob.glob(os.path.normpath(os.path.abspath(os.path.join(self.edi_path, "*.edi"))))
         self.assertTrue(len(edi_files) == self.edi_collection.num_of_edifiles)
+        self.assertTrue(set(edi_files) == set(self.edi_collection.edifiles))
         self.assertTrue(self.edi_collection.ptol == 0.05)  # default
         self.assertTrue(isinstance(self.edi_collection.all_frequencies, list))  # not none and none-empty
         self.assertTrue(isinstance(self.edi_collection.mt_periods, np.ndarray))

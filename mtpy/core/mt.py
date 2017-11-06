@@ -154,7 +154,7 @@ class MT(object):
         self.original_file_type = None
         if fn is not None:
             self.read_mt_file(fn)
-            self._fn = os.path.abspath(fn)  # store file reference
+            self._fn = os.path.normpath(os.path.abspath(fn))  # store file reference
 
         # provide key words to fill values if an edi file does not exist
         for key in kwargs.keys():
