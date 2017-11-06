@@ -3281,12 +3281,13 @@ class Model(object):
             padE = self.pad_east
             padN = self.pad_north
 #            topo_core = self.surface_dict['topography'][padN:-padN,padE:-padE]
-            core_cells = mtmesh.get_station_buffer(self.grid_east,
-                                                   self.grid_north,
+            gcx, gcy = [np.mean([arr[:-1],arr[1:]],axis=0) for arr in self.grid_east,self.grid_north]
+            core_cells = mtmesh.get_station_buffer(gcx,
+                                                   gcy,
                                                    self.station_locations.station_locations['rel_east'],
                                                    self.station_locations.station_locations['rel_north'],
                                                    buf = 5*(self.cell_size_east*2 + self.cell_size_north**2)**0.5)
-            topo_core = topo_core = self.surface_dict['topography'][core_cells]
+            topo_core = self.surface_dict['topography'][core_cells]
             
             # log increasing airlayers, in reversed order
             new_air_nodes = mtmesh.make_log_increasing_array(self.z1_layer,
