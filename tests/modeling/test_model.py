@@ -6,15 +6,14 @@ from unittest import TestCase
 from examples.create_modem_input import select_periods
 from mtpy.modeling.modem_data import Data
 from mtpy.modeling.modem_model import Model
+from tests import TEST_TEMP_DIR
 
 
 class TestModel(TestCase):
     @classmethod
     def setUpClass(cls):
         # setup temp dir
-        cls._temp_dir = "tests/temp"
-        if not os.path.isdir(cls._temp_dir):
-            os.mkdir(cls._temp_dir)
+        cls._temp_dir = TEST_TEMP_DIR
 
     def setUp(self):
         # for each test, setup a different output dir

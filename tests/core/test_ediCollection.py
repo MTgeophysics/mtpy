@@ -4,6 +4,9 @@ import unittest
 from unittest import TestCase
 
 import matplotlib
+
+from tests import TEST_TEMP_DIR
+
 if os.name == "posix" and 'DISPLAY' not in os.environ:
     print("MATPLOTLIB: No Display found, using non-interactive svg backend")
     matplotlib.use('svg')
@@ -55,9 +58,7 @@ class _BaseTest(object):
     @classmethod
     def setUpClass(cls):
         plt.clf()
-        cls._temp_dir = "tests/temp"
-        if not os.path.isdir(cls._temp_dir):
-            os.mkdir(cls._temp_dir)
+        cls._temp_dir = TEST_TEMP_DIR
 
     @classmethod
     def tearDownClass(cls):

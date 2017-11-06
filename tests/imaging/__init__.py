@@ -12,6 +12,7 @@ from matplotlib import _png
 from matplotlib.testing.compare import verify
 
 from mtpy.utils.mtpylog import MtPyLog
+from tests import TEST_TEMP_DIR, TEST_DIR
 
 if os.name == "posix" and 'DISPLAY' not in os.environ:
     print("MATPLOTLIB: No Display found, using non-interactive svg backend", sys.stderr)
@@ -52,12 +53,12 @@ class ImageCompare(object):
         self.baseline_dir = kwargs.pop(
             'baseline_dir',
             # 'tests/baseline_images/matplotlib_{ver}'.format(ver=matplotlib.__version__).replace('.', '_')
-            'tests/baseline_images'
+            os.path.normpath(os.path.join(TEST_DIR, 'baseline_images'))
         )
         self.result_dir = kwargs.pop(
             'result_dir',
             # 'tests/result_images/matplotlib_{ver}'.format(ver=matplotlib.__version__).replace('.', '_')
-            'tests/result_images'
+            os.path.normpath(os.path.join(TEST_DIR, 'result_images'))
         )
         self.filename = kwargs.pop('filename', None)
         self.extensions = kwargs.pop('extensions', ['png'])
@@ -262,7 +263,7 @@ class ImageTestCase(TestCase):
     @classmethod
     def setUpClass(cls):
         reset_matplotlib()
-        cls._temp_dir = "tests/temp/{}".format(cls.__name__.split('.')[-1])
+        cls._temp_dir = os.path.normpath(os.path.join(TEST_TEMP_DIR, cls.__name__.split('.')[-1]))
         if os.path.isdir(cls._temp_dir):
             shutil.rmtree(cls._temp_dir)
         os.mkdir(cls._temp_dir)

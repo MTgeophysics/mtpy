@@ -8,15 +8,26 @@ CreationDate:   2/11/2017
 Developer:      fei.zhang@ga.gov.au
 
 Revision History:
-    LastUpdate:     2/11/2017   FZ
+    LastUpdate: 07/11/2017  YG
+                02/11/2017  FZ
 """
 
 # package tests.beta scope global params
 import os
 import shutil
+import sys
 
-import matplotlib.pyplot as plt
-plt.ion()  # all beta/test_ plot disappear automatically
+import matplotlib
+
+if os.name == "posix" and 'DISPLAY' not in os.environ:
+    print("MATPLOTLIB: No Display found, using non-interactive svg backend", sys.stderr)
+    matplotlib.use('svg')
+    import matplotlib.pyplot as plt
+else:
+    # matplotlib.use('svg')
+    import matplotlib.pyplot as plt
+
+    plt.ion()
 
 # MTPY_ROOT='/Softlab/Githubz/mtpy'    # source code root dir
 MTPY_ROOT='E:/Githubz/mtpy'    # source code root dir
