@@ -44,7 +44,7 @@ class TestFrequencySelectionFromFile(TestCase):
         # create gui
         self.app = MainWindow()
         self.app.show()
-        self.app.freq_slct_from_file.set_data(_get_mt_objs("tests/data/edifiles"))
+        self.app.freq_slct_from_file.set_data(_get_mt_objs("data/edifiles"))
         QTest.qWaitForWindowActive(self.app)
 
     def tearDown(self):
