@@ -815,7 +815,7 @@ class Data(object):
                 # in this case the below interpolate_impedance_tensor function will degenerate into a same-freq set.
 
             if len(interp_periods) > 0:  # not empty
-                interp_z, interp_t = mt_obj.interpolate_impedance_tensor(1. / interp_periods)  # ,bounds_error=False)
+                interp_z, interp_t = mt_obj.interpolate(1. / interp_periods)  # ,bounds_error=False)
 #                interp_z, interp_t = mt_obj.interpolate(1./interp_periods)
                 for kk, ff in enumerate(interp_periods):
                     jj = np.where(self.period_list == ff)[0][0]
@@ -830,7 +830,12 @@ class Data(object):
                 # FZ: try to output a new edi files. Compare with original edi?
                 if new_edi_dir is not None:
                     new_edifile = os.path.join(new_edi_dir, mt_obj.station + '.edi')
-                    mt_obj.write_edi_file(new_fn=new_edifile, new_Z=interp_z, new_Tipper=interp_t)
+                    mt_obj.write_mt_file(
+                        save_dir=new_edi_dir,
+                        fn_basename=mt_obj.station,
+                        file_type='.edi',
+                        new_Z_obj=interp_z,
+                        new_Tipper_obj=interp_t)
             else:
                 pass
 
