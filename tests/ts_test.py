@@ -4,10 +4,12 @@ Created on Wed Jul 19 12:04:39 2017
 
 @author: jpeacock
 """
+import pytest
 
 import mtpy.core.ts as mtts
 reload(mtts)
 
+pytest.xfail("xfail due to mtpy.processing.tf moved to legacy")
 def read_z3d(fn):
     import mtpy.usgs.zen as zen
     ## TEST Writing

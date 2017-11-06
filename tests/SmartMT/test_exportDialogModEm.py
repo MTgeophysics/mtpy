@@ -8,7 +8,7 @@ from qtpy import QtCore
 from qtpy.QtWidgets import QFileDialog
 from qtpy.QtTest import QTest
 
-from mtpy.core import mt
+from mtpy.core.mt import MT
 from mtpy.gui.SmartMT.gui.export_dialog_modem import ExportDialogModEm
 
 
@@ -27,12 +27,12 @@ def _rewrite_text(widget, text):
 
 
 edi_paths = [
-    "tests/data/edifiles",
+    "data/edifiles",
     "examples/data/edi2",
     "examples/data/edi_files",
     "../MT_Datasets/3D_MT_data_edited_fromDuanJM/",
     "../MT_Datasets/GA_UA_edited_10s-10000s/",
-    "tests/data/edifiles2"
+    "data/edifiles2"
 ]
 
 
@@ -55,7 +55,7 @@ class TestExportDialogModEm(TestCase):
 
     def test_defaults(self):
         edi_files = glob.glob(os.path.join(edi_paths[0], '*.edi'))
-        mt_objs = [mt.MT(os.path.abspath(file_name)) for file_name in edi_files]
+        mt_objs = [MT(os.path.abspath(file_name)) for file_name in edi_files]
         self.dialog.set_data(mt_objs)
         # if self.dialog.exec_() == QtGui.QWizard.Accepted:
         #     print(self.dialog.get_save_file_path())
