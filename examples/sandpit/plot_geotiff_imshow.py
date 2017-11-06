@@ -1,6 +1,7 @@
 import matplotlib.cm as cm
 import matplotlib.mlab as mlab
 import matplotlib.pyplot as plt
+import pytest
 
 
 def demo():
@@ -21,6 +22,7 @@ def demo():
 
 
 import sys
+import os
 
 from osgeo import gdal, osr
 
@@ -32,6 +34,8 @@ import numpy as np
 
 
 def plot_geotiff(geofile='/e/Data/uncoverml/GA-cover2/PM_Gravity.tif', show=True):
+    if not os.path.isfile(geofile):
+        pytest.skip("file not found {}".format(geofile))
     # Register drivers
     gdal.AllRegister()
 

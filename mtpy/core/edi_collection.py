@@ -241,7 +241,7 @@ class EdiCollection(object):
         import examples.sandpit.plot_geotiff_imshow as plotegoimg
 
         myax = plotegoimg.plot_geotiff(
-            geofile='tests/data/PM_Gravity.tif', show=False)
+            geofile='data/PM_Gravity.tif', show=False)
 
         margin = 0.02  # degree
         myax.set_xlim(
@@ -291,12 +291,12 @@ class EdiCollection(object):
                         station, lon, lat = (mt_obj.station, mt_obj.lon, mt_obj.lat)
 
                         pt_stat = [station, freq, lon, lat,
-                                   mt_obj.pt.phimin[0][p_index],
-                                   mt_obj.pt.phimax[0][p_index],
-                                   mt_obj.pt.azimuth[0][p_index],
-                                   mt_obj.pt.beta[0][p_index],
-                                   2 * mt_obj.pt.beta[0][p_index],
-                                   mt_obj.pt.ellipticity[0][p_index],  # FZ: get ellipticity begin here
+                                   mt_obj.pt.phimin[p_index],
+                                   mt_obj.pt.phimax[p_index],
+                                   mt_obj.pt.azimuth[p_index],
+                                   mt_obj.pt.beta[p_index],
+                                   2 * mt_obj.pt.beta[p_index],
+                                   mt_obj.pt.ellipticity[p_index],  # FZ: get ellipticity begin here
                                    mt_obj.Tipper.mag_real[p_index],
                                    mt_obj.Tipper.mag_imag[p_index],
                                    mt_obj.Tipper.angle_real[p_index],

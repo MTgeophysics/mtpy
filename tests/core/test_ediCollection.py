@@ -1,7 +1,6 @@
 import glob
 import os
 import unittest
-from Tkinter import TclError
 from unittest import TestCase
 
 import matplotlib
