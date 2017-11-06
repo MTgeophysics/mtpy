@@ -68,7 +68,7 @@ def _read_txt(txt_fn):
 def test():
     fn = r"d:\Peacock\MTData\Umatilla\um102\um102_20170606_230518_256_EX.Z3D"
 
-    if os.path.isfile(fn):
+    if not os.path.isfile(fn):
         pytest.skip("input file not found: {}".format(fn))
 
     h5_fn = _make_hdf5_from_z3d(fn)
