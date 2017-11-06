@@ -617,7 +617,7 @@ class PlotMTResponse(object):
         plt.setp(self.axr.get_xticklabels(), visible=False)
         self.axr.set_ylabel('App. Res. ($\mathbf{\Omega \cdot m}$)',
                             fontdict=fontdict)
-        self.axr.set_yscale('log', nonposx='clip')
+        self.axr.set_yscale('log', nonposy='clip')
         self.axr.set_xscale('log', nonposx='clip')
         self.axr.set_xlim(self.x_limits)
         self.axr.set_ylim(self.res_limits)
@@ -1003,7 +1003,7 @@ class PlotMTResponse(object):
 
             # --> set axes properties
             plt.setp(self.axr2.get_xticklabels(), visible=False)
-            self.axr2.set_yscale('log', nonposx='clip')
+            self.axr2.set_yscale('log', nonposy='clip')
             self.axr2.set_xscale('log', nonposx='clip')
             self.axr2.set_xlim(self.x_limits)
             self.axr2.grid(True, alpha=.25,

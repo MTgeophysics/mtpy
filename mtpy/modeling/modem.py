@@ -5258,13 +5258,13 @@ class PlotResponse(object):
 #                    ax.set_yticklabels(ylabels)
 #                    plt.setp(ax.get_xticklabels(), visible=False)
                     if self.plot_z == True:
-                        ax.set_yscale('log')
+                        ax.set_yscale('log', nonposy='clip')
     
                 else:
                     ax.set_xlabel('Period (s)', fontdict=fontdict)
                     
                 if aa < 4 and self.plot_z is False:
-                    ax.set_yscale('log')
+                    ax.set_yscale('log', nonposy='clip')
                     if aa == 0 or aa == 3:
                         ax.set_ylim(self.res_limits_d)
                     elif aa == 1 or aa == 2:
@@ -5300,7 +5300,7 @@ class PlotResponse(object):
                     else:
                         pass
     
-                ax.set_xscale('log')
+                ax.set_xscale('log', nonposx='clip')
                 ax.set_xlim(xmin=10**(np.floor(np.log10(period[0])))*1.01,
                          xmax=10**(np.ceil(np.log10(period[-1])))*.99)
                 ax.grid(True, alpha=.25)

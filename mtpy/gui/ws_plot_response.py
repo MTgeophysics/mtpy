@@ -609,13 +609,13 @@ class PlotResponses(QtGui.QWidget):
                 ax.set_yticklabels(ylabels)
                 plt.setp(ax.get_xticklabels(), visible=False)
                 if self.plot_z == True:
-                    ax.set_yscale('log')
+                    ax.set_yscale('log', nonposy='clip')
 
             else:
                 ax.set_xlabel('Period (s)', fontdict=fontdict)
                 
             if aa < 4 and self.plot_z is False:
-                ax.set_yscale('log')
+                ax.set_yscale('log', nonposy='clip')
                     
             #set axes labels
             if aa == 0:
@@ -633,7 +633,7 @@ class PlotResponses(QtGui.QWidget):
                     ax.set_ylabel('Im[Z (mV/km nT)]',
                                   fontdict=fontdict)
 
-            ax.set_xscale('log')
+            ax.set_xscale('log', nonposx='clip')
             ax.set_xlim(xmin=10**(np.floor(np.log10(period[0])))*1.01,
                      xmax=10**(np.ceil(np.log10(period[-1])))*.99)
             ax.grid(True, alpha=.25)
