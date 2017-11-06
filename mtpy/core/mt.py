@@ -73,6 +73,7 @@ class MT(object):
     north                 station location in UTM coordinates assuming WGS-84
     utm_zone              zone of UTM coordinates assuming WGS-84
     rotation_angle        rotation angle of the data
+    fn                    absolute path to the data file
     ===================== =====================================================
 
     Other information is contained with in the different class attributes. For
@@ -153,6 +154,7 @@ class MT(object):
         self.original_file_type = None
         if fn is not None:
             self.read_mt_file(fn)
+            self._fn = os.path.abspath(fn)  # store file reference
 
         # provide key words to fill values if an edi file does not exist
         for key in kwargs.keys():
@@ -161,6 +163,11 @@ class MT(object):
     #==========================================================================
     # get functions
     #==========================================================================
+    @property
+    def fn(self):
+        """ reference to original data file"""
+        return self._fn
+
     @property
     def lat(self):
         """Latitude"""
@@ -1765,13 +1772,16 @@ class MT(object):
 
         """
 
-        plot_obj = PlotMTResponse(z_object=self.Z,
+        from mtpy.imaging import plot_mt_response
+        # todo change this to the format of the new imaging API
+        plot_obj = plot_mt_response.PlotMTResponse(z_object=self.Z,
                                                    t_object=self.Tipper,
                                                    pt_obj=self.pt,
                                                    station=self.station,
                                                    **kwargs)
 
         return plot_obj
+        # raise NotImplementedError
 
 #==============================================================================
 # Site details
