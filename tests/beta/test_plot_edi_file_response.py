@@ -19,7 +19,7 @@ def test_func():
     # path to edis
     epath = EDI_DATA_DIR
 
-    svdir = TEMP_OUT_DIR
+    svdir = TEST_TEMP_DIR
 
     elst=[os.path.join(epath,edi) for edi in os.listdir(epath) if (edi.endswith('.edi'))]
 

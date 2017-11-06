@@ -45,7 +45,7 @@ class TestOccam1D(TestCase):
             self._expected_output_dir = None
 
         # directory to save created input files
-        self._output_dir = os.path.join(TEMP_OUT_DIR, 'Occam1d')
+        self._output_dir = os.path.join(TEST_TEMP_DIR, 'Occam1d')
         # ufun.clean_recreate(self._output_dir) # this may remove other test functions' output
         if not os.path.exists(self._output_dir):
             os.mkdir(self._output_dir)

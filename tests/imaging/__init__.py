@@ -280,7 +280,15 @@ class ImageTestCase(TestCase):
             plt.show(block=False)  # show an empty window first for drawing
 
     def tearDown(self):
-        if plt.isinteractive() and plt.get_fignums():
-            plt.pause(1)
-        if plt.get_fignums():
-            plt.close("all")
+        _plt_wait(1)
+        _plt_close()
+
+
+def _plt_wait(seconds):
+    if plt.isinteractive() and plt.get_fignums():
+        plt.pause(seconds)
+
+
+def _plt_close():
+    if plt.get_fignums():
+        plt.close("all")

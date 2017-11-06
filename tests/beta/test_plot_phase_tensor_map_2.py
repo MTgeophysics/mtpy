@@ -37,7 +37,7 @@ def test_func():
     save = True
 
     # full path to file to save to
-    savepath = os.path.join(TEMP_OUT_DIR,'phase_tensor_map_2.png')
+    savepath = os.path.join(TEST_TEMP_DIR, 'phase_tensor_map_2.png')
 
     # frequency to plot
     plot_freq = 1.318400e-01

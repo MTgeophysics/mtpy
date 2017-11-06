@@ -4,6 +4,7 @@ import unittest
 from unittest import TestCase
 
 from mtpy.utils.shapefiles import create_phase_tensor_shpfiles
+from tests import TEST_TEMP_DIR
 
 edi_paths = [
     "",
@@ -17,9 +18,7 @@ edi_paths = [
 
 class TestPTShapeFile(TestCase):
     def setUp(self):
-        self._temp_dir = "tests/temp"
-        if not os.path.isdir(self._temp_dir):
-            os.mkdir(self._temp_dir)
+        self._temp_dir = TEST_TEMP_DIR
 
     def test_shapefile_01(self):
         edi_path = edi_paths[1]

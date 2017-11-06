@@ -8,6 +8,7 @@ from qtpy.QtWidgets import QFileDialog, QMessageBox, QDialog
 from qtpy.QtTest import QTest
 
 from mtpy.gui.SmartMT.gui.export_dialog import ExportDialog, IMAGE_FORMATS
+from tests import TEST_TEMP_DIR
 
 
 def _fake_exec_accept():
@@ -41,9 +42,7 @@ class TestExportDialog(TestCase):
     @classmethod
     def setUpClass(cls):
         # setup temp dir
-        cls._temp_dir = "tests/temp"
-        if not os.path.isdir(cls._temp_dir):
-            os.mkdir(cls._temp_dir)
+        cls._temp_dir = TEST_TEMP_DIR
 
     def setUp(self):
         # create figure

@@ -38,7 +38,7 @@ class TestModemInputFilesBuilder(TestCase):
     def setUp(self):
 
         # directory to save created input files
-        self._output_dir = os.path.join(TEMP_OUT_DIR,'ModEM')
+        self._output_dir = os.path.join(TEST_TEMP_DIR, 'ModEM')
         if os.path.exists(self._output_dir):
         # clear dir if it already exist
             shutil.rmtree(self._output_dir)

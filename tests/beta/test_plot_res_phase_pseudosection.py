@@ -24,7 +24,7 @@ def test_func():
     # path to edis
     epath = EDI_DATA_DIR
 
-    save_path = os.path.join(TEMP_OUT_DIR, 'resphase.png')
+    save_path = os.path.join(TEST_TEMP_DIR, 'resphase.png')
 
     elst = [op.join(epath,edi) for edi in os.listdir(epath) if edi.endswith('.edi')][::4]
 

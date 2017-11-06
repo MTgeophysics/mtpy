@@ -19,6 +19,8 @@ import sys
 
 import matplotlib
 
+from tests import TEST_MTPY_ROOT
+
 if os.name == "posix" and 'DISPLAY' not in os.environ:
     print("MATPLOTLIB: No Display found, using non-interactive svg backend", sys.stderr)
     matplotlib.use('svg')
@@ -29,19 +31,17 @@ else:
 
     plt.ion()
 
-# MTPY_ROOT='/Softlab/Githubz/mtpy'    # source code root dir
-MTPY_ROOT='E:/Githubz/mtpy'    # source code root dir
+EDI_DATA_DIR = os.path.normpath(
+    os.path.join(TEST_MTPY_ROOT, 'examples/data/edi_files'))
+EDI_DATA_DIR2 = os.path.normpath(
+    os.path.join(TEST_MTPY_ROOT, 'examples/data/edi_files_2'))
 
-EDI_DATA_DIR = os.path.join(MTPY_ROOT,'examples/data/edi_files')
-EDI_DATA_DIR2 = os.path.join(MTPY_ROOT,'examples/data/edi_files_2')
-
-AUS_TOPO_FILE = os.path.join(MTPY_ROOT,'examples/data/AussieContinent_etopo1.asc')
+AUS_TOPO_FILE = os.path.normpath(
+    os.path.join(TEST_MTPY_ROOT, 'examples/data/AussieContinent_etopo1.asc'))
 
 # path to directory containing model input files - samples reference for compare
-SAMPLE_DIR = os.path.join(MTPY_ROOT,'examples/model_files') # r'E:\Githubz\mtpy\examples\model_files'
-
-# test runs output directory where to save plots/files to
-TEMP_OUT_DIR = os.path.join(MTPY_ROOT,'temp/beta_out_dir')  # r'E:\Githubz\mtpy\temp'
+SAMPLE_DIR = os.path.normpath(
+    os.path.join(TEST_MTPY_ROOT, 'examples/model_files'))  # r'E:\Githubz\mtpy\examples\model_files'
 
 
 def _diffiles(f1, f2):

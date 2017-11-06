@@ -30,7 +30,7 @@ def test_fun():
     idir = os.path.join(SAMPLE_DIR,'Occam2d')
 
     # save path, to save plots to
-    savepath = TEMP_OUT_DIR
+    savepath = TEST_TEMP_DIR
     offset = 0
 
 

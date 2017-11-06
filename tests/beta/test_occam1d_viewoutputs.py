@@ -27,7 +27,7 @@ def test_fun():
 
     #FZ's workdir
     idir = os.path.join(SAMPLE_DIR,'Occam1d')
-    savepath = TEMP_OUT_DIR
+    savepath = TEST_TEMP_DIR
 
     # model and data file names
     modelfn=op.join(idir,'Model1D')

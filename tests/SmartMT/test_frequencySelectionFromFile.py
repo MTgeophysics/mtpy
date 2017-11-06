@@ -11,6 +11,7 @@ import numpy as np
 
 from mtpy.core import mt
 from mtpy.gui.SmartMT.Components.PlotParameter import FrequencySelectionFromFile
+from tests import TEST_TEMP_DIR
 from tests.SmartMT import _click_area
 
 
@@ -36,9 +37,7 @@ class TestFrequencySelectionFromFile(TestCase):
     @classmethod
     def setUpClass(cls):
         # setup temp dir
-        cls._temp_dir = "tests/temp"
-        if not os.path.isdir(cls._temp_dir):
-            os.mkdir(cls._temp_dir)
+        cls._temp_dir = TEST_TEMP_DIR
 
     def setUp(self):
         # create gui

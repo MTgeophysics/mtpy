@@ -24,7 +24,7 @@ def test_fun():
     wd = os.path.join(SAMPLE_DIR,'ModEM')  # r'E:\Githubz\mtpy\examples\model_files\ModEM'
 
     # directory to save to
-    save_path =  TEMP_OUT_DIR  # r'E:\Githubz\mtpy\temp'
+    save_path =  TEST_TEMP_DIR  # r'E:\Githubz\mtpy\temp'
 
     # file stem for inversion result
     filestem = 'Modular_MPI_NLCG_004'
