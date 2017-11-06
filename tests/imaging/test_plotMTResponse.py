@@ -3,6 +3,7 @@ import os
 
 import matplotlib.pyplot as plt
 
+from mtpy.core import mt
 from mtpy.imaging.plot_mt_response import PlotMTResponse
 from tests.imaging import ImageTestCase
 
@@ -25,9 +26,8 @@ def _test_gen(edi_path):
         edi_file_list = glob.glob(os.path.join(edi_path, '*.edi'))
         for edi_file in edi_file_list:
             plt.clf()
-            pt_obj = PlotMTResponse(
-                fn=edi_file, fig_size=(8, 6), fig_dpi=100
-            )
+            mt_obj = mt.MT(edi_file)
+            pt_obj = mt_obj.plot_mt_response(plot_yn='n')
             pt_obj.plot()
             plt.pause(.5)
             save_figure_name = "{}.png".format(default.__name__)
