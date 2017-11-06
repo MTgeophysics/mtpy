@@ -4,13 +4,13 @@ Created on Wed Jul 19 12:04:39 2017
 
 @author: jpeacock
 """
+import os
 import pytest
 
 import mtpy.core.ts as mtts
 reload(mtts)
 
-pytest.xfail("xfail due to mtpy.processing.tf moved to legacy")
-def read_z3d(fn):
+def _read_z3d(fn):
     import mtpy.usgs.zen as zen
     ## TEST Writing
     z1 = zen.Zen3D(fn)
@@ -40,23 +40,23 @@ def read_z3d(fn):
     
     return ts_obj
 
-def make_hdf5_from_z3d(z3d_fn):
+def _make_hdf5_from_z3d(z3d_fn):
     
-    ts_obj = read_z3d(z3d_fn)
+    ts_obj = _read_z3d(z3d_fn)
     
     h5_fn = z3d_fn[0:-4]+'.h5'
     ts_obj.write_hdf5(h5_fn)
     
     return h5_fn
     
-def make_txt_from_hdf5(hdf5_fn, chunk=4096):
+def _make_txt_from_hdf5(hdf5_fn, chunk=4096):
     ts_obj = mtts.MT_TS()
     ts_obj.read_hdf5(hdf5_fn)
     ts_obj.write_ascii_file(chunk_size=chunk)
     
     return ts_obj.fn_ascii
     
-def read_txt(txt_fn):
+def _read_txt(txt_fn):
     ts_obj = mtts.MT_TS()
     ts_obj.read_ascii(txt_fn)
     
@@ -65,10 +65,14 @@ def read_txt(txt_fn):
 #==============================================================================
 # try a test
 #==============================================================================
-fn = r"d:\Peacock\MTData\Umatilla\um102\um102_20170606_230518_256_EX.Z3D"
+def test():
+    fn = r"d:\Peacock\MTData\Umatilla\um102\um102_20170606_230518_256_EX.Z3D"
 
-h5_fn = make_hdf5_from_z3d(fn)
-txt_fn = make_txt_from_hdf5(h5_fn, chunk=8192)
-ts_obj = read_txt(txt_fn)
+    if os.path.isfile(fn):
+        pytest.skip("input file not found: {}".format(fn))
+
+    h5_fn = _make_hdf5_from_z3d(fn)
+    txt_fn = _make_txt_from_hdf5(h5_fn, chunk=8192)
+    ts_obj = _read_txt(txt_fn)
 
 
