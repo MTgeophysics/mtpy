@@ -17,7 +17,13 @@ CreationDate:   31/10/2017
 Developer:      fei.zhang@ga.gov.au
 
 Revision History:
-    LastUpdate:     31/10/2017   FZ
+    LastUpdate:     07/10/2017   YG
+                    31/10/2017   FZ
+
+
+
+Current issue:
+    test func2  failed when comparing output files (RhoZxy value different)
 """
 
 # import section
@@ -25,14 +31,11 @@ Revision History:
 import os
 
 import tests
-import tests.util_functions as ufun
-
-import tests.beta
-from tests.beta import *
 
 from unittest import TestCase
 
 import mtpy.modeling.occam1d as mtoc1d  # Wrapper class to interact with Occam1D
+from tests.beta import SAMPLE_DIR, EDI_DATA_DIR
 
 
 class TestOccam1D(TestCase):
@@ -45,7 +48,7 @@ class TestOccam1D(TestCase):
             self._expected_output_dir = None
 
         # directory to save created input files
-        self._output_dir = os.path.join(TEST_TEMP_DIR, 'Occam1d')
+        self._output_dir = os.path.join(tests.TEST_TEMP_DIR, 'Occam1d')
         # ufun.clean_recreate(self._output_dir) # this may remove other test functions' output
         if not os.path.exists(self._output_dir):
             os.mkdir(self._output_dir)
@@ -104,14 +107,10 @@ class TestOccam1D(TestCase):
             self.assertTrue(os.path.isfile(expected_data_file),
                             "Ref output data file does not exist, nothing to compare with"
                             )
+            is_identical, msg = tests.beta._diff_files(output_data_file, expected_data_file, ignores=["Date/Time"])
 
-            print ("Comparing", output_data_file, "and", expected_data_file)
-
-            count = tests.beta._diff_files(output_data_file, expected_data_file)
-            if afile == "OccamStartup1D":
-                self.assertTrue(count == 1, "Only-1 different line in for this file %s" % afile)
-            else:
-                self.assertTrue(count == 0, "The output files different in %s lines" % count)
+            print msg
+            self.assertTrue(is_identical)
 
     def test_fun2(self):
         """ another test edi case: The output files should be different !!!"""
@@ -132,10 +131,8 @@ class TestOccam1D(TestCase):
                             "Ref output data file does not exist, nothing to compare with"
                             )
 
-            print ("Comparing", output_data_file, "and", expected_data_file)
-
-            count = tests.beta._diff_files(output_data_file, expected_data_file)
-
-            self.assertTrue(count > 0, "The output files should be different !!!")
+            is_identical, msg = tests.beta._diff_files(output_data_file, expected_data_file)
+            print msg
+            self.assertTrue(is_identical)
 
 
