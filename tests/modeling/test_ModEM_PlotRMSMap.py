@@ -12,8 +12,7 @@ import os
 from unittest import TestCase
 
 from mtpy.modeling.modem import Plot_RMS_Maps
-from tests import _plt_wait, _plt_close, TEST_TEMP_DIR
-from tests.beta import SAMPLE_DIR
+from tests import _plt_wait, _plt_close, TEST_TEMP_DIR, SAMPLE_DIR
 
 
 class Test_PlotRMSMap(TestCase):

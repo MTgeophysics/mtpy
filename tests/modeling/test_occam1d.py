@@ -36,7 +36,8 @@ import numpy as np
 from unittest import TestCase
 
 import mtpy.modeling.occam1d as mtoc1d  # Wrapper class to interact with Occam1D
-from tests.beta import SAMPLE_DIR, EDI_DATA_DIR
+import tests.modeling
+from tests import EDI_DATA_DIR, SAMPLE_DIR
 
 
 class TestOccam1D(TestCase):
@@ -62,7 +63,7 @@ class TestOccam1D(TestCase):
         edifile_name = os.path.basename(path2edifile)
         tmpdir = edifile_name[:-4]  + "_dir" # remove the trailing .edi
         tmp_save_path = os.path.join(self._output_dir, tmpdir)
-        tests.beta._clean_recreate(tmp_save_path)
+        tests.modeling._clean_recreate(tmp_save_path)
 
         # create data file
         ocd = mtoc1d.Data()  # create an object and assign values to arguments
@@ -108,7 +109,7 @@ class TestOccam1D(TestCase):
             self.assertTrue(os.path.isfile(expected_data_file),
                             "Ref output data file does not exist, nothing to compare with"
                             )
-            is_identical, msg = tests.beta._diff_files(output_data_file, expected_data_file, ignores=["Date/Time"])
+            is_identical, msg = tests.modeling._diff_files(output_data_file, expected_data_file, ignores=["Date/Time"])
 
             print msg
             self.assertTrue(is_identical)
@@ -132,7 +133,7 @@ class TestOccam1D(TestCase):
                             "Ref output data file does not exist, nothing to compare with"
                             )
 
-            is_identical, msg = tests.beta._diff_files(output_data_file, expected_data_file)
+            is_identical, msg = tests.modeling._diff_files(output_data_file, expected_data_file)
             print msg
             self.assertTrue(is_identical)
 

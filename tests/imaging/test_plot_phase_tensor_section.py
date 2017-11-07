@@ -8,19 +8,15 @@ plots phase tensor ellipses as a pseudo section (distance along profile vs perio
 """
 import os
 import os.path as op
-from unittest import TestCase
 
 import mtpy.imaging.phase_tensor_pseudosection as ptp
 
 # path to edis
-from tests.beta import EDI_DATA_DIR
-from tests import _plt_wait, _plt_close
+from tests import EDI_DATA_DIR
+from tests.imaging import ImageTestCase
 
 
-class test_PlotPtPseudoSection(TestCase):
-    def tearDown(self):
-        _plt_wait(5)
-        _plt_close()
+class test_PlotPtPseudoSection(ImageTestCase):
 
     def test_edifiles(self):
         epath = EDI_DATA_DIR

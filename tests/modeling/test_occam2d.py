@@ -17,12 +17,11 @@ Revision History:
 """
 
 import os
-import mtpy.modeling.occam2d as occam2d
-import tests
-import tests.beta
-from tests.beta import *
-
 from unittest import TestCase
+
+import mtpy.modeling.occam2d as occam2d
+import tests.modeling
+from tests import EDI_DATA_DIR, SAMPLE_DIR
 
 
 # import matplotlib.pyplot as plt
@@ -139,7 +138,7 @@ class TestOccam2D(TestCase):
 
             print ("Comparing", output_data_file, "and", expected_data_file)
 
-            is_identical, msg = tests.beta._diff_files(output_data_file, expected_data_file, ignores=['Date/Time:'])
+            is_identical, msg = tests.modeling._diff_files(output_data_file, expected_data_file, ignores=['Date/Time:'])
             print msg
             self.assertTrue(is_identical)
 

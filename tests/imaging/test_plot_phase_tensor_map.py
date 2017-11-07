@@ -13,9 +13,11 @@ phase_tensor_map object then set the properties then run redraw_plot.
 """
 import os.path as op
 
+import os
+
 import mtpy.imaging.plotptmaps as pptmaps
 from mtpy.core.mt import MT
-from tests.beta import *
+from tests import EDI_DATA_DIR, EDI_DATA_DIR2
 from tests.imaging import ImageTestCase
 
 
@@ -72,7 +74,7 @@ class test_plotPhaseTensorMaps(ImageTestCase):
             phase_tensor_map.save_figure(savepath, close_plot='n')
             assert (os.path.exists(savepath))
 
-    def test_func(self):
+    def test_edi_files2(self):
         """
         test fun
         :return:

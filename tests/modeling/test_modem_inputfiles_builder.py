@@ -31,8 +31,8 @@ import numpy as np
 import shutil
 from unittest import TestCase
 
-from tests import TEST_TEMP_DIR
-from tests.beta import SAMPLE_DIR, EDI_DATA_DIR, AUS_TOPO_FILE, _diff_files
+from tests import TEST_TEMP_DIR, EDI_DATA_DIR, AUS_TOPO_FILE, SAMPLE_DIR
+from tests.modeling import _diff_files
 
 
 class TestModemInputFilesBuilder(TestCase):

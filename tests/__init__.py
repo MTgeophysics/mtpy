@@ -37,3 +37,13 @@ def _plt_wait(seconds):
 def _plt_close():
     if plt.get_fignums():
         plt.close("all")
+
+
+EDI_DATA_DIR = os.path.normpath(
+    os.path.join(TEST_MTPY_ROOT, 'examples/data/edi_files'))
+EDI_DATA_DIR2 = os.path.normpath(
+    os.path.join(TEST_MTPY_ROOT, 'examples/data/edi_files_2'))
+AUS_TOPO_FILE = os.path.normpath(
+    os.path.join(TEST_MTPY_ROOT, 'examples/data/AussieContinent_etopo1.asc'))
+SAMPLE_DIR = os.path.normpath(
+    os.path.join(TEST_MTPY_ROOT, 'examples/model_files'))  # r'E:\Githubz\mtpy\examples\model_files'

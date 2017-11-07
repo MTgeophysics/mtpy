@@ -6,12 +6,10 @@ Created on Wed Sep 18 15:35:39 2013
 
 plots edi files (res/phase vs period) for all edis in a directory and saves out as png files
 """
-
 import os
 
-from tests import _plt_wait
-from tests.beta import *
 import mtpy.imaging.plotresponse as mtpr
+from tests import _plt_wait, EDI_DATA_DIR, EDI_DATA_DIR2
 from tests.imaging import ImageTestCase
 
 
