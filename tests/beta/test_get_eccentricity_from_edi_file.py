@@ -6,9 +6,12 @@ Created on Tue Oct 31 13:19:35 2017
 Fei.zhang@ga.gov.au
 """
 
-from mtpy.core.mt import MT
-import mtpy.analysis.geometry as mtg
+import os
 import numpy as np
+
+import mtpy.analysis.geometry as mtg
+from mtpy.core.mt import MT
+from tests.beta import *
 
 
 def test_fun():
@@ -18,7 +21,7 @@ def test_fun():
     """
 
     #mtObj = MT(r'C:\Git\mtpy\examples\data\edi_files\pb42c.edi')
-    mtObj = MT(r'E:/Githubz/mtpy/examples/data/edi_files/pb42c.edi')
+    mtObj = MT(os.path.join(EDI_DATA_DIR, 'pb42c.edi'))
 
     eccentricity_pb42c = (np.array([ 0.01675639,  0.01038589,  0.00527011,  0.00638819,  0.01483804,
             0.00385233,  0.00513294,  0.00403781,  0.02862114,  0.02689821,

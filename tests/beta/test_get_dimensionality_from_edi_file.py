@@ -11,7 +11,6 @@ import mtpy.analysis.geometry as mtg
 from mtpy.core.mt import MT
 from tests.beta import *
 
-
 def test_fun():
     """
     test function

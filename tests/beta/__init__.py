@@ -5,7 +5,8 @@ import matplotlib.pyplot as plt
 plt.ion() # all beta/test_ plot disappear automatically
 
 # MTPY_ROOT='/Softlab/Githubz/mtpy'    # source code root dir
-MTPY_ROOT='E:/Githubz/mtpy'    # source code root dir
+MTPY_ROOT='/g/data/ha3/fxz547/Githubz/mtpyclone'    # source code root dir
+# MTPY_ROOT='E:/Githubz/mtpy'    # source code root dir
 
 EDI_DATA_DIR = os.path.join(MTPY_ROOT,'examples/data/edi_files')
 EDI_DATA_DIR2 = os.path.join(MTPY_ROOT,'examples/data/edi_files_2')
