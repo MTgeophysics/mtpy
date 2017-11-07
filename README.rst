@@ -8,8 +8,14 @@ Overview
 ========
 
 A Python Toolbox for Magnetotelluric (MT) Data Processing, Analysis, Modelling and Visualization
-This repository is a merged version of from https://github.com/geophysics/mtpy/tree/beta and
-https://github.com/GeoscienceAustralia/mtpy2/tree/develop.
+
+This repository is a merged from 
+
+| https://github.com/geophysics/mtpy/tree/beta 
+
+and
+
+| https://github.com/GeoscienceAustralia/mtpy2/tree/develop
 
 Contact Us.
 ==========
