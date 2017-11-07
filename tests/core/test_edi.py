@@ -1,46 +1,20 @@
-from unittest import TestCase
+from mtpy.core.edi import Edi
+
+def test_read_write():
+
+    #path2edi = 'data/AMT/15125A_spe.edi'
+    path2edi='data/AMT/15125A_imp.edi'
+
+    edi_obj = Edi(edi_fn=path2edi)
+    # change the latitude
+    edi_obj.lat = 45.7869
 
 
-class TestEdi(TestCase):
-    def test_read_edi_file(self):
-        self.failIf(False)
+    new_edi_fn = "%s_2"%(path2edi)
 
-    def test__read_data(self):
-        self.failIf(False)
+    ret_edi= edi_obj.write_edi_file(new_edi_fn=new_edi_fn)
 
-    def test__read_mt(self):
-        self.failIf(False)
+    print(ret_edi)
 
-    def test__read_spectra(self):
-        self.failIf(False)
-
-    def test_write_edi_file(self):
-        self.failIf(False)
-
-    def test__write_data_block(self):
-        self.failIf(False)
-
-    def test__get_lat(self):
-        self.failIf(False)
-
-    def test__set_lat(self):
-        self.failIf(False)
-
-    def test__get_lon(self):
-        self.failIf(False)
-
-    def test__set_lon(self):
-        self.failIf(False)
-
-    def test__get_elev(self):
-        self.failIf(False)
-
-    def test__set_elev(self):
-        self.failIf(False)
-
-    def test__get_station(self):
-        self.failIf(False)
-
-    def test__set_station(self):
-        self.failIf(False)
-
+if __name__ =="__main__":
+    test_read_write()
