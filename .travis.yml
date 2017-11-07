@@ -60,6 +60,8 @@ script:
   - py.test -n 4 --runxfail --cov=mtpy --cov-report term:skip-covered tests/core
   # test utils
   - py.test -n 4 --runxfail --cov=mtpy --cov-append --cov-report term:skip-covered tests/utils
+  # test analysis
+  - py.test -n 4 --runxfail --cov=mtpy --cov-append --cov-report term:skip-covered tests/analysis
   # test modeling
   - py.test -n 4 --runxfail --cov=mtpy --cov-append --cov-report term:skip-covered tests/modeling
   # test imaging
