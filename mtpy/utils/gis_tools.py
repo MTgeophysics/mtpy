@@ -5,25 +5,36 @@ Created on Fri Apr 14 14:47:48 2017
 @author: jrpeacock
 """
 
-#==============================================================================
+# ==============================================================================
 # Imports
-#==============================================================================
+# ==============================================================================
+import os
+if 'GDAL_DATA' not in os.environ:
+    raise Exception("GDAL_DATA environment variable not set. please see https://trac.osgeo.org/gdal/wiki/FAQInstallationAndBuilding#HowtosetGDAL_DATAvariable for more information.")
 from osgeo import osr
 import numpy as np
+from osgeo.ogr import OGRERR_NONE
 
-#==============================================================================
+from mtpylog import MtPyLog
+
+logger = MtPyLog().get_mtpy_logger(__name__)
+
+
+# ==============================================================================
 # Make sure lat and lon are in decimal degrees
-#==============================================================================
+# ==============================================================================
 def _assert_minutes(minutes):
-    assert minutes >= 0 and minutes < 60.,\
-           'minutes needs to be <60 and >0, currently {0:.0f}'.format(minutes)
-           
+    assert 0 <= minutes < 60., \
+        'minutes needs to be <60 and >0, currently {0:.0f}'.format(minutes)
+
     return minutes
-           
+
+
 def _assert_seconds(seconds):
-    assert seconds >= 0 and seconds < 60.,\
-           'seconds needs to be <60 and >0, currently {0:.3f}'.format(seconds) 
+    assert 0 <= seconds < 60., \
+        'seconds needs to be <60 and >0, currently {0:.3f}'.format(seconds)
     return seconds
+
 
 def convert_position_str2float(position_str):
     """
@@ -44,73 +55,77 @@ def convert_position_str2float(position_str):
         >>> import mpty.utils.gis_tools as gis_tools
         >>> gis_tools.convert_position_str2float('-118:34:56.3')
     """
-    
+
     p_list = position_str.split(':')
     if len(p_list) != 3:
         raise ValueError('{0} not correct format, should be DD:MM:SS'.format(position_str))
-    
+
     deg = float(p_list[0])
     minutes = _assert_minutes(float(p_list[1]))
     sec = _assert_seconds(float(p_list[2]))
-    
+
     # get the sign of the position so that when all are added together the
     # position is in the correct place
     sign = 1
     if deg < 0:
         sign = -1
-    
-    position_value = sign*(abs(deg)+minutes/60.+sec/3600.)
-    
-    return position_value 
-    
+
+    position_value = sign * (abs(deg) + minutes / 60. + sec / 3600.)
+
+    return position_value
+
+
 def assert_lat_value(latitude):
     """
     make sure latitude is in decimal degrees
     """
     try:
         lat_value = float(latitude)
-        
+
     except TypeError:
         return None
-        
+
     except ValueError:
         lat_value = convert_position_str2float(latitude)
-        
+
     if abs(lat_value) >= 90:
-            raise ValueError('|Latitude| > 90, unacceptable!')
-            
+        raise ValueError('|Latitude| > 90, unacceptable!')
+
     return lat_value
-    
+
+
 def assert_lon_value(longitude):
     """
     make sure longitude is in decimal degrees
     """
     try:
         lon_value = float(longitude)
-        
+
     except TypeError:
         return None
-        
+
     except ValueError:
         lon_value = convert_position_str2float(longitude)
-        
+
     if abs(lon_value) >= 180:
-            raise ValueError('|Longitude| > 180, unacceptable!')
-            
+        raise ValueError('|Longitude| > 180, unacceptable!')
+
     return lon_value
-    
+
+
 def assert_elevation_value(elevation):
     """
     make sure elevation is a floating point number
     """
-    
+
     try:
         elev_value = float(elevation)
     except (ValueError, TypeError):
         elev_value = 0.0
-        print 'WARNING -- {0} is not a number, setting elevation to 0'.format(elevation)
-        
+        logger.warn('{0} is not a number, setting elevation to 0'.format(elevation))
+
     return elev_value
+
 
 def convert_position_float2str(position):
     """
@@ -132,34 +147,35 @@ def convert_position_float2str(position):
         >>> gis_tools.convert_position_float2str(-118.34563)
         
     """
-    
+
     assert type(position) is float, 'Given value is not a float'
-    
+
     deg = int(position)
     sign = 1
-    if deg < 0: 
+    if deg < 0:
         sign = -1
-        
+
     deg = abs(deg)
-    minutes = (abs(position)-deg)*60.
-    sec = (minutes-int(minutes))*60.
+    minutes = (abs(position) - deg) * 60.
+    sec = (minutes - int(minutes)) * 60.
     if sec == 60:
         minutes += 1
         sec = 0
-        
+
     if minutes == 60:
         deg += 1
         minutes = 0
-    
-    position_str = '{0}:{1:02.0f}:{2:02.2f}'.format(sign*int(deg), 
+
+    position_str = '{0}:{1:02.0f}:{2:02.2f}'.format(sign * int(deg),
                                                     int(minutes),
                                                     float(sec))
-    
+
     return position_str
 
-#==============================================================================
+
+# ==============================================================================
 # Project a point
-#==============================================================================
+# ==============================================================================
 def get_utm_string_from_sr(spatialreference):
     """
     return utm zone string from spatial reference instance
@@ -171,21 +187,22 @@ def get_utm_string_from_sr(spatialreference):
         return str(abs(zone_number)) + 'S'
     else:
         return str(zone_number)
-    
+
 
 def get_utm_zone(latitude, longitude):
     """
     Get utm zone from a given latitude and longitude
     """
-    zone_number = (int(1+(longitude+180.0)/6.0))
-    if (latitude < 0.0):
+    zone_number = (int(1 + (longitude + 180.0) / 6.0))
+    if latitude < 0.0:
         is_northern = 0
         n_str = 'S'
     else:
         is_northern = 1
         n_str = 'N'
-    
-    return zone_number, is_northern, '{0:02.0f}{1}'.format(zone_number, n_str) 
+
+    return zone_number, is_northern, '{0:02.0f}{1}'.format(zone_number, n_str)
+
 
 def project_point_ll2utm(lat, lon, datum='WGS84', utm_zone=None, epsg=None):
     """
@@ -220,42 +237,44 @@ def project_point_ll2utm(lat, lon, datum='WGS84', utm_zone=None, epsg=None):
     # make sure the lat and lon are in decimal degrees
     lat = assert_lat_value(lat)
     lon = assert_lon_value(lon)
-    
+
     if lat is None or lon is None:
         return None, None, None
-    
+
     # get zone number, north and zone name
     if utm_zone is None:
         zone_number, is_northern, utm_zone = get_utm_zone(lat, lon)
     else:
         # get zone number and is_northern from utm_zone string
-        zone_number = int(filter(str.isdigit,utm_zone))
-        is_northern = min(1,utm_zone.lower().count('s'))
-    
-    ## set utm coordinate system
+        zone_number = int(filter(str.isdigit, utm_zone))
+        is_northern = min(1, utm_zone.lower().count('s'))
+
+    # set utm coordinate system
     utm_cs = osr.SpatialReference()
     utm_cs.SetWellKnownGeogCS(datum)
-    
-    if type(epsg) is not int:
-        utm_cs.SetUTM(zone_number, is_northern);
-    else:
-        utm_cs.ImportFromEPSG(epsg)
+
+    if isinstance(epsg, int):
+        ogrerr = utm_cs.ImportFromEPSG(epsg)
+        if ogrerr != OGRERR_NONE:
+            raise Exception("GDAL/osgeo ogr error code: {}".format(ogrerr))
         utm_zone = get_utm_string_from_sr(utm_cs)
-       
-    ## set lat, lon coordinate system
+    else:
+        utm_cs.SetUTM(zone_number, is_northern)
+
+    # set lat, lon coordinate system
     ll_cs = utm_cs.CloneGeogCS()
     ll_cs.ExportToPrettyWkt()
-       
-    ## set the transform wgs84_to_utm and do the transform
+
+    # set the transform wgs84_to_utm and do the transform
     ll2utm = osr.CoordinateTransformation(ll_cs, utm_cs)
-    
-    ## return different results depending on if lat/lon are iterable
+
+    # return different results depending on if lat/lon are iterable
     easting, northing, elev = list(ll2utm.TransformPoint(lon, lat))
-    projected_point = (easting, northing, utm_zone)    
+    projected_point = (easting, northing, utm_zone)
 
     return projected_point
-    
-    
+
+
 def project_point_utm2ll(easting, northing, utm_zone, datum='WGS84', epsg=None):
     """
     Project a point that is in Lat, Lon (will be converted to decimal degrees)
@@ -292,19 +311,21 @@ def project_point_utm2ll(easting, northing, utm_zone, datum='WGS84', epsg=None):
     except ValueError:
         raise ValueError("northing is not a float")
 
-    ## set utm coordinate system
+    # set utm coordinate system
     utm_cs = osr.SpatialReference()
     utm_cs.SetWellKnownGeogCS(datum)
 
-    if ((utm_zone is None) or (len(utm_zone) == 0) or (utm_zone=='0')):
+    if (utm_zone is None) or (len(utm_zone) == 0) or (utm_zone == '0'):
         if epsg is None:
             raise ValueError('Please provide either utm_zone or epsg')
         else:
-            utm_cs.ImportFromEPSG(epsg)
+            ogrerr = utm_cs.ImportFromEPSG(epsg)
+            if ogrerr != OGRERR_NONE:
+                raise Exception("GDAL/osgeo ogr error code: {}".format(ogrerr))
             utm_zone = get_utm_string_from_sr(utm_cs)
     else:
         assert len(utm_zone) == 3, 'UTM zone should be imput as ##N or ##S'
-        
+
         try:
             zone_number = int(utm_zone[0:2])
         except ValueError:
@@ -312,20 +333,20 @@ def project_point_utm2ll(easting, northing, utm_zone, datum='WGS84', epsg=None):
         is_northern = 1
         if 's' in utm_zone.lower():
             is_northern = 0
-        
-        utm_cs.SetUTM(zone_number, is_northern);
 
-    ## set lat, lon coordinate system
+        utm_cs.SetUTM(zone_number, is_northern)
+
+    # set lat, lon coordinate system
     ll_cs = utm_cs.CloneGeogCS()
     ll_cs.ExportToPrettyWkt()
-       
-    ## set the transform utm to lat lon
+
+    # set the transform utm to lat lon
     transform_utm2ll = osr.CoordinateTransformation(utm_cs, ll_cs)
-    ll_point = list(transform_utm2ll.TransformPoint(easting, northing)) 
-    
+    ll_point = list(transform_utm2ll.TransformPoint(easting, northing))
+
     # be sure to round out the numbers to remove computing with floats
-    return (round(ll_point[1], 6), round(ll_point[0], 6))
-  
+    return round(ll_point[1], 6), round(ll_point[0], 6)
+
 
 def project_points_ll2utm(lat, lon, datum='WGS84', utm_zone=None, epsg=None):
     """
@@ -359,18 +380,21 @@ def project_points_ll2utm(lat, lon, datum='WGS84', utm_zone=None, epsg=None):
                     
     """
 
+    lat = np.array(lat)
+    lon = np.array(lon)
+
     # check length of arrays
     if np.shape(lat) != np.shape(lon):
         raise ValueError("latitude and longitude arrays are of different lengths")
-        
+
     # flatten, if necessary
     flattened = False
-    if np.shape(lat) > 1:
+    llshape = np.shape(lat)
+    if llshape > 1:
         flattened = True
-        llshape = np.shape(lat)
-        lat = np.array(lat).flatten()
-        lon = np.array(lon).flatten()
-      
+        lat = lat.flatten()
+        lon = lon.flatten()
+
     # check lat/lon values
     for ii in range(len(lat)):
         lat[ii] = assert_lat_value(lat[ii])
@@ -379,48 +403,45 @@ def project_points_ll2utm(lat, lon, datum='WGS84', utm_zone=None, epsg=None):
     if lat is None or lon is None:
         return None, None, None
 
-    ## set utm coordinate system
+    # set utm coordinate system
     utm_cs = osr.SpatialReference()
     utm_cs.SetWellKnownGeogCS(datum)
 
     # get zone number, north and zone name
-    use_epsg = False
-    if utm_zone is None:
-        if epsg is None:
-            # get centre point and get zone from that
-            latc = (np.nanmax(lat) + np.nanmin(lat))/2.
-            lonc = (np.nanmax(lon) + np.nanmin(lon))/2.
-            zone_number, is_northern, utm_zone = get_utm_zone(latc, lonc)
-        else:
-            use_epsg = True
-    else:
-        # get zone number and is_northern from utm_zone string
-        zone_number = int(filter(str.isdigit,utm_zone))
-        is_northern = min(1,utm_zone.count('S'))
-    
-    # set projection info
-    if use_epsg:
-        utm_cs.ImportFromEPSG(epsg)
+    if epsg is not None:
+        # set projection info
+        ogrerr = utm_cs.ImportFromEPSG(epsg)
+        if ogrerr != OGRERR_NONE:
+            raise Exception("GDAL/osgeo ogr error code: {}".format(ogrerr))
         # get utm zone (for information) if applicable
         utm_zone = get_utm_string_from_sr(utm_cs)
     else:
-        utm_cs.SetUTM(zone_number, is_northern);
-        
-    ## set lat, lon coordinate system
+        if utm_zone is not None:
+            # get zone number and is_northern from utm_zone string
+            zone_number = int(filter(str.isdigit), utm_zone)
+            is_northern = min(1, utm_zone.count('S'))
+        else:
+            # get centre point and get zone from that
+            latc = (np.nanmax(lat) + np.nanmin(lat)) / 2.
+            lonc = (np.nanmax(lon) + np.nanmin(lon)) / 2.
+            zone_number, is_northern, utm_zone = get_utm_zone(latc, lonc)
+        # set projection info
+        utm_cs.SetUTM(zone_number, is_northern)
+
+    # set lat, lon coordinate system
     ll_cs = utm_cs.CloneGeogCS()
     ll_cs.ExportToPrettyWkt()
-       
-    ## set the transform wgs84_to_utm and do the transform
+
+    # set the transform wgs84_to_utm and do the transform
     ll2utm = osr.CoordinateTransformation(ll_cs, utm_cs)
-    
-    ## return different results depending on if lat/lon are iterable
+
+    # return different results depending on if lat/lon are iterable
     easting, northing, elev = np.array(ll2utm.TransformPoints(np.array([lon, lat]).T)).T
-    projected_point = (easting, northing, utm_zone)    
-    
+    projected_point = (easting, northing, utm_zone)
+
     # reshape back into original shape
     if flattened:
         lat = lat.reshape(*llshape)
         lon = lon.reshape(*llshape)
 
     return projected_point
-    

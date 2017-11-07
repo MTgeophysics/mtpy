@@ -16,6 +16,7 @@ Revision History:
 import os
 import shutil
 import sys
+from difflib import unified_diff
 
 import matplotlib
 
@@ -44,29 +45,37 @@ SAMPLE_DIR = os.path.normpath(
     os.path.join(TEST_MTPY_ROOT, 'examples/model_files'))  # r'E:\Githubz\mtpy\examples\model_files'
 
 
-def _diffiles(f1, f2):
+def _diff_files(after, before):
     """
-    compare two files line-by-line
-    :param f1:
-    :param f2:
+    compare two files using diff
+    :param before:
+    :param after:
     :return: the number count of different lines
     """
 
-    count = 0
+    with open(before) as f2p:
+        before_lines = f2p.readlines()
+    with open(after) as f1p:
+        after_lines = f1p.readlines()
 
-    with open(f1) as f1p:
-        test_lines = f1p.readlines()
-    with open(f2) as f2p:
-        correct_lines = f2p.readlines()
+    msg = "Comparing {} and {}:\n".format(before, after)
+    is_identical = False
 
-    for test, correct in zip(test_lines, correct_lines):
-        if test != correct:
-            # print ("Diffiles() Failure@: Expected %r; BUT Got %r." % (correct, test))
-            count = count + 1
-        else:
-            pass
+    lines = [line for line in unified_diff(
+        before_lines,
+        after_lines,
+        fromfile="baseline ({})".format(before),
+        tofile="test ({})".format(after),
+        n=0)]
+    if lines:
+        msg += "  Found differences:\n    " + "    ".join(lines)
+        is_identical = False
+    else:
+        msg += " NO differences found."
+        is_identical = True
 
-    return count
+    return is_identical, msg
+
 
 
 def _clean_recreate(adir):

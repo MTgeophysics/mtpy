@@ -107,7 +107,7 @@ class TestOccam1D(TestCase):
 
             print ("Comparing", output_data_file, "and", expected_data_file)
 
-            count = tests.beta._diffiles(output_data_file, expected_data_file)
+            count = tests.beta._diff_files(output_data_file, expected_data_file)
             if afile == "OccamStartup1D":
                 self.assertTrue(count == 1, "Only-1 different line in for this file %s" % afile)
             else:
@@ -134,7 +134,7 @@ class TestOccam1D(TestCase):
 
             print ("Comparing", output_data_file, "and", expected_data_file)
 
-            count = tests.beta._diffiles(output_data_file, expected_data_file)
+            count = tests.beta._diff_files(output_data_file, expected_data_file)
 
             self.assertTrue(count > 0, "The output files should be different !!!")
 
