@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 """
 .. module:: MT
-   :synopsis: The main container for MT response functions. 
+   :synopsis: The main container for MT response functions.
 
 .. moduleauthor:: Jared Peacock <jpeacock@usgs.gov>
 """
 
-#==============================================================================
-import os
+# ==============================================================================
 import numpy as np
+import os
 import time
 
 import mtpy.core.edi as MTedi
@@ -18,7 +18,8 @@ import mtpy.analysis.pt as MTpt
 import mtpy.analysis.distortion as MTdistortion
 import mtpy.core.jfile as MTj
 import mtpy.core.mt_xml as MTxml
-import mtpy.imaging.plot_mt_response as plot_mt_response
+
+reload(MTz)
 
 try:
     import scipy
@@ -35,6 +36,13 @@ except ImportError:
           'check installation you can get scipy from scipy.org.')
     interp_import = False
 
+import logging
+from mtpy.utils.mtpylog import MtPyLog
+
+logger = MtPyLog().get_mtpy_logger(__name__)
+logger.setLevel(logging.DEBUG)
+
+# ==============================================================================
 #==============================================================================
 
 
@@ -65,6 +73,7 @@ class MT(object):
     north                 station location in UTM coordinates assuming WGS-84
     utm_zone              zone of UTM coordinates assuming WGS-84
     rotation_angle        rotation angle of the data
+    fn                    absolute path to the data file
     ===================== =====================================================
 
     Other information is contained with in the different class attributes. For
@@ -78,7 +87,7 @@ class MT(object):
               >>> import mtpy.core.mt as mt
               >>> mt_obj = mt.MT()
               >>> mt_obj.write_cfg_file(r"/home/mt/generic.cfg")
-              
+
         * Currently EDI, XML, and j file are supported to read in information,
           and can write out EDI and XML formats.  Will be extending to j and
           Egberts Z format.
@@ -145,6 +154,7 @@ class MT(object):
         self.original_file_type = None
         if fn is not None:
             self.read_mt_file(fn)
+            self._fn = os.path.normpath(os.path.abspath(fn))  # store file reference
 
         # provide key words to fill values if an edi file does not exist
         for key in kwargs.keys():
@@ -153,6 +163,11 @@ class MT(object):
     #==========================================================================
     # get functions
     #==========================================================================
+    @property
+    def fn(self):
+        """ reference to original data file"""
+        return self._fn
+
     @property
     def lat(self):
         """Latitude"""
@@ -531,6 +546,10 @@ class MT(object):
         except AttributeError:
             pass
 
+
+        # keep the edi object around, should be able to deprecate this later
+        self._edi_obj = edi_obj
+
     def _parse_notes(self):
         """
         parse the notes section if there is any information that is useful
@@ -843,7 +862,7 @@ class MT(object):
         """
 
         j_obj = MTj.JFile(j_fn)
-        
+
         self.save_dir = os.path.dirname(j_fn)
         self.station = os.path.splitext(os.path.basename(j_fn))[0]
 
@@ -855,7 +874,7 @@ class MT(object):
         self.Site.Location.latitude = j_obj.metadata_dict['latitude']
         self.Site.Location.longitude = j_obj.metadata_dict['longitude']
         self.Site.Location.elevation = j_obj.metadata_dict['elevation']
-        
+
         self.Notes.info_dict = j_obj.header_dict
 
     def _read_xml_file(self, xml_fn):
@@ -943,7 +962,7 @@ class MT(object):
         """
         get field notes information
         """
-        
+
         for f_attr in xml_obj.FieldNotes.__dict__.keys():
             if f_attr.lower() == 'instrument':
                 for i_attr in xml_obj.FieldNotes.Instrument.__dict__.keys():
@@ -1494,7 +1513,7 @@ class MT(object):
                             continue
                         obj_attr_01 = getattr(obj_attr, a_key)
                         l_key = '{0}.{1}.{2}'.format(obj_name, obj_key, a_key)
-                        if not isinstance(obj_attr_01, (str, float, int, 
+                        if not isinstance(obj_attr_01, (str, float, int,
                                                         list, np.float64)) and\
                            obj_attr_01 is not None:
                             for b_key in sorted(obj_attr_01.__dict__.keys()):
@@ -1593,7 +1612,7 @@ class MT(object):
 
         return new_z_obj
 
-    def interpolate(self, new_freq_array, interp_type='slinear'):
+    def interpolate(self, new_freq_array, interp_type='slinear', bounds_error=True):
         """
         Interpolate the impedance tensor onto different frequencies
 
@@ -1633,17 +1652,27 @@ class MT(object):
         if not isinstance(new_freq_array, np.ndarray):
             new_freq_array = np.array(new_freq_array)
 
+        floater= 0.00000001  #FZ: a small offset to avoid out-of-bound error in spi interpolation module.
+        logger.info("massage the new_freq_array's min and max to avoid out-of-bound interp")
+        minindex = np.argmin(new_freq_array)
+        maxindex = np.argmax(new_freq_array)
+        new_freq_array[minindex] = new_freq_array[minindex] + floater
+        new_freq_array[maxindex] = new_freq_array[maxindex] - floater
+
+        #logger.debug("new freq array %s", new_freq_array)
+
         # check the bounds of the new frequency array
-        if self.Z.freq.min() > new_freq_array.min():
-            raise ValueError('New frequency minimum of {0:.5g}'.format(new_freq_array.min()) +
-                             ' is smaller than old frequency minimum of {0:.5g}'.format(self.Z.freq.min()) +
-                             '.  The new frequency range needs to be within the ' +
-                             'bounds of the old one.')
-        if self.Z.freq.max() < new_freq_array.max():
-            raise ValueError('New frequency maximum of {0:.5g}'.format(new_freq_array.max()) +
-                             'is smaller than old frequency maximum of {0:.5g}'.format(self.Z.freq.max()) +
-                             '.  The new frequency range needs to be within the ' +
-                             'bounds of the old one.')
+        if bounds_error:
+            if self.Z.freq.min() > new_freq_array.min():
+                raise ValueError('New frequency minimum of {0:.5g}'.format(new_freq_array.min())+\
+                                 ' is smaller than old frequency minimum of {0:.5g}'.format(self.Z.freq.min())+\
+                                 '.  The new frequency range needs to be within the ' +
+                                 'bounds of the old one.')
+            if self.Z.freq.max() < new_freq_array.max():
+                raise ValueError('New frequency maximum of {0:.5g}'.format(new_freq_array.max())+\
+                                 'is smaller than old frequency maximum of {0:.5g}'.format(self.Z.freq.max())+\
+                                 '.  The new frequency range needs to be within the ' +
+                                 'bounds of the old one.')
 
         # make a new Z object
         new_Z = MTz.Z(z_array=np.zeros((new_freq_array.shape[0], 2, 2),
@@ -1729,6 +1758,7 @@ class MT(object):
 
         return new_Z, new_Tipper
 
+
     def plot_mt_response(self, **kwargs):
         """
         Returns a mtpy.imaging.plotresponse.PlotResponse object
@@ -1742,6 +1772,8 @@ class MT(object):
 
         """
 
+        from mtpy.imaging import plot_mt_response
+        # todo change this to the format of the new imaging API
         plot_obj = plot_mt_response.PlotMTResponse(z_object=self.Z,
                                                    t_object=self.Tipper,
                                                    pt_obj=self.pt,
@@ -1749,6 +1781,7 @@ class MT(object):
                                                    **kwargs)
 
         return plot_obj
+        # raise NotImplementedError
 
 #==============================================================================
 # Site details

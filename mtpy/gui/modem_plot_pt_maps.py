@@ -329,7 +329,7 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
         self.plot_period = '{0:.5f}'.format(self.period_list[0])
         
         self._get_pt()
-        
+
         self.get_depth_array()
             
     def get_model_fn(self):
@@ -442,7 +442,7 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
                                                 
         for ii, key in enumerate(self.modem_data.mt_dict.keys()):
             east = self.modem_data.mt_dict[key].grid_east/self.dscale
-            north = self.modem_data.mt_dict[key].grid_north/self.dscale            
+            north = self.modem_data.mt_dict[key].grid_north/self.dscale
             dpt = self.modem_data.mt_dict[key].pt
             data_pt_arr[:, ii]['east'] = east
             data_pt_arr[:, ii]['north'] = north
@@ -515,7 +515,7 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
                 
         #make these attributes        
         self.pt_data_arr = data_pt_arr
-        
+
         if self.modem_resp_fn is not None:
             self.pt_resp_arr = model_pt_arr
             self.pt_resid_arr = res_pt_arr
@@ -606,7 +606,7 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
         #-------------plot phase tensors------------------------------------                    
         data_ii = self.period_dict[self.plot_period]
         print 'Ploting period {0}'.format(data_ii)
-        
+
         self.figure.clf()
                          
         if self.modem_resp_fn is not None:

@@ -3948,10 +3948,10 @@ class PlotResponse():
             ax_list = [axrte, axrtm]
             for aa, axr in enumerate(ax_list):
                 #set both axes to logarithmic scale
-                axr.set_xscale('log')
+                axr.set_xscale('log', nonposx='clip')
                 
                 try:
-                    axr.set_yscale('log')
+                    axr.set_yscale('log', nonposy='clip')
                 except ValueError:
                     pass
                 
@@ -4006,7 +4006,7 @@ class PlotResponse():
             #set Properties for the phase axes
             for aa, axp in enumerate([axpte, axptm]):
                 #set the x-axis to log scale
-                axp.set_xscale('log')
+                axp.set_xscale('log', nonposx='clip')
                 
                 #set the phase limits
                 axp.set_ylim(self.phase_limits)
@@ -4037,7 +4037,7 @@ class PlotResponse():
             #set axes properties of tipper axis
             if self.plot_tipper == 'y':
                 for aa, axt in enumerate([axtipre, axtipim]):
-                    axt.set_xscale('log')
+                    axt.set_xscale('log', nonposx='clip')
                     
                     #set tipper limits
                     axt.set_ylim(self.tip_limits)

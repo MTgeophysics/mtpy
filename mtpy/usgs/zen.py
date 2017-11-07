@@ -36,7 +36,7 @@ import mtpy.core.ts as mtts
 try:
     import win32api
 except ImportError:
-    print "Cannot find win32api, will not be able to detect drive names" 
+    print "Cannot find win32api, will not be able to detect drive names"
     
 #==============================================================================
 datetime_fmt = '%Y-%m-%d,%H:%M:%S'
@@ -414,7 +414,7 @@ class Z3D_Metadata(object):
         self.survey_type = None
         self.unit_length = None
         self.station = None
-        
+
         for key in kwargs:
             setattr(self, key, kwargs[key])
 
@@ -473,10 +473,10 @@ class Z3D_Metadata(object):
                     for t_str in t_list[2:]:
                         t_str = t_str.replace('\x00', '').replace('|', '')
                         try:
-                            self.board_cal.append([float(tt.strip()) 
+                            self.board_cal.append([float(tt.strip())
                                                for tt in t_str.strip().split(':')])
                         except ValueError:
-                            self.board_cal.append([tt.strip() 
+                            self.board_cal.append([tt.strip()
                                                for tt in t_str.strip().split(':')])
                 # some times the coil calibration does not start on its own line
                 # so need to parse the line up and I'm not sure what the calibration
@@ -520,9 +520,9 @@ class Z3D_Metadata(object):
             self.coil_cal = np.core.records.fromrecords(self.coil_cal, 
                                            names='frequency, amplitude, phase',
                                            formats='f8, f8, f8')
-        if len(self.board_cal) > 0: 
+        if len(self.board_cal) > 0:
             try:
-                self.board_cal = np.core.records.fromrecords(self.board_cal, 
+                self.board_cal = np.core.records.fromrecords(self.board_cal,
                                                              names='frequency, rate, amplitude, phase',
                                                              formats='f8, f8, f8, f8')
             except ValueError:
@@ -530,7 +530,7 @@ class Z3D_Metadata(object):
                                    
         self.station = '{0}{1}'.format(self.line_name,
                                        self.rx_xyz0.split(':')[0])
-        
+
         
 #==============================================================================
 # 
@@ -690,11 +690,11 @@ class Zen3D(object):
         self.df = None
         
         self.ts_obj = mtts.MT_TS()
-        
+
     @property
     def station(self):
         return self.metadata.station
-        
+
     @station.setter
     def station(self, station):
         self.metadata.station = station
@@ -855,7 +855,7 @@ class Zen3D(object):
         """
         if z3d_fn is not None:
             self.fn = z3d_fn
-            
+
         print '------- Reading {0} ---------'.format(self.fn)
         st = time.time()
         
@@ -919,10 +919,10 @@ class Zen3D(object):
         # trim the data after taking out the gps stamps
         self.ts_obj = mtts.MT_TS()
         self.ts_obj.ts = data[np.nonzero(data)]
-        
+
         # convert data to mV
-        self.convert_counts_to_mv() 
-        
+        self.convert_counts_to_mv()
+
         # fill time series object metadata
         self.ts_obj.station = self.station
         self.ts_obj.sampling_rate = float(self.df)
@@ -1191,7 +1191,7 @@ class Zen3D(object):
         except AttributeError:
             self.read_z3d()
                   
-        self.ts_obj.apply_addaptive_notch_filter(**notch_dict) 
+        self.ts_obj.apply_addaptive_notch_filter(**notch_dict)
         
     #==================================================
     def write_ascii_mt_file(self, save_fn=None, fmt='%.8e', notch_dict=None,
@@ -1245,7 +1245,7 @@ class Zen3D(object):
         """
         if self.metadata.rx_xyz0 is None:
             self.read_all_info()
-            
+
         if dec > 1:
             print 'Decimating data by factor of {0}'.format(dec)
             self.df = self.df/dec
@@ -1255,10 +1255,10 @@ class Zen3D(object):
             svfn_directory = os.path.join(os.path.dirname(self.fn), 'TS')
             if not os.path.exists(svfn_directory):
                 os.mkdir(svfn_directory)
-            
+
             svfn_date = ''.join(self.schedule.Date.split('-'))
             svfn_time = ''.join(self.schedule.Time.split(':'))
-            self.fn_mt_ascii = os.path.join(svfn_directory, 
+            self.fn_mt_ascii = os.path.join(svfn_directory,
                                        '{0}_{1}_{2}_{3}.{4}'.format(self.station,
                                                        svfn_date,
                                                        svfn_time,
@@ -1266,7 +1266,7 @@ class Zen3D(object):
                                                        self.metadata.ch_cmp.upper()))
 
 
-                
+
 
         else:
             self.fn_mt_ascii = save_fn

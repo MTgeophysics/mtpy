@@ -45,26 +45,28 @@ if setuptools is False:
     # recursively scan your source tree looking for any directory with an
     # __init__.py file"
 
-setup_kwargs['packages'] = ['mtpy',
+setup_kwargs['packages'] = [
+                            'tests',  'tests',
+                            'mtpy',
                             'mtpy.core',
                             'mtpy.imaging',
                             'mtpy.utils',
                             'mtpy.modeling',
                             'mtpy.processing',
                             'mtpy.analysis',
-                            'mtpy.test',
+                            #'mtpy.test',
                             'mtpy.uofa',
                             'mtpy.usgs',
-					'mtpy.gui']
+                            'mtpy.gui']
      
-setup_kwargs['install_requires'] = ['numpy>=1.8.1',
-                                    'scipy>=0.14.0',
-                                    'matplotlib>=1.3.1']
+# setup_kwargs['install_requires'] = ['numpy>=1.8.1',
+#                                     'scipy>=0.14.0',
+#                                     'matplotlib>=1.3.1']
 
 	
 
-setup(name="mtpy", 
+setup(name="mtpy",
 	version='1.0.dev',
-	description=("Collection of python tools for standard MT data processing."),
+	description=("Python toolkit for standard MT data processing."),
 	license="GNU GENERAL PUBLIC LICENSE v3",
 	**setup_kwargs)

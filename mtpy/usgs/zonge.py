@@ -20,7 +20,7 @@ import time
 import os
 import shutil
 import mtpy.core.z as mtz
-import mtpy.imaging.plotresponse as plotresponse
+import mtpy.imaging.plot_mt_response as plotresponse
 import mtpy.utils.format as MTft
 import mtpy.utils.configfile as mtcf
 import mtpy.core.edi as mtedi
@@ -1763,8 +1763,8 @@ class ZongeMTAvg():
         imaginary parts, phase is in milliradians
         
         """
-        
-        if type(zmag) is np.ndarray:
+
+        if isinstance(zmag, np.ndarray):
             assert len(zmag) == len(zphase)
         
         if self.z_coordinate == 'up':
@@ -1786,9 +1786,8 @@ class ZongeMTAvg():
 #        if set(freq_list1).issubset(freq_list2) == True:
 #            return dict([(freq, ff) for ff, freq in enumerate(freq_list1)])
 #        else:
-        comb_freq_list = list(set(freq_list1).intersection(freq_list2))+\
-                      list(set(freq_list1).symmetric_difference(freq_list2))
-        comb_freq_list.sort()
+        comb_freq_list = sorted(list(set(freq_list1).intersection(freq_list2)) +
+                                list(set(freq_list1).symmetric_difference(freq_list2)))
         return dict([(freq, ff) for ff, freq in enumerate(comb_freq_list)])
         
     def fill_Z(self):
@@ -1979,7 +1978,7 @@ class ZongeMTAvg():
         self.Tipper.tipper = np.nan_to_num(self.Tipper.tipper)
         self.Tipper.tipper_err = np.nan_to_num(self.Tipper.tipper_err)
         
-    def write_edi(self, avg_fn, station, survey_dict=None, 
+    def write_edi(self, avg_fn, station, survey_dict=None,
                   survey_cfg_file=None,  mtft_cfg_file=None, 
                   mtedit_cfg_file=r"c:\MinGW32-xy\Peacock\zen\bin\mtedit.cfg", 
                   save_path=None, rrstation=None, 
@@ -2113,7 +2112,7 @@ class ZongeMTAvg():
         self.edi.Header.fileby = survey_dict.pop('network','MTpy')
         
         #--> acquired date
-        self.edi.Header.acqdate = survey_dict.pop('date', 
+        self.edi.Header.acqdate = survey_dict.pop('date',
                                     time.strftime('%Y-%m-%d',time.localtime()))
         
         #--> prospect
@@ -2127,14 +2126,14 @@ class ZongeMTAvg():
         
         #--> elevation
         self.edi.Header.elev = survey_dict.pop('elevation', 0)
-       
+
         #-----------------INFO BLOCK---------------------------
         self.edi.Info.info_list = []
         self.edi.Info.info_list.append('MAX LINES: 999')
         
         #--> put the rest of the survey parameters in the info block
         for skey in sorted(survey_dict.keys()):
-            self.edi.Info.info_list.append('{0}: {1}'.format(skey, 
+            self.edi.Info.info_list.append('{0}: {1}'.format(skey,
                                                            survey_dict[skey]))
         
         #--> put parameters about how fourier coefficients were found
@@ -2152,7 +2151,7 @@ class ZongeMTAvg():
             for mkey in mtedit_dict.keys():
                 self.edi.Info.info_list.append('{0}: {1}'.format(mkey,
                                                            mtedit_dict[mkey]))
-        
+
         #----------------DEFINE MEASUREMENT BLOCK------------------
         self.edi.Define_measurement.maxchan = 5
         self.edi.Define_measurement.maxrun = 999
@@ -2162,7 +2161,7 @@ class ZongeMTAvg():
             self.edi.Define_measurement.units = mtedit_dict['unit.length']
         except (TypeError, KeyError):
             self.edi.Define_measurement.units = 'm'
-            
+
         self.edi.Define_measurement.reftype = 'cartesian'
         self.edi.Define_measurement.reflat = self.edi.Header.lat
         self.edi.Define_measurement.reflon = self.edi.Header.lon
@@ -2183,25 +2182,25 @@ class ZongeMTAvg():
         chn_id_dict = dict([(comp.lower(), (comp.lower(), cid, clen)) 
                             for comp, cid, clen in zip(chn_lst, chn_id, 
                                                        chn_len_lst)])
-                                                       
-        
+
+
         #--> hx component                
         try:
             hxazm = survey_dict['b_xaxis_azimuth']
         except KeyError:
             hxazm = 0
         try:
-            hdict = {'id': chn_id_dict['hx'][1], 
-                     'chtype': '{0}'.format(chn_id_dict['hx'][0].upper()), 
-                     'x':0, 
-                     'y':0, 
+            hdict = {'id': chn_id_dict['hx'][1],
+                     'chtype': '{0}'.format(chn_id_dict['hx'][0].upper()),
+                     'x':0,
+                     'y':0,
                      'azm':hxazm,
                      'acqchan':'{0}'.format(chn_id_dict['hx'][0].upper())}
         except KeyError:
-            hdict = {'id': 1, 
-                     'chtype': '{0}'.format('hx'), 
-                     'x':0, 
-                     'y':0, 
+            hdict = {'id': 1,
+                     'chtype': '{0}'.format('hx'),
+                     'x':0,
+                     'y':0,
                      'azm':hxazm,
                      'acqchan':'hx'}
         self.edi.Define_measurement.meas_hx = mtedi.HMeasurement(**hdict)
@@ -2212,69 +2211,69 @@ class ZongeMTAvg():
         except KeyError:
             hyazm = 90
         try:
-            hdict = {'id': chn_id_dict['hy'][1], 
-                     'chtype': '{0}'.format(chn_id_dict['hy'][0].upper()), 
-                     'x':0, 
-                     'y':0, 
+            hdict = {'id': chn_id_dict['hy'][1],
+                     'chtype': '{0}'.format(chn_id_dict['hy'][0].upper()),
+                     'x':0,
+                     'y':0,
                      'azm':hyazm,
                      'acqchan':'{0}'.format(chn_id_dict['hy'][0].upper())}
 
         except KeyError:
-            hdict = {'id': 2, 
-                     'chtype': 'hy', 
-                     'x':0, 
-                     'y':0, 
+            hdict = {'id': 2,
+                     'chtype': 'hy',
+                     'x':0,
+                     'y':0,
                      'azm':hyazm,
                      'acqchan':'hy'}
         self.edi.Define_measurement.meas_hy = mtedi.HMeasurement(**hdict)
-        
+
         #--> hz component
         try:
-            hdict = {'id': chn_id_dict['hz'][1], 
-                     'chtype': '{0}'.format(chn_id_dict['hz'][0].upper()), 
-                     'x':0, 
-                     'y':0, 
+            hdict = {'id': chn_id_dict['hz'][1],
+                     'chtype': '{0}'.format(chn_id_dict['hz'][0].upper()),
+                     'x':0,
+                     'y':0,
                      'azm':0,
                      'acqchan':'{0}'.format(chn_id_dict['hz'][0].upper())}
 
         except KeyError:
-            hdict = {'id': 3, 
-                     'chtype': 'hz', 
-                     'x':0, 
-                     'y':0, 
+            hdict = {'id': 3,
+                     'chtype': 'hz',
+                     'x':0,
+                     'y':0,
                      'azm':0}
         self.edi.Define_measurement.meas_hz = mtedi.HMeasurement(**hdict)
-        
+
         #--> ex component
         try:
-            edict = {'id':chn_id_dict['ex'][1], 
-                     'chtype':'{0}'.format(chn_id_dict['ex'][0].upper()), 
-                     'x':0, 
-                     'y':0, 
+            edict = {'id':chn_id_dict['ex'][1],
+                     'chtype':'{0}'.format(chn_id_dict['ex'][0].upper()),
+                     'x':0,
+                     'y':0,
                      'x2':chn_id_dict['ex'][2],
                      'y2':0}
         except KeyError:
-            edict = {'id':4, 
-                     'chtype':'ex', 
-                     'x':0, 
-                     'Y':0, 
+            edict = {'id':4,
+                     'chtype':'ex',
+                     'x':0,
+                     'Y':0,
                      'x2':100,
                      'y2':0}
         self.edi.Define_measurement.meas_ex = mtedi.EMeasurement(**edict)
                            
         #--> ey component
         try:
-            edict = {'id':chn_id_dict['ey'][1], 
-                     'chtype':'{0}'.format(chn_id_dict['ey'][0].upper()), 
-                     'x':0, 
-                     'y':0, 
+            edict = {'id':chn_id_dict['ey'][1],
+                     'chtype':'{0}'.format(chn_id_dict['ey'][0].upper()),
+                     'x':0,
+                     'y':0,
                      'x2':0,
                      'y2':chn_id_dict['ey'][2]}
         except KeyError:
-            edict = {'id':5, 
-                     'chtype':'ey', 
-                     'x':0, 
-                     'Y':0, 
+            edict = {'id':5,
+                     'chtype':'ey',
+                     'x':0,
+                     'Y':0,
                      'x2':0,
                      'y2':100}
         self.edi.Define_measurement.meas_ey = mtedi.EMeasurement(**edict)
@@ -2292,26 +2291,26 @@ class ZongeMTAvg():
             hyazm = 90
                 
         #--> rhx component
-        hdict = {'id': hxid, 
-                 'chtype': 'rhx', 
-                 'x':0, 
-                 'y':0, 
+        hdict = {'id': hxid,
+                 'chtype': 'rhx',
+                 'x':0,
+                 'y':0,
                  'azm':hxazm,
                  'acqchan':'rhx'}
         self.edi.Define_measurement.meas_rhx = mtedi.HMeasurement(**hdict)
 
         #--> rhy component
-        hdict = {'id': hyid, 
-                 'chtype': 'rhy', 
-                 'x':0, 
-                 'y':0, 
+        hdict = {'id': hyid,
+                 'chtype': 'rhy',
+                 'x':0,
+                 'y':0,
                  'azm':hyazm,
                  'acqchan':'rhy'}
         self.edi.Define_measurement.meas_rhy = mtedi.HMeasurement(**hdict)
         
         #----------------------MTSECT-----------------------------------------
         self.edi.Data_sect.nfreq = len(self.Z.freq)
-        self.edi.Data_sect.sectid = station        
+        self.edi.Data_sect.sectid = station
         self.edi.Data_sect.nchan = len(chn_lst)
         for chn, chnid in zip(chn_lst, chn_id):
             setattr(self.edi.Data_sect, chn, chnid)
@@ -2347,10 +2346,11 @@ class ZongeMTAvg():
         
         self.read_avg_file(avg_fn)
         
-        plot_resp = plotresponse.PlotResponse(z_object=self.Z,
-                                              tipper_object=self.Tipper, 
-                                              plot_tipper='yri',
-                                              **kwargs)
+        plot_resp = plotresponse.PlotMTResponse(z_object=self.Z,
+                                                tipper_object=self.Tipper,
+                                                plot_tipper='yri',
+                                                **kwargs)
+        plot_resp.plot()
         
         return plot_resp
         
@@ -2715,32 +2715,3 @@ class ZongeMTAvg():
             print 'Copied {0} to {1}'.format(edi_fn, copy_edi_fn)
         
         return edi_fn
-        
-            
-            
-        
-        
-            
-            
-        
-        
-        
-        
-
-        
-                    
-        
-        
-        
-        
-        
-        
-        
-    
-
-    
-    
-    
-
-    
-    

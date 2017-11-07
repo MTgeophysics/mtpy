@@ -1,0 +1,353 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>Dialog_Export_ModEm</class>
+ <widget class="QDialog" name="Dialog_Export_ModEm">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>400</width>
+    <height>300</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Dialog</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <widget class="QGroupBox" name="groupBox">
+     <property name="title">
+      <string>Data</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout">
+      <item row="0" column="1">
+       <widget class="QComboBox" name="comboBox_error_type">
+        <property name="currentIndex">
+         <number>2</number>
+        </property>
+        <item>
+         <property name="text">
+          <string>floor</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>value</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>egbert</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>egbert (floor)</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>stddev</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>square error</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>mean square error</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string/>
+         </property>
+        </item>
+       </widget>
+      </item>
+      <item row="0" column="0">
+       <widget class="QLabel" name="label">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="text">
+         <string>Error Type</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0" colspan="2">
+       <widget class="QGroupBox" name="groupBox_3">
+        <property name="title">
+         <string>Component Error Type</string>
+        </property>
+        <property name="checkable">
+         <bool>true</bool>
+        </property>
+        <property name="checked">
+         <bool>false</bool>
+        </property>
+        <layout class="QGridLayout" name="gridLayout_2">
+         <item row="0" column="0">
+          <widget class="QCheckBox" name="checkBox_zxx">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="text">
+            <string>zxx</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="0">
+          <widget class="QCheckBox" name="checkBox_zxy">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="text">
+            <string>zxy</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="1">
+          <widget class="QComboBox" name="comboBox_error_type_zxx">
+           <property name="currentIndex">
+            <number>2</number>
+           </property>
+           <item>
+            <property name="text">
+             <string>floor</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>value</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>egbert</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>egbert (floor)</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>stddev</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>square error</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>mean square error</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string/>
+            </property>
+           </item>
+          </widget>
+         </item>
+         <item row="1" column="1">
+          <widget class="QComboBox" name="comboBox_error_type_zxy">
+           <property name="currentIndex">
+            <number>2</number>
+           </property>
+           <item>
+            <property name="text">
+             <string>floor</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>value</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>egbert</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>egbert (floor)</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>stddev</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>square error</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>mean square error</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string/>
+            </property>
+           </item>
+          </widget>
+         </item>
+         <item row="2" column="1">
+          <widget class="QComboBox" name="comboBox_error_type_zyx">
+           <property name="currentIndex">
+            <number>2</number>
+           </property>
+           <item>
+            <property name="text">
+             <string>floor</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>value</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>egbert</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>egbert (floor)</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>stddev</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>square error</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>mean square error</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string/>
+            </property>
+           </item>
+          </widget>
+         </item>
+         <item row="3" column="1">
+          <widget class="QComboBox" name="comboBox_error_type_zyy">
+           <property name="currentIndex">
+            <number>2</number>
+           </property>
+           <item>
+            <property name="text">
+             <string>floor</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>value</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>egbert</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>egbert (floor)</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>stddev</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>square error</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>mean square error</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string/>
+            </property>
+           </item>
+          </widget>
+         </item>
+         <item row="2" column="0">
+          <widget class="QCheckBox" name="checkBox_zyx">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="text">
+            <string>zyx</string>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="0">
+          <widget class="QCheckBox" name="checkBox_zyy">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="text">
+            <string>zyy</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="groupBox_2">
+     <property name="title">
+      <string>Mesh</string>
+     </property>
+     <zorder>groupBox</zorder>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

@@ -1,0 +1,46 @@
+version: 1
+disable_existing_loggers: False
+formatters:
+    simple:
+        format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+        datefmt: "%Y-%m-%dT%H:%M:%S"
+
+handlers:
+    console: # screen display print out
+        class: logging.StreamHandler
+        level: DEBUG  #INFO
+        formatter: simple
+        stream: ext://sys.stdout
+
+    info_file_handler:
+        class: logging.handlers.RotatingFileHandler
+        level: DEBUG
+        formatter: simple
+        filename: C:\temp\info.log
+        maxBytes: 1000000 # 1MB
+        backupCount: 2
+        encoding: utf8
+
+    error_file_handler:
+        class: logging.handlers.RotatingFileHandler
+        level: ERROR
+        formatter: simple
+        filename: C:\temp\errors.log
+        maxBytes: 1000000 # 1MB
+        backupCount: 2
+        encoding: utf8
+
+loggers:
+    my_module:
+        level: DEBUG
+        handlers: [console]
+        propagate: no
+
+    __main__:
+        level: DEBUG
+        handlers: [console]
+        propagate: no
+
+root:
+    level: DEBUG
+    handlers: [console, info_file_handler, error_file_handler]

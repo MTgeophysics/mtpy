@@ -1,0 +1,79 @@
+dist: trusty
+sudo: required  # use VM instead of docker
+
+language: python
+python:
+  - "2.7"
+  # does not have headers provided, please ask https://launchpad.net/~pypy/+archive/ppa
+  # maintainers to fix their pypy-dev package.
+  # - "pypy"
+
+cache:
+  pip: true  # make cache for pip dependencies
+  directories:
+    - builds  # cached files
+
+env:
+  global:
+    - COVERALLS_PARALLEL=true
+  matrix:
+    - MATPLOTLIB_VERSION=2.1.0 QT_VERSION=4
+#    - MATPLOTLIB_VERSION=2.1.0 QT_VERSION=5
+    - MATPLOTLIB_VERSION=2.0.2 QT_VERSION=4
+    - MATPLOTLIB_VERSION=2.0.2 QT_VERSION=5
+    - MATPLOTLIB_VERSION=1.5.3 QT_VERSION=4
+
+before_install:
+  - chmod -vR +x ./bin/*
+  - sudo rm /etc/apt/sources.list.d/mongodb-3.2.list  # temp fix for issue travis-ci/travis-ci#8554
+  - sudo add-apt-repository --yes ppa:ubuntu-sdk-team/ppa  # qt5 source
+  - sudo apt update -qq
+  # install qt4 and dependencies
+  - if [ $QT_VERSION == 4 ]; then sudo apt -y install -qq "libqt4-dev"; fi  # install pyqt dependencies
+  - if [ $QT_VERSION == 5 ]; then sudo apt -y install -qq qtdeclarative5-dev libqt5svg5-dev qtmultimedia5-dev && export QMAKE=/usr/lib/x86_64-linux-gnu/qt5/bin/qmake; fi  # install qt5 and switch to qt5 env
+  - ./bin/install_pyqt.sh
+  # build gdal from source as the one on ubuntu trusty is out-of-date
+#  - sudo apt -y install -qq libgdal-dev=2.2.2  # dependencies of gdal
+  - ./bin/install_libgdal.sh
+  - export CPLUS_INCLUDE_PATH=/usr/include/gdal
+  - export C_INCLUDE_PATH=/usr/include/gdal
+  - export LD_LIBRARY_PATH="/usr/local/gdal/lib:$LD_LIBRARY_PATH"
+  - export PATH="/usr/local/gdal/bin:$PATH"
+  - pip install pytest-xdist  # add xdist for distributing tests
+  - pip install pytest-cov  # code coverage
+  - pip install coveralls
+
+# command to install dependencies
+install:
+  # manually build and install gdal
+#  - pip install GDAL==$(gdal-config --version | awk -F'[.]' '{print $1"."$2}') --global-option=build_ext --global-option="-I/usr/include/gdal/"
+  - pip install -q matplotlib==$MATPLOTLIB_VERSION
+  - pip install -q -r requirements.txt
+
+before_script:
+  - pip freeze  # show installed packages
+#  # install mtpy2 in dev mode
+#  - pip install .
+
+script:
+  - py.test -n 4 --cov=mtpy --cov-report term:skip-covered tests/core
+  - MTPY_TEST_COMPARE_IMAGE=True py.test --cov=mtpy --cov-append --cov-report term:skip-covered tests/imaging  # save and compare images
+  - py.test -n 4 --cov=mtpy --cov-append --cov-report term:skip-covered tests/modeling
+
+  - "export DISPLAY=:99.0"  # enable display on travis
+  - "sh -e /etc/init.d/xvfb start"
+  - sleep 3 # give xvfb some time to start
+  - py.test --cov=mtpy --cov-append --cov-report term:skip-covered tests/SmartMT
+
+after_success:
+  - coveralls
+
+matrix:
+  fast_finish: true
+  allow_failures:
+    - env: MATPLOTLIB_VERSION=2.1.0 QT_VERSION=5
+    - env: MATPLOTLIB_VERSION=2.1.0 QT_VERSION=4
+    - env: MATPLOTLIB_VERSION=1.5.3 QT_VERSION=4
+
+notifications:
+  webhooks: https://coveralls.io/webhook?repo_token=cAPLOTdLM6wuguwHgdUsBqtDprbhVZfRp
