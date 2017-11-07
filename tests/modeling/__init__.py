@@ -27,13 +27,15 @@ def _diff_files(after, before, ignores=None):
     with open(after) as f1p:
         after_lines = f1p.readlines()
 
+    before_lines = [line.strip() for line in before_lines]
+    after_lines = [line.strip() for line in after_lines]
+
     if ignores:
         for ignored_term in ignores:
             before_lines = filter(lambda line: ignored_term not in line, before_lines)
             after_lines = filter(lambda line: ignored_term not in line, before_lines)
 
     msg = "Comparing {} and {}:\n".format(before, after)
-    is_identical = False
 
     lines = [line for line in unified_diff(
         before_lines,
@@ -44,7 +46,7 @@ def _diff_files(after, before, ignores=None):
 
 
     if lines:
-        msg += "  Found differences:\n    " + "    ".join(lines)
+        msg += "  Found differences:\n\t" + "\n\t".join(lines)
         is_identical = False
     else:
         msg += " NO differences found."
