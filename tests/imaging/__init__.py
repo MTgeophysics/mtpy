@@ -270,7 +270,7 @@ class ImageTestCase(TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        plt.close('all')
+        _plt_close()
 
     def setUp(self):
         if plt.get_fignums():
