@@ -1,5 +1,5 @@
 import os
-
+import sys
 import matplotlib
 
 if os.name == "posix" and 'DISPLAY' not in os.environ:

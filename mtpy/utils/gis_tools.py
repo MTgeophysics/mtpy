@@ -10,7 +10,21 @@ Created on Fri Apr 14 14:47:48 2017
 # ==============================================================================
 import os
 if 'GDAL_DATA' not in os.environ:
-    raise Exception("GDAL_DATA environment variable not set. please see https://trac.osgeo.org/gdal/wiki/FAQInstallationAndBuilding#HowtosetGDAL_DATAvariable for more information.")
+    from subprocess import Popen, PIPE
+    try:
+        # try to find out gdal_data path using gdal-config
+        process = Popen(['gdal-config', '--datadir'], stdout=PIPE)
+        (output, err) = process.communicate()
+        exit_code = process.wait()
+        output = output.strip()
+        if exit_code == 0 and os.path.exists(output):
+            os.environ['GDAL_DATA'] = output
+        else:
+            raise Exception
+    except Exception:
+        raise Exception("GDAL_DATA environment variable not set. please see "
+                        "https://trac.osgeo.org/gdal/wiki/FAQInstallationAndBuilding#HowtosetGDAL_DATAvariable for "
+                        "more information.")
 from osgeo import osr
 import numpy as np
 from osgeo.ogr import OGRERR_NONE
