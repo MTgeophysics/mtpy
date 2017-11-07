@@ -14,7 +14,7 @@ import mtpy.imaging.phase_tensor_pseudosection as ptp
 
 # path to edis
 from tests.beta import EDI_DATA_DIR
-from tests.imaging import _plt_wait, _plt_close
+from tests import _plt_wait, _plt_close
 
 
 class test_PlotPtPseudoSection(TestCase):

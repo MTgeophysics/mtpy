@@ -2,17 +2,17 @@ from __future__ import print_function
 
 import functools
 import inspect
-
 import os
-import sys
 import shutil
+import sys
 from unittest import TestCase
+
 import matplotlib
 from matplotlib import _png
 from matplotlib.testing.compare import verify
 
 from mtpy.utils.mtpylog import MtPyLog
-from tests import TEST_TEMP_DIR, TEST_DIR
+from tests import TEST_TEMP_DIR, TEST_DIR, _plt_wait, _plt_close
 
 if os.name == "posix" and 'DISPLAY' not in os.environ:
     print("MATPLOTLIB: No Display found, using non-interactive svg backend", sys.stderr)
@@ -284,11 +284,3 @@ class ImageTestCase(TestCase):
         _plt_close()
 
 
-def _plt_wait(seconds):
-    if plt.isinteractive() and plt.get_fignums():
-        plt.pause(seconds)
-
-
-def _plt_close():
-    if plt.get_fignums():
-        plt.close("all")

@@ -14,7 +14,7 @@ import os.path as op
 
 # path to edis
 from tests.beta import EDI_DATA_DIR
-from tests.imaging import _plt_wait, _plt_close
+from tests import _plt_wait, _plt_close
 
 
 class Test_PlotStrike(TestCase):

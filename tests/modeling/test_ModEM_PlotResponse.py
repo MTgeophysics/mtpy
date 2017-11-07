@@ -13,7 +13,7 @@ from unittest import TestCase
 from mtpy.modeling.modem import PlotResponse
 
 from tests.beta import SAMPLE_DIR
-from tests.imaging import _plt_wait, _plt_close
+from tests import _plt_wait, _plt_close
 
 
 class Test_ModEM_PlotResponse(TestCase):

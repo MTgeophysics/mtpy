@@ -15,9 +15,8 @@ import os
 
 import matplotlib.pyplot as plt
 from mtpy.modeling.modem import PlotDepthSlice
-from tests import TEST_TEMP_DIR
+from tests import TEST_TEMP_DIR, _plt_wait, _plt_close
 from tests.beta import SAMPLE_DIR
-from tests.imaging import _plt_wait, _plt_close
 
 
 class Test_PlotDepthSlice(TestCase):
