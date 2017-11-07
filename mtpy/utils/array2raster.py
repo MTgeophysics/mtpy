@@ -131,19 +131,19 @@ class ModEM_to_Raster(object):
             self.pad_east = pad_east
             
         if self.pad_east is None:
-            self.pad_east = np.where(model_obj.nodes_east[0:25] > 
+            self.pad_east = np.where(model_obj.nodes_east[0:25] >
                                      self.cell_size_east*1.1)[0][-1]
         if pad_north is not None:
             self.pad_north = pad_north
         if self.pad_north is None:
-            self.pad_north = np.where(model_obj.nodes_north[0:25] > 
+            self.pad_north = np.where(model_obj.nodes_north[0:25] >
                                     self.cell_size_north*1.1)[0][-1]
         
         print 'Pad north = {0}'.format(self.pad_north)    
         print 'Pad east  = {0}'.format(self.pad_east) 
-        
-        
-        
+
+
+
         new_east = np.arange(model_obj.grid_east[self.pad_east],
                              model_obj.grid_east[-self.pad_east-2],
                              self.cell_size_east)
@@ -156,8 +156,8 @@ class ModEM_to_Raster(object):
         model_n, model_e = np.broadcast_arrays(model_obj.grid_north[:-1, None], 
                                                model_obj.grid_east[None, :-1])
 
-          
-                                          
+
+
         new_res_arr = np.zeros((new_north.size,
                                 new_east.size,
                                 model_obj.nodes_z.size))

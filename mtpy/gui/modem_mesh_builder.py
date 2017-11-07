@@ -504,7 +504,7 @@ class MeshWidget(QtGui.QWidget):
                                         model_fn_basename=sv_basename)
                                         
         self.model_obj.get_mesh_params()
-                      
+
     def set_rho(self):
         if self.model_obj.res_model is None:
             self.model_obj.res_model = np.zeros((self.model_obj.grid_north.shape[0],
@@ -905,4 +905,4 @@ def main():
 if __name__ == '__main__':
 
     main()      
-    
+
