@@ -1,11 +1,15 @@
+from __future__ import print_function
+
 import shutil
 from difflib import unified_diff
 
 import matplotlib
 import os
 
+import sys
+
 if os.name == "posix" and 'DISPLAY' not in os.environ:
-    print("MATPLOTLIB: No Display found, using non-interactive svg backend")
+    print("MATPLOTLIB: No Display found, using non-interactive svg backend", file=sys.stderr)
     matplotlib.use('svg')
     import matplotlib.pyplot as plt
 else:

@@ -1,14 +1,17 @@
+from __future__ import print_function
+
 import glob
 import os
 import unittest
 from unittest import TestCase
 
 import matplotlib
+import sys
 
 from tests import TEST_TEMP_DIR
 
 if os.name == "posix" and 'DISPLAY' not in os.environ:
-    print("MATPLOTLIB: No Display found, using non-interactive svg backend")
+    print("MATPLOTLIB: No Display found, using non-interactive svg backend", file=sys.stderr)
     matplotlib.use('svg')
     import matplotlib.pyplot as plt
 else:

@@ -56,14 +56,19 @@ before_script:
 #  - pip install .
 
 script:
-  - py.test -n 4 --cov=mtpy --cov-report term:skip-covered tests/core
-  - MTPY_TEST_COMPARE_IMAGE=True py.test --cov=mtpy --cov-append --cov-report term:skip-covered tests/imaging  # save and compare images
-  - py.test -n 4 --cov=mtpy --cov-append --cov-report term:skip-covered tests/modeling
-
+  # test core
+  - py.test -n 4 --runxfail --cov=mtpy --cov-report term:skip-covered tests/core
+  # test utils
+  - py.test -n 4 --runxfail --cov=mtpy --cov-append --cov-report term:skip-covered tests/utils
+  # test modeling
+  - py.test -n 4 --runxfail --cov=mtpy --cov-append --cov-report term:skip-covered tests/modeling
+  # test imaging
+  - MTPY_TEST_COMPARE_IMAGE=True py.test --runxfail --cov=mtpy --cov-append --cov-report term:skip-covered tests/imaging
+  # test gui
   - "export DISPLAY=:99.0"  # enable display on travis
   - "sh -e /etc/init.d/xvfb start"
   - sleep 3 # give xvfb some time to start
-  - py.test --cov=mtpy --cov-append --cov-report term:skip-covered tests/SmartMT
+  - py.test --runxfail --cov=mtpy --cov-append --cov-report term:skip-covered tests/SmartMT
 
 after_success:
   - coveralls

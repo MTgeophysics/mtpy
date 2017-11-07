@@ -1,6 +1,11 @@
 from __future__ import print_function
 
 import os
+import pytest
+
+qtpy = pytest.importorskip("qtpy")
+pytestmark = pytest.mark.skipif(os.name == "posix" and 'DISPLAY' not in os.environ)
+
 import random
 import sys
 
@@ -16,14 +21,8 @@ sip.setdestroyonexit(False)
 
 app = QApplication(sys.argv)
 
-if os.name == "posix" and 'DISPLAY' not in os.environ:
-    print("MATPLOTLIB: No Display found, using non-interactive svg backend", sys.stderr)
-    matplotlib.use('svg')
-    import matplotlib.pyplot as plt
-else:
-    # matplotlib.use('svg')
-    import matplotlib.pyplot as plt
-    plt.ion()
+import matplotlib.pyplot as plt
+plt.ion()
 
 MtPyLog().get_mtpy_logger(__name__).info("Testing using matplotlib backend {}".format(matplotlib.rcParams['backend']))
 

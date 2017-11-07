@@ -22,7 +22,7 @@ if 'GDAL_DATA' not in os.environ:
         else:
             raise Exception
     except Exception:
-        raise Exception("GDAL_DATA environment variable not set. please see "
+        raise ImportError("GDAL_DATA environment variable not set. please see "
                         "https://trac.osgeo.org/gdal/wiki/FAQInstallationAndBuilding#HowtosetGDAL_DATAvariable for "
                         "more information.")
 from osgeo import osr
