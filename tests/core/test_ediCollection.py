@@ -8,7 +8,7 @@ from unittest import TestCase
 import matplotlib
 import sys
 
-from tests import TEST_TEMP_DIR
+from tests import TEST_TEMP_DIR, plt_wait
 
 if os.name == "posix" and 'DISPLAY' not in os.environ:
     print("MATPLOTLIB: No Display found, using non-interactive svg backend", file=sys.stderr)
@@ -95,18 +95,15 @@ class _BaseTest(object):
 
     def test_plot_stations(self):
         self.edi_collection.plot_stations()
-        if plt.isinteractive():
-            plt.pause(1)
+        plt_wait(1)
 
     def test_display_on_basemap(self):
         self.edi_collection.display_on_basemap()
-        if plt.isinteractive():
-            plt.pause(1)
+        plt_wait(1)
 
     def test_display_on_image(self):
         self.edi_collection.display_on_image()
-        if plt.isinteractive():
-            plt.pause(1)
+        plt_wait(1)
 
     def test_create_mt_station_gdf(self):
         path = os.path.join(self._temp_dir, self.__class__.__name__ + "_mt_station_gdf")

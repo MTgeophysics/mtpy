@@ -142,3 +142,4 @@ mtpy/gui/SmartMT/ui_asset/*.py
 !mtpy/gui/SmartMT/ui_asset/__init__.py
 !mtpy/gui/SmartMT/ui_asset/icons_*_rc.py
 coverage_html_report
+builds/
