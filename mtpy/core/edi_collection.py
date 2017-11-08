@@ -329,7 +329,7 @@ class EdiCollection(object):
         """
         from mtpy.imaging.phase_tensor_maps import PlotPhaseTensorMaps
         for freq in self.all_frequencies:
-            ptm = PlotPhaseTensorMaps(fn_list=self.edifiles, plot_freq=freq)
+            ptm = PlotPhaseTensorMaps(fn_list=self.edifiles, plot_freq=freq, fig_dpi=80, plot_yn='n')
             ptm.export_params_to_file(save_path=dest_dir)
         return
 
