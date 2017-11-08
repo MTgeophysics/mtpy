@@ -37,9 +37,12 @@ def plt_wait(seconds):
             pass
 
 
-def plt_close():
+def plt_close(to_close=None):
     if plt.get_fignums():
-        plt.close("all")
+        if to_close is None:
+            plt.close()
+        else:
+            plt.close(to_close)
 
 
 EDI_DATA_DIR = os.path.normpath(
