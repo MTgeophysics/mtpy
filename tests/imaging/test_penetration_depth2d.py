@@ -13,10 +13,6 @@ class TestPenetration_depth2d(ImageTestCase):
         cls._edifiles = "data/edifiles"
         cls._period_index_list = [0, 1, 10, 20, 30, 40, 50, 59]
 
-    @classmethod
-    def tearDownClass(cls):
-        plt.close('all')
-
     def test_plot2Dprofile_no_period_index_list(self):
         """
         testing plot2Dprofile without period index list

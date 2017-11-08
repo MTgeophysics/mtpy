@@ -7,6 +7,7 @@ from tests.imaging import ImageTestCase, ImageCompare
 class TestPenetration_depth3d(ImageTestCase):
     @classmethod
     def setUpClass(cls):
+        super(TestPenetration_depth3d, cls).setUpClass()
         cls._edifiles_small = "data/edifiles"
 
     @ImageCompare(fig_size=(8, 6))

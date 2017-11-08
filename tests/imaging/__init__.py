@@ -5,6 +5,7 @@ import inspect
 import os
 import shutil
 import sys
+import threading
 from unittest import TestCase
 
 import matplotlib
@@ -258,10 +259,13 @@ class ImageCompare(object):
 
 ImageCompare.print_image_testing_note(file=sys.stderr)
 
+_thread_lock = threading.Lock()
+
 
 class ImageTestCase(TestCase):
     @classmethod
     def setUpClass(cls):
+        _thread_lock.acquire()
         reset_matplotlib()
         cls._temp_dir = os.path.normpath(os.path.join(TEST_TEMP_DIR, cls.__name__.split('.')[-1]))
         if os.path.isdir(cls._temp_dir):
@@ -271,6 +275,7 @@ class ImageTestCase(TestCase):
     @classmethod
     def tearDownClass(cls):
         plt_close()
+        _thread_lock.release()
 
     def setUp(self):
         if plt.get_fignums():
@@ -282,5 +287,3 @@ class ImageTestCase(TestCase):
     def tearDown(self):
         plt_wait(1)
         plt_close()
-
-
