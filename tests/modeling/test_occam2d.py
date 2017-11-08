@@ -27,8 +27,14 @@ from tests import EDI_DATA_DIR, SAMPLE_DIR
 # import matplotlib.pyplot as plt
 # plt.ion() # make figure disappear automatically:
 # plt.ioff()  # make figure show normally and need to click to close the figure to continue the proc
+from tests.imaging import reset_matplotlib
+
 
 class TestOccam2D(TestCase):
+    @classmethod
+    def setUpClass(cls):
+        reset_matplotlib()
+
     def setUp(self):
 
         # set the dir to the output from the previously correct run

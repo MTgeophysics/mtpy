@@ -14,9 +14,14 @@ from unittest import TestCase
 from mtpy.modeling.modem import PlotPTMaps
 
 from tests import plt_wait, plt_close, SAMPLE_DIR
+from tests.imaging import reset_matplotlib
 
 
 class Test_ModEM_PlotPTMaps(TestCase):
+    @classmethod
+    def setUpClass(cls):
+        reset_matplotlib()
+
     def tearDown(self):
         plt_wait(5)
         plt_close()

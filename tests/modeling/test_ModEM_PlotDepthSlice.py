@@ -16,9 +16,14 @@ import os
 import matplotlib.pyplot as plt
 from mtpy.modeling.modem import PlotDepthSlice
 from tests import TEST_TEMP_DIR, plt_wait, plt_close, SAMPLE_DIR
+from tests.imaging import reset_matplotlib
 
 
 class Test_PlotDepthSlice(TestCase):
+    @classmethod
+    def setUpClass(cls):
+        reset_matplotlib()
+
     def tearDown(self):
         plt_wait(1)
         plt_close()

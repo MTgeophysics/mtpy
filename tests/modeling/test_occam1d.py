@@ -38,9 +38,14 @@ from unittest import TestCase
 import mtpy.modeling.occam1d as mtoc1d  # Wrapper class to interact with Occam1D
 import tests.modeling
 from tests import EDI_DATA_DIR, SAMPLE_DIR
+from tests.imaging import reset_matplotlib
 
 
 class TestOccam1D(TestCase):
+    @classmethod
+    def setUpClass(cls):
+        reset_matplotlib()
+
     def setUp(self):
 
         # set the dir to the output from the previously correct run

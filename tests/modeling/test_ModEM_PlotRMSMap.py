@@ -13,9 +13,14 @@ from unittest import TestCase
 
 from mtpy.modeling.modem import Plot_RMS_Maps
 from tests import plt_wait, plt_close, TEST_TEMP_DIR, SAMPLE_DIR
+from tests.imaging import reset_matplotlib
 
 
 class Test_PlotRMSMap(TestCase):
+    @classmethod
+    def setUpClass(cls):
+        reset_matplotlib()
+
     def tearDown(self):
         plt_wait(1)
         plt_close()
