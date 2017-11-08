@@ -14,8 +14,6 @@ else:
 
     plt.ion()
 
-__author__ = 'fzhang'
-
 TEST_MTPY_ROOT = os.path.normpath(
     os.path.abspath(
         os.path.dirname(

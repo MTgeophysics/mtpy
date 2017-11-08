@@ -8,7 +8,7 @@ from qtpy.QtWidgets import QFileDialog, QMessageBox, QDialog
 from qtpy.QtTest import QTest
 
 from mtpy.gui.SmartMT.gui.export_dialog import ExportDialog, IMAGE_FORMATS
-from tests import TEST_TEMP_DIR
+from tests import TEST_TEMP_DIR, _plt_wait
 
 
 def _fake_exec_accept():
@@ -35,6 +35,7 @@ def _create_fig():
     plt.grid(True)
     # plt.savefig("test.png")
     # plt.show()
+    _plt_wait(1)
     return plt.gcf()  # get access to the current fig
 
 
@@ -54,8 +55,7 @@ class TestExportDialog(TestCase):
 
     def tearDown(self):
         self.dialog.close()
-        plt.close('all')
-        plt.clf()
+        plt.close(self._fig)
 
     def test_defaults(self):
         """ test gui default state"""

@@ -15,6 +15,7 @@ import matplotlib.pyplot as plt
 from PIL import Image
 from qtpy import QtCore, QT_VERSION
 from qtpy.QtWidgets import QDialog, QFileDialog, QMessageBox
+
 if QT_VERSION.startswith('4'):
     from matplotlib.backends.backend_qt4agg import FigureCanvas
 else:
@@ -25,9 +26,12 @@ from mtpy.gui.SmartMT.ui_asset.dialog_preview import Ui_Dialog_preview
 from mtpy.gui.SmartMT.utils.validator import DirectoryValidator
 
 IMAGE_FORMATS = []
-filetypes = plt.gcf().canvas.get_supported_filetypes()
-for type, description in filetypes.iteritems():
+_temp_fig = plt.figure()
+_file_types = _temp_fig.canvas.get_supported_filetypes()
+for type, description in _file_types.iteritems():
     IMAGE_FORMATS.append((type, description))
+plt.close(_temp_fig)
+del _temp_fig, _file_types
 
 
 class ExportDialog(QDialog):
@@ -184,7 +188,8 @@ class ExportDialog(QDialog):
     def _browse(self, *args, **kwargs):
         if self._dir_dialog.exec_() == QDialog.Accepted:
             dirs = self._dir_dialog.selectedFiles()  # behave differently in pyqt4 and pyqt5
-            directory = str(dirs[0] if dirs else self._dir_dialog.directory().absolutePath())  # this makes the behave the same
+            directory = str(
+                dirs[0] if dirs else self._dir_dialog.directory().absolutePath())  # this makes the behave the same
             # update directory
             index = self.ui.comboBox_directory.findText(directory)
             if index == -1:
