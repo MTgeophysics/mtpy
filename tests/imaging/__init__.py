@@ -12,7 +12,7 @@ from matplotlib import _png
 from matplotlib.testing.compare import verify
 
 from mtpy.utils.mtpylog import MtPyLog
-from tests import TEST_TEMP_DIR, TEST_DIR, _plt_wait, _plt_close
+from tests import TEST_TEMP_DIR, TEST_DIR, plt_wait, plt_close
 
 if os.name == "posix" and 'DISPLAY' not in os.environ:
     print("MATPLOTLIB: No Display found, using non-interactive svg backend", file=sys.stderr)
@@ -270,7 +270,7 @@ class ImageTestCase(TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        _plt_close()
+        plt_close()
 
     def setUp(self):
         if plt.get_fignums():
@@ -280,7 +280,7 @@ class ImageTestCase(TestCase):
             plt.show(block=False)  # show an empty window first for drawing
 
     def tearDown(self):
-        _plt_wait(1)
-        _plt_close()
+        plt_wait(1)
+        plt_close()
 
 

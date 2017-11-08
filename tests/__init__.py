@@ -29,12 +29,15 @@ if not os.path.isdir(TEST_TEMP_DIR):
     os.mkdir(TEST_TEMP_DIR)
 
 
-def _plt_wait(seconds):
+def plt_wait(seconds):
     if plt.isinteractive() and plt.get_fignums():
-        plt.pause(seconds)
+        try:
+            plt.pause(seconds)
+        except:
+            pass
 
 
-def _plt_close():
+def plt_close():
     if plt.get_fignums():
         plt.close("all")
 

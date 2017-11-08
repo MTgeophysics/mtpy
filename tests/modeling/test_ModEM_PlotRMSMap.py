@@ -12,13 +12,13 @@ import os
 from unittest import TestCase
 
 from mtpy.modeling.modem import Plot_RMS_Maps
-from tests import _plt_wait, _plt_close, TEST_TEMP_DIR, SAMPLE_DIR
+from tests import plt_wait, plt_close, TEST_TEMP_DIR, SAMPLE_DIR
 
 
 class Test_PlotRMSMap(TestCase):
     def tearDown(self):
-        _plt_wait(1)
-        _plt_close()
+        plt_wait(1)
+        plt_close()
 
 
     def test_fun(self):

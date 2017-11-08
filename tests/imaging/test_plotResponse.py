@@ -9,7 +9,7 @@ plots edi files (res/phase vs period) for all edis in a directory and saves out 
 import os
 
 import mtpy.imaging.plotresponse as mtpr
-from tests import _plt_wait, EDI_DATA_DIR, EDI_DATA_DIR2
+from tests import plt_wait, EDI_DATA_DIR, EDI_DATA_DIR2
 from tests.imaging import ImageTestCase
 
 
@@ -27,7 +27,7 @@ class Test_PlotResponse(ImageTestCase):
                                    plot_tipper='yri',
                                    plot_pt='y')
 
-            _plt_wait(1)
+            plt_wait(1)
 
             figfile = os.path.join(self._temp_dir, os.path.basename(efile)[:-4] + '.png')
             pr.save_plot(figfile)
@@ -45,7 +45,7 @@ class Test_PlotResponse(ImageTestCase):
                                    plot_num=2,
                                    plot_tipper='yri',
                                    plot_pt='y')
-            _plt_wait(1)
+            plt_wait(1)
 
             figfile = os.path.join(self._temp_dir, os.path.basename(efile)[:-4] + '.png')
             pr.save_plot(figfile)

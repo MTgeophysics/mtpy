@@ -15,13 +15,13 @@ import os
 
 import matplotlib.pyplot as plt
 from mtpy.modeling.modem import PlotDepthSlice
-from tests import TEST_TEMP_DIR, _plt_wait, _plt_close, SAMPLE_DIR
+from tests import TEST_TEMP_DIR, plt_wait, plt_close, SAMPLE_DIR
 
 
 class Test_PlotDepthSlice(TestCase):
     def tearDown(self):
-        _plt_wait(1)
-        _plt_close()
+        plt_wait(1)
+        plt_close()
 
     def test_PlotDepthSlice(self):
         """

@@ -103,8 +103,8 @@ class TestOccam2D(TestCase):
         ocr.write_regularization_file()
 
         ocr.plot_mesh()
-        tests._plt_wait(1)
-        tests._plt_close()
+        tests.plt_wait(1)
+        tests.plt_close()
 
         # make startup file
         ocs = occam2d.Startup()
@@ -188,7 +188,7 @@ class TestOccam2D(TestCase):
                 plotm.save_figure(
                     os.path.join(savepath, outfilename + '_resmodel.png'),
                     close_fig='n')  # this will produce 1 figure .png
-            tests._plt_wait(1)
+            tests.plt_wait(1)
 
         # plot the responses
         if plotresponses:
@@ -198,6 +198,6 @@ class TestOccam2D(TestCase):
                                                 )
             if save:
                 plotresponse.save_figures(savepath, close_fig='n')  # this will produce 2 .pdf file
-            tests._plt_wait(1)
+            tests.plt_wait(1)
 
-        tests._plt_close()
+        tests.plt_close()

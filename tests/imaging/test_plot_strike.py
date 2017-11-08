@@ -12,7 +12,7 @@ from mtpy.imaging.plotstrike import PlotStrike
 import os.path as op
 
 # path to edis
-from tests import _plt_wait, _plt_close, EDI_DATA_DIR
+from tests import plt_wait, plt_close, EDI_DATA_DIR
 from tests.imaging import ImageTestCase
 
 

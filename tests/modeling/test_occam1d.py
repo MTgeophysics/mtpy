@@ -184,7 +184,7 @@ class TestOccam1D(TestCase):
         p2file = os.path.join(savepath, 'occam1dplot.png')
         pr.save_figure(p2file, close_plot='n')
 
-        tests._plt_wait(1)
-        tests._plt_close()
+        tests.plt_wait(1)
+        tests.plt_close()
 
         assert (os.path.exists(p2file))

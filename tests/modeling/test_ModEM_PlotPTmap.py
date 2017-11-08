@@ -13,13 +13,13 @@ from unittest import TestCase
 
 from mtpy.modeling.modem import PlotPTMaps
 
-from tests import _plt_wait, _plt_close, SAMPLE_DIR
+from tests import plt_wait, plt_close, SAMPLE_DIR
 
 
 class Test_ModEM_PlotPTMaps(TestCase):
     def tearDown(self):
-        _plt_wait(5)
-        _plt_close()
+        plt_wait(5)
+        plt_close()
 
     def test_modular_MPI_NLCG_004(self):
         wd = op.normpath(op.join(SAMPLE_DIR, 'ModEM'))

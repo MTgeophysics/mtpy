@@ -22,10 +22,10 @@ import numpy as np
 
 from mtpy.imaging.penetration import get_penetration_depth, load_edi_files, Depth2D
 
-mpl.rcParams['lines.linewidth'] = 2
+# mpl.rcParams['lines.linewidth'] = 2
 # mpl.rcParams['lines.color'] = 'r'
 
-mpl.rcParams['figure.figsize'] = [20, 10]
+# mpl.rcParams['figure.figsize'] = [20, 10]
 
 import mtpy.core.mt as mt
 import mtpy.modeling.occam2d_rewrite as occam2d_new

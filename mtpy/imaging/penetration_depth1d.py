@@ -15,8 +15,8 @@ import matplotlib as mpl
 from mtpy.utils.mtpylog import MtPyLog
 from penetration import Depth1D
 
-mpl.rcParams['lines.linewidth'] = 2
-mpl.rcParams['lines.color'] = 'r'
+# mpl.rcParams['lines.linewidth'] = 2
+# mpl.rcParams['lines.color'] = 'r'
 
 # get a logger object for this module, using the utility class MtPyLog to
 # config the logger

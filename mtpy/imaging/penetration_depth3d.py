@@ -25,10 +25,10 @@ from mtpy.imaging.penetration import get_index, load_edi_files, Depth3D
 from mtpy.utils.decorator import deprecated
 from mtpy.utils.mtpylog import MtPyLog
 
-mpl.rcParams['lines.linewidth'] = 2
+# mpl.rcParams['lines.linewidth'] = 2
 # mpl.rcParams['lines.color'] = 'r'
 
-mpl.rcParams['figure.figsize'] = [20, 10]
+# mpl.rcParams['figure.figsize'] = [20, 10]
 
 # get a logger object for this module, using the utility class MtPyLog to
 # config the logger
