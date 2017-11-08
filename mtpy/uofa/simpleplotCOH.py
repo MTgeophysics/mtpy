@@ -29,6 +29,8 @@ coh Ey : col 5
 import os.path as op
 import sys
 
+import numpy as np
+
 
 def main():
 
@@ -46,9 +48,9 @@ def plotcoh(fn, saveplot=False):
 
     data = np.loadtxt(fn)
 
-    if saveplot is True:
-        import matplotlib
-        matplotlib.use('Agg')
+    # if saveplot is True:
+        # import matplotlib
+        # matplotlib.use('Agg')
 
     import pylab
 

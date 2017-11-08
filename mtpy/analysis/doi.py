@@ -12,7 +12,7 @@ import cmath
 
 import matplotlib
 
-matplotlib.use('TkAgg')
+# matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 
 mu0 = 4*math.pi*math.pow(10,-7)

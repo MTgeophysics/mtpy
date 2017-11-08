@@ -11,8 +11,8 @@ __author__ = 'u25656'
 
 def plot_freqlist():
 
-    import matplotlib
-    matplotlib.use('TkAgg')
+    # import matplotlib
+    # matplotlib.use('TkAgg')
     import matplotlib.pyplot as plt
 
     freqs = [ 1.000000e+00,  5.623413e-01, 3.162278e-01 , 1.778279e-01 , 1.000000e-01 ,5.623413e-02,

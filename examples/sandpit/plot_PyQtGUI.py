@@ -7,7 +7,7 @@ from matplotlib.backends.backend_qt4agg import  NavigationToolbar2QT as Navigati
 import matplotlib.pyplot as plt
 import matplotlib
 
-matplotlib.use('Qt5Agg')
+# matplotlib.use('Qt5Agg')
 
 import random
 

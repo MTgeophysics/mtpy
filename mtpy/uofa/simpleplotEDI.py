@@ -31,9 +31,9 @@ def plotedi(fn, saveplot=False, component=None):
         print '\n\tERROR - not a valid EDI file: {0}\n'.format(fn)
         sys.exit()
 
-    if saveplot is True:
-        import matplotlib
-        matplotlib.use('Agg')
+    # if saveplot is True:
+    #     import matplotlib
+        # matplotlib.use('Agg')
 
     import pylab
 

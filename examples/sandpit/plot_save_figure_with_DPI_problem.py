@@ -7,8 +7,8 @@ Author: fei.zhang@ga.gov.au
 Date: 2017-03-15
 """
 
-import matplotlib
-matplotlib.use('TkAgg')
+# import matplotlib
+# matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 
 import pandas as pd
