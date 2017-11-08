@@ -274,7 +274,7 @@ class ImageTestCase(TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        plt_close()
+        plt_close('all')
         _thread_lock.release()
 
     def setUp(self):

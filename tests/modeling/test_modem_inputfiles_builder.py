@@ -123,4 +123,4 @@ class TestModemInputFilesBuilder(TestCase):
 
             is_identical, msg = _diff_files(output_data_file, expected_data_file)
             print msg
-            self.assertTrue(is_identical)
+            self.assertTrue(is_identical, "The output file is not the same with the baseline file.")

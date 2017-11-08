@@ -146,7 +146,7 @@ class TestOccam2D(TestCase):
 
             is_identical, msg = tests.modeling._diff_files(output_data_file, expected_data_file, ignores=['Date/Time:'])
             print msg
-            self.assertTrue(is_identical)
+            self.assertTrue(is_identical, "The output file is not the same with the baseline file.")
 
     def test_plot_model_and_responses(self):
         """

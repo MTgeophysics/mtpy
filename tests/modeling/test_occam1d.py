@@ -117,7 +117,7 @@ class TestOccam1D(TestCase):
             is_identical, msg = tests.modeling._diff_files(output_data_file, expected_data_file, ignores=["Date/Time"])
 
             print msg
-            self.assertTrue(is_identical)
+            self.assertTrue(is_identical, "The output file is not the same with the baseline file.")
 
     def test_fun2(self):
         """ another test edi case: The output files should be different !!!"""
@@ -140,7 +140,7 @@ class TestOccam1D(TestCase):
 
             is_identical, msg = tests.modeling._diff_files(output_data_file, expected_data_file)
             print msg
-            self.assertTrue(is_identical)
+            self.assertTrue(is_identical, "The output file is not the same with the baseline file.")
 
     def test_view_outputs(self):
         # FZ's workdir
