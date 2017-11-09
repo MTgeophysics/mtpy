@@ -56,9 +56,10 @@ class EdiCollection(object):
     A super class to encapsulate the properties pertinent to a set of EDI files
     """
 
-    def __init__(self, edilist=None, mt_objs=None, ptol=0.05):
+    def __init__(self, edilist=None, mt_objs=None, outdir=None, ptol=0.05):
         """ constructor
         :param edilist: a list of edifiles with full path, for read-only
+        :param outdir:  computed result to be stored in outdir
         :param ptol: period tolerance considered as equal, default 0.05 means 5 percent
         this param controls what freqs/periods are grouped together:
         10pct may result more double counting of freq/period data than 5pct.
@@ -96,6 +97,8 @@ class EdiCollection(object):
         self.geopdf = self.create_mt_station_gdf()
 
         self.bound_box_dict = self.get_bounding_box()  # in orginal projection
+
+        self.outdir = outdir
 
         return
 
@@ -333,14 +336,14 @@ class EdiCollection(object):
             ptm.export_params_to_file(save_path=dest_dir)
         return
 
-    def create_measurement_csv(self, dest_dir='/e/tmp'):
+    def create_measurement_csv(self, dest_dir=None):
         """
         create csv file from the data of EDI files: IMPEDANCE, APPARENT RESISTIVITIES AND PHASES
         see also utils/shapefiles_creator.py
         :return: csvfname
         """
         if dest_dir is None:
-            raise Exception("output dir was not provided!!")
+            dest_dir = self.outdir
         else:
             logger.info("result will be in the dir %s", dest_dir)
             if not os.path.exists(dest_dir):
@@ -447,7 +450,7 @@ class EdiCollection(object):
 
         return bdict
 
-    def show_prop(self):
+    def show_prop(self, dest_dir=None):
         """
         show all properties
         :return:
@@ -461,7 +464,10 @@ class EdiCollection(object):
 
         print(self.bound_box_dict)
 
-        self.plot_stations(savefile='/e/tmp/edi_collection_test.jpg')
+        if dest_dir is None:
+            self.plot_stations(savefile= os.path.join(self.outdir,'edi_collection_test.jpg'))
+        else:
+            self.plot_stations(savefile= os.path.join(dest_dir,'edi_collection_test.jpg'))
 
         # self.display_on_basemap()
 
@@ -474,8 +480,8 @@ class EdiCollection(object):
 
 if __name__ == "__main__":
 
+    # python mtpy/core/edi_collection.py data/edifiles temp
     # python mtpy/core/edi_collection.py examples/data/edi2/ /e/tmp3/edi2_csv
-    # python mtpy/core/edi_collection.py /e/Data/MT_Datasets/GA_UA_edited_10s-10000s /e/tmp3/GA_UA_edited_10s-10000s_csv
 
     if len(sys.argv) < 2:
         print("\n  USAGE: %s edi_dir OR edi_list " % sys.argv[0])
@@ -493,10 +499,12 @@ if __name__ == "__main__":
         else:
             sys.exit(2)
 
-        # obj.show_prop()
+        outdir = sys.argv[2]
 
-        # print(obj.get_bounding_box(epsgcode=28353))
+        obj.show_prop(dest_dir = outdir)
 
-        # obj.create_mt_station_gdf(outshpfile='/e/tmp/edi_collection_test.shp')
+        print(obj.get_bounding_box(epsgcode=28353))
 
-        obj.create_measurement_csv(dest_dir=sys.argv[2])
+        obj.create_mt_station_gdf(os.path.join(outdir, 'edi_collection_test.shp'))
+
+        obj.create_measurement_csv(dest_dir= outdir)
