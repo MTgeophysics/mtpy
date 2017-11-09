@@ -57,7 +57,7 @@ Develop Setup
 
 1. Obtain the package by clone or zip download from https://github.com/GeoscienceAustralia/mtpy2:
 
-   -  ``git clone https://github.com/GeoscienceAustralia/mtpy2.git``
+   -  ``git clone https://github.com/MTgeophysics/mtpy.git``
 
 2. Install Python dependencies. And
    

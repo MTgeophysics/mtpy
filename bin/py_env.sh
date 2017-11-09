@@ -5,7 +5,7 @@
 # sys.path where libary will be imported from, 
 # PYTHONPATH setting
 
-# useful when using python to run mtpy scripts
+# useful when using commandline python to run mtpy scripts
 
 #PYEXE='python3'
 PYEXE='python'
