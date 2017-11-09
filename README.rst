@@ -17,7 +17,7 @@ and
 
 | https://github.com/GeoscienceAustralia/mtpy2/tree/develop
 
-Contact Us.
+Contacts
 ==========
 
 | **Alison Kirkby**
