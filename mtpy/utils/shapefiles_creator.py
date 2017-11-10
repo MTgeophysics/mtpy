@@ -1,10 +1,23 @@
+#! /usr/bin/env python
 """
-create shape files for MT datasets.
-Phase Tensor, Tipper Real/Imag, MT-site locations,etc
+Description:
 
-fei.zhang@ga.gov.au
-2017-03-06
+    This script creates shape files for MT datasets.
+    Phase Tensor, Tipper Real/Imag, MT-site locations, etc
+
+    The input files are created from a standard edi data file.
+
+References:
+    examples/tests/occam1d_buildinputfiles.py
+
+CreationDate:   2017-03-06
+Developer:      fei.zhang@ga.gov.au
+
+Revision History:
+    LastUpdate:     10/11/2017   FZ fix bug after the big merge
+
 """
+
 from __future__ import print_function
 
 import csv
@@ -138,13 +151,16 @@ class ShapeFilesCreator(object):
                     # long, lat, elev = (mt_obj.lon, mt_obj.lat, 0)
                     station, lon, lat = (mt_obj.station, mt_obj.lon, mt_obj.lat)
 
+                    # print(type(mt_obj.pt.phimin))
+                    # print(mt_obj.pt.phimin[p_index])
+
                     pt_stat = [station, freq, lon, lat,
-                               mt_obj.pt.phimin[0][p_index],
-                               mt_obj.pt.phimax[0][p_index],
-                               mt_obj.pt.azimuth[0][p_index],
-                               mt_obj.pt.beta[0][p_index],
-                               2 * mt_obj.pt.beta[0][p_index],
-                               mt_obj.pt.ellipticity[0][p_index],  # FZ: get ellipticity begin here
+                               mt_obj.pt.phimin[p_index],
+                               mt_obj.pt.phimax[p_index],
+                               mt_obj.pt.azimuth[p_index],
+                               mt_obj.pt.beta[p_index],
+                               2 * mt_obj.pt.beta[p_index],
+                               mt_obj.pt.ellipticity[p_index],  # FZ: get ellipticity begin here
                                mt_obj.Tipper.mag_real[p_index],
                                mt_obj.Tipper.mag_imag[p_index],
                                mt_obj.Tipper.angle_real[p_index],
@@ -482,11 +498,11 @@ def process_csv_folder(csv_folder, bbox_dict, target_epsg_code=None):
 
     # for acsv in csvfiles[:2]:
     for acsv in csvfiles:
-        # tip_re_gdf = create_tipper_real_shp(acsv, target_epsg_code=target_epsg_code)
+        tip_re_gdf = create_tipper_real_shp(acsv, arr_size=0.02, target_epsg_code=target_epsg_code)
 
-        # tip_im_gdf = create_tipper_imag_shp(acsv, target_epsg_code=target_epsg_code)
+        tip_im_gdf = create_tipper_imag_shp(acsv, arr_size=0.02, target_epsg_code=target_epsg_code)
 
-        ellip_gdf = create_ellipse_shp(acsv, esize=0.06, target_epsg_code=target_epsg_code)
+        ellip_gdf = create_ellipse_shp(acsv, esize=0.01, target_epsg_code=target_epsg_code)
 
         # visualize and make image file output of the above 3 geopandas df.
         my_gdf = ellip_gdf
@@ -496,7 +512,7 @@ def process_csv_folder(csv_folder, bbox_dict, target_epsg_code=None):
 
 
 # ==================================================================
-# python mtpy/utils/shapefiles_creator.py tests/data/edifiles /e/tmp
+# python mtpy/utils/shapefiles_creator.py data/edifiles /e/tmp
 # ==================================================================
 if __name__ == "__main__":
 
@@ -520,11 +536,11 @@ if __name__ == "__main__":
     edisobj = mtpy.core.edi_collection.EdiCollection(edifiles)
     bbox_dict = edisobj.bound_box_dict
     print(bbox_dict)
-    # shp_maker.create_mt_sites_shp()
+    shp_maker.create_mt_sites_shp()
 
     # create shapefiles and plots
     # epsg projection 4283 - gda94
-    # process_csv_folder(path2out, bbox_dict)  # , target_epsg_code will be default 4326?
+    process_csv_folder(path2out, bbox_dict)  # , target_epsg_code will be default 4326?
 
     # epsg projection 28354 - gda94 / mga zone 54
     # epsg projection 32754 - wgs84 / utm zone 54s
