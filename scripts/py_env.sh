@@ -8,7 +8,7 @@
 # useful when using commandline python to run mtpy scripts
 
 #PYEXE='python3'
-PYEXE='python'
+PYEXE='python2'
 
 echo "checking the $PYEXE excutable version etc. "
 
