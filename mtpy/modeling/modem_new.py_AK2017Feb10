@@ -17,7 +17,7 @@ import os
 import mtpy.core.z as mtz
 import mtpy.core.mt as mt
 import numpy as np
-import mtpy.utils.latlongutmconversion as utm2ll
+import mtpy.utils.latlon_utm_conversion as utm2ll
 import mtpy.modeling.ws3dinv as ws
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MultipleLocator, FormatStrFormatter

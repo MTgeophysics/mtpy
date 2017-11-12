@@ -15,7 +15,7 @@ Created on Tue Jan 07 12:42:34 2014
 #==============================================================================
 import mtpy.core.edi as MTedi
 import mtpy.core.z as MTz
-import mtpy.utils.latlongutmconversion as MTutm
+import mtpy.utils.latlon_utm_conversion as MTutm
 import mtpy.utils.exceptions as MTex
 import mtpy.utils.format as MTformat
 import mtpy.analysis.pt as MTpt
