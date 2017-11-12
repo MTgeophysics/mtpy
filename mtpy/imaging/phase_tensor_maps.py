@@ -17,7 +17,7 @@ import matplotlib.patches as patches
 import matplotlib.colorbar as mcb
 import mtpy.imaging.mtcolors as mtcl
 import mtpy.imaging.mtplottools as mtpl
-import mtpy.utils.conversions as utm2ll
+#import mtpy.utils.conversions as utm2ll
 from mtpy.utils.mtpylog import MtPyLog
 
 # get a logger object for this module, using the utility class MtPyLog to
