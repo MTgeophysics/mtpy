@@ -12,30 +12,7 @@ from __future__ import print_function
 import os
 import sys
 
-if 'GDAL_DATA' not in os.environ:
-    from subprocess import Popen, PIPE
-
-    print("GDAL_DATA environment variable is not set", file=sys.stderr)
-    try:
-        # try to find out gdal_data path using gdal-config
-        print("\tTrying to find gdal-data path ...", file=sys.stderr)
-        process = Popen(['gdal-config', '--datadir'], stdout=PIPE)
-        (output, err) = process.communicate()
-        exit_code = process.wait()
-        output = output.strip()
-        if exit_code == 0 and os.path.exists(output):
-            os.environ['GDAL_DATA'] = output
-            print("\tFound gdal-data path: {}".format(output), file=sys.stderr)
-        else:
-            print("\tCannot find gdal-data path. Please find the gdal-data path of your installation and set it to "
-                  "\"GDAL_DATA\" environment variable. Please see "
-                  "https://trac.osgeo.org/gdal/wiki/FAQInstallationAndBuilding#HowtosetGDAL_DATAvariable for "
-                  "more information.")
-            raise Exception
-    except Exception:
-        raise ImportError("GDAL_DATA environment variable not set. Please see "
-                          "https://trac.osgeo.org/gdal/wiki/FAQInstallationAndBuilding#HowtosetGDAL_DATAvariable for "
-                          "more information.")
+from mtpy.utils.decorator import gdal_data_check
 from osgeo import osr
 import numpy as np
 from osgeo.ogr import OGRERR_NONE
@@ -229,6 +206,7 @@ def get_utm_zone(latitude, longitude):
     return zone_number, is_northern, '{0:02.0f}{1}'.format(zone_number, n_str)
 
 
+@gdal_data_check
 def project_point_ll2utm(lat, lon, datum='WGS84', utm_zone=None, epsg=None):
     """
     Project a point that is in Lat, Lon (will be converted to decimal degrees)
@@ -300,6 +278,7 @@ def project_point_ll2utm(lat, lon, datum='WGS84', utm_zone=None, epsg=None):
     return projected_point
 
 
+@gdal_data_check
 def project_point_utm2ll(easting, northing, utm_zone, datum='WGS84', epsg=None):
     """
     Project a point that is in Lat, Lon (will be converted to decimal degrees)
@@ -373,6 +352,7 @@ def project_point_utm2ll(easting, northing, utm_zone, datum='WGS84', epsg=None):
     return round(ll_point[1], 6), round(ll_point[0], 6)
 
 
+@gdal_data_check
 def project_points_ll2utm(lat, lon, datum='WGS84', utm_zone=None, epsg=None):
     """
     Project a list of points that is in Lat, Lon (will be converted to decimal 

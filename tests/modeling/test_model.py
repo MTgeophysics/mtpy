@@ -6,7 +6,7 @@ from unittest import TestCase
 from examples.create_modem_input import select_periods
 from mtpy.modeling.modem_data import Data
 from mtpy.modeling.modem_model import Model
-from tests import TEST_TEMP_DIR
+from tests import TEST_TEMP_DIR, plt_close
 
 
 class TestModel(TestCase):
@@ -32,6 +32,9 @@ class TestModel(TestCase):
         )
         if not os.path.isdir(self._expected_output_dir):
             self._expected_output_dir = None
+
+    def tearDown(self):
+        plt_close('all')
 
 
 edi_paths = [

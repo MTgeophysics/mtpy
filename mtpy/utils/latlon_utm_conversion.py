@@ -7,6 +7,7 @@ from math import pi, sin, cos, tan, sqrt
 # LatLong- UTM conversion..h
 # definitions for lat/long to UTM and UTM to lat/lng conversions
 # include <string.h>
+from mtpy.utils.decorator import deprecated
 
 _deg2rad = pi / 180.0
 _rad2deg = 180.0 / pi
@@ -44,6 +45,7 @@ _ellipsoid = [
     [23, "WGS-84", 6378137, 0.00669438]
 ]
 
+
 # Reference ellipsoids derived from Peter H. Dana's website-
 # http://www.utexas.edu/depts/grg/gcraft/notes/datum/elist.html
 # Department of Geography, University of Texas at Austin
@@ -54,7 +56,8 @@ _ellipsoid = [
 # Defense Mapping Agency. 1987b. DMA Technical Report: Supplement to Department of Defense World Geodetic System
 # 1984 Technical Report. Part I and II. Washington, DC: Defense Mapping Agency
 
-
+@deprecated("This function may be removed in later release. mtpy.utils.gis_tools.project_point_ll2utm() should be "
+            "used instead.")
 def LLtoUTM(ReferenceEllipsoid, Lat, Long):
     """
     converts lat/long to UTM coords.  Equations from USGS Bulletin 1532
@@ -70,9 +73,9 @@ def LLtoUTM(ReferenceEllipsoid, Lat, Long):
     eccSquared = _ellipsoid[ReferenceEllipsoid][_eccentricitySquared]
     k0 = 0.9996
 
-# Make sure the longitude is between -180.00 .. 179.9
+    # Make sure the longitude is between -180.00 .. 179.9
     LongTemp = (Long + 180) - int((Long + 180) / 360) * \
-        360 - 180  # -180.00 .. 179.9
+                              360 - 180  # -180.00 .. 179.9
 
     LatRad = Lat * _deg2rad
     LongRad = LongTemp * _deg2rad
@@ -182,10 +185,12 @@ def _UTMLetterDesignator(Lat):
     else:
         return 'Z'  # if the Latitude is outside the UTM limits
 
+
 # void UTMtoLL(int ReferenceEllipsoid, const double UTMNorthing, const double UTMEasting, const char* UTMZone,
 #			  double& Lat,  double& Long )
 
-
+@deprecated("This function may be removed in later release. mtpy.utils.gis_tools.project_point_utm2ll() should be "
+            "used instead.")
 def UTMtoLL(ReferenceEllipsoid, northing, easting, zone):
     """
     converts UTM coords to lat/long.  Equations from USGS Bulletin 1532
@@ -214,7 +219,7 @@ def UTMtoLL(ReferenceEllipsoid, northing, easting, zone):
         NorthernHemisphere = 1  # point is in northern hemisphere
     else:
         NorthernHemisphere = 0  # point is in southern hemisphere
-        y -= 10000000.0         # remove 10,000,000 meter offset used for southern hemisphere
+        y -= 10000000.0  # remove 10,000,000 meter offset used for southern hemisphere
 
     # +3 puts origin in middle of zone
     LongOrigin = (ZoneNumber - 1) * 6 - 180 + 3
@@ -237,14 +242,17 @@ def UTMtoLL(ReferenceEllipsoid, northing, easting, zone):
                                     sin(phi1Rad) * sin(phi1Rad), 1.5)
     D = x / (N1 * k0)
 
-    Lat = phi1Rad - (N1 * tan(phi1Rad) / R1) * (D * D / 2 - (5 + 3 * T1 + 10 * C1 - 4 * C1 * C1 - 9 * eccPrimeSquared) * D * D * D * D / 24
-                                                + (61 + 90 * T1 + 298 * C1 + 45 * T1 * T1 - 252 * eccPrimeSquared - 3 * C1 * C1) * D * D * D * D * D * D / 720)
+    Lat = phi1Rad - (N1 * tan(phi1Rad) / R1) * (
+    D * D / 2 - (5 + 3 * T1 + 10 * C1 - 4 * C1 * C1 - 9 * eccPrimeSquared) * D * D * D * D / 24
+    + (61 + 90 * T1 + 298 * C1 + 45 * T1 * T1 - 252 * eccPrimeSquared - 3 * C1 * C1) * D * D * D * D * D * D / 720)
     Lat = Lat * _rad2deg
 
-    Long = (D - (1 + 2 * T1 + C1) * D * D * D / 6 + (5 - 2 * C1 + 28 * T1 - 3 * C1 * C1 + 8 * eccPrimeSquared + 24 * T1 * T1)
+    Long = (D - (1 + 2 * T1 + C1) * D * D * D / 6 + (
+    5 - 2 * C1 + 28 * T1 - 3 * C1 * C1 + 8 * eccPrimeSquared + 24 * T1 * T1)
             * D * D * D * D * D / 120) / cos(phi1Rad)
     Long = LongOrigin + Long * _rad2deg
     return (Lat, Long)
+
 
 # =============================================================================
 epsg_dict = {28350: ['+proj=utm +zone=50 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs', 50],
@@ -254,8 +262,11 @@ epsg_dict = {28350: ['+proj=utm +zone=50 +south +ellps=GRS80 +towgs84=0,0,0,0,0,
              28354: ['+proj=utm +zone=54 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs', 54],
              28355: ['+proj=utm +zone=55 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs', 55],
              28356: ['+proj=utm +zone=56 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs', 56],
-             3112: ['+proj=lcc +lat_1=-18 +lat_2=-36 +lat_0=0 +lon_0=134 +x_0=0 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs', 0],
+             3112: [
+                 '+proj=lcc +lat_1=-18 +lat_2=-36 +lat_0=0 +lon_0=134 +x_0=0 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs',
+                 0],
              4326: ['+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs', 0]}
+
 
 ##############################################
 
@@ -281,6 +292,8 @@ def project(x, y, epsg_from, epsg_to):
     return pyproj.transform(p1, p2, x, y)
 
 
+@deprecated("This function may be removed in later release. mtpy.utils.gis_tools.project_point_ll2utm() should be "
+            "used instead.")
 def utm_wgs84_conv(lat, lon):
     """
     Bidirectional UTM-WGS84 converter https://github.com/Turbo87/utm/blob/master/utm/conversion.py
@@ -326,19 +339,19 @@ if __name__ == '__main__':
     (new_lat, new_lon) = UTMtoLL(nref, n, e, z)
     print (lat, lon)
 
-# checking correctess
+    # checking correctess
     if (abs(lat - new_lat) > 1.0 * e - 10):
         print "Warning: lat and new_lat should be equal!"
 
     if (abs(lon - new_lon) > 1.0 * e - 10):
         print "Warning: lon and new_lon should be equal!"
 
-#  Use the third party package utm, which works for WGS84 only.
+    #  Use the third party package utm, which works for WGS84 only.
     new_utm = utm_wgs84_conv(lat, lon)
     print ("Result from the utm package: ", new_utm)
 
-# Compare with the pyproj function. This requires to know in priori the
-# epsg code 28354 (for utm zone 54)
+    # Compare with the pyproj function. This requires to know in priori the
+    # epsg code 28354 (for utm zone 54)
     pyproj_res = project(lon, lat, 4326, 28355)
 
     print ("Result from the pyproj function: ", pyproj_res)
