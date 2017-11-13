@@ -194,12 +194,14 @@ def get_utm_zone(latitude, longitude):
     Get utm zone from a given latitude and longitude
     """
     zone_number = (int(1 + (longitude + 180.0) / 6.0))
-    if latitude < 0.0:
-        is_northern = 0
-        n_str = 'S'
-    else:
-        is_northern = 1
-        n_str = 'N'
+    n_str = _utm_letter_designator(latitude)
+    is_northern = 1 if latitude >= 0 else 0
+    # if latitude < 0.0:
+    #     is_northern = 0
+    #     n_str = 'S'
+    # else:
+    #     is_northern = 1
+    #     n_str = 'N'
 
     return zone_number, is_northern, '{0:02.0f}{1}'.format(zone_number, n_str)
 
