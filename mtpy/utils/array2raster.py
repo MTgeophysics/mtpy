@@ -4,6 +4,8 @@ Created on Sun May 11 12:15:37 2014
 
 @author: jrpeacock
 """
+from mtpy.utils.shapefiles import transform_ll_to_utm
+
 try:
     from osgeo import ogr, gdal, osr
 except ImportError:
@@ -437,38 +439,38 @@ def array2raster(raster_fn, origin, cell_width, cell_height, res_array,
     
     # be sure to flush the data  
     outband.FlushCache()
- 
+
 #==============================================================================
 #  transform coordinate systems
 #==============================================================================
-def transform_ll_to_utm(lon, lat, reference_ellipsoid='WGS84'):    
-    def get_utm_zone(longitude):
-        return (int(1+(longitude+180.0)/6.0))
-    
-    def is_northern(latitude):
-        """
-        Determines if given latitude is a northern for UTM
-        """
-        if (latitude < 0.0):
-            return 0
-        else:
-            return 1
-            
-    utm_coordinate_system = osr.SpatialReference()
-    # Set geographic coordinate system to handle lat/lon  
-    utm_coordinate_system.SetWellKnownGeogCS(reference_ellipsoid) 
-    utm_coordinate_system.SetUTM(get_utm_zone(lon), is_northern(lat))
-    
-    # Clone ONLY the geographic coordinate system 
-    ll_coordinate_system = utm_coordinate_system.CloneGeogCS() 
-    # create transform component
-    ll_to_utm_geo_transform = osr.CoordinateTransformation(ll_coordinate_system, 
-                                                          utm_coordinate_system)
-                                                                                  
-    utm_point = ll_to_utm_geo_transform.TransformPoint(lon, lat, 0)
-        
-    # returns easting, northing, altitude  
-    return utm_coordinate_system, utm_point
+# def transform_ll_to_utm(lon, lat, reference_ellipsoid='WGS84'):
+#     def get_utm_zone(longitude):
+#         return (int(1+(longitude+180.0)/6.0))
+#
+#     def is_northern(latitude):
+#         """
+#         Determines if given latitude is a northern for UTM
+#         """
+#         if (latitude < 0.0):
+#             return 0
+#         else:
+#             return 1
+#
+#     utm_coordinate_system = osr.SpatialReference()
+#     # Set geographic coordinate system to handle lat/lon
+#     utm_coordinate_system.SetWellKnownGeogCS(reference_ellipsoid)
+#     utm_coordinate_system.SetUTM(get_utm_zone(lon), is_northern(lat))
+#
+#     # Clone ONLY the geographic coordinate system
+#     ll_coordinate_system = utm_coordinate_system.CloneGeogCS()
+#     # create transform component
+#     ll_to_utm_geo_transform = osr.CoordinateTransformation(ll_coordinate_system,
+#                                                           utm_coordinate_system)
+#
+#     utm_point = ll_to_utm_geo_transform.TransformPoint(lon, lat, 0)
+#
+#     # returns easting, northing, altitude
+#     return utm_coordinate_system, utm_point
 #==============================================================================
 # example test   
 #==============================================================================
