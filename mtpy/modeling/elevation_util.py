@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import scipy.interpolate as spi
 
+import mtpy.utils.gis_tools
 import mtpy.utils.latlon_utm_conversion as utm2ll
 
 
@@ -127,8 +128,8 @@ def read_dem_ascii(ascii_fn, cell_size=500, model_center=(0, 0), rot_90=0, epsg=
     lat = np.arange(y0, y0 + cs * (ny), cs)
 
     # calculate the lower left and uper right corners of the grid in meters
-    ll_en = utm2ll.LLtoUTM(23, lat[0], lon[0])
-    ur_en = utm2ll.LLtoUTM(23, lat[-1], lon[-1])
+    ll_en = mtpy.utils.gis_tools.ll_to_utm(23, lat[0], lon[0])
+    ur_en = mtpy.utils.gis_tools.ll_to_utm(23, lat[-1], lon[-1])
 
     # estimate cell sizes for each dem measurement
     d_east = abs(ll_en[1] - ur_en[1]) / nx

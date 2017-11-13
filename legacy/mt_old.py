@@ -15,6 +15,7 @@ Created on Tue Jan 07 12:42:34 2014
 #==============================================================================
 import mtpy.core.edi as MTedi
 import mtpy.core.z as MTz
+import mtpy.utils.gis_tools
 import mtpy.utils.latlon_utm_conversion as MTutm
 import mtpy.utils.exceptions as MTex
 import mtpy.utils.format as MTformat
@@ -365,18 +366,18 @@ class MT(object):
         get utm coordinates from lat and lon
         """
         
-        self.utm_zone, self.east, self.north = MTutm.LLtoUTM(self._utm_ellipsoid,
-                                                             self.lat, self.lon)
+        self.utm_zone, self.east, self.north = mtpy.utils.gis_tools.ll_to_utm(self._utm_ellipsoid,
+                                                                              self.lat, self.lon)
                                                          
     def _get_ll(self):
         """
         get lat and long from utm
         """
         
-        self.lat, self.lon = MTutm.UTMtoLL(self._utm_ellipsoid, 
-                                           self.north, 
-                                           self.east, 
-                                           self.utm_zone)
+        self.lat, self.lon = mtpy.utils.gis_tools.utm_to_ll(self._utm_ellipsoid,
+                                                            self.north,
+                                                            self.east,
+                                                            self.utm_zone)
                                            
                                            
                                            

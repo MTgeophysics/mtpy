@@ -21,6 +21,7 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 import mtpy.modeling.elevation_util as elev_util
 import mtpy.modeling.ws3dinv as ws
+import mtpy.utils.gis_tools
 import mtpy.utils.gocad as mtgocad
 import mtpy.utils.calculator as mtcc
 import mtpy.utils.latlon_utm_conversion as utm2ll
@@ -862,7 +863,7 @@ class Model(object):
             x, y = np.meshgrid(x, y)
 
         epsg_from, epsg_to = surface_epsg, self.Data.epsg
-        xs, ys = utm2ll.project(x, y, epsg_from, epsg_to)
+        xs, ys = mtpy.utils.gis_tools.epsg_project(x, y, epsg_from, epsg_to)
 
         # get centre position of model grid in real world coordinates
         x0, y0 = [np.median(self.station_locations[dd] - self.station_locations['rel_' + dd]) for dd in
@@ -1909,7 +1910,7 @@ class Model(object):
         if location_type == 'LL':
             if np.any(origin) == 0:
                 print("Warning, origin coordinates provided as zero, output lat/long are likely to be incorrect")
-            x, y = utm2ll.project(x, y, model_epsg, 4326)
+            x, y = mtpy.utils.gis_tools.epsg_project(x, y, model_epsg, 4326)
             # update format to accommodate lat/lon
             fmt[:2] = ['%.6f', '%.6f']
 

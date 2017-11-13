@@ -14,6 +14,8 @@ import scipy.signal as sps
 import mtpy.core.z
 
 # short spaces 3 spaces
+import mtpy.utils.gis_tools
+
 tsp = '   '
 # long spaces 6 spaces
 lsp = '      '
@@ -2004,8 +2006,8 @@ def getStationInfo(stationinfofile, station, mapversion=23):
             try:
                 info[ii]['easting']
                 info[ii]['northing']
-                lat, lon = utm2ll.UTMtoLL(mapversion, float(info[ii]['northing']),
-                                          float(info[ii]['easting']), info[ii]['zone'])
+                lat, lon = mtpy.utils.gis_tools.utm_to_ll(mapversion, float(info[ii]['northing']),
+                                                          float(info[ii]['easting']), info[ii]['zone'])
                 info[ii]['lat'] = sigfigs(str(lat), 12)
                 info[ii]['long'] = sigfigs(str(lon), 12)
             except KeyError:
@@ -2242,11 +2244,11 @@ def removeStaticShift(edifile, stol=.2, dm=1000):
     # loop over files to find nearby stations
     reslst = []
     statlst = []
-    zone, northing, easting = utm2ll.LLtoUTM(
+    zone, northing, easting = mtpy.utils.gis_tools.ll_to_utm(
         23, edidict['lat'], edidict['lon'])
     for kk, kedi in enumerate(edifilelst):
         kedidict = readedi(kedi)
-        zone, dn, de = utm2ll.LLtoUTM(23, kedidict['lat'], kedidict['lon'])
+        zone, dn, de = mtpy.utils.gis_tools.ll_to_utm(23, kedidict['lat'], kedidict['lon'])
         deltad = np.sqrt((dn - northing)**2 + (de - easting)**2)
         if deltad <= dm:
             kres, kphase = imp2resphase(kedidict['z'], kedidict['frequency'])

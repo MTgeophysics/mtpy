@@ -15,6 +15,8 @@ import legacy.birrptools as brp
 import legacy.mttools as mt
 import legacy.old_z as Z
 
+import mtpy.utils.gis_tools
+
 reload(Z)
 import mtpy.utils.latlon_utm_conversion as utm2ll
 from matplotlib import colors
@@ -1066,7 +1068,7 @@ def plotPTpseudoSection(filenamelst, colorkey='phimin', esize=2,
     for ii, fn in enumerate(filenamelst):
         imp = Z.Z(fn)
         stationlst.append(imp.station[stationid[0]:stationid[1]])
-        zone, east, north = utm2ll.LLtoUTM(23, imp.lat, imp.lon)
+        zone, east, north = mtpy.utils.gis_tools.ll_to_utm(23, imp.lat, imp.lon)
 
         if ii == 0:
             east0 = east
@@ -1409,7 +1411,7 @@ def plotRTpseudoSection(filenamelst, colorkey='rhodet', esize=2,
     for ii, fn in enumerate(filenamelst):
         imp = Z.Z(fn)
         stationlst.append(imp.station[stationid[0]:stationid[1]])
-        zone, east, north = utm2ll.LLtoUTM(23, imp.lat, imp.lon)
+        zone, east, north = mtpy.utils.gis_tools.ll_to_utm(23, imp.lat, imp.lon)
 
         if ii == 0:
             east0 = east
@@ -1741,7 +1743,7 @@ def plotPTMaps(edifilelst, freqspot=10, esize=2.0, colorkey='phimin', xpad=.2,
                 plotx = imp.lon - refpoint[0]
                 ploty = imp.lat - refpoint[1]
             elif mapscale == 'eastnorth':
-                zone, east, north = utm2ll.LLtoUTM(23, imp.lat, imp.lon)
+                zone, east, north = mtpy.utils.gis_tools.ll_to_utm(23, imp.lat, imp.lon)
                 if ii == 0:
                     zone1 = zone
                     plotx = east - refpoint[0]
@@ -1764,7 +1766,7 @@ def plotPTMaps(edifilelst, freqspot=10, esize=2.0, colorkey='phimin', xpad=.2,
                         plotx = east - refpoint[0]
                         ploty = north - refpoint[1]
             elif mapscale == 'eastnorthkm':
-                zone, east, north = utm2ll.LLtoUTM(23, imp.lat, imp.lon)
+                zone, east, north = mtpy.utils.gis_tools.ll_to_utm(23, imp.lat, imp.lon)
                 if ii == 0:
                     zone1 = zone
                     plotx = (east - refpoint[0]) / 1000.
@@ -2144,7 +2146,7 @@ def plotResPhasePseudoSection(edifilelst, stationid=[0, 4], ffactor=1,
         # get offsets between stations
         imp = Z.Z(fn)
         stationlst.append(imp.station[stationid[0]:stationid[1]])
-        zone, east, north = utm2ll.LLtoUTM(23, imp.lat, imp.lon)
+        zone, east, north = mtpy.utils.gis_tools.ll_to_utm(23, imp.lat, imp.lon)
 
         if ii == 0:
             east0 = east

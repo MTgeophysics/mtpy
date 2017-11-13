@@ -9,10 +9,8 @@ Created on Fri Apr 14 14:47:48 2017
 # Imports
 # ==============================================================================
 from __future__ import print_function
-import os
-import sys
 
-from mtpy.utils.decorator import gdal_data_check
+from mtpy.utils.decorator import gdal_data_check, deprecated
 from osgeo import osr
 import numpy as np
 from osgeo.ogr import OGRERR_NONE
@@ -446,7 +444,312 @@ def project_points_ll2utm(lat, lon, datum='WGS84', utm_zone=None, epsg=None):
 
     # reshape back into original shape
     if flattened:
-        lat = lat.reshape(*llshape)
-        lon = lon.reshape(*llshape)
+        lat = lat.reshape(llshape)
+        lon = lon.reshape(llshape)
 
     return projected_point
+
+
+# =================================
+# functions from latlon_utm_conversion.py
+
+
+_deg2rad = np.pi / 180.0
+_rad2deg = 180.0 / np.pi
+_equatorial_radius = 2
+_eccentricity_squared = 3
+
+_ellipsoid = [
+    #  id, Ellipsoid name, Equatorial Radius, square of eccentricity
+    # first once is a placeholder only, To allow array indices to match id
+    # numbers
+    [-1, "Placeholder", 0, 0],
+    [1, "Airy", 6377563, 0.00667054],
+    [2, "Australian National", 6378160, 0.006694542],
+    [3, "Bessel 1841", 6377397, 0.006674372],
+    [4, "Bessel 1841 (Nambia] ", 6377484, 0.006674372],
+    [5, "Clarke 1866", 6378206, 0.006768658],
+    [6, "Clarke 1880", 6378249, 0.006803511],
+    [7, "Everest", 6377276, 0.006637847],
+    [8, "Fischer 1960 (Mercury] ", 6378166, 0.006693422],
+    [9, "Fischer 1968", 6378150, 0.006693422],
+    [10, "GRS 1967", 6378160, 0.006694605],
+    [11, "GRS 1980", 6378137, 0.00669438],
+    [12, "Helmert 1906", 6378200, 0.006693422],
+    [13, "Hough", 6378270, 0.00672267],
+    [14, "International", 6378388, 0.00672267],
+    [15, "Krassovsky", 6378245, 0.006693422],
+    [16, "Modified Airy", 6377340, 0.00667054],
+    [17, "Modified Everest", 6377304, 0.006637847],
+    [18, "Modified Fischer 1960", 6378155, 0.006693422],
+    [19, "South American 1969", 6378160, 0.006694542],
+    [20, "WGS 60", 6378165, 0.006693422],
+    [21, "WGS 66", 6378145, 0.006694542],
+    [22, "WGS-72", 6378135, 0.006694318],
+    [23, "WGS-84", 6378137, 0.00669438]
+]
+
+
+# Reference ellipsoids derived from Peter H. Dana's website-
+# http://www.utexas.edu/depts/grg/gcraft/notes/datum/elist.html
+# Department of Geography, University of Texas at Austin
+# Internet: pdana@mail.utexas.edu
+# 3/22/95
+
+# Source
+# Defense Mapping Agency. 1987b. DMA Technical Report: Supplement to Department of Defense World Geodetic System
+# 1984 Technical Report. Part I and II. Washington, DC: Defense Mapping Agency
+
+@deprecated("This function may be removed in later release. mtpy.utils.gis_tools.project_point_ll2utm() should be "
+            "used instead.")
+def ll_to_utm(reerence_ellipsoid, lat, long):
+    """
+    converts lat/long to UTM coords.  Equations from USGS Bulletin 1532
+    East Longitudes are positive, West longitudes are negative.
+    North latitudes are positive, South latitudes are negative
+    Lat and Long are in decimal degrees
+    Written by Chuck Gantz- chuck.gantz@globalstar.com
+
+    Outputs:
+        UTMzone, easting, northing"""
+
+    a = _ellipsoid[reerence_ellipsoid][_equatorial_radius]
+    ecc_squared = _ellipsoid[reerence_ellipsoid][_eccentricity_squared]
+    k0 = 0.9996
+
+    # Make sure the longitude is between -180.00 .. 179.9
+    long_temp = (long + 180) - int((long + 180) / 360) * \
+                               360 - 180  # -180.00 .. 179.9
+
+    lat_rad = lat * _deg2rad
+    long_rad = long_temp * _deg2rad
+
+    zone_number = int((long_temp + 180) / 6) + 1
+
+    if 56.0 <= lat < 64.0 and 3.0 <= long_temp < 12.0:
+        zone_number = 32
+
+    # Special zones for Svalbard
+    if 72.0 <= lat < 84.0:
+        if 0.0 <= long_temp < 9.0:
+            zone_number = 31
+        elif 9.0 <= long_temp < 21.0:
+            zone_number = 33
+        elif 21.0 <= long_temp < 33.0:
+            zone_number = 35
+        elif 33.0 <= long_temp < 42.0:
+            zone_number = 37
+
+    # +3 puts origin in middle of zone
+    long_origin = (zone_number - 1) * 6 - 180 + 3
+    long_origin_rad = long_origin * _deg2rad
+
+    # compute the UTM Zone from the latitude and longitude
+    utm_zone = "%d%c" % (zone_number, _utm_letter_designator(lat))
+
+    ecc_prime_squared = ecc_squared / (1 - ecc_squared)
+    n = a / np.sqrt(1 - ecc_squared * np.sin(lat_rad) * np.sin(lat_rad))
+    t = np.tan(lat_rad) * np.tan(lat_rad)
+    c = ecc_prime_squared * np.cos(lat_rad) * np.cos(lat_rad)
+    a = np.cos(lat_rad) * (long_rad - long_origin_rad)
+
+    m = a * ((1
+              - ecc_squared / 4
+              - 3 * ecc_squared * ecc_squared / 64
+              - 5 * ecc_squared * ecc_squared * ecc_squared / 256) * lat_rad
+             - (3 * ecc_squared / 8
+                + 3 * ecc_squared * ecc_squared / 32
+                + 45 * ecc_squared * ecc_squared * ecc_squared / 1024) * np.sin(2 * lat_rad)
+             + (15 * ecc_squared * ecc_squared / 256 + 45 * ecc_squared *
+                ecc_squared * ecc_squared / 1024) * np.sin(4 * lat_rad)
+             - (35 * ecc_squared * ecc_squared * ecc_squared / 3072) * np.sin(6 * lat_rad))
+
+    utm_easting = (k0 * n * (a + (1 - t + c) * a * a * a / 6
+                             + (5 - 18 * t + t * t + 72 * c - 58 * ecc_prime_squared) * a * a * a * a * a / 120)
+                   + 500000.0)
+
+    utm_northing = (k0 * (m + n * np.tan(lat_rad) * (a * a / 2 + (5 - t + 9 * c + 4 * c * c) * a * a * a * a / 24
+                                                  + (61
+                                                     - 58 * t
+                                                     + t * t
+                                                     + 600 * c
+                                                     - 330 * ecc_prime_squared) * a * a * a * a * a * a / 720)))
+
+    if lat < 0:
+        # 10000000 meter offset for southern hemisphere
+        utm_northing = utm_northing + 10000000.0
+    return utm_zone, utm_easting, utm_northing
+
+
+def _utm_letter_designator(lat):
+    # This routine determines the correct UTM letter designator for the given latitude
+    # returns 'Z' if latitude is outside the UTM limits of 84N to 80S
+    # Written by Chuck Gantz- chuck.gantz@globalstar.com
+
+    if 84 >= lat >= 72:
+        return 'X'
+    elif 72 > lat >= 64:
+        return 'W'
+    elif 64 > lat >= 56:
+        return 'V'
+    elif 56 > lat >= 48:
+        return 'U'
+    elif 48 > lat >= 40:
+        return 'T'
+    elif 40 > lat >= 32:
+        return 'S'
+    elif 32 > lat >= 24:
+        return 'R'
+    elif 24 > lat >= 16:
+        return 'Q'
+    elif 16 > lat >= 8:
+        return 'P'
+    elif 8 > lat >= 0:
+        return 'N'
+    elif 0 > lat >= -8:
+        return 'M'
+    elif -8 > lat >= -16:
+        return 'L'
+    elif -16 > lat >= -24:
+        return 'K'
+    elif -24 > lat >= -32:
+        return 'J'
+    elif -32 > lat >= -40:
+        return 'H'
+    elif -40 > lat >= -48:
+        return 'G'
+    elif -48 > lat >= -56:
+        return 'F'
+    elif -56 > lat >= -64:
+        return 'E'
+    elif -64 > lat >= -72:
+        return 'D'
+    elif -72 > lat >= -80:
+        return 'C'
+    else:
+        return 'Z'  # if the Latitude is outside the UTM limits
+
+
+@deprecated("This function may be removed in later release. mtpy.utils.gis_tools.project_point_utm2ll() should be "
+            "used instead.")
+def utm_to_ll(reference_ellipsoid, northing, easting, zone):
+    """
+    converts UTM coords to lat/long.  Equations from USGS Bulletin 1532
+    East Longitudes are positive, West longitudes are negative.
+    North latitudes are positive, South latitudes are negative
+    Lat and Long are in decimal degrees.
+    Written by Chuck Gantz- chuck.gantz@globalstar.com
+    Converted to Python by Russ Nelson <nelson@crynwr.com>
+
+    Outputs:
+        Lat,Lon
+    """
+
+    k0 = 0.9996
+    a = _ellipsoid[reference_ellipsoid][_equatorial_radius]
+    ecc_squared = _ellipsoid[reference_ellipsoid][_eccentricity_squared]
+    e1 = (1 - np.sqrt(1 - ecc_squared)) / (1 + np.sqrt(1 - ecc_squared))
+    # NorthernHemisphere; //1 for northern hemispher, 0 for southern
+
+    x = easting - 500000.0  # remove 500,000 meter offset for longitude
+    y = northing
+
+    zone_letter = zone[-1]
+    zone_number = int(zone[:-1])
+    if zone_letter >= 'N':
+        NorthernHemisphere = 1  # point is in northern hemisphere
+    else:
+        NorthernHemisphere = 0  # point is in southern hemisphere
+        y -= 10000000.0  # remove 10,000,000 meter offset used for southern hemisphere
+
+    # +3 puts origin in middle of zone
+    long_origin = (zone_number - 1) * 6 - 180 + 3
+
+    ecc_prime_squared = (ecc_squared) / (1 - ecc_squared)
+
+    M = y / k0
+    mu = M / (a * (1 - ecc_squared / 4 - 3 * ecc_squared * ecc_squared /
+                   64 - 5 * ecc_squared * ecc_squared * ecc_squared / 256))
+
+    phi1_rad = (mu + (3 * e1 / 2 - 27 * e1 * e1 * e1 / 32) * np.sin(2 * mu)
+               + (21 * e1 * e1 / 16 - 55 * e1 * e1 * e1 * e1 / 32) * np.sin(4 * mu)
+               + (151 * e1 * e1 * e1 / 96) * np.sin(6 * mu))
+    phi1 = phi1_rad * _rad2deg
+
+    n1 = a / np.sqrt(1 - ecc_squared * np.sin(phi1_rad) * np.sin(phi1_rad))
+    t1 = np.tan(phi1_rad) * np.tan(phi1_rad)
+    c1 = ecc_prime_squared * np.cos(phi1_rad) * np.cos(phi1_rad)
+    r1 = a * (1 - ecc_squared) / pow(1 - ecc_squared *
+                                    np.sin(phi1_rad) * np.sin(phi1_rad), 1.5)
+    d = x / (n1 * k0)
+
+    lat = phi1_rad - (n1 * np.tan(phi1_rad) / r1) * (
+    d * d / 2 - (5 + 3 * t1 + 10 * c1 - 4 * c1 * c1 - 9 * ecc_prime_squared) * d * d * d * d / 24
+    + (61 + 90 * t1 + 298 * c1 + 45 * t1 * t1 - 252 * ecc_prime_squared - 3 * c1 * c1) * d * d * d * d * d * d / 720)
+    lat = lat * _rad2deg
+
+    long = (d - (1 + 2 * t1 + c1) * d * d * d / 6 + (
+    5 - 2 * c1 + 28 * t1 - 3 * c1 * c1 + 8 * ecc_prime_squared + 24 * t1 * t1)
+            * d * d * d * d * d / 120) / np.cos(phi1_rad)
+    long = long_origin + long * _rad2deg
+    return lat, long
+
+
+epsg_dict = {28350: ['+proj=utm +zone=50 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs', 50],
+             28351: ['+proj=utm +zone=51 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs', 51],
+             28352: ['+proj=utm +zone=52 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs', 52],
+             28353: ['+proj=utm +zone=53 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs', 53],
+             28354: ['+proj=utm +zone=54 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs', 54],
+             28355: ['+proj=utm +zone=55 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs', 55],
+             28356: ['+proj=utm +zone=56 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs', 56],
+             3112: [
+                 '+proj=lcc +lat_1=-18 +lat_2=-36 +lat_0=0 +lon_0=134 +x_0=0 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs',
+                 0],
+             4326: ['+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs', 0]}
+
+
+def epsg_project(x, y, epsg_from, epsg_to):
+    """
+    project some xy points using the pyproj modules
+    """
+
+    try:
+        import pyproj
+    except ImportError:
+        print("please install pyproj")
+        return
+    if epsg_from is not None:
+        try:
+            p1 = pyproj.Proj(epsg_dict[epsg_from][0])
+            p2 = pyproj.Proj(epsg_dict[epsg_to][0])
+        except KeyError:
+            print("Surface or data epsg either not in dictionary or None, please add epsg and Proj4 text to epsg_dict at beginning of modem_new module")
+            return
+
+    return pyproj.transform(p1, p2, x, y)
+
+
+@deprecated("This function may be removed in later release. mtpy.utils.gis_tools.project_point_ll2utm() should be "
+            "used instead.")
+def utm_wgs84_conv(lat, lon):
+    """
+    Bidirectional UTM-WGS84 converter https://github.com/Turbo87/utm/blob/master/utm/conversion.py
+    :param lat:
+    :param lon:
+    :return: tuple(e, n, zone, lett)
+    """
+
+    import utm  # pip install utm
+    tup = utm.from_latlon(lat, lon)
+
+    (new_lat, new_lon) = utm.to_latlon(tup[0], tup[1], tup[2], tup[3])
+    # print (new_lat,new_lon)  # should be same as the input param
+
+    # checking correctess
+    if abs(lat - new_lat) > 1.0 * np.e - 10:
+        print("Warning: lat and new_lat should be equal!")
+
+    if abs(lon - new_lon) > 1.0 * np.e - 10:
+        print("Warning: lon and new_lon should be equal!")
+
+    return tup
