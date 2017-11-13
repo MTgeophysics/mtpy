@@ -18,6 +18,7 @@ import numpy as np
 import mtpy.core.mt as mt
 import mtpy.core.z as mtz
 import mtpy.modeling.ws3dinv as ws
+import mtpy.utils.gis_tools
 import mtpy.utils.latlon_utm_conversion as utm2ll
 from mtpy import constants
 from mtpy.core.edi_collection import EdiCollection
@@ -398,9 +399,9 @@ class Data(object):
         for c_arr in self.data_array:
             if c_arr['lat'] != 0.0 and c_arr['lon'] != 0.0:
                 c_arr['zone'], c_arr['east'], c_arr['north'] = \
-                    utm2ll.LLtoUTM(self._utm_ellipsoid,
-                                   c_arr['lat'],
-                                   c_arr['lon'])
+                    mtpy.utils.gis_tools.ll_to_utm(self._utm_ellipsoid,
+                                                   c_arr['lat'],
+                                                   c_arr['lon'])
 
         # --> need to check to see if all stations are in the same zone
         utm_zone_list = list(set(self.data_array['zone']))
@@ -492,8 +493,8 @@ class Data(object):
             if c_arr['lat'] != 0.0 and c_arr['lon'] != 0.0:
                 c_arr['zone'] = constants.epsg_dict[self.epsg][1]
                 c_arr['east'], c_arr['north'] = \
-                    utm2ll.project(c_arr['lon'], c_arr['lat'],
-                                   4326, self.epsg)
+                    mtpy.utils.gis_tools.epsg_project(c_arr['lon'], c_arr['lat'],
+                                                      4326, self.epsg)
 
     def project_xy(self, x, y, epsg_from=None, epsg_to=4326):
         """
@@ -502,7 +503,7 @@ class Data(object):
         if epsg_from is None:
             epsg_from = self.epsg
 
-        return np.array(utm2ll.project(x, y, epsg_from, epsg_to))
+        return np.array(mtpy.utils.gis_tools.epsg_project(x, y, epsg_from, epsg_to))
 
     def get_relative_station_locations(self):
         """

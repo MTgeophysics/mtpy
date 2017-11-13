@@ -17,7 +17,9 @@ import os
 import mtpy.core.z as mtz
 import mtpy.core.mt as mt
 import numpy as np
-import mtpy.utils.latlongutmconversion as utm2ll
+
+import mtpy.utils.gis_tools
+import mtpy.utils.latlon_utm_conversion as utm2ll
 import mtpy.modeling.ws3dinv as ws
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MultipleLocator, FormatStrFormatter
@@ -427,9 +429,9 @@ class Data(object):
         for c_arr in self.data_array:
             if c_arr['lat'] != 0.0 and c_arr['lon'] != 0.0:
                 c_arr['zone'], c_arr['east'], c_arr['north'] = \
-                                          utm2ll.LLtoUTM(self._utm_ellipsoid,
-                                                         c_arr['lat'],
-                                                         c_arr['lon'])
+                                          mtpy.utils.gis_tools.ll_to_utm(self._utm_ellipsoid,
+                                                                         c_arr['lat'],
+                                                                         c_arr['lon'])
             
         #--> need to check to see if all stations are in the same zone
         utm_zone_list = list(set(self.data_array['zone']))
@@ -1575,9 +1577,9 @@ class Model(object):
         for c_arr in self.station_locations:
             if c_arr['lat'] != 0.0 and c_arr['lon'] != 0.0:
                 c_arr['zone'], c_arr['east'], c_arr['north'] = \
-                                          utm2ll.LLtoUTM(self._utm_ellipsoid,
-                                                         c_arr['lat'],
-                                                         c_arr['lon'])
+                                          mtpy.utils.gis_tools.ll_to_utm(self._utm_ellipsoid,
+                                                                         c_arr['lat'],
+                                                                         c_arr['lon'])
 
         #--> need to check to see if all stations are in the same zone
         utm_zone_list = list(set(self.station_locations['zone']))
@@ -2875,8 +2877,8 @@ def read_dem_ascii(ascii_fn, cell_size=500, model_center=(0, 0), rot_90=0):
     lat = np.arange(y0, y0+cs*(ny), cs)
 
     # calculate the lower left and uper right corners of the grid in meters
-    ll_en = utm2ll.LLtoUTM(23, lat[0], lon[0])
-    ur_en = utm2ll.LLtoUTM(23, lat[-1], lon[-1])
+    ll_en = mtpy.utils.gis_tools.ll_to_utm(23, lat[0], lon[0])
+    ur_en = mtpy.utils.gis_tools.ll_to_utm(23, lat[-1], lon[-1])
     
     # estimate cell sizes for each dem measurement
     d_east = abs(ll_en[1]-ur_en[1])/nx

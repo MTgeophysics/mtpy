@@ -20,6 +20,8 @@ import matplotlib.gridspec as gridspec
 import mtpy.core.edi as mtedi
 import mtpy.modeling.winglinktools as wlt
 import matplotlib.pyplot as plt
+
+import mtpy.utils.gis_tools
 import mtpy.utils.latlon_utm_conversion as utm2ll
 
 
@@ -2759,7 +2761,7 @@ class Occam2DData:
                             tipvar = z1.Tipper.tipper_err
 
                     # get eastings and northings so everything is in meters
-                    zone, east, north = utm2ll.LLtoUTM(23, z1.lat, z1.lon)
+                    zone, east, north = mtpy.utils.gis_tools.ll_to_utm(23, z1.lat, z1.lon)
 
                     # put things into a dictionary to sort out order of
                     # stations

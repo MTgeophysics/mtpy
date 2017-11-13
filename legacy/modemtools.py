@@ -14,6 +14,7 @@ import re
 
 import mtpy.core.mttools as mtt
 import mtpy.modeling.winglinktools as wlt
+import mtpy.utils.gis_tools
 import mtpy.utils.latlon_utm_conversion as ll2utm
 reload(wlt)
 
@@ -134,8 +135,8 @@ def latlon2xy(lat, lon, origin):
 
     # comment: to be checked for overlapping UTM zones!!
 
-    dummy1, utm_local_east, utm_local_north = ll2utm.LLtoUTM(23, lat, lon)
-    dummy2, utm_origin_east, utm_origin_north = ll2utm.LLtoUTM(23, origin[
+    dummy1, utm_local_east, utm_local_north = mtpy.utils.gis_tools.ll_to_utm(23, lat, lon)
+    dummy2, utm_origin_east, utm_origin_north = mtpy.utils.gis_tools.ll_to_utm(23, origin[
                                                                0], origin[1])
 
     x = utm_local_north - utm_origin_north
