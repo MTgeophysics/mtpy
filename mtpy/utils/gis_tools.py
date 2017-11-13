@@ -548,32 +548,30 @@ def ll_to_utm(reerence_ellipsoid, lat, long):
     utm_zone = "%d%c" % (zone_number, _utm_letter_designator(lat))
 
     ecc_prime_squared = ecc_squared / (1 - ecc_squared)
-    n = a / np.sqrt(1 - ecc_squared * np.sin(lat_rad) * np.sin(lat_rad))
+    n = a / np.sqrt(1 - ecc_squared * np.sin(lat_rad) ** 2)
     t = np.tan(lat_rad) * np.tan(lat_rad)
-    c = ecc_prime_squared * np.cos(lat_rad) * np.cos(lat_rad)
+    c = ecc_prime_squared * np.cos(lat_rad) ** 2
     a = np.cos(lat_rad) * (long_rad - long_origin_rad)
 
-    m = a * ((1
-              - ecc_squared / 4
-              - 3 * ecc_squared * ecc_squared / 64
-              - 5 * ecc_squared * ecc_squared * ecc_squared / 256) * lat_rad
+    m = a * ((1 - ecc_squared / 4
+              - 3 * ecc_squared ** 2 / 64
+              - 5 * ecc_squared ** 3 / 256) * lat_rad
              - (3 * ecc_squared / 8
-                + 3 * ecc_squared * ecc_squared / 32
-                + 45 * ecc_squared * ecc_squared * ecc_squared / 1024) * np.sin(2 * lat_rad)
-             + (15 * ecc_squared * ecc_squared / 256 + 45 * ecc_squared *
-                ecc_squared * ecc_squared / 1024) * np.sin(4 * lat_rad)
-             - (35 * ecc_squared * ecc_squared * ecc_squared / 3072) * np.sin(6 * lat_rad))
+                + 3 * ecc_squared ** 2 / 32
+                + 45 * ecc_squared ** 3 / 1024) * np.sin(2 * lat_rad)
+             + (15 * ecc_squared ** 2 / 256 + 45 * ecc_squared ** 3 / 1024) * np.sin(4 * lat_rad)
+             - (35 * ecc_squared ** 3 / 3072) * np.sin(6 * lat_rad))
 
-    utm_easting = (k0 * n * (a + (1 - t + c) * a * a * a / 6
-                             + (5 - 18 * t + t * t + 72 * c - 58 * ecc_prime_squared) * a * a * a * a * a / 120)
+    utm_easting = (k0 * n * (a + (1 - t + c) * a ** 3 / 6
+                             + (5 - 18 * t ** 3 + 72 * c - 58 * ecc_prime_squared) * a ** 5 / 120)
                    + 500000.0)
 
     utm_northing = (k0 * (m + n * np.tan(lat_rad) * (a * a / 2 + (5 - t + 9 * c + 4 * c * c) * a * a * a * a / 24
-                                                  + (61
-                                                     - 58 * t
-                                                     + t * t
-                                                     + 600 * c
-                                                     - 330 * ecc_prime_squared) * a * a * a * a * a * a / 720)))
+                                                     + (61
+                                                        - 58 * t
+                                                        + t ** 2
+                                                        + 600 * c
+                                                        - 330 * ecc_prime_squared) * a ** 6 / 720)))
 
     if lat < 0:
         # 10000000 meter offset for southern hemisphere
@@ -665,34 +663,35 @@ def utm_to_ll(reference_ellipsoid, northing, easting, zone):
     # +3 puts origin in middle of zone
     long_origin = (zone_number - 1) * 6 - 180 + 3
 
-    ecc_prime_squared = (ecc_squared) / (1 - ecc_squared)
+    ecc_prime_squared = ecc_squared / (1 - ecc_squared)
 
     M = y / k0
-    mu = M / (a * (1 - ecc_squared / 4 - 3 * ecc_squared * ecc_squared /
-                   64 - 5 * ecc_squared * ecc_squared * ecc_squared / 256))
+    mu = M / (a * (1 - ecc_squared / 4 - 3 * ecc_squared ** 2 /
+                   64 - 5 * ecc_squared ** 3 / 256))
 
-    phi1_rad = (mu + (3 * e1 / 2 - 27 * e1 * e1 * e1 / 32) * np.sin(2 * mu)
-               + (21 * e1 * e1 / 16 - 55 * e1 * e1 * e1 * e1 / 32) * np.sin(4 * mu)
-               + (151 * e1 * e1 * e1 / 96) * np.sin(6 * mu))
+    phi1_rad = (mu + (3 * e1 / 2 - 27 * e1 ** 3 / 32) * np.sin(2 * mu)
+                + (21 * e1 ** 2 / 16 - 55 * e1 ** 4 / 32) * np.sin(4 * mu)
+                + (151 * e1 ** 3 / 96) * np.sin(6 * mu))
     phi1 = phi1_rad * _rad2deg
 
-    n1 = a / np.sqrt(1 - ecc_squared * np.sin(phi1_rad) * np.sin(phi1_rad))
-    t1 = np.tan(phi1_rad) * np.tan(phi1_rad)
-    c1 = ecc_prime_squared * np.cos(phi1_rad) * np.cos(phi1_rad)
-    r1 = a * (1 - ecc_squared) / pow(1 - ecc_squared *
-                                    np.sin(phi1_rad) * np.sin(phi1_rad), 1.5)
+    n1 = a / np.sqrt(1 - ecc_squared * np.sin(phi1_rad) ** 2)
+    t1 = np.tan(phi1_rad) ** 2
+    c1 = ecc_prime_squared * np.cos(phi1_rad) ** 2
+    r1 = a * (1 - ecc_squared) / np.power(1 - ecc_squared *
+                                          np.sin(phi1_rad) ** 2, 1.5)
     d = x / (n1 * k0)
 
     lat = phi1_rad - (n1 * np.tan(phi1_rad) / r1) * (
-    d * d / 2 - (5 + 3 * t1 + 10 * c1 - 4 * c1 * c1 - 9 * ecc_prime_squared) * d * d * d * d / 24
-    + (61 + 90 * t1 + 298 * c1 + 45 * t1 * t1 - 252 * ecc_prime_squared - 3 * c1 * c1) * d * d * d * d * d * d / 720)
+        d ** 2 / 2 - (5 + 3 * t1 + 10 * c1 - 4 * c1 ** 2 - 9 * ecc_prime_squared) * d ** 4 / 24
+        + (
+            61 + 90 * t1 + 298 * c1 + 45 * t1 ** 2 - 252 * ecc_prime_squared - 3 * c1 ** 2) * d ** 6 / 720)
     lat = lat * _rad2deg
 
-    long = (d - (1 + 2 * t1 + c1) * d * d * d / 6 + (
-    5 - 2 * c1 + 28 * t1 - 3 * c1 * c1 + 8 * ecc_prime_squared + 24 * t1 * t1)
-            * d * d * d * d * d / 120) / np.cos(phi1_rad)
-    long = long_origin + long * _rad2deg
-    return lat, long
+    lon = (d - (1 + 2 * t1 + c1) * d ** 3 / 6 + (
+        5 - 2 * c1 + 28 * t1 - 3 * c1 ** 2 + 8 * ecc_prime_squared + 24 * t1 ** 2)
+           * d ** 5 / 120) / np.cos(phi1_rad)
+    lon = long_origin + lon * _rad2deg
+    return lat, lon
 
 
 epsg_dict = {28350: ['+proj=utm +zone=50 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs', 50],
@@ -723,7 +722,8 @@ def epsg_project(x, y, epsg_from, epsg_to):
             p1 = pyproj.Proj(epsg_dict[epsg_from][0])
             p2 = pyproj.Proj(epsg_dict[epsg_to][0])
         except KeyError:
-            print("Surface or data epsg either not in dictionary or None, please add epsg and Proj4 text to epsg_dict at beginning of modem_new module")
+            print(
+                "Surface or data epsg either not in dictionary or None, please add epsg and Proj4 text to epsg_dict at beginning of modem_new module")
             return
 
     return pyproj.transform(p1, p2, x, y)
