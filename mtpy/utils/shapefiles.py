@@ -75,7 +75,7 @@ class PTShapeFile(object):
 
     """
 
-    def __init__(self, edi_list, proj='WGS84', esize=0.03, **kwargs):
+    def __init__(self, edi_list=None, proj='WGS84', esize=0.03, **kwargs):
         self.edi_list = edi_list
         self.projection = proj
         #self.projection = None
@@ -93,8 +93,8 @@ class PTShapeFile(object):
 
         if self.edi_list is not None:
             self.mt_obj_list = [mt.MT(edi) for edi in self.edi_list]
-        else:
-            raise Exception("EDI files List is None")
+        # else:
+        #     raise Exception("EDI files List is None")
 
         for key in kwargs.keys():
             setattr(self, key, kwargs[key])
@@ -160,7 +160,7 @@ class PTShapeFile(object):
         key has a structured array that contains all the important information
         collected from each station.
 
-        Warn, only support 2 coordinate system 1) lat-long; 2) UTM-WGS84 default
+        Warning: this only supports 2 coordinate system 1) lat-long; 2) UTM-WGS84 default
         """
         self.pt_dict = {}
         if self.plot_period is None:
@@ -219,7 +219,8 @@ class PTShapeFile(object):
     def write_shape_files(self, every_site=1):
         """
         write shape file from given attributes
-        https://pcjericks.github.io/py-gdalogr-cookbook/vector_layers.html#create-a-new-shapefile-and-add-data
+        https://pcjericks.github.io/py-gdalogr-cookbook/vector_layers.html
+        #create-a-new-shapefile-and-add-data
         """
 
         self._get_pt_array()
@@ -1495,12 +1496,13 @@ def modem_to_shapefiles(mfndat, save_dir):
     """
 
     pts = PTShapeFile(save_path=save_dir)
-    pts.projection = 'NAD27'
-    pts.ellipse_size = 1200
+    pts.projection = None  #'WGS84'  # ''NAD27'
+    pts.ellipse_size = 0.1
     pts.write_data_pt_shape_files_modem(mfndat)
 
+    # tipper shape run OK, need check results
     tipshp = TipperShapeFile(save_path=save_dir)
-    tipshp.projection = 'NAD27'
+    tipshp.projection = 'WGS84'   #'NAD27'
     tipshp.arrow_lw = 30
     tipshp.arrow_head_height = 100
     tipshp.arrow_head_width = 70
@@ -1557,18 +1559,28 @@ def create_tipper_shpfiles(edipath, save_dir):
 
     return
 
-def test_modem_shape():
-    # modem: provide dat filr and save_path below:
-    mfn = r"E:/Githubz/mtpy/examples/data/ModEM_files/VicSynthetic07/Modular_MPI_NLCG_016.dat"
+def create_modem_data_shapefiles():
+    # modem: provide dat file and save_path below:
+    # mfn = r"E:/Githubz/mtpy/examples/data/ModEM_files/VicSynthetic07/Modular_MPI_NLCG_016.dat"
+    mfn = r"E:\Data\Modeling\Isa\100hs_flat_BB\Isa_run3_NLCG_048.dat"
     save_path = r"C:/tmp"
     modem_to_shapefiles(mfn, save_path)
 
+# script testing
+# if __name__ == "__main__dis":
+#     create_modem_data_shapefiles()
+
 # ===================================================
 #  main test
+# edi files-dir as input
 #  python mtpy/utils/shapefiles.py  data/edifiles c:/temp/
 #  python mtpy/utils/shapefiles.py examples/data/edi_files c:/temp/
+# modem dat file as input
+#  python mtpy/utils/shapefiles.py /e/Data/Modeling/Isa/100hs_flat_BB/Isa_run3_NLCG_048.dat c:/temp2/
+#  python mtpy/utils/shapefiles.py examples/data/ModEM_files/VicSynthetic07/Modular_MPI_NLCG_016.dat c:/temp2/
 # ----------------------------------------------------
 
+# script testing
 if __name__ == "__main__":
     import sys
     if len(sys.argv) < 3:
@@ -1576,10 +1588,19 @@ if __name__ == "__main__":
             "USAGE: %s input_edifile_dir output_shape_file_dir" %
             sys.argv[0])
         sys.exit(1)
-    else:
+
+    src_filedir = sys.argv[1] # A modem data file  OR edi-folder
+
+    destdir = sys.argv[2]
+    if not os.path.isdir(destdir):
+        os.mkdir(destdir)
+
+    if src_filedir[-4:].lower() == '.dat':      # modem dat file
+        modem_to_shapefiles(src_filedir, destdir)
+    elif os.path.isdir(src_filedir):            # edi folder
         create_phase_tensor_shpfiles(
-            sys.argv[1],
-            sys.argv[2],
+            src_filedir,
+            destdir,
             proj='WGS84', ellipse_size=1000, # UTM and size in meters. 1deg=100KM
             #proj=None,  ellipse_size=0.01, # Lat-Long geographic coord and size in degree
             every_site=1)
@@ -1588,4 +1609,6 @@ if __name__ == "__main__":
         # # ellipse_size=3000, every_site=2) # projected into UTM coordinate
 
         create_tipper_shpfiles(sys.argv[1],sys.argv[2])
+    else:
+        print("Nothing to do !!!")
 
