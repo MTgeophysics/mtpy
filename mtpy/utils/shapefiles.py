@@ -159,6 +159,8 @@ class PTShapeFile(object):
         make a dictionary with keys being the plot period values and each
         key has a structured array that contains all the important information
         collected from each station.
+
+        Warn, only support 2 coordinate system 1) lat-long; 2) UTM-WGS84 default
         """
         self.pt_dict = {}
         if self.plot_period is None:
@@ -191,16 +193,17 @@ class PTShapeFile(object):
                             self.projection)
 
                     pt_tuple = (mt_obj.station, east, north,
-                                mt_obj.pt.phimin[0][p_index],
-                                mt_obj.pt.phimax[0][p_index],
-                                mt_obj.pt.azimuth[0][p_index],
-                                mt_obj.pt.beta[0][p_index],
-                                2 * mt_obj.pt.beta[0][p_index],
-                                mt_obj.pt.ellipticity[0][p_index])  # FZ: get ellipticity begin here
+                                mt_obj.pt.phimin[p_index],
+                                mt_obj.pt.phimax[p_index],
+                                mt_obj.pt.azimuth[p_index],
+                                mt_obj.pt.beta[p_index],
+                                2 * mt_obj.pt.beta[p_index],
+                                mt_obj.pt.ellipticity[p_index])  # FZ: get ellipticity begin here
 
                     self.pt_dict[plot_per].append(pt_tuple)
-                except IndexError:
-                    pass
+                except IndexError, ex:
+                    print("index error", ex.message)
+                    raise Exception("Index Error")
 
             self.pt_dict[plot_per] = np.array(self.pt_dict[plot_per],
                                               dtype=[('station', '|S15'),
@@ -274,7 +277,11 @@ class PTShapeFile(object):
             layer.CreateField(field_ellipticity)
 
             poly_list = []
-            phimax = self.pt_dict[plot_per]['phimax'].max()
+
+            print("period=", plot_per)
+            #print(self.pt_dict.keys(), (self.pt_dict[plot_per])['phimax'].size)
+            phi_max_val = self.pt_dict[plot_per]['phimax'].max()
+
 
             for isite, pt_array in enumerate(self.pt_dict[plot_per]):
 
@@ -282,10 +289,12 @@ class PTShapeFile(object):
                     # need to make an ellipse first using the parametric
                     # equation
                     azimuth = -np.deg2rad(pt_array['azimuth'])
-                    width = self.ellipse_size * (pt_array['phimax'] / phimax)
-                    height = self.ellipse_size * (pt_array['phimin'] / phimax)
+                    width = self.ellipse_size * (pt_array['phimax'] / phi_max_val)
+                    height = self.ellipse_size * (pt_array['phimin'] / phi_max_val)
+
                     x0 = pt_array['east']
                     y0 = pt_array['north']
+
 
                     # apply formula to generate ellipses
                     x = x0 + height * np.cos(self._theta) * np.cos(azimuth) - \
@@ -1501,11 +1510,12 @@ def modem_to_shapefiles(mfndat, save_dir):
 
 
 def create_phase_tensor_shpfiles(
-        edi_dir, save_dir, proj='WGS84', ellipse_size=0.03, every_site=1):
+        edi_dir, save_dir, proj='WGS84', ellipse_size=1000, every_site=1):
     """
     generate shape file for a folder of edi files, and save the shape files a dir.
     :param edi_dir:
     :param save_dir:
+    :param proj: defult is WGS84-UTM, with ellipse_size=1000 meters
     :param ellipse_size: the size of ellipse: 100-5000, try them out to suit your needs
     :param every_site: by default every MT station will be output, but user can sample down with 2, 3,..
     :return:
@@ -1547,9 +1557,16 @@ def create_tipper_shpfiles(edipath, save_dir):
 
     return
 
+def test_modem_shape():
+    # modem: provide dat filr and save_path below:
+    mfn = r"E:/Githubz/mtpy/examples/data/ModEM_files/VicSynthetic07/Modular_MPI_NLCG_016.dat"
+    save_path = r"C:/tmp"
+    modem_to_shapefiles(mfn, save_path)
+
 # ===================================================
 #  main test
-# python shapefiles.py E:/Githubz/mtpy2/tests/data/edifiles E:\MT_shape_files
+#  python mtpy/utils/shapefiles.py  data/edifiles c:/temp/
+#  python mtpy/utils/shapefiles.py examples/data/edi_files c:/temp/
 # ----------------------------------------------------
 
 if __name__ == "__main__":
@@ -1563,15 +1580,12 @@ if __name__ == "__main__":
         create_phase_tensor_shpfiles(
             sys.argv[1],
             sys.argv[2],
-            proj='WGS84', #proj=None,
-            ellipse_size=6000,   # degree of metres. 1deg=100KM
-            every_site=1)  # unprojected
-        # create_phase_tensor_shpfiles(sys.argv[1], sys.argv[2], ,
-        # ellipse_size=3000, every_site=2) # projected into UTM coordinate
+            proj='WGS84', ellipse_size=1000, # UTM and size in meters. 1deg=100KM
+            #proj=None,  ellipse_size=0.01, # Lat-Long geographic coord and size in degree
+            every_site=1)
 
-        # create_tipper_shpfiles(sys.argv[1],sys.argv[2])
+        # # create_phase_tensor_shpfiles(sys.argv[1], sys.argv[2], ,
+        # # ellipse_size=3000, every_site=2) # projected into UTM coordinate
 
-# modem: provide dat filr and save_path below:
-#     mfn = r"E:/Githubz/mtpy2/examples/data/ModEM_files/VicSynthetic07/Modular_MPI_NLCG_016.dat"
-#     save_path = r"E:\MT_modem_shape_files"
-#     modem_to_shapefiles(mfn, save_path)
+        create_tipper_shpfiles(sys.argv[1],sys.argv[2])
+
