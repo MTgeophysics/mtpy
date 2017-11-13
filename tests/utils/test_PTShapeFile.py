@@ -16,6 +16,7 @@ edi_paths = [
     "data/edifiles2"
 ]
 
+
 class TestPTShapeFile(TestCase):
     def setUp(self):
         self._temp_dir = TEST_TEMP_DIR
@@ -49,3 +50,4 @@ class TestPTShapeFile(TestCase):
         if not os.path.isdir(save_path):
             os.mkdir(save_path)
         create_phase_tensor_shpfiles(edi_path, save_path, ellipse_size=6000, every_site=1)
+

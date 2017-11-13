@@ -393,7 +393,7 @@ def array2raster(raster_fn, origin, cell_width, cell_height, res_array,
     ncols = res_array.shape[1]
     nrows = res_array.shape[0]
 
-    utm_cs, utm_point = transform_ll_to_utm(origin[0], origin[1], projection)
+    utm_cs, utm_point = gis_tools.transform_ll_to_utm(origin[0], origin[1], projection)
     
     origin_east = utm_point[0]
     origin_north = utm_point[1]
@@ -441,34 +441,34 @@ def array2raster(raster_fn, origin, cell_width, cell_height, res_array,
 #==============================================================================
 #  transform coordinate systems
 #==============================================================================
-def transform_ll_to_utm(lon, lat, reference_ellipsoid='WGS84'):    
-    def get_utm_zone(longitude):
-        return (int(1+(longitude+180.0)/6.0))
-    
-    def is_northern(latitude):
-        """
-        Determines if given latitude is a northern for UTM
-        """
-        if (latitude < 0.0):
-            return 0
-        else:
-            return 1
-            
-    utm_coordinate_system = osr.SpatialReference()
-    # Set geographic coordinate system to handle lat/lon  
-    utm_coordinate_system.SetWellKnownGeogCS(reference_ellipsoid) 
-    utm_coordinate_system.SetUTM(get_utm_zone(lon), is_northern(lat))
-    
-    # Clone ONLY the geographic coordinate system 
-    ll_coordinate_system = utm_coordinate_system.CloneGeogCS() 
-    # create transform component
-    ll_to_utm_geo_transform = osr.CoordinateTransformation(ll_coordinate_system, 
-                                                          utm_coordinate_system)
-                                                                                  
-    utm_point = ll_to_utm_geo_transform.TransformPoint(lon, lat, 0)
-        
-    # returns easting, northing, altitude  
-    return utm_coordinate_system, utm_point
+# def transform_ll_to_utm(lon, lat, reference_ellipsoid='WGS84'):
+#     def get_utm_zone(longitude):
+#         return (int(1+(longitude+180.0)/6.0))
+#
+#     def is_northern(latitude):
+#         """
+#         Determines if given latitude is a northern for UTM
+#         """
+#         if (latitude < 0.0):
+#             return 0
+#         else:
+#             return 1
+#
+#     utm_coordinate_system = osr.SpatialReference()
+#     # Set geographic coordinate system to handle lat/lon
+#     utm_coordinate_system.SetWellKnownGeogCS(reference_ellipsoid)
+#     utm_coordinate_system.SetUTM(get_utm_zone(lon), is_northern(lat))
+#
+#     # Clone ONLY the geographic coordinate system
+#     ll_coordinate_system = utm_coordinate_system.CloneGeogCS()
+#     # create transform component
+#     ll_to_utm_geo_transform = osr.CoordinateTransformation(ll_coordinate_system,
+#                                                           utm_coordinate_system)
+#
+#     utm_point = ll_to_utm_geo_transform.TransformPoint(lon, lat, 0)
+#
+#     # returns easting, northing, altitude
+#     return utm_coordinate_system, utm_point
 #==============================================================================
 # example test   
 #==============================================================================
