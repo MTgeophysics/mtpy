@@ -57,7 +57,7 @@ before_script:
 
 script:
   # test
-  - MTPY_TEST_COMPARE_IMAGE=True py.test -n 4 --dist=loadscope --runxfail --cov=mtpy --cov-report term:skip-covered tests
+  - MTPY_TEST_COMPARE_IMAGE=True py.test -n 4 --dist=loadscope --cov=mtpy --cov-report term:skip-covered tests
   # test gui
   - "export DISPLAY=:99.0"  # enable display on travis
   - "sh -e /etc/init.d/xvfb start"
