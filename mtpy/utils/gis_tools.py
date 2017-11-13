@@ -502,7 +502,7 @@ _ellipsoid = [
 
 @deprecated("This function may be removed in later release. mtpy.utils.gis_tools.project_point_ll2utm() should be "
             "used instead.")
-def ll_to_utm(reerence_ellipsoid, lat, long):
+def ll_to_utm(reference_ellipsoid, lat, lon):
     """
     converts lat/long to UTM coords.  Equations from USGS Bulletin 1532
     East Longitudes are positive, West longitudes are negative.
@@ -513,13 +513,12 @@ def ll_to_utm(reerence_ellipsoid, lat, long):
     Outputs:
         UTMzone, easting, northing"""
 
-    a = _ellipsoid[reerence_ellipsoid][_equatorial_radius]
-    ecc_squared = _ellipsoid[reerence_ellipsoid][_eccentricity_squared]
+    a = _ellipsoid[reference_ellipsoid][_equatorial_radius]
+    ecc_squared = _ellipsoid[reference_ellipsoid][_eccentricity_squared]
     k0 = 0.9996
 
     # Make sure the longitude is between -180.00 .. 179.9
-    long_temp = (long + 180) - int((long + 180) / 360) * \
-                               360 - 180  # -180.00 .. 179.9
+    long_temp = (lon + 180) - int((lon + 180) / 360) * 360 - 180  # -180.00 .. 179.9
 
     lat_rad = lat * _deg2rad
     long_rad = long_temp * _deg2rad
@@ -540,42 +539,52 @@ def ll_to_utm(reerence_ellipsoid, lat, long):
         elif 33.0 <= long_temp < 42.0:
             zone_number = 37
 
-    # +3 puts origin in middle of zone
-    long_origin = (zone_number - 1) * 6 - 180 + 3
+    long_origin = (zone_number - 1) * 6 - 180 + 3  # +3 puts origin in middle of zone
     long_origin_rad = long_origin * _deg2rad
 
     # compute the UTM Zone from the latitude and longitude
     utm_zone = "%d%c" % (zone_number, _utm_letter_designator(lat))
 
     ecc_prime_squared = ecc_squared / (1 - ecc_squared)
-    n = a / np.sqrt(1 - ecc_squared * np.sin(lat_rad) ** 2)
-    t = np.tan(lat_rad) * np.tan(lat_rad)
-    c = ecc_prime_squared * np.cos(lat_rad) ** 2
-    a = np.cos(lat_rad) * (long_rad - long_origin_rad)
+    N = a / np.sqrt(1 - ecc_squared * np.sin(lat_rad) ** 2)
+    T = np.tan(lat_rad) ** 2
+    C = ecc_prime_squared * np.cos(lat_rad) ** 2
+    A = np.cos(lat_rad) * (long_rad - long_origin_rad)
 
-    m = a * ((1 - ecc_squared / 4
-              - 3 * ecc_squared ** 2 / 64
-              - 5 * ecc_squared ** 3 / 256) * lat_rad
-             - (3 * ecc_squared / 8
-                + 3 * ecc_squared ** 2 / 32
-                + 45 * ecc_squared ** 3 / 1024) * np.sin(2 * lat_rad)
-             + (15 * ecc_squared ** 2 / 256 + 45 * ecc_squared ** 3 / 1024) * np.sin(4 * lat_rad)
-             - (35 * ecc_squared ** 3 / 3072) * np.sin(6 * lat_rad))
+    M = a * (
+        (1
+         - ecc_squared / 4
+         - 3 * ecc_squared ** 2 / 64
+         - 5 * ecc_squared ** 3 / 256) * lat_rad
+        - (3 * ecc_squared / 8
+           + 3 * ecc_squared ** 2 / 32
+           + 45 * ecc_squared ** 3 / 1024) * np.sin(2 * lat_rad)
+        + (15 * ecc_squared ** 2 / 256
+           + 45 * ecc_squared ** 3 / 1024) * np.sin(4 * lat_rad)
+        - (35 * ecc_squared ** 3 / 3072) * np.sin(6 * lat_rad))
 
-    utm_easting = (k0 * n * (a + (1 - t + c) * a ** 3 / 6
-                             + (5 - 18 * t ** 3 + 72 * c - 58 * ecc_prime_squared) * a ** 5 / 120)
+    utm_easting = (k0 * N * (A
+                             + (1 - T + C) * A ** 3 / 6
+                             + (5 - 18 * T
+                                + T ** 2
+                                + 72 * C
+                                - 58 * ecc_prime_squared) * A ** 5 / 120)
                    + 500000.0)
 
-    utm_northing = (k0 * (m + n * np.tan(lat_rad) * (a * a / 2 + (5 - t + 9 * c + 4 * c * c) * a * a * a * a / 24
-                                                     + (61
-                                                        - 58 * t
-                                                        + t ** 2
-                                                        + 600 * c
-                                                        - 330 * ecc_prime_squared) * a ** 6 / 720)))
+    utm_northing = (k0 * (M
+                          + N * np.tan(lat_rad) * (A ** 2 / 2
+                                                   + (5
+                                                      - T
+                                                      + 9 * C
+                                                      + 4 * C ** 2) * A ** 4 / 24
+                                                   + (61
+                                                      - 58 * T
+                                                      + T ** 2
+                                                      + 600 * C
+                                                      - 330 * ecc_prime_squared) * A ** 6 / 720)))
 
     if lat < 0:
-        # 10000000 meter offset for southern hemisphere
-        utm_northing = utm_northing + 10000000.0
+        utm_northing = utm_northing + 10000000.0  # 10000000 meter offset for southern hemisphere
     return utm_zone, utm_easting, utm_northing
 
 
