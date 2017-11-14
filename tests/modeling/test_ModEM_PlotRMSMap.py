@@ -11,7 +11,7 @@ Plot RMS at each station as a map
 import os
 from unittest import TestCase
 
-from mtpy.modeling.modem import Plot_RMS_Maps
+from mtpy.modeling.ModEM import PlotRMSMaps
 from tests import plt_wait, plt_close, TEST_TEMP_DIR, SAMPLE_DIR
 from tests.imaging import reset_matplotlib
 
@@ -45,7 +45,7 @@ class Test_PlotRMSMap(TestCase):
         period_index = 0
 
         # plot map
-        rmsmap = Plot_RMS_Maps(residual_fn=os.path.join(wd, filestem + '.res'), period_index=period_index,
-                               xminorticks=50000, yminorticks=50000, save_plots='y')
+        rmsmap = PlotRMSMaps(residual_fn=os.path.join(wd, filestem + '.res'), period_index=period_index,
+                             xminorticks=50000, yminorticks=50000, save_plots='y')
 
         rmsmap.save_figure(save_path)  # this will save a file to
