@@ -5,10 +5,6 @@ Description:
     This script creates shape files for MT datasets.
     Phase Tensor, Tipper Real/Imag, MT-site locations, etc
 
-    The input files are created from a standard edi data file.
-
-References:
-    examples/tests/occam1d_buildinputfiles.py
 
 CreationDate:   2017-03-06
 Developer:      fei.zhang@ga.gov.au
@@ -34,7 +30,7 @@ import pandas as pd
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from shapely.geometry import Point, Polygon, LineString, LinearRing
 
-import mtpy.core.edi_collection
+from mtpy.core.edi_collection import EdiCollection
 import mtpy.core.mt as mt
 from mtpy.utils.decorator import deprecated
 from mtpy.utils.mtpylog import MtPyLog
@@ -47,10 +43,9 @@ logger = MtPyLog().get_mtpy_logger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
-@deprecated("This class is deprecated, please use mtpy.core.edi_collection.EdiCollection instead.")
-class ShapeFilesCreator(object):
-    """
-    create shape files for a list of MT edifiles
+class ShapeFilesCreator(EdiCollection):
+    """ Extend the functions of the EdiCollection class,
+    create phase tensor and tipper shapefiles for a list of edifiles
     """
 
     def __init__(self, edifile_list, outdir):
@@ -60,20 +55,11 @@ class ShapeFilesCreator(object):
         :param outdir: path2output dir, where the shpe file weill be written.
         """
 
-        self.edifiles = edifile_list
-        logger.info("number of edi files to be processed: %s",
-                    len(self.edifiles))
-        assert len(self.edifiles) > 0
+        super(ShapeFilesCreator,self).__init__(edilist=edifile_list, outdir=outdir)
+        #python-3 syntax: super().__init__(edilist=edifile_list, outdir=outdir)
 
         self.outputdir = outdir
-
-        if self.edifiles is not None:
-            self.mt_obj_list = [mt.MT(edi) for edi in self.edifiles]
-
-        # get all frequencies from all edi files
-        self.all_frequencies = None
         self.all_periods = self._get_all_periods()
-
         self.ptol = 0.05  # this param controls what freqs/periods are grouped together:
         # 10% may result more double counting of freq/period data than 5%.
         # eg: E:\Data\MT_Datasets\WenPingJiang_EDI 18528 rows vs 14654 rows
@@ -186,22 +172,6 @@ class ShapeFilesCreator(object):
 
         return pt_dict
 
-    @deprecated("This function is replaced by "
-                "mtpy.core.edi_collection.EdiCollection.create_phase_tensor_csv_with_image()")
-    def create_csv_files2(self):
-        """
-        Using PlotPhaseTensorMaps class to generate csv file of phase tensor attributes, etc.
-        Only for comparison. This method is more expensive because it will create plot object first.
-        :return:
-        """
-        from mtpy.imaging.phase_tensor_maps import PlotPhaseTensorMaps
-
-        for freq in self.all_frequencies:
-            ptm = PlotPhaseTensorMaps(fn_list=self.edifiles, plot_freq=freq)
-
-            ptm.export_params_to_file(save_path=self.outputdir)
-
-        return
 
     def create_phase_tensor_shp(self):
         """
@@ -504,8 +474,9 @@ def process_csv_folder(csv_folder, bbox_dict, target_epsg_code=None):
 
         ellip_gdf = create_ellipse_shp(acsv, esize=0.01, target_epsg_code=target_epsg_code)
 
-        # visualize and make image file output of the above 3 geopandas df.
+        # Now, visualize and output to image file from the geopandas dataframe
         my_gdf = ellip_gdf
+
         plot_geopdf(my_gdf, bbox_dict, acsv, target_epsg_code)
 
     return
@@ -528,15 +499,17 @@ if __name__ == "__main__":
     # filter the edi files here if desired, to get a subset:
     # edifiles2 = edifiles[0:-1:2]
     shp_maker = ShapeFilesCreator(edifiles, path2out)
-    ptdic = shp_maker.create_csv_files()  # dest_dir=path2out)    #  create csv files
+    ptdic = shp_maker.create_csv_files()  # dest_dir=path2out)    #  create csv files E:/temp1
+    #use super class: ptdic =shp_maker.create_phase_tensor_csv(path2out)  # compare csv in E:/temp2
 
     # print ptdic
     # print ptdic[ptdic.keys()[0]]
 
-    edisobj = mtpy.core.edi_collection.EdiCollection(edifiles)
+    # edisobj = mtpy.core.edi_collection.EdiCollection(edifiles)
+    edisobj = EdiCollection(edifiles)
     bbox_dict = edisobj.bound_box_dict
     print(bbox_dict)
-    shp_maker.create_mt_sites_shp()
+
 
     # create shapefiles and plots
     # epsg projection 4283 - gda94
