@@ -9,23 +9,13 @@ Plot RMS at each station as a map
 
 """
 import os
-from unittest import TestCase
 
 from mtpy.modeling.modem import PlotRMSMaps
-from tests import plt_wait, plt_close, TEST_TEMP_DIR, SAMPLE_DIR
-from tests.imaging import reset_matplotlib
+from tests import TEST_TEMP_DIR, SAMPLE_DIR
+from tests.imaging import ImageTestCase
 
 
-class Test_PlotRMSMap(TestCase):
-    @classmethod
-    def setUpClass(cls):
-        reset_matplotlib()
-
-    def tearDown(self):
-        plt_wait(1)
-        plt_close()
-
-
+class Test_PlotRMSMap(ImageTestCase):
     def test_fun(self):
         """
         test function
