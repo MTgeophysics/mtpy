@@ -787,7 +787,7 @@ class Data(object):
                         elif comp.find('t') == 0:
                             c_key = 'tip'
 
-                        # get the value for that compenent at that frequency
+                        # get the value for that competent at that frequency
                         zz = self.data_array[ss][c_key][ff, z_ii, z_jj]
                         if zz.real != 0.0 and zz.imag != 0.0 and zz.real != 1e32 and zz.imag != 1e32:
                             if self.formatting == '1':
@@ -806,7 +806,6 @@ class Data(object):
                                     rea = '{0:> 14.6e}'.format(zz.real)
                                     ima = '{0:> 14.6e}'.format(zz.imag)
 
-
                             elif self.formatting == '2':
                                 per = '{0:<14.6e}'.format(self.period_list[ff])
                                 sta = '{0:<10}'.format(self.data_array[ss]['station'])
@@ -822,6 +821,9 @@ class Data(object):
                                 else:
                                     rea = '{0:> 17.6e}'.format(zz.real)
                                     ima = '{0:> 17.6e}'.format(zz.imag)
+
+                            else:
+                                raise NotImplementedError("format {}({}) is not supported".format(self.formatting, type(self.formatting)))
 
                             # get error from inversion error
                             abs_err = self.data_array['{0}_inv_err'.format(c_key)][ss, ff, z_ii, z_jj]

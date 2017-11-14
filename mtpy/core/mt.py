@@ -21,29 +21,32 @@ import mtpy.core.mt_xml as MTxml
 
 reload(MTz)
 
-try:
-    import scipy
-    scipy_version = int(scipy.__version__.replace('.', ''))
-
-    if scipy_version < 140:
-        print ('Note: need scipy version 0.14.0 or higher or interpolation ' +
-               'might not work.')
-    import scipy.interpolate as spi
-    interp_import = True
-
-except ImportError:
-    print('Could not find scipy.interpolate, cannot use method interpolate' +
-          'check installation you can get scipy from scipy.org.')
-    interp_import = False
-
 import logging
 from mtpy.utils.mtpylog import MtPyLog
 
-logger = MtPyLog().get_mtpy_logger(__name__)
-logger.setLevel(logging.DEBUG)
+_logger = MtPyLog().get_mtpy_logger(__name__)
+_logger.setLevel(logging.DEBUG)
+
+try:
+    import scipy
+
+    scipy_version = int(scipy.__version__.replace('.', ''))
+
+    if scipy_version < 140:
+        raise _logger.warn('Note: need scipy version 0.14.0 or higher or interpolation '
+                           'might not work.')
+    import scipy.interpolate as spi
+
+    interp_import = True
+
+except ImportError:  # pragma: no cover
+    raise _logger.warn('Could not find scipy.interpolate, cannot use method interpolate'
+                       'check installation you can get scipy from scipy.org.')
+    interp_import = False
+
 
 # ==============================================================================
-#==============================================================================
+# ==============================================================================
 
 
 class MT(object):
@@ -160,9 +163,9 @@ class MT(object):
         for key in kwargs.keys():
             setattr(self, key, kwargs[key])
 
-    #==========================================================================
+    # ==========================================================================
     # get functions
-    #==========================================================================
+    # ==========================================================================
     @property
     def fn(self):
         """ reference to original data file"""
@@ -223,9 +226,9 @@ class MT(object):
         """mtpy.analysis.pt.PhaseTensor object to hold phase tensor"""
         return MTpt.PhaseTensor(z_object=self.Z)
 
-    #==========================================================================
+    # ==========================================================================
     # set functions
-    #==========================================================================
+    # ==========================================================================
     @lat.setter
     def lat(self, latitude):
         """
@@ -332,9 +335,9 @@ class MT(object):
         """
         self.Site.id = station_name
 
-    #==========================================================================
+    # ==========================================================================
     #  read in files
-    #==========================================================================
+    # ==========================================================================
     def read_mt_file(self, fn, file_type=None):
         """
         Read an MT response file.
@@ -430,7 +433,7 @@ class MT(object):
 
         return fn
 
-    #--> read in edi file
+    # --> read in edi file
     def _read_edi_file(self, edi_fn):
         """
         read in edi file and set attributes accordingly
@@ -454,7 +457,7 @@ class MT(object):
         self.Tipper = edi_obj.Tipper
         self.station = edi_obj.station
 
-        #--> make sure things are ordered from high frequency to low
+        # --> make sure things are ordered from high frequency to low
         self._check_freq_order()
 
     def _edi_get_site(self, edi_obj):
@@ -546,7 +549,6 @@ class MT(object):
         except AttributeError:
             pass
 
-
         # keep the edi object around, should be able to deprecate this later
         self._edi_obj = edi_obj
 
@@ -590,7 +592,7 @@ class MT(object):
                 setattr(obj, obj_attr, a_value)
                 self.Notes.info_dict.pop(a_key)
 
-    #--> write edi file
+    # --> write edi file
     def _write_edi_file(self, new_edi_fn, new_Z=None, new_Tipper=None):
         """
         write a new edi file if things have changed.  Note if new_Z or
@@ -667,7 +669,7 @@ class MT(object):
 
         return header
 
-    #--> get information list for edi
+    # --> get information list for edi
     def _edi_set_info_list(self):
         """
         get the information for an edi file
@@ -835,7 +837,7 @@ class MT(object):
 
         return sect
 
-    #--> check the order of frequencies
+    # --> check the order of frequencies
     def _check_freq_order(self):
         """
         check to make sure the Z and Tipper arrays are ordered such that
@@ -1081,7 +1083,7 @@ class MT(object):
                                 'author',
                                 d_obj.attr['author'])
                     if name == 'comments' and \
-                            f_attr.lower() == 'dataqualitywarnings':
+                                    f_attr.lower() == 'dataqualitywarnings':
                         name = 'warnings_' + name
                     value = d_obj.value
 
@@ -1261,8 +1263,8 @@ class MT(object):
         xml_obj.FieldNotes.Dipole.Id.value = self.FieldNotes.Electrode_ex.id
         xml_obj.FieldNotes.Dipole.Manufacturer.value = self.FieldNotes.Electrode_ex.manufacturer
         xml_obj.FieldNotes.Dipole.attr = {'name': 'EX'}
-        length = np.sqrt((self.FieldNotes.Electrode_ex.x2 - self.FieldNotes.Electrode_ex.x)**2 +
-                         (self.FieldNotes.Electrode_ex.y2 - self.FieldNotes.Electrode_ex.y)**2)
+        length = np.sqrt((self.FieldNotes.Electrode_ex.x2 - self.FieldNotes.Electrode_ex.x) ** 2 +
+                         (self.FieldNotes.Electrode_ex.y2 - self.FieldNotes.Electrode_ex.y) ** 2)
         xml_obj.FieldNotes.Dipole.Length.value = length
         azm = np.arctan((self.FieldNotes.Electrode_ex.y2 - self.FieldNotes.Electrode_ex.y) /
                         (self.FieldNotes.Electrode_ex.x2 - self.FieldNotes.Electrode_ex.x))
@@ -1274,8 +1276,8 @@ class MT(object):
         xml_obj.FieldNotes.Dipole_00.Id.value = self.FieldNotes.Electrode_ey.id
         xml_obj.FieldNotes.Dipole_00.Manufacturer.value = self.FieldNotes.Electrode_ey.manufacturer
         xml_obj.FieldNotes.Dipole_00.attr = {'name': 'EY'}
-        length = np.sqrt((self.FieldNotes.Electrode_ey.x2 - self.FieldNotes.Electrode_ey.x)**2 +
-                         (self.FieldNotes.Electrode_ey.y2 - self.FieldNotes.Electrode_ey.y)**2)
+        length = np.sqrt((self.FieldNotes.Electrode_ey.x2 - self.FieldNotes.Electrode_ey.x) ** 2 +
+                         (self.FieldNotes.Electrode_ey.y2 - self.FieldNotes.Electrode_ey.y) ** 2)
         xml_obj.FieldNotes.Dipole_00.Length.value = length
         azm = np.arctan((self.FieldNotes.Electrode_ey.y2 - self.FieldNotes.Electrode_ey.y) /
                         (self.FieldNotes.Electrode_ey.x2 - self.FieldNotes.Electrode_ey.x))
@@ -1507,15 +1509,15 @@ class MT(object):
                 l_key = '{0}.{1}'.format(obj_name, obj_key)
 
                 if not isinstance(obj_attr, (str, float, int, list)) and \
-                   obj_attr is not None:
+                                obj_attr is not None:
                     for a_key in sorted(obj_attr.__dict__.keys()):
                         if a_key in ['_kw_list', '_fmt_list']:
                             continue
                         obj_attr_01 = getattr(obj_attr, a_key)
                         l_key = '{0}.{1}.{2}'.format(obj_name, obj_key, a_key)
                         if not isinstance(obj_attr_01, (str, float, int,
-                                                        list, np.float64)) and\
-                           obj_attr_01 is not None:
+                                                        list, np.float64)) and \
+                                        obj_attr_01 is not None:
                             for b_key in sorted(obj_attr_01.__dict__.keys()):
                                 obj_attr_02 = getattr(obj_attr_01, b_key)
                                 l_key = '{0}.{1}.{2}.{3}'.format(obj_name,
@@ -1645,32 +1647,31 @@ class MT(object):
         """
         # if the interpolation module has not been loaded return
         if interp_import is False:
-            print('could not interpolate, need to install scipy')
-            return
+            raise ImportError('could not interpolate, need to install scipy')
 
         # make sure the input is a numpy array
         if not isinstance(new_freq_array, np.ndarray):
             new_freq_array = np.array(new_freq_array)
 
-        floater= 0.00000001  #FZ: a small offset to avoid out-of-bound error in spi interpolation module.
-        logger.info("massage the new_freq_array's min and max to avoid out-of-bound interp")
-        minindex = np.argmin(new_freq_array)
-        maxindex = np.argmax(new_freq_array)
-        new_freq_array[minindex] = new_freq_array[minindex] + floater
-        new_freq_array[maxindex] = new_freq_array[maxindex] - floater
-
-        #logger.debug("new freq array %s", new_freq_array)
-
         # check the bounds of the new frequency array
         if bounds_error:
+            # YG: the commented block below seems no longer necessary.
+            # floater = 1.e-8  # FZ: a small offset to avoid out-of-bound error in spi interpolation module.
+            # _logger.info("massage the new_freq_array's min and max to avoid out-of-bound interp")
+            # minindex = np.argmin(new_freq_array)
+            # maxindex = np.argmax(new_freq_array)
+            # new_freq_array[minindex] += floater
+            # new_freq_array[maxindex] -= floater
+
+            # logger.debug("new freq array %s", new_freq_array)
             if self.Z.freq.min() > new_freq_array.min():
-                raise ValueError('New frequency minimum of {0:.5g}'.format(new_freq_array.min())+\
-                                 ' is smaller than old frequency minimum of {0:.5g}'.format(self.Z.freq.min())+\
+                raise ValueError('New frequency minimum of {0:.5g}'.format(new_freq_array.min()) + \
+                                 ' is smaller than old frequency minimum of {0:.5g}'.format(self.Z.freq.min()) + \
                                  '.  The new frequency range needs to be within the ' +
                                  'bounds of the old one.')
             if self.Z.freq.max() < new_freq_array.max():
-                raise ValueError('New frequency maximum of {0:.5g}'.format(new_freq_array.max())+\
-                                 'is smaller than old frequency maximum of {0:.5g}'.format(self.Z.freq.max())+\
+                raise ValueError('New frequency maximum of {0:.5g}'.format(new_freq_array.max()) + \
+                                 'is smaller than old frequency maximum of {0:.5g}'.format(self.Z.freq.max()) + \
                                  '.  The new frequency range needs to be within the ' +
                                  'bounds of the old one.')
 
@@ -1751,13 +1752,12 @@ class MT(object):
             new_f = new_freq_array[new_nz_index]
 
             # interpolate onto new frequency range
-            new_Tipper.tipper[new_nz_index, 0, jj] = t_func_real(new_f) +\
-                1j * t_func_imag(new_f)
+            new_Tipper.tipper[new_nz_index, 0, jj] = t_func_real(new_f) + \
+                                                     1j * t_func_imag(new_f)
 
             new_Tipper.tipper_err[new_nz_index, 0, jj] = t_func_err(new_f)
 
         return new_Z, new_Tipper
-
 
     def plot_mt_response(self, **kwargs):
         """
@@ -1783,9 +1783,10 @@ class MT(object):
         return plot_obj
         # raise NotImplementedError
 
-#==============================================================================
+
+# ==============================================================================
 # Site details
-#==============================================================================
+# ==============================================================================
 
 
 class Site(object):
@@ -1817,7 +1818,6 @@ class Site(object):
     """
 
     def __init__(self, **kwargs):
-
         self.acquired_by = None
         self.end_date = None
         self.id = None
@@ -1831,9 +1831,10 @@ class Site(object):
         for key in kwargs.keys():
             setattr(self, key, kwargs[key])
 
-#==============================================================================
+
+# ==============================================================================
 # Location class, be sure to put locations in decimal degrees, and note datum
-#==============================================================================
+# ==============================================================================
 
 
 class Location(object):
@@ -1935,9 +1936,10 @@ class Location(object):
         self.latitude = ll_point[0]
         self.longitude = ll_point[1]
 
-#==============================================================================
+
+# ==============================================================================
 # Field Notes
-#==============================================================================
+# ==============================================================================
 
 
 class FieldNotes(object):
@@ -1985,9 +1987,9 @@ class FieldNotes(object):
             setattr(self, key, kwargs[key])
 
 
-#==============================================================================
+# ==============================================================================
 # Instrument
-#==============================================================================
+# ==============================================================================
 class Instrument(object):
     """
     Information on an instrument that was used.
@@ -2015,9 +2017,10 @@ class Instrument(object):
         for key in kwargs.keys():
             setattr(self, key, kwargs[key])
 
-#==============================================================================
+
+# ==============================================================================
 # Data Quality
-#==============================================================================
+# ==============================================================================
 
 
 class DataQuality(object):
@@ -2055,9 +2058,9 @@ class DataQuality(object):
             setattr(self, key, kwargs[key])
 
 
-#==============================================================================
+# ==============================================================================
 # Citation
-#==============================================================================
+# ==============================================================================
 class Citation(object):
     """
     Information for a citation.
@@ -2091,9 +2094,9 @@ class Citation(object):
             setattr(self, key, kwargs[key])
 
 
-#==============================================================================
+# ==============================================================================
 # Copyright
-#==============================================================================
+# ==============================================================================
 class Copyright(object):
     """
     Information of copyright, mainly about how someone else can use these
@@ -2136,9 +2139,10 @@ class Copyright(object):
         for key in kwargs.keys():
             setattr(self, key, kwargs[key])
 
-#==============================================================================
+
+# ==============================================================================
 # Provenance
-#==============================================================================
+# ==============================================================================
 
 
 class Provenance(object):
@@ -2163,7 +2167,6 @@ class Provenance(object):
     """
 
     def __init__(self, **kwargs):
-
         self.creation_time = time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime())
         self.creating_application = 'MTpy'
         self.Creator = Person()
@@ -2172,9 +2175,10 @@ class Provenance(object):
         for key in kwargs.keys():
             setattr(self, key, kwargs[key])
 
-#==============================================================================
+
+# ==============================================================================
 # Person
-#==============================================================================
+# ==============================================================================
 
 
 class Person(object):
@@ -2206,9 +2210,10 @@ class Person(object):
         for key in kwargs.keys():
             setattr(self, key, kwargs[key])
 
-#==============================================================================
+
+# ==============================================================================
 # Processing
-#==============================================================================
+# ==============================================================================
 
 
 class Processing(object):
@@ -2255,9 +2260,11 @@ class Software(object):
 
         for key in kwargs:
             setattr(self, key, kwargs[key])
-#==============================================================================
+
+
+# ==============================================================================
 #             Error
-#==============================================================================
+# ==============================================================================
 
 
 class MT_Error(Exception):
