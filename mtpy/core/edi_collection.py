@@ -323,7 +323,7 @@ class EdiCollection(object):
 
         return pt_dict
 
-    @deprecated("This function is more expensive compared with create_phase_tensor_csv()")
+    @deprecated("This function is more expensive compared with the method create_phase_tensor_csv(self,)")
     def create_phase_tensor_csv_with_image(self, dest_dir):
         """
         Using PlotPhaseTensorMaps class to generate csv file of phase tensor attributes, etc.
