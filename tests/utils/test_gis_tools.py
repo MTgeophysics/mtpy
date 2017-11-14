@@ -65,7 +65,7 @@ class TestGisTools(TestCase):
         self.assertTrue(np.isclose(northing, self.northing))
 
     def test_transform_utm_to_ll(self):
-        new_lon, new_lat, evel = transform_utm_to_ll(self.easting, self.northing, 55)
+        new_lon, new_lat, evel = transform_utm_to_ll(self.easting, self.northing, self.zone)
 
         print(new_lat, new_lon)
 

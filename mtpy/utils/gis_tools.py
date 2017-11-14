@@ -334,7 +334,7 @@ def project_point_utm2ll(easting, northing, utm_zone, datum='WGS84', epsg=None):
             zone_number = int(utm_zone[0:-1])
             zone_letter = utm_zone[-1]
         except ValueError:
-            raise ValueError('Zone number {0} is not a number'.format(utm_zone[0:2]))
+            raise ValueError('Zone number {0} is not a number'.format(utm_zone[0:-1]))
         is_northern = 1 if zone_letter.lower() >= 'n' else 0
 
         utm_cs.SetUTM(zone_number, is_northern)
@@ -771,8 +771,15 @@ def transform_utm_to_ll(easting, northing, zone,
     utm_coordinate_system = osr.SpatialReference()
     # Set geographic coordinate system to handle lat/lon
     utm_coordinate_system.SetWellKnownGeogCS(reference_ellipsoid)
-    is_northern = northing > 0
-    utm_coordinate_system.SetUTM(zone, is_northern)
+
+    try:
+        zone_number = int(zone[0:-1])
+        zone_letter = zone[-1]
+    except ValueError:
+        raise ValueError('Zone number {0} is not a number'.format(zone[0:-1]))
+    is_northern = 1 if zone_letter.lower() >= 'n' else 0
+
+    utm_coordinate_system.SetUTM(zone_number, is_northern)
 
     # Clone ONLY the geographic coordinate system
     ll_coordinate_system = utm_coordinate_system.CloneGeogCS()
