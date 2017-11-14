@@ -15,7 +15,7 @@ class TestGisTools(TestCase):
         self.zone = '55H'
         self.easting = 702562.773
         self.northing = 6202448.526
-        self.atol = 0.1  # tolerance of error
+        self.atol = 0.3  # tolerance of error
 
     def test_ll_to_utm(self):
         zone, easting, northing = ll_to_utm(self.nref, self.lat, self.lon)
