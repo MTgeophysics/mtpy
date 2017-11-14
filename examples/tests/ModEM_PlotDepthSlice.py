@@ -11,7 +11,7 @@ import os
 import matplotlib.pyplot as plt
 
 os.chdir(r'C:\Git\mtpy')
-from mtpy.modeling.modem import PlotDepthSlice
+from mtpy.modeling.ModEM import PlotDepthSlice
 
 # directory where files are located
 wd = r'C:\Git\mtpy\examples\model_files\ModEM'
