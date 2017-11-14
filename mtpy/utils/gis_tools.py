@@ -257,8 +257,10 @@ def project_point_ll2utm(lat, lon, datum='WGS84', utm_zone=None, epsg=None):
         utm_zone = utm_cs.GetUTMZone()
         zone_number = abs(utm_zone)
         is_northern = bool(utm_zone > 0)
-        utm_zone = get_utm_zone(lat, lon)
-        assert(zone_number == int(utm_zone[0:-1]))
+        zone_number_1, is_northern_1, utm_zone = get_utm_zone(lat, lon)
+        # check the result from 2 different functions
+        assert(zone_number == zone_number_1)
+        assert(is_northern == is_northern_1)
     elif utm_zone is None:
         zone_number, is_northern, utm_zone = get_utm_zone(lat, lon)
     else:
