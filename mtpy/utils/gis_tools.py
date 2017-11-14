@@ -326,7 +326,7 @@ def project_point_utm2ll(easting, northing, utm_zone, datum='WGS84', epsg=None):
             ogrerr = utm_cs.ImportFromEPSG(epsg)
             if ogrerr != OGRERR_NONE:
                 raise Exception("GDAL/osgeo ogr error code: {}".format(ogrerr))
-            # utm_zone = get_utm_string_from_sr(utm_cs)
+                # utm_zone = get_utm_string_from_sr(utm_cs)
     else:
         # assert len(utm_zone) == 3, 'UTM zone should be imput as ##N or ##S'
 
@@ -739,8 +739,6 @@ def epsg_project(x, y, epsg_from, epsg_to):
     return pyproj.transform(p1, p2, x, y)
 
 
-@deprecated("This function may be removed in later release. mtpy.utils.gis_tools.project_point_ll2utm() should be "
-            "used instead.")
 def utm_wgs84_conv(lat, lon):
     """
     Bidirectional UTM-WGS84 converter https://github.com/Turbo87/utm/blob/master/utm/conversion.py
@@ -766,6 +764,8 @@ def utm_wgs84_conv(lat, lon):
 
 
 @gdal_data_check
+@deprecated("This function may be removed in later release. mtpy.utils.gis_tools.project_point_utm2ll() should be "
+            "used instead.")
 def transform_utm_to_ll(easting, northing, zone,
                         reference_ellipsoid='WGS84'):
     utm_coordinate_system = osr.SpatialReference()
@@ -792,6 +792,8 @@ def transform_utm_to_ll(easting, northing, zone,
 
 
 @gdal_data_check
+@deprecated("This function may be removed in later release. mtpy.utils.gis_tools.project_point_ll2utm() should be "
+            "used instead.")
 def transform_ll_to_utm(lon, lat, reference_ellipsoid='WGS84'):
     """
     transform a (lon,lat) to  a UTM coordinate.
