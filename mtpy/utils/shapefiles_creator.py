@@ -55,20 +55,11 @@ class ShapeFilesCreator(EdiCollection):
         :param outdir: path2output dir, where the shpe file weill be written.
         """
 
-        self.edifiles = edifile_list
-        logger.info("number of edi files to be processed: %s",
-                    len(self.edifiles))
-        assert len(self.edifiles) > 0
+        super(ShapeFilesCreator,self).__init__(edilist=edifile_list, outdir=outdir)
+        #python-3 syntax: super().__init__(edilist=edifile_list, outdir=outdir)
 
         self.outputdir = outdir
-
-        if self.edifiles is not None:
-            self.mt_obj_list = [mt.MT(edi) for edi in self.edifiles]
-
-        # get all frequencies from all edi files
-        self.all_frequencies = None
         self.all_periods = self._get_all_periods()
-
         self.ptol = 0.05  # this param controls what freqs/periods are grouped together:
         # 10% may result more double counting of freq/period data than 5%.
         # eg: E:\Data\MT_Datasets\WenPingJiang_EDI 18528 rows vs 14654 rows
@@ -508,7 +499,8 @@ if __name__ == "__main__":
     # filter the edi files here if desired, to get a subset:
     # edifiles2 = edifiles[0:-1:2]
     shp_maker = ShapeFilesCreator(edifiles, path2out)
-    ptdic = shp_maker.create_csv_files()  # dest_dir=path2out)    #  create csv files
+    ptdic = shp_maker.create_csv_files()  # dest_dir=path2out)    #  create csv files E:/temp1
+    #use super class: ptdic =shp_maker.create_phase_tensor_csv(path2out)  # compare csv in E:/temp2
 
     # print ptdic
     # print ptdic[ptdic.keys()[0]]
