@@ -26,8 +26,7 @@ import os
 import os.path as op
 
 os.chdir(r'C:\Git\mtpy')
-from mtpy.modeling.modem import PlotPTMaps
-
+from mtpy.modeling.ModEM import PlotPTMaps
 
 wd = r'C:\Git\mtpy\examples\model_files\ModEM'
 

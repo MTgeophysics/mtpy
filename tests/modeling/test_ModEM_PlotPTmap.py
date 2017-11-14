@@ -11,7 +11,7 @@ Plot data and responses from ModEM model.
 import os.path as op
 from unittest import TestCase
 
-from mtpy.modeling.modem import PlotPTMaps
+from mtpy.modeling.ModEM import PlotPTMaps
 
 from tests import plt_wait, plt_close, SAMPLE_DIR
 from tests.imaging import reset_matplotlib
