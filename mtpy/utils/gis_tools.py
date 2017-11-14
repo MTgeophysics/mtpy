@@ -176,6 +176,7 @@ def convert_position_float2str(position):
 # ==============================================================================
 # Project a point
 # ==============================================================================
+@deprecated("NATO UTS zone is used in other part of mtpy, this function is for Standard UTS")
 def get_utm_string_from_sr(spatialreference):
     """
     return utm zone string from spatial reference instance
@@ -195,7 +196,7 @@ def get_utm_zone(latitude, longitude):
     """
     zone_number = (int(1 + (longitude + 180.0) / 6.0))
     n_str = _utm_letter_designator(latitude)
-    is_northern = 1 if latitude >= 0 else 0
+    is_northern = bool(latitude >= 0)
     # if latitude < 0.0:
     #     is_northern = 0
     #     n_str = 'S'
@@ -244,25 +245,28 @@ def project_point_ll2utm(lat, lon, datum='WGS84', utm_zone=None, epsg=None):
     if lat is None or lon is None:
         return None, None, None
 
-    # get zone number, north and zone name
-    if utm_zone is None:
-        zone_number, is_northern, utm_zone = get_utm_zone(lat, lon)
-    else:
-        # get zone number and is_northern from utm_zone string
-        zone_number = int(filter(str.isdigit, utm_zone))
-        is_northern = min(1, utm_zone.lower().count('s'))
-
     # set utm coordinate system
     utm_cs = osr.SpatialReference()
     utm_cs.SetWellKnownGeogCS(datum)
 
+    # get zone number, north and zone name
     if isinstance(epsg, int):
         ogrerr = utm_cs.ImportFromEPSG(epsg)
         if ogrerr != OGRERR_NONE:
             raise Exception("GDAL/osgeo ogr error code: {}".format(ogrerr))
-        utm_zone = get_utm_string_from_sr(utm_cs)
+        utm_zone = utm_cs.GetUTMZone()
+        zone_number = abs(utm_zone)
+        is_northern = bool(utm_zone > 0)
+        utm_zone = get_utm_zone(lat, lon)
+        assert(zone_number == int(utm_zone[0:-1]))
+    elif utm_zone is None:
+        zone_number, is_northern, utm_zone = get_utm_zone(lat, lon)
     else:
-        utm_cs.SetUTM(zone_number, is_northern)
+        # get zone number and is_northern from utm_zone string
+        zone_number = int(utm_zone[0:-1])
+        is_northern = True if utm_zone[-1].lower() > 'n' else False
+
+    utm_cs.SetUTM(zone_number, is_northern)
 
     # set lat, lon coordinate system
     ll_cs = utm_cs.CloneGeogCS()
@@ -326,18 +330,24 @@ def project_point_utm2ll(easting, northing, utm_zone, datum='WGS84', epsg=None):
             ogrerr = utm_cs.ImportFromEPSG(epsg)
             if ogrerr != OGRERR_NONE:
                 raise Exception("GDAL/osgeo ogr error code: {}".format(ogrerr))
-                # utm_zone = get_utm_string_from_sr(utm_cs)
-    else:
-        # assert len(utm_zone) == 3, 'UTM zone should be imput as ##N or ##S'
+            utm_zone = utm_cs.GetUTMZone()
+            # assert len(utm_zone) == 3, 'UTM zone should be imput as ##N or ##S'
 
+    if isinstance(utm_zone, str):
         try:
             zone_number = int(utm_zone[0:-1])
             zone_letter = utm_zone[-1]
         except ValueError:
             raise ValueError('Zone number {0} is not a number'.format(utm_zone[0:-1]))
-        is_northern = 1 if zone_letter.lower() >= 'n' else 0
+        is_northern = True if zone_letter.lower() >= 'n' else False
+    elif isinstance(utm_zone, int):
+        # std UTM code returned my gdal
+        is_northern = True if utm_zone > 0 else False
+        zone_number = abs(utm_zone)
+    else:
+        raise NotImplementedError("utm_zone type ({}) not supported".format(type(utm_zone)))
 
-        utm_cs.SetUTM(zone_number, is_northern)
+    utm_cs.SetUTM(zone_number, is_northern)
 
     # set lat, lon coordinate system
     ll_cs = utm_cs.CloneGeogCS()
@@ -418,12 +428,14 @@ def project_points_ll2utm(lat, lon, datum='WGS84', utm_zone=None, epsg=None):
         if ogrerr != OGRERR_NONE:
             raise Exception("GDAL/osgeo ogr error code: {}".format(ogrerr))
         # get utm zone (for information) if applicable
-        utm_zone = get_utm_string_from_sr(utm_cs)
+        utm_zone = utm_cs.GetUTMZone()
+        # set projection info
+        utm_cs.SetUTM(abs(utm_zone), utm_zone > 0)
     else:
         if utm_zone is not None:
             # get zone number and is_northern from utm_zone string
-            zone_number = int(filter(str.isdigit), utm_zone)
-            is_northern = min(1, utm_zone.count('S'))
+            zone_number = int(utm_zone[0:-1])
+            is_northern = True if utm_zone[-1].lower() > 'n' else False
         else:
             # get centre point and get zone from that
             latc = (np.nanmax(lat) + np.nanmin(lat)) / 2.
@@ -777,7 +789,7 @@ def transform_utm_to_ll(easting, northing, zone,
         zone_letter = zone[-1]
     except ValueError:
         raise ValueError('Zone number {0} is not a number'.format(zone[0:-1]))
-    is_northern = 1 if zone_letter.lower() >= 'n' else 0
+    is_northern = True if zone_letter.lower() >= 'n' else False
 
     utm_coordinate_system.SetUTM(zone_number, is_northern)
 
@@ -811,10 +823,11 @@ def transform_ll_to_utm(lon, lat, reference_ellipsoid='WGS84'):
         """
         Determines if given latitude is a northern for UTM
         """
-        if (latitude < 0.0):
-            return 0
-        else:
-            return 1
+        # if (latitude < 0.0):
+        #     return 0
+        # else:
+        #     return 1
+        return latitude >= 0
 
     utm_coordinate_system = osr.SpatialReference()
     # Set geographic coordinate system to handle lat/lon
