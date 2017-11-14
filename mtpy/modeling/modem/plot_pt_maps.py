@@ -714,10 +714,10 @@ class PlotPTMaps(mtplottools.MTEllipse):
 
         """
 
-        if fig_dpi == None:
+        if fig_dpi is None:
             fig_dpi = self.fig_dpi
 
-        if os.path.isdir(save_path) == False:
+        if not os.path.isdir(save_path):
             try:
                 os.mkdir(save_path)
             except:

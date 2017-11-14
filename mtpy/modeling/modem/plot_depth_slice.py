@@ -353,7 +353,6 @@ class PlotDepthSlice(object):
                 cb.ax.xaxis.set_label_position('top')
                 cb.ax.xaxis.set_label_coords(.5, 1.3)
 
-
             elif self.cb_orientation == 'vertical':
                 cb.ax.yaxis.set_label_position('right')
                 cb.ax.yaxis.set_label_coords(1.25, .5)

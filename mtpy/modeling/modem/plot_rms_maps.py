@@ -217,11 +217,11 @@ class PlotRMSMaps(object):
                 # calulate the rms self.residual/error
                 if p_dict['plot_num'] < 5:
                     rms = r_arr['z'][self.period_index, ii, jj].__abs__() / \
-                          (r_arr['z_err'][self.period_index, ii, jj].real)
+                          r_arr['z_err'][self.period_index, ii, jj].real
 
                 else:
                     rms = r_arr['tip'][self.period_index, ii, jj].__abs__() / \
-                          (r_arr['tip_err'][self.period_index, ii, jj].real)
+                          r_arr['tip_err'][self.period_index, ii, jj].real
 
                 # color appropriately
                 if np.nan_to_num(rms) == 0.0:
@@ -235,7 +235,7 @@ class PlotRMSMaps(object):
                     marker_size = self.marker_size
                     marker_edge_color = (0, 0, 0)
 
-                elif rms >= 1 and rms <= self.rms_max:
+                elif 1 <= rms <= self.rms_max:
                     r_color = 1 - rms / self.rms_max + rms_1
                     marker_color = (r_color, r_color, r_color)
                     marker = self.marker
@@ -308,10 +308,10 @@ class PlotRMSMaps(object):
 
         self.fig.suptitle('period = {0:.5g} (s)'.format(self.residual.period_list[self.period_index]),
                           fontdict={'size': self.font_size + 3, 'weight': 'bold'})
-        plt.show()
+        self.fig.show()
 
     def redraw_plot(self):
-        plt.close('all')
+        plt.close(self.fig)
         self.plot()
 
     def save_figure(self, save_path=None, save_fn_basename=None,
@@ -336,8 +336,8 @@ class PlotRMSMaps(object):
         self.fig.savefig(save_fn, dpi=self.fig_dpi)
         print 'saved file to {0}'.format(save_fn)
 
-        if fig_close == True:
-            plt.close('all')
+        if fig_close:
+            plt.close(self.fig)
 
     def plot_loop(self, fig_format='png'):
         """

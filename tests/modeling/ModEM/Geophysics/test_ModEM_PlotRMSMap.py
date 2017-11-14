@@ -36,6 +36,7 @@ class Test_PlotRMSMap(ImageTestCase):
 
         # plot map
         rmsmap = PlotRMSMaps(residual_fn=os.path.join(wd, filestem + '.res'), period_index=period_index,
-                             xminorticks=50000, yminorticks=50000, save_plots='y')
+                             xminorticks=50000, yminorticks=50000, save_plots='y', plot_yn='n')
+        rmsmap.plot()
 
-        rmsmap.save_figure(save_path)  # this will save a file to
+        rmsmap.save_figure(save_path, fig_close=False)  # this will save a file to
