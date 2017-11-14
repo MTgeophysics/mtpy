@@ -10,7 +10,7 @@ Plot RMS at each station as a map
 import os
 
 os.chdir(r'C:\Git\mtpy')
-from mtpy.modeling.ModEM import PlotRMSMaps
+from mtpy.modeling.modem import PlotRMSMaps
 
 # directory where files are located
 wd = r'C:\Git\mtpy\examples\model_files\ModEM'

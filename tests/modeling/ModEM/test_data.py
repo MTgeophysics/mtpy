@@ -8,7 +8,7 @@ from unittest import TestCase
 import matplotlib.pyplot as plt
 
 from examples.create_modem_input import select_periods
-from mtpy.modeling.ModEM import Data
+from mtpy.modeling.modem import Data
 
 # patch that changes the matplotlib behaviour
 from tests import TEST_TEMP_DIR

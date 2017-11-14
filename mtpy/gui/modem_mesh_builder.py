@@ -7,7 +7,7 @@ Created on Sun Nov 02 13:47:10 2014
 
 from PyQt4 import QtCore, QtGui
 
-import mtpy.modeling.ModEM
+import mtpy.modeling.modem
 import mtpy.modeling.modem as modem
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as NavigationToolbar
@@ -94,7 +94,7 @@ class ModEM_Mesh_Window(QtGui.QMainWindow):
         fn = str(fn_dialog.getOpenFileName(caption='Choose ModEM data file',
                                        filter='(*.dat);; (*.data)'))
                                        
-        self.mesh_widget.modem_data = mtpy.modeling.ModEM.Data()
+        self.mesh_widget.modem_data = mtpy.modeling.modem.Data()
         self.mesh_widget.modem_data.read_data_file(fn)
         self.mesh_widget.modem_data_fn = fn
         
@@ -110,7 +110,7 @@ class ModEM_Mesh_Window(QtGui.QMainWindow):
         fn = str(fn_dialog.getOpenFileName(caption='Choose ModEM model file',
                                        filter='*.rho'))
                                        
-        self.mesh_widget.model_obj = mtpy.modeling.ModEM.Model()
+        self.mesh_widget.model_obj = mtpy.modeling.modem.Model()
         self.mesh_widget.model_obj.read_model_file(fn)
 
         self.mesh_widget.dir_path = os.path.dirname(fn)
@@ -139,7 +139,7 @@ class MeshWidget(QtGui.QWidget):
     
     def __init__(self):
         super(MeshWidget, self).__init__()
-        self.model_obj = mtpy.modeling.ModEM.Model()
+        self.model_obj = mtpy.modeling.modem.Model()
         self.mpl_widget = MeshPlot()
         
         #sys.stdout = MyStream()
@@ -328,7 +328,7 @@ class MeshWidget(QtGui.QWidget):
         fn = str(fn_dialog.getOpenFileName(caption='Choose ModEM data file',
                                        filter='(*.dat);; (*.data)'))
                                        
-        self.modem_data = mtpy.modeling.ModEM.Data()
+        self.modem_data = mtpy.modeling.modem.Data()
         self.modem_data.read_data_file(fn)
         self.modem_data_fn = fn
         
@@ -357,7 +357,7 @@ class MeshWidget(QtGui.QWidget):
         fn = str(fn_dialog.getOpenFileName(caption='Choose ModEM model file',
                                        filter='*.rho'))
                                        
-        self.model_obj = mtpy.modeling.ModEM.Model()
+        self.model_obj = mtpy.modeling.modem.Model()
         self.model_obj.read_model_file(fn)
 
         self.dir_path = os.path.dirname(fn)
@@ -416,7 +416,7 @@ class MeshWidget(QtGui.QWidget):
         for fn in fn_list:
             self.edi_list.append(str(fn))
         
-        self.model_obj = mtpy.modeling.ModEM.Model(edi_list=self.edi_list)
+        self.model_obj = mtpy.modeling.modem.Model(edi_list=self.edi_list)
         
         self.model_obj.get_station_locations()
         

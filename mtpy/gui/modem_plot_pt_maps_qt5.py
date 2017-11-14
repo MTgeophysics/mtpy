@@ -14,7 +14,7 @@ JP 2014
 import os
 import numpy as np
 
-import mtpy.modeling.ModEM
+import mtpy.modeling.modem
 
 try:
     from PyQt5 import QtCore, QtGui, QtWidgets
@@ -311,7 +311,7 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
         
         fn = os.path.abspath(fn)
                                        
-        self.modem_data = mtpy.modeling.ModEM.Data()
+        self.modem_data = mtpy.modeling.modem.Data()
         self.modem_data.read_data_file(fn)
         self.modem_data_fn = fn
         
@@ -344,7 +344,7 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
                                            filter='(*.rho);; (*.ws)',
                                            directory=self.dir_path)[0])
         fn = os.path.abspath(fn)
-        self.modem_model = mtpy.modeling.ModEM.Model()
+        self.modem_model = mtpy.modeling.modem.Model()
         self.modem_model.read_model_file(fn)
         self.modem_model_fn = fn
         self.plot()
@@ -367,7 +367,7 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
                                            filter='*.dat', 
                                            directory=self.dir_path))
                                        
-        self.modem_resp = mtpy.modeling.ModEM.Data()
+        self.modem_resp = mtpy.modeling.modem.Data()
         self.modem_resp.read_data_file(fn)
         self.modem_resp_fn = fn
         self.plot()

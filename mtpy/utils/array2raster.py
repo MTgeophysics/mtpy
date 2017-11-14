@@ -4,7 +4,7 @@ Created on Sun May 11 12:15:37 2014
 
 @author: jrpeacock
 """
-import mtpy.modeling.ModEM
+import mtpy.modeling.modem
 
 try:
     from osgeo import ogr, gdal, osr
@@ -54,7 +54,7 @@ class ModEM_to_Raster(object):
         get model to put into array
         """
 
-        model_obj = mtpy.modeling.ModEM.Model()
+        model_obj = mtpy.modeling.modem.Model()
         model_obj.model_fn = self.model_fn
         model_obj.read_model_file()
         
@@ -84,7 +84,7 @@ class ModEM_to_Raster(object):
         self.pad_east = pad_east
         self.pad_north = pad_north
             
-        model_obj = mtpy.modeling.ModEM.Model()
+        model_obj = mtpy.modeling.modem.Model()
         model_obj.model_fn = self.model_fn
         model_obj.read_model_file()
         
@@ -116,7 +116,7 @@ class ModEM_to_Raster(object):
         
         """
         
-        model_obj = mtpy.modeling.ModEM.Model()
+        model_obj = mtpy.modeling.modem.Model()
         model_obj.model_fn = self.model_fn
         model_obj.read_model_file()
 

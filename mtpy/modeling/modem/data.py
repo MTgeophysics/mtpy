@@ -17,7 +17,7 @@ import numpy as np
 
 from mtpy.core import mt as mt, z as mtz
 from mtpy.modeling import ws3dinv as ws
-from mtpy.modeling.ModEM import Model
+from mtpy.modeling.modem import Model
 from mtpy.utils import gis_tools as gis_tools
 from mtpy.utils.mtpylog import MtPyLog
 

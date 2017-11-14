@@ -18,7 +18,7 @@ import subprocess
 # 3rd party packages
 from PyQt5 import QtCore, QtGui, QtWidgets
 
-import mtpy.modeling.ModEM
+import mtpy.modeling.modem
 from mtpy.gui.my_stream import MyStream
 import mtpy.modeling.modem as modem
 #==============================================================================
@@ -173,12 +173,12 @@ class ConvertModel2VTK(QtWidgets.QWidget):
         
     def make_vtk_files(self):
         if self.model_type == 'ModEM':
-            m_obj = mtpy.modeling.ModEM.Model()
+            m_obj = mtpy.modeling.modem.Model()
             m_obj.read_model_file(os.path.join(self.cwd, self.model_fn))
             m_obj.write_vtk_file(vtk_save_path=self.cwd,
                                  vtk_fn_basename=self.vtk_model_fn)
                                  
-            d_obj = mtpy.modeling.ModEM.Data()
+            d_obj = mtpy.modeling.modem.Data()
             d_obj.read_data_file(self.resp_fn)
             d_obj.write_vtk_station_file(vtk_save_path=self.cwd,
                                          vtk_fn_basename=self.vtk_station_fn)

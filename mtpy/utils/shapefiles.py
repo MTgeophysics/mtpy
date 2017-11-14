@@ -7,7 +7,7 @@ Created on Sun Apr 13 12:32:16 2014
 
 @author: jrpeacock
 """
-import mtpy.modeling.ModEM
+import mtpy.modeling.modem
 from mtpy.utils.gis_tools import transform_ll_to_utm
 
 try:
@@ -378,7 +378,7 @@ class PTShapeFile(object):
 
         """
 
-        modem_obj = mtpy.modeling.ModEM.Data()
+        modem_obj = mtpy.modeling.modem.Data()
         modem_obj.read_data_file(modem_data_fn)
 
         self.plot_period = modem_obj.period_list.copy()
@@ -398,7 +398,7 @@ class PTShapeFile(object):
         """
 
         # first get the data and response and place them in array for later use
-        modem_data_obj = mtpy.modeling.ModEM.Data()
+        modem_data_obj = mtpy.modeling.modem.Data()
         modem_data_obj.read_data_file(modem_data_fn)
 
         self.plot_period = modem_data_obj.period_list.copy()
@@ -408,7 +408,7 @@ class PTShapeFile(object):
 
         self._set_rotation_angle(rotation_angle)
 
-        modem_resp_obj = mtpy.modeling.ModEM.Data()
+        modem_resp_obj = mtpy.modeling.modem.Data()
         modem_resp_obj.read_data_file(modem_resp_fn)
 
         # rotate model response
@@ -585,7 +585,7 @@ class PTShapeFile(object):
         """
 
         # first get the data and response and place them in array for later use
-        modem_data_obj = mtpy.modeling.ModEM.Data()
+        modem_data_obj = mtpy.modeling.modem.Data()
         modem_data_obj.read_data_file(modem_data_fn)
 
         self.plot_period = modem_data_obj.period_list.copy()
@@ -595,7 +595,7 @@ class PTShapeFile(object):
 
         self._set_rotation_angle(rotation_angle)
 
-        modem_resp_obj = mtpy.modeling.ModEM.Data()
+        modem_resp_obj = mtpy.modeling.modem.Data()
         modem_resp_obj.read_data_file(modem_resp_fn)
 
         # rotate model response
@@ -1260,7 +1260,7 @@ class TipperShapeFile(object):
 
         """
 
-        modem_obj = mtpy.modeling.ModEM.Data()
+        modem_obj = mtpy.modeling.modem.Data()
         modem_obj.read_data_file(modem_data_fn)
 
         self.plot_period = modem_obj.period_list.copy()
@@ -1279,10 +1279,10 @@ class TipperShapeFile(object):
         write residual tipper files for modem
 
         """
-        modem_data_obj = mtpy.modeling.ModEM.Data()
+        modem_data_obj = mtpy.modeling.modem.Data()
         modem_data_obj.read_data_file(modem_data_fn)
 
-        modem_resp_obj = mtpy.modeling.ModEM.Data()
+        modem_resp_obj = mtpy.modeling.modem.Data()
         modem_resp_obj.read_data_file(modem_resp_fn)
 
         self.plot_period = modem_data_obj.period_list.copy()

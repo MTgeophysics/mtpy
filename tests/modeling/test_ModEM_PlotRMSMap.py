@@ -11,7 +11,7 @@ Plot RMS at each station as a map
 import os
 from unittest import TestCase
 
-from mtpy.modeling.ModEM import PlotRMSMaps
+from mtpy.modeling.modem import PlotRMSMaps
 from tests import plt_wait, plt_close, TEST_TEMP_DIR, SAMPLE_DIR
 from tests.imaging import reset_matplotlib
 

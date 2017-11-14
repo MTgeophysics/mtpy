@@ -14,7 +14,7 @@ from unittest import TestCase
 import os
 
 import matplotlib.pyplot as plt
-from mtpy.modeling.ModEM import PlotDepthSlice
+from mtpy.modeling.modem import PlotDepthSlice
 from tests import TEST_TEMP_DIR, plt_wait, plt_close, SAMPLE_DIR
 from tests.imaging import reset_matplotlib
 
