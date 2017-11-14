@@ -15,36 +15,36 @@ ModEM
 # ==============================================================================
 # general packages
 import os
+
+import matplotlib.cm as cm
+import matplotlib.colorbar as mcb
+import matplotlib.colors as colors
+import matplotlib.gridspec as gridspec
+# Plotting tools
+import matplotlib.pyplot as plt
+import matplotlib.widgets as widgets
 import numpy as np
 import scipy.interpolate as spi
 import scipy.stats as stats
+from matplotlib.colors import Normalize
+from matplotlib.patches import Ellipse
+from matplotlib.ticker import MultipleLocator, FormatStrFormatter
 
+import mtpy.analysis.pt as mtpt
+import mtpy.core.mt as mt
 # mtpy modules
 import mtpy.core.z as mtz
-import mtpy.core.mt as mt
-import mtpy.utils.gis_tools as gis_tools
-import mtpy.modeling.ws3dinv as ws
-import mtpy.imaging.mtplottools as mtplottools
-import mtpy.utils.exceptions as mtex
-import mtpy.utils.calculator as mtcc
-import mtpy.analysis.pt as mtpt
 import mtpy.imaging.mtcolors as mtcl
+import mtpy.imaging.mtplottools as mtplottools
+import mtpy.modeling.ws3dinv as ws
 import mtpy.utils.configfile as mtcfg
+import mtpy.utils.exceptions as mtex
 import mtpy.utils.filehandling as mtfh
+import mtpy.utils.gis_tools as gis_tools
 import mtpy.utils.mesh_tools as mtmesh
-
-# Plotting tools
-import matplotlib.pyplot as plt
-from matplotlib.ticker import MultipleLocator, FormatStrFormatter
-from matplotlib.patches import Ellipse
-from matplotlib.colors import Normalize
-import matplotlib.colorbar as mcb
-import matplotlib.gridspec as gridspec
-import matplotlib.widgets as widgets
-import matplotlib.colors as colors
-import matplotlib.cm as cm
-
 # vtk tools
+from mtpy.modeling.ModEM import ModEMError
+
 try:
     from evtk.hl import gridToVTK, pointsToVTK
 except ImportError:
@@ -7671,5 +7671,3 @@ class Plot_RMS_Maps(object):
 # ==============================================================================
 # Exceptions
 # ==============================================================================
-class ModEMError(Exception):
-    pass
