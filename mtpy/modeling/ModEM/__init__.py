@@ -11,9 +11,10 @@ from .model_manipulator import ModelManipulator
 from .plot_response import PlotResponse
 from .plot_pt_maps import PlotPTMaps
 from .plot_depth_slice import PlotDepthSlice
+from .plot_slices import PlotSlices
 
 __all__ = ['ModEMError', 'DataError', 'Stations', 'Data', 'Model', 'Residual',
            'ControlInv', 'ControlFwd', 'Covariance', 'ModEMConfig', 'ModelManipulator',
-           'PlotResponse', 'PlotPTMaps', 'PlotDepthSlice']
+           'PlotResponse', 'PlotPTMaps', 'PlotDepthSlice', 'PlotSlices']
 
 
