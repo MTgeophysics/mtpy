@@ -23,8 +23,7 @@ current error:
 
 import os
 
-from mtpy.modeling.ModEM import Data, Model
-from mtpy.modeling.modem import Covariance
+from mtpy.modeling.ModEM import Data, Model, Covariance
 import numpy as np
 
 import shutil
