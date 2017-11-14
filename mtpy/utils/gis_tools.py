@@ -176,7 +176,7 @@ def convert_position_float2str(position):
 # ==============================================================================
 # Project a point
 # ==============================================================================
-@deprecated("NATO UTS zone is used in other part of mtpy, this function is for Standard UTS")
+@deprecated("NATO UTM zone is used in other part of mtpy, this function is for Standard UTM")
 def get_utm_string_from_sr(spatialreference):
     """
     return utm zone string from spatial reference instance
@@ -717,7 +717,7 @@ def utm_to_ll(reference_ellipsoid, northing, easting, zone):
     lon = long_origin + lon * _rad2deg
     return lat, lon
 
-
+# http://spatialreference.org/ref/epsg/28350/proj4/
 epsg_dict = {28350: ['+proj=utm +zone=50 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs', 50],
              28351: ['+proj=utm +zone=51 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs', 51],
              28352: ['+proj=utm +zone=52 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs', 52],
