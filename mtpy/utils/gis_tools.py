@@ -259,8 +259,8 @@ def project_point_ll2utm(lat, lon, datum='WGS84', utm_zone=None, epsg=None):
         is_northern = bool(utm_zone > 0)
         zone_number_1, is_northern_1, utm_zone = get_utm_zone(lat, lon)
         # check the result from 2 different functions
-        assert(zone_number == zone_number_1)
-        assert(is_northern == is_northern_1)
+        # assert(zone_number == zone_number_1)
+        # assert(is_northern == is_northern_1)
     elif utm_zone is None:
         zone_number, is_northern, utm_zone = get_utm_zone(lat, lon)
     else:
@@ -846,3 +846,7 @@ def transform_ll_to_utm(lon, lat, reference_ellipsoid='WGS84'):
 
     # returns easting, northing, altitude
     return utm_coordinate_system, utm_point
+
+def get_epsg_code(lat,lon, ellip):
+
+    return 28350
