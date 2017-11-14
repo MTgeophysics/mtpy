@@ -7,8 +7,7 @@ Created on Wed Oct 18 10:18:12 2017
 import os
 os.chdir(r'C:\Git\mtpy') # change this path to the path where mtpy is installed
 import os.path as op
-from mtpy.modeling.modem import Model
-from mtpy.modeling.ModEM import Data
+from mtpy.modeling.ModEM import Data, Model
 from mtpy.modeling.modem import Covariance
 import mtpy.core.edi as mtedi
 import numpy as np

@@ -344,7 +344,7 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
                                            filter='(*.rho);; (*.ws)',
                                            directory=self.dir_path)[0])
         fn = os.path.abspath(fn)
-        self.modem_model = modem.Model()
+        self.modem_model = mtpy.modeling.ModEM.Model()
         self.modem_model.read_model_file(fn)
         self.modem_model_fn = fn
         self.plot()

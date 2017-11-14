@@ -251,7 +251,8 @@ import mtpy.modeling.ModEM        >>> import mtpy.modeling.modem as modem
                         for edi in os.listdir(edi_path) 
 import mtpy.modeling.ModEM        >>> ...         if edi.find('.edi') > 0]
         >>> #2) make a grid from the stations themselves with 200m cell spacing
-        >>> mmesh = modem.Model(edi_list=edi_list, cell_size_east=200, 
+import mtpy.modeling.ModEM
+        >>> mmesh = mtpy.modeling.ModEM.Model(edi_list=edi_list, cell_size_east=200, 
         >>> ...                cell_size_north=200)
         >>> mmesh.make_mesh()
         >>> # check to see if the mesh is what you think it should be
@@ -1362,7 +1363,8 @@ class Model(object):
                         for edi in os.listdir(edi_path)
 import mtpy.modeling.ModEM        >>> ...         if edi.find('.edi') > 0]
         >>> #2) make a grid from the stations themselves with 200m cell spacing
-        >>> mmesh = modem.Model(edi_list=edi_list, cell_size_east=200,
+import mtpy.modeling.ModEM
+        >>> mmesh = mtpy.modeling.ModEM.Model(edi_list=edi_list, cell_size_east=200,
         >>> ...                cell_size_north=200)
         >>> mmesh.make_mesh()
         >>> # check to see if the mesh is what you think it should be

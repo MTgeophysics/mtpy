@@ -173,7 +173,7 @@ class ConvertModel2VTK(QtWidgets.QWidget):
         
     def make_vtk_files(self):
         if self.model_type == 'ModEM':
-            m_obj = modem.Model()
+            m_obj = mtpy.modeling.ModEM.Model()
             m_obj.read_model_file(os.path.join(self.cwd, self.model_fn))
             m_obj.write_vtk_file(vtk_save_path=self.cwd,
                                  vtk_fn_basename=self.vtk_model_fn)
