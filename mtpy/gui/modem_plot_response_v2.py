@@ -27,6 +27,8 @@ from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as Navigatio
 from matplotlib.figure import Figure
 import mtpy.imaging.mtplottools as mtplottools
 import matplotlib.gridspec as gridspec
+
+import mtpy.modeling.ModEM
 import mtpy.modeling.modem as modem
 
 #==============================================================================
@@ -294,7 +296,7 @@ class PlotResponses(QtGui.QWidget):
         self.file_watcher.addPath(self._data_fn)
         
         # create new modem data object
-        self.modem_data = modem.Data()
+        self.modem_data = mtpy.modeling.ModEM.Data()
         self.modem_data.read_data_file(self._data_fn)
         
         # make a back up copy that will be unchanged
@@ -326,7 +328,7 @@ class PlotResponses(QtGui.QWidget):
     @resp_fn.setter
     def resp_fn(self, resp_fn):
         self._resp_fn = resp_fn
-        self.modem_resp = modem.Data()
+        self.modem_resp = mtpy.modeling.ModEM.Data()
 
         self.modem_resp.read_data_file(self._resp_fn)
         self.plot() 

@@ -1,14 +1,14 @@
-# -*- coding: utf-8 -*-
 """
-    Description:
+==================
+ModEM
+==================
 
+# Generate files for ModEM
 
-    Usage:
+# revised by JP 2017
+# revised by AK 2017 to bring across functionality from ak branch
 
-    Author: YingzhiGou
-    Date: 
 """
-
 
 class ModEMError(Exception):
     pass

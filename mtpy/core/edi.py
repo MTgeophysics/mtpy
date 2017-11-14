@@ -340,8 +340,8 @@ class Edi(object):
         self.Tipper._freq = freq_arr
         self.Tipper._tipper = tipper_arr
         self.Tipper._tipper_err = tipper_err_arr
-        self.Tipper._compute_amp_phase()
-        self.Tipper._compute_mag_direction()
+        self.Tipper.compute_amp_phase()
+        self.Tipper.compute_mag_direction()
 
     def _read_spectra(self, data_lines,
                       comp_list=['hx', 'hy', 'hz', 'ex', 'ey', 'rhx', 'rhy']):
@@ -527,8 +527,8 @@ class Edi(object):
         self.Tipper.tipper_err = t_err_arr
         self.Tipper.freq = freq_arr
         self.Tipper.rotation_angle = np.zeros_like(freq_arr)
-        self.Tipper._compute_amp_phase()
-        self.Tipper._compute_mag_direction()
+        self.Tipper.compute_amp_phase()
+        self.Tipper.compute_mag_direction()
 
     def write_edi_file(self, new_edi_fn=None):
         """

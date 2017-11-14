@@ -322,8 +322,8 @@ class MT(object):
 
         self._Tipper = t_object
         if self._Tipper is not None:
-            self._Tipper._compute_amp_phase()
-            self._Tipper._compute_mag_direction()
+            self._Tipper.compute_amp_phase()
+            self._Tipper.compute_mag_direction()
 
     @station.setter
     def station(self, station_name):

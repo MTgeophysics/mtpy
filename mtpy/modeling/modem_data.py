@@ -1487,8 +1487,8 @@ class Data(object):
 
             self.mt_dict[s_key].zinv.compute_invariants()
             self.mt_dict[s_key].pt.set_z_object(mt_obj.Z)
-            self.mt_dict[s_key].Tipper._compute_amp_phase()
-            self.mt_dict[s_key].Tipper._compute_mag_direction()
+            self.mt_dict[s_key].Tipper.compute_amp_phase()
+            self.mt_dict[s_key].Tipper.compute_mag_direction()
 
             self.data_array[ii]['station'] = mt_obj.station
             self.data_array[ii]['lat'] = mt_obj.lat

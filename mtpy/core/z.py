@@ -1143,8 +1143,8 @@ class Tipper(object):
         self._angle_err = None
 
         if self._tipper is not None and self._freq is not None:
-            self._compute_amp_phase()
-            self._compute_mag_direction()
+            self.compute_amp_phase()
+            self.compute_mag_direction()
 
     # ==========================================================================
     # Define get/set and properties
@@ -1171,7 +1171,7 @@ class Tipper(object):
             return
 
         # for consistency recalculate amplitude and phase
-        self._compute_amp_phase()
+        self.compute_amp_phase()
 
     # ---tipper--------------------------------------------------------------
     @property
@@ -1205,10 +1205,10 @@ class Tipper(object):
                                             len(self._tipper))
 
             # for consistency recalculate mag and angle
-        self._compute_mag_direction()
+        self.compute_mag_direction()
 
         # for consistency recalculate amplitude and phase
-        self._compute_amp_phase()
+        self.compute_amp_phase()
 
     # ----tipper error---------------------------------------------------------
     @property
@@ -1242,13 +1242,13 @@ class Tipper(object):
                     assert self._tipper_err.shape == self._tipper.shape
 
         # for consistency recalculate mag and angle
-        self._compute_mag_direction()
+        self.compute_mag_direction()
 
         # for consistency recalculate amplitude and phase
-        self._compute_amp_phase()
+        self.compute_amp_phase()
 
     # ----amplitude and phase
-    def _compute_amp_phase(self):
+    def compute_amp_phase(self):
         """
         Sets attributes:
     			* *amplitude*
@@ -1337,8 +1337,8 @@ class Tipper(object):
         self.tipper = tipper_new
 
         # for consistency recalculate amplitude and phase
-        self._compute_amp_phase()
-        self._compute_mag_direction()
+        self.compute_amp_phase()
+        self.compute_mag_direction()
 
     # ---------------------------------
     # properties
@@ -1359,7 +1359,7 @@ class Tipper(object):
         return self._phase_err
 
     # ----magnitude and direction----------------------------------------------
-    def _compute_mag_direction(self):
+    def compute_mag_direction(self):
         """
         computes the magnitude and direction of the real and imaginary
         induction vectors.
@@ -1412,8 +1412,8 @@ class Tipper(object):
         self.tipper[:, 0, 1].imag = np.sqrt(mag_imag ** 2 / \
                                             (1 - np.arctan(ang_imag) ** 2))
         # for consistency recalculate mag and angle
-        self._compute_mag_direction()
-        self._compute_amp_phase()
+        self.compute_mag_direction()
+        self.compute_amp_phase()
 
     @property
     def mag_real(self):
@@ -1515,10 +1515,10 @@ class Tipper(object):
         self.tipper_err = tipper_err_rot
 
         # for consistency recalculate mag and angle
-        self._compute_mag_direction()
+        self.compute_mag_direction()
 
         # for consistency recalculate amplitude and phase
-        self._compute_amp_phase()
+        self.compute_amp_phase()
 
 
 # ------------------------

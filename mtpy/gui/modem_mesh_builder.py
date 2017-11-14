@@ -6,6 +6,8 @@ Created on Sun Nov 02 13:47:10 2014
 """
 
 from PyQt4 import QtCore, QtGui
+
+import mtpy.modeling.ModEM
 import mtpy.modeling.modem as modem
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as NavigationToolbar
@@ -92,7 +94,7 @@ class ModEM_Mesh_Window(QtGui.QMainWindow):
         fn = str(fn_dialog.getOpenFileName(caption='Choose ModEM data file',
                                        filter='(*.dat);; (*.data)'))
                                        
-        self.mesh_widget.modem_data = modem.Data()
+        self.mesh_widget.modem_data = mtpy.modeling.ModEM.Data()
         self.mesh_widget.modem_data.read_data_file(fn)
         self.mesh_widget.modem_data_fn = fn
         
@@ -326,7 +328,7 @@ class MeshWidget(QtGui.QWidget):
         fn = str(fn_dialog.getOpenFileName(caption='Choose ModEM data file',
                                        filter='(*.dat);; (*.data)'))
                                        
-        self.modem_data = modem.Data()
+        self.modem_data = mtpy.modeling.ModEM.Data()
         self.modem_data.read_data_file(fn)
         self.modem_data_fn = fn
         

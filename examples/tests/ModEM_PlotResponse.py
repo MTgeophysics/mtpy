@@ -28,7 +28,7 @@ import os.path as op
 
 os.chdir(r'C:\Git\mtpy')
 from mtpy.modeling.modem import PlotResponse
-from mtpy.modeling.modem import Data
+from mtpy.modeling.ModEM import Data
 
 #### Inputs ####
 wd = r'C:\Git\mtpy\examples\model_files\ModEM'

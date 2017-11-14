@@ -1411,7 +1411,7 @@ class PlotWidget(QtWidgets.QWidget):
                 self.mt_obj.Tipper.tipper[d_index] = 0.0+0.0j
                 self.mt_obj.Tipper.tipper_err[d_index] = 0.0
                 
-                self.mt_obj.Tipper._compute_amp_phase()
+                self.mt_obj.Tipper.compute_amp_phase()
             
 #            self._ax.figure.canvas.repaint()
 #            self._ax.figure.canvas.update()
@@ -1525,7 +1525,7 @@ class PlotWidget(QtWidgets.QWidget):
             self.mt_obj.Tipper.tipper[ff, 0, 0] = 0.0+0.0*1j            
             self.mt_obj.Tipper.tipper_err[ff, 0, 0] = 0.0
             
-        self.mt_obj.Tipper._compute_amp_phase()
+        self.mt_obj.Tipper.compute_amp_phase()
  
         self.ax_tip_x.figure.canvas.draw()
         
@@ -1544,7 +1544,7 @@ class PlotWidget(QtWidgets.QWidget):
             self.mt_obj.Tipper.tipper[ff, 0, 1] = 0.0+0.0*1j            
             self.mt_obj.Tipper.tipper_err[ff, 0, 1] = 0.0  
  
-        self.mt_obj.Tipper._compute_amp_phase()
+        self.mt_obj.Tipper.compute_amp_phase()
         
         self.ax_tip_y.figure.canvas.draw()
 
