@@ -19,6 +19,7 @@ from mtpy.core import mt as mt, z as mtz
 from mtpy.modeling import ws3dinv as ws
 from mtpy.modeling.modem import Model
 from mtpy.utils import gis_tools as gis_tools
+from mtpy.utils.mtpylog import MtPyLog
 
 from .exception import ModEMError
 from .station import Stations
@@ -29,9 +30,15 @@ except ImportError:
     print('If you want to write a vtk file for 3d viewing, you need download '
           'and install evtk from https://bitbucket.org/pauloh/pyevtk', file=sys.stderr)
 
-__all__ = ['Data']
+    print('Note: if you are using Windows you should build evtk first with'
+          'either MinGW or cygwin using the command: \n'
+          '    python setup.py build -compiler=mingw32  or \n'
+          '    python setup.py build -compiler=cygwin')
+
+logger = MtPyLog().get_mtpy_logger(__name__)
 
 
+# =============================================================================
 class Data(object):
     """
     Data will read and write .dat files for ModEM and convert a WS data file

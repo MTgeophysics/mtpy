@@ -8,14 +8,14 @@ from unittest import TestCase
 import matplotlib.pyplot as plt
 
 from examples.create_modem_input import select_periods
-from mtpy.modeling.modem_data import Data
+from mtpy.modeling.ModEM import Data
+
 # patch that changes the matplotlib behaviour
 from tests import TEST_TEMP_DIR
 from tests.modeling import show_patcher
 
 plt.ion()  # enable interactive
 # plt.ioff()  # disable interactive, which will also disable this patch
-
 
 plt.show = show_patcher(plt.show)
 
