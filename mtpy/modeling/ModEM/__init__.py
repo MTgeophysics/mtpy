@@ -7,8 +7,9 @@ from .control_inv import ControlInv
 from .control_fwd import ControlFwd
 from .convariance import Covariance
 from .config import ModEMConfig
+from .model_manipulator import ModelManipulator
 
 __all__ = ['ModEMError', 'DataError', 'Stations', 'Data', 'Model', 'Residual',
-           'ControlInv', 'ControlFwd', 'Covariance', 'ModEMConfig']
+           'ControlInv', 'ControlFwd', 'Covariance', 'ModEMConfig', 'ModelManipulator']
 
 
