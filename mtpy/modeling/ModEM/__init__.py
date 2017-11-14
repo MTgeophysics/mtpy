@@ -6,7 +6,9 @@ from .residual import Residual
 from .control_inv import ControlInv
 from .control_fwd import ControlFwd
 from .convariance import Covariance
+from .config import ModEMConfig
 
-__all__ = ['ModEMError', 'DataError', 'Stations', 'Data', 'Model', 'Residual', 'ControlInv', 'ControlFwd', 'Covariance']
+__all__ = ['ModEMError', 'DataError', 'Stations', 'Data', 'Model', 'Residual',
+           'ControlInv', 'ControlFwd', 'Covariance', 'ModEMConfig']
 
 
