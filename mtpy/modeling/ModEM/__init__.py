@@ -8,8 +8,10 @@ from .control_fwd import ControlFwd
 from .convariance import Covariance
 from .config import ModEMConfig
 from .model_manipulator import ModelManipulator
+from .plot_response import PlotResponse
 
 __all__ = ['ModEMError', 'DataError', 'Stations', 'Data', 'Model', 'Residual',
-           'ControlInv', 'ControlFwd', 'Covariance', 'ModEMConfig', 'ModelManipulator']
+           'ControlInv', 'ControlFwd', 'Covariance', 'ModEMConfig', 'ModelManipulator',
+           'PlotResponse']
 
 

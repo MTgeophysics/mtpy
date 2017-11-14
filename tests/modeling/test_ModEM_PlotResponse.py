@@ -10,7 +10,7 @@ import os
 import os.path as op
 from unittest import TestCase
 
-from mtpy.modeling.modem import PlotResponse
+from mtpy.modeling.ModEM import PlotResponse
 
 from tests import plt_wait, plt_close, SAMPLE_DIR
 from tests.imaging import reset_matplotlib
