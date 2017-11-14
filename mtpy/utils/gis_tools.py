@@ -245,18 +245,11 @@ def project_point_ll2utm(lat, lon, datum='WGS84', utm_zone=None, epsg=None):
     if lat is None or lon is None:
         return None, None, None
 
-    # get zone number, north and zone name
-    if utm_zone is None:
-        zone_number, is_northern, utm_zone = get_utm_zone(lat, lon)
-    else:
-        # get zone number and is_northern from utm_zone string
-        zone_number = int(utm_zone[0:-1])
-        is_northern = True if utm_zone[-1].lower() > 'n' else False
-
     # set utm coordinate system
     utm_cs = osr.SpatialReference()
     utm_cs.SetWellKnownGeogCS(datum)
 
+    # get zone number, north and zone name
     if isinstance(epsg, int):
         ogrerr = utm_cs.ImportFromEPSG(epsg)
         if ogrerr != OGRERR_NONE:
@@ -264,6 +257,14 @@ def project_point_ll2utm(lat, lon, datum='WGS84', utm_zone=None, epsg=None):
         utm_zone = utm_cs.GetUTMZone()
         zone_number = abs(utm_zone)
         is_northern = bool(utm_zone > 0)
+        utm_zone = get_utm_zone(lat, lon)
+        assert(zone_number == int(utm_zone[0:-1]))
+    elif utm_zone is None:
+        zone_number, is_northern, utm_zone = get_utm_zone(lat, lon)
+    else:
+        # get zone number and is_northern from utm_zone string
+        zone_number = int(utm_zone[0:-1])
+        is_northern = True if utm_zone[-1].lower() > 'n' else False
 
     utm_cs.SetUTM(zone_number, is_northern)
 
