@@ -319,24 +319,23 @@ def project_point_utm2ll(easting, northing, utm_zone, datum='WGS84', epsg=None):
     utm_cs = osr.SpatialReference()
     utm_cs.SetWellKnownGeogCS(datum)
 
-    if (utm_zone is None) or (len(utm_zone) == 0) or (utm_zone == '0'):
+    if not utm_zone or (utm_zone == '0'):
         if epsg is None:
             raise ValueError('Please provide either utm_zone or epsg')
         else:
             ogrerr = utm_cs.ImportFromEPSG(epsg)
             if ogrerr != OGRERR_NONE:
                 raise Exception("GDAL/osgeo ogr error code: {}".format(ogrerr))
-            utm_zone = get_utm_string_from_sr(utm_cs)
+            # utm_zone = get_utm_string_from_sr(utm_cs)
     else:
-        assert len(utm_zone) == 3, 'UTM zone should be imput as ##N or ##S'
+        # assert len(utm_zone) == 3, 'UTM zone should be imput as ##N or ##S'
 
         try:
-            zone_number = int(utm_zone[0:2])
+            zone_number = int(utm_zone[0:-1])
+            zone_letter = utm_zone[-1]
         except ValueError:
             raise ValueError('Zone number {0} is not a number'.format(utm_zone[0:2]))
-        is_northern = 1
-        if 's' in utm_zone.lower():
-            is_northern = 0
+        is_northern = 1 if zone_letter.lower() >= 'n' else 0
 
         utm_cs.SetUTM(zone_number, is_northern)
 
