@@ -3,10 +3,10 @@
 ModEM
 ==================
 
-# Generate files for ModEM
+residuals class to contain RMS information
 
-# revised by JP 2017
-# revised by AK 2017 to bring across functionality from ak branch
+revised by JP 2017
+revised by AK 2017 to bring across functionality from ak branch
 
 """
 import os.path as op
@@ -27,25 +27,8 @@ class Residual(object):
     ====================== ====================================================
     Attributes/Key Words   Description
     ====================== ====================================================
-
-    center_position_EN     (east, north, evel) for center point of station
-                           array.  All stations are relative to this location
-                           for plotting purposes.
-    rms_array              numpy.ndarray structured to store station
-                           location values and rms.  Keys are:
-                               * station --> station name
-                               * east --> UTM east (m)
-                               * north --> UTM north (m)
-                               * lat --> latitude in decimal degrees
-                               * lon --> longitude in decimal degrees
-                               * elev --> elevation (m)
-                               * zone --> UTM zone
-                               * rel_east -- > relative east location to
-                                               center_position (m)
-                               * rel_north --> relative north location to
-                                               center_position (m)
-                               * rms --> root-mean-square residual for each
-                                         station
+    work_dir
+    residual_fn            full path to data file
     residual_array         numpy.ndarray (num_stations) structured to store
                            data.  keys are:
                                * station --> station name
@@ -67,155 +50,206 @@ class Residual(object):
                                        (num_freq, 1, 2)
                                * tipperr --> Tipper array with shape
                                        (num_freq, 1, 2)
-    residual_fn            full path to data file
-    data_period_list       period list from all the data
-
-    fn_basename            basename of residual file
-    header_strings         strings for header of data file following the format
-                           outlined in the ModEM documentation
-    inv_comp_dict          dictionary of inversion componets
-    inv_mode               inversion mode, options are: *default* is '1'
-                               * '1' --> for 'Full_Impedance' and
-                                             'Full_Vertical_Components'
-                               * '2' --> 'Full_Impedance'
-                               * '3' --> 'Off_Diagonal_Impedance' and
-                                         'Full_Vertical_Components'
-                               * '4' --> 'Off_Diagonal_Impedance'
-                               * '5' --> 'Full_Vertical_Components'
-                               * '6' --> 'Full_Interstation_TF'
-                               * '7' --> 'Off_Diagonal_Rho_Phase'
-
-    inv_mode_dict          dictionary for inversion modes
-    mt_dict                dictionary of mtpy.core.mt.MT objects with keys
-                           being station names
-    units                  [ [V/m]/[T] | [mV/km]/[nT] | Ohm ] units of Z
-                           *default* is [mV/km]/[nT]
-    wave_sign              [ + | - ] sign of time dependent wave.
-                           *default* is '+' as positive downwards.
+    rms
+    rms_array              numpy.ndarray structured to store station
+                           location values and rms.  Keys are:
+                               * station --> station name
+                               * east --> UTM east (m)
+                               * north --> UTM north (m)
+                               * lat --> latitude in decimal degrees
+                               * lon --> longitude in decimal degrees
+                               * elev --> elevation (m)
+                               * zone --> UTM zone
+                               * rel_east -- > relative east location to
+                                               center_position (m)
+                               * rel_north --> relative north location to
+                                               center_position (m)
+                               * rms --> root-mean-square residual for each
+                                         station
+    rms_tip
+    rms_z
     ====================== ====================================================
-
     """
-
+# todo complete the doc above
     def __init__(self, **kwargs):
-
-        self.workdir = kwargs.pop('workdir', '.')
+        self.work_dir = kwargs.pop('work_dir', '.')
         self.residual_fn = kwargs.pop('residual_fn', None)
+        self.residual_array = None
+        self.rms = None
+        self.rms_array = None
+        self.rms_tip = None
+        self.rms_z = None
 
     def read_residual_file(self, residual_fn=None):
-
         if residual_fn is not None:
             self.residual_fn = residual_fn
-            resObj = Data()
-            resObj.read_data_file(self.residual_fn)
+            res_obj = Data()
+            res_obj.read_data_file(self.residual_fn)
         else:
-            print "Cannot read residuals, please provide residual_fn"
+            raise Exception("Cannot read residuals, please provide residual_fn")
+
+        # pass relevant arguments through residual object
+        for att in ['center_position_EN', 'data_period_list',
+                    'wave_sign_impedance', 'wave_sign_tipper']:
+            if hasattr(res_obj, att):
+                setattr(self, att, getattr(res_obj, att))
+
+        # define new data types for residual arrays by copying/modifying dtype from data object
+        self.residual_array = res_obj.data_array.copy()
+
+        # append some new fields to contain rms values
+        self.rms_array = res_obj.station_locations.copy()
+        for field_name in ['rms', 'rms_z', 'rms_tip']:
+            self.rms_array = recfunctions.append_fields(self.rms_array.copy(),
+                                                        field_name,
+                                                        np.zeros(len(res_obj.station_locations)),
+                                                        usemask=False)
+
+    def calculate_residual_from_data(self, data_fn=None, resp_fn=None):
+        """
+        created by ak on 26/09/2017
+
+        :param data_fn:
+        :param resp_fn:
+        :return:
+        """
+
+        data_obj = self._read_data_file(data_fn=data_fn)
+        resp_obj = self._read_resp_file(resp_fn=resp_fn)
+
+        self.residual_array = data_obj.data_array
+        for comp in ['z', 'tip']:
+            self.residual_array[comp] = self.residual_array[comp] - resp_obj.data_array[comp]
+
+        data_obj.fn_basename = resp_obj.fn_basename[:-3] + 'res'
+
+        data_obj.write_data_file(fill=False, compute_error=False)
+
+    def _read_data_file(self, data_fn=None):
+        """
+        created by ak on 26/09/2017
+
+        :param data_fn:
+        :return:
+        """
+        if data_fn is not None:
+            self.data_fn = data_fn
+            data_obj = Data()
+            data_obj.read_data_file(self.data_fn)
+        else:
+            raise Exception("Cannot read data, please provide data_fn")
+
+        # pass relevant arguments through residual object
+        for att in ['center_position_EN', 'data_period_list',
+                    'wave_sign_impedance', 'wave_sign_tipper']:
+            if hasattr(data_obj, att):
+                setattr(self, att, getattr(data_obj, att))
+
+        return data_obj
+
+    def _read_resp_file(self, resp_fn=None):
+        if resp_fn is not None:
+            self.resp_fn = resp_fn
+            resp_obj = Data()
+            resp_obj.read_data_file(self.resp_fn)
+        else:
+            print "Cannot read data, please provide data_fn"
             return
 
         # pass relevant arguments through residual object
         for att in ['center_position_EN', 'data_period_list',
                     'wave_sign_impedance', 'wave_sign_tipper']:
-            if hasattr(resObj, att):
-                setattr(self, att, getattr(resObj, att))
+            if hasattr(resp_obj, att):
+                setattr(self, att, getattr(resp_obj, att))
 
-        # define new data types for residual arrays by copying/modifying dtype from data object
-        self.residual_array = resObj.data_array.copy()
-
-        # append some new fields to contain rms values
-        self.rms_array = resObj.station_locations.copy()
-        for fieldname in ['rms', 'rms_z', 'rms_tip']:
-            self.rms_array = recfunctions.append_fields(self.rms_array.copy(),
-                                                        fieldname,
-                                                        np.zeros(len(resObj.station_locations)),
-                                                        usemask=False)
+        return resp_obj
 
     def get_rms(self, residual_fn=None):
 
         if self.residual_array is None:
-            self._read_residual_fn()
+            self.read_residual_file(residual_fn)
         if self.residual_array is None:
             return
 
         rms_z_comp = np.zeros((len(self.rms_array), 2, 2))
         rms_tip_comp = np.zeros((len(self.rms_array), 2))
-        rms_valuelist_all = np.zeros(0)
-        rms_valuelist_z = np.zeros(0)
-        rms_valuelist_tip = np.zeros(0)
+        rms_value_list_all = np.zeros(0)
+        rms_value_list_z = np.zeros(0)
+        rms_value_list_tip = np.zeros(0)
 
-        for stname in self.rms_array['station']:
-            rms_valuelist = []
-            sta_ind = np.where(self.rms_array['station'] == stname)[0][0]
-            sta_indd = np.where(self.residual_array['station'] == stname)[0][0]
-            resvals = self.residual_array[sta_indd]
-            znorm, tipnorm = None, None
-            if np.amax(np.abs(resvals['z'])) > 0:
+        for station_name in self.rms_array['station']:
+            rms_value_list = []
+            sta_ind = np.where(self.rms_array['station'] == station_name)[0][0]
+            sta_indd = np.where(self.residual_array['station'] == station_name)[0][0]
+            res_vals = self.residual_array[sta_indd]
+            z_norm, tip_norm = None, None
+            if np.amax(np.abs(res_vals['z'])) > 0:
                 # sum over absolute value of z
                 # need to divide by sqrt(2) to normalise (code applies same error to real and imag components)
-                znorm = np.abs(resvals['z']) / (np.real(resvals['z_err']) * 2. ** 0.5)
-                znorm = znorm[np.all(np.isfinite(znorm), axis=(1, 2))]
+                z_norm = np.abs(res_vals['z']) / (np.real(res_vals['z_err']) * 2. ** 0.5)
+                z_norm = z_norm[np.all(np.isfinite(z_norm), axis=(1, 2))]
 
                 # append individual normalised errors to a master list for all stations
-                rms_valuelist_all = np.append(rms_valuelist_all, znorm.flatten())
-                rms_valuelist_z = np.append(rms_valuelist_z, znorm.flatten())
+                rms_value_list_all = np.append(rms_value_list_all, z_norm.flatten())
+                rms_value_list_z = np.append(rms_value_list_z, z_norm.flatten())
 
                 # normalised error for separate components
-                rms_z_comp[sta_ind] = (((znorm ** 2.).sum(axis=0)) / (znorm.shape[0])) ** 0.5
-                rms_valuelist.append(rms_z_comp[sta_ind])
+                rms_z_comp[sta_ind] = (((z_norm ** 2.).sum(axis=0)) / (z_norm.shape[0])) ** 0.5
+                rms_value_list.append(rms_z_comp[sta_ind])
 
-            if np.amax(np.abs(resvals['tip'])) > 0:
+            if np.amax(np.abs(res_vals['tip'])) > 0:
                 # sum over absolute value of tipper
                 # need to divide by sqrt(2) to normalise (code applies same error to real and imag components)
-                tipnorm = np.abs(resvals['tip']) / (np.real(resvals['tip_err']) * 2. ** 0.5)
-                tipnorm = tipnorm[np.all(np.isfinite(tipnorm), axis=(1, 2))]
+                tip_norm = np.abs(res_vals['tip']) / (np.real(res_vals['tip_err']) * 2. ** 0.5)
+                tip_norm = tip_norm[np.all(np.isfinite(tip_norm), axis=(1, 2))]
 
                 # append individual normalised errors to a master list for all stations
-                rms_valuelist_all = np.append(rms_valuelist_all, tipnorm.flatten())
-                rms_valuelist_tip = np.append(rms_valuelist_tip, tipnorm.flatten())
+                rms_value_list_all = np.append(rms_value_list_all, tip_norm.flatten())
+                rms_value_list_tip = np.append(rms_value_list_tip, tip_norm.flatten())
 
                 # normalised error for separate components
-                rms_tip_comp[sta_ind] = (((tipnorm ** 2.).sum(axis=0)) / len(tipnorm)) ** 0.5
-                rms_valuelist.append(rms_tip_comp[sta_ind])
+                rms_tip_comp[sta_ind] = (((tip_norm ** 2.).sum(axis=0)) / len(tip_norm)) ** 0.5
+                rms_value_list.append(rms_tip_comp[sta_ind])
 
-            rms_valuelist = np.vstack(rms_valuelist).flatten()
+            rms_value_list = np.vstack(rms_value_list).flatten()
 
-            rms_value = ((rms_valuelist ** 2.).sum() / rms_valuelist.size) ** 0.5
+            rms_value = ((rms_value_list ** 2.).sum() / rms_value_list.size) ** 0.5
 
             self.rms_array[sta_ind]['rms'] = rms_value
 
-            if znorm is not None:
+            if z_norm is not None:
                 self.rms_array[sta_ind]['rms_z'] = ((rms_z_comp[sta_ind] ** 2.).sum() / rms_z_comp[sta_ind].size) ** 0.5
-            if tipnorm is not None:
+            if tip_norm is not None:
                 self.rms_array[sta_ind]['rms_tip'] = ((rms_tip_comp[sta_ind] ** 2.).sum() / rms_z_comp[
                     sta_ind].size) ** 0.5
 
-        self.rms = np.mean(rms_valuelist_all ** 2.) ** 0.5
-        self.rms_z = np.mean(rms_valuelist_z ** 2.) ** 0.5
-        self.rms_tip = np.mean(rms_valuelist_tip ** 2.) ** 0.5
+        self.rms = np.mean(rms_value_list_all ** 2.) ** 0.5
+        self.rms_z = np.mean(rms_value_list_z ** 2.) ** 0.5
+        self.rms_tip = np.mean(rms_value_list_tip ** 2.) ** 0.5
 
     def write_rms_to_file(self):
         """
         write rms station data to file
         """
 
-        fn = op.join(self.workdir, 'rms_values.dat')
+        fn = op.join(self.work_dir, 'rms_values.dat')
 
         if not hasattr(self, 'rms'):
             self.get_rms()
 
-        headerlist = ['station', 'lon', 'lat', 'rel_east', 'rel_north', 'rms', 'rms_z', 'rms_tip']
+        header_list = ['station', 'lon', 'lat', 'rel_east', 'rel_north', 'rms', 'rms_z', 'rms_tip']
 
         dtype = []
-        for val in headerlist:
+        for val in header_list:
             if val == 'station':
                 dtype.append((val, 'S10'))
             else:
                 dtype.append((val, np.float))
 
-        savelist = np.zeros(len(self.rms_array), dtype=dtype)
-        for val in headerlist:
-            savelist[val] = self.rms_array[val]
+        save_list = np.zeros(len(self.rms_array), dtype=dtype)
+        for val in header_list:
+            save_list[val] = self.rms_array[val]
 
-        header = ' '.join(headerlist)
+        header = ' '.join(header_list)
 
-        np.savetxt(fn, savelist, header=header, fmt=['%s', '%.6f', '%.6f', '%.1f', '%.1f', '%.3f', '%.3f', '%.3f'])
-
-
+        np.savetxt(fn, save_list, header=header, fmt=['%s', '%.6f', '%.6f', '%.1f', '%.1f', '%.3f', '%.3f', '%.3f'])
