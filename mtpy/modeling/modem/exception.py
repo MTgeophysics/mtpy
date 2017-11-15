@@ -16,6 +16,6 @@ class ModEMError(Exception):
     pass
 
 
-class DataError(Exception):
+class DataError(ModEMError):
     """Raise for ModEM Data class specific exception"""
     pass

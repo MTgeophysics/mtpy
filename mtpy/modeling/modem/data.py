@@ -20,7 +20,7 @@ from mtpy.modeling import ws3dinv as ws
 from mtpy.utils import gis_tools as gis_tools
 from mtpy.utils.mtpylog import MtPyLog
 
-from .exception import ModEMError
+from .exception import ModEMError, DataError
 from .station import Stations
 from .model import Model
 
@@ -34,8 +34,6 @@ except ImportError:
           'either MinGW or cygwin using the command: \n'
           '    python setup.py build -compiler=mingw32  or \n'
           '    python setup.py build -compiler=cygwin')
-
-logger = MtPyLog().get_mtpy_logger(__name__)
 
 
 # =============================================================================
@@ -115,7 +113,7 @@ class Data(object):
     fn_basename            basename of data file. *default* is 'ModEM_Data.dat'
     header_strings         strings for header of data file following the format
                            outlined in the ModEM documentation
-    inv_comp_dict          dictionary of inversion componets
+    inv_comp_dict          dictionary of inversion components
     inv_mode               inversion mode, options are: *default* is '1'
                                * '1' --> for 'Full_Impedance' and
                                              'Full_Vertical_Components'
@@ -231,6 +229,7 @@ class Data(object):
     """
 
     def __init__(self, edi_list=None, **kwargs):
+        self._logger = MtPyLog().get_mtpy_logger(self.__class__.__name__)
         self.edi_list = edi_list
 
         self.error_type_z = 'egbert_floor'
@@ -399,7 +398,6 @@ class Data(object):
     def get_period_list(self):
         """
         make a period list to invert for
-
         """
         if self.mt_dict is None:
             self.get_mt_dict()
@@ -420,30 +418,27 @@ class Data(object):
         self.data_period_list = np.array(sorted(list(set(data_period_list)),
                                                 reverse=False))
 
-        if self.period_min is not None:
-            if self.period_max is None:
-                raise ModEMError('Need to input period_max')
-        if self.period_max is not None:
-            if self.period_min is None:
-                raise ModEMError('Need to input period_min')
-        if self.period_min is not None and self.period_max is not None:
-            if self.max_num_periods is None:
-                raise ModEMError('Need to input number of periods to use')
+        if self.period_min is not None and self.period_max is None:
+            raise DataError('Need to input period_max')
+        if self.period_max is not None and self.period_min is None:
+            raise DataError('Need to input period_min')
+        if self.period_min is not None and self.period_max is not None and self.max_num_periods is None:
+            raise DataError('Need to input number of periods to use')
 
-            min_index = np.where(self.data_period_list >= self.period_min)[0][0]
-            max_index = np.where(self.data_period_list <= self.period_max)[0][-1]
+        min_index = np.where(self.data_period_list >= self.period_min)[0][0]
+        max_index = np.where(self.data_period_list <= self.period_max)[0][-1]
 
-            pmin = np.log10(self.data_period_list[min_index])
-            pmax = np.log10(self.data_period_list[max_index])
-            self.period_list = np.logspace(pmin, pmax, num=self.max_num_periods)
+        pmin = np.log10(self.data_period_list[min_index])
+        pmax = np.log10(self.data_period_list[max_index])
+        self.period_list = np.logspace(pmin, pmax, num=self.max_num_periods)
 
-            print('-' * 50)
-            print('Inverting for periods:')
-            for per in self.period_list:
-                print('     {0:<12.6f}'.format(per))
-            print('-' * 50)
+        print('-' * 50)
+        print('Inverting for periods:')
+        for per in self.period_list:
+            print('     {0:<12.6f}'.format(per))
+        print('-' * 50)
 
-        if self.period_list is None:
+        if self.period_list is None:  # YG: is this possible?
             raise ModEMError('Need to input period_min, period_max, '
                              'max_num_periods or a period_list')
 
@@ -454,7 +449,7 @@ class Data(object):
         if self._rotation_angle == rotation_angle:
             return
 
-        print('Changing rotation angle from {0:.1f} to {1:.1f}'.format(
+        self._logger.info('Changing rotation angle from {0:.1f} to {1:.1f}'.format(
             self._rotation_angle, rotation_angle))
 
         self._rotation_angle = -self._rotation_angle + rotation_angle
@@ -462,7 +457,7 @@ class Data(object):
         if self.rotation_angle == 0:
             return
 
-        print('Changing rotation angle from {0:.1f} to {1:.1f}'.format(
+        self._logger.info('Changing rotation angle from {0:.1f} to {1:.1f}'.format(
             self._rotation_angle, rotation_angle))
         self._rotation_angle = rotation_angle
 
@@ -474,7 +469,7 @@ class Data(object):
             mt_obj.Z.rotate(self._rotation_angle)
             mt_obj.Tipper.rotate(self._rotation_angle)
 
-        print('Data rotated to align with {0:.1f} deg clockwise from N'.format(
+        self._logger.info('Data rotated to align with {0:.1f} deg clockwise from N'.format(
             self._rotation_angle))
         self.fill_data_array()
 
