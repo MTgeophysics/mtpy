@@ -100,10 +100,10 @@ class ShapeFilesCreator(EdiCollection):
 
         return all_periods
 
-    @deprecated("This function is replaced by mtpy.core.edi_collection.EdiCollection.create_phase_tensor_csv()")
-    def create_csv_files(self, dest_dir=None):
-        """
-        create csv file
+    @deprecated("This function is moved to mtpy.core.edi_collection.EdiCollection.create_phase_tensor_csv()")
+    def create_csv_files_deprecated(self, dest_dir=None):
+        """ this method is moved to edi_collection. tested produce same results.
+        create csv file.
         :return:
         """
         if dest_dir is None:
@@ -189,13 +189,6 @@ class ShapeFilesCreator(EdiCollection):
 
         pass
 
-    def create_mt_sites_shp(self):
-        """
-        create MT site location points shape files
-        :return:
-        """
-
-        pass
 
 
 # http://toblerity.org/shapely/manual.html#polygons
@@ -261,7 +254,8 @@ def create_ellipse_shp(csvfile, esize=0.03, target_epsg_code=None):
     return pdf
 
 
-def plot_geopdf(pdf, bbox, out_file_name, target_epsg_code, showfig=False):
+def plot_geopdf(pdf, bbox, jpg_file_name, target_epsg_code, showfig=False):
+
     if target_epsg_code is None:
         p = pdf
         target_epsg_code = '4326'  # EDI orginal lat/lon epsg 4326 or GDA94
@@ -273,9 +267,9 @@ def plot_geopdf(pdf, bbox, out_file_name, target_epsg_code, showfig=False):
     # bounds = p.total_bounds  # lat-lon bounds for this csv dataframe
 
     # plot and save
-    jpg_fname = out_file_name.replace('.csv', '_epsg%s.jpg' % target_epsg_code)
-    fig_title = os.path.basename(jpg_fname)
-    logger.info('saving figure to file %s', jpg_fname)
+
+    fig_title = os.path.basename(jpg_file_name)
+    logger.info('saving figure to file %s', jpg_file_name)
 
     colorby = 'phi_min'
     my_cmap_r = 'jet'
@@ -359,7 +353,7 @@ def plot_geopdf(pdf, bbox, out_file_name, target_epsg_code, showfig=False):
         cb.set_label(colorby, fontdict={'size': 15, 'weight': 'bold'})
 
     fig = plt.gcf()
-    fig.savefig(jpg_fname, dpi=400)
+    fig.savefig(jpg_file_name, dpi=400)
 
     if showfig is True:
         plt.show()
@@ -469,15 +463,21 @@ def process_csv_folder(csv_folder, bbox_dict, target_epsg_code=None):
     # for acsv in csvfiles[:2]:
     for acsv in csvfiles:
         tip_re_gdf = create_tipper_real_shp(acsv, arr_size=0.02, target_epsg_code=target_epsg_code)
+        my_gdf = tip_re_gdf
+        jpg_file_name = acsv.replace('.csv', '_tip_re_epsg%s.jpg' % target_epsg_code)
+        plot_geopdf(my_gdf, bbox_dict, jpg_file_name, target_epsg_code)
 
         tip_im_gdf = create_tipper_imag_shp(acsv, arr_size=0.02, target_epsg_code=target_epsg_code)
+        my_gdf = tip_im_gdf
+        jpg_file_name = acsv.replace('.csv', '_tip_im_epsg%s.jpg' % target_epsg_code)
+        plot_geopdf(my_gdf, bbox_dict, jpg_file_name, target_epsg_code)
 
         ellip_gdf = create_ellipse_shp(acsv, esize=0.01, target_epsg_code=target_epsg_code)
-
         # Now, visualize and output to image file from the geopandas dataframe
         my_gdf = ellip_gdf
+        jpg_file_name = acsv.replace('.csv', '_ellips_epsg%s.jpg' % target_epsg_code)
+        plot_geopdf(my_gdf, bbox_dict, jpg_file_name, target_epsg_code)
 
-        plot_geopdf(my_gdf, bbox_dict, acsv, target_epsg_code)
 
     return
 
@@ -499,8 +499,8 @@ if __name__ == "__main__":
     # filter the edi files here if desired, to get a subset:
     # edifiles2 = edifiles[0:-1:2]
     shp_maker = ShapeFilesCreator(edifiles, path2out)
-    ptdic = shp_maker.create_csv_files()  # dest_dir=path2out)    #  create csv files E:/temp1
-    #use super class: ptdic =shp_maker.create_phase_tensor_csv(path2out)  # compare csv in E:/temp2
+    # ptdic = shp_maker.create_csv_files_deprecated()  # dest_dir=path2out)    #  create csv files E:/temp1
+    ptdic =shp_maker.create_phase_tensor_csv(path2out)  # compare csv in E:/temp2
 
     # print ptdic
     # print ptdic[ptdic.keys()[0]]
@@ -510,11 +510,11 @@ if __name__ == "__main__":
     bbox_dict = edisobj.bound_box_dict
     print(bbox_dict)
 
-
     # create shapefiles and plots
     # epsg projection 4283 - gda94
     process_csv_folder(path2out, bbox_dict)  # , target_epsg_code will be default 4326?
 
+# Further testing epsg codes:
     # epsg projection 28354 - gda94 / mga zone 54
     # epsg projection 32754 - wgs84 / utm zone 54s
 
