@@ -170,12 +170,16 @@ class PTShapeFile(object):
 
         for plot_per in self.plot_period:
             self.pt_dict[plot_per] = []
+
             for mt_obj in self.mt_obj_list:
-                try:
-                    p_index = [ff for ff, f2 in enumerate(1. / mt_obj.Z.freq)
-                               if (f2 > plot_per * (1 - self.ptol)) and
-                               (f2 < plot_per * (1 + self.ptol))][0]
-                    if self.projection is None:  # unprojected coord lat lon
+                p_index = [ff for ff, f2 in enumerate(1. / mt_obj.Z.freq)
+                           if (f2 > plot_per * (1 - self.ptol)) and
+                           (f2 < plot_per * (1 + self.ptol))]
+
+                if len(p_index) >= 1:
+                    p_index = p_index[0]
+
+                    if self.projection is None:  # geographic-coord lat lon
                         east, north, elev = (mt_obj.lon, mt_obj.lat, 0)
                         self.utm_cs = osr.SpatialReference()
                         # Set geographic coordinate system to handle lat/lon
@@ -203,9 +207,8 @@ class PTShapeFile(object):
                                 mt_obj.pt.ellipticity[p_index])  # FZ: get ellipticity begin here
 
                     self.pt_dict[plot_per].append(pt_tuple)
-                except IndexError, ex:
-                    print("index error", ex.message)
-                    raise Exception("Index Error")
+                else:
+                    print("The period %s is NOT found for this station %s" %(plot_per, mt_obj.station))
 
             self.pt_dict[plot_per] = np.array(self.pt_dict[plot_per],
                                               dtype=[('station', '|S15'),
