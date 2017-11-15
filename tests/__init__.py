@@ -1,6 +1,7 @@
 from __future__ import print_function
 
 import os
+import shutil
 import sys
 import matplotlib
 
@@ -27,6 +28,14 @@ TEST_TEMP_DIR = os.path.normpath(os.path.join(TEST_DIR, "temp"))
 
 if not os.path.isdir(TEST_TEMP_DIR):
     os.mkdir(TEST_TEMP_DIR)
+
+
+def make_temp_dir(dir_name, base_dir=TEST_TEMP_DIR):
+    _temp_dir = os.path.normpath(os.path.join(base_dir, dir_name))
+    if os.path.isdir(_temp_dir):
+        shutil.rmtree(_temp_dir)
+    os.mkdir(_temp_dir)
+    return _temp_dir
 
 
 def plt_wait(seconds):

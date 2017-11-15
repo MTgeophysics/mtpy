@@ -29,20 +29,19 @@ import numpy as np
 import shutil
 from unittest import TestCase
 
-from tests import TEST_TEMP_DIR, EDI_DATA_DIR, AUS_TOPO_FILE, SAMPLE_DIR
-from tests.modeling import _diff_files
+from tests import EDI_DATA_DIR, AUS_TOPO_FILE, SAMPLE_DIR, make_temp_dir
+from tests.modeling import diff_files
 
 
 class TestModemInputFilesBuilder(TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls._temp_dir = make_temp_dir(cls.__name__)
+
     def setUp(self):
 
         # directory to save created input files
-        self._output_dir = os.path.join(TEST_TEMP_DIR, 'ModEM')
-        if os.path.exists(self._output_dir):
-            # clear dir if it already exist
-            shutil.rmtree(self._output_dir)
-
-        os.mkdir(self._output_dir)
+        self._output_dir = make_temp_dir(self._testMethodName, base_dir=self._temp_dir)
 
         # set the dir to the output from the previously correct run
         self._expected_output_dir = os.path.join(SAMPLE_DIR, 'ModEM')
@@ -119,6 +118,6 @@ class TestModemInputFilesBuilder(TestCase):
 
             # print ("Comparing", output_data_file, "and", expected_data_file)
 
-            is_identical, msg = _diff_files(output_data_file, expected_data_file)
+            is_identical, msg = diff_files(output_data_file, expected_data_file)
             print msg
             self.assertTrue(is_identical, "The output file is not the same with the baseline file.")

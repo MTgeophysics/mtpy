@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 from examples.create_modem_input import select_periods
 from mtpy.modeling.modem_data import Data
 # patch that changes the matplotlib behaviour
-from tests import TEST_TEMP_DIR
+from tests import make_temp_dir
 from tests.modeling import show_patcher
 
 plt.ion()  # enable interactive
@@ -26,15 +26,11 @@ class TestData(TestCase):
     @classmethod
     def setUpClass(cls):
         # setup temp dir
-        cls._temp_dir = TEST_TEMP_DIR
+        cls._temp_dir = make_temp_dir(cls.__name__)
 
     def setUp(self):
         # for each test, setup a different output dir
-        self._output_dir = os.path.normpath(os.path.join(self._temp_dir, self._testMethodName))
-        if os.path.exists(self._output_dir):
-            # clear dir if it already exist
-            shutil.rmtree(self._output_dir)
-        os.mkdir(self._output_dir)
+        self._output_dir = make_temp_dir(self._testMethodName, base_dir=self._temp_dir)
 
         # set the dir to the output from the previously correct run
         self._expected_output_dir = os.path.normpath(

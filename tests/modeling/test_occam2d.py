@@ -20,20 +20,20 @@ import os
 from unittest import TestCase
 
 import mtpy.modeling.occam2d as occam2d
-import tests.modeling
-from tests import EDI_DATA_DIR, SAMPLE_DIR
-
+from tests import EDI_DATA_DIR, SAMPLE_DIR, make_temp_dir, plt_wait, plt_close
 
 # import matplotlib.pyplot as plt
 # plt.ion() # make figure disappear automatically:
 # plt.ioff()  # make figure show normally and need to click to close the figure to continue the proc
 from tests.imaging import reset_matplotlib
+from tests.modeling import diff_files
 
 
 class TestOccam2D(TestCase):
     @classmethod
     def setUpClass(cls):
         reset_matplotlib()
+        cls._temp_dir = make_temp_dir(cls.__name__)
 
     def setUp(self):
 
@@ -44,10 +44,7 @@ class TestOccam2D(TestCase):
             self._expected_output_dir = None
 
         # directory to save created input files
-        self._output_dir = os.path.join(tests.TEST_TEMP_DIR, 'Occam2d')
-        # ufun.clean_recreate(self._output_dir) # this may remove other test functions' output
-        if not os.path.exists(self._output_dir):
-            os.mkdir(self._output_dir)
+        self._output_dir = make_temp_dir('Occam2d', self._temp_dir)
 
     def _main_func(self, edipath):
         """
@@ -109,8 +106,8 @@ class TestOccam2D(TestCase):
         ocr.write_regularization_file()
 
         ocr.plot_mesh()
-        tests.plt_wait(1)
-        tests.plt_close()
+        plt_wait(1)
+        plt_close()
 
         # make startup file
         ocs = occam2d.Startup()
@@ -144,7 +141,7 @@ class TestOccam2D(TestCase):
 
             print ("Comparing", output_data_file, "and", expected_data_file)
 
-            is_identical, msg = tests.modeling._diff_files(output_data_file, expected_data_file, ignores=['Date/Time:'])
+            is_identical, msg = diff_files(output_data_file, expected_data_file, ignores=['Date/Time:'])
             print msg
             self.assertTrue(is_identical, "The output file is not the same with the baseline file.")
 
@@ -158,7 +155,7 @@ class TestOccam2D(TestCase):
         idir = os.path.join(SAMPLE_DIR, 'Occam2d')
 
         # save path, to save plots to
-        savepath = tests.TEST_TEMP_DIR
+        savepath = self._temp_dir
         offset = 0
 
         # go to model results directory and find the latest iteration file
@@ -194,7 +191,7 @@ class TestOccam2D(TestCase):
                 plotm.save_figure(
                     os.path.join(savepath, outfilename + '_resmodel.png'),
                     close_fig='n')  # this will produce 1 figure .png
-            tests.plt_wait(1)
+            plt_wait(1)
 
         # plot the responses
         if plotresponses:
@@ -204,6 +201,6 @@ class TestOccam2D(TestCase):
                                                 )
             if save:
                 plotresponse.save_figures(savepath, close_fig='n')  # this will produce 2 .pdf file
-            tests.plt_wait(1)
+            plt_wait(1)
 
-        tests.plt_close()
+        plt_close()

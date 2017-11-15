@@ -11,7 +11,7 @@ Plot RMS at each station as a map
 import os
 
 from mtpy.modeling.modem import PlotRMSMaps
-from tests import TEST_TEMP_DIR, SAMPLE_DIR
+from tests import SAMPLE_DIR
 from tests.imaging import ImageTestCase
 
 
@@ -26,7 +26,7 @@ class Test_PlotRMSMap(ImageTestCase):
         wd = os.path.join(SAMPLE_DIR, 'ModEM')
 
         # directory to save to
-        save_path = TEST_TEMP_DIR
+        save_path = self._temp_dir
 
         # file stem for inversion result
         filestem = 'Modular_MPI_NLCG_004'

@@ -15,7 +15,7 @@ import os
 import matplotlib.pyplot as plt
 
 from mtpy.modeling.modem import PlotDepthSlice
-from tests import TEST_TEMP_DIR, SAMPLE_DIR
+from tests import SAMPLE_DIR
 from tests.imaging import ImageTestCase
 
 
@@ -30,7 +30,7 @@ class Test_PlotDepthSlice(ImageTestCase):
         wd = os.path.join(SAMPLE_DIR, 'ModEM')
 
         # directory to save to
-        save_path = TEST_TEMP_DIR
+        save_path = self._temp_dir
         # file stem for inversion result
         filestem = 'Modular_MPI_NLCG_004'
 

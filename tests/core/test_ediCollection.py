@@ -8,7 +8,7 @@ from unittest import TestCase
 import matplotlib
 import sys
 
-from tests import TEST_TEMP_DIR, plt_wait
+from tests import plt_wait, make_temp_dir
 
 if os.name == "posix" and 'DISPLAY' not in os.environ:
     print("MATPLOTLIB: No Display found, using non-interactive svg backend", file=sys.stderr)
@@ -29,8 +29,8 @@ edi_paths = [
     "data/edifiles",
     "examples/data/edi2",
     "examples/data/edi_files",
-    "../MT_Datasets/3D_MT_data_edited_fromDuanJM/",
-    "../MT_Datasets/GA_UA_edited_10s-10000s/",
+    "../MT_Datasets/3D_MT_data_edited_fromDuanJM",
+    "../MT_Datasets/GA_UA_edited_10s-10000s",
     "data/edifiles2"
 ]
 
@@ -61,7 +61,7 @@ class _BaseTest(object):
     @classmethod
     def setUpClass(cls):
         plt.clf()
-        cls._temp_dir = TEST_TEMP_DIR
+        cls._temp_dir = make_temp_dir(cls.__name__)
 
     @classmethod
     def tearDownClass(cls):
@@ -106,27 +106,19 @@ class _BaseTest(object):
         plt_wait(1)
 
     def test_create_mt_station_gdf(self):
-        path = os.path.join(self._temp_dir, self.__class__.__name__ + "_mt_station_gdf")
-        if not os.path.exists(path):
-            os.mkdir(path)
+        path = make_temp_dir(self.__class__.__name__ + "_mt_station_gdf", base_dir=self._temp_dir)
         self.edi_collection.create_mt_station_gdf(path)
 
     def test_create_measurement_csv(self):
-        path = os.path.join(self._temp_dir, self.__class__.__name__ + "_measurement_csv")
-        if not os.path.exists(path):
-            os.mkdir(path)
+        path = make_temp_dir(self.__class__.__name__ + "_measurement_csv", base_dir=self._temp_dir)
         self.edi_collection.create_measurement_csv(path)
 
     def test_create_phase_tensor_csv(self):
-        path = os.path.join(self._temp_dir, self.__class__.__name__ + "_phase_tensor_csv")
-        if not os.path.exists(path):
-            os.mkdir(path)
+        path = make_temp_dir(self.__class__.__name__ + "_phase_tensor_csv", base_dir=self._temp_dir)
         self.edi_collection.create_phase_tensor_csv(path)
 
     def test_create_phase_tensor_csv_with_image(self):
-        path2 = os.path.join(self._temp_dir, self.__class__.__name__ + "_phase_tensor_csv_with_image")
-        if not os.path.exists(path2):
-            os.mkdir(path2)
+        path2 = make_temp_dir(self.__class__.__name__ + "_phase_tensor_csv_with_image", base_dir=self._temp_dir)
         self.edi_collection.create_phase_tensor_csv_with_image(path2)
 
 

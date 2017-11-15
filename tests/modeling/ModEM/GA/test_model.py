@@ -6,22 +6,18 @@ from unittest import TestCase
 from examples.create_modem_input import select_periods
 from mtpy.modeling.modem_data import Data
 from mtpy.modeling.modem_model import Model
-from tests import TEST_TEMP_DIR, plt_close
+from tests import plt_close, make_temp_dir
 
 
 class TestModel(TestCase):
     @classmethod
     def setUpClass(cls):
         # setup temp dir
-        cls._temp_dir = TEST_TEMP_DIR
+        cls._temp_dir = make_temp_dir(cls.__name__)
 
     def setUp(self):
         # for each test, setup a different output dir
-        self._output_dir = os.path.normpath(os.path.join(self._temp_dir, self._testMethodName))
-        if os.path.exists(self._output_dir):
-            # clear dir if it already exist
-            shutil.rmtree(self._output_dir)
-        os.mkdir(self._output_dir)
+        self._output_dir = make_temp_dir(self._testMethodName, base_dir=self._temp_dir)
 
         # set the dir to the output from the previously correct run
         self._expected_output_dir = os.path.normpath(

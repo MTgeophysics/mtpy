@@ -20,9 +20,10 @@ else:
     plt.ion()
 
 
-def _diff_files(after, before, ignores=None):
+def diff_files(after, before, ignores=None):
     """
     compare two files using diff
+    :param ignores:
     :param before:
     :param after:
     :return: the number count of different lines
