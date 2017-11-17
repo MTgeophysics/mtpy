@@ -10,7 +10,7 @@ CreationDate:   2017-03-06
 Developer:      fei.zhang@ga.gov.au
 
 Revision History:
-    LastUpdate:     10/11/2017   FZ fix bug after the big merge
+    LastUpdate:     10/11/2017   FZ fix bugs after the big merge
 
 """
 
@@ -59,46 +59,46 @@ class ShapeFilesCreator(EdiCollection):
         #python-3 syntax: super().__init__(edilist=edifile_list, outdir=outdir)
 
         self.outputdir = outdir
-        self.all_periods = self._get_all_periods()
+        # self.all_periods = self._get_all_periods()
         self.ptol = 0.05  # this param controls what freqs/periods are grouped together:
         # 10% may result more double counting of freq/period data than 5%.
         # eg: E:\Data\MT_Datasets\WenPingJiang_EDI 18528 rows vs 14654 rows
 
         return
 
-    def _get_all_periods(self):
-        """
-        from the list of edi files get a list of all possible frequencies.
-
-        """
-        if self.all_frequencies is not None:  # already initialized
-            return
-
-        # get all frequencies from all edi files
-        all_freqs = []
-        for mt_obj in self.mt_obj_list:
-            all_freqs.extend(list(mt_obj.Z.freq))
-
-        # sort all frequencies so that they are in ascending order,
-        # use set to remove repeats and make an array
-        self.all_frequencies = sorted(list(set(all_freqs)))
-
-        logger.info("Number of MT Frequencies: %s", len(self.all_frequencies))
-
-        all_periods = 1.0 / np.array(sorted(self.all_frequencies, reverse=True))
-
-        logger.debug("Type of all_periods %s", type(all_periods))
-        logger.info("Number of MT Periods: %s", len(all_periods))
-        logger.debug(all_periods)
-
-        # else:
-        #     if isinstance(self.all_periods, list):
-        #         pass
-        #     if isinstance(self.all_periods, int) or isinstance(
-        #             self.all_periods, float):
-        #         self.all_periods = [self.all_periods]
-
-        return all_periods
+    # def _get_all_periods(self): # moved to edi_collection.py
+    #     """
+    #     from the list of edi files get a list of all possible frequencies.
+    #
+    #     """
+    #     if self.all_frequencies is not None:  # already initialized
+    #         return
+    #
+    #     # get all frequencies from all edi files
+    #     all_freqs = []
+    #     for mt_obj in self.mt_obj_list:
+    #         all_freqs.extend(list(mt_obj.Z.freq))
+    #
+    #     # sort all frequencies so that they are in ascending order,
+    #     # use set to remove repeats and make an array
+    #     self.all_frequencies = sorted(list(set(all_freqs)))
+    #
+    #     logger.info("Number of MT Frequencies: %s", len(self.all_frequencies))
+    #
+    #     all_periods = 1.0 / np.array(sorted(self.all_frequencies, reverse=True))
+    #
+    #     logger.debug("Type of all_periods %s", type(all_periods))
+    #     logger.info("Number of MT Periods: %s", len(all_periods))
+    #     logger.debug(all_periods)
+    #
+    #     # else:
+    #     #     if isinstance(self.all_periods, list):
+    #     #         pass
+    #     #     if isinstance(self.all_periods, int) or isinstance(
+    #     #             self.all_periods, float):
+    #     #         self.all_periods = [self.all_periods]
+    #
+    #     return all_periods
 
     @deprecated("This function is moved to mtpy.core.edi_collection.EdiCollection.create_phase_tensor_csv()")
     def create_csv_files_deprecated(self, dest_dir=None):
@@ -193,7 +193,7 @@ class ShapeFilesCreator(EdiCollection):
 
 # http://toblerity.org/shapely/manual.html#polygons
 # https://geohackweek.github.io/vector/04-geopandas-intro/
-def create_ellipse_shp(csvfile, esize=0.03, target_epsg_code=None):
+def create_ellipse_shp(csvfile, esize=0.03, target_epsg_code=4283):
     """
     create phase tensor ellipse geometry from a csv file
     :param csvfile: a csvfile with full path
@@ -241,7 +241,7 @@ def create_ellipse_shp(csvfile, esize=0.03, target_epsg_code=None):
     pdf = gpd.GeoDataFrame(pdf, crs=crs, geometry=ellipse_list)
 
     if target_epsg_code is None:
-        target_epsg_code = '4326'  # EDI original lat/lon epsg 4326 or GDA94
+        raise Exception("Must provide a target_epsg_code")
     else:
         pdf.to_crs(epsg=target_epsg_code, inplace=True)
         # world = world.to_crs({'init': 'epsg:3395'})
@@ -258,7 +258,7 @@ def plot_geopdf(pdf, bbox, jpg_file_name, target_epsg_code, showfig=False):
 
     if target_epsg_code is None:
         p = pdf
-        target_epsg_code = '4326'  # EDI orginal lat/lon epsg 4326 or GDA94
+        target_epsg_code = '4283'  # EDI orginal lat/lon epsg 4326=WGS84 or 4283=GDA94
     else:
         p = pdf.to_crs(epsg=target_epsg_code)
         # world = world.to_crs({'init': 'epsg:3395'})
@@ -274,7 +274,7 @@ def plot_geopdf(pdf, bbox, jpg_file_name, target_epsg_code, showfig=False):
     colorby = 'phi_min'
     my_cmap_r = 'jet'
 
-    if int(target_epsg_code) == 4326:
+    if int(target_epsg_code) == 4326 or int(target_epsg_code) == 4283:
 
         myax = p.plot(figsize=[10, 10], linewidth=2.0, column=colorby, cmap=my_cmap_r)  # , marker='o', markersize=10)
 
@@ -314,7 +314,7 @@ def plot_geopdf(pdf, bbox, jpg_file_name, target_epsg_code, showfig=False):
         myax.set_xlabel('Longitude')
         myax.set_ylabel('Latitude')
         myax.set_title(fig_title)
-    else:
+    else:  # UTM kilometer units
         myax = p.plot(figsize=[10, 8], linewidth=2.0, column=colorby,
                       cmap=my_cmap_r)  # simple plot need to have details added
 
@@ -365,7 +365,7 @@ def plot_geopdf(pdf, bbox, jpg_file_name, target_epsg_code, showfig=False):
     del (fig)
 
 
-def create_tipper_real_shp(csvfile, arr_size=0.03, target_epsg_code=None):
+def create_tipper_real_shp(csvfile, arr_size=0.03, target_epsg_code=4283):
     """ create tipper lines shape from a csv file
     The shape is a line without arrow.
     Must use a GIS software such as ArcGIS to display and add an arrow at each line's end
@@ -392,7 +392,7 @@ def create_tipper_real_shp(csvfile, arr_size=0.03, target_epsg_code=None):
     pdf = gpd.GeoDataFrame(pdf, crs=crs, geometry='tip_re')
 
     if target_epsg_code is None:
-        target_epsg_code = '4326'  # EDI original lat/lon epsg 4326 or GDA94
+        raise Exception("Must provide a target_epsg_code")
     else:
         pdf.to_crs(epsg=target_epsg_code, inplace=True)
         # world = world.to_crs({'init': 'epsg:3395'})
@@ -405,7 +405,7 @@ def create_tipper_real_shp(csvfile, arr_size=0.03, target_epsg_code=None):
     return pdf
 
 
-def create_tipper_imag_shp(csvfile, arr_size=0.03, target_epsg_code=None):
+def create_tipper_imag_shp(csvfile, arr_size=0.03, target_epsg_code=4283):
     """ create imagery tipper lines shape from a csv file
     The shape is a line without arrow.
     Must use a GIS software such as ArcGIS to display and add an arrow at each line's end
@@ -432,7 +432,7 @@ def create_tipper_imag_shp(csvfile, arr_size=0.03, target_epsg_code=None):
     pdf = gpd.GeoDataFrame(pdf, crs=crs, geometry='tip_im')
 
     if target_epsg_code is None:
-        target_epsg_code = '4326'  # EDI original lat/lon epsg 4326 or GDA94
+        raise Exception("Must provide a target_epsg_code")  # EDI original lat/lon epsg 4326 or GDA94
     else:
         pdf.to_crs(epsg=target_epsg_code, inplace=True)
         # world = world.to_crs({'init': 'epsg:3395'})
@@ -445,9 +445,9 @@ def create_tipper_imag_shp(csvfile, arr_size=0.03, target_epsg_code=None):
     return pdf
 
 
-def process_csv_folder(csv_folder, bbox_dict, target_epsg_code=None):
+def process_csv_folder(csv_folder, bbox_dict, target_epsg_code=4283):
     """
-    process all *.csv files in a dir
+    process all *.csv files in a dir, ude target_epsg_code=4283 GDA94 as default
     :param csv_folder:
     :return:
     """
@@ -506,20 +506,25 @@ if __name__ == "__main__":
     # print ptdic[ptdic.keys()[0]]
 
     # edisobj = mtpy.core.edi_collection.EdiCollection(edifiles)
-    edisobj = EdiCollection(edifiles)
+    edisobj =  EdiCollection(edifiles)
     bbox_dict = edisobj.bound_box_dict
     print(bbox_dict)
 
+    bbox_dict2 = shp_maker.bound_box_dict
+    print (bbox_dict2)
+    if bbox_dict != bbox_dict2:
+        raise Exception("parent-child's attribute bbo_dic not equal!!!")
+
     # create shapefiles and plots
     # epsg projection 4283 - gda94
-    process_csv_folder(path2out, bbox_dict)  # , target_epsg_code will be default 4326?
+    #process_csv_folder(path2out, bbox_dict)
 
 # Further testing epsg codes:
     # epsg projection 28354 - gda94 / mga zone 54
     # epsg projection 32754 - wgs84 / utm zone 54s
+    #  GDA94/GALCC =3112
+    for my_epsgcode in [3112,]:  #[4326, 4283, 3112, 32755]:   # 32754, 28355]:
 
-    # for my_epsgcode in [32754,]:  #[3112, 32755]:   # 32754, 28355]:
-    #     #my_epsgcode = 32755 # GDA94/GALCC =3112
-    #     bbox_dict=edisobj.get_bounding_box(epsgcode=my_epsgcode)
-    #     print(bbox_dict)
-    #     process_csv_folder(path2out, bbox_dict, target_epsg_code=my_epsgcode)
+        bbox_dict=edisobj.get_bounding_box(epsgcode=my_epsgcode)
+        print(bbox_dict)
+        process_csv_folder(path2out, bbox_dict, target_epsg_code=my_epsgcode)

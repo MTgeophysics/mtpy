@@ -121,15 +121,15 @@ class EdiCollection(object):
         self.all_frequencies = sorted(list(set(all_freqs)))
 
         logger.debug("Number of MT Frequencies: %s", len(self.all_frequencies))
+        all_periods = 1.0 / np.array(sorted(self.all_frequencies, reverse=True))
 
-        all_periods = 1.0 / \
-                      np.array(sorted(self.all_frequencies, reverse=True))
-
-        # logger.debug("Type of the all_periods %s", type(all_periods))
+        logger.debug("Type of all_periods %s", type(all_periods))
         logger.info("Number of MT Periods: %s", len(all_periods))
-        logger.debug(all_periods)
+        logger.debug("Periods List: %s", str(all_periods))
 
         return all_periods
+
+
 
     def get_periods_by_stats(self, percentage=10.0):
         """
@@ -478,6 +478,13 @@ class EdiCollection(object):
 
         return
 
+    def get_utm_zones(self):
+        """what UTM zones these (edi files) MT stations belong to?
+        are they in a single UTM zone, which corresponds to a unique EPSG code
+        :return: UTM Zone number  + S/N
+        """
+
+        return "55S"
 
 if __name__ == "__main__":
 
