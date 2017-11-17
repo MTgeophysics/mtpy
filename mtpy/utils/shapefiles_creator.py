@@ -173,10 +173,10 @@ class ShapeFilesCreator(EdiCollection):
         return pt_dict
 
 
-    def create_phase_tensor_shp(self):
+    def create_phase_tensor_shp(self, period, d_sites=1):
         """
-        create phase tensor ellipses shape files
-        :return:
+        create phase tensor ellipses shape file correspond to MT period and every d_sites
+        :return: path_to_shapefile
         """
 
         pass
