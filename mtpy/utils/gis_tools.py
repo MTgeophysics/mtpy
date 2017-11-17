@@ -52,7 +52,7 @@ def convert_position_str2float(position_str):
                           
     Example
     -------------
-        >>> import mpty.utils.gis_tools as gis_tools
+        >>> import mtpy.utils.gis_tools as gis_tools
         >>> gis_tools.convert_position_str2float('-118:34:56.3')
     """
 
@@ -143,7 +143,7 @@ def convert_position_float2str(position):
                           
     Example
     -------------
-        >>> import mpty.utils.gis_tools as gis_tools
+        >>> import mtpy.utils.gis_tools as gis_tools
         >>> gis_tools.convert_position_float2str(-118.34563)
         
     """
@@ -806,8 +806,8 @@ def transform_utm_to_ll(easting, northing, zone,
 
 
 @gdal_data_check
-@deprecated("This function may be removed in later release. mtpy.utils.gis_tools.project_point_ll2utm() should be "
-            "used instead.")
+# @deprecated("This function may be removed in later release. mtpy.utils.gis_tools.project_point_ll2utm() should be "
+#             "used instead.")
 def transform_ll_to_utm(lon, lat, reference_ellipsoid='WGS84'):
     """
     transform a (lon,lat) to  a UTM coordinate.
@@ -847,6 +847,29 @@ def transform_ll_to_utm(lon, lat, reference_ellipsoid='WGS84'):
     # returns easting, northing, altitude
     return utm_coordinate_system, utm_point
 
-def get_epsg_code(lat,lon, ellip):
 
-    return 28350
+
+#################################################################
+# Example usages of this script/module
+# python gis_tools.py
+#=================================================================
+if __name__ == "__main__":
+
+    mylat=-35.0
+    mylon=149.5
+    utm = project_point_ll2utm(mylat, mylon)
+    print (utm)
+
+    utm2 =  transform_ll_to_utm(mylon, mylat)
+    print (utm2[1])
+
+    spref_obj=utm2[0]
+    print("The spatial ref string =:", str(spref_obj))
+    print("The spatial ref WKT format =:", spref_obj.ExportToWkt())
+    print("*********  Details of the spatial reference object ***************")
+    print ("spref.GetAttrValue('projcs')", spref_obj.GetAttrValue('projcs'))
+    print( "spref.GetUTMZone()", spref_obj.GetUTMZone())
+
+# how to get the EPSG code from a UTM zone number?
+
+
