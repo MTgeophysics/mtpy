@@ -81,6 +81,11 @@ class PTShapeFile(object):
         self.edi_list = edi_list
         self.projection = proj
         #self.projection = None
+        # UTM zone 50 {'init': u'epsg:32750'} UTM zone 51 32751
+        # WGS84: 'epsg:4326'  GDA94:  EPSG:4283 See  http://epsg.io/4283​
+        # http://spatialreference.org/ref/epsg/4283/
+        # self.utm_cs = None
+
         self.plot_period = None
         self.save_path = None  # os.getcwd()
         # self.ellipse_size = 500.0  # maximum ellipse major axis size in
@@ -105,12 +110,10 @@ class PTShapeFile(object):
             self._get_plot_period()
             self._get_pt_array()
 
+            print(self.plot_period)
+
         self._proj_dict = {'WGS84': 4326, 'NAD27': 4267, 'GDA94': 4283}
 
-        # UTM zone 50 {'init': u'epsg:32750'} UTM zone 51 32751
-        # WGS84: 'epsg:4326'  GDA94:  EPSG:4283 See  http://epsg.io/4283​
-        # http://spatialreference.org/ref/epsg/4283/
-        self.utm_cs = None
         self._rotation_angle = 0.0
 
     def _set_rotation_angle(self, rotation_angle):
@@ -153,7 +156,7 @@ class PTShapeFile(object):
                     self.plot_period, float):
                 self.plot_period = [self.plot_period]
 
-    def _get_pt_array(self):
+    def _get_pt_array(self, periods=None):
         """
         get the phase tensor information into a form that is more structured
         to manipulate easier later.
@@ -162,13 +165,22 @@ class PTShapeFile(object):
         key has a structured array that contains all the important information
         collected from each station.
 
-        Warning: this only supports 2 coordinate system 1) lat-long; 2) UTM-WGS84 default
+        Note: this only supports 2 coordinate system 1) lat-long; 2) UTM-WGS84 default
+
+        :param periods: a list of the periods as a subset of the all periods.
+        :return:
         """
+
+        utm_cs_list=[]  # used to detect multi-UTM zones
+
         self.pt_dict = {}
         if self.plot_period is None:
             self._get_plot_period()
 
-        for plot_per in self.plot_period:
+        if periods is None:
+            periods=self.plot_period
+
+        for plot_per in periods:
             self.pt_dict[plot_per] = []
 
             for mt_obj in self.mt_obj_list:
@@ -193,6 +205,7 @@ class PTShapeFile(object):
                                                                      mt_obj.lat,
                                                                      edi_proj)
                         east, north, elev = utm_point
+                        utm_cs_list.append(self.utm_cs.GetAttrValue('projcs'))
                     else:
                         raise Exception(
                             "%s is NOT supported" %
@@ -220,17 +233,26 @@ class PTShapeFile(object):
                                                      ('skew', np.float),
                                                      ('n_skew', np.float),
                                                      ('ellipticity', np.float)])
+        unique_utm_cs = sorted(list(set(utm_cs_list)))
+        if len(unique_utm_cs) >1:
+            print ("Warning: Multi-UTM-Zones found in the EDI files", unique_utm_cs)
 
-    def write_shape_files(self, every_site=1):
+
+    def write_shape_files(self, periods=None):
         """
         write shape file from given attributes
         https://pcjericks.github.io/py-gdalogr-cookbook/vector_layers.html
         #create-a-new-shapefile-and-add-data
         """
 
-        self._get_pt_array()
+        # Why call again:
+        # self._get_pt_array() # already called in __init__?
 
-        for plot_per in self.plot_period:
+        if periods is None:
+            periods = self.plot_period
+
+        #for plot_per in self.plot_period:
+        for plot_per in periods:
             # shape file path
             shape_fn = os.path.join(self.save_path,
                                     'PT_{0:.5g}s_{1}.shp'.format(plot_per,
@@ -285,77 +307,75 @@ class PTShapeFile(object):
             poly_list = []
 
             print("period=", plot_per)
-            #print(self.pt_dict.keys(), (self.pt_dict[plot_per])['phimax'].size)
+            print(self.pt_dict.keys()) # (self.pt_dict[plot_per])['phimax'].size)
             phi_max_val = self.pt_dict[plot_per]['phimax'].max()
 
 
             for isite, pt_array in enumerate(self.pt_dict[plot_per]):
 
-                if isite % every_site == 0:  # FZ added to control MT-sites output to shp file
-                    # need to make an ellipse first using the parametric
-                    # equation
-                    azimuth = -np.deg2rad(pt_array['azimuth'])
-                    width = self.ellipse_size * (pt_array['phimax'] / phi_max_val)
-                    height = self.ellipse_size * (pt_array['phimin'] / phi_max_val)
+                # need to make an ellipse first using the parametric
+                # equation
+                azimuth = -np.deg2rad(pt_array['azimuth'])
+                width = self.ellipse_size * (pt_array['phimax'] / phi_max_val)
+                height = self.ellipse_size * (pt_array['phimin'] / phi_max_val)
 
-                    x0 = pt_array['east']
-                    y0 = pt_array['north']
+                x0 = pt_array['east']
+                y0 = pt_array['north']
 
 
-                    # apply formula to generate ellipses
-                    x = x0 + height * np.cos(self._theta) * np.cos(azimuth) - \
-                        width * np.sin(self._theta) * np.sin(azimuth)
-                    y = y0 + height * np.cos(self._theta) * np.sin(azimuth) + \
-                        width * np.sin(self._theta) * np.cos(azimuth)
+                # apply formula to generate ellipses
+                x = x0 + height * np.cos(self._theta) * np.cos(azimuth) - \
+                    width * np.sin(self._theta) * np.sin(azimuth)
+                y = y0 + height * np.cos(self._theta) * np.sin(azimuth) + \
+                    width * np.sin(self._theta) * np.cos(azimuth)
 
-                    # 1) make a geometry shape of the ellipse
-                    ellipse = ogr.Geometry(ogr.wkbLinearRing)
+                # 1) make a geometry shape of the ellipse
+                ellipse = ogr.Geometry(ogr.wkbLinearRing)
 
-                    for ii, jj in zip(x, y):
-                        ellipse.AddPoint(np.round(ii, 6), np.round(jj, 6))
+                for ii, jj in zip(x, y):
+                    ellipse.AddPoint(np.round(ii, 6), np.round(jj, 6))
 
-                    ellipse.CloseRings()
+                ellipse.CloseRings()
 
-                    # 2) make a polygon
-                    poly = ogr.Geometry(ogr.wkbPolygon)
-                    poly.AddGeometry(ellipse)
+                # 2) make a polygon
+                poly = ogr.Geometry(ogr.wkbPolygon)
+                poly.AddGeometry(ellipse)
 
-                    poly_list.append(poly)
+                poly_list.append(poly)
 
-                    # 4) this part is confusing but we need to create a feature that has the
-                    # same definition as the layer that we created.
-                    # get the layer definition
-                    feature_def = layer.GetLayerDefn()
+                # 4) this part is confusing but we need to create a feature that has the
+                # same definition as the layer that we created.
+                # get the layer definition
+                feature_def = layer.GetLayerDefn()
 
-                    # create a new feature
-                    new_feature = ogr.Feature(feature_def)
-                    # set the geometry of that feature to be the ellipse
-                    new_feature.SetGeometry(poly)
-                    # create the feature in the layer.
-                    layer.CreateFeature(new_feature)
+                # create a new feature
+                new_feature = ogr.Feature(feature_def)
+                # set the geometry of that feature to be the ellipse
+                new_feature.SetGeometry(poly)
+                # create the feature in the layer.
+                layer.CreateFeature(new_feature)
 
-                    #
-                    # 5) create a field to color by
-                    new_feature.SetField("Name", pt_array['station'])
-                    new_feature.SetField("phi_min", pt_array['phimin'])
-                    new_feature.SetField("phi_max", pt_array['phimax'])
-                    new_feature.SetField("skew", pt_array['skew'])
-                    new_feature.SetField("n_skew", pt_array['n_skew'])
+                #
+                # 5) create a field to color by
+                new_feature.SetField("Name", pt_array['station'])
+                new_feature.SetField("phi_min", pt_array['phimin'])
+                new_feature.SetField("phi_max", pt_array['phimax'])
+                new_feature.SetField("skew", pt_array['skew'])
+                new_feature.SetField("n_skew", pt_array['n_skew'])
 
-                    new_feature.SetField(
-                        "azimuth", pt_array['azimuth'])  # FZ added
-                    new_feature.SetField(
-                        "ellipt", pt_array['ellipticity'])  # FZ added
-                    # new_feature.SetField("ellipticity", pt_array['azimuth'])
-                    # # FZ added
+                new_feature.SetField(
+                    "azimuth", pt_array['azimuth'])  # FZ added
+                new_feature.SetField(
+                    "ellipt", pt_array['ellipticity'])  # FZ added
+                # new_feature.SetField("ellipticity", pt_array['azimuth'])
+                # # FZ added
 
-                    # add the new feature to the layer.
-                    layer.SetFeature(new_feature)
+                # add the new feature to the layer.
+                layer.SetFeature(new_feature)
 
-                    # apparently need to destroy the feature
-                    new_feature.Destroy()
-                else:
-                    print("Skipping this site's phase tensor: ", isite)
+                # apparently need to destroy the feature
+                new_feature.Destroy()
+
 
             # Need to be sure that all the new info is saved to
             data_source.SyncToDisk()
@@ -921,6 +941,8 @@ class TipperShapeFile(object):
         key has a structured array that contains all the important information
         collected from each station.
         """
+        utm_cs_list=[]
+
         self.tip_dict = {}
         for plot_per in self.plot_period:
             self.tip_dict[plot_per] = []
@@ -940,6 +962,8 @@ class TipperShapeFile(object):
                                                                      mt_obj.lat,
                                                                      self.projection)
                         east, north, elev = utm_point
+
+                        utm_cs_list.append(self.utm_cs.GetAttrValue('projcs'))
 
                     if mt_obj.Tipper.tipper is not None:
 
@@ -973,6 +997,10 @@ class TipperShapeFile(object):
                                                       ('mag_imag', np.float),
                                                       ('ang_real', np.float),
                                                       ('ang_imag', np.float)])
+
+        unique_utm_cs = sorted(list(set(utm_cs_list)))
+        if len(unique_utm_cs) >1:
+            print ("Warning: Multi-UTM-Zones found in the EDI files", unique_utm_cs)
 
     def write_real_shape_files(self):
         """
@@ -1457,7 +1485,7 @@ def modem_to_shapefiles(mfndat, save_dir):
 
 
 def create_phase_tensor_shpfiles(
-        edi_dir, save_dir, proj='WGS84', ellipse_size=1000, every_site=1):
+        edi_dir, save_dir, proj='WGS84', ellipse_size=1000, every_site=1, period_list=None):
     """
     generate shape file for a folder of edi files, and save the shape files a dir.
     :param edi_dir:
@@ -1474,11 +1502,13 @@ def create_phase_tensor_shpfiles(
               if edi.find('.edi') > 0]
     # edilst.remove(os.path.join(edipath, 'mb035.edi'))
 
-    pts = PTShapeFile(edilst, save_path=save_dir, proj=proj)
+    #subset of the edilst:
+    edilst2 = edilst[::every_site]
+    pts = PTShapeFile(edilst2, save_path=save_dir, proj=proj)
 
     pts.ellipse_size = ellipse_size
 
-    pts.write_shape_files(every_site)
+    pts.write_shape_files( periods=period_list )
 
 
 def create_tipper_shpfiles(edipath, save_dir):
@@ -1511,9 +1541,6 @@ def create_modem_data_shapefiles():
     save_path = r"C:/tmp"
     modem_to_shapefiles(mfn, save_path)
 
-# script testing
-# if __name__ == "__main__dis":
-#     create_modem_data_shapefiles()
 
 # ===================================================
 #  main test
@@ -1525,7 +1552,7 @@ def create_modem_data_shapefiles():
 #  python mtpy/utils/shapefiles.py examples/data/ModEM_files/VicSynthetic07/Modular_MPI_NLCG_016.dat c:/temp2/
 # ----------------------------------------------------
 
-# script testing
+# example codes of how to use this module
 if __name__ == "__main__":
     import sys
     if len(sys.argv) < 3:
@@ -1534,26 +1561,29 @@ if __name__ == "__main__":
             sys.argv[0])
         sys.exit(1)
 
-    src_filedir = sys.argv[1] # A modem data file  OR edi-folder
+    src_file_dir = sys.argv[1] # A modem data file  OR edi-folder
 
-    destdir = sys.argv[2]
-    if not os.path.isdir(destdir):
-        os.mkdir(destdir)
+    dest_dir = sys.argv[2]
+    if not os.path.isdir(dest_dir):
+        os.mkdir(dest_dir)
 
-    if src_filedir[-4:].lower() == '.dat':      # modem dat file
-        modem_to_shapefiles(src_filedir, destdir)
-    elif os.path.isdir(src_filedir):            # edi folder
+    if src_file_dir[-4:].lower() == '.dat':      # modem dat file
+        modem_to_shapefiles(src_file_dir, dest_dir)
+    elif os.path.isdir(src_file_dir):            # input from edi folder
         create_phase_tensor_shpfiles(
-            src_filedir,
-            destdir,
+            src_file_dir,
+            dest_dir,
             proj='WGS84', ellipse_size=1000, # UTM and size in meters. 1deg=100KM
             #proj=None,  ellipse_size=0.01, # Lat-Long geographic coord and size in degree
-            every_site=1)
+            every_site=2,
+            #period_list=[ 218.43599825251204, 218.43599825 ] # KeyError 218.43599825
+            #period_list=[0.0128, 0.016]  # must get very accurate periods
+        )
 
         # # create_phase_tensor_shpfiles(sys.argv[1], sys.argv[2], ,
         # # ellipse_size=3000, every_site=2) # projected into UTM coordinate
 
-        create_tipper_shpfiles(sys.argv[1],sys.argv[2])
+        #create_tipper_shpfiles(sys.argv[1],sys.argv[2])
     else:
         print("Nothing to do !!!")
 
