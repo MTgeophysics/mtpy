@@ -121,15 +121,15 @@ class EdiCollection(object):
         self.all_frequencies = sorted(list(set(all_freqs)))
 
         logger.debug("Number of MT Frequencies: %s", len(self.all_frequencies))
+        all_periods = 1.0 / np.array(sorted(self.all_frequencies, reverse=True))
 
-        all_periods = 1.0 / \
-                      np.array(sorted(self.all_frequencies, reverse=True))
-
-        # logger.debug("Type of the all_periods %s", type(all_periods))
+        logger.debug("Type of all_periods %s", type(all_periods))
         logger.info("Number of MT Periods: %s", len(all_periods))
-        logger.debug(all_periods)
+        logger.debug("Periods List: %s", str(all_periods))
 
         return all_periods
+
+
 
     def get_periods_by_stats(self, percentage=10.0):
         """
@@ -283,8 +283,9 @@ class EdiCollection(object):
                 for mt_obj in self.mt_obj_list:
                     freq_min = freq * (1 - self.ptol)
                     freq_max = freq * (1 + self.ptol)
+
                     f_index_list = [ff for ff, f2 in enumerate(mt_obj.Z.freq)
-                                    if (f2 > freq_min) and (f2 < freq * freq_max)]
+                                    if (f2 > freq_min) and (f2 < freq_max)]
                     if len(f_index_list) > 1:
                         logger.warn("more than one freq found %s", f_index_list)
                     if len(f_index_list) >= 1:
@@ -374,7 +375,7 @@ class EdiCollection(object):
                                 if (f2 > freq * (1 - self.ptol)) and
                                 (f2 < freq * (1 + self.ptol))]
                 if len(f_index_list) > 1:
-                    logger.warn("more than one fre found %s", f_index_list)
+                    logger.warn("more than one freq found %s", f_index_list)
 
                 if len(f_index_list) >= 1:
                     p_index = f_index_list[0]
@@ -477,6 +478,13 @@ class EdiCollection(object):
 
         return
 
+    def get_utm_zones(self):
+        """what UTM zones these (edi files) MT stations belong to?
+        are they in a single UTM zone, which corresponds to a unique EPSG code
+        :return: UTM Zone number  + S/N
+        """
+
+        return "55S"
 
 if __name__ == "__main__":
 
@@ -505,6 +513,8 @@ if __name__ == "__main__":
 
         print(obj.get_bounding_box(epsgcode=28353))
 
-        obj.create_mt_station_gdf(os.path.join(outdir, 'edi_collection_test.shp'))
+        obj.create_phase_tensor_csv(outdir)
 
+        # obj.create_mt_station_gdf(os.path.join(outdir, 'edi_collection_test.shp'))
+        #
         obj.create_measurement_csv(dest_dir= outdir)
