@@ -1,7 +1,6 @@
 import difflib
 import glob
 import os
-import shutil
 import sys
 from unittest import TestCase
 
@@ -57,7 +56,6 @@ epsg_code = 3112
 
 error_types = [
     # (test_name, error_type_tipper, error_tpye_z, component_error_type)
-    ('abs_floor',         'abs',   'floor',         None),
     ('floor_egbert',      'floor', 'egbert',        None),
     ('abs_egbert_floor',  'abs',   'egbert_floor',  None),
     ('floor_mean_od',     'floor', 'mean_od',       None),
@@ -69,7 +67,7 @@ error_types = [
 ]
 
 
-def _test_gen(edi_path, error_type_z, error_type_tipper, comp_error_type):
+def _test_gen(edi_path, error_type_tipper, error_type_z, comp_error_type):
     """
     generate list of tests for the given edi path
     :param index:
