@@ -764,7 +764,7 @@ class Data(object):
                     err = err_value * np.median(d[nz])
 
                 elif 'mean_od' in self.error_type_z:
-                    d = np.array(d_xy, d_yx)
+                    d = np.array([d_xy, d_yx])
                     nz = np.nonzero(d)
                     err = err_value * np.mean(d[nz])
 
