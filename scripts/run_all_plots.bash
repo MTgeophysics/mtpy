@@ -1,22 +1,23 @@
 #! /usr/bin/env bash
 #######################################
 # test-running all python scripts.
-#WinPC: python examples/plot_phase_tensor_map.py  E:/Datasets/MT_Datasets/GA_UA_edited_10s-10000s 0.0625 E:/MTPY2_Outputs/
 #######################################
 
-export PYTHONPATH=/e/Githubz/mtpy2
-#cd mtpy ;  export PYTHONPATH=.
+
+cd mtpy
+export PYTHONPATH=.
+# export PYTHONPATH=/e/Githubz/mtpy
 
 python examples/plot_edis.py data/edifiles/15125A.edi # not work after merge
 
+# New shape file creator script: create csv and shape files
+python mtpy/utils/shapefiles_creator.py /e/Data/MT_Datasets/WenPingJiang_EDI /e/Data/MT_Datasets/WenPingJiang_SHP2 # long time
+python mtpy/utils/shapefiles_creator.py /e/Data/MT_Datasets/WenPingJiang_EDI /e/tmp_20/
+python mtpy/utils/shapefiles_creator.py /e/Data//MT_Datasets/GA_UA_edited_10s-10000s/ /e/Data//MT_Datasets/GA_UA_edited_10s-10000s_SHP2
 
 # Old shape files generation: fine-tune the __main__ section about calling params
 python mtpy/utils/shapefiles.py /e/Data/MT_Datasets/GA_UA_edited_10s-10000s/ /e/Data/MT_Datasets/GA_UA_edited_10s-10000s_SHP/ # not working after merge
 python mtpy/utils/shapefiles.py /e/Data/MT_Datasets/3D_MT_data_edited_fromDuanJM /e/Data/MT_Datasets/3D_MT_data_edited_fromDuanJM_SHP/
-
-# New shape file creator script: create csv and shape files
-python mtpy/utils/shapefiles_creator.py /e/Data/MT_Datasets/WenPingJiang_EDI /e/Data/MT_Datasets/WenPingJiang_SHP2 # long time
-python mtpy/utils/shapefiles_creator.py /e/Data//MT_Datasets/GA_UA_edited_10s-10000s/ /e/Data//MT_Datasets/GA_UA_edited_10s-10000s_SHP2
 
 # EDI collection (surveys) properties: plot stations and create CSV files
 python mtpy/core/edi_collection.py data/edifiles/ /e/tmp0
