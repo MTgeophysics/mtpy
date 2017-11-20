@@ -185,7 +185,7 @@ class ShapeFilesCreator(EdiCollection):
         logger.debug("phase tensor values =: %s", pt)
 
         if len(pt)<1:
-            logger.info("No phase tensor for period ", period)
+            logger.warn("No phase tensor for the period %s for any MT station", period)
             return None
 
         pdf = pd.DataFrame(pt)
@@ -565,7 +565,12 @@ if __name__ == "__main__":
     # edifiles2 = edifiles[0:-1:2]
     shp_maker = ShapeFilesCreator(edifiles, path2out)
 
-    for aper in shp_maker.all_unique_periods:  # ascending order short to long periods
+    shp_maker.create_phase_tensor_shp_by_period(999.99) # nothing created for non-existent peri
+
+    min_period = shp_maker.all_unique_periods[0]
+    max_period = shp_maker.all_unique_periods[-1]
+    for aper in (min_period, max_period):
+    # for aper in shp_maker.all_unique_periods:  # ascending order: from short to long periods
         # shp_maker.create_phase_tensor_shp_by_period(2.85)
         shp_maker.create_phase_tensor_shp_by_period(aper)
 

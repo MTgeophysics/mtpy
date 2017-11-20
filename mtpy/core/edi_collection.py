@@ -302,7 +302,7 @@ class EdiCollection(object):
 
                 pt_dict_list.append(pt_dict)
             else:
-                print("Skip !!! the period %s is NOT found for this station %s" %(plot_per, mt_obj.station))
+                logger.warn(" the period %s is NOT found for this station %s. Skipping!!!" %(plot_per, mt_obj.station))
 
 
         return pt_dict_list
