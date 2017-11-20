@@ -13,8 +13,10 @@ import os
 
 import numpy as np
 
-from .exception import ModEMError
+from mtpy.utils.mtpylog import MtPyLog
+from .exception import CovarianceError
 from .model import Model
+
 try:
     from evtk.hl import gridToVTK
 except ImportError:
@@ -31,6 +33,7 @@ class Covariance(object):
     """
 
     def __init__(self, grid_dimensions=None, **kwargs):
+        self._logger = MtPyLog().get_mtpy_logger(self.__class__.__name__)
 
         self.grid_dimensions = grid_dimensions
         self.smoothing_east = 0.3
@@ -68,7 +71,7 @@ class Covariance(object):
 
     def write_covariance_file(self, cov_fn=None, save_path=None,
                               cov_fn_basename=None, model_fn=None,
-                              sea_water=0.3, air=1e12):
+                              sea_water=0.3, air=1e12):  #
         """
         write a covariance file
         """
@@ -83,13 +86,14 @@ class Covariance(object):
 
             print 'Reading {0}'.format(model_fn)
             self.grid_dimensions = mod_obj.res_model.shape
-            self.mask_arr = np.ones_like(mod_obj.res_model)
+            if self.mask_arr is None:
+                self.mask_arr = np.ones_like(mod_obj.res_model)
             self.mask_arr[np.where(mod_obj.res_model >= air * .9)] = 0
             self.mask_arr[np.where((mod_obj.res_model <= sea_water * 1.1) &
                                    (mod_obj.res_model >= sea_water * .9))] = 9
 
         if self.grid_dimensions is None:
-            raise ModEMError('Grid dimensions are None, input as (Nx, Ny, Nz)')
+            raise CovarianceError('Grid dimensions are None, input as (Nx, Ny, Nz)')
 
         if cov_fn is not None:
             self.cov_fn = cov_fn
@@ -100,14 +104,11 @@ class Covariance(object):
                 self.cov_fn_basename = cov_fn_basename
             self.cov_fn = os.path.join(self.save_path, self.cov_fn_basename)
 
-        clines = [self._header_str]
-        clines.append('\n\n')
+        clines = [self._header_str, '\n\n', ' {0:<10}{1:<10}{2:<10}\n'.format(self.grid_dimensions[0],
+                                                                              self.grid_dimensions[1],
+                                                                              self.grid_dimensions[2]), '\n']
 
         # --> grid dimensions
-        clines.append(' {0:<10}{1:<10}{2:<10}\n'.format(self.grid_dimensions[0],
-                                                        self.grid_dimensions[1],
-                                                        self.grid_dimensions[2]))
-        clines.append('\n')
 
         # --> smoothing in north direction
         n_smooth_line = ''
@@ -157,14 +158,14 @@ class Covariance(object):
         cfid.writelines(clines)
         cfid.close()
 
-        print 'Wrote covariance file to {0}'.format(self.cov_fn)
+        self._logger.info('Wrote covariance file to {0}'.format(self.cov_fn))
 
     def read_cov_file(self, cov_fn):
         """
         read a covariance file
         """
         if not os.path.isfile(cov_fn):
-            raise ModEMError('{0} not found, check path'.format(cov_fn))
+            raise CovarianceError('{0} not found, check path'.format(cov_fn))
 
         self.cov_fn = cov_fn
         self.save_path = os.path.dirname(self.cov_fn)
@@ -185,12 +186,10 @@ class Covariance(object):
                 line_list = line.strip().split()
                 if len(line_list) == 0:
                     continue
-                elif len(line_list) == 1 and num_find == False and \
-                                line_list[0].find('.') == -1:
+                elif len(line_list) == 1 and not num_find and line_list[0].find('.') == -1:
                     self.smoothing_num = int(line_list[0])
                     num_find = True
-                elif len(line_list) == 1 and num_find == True and \
-                                line_list[0].find('.') == -1:
+                elif len(line_list) == 1 and num_find and line_list[0].find('.') == -1:
                     self.exceptions_num = int(line_list[0])
                 elif len(line_list) == 1 and line_list[0].find('.') >= 0:
                     self.smoothing_z = float(line_list[0])
@@ -200,11 +199,9 @@ class Covariance(object):
                     self.mask_arr = np.ones((nx, ny, nz), dtype=np.int)
                     self.smoothing_east = np.zeros(ny)
                     self.smoothing_north = np.zeros(nx)
-
                 elif len(line_list) == 2:
                     # starts at 1 but python starts at 0
                     index_00, index_01 = [int(ii) - 1 for ii in line_list]
-
                     count = 0
                 elif line_list[0].find('.') >= 0 and north_find == False:
                     self.smoothing_north = np.array(line_list, dtype=np.float)
@@ -212,7 +209,7 @@ class Covariance(object):
                 elif line_list[0].find('.') >= 0 and north_find == True:
                     self.smoothing_east = np.array(line_list, dtype=np.float)
                     east_find = True
-                elif north_find == True and east_find == True:
+                elif north_find and east_find:
                     line_list = np.array(line_list, dtype=np.int)
                     line_list = line_list.reshape((ny, 1))
 
@@ -260,8 +257,4 @@ class Covariance(object):
                   grid_z / 1000.,
                   cellData={'covariance_mask': self.mask_arr})
 
-        print '-' * 50
-        print '--> Wrote covariance file to {0}\n'.format(cov_vtk_fn)
-        print '=' * 26
-
-
+        self._logger.info('Wrote covariance file to {0}\n'.format(cov_vtk_fn))

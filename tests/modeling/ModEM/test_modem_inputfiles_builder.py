@@ -4,6 +4,8 @@
 Description:
     testing ModEM input files builder modules.
 
+    this test suite create all output for modem and compare the created files with the baseline files
+
 References:
     examples/tests/ModEM_build_inputfiles.py
 

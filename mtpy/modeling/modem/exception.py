@@ -25,3 +25,8 @@ class DataError(ModEMError):
 class ModelError(ModEMError):
     """ Raise for ModEM Model class specific exceptions"""
     pass
+
+
+class CovarianceError(ModEMError):
+    """ Raise for Covariance class specific exceptions"""
+    pass

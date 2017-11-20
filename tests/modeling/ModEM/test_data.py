@@ -23,6 +23,9 @@ plt.ion()  # enable interactive
 # end of patch
 
 class TestData(TestCase):
+    """
+    this test suite only validates the functionality of Data objects but does not verify the output files
+    """
     @classmethod
     def setUpClass(cls):
         # setup temp dir
