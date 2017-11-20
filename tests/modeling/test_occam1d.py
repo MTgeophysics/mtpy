@@ -47,7 +47,6 @@ class TestOccam1D(TestCase):
         cls._temp_dir = make_temp_dir(cls.__name__)
 
     def setUp(self):
-
         # set the dir to the output from the previously correct run
         self._expected_output_dir = os.path.join(SAMPLE_DIR, 'Occam1d')
 
@@ -55,7 +54,7 @@ class TestOccam1D(TestCase):
             self._expected_output_dir = None
 
         # directory to save created input files
-        self._output_dir = make_temp_dir('Occam1d', base_dir=self._temp_dir)
+        self._output_dir = make_temp_dir(self._testMethodName, base_dir=self._temp_dir)
 
     def _main_func(self, path2edifile):
         """
@@ -173,10 +172,7 @@ class TestOccam1D(TestCase):
                                    model_fn=modelfn,
                                    resp_te_fn=respfn,
                                    iter_te_fn=iterfn,
-                                   resp_tm_fn=respfn,
-                                   iter_tm_fn=iterfn,
-                                   depth_limits=(0, 1),
-
+                                   depth_limits=(0, 1)
                                    )
         pr.axm.set_xlim(1e-1, 1e3)
         pr.axr.set_ylim(1, 100)
@@ -187,4 +183,4 @@ class TestOccam1D(TestCase):
         tests.plt_wait(1)
         tests.plt_close()
 
-        assert (os.path.exists(p2file))
+        assert(os.path.exists(p2file))

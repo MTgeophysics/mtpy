@@ -70,30 +70,30 @@ def _clean_recreate(adir):
     os.mkdir(adir)
 
 
-def show_patcher(show_func):
-    """
-    patch the plt.show() if interactive is enabled to display and then close the plot after 1 second
-    so plt.show() will not block the script and the figure is still visible to the user
-    :param show_func:
-    :return:
-    """
-
-    def new_show_func(*args, **kwargs):
-        stuff = show_func(*args, **kwargs)
-        # wait 1 second for the image to show on screen
-        figManager = plt.gcf()
-        if figManager is not None:
-            canvas = figManager.canvas
-            # if canvas.figure.stale:
-            #     canvas.draw()
-            # show(block=False)
-            try:
-                canvas.start_event_loop(1)  # wait time = 1
-            except NotImplementedError:
-                pass
-            finally:
-                pass
-        plt.close()
-        return stuff
-
-    return new_show_func if plt.isinteractive() else show_func
+# def show_patcher(show_func):
+#     """
+#     patch the plt.show() if interactive is enabled to display and then close the plot after 1 second
+#     so plt.show() will not block the script and the figure is still visible to the user
+#     :param show_func:
+#     :return:
+#     """
+#
+#     def new_show_func(*args, **kwargs):
+#         stuff = show_func(*args, **kwargs)
+#         # wait 1 second for the image to show on screen
+#         figManager = plt.gcf()
+#         if figManager is not None:
+#             canvas = figManager.canvas
+#             # if canvas.figure.stale:
+#             #     canvas.draw()
+#             # show(block=False)
+#             try:
+#                 canvas.start_event_loop(1)  # wait time = 1
+#             except NotImplementedError:
+#                 pass
+#             finally:
+#                 pass
+#         plt.close()
+#         return stuff
+#
+#     return new_show_func if plt.isinteractive() else show_func

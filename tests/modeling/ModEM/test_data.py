@@ -9,14 +9,15 @@ import matplotlib.pyplot as plt
 from examples.create_modem_input import select_periods
 from mtpy.modeling.modem import Data
 # patch that changes the matplotlib behaviour
-from tests import make_temp_dir
-from tests.modeling import show_patcher
+from tests import make_temp_dir, plt_wait, plt_close
+
+# from tests.modeling import show_patcher
 
 plt.ion()  # enable interactive
 # plt.ioff()  # disable interactive, which will also disable this patch
 
 
-plt.show = show_patcher(plt.show)
+# plt.show = show_patcher(plt.show)
 
 
 # end of patch
@@ -40,6 +41,10 @@ class TestData(TestCase):
         )
         if not os.path.isdir(self._expected_output_dir):
             self._expected_output_dir = None
+
+    def tearDown(self):
+        plt_wait(1)
+        plt_close('all')
 
 
 edi_paths = [
