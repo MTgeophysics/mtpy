@@ -3,8 +3,7 @@ import os
 from unittest import TestCase
 
 from examples.create_modem_input import select_periods
-from mtpy.modeling.modem import Data
-from mtpy.modeling.modem_model import Model
+from mtpy.modeling.modem import Data, Model
 from tests import plt_close, make_temp_dir
 
 
@@ -65,7 +64,8 @@ def _test_gen(index, edi_path):
         datob.write_data_file(save_path=self._output_dir)
 
         # create mesh grid model object
-        model = Model(Data=datob,
+        model = Model(station_object=datob.station_locations,
+                      Data=datob,
                       epsg=epsg_code,
                       cell_size_east=10000, cell_size_north=10000,  # GA_VIC
                       pad_north=8,  # number of padding cells in each of the north and south directions

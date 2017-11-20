@@ -186,7 +186,9 @@ class TestOccam2D(TestCase):
                                       dpi=300,  # resolution of figure
                                       fig_aspect=0.5,  # aspect ratio between horizontal and vertical scale
                                       ylimits=(0, 10),  # depth limits
-                                      stationid=(-1, 3))  # index of station name to plot
+                                      stationid=(-1, 3),  # index of station name to plot
+                                      plot_yn='n')
+            plotm.plot()
             if save:
                 plotm.save_figure(
                     os.path.join(savepath, outfilename + '_resmodel.png'),

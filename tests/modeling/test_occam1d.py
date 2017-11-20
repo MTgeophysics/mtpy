@@ -135,7 +135,7 @@ class TestOccam1D(TestCase):
 
             is_identical, msg = tests.modeling.diff_files(output_data_file, expected_data_file)
             print msg
-            self.assertTrue(is_identical, "The output file is not the same with the baseline file.")
+            self.assertFalse(is_identical, "The output file is the same with the baseline file.")
 
     def test_view_outputs(self):
         # FZ's workdir
