@@ -12,10 +12,16 @@ ModEM
 
 __all__ = ['ModEMError', 'DataError']
 
+
 class ModEMError(Exception):
     pass
 
 
 class DataError(ModEMError):
-    """Raise for ModEM Data class specific exception"""
+    """Raise for ModEM Data class specific exceptions"""
+    pass
+
+
+class ModelError(ModEMError):
+    """ Raise for ModEM Model class specific exceptions"""
     pass
