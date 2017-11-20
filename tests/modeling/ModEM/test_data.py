@@ -8,7 +8,7 @@ from unittest import TestCase
 import matplotlib.pyplot as plt
 
 from examples.create_modem_input import select_periods
-from mtpy.modeling.modem_data import Data
+from mtpy.modeling.modem import Data
 # patch that changes the matplotlib behaviour
 from tests import make_temp_dir
 from tests.modeling import show_patcher
@@ -56,18 +56,20 @@ epsg_code = 28354
 epsg_code = 3112
 
 error_types = [
-    ('floor', 'floor', None),
-    ('value', 'value', None),
-    ('egbert', 'egbert', None),
-    ('floor_egbert', 'floor_egbert', None),
-    ('stddev', 'stddev', None),
-    ('sqr', 'sqr', None),
-    ('meansqr', 'meansqr', None),
-    ('floor_with_zxy_sqr', 'floor', {'zxy': 'sqr'})
+    # (test_name, error_type_tipper, error_tpye_z, component_error_type)
+    ('abs_floor',         'abs',   'floor',         None),
+    ('floor_egbert',      'floor', 'egbert',        None),
+    ('abs_egbert_floor',  'abs',   'egbert_floor',  None),
+    ('floor_mean_od',     'floor', 'mean_od',       None),
+    ('abs_mean_od_floor', 'abs',   'mean_od_floor', None),
+    ('floor_eigen',       'floor', 'eigen',         None),
+    ('abs_eigen_floor',   'abs',   'eigen_floor',   None),
+    ('floor_median',      'floor', 'median',        None),
+    ('abs_median_floor',  'abs',   'median_floor',  None)
 ]
 
 
-def _test_gen(index, edi_path, error_type, comp_error_type):
+def _test_gen(edi_path, error_type_z, error_type_tipper, comp_error_type):
     """
     generate list of tests for the given edi path
     :param index:
@@ -87,7 +89,8 @@ def _test_gen(index, edi_path, error_type, comp_error_type):
                      inv_mode='1',
                      period_list=period_list,
                      epsg=epsg_code,
-                     error_type=error_type,
+                     error_type_tipper=error_type_tipper,
+                     error_type_z=error_type_z,
                      comp_error_type=comp_error_type,
                      error_floor=10)
         datob.write_data_file(save_path=self._output_dir)
@@ -124,10 +127,10 @@ def _test_gen(index, edi_path, error_type, comp_error_type):
 
 
 # generate tests
-for index, edi_path in enumerate(edi_paths):
-    for name, error_type, comp_error_type in error_types:
-        test_func = _test_gen(index, edi_path, error_type, comp_error_type)
-        test_func.__name__ = "test_{}_{}_{}".format(index + 1, os.path.basename(edi_path), name)
+for edi_path in edi_paths:
+    for name, error_type_tipper, error_type_z, comp_error_type in error_types:
+        test_func = _test_gen(edi_path, error_type_tipper, error_type_z, comp_error_type)
+        test_func.__name__ = "test_{}_{}".format(os.path.basename(edi_path), name)
         setattr(TestData, test_func.__name__, test_func)
 
 if 'test_func' in globals():

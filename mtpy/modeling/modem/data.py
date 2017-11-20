@@ -18,6 +18,7 @@ import numpy as np
 from mtpy.core import mt as mt, z as mtz
 from mtpy.modeling import ws3dinv as ws
 from mtpy.utils import gis_tools as gis_tools
+from mtpy.utils.decorator import deprecated
 from mtpy.utils.mtpylog import MtPyLog
 
 from .exception import ModEMError, DataError
@@ -105,6 +106,7 @@ class Data(object):
                                            error_value_z * mean([Zxy, Zyx])
                                 * 'eigen' sets error to
                                           error_value_z * eigenvalues(Z[ii])
+                                * 'median'
 
 
     error_value_z            percentage to multiply Z by to set error
@@ -480,7 +482,48 @@ class Data(object):
                               fset=_set_rotation_angle,
                               doc="""Rotate data assuming N=0, E=90""")
 
-    def fill_data_array(self):
+    def _initialise_empty_data_array(self, stationlocations, period_list,
+                                     location_type='LL', stationnames=None):
+        """
+        create an empty data array to create input files for forward modelling
+        station locations is an array containing x,y coordinates of each station
+        (shape = (number_of_stations,2))
+        period_list = list of periods to model
+        location_type = 'LL' or 'EN' - longitude/latitude or easting/northing
+
+        """
+        self.period_list = period_list.copy()
+        nf = len(self.period_list)
+        self._set_dtype((nf, 2, 2), (nf, 1, 2))
+        self.data_array = np.zeros(len(stationlocations), dtype=self._dtype)
+        if location_type == 'LL':
+            self.data_array['lon'] = stationlocations[:, 0]
+            self.data_array['lat'] = stationlocations[:, 1]
+        else:
+            self.data_array['east'] = stationlocations[:, 0]
+            self.data_array['north'] = stationlocations[:, 1]
+
+            # set non-zero values to array (as zeros will be deleted)
+        if self.inv_mode in '12':
+            self.data_array['z'][:] = 100. + 100j
+            self.data_array['z_err'][:] = 1e15
+        if self.inv_mode == '1':
+            self.data_array['tip'][:] = 0.1 + 0.1j
+            self.data_array['tip_err'][:] = 1e15
+
+        # set station names
+        if stationnames is not None:
+            if len(stationnames) != len(stationnames):
+                stationnames = None
+
+        if stationnames is None:
+            stationnames = ['st%03i' %
+                            ss for ss in range(len(stationlocations))]
+        self.data_array['station'] = stationnames
+
+        self.get_relative_station_locations()
+
+    def fill_data_array(self, new_edi_dir=None, use_original_freq=False):
         """
         fill the data array from mt_dict
 
@@ -503,7 +546,7 @@ class Data(object):
         rel_distance = True
         for ii, s_key in enumerate(sorted(self.mt_dict.keys())):
             mt_obj = self.mt_dict[s_key]
-            if d_array is True:
+            if d_array:
                 try:
                     d_index = np.where(d_arr_copy['station'] == s_key)[0][0]
                     self.data_array[ii]['station'] = s_key
@@ -516,7 +559,7 @@ class Data(object):
                     self.data_array[ii]['rel_north'] = d_arr_copy[d_index]['rel_north']
                     self.data_array[:]['zone'] = d_arr_copy[d_index]['zone']
                 except IndexError:
-                    print('Could not find {0} in data_array'.format(s_key))
+                    self._logger.warn('Could not find {0} in data_array'.format(s_key))
             else:
                 self.data_array[ii]['station'] = mt_obj.station
                 self.data_array[ii]['lat'] = mt_obj.lat
@@ -527,7 +570,7 @@ class Data(object):
                 try:
                     self.data_array[ii]['rel_east'] = mt_obj.grid_east
                     self.data_array[ii]['rel_north'] = mt_obj.grid_north
-                    rel_distance = False
+                    rel_distance = False  # YG: should rel_distance = True here?
                 except AttributeError:
                     pass
 
@@ -537,27 +580,93 @@ class Data(object):
                 (self.period_list >= 1. / mt_obj.Z.freq.max()) &
                 (self.period_list <= 1. / mt_obj.Z.freq.min()))]
 
-            interp_z, interp_t = mt_obj.interpolate(1. / interp_periods)
-            for kk, ff in enumerate(interp_periods):
-                jj = np.where(self.period_list == ff)[0][0]
-                self.data_array[ii]['z'][jj] = interp_z.z[kk, :, :]
-                self.data_array[ii]['z_err'][jj] = interp_z.z_err[kk, :, :]
+            # if specified, apply a buffer so that interpolation doesn't
+            # stretch too far over periods
+            if type(self.period_buffer) in [float, int]:
+                interp_periods_new = []
+                dperiods = 1. / mt_obj.Z.freq
+                for iperiod in interp_periods:
+                    # find nearest data period
+                    difference = np.abs(iperiod - dperiods)
+                    nearestdperiod = dperiods[difference == np.amin(difference)][0]
+                    if max(nearestdperiod / iperiod, iperiod / nearestdperiod) < self.period_buffer + 1.:
+                        interp_periods_new.append(iperiod)
+
+                interp_periods = np.array(interp_periods_new)
+
+            # FZ: sort in order
+            interp_periods = np.sort(interp_periods)
+            self._logger.debug("station_name and its original period: %s %s %s", mt_obj.station, len(mt_obj.Z.freq),
+                         1.0 / mt_obj.Z.freq)
+            self._logger.debug("station_name and interpolation period: %s %s %s", mt_obj.station, len(interp_periods),
+                         interp_periods)
+
+            # default: use_original_freq = True, each MT station edi file will use it's own frequency-filtered.
+            # no new freq in the output modem.dat file. select those freq of mt_obj according to interp_periods
+            if use_original_freq:
+                interp_periods = self.filter_periods(mt_obj, interp_periods)
+                self._logger.debug("station_name and selected/filtered periods: %s, %s, %s", mt_obj.station,
+                             len(interp_periods), interp_periods)
+                # in this case the below interpolate_impedance_tensor function will degenerate into a same-freq set.
+
+            if len(interp_periods) > 0:  # not empty
+                interp_z, interp_t = mt_obj.interpolate(1. / interp_periods)  # ,bounds_error=False)
+#                interp_z, interp_t = mt_obj.interpolate(1./interp_periods)
+                for kk, ff in enumerate(interp_periods):
+                    jj = np.where(self.period_list == ff)[0][0]
+                    self.data_array[ii]['z'][jj] = interp_z.z[kk, :, :]
+                    self.data_array[ii]['z_err'][jj] = interp_z.z_err[kk, :, :]
 
                 if mt_obj.Tipper.tipper is not None:
                     self.data_array[ii]['tip'][jj] = interp_t.tipper[kk, :, :]
                     self.data_array[ii]['tip_err'][jj] = \
                         interp_t.tipper_err[kk, :, :]
 
+                # FZ: try to output a new edi files. Compare with original edi?
+                if new_edi_dir is not None and os.path.isdir(new_edi_dir):
+                    # new_edifile = os.path.join(new_edi_dir, mt_obj.station + '.edi')
+                    mt_obj.write_mt_file(
+                        save_dir=new_edi_dir,
+                        fn_basename=mt_obj.station,
+                        file_type='.edi',
+                        new_Z_obj=interp_z,
+                        new_Tipper_obj=interp_t)
+            else:
+                pass
+
         if rel_distance is False:
             self.get_relative_station_locations()
 
-    def _set_station_locations(self, station_obj):
+        return
+
+    @staticmethod
+    def filter_periods(mt_obj, per_array):
+        """Select the periods of the mt_obj that are in per_array.
+        used to do original freq inversion.
+
+        :param mt_obj:
+        :param per_array:
+        :return: array of selected periods (subset) of the mt_obj
+        """
+
+        mt_per = 1.0 / mt_obj.Z.freq
+
+        new_per = [p for p in mt_per if any([np.isclose(p, p2, 1.e-8) for p2 in per_array])]
+        # for p in mt_per:
+        #     for p2 in per_array:
+        #         # if abs(p - p2) < 0.00000001:  # Be aware of floating error if use ==
+        #         if np.isclose(p, p2, 1.e-8):
+        #             new_per.append(p)
+
+        return np.array(new_per)
+
+    def _set_station_locations(self, station_locations):
         """
         take a station_locations array and populate data_array
         """
-
-        if station_obj is not None:
-            station_locations = station_obj.station_locations
+        # YG: ???? where is station_obj, this probably due to the api change, when this function use to take station_obj as an argument
+        # if station_obj is not None:
+        #     station_locations = station_obj.station_locations
 
         if self.data_array is None:
             self._set_dtype((len(self.period_list), 2, 2),
@@ -579,7 +688,7 @@ class Data(object):
                     d_index = np.where(self.data_array['station'] ==
                                        s_arr['station'])[0][0]
                 except IndexError:
-                    print('Could not find {0} in data_array'.format(s_arr['station']))
+                    self._logger.warn('Could not find {0} in data_array'.format(s_arr['station']))
                     d_index = None
 
                 if d_index is not None:
@@ -625,6 +734,8 @@ class Data(object):
             self.data_array['tip_inv_err'][t_index] = self.error_value_tipper
         elif 'abs' in self.error_type_tipper:
             self.data_array['tip_inv_err'][:] = self.error_value_tipper
+        else:
+            raise DataError("Unsupported error type (tipper): {}".format(self.error_type_tipper))
 
         # compute error for z
         err_value = self.error_value_z / 100.
@@ -664,7 +775,7 @@ class Data(object):
                         err = err_value * d.flatten()[nz].mean()
 
                 else:
-                    raise NameError('{0} not understood'.format(self.error_type_z))
+                    raise DataError('error type (z) {0} not understood'.format(self.error_type_z))
 
                 self.data_array['z_inv_err'][ss, ff, :, :] = err
 
@@ -675,10 +786,9 @@ class Data(object):
 
     def write_data_file(self, save_path=None, fn_basename=None,
                         rotation_angle=None, compute_error=True, fill=True,
-                        elevation=False):
+                        elevation=False, use_original_freq=False):
         """
         write data file for ModEM
-
         will save file as save_path/fn_basename
 
         Arguments:
@@ -732,7 +842,7 @@ class Data(object):
             # get relative station locations in grid coordinates
             self.get_relative_station_locations()
 
-        if elevation is False:
+        if not elevation:
             self.data_array['elev'][:] = 0.0
 
         dlines = []
@@ -741,27 +851,38 @@ class Data(object):
                 dlines.append(self.get_header_string(self.error_type_z,
                                                      self.error_value_z,
                                                      self.rotation_angle))
+                dlines.append(self.header_string)
+                dlines.append('> {0}\n'.format(inv_mode))
+                dlines.append('> exp({0}i\omega t)\n'.format(self.wave_sign_impedance))
+                dlines.append('> {0}\n'.format(self.units))
+
                 nsta = len(np.nonzero(np.abs(self.data_array['z']).sum(axis=(1, 2, 3)))[0])
                 nper = len(np.nonzero(np.abs(self.data_array['z']).sum(axis=(0, 2, 3)))[0])
             elif 'vertical' in inv_mode.lower():
                 dlines.append(self.get_header_string(self.error_type_tipper,
                                                      self.error_value_tipper,
-                                                     self.rotation_angle))
+                                                         self.rotation_angle))
+                dlines.append(self.header_string)
+                dlines.append('> {0}\n'.format(inv_mode))
+                dlines.append('> exp({0}i\omega t)\n'.format(self.wave_sign_tipper))
+                dlines.append('> []\n')
                 nsta = len(np.nonzero(np.abs(self.data_array['tip']).sum(axis=(1, 2, 3)))[0])
                 nper = len(np.nonzero(np.abs(self.data_array['tip']).sum(axis=(0, 2, 3)))[0])
             else:
                 # maybe error here
                 raise NotImplementedError("inv_mode {} is not supproted".format(inv_mode))
 
-            dlines.append(self.header_string)
-            dlines.append('> {0}\n'.format(inv_mode))
+            # YG: moved the commented lines to the if-elif-else statement above to reduce number of times of string comparesions
+            # dlines.append(self.header_string)
+            # dlines.append('> {0}\n'.format(inv_mode))
+            #
+            # if inv_mode.find('Impedance') > 0:
+            #     dlines.append('> exp({0}i\omega t)\n'.format(self.wave_sign_impedance))
+            #     dlines.append('> {0}\n'.format(self.units))
+            # elif inv_mode.find('Vertical') >= 0:
+            #     dlines.append('> exp({0}i\omega t)\n'.format(self.wave_sign_tipper))
+            #     dlines.append('> []\n')
 
-            if inv_mode.find('Impedance') > 0:
-                dlines.append('> exp({0}i\omega t)\n'.format(self.wave_sign_impedance))
-                dlines.append('> {0}\n'.format(self.units))
-            elif inv_mode.find('Vertical') >= 0:
-                dlines.append('> exp({0}i\omega t)\n'.format(self.wave_sign_tipper))
-                dlines.append('> []\n')
             dlines.append('> 0\n')  # oriention, need to add at some point
             dlines.append('> {0:>10.6f} {1:>10.6f}\n'.format(
                 self.center_point.lat[0], self.center_point.lon[0]))
@@ -835,8 +956,54 @@ class Data(object):
         with open(self.data_fn, 'w') as dfid:
             dfid.writelines(dlines)
 
-        print('Wrote ModEM data file to {0}'.format(self.data_fn))
+        self._logger.info('Wrote ModEM data file to {0}'.format(self.data_fn))
         return self.data_fn
+
+    @deprecated("error type from GA implementation, not fully tested yet")
+    def _impedance_components_error_meansqr(self, c_key, ss, z_ii, z_jj):
+        """
+        calculate the mean square of errors of a given component over all frequencies for a given station
+        :param c_key:
+        :param ss:
+        :param z_ii:
+        :param z_jj:
+        :return:
+        """
+        abs_err = np.mean(np.square(self.data_array[ss][c_key + '_err'][:, z_ii, z_jj]))
+        return abs_err
+
+    @deprecated("error type from GA implementation, not fully tested yet")
+    def _impedance_components_error_sqr(self, c_key, ff, ss, z_ii, z_jj):
+        """
+        use the square of the error of a given frequency and a given component at the given station
+        :param c_key:
+        :param ff:
+        :param ss:
+        :param z_ii:
+        :param z_jj:
+        :return:
+        """
+        return np.square(self.data_array[ss][c_key + '_err'][ff, z_ii, z_jj])
+
+    @deprecated("error type from GA implementation, not fully tested yet")
+    def _impedance_components_error_stddev(self, c_key, ss, z_ii, z_jj):
+        """
+        calculate the stddev across all frequencies on a given component
+        :param c_key:
+        :param ss:
+        :param z_ii:
+        :param z_jj:
+        :return:
+        """
+        # errors = [self.data_array[ss][c_key + '_err'][freq, z_ii, z_jj] for freq in range(self.data_array['z'].shape[1])]
+        # print errors
+        # abs_err = np.std(errors)
+        # print abs_err
+        errors = self.data_array[ss][c_key + '_err'][:, z_ii, z_jj]
+        # print errors
+        abs_err = np.std(errors)
+        # print abs_err
+        return abs_err
 
     def convert_ws3dinv_data_file(self, ws_data_fn, station_fn=None,
                                   save_path=None, fn_basename=None):
@@ -1000,9 +1167,15 @@ class Data(object):
 
         return ws_data.data_fn, station_info.station_fn
 
-    def read_data_file(self, data_fn=None):
-        """
-        read ModEM data file
+    def read_data_file(self, data_fn=None, center_utm=None):
+        """ Read ModEM data file
+
+       inputs:
+        data_fn = full path to data file name
+        center_utm = option to provide real world coordinates of the center of
+                     the grid for putting the data and model back into
+                     utm/grid coordinates, format [east_0, north_0, z_0]
+
 
         Fills attributes:
             * data_array
@@ -1017,9 +1190,10 @@ class Data(object):
             self.fn_basename = os.path.basename(self.data_fn)
 
         if self.data_fn is None:
-            raise ModEMError('data_fn is None, enter a data file to read.')
+            raise DataError('data_fn is None, enter a data file to read.')
         elif os.path.isfile(self.data_fn) is False:
-            raise ModEMError('Could not find {0}, check path'.format(self.data_fn))
+            raise DataError(
+                'Could not find {0}, check path'.format(self.data_fn))
 
         dfid = file(self.data_fn, 'r')
         dlines = dfid.readlines()
@@ -1105,7 +1279,7 @@ class Data(object):
             if h_str.find('_deg') > 0:
                 try:
                     self._rotation_angle = float(h_str[0:h_str.find('_deg')])
-                    print('Set rotation angle to {0:.1f} '.format(
+                    self._logger.info('Set rotation angle to {0:.1f} '.format(
                         self._rotation_angle) + 'deg clockwise from N')
                 except ValueError:
                     pass
@@ -1257,8 +1431,7 @@ class Data(object):
                     self.station_locations.elev / 1000.,
                     data={'elevation': self.station_locations.elev})
 
-        print('--> Wrote station file to {0}'.format(vtk_fn))
-        print('-' * 50)
+        self._logger.info('Wrote station file to {0}'.format(vtk_fn))
 
     def get_parameters(self):
         """
