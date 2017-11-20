@@ -14,13 +14,15 @@ import os
 import sys
 import numpy as np
 from matplotlib import pyplot as plt
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 from scipy import stats as stats, interpolate as spi
 
 from mtpy.modeling import ws3dinv as ws
 from mtpy.utils import mesh_tools as mtmesh, gis_tools as gis_tools, filehandling as mtfh
 from mtpy.utils.decorator import deprecated
+from mtpy.utils.mtpylog import MtPyLog
 
-from .exception import ModEMError
+from .exception import ModEMError, ModelError
 
 try:
     from evtk.hl import gridToVTK
@@ -871,7 +873,7 @@ class Model(object):
                 self.save_path = os.getcwd()
                 self.model_fn = os.path.join(self.save_path,
                                              self.model_fn_basename)
-            elif os.path.isdir(self.save_path) == True:
+            elif os.path.isdir(self.save_path):
                 self.model_fn = os.path.join(self.save_path,
                                              self.model_fn_basename)
             else:
@@ -950,7 +952,7 @@ class Model(object):
             ifid.write('{0:>9.3f}\n'.format(self.mesh_rotation_angle))
         ifid.close()
 
-        print 'Wrote file to: {0}'.format(self.model_fn)
+        self._logger.info('Wrote file to: {0}'.format(self.model_fn))
 
     def read_model_file(self, model_fn=None, shift_grid=False):
         """
@@ -1002,10 +1004,10 @@ class Model(object):
             self.model_fn = model_fn
 
         if self.model_fn is None:
-            raise ModEMError('model_fn is None, input a model file name')
+            raise ModelError('model_fn is None, input a model file name')
 
         if os.path.isfile(self.model_fn) is None:
-            raise ModEMError('Cannot find {0}, check path'.format(self.model_fn))
+            raise ModelError('Cannot find {0}, check path'.format(self.model_fn))
 
         self.save_path = os.path.dirname(self.model_fn)
 
@@ -1148,14 +1150,16 @@ class Model(object):
                   self.grid_z / 1000.,
                   cellData={'resistivity': self.res_model})
 
-        print '-' * 50
-        print '--> Wrote model file to {0}\n'.format(vtk_fn)
-        print '=' * 26
-        print '  model dimensions = {0}'.format(self.res_model.shape)
-        print '     * north         {0}'.format(self.nodes_north.size)
-        print '     * east          {0}'.format(self.nodes_east.size)
-        print '     * depth         {0}'.format(self.nodes_z.size)
-        print '=' * 26
+        self._logger.info('Wrote model file to {}'.format(vtk_fn))
+        self.print_model_file_summary()
+
+    def print_model_file_summary(self, file=sys.stdout):
+        print('=' * 26, file=file)
+        print('  model dimensions = {0}'.format(self.res_model.shape), file=file)
+        print('     * north         {0}'.format(self.nodes_north.size), file=file)
+        print('     * east          {0}'.format(self.nodes_east.size), file=file)
+        print('     * depth         {0}'.format(self.nodes_z.size), file=file)
+        print('=' * 26, file=file)
 
     def get_parameters(self):
         """
@@ -1435,7 +1439,7 @@ class Model(object):
 
         # calculate the number of elevation cells needed
         num_elev_cells = int((elev_max - elev_min) / elevation_cell)
-        print 'Number of elevation cells: {0}'.format(num_elev_cells)
+        self._logger.info('Number of elevation cells: {0}'.format(num_elev_cells))
 
         # find sea level if it is there
         if elev_min < 0:
@@ -1443,7 +1447,7 @@ class Model(object):
         else:
             sea_level_index = num_elev_cells - 1
 
-        print 'Sea level index is {0}'.format(sea_level_index)
+        self._logger.info('Sea level index is {0}'.format(sea_level_index))
 
         # make an array of just the elevation for the model
         # north is first index, east is second, vertical is third
@@ -1614,7 +1618,7 @@ class Model(object):
                 if surfacename == 'topography':
                     iisea = np.where((gcz <= surfacedata[j, i]) & (gcz > 0.))[0]
                     self.res_model[j, i, iisea] = 0.3
-                print j, i, ii
+                # print j, i, ii
 
     def interpolate_elevation2(self, surfacefile=None, surface=None, surfacename=None,
                                method='nearest'):
@@ -1705,7 +1709,6 @@ class Model(object):
         # <type 'numpy.ndarray'>  (65, 92), 65 92: it's 2D image with cell index as pixels
         # np.savetxt('E:/tmp/elev_mg.txt', elev_mg, fmt='%10.5f')
 
-
         # get a name for surface
         if surfacename is None:
             if surfacefile is not None:
@@ -1741,7 +1744,6 @@ class Model(object):
         if self.n_airlayers is None or self.n_airlayers == 0:
             print("No air layers specified, so will not add air/topography !!!")
             print("Only bathymetry will be added below according to the topofile: sea-water low resistivity!!!")
-
 
         elif self.n_airlayers > 0:  # FZ: new logic, add equal blocksize air layers on top of the simple flat-earth grid
             # build air layers based on the inner core area
