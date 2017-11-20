@@ -24,13 +24,11 @@ current error:
 # import section
 
 import os
-
-from mtpy.modeling.modem import Data, Model, Covariance
-import numpy as np
-
-import shutil
 from unittest import TestCase
 
+import numpy as np
+
+from mtpy.modeling.modem import Data, Model, Covariance
 from tests import EDI_DATA_DIR, AUS_TOPO_FILE, SAMPLE_DIR, make_temp_dir
 from tests.modeling import diff_files
 

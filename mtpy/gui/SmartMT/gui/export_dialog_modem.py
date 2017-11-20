@@ -21,7 +21,6 @@ from qtpy.QtGui import QDoubleValidator
 from qtpy.QtWidgets import QWizard, QFileDialog, QDialog, QMessageBox
 
 from examples.create_modem_input import select_periods
-from mtpy.modeling.modem import Data
 from mtpy.constants import epsg_dict
 from mtpy.gui.SmartMT.Components.PlotParameter import FrequencySelection, Rotation
 from mtpy.gui.SmartMT.gui.busy_indicators import ProgressBar
@@ -29,7 +28,7 @@ from mtpy.gui.SmartMT.gui.export_dialog import PreviewDialog
 from mtpy.gui.SmartMT.gui.matplotlib_imabedding import MathTextLabel
 from mtpy.gui.SmartMT.ui_asset.wizard_export_modem import Ui_Wizard_esport_modem
 from mtpy.gui.SmartMT.utils.validator import FileValidator, DirectoryValidator
-from mtpy.modeling.modem_covariance import Covariance
+from mtpy.modeling.modem import Data, Covariance
 from mtpy.modeling.modem_model import Model
 from mtpy.utils.mtpylog import MtPyLog
 
