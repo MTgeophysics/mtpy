@@ -18,12 +18,14 @@ Developer:      fei.zhang@ga.gov.au
 LastUpdate:     08/09/2017
 """
 
-import os, sys
 import csv
+import os
+import sys
 
 import mtpy.analysis.pt as pt
+from legacy.modeling import modem_data
 from mtpy.core import z
-from mtpy.modeling import modem_data
+
 
 class ModemDataToPhaseTensor(object):
 

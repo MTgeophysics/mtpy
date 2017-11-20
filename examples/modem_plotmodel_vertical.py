@@ -10,7 +10,7 @@ import os.path as op
 import matplotlib.pyplot as plt
 import numpy as np
 
-import mtpy.modeling.modem_data as md
+import legacy.modeling.modem_data as md
 import mtpy.modeling.modem_model as mm
 
 # INPUTS #

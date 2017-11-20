@@ -1,10 +1,9 @@
 import glob
 import os
-import shutil
 from unittest import TestCase
 
 from examples.create_modem_input import select_periods
-from mtpy.modeling.modem_data import Data
+from mtpy.modeling.modem import Data
 from mtpy.modeling.modem_model import Model
 from tests import plt_close, make_temp_dir
 

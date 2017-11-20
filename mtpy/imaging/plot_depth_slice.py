@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.ticker import MultipleLocator
 
-from mtpy.modeling.modem_data import Data
+from mtpy.modeling.modem import Data
 from mtpy.modeling.modem_model import Model
 
 try:

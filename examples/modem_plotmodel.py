@@ -5,12 +5,14 @@ Created on Tue Oct 04 13:13:29 2016
 @author: u64125
 """
 
-import mtpy.modeling.modem_data as md
-import mtpy.modeling.modem_model as mm
-import os.path as op
 import os
+import os.path as op
+
 import matplotlib.pyplot as plt
 import numpy as np
+
+import legacy.modeling.modem_data as md
+import mtpy.modeling.modem_model as mm
 
 workdir = r'C:\Git\mtpy\examples\data'
 modeldir = op.join(workdir, 'ModEM_files')

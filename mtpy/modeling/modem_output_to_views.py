@@ -26,7 +26,7 @@ import numpy as np
 from matplotlib.ticker import MultipleLocator
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
-from mtpy.modeling.modem_data import Data
+from legacy.modeling.modem_data import Data
 from mtpy.modeling.modem_model import Model
 from mtpy.utils.mtpylog import MtPyLog
 

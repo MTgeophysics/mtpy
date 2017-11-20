@@ -21,13 +21,11 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 import mtpy.modeling.elevation_util as elev_util
 import mtpy.modeling.ws3dinv as ws
+import mtpy.utils.calculator as mtcc
 import mtpy.utils.gis_tools
 import mtpy.utils.gocad as mtgocad
-import mtpy.utils.calculator as mtcc
-import mtpy.utils.latlon_utm_conversion as utm2ll
-from mtpy.modeling.modem_data import Data
+from legacy.modeling.modem_data import Data
 from mtpy.utils.mtpylog import MtPyLog
-
 
 try:
     from evtk.hl import gridToVTK, pointsToVTK

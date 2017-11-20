@@ -9,11 +9,12 @@ residuals class to contain RMS information
 """
 
 import os.path as op
+
 import numpy as np
 from numpy.lib import recfunctions
-from mtpy.modeling.modem_data import Data
 
 import mtpy.utils.gocad as mtgocad
+from legacy.modeling.modem_data import Data
 
 reload(mtgocad)
 try:

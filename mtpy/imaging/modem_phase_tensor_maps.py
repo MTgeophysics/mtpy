@@ -17,7 +17,7 @@ import mtpy.imaging.mtcolors as mtcl
 import mtpy.imaging.mtplottools as mtplottools
 import mtpy.modeling.ws3dinv as ws
 import mtpy.utils.exceptions as mtex
-from mtpy.modeling.modem_data import Data
+from mtpy.modeling.modem import Data
 from mtpy.modeling.modem_model import Model
 
 try:
