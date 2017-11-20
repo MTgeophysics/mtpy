@@ -2,8 +2,7 @@
 """
 Description:
 
-    This script creates shape files for MT datasets.
-    Phase Tensor, Tipper Real/Imag, MT-site locations, etc
+    Create shape files for Phase Tensor Ellipses, Tipper Real/Imag.
 
 
 CreationDate:   2017-03-06
@@ -11,6 +10,7 @@ Developer:      fei.zhang@ga.gov.au
 
 Revision History:
     LastUpdate:     10/11/2017   FZ fix bugs after the big merge
+    LastUpdate:     20/11/2017   change from freq to period filenames, allow to specify a period
 
 """
 
@@ -58,9 +58,10 @@ class ShapeFilesCreator(EdiCollection):
         super(ShapeFilesCreator,self).__init__(edilist=edifile_list, outdir=outdir)
         #python-3 syntax: super().__init__(edilist=edifile_list, outdir=outdir)
 
-        self.outputdir = outdir
+        # These attributes below are defined in the parent class.
+        # self.outputdir = outdir
         # self.all_periods = self._get_all_periods()
-        self.ptol = 0.05  # this param controls what freqs/periods are grouped together:
+        # self.ptol = 0.05  # this param controls what freqs/periods are grouped together:
         # 10% may result more double counting of freq/period data than 5%.
         # eg: E:\Data\MT_Datasets\WenPingJiang_EDI 18528 rows vs 14654 rows
 
@@ -107,7 +108,7 @@ class ShapeFilesCreator(EdiCollection):
         :return:
         """
         if dest_dir is None:
-            dest_dir = self.outputdir
+            dest_dir = self.outdir
 
         # summary csv file
         csvfname = os.path.join(dest_dir, "phase_tensor.csv")
@@ -173,13 +174,80 @@ class ShapeFilesCreator(EdiCollection):
         return pt_dict
 
 
-    def create_phase_tensor_shp(self, period, d_sites=1):
+    def create_phase_tensor_shp_by_period(self, period, ellipsize=0.02, target_epsg_code=4283 ):
         """
-        create phase tensor ellipses shape file correspond to MT period and every d_sites
+        create phase tensor ellipses shape file correspond to MT period
         :return: path_to_shapefile
         """
 
-        pass
+        pt = self.get_phase_tensor_by_period(period)
+
+        logger.debug("phase tensor values =: %s", pt)
+
+        if len(pt)<1:
+            logger.info("No phase tensor for period ", period)
+            return None
+
+        pdf = pd.DataFrame(pt)
+
+        logger.debug(pdf['period'])
+
+        mt_locations = [Point(xy) for xy in zip(pdf['lon'], pdf['lat'])]
+        # OR pdf['geometry'] = pdf.apply(lambda z: Point(z.lon, z.lat), axis=1)
+        # if you want to df = df.drop(['Lon', 'Lat'], axis=1)
+        crs = {'init': 'epsg:4326'}  # initial crs WGS80
+        crs = {'init': 'epsg:4283'}  # initial crs GDA94
+
+        geopdf = gpd.GeoDataFrame(pdf, crs=crs, geometry=mt_locations)
+
+        # make  pt_ellispes using polygons
+        phi_max_v = geopdf['phi_max'].max()  # the max of this group of ellipse
+
+        print(phi_max_v)
+
+        # points to trace out the polygon-ellipse
+
+        theta = np.arange(0, 2 * np.pi, np.pi / 30.)
+
+        azimuth = -np.deg2rad(geopdf['azimuth'])
+        width = ellipsize * (geopdf['phi_max'] / phi_max_v)
+        height = ellipsize * (geopdf['phi_min'] / phi_max_v)
+        x0 = geopdf['lon']
+        y0 = geopdf['lat']
+
+        # apply formula to generate ellipses
+
+        ellipse_list = []
+        for i in xrange(0, len(azimuth)):
+            x = x0[i] + height[i] * np.cos(theta) * np.cos(azimuth[i]) - \
+                width[i] * np.sin(theta) * np.sin(azimuth[i])
+            y = y0[i] + height[i] * np.cos(theta) * np.sin(azimuth[i]) + \
+                width[i] * np.sin(theta) * np.cos(azimuth[i])
+
+            polyg = Polygon(LinearRing([xy for xy in zip(x, y)]))
+
+            # print polyg  # an ellispe
+
+            ellipse_list.append(polyg)
+
+        geopdf = gpd.GeoDataFrame(geopdf, crs=crs, geometry=ellipse_list)
+
+        if target_epsg_code is None:
+            raise Exception("Must provide a target_epsg_code")
+        else:
+            geopdf.to_crs(epsg=target_epsg_code, inplace=True)
+            # world = world.to_crs({'init': 'epsg:3395'})
+            # world.to_crs(epsg=3395) would also work
+
+        # to shape file
+        shp_fname = 'Phase_Tensor_EPSG_%s_Period_%ss.shp' % (target_epsg_code, period)
+        path2shp = os.path.join(self.outdir, shp_fname)
+
+        logger.debug("To write to ESRI shp file %s", path2shp)
+        geopdf.to_file(path2shp, driver='ESRI Shapefile')
+
+        return geopdf
+
 
     def create_tipper_shp(self):
         """
@@ -481,11 +549,31 @@ def process_csv_folder(csv_folder, bbox_dict, target_epsg_code=4283):
 
     return
 
+###################################################################
+if __name__ == "__main__":
+
+    edidir = sys.argv[1]
+
+    edifiles = glob.glob(os.path.join(edidir, "*.edi"))
+
+    if len(sys.argv) > 2:
+        path2out = sys.argv[2]
+    else:
+        path2out = None
+
+    # filter the edi files here if desired, to get a subset:
+    # edifiles2 = edifiles[0:-1:2]
+    shp_maker = ShapeFilesCreator(edifiles, path2out)
+
+    for aper in shp_maker.all_unique_periods:  # ascending order short to long periods
+        # shp_maker.create_phase_tensor_shp_by_period(2.85)
+        shp_maker.create_phase_tensor_shp_by_period(aper)
+
 
 # ==================================================================
 # python mtpy/utils/shapefiles_creator.py data/edifiles /e/tmp
 # ==================================================================
-if __name__ == "__main__":
+if __name__ == "__main__999":
 
     edidir = sys.argv[1]
 

@@ -259,6 +259,55 @@ class EdiCollection(object):
 
         return myax2
 
+    def get_phase_tensor_by_period(self, period):
+        """
+        For a given MT period (s) value, compute the phase tensor tip etc.
+        :param period:
+        :return: dictionary pt_dict_list
+
+        pt_dict keys ['station', 'freq', 'lon', 'lat', 'phi_min', 'phi_max', 'azimuth', 'skew', 'n_skew', 'elliptic',
+                      'tip_mag_re', 'tip_mag_im', 'tip_ang_re', 'tip_ang_im']
+        """
+
+        pt_dict_list = []
+        plot_per = period
+        #plot_per = self.all_unique_periods[1]  # test first
+
+        print("The plot period is ", plot_per)
+
+        for mt_obj in self.mt_obj_list:
+            pt_dict = {}
+            p_index = [ff for ff, f2 in enumerate(1.0/mt_obj.Z.freq)
+                       if (f2 > plot_per * (1 - self.ptol)) and
+                       (f2 < plot_per * (1 + self.ptol))]
+
+            if len(p_index) >= 1:
+                p_index = p_index[0]
+                pt_dict['station']=mt_obj.station
+                pt_dict['period'] =plot_per
+                pt_dict['lon'] = mt_obj.lon
+                pt_dict['lat'] = mt_obj.lat
+
+                pt_dict['phi_min'] = mt_obj.pt.phimin[p_index]
+                pt_dict['phi_max'] = mt_obj.pt.phimax[p_index]
+                pt_dict['azimuth']= mt_obj.pt.azimuth[p_index]
+                pt_dict['skew'] = mt_obj.pt.beta[p_index]
+                pt_dict['n_skew'] = 2 * mt_obj.pt.beta[p_index]
+                pt_dict['elliptic'] = mt_obj.pt.ellipticity[p_index]
+
+                pt_dict['tip_mag_re']=0
+                pt_dict['tip_mag_im']=0
+                pt_dict['tip_ang_re']=0
+                pt_dict['tip_ang_im']=0
+
+                pt_dict_list.append(pt_dict)
+            else:
+                print("Skip !!! the period %s is NOT found for this station %s" %(plot_per, mt_obj.station))
+
+
+        return pt_dict_list
+
+
     def create_phase_tensor_csv(self, dest_dir, file_name="phase_tensor.csv"):
         """
         create phase tensor ellipse and tipper properties.
