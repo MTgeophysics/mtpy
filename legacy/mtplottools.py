@@ -14,11 +14,9 @@ from matplotlib.ticker import MultipleLocator, FormatStrFormatter
 import legacy.birrptools as brp
 import legacy.mttools as mt
 import legacy.old_z as Z
-
 import mtpy.utils.gis_tools
 
 reload(Z)
-import mtpy.utils.latlon_utm_conversion as utm2ll
 from matplotlib import colors
 from matplotlib import gridspec
 

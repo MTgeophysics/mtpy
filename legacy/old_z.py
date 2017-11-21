@@ -5,19 +5,16 @@ Created on Mon May 03 13:44:51 2010
 @author: Jared Peacock
 """
 
-import numpy as np
 import os
 
-import matplotlib.pyplot as plt
 import matplotlib.pylab as pylab
-from matplotlib.ticker import MultipleLocator, FormatStrFormatter
-import matplotlib.gridspec as gridspec
-from matplotlib.patches import Ellipse
-from matplotlib.colors import LinearSegmentedColormap, Normalize
+import matplotlib.pyplot as plt
 from matplotlib.colorbar import *
+from matplotlib.colors import LinearSegmentedColormap, Normalize
+from matplotlib.patches import Ellipse
+from matplotlib.ticker import MultipleLocator
 
 import mtpy.utils.gis_tools
-import mtpy.utils.latlon_utm_conversion as utm2ll
 
 # make a custom colormap to use for plotting
 ptcmapdict = {'red': ((0.0, 1.0, 1.0), (1.0, 1.0, 1.0)),

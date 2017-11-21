@@ -14,28 +14,29 @@ ModEM
 """
 
 import os
-import mtpy.core.z as mtz
-import mtpy.core.mt as mt
-import numpy as np
 
-import mtpy.utils.gis_tools
-import mtpy.utils.latlon_utm_conversion as utm2ll
-import mtpy.modeling.ws3dinv as ws
-import matplotlib.pyplot as plt
-from matplotlib.ticker import MultipleLocator, FormatStrFormatter
-from matplotlib.patches import Ellipse
-from matplotlib.colors import Normalize
-import matplotlib.colorbar as mcb
-import matplotlib.gridspec as gridspec
-import mtpy.imaging.mtplottools as mtplottools
-import matplotlib.widgets as widgets
-import matplotlib.colors as colors
 import matplotlib.cm as cm
-import mtpy.utils.exceptions as mtex
-import mtpy.analysis.pt as mtpt
-import mtpy.imaging.mtcolors as mtcl
+import matplotlib.colorbar as mcb
+import matplotlib.colors as colors
+import matplotlib.gridspec as gridspec
+import matplotlib.pyplot as plt
+import matplotlib.widgets as widgets
+import numpy as np
 import scipy.interpolate as spi
 import scipy.stats as stats
+from matplotlib.colors import Normalize
+from matplotlib.patches import Ellipse
+from matplotlib.ticker import MultipleLocator, FormatStrFormatter
+
+import mtpy.analysis.pt as mtpt
+import mtpy.core.mt as mt
+import mtpy.core.z as mtz
+import mtpy.imaging.mtcolors as mtcl
+import mtpy.imaging.mtplottools as mtplottools
+import mtpy.modeling.ws3dinv as ws
+import mtpy.utils.exceptions as mtex
+import mtpy.utils.gis_tools
+
 try:
     from evtk.hl import gridToVTK, pointsToVTK
 except ImportError:

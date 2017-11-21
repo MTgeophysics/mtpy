@@ -12,19 +12,20 @@ Created on Tue Jan 07 12:42:34 2014
 @author: jpeacock-pr
 """
 
-#==============================================================================
-import mtpy.core.edi as MTedi
-import mtpy.core.z as MTz
-import mtpy.utils.gis_tools
-import mtpy.utils.latlon_utm_conversion as MTutm
-import mtpy.utils.exceptions as MTex
+import os
+
 import mtpy.utils.format as MTformat
+import numpy as np
+
+import mtpy.analysis.distortion as MTdistortion
 import mtpy.analysis.pt as MTpt
 import mtpy.analysis.zinvariants as MTinv
-import mtpy.analysis.distortion as MTdistortion
-import os
-import numpy as np
+# ==============================================================================
+import mtpy.core.edi as MTedi
+import mtpy.core.z as MTz
 import mtpy.imaging.plotresponse as plotresponse
+import mtpy.utils.exceptions as MTex
+import mtpy.utils.gis_tools
 
 try:
     import scipy

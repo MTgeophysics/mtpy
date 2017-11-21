@@ -19,7 +19,6 @@ import mtpy.core.mt as mt
 import mtpy.core.z as mtz
 import mtpy.modeling.ws3dinv as ws
 import mtpy.utils.gis_tools
-import mtpy.utils.latlon_utm_conversion as utm2ll
 from mtpy import constants
 from mtpy.core.edi_collection import EdiCollection
 from mtpy.utils.mtpylog import MtPyLog

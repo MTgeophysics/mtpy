@@ -5,17 +5,18 @@ Created on 12.12.2012
 @author: LK
 """
 
+import glob
 import os
 import os.path as op
-import sys
-import numpy as np
-import glob
 import re
+import sys
 
 import mtpy.core.mttools as mtt
+import numpy as np
+
 import mtpy.modeling.winglinktools as wlt
 import mtpy.utils.gis_tools
-import mtpy.utils.latlon_utm_conversion as ll2utm
+
 reload(wlt)
 
 
@@ -615,8 +616,6 @@ def plotmodel3d(modem_modelfile, viewaxis='z', layer=0, savefile=None):
 
 
     """
-
-    import pylab as p
 
     pass
 
