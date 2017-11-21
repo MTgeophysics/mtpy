@@ -10,11 +10,10 @@ import os.path as op
 import matplotlib.pyplot as plt
 import numpy as np
 
-import legacy.modeling.modem_data as md
-import legacy.modeling.modem_model as mm
-
 # INPUTS #
 # define a workdir for your environ
+from mtpy.modeling.modem import Data, Model
+
 workdir = r'V:\Geology\conductivity_modelling'
 workdir = r'E:\Githubz\mtpy2\examples\data\ModEM_files'
 # workdir = r'/Softlab/Githubz/mtpy2/examples/data/ModEM_files'
@@ -43,9 +42,9 @@ datafn = 'ModEM_Data_noise10inv.dat'
 
 read_data = True
 if read_data:
-    doo = md.Data()
+    doo = Data()
     doo.read_data_file(op.join(modeldir, datafn))
-    moo = mm.Model(model_fn=op.join(modeldir, iterfn))
+    moo = Model(model_fn=op.join(modeldir, iterfn))
     moo.read_model_file()
 
 # get grid centres

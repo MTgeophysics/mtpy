@@ -11,8 +11,7 @@ import os.path as op
 import matplotlib.pyplot as plt
 import numpy as np
 
-import legacy.modeling.modem_data as md
-import legacy.modeling.modem_model as mm
+from mtpy.modeling.modem import Data, Model
 
 workdir = r'C:\Git\mtpy\examples\data'
 modeldir = op.join(workdir, 'ModEM_files')
@@ -21,9 +20,9 @@ read_data = True
 iterfn = max([ff for ff in os.listdir(modeldir) if ff.endswith('.rho')])
 
 if read_data:
-    doo = md.Data()
+    doo = Data()
     doo.read_data_file(op.join(modeldir, 'ModEM_Data.dat'))
-    moo = mm.Model(model_fn=op.join(modeldir, iterfn))
+    moo = Model(model_fn=op.join(modeldir, iterfn))
     moo.read_model_file()
 
 snoew = 10

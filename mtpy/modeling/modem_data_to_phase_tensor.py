@@ -23,7 +23,7 @@ import os
 import sys
 
 import mtpy.analysis.pt as pt
-from legacy.modeling import modem_data
+from mtpy.modeling.modem import Data
 from mtpy.core import z
 
 
@@ -46,7 +46,7 @@ class ModemDataToPhaseTensor(object):
         dest_dir = self.dest_dir
 
         # Create a new ModEM data instance
-        md = modem_data.Data()
+        md = Data()
         # Read the datafile
         md.read_data_file(data_fn=data_file)
 
