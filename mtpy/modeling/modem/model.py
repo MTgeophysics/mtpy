@@ -20,7 +20,6 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 from scipy import stats as stats, interpolate as spi
 
 import mtpy
-import mtpy.modeling.elevation_util as elev_util
 import mtpy.utils.calculator as mtcc
 from mtpy.modeling import ws3dinv as ws
 from mtpy.utils import mesh_tools as mtmesh, gis_tools as gis_tools, filehandling as mtfh
@@ -1027,7 +1026,7 @@ class Model(object):
 
         # read the surface data in from ascii if surface not provided
         if surface is None:
-            surface = elev_util.read_surface_ascii(surfacefile)
+            surface = mtfh.read_surface_ascii(surfacefile)
 
         x, y, elev = surface
 

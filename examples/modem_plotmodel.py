@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 import legacy.modeling.modem_data as md
-import mtpy.modeling.modem_model as mm
+import legacy.modeling.modem_model as mm
 
 workdir = r'C:\Git\mtpy\examples\data'
 modeldir = op.join(workdir, 'ModEM_files')

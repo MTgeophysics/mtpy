@@ -16,7 +16,7 @@ import os
 
 import numpy as np
 
-from mtpy.modeling.modem_model import Model
+from legacy.modeling.modem_model import Model
 from mtpy.utils.mtpylog import MtPyLog
 
 try:

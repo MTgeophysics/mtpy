@@ -19,7 +19,7 @@ import numpy as np
 import scipy.interpolate as spi
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
-import mtpy.modeling.elevation_util as elev_util
+import legacy.modeling.elevation_util as elev_util
 import mtpy.modeling.ws3dinv as ws
 import mtpy.utils.calculator as mtcc
 import mtpy.utils.gis_tools

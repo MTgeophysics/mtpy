@@ -30,9 +30,9 @@ import numpy as np
 
 from legacy.modeling.modem_covariance import Covariance
 from legacy.modeling.modem_data import Data
+from legacy.modeling.modem_model import Model
 from mtpy.core.edi_collection import EdiCollection
 from mtpy.gui.SmartMT.utils.matplotlib_utils import gen_hist_bins
-from mtpy.modeling.modem_model import Model
 
 
 # YG: patch that changes the matplotlib behaviour

@@ -17,7 +17,6 @@ LastUpdate:     15/09/2017   FZ
 
 import csv
 import glob
-import logging
 import os
 import sys
 
@@ -26,15 +25,14 @@ import numpy as np
 from matplotlib.ticker import MultipleLocator
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
-from legacy.modeling.modem_data import Data
-from mtpy.modeling.modem_model import Model
+from mtpy.modeling.modem import Data, Model
 from mtpy.utils.mtpylog import MtPyLog
 
 logger = MtPyLog.get_mtpy_logger(__name__)
 # logger.setLevel(logging.DEBUG)
 
 
-class ModemSlices():
+class ModemSlices(object):
     def __init__(self, filedat, filerho, plot_orient='ew', **kwargs):
         """Constructor
         :param filedat: path2file.dat
