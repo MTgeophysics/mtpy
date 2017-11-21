@@ -21,8 +21,6 @@ import numpy as np
 import pandas as pd
 from shapely.geometry import Point  # , Polygon, LineString, LinearRing
 
-# import matplotlib as mpl
-# from mpl_toolkits.axes_grid1 import make_axes_locatable
 import mtpy.core.mt as mt
 import mtpy.imaging.mtplottools as mtplottools
 from mtpy.utils.decorator import deprecated
@@ -241,7 +239,7 @@ class EdiCollection(object):
         display/overlay the MT properties on a background geo-referenced map image
         :return:
         """
-        import examples.sandpit.plot_geotiff_imshow as plotegoimg
+        import mtpy.utils.plot_geotiff_imshow as plotegoimg
 
         myax = plotegoimg.plot_geotiff(
             geofile='data/PM_Gravity.tif', show=False)
@@ -500,19 +498,54 @@ class EdiCollection(object):
 
         return bdict
 
-    def show_prop(self, dest_dir=None):
+    def get_utm_zones(self):
+        """what UTM zones these (edi files) MT stations belong to?
+        are they in a single UTM zone, which corresponds to a unique EPSG code?
+        or do they belong to multiple UTM zones?
+        :return: Dictionary{UTMZone:Number_MTsites}
         """
-        show all properties
+
+        def get_utm_zone(latitude, longitude):
+            zone_num = int(1 + (longitude + 180.0) / 6.0)
+
+            if latitude >=0:
+                return "%s%s"%(zone_num,'N')
+            else:
+                return "%s%s"%(zone_num,'S')
+
+        utm_zones={}
+        for mt_obj in self.mt_obj_list:
+            utmz = get_utm_zone(mt_obj.lat, mt_obj.lon)
+            utm_zones[utmz] = utm_zones.get(utmz,0)+1
+
+        return utm_zones
+
+    def get_stations_distances(self):
+        """ TODO:
+        get the min max of the distances between stations, may be useful to determine ellipses tipper length, etc
+        :return: dict={}
+        """
+
+        return {}
+
+
+    def show_obj(self, dest_dir=None):
+        """
+        test call object's methods and show it's properties
         :return:
         """
         print(len(self.all_unique_periods), 'unique periods (s)', self.all_unique_periods)
+
         print(len(self.all_frequencies),
               'unique frequencies (Hz)', self.all_frequencies)
 
         myper = obj.get_periods_by_stats(percentage=20)
+
         print(myper)
 
         print(self.bound_box_dict)
+
+        print(self.get_bounding_box(epsgcode=28353))
 
         if dest_dir is None:
             self.plot_stations(savefile= os.path.join(self.outdir,'edi_collection_test.jpg'))
@@ -521,19 +554,17 @@ class EdiCollection(object):
 
         # self.display_on_basemap()
 
-        self.display_on_image()
+        # self.display_on_image()
 
         # self.display_folium()
 
+        utmzones=self.get_utm_zones()
+
+        number_zones = len(utmzones.items())
+        logger.info("This Edi fileset has %s UTM Zone(s): %s ", number_zones, utmzones)
+
         return
 
-    def get_utm_zones(self):
-        """what UTM zones these (edi files) MT stations belong to?
-        are they in a single UTM zone, which corresponds to a unique EPSG code
-        :return: UTM Zone number  + S/N
-        """
-
-        return "55S"
 
 if __name__ == "__main__":
 
@@ -558,12 +589,10 @@ if __name__ == "__main__":
 
         outdir = sys.argv[2]
 
-        obj.show_prop(dest_dir = outdir)
+        obj.show_obj(dest_dir = outdir)
 
-        print(obj.get_bounding_box(epsgcode=28353))
-
-        obj.create_phase_tensor_csv(outdir)
+        # obj.create_phase_tensor_csv(outdir)
+        #
+        # obj.create_measurement_csv(dest_dir= outdir)
 
         # obj.create_mt_station_gdf(os.path.join(outdir, 'edi_collection_test.shp'))
-        #
-        obj.create_measurement_csv(dest_dir= outdir)

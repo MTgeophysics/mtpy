@@ -858,10 +858,10 @@ if __name__ == "__main__":
     mylat=-35.0
     mylon=149.5
     utm = project_point_ll2utm(mylat, mylon)
-    print (utm)
+    print ("project_point_ll2utm(mylat, mylon) =:  ", utm)
 
-    utm2 =  transform_ll_to_utm(mylon, mylat)
-    print (utm2[1])
+    utm2 = transform_ll_to_utm(mylon, mylat)
+    print ("The transform_ll_to_utm(mylon, mylat) results lat, long, elev =: ", utm2[1])
 
     spref_obj=utm2[0]
     print("The spatial ref string =:", str(spref_obj))

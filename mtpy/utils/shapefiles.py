@@ -1573,7 +1573,7 @@ if __name__ == "__main__":
         create_phase_tensor_shpfiles(
             src_file_dir,
             dest_dir,
-            proj='WGS84', ellipse_size=1000, # UTM and size in meters. 1deg=100KM
+            proj='WGS84', ellipse_size=8000, # UTM and size in meters. 1deg=100KM
             #proj=None,  ellipse_size=0.01, # Lat-Long geographic coord and size in degree
             every_site=2,
             #period_list=[ 218.43599825251204, 218.43599825 ] # KeyError 218.43599825

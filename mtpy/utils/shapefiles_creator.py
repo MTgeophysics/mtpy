@@ -588,21 +588,23 @@ if __name__ == "__main__":
     else:
         path2out = None
 
+    esize=0.08 # ellipse size ?
+
     # filter the edi files here if desired, to get a subset:
     # edifiles2 = edifiles[0:-1:2]
     shp_maker = ShapeFilesCreator(edifiles, path2out)
 
-    shp_maker.create_phase_tensor_shp_by_period(999.99) # nothing created for non-existent peri
+    shp_maker.create_phase_tensor_shp_by_period(999.99,ellipsize=esize) # nothing created for non-existent peri
 
     min_period = shp_maker.all_unique_periods[0]
     max_period = shp_maker.all_unique_periods[-1]
-    for aper in (min_period, max_period):
-        # for aper in shp_maker.all_unique_periods:  # ascending order: from short to long periods
+    #for aper in (min_period, max_period):
+    for aper in shp_maker.all_unique_periods[::2]:  # ascending order: from short to long periods
         # shp_maker.create_phase_tensor_shp_by_period(2.85)
-        shp_maker.create_phase_tensor_shp_by_period(aper, target_epsg_code=None)
+        shp_maker.create_phase_tensor_shp_by_period(aper, target_epsg_code=None,ellipsize=esize)
 
-        for my_epsgcode in [3112, 4326, 4283, 32755, 28355]:  #[4326, 4283, 3112, 32755, 32754, 28355]:
-            shp_maker.create_phase_tensor_shp_by_period(aper, target_epsg_code=my_epsgcode, export=True)
+        for my_epsgcode in [3112, 28354]:  # [3112, 4326, 4283, 32754, 32755, 28354, 28355]:
+            shp_maker.create_phase_tensor_shp_by_period(aper, target_epsg_code=my_epsgcode, ellipsize=esize, export=True)
 
 # ==================================================================
 # python mtpy/utils/shapefiles_creator.py data/edifiles /e/tmp
