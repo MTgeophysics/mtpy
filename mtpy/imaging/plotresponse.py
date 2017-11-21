@@ -675,6 +675,9 @@ class PlotResponse(mtpl.PlotSettings):
             tiplabel = []
             
             for aa in range(nt):
+                if type(txr) == np.ma.core.MaskedArray:
+                    if txr.mask[aa]:
+                        continue
                 xlenr = txr[aa]*np.log10(self.mt.period[aa])
                 xleni = txi[aa]*np.log10(self.mt.period[aa])
                 
