@@ -11,7 +11,6 @@ from __future__ import print_function
 
 import csv
 import glob
-import logging
 import os
 import sys
 
@@ -27,9 +26,6 @@ import mtpy.core.mt as mt
 import mtpy.imaging.mtplottools as mtplottools
 from mtpy.utils.decorator import deprecated
 from mtpy.utils.mtpylog import MtPyLog
-
-logger = MtPyLog().get_mtpy_logger(__name__)
-logger.setLevel(logging.DEBUG)
 
 
 def is_num_in_seq(anum, aseq, atol=0.0001):
@@ -65,11 +61,11 @@ class EdiCollection(object):
         10pct may result more double counting of freq/period data than 5pct.
         eg: E:/Data/MT_Datasets/WenPingJiang_EDI 18528 rows vs 14654 rows
         """
-
+        self._logger = MtPyLog.get_mtpy_logger(self.__class__.__name__)
         if edilist is not None:
             self.edifiles = edilist
-            logger.info("number of edi files in this collection: %s",
-                        len(self.edifiles))
+            self._logger.info("number of edi files in this collection: %s",
+                         len(self.edifiles))
         elif mt_objs is not None:
             self.edifiles = [mt_obj.fn for mt_obj in mt_objs]
         assert len(self.edifiles) > 0
@@ -81,13 +77,13 @@ class EdiCollection(object):
 
         if edilist is not None:
             # if edilist is provided, always create MT objects from the list
-            logger.debug("constructing MT objects from edi files")
+            self._logger.debug("constructing MT objects from edi files")
             self.mt_obj_list = [mt.MT(edi) for edi in self.edifiles]
         elif mt_objs is not None:
             # use the supplied mt_objs
             self.mt_obj_list = list(mt_objs)
         else:
-            logger.error("None Edi file set")
+            self._logger.error("None Edi file set")
 
         # get all frequencies from all edi files
         self.all_frequencies = None
@@ -120,12 +116,12 @@ class EdiCollection(object):
         # use set to remove repeats and make an array
         self.all_frequencies = sorted(list(set(all_freqs)))
 
-        logger.debug("Number of MT Frequencies: %s", len(self.all_frequencies))
+        self._logger.debug("Number of MT Frequencies: %s", len(self.all_frequencies))
         all_periods = 1.0 / np.array(sorted(self.all_frequencies, reverse=True))
 
-        logger.debug("Type of all_periods %s", type(all_periods))
-        logger.info("Number of MT Periods: %s", len(all_periods))
-        logger.debug("Periods List: %s", str(all_periods))
+        self._logger.debug("Type of all_periods %s", type(all_periods))
+        self._logger.info("Number of MT Periods: %s", len(all_periods))
+        self._logger.debug("Periods List: %s", str(all_periods))
 
         return all_periods
 
@@ -151,7 +147,7 @@ class EdiCollection(object):
                 adict.update({aper: acount})
                 # print (aper, acount)
             else:
-                logger.info("Period=%s is excluded. it is from stations: %s ", aper, station_list)
+                self._logger.info("Period=%s is excluded. it is from stations: %s ", aper, station_list)
 
         mydict_ordered = sorted(
             adict.items(), key=lambda value: value[1], reverse=True)
@@ -217,7 +213,7 @@ class EdiCollection(object):
 
         world = gpd.read_file(gpd.datasets.get_path('naturalearth_lowres'))
 
-        logger.debug(world.shape)
+        self._logger.debug(world.shape)
 
         myax = world.plot(alpha=0.5)
         # myax.set_xlim([149,150])
@@ -302,7 +298,7 @@ class EdiCollection(object):
 
                 pt_dict_list.append(pt_dict)
             else:
-                logger.warn(" the period %s is NOT found for this station %s. Skipping!!!" %(plot_per, mt_obj.station))
+                self._logger.warn(" the period %s is NOT found for this station %s. Skipping!!!" % (plot_per, mt_obj.station))
 
 
         return pt_dict_list
@@ -336,7 +332,7 @@ class EdiCollection(object):
                     f_index_list = [ff for ff, f2 in enumerate(mt_obj.Z.freq)
                                     if (f2 > freq_min) and (f2 < freq_max)]
                     if len(f_index_list) > 1:
-                        logger.warn("more than one freq found %s", f_index_list)
+                        self._logger.warn("more than one freq found %s", f_index_list)
                     if len(f_index_list) >= 1:
                         p_index = f_index_list[0]
                         # geographic coord lat long and elevation
@@ -357,7 +353,7 @@ class EdiCollection(object):
 
                         ptlist.append(pt_stat)
                     else:
-                        logger.warn("Freq %s NOT found for this station %s", freq, mt_obj.station)
+                        self._logger.warn("Freq %s NOT found for this station %s", freq, mt_obj.station)
 
                 csv_freq_file = os.path.join(dest_dir,
                                              '{name[0]}_{freq}Hz{name[1]}'.format(
@@ -395,7 +391,7 @@ class EdiCollection(object):
         if dest_dir is None:
             dest_dir = self.outdir
         else:
-            logger.info("result will be in the dir %s", dest_dir)
+            self._logger.info("result will be in the dir %s", dest_dir)
             if not os.path.exists(dest_dir):
                 os.mkdir(dest_dir)
 
@@ -424,12 +420,12 @@ class EdiCollection(object):
                                 if (f2 > freq * (1 - self.ptol)) and
                                 (f2 < freq * (1 + self.ptol))]
                 if len(f_index_list) > 1:
-                    logger.warn("more than one freq found %s", f_index_list)
+                    self._logger.warn("more than one freq found %s", f_index_list)
 
                 if len(f_index_list) >= 1:
                     p_index = f_index_list[0]
 
-                    logger.debug("The freqs index %s", f_index_list)
+                    self._logger.debug("The freqs index %s", f_index_list)
                     # geographic coord lat long and elevation
                     # long, lat, elev = (mt_obj.lon, mt_obj.lat, 0)
                     station, lat, lon = (
@@ -459,7 +455,7 @@ class EdiCollection(object):
                     mtlist.append(mt_stat)
 
                 else:
-                    logger.warn(
+                    self._logger.warn(
                         'Freq %s NOT found for this station %s', freq, mt_obj.station)
 
             with open(csvfname, "ab") as csvf:  # summary csv for all freqs
@@ -496,7 +492,7 @@ class EdiCollection(object):
                  "MaxLon": tup[2],
                  "MaxLat": tup[3]}
 
-        logger.debug(bdict)
+        self._logger.debug(bdict)
 
         return bdict
 

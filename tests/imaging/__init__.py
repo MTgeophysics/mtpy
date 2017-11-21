@@ -24,7 +24,7 @@ else:
 
     plt.ion()
 
-MtPyLog().get_mtpy_logger(__name__).info("Testing using matplotlib backend {}".format(matplotlib.rcParams['backend']))
+MtPyLog.get_mtpy_logger(__name__).info("Testing using matplotlib backend {}".format(matplotlib.rcParams['backend']))
 
 
 def reset_matplotlib():

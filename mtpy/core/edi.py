@@ -21,7 +21,6 @@ import mtpy.utils.exceptions as MTex
 import mtpy.utils.filehandling as MTfh
 import mtpy.core.z as MTz
 from mtpy.utils.mtpylog import MtPyLog
-import logging
 
 try:
     import scipy.stats.distributions as ssd
@@ -38,9 +37,7 @@ tab = ' ' * 4
 
 tab = ' '*4
 
-# get a logger object for this module, using the utility class MtPyLog to config the logger
-logger = MtPyLog().get_mtpy_logger(__name__)
-logger.setLevel(logging.INFO)  #this sets the module specific log Level
+_logger = MtPyLog.get_mtpy_logger(__name__)
 
 class Edi(object):
     """
@@ -113,7 +110,7 @@ class Edi(object):
     """
 
     def __init__(self, edi_fn=None):
-
+        self._logger = MtPyLog.get_mtpy_logger(self.__class__.__name__)
         self.edi_fn = edi_fn
         self._edi_lines = None
         self.Header = Header()
@@ -166,7 +163,7 @@ class Edi(object):
 
         """
 
-        logger.info("Reading the edi file %s", self.edi_fn)
+        self._logger.info("Reading the edi file %s", self.edi_fn)
 
         if edi_fn is not None:
             self.edi_fn = edi_fn
@@ -192,21 +189,21 @@ class Edi(object):
 
         if self.Header.lat is None:
             self.Header.lat = self.Define_measurement.reflat
-            logger.info(
+            self._logger.info(
                 'Got latitude from reflat for {0}'.format(
                     self.Header.dataid))
         if self.Header.lon is None:
             self.Header.lon = self.Define_measurement.reflon
-            logger.info(
+            self._logger.info(
                 'Got longitude from reflon for {0}'.format(
                     self.Header.dataid))
         if self.Header.elev is None:
             self.Header.elev = self.Define_measurement.refelev
-            logger.info(
+            self._logger.info(
                 'Got elevation from refelev for {0}'.format(
                     self.Header.dataid))
 
-        logger.info(
+        self._logger.info(
             "Read in edi file for station {0}".format(
                 self.Header.dataid))
 
@@ -224,8 +221,8 @@ class Edi(object):
         lines = self._edi_lines[self.Data_sect.line_num:]
 
         if self.Data_sect.data_type == 'spectra':
-            logger.info('Converting Spectra to Impedance and Tipper')
-            logger.info('Check to make sure input channel list is correct if the data looks incorrect')
+            self._logger.info('Converting Spectra to Impedance and Tipper')
+            self._logger.info('Check to make sure input channel list is correct if the data looks incorrect')
             self._read_spectra(lines)
 
         elif self.Data_sect.data_type == 'z':
@@ -288,7 +285,7 @@ class Edi(object):
 
         # check for order of frequency, we want high to low
         if freq_arr[0] < freq_arr[1]:
-            logger.info(
+            self._logger.info(
                 'Ordered arrays to be arranged from high to low frequency')
             freq_arr = freq_arr[::-1]
             z_arr = z_arr[::-1]
@@ -335,7 +332,7 @@ class Edi(object):
                 tipper_err_arr = tipper_err_arr[::-1]
 
         else:
-            logger.info('Could not find any Tipper data.')
+            self._logger.info('Could not find any Tipper data.')
 
         self.Tipper._freq = freq_arr
         self.Tipper._tipper = tipper_arr
@@ -373,7 +370,7 @@ class Edi(object):
                                   if ss.lower().find('avgt') == 0][0])
                     avgt_dict[key] = avgt
                 except ValueError:
-                    logger.info('did not find frequency key')
+                    self._logger.info('did not find frequency key')
 
             elif data_find and line.find('>') == -1 and \
                  line.find('!') == -1:
@@ -643,7 +640,7 @@ class Edi(object):
         with open(new_edi_fn, 'w') as fid:
             fid.write(''.join(edi_lines))
 
-        logger.info('Wrote {0}'.format(new_edi_fn))
+        self._logger.info('Wrote {0}'.format(new_edi_fn))
         return new_edi_fn
 
     def _write_data_block(self, data_comp_arr, data_key):
@@ -709,7 +706,7 @@ class Edi(object):
         """set latitude and make sure it is converted to a float"""
 
         self.Header.lat = gis_tools.assert_lat_value(input_lat)
-        logger.info('Converted input latitude to decimal degrees: {0: .6f}'.format(
+        self._logger.info('Converted input latitude to decimal degrees: {0: .6f}'.format(
             self.Header.lat))
 
     # --> Longitude
@@ -722,7 +719,7 @@ class Edi(object):
     def lon(self, input_lon):
         """set latitude and make sure it is converted to a float"""
         self.Header.lon = gis_tools.assert_lon_value(input_lon)
-        logger.info('Converted input longitude to decimal degrees: {0: .6f}'.format(
+        self._logger.info('Converted input longitude to decimal degrees: {0: .6f}'.format(
             self.Header.lon))
 
     # --> Elevation
@@ -913,7 +910,7 @@ class Header(object):
         """
 
         if self.edi_fn is None and self.edi_lines is None:
-            logger.info('No edi file to read.')
+            self._logger.info('No edi file to read.')
             return
 
         self.header_list = []
@@ -922,7 +919,7 @@ class Header(object):
         # read in file line by line
         if self.edi_fn is not None:
             if os.path.isfile(self.edi_fn) == False:
-                logger.info(
+                self._logger.info(
                     'Could not find {0}, check path'.format(
                         self.edi_fn))
             with open(self.edi_fn, 'r') as fid:
@@ -975,7 +972,7 @@ class Header(object):
 
         if self.header_list is None and self.edi_fn is None and \
                 self.edi_lines is None:
-            logger.info('Nothing to read. header_list and edi_fn are None')
+            self._logger.info('Nothing to read. header_list and edi_fn are None')
 
         elif self.edi_fn is not None or self.edi_lines is not None:
             self.get_header_list()
@@ -1049,7 +1046,7 @@ class Header(object):
             try:
                 value = getattr(self, key)
             except Exception, ex:
-                logger.debug("key value: %s %s %s", key,value, ex)
+                self._logger.debug("key value: %s %s %s", key,value, ex)
                 value=None
             if key in ['progdate', 'progvers']:
                 if value is None:
@@ -1079,7 +1076,7 @@ class Header(object):
         """
 
         if header_list is None:
-            logger.info('No header information to read')
+            self._logger.info('No header information to read')
             return None
 
         new_header_list = []
@@ -1122,7 +1119,7 @@ class Information(object):
         """
 
         if self.edi_fn is None and self.edi_lines is None:
-            logger.info('no edi file input, check edi_fn attribute')
+            self._logger.info('no edi file input, check edi_fn attribute')
             return
 
         self.info_list = []
@@ -1132,7 +1129,7 @@ class Information(object):
 
         if self.edi_fn is not None:
             if os.path.isfile(self.edi_fn) is False:
-                logger.info(
+                self._logger.info(
                     'Could not find {0}, check path'.format(
                         self.edi_fn))
                 return
@@ -1190,7 +1187,7 @@ class Information(object):
                 #setattr(self, l_key, l_value)
 
         if self.info_list is None:
-            logger.info("Could not read information")
+            self._logger.info("Could not read information")
             return
 
     def write_info(self, info_list=None):
@@ -1329,7 +1326,7 @@ class DefineMeasurement(object):
         get measurement list including measurement setup
         """
         if self.edi_fn is None and self.edi_lines is None:
-            logger.info('No edi file input, check edi_fn attribute')
+            self._logger.info('No edi file input, check edi_fn attribute')
             return
 
         self.measurement_list = []
@@ -1337,7 +1334,7 @@ class DefineMeasurement(object):
 
         if self.edi_fn is not None:
             if os.path.isfile(self.edi_fn) is False:
-                logger.info(
+                self._logger.info(
                     'Could not find {0}, check path'.format(
                         self.edi_fn))
                 return
@@ -1400,7 +1397,7 @@ class DefineMeasurement(object):
             self.get_measurement_lists()
 
         if self.measurement_list is None:
-            logger.info(
+            self._logger.info(
                 'Nothing to read, check edi_fn or measurement_list attributes')
             return
 
@@ -1472,7 +1469,7 @@ class DefineMeasurement(object):
         m_key_list = [(kk, self.__dict__[kk].id) for kk in self.__dict__.keys()
                       if kk.find('meas_') == 0]
         if len(m_key_list) == 0:
-            logger.info('No XMEAS information.')
+            self._logger.info('No XMEAS information.')
         else:
             # need to sort the dictionary by chanel id
             chn_count = 1
@@ -1766,7 +1763,7 @@ class DataSection(object):
             self.read_data_sect(data_sect_list)
 
         self.data_type = 'z'
-        logger.info('Writing out data a impedances')
+        self._logger.info('Writing out data a impedances')
 
         data_sect_lines = ['\n>=mtsect\n'.upper()]
 
@@ -1824,7 +1821,7 @@ def _validate_str_with_equals(input_string):
 
     # probably not a good return
     if len(str_list) % 2 != 0:
-        logger.info(
+        _logger.info(
             'The number of entries in {0} is not even'.format(str_list))
         return str_list
 

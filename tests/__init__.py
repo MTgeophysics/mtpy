@@ -5,6 +5,8 @@ import shutil
 import sys
 import matplotlib
 
+from mtpy.utils.mtpylog import MtPyLog
+
 if os.name == "posix" and 'DISPLAY' not in os.environ:
     print("MATPLOTLIB: No Display found, using non-interactive svg backend", file=sys.stderr)
     matplotlib.use('svg')
@@ -62,3 +64,7 @@ AUS_TOPO_FILE = os.path.normpath(
     os.path.join(TEST_MTPY_ROOT, 'examples/data/AussieContinent_etopo1.asc'))
 SAMPLE_DIR = os.path.normpath(
     os.path.join(TEST_MTPY_ROOT, 'examples/model_files'))  # r'E:\Githubz\mtpy\examples\model_files'
+
+
+# set test logging configure
+MtPyLog.load_configure(os.path.join(TEST_DIR, "logging.yml"))

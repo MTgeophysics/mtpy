@@ -30,8 +30,8 @@ from legacy.modeling.modem_data import Data
 from mtpy.modeling.modem_model import Model
 from mtpy.utils.mtpylog import MtPyLog
 
-logger = MtPyLog().get_mtpy_logger(__name__)
-logger.setLevel(logging.DEBUG)
+logger = MtPyLog.get_mtpy_logger(__name__)
+# logger.setLevel(logging.DEBUG)
 
 
 class ModemSlices():

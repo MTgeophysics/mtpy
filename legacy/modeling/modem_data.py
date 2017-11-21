@@ -35,7 +35,7 @@ except ImportError:
            '    python setup.py build -compiler=mingw32  or \n'
            '    python setup.py build -compiler=cygwin')
 
-logger = MtPyLog().get_mtpy_logger(__name__)
+logger = MtPyLog.get_mtpy_logger(__name__)
 
 
 class DataError(Exception):

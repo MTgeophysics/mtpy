@@ -19,7 +19,7 @@ from mtpy.utils.mtpylog import MtPyLog
 
 # get a logger object for this module, using the utility class MtPyLog to
 # config the logger
-logger = MtPyLog().get_mtpy_logger(__name__)
+_logger = MtPyLog.get_mtpy_logger(__name__)
 # logger =
 # MtPyLog(path2configfile='logging.yml').get_mtpy_logger(__name__) #
 # specific
@@ -31,11 +31,11 @@ def plot_edi_dir(edi_path):
 
     edi_files = glob.glob(os.path.join(edi_path, "*.edi"))
 
-    logger.debug(edi_files)
+    _logger.debug(edi_files)
 
     for efile in edi_files:
         # for efile in edi_files[:2]:
-        logger.debug("plotting %s", efile)
+        _logger.debug("plotting %s", efile)
         # eo = mtedi.Edi(filename=efile)
         plot_edi_file(efile)
 
@@ -56,7 +56,7 @@ def plot_edi_file(edi_file):
     plt.style.use('seaborn-deep')
     plt.style.use('classic')
 
-    logger.info("Plotting the edi file %s", edi_file)
+    _logger.info("Plotting the edi file %s", edi_file)
 
     pr = mtpr.PlotMTResponse(
         fn=edi_file, plot_num=2, res_limits=(
@@ -89,4 +89,4 @@ if __name__ == '__main__':
         elif os.path.isdir(edi_path):
             plot_edi_dir(edi_path)
         else:
-            logger.error("Usage %s %s", sys.argv[0], "path2edi")
+            _logger.error("Usage %s %s", sys.argv[0], "path2edi")
