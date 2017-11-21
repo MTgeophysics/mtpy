@@ -59,7 +59,7 @@ def plot_geotiff(geofile='/e/Data/uncoverml/GA-cover2/PM_Gravity.tif', show=True
     inproj = osr.SpatialReference()
     inproj.ImportFromWkt(proj)
 
-    print(inproj)
+    print("Input project ; ", str(inproj))
 
     # these need cartopy, pyepsg , still has error
     #   File "/usr/lib/python2.7/xml/etree/ElementTree.py", line 1517, in _raiseerror
