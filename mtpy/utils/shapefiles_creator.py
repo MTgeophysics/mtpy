@@ -173,14 +173,13 @@ class ShapeFilesCreator(EdiCollection):
 
         return pt_dict
 
-
-    def create_phase_tensor_shp_by_period(self, period, ellipsize=0.02, target_epsg_code=4283,export=False ):
+    def create_phase_tensor_shp(self, period, ellipsize=0.02, target_epsg_code=4283, export=False):
         """
-        create phase tensor ellipses shape file correspond to MT period
+        create phase tensor ellipses shape file correspond to a MT period
         :return: (geopdf_obj, path_to_shapefile)
         """
 
-        pt = self.get_phase_tensor_by_period(period)
+        pt = self.get_phase_tensor_tippers(period)
 
         logger.debug("phase tensor values =: %s", pt)
 
@@ -259,13 +258,64 @@ class ShapeFilesCreator(EdiCollection):
         return (geopdf,path2shp)
 
 
-    def create_tipper_shp(self):
+    def create_tipper_real_shp_at_period(self, period, line_length=4, target_epsg_code=4283, export=False):
         """
-        create tipper shape files
-        :return:
+        create tipper lines shape from a csv file
+        The shape is a line without arrow.
+        Must use a GIS software such as ArcGIS to display and add an arrow at each line's end
+        line_length is how long will be the line (arrow)
+        :return:(geopdf_obj, path_to_shapefile)
         """
 
-        pass
+        pt = self.get_phase_tensor_tippers(period)
+
+        logger.debug("phase tensor values =: %s", pt)
+
+        if len(pt) < 1:
+            logger.warn("No phase tensor for the period %s for any MT station", period)
+            return None
+
+        pdf = pd.DataFrame(pt)
+
+        logger.debug(pdf['period'])
+
+        orig_crs = {'init': 'epsg:4283'}  # initial crs GDA94
+
+        pdf['tip_re'] = pdf.apply(lambda x:
+                                  LineString([(float(x.lon), float(x.lat)),
+                                              (float(x.lon) + line_length * x.tip_mag_re * np.cos(
+                                                  -np.deg2rad(x.tip_ang_re)),
+                                               float(x.lat) + line_length * x.tip_mag_re * np.sin(
+                                                   -np.deg2rad(x.tip_ang_re)))]), axis=1)
+
+        geopdf = gpd.GeoDataFrame(pdf, crs=orig_crs, geometry='tip_re')
+
+
+        if target_epsg_code is None:
+            logger.info("Geopandas Datframe CRS: %s", geopdf.crs)
+            # {'init': 'epsg:4283', 'no_defs': True}
+            # raise Exception("Must provide a target_epsg_code")
+            target_epsg_code = geopdf.crs['init'][5:]
+        else:
+            geopdf.to_crs(epsg=target_epsg_code, inplace=True)
+            # world = world.to_crs({'init': 'epsg:3395'})
+            # world.to_crs(epsg=3395) would also work
+
+        # to shape file
+        shp_fname = 'Tipper_Real_EPSG_%s_Period_%ss.shp' % (target_epsg_code, period)
+        path2shp = os.path.join(self.outdir, shp_fname)
+        logger.debug("To write to ESRI shp file %s", path2shp)
+        geopdf.to_file(path2shp, driver='ESRI Shapefile')
+
+        logger.info("Geopandas Dataframe CRS: %s", geopdf.crs)
+
+        if export is True:
+            bbox_dict = self.get_bounding_box(epsgcode=target_epsg_code)
+            print(bbox_dict)
+            path2jpg = path2shp.replace(".shp", ".jpg")
+            export_geopdf_to_image(geopdf, bbox_dict, path2jpg)  # showfig=True)
+
+        return (geopdf, path2shp)
 
 
 ####################################################################
@@ -335,11 +385,11 @@ def create_ellipse_shp(csvfile, esize=0.03, target_epsg_code=4283):
 
     return pdf
 
-def create_tipper_real_shp(csvfile, arr_size=0.03, target_epsg_code=4283):
+def create_tipper_real_shp(csvfile, line_length=0.03, target_epsg_code=4283):
     """ create tipper lines shape from a csv file
     The shape is a line without arrow.
     Must use a GIS software such as ArcGIS to display and add an arrow at each line's end
-    arr_size=4  how long will be the line (arrow)
+    line_length=4  how long will be the line (arrow)
     return: a geopandas dataframe object for further processing.
     """
 
@@ -355,9 +405,9 @@ def create_tipper_real_shp(csvfile, arr_size=0.03, target_epsg_code=4283):
 
     pdf['tip_re'] = pdf.apply(lambda x:
                               LineString([(float(x.lon), float(x.lat)),
-                                          (float(x.lon) + arr_size * x.tip_mag_re * np.cos(
+                                          (float(x.lon) + line_length * x.tip_mag_re * np.cos(
                                               -np.deg2rad(x.tip_ang_re)),
-                                           float(x.lat) + arr_size * x.tip_mag_re * np.sin(
+                                           float(x.lat) + line_length * x.tip_mag_re * np.sin(
                                                -np.deg2rad(x.tip_ang_re)))]), axis=1)
 
     pdf = gpd.GeoDataFrame(pdf, crs=crs, geometry='tip_re')
@@ -376,11 +426,11 @@ def create_tipper_real_shp(csvfile, arr_size=0.03, target_epsg_code=4283):
     return pdf
 
 
-def create_tipper_imag_shp(csvfile, arr_size=0.03, target_epsg_code=4283):
+def create_tipper_imag_shp(csvfile, line_length=0.03, target_epsg_code=4283):
     """ create imagery tipper lines shape from a csv file
     The shape is a line without arrow.
     Must use a GIS software such as ArcGIS to display and add an arrow at each line's end
-    arr_size=4  how long will be the line (arrow)
+    line_length=4  how long will be the line (arrow)
     return: a geopandas dataframe object for further processing.
     """
 
@@ -396,9 +446,9 @@ def create_tipper_imag_shp(csvfile, arr_size=0.03, target_epsg_code=4283):
 
     pdf['tip_im'] = pdf.apply(lambda x:
                               LineString([(float(x.lon), float(x.lat)),
-                                          (float(x.lon) + arr_size * x.tip_mag_im * np.cos(
+                                          (float(x.lon) + line_length * x.tip_mag_im * np.cos(
                                               -np.deg2rad(x.tip_ang_im)),
-                                           float(x.lat) + arr_size * x.tip_mag_im * np.sin(
+                                           float(x.lat) + line_length * x.tip_mag_im * np.sin(
                                                -np.deg2rad(x.tip_ang_im)))]), axis=1)
 
     pdf = gpd.GeoDataFrame(pdf, crs=crs, geometry='tip_im')
@@ -555,12 +605,12 @@ def process_csv_folder(csv_folder, bbox_dict, target_epsg_code=4283):
 
     # for acsv in csvfiles[:2]:
     for acsv in csvfiles:
-        tip_re_gdf = create_tipper_real_shp(acsv, arr_size=0.02, target_epsg_code=target_epsg_code)
+        tip_re_gdf = create_tipper_real_shp(acsv, line_length=0.02, target_epsg_code=target_epsg_code)
         my_gdf = tip_re_gdf
         jpg_file_name = acsv.replace('.csv', '_tip_re_epsg%s.jpg' % target_epsg_code)
         export_geopdf_to_image(my_gdf, bbox_dict, jpg_file_name, target_epsg_code)
 
-        tip_im_gdf = create_tipper_imag_shp(acsv, arr_size=0.02, target_epsg_code=target_epsg_code)
+        tip_im_gdf = create_tipper_imag_shp(acsv, line_length=0.02, target_epsg_code=target_epsg_code)
         my_gdf = tip_im_gdf
         jpg_file_name = acsv.replace('.csv', '_tip_im_epsg%s.jpg' % target_epsg_code)
         export_geopdf_to_image(my_gdf, bbox_dict, jpg_file_name, target_epsg_code)
@@ -594,17 +644,18 @@ if __name__ == "__main__":
     # edifiles2 = edifiles[0:-1:2]
     shp_maker = ShapeFilesCreator(edifiles, path2out)
 
-    shp_maker.create_phase_tensor_shp_by_period(999.99,ellipsize=esize) # nothing created for non-existent peri
+    shp_maker.create_phase_tensor_shp(999.99, ellipsize=esize) # nothing created for non-existent peri
 
     min_period = shp_maker.all_unique_periods[0]
     max_period = shp_maker.all_unique_periods[-1]
-    #for aper in (min_period, max_period):
-    for aper in shp_maker.all_unique_periods[::2]:  # ascending order: from short to long periods
+    for aper in [min_period, max_period]:
+    #for aper in shp_maker.all_unique_periods[::2]:  # ascending order: from short to long periods
         # shp_maker.create_phase_tensor_shp_by_period(2.85)
-        shp_maker.create_phase_tensor_shp_by_period(aper, target_epsg_code=None,ellipsize=esize)
-
+        shp_maker.create_phase_tensor_shp(aper, target_epsg_code=None, ellipsize=esize)
+        shp_maker.create_tipper_real_shp_at_period(aper,line_length=esize,target_epsg_code=None)
         for my_epsgcode in [3112, 28354]:  # [3112, 4326, 4283, 32754, 32755, 28354, 28355]:
-            shp_maker.create_phase_tensor_shp_by_period(aper, target_epsg_code=my_epsgcode, ellipsize=esize, export=True)
+            shp_maker.create_phase_tensor_shp(aper, target_epsg_code=my_epsgcode, ellipsize=esize, export=True)
+            shp_maker.create_tipper_real_shp_at_period(aper, line_length=esize, target_epsg_code=my_epsgcode, export=True)
 
 # ==================================================================
 # python mtpy/utils/shapefiles_creator.py data/edifiles /e/tmp

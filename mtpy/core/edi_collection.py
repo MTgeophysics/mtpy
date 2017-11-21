@@ -257,10 +257,10 @@ class EdiCollection(object):
 
         return myax2
 
-    def get_phase_tensor_by_period(self, period):
+    def get_phase_tensor_tippers(self, period):
         """
-        For a given MT period (s) value, compute the phase tensor tip etc.
-        :param period:
+        For a given MT period (s) value, compute the phase tensor and tippers etc.
+        :param period: MT_period (s)
         :return: dictionary pt_dict_list
 
         pt_dict keys ['station', 'freq', 'lon', 'lat', 'phi_min', 'phi_max', 'azimuth', 'skew', 'n_skew', 'elliptic',
@@ -293,10 +293,10 @@ class EdiCollection(object):
                 pt_dict['n_skew'] = 2 * mt_obj.pt.beta[p_index]
                 pt_dict['elliptic'] = mt_obj.pt.ellipticity[p_index]
 
-                pt_dict['tip_mag_re']=0
-                pt_dict['tip_mag_im']=0
-                pt_dict['tip_ang_re']=0
-                pt_dict['tip_ang_im']=0
+                pt_dict['tip_mag_re']= mt_obj.Tipper.mag_real[p_index]
+                pt_dict['tip_mag_im']= mt_obj.Tipper.mag_imag[p_index]
+                pt_dict['tip_ang_re']= mt_obj.Tipper.angle_real[p_index]
+                pt_dict['tip_ang_im']= mt_obj.Tipper.angle_imag[p_index]
 
                 pt_dict_list.append(pt_dict)
             else:
