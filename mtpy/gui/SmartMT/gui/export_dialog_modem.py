@@ -571,7 +571,7 @@ class ModEMWorker(QtCore.QThread):
     def __init__(self, parent, edi_list, select_period_kwargs, data_kwargs, mesh_kwargs, topo_args, covariance_kwargs,
                  show=False):
         QtCore.QThread.__init__(self, parent)
-        self._logger = MtPyLog().get_mtpy_logger(__name__)
+        self._logger = MtPyLog.get_mtpy_logger(self.__class__.__name__)
 
         self._edi_list = edi_list
         self._select_period_kwargs = select_period_kwargs

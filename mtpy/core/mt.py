@@ -21,11 +21,10 @@ import mtpy.core.mt_xml as MTxml
 
 reload(MTz)
 
-import logging
 from mtpy.utils.mtpylog import MtPyLog
 
-_logger = MtPyLog().get_mtpy_logger(__name__)
-_logger.setLevel(logging.DEBUG)
+_logger = MtPyLog.get_mtpy_logger(__name__)
+# _logger.setLevel(logging.DEBUG)
 
 try:
     import scipy
@@ -140,7 +139,7 @@ class MT(object):
     """
 
     def __init__(self, fn=None, **kwargs):
-
+        self._logging = MtPyLog.get_mtpy_logger(self.__class__.__name__)
         # important information held in objects
         self.Site = Site()
         self.FieldNotes = FieldNotes()
@@ -1657,7 +1656,7 @@ class MT(object):
         if bounds_error:
             # YG: the commented block below seems no longer necessary.
             # floater = 1.e-8  # FZ: a small offset to avoid out-of-bound error in spi interpolation module.
-            # _logger.info("massage the new_freq_array's min and max to avoid out-of-bound interp")
+            # self._logger.info("massage the new_freq_array's min and max to avoid out-of-bound interp")
             # minindex = np.argmin(new_freq_array)
             # maxindex = np.argmax(new_freq_array)
             # new_freq_array[minindex] += floater

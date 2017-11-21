@@ -8,6 +8,9 @@ from tests import plt_close, make_temp_dir
 
 
 class TestModel(TestCase):
+    """
+    this test suite only validates the functionality of Model objects but does not verify the output files
+    """
     @classmethod
     def setUpClass(cls):
         # setup temp dir
@@ -44,8 +47,8 @@ epsg_code = 28354
 epsg_code = 3112
 
 
-def _test_gen(index, edi_path):
-    def test_func(self):
+def _test_gen(edi_path):
+    def _test_func(self):
         if not os.path.isdir(edi_path):
             # input file does not exist, skip test after remove the output dir
             os.rmdir(self._output_dir)
@@ -58,7 +61,8 @@ def _test_gen(index, edi_path):
                      inv_mode='1',
                      period_list=period_list,
                      epsg=epsg_code,
-                     error_type='egbert',
+                     error_type_tipper='abs',
+                     error_type_z='egbert',
                      comp_error_type=None,
                      error_floor=10)
         datob.write_data_file(save_path=self._output_dir)
@@ -87,14 +91,11 @@ def _test_gen(index, edi_path):
         # write a model file and initialise a resistivity model
         model.write_model_file(save_path=self._output_dir)
 
-    return test_func
+    return _test_func
 
 
 # generate tests
-for index, edi_path in enumerate(edi_paths):
-    test_func = _test_gen(index, edi_path)
-    test_func.__name__ = "test_{}_{}".format(index+1, os.path.basename(edi_path))
-    setattr(TestModel, test_func.__name__, test_func)
-
-if 'test_func' in globals():
-    del globals()['test_func']
+for edi_path in edi_paths:
+    _func = _test_gen(edi_path)
+    _func.__name__ = "test_{}".format(os.path.basename(edi_path))
+    setattr(TestModel, _func.__name__, _func)

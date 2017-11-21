@@ -13,14 +13,15 @@ import logging
 import logging.config
 import inspect
 
+
 # DEBUG is good for debug and development
-logging.getLogger().setLevel(logging.DEBUG)
+# logging.getLogger().setLevel(logging.DEBUG)
 
 
-class MtPyLog():
+class MtPyLog(object):
     # def __init__(self, path2configfile=None):
-
-    def __init__(self, path2configfile='logging.yml'):
+    @staticmethod
+    def load_configure(path2configfile='logging.yml'):
         """
         configure/setup the logging according to the input configfile
 
@@ -28,11 +29,11 @@ class MtPyLog():
         Its default is the logging.yml located in the same dir as this module.
         It can be modofied to use env variables to search for a log config file.
         """
-        self.configfile = path2configfile
+        configfile = path2configfile
 
-        if self.configfile is None or self.configfile == '':
+        if configfile is None or configfile == '':
             logging.basicConfig()
-        elif self.configfile.endswith('yaml') or self.configfile.endswith('yml'):
+        elif configfile.endswith('yaml') or configfile.endswith('yml'):
 
             this_module_file_path = os.path.abspath(__file__)
 
@@ -51,19 +52,20 @@ class MtPyLog():
                 logging.exception(
                     "the config yaml file %s does not exist?", yaml_path)
 
-        elif self.configfile.endswith('.conf') or self.configfile.endswith('.ini'):
+        elif configfile.endswith('.conf') or configfile.endswith('.ini'):
             logging.config.fileConfig(
-                self.configfile, disable_existing_loggers=False)
+                configfile, disable_existing_loggers=False)
             # must change the default disable_existing_loggers=True to False to
             # make this behave 100% OK
-        elif self.configfile.endswith('.json'):
+        elif configfile.endswith('.json'):
             pass
         else:
             raise Exception(
                 "logging configuration file %s is not supported" %
-                self.configfile)
+                configfile)
 
-    def get_mtpy_logger(self, loggername=''):
+    @staticmethod
+    def get_mtpy_logger(loggername=''):
         """
         create a named logger (try different)
         :param loggername: the name (key) of the logger object in this Python interpreter.
@@ -110,7 +112,7 @@ def test_yaml_configfile(yamlfile='logging.yml'):
     # 1 user provides config file to use from envar or other methods
     UsersOwnConfigFile = yamlfile
     # 2 construct a MtPyLog object
-    myobj = MtPyLog(UsersOwnConfigFile)
+    myobj = MtPyLog.load_configure(UsersOwnConfigFile)
     # 3 create a named-logger object
     # logger = myobj.get_mtpy_logger('simpleExample')
     # logger = myobj.get_mtpy_logger('simpleExample2') # not configured, use
@@ -147,7 +149,7 @@ def test_ini_configfile(UsersOwnConfigFile='logging.conf'):
     # 1 user provides config file to use from envar or other methods
 
     # 2 construct a MtPyLog object
-    myobj = MtPyLog(UsersOwnConfigFile)
+    myobj = MtPyLog.load_configure(UsersOwnConfigFile)
     # 3 create a named-logger object
     # logger = myobj.get_mtpy_logger('simpleExample')
     # logger = myobj.get_mtpy_logger('simpleExample2') # not configured, use
@@ -200,7 +202,7 @@ if __name__ == "__main__":
     # 1 user decide what config file to use from envar or other methods
     UsersOwnConfigFile = ''  # ''logging.yaml'
     # 2 construct a MtPyLog object
-    myobj = MtPyLog(UsersOwnConfigFile)
+    myobj = MtPyLog.load_configure(UsersOwnConfigFile)
     # 3 create a named-logger object
     # logger = myobj.get_mtpy_logger('simpleExample')
     # logger = myobj.get_mtpy_logger('simpleExample2') # not configured, use

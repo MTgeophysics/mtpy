@@ -20,7 +20,7 @@ from penetration import Depth1D
 
 # get a logger object for this module, using the utility class MtPyLog to
 # config the logger
-logger = MtPyLog().get_mtpy_logger(__name__)
+_logger = MtPyLog.get_mtpy_logger(__name__)
 
 # logger =
 # MtPyLog(path2configfile='logging.yml').get_mtpy_logger(__name__) #
@@ -144,7 +144,7 @@ def plot_edi_dir(edi_path, rholist=['zxy', 'zyx', 'det']):
     import glob
     edi_files = glob.glob(os.path.join(edi_path, "*.edi"))
 
-    logger.debug(edi_files)
+    _logger.debug(edi_files)
 
     for efile in edi_files:
         # for efile in edi_files[:2]:
@@ -203,4 +203,4 @@ if __name__ == '__main__':
             # plot_edi_dir(edi_path )
             plot_edi_dir(edi_path, rholist=['det'])
         else:
-            logger.error("Usage %s %s", sys.argv[0], "path2edi")
+            _logger.error("Usage %s %s", sys.argv[0], "path2edi")

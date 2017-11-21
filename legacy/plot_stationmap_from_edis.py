@@ -28,15 +28,15 @@ import mtpy.utils.filehandling as MTfh
 from mtpy.utils.mtpylog import MtPyLog
 # get a logger object for this module, using the utility class MtPyLog to
 # config the logger
-logger = MtPyLog().get_mtpy_logger(__name__)
+_logger = MtPyLog.get_mtpy_logger(__name__)
 
 
 def makemap(edilist, mapstretchfactor, symbolsize, labelsize, showlabel):
 
     this_fun_name = inspect.getframeinfo(inspect.currentframe())[2]
-    logger.debug("starting %s", this_fun_name)
-    logger.debug("mapstretchfactor, symbolsize, labelsize, showlabel")
-    logger.debug(
+    _logger.debug("starting %s", this_fun_name)
+    _logger.debug("mapstretchfactor, symbolsize, labelsize, showlabel")
+    _logger.debug(
         "%s %s %s %s",
         mapstretchfactor,
         symbolsize,
@@ -102,14 +102,14 @@ def makemap(edilist, mapstretchfactor, symbolsize, labelsize, showlabel):
         # significantly more long than lat
         # could be 0 factor = int(int(lonlat_stretch) / 2.)
         factor = lonlat_stretch / 2.
-        logger.debug("factor=%s", factor)
+        _logger.debug("factor=%s", factor)
         latnum = int(maximumlabels / factor) + 1
         lonnum = maximumlabels
     elif int(lonlat_stretch) < 0.5:
         # significantly more long than lat
         #factor = int(int(1. / lonlat_stretch) / 2.)
         factor = (1. / lonlat_stretch) / 2.
-        logger.debug("factor=%s", factor)
+        _logger.debug("factor=%s", factor)
         lonnum = int(maximumlabels / factor) + 1
         latnum = maximumlabels
 
@@ -186,7 +186,7 @@ def makemap(edilist, mapstretchfactor, symbolsize, labelsize, showlabel):
 
 def main():
     if len(sys.argv) < 2:
-        logger.debug( """\n\tusage: \n
+        _logger.debug("""\n\tusage: \n
             python plot_stationmap_from_edis.py <edi folder> [optional_arguments]
 
         list of optional arguments:
@@ -216,9 +216,9 @@ def main():
     try:
         # if not op.isdir(edifolder):
         #     raise
-        logger.debug(edifolder)
+        _logger.debug(edifolder)
         edifiles = os.listdir(edifolder)
-        logger.debug(edifiles)
+        _logger.debug(edifiles)
         edilist = fnmatch.filter(os.listdir(edifolder), '*.[Ee][Dd][Ii]')
         edilist = [
             os.path.abspath(
@@ -228,25 +228,25 @@ def main():
         if len(edilist) == 0:
             raise
     except:
-        logger.debug('No EDI files in folder %s', edifolder)
+        _logger.debug('No EDI files in folder %s', edifolder)
         return
 
     try:
         symbolsize = int(float(sys.argv[2]))
     except:
-        logger.debug('cannot read symbolsize value - using default')
+        _logger.debug('cannot read symbolsize value - using default')
         symbolsize = 24
 
     try:
         mapstretchfactor = float(sys.argv[3])
     except:
-        logger.debug('cannot read mapstretchfactor value - using default')
+        _logger.debug('cannot read mapstretchfactor value - using default')
         mapstretchfactor = 1
 
     try:
         labelsize = int(float(sys.argv[4]))
     except:
-        logger.debug('cannot read labelsize value - using default')
+        _logger.debug('cannot read labelsize value - using default')
         labelsize = 14
 
     showlabel = sys.argv[5]
@@ -258,7 +258,7 @@ def main():
     f1, f2 = makemap(edilist, mapstretchfactor,
                      symbolsize, labelsize, showlabel)
 
-    logger.info('wrote map files\n\t %s \n and\n\t %s\n', f1, f2)
+    _logger.info('wrote map files\n\t %s \n and\n\t %s\n', f1, f2)
 
 ##########################################################################
 # Usage example:

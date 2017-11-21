@@ -505,7 +505,7 @@ class MeshWidget(QtGui.QWidget):
         self.model_obj.write_model_file(save_path=sv_path,
                                         model_fn_basename=sv_basename)
                                         
-        self.model_obj.get_mesh_params()
+        self.model_obj.print_mesh_params()
 
     def set_rho(self):
         if self.model_obj.res_model is None:

@@ -154,7 +154,7 @@ class Model(object):
     """
 
     def __init__(self, station_object=None, **kwargs):
-        self._logger = MtPyLog().get_mtpy_logger(self.__class__.__name__)
+        self._logger = MtPyLog.get_mtpy_logger(self.__class__.__name__)
         self.station_locations = station_object
 
         # size of cells within station area in meters
@@ -215,7 +215,10 @@ class Model(object):
         self.res_scale = 'loge'
 
         for key in kwargs.keys():
-            setattr(self, key, kwargs[key])
+            if hasattr(self, key):
+                setattr(self, key, kwargs[key])
+            else:
+                self._logger.warn("Argument {}={} is not supportted thus not been set.".format(key, kwargs[key]))
 
     ### --> make nodes and grid symbiotic so if you set one the other one
     ###     gets set as well
@@ -404,9 +407,9 @@ class Model(object):
         self.grid_center = np.array([center_north, center_east, center_z])
 
         # --> print out useful information
-        self.get_mesh_params()
+        self.print_mesh_params()
 
-    def get_mesh_params(self, file=sys.stdout):  # todo rename to print_mesh_params
+    def print_mesh_params(self, file=sys.stdout):
         # --> print out useful information
         print('-' * 15, file=file)
         print('\tNumber of stations = {0}'.format(len(self.station_locations.station)), file=file)

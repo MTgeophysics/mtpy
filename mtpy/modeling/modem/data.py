@@ -231,7 +231,7 @@ class Data(object):
     """
 
     def __init__(self, edi_list=None, **kwargs):
-        self._logger = MtPyLog().get_mtpy_logger(self.__class__.__name__)
+        self._logger = MtPyLog.get_mtpy_logger(self.__class__.__name__)
         self.edi_list = edi_list
 
         self.error_type_z = 'egbert_floor'
@@ -314,7 +314,10 @@ class Data(object):
                                        'Error\n'])
 
         for key in kwargs.keys():
-            setattr(self, key, kwargs[key])
+            if hasattr(self, key):
+                setattr(self, key, kwargs[key])
+            else:
+                self._logger.warn("Argument {}={} is not supportted thus not been set.".format(key, kwargs[key]))
 
     def _set_dtype(self, z_shape, t_shape):
         """
