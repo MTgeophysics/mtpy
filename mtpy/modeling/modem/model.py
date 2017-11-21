@@ -20,12 +20,11 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 from scipy import stats as stats, interpolate as spi
 
 import mtpy
+import mtpy.modeling.elevation_util as elev_util
+import mtpy.utils.calculator as mtcc
 from mtpy.modeling import ws3dinv as ws
 from mtpy.utils import mesh_tools as mtmesh, gis_tools as gis_tools, filehandling as mtfh
-from mtpy.utils.decorator import deprecated
 from mtpy.utils.mtpylog import MtPyLog
-import mtpy.utils.calculator as mtcc
-import mtpy.modeling.elevation_util as elev_util
 from .exception import ModelError
 
 try:
@@ -170,8 +169,8 @@ class Model(object):
             self.station_locations = self.data_obj.station_locations
             self._logger.info(
                 "Use Data object as input.")
-        else:
-            raise AttributeError("please provide either Station object or Data object as input")
+        # else:
+        #     raise AttributeError("please provide either Station object or Data object as input")
 
         # size of cells within station area in meters
         self.cell_size_east = 500
@@ -1978,33 +1977,32 @@ class Model(object):
         V
         S
         """
-        dfid = file(ascii_fn, 'r')
-        d_dict = {}
-        for ii in range(6):
-            dline = dfid.readline()
-            dline = dline.strip().split()
-            key = dline[0].strip().lower()
-            value = float(dline[1].strip())
-            d_dict[key] = value
+        elevation = None
+        with file(ascii_fn, 'r') as dfid:
+            d_dict = {}
+            for ii in range(6):
+                dline = dfid.readline()
+                dline = dline.strip().split()
+                key = dline[0].strip().lower()
+                value = float(dline[1].strip())
+                d_dict[key] = value
 
-        x0 = d_dict['xllcorner']
-        y0 = d_dict['yllcorner']
-        nx = int(d_dict['ncols'])
-        ny = int(d_dict['nrows'])
-        cs = d_dict['cellsize']
+            x0 = d_dict['xllcorner']
+            y0 = d_dict['yllcorner']
+            nx = int(d_dict['ncols'])
+            ny = int(d_dict['nrows'])
+            cs = d_dict['cellsize']
 
-        # read in the elevation data
-        elevation = np.zeros((nx, ny))
+            # read in the elevation data
+            elevation = np.zeros((nx, ny))
 
-        for ii in range(1, int(ny) + 2):
-            dline = dfid.readline()
-            if len(str(dline)) > 1:
-                # needs to be backwards because first line is the furthest north row.
-                elevation[:, -ii] = np.array(dline.strip().split(' '), dtype='float')
-            else:
-                break
-
-        dfid.close()
+            for ii in range(1, int(ny) + 2):
+                dline = dfid.readline()
+                if len(str(dline)) > 1:
+                    # needs to be backwards because first line is the furthest north row.
+                    elevation[:, -ii] = np.array(dline.strip().split(' '), dtype='float')
+                else:
+                    break
 
         # create lat and lon arrays from the dem fle
         lon = np.arange(x0, x0 + cs * (nx), cs)
@@ -2030,9 +2028,14 @@ class Model(object):
         # resample the data accordingly
         new_east = east[np.arange(0, east.size, num_cells)]
         new_north = north[np.arange(0, north.size, num_cells)]
-        new_x, new_y = np.meshgrid(np.arange(0, east.size, num_cells),
-                                   np.arange(0, north.size, num_cells),
-                                   indexing='ij')
+        try:
+            new_x, new_y = np.meshgrid(np.arange(0, east.shape[0], num_cells),
+                                       np.arange(0, north.shape[0], num_cells),
+                                       indexing='ij')
+        except TypeError:
+            new_x, new_y = [arr.T for arr in np.meshgrid(np.arange(0, east.shape[0], num_cells),
+                                                         np.arange(0, north.shape[0], num_cells))]
+
         elevation = elevation[new_x, new_y]
         # make any null values set to minimum elevation, could be dangerous
         elevation[np.where(elevation == -9999.0)] = elevation[np.where(elevation != -9999.0)].min()
@@ -2324,67 +2327,12 @@ class Model(object):
         self.nodes_z = elev_nodes_z
         self.res_model = mod_elev
 
-        if write_file == True:
+        if write_file:
             self.save_path = os.path.dirname(self.model_fn)
             self.write_model_file(model_fn_basename='{0}_topo.rho'.format(
                 os.path.basename(self.model_fn)[0:-4]))
 
             return self.model_fn
-
-    def assign_resistivity_from_surfacedata(self, surfacename, resistivity_value, where='above'):
-        """
-        assign resistivity value to all points above or below a surface
-        requires the surface_dict attribute to exist and contain data for
-        surface key (can get this information from ascii file using
-        project_surface)
-
-        **inputs**
-        surfacename = name of surface (must correspond to key in surface_dict)
-        resistivity_value = value to assign
-        where = 'above' or 'below' - assign resistivity above or below the
-                surface
-        """
-
-        # FZ: should ref-define the self.res_model if its shape has changed after topo air layer are added
-
-
-        gcz = np.mean([self.grid_z[:-1], self.grid_z[1:]], axis=0)
-
-        #        logger.debug("gcz is the cells centre coordinates: %s, %s", len(gcz), gcz)
-        # convert to positive down, relative to the top of the grid
-        surfacedata = - self.surface_dict[surfacename]
-        # surfacedata = self.surface_dict[surfacename] - self.sea_level
-
-        # define topography, so that we don't overwrite cells above topography
-        # first check if topography exists
-        if 'topography' in self.surface_dict.keys():
-            # second, check topography isn't the surface we're trying to assign
-            # resistivity for
-            if surfacename == 'topography':
-                # if it is, we need to define the upper limit as the highest point in the surface
-                top = np.zeros_like(surfacedata) + np.amin(surfacedata) - 1.
-            else:
-                # if not, upper limit of resistivity assignment is the topography, note positive downwards
-                top = -self.surface_dict['topography']
-        # if no topography, use top of model
-        else:
-            top = self.grid_z[0] + np.zeros_like(surfacedata)
-
-        # assign resistivity value
-        for j in range(len(self.res_model)):
-            for i in range(len(self.res_model[j])):
-                if where == 'above':
-                    # needs to be above the surface but below the top (as defined before)
-                    ii = np.where((gcz <= surfacedata[j, i]) & (gcz > top[j, i]))[0]
-                else:  # for below the surface
-                    ii = np.where(gcz > surfacedata[j, i])[0]
-
-                self.res_model[j, i, ii] = resistivity_value
-
-                if surfacename == 'topography':
-                    iisea = np.where((gcz <= surfacedata[j, i]) & (gcz > 0.))[0]
-                    self.res_model[j, i, iisea] = 0.3
-                    # print j, i, ii
 
     def interpolate_elevation2(self, surfacefile=None, surface=None, surfacename=None,
                                method='nearest'):
