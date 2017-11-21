@@ -16,7 +16,7 @@ import os
 import mtpy.modeling.occam1d as mtoc1d   # Wrapper class to interact with Occam1D
 
 # directory to save created input files
-savepath = r'C:\Git\mtpy\examples\model_files\Occam1d'
+savepath = r'C:\Git\testing\model_files\Occam1d'
 if not op.exists(savepath):
     os.mkdir(savepath)
 
@@ -32,7 +32,8 @@ ocd.write_data_file(edi_file=op.join(edipath,edifilename),
                     res_errorfloor=5, # percent error floor
                     phase_errorfloor=1, # error floor in degrees
                     z_errorfloor=2.5,
-                    remove_outofquadrant=True)
+                    remove_outofquadrant=True,
+                    thetar=30)
 
 # create model file
 ocm = mtoc1d.Model(n_layers=100, # number of layers

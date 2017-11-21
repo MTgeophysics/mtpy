@@ -16,7 +16,7 @@ import os.path as op
 
 
 # path to edis
-epath = r'C:\Git\mtpy\examples\data\edi_files_2'
+epath = r'C:\Git\mtpy\examples\data\edi_files'
 
 svdir = r'C:\Git\mtpy\examples\plots\edi_plots'
 
@@ -29,4 +29,4 @@ for efile in elst[-1:]:
                            plot_num=2,
                            plot_tipper='yri',
                            plot_pt='y')
-    pr.save_plot(op.join(svdir,op.join(svdir,op.basename(efile)[:-4]+'.png')))
+#    pr.save_plot(op.join(svdir,op.join(svdir,op.basename(efile)[:-4]+'.png')))

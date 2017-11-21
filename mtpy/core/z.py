@@ -1277,6 +1277,9 @@ class Tipper(object):
             for idx_f in range(len(self.tipper)):
                 for jj in range(2):
                     if self.tipper_err is not None:
+                        if type(self.tipper) == np.ma.core.MaskedArray:
+                            if self.tipper.mask[idx_f, 0, jj]:
+                                continue
                         r_err, phi_err = MTcc.propagate_error_rect2polar(
                             np.real(self.tipper[idx_f, 0, jj]),
                             self.tipper_err[idx_f, 0, jj],

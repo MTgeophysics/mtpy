@@ -47,7 +47,8 @@ ro = PlotResponse(data_fn=op.join(wd,datafn),
                   resp_fn=op.join(wd,respfn),
                   plot_type=[station],
                   plot_z=plot_z,
-#                      ctmm='r',ctem='b',
+                      mtmm='-',mtem='-',
+                      mtmd='.',mted='.',
 #                      res_limits=(.01,1000)
                   )
 ro.plot()
