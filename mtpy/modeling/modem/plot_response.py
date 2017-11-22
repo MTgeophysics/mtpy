@@ -214,9 +214,9 @@ class PlotResponse(object):
         plt.rcParams['font.size'] = self.font_size
 
         fontdict = {'size': self.font_size + 2, 'weight': 'bold'}
-        if self.plot_z == True:
+        if self.plot_z:
             h_ratio = [1, 1, .5]
-        elif self.plot_z == False:
+        elif not self.plot_z:
             h_ratio = [1.5, 1, .5]
 
         ax_list = []
@@ -274,7 +274,7 @@ class PlotResponse(object):
             nty = np.nonzero(t_obj.tipper[:, 0, 1])[0]
 
             # convert to apparent resistivity and phase
-            if self.plot_z == True:
+            if self.plot_z:
                 scaling = np.zeros_like(z_obj.z)
                 for ii in range(2):
                     for jj in range(2):
@@ -285,7 +285,7 @@ class PlotResponse(object):
                 plot_phase_err = abs(z_obj.z_err * scaling)
                 h_ratio = [1, 1, .5]
 
-            elif self.plot_z == False:
+            elif not self.plot_z:
                 plot_res = z_obj.resistivity
                 plot_res_err = z_obj.resistivity_err
                 plot_phase = z_obj.phase
@@ -402,7 +402,7 @@ class PlotResponse(object):
                                              **kw_yy)
 
             # plot tipper
-            if self.plot_tipper == True:
+            if self.plot_tipper:
                 ertx = mtplottools.plot_errorbar(axtxr,
                                                  period[ntx],
                                                  t_obj.tipper[ntx, 0, 0].real,
@@ -427,7 +427,7 @@ class PlotResponse(object):
 
             # ----------------------------------------------
             # get error bar list for editing later
-            if self.plot_tipper == False:
+            if not self.plot_tipper:
                 try:
                     self._err_list = [[erxx[1][0], erxx[1][1], erxx[2][0]],
                                       [erxy[1][0], erxy[1][1], erxy[2][0]],
