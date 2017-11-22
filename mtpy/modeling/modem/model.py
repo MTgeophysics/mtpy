@@ -101,15 +101,24 @@ class Model(object):
     ==================== ======================================================
     Attributes           Description
     ==================== ======================================================
+    _logger              python logging object that put messages in logging
+                         format defined in logging configure file, see MtPyLog
+                         more information
+    cell_number_ew       optional for user to specify the total number of sells
+                         on the east-west direction. *default* is None
+    cell_number_ns       optional for user to specify the total number of sells
+                         on the north-south direction. *default* is None
     cell_size_east       mesh block width in east direction
                          *default* is 500
     cell_size_north      mesh block width in north direction
                          *default* is 500
-    edi_list             list of .edi files to invert for
+    grid_center          center of the mesh grid
     grid_east            overall distance of grid nodes in east direction
     grid_north           overall distance of grid nodes in north direction
     grid_z               overall distance of grid nodes in z direction
     model_fn             full path to initial file name
+    model_fn_basename    default name for the model file name
+    n_air_layers         number of air layers in the model. *default* is 0
     n_layers             total number of vertical layers in model
     nodes_east           relative distance between nodes in east direction
     nodes_north          relative distance between nodes in north direction
@@ -131,13 +140,20 @@ class Model(object):
                          *default* is 4
     ew_ext               E-W extension of model in meters
     ns_ext               N-S extension of model in meters
+    res_scale            scaling method of res, supports
+                           'loge' - for log e format
+                           'log' or 'log10' - for log with base 10
+                           'linear' - linear scale
+                         *default* is 'loge'
     res_list             list of resistivity values for starting model
     res_model            starting resistivity model
+    res_initial_value    resistivity initial value for the resistivity model
+                         *default* is 100
     mesh_rotation_angle  Angle to rotate the grid to. Angle is measured
                          positve clockwise assuming North is 0 and east is 90.
                          *default* is None
     save_path            path to save file to
-    station_fn           full path to station file
+    sea_level            sea level in grid_z coordinates. *default* is 0
     station_locations    location of stations
     title                title in initial file
     z1_layer             first layer thickness
@@ -149,9 +165,74 @@ class Model(object):
     ==================== ======================================================
     Methods              Description
     ==================== ======================================================
+    add_topography       if air_layers is non-zero, will add topo: read in
+                         topograph file, make a surface model. Call
+                         project_stations_on_topography in the end, which will
+                         re-write the .dat file.
+                         If n_airlayers is zero, then cannot add topo data,
+                         only bathymetry is needed.
+    add_topography_to_mesh    For a given mesh grid, use the topofile data to
+                              define resistivity model. No new air layers will
+                              be added. Just identify the max elev height as
+                              the ref point
+                              read in topograph file, make a surface model.
+                              Call project_stations_on_topography in the end,
+                              which will re-write the .dat file.
+    add_topography_to_model   Add topography to an existing model from a dem
+                              in ascii format.
+    add_topography_to_model2    if air_layers is non-zero, will add topo: read
+                                in topograph file, make a surface model.
+                                Call project_stations_on_topography in the end,
+                                which will re-write the .dat file.
+                                If n_airlayers is zero, then cannot add topo
+                                data, only bathymetry is needed.
+    assign_resistivity_from_surfacedata     assign resistivity value to all
+                                            points above or below a surface
+                                            requires the surface_dict attribute
+                                            to exist and contain data for
+                                            surface key (can get this
+                                            information from ascii file using
+                                            project_surface)
+    get_parameters       get important model parameters to write to a file for
+                         documentation later.
+    interpolate_elevation   interpolate the elevation onto the model grid.
+    interpolate_elevation2  project a surface to the model grid and add
+                            resulting elevation data to a dictionary called
+                            surface_dict. Assumes the surface is in lat/long
+                            coordinates (wgs84)
     make_mesh            makes a mesh from the given specifications
+    make_mesh_from_center   The mesh is built by first finding the center of
+                            the station area. Then cells are added in the north
+                            and east direction with width cell_size_east and
+                            cell_size_north to cover all the station area.
+    make_z_mesh          Create a mesh grid for vertical Earth layers.
+    make_z_mesh_exp      version of make_z_mesh method in order to create
+                         exp-increasing cell sizes from the top layer
+    make_z_mesh_new      new version of make_z_mesh. make_z_mesh and M
     plot_mesh            plots mesh to make sure everything is good
-    write_initial_file   writes an initial model file that includes the mesh
+    plot_mesh_xy         add mesh grid lines in xy plan north-east map
+    plot_mesh_xz         display the mesh in North-Depth aspect
+    plot_topograph       display topography elevation data together with
+                         station locations on a cell-index N-E map
+    print_mesh_params    print out the mesh-related paramas
+    print_model_file_summary    print out the summary of the model file
+    project_stations_on_topography  This method is used in add_topography().
+                                    It will Re-write the data file to change
+                                    the elevation column. And update
+                                    covariance mask according topo elevation
+                                    model.
+    project_surface      project a surface to the model grid and add resulting
+                         elevation data to a dictionary called surface_dict.
+                         Assumes the surface is in lat/long coordinates (wgs84),
+                         if not, need to supply the epsg of the surface xy
+                         points
+    read_dem_ascii       read in dem which is ascii format
+    read_model_file      read an initial file and return the pertinent
+                         information including grid positions in coordinates
+                         relative to the center point (0,0) and starting model.
+    read_ws_model_file   reads in a WS3INV3D model file
+    write_model_file     writes an initial model file that includes the mesh
+    write_vtk_file       write a vtk file to view in Paraview or other
     ==================== ======================================================
     """
 
@@ -162,7 +243,8 @@ class Model(object):
         self.data_obj = None
         if station_object is not None:
             self.station_locations = station_object
-            self._logger.info("Use Station object as input, all functions that uses data_objects are nolonger available.")
+            self._logger.info("Use Station object as input, all functions that uses data_objects are nolonger "
+                              "available.")
         elif data_object is not None:
             self.data_obj = data_object
             self.station_locations = self.data_obj.station_locations
@@ -204,7 +286,7 @@ class Model(object):
         self.n_layers = 30
 
         # number of air layers
-        self.n_airlayers = 0
+        self.n_air_layers = 0
         # sea level in grid_z coordinates. Auto adjusts when topography read in?
         self.sea_level = 0.
 
@@ -224,10 +306,10 @@ class Model(object):
         self.grid_center = None
 
         # resistivity model
-        self.res_starting_value = 100.0
+        self.res_initial_value = 100.0
         self.res_model = None
 
-        # inital file stuff
+        # initial file stuff
         self.model_fn = None
         self.save_path = os.getcwd()
         self.model_fn_basename = 'ModEM_Model_File.rho'
@@ -244,9 +326,9 @@ class Model(object):
             else:
                 self._logger.warn("Argument {}={} is not supportted thus not been set.".format(key, kwargs[key]))
 
-    ### --> make nodes and grid symbiotic so if you set one the other one
-    ###     gets set as well
-    ## Nodes East
+    # --> make nodes and grid symbiotic so if you set one the other one
+    #     gets set as well
+    # Nodes East
     @property
     def nodes_east(self):
         if self.grid_east is not None:
@@ -259,10 +341,9 @@ class Model(object):
         nodes = np.array(nodes)
         self._nodes_east = nodes
         self.grid_east = np.array([-nodes.sum() / 2 + nodes[0:ii].sum()
-                                   for ii in range(nodes.size)] + \
-                                  [nodes.sum() / 2])
+                                   for ii in range(nodes.size)] + [nodes.sum() / 2])
 
-    ## Nodes North
+    # Nodes North
     @property
     def nodes_north(self):
         if self.grid_north is not None:
@@ -275,8 +356,7 @@ class Model(object):
         nodes = np.array(nodes)
         self._nodes_north = nodes
         self.grid_north = np.array([-nodes.sum() / 2 + nodes[0:ii].sum()
-                                    for ii in range(nodes.size)] + \
-                                   [nodes.sum() / 2])
+                                    for ii in range(nodes.size)] + [nodes.sum() / 2])
 
     @property
     def nodes_z(self):
@@ -290,8 +370,7 @@ class Model(object):
     def nodes_z(self, nodes):
         nodes = np.array(nodes)
         self._nodes_z = nodes
-        self.grid_z = np.array([nodes[0:ii].sum() for ii in range(nodes.size)] + \
-                               [nodes.sum()])
+        self.grid_z = np.array([nodes[0:ii].sum() for ii in range(nodes.size)] + [nodes.sum()])
 
     def make_mesh(self):
         """
@@ -310,13 +389,13 @@ class Model(object):
 
         """
 
-        ## --> find the edges of the grid
-        ## calculate the extra width of padding cells
-        ## multiply by 1.5 because this is only for 1 side
+        # --> find the edges of the grid
+        # calculate the extra width of padding cells
+        # multiply by 1.5 because this is only for 1 side
         pad_width_east = self.pad_num * 1.5 * self.cell_size_east
         pad_width_north = self.pad_num * 1.5 * self.cell_size_north
 
-        ## get the extremities
+        # get the extremities
         west = self.station_locations.rel_east.min() - pad_width_east
         east = self.station_locations.rel_east.max() + pad_width_east
         south = self.station_locations.rel_north.min() - pad_width_north
@@ -342,7 +421,7 @@ class Model(object):
                                 north - add_ns + 2 * self.cell_size_north,
                                 self.cell_size_north)
 
-        ## compute padding cells
+        # compute padding cells
         if self.pad_method == 'extent1':
             padding_east = mtmesh.get_padding_cells(self.cell_size_east,
                                                     self.ew_ext / 2 - east,
@@ -457,7 +536,6 @@ class Model(object):
         print('    as rotating the mesh.', file=file)
         print('-' * 15, file=file)
 
-
     def make_mesh_from_center(self, update_data_center=True):
         """
         The mesh is built by first finding the center of the station area.
@@ -494,9 +572,9 @@ class Model(object):
         else:
             self._logger.debug("user specified cell number in east-west mesh %s", self.cell_number_ew)
             center_ew = 0.5 * (self.station_locations.rel_east.min() + self.station_locations.rel_east.max())
-            cellnumb = int(self.cell_number_ew / 2)
-            west = center_ew - self.cell_size_east * cellnumb
-            east = center_ew + self.cell_size_east * cellnumb
+            cell_num = int(self.cell_number_ew / 2)
+            west = center_ew - self.cell_size_east * cell_num
+            east = center_ew + self.cell_size_east * cell_num
 
         if self.cell_number_ns is None:
             south = self.station_locations.rel_north.min() - self.cell_size_north * nc_extra_north
@@ -505,97 +583,95 @@ class Model(object):
             self._logger.debug("user specified cell number in north-south mesh %s", self.cell_number_ns)
             center_ns = self.station_locations.rel_north.min() + self.station_locations.rel_north.max()
             center_ns = 0.5 * center_ns
-            cellnumb = int(self.cell_number_ns / 2)
-            south = center_ns - self.cell_size_north * cellnumb
-            north = center_ns + self.cell_size_north * cellnumb
+            cell_num = int(self.cell_number_ns / 2)
+            south = center_ns - self.cell_size_north * cell_num
+            north = center_ns + self.cell_size_north * cell_num
 
         # rounding appropriately.
-        westr = np.round(west, -2)
-        eastr = np.round(east, -2)
-        southr = np.round(south, -2)
-        northr = np.round(north, -2)
+        west_r = np.round(west, -2)
+        east_r = np.round(east, -2)
+        south_r = np.round(south, -2)
+        north_r = np.round(north, -2)
         #        # adjust center position (centre may be moved by rounding)
         #        self.Data.center_position_EN[0] += (westr + eastr - west - east)/2.
         #        self.Data.center_position_EN[1] += (southr + northr - south - north)/2.
         # -------make a grid around the stations from the parameters above-----
         # --> make grid in east-west direction
         # cells within station area
-        east_gridr = np.arange(start=westr, stop=eastr + self.cell_size_east,
-                               step=self.cell_size_east)
+        east_grid_r = np.arange(start=west_r, stop=east_r + self.cell_size_east,
+                                step=self.cell_size_east)
 
-        self._logger.debug("FZ: east_gridr = %s", east_gridr)
-        mean_egrid = np.mean(east_gridr)
+        self._logger.debug("FZ: east_gridr = %s", east_grid_r)
+        mean_egrid = np.mean(east_grid_r)
         self._logger.info("mean_egrid = %s", mean_egrid)
         if self.data_obj.rotation_angle == 0:
             self.data_obj.center_position_utm[1] -= mean_egrid
             self.station_locations.rel_east += mean_egrid
-        east_gridr -= mean_egrid
-        self._logger.debug("FZ: east_gridr_2 shifted centre = %s", east_gridr)
+        east_grid_r -= mean_egrid
+        self._logger.debug("FZ: east_gridr_2 shifted centre = %s", east_grid_r)
 
         # padding cells in the east-west direction
         for ii in range(1, pad_east + 1):
-            east_0 = float(east_gridr[-1])
-            west_0 = float(east_gridr[0])
-            #            add_size = mtcc.roundsf(self.cell_size_east * self.pad_stretch_h * ii, -2) # -2 round to decimal left
+            east_0 = float(east_grid_r[-1])
+            west_0 = float(east_grid_r[0])
+            # add_size = mtcc.roundsf(self.cell_size_east * self.pad_stretch_h * ii, -2) # -2 round to decimal left
             # round to the nearest 2 significant figures
             add_size = mtcc.roundsf(self.cell_size_east * self.pad_stretch_h ** ii, 2)
             pad_w = west_0 - add_size
             pad_e = east_0 + add_size
-            east_gridr = np.insert(east_gridr, 0, pad_w)
-            east_gridr = np.append(east_gridr, pad_e)
+            east_grid_r = np.insert(east_grid_r, 0, pad_w)
+            east_grid_r = np.append(east_grid_r, pad_e)
 
         # --> For some inversion code, need to make sure none of the stations lie on the nodes
         # this section would make the cell-sizes become unequal
         shift_station = 0.0  # originally = 0.02
         for s_east in sorted(self.station_locations.rel_east):
             try:
-                node_index = np.where(abs(s_east - east_gridr) <
+                node_index = np.where(abs(s_east - east_grid_r) <
                                       shift_station * self.cell_size_east)[0][0]
-                if s_east - east_gridr[node_index] > 0:
-                    east_gridr[node_index] -= shift_station * self.cell_size_east
-                elif s_east - east_gridr[node_index] < 0:
-                    east_gridr[node_index] += shift_station * self.cell_size_east
+                if s_east - east_grid_r[node_index] > 0:
+                    east_grid_r[node_index] -= shift_station * self.cell_size_east
+                elif s_east - east_grid_r[node_index] < 0:
+                    east_grid_r[node_index] += shift_station * self.cell_size_east
             except IndexError:
                 continue
 
         # --> make grid in north-south direction
         # N-S cells with in station area
-        north_gridr = np.arange(start=southr, stop=northr + self.cell_size_north,
-                                step=self.cell_size_north)
+        north_grid_r = np.arange(start=south_r, stop=north_r + self.cell_size_north,
+                                 step=self.cell_size_north)
         if self.data_obj.rotation_angle == 0:
-            self.data_obj.center_position_EN[1] -= np.mean(north_gridr)
-            self.station_locations.rel_north += np.mean(north_gridr)
-        north_gridr -= np.mean(north_gridr)
+            self.data_obj.center_position_EN[1] -= np.mean(north_grid_r)
+            self.station_locations.rel_north += np.mean(north_grid_r)
+        north_grid_r -= np.mean(north_grid_r)
         # padding cells in the east-west direction
         for ii in range(1, pad_north + 1):
-            south_0 = float(north_gridr[0])
-            north_0 = float(north_gridr[-1])
+            south_0 = float(north_grid_r[0])
+            north_0 = float(north_grid_r[-1])
             #            add_size = mtcc.roundsf(self.cell_size_north *self.pad_stretch_h * ii, -2)
             add_size = mtcc.roundsf(self.cell_size_north * self.pad_stretch_h ** ii, 2)
             pad_s = south_0 - add_size
             pad_n = north_0 + add_size
-            north_gridr = np.insert(north_gridr, 0, pad_s)
-            north_gridr = np.append(north_gridr, pad_n)
+            north_grid_r = np.insert(north_grid_r, 0, pad_s)
+            north_grid_r = np.append(north_grid_r, pad_n)
 
         # --> need to make sure none of the stations lie on the nodes
         for s_north in sorted(self.station_locations.rel_north):
             try:
-                node_index = np.where(abs(s_north - north_gridr) <
+                node_index = np.where(abs(s_north - north_grid_r) <
                                       shift_station * self.cell_size_north)[0][0]
-                if s_north - north_gridr[node_index] > 0:
-                    north_gridr[node_index] -= shift_station * self.cell_size_north
-                elif s_north - north_gridr[node_index] < 0:
-                    north_gridr[node_index] += shift_station * self.cell_size_north
+                if s_north - north_grid_r[node_index] > 0:
+                    north_grid_r[node_index] -= shift_station * self.cell_size_north
+                elif s_north - north_grid_r[node_index] < 0:
+                    north_grid_r[node_index] += shift_station * self.cell_size_north
             except IndexError:
                 continue
 
-                # =================================  begin to make vertical mesh
-                #        (z_nodes, z_grid) = self.make_z_mesh2()
-        (z_nodes, z_grid) = self.make_z_mesh3()
+        (z_nodes, z_grid) = self.make_z_mesh_new()
 
         # Need to make an array of the individual cell dimensions for modem
-        east_nodes = east_gridr[1:] - east_gridr[:-1]
-        north_nodes = north_gridr[1:] - north_gridr[:-1]
+        east_nodes = east_grid_r[1:] - east_grid_r[:-1]
+        north_nodes = north_grid_r[1:] - north_grid_r[:-1]
 
         # compute grid center
         center_east = -east_nodes.__abs__().sum() / 2
@@ -609,8 +685,8 @@ class Model(object):
         self.nodes_z = z_nodes
 
         # make grid lines
-        self.grid_east = east_gridr
-        self.grid_north = north_gridr
+        self.grid_east = east_grid_r
+        self.grid_north = north_grid_r
         self.grid_z = z_grid
 
         # print ('self.nodes_z', self.nodes_z)  # FZ: cell sizes
@@ -620,7 +696,7 @@ class Model(object):
         if update_data_center:  # update the data file's centre position, reprojected back to degrees
             try:
                 self.data_obj.center_position = self.data_obj.project_xy(self.data_obj.center_position_EN[0],
-                                                                 self.data_obj.center_position_EN[1])
+                                                                         self.data_obj.center_position_EN[1])
             except:
                 pass
 
@@ -652,13 +728,13 @@ class Model(object):
         p = self.pad_stretch_v
         nzf = np.log10((p - 1) * self.z_target_depth / self.z1_layer) / np.log10(p) - 1
         nz = int(nzf)
-        if (nz > self.n_layers):
+        if nz > self.n_layers:
             self.n_layers = nz  # adjust z layers to prevent too big numbers.
 
-        numz = self.n_layers - self.pad_z + 1  # - self.n_airlayers
+        num_z = self.n_layers - self.pad_z + 1  # - self.n_airlayers
         # numz = self.n_layers - self.pad_z + 1   - self.n_airlayers
-        factorz = 1.2  # first few layers excluding the air_layers.
-        exp_list = [self.z1_layer * (factorz ** nz) for nz in xrange(0, numz)]
+        factor_z = 1.2  # first few layers excluding the air_layers.
+        exp_list = [self.z1_layer * (factor_z ** nz) for nz in xrange(0, num_z)]
         log_z = np.array(exp_list)
         z_nodes = log_z
 
@@ -694,7 +770,7 @@ class Model(object):
         self.sea_level = z_grid[add_air]
         self._logger.debug("FZ:***1 sea_level = %s", self.sea_level)
 
-        return (z_nodes, z_grid)
+        return z_nodes, z_grid
 
     def make_z_mesh_exp(self, zfactor=1.2):
         """
@@ -715,10 +791,10 @@ class Model(object):
 
         print("self.n_layers %s and calculated z_layers=%s" % (self.n_layers, nz))
 
-        numz = self.n_layers - self.pad_z  # speficied total_layers - padding_layers
+        num_z = self.n_layers - self.pad_z  # speficied total_layers - padding_layers
         # numz should be close to nz.
 
-        exp_list = [self.z1_layer * (zfactor ** n) for n in xrange(0, numz)]
+        exp_list = [self.z1_layer * (zfactor ** n) for n in xrange(0, num_z)]
         log_z = np.array(exp_list)
         z_nodes = log_z  # a list of increasing cell sizes
 
@@ -742,7 +818,7 @@ class Model(object):
         self._logger.debug("Max vertical depth of the mesh= %s", z_grid[-1])
         self._logger.debug("shape of vertical layers cells and grid lines %s, %s", z_nodes.shape, z_grid.shape)
 
-        return (z_nodes, z_grid)
+        return z_nodes, z_grid
 
     def make_z_mesh_new(self):
         """
@@ -751,7 +827,7 @@ class Model(object):
 
         # --> make depth grid
         # if n_airlayers < 0; set to 0
-        nair = max(0, self.n_airlayers)
+        nair = max(0, self.n_air_layers)
 
         log_z = mtcc.make_log_increasing_array(self.z1_layer, self.z_target_depth,
                                                self.n_layers - self.pad_z - nair)
@@ -770,16 +846,16 @@ class Model(object):
 
         # add air layers and define ground surface level.
         # initial layer thickness is same as z1_layer
-        z_nodes = np.hstack([[self.z1_layer] * self.n_airlayers, z_nodes])
+        z_nodes = np.hstack([[self.z1_layer] * self.n_air_layers, z_nodes])
 
         # make an array of absolute values
         z_grid = np.array([z_nodes[:ii].sum() for ii in range(z_nodes.shape[0] + 1)])
 
         return z_nodes, z_grid
 
-    def add_topography_to_mesh(self, topographyfile=None, topographyarray=None,
-                             interp_method='nearest',
-                             air_resistivity=1e17, sea_resistivity=0.3):
+    def add_topography_to_mesh(self, topography_file=None, topography_array=None,
+                               interp_method='nearest',
+                               air_resistivity=1e17, sea_resistivity=0.3):
         """
         For a given mesh grid, use the topofile data to define resistivity model.
         No new air layers will be added. Just identify the max elev height as the ref point
@@ -791,12 +867,12 @@ class Model(object):
         sea_level = 0.0  # self.sea_level
 
         # first, get surface data
-        if topographyfile is not None:
-            self.project_surface(surfacefile=topographyfile,
-                                 surfacename='topography',
+        if topography_file is not None:
+            self.project_surface(surface_file=topography_file,
+                                 surface_name='topography',
                                  method=interp_method)
-        if topographyarray is not None:
-            self.surface_dict['topography'] = topographyarray
+        if topography_array is not None:
+            self.surface_dict['topography'] = topography_array
 
         # update the z-centre as the max topo_elev (top air layer)
         self.grid_center[2] = -np.amax(self.surface_dict['topography'])
@@ -842,8 +918,8 @@ class Model(object):
 
         return
 
-    def add_topography(self, topographyfile=None, topographyarray=None, interp_method='nearest',
-                       air_resistivity=1e17, sea_resistivity=0.3, airlayer_cellsize=None):
+    def add_topography(self, topography_file=None, topography_array=None, interp_method='nearest',
+                       air_resistivity=1e17, sea_resistivity=0.3):
         """
         if air_layers is non-zero, will add topo: read in topograph file, make a surface model.
         Call project_stations_on_topography in the end, which will re-write the .dat file.
@@ -851,18 +927,18 @@ class Model(object):
         If n_airlayers is zero, then cannot add topo data, only bathymetry is needed.
         """
         # first, get surface data
-        if topographyfile is not None:
-            self.project_surface(surfacefile=topographyfile,
-                                 surfacename='topography',
+        if topography_file is not None:
+            self.project_surface(surface_file=topography_file,
+                                 surface_name='topography',
                                  method=interp_method)
-        if topographyarray is not None:
-            self.surface_dict['topography'] = topographyarray
+        if topography_array is not None:
+            self.surface_dict['topography'] = topography_array
 
-        if self.n_airlayers is None or self.n_airlayers == 0:
+        if self.n_air_layers is None or self.n_air_layers == 0:
             print("No air layers specified, so will not add air/topography !!!")
             print("Only bathymetry will be added below according to the topofile: sea-water low resistivity!!!")
 
-        elif self.n_airlayers > 0:  # FZ: new logic, add equal blocksize air layers on top of the simple flat-earth grid
+        elif self.n_air_layers > 0:  # FZ: new logic, add equal blocksize air layers on top of the simple flat-earth grid
             # build air layers based on the inner core area
             padE = int(sum(self.pad_east))
             padN = int(sum(self.pad_north))
@@ -881,7 +957,7 @@ class Model(object):
             # log increasing airlayers, in reversed order
             new_air_nodes = mtcc.make_log_increasing_array(self.z1_layer,
                                                            topo_core.max() - topo_core.min(),
-                                                           self.n_airlayers,
+                                                           self.n_air_layers,
                                                            increment_factor=0.999)[::-1]
             # sum to get grid cell locations
             new_airlayers = np.array([new_air_nodes[:ii].sum() for ii in range(len(new_air_nodes) + 1)])
@@ -894,7 +970,8 @@ class Model(object):
 
             # add new air layers, cut_off some tailing layers to preserve array size.
             self.grid_z = np.concatenate(
-                [new_airlayers, self.grid_z[self.n_airlayers + 1:] - self.grid_z[self.n_airlayers] + new_airlayers[-1]],
+                [new_airlayers,
+                 self.grid_z[self.n_air_layers + 1:] - self.grid_z[self.n_air_layers] + new_airlayers[-1]],
                 axis=0)
             print(" NEW self.grid_z shape and values = ", self.grid_z.shape, self.grid_z)
 
@@ -970,11 +1047,12 @@ class Model(object):
 
         self.station_grid_index = self.project_stations_on_topography()
 
-        self._logger.debug("NEW res_model and cov_mask shapes: %s, %s", self.res_model.shape, self.covariance_mask.shape)
+        self._logger.debug("NEW res_model and cov_mask shapes: %s, %s", self.res_model.shape,
+                           self.covariance_mask.shape)
 
         return
 
-    def project_surface(self, surfacefile=None, surface=None, surfacename=None,
+    def project_surface(self, surface_file=None, surface=None, surface_name=None,
                         surface_epsg=4326, method='nearest'):  # todo GA Version
         """
         project a surface to the model grid and add resulting elevation data
@@ -1026,7 +1104,7 @@ class Model(object):
 
         # read the surface data in from ascii if surface not provided
         if surface is None:
-            surface = mtfh.read_surface_ascii(surfacefile)
+            surface = mtfh.read_surface_ascii(surface_file)
 
         x, y, elev = surface
 
@@ -1034,7 +1112,7 @@ class Model(object):
         if len(x.shape) == 1:
             x, y = np.meshgrid(x, y)
 
-        epsg_from, epsg_to = surface_epsg, self.Data.epsg
+        epsg_from, epsg_to = surface_epsg, self.data_obj.epsg
         xs, ys = mtpy.utils.gis_tools.epsg_project(x, y, epsg_from, epsg_to)
 
         # get centre position of model grid in real world coordinates
@@ -1061,22 +1139,23 @@ class Model(object):
         # np.savetxt('E:/tmp/elev_mg.txt', elev_mg, fmt='%10.5f')
 
         # get a name for surface
-        if surfacename is None:
-            if surfacefile is not None:
-                surfacename = os.path.basename(surfacefile)
+        if surface_name is None:
+            if surface_file is not None:
+                surface_name = os.path.basename(surface_file)
             else:
                 ii = 1
-                surfacename = 'surface%01i' % ii
-                while surfacename in self.surface_dict.keys():
+                surface_name = 'surface%01i' % ii
+                while surface_name in self.surface_dict.keys():
                     ii += 1
-                    surfacename = 'surface%01i' % ii
+                    surface_name = 'surface%01i' % ii
 
         # add surface to a dictionary of surface elevation data
-        self.surface_dict[surfacename] = elev_mg
+        self.surface_dict[surface_name] = elev_mg
 
         return
 
-    def assign_resistivity_from_surfacedata(self, surfacename, resistivity_value, where='above'):
+    def assign_resistivity_from_surfacedata(self, surface_name, resistivity_value,
+                                            where='above'):
         """
         assign resistivity value to all points above or below a surface
         requires the surface_dict attribute to exist and contain data for
@@ -1092,12 +1171,11 @@ class Model(object):
 
         # FZ: should ref-define the self.res_model if its shape has changed after topo air layer are added
 
-
         gcz = np.mean([self.grid_z[:-1], self.grid_z[1:]], axis=0)
 
         self._logger.debug("gcz is the cells centre coordinates: %s, %s", len(gcz), gcz)
         # convert to positive down, relative to the top of the grid
-        surfacedata = self.sea_level - self.surface_dict[surfacename]
+        surfacedata = self.sea_level - self.surface_dict[surface_name]
         # surfacedata = self.surface_dict[surfacename] - self.sea_level
 
         # define topography, so that we don't overwrite cells above topography
@@ -1105,7 +1183,7 @@ class Model(object):
         if 'topography' in self.surface_dict.keys():
             # second, check topography isn't the surface we're trying to assign
             # resistivity for
-            if surfacename == 'topography':
+            if surface_name == 'topography':
                 # if it is, we need to define the upper limit as the top of the model
                 top = np.zeros_like(surfacedata) + np.amin(self.grid_z)
             else:
@@ -1181,17 +1259,17 @@ class Model(object):
             # update elevation in station locations and data array, +1 m as
             # data elevation needs to be below the topography (as advised by Naser)
             self.station_locations['elev'][ss] = topoval + 1.
-            self.Data.data_array['elev'][ss] = topoval + 1.
+            self.data_obj.data_array['elev'][ss] = topoval + 1.
 
         # This will shift stations' location to be relative to the defined mesh-grid centre
-        self.Data.station_locations = self.station_locations
+        self.data_obj.station_locations = self.station_locations
 
         self._logger.debug("Re-write data file after adding topo")
-        self.Data.write_data_file(fill=False)  # (Xi, Yi, Zi) of each station-i may be shifted
+        self.data_obj.write_data_file(fill=False)  # (Xi, Yi, Zi) of each station-i may be shifted
 
         # debug self.Data.write_data_file(save_path='/e/tmp', fill=False)
 
-        return (station_index_x, station_index_y)
+        return station_index_x, station_index_y
 
     def plot_mesh(self, east_limits=None, north_limits=None, z_limits=None,
                   **kwargs):
@@ -1479,7 +1557,6 @@ class Model(object):
         # ax2.scatter(plot_east, [0] * self.station_locations.shape[0],
         #            marker=station_marker, c=marker_color,s=marker_size)
 
-
         ax2.set_ylim(self.z_target_depth, -2000)
 
         #
@@ -1649,14 +1726,14 @@ class Model(object):
             self.res_model = np.zeros((self.nodes_north.size,
                                        self.nodes_east.size,
                                        self.nodes_z.size))
-            self.res_model[:, :, :] = self.res_starting_value
+            self.res_model[:, :, :] = self.res_initial_value
 
         elif type(self.res_model) in [float, int]:
-            self.res_starting_value = self.res_model
+            self.res_initial_value = self.res_model
             self.res_model = np.zeros((self.nodes_north.size,
                                        self.nodes_east.size,
                                        self.nodes_z.size))
-            self.res_model[:, :, :] = self.res_starting_value
+            self.res_model[:, :, :] = self.res_initial_value
 
         # --> write file
         ifid = file(self.model_fn, 'w')
@@ -1691,6 +1768,8 @@ class Model(object):
             write_res_model = np.log10(self.res_model[::-1, :, :])
         elif self.res_scale.lower() == 'linear':
             write_res_model = self.res_model[::-1, :, :]
+        else:
+            raise ModelError("resistivity scale \"{}\" is not supported.".format(self.res_scale))
 
         # write out the layers from resmodel
         for zz in range(self.nodes_z.size):
@@ -1718,7 +1797,7 @@ class Model(object):
 
         self._logger.info('Wrote file to: {0}'.format(self.model_fn))
 
-    def read_model_file(self, model_fn=None, shift_grid=False):
+    def read_model_file(self, model_fn=None):
         """
         read an initial file and return the pertinent information including
         grid positions in coordinates relative to the center point (0,0) and
@@ -1832,7 +1911,7 @@ class Model(object):
                     self.grid_center = np.array(ilist, dtype=np.float)
                 # rotation angle
                 elif len(ilist) == 1:
-                    self.rotation_angle = np.float(ilist[0])
+                    self.mesh_rotation_angle = np.float(ilist[0])
                 else:
                     pass
 
@@ -1882,7 +1961,7 @@ class Model(object):
 
         # compute grid center
         center_east = -self.nodes_east.__abs__().sum() / 2
-        center_north = -self.nodes_norths.__abs__().sum() / 2
+        center_north = -self.nodes_north.__abs__().sum() / 2
         center_z = 0
         self.grid_center = np.array([center_north, center_east, center_z])
 
@@ -1958,7 +2037,8 @@ class Model(object):
         return parameter_dict
 
     # --> read in ascii dem file
-    def read_dem_ascii(self, ascii_fn, cell_size=500, model_center=(0, 0),
+    @staticmethod
+    def read_dem_ascii(ascii_fn, cell_size=500, model_center=(0, 0),
                        rot_90=0, dem_rotation_angle=0):
         """
         read in dem which is ascii format
@@ -2004,8 +2084,8 @@ class Model(object):
                     break
 
         # create lat and lon arrays from the dem fle
-        lon = np.arange(x0, x0 + cs * (nx), cs)
-        lat = np.arange(y0, y0 + cs * (ny), cs)
+        lon = np.arange(x0, x0 + cs * nx, cs)
+        lat = np.arange(y0, y0 + cs * ny, cs)
 
         # calculate the lower left and uper right corners of the grid in meters
         ll_en = gis_tools.project_point_ll2utm(lat[0], lon[0])
@@ -2065,7 +2145,8 @@ class Model(object):
 
         return new_east, new_north, elevation
 
-    def interpolate_elevation(self, elev_east, elev_north, elevation,
+    @staticmethod
+    def interpolate_elevation(elev_east, elev_north, elevation,
                               model_east, model_north, pad=3,
                               elevation_max=None):
         """
@@ -2211,7 +2292,7 @@ class Model(object):
 
         # find sea level if it is there
         if elev_min < 0:
-            sea_level_index = num_elev_cells - abs(int((elev_min) / elevation_cell)) - 1
+            sea_level_index = num_elev_cells - abs(int(elev_min / elevation_cell)) - 1
         else:
             sea_level_index = num_elev_cells - 1
 
@@ -2304,25 +2385,25 @@ class Model(object):
                              full path to model file that contains topography
 
         """
-        ### 1.) read in the dem and center it onto the resistivity model
+        # 1.) read in the dem and center it onto the resistivity model
         e_east, e_north, elevation = self.read_dem_ascii(dem_ascii_fn,
                                                          cell_size=cell_size,
                                                          model_center=model_center,
                                                          rot_90=rot_90,
                                                          dem_rotation_angle=dem_rotation_angle)
 
-        ### 2.) interpolate the elevation model onto the model grid
+        # 2.) interpolate the elevation model onto the model grid
         m_elev = self.interpolate_elevation(e_east, e_north, elevation,
                                             self.grid_east, self.grid_north,
                                             pad=pad, elevation_max=elev_max)
 
         m_elev[np.where(m_elev == -9999.0)] = m_elev[np.where(m_elev != -9999.0)].min()
-        ### 3.) make a resistivity model that incoorporates topography
+        # 3.) make a resistivity model that incoorporates topography
         mod_elev, elev_nodes_z = self.make_elevation_model(m_elev,
                                                            self.nodes_z,
                                                            elevation_cell=elev_cell)
 
-        ### 4.) write new model file
+        # 4.) write new model file
         self.nodes_z = elev_nodes_z
         self.res_model = mod_elev
 
@@ -2438,8 +2519,8 @@ class Model(object):
 
         return
 
-    def add_topography_to_model2(self, topographyfile=None, topographyarray=None, interp_method='nearest',
-                                 air_resistivity=1e12, sea_resistivity=0.3, airlayer_cellsize=None):
+    def add_topography_to_model2(self, topographyfile=None, topographyarray=None,
+                                 interp_method='nearest', air_resistivity=1e12):
         """
         if air_layers is non-zero, will add topo: read in topograph file, make a surface model.
         Call project_stations_on_topography in the end, which will re-write the .dat file.
@@ -2454,11 +2535,11 @@ class Model(object):
         if topographyarray is not None:
             self.surface_dict['topography'] = topographyarray
 
-        if self.n_airlayers is None or self.n_airlayers == 0:
-            print("No air layers specified, so will not add air/topography !!!")
-            print("Only bathymetry will be added below according to the topofile: sea-water low resistivity!!!")
+        if self.n_air_layers is None or self.n_air_layers == 0:
+            self._logger.warn("No air layers specified, so will not add air/topography !!!")
+            self._logger.warn("Only bathymetry will be added below according to the topofile: sea-water low resistivity!!!")
 
-        elif self.n_airlayers > 0:  # FZ: new logic, add equal blocksize air layers on top of the simple flat-earth grid
+        elif self.n_air_layers > 0:  # FZ: new logic, add equal blocksize air layers on top of the simple flat-earth grid
             # build air layers based on the inner core area
             padE = self.pad_east
             padN = self.pad_north
@@ -2474,16 +2555,16 @@ class Model(object):
             # log increasing airlayers, in reversed order
             new_air_nodes = mtmesh.make_log_increasing_array(self.z1_layer,
                                                              topo_core.max() - topo_core.min(),
-                                                             self.n_airlayers + 1,
+                                                             self.n_air_layers + 1,
                                                              increment_factor=0.999)[::-1]
             # sum to get grid cell locations
             new_airlayers = np.array([new_air_nodes[:ii].sum() for ii in range(len(new_air_nodes) + 1)])
             # round to nearest whole number and reverse the order
             new_airlayers = np.around(new_airlayers - topo_core.max())
 
-            print("new_airlayers", new_airlayers)
+            self._logger.debug("new_airlayers", new_airlayers)
 
-            print("self.grid_z[0:2]", self.grid_z[0:2])
+            self._logger.debug("self.grid_z[0:2]", self.grid_z[0:2])
 
             # add new air layers, cut_off some tailing layers to preserve array size.
             #            self.grid_z = np.concatenate([new_airlayers, self.grid_z[self.n_airlayers+1:] - self.grid_z[self.n_airlayers] + new_airlayers[-1]], axis=0)
@@ -2498,8 +2579,8 @@ class Model(object):
         # update the resistivity model
         new_res_model = np.ones((self.nodes_north.size,
                                  self.nodes_east.size,
-                                 self.nodes_z.size)) * self.res_starting_value
-        new_res_model[:, :, self.n_airlayers + 1:] = self.res_model
+                                 self.nodes_z.size)) * self.res_initial_value
+        new_res_model[:, :, self.n_air_layers + 1:] = self.res_model
         self.res_model = new_res_model
 
         #        logger.info("begin to self.assign_resistivity_from_surfacedata(...)")

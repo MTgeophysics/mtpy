@@ -85,7 +85,7 @@ class TestModemInputFilesBuilder(TestCase):
                    pad_z=6,  # number of vertical padding cells
                    pad_stretch_v=1.6,  # factor to increase by in padding cells (vertical)
                    pad_stretch_h=1.4,  # factor to increase by in padding cells (horizontal)
-                   n_airlayers=10,  # number of air layers
+                   n_air_layers=10,  # number of air layers
                    res_model=100,  # halfspace resistivity value for reference model
                    n_layers=90,  # total number of z layers, including air
                    z1_layer=10,  # first layer thickness
