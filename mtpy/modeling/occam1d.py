@@ -1492,7 +1492,6 @@ class Plot1DResponse(object):
             self.mtem = kwargs.pop('mtem', '+')
             self.mtmm = kwargs.pop('mtmm', '+')
 
-
         # black and white mode
         elif self.color_mode == 'bw':
             # color for data
@@ -1689,7 +1688,7 @@ class Plot1DResponse(object):
         # --> plot model apparent resistivity and phase-------------------------
         nr = len(self.resp_te_fn)
         for rr, rfn in enumerate(self.resp_te_fn):
-            if rfn == None:
+            if rfn is None:
                 break
             itnum = rfn[-7:-5]
             if self.color_mode == 'color':
@@ -1753,7 +1752,7 @@ class Plot1DResponse(object):
         # ---------------plot TM model response---------------------------------
         nr = len(self.resp_tm_fn)
         for rr, rfn in enumerate(self.resp_tm_fn):
-            if rfn == None:
+            if rfn is None:
                 break
             itnum = rfn[-7:-5]
             if self.color_mode == 'color':
@@ -1861,7 +1860,7 @@ class Plot1DResponse(object):
             # --> plot te models
             nr = len(self.iter_te_fn)
             for ii, ifn in enumerate(self.iter_te_fn):
-                if ifn == None:
+                if ifn is None:
                     break
                 if self.color_mode == 'color':
                     cxy = (0, .4 + float(ii) / (3 * nr), 0)
@@ -1880,7 +1879,7 @@ class Plot1DResponse(object):
             # --> plot TM models
             nr = len(self.iter_tm_fn)
             for ii, ifn in enumerate(self.iter_tm_fn):
-                if ifn == None:
+                if ifn is None:
                     break
                 if self.color_mode == 'color':
                     cyx = (.7 + float(ii) / (4 * nr), .13, .63 - float(ii) / (4 * nr))
@@ -1898,7 +1897,7 @@ class Plot1DResponse(object):
 
             m1 = Model()
             m1.read_model_file(self.model_fn)
-            if self.depth_limits == None:
+            if self.depth_limits is None:
                 dmin = min(plot_depth)
                 if dmin == 0:
                     dmin = 1
@@ -2003,10 +2002,10 @@ class Plot1DResponse(object):
 
         """
 
-        if fig_dpi == None:
+        if fig_dpi is None:
             fig_dpi = self.fig_dpi
 
-        if os.path.isdir(save_fn) == False:
+        if not os.path.isdir(save_fn):
             file_format = save_fn[-3:]
             self.fig.savefig(save_fn, dpi=fig_dpi, format=file_format,
                              orientation=orientation, bbox_inches='tight')
@@ -2032,7 +2031,7 @@ class Plot1DResponse(object):
         rewrite the string builtin to give a useful message
         """
 
-        return ("Plots model responses and model for 1D occam inversion")
+        return "Plots model responses and model for 1D occam inversion"
 
 
 class Run(object):
@@ -2065,7 +2064,7 @@ class Run(object):
             print '  check {0} for files'.format(os.path.dirname(self.startup_fn))
 
 
-class PlotL2():
+class PlotL2(object):
     """
     plot L2 curve of iteration vs rms and roughness
 
@@ -2406,7 +2405,7 @@ class PlotL2():
         rewrite the string builtin to give a useful message
         """
 
-        return ("Plots RMS vs Iteration computed by Occam2D")
+        return "Plots RMS vs Iteration computed by Occam2D"
 
 
 def parse_arguments(arguments):

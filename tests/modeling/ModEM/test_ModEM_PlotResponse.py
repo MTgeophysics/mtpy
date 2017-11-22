@@ -6,25 +6,14 @@ Created on Tue Oct 04 13:13:29 2016
 
 Plot responses from ModEM model.
 """
-import os
 import os.path as op
-from unittest import TestCase
 
 from mtpy.modeling.modem import PlotResponse
+from tests import SAMPLE_DIR
+from tests.imaging import ImageTestCase
 
-from tests import plt_wait, plt_close, SAMPLE_DIR
-from tests.imaging import reset_matplotlib
 
-
-class Test_ModEM_PlotResponse(TestCase):
-    @classmethod
-    def setUpClass(cls):
-        reset_matplotlib()
-
-    def tearDown(self):
-        plt_wait(5)
-        plt_close()
-
+class Test_ModEM_PlotResponse(ImageTestCase):
     def test_modular_MPI_NLCG_004(self):
         wd = op.normpath(op.join(SAMPLE_DIR, 'ModEM'))
         filestem = 'Modular_MPI_NLCG_004'

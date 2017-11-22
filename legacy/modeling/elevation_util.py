@@ -6,14 +6,11 @@ Author: fei.zhang@ga.gov.au
 
 Date:
 """
-import os
 
-import matplotlib.pyplot as plt
 import numpy as np
 import scipy.interpolate as spi
 
 import mtpy.utils.gis_tools
-import mtpy.utils.latlon_utm_conversion as utm2ll
 
 
 # ==============================================================================

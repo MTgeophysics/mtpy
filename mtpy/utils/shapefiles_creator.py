@@ -4,7 +4,6 @@ Description:
 
     Create shape files for Phase Tensor Ellipses, Tipper Real/Imag.
 
-
 CreationDate:   2017-03-06
 Developer:      fei.zhang@ga.gov.au
 
@@ -39,12 +38,12 @@ mpl.rcParams['lines.linewidth'] = 2
 # mpl.rcParams['lines.color'] = 'r'
 mpl.rcParams['figure.figsize'] = [10, 6]
 
-logger = MtPyLog().get_mtpy_logger(__name__)
-logger.setLevel(logging.DEBUG)
+_logger = MtPyLog.get_mtpy_logger(__name__)
+# logger.setLevel(logging.DEBUG)
 
 
 class ShapeFilesCreator(EdiCollection):
-    """ Extend the functions of the EdiCollection class,
+    """ Extend the EdiCollection parent class,
     create phase tensor and tipper shapefiles for a list of edifiles
     """
 
@@ -55,7 +54,7 @@ class ShapeFilesCreator(EdiCollection):
         :param outdir: path2output dir, where the shpe file weill be written.
         """
 
-        super(ShapeFilesCreator,self).__init__(edilist=edifile_list, outdir=outdir)
+        super(ShapeFilesCreator, self).__init__(edilist=edifile_list, outdir=outdir)
         #python-3 syntax: super().__init__(edilist=edifile_list, outdir=outdir)
 
         # These attributes below are defined in the parent class.
@@ -130,7 +129,7 @@ class ShapeFilesCreator(EdiCollection):
                                 if (f2 > freq * (1 - self.ptol)) and
                                 (f2 < freq * (1 + self.ptol))]
                 if len(f_index_list) > 1:
-                    logger.warn("more than one fre found %s", f_index_list)
+                    self._logger.warn("more than one fre found %s", f_index_list)
 
                 if len(f_index_list) >= 1:
                     p_index = f_index_list[0]
@@ -155,7 +154,7 @@ class ShapeFilesCreator(EdiCollection):
 
                     ptlist.append(pt_stat)
                 else:
-                    logger.warn('Freq %s NOT found for this station %s', freq, mt_obj.station)
+                    self._logger.warn('Freq %s NOT found for this station %s', freq, mt_obj.station)
 
             with open(csvfname, "ab") as csvf:  # summary csv for all freqs
                 writer = csv.writer(csvf)
@@ -181,15 +180,15 @@ class ShapeFilesCreator(EdiCollection):
 
         pt = self.get_phase_tensor_tippers(period)
 
-        logger.debug("phase tensor values =: %s", pt)
+        self._logger.debug("phase tensor values =: %s", pt)
 
         if len(pt)<1:
-            logger.warn("No phase tensor for the period %s for any MT station", period)
+            self._logger.warn("No phase tensor for the period %s for any MT station", period)
             return None
 
         pdf = pd.DataFrame(pt)
 
-        logger.debug(pdf['period'])
+        self._logger.debug(pdf['period'])
 
         mt_locations = [Point(xy) for xy in zip(pdf['lon'], pdf['lat'])]
         # OR pdf['geometry'] = pdf.apply(lambda z: Point(z.lon, z.lat), axis=1)
@@ -232,7 +231,7 @@ class ShapeFilesCreator(EdiCollection):
         geopdf = gpd.GeoDataFrame(geopdf, crs=orig_crs, geometry=ellipse_list)
 
         if target_epsg_code is None:
-            logger.info("Geopandas Datframe CRS: %s", geopdf.crs)
+            self._logger.info("Geopandas Datframe CRS: %s", geopdf.crs)
             # {'init': 'epsg:4283', 'no_defs': True}
             #raise Exception("Must provide a target_epsg_code")
             target_epsg_code= geopdf.crs['init'][5:]
@@ -244,10 +243,10 @@ class ShapeFilesCreator(EdiCollection):
         # to shape file
         shp_fname = 'Phase_Tensor_EPSG_%s_Period_%ss.shp' % (target_epsg_code, period)
         path2shp = os.path.join(self.outdir, shp_fname)
-        logger.debug("To write to ESRI shp file %s", path2shp)
+        self._logger.debug("To write to ESRI shp file %s", path2shp)
         geopdf.to_file(path2shp, driver='ESRI Shapefile')
 
-        logger.info("Geopandas Datframe CRS: %s", geopdf.crs)
+        self._logger.info("Geopandas Datframe CRS: %s", geopdf.crs)
 
         if export is True:
             bbox_dict= self.get_bounding_box(epsgcode=target_epsg_code)
@@ -277,15 +276,19 @@ class ShapeFilesCreator(EdiCollection):
 
         pdf = pd.DataFrame(pt)
 
+        tip_mag_re_maxval = pdf['tip_mag_re'].max()
+
+        line_length_normalized = line_length/tip_mag_re_maxval
+
         logger.debug(pdf['period'])
 
         orig_crs = {'init': 'epsg:4283'}  # initial crs GDA94
 
         pdf['tip_re'] = pdf.apply(lambda x:
                                   LineString([(float(x.lon), float(x.lat)),
-                                              (float(x.lon) + line_length * x.tip_mag_re * np.cos(
+                                              (float(x.lon) + line_length_normalized * x.tip_mag_re * np.cos(
                                                   -np.deg2rad(x.tip_ang_re)),
-                                               float(x.lat) + line_length * x.tip_mag_re * np.sin(
+                                               float(x.lat) + line_length_normalized * x.tip_mag_re * np.sin(
                                                    -np.deg2rad(x.tip_ang_re)))]), axis=1)
 
         geopdf = gpd.GeoDataFrame(pdf, crs=orig_crs, geometry='tip_re')
@@ -492,7 +495,7 @@ def export_geopdf_to_image(geopdf, bbox, jpg_file_name, target_epsg_code=None, s
     # plot and save
 
     fig_title = os.path.basename(jpg_file_name)
-    logger.info('saving figure to file %s', jpg_file_name)
+    self._logger.info('saving figure to file %s', jpg_file_name)
 
     colorby = 'phi_min'
     my_cmap_r = 'jet'
@@ -531,6 +534,7 @@ def export_geopdf_to_image(geopdf, bbox, jpg_file_name, target_epsg_code=None, s
 
         # automatically adjust plot xy-scope
         margin = 0.02  # degree
+        margin = 0.05 * (bbox['MaxLon'] - bbox['MinLon'] + bbox['MaxLat']- bbox['MinLat'])
         myax.set_xlim((bbox['MinLon'] - margin, bbox['MaxLon'] + margin))
         myax.set_ylim((bbox['MinLat'] - margin, bbox['MaxLat'] + margin))
 
@@ -552,7 +556,8 @@ def export_geopdf_to_image(geopdf, bbox, jpg_file_name, target_epsg_code=None, s
         # myax.set_ylim([7400000, 7900000])
 
         # automatically adjust plot xy-scope
-        margin = 2000  # meters
+        #margin = 2000  # meters
+        margin = 0.05 * (bbox['MaxLon'] - bbox['MinLon'] + bbox['MaxLat'] - bbox['MinLat'])
         myax.set_xlim((bbox['MinLon'] - margin, bbox['MaxLon'] + margin))
         myax.set_ylim((bbox['MinLat'] - margin, bbox['MaxLat'] + margin))
 
@@ -596,7 +601,7 @@ def process_csv_folder(csv_folder, bbox_dict, target_epsg_code=4283):
     """
 
     if csv_folder is None:
-        logger.critical("Must provide a csv folder")
+        _logger.critical("Must provide a csv folder")
 
     csvfiles = glob.glob(csv_folder + '/*Hz.csv')  # phase_tensor_tipper_0.004578Hz.csv
 
@@ -624,38 +629,6 @@ def process_csv_folder(csv_folder, bbox_dict, target_epsg_code=4283):
 
     return
 
-###################################################################
-# Example codes to use the ShapeFilesCreator class define in this module.
-
-if __name__ == "__main__":
-
-    edidir = sys.argv[1]
-
-    edifiles = glob.glob(os.path.join(edidir, "*.edi"))
-
-    if len(sys.argv) > 2:
-        path2out = sys.argv[2]
-    else:
-        path2out = None
-
-    esize=0.08 # ellipse size ?
-
-    # filter the edi files here if desired, to get a subset:
-    # edifiles2 = edifiles[0:-1:2]
-    shp_maker = ShapeFilesCreator(edifiles, path2out)
-
-    shp_maker.create_phase_tensor_shp(999.99, ellipsize=esize) # nothing created for non-existent peri
-
-    min_period = shp_maker.all_unique_periods[0]
-    max_period = shp_maker.all_unique_periods[-1]
-    for aper in [min_period, max_period]:
-    #for aper in shp_maker.all_unique_periods[::2]:  # ascending order: from short to long periods
-        # shp_maker.create_phase_tensor_shp_by_period(2.85)
-        shp_maker.create_phase_tensor_shp(aper, target_epsg_code=None, ellipsize=esize)
-        shp_maker.create_tipper_real_shp_at_period(aper,line_length=esize,target_epsg_code=None)
-        for my_epsgcode in [3112, 28354]:  # [3112, 4326, 4283, 32754, 32755, 28354, 28355]:
-            shp_maker.create_phase_tensor_shp(aper, target_epsg_code=my_epsgcode, ellipsize=esize, export=True)
-            shp_maker.create_tipper_real_shp_at_period(aper, line_length=esize, target_epsg_code=my_epsgcode, export=True)
 
 # ==================================================================
 # python mtpy/utils/shapefiles_creator.py data/edifiles /e/tmp
@@ -703,3 +676,42 @@ if __name__ == "__main__999":
         bbox_dict=edisobj.get_bounding_box(epsgcode=my_epsgcode)
         print(bbox_dict)
         process_csv_folder(path2out, bbox_dict, target_epsg_code=my_epsgcode)
+
+###################################################################
+# Example codes to use the ShapeFilesCreator class - new version
+
+if __name__ == "__main__":
+
+    edidir = sys.argv[1]
+
+    edifiles = glob.glob(os.path.join(edidir, "*.edi"))
+
+    if len(sys.argv) > 2:
+        path2out = sys.argv[2]
+    else:
+        path2out = None
+
+    # esize=0.08 # specify ellipse size ?
+
+    # filter the edi files here if desired, to get a subset:
+    edi_list = edifiles[0:-1]  # subset of the edi files?
+    shp_maker = ShapeFilesCreator(edi_list, path2out)
+
+    station_distance_min= shp_maker.get_stations_distances_stats().get("MIN_DIST")
+    esize = station_distance_min/2  # a half or a third of the min_distance?
+
+    print ("Automatically set the Ellispse Size =:", esize)
+
+    shp_maker.create_phase_tensor_shp(999.99, ellipsize=esize) # nothing created for non-existent peri
+
+    min_period = shp_maker.all_unique_periods[0]
+    max_period = shp_maker.all_unique_periods[-1]
+
+    #for aper in [min_period, max_period]:
+    for aper in shp_maker.all_unique_periods[::5]:  # ascending order: from short to long periods
+        # shp_maker.create_phase_tensor_shp_by_period(2.85)
+        shp_maker.create_phase_tensor_shp(aper, target_epsg_code=None, ellipsize=esize)
+        shp_maker.create_tipper_real_shp_at_period(aper,line_length=esize,target_epsg_code=None)
+        for my_epsgcode in [3112, 28354]:  # [3112, 4326, 4283, 32754, 32755, 28354, 28355]:
+            shp_maker.create_phase_tensor_shp(aper, target_epsg_code=my_epsgcode, ellipsize=esize, export=True)
+            shp_maker.create_tipper_real_shp_at_period(aper, line_length=esize, target_epsg_code=my_epsgcode, export=True)

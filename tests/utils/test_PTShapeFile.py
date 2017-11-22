@@ -4,22 +4,23 @@ import unittest
 from unittest import TestCase
 
 from mtpy.utils.shapefiles import create_phase_tensor_shpfiles
-from tests import TEST_TEMP_DIR
+from tests import make_temp_dir
 
 edi_paths = [
     "",
     "data/edifiles",
     "examples/data/edi2",
     "examples/data/edi_files",
-    "../MT_Datasets/3D_MT_data_edited_fromDuanJM/",
-    "../MT_Datasets/GA_UA_edited_10s-10000s/",
+    "../MT_Datasets/3D_MT_data_edited_fromDuanJM",
+    "../MT_Datasets/GA_UA_edited_10s-10000s",
     "data/edifiles2"
 ]
 
 
 class TestPTShapeFile(TestCase):
-    def setUp(self):
-        self._temp_dir = TEST_TEMP_DIR
+    @classmethod
+    def setUpClass(cls):
+        cls._temp_dir = make_temp_dir(cls.__name__)
 
     def test_shapefile_01(self):
         edi_path = edi_paths[1]

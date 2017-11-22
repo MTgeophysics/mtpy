@@ -9,23 +9,13 @@ Plot data and responses from ModEM model.
 """
 
 import os.path as op
-from unittest import TestCase
 
 from mtpy.modeling.modem import PlotPTMaps
+from tests import SAMPLE_DIR
+from tests.imaging import ImageTestCase
 
-from tests import plt_wait, plt_close, SAMPLE_DIR
-from tests.imaging import reset_matplotlib
 
-
-class Test_ModEM_PlotPTMaps(TestCase):
-    @classmethod
-    def setUpClass(cls):
-        reset_matplotlib()
-
-    def tearDown(self):
-        plt_wait(5)
-        plt_close()
-
+class Test_ModEM_PlotPTMaps(ImageTestCase):
     def test_modular_MPI_NLCG_004(self):
         wd = op.normpath(op.join(SAMPLE_DIR, 'ModEM'))
         filestem = 'Modular_MPI_NLCG_004'

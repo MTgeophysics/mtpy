@@ -14,8 +14,8 @@ edi_paths = [
     "data/edifiles",
     "examples/data/edi2",
     "examples/data/edi_files",
-    "../MT_Datasets/3D_MT_data_edited_fromDuanJM/",
-    "../MT_Datasets/GA_UA_edited_10s-10000s/",
+    "../MT_Datasets/3D_MT_data_edited_fromDuanJM",
+    "../MT_Datasets/GA_UA_edited_10s-10000s",
     "data/edifiles2"
 ]
 

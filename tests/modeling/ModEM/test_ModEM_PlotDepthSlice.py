@@ -9,25 +9,17 @@ Created on Tue Oct 04 13:13:29 2016
 Fei.zhang@ga.gov.au
 YG
 """
-from unittest import TestCase
 
 import os
 
 import matplotlib.pyplot as plt
+
 from mtpy.modeling.modem import PlotDepthSlice
-from tests import TEST_TEMP_DIR, plt_wait, plt_close, SAMPLE_DIR
-from tests.imaging import reset_matplotlib
+from tests import SAMPLE_DIR
+from tests.imaging import ImageTestCase
 
 
-class Test_PlotDepthSlice(TestCase):
-    @classmethod
-    def setUpClass(cls):
-        reset_matplotlib()
-
-    def tearDown(self):
-        plt_wait(1)
-        plt_close()
-
+class Test_PlotDepthSlice(ImageTestCase):
     def test_PlotDepthSlice(self):
         """
         test function
@@ -38,7 +30,7 @@ class Test_PlotDepthSlice(TestCase):
         wd = os.path.join(SAMPLE_DIR, 'ModEM')
 
         # directory to save to
-        save_path = TEST_TEMP_DIR
+        save_path = self._temp_dir
         # file stem for inversion result
         filestem = 'Modular_MPI_NLCG_004'
 

@@ -10,7 +10,7 @@ Plot RMS at each station as a map
 import os
 
 os.chdir(r'C:\Git\mtpy')
-from mtpy.modeling.modem import Plot_RMS_Maps
+from mtpy.modeling.modem import PlotRMSMaps
 
 # directory where files are located
 wd = r'C:\Git\mtpy\examples\model_files\ModEM'
@@ -25,6 +25,6 @@ filestem = 'Modular_MPI_NLCG_004'
 period_index = 0
 
 # plot map
-rmsmap = Plot_RMS_Maps(residual_fn=os.path.join(wd,filestem + '.res'),period_index=period_index,
-                   xminorticks=50000,yminorticks=50000,save_plots='y')
+rmsmap = PlotRMSMaps(residual_fn=os.path.join(wd, filestem + '.res'), period_index=period_index,
+                     xminorticks=50000, yminorticks=50000, save_plots='y')
 rmsmap.save_figure(save_path)
