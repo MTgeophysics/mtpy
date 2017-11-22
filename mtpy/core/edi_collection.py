@@ -545,10 +545,10 @@ class EdiCollection(object):
                 dist = math.sqrt((xi-xj)**2 + (yi - yj)**2)
                 mt_distances.append(dist)
 
-        print (mt_distances)
+        # print (mt_distances)
 
         anarray = pd.Series(mt_distances)
-        min_d = anarray.min()
+        min_d = anarray.min()  # cold be very small due to two close stations, skew the result
         max_d = anarray.max()
         logger.debug("Minimum = %s", min_d )
         logger.debug("Maximum = %s", max_d )
