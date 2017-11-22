@@ -38,8 +38,8 @@ mpl.rcParams['lines.linewidth'] = 2
 # mpl.rcParams['lines.color'] = 'r'
 mpl.rcParams['figure.figsize'] = [10, 6]
 
-_logger = MtPyLog.get_mtpy_logger(__name__)
-# logger.setLevel(logging.DEBUG)
+_logger = MtPyLog.get_mtpy_logger(__name__)  # logger inside this file/module
+_logger.setLevel(logging.DEBUG) # set your logger level
 
 
 class ShapeFilesCreator(EdiCollection):
@@ -268,10 +268,10 @@ class ShapeFilesCreator(EdiCollection):
 
         pt = self.get_phase_tensor_tippers(period)
 
-        logger.debug("phase tensor values =: %s", pt)
+        _logger.debug("phase tensor values =: %s", pt)
 
         if len(pt) < 1:
-            logger.warn("No phase tensor for the period %s for any MT station", period)
+            _logger.warn("No phase tensor for the period %s for any MT station", period)
             return None
 
         pdf = pd.DataFrame(pt)
@@ -280,7 +280,7 @@ class ShapeFilesCreator(EdiCollection):
 
         line_length_normalized = line_length/tip_mag_re_maxval
 
-        logger.debug(pdf['period'])
+        _logger.debug(pdf['period'])
 
         orig_crs = {'init': 'epsg:4283'}  # initial crs GDA94
 
@@ -295,7 +295,7 @@ class ShapeFilesCreator(EdiCollection):
 
 
         if target_epsg_code is None:
-            logger.info("Geopandas Datframe CRS: %s", geopdf.crs)
+            _logger.info("Geopandas Datframe CRS: %s", geopdf.crs)
             # {'init': 'epsg:4283', 'no_defs': True}
             # raise Exception("Must provide a target_epsg_code")
             target_epsg_code = geopdf.crs['init'][5:]
@@ -307,10 +307,10 @@ class ShapeFilesCreator(EdiCollection):
         # to shape file
         shp_fname = 'Tipper_Real_EPSG_%s_Period_%ss.shp' % (target_epsg_code, period)
         path2shp = os.path.join(self.outdir, shp_fname)
-        logger.debug("To write to ESRI shp file %s", path2shp)
+        _logger.debug("To write to ESRI shp file %s", path2shp)
         geopdf.to_file(path2shp, driver='ESRI Shapefile')
 
-        logger.info("Geopandas Dataframe CRS: %s", geopdf.crs)
+        _logger.info("Geopandas Dataframe CRS: %s", geopdf.crs)
 
         if export is True:
             bbox_dict = self.get_bounding_box(epsgcode=target_epsg_code)
@@ -495,7 +495,7 @@ def export_geopdf_to_image(geopdf, bbox, jpg_file_name, target_epsg_code=None, s
     # plot and save
 
     fig_title = os.path.basename(jpg_file_name)
-    self._logger.info('saving figure to file %s', jpg_file_name)
+    _logger.info('saving figure to file %s', jpg_file_name)
 
     colorby = 'phi_min'
     my_cmap_r = 'jet'

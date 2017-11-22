@@ -24,7 +24,7 @@ import mtpy.core.mt as mt
 import mtpy.imaging.mtplottools as mtplottools
 from mtpy.utils.decorator import deprecated
 from mtpy.utils.mtpylog import MtPyLog
-
+from logging import DEBUG, INFO, ERROR
 
 def is_num_in_seq(anum, aseq, atol=0.0001):
     """
@@ -59,7 +59,11 @@ class EdiCollection(object):
         10pct may result more double counting of freq/period data than 5pct.
         eg: E:/Data/MT_Datasets/WenPingJiang_EDI 18528 rows vs 14654 rows
         """
-        self._logger = MtPyLog.get_mtpy_logger(self.__class__.__name__)
+
+        #self._logger = MtPyLog.get_mtpy_logger(self.__class__.__name__)  # will be EdiCollection
+        self._logger = MtPyLog.get_mtpy_logger(__name__)  # __name__ will be  path.to.module OR __main__
+        self._logger.setLevel(INFO)
+
         if edilist is not None:
             self.edifiles = edilist
             self._logger.info("number of edi files in this collection: %s",
@@ -546,8 +550,8 @@ class EdiCollection(object):
         anarray = pd.Series(mt_distances)
         min_d = anarray.min()  # cold be very small due to two close stations, skew the result
         max_d = anarray.max()
-        logger.debug("Minimum = %s", min_d )
-        logger.debug("Maximum = %s", max_d )
+        self._logger.debug("Minimum = %s", min_d )
+        self._logger.debug("Maximum = %s", max_d )
 
         return {"MIN_DIST":min_d, "MAX_DIST":max_d}
 
@@ -583,7 +587,7 @@ class EdiCollection(object):
         utmzones=self.get_station_utmzones_stats()
 
         number_zones = len(utmzones.items())
-        logger.info("This Edi fileset has %s UTM Zone(s): %s ", number_zones, utmzones)
+        self._logger.info("This Edi fileset has %s UTM Zone(s): %s ", number_zones, utmzones)
 
         return
 
