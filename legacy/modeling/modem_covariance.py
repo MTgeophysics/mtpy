@@ -16,7 +16,7 @@ import os
 
 import numpy as np
 
-from mtpy.modeling.modem_model import Model
+from legacy.modeling.modem_model import Model
 from mtpy.utils.mtpylog import MtPyLog
 
 try:
@@ -30,7 +30,7 @@ except ImportError:
            '    python setup.py build -compiler=mingw32  or \n'
            '    python setup.py build -compiler=cygwin')
 
-logger = MtPyLog().get_mtpy_logger(__name__)
+logger = MtPyLog.get_mtpy_logger(__name__)
 
 
 class MTException(Exception):

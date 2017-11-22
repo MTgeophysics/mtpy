@@ -55,7 +55,7 @@ class deprecated(object):
 class gdal_data_check(object):
     _has_checked = False
     _gdal_data_found = False
-    _logger = MtPyLog().get_mtpy_logger(__name__)
+    _logger = MtPyLog.get_mtpy_logger(__name__)
 
     def __init__(self, func):
         """

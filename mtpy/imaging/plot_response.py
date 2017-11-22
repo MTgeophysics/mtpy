@@ -4,15 +4,13 @@ Plots data vs model response computed by an Inversion Method
 # ==============================================================================
 """
 
-import os
-
 import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.ticker import FormatStrFormatter
 
 import mtpy.imaging.mtplottools as mtplottools
-from mtpy.modeling.modem_data import Data
+from mtpy.modeling.modem import Data
 
 try:
     from pyevtk.hl import gridToVTK, pointsToVTK

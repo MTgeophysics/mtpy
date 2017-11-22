@@ -30,14 +30,13 @@ Current issue:
 
 import os
 
-import tests
 import numpy as np
 
 from unittest import TestCase
 
 import mtpy.modeling.occam1d as mtoc1d  # Wrapper class to interact with Occam1D
 import tests.modeling
-from tests import EDI_DATA_DIR, SAMPLE_DIR
+from tests import EDI_DATA_DIR, SAMPLE_DIR, make_temp_dir
 from tests.imaging import reset_matplotlib
 
 
@@ -45,20 +44,17 @@ class TestOccam1D(TestCase):
     @classmethod
     def setUpClass(cls):
         reset_matplotlib()
+        cls._temp_dir = make_temp_dir(cls.__name__)
 
     def setUp(self):
-
         # set the dir to the output from the previously correct run
-        self._expected_output_dir = os.path.join(SAMPLE_DIR,'Occam1d')
+        self._expected_output_dir = os.path.join(SAMPLE_DIR, 'Occam1d')
 
         if not os.path.isdir(self._expected_output_dir):
             self._expected_output_dir = None
 
         # directory to save created input files
-        self._output_dir = os.path.join(tests.TEST_TEMP_DIR, 'Occam1d')
-        # ufun.clean_recreate(self._output_dir) # this may remove other test functions' output
-        if not os.path.exists(self._output_dir):
-            os.mkdir(self._output_dir)
+        self._output_dir = make_temp_dir(self._testMethodName, base_dir=self._temp_dir)
 
     def _main_func(self, path2edifile):
         """
@@ -66,7 +62,7 @@ class TestOccam1D(TestCase):
         :return:
         """
         edifile_name = os.path.basename(path2edifile)
-        tmpdir = edifile_name[:-4]  + "_dir" # remove the trailing .edi
+        tmpdir = edifile_name[:-4] + "_dir"  # remove the trailing .edi
         tmp_save_path = os.path.join(self._output_dir, tmpdir)
         tests.modeling._clean_recreate(tmp_save_path)
 
@@ -76,7 +72,7 @@ class TestOccam1D(TestCase):
         ocd.write_data_file(edi_file=path2edifile,
                             mode='det',
                             # mode, can be te, tm, det (for res/phase) or tez, tmz, zdet for real/imag impedance tensor values
-                            save_path= tmp_save_path,
+                            save_path=tmp_save_path,
                             res_errorfloor=5,  # percent error floor
                             phase_errorfloor=1,  # error floor in degrees
                             z_errorfloor=2.5,
@@ -87,7 +83,7 @@ class TestOccam1D(TestCase):
                            target_depth=10000,  # target depth in metres, before padding
                            z1_layer=10  # first layer thickness in metres
                            )
-        ocm.write_model_file(save_path = tmp_save_path)
+        ocm.write_model_file(save_path=tmp_save_path)
 
         # create startup file
         ocs = mtoc1d.Startup(data_fn=ocd.data_fn,  # basename of data file *default* is Occam1DDataFile
@@ -102,11 +98,10 @@ class TestOccam1D(TestCase):
     def test_fun1(self):
         """ use the same pb23c.edi to reproduce previous run results"""
 
-        outdir = self._main_func(os.path.join(EDI_DATA_DIR,'pb23c.edi') )
+        outdir = self._main_func(os.path.join(EDI_DATA_DIR, 'pb23c.edi'))
 
         for afile in ("Model1D", "Occam1d_DataFile_DET.dat", "OccamStartup1D"):
-
-            output_data_file =  os.path.join(outdir, afile)
+            output_data_file = os.path.join(outdir, afile)
             self.assertTrue(os.path.isfile(output_data_file), "output data file not found")
 
             expected_data_file = os.path.join(self._expected_output_dir, afile)
@@ -114,7 +109,7 @@ class TestOccam1D(TestCase):
             self.assertTrue(os.path.isfile(expected_data_file),
                             "Ref output data file does not exist, nothing to compare with"
                             )
-            is_identical, msg = tests.modeling._diff_files(output_data_file, expected_data_file, ignores=["Date/Time"])
+            is_identical, msg = tests.modeling.diff_files(output_data_file, expected_data_file, ignores=["Date/Time"])
 
             print msg
             self.assertTrue(is_identical, "The output file is not the same with the baseline file.")
@@ -122,12 +117,11 @@ class TestOccam1D(TestCase):
     def test_fun2(self):
         """ another test edi case: The output files should be different !!!"""
 
-        #outdir = self._main_func(r'E:/Githubz/mtpy/examples/data/edi_files/pb25c.edi')
-        outdir = self._main_func(os.path.join(EDI_DATA_DIR,'pb25c.edi') )
+        # outdir = self._main_func(r'E:/Githubz/mtpy/examples/data/edi_files/pb25c.edi')
+        outdir = self._main_func(os.path.join(EDI_DATA_DIR, 'pb25c.edi'))
 
-
-        #for afile in ("Model1D", "Occam1d_DataFile_DET.dat", "OccamStartup1D"):
-        for afile in [ "Occam1d_DataFile_DET.dat", ]:  # only one file is different, the other 2 files same?
+        # for afile in ("Model1D", "Occam1d_DataFile_DET.dat", "OccamStartup1D"):
+        for afile in ["Occam1d_DataFile_DET.dat", ]:  # only one file is different, the other 2 files same?
 
             output_data_file = os.path.join(outdir, afile)
             self.assertTrue(os.path.isfile(output_data_file), "output data file not found")
@@ -138,13 +132,13 @@ class TestOccam1D(TestCase):
                             "Ref output data file does not exist, nothing to compare with"
                             )
 
-            is_identical, msg = tests.modeling._diff_files(output_data_file, expected_data_file)
+            is_identical, msg = tests.modeling.diff_files(output_data_file, expected_data_file)
             print msg
-            self.assertTrue(is_identical, "The output file is not the same with the baseline file.")
+            self.assertFalse(is_identical, "The output file is the same with the baseline file.")
 
     def test_view_outputs(self):
         # FZ's workdir
-        savepath = tests.TEST_TEMP_DIR
+        savepath = self._temp_dir
 
         # model and data file names
         modelfn = os.path.join(self._expected_output_dir, 'Model1D')
@@ -178,10 +172,7 @@ class TestOccam1D(TestCase):
                                    model_fn=modelfn,
                                    resp_te_fn=respfn,
                                    iter_te_fn=iterfn,
-                                   resp_tm_fn=respfn,
-                                   iter_tm_fn=iterfn,
-                                   depth_limits=(0, 1),
-
+                                   depth_limits=(0, 1)
                                    )
         pr.axm.set_xlim(1e-1, 1e3)
         pr.axr.set_ylim(1, 100)
@@ -192,4 +183,4 @@ class TestOccam1D(TestCase):
         tests.plt_wait(1)
         tests.plt_close()
 
-        assert (os.path.exists(p2file))
+        assert(os.path.exists(p2file))

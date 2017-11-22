@@ -4,6 +4,8 @@
 Description:
     testing ModEM input files builder modules.
 
+    this test suite create all output for modem and compare the created files with the baseline files
+
 References:
     examples/tests/ModEM_build_inputfiles.py
 
@@ -22,29 +24,24 @@ current error:
 # import section
 
 import os
-
-from mtpy.modeling.modem import Model
-from mtpy.modeling.modem import Data
-from mtpy.modeling.modem import Covariance
-import numpy as np
-
-import shutil
 from unittest import TestCase
 
-from tests import TEST_TEMP_DIR, EDI_DATA_DIR, AUS_TOPO_FILE, SAMPLE_DIR
-from tests.modeling import _diff_files
+import numpy as np
+
+from mtpy.modeling.modem import Data, Model, Covariance
+from tests import EDI_DATA_DIR, AUS_TOPO_FILE, SAMPLE_DIR, make_temp_dir
+from tests.modeling import diff_files
 
 
 class TestModemInputFilesBuilder(TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls._temp_dir = make_temp_dir(cls.__name__)
+
     def setUp(self):
 
         # directory to save created input files
-        self._output_dir = os.path.join(TEST_TEMP_DIR, 'ModEM')
-        if os.path.exists(self._output_dir):
-            # clear dir if it already exist
-            shutil.rmtree(self._output_dir)
-
-        os.mkdir(self._output_dir)
+        self._output_dir = make_temp_dir(self._testMethodName, base_dir=self._temp_dir)
 
         # set the dir to the output from the previously correct run
         self._expected_output_dir = os.path.join(SAMPLE_DIR, 'ModEM')
@@ -88,7 +85,7 @@ class TestModemInputFilesBuilder(TestCase):
                    pad_z=6,  # number of vertical padding cells
                    pad_stretch_v=1.6,  # factor to increase by in padding cells (vertical)
                    pad_stretch_h=1.4,  # factor to increase by in padding cells (horizontal)
-                   n_airlayers=10,  # number of air layers
+                   n_air_layers=10,  # number of air layers
                    res_model=100,  # halfspace resistivity value for reference model
                    n_layers=90,  # total number of z layers, including air
                    z1_layer=10,  # first layer thickness
@@ -121,6 +118,6 @@ class TestModemInputFilesBuilder(TestCase):
 
             # print ("Comparing", output_data_file, "and", expected_data_file)
 
-            is_identical, msg = _diff_files(output_data_file, expected_data_file)
+            is_identical, msg = diff_files(output_data_file, expected_data_file)
             print msg
             self.assertTrue(is_identical, "The output file is not the same with the baseline file.")

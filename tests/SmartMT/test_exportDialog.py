@@ -8,7 +8,7 @@ from qtpy.QtWidgets import QFileDialog, QMessageBox, QDialog
 from qtpy.QtTest import QTest
 
 from mtpy.gui.SmartMT.gui.export_dialog import ExportDialog, IMAGE_FORMATS
-from tests import TEST_TEMP_DIR, plt_wait
+from tests import plt_wait, make_temp_dir
 from tests.imaging import reset_matplotlib
 
 
@@ -44,7 +44,7 @@ class TestExportDialog(TestCase):
     @classmethod
     def setUpClass(cls):
         # setup temp dir
-        cls._temp_dir = TEST_TEMP_DIR
+        cls._temp_dir = make_temp_dir(cls.__name__)
         reset_matplotlib()
 
     def setUp(self):

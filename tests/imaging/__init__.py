@@ -3,7 +3,6 @@ from __future__ import print_function
 import functools
 import inspect
 import os
-import shutil
 import sys
 import threading
 from unittest import TestCase
@@ -13,7 +12,7 @@ from matplotlib import _png
 from matplotlib.testing.compare import verify
 
 from mtpy.utils.mtpylog import MtPyLog
-from tests import TEST_TEMP_DIR, TEST_DIR, plt_wait, plt_close
+from tests import TEST_DIR, plt_wait, plt_close, make_temp_dir, TEST_TEMP_DIR
 
 if os.name == "posix" and 'DISPLAY' not in os.environ:
     print("MATPLOTLIB: No Display found, using non-interactive svg backend", file=sys.stderr)
@@ -25,7 +24,7 @@ else:
 
     plt.ion()
 
-MtPyLog().get_mtpy_logger(__name__).info("Testing using matplotlib backend {}".format(matplotlib.rcParams['backend']))
+MtPyLog.get_mtpy_logger(__name__).info("Testing using matplotlib backend {}".format(matplotlib.rcParams['backend']))
 
 
 def reset_matplotlib():
@@ -59,7 +58,7 @@ class ImageCompare(object):
         self.result_dir = kwargs.pop(
             'result_dir',
             # 'tests/result_images/matplotlib_{ver}'.format(ver=matplotlib.__version__).replace('.', '_')
-            os.path.normpath(os.path.join(TEST_DIR, 'result_images'))
+            os.path.normpath(os.path.join(TEST_TEMP_DIR, 'image_compare_tests'))
         )
         self.filename = kwargs.pop('filename', None)
         self.extensions = kwargs.pop('extensions', ['png'])
@@ -74,11 +73,8 @@ class ImageCompare(object):
         self.on_fail = kwargs.pop('on_fail', None)
         self.on_compare_fail = kwargs.pop("on_compare_fail", None)
         self.on_empty_image = kwargs.pop("on_empty_image", None)
-
-        if self.result_dir and not os.path.exists(self.result_dir):
-            os.makedirs(self.result_dir)
-            # if self.baseline_dir and not os.path.exists(self.baseline_dir):
-            #     os.makedirs(self.baseline_dir)
+        if not os.path.exists(self.result_dir):
+            os.mkdir(self.result_dir)
 
     def __call__(self, original):
         import matplotlib.pyplot as plt
@@ -267,10 +263,7 @@ class ImageTestCase(TestCase):
     def setUpClass(cls):
         _thread_lock.acquire()
         reset_matplotlib()
-        cls._temp_dir = os.path.normpath(os.path.join(TEST_TEMP_DIR, cls.__name__.split('.')[-1]))
-        if os.path.isdir(cls._temp_dir):
-            shutil.rmtree(cls._temp_dir)
-        os.mkdir(cls._temp_dir)
+        cls._temp_dir = make_temp_dir(cls.__name__.split('.')[-1])
 
     @classmethod
     def tearDownClass(cls):

@@ -1,18 +1,17 @@
 # -*- coding: utf-8 -*-
 # module for MT calculations
 
-import math
-import numpy as np
-import os
-import fnmatch
-import time
 import datetime
+import fnmatch
+import math
+import os
 import shutil
-import scipy as sp
+import time
+
+import numpy as np
 import scipy.signal as sps
 
 import mtpy.core.z
-
 # short spaces 3 spaces
 import mtpy.utils.gis_tools
 
@@ -1994,8 +1993,6 @@ def getStationInfo(stationinfofile, station, mapversion=23):
     station from the stationinfofile as a dictionary with key words in the
     hdrinfo."""
 
-    import mtpy.utils.latlon_utm_conversion as utm2ll
-
     info = readStationInfo(stationinfofile)
     for ii in range(len(info)):
         if info[ii]['station'].lower() == station.lower():
@@ -2225,8 +2222,6 @@ def removeStaticShift(edifile, stol=.2, dm=1000):
     Outputs:
         newedifile = full path to new edifile
     """
-
-    import mtpy.utils.latlon_utm_conversion as utm2ll
 
     # get directory name where all edi files should be
     edipath = os.path.dirname(edifile)

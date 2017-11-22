@@ -14,6 +14,8 @@ JP 2014
 import os
 import numpy as np
 
+import mtpy.modeling.modem
+
 try:
     from PyQt4 import QtCore, QtGui
 except ImportError:
@@ -310,7 +312,7 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
         
         fn = os.path.abspath(fn)
                                        
-        self.modem_data = modem.Data()
+        self.modem_data = mtpy.modeling.modem.Data()
         self.modem_data.read_data_file(fn)
         self.modem_data_fn = fn
         
@@ -343,7 +345,7 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
                                            filter='(*.rho);; (*.ws)',
                                            directory=self.dir_path))
         fn = os.path.abspath(fn)
-        self.modem_model = modem.Model()
+        self.modem_model = mtpy.modeling.modem.Model()
         self.modem_model.read_model_file(fn)
         self.modem_model_fn = fn
         self.plot()
@@ -366,7 +368,7 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
                                            filter='*.dat', 
                                            directory=self.dir_path))
                                        
-        self.modem_resp = modem.Data()
+        self.modem_resp = mtpy.modeling.modem.Data()
         self.modem_resp.read_data_file(fn)
         self.modem_resp_fn = fn
         self.plot()
@@ -453,7 +455,7 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
 
             # compute tipper data
             tip = self.modem_data.mt_dict[key].Tipper
-            tip._compute_mag_direction()
+            tip.compute_mag_direction()
                         
             data_pt_arr[:, ii]['txr'] = tip.mag_real*\
                                         np.sin(np.deg2rad(tip.angle_real))
@@ -474,7 +476,7 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
                 model_pt_arr[:, ii]['skew'] = mpt.beta
                 
                 mtip = self.modem_resp.mt_dict[key].Tipper
-                mtip._compute_mag_direction()
+                mtip.compute_mag_direction()
                             
                 model_pt_arr[:, ii]['txr'] = mtip.mag_real*\
                                             np.sin(np.deg2rad(mtip.angle_real))

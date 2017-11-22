@@ -38,8 +38,8 @@ mpl.rcParams['lines.linewidth'] = 2
 # mpl.rcParams['lines.color'] = 'r'
 mpl.rcParams['figure.figsize'] = [10, 6]
 
-logger = MtPyLog().get_mtpy_logger(__name__)
-logger.setLevel(logging.DEBUG)
+_logger = MtPyLog.get_mtpy_logger(__name__)
+# logger.setLevel(logging.DEBUG)
 
 
 class ShapeFilesCreator(EdiCollection):
@@ -54,7 +54,7 @@ class ShapeFilesCreator(EdiCollection):
         :param outdir: path2output dir, where the shpe file weill be written.
         """
 
-        super(ShapeFilesCreator,self).__init__(edilist=edifile_list, outdir=outdir)
+        super(ShapeFilesCreator, self).__init__(edilist=edifile_list, outdir=outdir)
         #python-3 syntax: super().__init__(edilist=edifile_list, outdir=outdir)
 
         # These attributes below are defined in the parent class.
@@ -129,7 +129,7 @@ class ShapeFilesCreator(EdiCollection):
                                 if (f2 > freq * (1 - self.ptol)) and
                                 (f2 < freq * (1 + self.ptol))]
                 if len(f_index_list) > 1:
-                    logger.warn("more than one fre found %s", f_index_list)
+                    self._logger.warn("more than one fre found %s", f_index_list)
 
                 if len(f_index_list) >= 1:
                     p_index = f_index_list[0]
@@ -154,7 +154,7 @@ class ShapeFilesCreator(EdiCollection):
 
                     ptlist.append(pt_stat)
                 else:
-                    logger.warn('Freq %s NOT found for this station %s', freq, mt_obj.station)
+                    self._logger.warn('Freq %s NOT found for this station %s', freq, mt_obj.station)
 
             with open(csvfname, "ab") as csvf:  # summary csv for all freqs
                 writer = csv.writer(csvf)
@@ -180,15 +180,15 @@ class ShapeFilesCreator(EdiCollection):
 
         pt = self.get_phase_tensor_tippers(period)
 
-        logger.debug("phase tensor values =: %s", pt)
+        self._logger.debug("phase tensor values =: %s", pt)
 
         if len(pt)<1:
-            logger.warn("No phase tensor for the period %s for any MT station", period)
+            self._logger.warn("No phase tensor for the period %s for any MT station", period)
             return None
 
         pdf = pd.DataFrame(pt)
 
-        logger.debug(pdf['period'])
+        self._logger.debug(pdf['period'])
 
         mt_locations = [Point(xy) for xy in zip(pdf['lon'], pdf['lat'])]
         # OR pdf['geometry'] = pdf.apply(lambda z: Point(z.lon, z.lat), axis=1)
@@ -231,7 +231,7 @@ class ShapeFilesCreator(EdiCollection):
         geopdf = gpd.GeoDataFrame(geopdf, crs=orig_crs, geometry=ellipse_list)
 
         if target_epsg_code is None:
-            logger.info("Geopandas Datframe CRS: %s", geopdf.crs)
+            self._logger.info("Geopandas Datframe CRS: %s", geopdf.crs)
             # {'init': 'epsg:4283', 'no_defs': True}
             #raise Exception("Must provide a target_epsg_code")
             target_epsg_code= geopdf.crs['init'][5:]
@@ -243,10 +243,10 @@ class ShapeFilesCreator(EdiCollection):
         # to shape file
         shp_fname = 'Phase_Tensor_EPSG_%s_Period_%ss.shp' % (target_epsg_code, period)
         path2shp = os.path.join(self.outdir, shp_fname)
-        logger.debug("To write to ESRI shp file %s", path2shp)
+        self._logger.debug("To write to ESRI shp file %s", path2shp)
         geopdf.to_file(path2shp, driver='ESRI Shapefile')
 
-        logger.info("Geopandas Datframe CRS: %s", geopdf.crs)
+        self._logger.info("Geopandas Datframe CRS: %s", geopdf.crs)
 
         if export is True:
             bbox_dict= self.get_bounding_box(epsgcode=target_epsg_code)
@@ -495,7 +495,7 @@ def export_geopdf_to_image(geopdf, bbox, jpg_file_name, target_epsg_code=None, s
     # plot and save
 
     fig_title = os.path.basename(jpg_file_name)
-    logger.info('saving figure to file %s', jpg_file_name)
+    self._logger.info('saving figure to file %s', jpg_file_name)
 
     colorby = 'phi_min'
     my_cmap_r = 'jet'
@@ -601,7 +601,7 @@ def process_csv_folder(csv_folder, bbox_dict, target_epsg_code=4283):
     """
 
     if csv_folder is None:
-        logger.critical("Must provide a csv folder")
+        _logger.critical("Must provide a csv folder")
 
     csvfiles = glob.glob(csv_folder + '/*Hz.csv')  # phase_tensor_tipper_0.004578Hz.csv
 

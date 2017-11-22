@@ -32,7 +32,7 @@ from mtpy.utils.mtpylog import MtPyLog
 
 # get a logger object for this module, using the utility class MtPyLog to
 # config the logger
-logger = MtPyLog().get_mtpy_logger(__name__)
+_logger = MtPyLog.get_mtpy_logger(__name__)
 
 
 # logger =
@@ -150,14 +150,14 @@ def plot_bar3d_depth(edifiles, per_index, whichrho='det'):
     if os.path.isdir(edifiles):
         edi_dir = edifiles  # "E:/Githubz/mtpy2/tests/data/edifiles/"
         edifiles = glob.glob(os.path.join(edi_dir, '*.edi'))
-        logger.debug(edifiles)
+        _logger.debug(edifiles)
     else:
         # Assume edifiles is [a list of files]
         pass
 
     scale_param = np.sqrt(1.0 / (2.0 * np.pi * 4 * np.pi * 10 ** (-7)))
 
-    logger.debug("The scaling parameter=%.6f" % scale_param)
+    _logger.debug("The scaling parameter=%.6f" % scale_param)
 
     # per_index=0,1,2,....
     periods = []
@@ -283,7 +283,7 @@ def get_penetration_depths_from_edi_file(edifile, rholist=['det']):
     :param rholist: flag the method to compute penetration depth: det zxy zyx
     :return: a tuple:(station_lat, statoin_lon, periods_list, pendepth_list)
     """
-    logger.debug("processing the edi file %s", edifile)
+    _logger.debug("processing the edi file %s", edifile)
 
     mt_obj = mt.MT(edifile)
     zeta = mt_obj.Z  # the attribute Z represent the impedance tensor 2X2 matrix
@@ -291,7 +291,7 @@ def get_penetration_depths_from_edi_file(edifile, rholist=['det']):
 
     scale_param = np.sqrt(1.0 / (2.0 * np.pi * 4 * np.pi * 10 ** (-7)))
 
-    logger.debug("the scale parameter= %s", scale_param)
+    _logger.debug("the scale parameter= %s", scale_param)
 
     # The periods array
     periods = 1.0 / freqs
@@ -327,14 +327,14 @@ def create_csv_file(edi_dir, outputcsv=None, zcomponent='det'):
 
     edi_files = glob.glob(os.path.join(edi_dir, "*.edi"))
 
-    logger.debug(edi_files)
+    _logger.debug(edi_files)
 
     # the first period list as a reference for checking other stations period
     periods_list0 = None
     latlon_dep = []  # CSV to be returned
     for afile in edi_files:
         # for efile in edi_files[:2]:
-        logger.debug("processing %s", afile)
+        _logger.debug("processing %s", afile)
         lat, lon, per, depths = get_penetration_depths_from_edi_file(afile)
         if periods_list0 is None:
             periods_list0 = per  # initial value assignment
@@ -346,7 +346,7 @@ def create_csv_file(edi_dir, outputcsv=None, zcomponent='det'):
             depth_string = ','.join(['%.2f' % num for num in depths])
             latlon_dep.append((lat, lon, depth_string))
         else:
-            logger.error(
+            _logger.error(
                 "MT Periods Not Equal !! %s VS %s",
                 per,
                 periods_list0)
@@ -358,7 +358,7 @@ def create_csv_file(edi_dir, outputcsv=None, zcomponent='det'):
     if outputcsv is None:
         outputcsv = r"E:/tmp/MT_pen_depth.csv"
 
-    logger.info("Saving to csv file: %s", outputcsv)
+    _logger.info("Saving to csv file: %s", outputcsv)
     with open(outputcsv, "wb") as f:
         writer = csv.writer(f)
         writer.writerows(latlon_dep)

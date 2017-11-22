@@ -24,7 +24,7 @@ app = QApplication(sys.argv)
 import matplotlib.pyplot as plt
 plt.ion()
 
-MtPyLog().get_mtpy_logger(__name__).info("Testing using matplotlib backend {}".format(matplotlib.rcParams['backend']))
+MtPyLog.get_mtpy_logger(__name__).info("Testing using matplotlib backend {}".format(matplotlib.rcParams['backend']))
 
 
 def _click_area(qobj, pos=None, offset=None, modifier=QtCore.Qt.NoModifier):

@@ -22,7 +22,6 @@ import mtpy.modeling.winglinktools as wlt
 import matplotlib.pyplot as plt
 
 import mtpy.utils.gis_tools
-import mtpy.utils.latlon_utm_conversion as utm2ll
 
 
 occamdict = {'1': 'resxy', '2': 'phasexy', '3': 'realtip', '4': 'imagtip', '5': 'resyx',

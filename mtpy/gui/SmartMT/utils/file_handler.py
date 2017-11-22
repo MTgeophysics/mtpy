@@ -27,7 +27,7 @@ class FileHandler:
 
     def __init__(self):
         self._station_dict = dict()
-        self._logger = MtPyLog().get_mtpy_logger(__name__)
+        self._logger = MtPyLog.get_mtpy_logger(self.__class__.__name__)
         self._file_dict = dict()
         self._group_dict = dict()
         self._file_to_groups = dict()

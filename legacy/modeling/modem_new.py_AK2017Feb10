@@ -14,28 +14,29 @@ ModEM
 """
 
 import os
-import mtpy.core.z as mtz
-import mtpy.core.mt as mt
-import numpy as np
 
-import mtpy.utils.gis_tools
-import mtpy.utils.latlon_utm_conversion as utm2ll
-import mtpy.modeling.ws3dinv as ws
-import matplotlib.pyplot as plt
-from matplotlib.ticker import MultipleLocator, FormatStrFormatter
-from matplotlib.patches import Ellipse
-from matplotlib.colors import Normalize
-import matplotlib.colorbar as mcb
-import matplotlib.gridspec as gridspec
-import mtpy.imaging.mtplottools as mtplottools
-import matplotlib.widgets as widgets
-import matplotlib.colors as colors
 import matplotlib.cm as cm
-import mtpy.utils.exceptions as mtex
-import mtpy.analysis.pt as mtpt
-import mtpy.imaging.mtcolors as mtcl
+import matplotlib.colorbar as mcb
+import matplotlib.colors as colors
+import matplotlib.gridspec as gridspec
+import matplotlib.pyplot as plt
+import matplotlib.widgets as widgets
+import numpy as np
 import scipy.interpolate as spi
 import scipy.stats as stats
+from matplotlib.colors import Normalize
+from matplotlib.patches import Ellipse
+from matplotlib.ticker import MultipleLocator, FormatStrFormatter
+
+import mtpy.analysis.pt as mtpt
+import mtpy.core.mt as mt
+import mtpy.core.z as mtz
+import mtpy.imaging.mtcolors as mtcl
+import mtpy.imaging.mtplottools as mtplottools
+import mtpy.modeling.ws3dinv as ws
+import mtpy.utils.exceptions as mtex
+import mtpy.utils.gis_tools
+
 try:
     from evtk.hl import gridToVTK, pointsToVTK
 except ImportError:
@@ -202,7 +203,7 @@ class Data(object):
         >>> edi_list = [os.path.join(edi_path, edi) \
                         for edi in os.listdir(edi_path)\
                         if edi.find('.edi') > 0]
-        >>> md = modem.Data(edi_list, period_min=.1, period_max=300,\
+import mtpy.modeling.ModEM        >>> md = mtpy.modeling.ModEM.Data(edi_list, period_min=.1, period_max=300,\
                             max_num_periods=12)
         >>> md.write_data_file(save_path=r"/home/modem/inv1")
         
@@ -214,7 +215,7 @@ class Data(object):
         >>> edi_list = [os.path.join(edi_path, edi) \
                         for edi in os.listdir(edi_path)\
                         if edi.find('.edi') > 0]
-        >>> md = modem.Data(edi_list)
+import mtpy.modeling.ModEM        >>> md = mtpy.modeling.ModEM.Data(edi_list)
         >>> #get period list from an .edi file
         >>> mt_obj1 = modem.mt.MT(edi_list[0])
         >>> inv_period_list = 1./mt_obj1.Z.freq
@@ -225,8 +226,8 @@ class Data(object):
                 
     :Example 3 --> change error values: ::
         
-        >>> import mtpy.modeling.modem as modem
-        >>> mdr = modem.Data()
+import mtpy.modeling.ModEM        >>> import mtpy.modeling.modem as modem
+        >>> mdr = mtpy.modeling.ModEM.Data()
         >>> mdr.read_data_file(r"/home/modem/inv1/ModEM_Data.dat")
         >>> mdr.error_type = 'floor'
         >>> mdr.error_floor = 10
@@ -235,8 +236,8 @@ class Data(object):
         
     :Example 4 --> change inversion type: ::
         
-        >>> import mtpy.modeling.modem as modem
-        >>> mdr = modem.Data()
+import mtpy.modeling.ModEM        >>> import mtpy.modeling.modem as modem
+        >>> mdr = mtpy.modeling.ModEM.Data()
         >>> mdr.read_data_file(r"/home/modem/inv1/ModEM_Data.dat")
         >>> mdr.inv_mode = '3'
         >>> mdr.write_data_file(save_path=r"/home/modem/inv2")
@@ -249,9 +250,10 @@ class Data(object):
         >>> edi_path = r"/home/EDI_Files"
         >>> edi_list = [os.path.join(edi_path, edi) 
                         for edi in os.listdir(edi_path) 
-        >>> ...         if edi.find('.edi') > 0]
+import mtpy.modeling.ModEM        >>> ...         if edi.find('.edi') > 0]
         >>> #2) make a grid from the stations themselves with 200m cell spacing
-        >>> mmesh = modem.Model(edi_list=edi_list, cell_size_east=200, 
+import mtpy.modeling.ModEM
+        >>> mmesh = mtpy.modeling.ModEM.Model(edi_list=edi_list, cell_size_east=200, 
         >>> ...                cell_size_north=200)
         >>> mmesh.make_mesh()
         >>> # check to see if the mesh is what you think it should be
@@ -259,7 +261,7 @@ class Data(object):
         >>> # all is good write the mesh file
         >>> mmesh.write_model_file(save_path=r"/home/modem/Inv1")
         >>> # create data file
-        >>> md = modem.Data(edi_list, station_locations=mmesh.station_locations)
+        >>> md = mtpy.modeling.ModEM.Data(edi_list, station_locations=mmesh.station_locations)
         >>> md.write_data_file(save_path=r"/home/modem/Inv1")
         
     :Example 6 --> rotate data: ::
@@ -842,7 +844,7 @@ class Data(object):
             >>> edi_list = [os.path.join(edi_path, edi) \
                             for edi in os.listdir(edi_path)\
                             if edi.find('.edi') > 0]
-            >>> md = modem.Data(edi_list, period_min=.1, period_max=300,\
+import mtpy.modeling.ModEM            >>> md = mtpy.modeling.ModEM.Data(edi_list, period_min=.1, period_max=300,\
                                 max_num_periods=12)
             >>> md.write_data_file(save_path=r"/home/modem/inv1")
         """
@@ -1037,8 +1039,8 @@ class Data(object):
         
         :Example: ::
             
-            >>> import mtpy.modeling.modem as modem
-            >>> mdr = modem.Data()
+import mtpy.modeling.ModEM            >>> import mtpy.modeling.modem as modem
+            >>> mdr = mtpy.modeling.ModEM.Data()
             >>> mdr.convert_ws3dinv_data_file(r"/home/ws3dinv/inv1/WSData.dat",
                     station_fn=r"/home/ws3dinv/inv1/WS_Station_Locations.txt")
         """
@@ -1274,8 +1276,8 @@ class Data(object):
             
             self.mt_dict[s_key].zinv.compute_invariants()
             self.mt_dict[s_key].pt.set_z_object(mt_obj.Z)
-            self.mt_dict[s_key].Tipper._compute_amp_phase()
-            self.mt_dict[s_key].Tipper._compute_mag_direction()
+            self.mt_dict[s_key].Tipper.compute_amp_phase()
+            self.mt_dict[s_key].Tipper.compute_mag_direction()
                                    
         
             self.data_array[ii]['station'] = mt_obj.station
@@ -1360,9 +1362,10 @@ class Model(object):
         >>> edi_path = r"/home/EDI_Files"
         >>> edi_list = [os.path.join(edi_path, edi)
                         for edi in os.listdir(edi_path)
-        >>> ...         if edi.find('.edi') > 0]
+import mtpy.modeling.ModEM        >>> ...         if edi.find('.edi') > 0]
         >>> #2) make a grid from the stations themselves with 200m cell spacing
-        >>> mmesh = modem.Model(edi_list=edi_list, cell_size_east=200,
+import mtpy.modeling.ModEM
+        >>> mmesh = mtpy.modeling.ModEM.Model(edi_list=edi_list, cell_size_east=200,
         >>> ...                cell_size_north=200)
         >>> mmesh.make_mesh()
         >>> # check to see if the mesh is what you think it should be
@@ -1370,7 +1373,7 @@ class Model(object):
         >>> # all is good write the mesh file
         >>> msmesh.write_model_file(save_path=r"/home/modem/Inv1")
         >>> # create data file
-        >>> md = modem.Data(edi_list, station_locations=mmesh.station_locations)
+        >>> md = mtpy.modeling.ModEM.Data(edi_list, station_locations=mmesh.station_locations)
         >>> md.write_data_file(save_path=r"/home/modem/Inv1")
 
     :Example 2 --> create data file first then model file: ::
