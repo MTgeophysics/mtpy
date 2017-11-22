@@ -498,11 +498,11 @@ class EdiCollection(object):
 
         return bdict
 
-    def get_utm_zones(self):
-        """what UTM zones these (edi files) MT stations belong to?
+    def get_station_utmzones_stats(self):
+        """A simple method to find what UTM zones these (edi files) MT stations belong to
         are they in a single UTM zone, which corresponds to a unique EPSG code?
         or do they belong to multiple UTM zones?
-        :return: Dictionary{UTMZone:Number_MTsites}
+        :return: a_dict like {UTMZone:Number_of_MT_sites}
         """
 
         def get_utm_zone(latitude, longitude):
@@ -520,14 +520,40 @@ class EdiCollection(object):
 
         return utm_zones
 
-    def get_stations_distances(self):
+    def get_stations_distances_stats(self):
         """ TODO:
-        get the min max of the distances between stations, may be useful to determine ellipses tipper length, etc
+        get the min max statistics of the distances between stations.
+        useful for determining the ellipses tipper sizes etc
         :return: dict={}
         """
+        import math
 
-        return {}
+        mt_stations = []
 
+        for mtobj in self.mt_obj_list:
+            mt_stations.append( (mtobj.lat, mtobj.lon,  mtobj.utm_zone) )
+
+        pdf = pd.DataFrame(mt_stations, columns=['Lat', 'Lon',  'UtmZone'])
+
+        mt_distances = []
+        for i in xrange(len(pdf)):
+            xi=pdf.iloc[i]['Lat']
+            yi=pdf.iloc[i]['Lon']
+            for j in xrange(i+1, len(pdf)):
+                xj = pdf.iloc[j]['Lat']
+                yj = pdf.iloc[j]['Lon']
+                dist = math.sqrt((xi-xj)**2 + (yi - yj)**2)
+                mt_distances.append(dist)
+
+        print (mt_distances)
+
+        anarray = pd.Series(mt_distances)
+        min_d = anarray.min()
+        max_d = anarray.max()
+        logger.debug("Minimum = %s", min_d )
+        logger.debug("Maximum = %s", max_d )
+
+        return {"MIN_DIST":min_d, "MAX_DIST":max_d}
 
     def show_obj(self, dest_dir=None):
         """
@@ -558,7 +584,7 @@ class EdiCollection(object):
 
         # self.display_folium()
 
-        utmzones=self.get_utm_zones()
+        utmzones=self.get_station_utmzones_stats()
 
         number_zones = len(utmzones.items())
         logger.info("This Edi fileset has %s UTM Zone(s): %s ", number_zones, utmzones)
@@ -589,7 +615,12 @@ if __name__ == "__main__":
 
         outdir = sys.argv[2]
 
-        obj.show_obj(dest_dir = outdir)
+        #obj.show_obj(dest_dir = outdir)
+
+        mt_distances = obj.get_stations_distances_stats()
+        min_dist = mt_distances.get("MIN_DIST")
+        max_dist = mt_distances.get("MAX_DIST")
+        print( min_dist, max_dist)
 
         # obj.create_phase_tensor_csv(outdir)
         #
