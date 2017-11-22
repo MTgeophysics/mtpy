@@ -156,7 +156,7 @@ class Occam1D_GUI(QtWidgets.QMainWindow):
         fn_dialog = QtWidgets.QFileDialog()
         fn = str(fn_dialog.getOpenFileName(caption='Choose Occam 1D data file',
                                            filter='(*.dat);; (*.data)',
-                                           directory=self.dir_path))
+                                           directory=self.dir_path)[0])
 
         self.occam_widget.occam_data.read_data_file(fn)
         self.dir_path = os.path.dirname(fn)
@@ -166,7 +166,7 @@ class Occam1D_GUI(QtWidgets.QMainWindow):
     def get_model_file(self):
         fn_dialog = QtWidgets.QFileDialog()
         fn = str(fn_dialog.getOpenFileName(caption='Choose Occam 1D model file',
-                                           directory=self.dir_path))
+                                           directory=self.dir_path)[0])
 
         self.occam_widget.occam_model.read_model_file(fn)
         self.dir_path = os.path.dirname(fn)
@@ -435,7 +435,7 @@ class OccamWidget(QtWidgets.QWidget):
 
         occam_path_dialog = QtWidgets.QFileDialog()
         fn = str(occam_path_dialog.getOpenFileName(
-                                        caption='Locate Occam1D executable'))
+                                        caption='Locate Occam1D executable')[0])
 
         self.occam_exec = os.path.abspath(fn)
         self.get_occam_path_edit.setText(self.occam_exec)
@@ -449,11 +449,11 @@ class OccamWidget(QtWidgets.QWidget):
             edi_dialog = QtWidgets.QFileDialog()
             fn = str(edi_dialog.getOpenFileName(caption='Pick .edi file',
                                                 filter='*.edi',
-                                                directory=edi_path))
+                                                directory=edi_path)[0])
         else:
             edi_dialog = QtWidgets.QFileDialog()
             fn = str(edi_dialog.getOpenFileName(caption='Pick .edi file',
-                                                filter='*.edi'))
+                                                filter='*.edi')[0])
         self.edi_fn = fn
         self.get_edi_edit.setText(self.edi_fn)
 

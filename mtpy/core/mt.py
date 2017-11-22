@@ -10,6 +10,7 @@
 import numpy as np
 import os
 import time
+import warnings
 
 import mtpy.core.edi as MTedi
 import mtpy.core.z as MTz
@@ -19,8 +20,6 @@ import mtpy.analysis.distortion as MTdistortion
 import mtpy.core.jfile as MTj
 import mtpy.core.mt_xml as MTxml
 
-reload(MTz)
-
 from mtpy.utils.mtpylog import MtPyLog
 
 _logger = MtPyLog.get_mtpy_logger(__name__)
@@ -29,25 +28,25 @@ _logger = MtPyLog.get_mtpy_logger(__name__)
 try:
     import scipy
 
-    scipy_version = int(scipy.__version__.replace('.', ''))
-
-    if scipy_version < 140:
-        raise _logger.warn('Note: need scipy version 0.14.0 or higher or interpolation '
-                           'might not work.')
+    scipy_version = [int(ss) for ss in scipy.__version__.split('.')]
+    if scipy_version[0] == 0:
+        if scipy_version[1] < 14:
+            warnings.warn('Note: need scipy version 0.14.0 or higher or interpolation '
+                          'might not work.', ImportWarning)
+            _logger.warning('Note: need scipy version 0.14.0 or higher or interpolation '
+                            'might not work.')
     import scipy.interpolate as spi
 
     interp_import = True
 
 except ImportError:  # pragma: no cover
-    raise _logger.warn('Could not find scipy.interpolate, cannot use method interpolate'
+    warnings.warn('Could not find scipy.interpolate, cannot use method interpolate'
+                       'check installation you can get scipy from scipy.org.')
+    _logger.warning('Could not find scipy.interpolate, cannot use method interpolate'
                        'check installation you can get scipy from scipy.org.')
     interp_import = False
 
-
-# ==============================================================================
-# ==============================================================================
-
-
+# =============================================================================
 class MT(object):
     """
     Basic MT container to hold all information necessary for a MT station
