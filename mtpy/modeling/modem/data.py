@@ -647,10 +647,10 @@ class Data(object):
                     self.data_array[ii]['z'][jj] = interp_z.z[kk, :, :]
                     self.data_array[ii]['z_err'][jj] = interp_z.z_err[kk, :, :]
 
-                if mt_obj.Tipper.tipper is not None:
-                    self.data_array[ii]['tip'][jj] = interp_t.tipper[kk, :, :]
-                    self.data_array[ii]['tip_err'][jj] = \
-                        interp_t.tipper_err[kk, :, :]
+                    if mt_obj.Tipper.tipper is not None:
+                        self.data_array[ii]['tip'][jj] = interp_t.tipper[kk, :, :]
+                        self.data_array[ii]['tip_err'][jj] = \
+                            interp_t.tipper_err[kk, :, :]
 
                 # FZ: try to output a new edi files. Compare with original edi?
                 if new_edi_dir is not None and os.path.isdir(new_edi_dir):
