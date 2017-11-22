@@ -243,13 +243,12 @@ class Model(object):
         self.data_obj = None
         if station_object is not None:
             self.station_locations = station_object
-            self._logger.info("Use Station object as input, all functions that uses data_objects are nolonger "
-                              "available.")
+            self._logger.info("Use Station object as input, all functions that "
+                              "uses data_objects are no longer available.")
         elif data_object is not None:
             self.data_obj = data_object
             self.station_locations = self.data_obj.station_locations
-            self._logger.info(
-                "Use Data object as input.")
+            self._logger.info("Use Data object as input.")
         # else:
         #     raise AttributeError("please provide either Station object or Data object as input")
 
@@ -570,18 +569,25 @@ class Model(object):
             west = self.station_locations.rel_east.min() - self.cell_size_east * nc_extra_east
             east = self.station_locations.rel_east.max() + self.cell_size_east * nc_extra_east
         else:
-            self._logger.debug("user specified cell number in east-west mesh %s", self.cell_number_ew)
-            center_ew = 0.5 * (self.station_locations.rel_east.min() + self.station_locations.rel_east.max())
+            self._logger.debug("user specified cell number in east-west mesh %s" %
+                               self.cell_number_ew)
+            center_ew = 0.5 * (self.station_locations.rel_east.min() +
+                               self.station_locations.rel_east.max())
             cell_num = int(self.cell_number_ew / 2)
             west = center_ew - self.cell_size_east * cell_num
             east = center_ew + self.cell_size_east * cell_num
 
         if self.cell_number_ns is None:
-            south = self.station_locations.rel_north.min() - self.cell_size_north * nc_extra_north
-            north = self.station_locations.rel_north.max() + self.cell_size_north * nc_extra_north
+            south = self.station_locations.rel_north.min() - \
+                    self.cell_size_north * nc_extra_north
+            north = self.station_locations.rel_north.max() + \
+                    self.cell_size_north * nc_extra_north
         else:
-            self._logger.debug("user specified cell number in north-south mesh %s", self.cell_number_ns)
-            center_ns = self.station_locations.rel_north.min() + self.station_locations.rel_north.max()
+            self._logger.debug(
+                "user specified cell number in north-south mesh %s" %
+                self.cell_number_ns)
+            center_ns = self.station_locations.rel_north.min() + \
+                        self.station_locations.rel_north.max()
             center_ns = 0.5 * center_ns
             cell_num = int(self.cell_number_ns / 2)
             south = center_ns - self.cell_size_north * cell_num
@@ -601,14 +607,14 @@ class Model(object):
         east_grid_r = np.arange(start=west_r, stop=east_r + self.cell_size_east,
                                 step=self.cell_size_east)
 
-        self._logger.debug("FZ: east_gridr = %s", east_grid_r)
+        self._logger.debug("FZ: east_gridr = %s" % east_grid_r)
         mean_egrid = np.mean(east_grid_r)
-        self._logger.info("mean_egrid = %s", mean_egrid)
+        self._logger.info("mean_egrid = %s" % mean_egrid)
         if self.data_obj.rotation_angle == 0:
             self.data_obj.center_position_utm[1] -= mean_egrid
             self.station_locations.rel_east += mean_egrid
         east_grid_r -= mean_egrid
-        self._logger.debug("FZ: east_gridr_2 shifted centre = %s", east_grid_r)
+        self._logger.debug("FZ: east_gridr_2 shifted centre = %s" % east_grid_r)
 
         # padding cells in the east-west direction
         for ii in range(1, pad_east + 1):
@@ -738,13 +744,13 @@ class Model(object):
         log_z = np.array(exp_list)
         z_nodes = log_z
 
-        self._logger.debug("cell_sizes log_z = %s", log_z)
-        self._logger.debug("and z_nodes = %s", z_nodes)
+        self._logger.debug("cell_sizes log_z = %s" % log_z)
+        self._logger.debug("and z_nodes = %s" % z_nodes)
 
         # index of top of padding
         itp = len(z_nodes) - 1
 
-        self._logger.debug("index of top of padding itp= %s", itp)
+        self._logger.debug("index of top of padding itp= %s" % itp)
 
         # padding cells in the end of the vertical direction
         for ii in range(1, self.pad_z + 1):
@@ -768,7 +774,7 @@ class Model(object):
         # wrong: the following line does not make any sense if no air layer was added above.
         # incorrrect: self.sea_level = z_grid[self.n_airlayers]
         self.sea_level = z_grid[add_air]
-        self._logger.debug("FZ:***1 sea_level = %s", self.sea_level)
+        self._logger.debug("FZ:***1 sea_level = %s" % self.sea_level)
 
         return z_nodes, z_grid
 
@@ -787,7 +793,8 @@ class Model(object):
         if self.z_target_depth is not None:
             nf = np.log10((zfactor - 1) * self.z_target_depth / self.z1_layer) / np.log10(zfactor) - 1
             nz = int(nf)
-            self._logger.debug("%s layers are needed to reach the target depth %s", nz, self.z_target_depth)
+            self._logger.debug("%s layers are needed to reach the target depth %s" %
+                               (nz, self.z_target_depth))
 
         print("self.n_layers %s and calculated z_layers=%s" % (self.n_layers, nz))
 
@@ -798,12 +805,12 @@ class Model(object):
         log_z = np.array(exp_list)
         z_nodes = log_z  # a list of increasing cell sizes
 
-        self._logger.debug("cell_sizes z_nodes = %s", z_nodes)
+        self._logger.debug("cell_sizes z_nodes = %s" % z_nodes)
 
         # index of top of padding
         itp = len(z_nodes) - 1
 
-        self._logger.debug("index of top of padding itp= %s", itp)
+        self._logger.debug("index of top of padding itp= %s" % itp)
 
         # padding cells in the end of the vertical direction
         for ii in range(1, self.pad_z + 1):
@@ -814,9 +821,10 @@ class Model(object):
         # make an array of sum values as coordinates of the horizontal lines
         z_grid = np.array([z_nodes[:ii].sum() for ii in range(z_nodes.shape[0] + 1)])
 
-        self._logger.debug("z grid lines = %s", z_grid)
-        self._logger.debug("Max vertical depth of the mesh= %s", z_grid[-1])
-        self._logger.debug("shape of vertical layers cells and grid lines %s, %s", z_nodes.shape, z_grid.shape)
+        self._logger.debug("z grid lines = %s" % z_grid)
+        self._logger.debug("Max vertical depth of the mesh= %s" % z_grid[-1])
+        self._logger.debug("shape of vertical layers cells and grid lines %s, %s" %
+                           (z_nodes.shape, z_grid.shape))
 
         return z_nodes, z_grid
 
@@ -880,7 +888,7 @@ class Model(object):
         # shift the grid_z lines to the new reference
         self.grid_z = self.grid_z + self.grid_center[2]
 
-        self._logger.debug("New vertical grid lines = %s", self.grid_z)
+        self._logger.debug("New vertical grid lines = %s" % self.grid_z)
 
         self._logger.info("begin to self.assign_resistivity_from_surfacedata(...)")
         self.assign_resistivity_from_surfacedata('topography', air_resistivity, where='above')
@@ -913,8 +921,9 @@ class Model(object):
 
         self.station_grid_index = self.project_stations_on_topography()
 
-        self._logger.debug("NEW res_model and cov_mask shapes: %s, %s", self.res_model.shape,
-                           self.covariance_mask.shape)
+        self._logger.debug("NEW res_model and cov_mask shapes: %s, %s" %
+                           (self.res_model.shape,
+                            self.covariance_mask.shape))
 
         return
 
@@ -982,7 +991,7 @@ class Model(object):
             # wrong? self.sea_level = self.grid_z[self.n_airlayers]
             # self.sea_level = self.grid_z[self.n_airlayers]
             self.sea_level = 0  # keep as zero
-            self._logger.debug("FZ:***2 sea_level = %s", self.sea_level)
+            self._logger.debug("FZ:***2 sea_level = %s" % self.sea_level)
 
             # print (stop_here_for_debug)
 
@@ -1047,8 +1056,9 @@ class Model(object):
 
         self.station_grid_index = self.project_stations_on_topography()
 
-        self._logger.debug("NEW res_model and cov_mask shapes: %s, %s", self.res_model.shape,
-                           self.covariance_mask.shape)
+        self._logger.debug("NEW res_model and cov_mask shapes: %s, %s" %
+                           (self.res_model.shape,
+                            self.covariance_mask.shape))
 
         return
 
@@ -1173,7 +1183,8 @@ class Model(object):
 
         gcz = np.mean([self.grid_z[:-1], self.grid_z[1:]], axis=0)
 
-        self._logger.debug("gcz is the cells centre coordinates: %s, %s", len(gcz), gcz)
+        self._logger.debug("gcz is the cells centre coordinates: %s, %s" %
+                           (len(gcz), gcz))
         # convert to positive down, relative to the top of the grid
         surfacedata = self.sea_level - self.surface_dict[surface_name]
         # surfacedata = self.surface_dict[surfacename] - self.sea_level
@@ -1254,7 +1265,8 @@ class Model(object):
             #            !!! can't use topo elevation directly from topography file as the
             #                elevation needs to sit on the model mesh!
             #            topoval = self.surface_dict['topography'][syi, sxi]
-            self._logger.debug("sname,ss, sxi, syi, szi, topoval: %s,%s,%s,%s,%s,%s", sname, ss, sxi, syi, szi, topoval)
+            self._logger.debug("sname,ss, sxi, syi, szi, topoval: %s,%s,%s,%s,%s,%s"
+                               % (sname, ss, sxi, syi, szi, topoval))
 
             # update elevation in station locations and data array, +1 m as
             # data elevation needs to be below the topography (as advised by Naser)
@@ -1625,8 +1637,8 @@ class Model(object):
         sgindex_x = self.station_grid_index[0]
         sgindex_y = self.station_grid_index[1]
 
-        self._logger.debug("station grid index x: %s", sgindex_x)
-        self._logger.debug("station grid index y: %s", sgindex_y)
+        self._logger.debug("station grid index x: %s" % sgindex_x)
+        self._logger.debug("station grid index y: %s" % sgindex_y)
 
         ax.scatter(sgindex_x, sgindex_y, marker='v', c='b', s=2)
 
@@ -2562,9 +2574,9 @@ class Model(object):
             # round to nearest whole number and reverse the order
             new_airlayers = np.around(new_airlayers - topo_core.max())
 
-            self._logger.debug("new_airlayers", new_airlayers)
+            self._logger.debug("new_airlayers {}".format(new_airlayers))
 
-            self._logger.debug("self.grid_z[0:2]", self.grid_z[0:2])
+            self._logger.debug("self.grid_z[0:2] {}".format(self.grid_z[0:2]))
 
             # add new air layers, cut_off some tailing layers to preserve array size.
             #            self.grid_z = np.concatenate([new_airlayers, self.grid_z[self.n_airlayers+1:] - self.grid_z[self.n_airlayers] + new_airlayers[-1]], axis=0)
