@@ -2036,7 +2036,7 @@ class Model(object):
                           'z_target_depth',
                           'z_bottom',
                           'mesh_rotation_angle',
-                          'res_starting_value',
+                          'res_initial_value',
                           'save_path']
 
         parameter_dict = {}
