@@ -141,7 +141,6 @@ class PlotPTMaps(mtplottools.MTEllipse):
     """
 
     def __init__(self, data_fn=None, resp_fn=None, model_fn=None, **kwargs):
-
         mtplottools.MTEllipse.__init__(self, **kwargs)
 
         self.model_fn = model_fn
