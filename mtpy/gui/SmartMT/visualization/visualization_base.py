@@ -49,7 +49,7 @@ class VisualizationBase(QtCore.QThread):
         self._mt_objs = None
         self._fig = None
         self._plotting_object = None
-        self._logger = MtPyLog().get_mtpy_logger(__name__)
+        self._logger = MtPyLog.get_mtpy_logger(self.__class__.__name__)
         self._parameter_ui = PlotParameter(self._parent)
 
         # add plot common setting gui

@@ -17,7 +17,7 @@ from osgeo.ogr import OGRERR_NONE
 
 from mtpylog import MtPyLog
 
-logger = MtPyLog().get_mtpy_logger(__name__)
+_logger = MtPyLog.get_mtpy_logger(__name__)
 
 
 class GIS_ERROR(Exception):
@@ -124,7 +124,7 @@ def assert_elevation_value(elevation):
         elev_value = float(elevation)
     except (ValueError, TypeError):
         elev_value = 0.0
-        logger.warn('{0} is not a number, setting elevation to 0'.format(elevation))
+        _logger.warn('{0} is not a number, setting elevation to 0'.format(elevation))
 
     return elev_value
 

@@ -29,7 +29,7 @@ from mtpy.utils.mtpylog import MtPyLog
 
 # get a logger object for this module, using the utility class MtPyLog to
 # config the logger
-logger = MtPyLog().get_mtpy_logger(__name__)
+_logger = MtPyLog.get_mtpy_logger(__name__)
 # default contains of rholist
 DEFAULT_RHOLIST = {'zxy', 'zyx', 'det'}
 
@@ -44,7 +44,7 @@ class Depth1D(ImagingBase):
         self._set_edi(data)
 
     def __init__(self, edis=None, rholist=DEFAULT_RHOLIST):
-        super(Depth1D, self).__init__()
+        ImagingBase.__init__(self)
         self._rholist = None
         self.set_data(edis)
         self.set_rholist(rholist)
@@ -498,7 +498,7 @@ def get_penetration_depth(mt_obj_list, per_index, whichrho='det'):
         zeta = mt_obj.Z
 
         if per_index >= len(zeta.freq):
-            logger.debug(
+            _logger.debug(
                 "Number of frequecies (Max per_index)= %s", len(
                     zeta.freq))
             raise Exception(
@@ -518,7 +518,7 @@ def get_penetration_depth(mt_obj_list, per_index, whichrho='det'):
             det2 = np.abs(zeta.det[per_index])
             penetration_depth = -scale_param * np.sqrt(0.2 * per * det2 * per)
         else:
-            logger.critical(
+            _logger.critical(
                 "unsupported method to compute penetration depth: %s",
                 whichrho)
             # sys.exit(100)
@@ -551,7 +551,7 @@ def get_penetration_depth_generic(edi_file_list, period_sec, whichrho='det', pto
     """
 
     scale_param = np.sqrt(1.0 / (2.0 * np.pi * 4 * np.pi * 10 ** (-7)))
-    logger.debug("The scaling parameter=%.6f" % scale_param)
+    _logger.debug("The scaling parameter=%.6f" % scale_param)
 
     # per_index=0,1,2,....
     periods = []
@@ -578,7 +578,7 @@ def get_penetration_depth_generic(edi_file_list, period_sec, whichrho='det', pto
         p_index = [ff for ff, f2 in enumerate(1.0 / mt_obj.Z.freq)
                    if (f2 > period_sec * (1 - ptol)) and (f2 < period_sec * (1 + ptol))]
 
-        logger.debug("Period index found: %s", p_index)
+        _logger.debug("Period index found: %s", p_index)
 
         if len(p_index) >= 1:  # this edi can be included
             per_index = p_index[0]
@@ -590,7 +590,7 @@ def get_penetration_depth_generic(edi_file_list, period_sec, whichrho='det', pto
             zeta = mt_obj.Z
 
             if per_index >= len(zeta.freq):
-                logger.debug(
+                _logger.debug(
                     "Number of frequecies (Max per_index)= %s", len(
                         zeta.freq))
                 raise Exception(
@@ -609,14 +609,14 @@ def get_penetration_depth_generic(edi_file_list, period_sec, whichrho='det', pto
                 penetration_depth = -scale_param * np.sqrt(zeta.resistivity[per_index, 1, 0] * per)
 
             else:
-                logger.critical(
+                _logger.critical(
                     "un-supported method to compute penetration depth: %s", whichrho)
                 sys.exit(100)
 
             pendep.append(penetration_depth)
 
         else:
-            logger.warn(
+            _logger.warn(
                 '%s was not used in the 3d profile, because it has no required period.',
                 afile)
             pass
@@ -645,10 +645,10 @@ def check_period_values(period_list, ptol=0.1):
     :return: True/False
     """
 
-    logger.debug("The Periods List to be checked : %s", period_list)
+    _logger.debug("The Periods List to be checked : %s", period_list)
 
     if not period_list:
-        logger.error("The MT periods list is empty - No relevant data found in the EDI files.")
+        _logger.error("The MT periods list is empty - No relevant data found in the EDI files.")
         return False  # what is the sensible default value for this ?
 
     p0 = period_list[0]  # the first value as a ref
@@ -683,8 +683,8 @@ def get_bounding_box(latlons):
         minlon = min(minlon, lon)
         maxlon = max(maxlon, lon)
 
-    logger.debug("Latitude Range: [%.5f, %.5f]", minlat, maxlat)
-    logger.debug("Longitude Range: [%.5f, %.5f]", minlon, maxlon)
+    _logger.debug("Latitude Range: [%.5f, %.5f]", minlat, maxlat)
+    _logger.debug("Longitude Range: [%.5f, %.5f]", minlon, maxlon)
 
     # lats = [tup[0] for tup in latlons]
     # lons = [tup[1] for tup in latlons]
@@ -720,6 +720,6 @@ def get_index(lat, lon, minlat, minlon, pixelsize, offset=0):
     iy = int(round(index_y))
 
     # any negative values, out-of-bound?
-    logger.debug("Grid index: (%s, %s)", ix, iy)
+    _logger.debug("Grid index: (%s, %s)", ix, iy)
 
     return ix + offset, iy + offset

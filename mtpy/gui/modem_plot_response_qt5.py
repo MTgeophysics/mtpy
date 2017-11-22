@@ -21,6 +21,8 @@ import copy
 import numpy as np
 import matplotlib.pyplot as plt
 
+import mtpy.modeling.modem
+
 try:
     from PyQt5 import QtCore, QtGui, QtWidgets
 except ImportError:
@@ -299,7 +301,7 @@ class PlotResponses(QtWidgets.QWidget):
         self.file_watcher_dfn.addPath(self._data_fn)
         
         # create new modem data object
-        self.modem_data = modem.Data()
+        self.modem_data = mtpy.modeling.modem.Data()
         self.modem_data.read_data_file(self._data_fn)
         
         # make a back up copy that will be unchanged
@@ -326,7 +328,7 @@ class PlotResponses(QtWidgets.QWidget):
     @resp_fn.setter
     def resp_fn(self, resp_fn):
         self._resp_fn = os.path.abspath(resp_fn)
-        self.modem_resp = modem.Data()
+        self.modem_resp = mtpy.modeling.modem.Data()
 
         self.modem_resp.read_data_file(self._resp_fn)
         self.plot() 
