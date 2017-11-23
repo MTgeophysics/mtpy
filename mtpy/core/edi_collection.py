@@ -96,6 +96,12 @@ class EdiCollection(object):
 
         self.bound_box_dict = self.get_bounding_box()  # in orginal projection
 
+        # ensure that outdir is specified, and be created if not there.
+        if outdir is None:
+            raise Exception("Error: OutputDir is not specified!!!")
+        elif not os.path.exists(outdir):
+            os.mkdir(outdir)
+
         self.outdir = outdir
 
         return
@@ -508,7 +514,7 @@ class EdiCollection(object):
         def get_utm_zone(latitude, longitude):
             zone_num = int(1 + (longitude + 180.0) / 6.0)
 
-            if latitude >=0:
+            if latitude >= 0:
                 return "%s%s"%(zone_num,'N')
             else:
                 return "%s%s"%(zone_num,'S')
@@ -548,12 +554,25 @@ class EdiCollection(object):
         # print (mt_distances)
 
         anarray = pd.Series(mt_distances)
+        print(anarray.describe())
+
+        q01 = anarray.quantile(q=0.01)
+        q02 = anarray.quantile(q=0.02)
+        q03 = anarray.quantile(q=0.03)
+        q04 = anarray.quantile(q=0.04)
+        q05 = anarray.quantile(q=0.05)
+
+        print (q01, q02,q03,q04,q05)
+
+        # anarray.plot()
+        # plt.show()
+
         min_d = anarray.min()  # cold be very small due to two close stations, skew the result
         max_d = anarray.max()
         self._logger.debug("Minimum = %s", min_d )
         self._logger.debug("Maximum = %s", max_d )
 
-        return {"MIN_DIST":min_d, "MAX_DIST":max_d}
+        return {"MIN_DIST":min_d, "Q1PERCENT":q01, "Q2PERCENT":q02, "Q3PERCENT":q03, "MAX_DIST":max_d}
 
     def show_obj(self, dest_dir=None):
         """
