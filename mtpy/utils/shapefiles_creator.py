@@ -664,12 +664,13 @@ if __name__ == "__main__":
 
     #for aper in [min_period, max_period]:
     for aper in shp_maker.all_unique_periods[::5]:  # ascending order: from short to long periods
+        # default projection as target output
         # shp_maker.create_phase_tensor_shp(2.85)
-        shp_maker.create_phase_tensor_shp(aper,  ellipsize=esize,export=True)
-        shp_maker.create_tipper_real_shp(aper, line_length=tipsize, export=True)
-        shp_maker.create_tipper_imag_shp(aper, line_length=tipsize, export=True)
+        # shp_maker.create_phase_tensor_shp(aper,  ellipsize=esize,export=True)
+        # shp_maker.create_tipper_real_shp(aper, line_length=tipsize, export=True)
+        # shp_maker.create_tipper_imag_shp(aper, line_length=tipsize, export=True)
 
-        for my_epsgcode in [3112, 28354]:  # [3112, 4326, 4283, 32754, 32755, 28354, 28355]:
+        for my_epsgcode in [28353]:  # [3112, 4326, 4283, 32754, 32755, 28353, 28354, 28355]:
             shp_maker.create_phase_tensor_shp(aper, target_epsg_code=my_epsgcode, ellipsize=esize, export=True)
             shp_maker.create_tipper_real_shp(aper, line_length=tipsize, target_epsg_code=my_epsgcode, export=True)
             shp_maker.create_tipper_imag_shp(aper, line_length=tipsize, target_epsg_code=my_epsgcode, export=True)
