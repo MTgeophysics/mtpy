@@ -98,7 +98,8 @@ class EdiCollection(object):
 
         # ensure that outdir is specified, and be created if not there.
         if outdir is None:
-            raise Exception("Error: OutputDir is not specified!!!")
+            #raise Exception("Error: OutputDir is not specified!!!")
+            pass
         elif not os.path.exists(outdir):
             os.mkdir(outdir)
 
@@ -634,7 +635,7 @@ if __name__ == "__main__":
 
         outdir = sys.argv[2]
 
-        #obj.show_obj(dest_dir = outdir)
+        obj.show_obj(dest_dir = outdir)
 
         mt_distances = obj.get_stations_distances_stats()
         min_dist = mt_distances.get("MIN_DIST")
