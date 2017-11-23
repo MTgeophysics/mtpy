@@ -89,7 +89,7 @@ class ModEM_to_Raster(object):
         model_obj.read_model_file()
         
         if model_center:                                      
-            center_zone, center_east, center_north = gis_tools.project_point_ll2utm( 
+            center_east, center_north, center_zone = gis_tools.project_point_ll2utm( 
                                                                     model_center[1],
                                                                     model_center[0]) 
                                              
