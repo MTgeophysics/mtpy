@@ -307,8 +307,8 @@ class PTShapeFile(object):
 
             poly_list = []
 
-            print("period=", plot_per)
-            print(self.pt_dict.keys()) # (self.pt_dict[plot_per])['phimax'].size)
+#            print("period=", plot_per)
+#            print(self.pt_dict.keys()) # (self.pt_dict[plot_per])['phimax'].size)
             phi_max_val = self.pt_dict[plot_per]['phimax'].max()
 
 
@@ -408,6 +408,7 @@ class PTShapeFile(object):
         self.mt_obj_list = [modem_obj.mt_dict[key]
                             for key in modem_obj.mt_dict.keys()]
 
+        self._get_pt_array()
         self._set_rotation_angle(rotation_angle)
 
         self.write_shape_files()
@@ -460,11 +461,11 @@ class PTShapeFile(object):
                     mpt = modem_resp_obj.mt_dict[key].pt
 
                     pt_tuple = (mt_obj.station, east, north,
-                                mpt.phimin[0][p_index],
-                                mpt.phimax[0][p_index],
-                                mpt.azimuth[0][p_index],
-                                mpt.beta[0][p_index],
-                                2 * mpt.beta[0][p_index])
+                                mpt.phimin[p_index],
+                                mpt.phimax[p_index],
+                                mpt.azimuth[p_index],
+                                mpt.beta[p_index],
+                                2 * mpt.beta[p_index])
                 except KeyError:
                     pt_tuple = (mt_obj.station, east, north,
                                 0,
@@ -657,10 +658,10 @@ class PTShapeFile(object):
                     #                                          abs(rpt.pt[p_index, 1, 0])**2+
                     # abs(rpt.pt[p_index, 1, 1])**2)
                     pt_tuple = (mt_obj.station, east, north,
-                                rpt.phimin[0][p_index],
-                                rpt.phimax[0][p_index],
-                                rpt.azimuth[0][p_index],
-                                rpt.beta[0][p_index],
+                                rpt.phimin[p_index],
+                                rpt.phimax[p_index],
+                                rpt.azimuth[p_index],
+                                rpt.beta[p_index],
                                 rpt_mean)
                     #                                np.sqrt(abs(rpt.phimin[0][p_index]*
                     #                                            rpt.phimax[0][p_index])))
