@@ -201,10 +201,11 @@ def get_utm_zone(latitude, longitude):
     ## n_str = _utm_letter_designator(latitude)
     is_northern = bool(latitude >= 0)
     
-    if latitude < 0.0:
-        n_str = 'S'
-    else:
-        n_str = 'N'
+    # if latitude < 0.0:
+    #     n_str = 'S'
+    # else:
+    #     n_str = 'N'
+    n_str = _utm_letter_designator(latitude)
 
     return zone_number, is_northern, '{0:02.0f}{1}'.format(zone_number, n_str)
 
@@ -277,15 +278,13 @@ def project_point_ll2utm(lat, lon, datum='WGS84', utm_zone=None, epsg=None):
         utm_cs.CopyGeogCSFrom(ll_cs)
         if utm_zone is None:
             # get the UTM zone in the datum coordinate system, otherwise
-            zone_number, is_northern, utm_zone = get_utm_zone(lat.mean(), 
+            zone_number, is_northern, utm_zone = get_utm_zone(lat.mean(),
                                                               lon.mean())
-            utm_cs.SetUTM(zone_number, is_northern)
         else:
             # get zone number and is_northern from utm_zone string
             zone_number = int(utm_zone[0:-1])
             is_northern = True if utm_zone[-1].lower() > 'n' else False
-            utm_cs.CopyGeogCSFrom(ll_cs)
-            utm_cs.SetUTM(zone_number, is_northern)
+        utm_cs.SetUTM(zone_number, is_northern)
 
     # set the transform wgs84_to_utm and do the transform
     ll2utm = osr.CoordinateTransformation(ll_cs, utm_cs)
