@@ -38,7 +38,7 @@ before_install:
   - export CPLUS_INCLUDE_PATH=/usr/include/gdal
   - export C_INCLUDE_PATH=/usr/include/gdal
   - export LD_LIBRARY_PATH="/usr/local/gdal/lib:$LD_LIBRARY_PATH"
-  - export GDAL_DATA=/usr/local/gdal/share/gdal
+  - export GDAL_DATA=$(gdal-config --datadir)
   - export PATH="/usr/local/gdal/bin:$PATH"
   - pip install pytest-xdist  # add xdist for distributing tests
   - pip install pytest-cov  # code coverage
@@ -55,6 +55,10 @@ before_script:
   - pip freeze  # show installed packages
 #  # install mtpy2 in dev mode
 #  - pip install .
+   # check gdal installation
+  - gdal-config --datadir
+  - echo $GDAL_DATA
+
 
 script:
   # test
