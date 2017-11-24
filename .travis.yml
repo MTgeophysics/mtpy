@@ -38,8 +38,8 @@ before_install:
   - export CPLUS_INCLUDE_PATH=/usr/include/gdal
   - export C_INCLUDE_PATH=/usr/include/gdal
   - export LD_LIBRARY_PATH="/usr/local/gdal/lib:$LD_LIBRARY_PATH"
-  - export GDAL_DATA=$(gdal-config --datadir)
   - export PATH="/usr/local/gdal/bin:$PATH"
+  - export GDAL_DATA=$(gdal-config --datadir) && echo GDAL_DATA=$GDAL_DATA
   - pip install pytest-xdist  # add xdist for distributing tests
   - pip install pytest-cov  # code coverage
   - pip install coveralls
@@ -68,7 +68,7 @@ script:
   - "export DISPLAY=:99.0"  # enable display on travis
   - "sh -e /etc/init.d/xvfb start"
   - sleep 3 # give xvfb some time to start
-  - py.test --runxfail --cov=mtpy --cov-append --cov-report= tests/SmartMT
+  - py.test --cov=mtpy --cov-append --cov-report= tests/SmartMT
 
 after_success:
   - coveralls
