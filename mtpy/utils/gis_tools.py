@@ -15,7 +15,7 @@ from osgeo import osr
 import numpy as np
 from osgeo.ogr import OGRERR_NONE
 
-from mtpylog import MtPyLog
+from .mtpylog import MtPyLog
 
 _logger = MtPyLog.get_mtpy_logger(__name__)
 
