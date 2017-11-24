@@ -12,7 +12,7 @@ Revision History:
     LastUpdate:     11/24/17   RH
     LastUpdate:     dd/mm/yyyy  Who     Optional description
 """
-
+import os
 import mtpy.modeling.modem as modem
 import numpy as np
 import logging, traceback
@@ -220,7 +220,13 @@ def main():
     :return:
     """
 
-    modemfn = '/home/rakib/work/ausLAMP/AlisonPlotting/plotting/ModEM_input_output/ModEM_Data.dat'
+    imaging2 = os.path.dirname(__file__)
+    mtpy = os.path.dirname(imaging2)
+    base = os.path.dirname(mtpy)
+    examples = os.path.join(base, 'examples')
+    data = os.path.join(examples, 'data')
+    ModEM_files = os.path.join(data, 'ModEM_files')
+    modemfn = os.path.join(ModEM_files, 'ModEM_Data_im2.dat')
 
     pmt = plot_modem_ptensors(data_fn=modemfn)
 
