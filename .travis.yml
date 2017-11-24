@@ -28,6 +28,7 @@ before_install:
   - sudo rm /etc/apt/sources.list.d/mongodb-3.2.list  # temp fix for issue travis-ci/travis-ci#8554
   - sudo add-apt-repository --yes ppa:ubuntu-sdk-team/ppa  # qt5 source
   - sudo apt update -qq
+  - sudo apt install libproj-dev  # undocumented gdal dependency
   # install qt4 and dependencies
   - if [ $QT_VERSION == 4 ]; then sudo apt -y install -qq "libqt4-dev"; fi  # install pyqt dependencies
   - if [ $QT_VERSION == 5 ]; then sudo apt -y install -qq qtdeclarative5-dev libqt5svg5-dev qtmultimedia5-dev && export QMAKE=/usr/lib/x86_64-linux-gnu/qt5/bin/qmake; fi  # install qt5 and switch to qt5 env
