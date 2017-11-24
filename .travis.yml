@@ -55,15 +55,12 @@ before_script:
   - pip freeze  # show installed packages
 #  # install mtpy2 in dev mode
 #  - pip install .
-   # check gdal installation
-  - gdal-config --datadir
-  - echo $GDAL_DATA
 
 
 script:
   # test
 #  - MTPY_TEST_COMPARE_IMAGE=False py.test -n 4 --dist=loadscope --cov=mtpy --cov-report= tests
-  - py.test --cov=mtpy --cov-report= tests
+  - py.test -vv --cov=mtpy --cov-report= tests
   # test gui
   - "export DISPLAY=:99.0"  # enable display on travis
   - "sh -e /etc/init.d/xvfb start"
