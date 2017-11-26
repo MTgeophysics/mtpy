@@ -92,8 +92,8 @@ class MTArrows(object):
     """
 
     def __init__(self, **kwargs):
-        self.as_super = super(MTArrows, self)
-        self.as_super.__init__(**kwargs)
+        # self.as_super = super(MTArrows, self)
+        # self.as_super.__init__(**kwargs)
 
         self.arrow_size = 2.5
         self.arrow_head_length = .15 * self.arrow_size
@@ -183,7 +183,6 @@ class MTEllipse(object):
     """
 
     def __init__(self, **kwargs):
-
         self.ellipse_size = 2
         self.ellipse_colorby = 'phimin'
         self.ellipse_range = (0, 90, 10)
