@@ -257,9 +257,13 @@ def project_point_ll2utm(lat, lon, datum='WGS84', utm_zone=None, epsg=None):
     # set lat lon coordinate system
     ll_cs = osr.SpatialReference()
     if isinstance(datum, int):
-        ll_cs.ImportFromEPSG(datum)
+        ogrerr = ll_cs.ImportFromEPSG(datum)
+        if ogrerr != OGRERR_NONE:
+            raise GIS_ERROR("GDAL/osgeo ogr error code: {}".format(ogrerr))
     elif isinstance(datum, str):
-        ll_cs.SetWellKnownGeogCS(datum)
+        ogrerr = ll_cs.SetWellKnownGeogCS(datum)
+        if ogrerr != OGRERR_NONE:
+            raise GIS_ERROR("GDAL/osgeo ogr error code: {}".format(ogrerr))
     else:
         raise GIS_ERROR("""datum {0} not understood, needs to be EPSG as int
                            or a well known datum as a string""".format(datum))
@@ -275,8 +279,10 @@ def project_point_ll2utm(lat, lon, datum='WGS84', utm_zone=None, epsg=None):
            
     # otherwise project onto given datum
     elif epsg is None:
-        utm_cs.CopyGeogCSFrom(ll_cs)
-        if utm_zone is None:
+        ogrerr = utm_cs.CopyGeogCSFrom(ll_cs)
+        if ogrerr != OGRERR_NONE:
+            raise GIS_ERROR("GDAL/osgeo ogr error code: {}".format(ogrerr))
+        if utm_zone is None or not isinstance(None, str) or utm_zone.lower() == 'none':
             # get the UTM zone in the datum coordinate system, otherwise
             zone_number, is_northern, utm_zone = get_utm_zone(lat.mean(),
                                                               lon.mean())
@@ -300,7 +306,7 @@ def project_point_ll2utm(lat, lon, datum='WGS84', utm_zone=None, epsg=None):
         projected_point['easting'][ii] = point[0]
         projected_point['northing'][ii] = point[1]
         projected_point['elev'][ii] = point[2]
-        projected_point['utm_zone'][ii] = utm_zone
+        projected_point['utm_zone'][ii] = utm_zone if utm_zone is not None else get_utm_zone(lat[ii], lon[ii])[2]
         
     # if just projecting one point, then return as a tuple so as not to break
     # anything.  In the future we should adapt to just return a record array
