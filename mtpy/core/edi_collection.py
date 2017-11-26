@@ -96,7 +96,7 @@ class EdiCollection(object):
 
         self.bound_box_dict = self.get_bounding_box()  # in orginal projection
 
-        # ensure that outdir is specified, and be created if not there.
+        # ensure that outdir is created if not exists.
         if outdir is None:
             #raise Exception("Error: OutputDir is not specified!!!")
             pass

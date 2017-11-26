@@ -47,12 +47,25 @@ class ShapeFilesCreator(EdiCollection):
     create phase tensor and tipper shapefiles for a list of edifiles
     """
 
-    def __init__(self, edifile_list, outdir):
+    def __init__(self, edifile_list, outdir, orig_crs={'init': 'epsg:4283'}):
         """
         loop through a list of edi files, create required shapefiles
         :param edifile_list: [path2edi,...]
-        :param outdir: path2output dir, where the shpe file weill be written.
+        :param outdir: path2output dir, where the shp file will be written.
+        :param orig_crs = {'init': 'epsg:4326'}  # initial crs WGS84
+        :param orig_crs = {'init': 'epsg:4283'}  # initial crs GDA94
+
         """
+
+        self.orig_crs = orig_crs
+
+        # ensure that outdir is specified, and be created if not there.
+        if outdir is None:
+            raise Exception("Error: OutputDir is not specified!!!")
+        elif not os.path.exists(outdir):
+            os.mkdir(outdir)
+
+        self.outdir = outdir
 
         super(ShapeFilesCreator, self).__init__(edilist=edifile_list, outdir=outdir)
         #python-3 syntax: super().__init__(edilist=edifile_list, outdir=outdir)
@@ -63,6 +76,7 @@ class ShapeFilesCreator(EdiCollection):
         # self.ptol = 0.05  # this param controls what freqs/periods are grouped together:
         # 10% may result more double counting of freq/period data than 5%.
         # eg: E:\Data\MT_Datasets\WenPingJiang_EDI 18528 rows vs 14654 rows
+
 
         return
 
@@ -89,9 +103,9 @@ class ShapeFilesCreator(EdiCollection):
         # OR pdf['geometry'] = pdf.apply(lambda z: Point(z.lon, z.lat), axis=1)
         # if you want to df = df.drop(['Lon', 'Lat'], axis=1)
         #orig_crs = {'init': 'epsg:4326'}  # initial crs WGS84
-        orig_crs = {'init': 'epsg:4283'}  # initial crs GDA94
+        # orig_crs = {'init': 'epsg:4283'}  # initial crs GDA94
 
-        geopdf = gpd.GeoDataFrame(pdf, crs=orig_crs, geometry=mt_locations)
+        geopdf = gpd.GeoDataFrame(pdf, crs=self.orig_crs, geometry=mt_locations)
 
         # make  pt_ellispes using polygons
         phi_max_v = geopdf['phi_max'].max()  # the max of this group of ellipse
@@ -123,7 +137,7 @@ class ShapeFilesCreator(EdiCollection):
 
             ellipse_list.append(polyg)
 
-        geopdf = gpd.GeoDataFrame(geopdf, crs=orig_crs, geometry=ellipse_list)
+        geopdf = gpd.GeoDataFrame(geopdf, crs=self.orig_crs, geometry=ellipse_list)
 
         if target_epsg_code is None:
             self._logger.info("The orginal Geopandas Dataframe CRS: %s", geopdf.crs)
@@ -175,8 +189,6 @@ class ShapeFilesCreator(EdiCollection):
 
         self._logger.debug(pdf['period'])
 
-        orig_crs = {'init': 'epsg:4283'}  # initial crs GDA94
-
         pdf['tip_re'] = pdf.apply(lambda x:
                                   LineString([(float(x.lon), float(x.lat)),
                                               (float(x.lon) + line_length_normalized * x.tip_mag_re * np.cos(
@@ -184,7 +196,7 @@ class ShapeFilesCreator(EdiCollection):
                                                float(x.lat) + line_length_normalized * x.tip_mag_re * np.sin(
                                                    -np.deg2rad(x.tip_ang_re)))]), axis=1)
 
-        geopdf = gpd.GeoDataFrame(pdf, crs=orig_crs, geometry='tip_re')
+        geopdf = gpd.GeoDataFrame(pdf, crs=self.orig_crs, geometry='tip_re')
 
 
         if target_epsg_code is None:
@@ -237,14 +249,12 @@ class ShapeFilesCreator(EdiCollection):
 
         self._logger.debug(pdf['period'])
 
-        orig_crs = {'init': 'epsg:4283'}  # initial crs GDA94
-
         pdf['tip_im'] = pdf.apply(lambda x:  LineString([(float(x.lon), float(x.lat)),
                             (float(x.lon) + line_length_normalized * x.tip_mag_im * np.cos(-np.deg2rad(x.tip_ang_im)),
                             float(x.lat) + line_length_normalized * x.tip_mag_im * np.sin(-np.deg2rad(x.tip_ang_im)))]),
                             axis=1)
 
-        geopdf = gpd.GeoDataFrame(pdf, crs=orig_crs, geometry='tip_im')
+        geopdf = gpd.GeoDataFrame(pdf, crs=self.orig_crs, geometry='tip_im')
 
         if target_epsg_code is None:
             self._logger.info("Keep the Default/Original Geopandas Dataframe CRS: %s", geopdf.crs)
@@ -284,13 +294,13 @@ def create_ellipse_shp_from_csv(csvfile, esize=0.03, target_epsg_code=4283):
     :param esize: ellipse size, defaut 0.03 is about 3KM in the max ellipse rad
     :return: a geopandas dataframe
     """
+    # crs = {'init': 'epsg:4326'}  # if assume initial crs WGS84
+    crs = {'init': 'epsg:4283'}  # if assume initial crs GDA94
 
     pdf = pd.read_csv(csvfile)
     mt_locations = [Point(xy) for xy in zip(pdf['lon'], pdf['lat'])]
     # OR pdf['geometry'] = pdf.apply(lambda z: Point(z.lon, z.lat), axis=1)
     # if you want to df = df.drop(['Lon', 'Lat'], axis=1)
-    # crs = {'init': 'epsg:4326'}  # initial crs WGS84
-    crs = {'init': 'epsg:4283'}  # initial crs GDA94
 
     pdf = gpd.GeoDataFrame(pdf, crs=crs, geometry=mt_locations)
 
@@ -346,13 +356,13 @@ def create_tipper_real_shp_from_csv(csvfile, line_length=0.03, target_epsg_code=
     return: a geopandas dataframe object for further processing.
     """
 
+    # crs = {'init': 'epsg:4326'}  # if assume initial crs WGS84
+    crs = {'init': 'epsg:4283'}  # if assume initial crs GDA94
+
     pdf = pd.read_csv(csvfile)
     # mt_locations = [Point(xy) for xy in zip(pdf.lon, pdf.lat)]
     # OR pdf['geometry'] = pdf.apply(lambda z: Point(z.lon, z.lat), axis=1)
     # if you want to df = df.drop(['Lon', 'Lat'], axis=1)
-
-    # crs = {'init': 'epsg:4326'}  # initial crs WGS84
-    crs = {'init': 'epsg:4283'}  # initial crs GDA94
 
     # geo_df = gpd.GeoDataFrame(pdf, crs=crs, geometry=mt_locations)
 
@@ -387,13 +397,13 @@ def create_tipper_imag_shp_from_csv(csvfile, line_length=0.03, target_epsg_code=
     return: a geopandas dataframe object for further processing.
     """
 
+    # crs = {'init': 'epsg:4326'}  # if assume initial crs WGS84
+    crs = {'init': 'epsg:4283'}  # if assume initial crs GDA94
+
     pdf = pd.read_csv(csvfile)
     # mt_locations = [Point(xy) for xy in zip(pdf.lon, pdf.lat)]
     # OR pdf['geometry'] = pdf.apply(lambda z: Point(z.lon, z.lat), axis=1)
     # if you want to df = df.drop(['Lon', 'Lat'], axis=1)
-
-    # crs = {'init': 'epsg:4326'}  # initial crs WGS84
-    crs = {'init': 'epsg:4283'}  # initial crs GDA94
 
     # geo_df = gpd.GeoDataFrame(pdf, crs=crs, geometry=mt_locations)
 
