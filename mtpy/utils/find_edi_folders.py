@@ -5,9 +5,9 @@ Description:
     Find path to all the directories which contain a given type of files: .edi, .py .jpg, .pdf
 
 How to Run:
-    python mtpy/utils/find_edi_floders.py  . EDI
-    python mtpy/utils/find_edi_floders.py  /e/Data/ EDI 2
-    python mtpy/utils/find_edi_floders.py  /e/Data/ PY 
+    python mtpy/utils/find_edi_folders.py  . EDI
+    python mtpy/utils/find_edi_folders.py  /e/Data/ EDI 2
+    python mtpy/utils/find_edi_folders.py  /e/Data/ PY 
 
 CreationDate:   26/11/2017
 Developer:      fei.zhang@ga.gov.au
@@ -20,7 +20,7 @@ Revision History:
 import os
 import sys
 
-class Search4EdiFolders(object):
+class Search4Folders(object):
 
     def __init__(self, startDir, edifiles_threshold=0, filetype='edi'):
         self.startDir = startDir
@@ -72,10 +72,12 @@ if __name__ =="__main__":
             edifiles_th=0
 
 
-        sObj= Search4EdiFolders(root_dir, edifiles_threshold=edifiles_th, filetype=ftype)
+        sObj= Search4Folders(root_dir, edifiles_threshold=edifiles_th, filetype=ftype)
         #sObj= Search4EdiFolders(root_dir, edifiles_threshold=edifiles_th, filetype='py')
 
-        edi_dirs_list =sObj.find_edi_folders(root_dir)
+        edi_dirs_list = sObj.find_edi_folders(root_dir)
+
+
+        print ("Number of interesting folders found =", len(edi_dirs_list))
 
         print (edi_dirs_list)
-        print ("Number of interesting folders found =", len(edi_dirs_list))
