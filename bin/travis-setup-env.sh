@@ -35,3 +35,5 @@ pip install -q -r requirements.txt
 pip freeze
 #  # install mtpy2 in dev mode
 #pip install .
+
+export CACHED=TRUE
