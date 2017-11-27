@@ -687,7 +687,7 @@ class MT(object):
         for f_key in sorted(self.FieldNotes.__dict__.keys()):
             obj = getattr(self.FieldNotes, f_key)
             for t_key in sorted(obj.__dict__.keys()):
-                if t_key in ['_kw_list', '_fmt_list']:
+                if t_key in ['_kw_list', '_fmt_list', '_logger']:
                     continue
                 l_key = 'fieldnotes.{0}.{1}'.format(f_key.lower(),
                                                     t_key.lower())
@@ -1515,7 +1515,7 @@ class MT(object):
                 if not isinstance(obj_attr, (str, float, int, list)) and \
                                 obj_attr is not None:
                     for a_key in sorted(obj_attr.__dict__.keys()):
-                        if a_key in ['_kw_list', '_fmt_list']:
+                        if a_key in ['_kw_list', '_fmt_list', '_logger']:
                             continue
                         obj_attr_01 = getattr(obj_attr, a_key)
                         l_key = '{0}.{1}.{2}'.format(obj_name, obj_key, a_key)
