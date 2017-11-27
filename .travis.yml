@@ -42,7 +42,7 @@ before_install:
   - export PATH="/usr/local/gdal/bin:$PATH"
   - export GDAL_DATA=$(gdal-config --datadir) && echo GDAL_DATA=$GDAL_DATA
   - pip install pytest-xdist  # add xdist for distributing tests
-  - pip install pytest-xvfb  # run xvfb automatically
+#  - pip install pytest-xvfb  # run xvfb automatically
   - pip install pytest-cov  # code coverage
   - pip install coveralls
 
@@ -61,12 +61,12 @@ before_script:
 
 script:
   # test
-  - MTPY_TEST_COMPARE_IMAGE=False py.test -n 4 --dist=loadscope --cov=mtpy --cov-report= tests #--ignore=tests/SmartMT
+  - MTPY_TEST_COMPARE_IMAGE=False py.test -n 4 --dist=loadscope --cov=mtpy --cov-report= tests --ignore=tests/SmartMT
 #   test gui
-#  - "export DISPLAY=:99.0"  # enable display on travis
-#  - "sh -e /etc/init.d/xvfb start"
-#  - sleep 3 # give xvfb some time to start
-#  - py.test -n 4 --cov=mtpy --cov-append --cov-report= tests/SmartMT
+  - "export DISPLAY=:99.0"  # enable display on travis
+  - "sh -e /etc/init.d/xvfb start"
+  - sleep 3 # give xvfb some time to start
+  - py.test -n 4 --cov=mtpy --cov-append --cov-report= tests/SmartMT
 
 after_success:
   - coveralls
