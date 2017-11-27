@@ -3,7 +3,6 @@
 # for Travis-ci, the following script sets installs all dependencies
 set -ex
 
-chmod -vR +x ./bin/*
 sudo rm /etc/apt/sources.list.d/mongodb-3.2.list  # temp fix for issue travis-ci/travis-ci#8554
 sudo add-apt-repository --yes ppa:ubuntu-sdk-team/ppa  # qt5 source
 sudo apt update -qq
