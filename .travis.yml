@@ -16,6 +16,12 @@ cache:
 env:
   global:
     - COVERALLS_PARALLEL=true
+  matrix:
+#    - MATPLOTLIB_VERSION=2.1.0 QT_VERSION=4
+    - MATPLOTLIB_VERSION=2.0.2 QT_VERSION=5
+    - MATPLOTLIB_VERSION=2.1.0 QT_VERSION=5
+    - MATPLOTLIB_VERSION=2.0.2 QT_VERSION=4
+    - MATPLOTLIB_VERSION=1.5.3 QT_VERSION=5
 
 before_install:
   - chmod -vR +x ./bin/*
@@ -27,55 +33,34 @@ stages:
 jobs:
   include:
     - stage: prepare cache
-      matrix:
-        include:
-        - python: 2.7
-          env:
-            - MATPLOTLIB_VERSION=2.1.0
-            - QT_VERSION=5
-        - python: 2.7
-          env:
-            - MATPLOTLIB_VERSION=2.0.2
-            - QT_VERSION=4
-        - python: 2.7
-          env:
-            - MATPLOTLIB_VERSION=2.0.2
-            - QT_VERSION=5
-        - python: 2.7
-          env:
-            - MATPLOTLIB_VERSION=1.5.3
-            - QT_VERSION=5
       script: ./bin/travis-setup-env
-    - stage: test
-      matrix:
-        include:
-          - python: 2.7
-          env:
-            - MATPLOTLIB_VERSION=2.1.0
-            - QT_VERSION=5
-          - python: 2.7
-          env:
-            - MATPLOTLIB_VERSION=2.0.2
-            - QT_VERSION=4
-          - python: 2.7
-          env:
-            - MATPLOTLIB_VERSION=2.0.2
-            - QT_VERSION=5
-          - python: 2.7
-          env:
-            - MATPLOTLIB_VERSION=1.5.3
-            - QT_VERSION=5
-      script: py.test -v -n 4 --dist=loadscope --cov=mtpy --cov-report= tests/analysis
-      script: py.test -v -n 4 --dist=loadscope --cov=mtpy --cov-report= tests/core
-      script: MTPY_TEST_COMPARE_IMAGE=False py.test -v -n 4 --dist=loadscope --cov=mtpy --cov-report= tests/imaging
-      script: py.test -v -n 4 --dist=loadscope --cov=mtpy --cov-report= tests/modeling
-      script: py.test -v -n 4 --dist=loadscope --cov=mtpy --cov-report= tests/utils
-      script: #  test gui
-        - "export DISPLAY=:99.0"  # enable display on travis
-        - "sh -e /etc/init.d/xvfb start"
-        - sleep 3 # give xvfb some time to start
-        - py.test -v -n 4 --dist=loadscope --cov=mtpy --cov-report= tests/SmartMT
+      env:
+        - MATPLOTLIB_VERSION=2.0.2 QT_VERSION=5
+    - stage: prepare cache
+      script: ./bin/travis-setup-env
+      env:
+        - MATPLOTLIB_VERSION=2.1.0 QT_VERSION=5
+    - stage: prepare cache
+      script: ./bin/travis-setup-env
+      env:
+        - MATPLOTLIB_VERSION=2.0.2 QT_VERSION=4
+    - stage: prepare cache
+      script: ./bin/travis-setup-env
+      env:
+        - MATPLOTLIB_VERSION=1.5.3 QT_VERSION=5
+#    - stage: test
 #    - stage: deploy
+
+script: py.test -v -n 4 --dist=loadscope --cov=mtpy --cov-report= tests/analysis
+script: py.test -v -n 4 --dist=loadscope --cov=mtpy --cov-report= tests/core
+script: MTPY_TEST_COMPARE_IMAGE=False py.test -v -n 4 --dist=loadscope --cov=mtpy --cov-report= tests/imaging
+script: py.test -v -n 4 --dist=loadscope --cov=mtpy --cov-report= tests/modeling
+script: py.test -v -n 4 --dist=loadscope --cov=mtpy --cov-report= tests/utils
+script: #  test gui
+  - "export DISPLAY=:99.0"  # enable display on travis
+  - "sh -e /etc/init.d/xvfb start"
+  - sleep 3 # give xvfb some time to start
+  - py.test -v -n 4 --dist=loadscope --cov=mtpy --cov-report= tests/SmartMT
 
 after_success:
   - coveralls
