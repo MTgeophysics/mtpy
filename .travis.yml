@@ -34,24 +34,24 @@ jobs:
     - stage: prepare cache  # run saperate job to build dependencies to avoid 50 min timeout on travis
       script: chmod -vR +x ./bin/* && ./bin/travis-setup-env.sh
       env:
-        - MATPLOTLIB_VERSION=2.0.2 QT_VERSION=5
+        - MATPLOTLIB_VERSION=2.0.2 QT_VERSION=5 PRECACHE=TRUE
     - stage: prepare cache
       script: chmod -vR +x ./bin/* && ./bin/travis-setup-env.sh
       env:
-        - MATPLOTLIB_VERSION=2.1.0 QT_VERSION=5
+        - MATPLOTLIB_VERSION=2.1.0 QT_VERSION=5 PRECACHE=TRUE
     - stage: prepare cache
       script: chmod -vR +x ./bin/* && ./bin/travis-setup-env.sh
       env:
-        - MATPLOTLIB_VERSION=2.0.2 QT_VERSION=4
+        - MATPLOTLIB_VERSION=2.0.2 QT_VERSION=4 PRECACHE=TRUE
     - stage: prepare cache
       script: chmod -vR +x ./bin/* && ./bin/travis-setup-env.sh
       env:
-        - MATPLOTLIB_VERSION=1.5.3 QT_VERSION=5
+        - MATPLOTLIB_VERSION=1.5.3 QT_VERSION=5 PRECACHE=TRUE
 #    - stage: test
 #    - stage: deploy
 
 before_script:
-  - chmod -vR +x ./bin/* && ./bin/travis-setup-env.sh
+  - if [ -z ${PRECACHE+x} ]; then chmod -vR +x ./bin/* && ./bin/travis-setup-env.sh; fi
 
 script: 
   - py.test -v -n 4 --dist=loadscope --cov=mtpy --cov-report= tests/analysis
