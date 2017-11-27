@@ -17,8 +17,6 @@ env:
   global:
     - COVERALLS_PARALLEL=true
 
-stages
-
 jobs:
   include:
     - stage: compile
