@@ -538,9 +538,9 @@ class EdiCollection(object):
         mt_stations = []
 
         for mtobj in self.mt_obj_list:
-            mt_stations.append( (mtobj.lat, mtobj.lon,  mtobj.utm_zone) )
+            mt_stations.append( (mtobj.station, mtobj.lat, mtobj.lon,  mtobj.utm_zone) )
 
-        pdf = pd.DataFrame(mt_stations, columns=['Lat', 'Lon',  'UtmZone'])
+        pdf = pd.DataFrame(mt_stations, columns=['Station', 'Lat', 'Lon',  'UtmZone'])
 
         mt_distances = []
         for i in xrange(len(pdf)):
@@ -551,6 +551,9 @@ class EdiCollection(object):
                 yj = pdf.iloc[j]['Lon']
                 dist = math.sqrt((xi-xj)**2 + (yi - yj)**2)
                 mt_distances.append(dist)
+
+                if(dist <0.004): # 0.004 is about 400 meters
+                    self._logger.info("Small distances occurred between stations: %s %s", pdf.iloc[i].Station, pdf.iloc[j].Station)
 
         # print (mt_distances)
 
@@ -563,7 +566,7 @@ class EdiCollection(object):
         q04 = anarray.quantile(q=0.04)
         q05 = anarray.quantile(q=0.05)
 
-        print (q01, q02,q03,q04,q05)
+        self._logger.info("1,2,3,4 5 Percentile distances: %s, %s, %s, %s, %s", q01, q02,q03,q04,q05)
 
         # anarray.plot()
         # plt.show()
@@ -611,14 +614,14 @@ class EdiCollection(object):
 
         return
 
-
+##################################################################
 if __name__ == "__main__":
 
     # python mtpy/core/edi_collection.py data/edifiles temp
     # python mtpy/core/edi_collection.py examples/data/edi2/ /e/tmp3/edi2_csv
 
-    if len(sys.argv) < 2:
-        print("\n  USAGE: %s edi_dir OR edi_list " % sys.argv[0])
+    if len(sys.argv) < 3:
+        print("\n  USAGE: %s edi_dir out_Dir" % sys.argv[0])
         sys.exit(1)
     else:
         argv1 = sys.argv[1]
@@ -640,7 +643,7 @@ if __name__ == "__main__":
         mt_distances = obj.get_stations_distances_stats()
         min_dist = mt_distances.get("MIN_DIST")
         max_dist = mt_distances.get("MAX_DIST")
-        print( min_dist, max_dist)
+        print( mt_distances )
 
         # obj.create_phase_tensor_csv(outdir)
         #
