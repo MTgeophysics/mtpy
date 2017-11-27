@@ -845,7 +845,10 @@ class MT_XML(XML_Config):
                         for h_index in range(ty):
                             c = comp_dict_t[(e_index, h_index)]
                             c_dict = {'name':c[0], 'input':c[1], 'output':c[2]}
-                            t_arr = getattr(self.Tipper, attr_name)
+                            try:
+                                t_arr = getattr(self.Tipper, attr_name)
+                            except AttributeError:
+                                continue
                             t_value = t_arr[f_index, e_index, h_index]
                             if attr_name ==  'tipper_err': 
                                 c_value = '{0:<+.6e}'.format(t_value)
@@ -867,9 +870,17 @@ class MT_XML(XML_Config):
         """
         if XML_element_obj._attr is None:
             XML_element_obj._attr = {}
-
+        else:
+            for key in XML_element_obj._attr.keys():
+                XML_element_obj._attr[key] = str(XML_element_obj._attr[key])
+#        if XML_element_obj._name is None:
+#            XML_element_obj._name = 'None'
+#        if XML_element_obj._value is None:
+#            XML_element_obj.value = 'None'
             
-        new_element = ET.SubElement(parent_et, XML_element_obj._name, XML_element_obj._attr)
+        new_element = ET.SubElement(parent_et, 
+                                    XML_element_obj._name,
+                                    XML_element_obj._attr)
         new_element.text = XML_element_obj._value
         #new_element.tail = '\n'
         return new_element
@@ -925,8 +936,7 @@ class MT_XML(XML_Config):
                                             if len(key_04_list) !=0:
                                                 for key_04 in key_04_list:
                                                     d_05_obj = getattr(d_04_obj, key_04)
-                                                    element_05 = self._write_element(element_04, d_05_obj)
-                
+                                                    element_05 = self._write_element(element_04, d_05_obj)         
   
         #--> write xml file
         xmlstr = minidom.parseString(ET.tostring(emtf)).toprettyxml(indent="   ")

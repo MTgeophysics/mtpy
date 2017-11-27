@@ -1264,8 +1264,11 @@ class MT(object):
         length = np.sqrt((self.FieldNotes.Electrode_ex.x2 - self.FieldNotes.Electrode_ex.x) ** 2 +
                          (self.FieldNotes.Electrode_ex.y2 - self.FieldNotes.Electrode_ex.y) ** 2)
         xml_obj.FieldNotes.Dipole.Length.value = length
-        azm = np.arctan((self.FieldNotes.Electrode_ex.y2 - self.FieldNotes.Electrode_ex.y) /
-                        (self.FieldNotes.Electrode_ex.x2 - self.FieldNotes.Electrode_ex.x))
+        try:
+            azm = np.arctan((self.FieldNotes.Electrode_ex.y2 - self.FieldNotes.Electrode_ex.y) /
+                            (self.FieldNotes.Electrode_ex.x2 - self.FieldNotes.Electrode_ex.x))
+        except ZeroDivisionError:
+            azm = 0.0
         xml_obj.FieldNotes.Dipole.Azimuth.value = np.degrees(azm)
         xml_obj.FieldNotes.Dipole.Channel.value = self.FieldNotes.Electrode_ex.acqchan
 
@@ -1277,8 +1280,11 @@ class MT(object):
         length = np.sqrt((self.FieldNotes.Electrode_ey.x2 - self.FieldNotes.Electrode_ey.x) ** 2 +
                          (self.FieldNotes.Electrode_ey.y2 - self.FieldNotes.Electrode_ey.y) ** 2)
         xml_obj.FieldNotes.Dipole_00.Length.value = length
-        azm = np.arctan((self.FieldNotes.Electrode_ey.y2 - self.FieldNotes.Electrode_ey.y) /
-                        (self.FieldNotes.Electrode_ey.x2 - self.FieldNotes.Electrode_ey.x))
+        try:
+            azm = np.arctan((self.FieldNotes.Electrode_ey.y2 - self.FieldNotes.Electrode_ey.y) /
+                            (self.FieldNotes.Electrode_ey.x2 - self.FieldNotes.Electrode_ey.x))
+        except ZeroDivisionError:
+            azm = 0.0
         xml_obj.FieldNotes.Dipole_00.Azimuth.value = np.degrees(azm)
         xml_obj.FieldNotes.Dipole_00.Channel.value = self.FieldNotes.Electrode_ey.acqchan
 
@@ -1328,7 +1334,7 @@ class MT(object):
 
         xml_obj.ProcessingInfo.ProcessedBy.value = self.Processing.processed_by
         xml_obj.ProcessingInfo.ProcessingSoftware.Name.value = self.Processing.Software.name
-        xml_obj.ProcessingInfo.ProcessingSoftware.Author.value = self.Processing.Software.author
+        xml_obj.ProcessingInfo.ProcessingSoftware.Author.value = self.Processing.Software.Author.name
         xml_obj.ProcessingInfo.ProcessingSoftware.Version.value = self.Processing.Software.version
 
         # TODO: Need to find a way to put in processing parameters.
