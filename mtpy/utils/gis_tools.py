@@ -15,7 +15,7 @@ from osgeo import osr
 import numpy as np
 from osgeo.ogr import OGRERR_NONE
 
-from mtpylog import MtPyLog
+from .mtpylog import MtPyLog
 
 _logger = MtPyLog.get_mtpy_logger(__name__)
 
@@ -201,10 +201,11 @@ def get_utm_zone(latitude, longitude):
     ## n_str = _utm_letter_designator(latitude)
     is_northern = bool(latitude >= 0)
     
-    if latitude < 0.0:
-        n_str = 'S'
-    else:
-        n_str = 'N'
+    # if latitude < 0.0:
+    #     n_str = 'S'
+    # else:
+    #     n_str = 'N'
+    n_str = _utm_letter_designator(latitude)
 
     return zone_number, is_northern, '{0:02.0f}{1}'.format(zone_number, n_str)
 
@@ -256,9 +257,13 @@ def project_point_ll2utm(lat, lon, datum='WGS84', utm_zone=None, epsg=None):
     # set lat lon coordinate system
     ll_cs = osr.SpatialReference()
     if isinstance(datum, int):
-        ll_cs.ImportFromEPSG(datum)
+        ogrerr = ll_cs.ImportFromEPSG(datum)
+        if ogrerr != OGRERR_NONE:
+            raise GIS_ERROR("GDAL/osgeo ogr error code: {}".format(ogrerr))
     elif isinstance(datum, str):
-        ll_cs.SetWellKnownGeogCS(datum)
+        ogrerr = ll_cs.SetWellKnownGeogCS(datum)
+        if ogrerr != OGRERR_NONE:
+            raise GIS_ERROR("GDAL/osgeo ogr error code: {}".format(ogrerr))
     else:
         raise GIS_ERROR("""datum {0} not understood, needs to be EPSG as int
                            or a well known datum as a string""".format(datum))
@@ -274,18 +279,18 @@ def project_point_ll2utm(lat, lon, datum='WGS84', utm_zone=None, epsg=None):
            
     # otherwise project onto given datum
     elif epsg is None:
-        utm_cs.CopyGeogCSFrom(ll_cs)
-        if utm_zone is None:
+        ogrerr = utm_cs.CopyGeogCSFrom(ll_cs)
+        if ogrerr != OGRERR_NONE:
+            raise GIS_ERROR("GDAL/osgeo ogr error code: {}".format(ogrerr))
+        if utm_zone is None or not isinstance(None, str) or utm_zone.lower() == 'none':
             # get the UTM zone in the datum coordinate system, otherwise
-            zone_number, is_northern, utm_zone = get_utm_zone(lat.mean(), 
+            zone_number, is_northern, utm_zone = get_utm_zone(lat.mean(),
                                                               lon.mean())
-            utm_cs.SetUTM(zone_number, is_northern)
         else:
             # get zone number and is_northern from utm_zone string
             zone_number = int(utm_zone[0:-1])
             is_northern = True if utm_zone[-1].lower() > 'n' else False
-            utm_cs.CopyGeogCSFrom(ll_cs)
-            utm_cs.SetUTM(zone_number, is_northern)
+        utm_cs.SetUTM(zone_number, is_northern)
 
     # set the transform wgs84_to_utm and do the transform
     ll2utm = osr.CoordinateTransformation(ll_cs, utm_cs)
@@ -301,7 +306,7 @@ def project_point_ll2utm(lat, lon, datum='WGS84', utm_zone=None, epsg=None):
         projected_point['easting'][ii] = point[0]
         projected_point['northing'][ii] = point[1]
         projected_point['elev'][ii] = point[2]
-        projected_point['utm_zone'][ii] = utm_zone
+        projected_point['utm_zone'][ii] = utm_zone if utm_zone is not None else get_utm_zone(lat[ii], lon[ii])[2]
         
     # if just projecting one point, then return as a tuple so as not to break
     # anything.  In the future we should adapt to just return a record array

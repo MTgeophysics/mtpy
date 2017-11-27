@@ -8,14 +8,14 @@ cd mtpy
 export PYTHONPATH=.
 # export PYTHONPATH=/e/Githubz/mtpy
 
-python examples/plot_edis.py data/edifiles/15125A.edi # not work after merge
+python examples/plot_edis.py data/edifiles/15125A.edi
 
 # New shape file creator script: create csv and shape files
 python mtpy/utils/shapefiles_creator.py /e/Data/MT_Datasets/WenPingJiang_EDI /e/Data/MT_Datasets/WenPingJiang_SHP2 # long time
 python mtpy/utils/shapefiles_creator.py /e/Data/MT_Datasets/WenPingJiang_EDI /e/tmp_20/
 python mtpy/utils/shapefiles_creator.py /e/Data//MT_Datasets/GA_UA_edited_10s-10000s/ /e/Data//MT_Datasets/GA_UA_edited_10s-10000s_SHP2
 
-# Old shape files generation: fine-tune the __main__ section about calling params
+# **** compare with the Old shape files generation: user please tune the __main__ section to provide suitable params
 python mtpy/utils/shapefiles.py /e/Data/MT_Datasets/GA_UA_edited_10s-10000s/ /e/Data/MT_Datasets/GA_UA_edited_10s-10000s_SHP/ # not working after merge
 python mtpy/utils/shapefiles.py /e/Data/MT_Datasets/3D_MT_data_edited_fromDuanJM /e/Data/MT_Datasets/3D_MT_data_edited_fromDuanJM_SHP/
 
@@ -23,7 +23,6 @@ python mtpy/utils/shapefiles.py /e/Data/MT_Datasets/3D_MT_data_edited_fromDuanJM
 python mtpy/core/edi_collection.py data/edifiles/ /e/tmp0
 python mtpy/core/edi_collection.py examples/data/edi2/ /e/tmp0
 python mtpy/core/edi_collection.py examples/data/edi_files /e/tmp0
-
 python mtpy/core/edi_collection.py /e/Data/MT_Datasets/WenPingJiang_EDI/ /e/tmp0
 python mtpy/core/edi_collection.py /e/Data/MT_Datasets/GA_UA_edited_10s-10000s/ /e/tmp0
 python mtpy/core/edi_collection.py /e/Data/MT_Datasets/728889/EDI_files/ /e/tmp0
@@ -110,7 +109,7 @@ python examples/modem_plot_models.py /e/Data/Modeling/Isa/100hs_flat_BB/ DepthSl
 
 # view horizontal slices of a rho file
 python mtpy/imaging/plot_depth_slice.py /e/Data/Modeling/Isa/100hs_flat_BB/Isa_run3_NLCG_048.rho 20
-python mtpy/imaging/plot_depth_slice.py /e/tmp/GA_UA_edited_10s-10000s_16/ModEM_Model.ws
+python mtpy/imaging/plot_depth_slice.py /e/MTPY2_Outputs/GA_UA_edited_10s-10000s_modem_inputs/ModEM_Model.ws
 
 
 # View all or selected multiple horizontal slices of an inversion model (output of ModEM)
@@ -119,15 +118,16 @@ python mtpy/imaging/modem_plot_slices.py /e/Data/Modeling/Isa/100hs_flat_BB/Isa_
 python mtpy/imaging/modem_plot_slices.py /e/Data/Modeling/Isa/100hs_flat_BB/Isa_run3_NLCG_048.dat /e/Data/Modeling/Isa/100hs_flat_BB/Isa_run3_NLCG_048.rho ew 300
 
 # View all or selected horizontal slices of an initial model
-python mtpy/imaging/modem_plot_slices.py /e/tmp/GA_UA_edited_10s-10000s_16/ModEM_Data.dat  /e/tmp/GA_UA_edited_10s-10000s_16/ModEM_Model.ws ew
-python mtpy/imaging/modem_plot_slices.py /e/tmp/GA_UA_edited_10s-10000s_16/ModEM_Data.dat  /e/tmp/GA_UA_edited_10s-10000s_16/ModEM_Model.ws z -1000 0 100
-python mtpy/imaging/modem_plot_slices.py /e/tmp/GA_UA_edited_10s-10000s_16/ModEM_Data.dat /e/tmp/GA_UA_edited_10s-10000s_16/ModEM_Model.ws z -1000 1000
+python mtpy/imaging/modem_plot_slices.py /e/MTPY2_Outputs/GA_UA_edited_10s-10000s_modem_inputs/ModEM_Data.dat  /e/MTPY2_Outputs/GA_UA_edited_10s-10000s_modem_inputs/ModEM_Model.ws ew
+python mtpy/imaging/modem_plot_slices.py /e/MTPY2_Outputs/GA_UA_edited_10s-10000s_modem_inputs/ModEM_Data.dat  /e/MTPY2_Outputs/GA_UA_edited_10s-10000s_modem_inputs/ModEM_Model.ws z -1000 0 100
+python mtpy/imaging/modem_plot_slices.py /e/MTPY2_Outputs/GA_UA_edited_10s-10000s_modem_inputs/ModEM_Data.dat /e/MTPY2_Outputs/GA_UA_edited_10s-10000s_modem_inputs/ModEM_Model.ws z -1000 1000
 
 
 # create CSV files
 python mtpy/modeling/modem_output_to_views.py /e/Data/Modeling/Isa/100hs_flat_BB/Isa_run3_NLCG_048.dat /e/Data/Modeling/Isa/100hs_flat_BB/Isa_run3_NLCG_048.rho 20
-python mtpy/modeling/modem_output_to_views.py /e/tmp/GA_UA_edited_10s-10000s_16/ModEM_Data.dat  /e/tmp/GA_UA_edited_10s-10000s_16/ModEM_Model.ws -1000 1000
+python mtpy/modeling/modem_output_to_views.py /e/MTPY2_Outputs/GA_UA_edited_10s-10000s_modem_inputs/ModEM_Data.dat  /e/MTPY2_Outputs/GA_UA_edited_10s-10000s_modem_inputs/ModEM_Model.ws -1000 1000
 
 # create csv files from modem.dat
 python mtpy/modeling/modem_data_to_phase_tensor.py examples/data/ModEM_files/Modular_MPI_NLCG_028.dat [OutDir]
-python mtpy/modeling/modem_data_to_phase_tensor.py /e/tmp/GA_UA_edited_10s-10000s_16/ModEM_Data.dat [OutDir]
+python mtpy/modeling/modem_data_to_phase_tensor.py /e/MTPY2_Outputs/GA_UA_edited_10s-10000s_modem_inputs/ModEM_Data.dat [OutDir]
+

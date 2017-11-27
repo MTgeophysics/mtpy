@@ -7,14 +7,18 @@ CreatedBy:      Alison Kirkby
 
 LastUpdated:    2017-01-24
 UpdatedBy:      fei.zhang@ga.gov.au
+
+LastUpdated:    2017-11-24  FZ fixed this script after the big merge brokeness
+
 """
 
 
 import os
 import sys
 import glob
+from mtpy.core import mt
+
 import matplotlib.pyplot as plt
-import mtpy.imaging.plot_mt_response as mtpr
 from mtpy.utils.mtpylog import MtPyLog
 
 # get a logger object for this module, using the utility class MtPyLog to
@@ -25,7 +29,7 @@ _logger = MtPyLog.get_mtpy_logger(__name__)
 # specific
 
 
-def plot_edi_dir(edi_path):
+def plot_edi_dir(edi_path, every_how_many_edi=2):
     """ plot edi files from the input directory edi_path
     """
 
@@ -33,11 +37,14 @@ def plot_edi_dir(edi_path):
 
     _logger.debug(edi_files)
 
-    for efile in edi_files:
+    for efile in edi_files[::every_how_many_edi]:
         # for efile in edi_files[:2]:
         _logger.debug("plotting %s", efile)
         # eo = mtedi.Edi(filename=efile)
         plot_edi_file(efile)
+
+        # plt.pause(1.0)
+        # plt.close()
 
     return
 
@@ -58,21 +65,22 @@ def plot_edi_file(edi_file):
 
     _logger.info("Plotting the edi file %s", edi_file)
 
-    pr = mtpr.PlotMTResponse(
-        fn=edi_file, plot_num=2, res_limits=(
-            1, 10000), phase_limits=(
-            0, 90))
-    pr.plot()
+    mt_obj = mt.MT(edi_file)
+    pt_obj = mt_obj.plot_mt_response(plot_yn='n')
+    pt_obj.plot()
 
-    return pr
+    # pt_obj = mt_obj.plot_mt_response(plot_yn='n',plot_num=2, res_limits=(1, 10000), phase_limits=(0, 90))
+    # pt_obj.plot()
+
+    return
 
 
 ###############################################################################
-# plot one-by-one edi files in a given dirpath
+# plot one-by-one edi files in a given dir-path
 # How to Run:
-#    export PYTHONPATH=/Softlab/Githubz/mtpy2:$PYTHONPATH
-#    python  examples/plot_edis.py data/edi_files/
-#    python  examples/plot_edis.py tests/data/edifiles/15125A.edi
+#    export PYTHONPATH=.
+#    python  examples/plot_edis.py data/edifiles/
+#    python  examples/plot_edis.py data/edifiles/15125A.edi
 # =============================================================================
 if __name__ == '__main__':
 
@@ -87,6 +95,7 @@ if __name__ == '__main__':
         if os.path.isfile(edi_path):
             plot_edi_file(edi_path)
         elif os.path.isdir(edi_path):
-            plot_edi_dir(edi_path)
+            #plot_edi_dir(edi_path)
+            plot_edi_dir(edi_path,every_how_many_edi=6)
         else:
             _logger.error("Usage %s %s", sys.argv[0], "path2edi")

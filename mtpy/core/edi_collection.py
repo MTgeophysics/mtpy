@@ -24,7 +24,7 @@ import mtpy.core.mt as mt
 import mtpy.imaging.mtplottools as mtplottools
 from mtpy.utils.decorator import deprecated
 from mtpy.utils.mtpylog import MtPyLog
-from logging import DEBUG, INFO, ERROR
+# from logging import DEBUG, INFO, ERROR
 
 def is_num_in_seq(anum, aseq, atol=0.0001):
     """
@@ -62,7 +62,7 @@ class EdiCollection(object):
 
         #self._logger = MtPyLog.get_mtpy_logger(self.__class__.__name__)  # will be EdiCollection
         self._logger = MtPyLog.get_mtpy_logger(__name__)  # __name__ will be  path.to.module OR __main__
-        self._logger.setLevel(INFO)
+        # self._logger.setLevel(INFO)
 
         if edilist is not None:
             self.edifiles = edilist
@@ -95,6 +95,13 @@ class EdiCollection(object):
         self.geopdf = self.create_mt_station_gdf()
 
         self.bound_box_dict = self.get_bounding_box()  # in orginal projection
+
+        # ensure that outdir is created if not exists.
+        if outdir is None:
+            #raise Exception("Error: OutputDir is not specified!!!")
+            pass
+        elif not os.path.exists(outdir):
+            os.mkdir(outdir)
 
         self.outdir = outdir
 
@@ -414,13 +421,11 @@ class EdiCollection(object):
             writer.writerow(csv_header)
 
         for freq in self.all_frequencies:
-
             mtlist = []
             for mt_obj in self.mt_obj_list:
-
-                f_index_list = [ff for ff, f2 in enumerate(mt_obj.Z.freq)
-                                if (f2 > freq * (1 - self.ptol)) and
-                                (f2 < freq * (1 + self.ptol))]
+                freq_max = freq * (1 + self.ptol)
+                freq_min = freq * (1 - self.ptol)
+                f_index_list = np.where((mt_obj.Z.freq < freq_max) & (mt_obj.Z.freq > freq_min))
                 if len(f_index_list) > 1:
                     self._logger.warn("more than one freq found %s", f_index_list)
 
@@ -508,7 +513,7 @@ class EdiCollection(object):
         def get_utm_zone(latitude, longitude):
             zone_num = int(1 + (longitude + 180.0) / 6.0)
 
-            if latitude >=0:
+            if latitude >= 0:
                 return "%s%s"%(zone_num,'N')
             else:
                 return "%s%s"%(zone_num,'S')
@@ -531,9 +536,9 @@ class EdiCollection(object):
         mt_stations = []
 
         for mtobj in self.mt_obj_list:
-            mt_stations.append( (mtobj.lat, mtobj.lon,  mtobj.utm_zone) )
+            mt_stations.append( (mtobj.station, mtobj.lat, mtobj.lon,  mtobj.utm_zone) )
 
-        pdf = pd.DataFrame(mt_stations, columns=['Lat', 'Lon',  'UtmZone'])
+        pdf = pd.DataFrame(mt_stations, columns=['Station', 'Lat', 'Lon',  'UtmZone'])
 
         mt_distances = []
         for i in xrange(len(pdf)):
@@ -545,15 +550,31 @@ class EdiCollection(object):
                 dist = math.sqrt((xi-xj)**2 + (yi - yj)**2)
                 mt_distances.append(dist)
 
+                if(dist <0.004): # 0.004 is about 400 meters
+                    self._logger.info("Small distances occurred between stations: %s %s", pdf.iloc[i].Station, pdf.iloc[j].Station)
+
         # print (mt_distances)
 
         anarray = pd.Series(mt_distances)
+        print(anarray.describe())
+
+        q01 = anarray.quantile(q=0.01)
+        q02 = anarray.quantile(q=0.02)
+        q03 = anarray.quantile(q=0.03)
+        q04 = anarray.quantile(q=0.04)
+        q05 = anarray.quantile(q=0.05)
+
+        self._logger.info("1,2,3,4 5 Percentile distances: %s, %s, %s, %s, %s", q01, q02,q03,q04,q05)
+
+        # anarray.plot()
+        # plt.show()
+
         min_d = anarray.min()  # cold be very small due to two close stations, skew the result
         max_d = anarray.max()
         self._logger.debug("Minimum = %s", min_d )
         self._logger.debug("Maximum = %s", max_d )
 
-        return {"MIN_DIST":min_d, "MAX_DIST":max_d}
+        return {"MIN_DIST":min_d, "Q1PERCENT":q01, "Q2PERCENT":q02, "Q3PERCENT":q03, "MAX_DIST":max_d}
 
     def show_obj(self, dest_dir=None):
         """
@@ -591,14 +612,14 @@ class EdiCollection(object):
 
         return
 
-
+##################################################################
 if __name__ == "__main__":
 
     # python mtpy/core/edi_collection.py data/edifiles temp
     # python mtpy/core/edi_collection.py examples/data/edi2/ /e/tmp3/edi2_csv
 
-    if len(sys.argv) < 2:
-        print("\n  USAGE: %s edi_dir OR edi_list " % sys.argv[0])
+    if len(sys.argv) < 3:
+        print("\n  USAGE: %s edi_dir out_Dir" % sys.argv[0])
         sys.exit(1)
     else:
         argv1 = sys.argv[1]
@@ -615,12 +636,12 @@ if __name__ == "__main__":
 
         outdir = sys.argv[2]
 
-        #obj.show_obj(dest_dir = outdir)
+        obj.show_obj(dest_dir = outdir)
 
         mt_distances = obj.get_stations_distances_stats()
         min_dist = mt_distances.get("MIN_DIST")
         max_dist = mt_distances.get("MAX_DIST")
-        print( min_dist, max_dist)
+        print( mt_distances )
 
         # obj.create_phase_tensor_csv(outdir)
         #

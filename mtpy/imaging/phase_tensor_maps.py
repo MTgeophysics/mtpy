@@ -664,8 +664,10 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
 
         for ii, mt in enumerate(self.mt_list):
             # try to find the freq in the freq list of each file
-            freqfind = np.where((mt.Z.freq >= self.plot_freq * (1 - self.ftol)) &
-                                (mt.Z.freq <= self.plot_freq * (1 + self.ftol)))
+            freq_max = self.plot_freq * (1 + self.ftol)
+            freq_min = self.plot_freq * (1 - self.ftol)
+            freqfind = np.where((mt.Z.freq >= freq_min) &
+                                (mt.Z.freq <= freq_max))
 
             try:
                 self.jj = freqfind[0][0]
@@ -770,7 +772,6 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
 
                 elif self.ellipse_colorby == 'phidet':
                     colorarray = np.sqrt(abs(pt.det[jj])) * (180 / np.pi)
-
 
                 elif self.ellipse_colorby == 'skew' or \
                                 self.ellipse_colorby == 'skew_seg':

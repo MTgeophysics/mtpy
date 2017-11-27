@@ -29,9 +29,11 @@ Contacts
 | **Jared Peacock**
 | peacock.jared@gmail.com
 
-
 | **Yingzhi Gou**
 | Yingzhi.Gou@ga.gov.au
+
+| **Rakib Hassan**
+| Rakib.Hassan@ga.gov.au
 
 | **Jinming Duan**
 | Jingming.Duan@ga.gov.au
@@ -120,8 +122,8 @@ Conventions
 
 
 
-.. |Build Status| image:: https://travis-ci.org/GeoscienceAustralia/mtpy2.svg?branch=develop
-   :target: https://travis-ci.org/GeoscienceAustralia/mtpy2
+.. |Build Status| image:: https://travis-ci.org/MTgeophysics/mtpy.svg?branch=develop
+   :target: https://travis-ci.org/MTgeophysics/mtpy
 .. |Coverage Status| image:: https://coveralls.io/repos/github/GeoscienceAustralia/mtpy2/badge.svg?branch=develop
    :target: https://coveralls.io/github/GeoscienceAustralia/mtpy2?branch=develop
 .. |Documentation Status| image:: https://readthedocs.org/projects/mtpy2/badge/?version=develop
