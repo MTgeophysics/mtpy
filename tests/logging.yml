@@ -13,14 +13,14 @@ handlers:
         stream: ext://sys.stdout
 
 loggers:
-    my_module:
-        level: DEBUG
-        handlers: [console]
-        propagate: no
+#    my_module:
+#        level: DEBUG
+#        handlers: [console, ]
+#        propagate: no
 
     __main__:
-        level: INFO 
-        handlers: [console]
+        level: DEBUG
+        handlers: [console, ]
         propagate: no
 
 root:

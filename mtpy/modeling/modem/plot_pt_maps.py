@@ -18,6 +18,7 @@ from matplotlib.patches import Ellipse
 
 from mtpy.analysis import pt as mtpt
 from mtpy.imaging import mtplottools as mtplottools, mtcolors as mtcl
+from mtpy.imaging.mtplottools import MTEllipse
 from mtpy.modeling import ws3dinv as ws
 from mtpy.utils import exceptions as mtex
 from .data import Data
@@ -26,7 +27,7 @@ from .model import Model
 __all__ = ['PlotPTMaps']
 
 
-class PlotPTMaps(mtplottools.MTEllipse):
+class PlotPTMaps(MTEllipse):
     """
     Plot phase tensor maps including residual pt if response file is input.
 
@@ -141,7 +142,8 @@ class PlotPTMaps(mtplottools.MTEllipse):
     """
 
     def __init__(self, data_fn=None, resp_fn=None, model_fn=None, **kwargs):
-        mtplottools.MTEllipse.__init__(self, **kwargs)
+        # MTEllipse.__init__(self, **kwargs)
+        super(PlotPTMaps, self).__init__(**kwargs)
 
         self.model_fn = model_fn
         self.data_fn = data_fn

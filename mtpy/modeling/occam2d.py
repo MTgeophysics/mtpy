@@ -29,7 +29,7 @@ Functions:
 
 
 """
-#==============================================================================
+# ==============================================================================
 import numpy as np
 import scipy as sp
 from scipy.stats import mode
@@ -48,7 +48,9 @@ import mtpy.analysis.geometry as MTgy
 from mtpy.imaging.mtplottools import plot_errorbar
 import mtpy.utils.calculator as mtcc
 import mtpy.utils.mesh_tools as mtmesh
-#==============================================================================
+
+
+# ==============================================================================
 
 class Mesh():
     """
@@ -231,41 +233,41 @@ class Mesh():
             raise OccamInputError('Need to input station locations to define '
                                   'a finite element mesh')
 
-        #be sure the station locations are sorted from left to right
+        # be sure the station locations are sorted from left to right
         self.station_locations.sort()
 
         self.rel_station_locations = np.copy(self.station_locations)
 
-        #center the stations around 0 like the mesh will be
+        # center the stations around 0 like the mesh will be
         self.rel_station_locations -= self.rel_station_locations.mean()
 
-        #1) make horizontal nodes at station locations and fill in the cells
+        # 1) make horizontal nodes at station locations and fill in the cells
         #   around that area with cell width. This will put the station 
         #   in the center of the regularization block as prescribed for occam
         # the first cell of the station area will be outside of the furthest
         # right hand station to reduce the effect of a large neighboring cell.
-        self.x_grid = np.array([self.rel_station_locations[0]-self.cell_width*\
+        self.x_grid = np.array([self.rel_station_locations[0] - self.cell_width * \
                                 self.x_pad_multiplier])
 
         for ii, offset in enumerate(self.rel_station_locations[:-1]):
-            dx = self.rel_station_locations[ii+1]-offset
-            num_cells = int(np.floor(dx/self.cell_width))
-            #if the spacing between stations is smaller than mesh set cell
-            #size to mid point between stations
+            dx = self.rel_station_locations[ii + 1] - offset
+            num_cells = int(np.floor(dx / self.cell_width))
+            # if the spacing between stations is smaller than mesh set cell
+            # size to mid point between stations
             if num_cells == 0:
-                cell_width = dx/2.
+                cell_width = dx / 2.
                 num_cells = 1
-            #calculate cell spacing so that they are equal between neighboring
-            #stations
+            # calculate cell spacing so that they are equal between neighboring
+            # stations
             else:
-                cell_width = dx/num_cells
+                cell_width = dx / num_cells
             if self.x_grid[-1] != offset:
                 self.x_grid = np.append(self.x_grid, offset)
             for dd in range(num_cells):
-                new_cell = offset+(dd+1)*cell_width
-                #make sure cells aren't too close together
+                new_cell = offset + (dd + 1) * cell_width
+                # make sure cells aren't too close together
                 try:
-                    if abs(self.rel_station_locations[ii+1]-new_cell) >= cell_width*.9:
+                    if abs(self.rel_station_locations[ii + 1] - new_cell) >= cell_width * .9:
                         self.x_grid = np.append(self.x_grid, new_cell)
                     else:
                         pass
@@ -276,86 +278,85 @@ class Mesh():
         # add a cell on the right hand side of the station area to reduce 
         # effect of a large cell next to it       
         self.x_grid = np.append(self.x_grid,
-                                self.rel_station_locations[-1]+self.cell_width*\
+                                self.rel_station_locations[-1] + self.cell_width * \
                                 self.x_pad_multiplier)
 
-        #--> pad the mesh with exponentially increasing horizontal cells
+        # --> pad the mesh with exponentially increasing horizontal cells
         #    such that the edge of the mesh can be estimated with a 1D model
 
-        x_left = float(abs(self.x_grid[0]-self.x_grid[1]))
-        x_right = float(abs(self.x_grid[-1]-self.x_grid[-2]))
+        x_left = float(abs(self.x_grid[0] - self.x_grid[1]))
+        x_right = float(abs(self.x_grid[-1] - self.x_grid[-2]))
         x_pad_cell = np.max([x_left, x_right])
 
         for ii in range(self.num_x_pad_cells):
             left_cell = self.x_grid[0]
             right_cell = self.x_grid[-1]
-            pad_cell = x_pad_cell*self.x_pad_multiplier**(ii+1)
-            self.x_grid = np.insert(self.x_grid, 0, left_cell-pad_cell)
-            self.x_grid = np.append(self.x_grid, right_cell+pad_cell)
+            pad_cell = x_pad_cell * self.x_pad_multiplier ** (ii + 1)
+            self.x_grid = np.insert(self.x_grid, 0, left_cell - pad_cell)
+            self.x_grid = np.append(self.x_grid, right_cell + pad_cell)
 
-        #--> compute relative positions for the grid
+        # --> compute relative positions for the grid
         self.x_nodes = self.x_grid.copy()
         for ii, xx in enumerate(self.x_grid[:-1]):
-            self.x_nodes[ii] = abs(self.x_grid[ii+1]-xx)
+            self.x_nodes[ii] = abs(self.x_grid[ii + 1] - xx)
         self.x_nodes = self.x_nodes[:-1]
 
-        #2) make vertical nodes so that they increase with depth
-        #--> make depth grid
-#        log_z = np.logspace(np.log10(self.z1_layer),
-#                            np.log10(self.z_target_depth-\
-#                                     np.logspace(np.log10(self.z1_layer),
-#                            np.log10(self.z_target_depth),
-#                            num=self.n_layers)[-2]),
-#                            num=self.n_layers-self.num_z_pad_cells)
+        # 2) make vertical nodes so that they increase with depth
+        # --> make depth grid
+        #        log_z = np.logspace(np.log10(self.z1_layer),
+        #                            np.log10(self.z_target_depth-\
+        #                                     np.logspace(np.log10(self.z1_layer),
+        #                            np.log10(self.z_target_depth),
+        #                            num=self.n_layers)[-2]),
+        #                            num=self.n_layers-self.num_z_pad_cells)
 
         log_z = mtmesh.make_log_increasing_array(self.z1_layer,
-                                               self.z_target_depth,
-                                               self.n_layers-self.num_z_pad_cells,
-                                               increment_factor=0.99)
+                                                 self.z_target_depth,
+                                                 self.n_layers - self.num_z_pad_cells,
+                                                 increment_factor=0.99)
 
+        # round the layers to be whole numbers
+        ztarget = np.array([mtcc.roundsf(zz, 1) for zz in
+                            log_z])  # zz-zz%10**np.floor(np.log10(zz))
 
-        #round the layers to be whole numbers
-        ztarget = np.array([mtcc.roundsf(zz,1) for zz in
-                           log_z])#zz-zz%10**np.floor(np.log10(zz))
-
-        #--> create padding cells past target depth
-#        log_zpad = np.logspace(np.log10(self.z_target_depth),
-#                            np.log10(self.z_bottom-\
-#                                    np.logspace(np.log10(self.z_target_depth),
-#                            np.log10(self.z_bottom),
-#                            num=self.num_z_pad_cells)[-2]),
-#                            num=self.num_z_pad_cells)
+        # --> create padding cells past target depth
+        #        log_zpad = np.logspace(np.log10(self.z_target_depth),
+        #                            np.log10(self.z_bottom-\
+        #                                    np.logspace(np.log10(self.z_target_depth),
+        #                            np.log10(self.z_bottom),
+        #                            num=self.num_z_pad_cells)[-2]),
+        #                            num=self.num_z_pad_cells)
         log_zpad = mtmesh.make_log_increasing_array(log_z[-1],
-                                               self.z_bottom,
-                                               self.num_z_pad_cells,
-                                               increment_factor=0.99)
-        #round the layers to 1 sf
-        zpadding = np.array([mtcc.roundsf(zz,1) for zz in
-                               log_zpad])#zz-zz%10**np.floor(np.log10(zz))
+                                                    self.z_bottom,
+                                                    self.num_z_pad_cells,
+                                                    increment_factor=0.99)
+        # round the layers to 1 sf
+        zpadding = np.array([mtcc.roundsf(zz, 1) for zz in
+                             log_zpad])  # zz-zz%10**np.floor(np.log10(zz))
 
-        #create the vertical nodes
+        # create the vertical nodes
         self.z_nodes = np.append(ztarget, zpadding)
 
-        #calculate actual distances of depth layers
-        self.z_grid = np.array([self.z_nodes[:ii+1].sum()
+        # calculate actual distances of depth layers
+        self.z_grid = np.array([self.z_nodes[:ii + 1].sum()
                                 for ii in range(self.z_nodes.shape[0])])
 
         self.mesh_values = np.zeros((self.x_nodes.shape[0],
                                      self.z_nodes.shape[0], 4), dtype=str)
-        self.mesh_values[:,:,:] = '?'
+        self.mesh_values[:, :, :] = '?'
 
-        #get elevation if elevation_profile is given
+        # get elevation if elevation_profile is given
         if self.elevation_profile is not None:
             self.add_elevation(self.elevation_profile)
 
-        print '='*55
+        print '=' * 55
         print '{0:^55}'.format('mesh parameters'.upper())
-        print '='*55
+        print '=' * 55
         print '  number of horizontal nodes = {0}'.format(self.x_nodes.shape[0])
         print '  number of vertical nodes   = {0}'.format(self.z_nodes.shape[0])
         print '  Total Horizontal Distance  = {0:2f}'.format(self.x_nodes.sum())
         print '  Total Vertical Distance    = {0:2f}'.format(self.z_nodes.sum())
-        print '='*55
+        print '=' * 55
 
     def add_elevation(self, elevation_profile=None):
         """
@@ -398,91 +399,89 @@ class Mesh():
             raise OccamInputError('Need to input an elevation profile to '
                                   'add elevation into the mesh.')
 
-        elev_diff = abs(elevation_profile[1].max()-elevation_profile[1].min())
-        num_elev_layers = int(elev_diff/self.z1_layer)
+        elev_diff = abs(elevation_profile[1].max() - elevation_profile[1].min())
+        num_elev_layers = int(elev_diff / self.z1_layer)
 
-        #add vertical nodes and values to mesh_values
-        self.z_nodes = np.append([self.z1_layer]*num_elev_layers, self.z_nodes)
-        self.z_grid = np.array([self.z_nodes[:ii+1].sum()
+        # add vertical nodes and values to mesh_values
+        self.z_nodes = np.append([self.z1_layer] * num_elev_layers, self.z_nodes)
+        self.z_grid = np.array([self.z_nodes[:ii + 1].sum()
                                 for ii in range(self.z_nodes.shape[0])])
-        #this assumes that mesh_values have not been changed yet and are all ?
+        # this assumes that mesh_values have not been changed yet and are all ?
         self.mesh_values = np.zeros((self.x_grid.shape[0],
                                      self.z_grid.shape[0], 4), dtype=str)
-        self.mesh_values[:,:,:] = '?'
+        self.mesh_values[:, :, :] = '?'
 
-        #--> need to interpolate the elevation values onto the mesh nodes
+        # --> need to interpolate the elevation values onto the mesh nodes
         # first center the locations about 0, this needs to be the same
         # center as the station locations.
-        offset = elevation_profile[0]-elevation_profile[0].mean()
-        elev = elevation_profile[1]-elevation_profile[1].min()
+        offset = elevation_profile[0] - elevation_profile[0].mean()
+        elev = elevation_profile[1] - elevation_profile[1].min()
 
         func_elev = spi.interp1d(offset, elev, kind='linear')
 
         # need to figure out which cells and triangular cells need to be air
-        xpad = self.num_x_pad_cells+1
+        xpad = self.num_x_pad_cells + 1
         for ii, xg in enumerate(self.x_grid[xpad:-xpad], xpad):
-            #get the index value for z_grid by calculating the elevation
-            #difference relative to the top of the model
-            dz = elev.max()-func_elev(xg)
-            #index of ground in the model for that x location
-            zz = int(np.ceil(dz/self.z1_layer))
+            # get the index value for z_grid by calculating the elevation
+            # difference relative to the top of the model
+            dz = elev.max() - func_elev(xg)
+            # index of ground in the model for that x location
+            zz = int(np.ceil(dz / self.z1_layer))
             if zz == 0:
                 pass
             else:
-                #--> need to figure out the triangular elements
-                #top triangle
-                zlayer = elev.max()-self.z_grid[zz]
+                # --> need to figure out the triangular elements
+                # top triangle
+                zlayer = elev.max() - self.z_grid[zz]
                 try:
-                    xtop = xg+(self.x_grid[ii+1]-xg)/2
-                    ytop = zlayer+3*(self.z_grid[zz]-self.z_grid[zz-1])/4
+                    xtop = xg + (self.x_grid[ii + 1] - xg) / 2
+                    ytop = zlayer + 3 * (self.z_grid[zz] - self.z_grid[zz - 1]) / 4
                     elev_top = func_elev(xtop)
-                    #print xg, xtop, ytop, elev_top, zz
+                    # print xg, xtop, ytop, elev_top, zz
                     if elev_top > ytop:
                         self.mesh_values[ii, 0:zz, 0] = self.air_key
                     else:
-                        self.mesh_values[ii, 0:zz-1, 0] = self.air_key
+                        self.mesh_values[ii, 0:zz - 1, 0] = self.air_key
                 except ValueError:
                     pass
 
-                #left triangle
+                # left triangle
                 try:
-                    xleft = xg+(self.x_grid[ii+1]-xg)/4.
-                    yleft = zlayer+(self.z_grid[zz]-self.z_grid[zz-1])/2.
+                    xleft = xg + (self.x_grid[ii + 1] - xg) / 4.
+                    yleft = zlayer + (self.z_grid[zz] - self.z_grid[zz - 1]) / 2.
                     elev_left = func_elev(xleft)
-                    #print xg, xleft, yleft, elev_left, zz
+                    # print xg, xleft, yleft, elev_left, zz
                     if elev_left > yleft:
                         self.mesh_values[ii, 0:zz, 1] = self.air_key
                 except ValueError:
                     pass
 
-                #bottom triangle
+                # bottom triangle
                 try:
-                    xbottom = xg+(self.x_grid[ii+1]-xg)/2
-                    ybottom = zlayer+(self.z_grid[zz]-self.z_grid[zz-1])/4
+                    xbottom = xg + (self.x_grid[ii + 1] - xg) / 2
+                    ybottom = zlayer + (self.z_grid[zz] - self.z_grid[zz - 1]) / 4
                     elev_bottom = func_elev(xbottom)
-                    #print xg, xbottom, ybottom, elev_bottom, zz
+                    # print xg, xbottom, ybottom, elev_bottom, zz
                     if elev_bottom > ybottom:
                         self.mesh_values[ii, 0:zz, 2] = self.air_key
                 except ValueError:
                     pass
 
-                #right triangle
+                # right triangle
                 try:
-                    xright = xg+3*(self.x_grid[ii+1]-xg)/4
-                    yright = zlayer+(self.z_grid[zz]-self.z_grid[zz-1])/2
+                    xright = xg + 3 * (self.x_grid[ii + 1] - xg) / 4
+                    yright = zlayer + (self.z_grid[zz] - self.z_grid[zz - 1]) / 2
                     elev_right = func_elev(xright)
-                    if elev_right > yright*.95:
-
+                    if elev_right > yright * .95:
                         self.mesh_values[ii, 0:zz, 3] = self.air_key
                 except ValueError:
                     pass
-        #--> need to fill out the padding cells so they have the same elevation
+        # --> need to fill out the padding cells so they have the same elevation
         #    as the extremity stations.
         for ii in range(xpad):
-            self.mesh_values[ii, :, :] = self.mesh_values[xpad+1, :, :]
-        for ii in range(xpad+1):
-            self.mesh_values[-(ii+1), :, :] = self.mesh_values[-xpad-2, :, :]
-
+            self.mesh_values[ii, :, :] = self.mesh_values[xpad + 1, :, :]
+        for ii in range(xpad + 1):
+            self.mesh_values[-(ii + 1), :, :] = self.mesh_values[-xpad - 2, :, :]
 
         print '{0:^55}'.format('--- Added Elevation to Mesh --')
 
@@ -525,7 +524,7 @@ class Mesh():
 
         depth_scale = kwargs.pop('depth_scale', 'km')
 
-        #set the scale of the plot
+        # set the scale of the plot
         if depth_scale == 'km':
             df = 1000.
         elif depth_scale == 'm':
@@ -543,45 +542,44 @@ class Mesh():
         fig = plt.figure(fig_num, figsize=fig_size, dpi=fig_dpi)
         ax = fig.add_subplot(1, 1, 1, aspect='equal')
 
-        #plot the station marker
-        #plots a V for the station cause when you use scatter the spacing
-        #is variable if you change the limits of the y axis, this way it
-        #always plots at the surface.
+        # plot the station marker
+        # plots a V for the station cause when you use scatter the spacing
+        # is variable if you change the limits of the y axis, this way it
+        # always plots at the surface.
         for offset in self.rel_station_locations:
-            ax.text((offset)/df,
+            ax.text((offset) / df,
                     0,
                     marker,
                     horizontalalignment='center',
                     verticalalignment='baseline',
-                    fontdict={'size':ms,'color':mc})
+                    fontdict={'size': ms, 'color': mc})
 
-
-        #--> make list of column lines
+        # --> make list of column lines
         row_line_xlist = []
         row_line_ylist = []
-        for xx in self.x_grid/df:
-            row_line_xlist.extend([xx,xx])
+        for xx in self.x_grid / df:
+            row_line_xlist.extend([xx, xx])
             row_line_xlist.append(None)
-            row_line_ylist.extend([0, self.z_grid[-1]/df])
+            row_line_ylist.extend([0, self.z_grid[-1] / df])
             row_line_ylist.append(None)
 
-        #plot column lines (variables are a little bit of a misnomer)
+        # plot column lines (variables are a little bit of a misnomer)
         ax.plot(row_line_xlist,
                 row_line_ylist,
                 color='k',
                 lw=lw)
 
-        #--> make list of row lines
-        col_line_xlist = [self.x_grid[0]/df, self.x_grid[-1]/df]
+        # --> make list of row lines
+        col_line_xlist = [self.x_grid[0] / df, self.x_grid[-1] / df]
         col_line_ylist = [0, 0]
-        for yy in self.z_grid/df:
-            col_line_xlist.extend([self.x_grid[0]/df,
-                                  self.x_grid[-1]/df])
+        for yy in self.z_grid / df:
+            col_line_xlist.extend([self.x_grid[0] / df,
+                                   self.x_grid[-1] / df])
             col_line_xlist.append(None)
             col_line_ylist.extend([yy, yy])
             col_line_ylist.append(None)
 
-        #plot row lines (variables are a little bit of a misnomer)
+        # plot row lines (variables are a little bit of a misnomer)
         ax.plot(col_line_xlist,
                 col_line_ylist,
                 color='k',
@@ -590,13 +588,13 @@ class Mesh():
         if plot_triangles == 'y':
             row_line_xlist = []
             row_line_ylist = []
-            for xx in self.x_grid/df:
-                row_line_xlist.extend([xx,xx])
+            for xx in self.x_grid / df:
+                row_line_xlist.extend([xx, xx])
                 row_line_xlist.append(None)
-                row_line_ylist.extend([0, self.z_grid[-1]/df])
+                row_line_ylist.extend([0, self.z_grid[-1] / df])
                 row_line_ylist.append(None)
 
-            #plot columns
+            # plot columns
             ax.plot(row_line_xlist,
                     row_line_ylist,
                     color='k',
@@ -604,14 +602,14 @@ class Mesh():
 
             col_line_xlist = []
             col_line_ylist = []
-            for yy in self.z_grid/df:
-                col_line_xlist.extend([self.x_grid[0]/df,
-                                      self.x_grid[-1]/df])
+            for yy in self.z_grid / df:
+                col_line_xlist.extend([self.x_grid[0] / df,
+                                       self.x_grid[-1] / df])
                 col_line_xlist.append(None)
                 col_line_ylist.extend([yy, yy])
                 col_line_ylist.append(None)
 
-            #plot rows
+            # plot rows
             ax.plot(col_line_xlist,
                     col_line_ylist,
                     color='k',
@@ -619,34 +617,33 @@ class Mesh():
 
             diag_line_xlist = []
             diag_line_ylist = []
-            for xi, xx in enumerate(self.x_grid[:-1]/df):
-                for yi, yy in enumerate(self.z_grid[:-1]/df):
-                    diag_line_xlist.extend([xx, self.x_grid[xi+1]/df])
+            for xi, xx in enumerate(self.x_grid[:-1] / df):
+                for yi, yy in enumerate(self.z_grid[:-1] / df):
+                    diag_line_xlist.extend([xx, self.x_grid[xi + 1] / df])
                     diag_line_xlist.append(None)
-                    diag_line_xlist.extend([xx, self.x_grid[xi+1]/df])
+                    diag_line_xlist.extend([xx, self.x_grid[xi + 1] / df])
                     diag_line_xlist.append(None)
 
-                    diag_line_ylist.extend([yy, self.z_grid[yi+1]/df])
+                    diag_line_ylist.extend([yy, self.z_grid[yi + 1] / df])
                     diag_line_ylist.append(None)
-                    diag_line_ylist.extend([self.z_grid[yi+1]/df, yy])
+                    diag_line_ylist.extend([self.z_grid[yi + 1] / df, yy])
                     diag_line_ylist.append(None)
 
-            #plot diagonal lines.
+            # plot diagonal lines.
             ax.plot(diag_line_xlist,
                     diag_line_ylist,
                     color='k',
                     lw=lw)
 
-        #--> set axes properties
-        ax.set_ylim(self.z_target_depth/df, -2000/df)
-        xpad = self.num_x_pad_cells-1
-        ax.set_xlim(self.x_grid[xpad]/df, -self.x_grid[xpad]/df)
+        # --> set axes properties
+        ax.set_ylim(self.z_target_depth / df, -2000 / df)
+        xpad = self.num_x_pad_cells - 1
+        ax.set_xlim(self.x_grid[xpad] / df, -self.x_grid[xpad] / df)
         ax.set_xlabel('Easting ({0})'.format(depth_scale),
-                      fontdict={'size':fs+2, 'weight':'bold'})
+                      fontdict={'size': fs + 2, 'weight': 'bold'})
         ax.set_ylabel('Depth ({0})'.format(depth_scale),
-                  fontdict={'size':fs+2, 'weight':'bold'})
+                      fontdict={'size': fs + 2, 'weight': 'bold'})
         plt.show()
-
 
     def write_mesh_file(self, save_path=None, basename='Occam2DMesh'):
         """
@@ -683,7 +680,6 @@ class Mesh():
         if self.save_path is None:
             self.save_path = os.getcwd()
 
-
         self.mesh_fn = os.path.join(self.save_path, basename)
 
         if self.x_nodes is None:
@@ -693,14 +689,14 @@ class Mesh():
         nx = self.x_nodes.shape[0]
         nz = self.z_nodes.shape[0]
         mesh_lines.append('MESH FILE Created by mtpy.modeling.occam2d\n')
-        mesh_lines.append("   {0}  {1}  {2}  {0}  {0}  {3}\n".format(0, nx ,
-                          nz, 2))
+        mesh_lines.append("   {0}  {1}  {2}  {0}  {0}  {3}\n".format(0, nx,
+                                                                     nz, 2))
 
-        #--> write horizontal nodes
+        # --> write horizontal nodes
         node_str = ''
         for ii, xnode in enumerate(self.x_nodes):
             node_str += '{0:>9.1f} '.format(xnode)
-            if np.remainder(ii+1, 8) == 0:
+            if np.remainder(ii + 1, 8) == 0:
                 node_str += '\n'
                 mesh_lines.append(node_str)
                 node_str = ''
@@ -708,23 +704,23 @@ class Mesh():
         node_str += '\n'
         mesh_lines.append(node_str)
 
-        #--> write vertical nodes
+        # --> write vertical nodes
         node_str = ''
         for ii, znode in enumerate(self.z_nodes):
             node_str += '{0:>9.1f} '.format(znode)
-            if np.remainder(ii+1, 8) == 0:
+            if np.remainder(ii + 1, 8) == 0:
                 node_str += '\n'
                 mesh_lines.append(node_str)
                 node_str = ''
         node_str += '\n'
         mesh_lines.append(node_str)
 
-        #--> need a 0 after the nodes
+        # --> need a 0 after the nodes
         mesh_lines.append('    0\n')
-        #--> write triangular mesh block values as ?
+        # --> write triangular mesh block values as ?
         for zz in range(self.z_nodes.shape[0]):
             for tt in range(4):
-                mesh_lines.append(''.join(self.mesh_values[:, zz, tt])+'\n')
+                mesh_lines.append(''.join(self.mesh_values[:, zz, tt]) + '\n')
 
         mfid = file(self.mesh_fn, 'w')
         mfid.writelines(mesh_lines)
@@ -768,7 +764,7 @@ class Mesh():
         """
         self.mesh_fn = mesh_fn
 
-        mfid = file(self.mesh_fn,'r')
+        mfid = file(self.mesh_fn, 'r')
 
         mlines = mfid.readlines()
 
@@ -776,16 +772,16 @@ class Mesh():
         nv = int(mlines[1].strip().split()[2])
 
         self.x_nodes = np.zeros(nh)
-        self.z_nodes=np.zeros(nv)
+        self.z_nodes = np.zeros(nv)
         self.mesh_values = np.zeros((nh, nv, 4), dtype=str)
 
-        #get horizontal nodes
+        # get horizontal nodes
         h_index = 0
         v_index = 0
         m_index = 0
         line_count = 2
 
-        #--> fill horizontal nodes
+        # --> fill horizontal nodes
         for mline in mlines[line_count:]:
             mline = mline.strip().split()
             for m_value in mline:
@@ -796,7 +792,7 @@ class Mesh():
             if h_index == nh:
                 break
 
-        #--> fill vertical nodes
+        # --> fill vertical nodes
         for mline in mlines[line_count:]:
             mline = mline.strip().split()
             for m_value in mline:
@@ -806,25 +802,25 @@ class Mesh():
             if v_index == nv:
                 break
 
-        #--> fill model values
-        for ll, mline in enumerate(mlines[line_count+1:], line_count):
+        # --> fill model values
+        for ll, mline in enumerate(mlines[line_count + 1:], line_count):
             mline = mline.strip()
-            if m_index == nv or mline.lower().find('exception')>0:
+            if m_index == nv or mline.lower().find('exception') > 0:
                 break
             else:
                 mlist = list(mline)
                 if len(mlist) != nh:
                     print '--- Line {0} in {1}'.format(ll, self.mesh_fn)
                     print 'Check mesh file too many columns'
-                    print 'Should be {0}, has {1}'.format(nh,len(mlist))
+                    print 'Should be {0}, has {1}'.format(nh, len(mlist))
                     mlist = mlist[0:nh]
                 for kk in range(4):
                     for jj, mvalue in enumerate(list(mlist)):
-                        self.mesh_values[jj,m_index,kk] = mline[jj]
+                        self.mesh_values[jj, m_index, kk] = mline[jj]
                 m_index += 1
 
-        #sometimes it seems that the number of nodes is not the same as the
-        #header would suggest so need to remove the zeros
+        # sometimes it seems that the number of nodes is not the same as the
+        # header would suggest so need to remove the zeros
         self.x_nodes = self.x_nodes[np.nonzero(self.x_nodes)]
         if self.x_nodes.shape[0] != nh:
             new_nh = self.x_nodes.shape[0]
@@ -839,7 +835,7 @@ class Mesh():
             print 'The header number {0} should read {1}'.format(nv, new_nv)
             self.mesh_values.resize(new_nh, nv, 4)
 
-        #make x_grid and z_grid
+        # make x_grid and z_grid
         self.x_grid = self.x_nodes.copy()
         self.x_grid = np.append(self.x_grid, self.x_grid[-1])
         self.x_grid = np.array([self.x_grid[:ii].sum()
@@ -847,7 +843,6 @@ class Mesh():
         self.x_grid -= self.x_grid.mean()
         self.z_grid = np.array([self.z_nodes[:ii].sum()
                                 for ii in range(self.z_nodes.shape[0])])
-
 
 
 class Profile():
@@ -959,7 +954,6 @@ class Profile():
         self.elevation_profile = None
         self.estimate_elevation = True
 
-
     def _get_edi_list(self):
         """
         get a list of edi files that coorespond to the station list
@@ -977,14 +971,13 @@ class Profile():
         else:
             self.edi_list = [mt.MT(os.path.join(self.edi_path, edi)) for
                              edi in os.listdir(self.edi_path)
-                             if edi[-3:]=='edi']
+                             if edi[-3:] == 'edi']
 
         self.num_edi = len(self.edi_list)
 
         for edi in self.edi_list:
             if type(edi.Tipper.rotation_angle) is list:
                 edi.Tipper.rotation_angle = np.array(edi.Tipper.rotation_angle)
-
 
     def generate_profile(self):
         """
@@ -1012,13 +1005,13 @@ class Profile():
         utm_zones = np.zeros(self.num_edi)
 
         for ii, edi in enumerate(self.edi_list):
-            #find strike angles for each station if a strike angle is not given
+            # find strike angles for each station if a strike angle is not given
             if self.geoelectric_strike is None:
                 try:
-                    #check dimensionality to be sure strike is estimate for 2D
+                    # check dimensionality to be sure strike is estimate for 2D
                     dim = MTgy.dimensionality(z_object=edi.Z)
-                    #get strike for only those periods
-                    gstrike = MTgy.strike_angle(edi.Z.z[np.where(dim==2)])[:,0]
+                    # get strike for only those periods
+                    gstrike = MTgy.strike_angle(edi.Z.z[np.where(dim == 2)])[:, 0]
                     strike_angles[ii] = np.median(gstrike)
                 except:
                     pass
@@ -1032,21 +1025,21 @@ class Profile():
 
         if self.geoelectric_strike is None:
             try:
-                #might try mode here instead of mean
+                # might try mode here instead of mean
                 self.geoelectric_strike = np.median(np.nonzero(strike_angles))
             except:
-                #empty list or so....
-                #can happen, if everyhing is just 1D
+                # empty list or so....
+                # can happen, if everyhing is just 1D
                 self.geoelectric_strike = 0.
 
-        #need to check the zones of the stations
+        # need to check the zones of the stations
         main_utmzone = mode(utm_zones)[0][0]
 
         for ii, zone in enumerate(utm_zones):
             if zone == main_utmzone:
                 continue
             else:
-                print ('station {0} is out of main utm zone'.format(self.edi_list[ii].station)+\
+                print ('station {0} is out of main utm zone'.format(self.edi_list[ii].station) + \
                        ' will not be included in profile')
 
         # check regression for 2 profile orientations:
@@ -1055,112 +1048,110 @@ class Profile():
         profile1 = sp.stats.linregress(easts, norths)
         profile2 = sp.stats.linregress(norths, easts)
         profile_line = profile1[:2]
-        #if the profile is rather E=E(N), the parameters have to converted
+        # if the profile is rather E=E(N), the parameters have to converted
         # into N=N(E) form:
         if profile2[4] < profile1[4]:
-            profile_line = (1./profile2[0], -profile2[1]/profile2[0])
+            profile_line = (1. / profile2[0], -profile2[1] / profile2[0])
         self.profile_line = profile_line
-        #profile_line = sp.polyfit(lo_easts, lo_norths, 1)
+        # profile_line = sp.polyfit(lo_easts, lo_norths, 1)
         if self.profile_angle is None:
-            self.profile_angle = (90-(np.arctan(profile_line[0])*180/np.pi))%180
+            self.profile_angle = (90 - (np.arctan(profile_line[0]) * 180 / np.pi)) % 180
 
-        #rotate Z according to strike angle,
+        # rotate Z according to strike angle,
 
-        #if strike was explicitely given, use that value!
+        # if strike was explicitely given, use that value!
 
-        #otherwise:
-        #have 90 degree ambiguity in strike determination
-        #choose strike which offers larger angle with profile
-        #if profile azimuth is in [0,90].
+        # otherwise:
+        # have 90 degree ambiguity in strike determination
+        # choose strike which offers larger angle with profile
+        # if profile azimuth is in [0,90].
 
         if self._rotate_to_strike is False:
             if 0 <= self.profile_angle < 90:
-                if np.abs(self.profile_angle-self.geoelectric_strike) < 45:
+                if np.abs(self.profile_angle - self.geoelectric_strike) < 45:
                     self.geoelectric_strike += 90
             elif 90 <= self.profile_angle < 135:
-                if self.profile_angle-self.geoelectric_strike < 45:
+                if self.profile_angle - self.geoelectric_strike < 45:
                     self.geoelectric_strike -= 90
             else:
-                if self.profile_angle-self.geoelectric_strike >= 135:
+                if self.profile_angle - self.geoelectric_strike >= 135:
                     self.geoelectric_strike += 90
 
-        self.geoelectric_strike = self.geoelectric_strike%180
+        self.geoelectric_strike = self.geoelectric_strike % 180
 
-        #rotate components of Z and Tipper to align with geoelectric strike
-        #which should now be perpendicular to the profile strike
+        # rotate components of Z and Tipper to align with geoelectric strike
+        # which should now be perpendicular to the profile strike
         if self._rotate_to_strike == True:
-            self.profile_angle = self.geoelectric_strike+90
-            p1 = np.tan(np.deg2rad(90-self.profile_angle))
-            #need to project the y-intercept to the new angle
-            p2 = (self.profile_line[0]-p1)*easts[0]+self.profile_line[1]
+            self.profile_angle = self.geoelectric_strike + 90
+            p1 = np.tan(np.deg2rad(90 - self.profile_angle))
+            # need to project the y-intercept to the new angle
+            p2 = (self.profile_line[0] - p1) * easts[0] + self.profile_line[1]
             self.profile_line = (p1, p2)
 
             for edi in self.edi_list:
-                edi.Z.rotate(self.geoelectric_strike-edi.Z.rotation_angle)
+                edi.Z.rotate(self.geoelectric_strike - edi.Z.rotation_angle)
                 # rotate tipper to profile azimuth, not strike.
                 try:
-                    edi.Tipper.rotate((self.profile_angle-90)%180-
-                                       edi.Tipper.rotation_angle.mean())
+                    edi.Tipper.rotate((self.profile_angle - 90) % 180 -
+                                      edi.Tipper.rotation_angle.mean())
                 except AttributeError:
-                    edi.Tipper.rotate((self.profile_angle-90)%180-
-                                       edi.Tipper.rotation_angle)
+                    edi.Tipper.rotate((self.profile_angle - 90) % 180 -
+                                      edi.Tipper.rotation_angle)
 
-            print '='*72
+            print '=' * 72
             print ('Rotated Z and Tipper to align with '
                    '{0:+.2f} degrees E of N'.format(self.geoelectric_strike))
             print ('Profile angle is '
                    '{0:+.2f} degrees E of N'.format(self.profile_angle))
-            print '='*72
+            print '=' * 72
         else:
             for edi in self.edi_list:
-                edi.Z.rotate((self.profile_angle-90)%180-edi.Z.rotation_angle)
+                edi.Z.rotate((self.profile_angle - 90) % 180 - edi.Z.rotation_angle)
                 # rotate tipper to profile azimuth, not strike.
                 try:
-                    edi.Tipper.rotate((self.profile_angle-90)%180-
-                                       edi.Tipper.rotation_angle.mean())
+                    edi.Tipper.rotate((self.profile_angle - 90) % 180 -
+                                      edi.Tipper.rotation_angle.mean())
                 except AttributeError:
-                    edi.Tipper.rotate((self.profile_angle-90)%180-
-                                       edi.Tipper.rotation_angle)
+                    edi.Tipper.rotate((self.profile_angle - 90) % 180 -
+                                      edi.Tipper.rotation_angle)
 
-            print '='*72
+            print '=' * 72
             print ('Rotated Z and Tipper to be perpendicular  with '
-                   '{0:+.2f} profile angle'.format((self.profile_angle-90)%180))
+                   '{0:+.2f} profile angle'.format((self.profile_angle - 90) % 180))
             print ('Profile angle is '
                    '{0:+.2f} degrees E of N'.format(self.profile_angle))
-            print '='*72
+            print '=' * 72
 
-        #--> project stations onto profile line
+        # --> project stations onto profile line
         projected_stations = np.zeros((self.num_edi, 2))
         self.station_locations = np.zeros(self.num_edi)
 
-        #create profile vector
+        # create profile vector
         profile_vector = np.array([1, self.profile_line[0]])
-        #be sure the amplitude is 1 for a unit vector
+        # be sure the amplitude is 1 for a unit vector
         profile_vector /= np.linalg.norm(profile_vector)
 
         for ii, edi in enumerate(self.edi_list):
-            station_vector = np.array([easts[ii], norths[ii]-self.profile_line[1]])
-            position = np.dot(profile_vector, station_vector)*profile_vector
+            station_vector = np.array([easts[ii], norths[ii] - self.profile_line[1]])
+            position = np.dot(profile_vector, station_vector) * profile_vector
             self.station_locations[ii] = np.linalg.norm(position)
             edi.offset = np.linalg.norm(position)
             edi.projected_east = position[0]
-            edi.projected_north = position[1]+self.profile_line[1]
-            projected_stations[ii] = [position[0], position[1]+self.profile_line[1]]
+            edi.projected_north = position[1] + self.profile_line[1]
+            projected_stations[ii] = [position[0], position[1] + self.profile_line[1]]
 
-        #set the first station to 0
+        # set the first station to 0
         for edi in self.edi_list:
             edi.offset -= self.station_locations.min()
         self.station_locations -= self.station_locations.min()
 
-
-        #Sort from West to East:
+        # Sort from West to East:
         index_sort = np.argsort(self.station_locations)
         if self.profile_angle == 0:
-            #Exception: sort from North to South
+            # Exception: sort from North to South
             index_sort = np.argsort(norths)
 
-
-        #sorting along the profile
+        # sorting along the profile
         self.edi_list = [self.edi_list[ii] for ii in index_sort]
         self.station_locations = np.array([self.station_locations[ii]
                                            for ii in index_sort])
@@ -1186,31 +1177,29 @@ class Profile():
         """
         self.elevation_model = elevation_model
 
-
-        #--> get an elevation model for the mesh
+        # --> get an elevation model for the mesh
         if self.elevation_model == None:
             self.elevation_profile = np.zeros((2, len(self.edi_list)))
-            self.elevation_profile[0,:] = np.array([ss
-                                            for ss in self.station_locations])
-            self.elevation_profile[1,:] = np.array([edi.elev
-                                                  for edi in self.edi_list])
+            self.elevation_profile[0, :] = np.array([ss
+                                                     for ss in self.station_locations])
+            self.elevation_profile[1, :] = np.array([edi.elev
+                                                     for edi in self.edi_list])
 
-        #--> project known elevations onto the profile line
+        # --> project known elevations onto the profile line
         else:
             self.elevation_profile = np.zeros((2, self.elevation_model.shape[1]))
-            #create profile vector
+            # create profile vector
             profile_vector = np.array([1, self.profile_line[0]])
-            #be sure the amplitude is 1 for a unit vector
+            # be sure the amplitude is 1 for a unit vector
             profile_vector /= np.linalg.norm(profile_vector)
             for ii in range(self.elevation_model.shape[1]):
                 east = self.elevation_model[0, ii]
                 north = self.elevation_model[1, ii]
                 elev = self.elevation_model[2, ii]
-                elev_vector = np.array([east, north-self.profile_line[1]])
-                position = np.dot(profile_vector, elev_vector)*profile_vector
+                elev_vector = np.array([east, north - self.profile_line[1]])
+                position = np.dot(profile_vector, elev_vector) * profile_vector
                 self.elevation_profile[0, ii] = np.linalg.norm(position)
                 self.elevation_profile[1, ii] = elev
-
 
     def plot_profile(self, **kwargs):
         """
@@ -1277,22 +1266,22 @@ class Profile():
 
         for edi in self.edi_list:
             m1, = ax.plot(edi.projected_east, edi.projected_north,
-                         marker=marker, ms=ms, mfc=mc, mec=mc, color=lc)
+                          marker=marker, ms=ms, mfc=mc, mec=mc, color=lc)
 
             m2, = ax.plot(edi.east, edi.north, marker=marker,
-                         ms=.5*ms, mfc=(.6, .6, .6), mec=(.6, .6, .6),
-                         color=lc)
+                          ms=.5 * ms, mfc=(.6, .6, .6), mec=(.6, .6, .6),
+                          color=lc)
 
             if station_id is None:
-                ax.text(edi.projected_east, edi.projected_north*1.00025,
+                ax.text(edi.projected_east, edi.projected_north * 1.00025,
                         edi.station,
                         ha='center', va='baseline',
-                        fontdict={'size':fs, 'weight':'bold'})
+                        fontdict={'size': fs, 'weight': 'bold'})
             else:
-                ax.text(edi.projected_east, edi.projected_north*1.00025,
+                ax.text(edi.projected_east, edi.projected_north * 1.00025,
                         edi.station[station_id[0]:station_id[1]],
                         ha='center', va='baseline',
-                        fontdict={'size':fs, 'weight':'bold'})
+                        fontdict={'size': fs, 'weight': 'bold'})
 
         peasts = np.array([edi.projected_east for edi in self.edi_list])
         pnorths = np.array([edi.projected_north for edi in self.edi_list])
@@ -1302,19 +1291,20 @@ class Profile():
         ploty = sp.polyval(self.profile_line, easts)
         ax.plot(easts, ploty, lw=lw, color=lc)
         ax.set_title('Original/Projected Stations')
-        ax.set_ylim((min([norths.min(), pnorths.min()])*.999,
-                     max([norths.max(), pnorths.max()])*1.001))
-        ax.set_xlim((min([easts.min(), peasts.min()])*.98,
-                     max([easts.max(), peasts.max()])*1.02))
+        ax.set_ylim((min([norths.min(), pnorths.min()]) * .999,
+                     max([norths.max(), pnorths.max()]) * 1.001))
+        ax.set_xlim((min([easts.min(), peasts.min()]) * .98,
+                     max([easts.max(), peasts.max()]) * 1.02))
         ax.set_xlabel('Easting (m)',
-                       fontdict={'size':fs+2, 'weight':'bold'})
+                      fontdict={'size': fs + 2, 'weight': 'bold'})
         ax.set_ylabel('Northing (m)',
-                       fontdict={'size':fs+2, 'weight':'bold'})
+                      fontdict={'size': fs + 2, 'weight': 'bold'})
         ax.grid(alpha=.5)
         ax.legend([m1, m2], ['Projected', 'Original'], loc='upper left',
-                  prop={'size':fs})
+                  prop={'size': fs})
 
         plt.show()
+
 
 class Regularization(Mesh):
     """
@@ -1457,7 +1447,7 @@ class Regularization(Mesh):
         Mesh.__init__(self, station_locations, **kwargs)
 
         self.min_block_width = kwargs.pop('min_block_width',
-                                          2*np.median(self.cell_width))
+                                          2 * np.median(self.cell_width))
         self.trigger = kwargs.pop('trigger', .75)
         self.model_columns = None
         self.model_rows = None
@@ -1472,8 +1462,7 @@ class Regularization(Mesh):
         self.prejudice_fn = kwargs.pop('prejudice_fn', 'none')
         self.num_layers = kwargs.pop('num_layers', None)
 
-
-        #--> build mesh
+        # --> build mesh
         if self.station_locations is not None:
             self.build_mesh()
             self.build_regularization()
@@ -1492,52 +1481,52 @@ class Regularization(Mesh):
         # list of mesh rows to combine
         self.model_rows = []
 
-        #At the top of the mesh model blocks will be 2 combined mesh blocks
-        #Note that the padding cells are combined into one model block
-        station_col = [2]*((self.x_nodes.shape[0]-2*self.num_x_pad_cells)/2)
-        model_cols = [self.num_x_pad_cells]+station_col+[self.num_x_pad_cells]
-        station_widths = [self.x_nodes[ii]+self.x_nodes[ii+1] for ii in
-                       range(self.num_x_pad_cells,
-                             self.x_nodes.shape[0]-self.num_x_pad_cells, 2)]
+        # At the top of the mesh model blocks will be 2 combined mesh blocks
+        # Note that the padding cells are combined into one model block
+        station_col = [2] * ((self.x_nodes.shape[0] - 2 * self.num_x_pad_cells) / 2)
+        model_cols = [self.num_x_pad_cells] + station_col + [self.num_x_pad_cells]
+        station_widths = [self.x_nodes[ii] + self.x_nodes[ii + 1] for ii in
+                          range(self.num_x_pad_cells,
+                                self.x_nodes.shape[0] - self.num_x_pad_cells, 2)]
 
         pad_width = self.x_nodes[0:self.num_x_pad_cells].sum()
-        model_widths = [pad_width]+station_widths+[pad_width]
+        model_widths = [pad_width] + station_widths + [pad_width]
         num_cols = len(model_cols)
 
-#        model_thickness = np.append(self.z_nodes[0:self.z_nodes.shape[0]-
-#                                                        self.num_z_pad_cells],
-#                                    self.z_nodes[-self.num_z_pad_cells:].sum())
+        #        model_thickness = np.append(self.z_nodes[0:self.z_nodes.shape[0]-
+        #                                                        self.num_z_pad_cells],
+        #                                    self.z_nodes[-self.num_z_pad_cells:].sum())
         model_thickness = np.hstack([[self.z_nodes[:2].sum()],
-                                      self.z_nodes[2:-self.num_z_pad_cells],
+                                     self.z_nodes[2:-self.num_z_pad_cells],
                                      [self.z_nodes[-self.num_z_pad_cells:].sum()]])
 
         self.num_param = 0
-        #--> now need to calulate model blocks to the bottom of the model
+        # --> now need to calulate model blocks to the bottom of the model
         columns = list(model_cols)
         widths = list(model_widths)
         for zz, thickness in enumerate(model_thickness):
-            #index for model column blocks from first_row, start at 1 because
+            # index for model column blocks from first_row, start at 1 because
             # 0 is for padding cells            
             block_index = 1
             num_rows = 1
             if zz == 0:
                 num_rows += 1
-            if zz == len(model_thickness)-1:
+            if zz == len(model_thickness) - 1:
                 num_rows = self.num_z_pad_cells
-            while block_index+1 < num_cols-1:
-                #check to see if horizontally merged mesh cells are not larger
-                #than the thickness times trigger
-                if thickness < self.trigger*(widths[block_index]+\
-                                             widths[block_index+1]):
+            while block_index + 1 < num_cols - 1:
+                # check to see if horizontally merged mesh cells are not larger
+                # than the thickness times trigger
+                if thickness < self.trigger * (widths[block_index] + \
+                                                       widths[block_index + 1]):
                     block_index += 1
                     continue
-                #merge 2 neighboring cells to avoid vertical exaggerations
+                # merge 2 neighboring cells to avoid vertical exaggerations
                 else:
-                    widths[block_index] += widths[block_index+1]
-                    columns[block_index] += columns[block_index+1]
-                    #remove one of the merged cells
-                    widths.pop(block_index+1)
-                    columns.pop(block_index+1)
+                    widths[block_index] += widths[block_index + 1]
+                    columns[block_index] += columns[block_index + 1]
+                    # remove one of the merged cells
+                    widths.pop(block_index + 1)
+                    columns.pop(block_index + 1)
 
                     num_cols -= 1
             self.num_param += num_cols
@@ -1545,22 +1534,22 @@ class Regularization(Mesh):
             self.model_columns.append(list(columns))
             self.model_rows.append([num_rows, num_cols])
 
-        #calculate the distance from the right side of the furthest left
-        #model block to the furthest left station which is half the distance
+        # calculate the distance from the right side of the furthest left
+        # model block to the furthest left station which is half the distance
         # from the center of the mesh grid.
-        self.binding_offset = self.x_grid[self.num_x_pad_cells+1]+\
-                                            self.station_locations.mean()
+        self.binding_offset = self.x_grid[self.num_x_pad_cells + 1] + \
+                              self.station_locations.mean()
 
         self.get_num_free_params()
 
-        print '='*55
+        print '=' * 55
         print '{0:^55}'.format('regularization parameters'.upper())
-        print '='*55
+        print '=' * 55
         print '   binding offset       = {0:.1f}'.format(self.binding_offset)
         print '   number layers        = {0}'.format(len(self.model_columns))
         print '   number of parameters = {0}'.format(self.num_param)
         print '   number of free param = {0}'.format(self.num_free_param)
-        print '='*55
+        print '=' * 55
 
     def get_num_free_params(self):
         """
@@ -1576,24 +1565,24 @@ class Regularization(Mesh):
         self.num_free_param = 0
 
         row_count = 0
-        #loop over columns and rows of regularization grid
+        # loop over columns and rows of regularization grid
         for col, row in zip(self.model_columns, self.model_rows):
             rr = row[0]
             col_count = 0
             for ii, cc in enumerate(col):
-                #make a model block from the index values of the regularization
-                #grid
-                model_block = self.mesh_values[row_count:row_count+rr,
-                                              col_count:col_count+cc, :]
+                # make a model block from the index values of the regularization
+                # grid
+                model_block = self.mesh_values[row_count:row_count + rr,
+                              col_count:col_count + cc, :]
 
-                #find all the free triangular blocks within that model block
-                find_free = np.where(model_block=='?')
+                # find all the free triangular blocks within that model block
+                find_free = np.where(model_block == '?')
                 try:
-                    #test to see if the number of free parameters is equal
-                    #to the number of triangular elements with in the model
-                    #block, if there is the model block is assumed to be free.
+                    # test to see if the number of free parameters is equal
+                    # to the number of triangular elements with in the model
+                    # block, if there is the model block is assumed to be free.
                     if find_free[0].size == model_block.size:
-                        self.num_free_param  += 1
+                        self.num_free_param += 1
                 except IndexError:
                     pass
                 col_count += cc
@@ -1650,7 +1639,7 @@ class Regularization(Mesh):
 
         reg_lines = []
 
-        #--> write out header information
+        # --> write out header information
         reg_lines.append('{0:<18}{1}\n'.format('Format:',
                                                'occam2mtmod_1.0'.upper()))
         reg_lines.append('{0:<18}{1}\n'.format('Model Name:',
@@ -1661,30 +1650,30 @@ class Regularization(Mesh):
             reg_lines.append('{0:<18}{1}\n'.format('Mesh File:',
                                                    os.path.basename(self.mesh_fn)))
         else:
-            reg_lines.append('{0:<18}{1}\n'.format('Mesh File:',self.mesh_fn))
+            reg_lines.append('{0:<18}{1}\n'.format('Mesh File:', self.mesh_fn))
         reg_lines.append('{0:<18}{1}\n'.format('Mesh Type:',
                                                'pw2d'.upper()))
         if os.path.dirname(self.statics_fn) == self.save_path:
             reg_lines.append('{0:<18}{1}\n'.format('Statics File:',
-                             os.path.basename(self.statics_fn)))
+                                                   os.path.basename(self.statics_fn)))
         else:
             reg_lines.append('{0:<18}{1}\n'.format('Statics File:',
                                                    self.statics_fn))
         if os.path.dirname(self.prejudice_fn) == self.save_path:
             reg_lines.append('{0:<18}{1}\n'.format('Prejudice File:',
-                             os.path.basename(self.prejudice_fn)))
+                                                   os.path.basename(self.prejudice_fn)))
         else:
             reg_lines.append('{0:<18}{1}\n'.format('Prejudice File:',
                                                    self.prejudice_fn))
         reg_lines.append('{0:<20}{1: .1f}\n'.format('Binding Offset:',
-                                                   self.binding_offset))
+                                                    self.binding_offset))
         reg_lines.append('{0:<20}{1}\n'.format('Num Layers:',
                                                len(self.model_columns)))
 
-        #--> write rows and columns of regularization grid
+        # --> write rows and columns of regularization grid
         for row, col in zip(self.model_rows, self.model_columns):
-            reg_lines.append(''.join([' {0:>5}'.format(rr) for rr in row])+'\n')
-            reg_lines.append(''.join(['{0:>5}'.format(cc) for cc in col])+'\n')
+            reg_lines.append(''.join([' {0:>5}'.format(rr) for rr in row]) + '\n')
+            reg_lines.append(''.join(['{0:>5}'.format(cc) for cc in col]) + '\n')
 
         reg_lines.append('{0:<18}{1}\n'.format('NO. EXCEPTIONS:', '0'))
         rfid = file(self.reg_fn, 'w')
@@ -1716,7 +1705,7 @@ class Regularization(Mesh):
         rlines = rfid.readlines()
 
         for ii, iline in enumerate(rlines):
-            #read header information
+            # read header information
             if iline.find(':') > 0:
                 iline = iline.strip().split(':')
                 key = iline[0].strip().lower()
@@ -1727,11 +1716,11 @@ class Regularization(Mesh):
                 except ValueError:
                     setattr(self, key, value)
 
-                #append the last line
+                # append the last line
                 if key.find('exception') > 0:
                     self.model_columns.append(ncols)
 
-            #get mesh values
+            # get mesh values
             else:
                 iline = iline.strip().split()
                 iline = [int(jj) for jj in iline]
@@ -1741,17 +1730,17 @@ class Regularization(Mesh):
                     self.model_rows.append(iline)
                     ncols = []
                 elif len(iline) > 2:
-                    ncols = ncols+iline
+                    ncols = ncols + iline
 
-        #set mesh file name
+        # set mesh file name
         if not os.path.isfile(self.mesh_fn):
             self.mesh_fn = os.path.join(self.save_path, self.mesh_fn)
 
-        #set statics file name
+        # set statics file name
         if not os.path.isfile(self.mesh_fn):
             self.statics_fn = os.path.join(self.save_path, self.statics_fn)
 
-        #set prejudice file name
+        # set prejudice file name
         if not os.path.isfile(self.mesh_fn):
             self.prejudice_fn = os.path.join(self.save_path, self.prejudice_fn)
 
@@ -1876,7 +1865,7 @@ class Startup(object):
             self.startup_fn = os.path.join(self.save_path,
                                            self.startup_basename)
 
-        #--> check to make sure all the important input are given
+        # --> check to make sure all the important input are given
         if self.data_fn is None:
             raise OccamInputError('Need to input data file name')
 
@@ -1887,16 +1876,16 @@ class Startup(object):
             raise OccamInputError('Need to input number of model parameters')
 
         slines = []
-        slines.append('{0:<20}{1}\n'.format('Format:',self.format))
+        slines.append('{0:<20}{1}\n'.format('Format:', self.format))
         slines.append('{0:<20}{1}\n'.format('Description:', self.description))
         if os.path.dirname(self.model_fn) == self.save_path:
             slines.append('{0:<20}{1}\n'.format('Model File:',
-                          os.path.basename(self.model_fn)))
+                                                os.path.basename(self.model_fn)))
         else:
             slines.append('{0:<20}{1}\n'.format('Model File:', self.model_fn))
         if os.path.dirname(self.data_fn) == self.save_path:
             slines.append('{0:<20}{1}\n'.format('Data File:',
-                          os.path.basename(self.data_fn)))
+                                                os.path.basename(self.data_fn)))
         else:
             slines.append('{0:<20}{1}\n'.format('Data File:', self.data_fn))
         slines.append('{0:<20}{1}\n'.format('Date/Time:', self.date_time))
@@ -1914,8 +1903,8 @@ class Startup(object):
             slines.append('{0:<20}{1}\n'.format('!Model Limits:', 'none'))
         else:
             slines.append('{0:<20}{1},{2}\n'.format('Model Limits:',
-                                                self.model_limits[0],
-                                                self.model_limits[1]))
+                                                    self.model_limits[0],
+                                                    self.model_limits[1]))
         if self.model_value_steps is None:
             slines.append('{0:<20}{1}\n'.format('!Model Value Steps:', 'none'))
         else:
@@ -1932,7 +1921,7 @@ class Startup(object):
                                             self.misfit_reached))
         slines.append('{0:<20}{1}\n'.format('Param Count:', self.param_count))
 
-        #make an array of starting values if not are given
+        # make an array of starting values if not are given
         if self.model_values is None:
             self.model_values = np.zeros(self.param_count)
             self.model_values[:] = self.resistivity_start
@@ -1940,25 +1929,26 @@ class Startup(object):
         if self.model_values.shape[0] != self.param_count:
             raise OccamInputError('length of model vaues array is not equal '
                                   'to param count {0} != {1}'.format(
-                                  self.model_values.shape[0], self.param_count))
+                self.model_values.shape[0], self.param_count))
 
-        #write out starting resistivity values
+        # write out starting resistivity values
         sline = []
         for ii, mv in enumerate(self.model_values):
             sline.append('{0:^10.4f}'.format(mv))
-            if np.remainder(ii+1, 4) == 0:
+            if np.remainder(ii + 1, 4) == 0:
                 sline.append('\n')
                 slines.append(''.join(list(sline)))
                 sline = []
-        slines.append(''.join(list(sline+['\n'])))
-        #--> write file
+        slines.append(''.join(list(sline + ['\n'])))
+        # --> write file
         sfid = file(self.startup_fn, 'w')
         sfid.writelines(slines)
         sfid.close()
 
         print 'Wrote Occam2D startup file to {0}'.format(self.startup_fn)
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 class Data(Profile):
     """
     Reads and writes data files and more.  
@@ -2080,6 +2070,7 @@ class Data(Profile):
         >>> ocd.mask_points()
 
     """
+
     def __init__(self, edi_path=None, **kwargs):
         Profile.__init__(self, edi_path, **kwargs)
 
@@ -2107,46 +2098,45 @@ class Data(Profile):
         self.edi_type = 'z'
         self.masked_data = None
 
-        self.occam_dict = {'1':'log_te_res',
-                           '2':'te_phase',
-                           '3':'re_tip',
-                           '4':'im_tip',
-                           '5':'log_tm_res',
-                           '6':'tm_phase',
-                           '9':'te_res',
-                           '10':'tm_res'}
+        self.occam_dict = {'1': 'log_te_res',
+                           '2': 'te_phase',
+                           '3': 're_tip',
+                           '4': 'im_tip',
+                           '5': 'log_tm_res',
+                           '6': 'tm_phase',
+                           '9': 'te_res',
+                           '10': 'tm_res'}
 
-        self.mode_dict = {'log_all':[1, 2, 3, 4, 5, 6],
-                          'log_te_tip':[1, 2, 3, 4],
-                          'log_tm_tip':[5, 6, 3, 4],
-                          'log_te_tm':[1, 2, 5, 6],
-                          'log_te':[1, 2],
-                          'log_tm':[5, 6],
-                          'all':[9, 2, 3, 4, 10, 6],
-                          'te_tip':[9, 2, 3, 4],
-                          'tm_tip':[10, 6, 3, 4],
-                          'te_tm':[9, 2, 10, 6],
-                          'te':[9, 2],
-                          'tm':[10, 6],
-                          'tip':[3, 4],
-                          '1':[1, 2, 3, 4, 5, 6],
-                          '2':[1, 2, 3, 4],
-                          '3':[5, 6, 3, 4],
-                          '4':[1, 2, 5, 6],
-                          '5':[1, 2],
-                          '6':[5, 6],
-                          '7':[9, 2, 3, 4, 10, 6],
-                          '8':[9, 2, 3, 4],
-                          '9':[10, 6, 3, 4],
-                          '10':[9, 2, 10, 6],
-                          '11':[9, 2],
-                          '12':[10, 6],
-                          '13':[3, 4]}
+        self.mode_dict = {'log_all': [1, 2, 3, 4, 5, 6],
+                          'log_te_tip': [1, 2, 3, 4],
+                          'log_tm_tip': [5, 6, 3, 4],
+                          'log_te_tm': [1, 2, 5, 6],
+                          'log_te': [1, 2],
+                          'log_tm': [5, 6],
+                          'all': [9, 2, 3, 4, 10, 6],
+                          'te_tip': [9, 2, 3, 4],
+                          'tm_tip': [10, 6, 3, 4],
+                          'te_tm': [9, 2, 10, 6],
+                          'te': [9, 2],
+                          'tm': [10, 6],
+                          'tip': [3, 4],
+                          '1': [1, 2, 3, 4, 5, 6],
+                          '2': [1, 2, 3, 4],
+                          '3': [5, 6, 3, 4],
+                          '4': [1, 2, 5, 6],
+                          '5': [1, 2],
+                          '6': [5, 6],
+                          '7': [9, 2, 3, 4, 10, 6],
+                          '8': [9, 2, 3, 4],
+                          '9': [10, 6, 3, 4],
+                          '10': [9, 2, 10, 6],
+                          '11': [9, 2],
+                          '12': [10, 6],
+                          '13': [3, 4]}
 
         self._data_string = '{0:^6}{1:^6}{2:^6} {3: >8} {4: >8}\n'
         self._data_header = '{0:<6}{1:<6}{2:<6} {3:<8} {4:<8}\n'.format(
-                            'SITE', 'FREQ', 'TYPE', 'DATUM', 'ERROR')
-
+            'SITE', 'FREQ', 'TYPE', 'DATUM', 'ERROR')
 
     def read_data_file(self, data_fn=None):
         """
@@ -2183,20 +2173,20 @@ class Data(Profile):
 
         print 'Reading from {0}'.format(self.data_fn)
 
-        dfid = open(self.data_fn,'r')
+        dfid = open(self.data_fn, 'r')
 
         dlines = dfid.readlines()
 
-        #get format of input data
+        # get format of input data
         self.occam_format = dlines[0].strip().split(':')[1].strip()
 
-        #get title
+        # get title
         title_str = dlines[1].strip().split(':')[1].strip()
 
         title_list = title_str.split(',')
         self.title = title_list[0]
 
-        #get strike angle and profile angle
+        # get strike angle and profile angle
         if len(title_list) > 1:
             for t_str in title_list[1:]:
                 t_list = t_str.split('=')
@@ -2213,65 +2203,65 @@ class Data(Profile):
                     except ValueError:
                         setattr(self, key, value)
 
-        #get number of sites
+        # get number of sites
         nsites = int(dlines[2].strip().split(':')[1].strip())
         print '    {0} = {1}'.format('number of sites', nsites)
 
-        #get station names
+        # get station names
         self.station_list = np.array([dlines[ii].strip()
-                                      for ii in range(3, nsites+3)])
+                                      for ii in range(3, nsites + 3)])
 
-        #get offsets in meters
+        # get offsets in meters
         self.station_locations = np.array([float(dlines[ii].strip())
-                                        for ii in range(4+nsites, 4+2*nsites)])
+                                           for ii in range(4 + nsites, 4 + 2 * nsites)])
 
-        #get number of frequencies
-        nfreq = int(dlines[4+2*nsites].strip().split(':')[1].strip())
+        # get number of frequencies
+        nfreq = int(dlines[4 + 2 * nsites].strip().split(':')[1].strip())
         print '    {0} = {1}'.format('number of frequencies', nfreq)
 
-        #get frequencies
+        # get frequencies
         self.freq = np.array([float(dlines[ii].strip())
-                                for ii in range(5+2*nsites,5+2*nsites+nfreq)])
+                              for ii in range(5 + 2 * nsites, 5 + 2 * nsites + nfreq)])
 
-        #get periods
-        self.period = 1./self.freq
+        # get periods
+        self.period = 1. / self.freq
 
-        #-----------get data-------------------
-        #set zero array size the first row will be the data and second the error
+        # -----------get data-------------------
+        # set zero array size the first row will be the data and second the error
         asize = (2, self.freq.shape[0])
 
-        #make a list of dictionaries for each station.
-        self.data = [{'station':station,
-                      'offset':offset,
-                      'te_phase':np.zeros(asize),
-                      'tm_phase':np.zeros(asize),
-                      're_tip':np.zeros(asize),
-                      'im_tip':np.zeros(asize),
-                      'te_res':np.zeros(asize),
-                      'tm_res':np.zeros(asize)}
-                       for station, offset in zip(self.station_list,
-                                                  self.station_locations)]
+        # make a list of dictionaries for each station.
+        self.data = [{'station': station,
+                      'offset': offset,
+                      'te_phase': np.zeros(asize),
+                      'tm_phase': np.zeros(asize),
+                      're_tip': np.zeros(asize),
+                      'im_tip': np.zeros(asize),
+                      'te_res': np.zeros(asize),
+                      'tm_res': np.zeros(asize)}
+                     for station, offset in zip(self.station_list,
+                                                self.station_locations)]
 
-        self.data_list = dlines[7+2*nsites+nfreq:]
+        self.data_list = dlines[7 + 2 * nsites + nfreq:]
         for line in self.data_list:
             try:
                 station, freq, comp, odata, oerr = line.split()
-                #station index -1 cause python starts at 0
-                ss = int(station)-1
+                # station index -1 cause python starts at 0
+                ss = int(station) - 1
 
-                #frequency index -1 cause python starts at 0
-                ff = int(freq)-1
-                #data key
+                # frequency index -1 cause python starts at 0
+                ff = int(freq) - 1
+                # data key
                 key = self.occam_dict[comp]
 
-                #put into array
+                # put into array
                 if int(comp) == 1 or int(comp) == 5:
-                    self.data[ss][key[4:]][0, ff] = 10**float(odata)
-                    #error
-                    self.data[ss][key[4:]][1, ff] = float(oerr)*np.log(10)
+                    self.data[ss][key[4:]][0, ff] = 10 ** float(odata)
+                    # error
+                    self.data[ss][key[4:]][1, ff] = float(oerr) * np.log(10)
                 else:
                     self.data[ss][key][0, ff] = float(odata)
-                    #error
+                    # error
                     self.data[ss][key][1, ff] = float(oerr)
             except ValueError:
                 print 'Could not read line {0}'.format(line)
@@ -2298,49 +2288,49 @@ class Data(Profile):
         if self.freq is not None:
             return
 
-        #get all frequencies from all edi files
+        # get all frequencies from all edi files
         lo_all_freqs = []
         for edi in self.edi_list:
             lo_all_freqs.extend(list(edi.Z.freq))
 
-        #sort all frequencies so that they are in descending order,
-        #use set to remove repeats and make an array
+        # sort all frequencies so that they are in descending order,
+        # use set to remove repeats and make an array
         all_freqs = np.array(sorted(list(set(lo_all_freqs)), reverse=True))
 
-        #--> get min and max values if none are given
-        if (self.freq_min is None) or (self.freq_min < all_freqs.min()) or\
-           (self.freq_min > all_freqs.max()):
+        # --> get min and max values if none are given
+        if (self.freq_min is None) or (self.freq_min < all_freqs.min()) or \
+                (self.freq_min > all_freqs.max()):
             self.freq_min = all_freqs.min()
 
-        if (self.freq_max is None) or (self.freq_max > all_freqs.max()) or\
-           (self.freq_max < all_freqs.max()):
+        if (self.freq_max is None) or (self.freq_max > all_freqs.max()) or \
+                (self.freq_max < all_freqs.max()):
             self.freq_max = all_freqs.max()
 
-        #--> get all frequencies within the given range
+        # --> get all frequencies within the given range
         self.freq = all_freqs[np.where((all_freqs >= self.freq_min) &
                                        (all_freqs <= self.freq_max))]
 
         if len(self.freq) == 0:
             raise OccamInputError('No frequencies in user-defined interval '
-                           '[{0}, {1}]'.format(self.freq_min, self.freq_max))
+                                  '[{0}, {1}]'.format(self.freq_min, self.freq_max))
 
-        #check, if frequency list is longer than given max value
+        # check, if frequency list is longer than given max value
         if self.freq_num is not None:
             if int(self.freq_num) < self.freq.shape[0]:
-                print ('Number of frequencies exceeds freq_num ' 
-                        '{0} > {1} '.format(self.freq.shape[0], self.freq_num)+
-                        'Trimming frequencies to {0}'.format(self.freq_num))
+                print ('Number of frequencies exceeds freq_num '
+                       '{0} > {1} '.format(self.freq.shape[0], self.freq_num) +
+                       'Trimming frequencies to {0}'.format(self.freq_num))
 
-                excess = self.freq.shape[0]/float(self.freq_num)
+                excess = self.freq.shape[0] / float(self.freq_num)
                 if excess < 2:
                     offset = 0
                 else:
-                    stepsize = (self.freq.shape[0]-1)/self.freq_num
-                    offset = stepsize/2.
+                    stepsize = (self.freq.shape[0] - 1) / self.freq_num
+                    offset = stepsize / 2.
                 indices = np.array(np.around(np.linspace(offset,
-                                   self.freq.shape[0]-1-offset,
-                                   self.freq_num),0), dtype='int')
-                if indices[0] > (self.freq.shape[0]-1-indices[-1]):
+                                                         self.freq.shape[0] - 1 - offset,
+                                                         self.freq_num), 0), dtype='int')
+                if indices[0] > (self.freq.shape[0] - 1 - indices[-1]):
                     indices -= 1
                 self.freq = self.freq[indices]
 
@@ -2357,40 +2347,40 @@ class Data(Profile):
         Error is assumed to be 1 stddev.
         """
 
-        #create a profile line, this sorts the stations by offset and rotates
-        #data.
+        # create a profile line, this sorts the stations by offset and rotates
+        # data.
         self.generate_profile()
         self.plot_profile()
 
-        #--> get frequencies to invert for
+        # --> get frequencies to invert for
         self._get_frequencies()
 
-        #set zero array size the first row will be the data and second the error
+        # set zero array size the first row will be the data and second the error
         asize = (2, self.freq.shape[0])
 
-        #make a list of dictionaries for each station.
-        self.data=[{'station':station,
-                    'offset':offset,
-                    'te_phase':np.zeros(asize),
-                    'tm_phase':np.zeros(asize),
-                    're_tip':np.zeros(asize),
-                    'im_tip':np.zeros(asize),
-                    'te_res':np.zeros(asize),
-                    'tm_res':np.zeros(asize)}
+        # make a list of dictionaries for each station.
+        self.data = [{'station': station,
+                      'offset': offset,
+                      'te_phase': np.zeros(asize),
+                      'tm_phase': np.zeros(asize),
+                      're_tip': np.zeros(asize),
+                      'im_tip': np.zeros(asize),
+                      'te_res': np.zeros(asize),
+                      'tm_res': np.zeros(asize)}
                      for station, offset in zip(self.station_list,
                                                 self.station_locations)]
 
-        #loop over mt object in edi_list and use a counter starting at 1
-        #because that is what occam starts at.
+        # loop over mt object in edi_list and use a counter starting at 1
+        # because that is what occam starts at.
         for s_index, edi in enumerate(self.edi_list):
 
             if self.freq_tol is None:
                 station_freq = edi.Z.freq
                 interp_freq = self.freq[np.where((self.freq >= station_freq.min()) &
-                                               (self.freq <= station_freq.max()))]
+                                                 (self.freq <= station_freq.max()))]
                 # interpolate data onto given frequency list
                 z_interp, t_interp = edi.interpolate(interp_freq)
-#                z_interp._compute_res_phase()
+                #                z_interp._compute_res_phase()
                 z_interp.compute_resistivity_phase()
 
                 rho = z_interp.resistivity
@@ -2415,102 +2405,100 @@ class Data(Profile):
             for freq_num, frequency in enumerate(self.freq):
                 if self.freq_tol is not None:
                     try:
-                        f_index = np.where((station_freq >= frequency*(1-self.freq_tol)) &
-                                           (station_freq <= frequency*(1+self.freq_tol)))[0][0]
+                        f_index = np.where((station_freq >= frequency * (1 - self.freq_tol)) &
+                                           (station_freq <= frequency * (1 + self.freq_tol)))[0][0]
 
                     except IndexError:
                         f_index = None
                 else:
-                    #skip, if the listed frequency is not available for the station
+                    # skip, if the listed frequency is not available for the station
                     if (frequency in interp_freq):
-                        #find the respective frequency index for the station
-                        f_index = np.abs(interp_freq-frequency).argmin()
+                        # find the respective frequency index for the station
+                        f_index = np.abs(interp_freq - frequency).argmin()
                     else:
                         f_index = None
 
                 if f_index == None:
                     continue
 
-                #--> get te resistivity
+                # --> get te resistivity
                 self.data[s_index]['te_res'][0, freq_num] = rho[f_index, 0, 1]
-                #compute error
+                # compute error
                 if rho[f_index, 0, 1] != 0.0:
-                    #--> get error from data
+                    # --> get error from data
                     if self.res_te_err is None:
                         self.data[s_index]['te_res'][1, freq_num] = \
-                            np.abs(rho_err[f_index, 0, 1]/rho[f_index, 0, 1])
-                    #--> set generic error floor
+                            np.abs(rho_err[f_index, 0, 1] / rho[f_index, 0, 1])
+                    # --> set generic error floor
                     else:
                         self.data[s_index]['te_res'][1, freq_num] = \
-                                                        self.res_te_err/100.
+                            self.res_te_err / 100.
 
-                #--> get tm resistivity
-                self.data[s_index]['tm_res'][0, freq_num] =  rho[f_index, 1, 0]
-                #compute error
+                # --> get tm resistivity
+                self.data[s_index]['tm_res'][0, freq_num] = rho[f_index, 1, 0]
+                # compute error
                 if rho[f_index, 1, 0] != 0.0:
-                    #--> get error from data
+                    # --> get error from data
                     if self.res_tm_err is None:
                         self.data[s_index]['tm_res'][1, freq_num] = \
-                        np.abs(rho_err[f_index, 1, 0]/rho[f_index, 1, 0])
-                    #--> set generic error floor
+                            np.abs(rho_err[f_index, 1, 0] / rho[f_index, 1, 0])
+                    # --> set generic error floor
                     else:
                         self.data[s_index]['tm_res'][1, freq_num] = \
-                            self.res_tm_err/100.
+                            self.res_tm_err / 100.
 
-                #--> get te phase
+                # --> get te phase
                 phase_te = phi[f_index, 0, 1]
-                #be sure the phase is in the first quadrant
+                # be sure the phase is in the first quadrant
                 if phase_te > 180:
                     phase_te -= 180
-                self.data[s_index]['te_phase'][0, freq_num] =  phase_te
-                #compute error
-                #if phi[f_index, 0, 1] != 0.0:
-                #--> get error from data
+                self.data[s_index]['te_phase'][0, freq_num] = phase_te
+                # compute error
+                # if phi[f_index, 0, 1] != 0.0:
+                # --> get error from data
                 if self.phase_te_err is None:
                     self.data[s_index]['te_phase'][1, freq_num] = \
-                    np.degrees(np.arcsin(.5*
-                               self.data[s_index]['te_res'][0, freq_num]))
-                #--> set generic error floor
+                        np.degrees(np.arcsin(.5 *
+                                             self.data[s_index]['te_res'][0, freq_num]))
+                # --> set generic error floor
                 else:
                     self.data[s_index]['te_phase'][1, freq_num] = \
-                        (self.phase_te_err/100.)*57./2.
+                        (self.phase_te_err / 100.) * 57. / 2.
 
-                #--> get tm phase and be sure its in the first quadrant
-                phase_tm = phi[f_index, 1, 0]%180
+                # --> get tm phase and be sure its in the first quadrant
+                phase_tm = phi[f_index, 1, 0] % 180
 
-                self.data[s_index]['tm_phase'][0, freq_num] =  phase_tm
-                #compute error
-                #if phi[f_index, 1, 0] != 0.0:
-                #--> get error from data
+                self.data[s_index]['tm_phase'][0, freq_num] = phase_tm
+                # compute error
+                # if phi[f_index, 1, 0] != 0.0:
+                # --> get error from data
                 if self.phase_tm_err is None:
                     self.data[s_index]['tm_phase'][1, freq_num] = \
-                    np.degrees(np.arcsin(.5*
-                               self.data[s_index]['tm_res'][0, freq_num]))
-                #--> set generic error floor
+                        np.degrees(np.arcsin(.5 *
+                                             self.data[s_index]['tm_res'][0, freq_num]))
+                # --> set generic error floor
                 else:
                     self.data[s_index]['tm_phase'][1, freq_num] = \
-                        (self.phase_tm_err/100.)*57./2.
+                        (self.phase_tm_err / 100.) * 57. / 2.
 
-
-
-                #--> get Tipper
+                # --> get Tipper
                 if tipper is not None:
                     self.data[s_index]['re_tip'][0, freq_num] = \
-                                                    tipper[f_index, 0, 1].real
+                        tipper[f_index, 0, 1].real
                     self.data[s_index]['im_tip'][0, freq_num] = \
-                                                    tipper[f_index, 0, 1].imag
+                        tipper[f_index, 0, 1].imag
 
-                    #get error
+                    # get error
                     if self.tipper_err is not None:
                         self.data[s_index]['re_tip'][1, freq_num] = \
-                                                        self.tipper_err/100.
+                            self.tipper_err / 100.
                         self.data[s_index]['im_tip'][1, freq_num] = \
-                                                        self.tipper_err/100.
+                            self.tipper_err / 100.
                     else:
                         self.data[s_index]['re_tip'][1, freq_num] = \
-                           tipper[f_index, 0, 1].real/tipper_err[f_index, 0, 1]
+                            tipper[f_index, 0, 1].real / tipper_err[f_index, 0, 1]
                         self.data[s_index]['im_tip'][1, freq_num] = \
-                           tipper[f_index, 0, 1].imag/tipper_err[f_index, 0, 1]
+                            tipper[f_index, 0, 1].imag / tipper_err[f_index, 0, 1]
 
     def _get_data_list(self):
         """
@@ -2522,95 +2510,93 @@ class Data(Profile):
         for ss, sdict in enumerate(self.data, 1):
             for ff in range(self.freq.shape[0]):
                 for mmode in self.mode_dict[self.model_mode]:
-                    #log(te_res)
+                    # log(te_res)
                     if mmode == 1:
                         if sdict['te_res'][0, ff] != 0.0:
                             dvalue = np.log10(sdict['te_res'][0, ff])
-                            derror = sdict['te_res'][1, ff]/np.log(10)
+                            derror = sdict['te_res'][1, ff] / np.log(10)
                             dstr = '{0:.4f}'.format(dvalue)
                             derrstr = '{0:.4f}'.format(derror)
-                            line = self._data_string.format(ss, ff+1, mmode,
+                            line = self._data_string.format(ss, ff + 1, mmode,
                                                             dstr, derrstr)
                             self.data_list.append(line)
 
-                    #te_res
+                    # te_res
                     if mmode == 9:
                         if sdict['te_res'][0, ff] != 0.0:
                             dvalue = sdict['te_res'][0, ff]
                             derror = sdict['te_res'][1, ff]
                             dstr = '{0:.4f}'.format(dvalue)
                             derrstr = '{0:.4f}'.format(derror)
-                            line = self._data_string.format(ss, ff+1, mmode,
+                            line = self._data_string.format(ss, ff + 1, mmode,
                                                             dstr, derrstr)
                             self.data_list.append(line)
 
-                    #te_phase
+                    # te_phase
                     if mmode == 2:
                         if sdict['te_phase'][0, ff] != 0.0:
                             dvalue = sdict['te_phase'][0, ff]
                             derror = sdict['te_phase'][1, ff]
                             dstr = '{0:.4f}'.format(dvalue)
                             derrstr = '{0:.4f}'.format(derror)
-                            line = self._data_string.format(ss, ff+1, mmode,
+                            line = self._data_string.format(ss, ff + 1, mmode,
                                                             dstr, derrstr)
                             self.data_list.append(line)
 
-                   #log(tm_res)
+                            # log(tm_res)
                     if mmode == 5:
                         if sdict['tm_res'][0, ff] != 0.0:
                             dvalue = np.log10(sdict['tm_res'][0, ff])
-                            derror = sdict['tm_res'][1, ff]/np.log(10)
+                            derror = sdict['tm_res'][1, ff] / np.log(10)
                             dstr = '{0:.4f}'.format(dvalue)
                             derrstr = '{0:.4f}'.format(derror)
-                            line = self._data_string.format(ss, ff+1, mmode,
+                            line = self._data_string.format(ss, ff + 1, mmode,
                                                             dstr, derrstr)
                             self.data_list.append(line)
 
-                    #tm_res
+                    # tm_res
                     if mmode == 10:
                         if sdict['tm_res'][0, ff] != 0.0:
                             dvalue = sdict['tm_res'][0, ff]
                             derror = sdict['tm_res'][1, ff]
                             dstr = '{0:.4f}'.format(dvalue)
                             derrstr = '{0:.4f}'.format(derror)
-                            line = self._data_string.format(ss, ff+1, mmode,
+                            line = self._data_string.format(ss, ff + 1, mmode,
                                                             dstr, derrstr)
                             self.data_list.append(line)
 
-                    #tm_phase
+                    # tm_phase
                     if mmode == 6:
                         if sdict['tm_phase'][0, ff] != 0.0:
                             dvalue = sdict['tm_phase'][0, ff]
                             derror = sdict['tm_phase'][1, ff]
                             dstr = '{0:.4f}'.format(dvalue)
                             derrstr = '{0:.4f}'.format(derror)
-                            line = self._data_string.format(ss, ff+1, mmode,
+                            line = self._data_string.format(ss, ff + 1, mmode,
                                                             dstr, derrstr)
                             self.data_list.append(line)
 
-                    #Re_tip
+                    # Re_tip
                     if mmode == 3:
                         if sdict['re_tip'][0, ff] != 0.0:
                             dvalue = sdict['re_tip'][0, ff]
                             derror = sdict['re_tip'][1, ff]
                             dstr = '{0:.4f}'.format(dvalue)
                             derrstr = '{0:.4f}'.format(derror)
-                            line = self._data_string.format(ss, ff+1, mmode,
+                            line = self._data_string.format(ss, ff + 1, mmode,
                                                             dstr, derrstr)
                             self.data_list.append(line)
 
-                    #Im_tip
+                    # Im_tip
                     if mmode == 4:
                         if sdict['im_tip'][0, ff] != 0.0:
                             dvalue = sdict['im_tip'][0, ff]
                             derror = sdict['im_tip'][1, ff]
                             dstr = '{0:.4f}'.format(dvalue)
                             derrstr = '{0:.4f}'.format(derror)
-                            line = self._data_string.format(ss, ff+1, mmode,
+                            line = self._data_string.format(ss, ff + 1, mmode,
                                                             dstr, derrstr)
                             self.data_list.append(line)
-
-
 
     def write_data_file(self, data_fn=None):
         """
@@ -2639,7 +2625,7 @@ class Data(Profile):
         if self.data is None:
             self._fill_data()
 
-        #get the appropriate data to write to file
+        # get the appropriate data to write to file
         self._get_data_list()
 
         if data_fn is not None:
@@ -2654,34 +2640,34 @@ class Data(Profile):
 
         data_lines = []
 
-        #--> header line
+        # --> header line
         data_lines.append('{0:<18}{1}\n'.format('FORMAT:', self.occam_format))
 
-        #--> title line
+        # --> title line
         if self.profile_angle is None:
             self.profile_angle = 0
         if self.geoelectric_strike is None:
             self.geoelectric_strike = 0.0
         t_str = '{0}, Profile={1:.1f} deg, Strike={2:.1f} deg'.format(
-                 self.title, self.profile_angle, self.geoelectric_strike)
+            self.title, self.profile_angle, self.geoelectric_strike)
         data_lines.append('{0:<18}{1}\n'.format('TITLE:', t_str))
 
-       #--> sites
+        # --> sites
         data_lines.append('{0:<18}{1}\n'.format('SITES:', len(self.data)))
         for sdict in self.data:
             data_lines.append('   {0}\n'.format(sdict['station']))
 
-        #--> offsets
+        # --> offsets
         data_lines.append('{0:<18}\n'.format('OFFSETS (M):'))
         for sdict in self.data:
             data_lines.append('   {0:.1f}\n'.format(sdict['offset']))
-        #--> frequencies
+        # --> frequencies
         data_lines.append('{0:<18}{1}\n'.format('FREQUENCIES:',
                                                 self.freq.shape[0]))
         for ff in self.freq:
             data_lines.append('   {0:<10.6e}\n'.format(ff))
 
-        #--> data
+        # --> data
         data_lines.append('{0:<18}{1}\n'.format('DATA BLOCKS:',
                                                 len(self.data_list)))
         data_lines.append(self._data_header)
@@ -2702,12 +2688,12 @@ class Data(Profile):
         NEED TO ADAPT THIS TO THE CURRENT SETUP.
         """
 
-        x,y = self.easts,self.norths
-        x1,y1 = x[0],y[0]
-        [m,c1] = self.profile
-        x0 = (y1+(1.0/m)*x1-c1)/(m+(1.0/m))
-        y0 = m*x0+c1
-        self.profile_origin = [x0,y0]
+        x, y = self.easts, self.norths
+        x1, y1 = x[0], y[0]
+        [m, c1] = self.profile
+        x0 = (y1 + (1.0 / m) * x1 - c1) / (m + (1.0 / m))
+        y0 = m * x0 + c1
+        self.profile_origin = [x0, y0]
 
     def plot_response(self, **kwargs):
         """
@@ -2728,7 +2714,7 @@ class Data(Profile):
         return pr_obj
 
     def plot_mask_points(self, data_fn=None, marker='h', res_err_inc=.25,
-                         phase_err_inc=.05):
+                         phase_err_inc=.05, **kwargs):
         """
         An interactive plotting tool to mask points an add errorbars
         
@@ -2763,7 +2749,7 @@ class Data(Profile):
 
         pr_obj = self.plot_response(**kwargs)
 
-        #make points an attribute of self which is a data type OccamPointPicker
+        # make points an attribute of self which is a data type OccamPointPicker
         self.masked_data = OccamPointPicker(pr_obj.ax_list,
                                             pr_obj.line_list,
                                             pr_obj.err_list,
@@ -2780,58 +2766,58 @@ class Data(Profile):
 
         mp_obj = maskpoints_obj
         m_data = list(self.data)
-        #rewrite the data file
-        #make a reverse dictionary for locating the masked points in the data
-        #file
-        rploc = dict([('{0}'.format(mp_obj.fndict[key]),int(key)-1)
-                    for key in mp_obj.fndict.keys()])
+        # rewrite the data file
+        # make a reverse dictionary for locating the masked points in the data
+        # file
+        rploc = dict([('{0}'.format(mp_obj.fndict[key]), int(key) - 1)
+                      for key in mp_obj.fndict.keys()])
 
-        #make a period dictionary to locate points changed
-        frpdict = dict([('{0:.5g}'.format(fr),ff)
-                            for ff,fr in enumerate(1./self.freq)])
+        # make a period dictionary to locate points changed
+        frpdict = dict([('{0:.5g}'.format(fr), ff)
+                        for ff, fr in enumerate(1. / self.freq)])
 
-        #loop over the data list
+        # loop over the data list
         for dd, dat in enumerate(mp_obj.data):
             derror = self.points.error[dd]
-            #loop over the 4 main entrie
-            for ss, skey in enumerate(['resxy', 'resyx', 'phasexy','phaseyx']):
-                #rewrite any coinciding points
+            # loop over the 4 main entrie
+            for ss, skey in enumerate(['resxy', 'resyx', 'phasexy', 'phaseyx']):
+                # rewrite any coinciding points
                 for frpkey in frpdict.keys():
                     try:
                         ff = frpdict[frpkey]
                         floc = self.points.fdict[dd][ss][frpkey]
 
-                        #CHANGE APPARENT RESISTIVITY
+                        # CHANGE APPARENT RESISTIVITY
                         if ss == 0 or ss == 1:
-                            #change the apparent resistivity value
+                            # change the apparent resistivity value
                             if m_data[rploc[str(dd)]][skey][0][ff] != \
-                                                      np.log10(dat[ss][floc]):
+                                    np.log10(dat[ss][floc]):
                                 if dat[ss][floc] == 0:
                                     m_data[rploc[str(dd)]][skey][0][ff] = 0.0
                                 else:
                                     m_data[rploc[str(dd)]][skey][0][ff] = \
-                                            np.log10(dat[ss][floc])
+                                        np.log10(dat[ss][floc])
 
-                            #change the apparent resistivity error value
+                            # change the apparent resistivity error value
                             if dat[ss][floc] == 0.0:
                                 rerr = 0.0
                             else:
-                                rerr = derror[ss][floc]/dat[ss][floc]/np.log(10)
+                                rerr = derror[ss][floc] / dat[ss][floc] / np.log(10)
                             if m_data[rploc[str(dd)]][skey][1][ff] != rerr:
                                 m_data[rploc[str(dd)]][skey][1][ff] = rerr
 
-                        #DHANGE PHASE
+                        # DHANGE PHASE
                         elif ss == 2 or ss == 3:
-                            #change the phase value
+                            # change the phase value
                             if m_data[rploc[str(dd)]][skey][0][ff] != \
-                                                                 dat[ss][floc]:
+                                    dat[ss][floc]:
                                 if dat[ss][floc] == 0:
                                     m_data[rploc[str(dd)]][skey][0][ff] = 0.0
                                 else:
                                     m_data[rploc[str(dd)]][skey][0][ff] = \
-                                                                  dat[ss][floc]
+                                        dat[ss][floc]
 
-                            #change the apparent resistivity error value
+                            # change the apparent resistivity error value
                             if dat[ss][floc] == 0.0:
                                 rerr = 0.0
                             else:
@@ -2881,14 +2867,14 @@ class Response(object):
         self.resp_fn = resp_fn
 
         self.resp = None
-        self.occam_dict = {'1':'log_te_res',
-                           '2':'te_phase',
-                           '3':'re_tip',
-                           '4':'im_tip',
-                           '5':'log_tm_res',
-                           '6':'tm_phase',
-                           '9':'te_res',
-                           '10':'tm_res'}
+        self.occam_dict = {'1': 'log_te_res',
+                           '2': 'te_phase',
+                           '3': 're_tip',
+                           '4': 'im_tip',
+                           '5': 'log_tm_res',
+                           '6': 'tm_phase',
+                           '9': 'te_res',
+                           '10': 'tm_res'}
 
         if resp_fn is not None:
             self.read_response_file()
@@ -2905,49 +2891,71 @@ class Response(object):
         if self.resp_fn is None:
             raise OccamInputError('resp_fn is None, please input response file')
 
-        if os.path.isfile(self.resp_fn) == False:
+        if not os.path.isfile(self.resp_fn):
             raise OccamInputError('Could not find {0}'.format(self.resp_fn))
-
-        r_arr = np.loadtxt(self.resp_fn, dtype=[('station', np.int),
-                                                 ('freq', np.int),
-                                                 ('comp', np.int),
-                                                 ('z', np.int),
-                                                 ('data', np.float),
-                                                 ('resp', np.float),
-                                                 ('err', np.float)])
+        try:
+            r_arr = np.loadtxt(self.resp_fn, dtype=[('station', np.int),
+                                                    ('freq', np.int),
+                                                    ('comp', np.int),
+                                                    ('z', np.int),
+                                                    ('data', np.float),
+                                                    ('resp', np.float),
+                                                    ('err', np.float)])
+        except ValueError as e:
+            try:
+                # for ValueError: invalid literal for long() with base 10: ...
+                # which is found on some Linux environments
+                # tying to recover
+                r_arr = np.loadtxt(self.resp_fn, dtype=[('station', np.float),
+                                                        ('freq', np.float),
+                                                        ('comp', np.float),
+                                                        ('z', np.float),
+                                                        ('data', np.float),
+                                                        ('resp', np.float),
+                                                        ('err', np.float)])
+                r_arr = r_arr.astype([('station', np.int),
+                                      ('freq', np.int),
+                                      ('comp', np.int),
+                                      ('z', np.int),
+                                      ('data', np.float),
+                                      ('resp', np.float),
+                                      ('err', np.float)])
+            except:
+                raise OccamInputError("Filed to read file {}. numpy error message: {}".format(self.resp_fn, e.message))
 
         num_stat = r_arr['station'].max()
         num_freq = r_arr['freq'].max()
 
-        #set zero array size the first row will be the data and second the error
+        # set zero array size the first row will be the data and second the error
         asize = (2, num_freq)
 
-        #make a list of dictionaries for each station.
-        self.resp = [{'te_phase':np.zeros(asize),
-                      'tm_phase':np.zeros(asize),
-                      're_tip':np.zeros(asize),
-                      'im_tip':np.zeros(asize),
-                      'te_res':np.zeros(asize),
-                      'tm_res':np.zeros(asize)}
-                       for ss in range(num_stat)]
+        # make a list of dictionaries for each station.
+        self.resp = [{'te_phase': np.zeros(asize),
+                      'tm_phase': np.zeros(asize),
+                      're_tip': np.zeros(asize),
+                      'im_tip': np.zeros(asize),
+                      'te_res': np.zeros(asize),
+                      'tm_res': np.zeros(asize)}
+                     for ss in range(num_stat)]
 
         for line in r_arr:
-            #station index -1 cause python starts at 0
-            ss = line['station']-1
+            # station index -1 cause python starts at 0
+            ss = line['station'] - 1
 
-            #frequency index -1 cause python starts at 0
-            ff = line['freq']-1
-            #data key
+            # frequency index -1 cause python starts at 0
+            ff = line['freq'] - 1
+            # data key
             key = self.occam_dict[str(line['comp'])]
-            #put into array
+            # put into array
             if line['comp'] == 1 or line['comp'] == 5:
-                self.resp[ss][key[4:]][0, ff] = 10**line['resp']
-                #error
-                self.resp[ss][key[4:]][1, ff] = line['err']*np.log(10)
+                self.resp[ss][key[4:]][0, ff] = 10 ** line['resp']
+                # error
+                self.resp[ss][key[4:]][1, ff] = line['err'] * np.log(10)
             else:
                 self.resp[ss][key][0, ff] = line['resp']
-                #error
+                # error
                 self.resp[ss][key][1, ff] = line['err']
+
 
 class Model(Startup):
     """
@@ -3022,7 +3030,6 @@ class Model(Startup):
         self.mesh_x = None
         self.mesh_z = None
 
-
     def read_iter_file(self, iter_fn=None):
         """
         Read an iteration file.
@@ -3052,25 +3059,24 @@ class Model(Startup):
         if self.iter_fn is None:
             raise OccamInputError('iter_fn is None, input iteration file')
 
-
-        #check to see if the file exists
+        # check to see if the file exists
         if os.path.exists(self.iter_fn) == False:
             raise OccamInputError('Can not find {0}'.format(self.iter_fn))
 
         self.save_path = os.path.dirname(self.iter_fn)
 
-        #open file, read lines, close file
+        # open file, read lines, close file
         ifid = file(self.iter_fn, 'r')
         ilines = ifid.readlines()
         ifid.close()
 
         ii = 0
-        #put header info into dictionary with similar keys
+        # put header info into dictionary with similar keys
         while ilines[ii].lower().find('param') != 0:
             iline = ilines[ii].strip().split(':')
             key = iline[0].strip().lower()
             if key.find('!') != 0:
-                key = key.replace(' ', '_').replace('file', 'fn').replace('/','_')
+                key = key.replace(' ', '_').replace('file', 'fn').replace('/', '_')
                 value = iline[1].strip()
                 try:
                     setattr(self, key, float(value))
@@ -3078,28 +3084,28 @@ class Model(Startup):
                     setattr(self, key, value)
             ii += 1
 
-        #get number of parameters
+        # get number of parameters
         iline = ilines[ii].strip().split(':')
         key = iline[0].strip().lower().replace(' ', '_')
         value = int(iline[1].strip())
         setattr(self, key, value)
 
         self.model_values = np.zeros(self.param_count)
-        kk= int(ii+1)
+        kk = int(ii + 1)
 
         jj = 0
         mv_index = 0
-        while jj < len(ilines)-kk:
-            iline = np.array(ilines[jj+kk].strip().split(), dtype='float')
-            self.model_values[mv_index:mv_index+iline.shape[0]] = iline
+        while jj < len(ilines) - kk:
+            iline = np.array(ilines[jj + kk].strip().split(), dtype='float')
+            self.model_values[mv_index:mv_index + iline.shape[0]] = iline
             jj += 1
             mv_index += iline.shape[0]
 
-        #make sure data file is full path
+        # make sure data file is full path
         if os.path.isfile(self.data_fn) == False:
             self.data_fn = os.path.join(self.save_path, self.data_fn)
 
-        #make sure model file is full path
+        # make sure model file is full path
         if os.path.isfile(self.model_fn) == False:
             self.model_fn = os.path.join(self.save_path, self.model_fn)
 
@@ -3119,76 +3125,77 @@ class Model(Startup):
         
         """
 
-        #first read in the iteration file
+        # first read in the iteration file
         self.read_iter_file()
 
-        #read in the regulariztion file
+        # read in the regulariztion file
         r1 = Regularization()
         r1.read_regularization_file(self.model_fn)
         r1.model_rows = np.array(r1.model_rows)
         self.model_rows = r1.model_rows
         self.model_columns = r1.model_columns
 
-        #read in mesh file
+        # read in mesh file
         r1.read_mesh_file(r1.mesh_fn)
 
-        #get the binding offset which is the right side of the furthest left
-        #block, this helps locate the model in relative space
+        # get the binding offset which is the right side of the furthest left
+        # block, this helps locate the model in relative space
         bndgoff = r1.binding_offset
 
-        #make sure that the number of rows and number of columns are the same
+        # make sure that the number of rows and number of columns are the same
         assert len(r1.model_rows) == len(r1.model_columns)
 
-        #initiate the resistivity model to the shape of the FE mesh
+        # initiate the resistivity model to the shape of the FE mesh
         self.res_model = np.zeros((r1.z_nodes.shape[0], r1.x_nodes.shape[0]))
 
-        #read in the model and set the regularization block values to map onto
-        #the FE mesh so that the model can be plotted as an image or regular
-        #mesh.
+        # read in the model and set the regularization block values to map onto
+        # the FE mesh so that the model can be plotted as an image or regular
+        # mesh.
         mm = 0
         for ii in range(len(r1.model_rows)):
-            #get the number of layers to combine
-            #this index will be the first index in the vertical direction
+            # get the number of layers to combine
+            # this index will be the first index in the vertical direction
             ny1 = r1.model_rows[:ii, 0].sum()
-            #the second index  in the vertical direction
-            ny2 = ny1+r1.model_rows[ii][0]
-            #make the list of amalgamated columns an array for ease
+            # the second index  in the vertical direction
+            ny2 = ny1 + r1.model_rows[ii][0]
+            # make the list of amalgamated columns an array for ease
             lc = np.array(r1.model_columns[ii])
-            #loop over the number of amalgamated blocks
+            # loop over the number of amalgamated blocks
             for jj in range(len(r1.model_columns[ii])):
-                #get first in index in the horizontal direction
+                # get first in index in the horizontal direction
                 nx1 = lc[:jj].sum()
-                #get second index in horizontal direction
-                nx2 = nx1+lc[jj]
-                #put the apporpriate resistivity value into all the amalgamated
-                #model blocks of the regularization grid into the forward model
-                #grid
+                # get second index in horizontal direction
+                nx2 = nx1 + lc[jj]
+                # put the apporpriate resistivity value into all the amalgamated
+                # model blocks of the regularization grid into the forward model
+                # grid
                 self.res_model[ny1:ny2, nx1:nx2] = self.model_values[mm]
                 mm += 1
 
-        #make some arrays for plotting the model
-        self.plot_x = np.array([r1.x_nodes[:ii+1].sum()
+        # make some arrays for plotting the model
+        self.plot_x = np.array([r1.x_nodes[:ii + 1].sum()
                                 for ii in range(len(r1.x_nodes))])
-        self.plot_z = np.array([r1.z_nodes[:ii+1].sum()
+        self.plot_z = np.array([r1.z_nodes[:ii + 1].sum()
                                 for ii in range(len(r1.z_nodes))])
 
-        #center the grid onto the station coordinates
-        x0 = bndgoff-self.plot_x[r1.model_columns[0][0]]
+        # center the grid onto the station coordinates
+        x0 = bndgoff - self.plot_x[r1.model_columns[0][0]]
         self.plot_x += x0
 
-        #flip the arrays around for plotting purposes
-        #plotx = plotx[::-1] and make the first layer start at zero
-        self.plot_z = self.plot_z[::-1]-self.plot_z[0]
+        # flip the arrays around for plotting purposes
+        # plotx = plotx[::-1] and make the first layer start at zero
+        self.plot_z = self.plot_z[::-1] - self.plot_z[0]
 
-        #make a mesh grid to plot in the model coordinates
+        # make a mesh grid to plot in the model coordinates
         self.mesh_x, self.mesh_z = np.meshgrid(self.plot_x, self.plot_z)
 
-        #flip the resmodel upside down so that the top is the stations
+        # flip the resmodel upside down so that the top is the stations
         self.res_model = np.flipud(self.res_model)
 
-#==============================================================================
+
+# ==============================================================================
 # plot the MT and model responses            
-#==============================================================================
+# ==============================================================================
 class PlotResponse():
     """
     Helper class to deal with plotting the MT response and occam2d model.
@@ -3307,45 +3314,45 @@ class PlotResponse():
         self.line_list = []
         self.err_list = []
 
-        #color mode
+        # color mode
         if self.color_mode == 'color':
-            #color for data
+            # color for data
             self.cted = kwargs.pop('cted', (0, 0, 1))
             self.ctmd = kwargs.pop('ctmd', (1, 0, 0))
             self.mted = kwargs.pop('mted', 's')
             self.mtmd = kwargs.pop('mtmd', 'o')
 
-            #color for occam2d model
+            # color for occam2d model
             self.ctem = kwargs.pop('ctem', (0, .6, .3))
             self.ctmm = kwargs.pop('ctmm', (.9, 0, .8))
             self.mtem = kwargs.pop('mtem', '+')
             self.mtmm = kwargs.pop('mtmm', '+')
 
-            #color for Winglink model
+            # color for Winglink model
             self.ctewl = kwargs.pop('ctewl', (0, .6, .8))
             self.ctmwl = kwargs.pop('ctmwl', (.8, .7, 0))
             self.mtewl = kwargs.pop('mtewl', 'x')
             self.mtmwl = kwargs.pop('mtmwl', 'x')
 
-            #color of tipper
+            # color of tipper
             self.ctipr = kwargs.pop('ctipr', self.cted)
             self.ctipi = kwargs.pop('ctipi', self.ctmd)
 
-        #black and white mode
+        # black and white mode
         elif self.color_mode == 'bw':
-            #color for data
+            # color for data
             self.cted = kwargs.pop('cted', (0, 0, 0))
             self.ctmd = kwargs.pop('ctmd', (0, 0, 0))
             self.mted = kwargs.pop('mted', '*')
             self.mtmd = kwargs.pop('mtmd', 'v')
 
-            #color for occam2d model
+            # color for occam2d model
             self.ctem = kwargs.pop('ctem', (0.6, 0.6, 0.6))
             self.ctmm = kwargs.pop('ctmm', (0.6, 0.6, 0.6))
             self.mtem = kwargs.pop('mtem', '+')
             self.mtmm = kwargs.pop('mtmm', 'x')
 
-            #color for Winglink model
+            # color for Winglink model
             self.ctewl = kwargs.pop('ctewl', (0.3, 0.3, 0.3))
             self.ctmwl = kwargs.pop('ctmwl', (0.3, 0.3, 0.3))
             self.mtewl = kwargs.pop('mtewl', '|')
@@ -3382,7 +3389,6 @@ class PlotResponse():
         elif self.plot_num == 2:
             self.ylabel_coord = kwargs.pop('ylabel_coords', (-.12, .5))
 
-
         self.fig_list = []
 
         if self.plot_yn == 'y':
@@ -3400,25 +3406,25 @@ class PlotResponse():
         rp_list = data_obj.data
         nr = len(rp_list)
 
-        #create station list
+        # create station list
         self.station_list = [rp['station'] for rp in rp_list]
 
-        #boolean for adding winglink output to the plots 0 for no, 1 for yes
+        # boolean for adding winglink output to the plots 0 for no, 1 for yes
         addwl = 0
-        #read in winglink data file
+        # read in winglink data file
         if self.wl_fn != None:
             addwl = 1
-            self.subplot_hspace+.1
+            self.subplot_hspace + .1
             wld, wlrp_list, wlplist, wlslist, wltlist = MTwl.readOutputFile(
-                                                                   self.wl_fn)
+                self.wl_fn)
             sdict = dict([(ostation, wlistation) for wlistation in wlslist
                           for ostation in self.station_list
-                          if wlistation.find(ostation)>=0])
+                          if wlistation.find(ostation) >= 0])
 
-        #set a local parameter period for less typing
+        # set a local parameter period for less typing
         period = data_obj.period
 
-        #---------------plot each respones in a different figure---------------
+        # ---------------plot each respones in a different figure---------------
         if self.plot_type == '1':
             pstation_list = range(len(self.station_list))
 
@@ -3432,7 +3438,7 @@ class PlotResponse():
                     if station.find(pstation) >= 0:
                         pstation_list.append(ii)
 
-        #set the grid of subplots
+        # set the grid of subplots
         if self.plot_tipper == 'y':
             gs = gridspec.GridSpec(3, 2,
                                    wspace=self.subplot_wspace,
@@ -3452,51 +3458,51 @@ class PlotResponse():
                                    hspace=self.subplot_hspace,
                                    height_ratios=[2, 1.5])
 
-        #--> set default font size
+        # --> set default font size
         plt.rcParams['font.size'] = self.font_size
 
-        #loop over each station to plot
+        # loop over each station to plot
         for ii, jj in enumerate(pstation_list):
             fig = plt.figure(self.station_list[jj],
                              self.fig_size, dpi=self.fig_dpi)
             plt.clf()
 
-            #--> set subplot instances
-            #---plot both TE and TM in same subplot---
+            # --> set subplot instances
+            # ---plot both TE and TM in same subplot---
             if self.plot_num == 1:
-                axrte = fig.add_subplot(gs[0,:])
+                axrte = fig.add_subplot(gs[0, :])
                 axrtm = axrte
-                axpte = fig.add_subplot(gs[1,:],sharex=axrte)
+                axpte = fig.add_subplot(gs[1, :], sharex=axrte)
                 axptm = axpte
                 if self.plot_tipper == 'y':
                     axtipre = fig.add_subplot(gs[2, :], sharex=axrte)
                     axtipim = axtipre
 
-            #---plot TE and TM in separate subplots---
+            # ---plot TE and TM in separate subplots---
             elif self.plot_num == 2:
-                axrte = fig.add_subplot(gs[0,0])
-                axrtm = fig.add_subplot(gs[0,1])
-                axpte = fig.add_subplot(gs[1,0], sharex=axrte)
-                axptm = fig.add_subplot(gs[1,1], sharex=axrtm)
+                axrte = fig.add_subplot(gs[0, 0])
+                axrtm = fig.add_subplot(gs[0, 1])
+                axpte = fig.add_subplot(gs[1, 0], sharex=axrte)
+                axptm = fig.add_subplot(gs[1, 1], sharex=axrtm)
                 if self.plot_tipper == 'y':
                     axtipre = fig.add_subplot(gs[2, 0], sharex=axrte)
                     axtipim = fig.add_subplot(gs[2, 1], sharex=axrtm)
 
-            #plot the data, it should be the same for all response files
-            #empty lists for legend marker and label
+            # plot the data, it should be the same for all response files
+            # empty lists for legend marker and label
             rlistte = []
             llistte = []
             rlisttm = []
             llisttm = []
-            #------------Plot Resistivity----------------------------------
-            #cut out missing data points first
-            #--> data
-            rxy = np.where(rp_list[jj]['te_res'][0]!=0)[0]
-            ryx = np.where(rp_list[jj]['tm_res'][0]!=0)[0]
+            # ------------Plot Resistivity----------------------------------
+            # cut out missing data points first
+            # --> data
+            rxy = np.where(rp_list[jj]['te_res'][0] != 0)[0]
+            ryx = np.where(rp_list[jj]['tm_res'][0] != 0)[0]
 
-            #--> TE mode Data
+            # --> TE mode Data
             if len(rxy) > 0:
-                rte_err = rp_list[jj]['te_res'][1, rxy]*\
+                rte_err = rp_list[jj]['te_res'][1, rxy] * \
                           rp_list[jj]['te_res'][0, rxy]
                 rte = plot_errorbar(axrte,
                                     period[rxy],
@@ -3515,9 +3521,9 @@ class PlotResponse():
             else:
                 rte = [None, [None, None, None], [None, None, None]]
 
-             #--> TM mode data
+                # --> TM mode data
             if len(ryx) > 0:
-                rtm_err = rp_list[jj]['tm_res'][1, ryx]*\
+                rtm_err = rp_list[jj]['tm_res'][1, ryx] * \
                           rp_list[jj]['tm_res'][0, ryx]
                 rtm = plot_errorbar(axrtm,
                                     period[ryx],
@@ -3535,67 +3541,66 @@ class PlotResponse():
                 llisttm.append('$Obs_{TM}$')
             else:
                 rtm = [None, [None, None, None], [None, None, None]]
-            #--------------------plot phase--------------------------------
-            #cut out missing data points first
-            #--> data
-            pxy = np.where(rp_list[jj]['te_phase'][0]!=0)[0]
-            pyx = np.where(rp_list[jj]['tm_phase'][0]!=0)[0]
+            # --------------------plot phase--------------------------------
+            # cut out missing data points first
+            # --> data
+            pxy = np.where(rp_list[jj]['te_phase'][0] != 0)[0]
+            pyx = np.where(rp_list[jj]['tm_phase'][0] != 0)[0]
 
-            #--> TE mode data
+            # --> TE mode data
             if len(pxy) > 0:
                 pte = plot_errorbar(axpte,
                                     period[pxy],
-                                     rp_list[jj]['te_phase'][0, pxy],
-                                     ls=':',
-                                     marker=self.mted,
-                                     ms=self.ms,
-                                     color=self.cted,
-                                     y_error=rp_list[jj]['te_phase'][1, pxy],
-                                     lw=self.lw,
-                                     e_capsize=self.e_capsize,
-                                     e_capthick=self.e_capthick)
+                                    rp_list[jj]['te_phase'][0, pxy],
+                                    ls=':',
+                                    marker=self.mted,
+                                    ms=self.ms,
+                                    color=self.cted,
+                                    y_error=rp_list[jj]['te_phase'][1, pxy],
+                                    lw=self.lw,
+                                    e_capsize=self.e_capsize,
+                                    e_capthick=self.e_capthick)
 
             else:
                 pte = [None, [None, None, None], [None, None, None]]
 
-            #--> TM mode data
-            if len(pyx)>0:
+            # --> TM mode data
+            if len(pyx) > 0:
                 ptm = plot_errorbar(axptm,
                                     period[pyx],
-                                     rp_list[jj]['tm_phase'][0, pyx],
-                                     ls=':',
-                                     marker=self.mtmd,
-                                     ms=self.ms,
-                                     color=self.ctmd,
-                                     y_error=rp_list[jj]['tm_phase'][1, pyx],
-                                     lw=self.lw,
-                                     e_capsize=self.e_capsize,
-                                     e_capthick=self.e_capthick)
+                                    rp_list[jj]['tm_phase'][0, pyx],
+                                    ls=':',
+                                    marker=self.mtmd,
+                                    ms=self.ms,
+                                    color=self.ctmd,
+                                    y_error=rp_list[jj]['tm_phase'][1, pyx],
+                                    lw=self.lw,
+                                    e_capsize=self.e_capsize,
+                                    e_capthick=self.e_capthick)
 
             else:
                 ptm = [None, [None, None, None], [None, None, None]]
 
-            #append axis properties to lists that can be used by
-            #OccamPointPicker
+            # append axis properties to lists that can be used by
+            # OccamPointPicker
             self.ax_list.append([axrte, axrtm, axpte, axptm])
             self.line_list.append([rte[0], rtm[0], pte[0], ptm[0]])
-            self.err_list.append([[rte[1][0],rte[1][1],rte[2][0]],
-                                  [rtm[1][0],rtm[1][1],rtm[2][0]],
-                                  [pte[1][0],pte[1][1],pte[2][0]],
-                                  [ptm[1][0],ptm[1][1],ptm[2][0]]])
+            self.err_list.append([[rte[1][0], rte[1][1], rte[2][0]],
+                                  [rtm[1][0], rtm[1][1], rtm[2][0]],
+                                  [pte[1][0], pte[1][1], pte[2][0]],
+                                  [ptm[1][0], ptm[1][1], ptm[2][0]]])
 
-
-            #---------------------plot tipper----------------------------------
+            # ---------------------plot tipper----------------------------------
             if self.plot_tipper == 'y':
                 t_list = []
                 t_label = []
-                txy = np.where(rp_list[jj]['re_tip'][0]!=0)[0]
-                tyx = np.where(rp_list[jj]['im_tip'][0]!=0)[0]
-                #--> real tipper  data
-                if len(txy)>0:
-                    per_list_p =[]
+                txy = np.where(rp_list[jj]['re_tip'][0] != 0)[0]
+                tyx = np.where(rp_list[jj]['im_tip'][0] != 0)[0]
+                # --> real tipper  data
+                if len(txy) > 0:
+                    per_list_p = []
                     tpr_list_p = []
-                    per_list_n =[]
+                    per_list_n = []
                     tpr_list_n = []
                     for per, tpr in zip(period[txy],
                                         rp_list[jj]['re_tip'][0, txy]):
@@ -3630,15 +3635,15 @@ class PlotResponse():
                         plt.setp(s_line, 'color', self.ctipr)
                         plt.setp(b_line, 'linewidth', .01)
                         if len(t_list) == 0:
-                             t_list.append(m_line)
-                             t_label.append('Real')
+                            t_list.append(m_line)
+                            t_label.append('Real')
 
                 else:
                     pass
-                if len(tyx)>0:
-                    per_list_p =[]
+                if len(tyx) > 0:
+                    per_list_p = []
                     tpi_list_p = []
-                    per_list_n =[]
+                    per_list_n = []
                     tpi_list_n = []
                     for per, tpi in zip(period[tyx],
                                         rp_list[jj]['im_tip'][0, tyx]):
@@ -3679,7 +3684,7 @@ class PlotResponse():
                 else:
                     pass
 
-            #------------------- plot model response --------------------------
+            # ------------------- plot model response --------------------------
             if self.resp_fn is not None:
                 num_resp = len(self.resp_fn)
                 for rr, rfn in enumerate(self.resp_fn):
@@ -3690,75 +3695,75 @@ class PlotResponse():
                     # create colors for different responses
                     if self.color_mode == 'color':
                         cxy = (0,
-                               .4+float(rr)/(3*num_resp),
+                               .4 + float(rr) / (3 * num_resp),
                                0)
-                        cyx = (.7+float(rr)/(4*num_resp),
+                        cyx = (.7 + float(rr) / (4 * num_resp),
                                .13,
-                               .63-float(rr)/(4*num_resp))
+                               .63 - float(rr) / (4 * num_resp))
                     elif self.color_mode == 'bw':
-                        cxy = (1-1.25/(rr+2.), 1-1.25/(rr+2.), 1-1.25/(rr+2.))
-                        cyx = (1-1.25/(rr+2.), 1-1.25/(rr+2.), 1-1.25/(rr+2.))
+                        cxy = (1 - 1.25 / (rr + 2.), 1 - 1.25 / (rr + 2.), 1 - 1.25 / (rr + 2.))
+                        cyx = (1 - 1.25 / (rr + 2.), 1 - 1.25 / (rr + 2.), 1 - 1.25 / (rr + 2.))
 
-                    #calculate rms's
+                    # calculate rms's
                     rmslistte = np.hstack((rp[jj]['te_res'][1],
-                                          rp[jj]['te_phase'][1]))
+                                           rp[jj]['te_phase'][1]))
                     rmslisttm = np.hstack((rp[jj]['tm_res'][1],
-                                          rp[jj]['tm_phase'][1]))
-                    rmste = np.sqrt(np.sum([rms**2 for rms in rmslistte])/
+                                           rp[jj]['tm_phase'][1]))
+                    rmste = np.sqrt(np.sum([rms ** 2 for rms in rmslistte]) /
                                     len(rmslistte))
-                    rmstm = np.sqrt(np.sum([rms**2 for rms in rmslisttm])/
+                    rmstm = np.sqrt(np.sum([rms ** 2 for rms in rmslisttm]) /
                                     len(rmslisttm))
 
-                    #------------Plot Resistivity------------------------------
-                    #cut out missing data points first
-                    #--> response
-                    mrxy = np.where(rp[jj]['te_res'][0]!=0)[0]
-                    mryx = np.where(rp[jj]['tm_res'][0]!=0)[0]
+                    # ------------Plot Resistivity------------------------------
+                    # cut out missing data points first
+                    # --> response
+                    mrxy = np.where(rp[jj]['te_res'][0] != 0)[0]
+                    mryx = np.where(rp[jj]['tm_res'][0] != 0)[0]
 
-                    #--> TE mode Model Response
+                    # --> TE mode Model Response
                     if len(mrxy) > 0:
                         r3 = plot_errorbar(axrte,
-                                            period[mrxy],
-                                            rp[jj]['te_res'][0, mrxy],
-                                            ls='--',
-                                            marker=self.mtem,
-                                            ms=self.ms,
-                                            color=cxy,
-                                            y_error=None,
-                                            lw=self.lw,
-                                            e_capsize=self.e_capsize,
-                                            e_capthick=self.e_capthick)
+                                           period[mrxy],
+                                           rp[jj]['te_res'][0, mrxy],
+                                           ls='--',
+                                           marker=self.mtem,
+                                           ms=self.ms,
+                                           color=cxy,
+                                           y_error=None,
+                                           lw=self.lw,
+                                           e_capsize=self.e_capsize,
+                                           e_capthick=self.e_capthick)
 
                         rlistte.append(r3[0])
-                        llistte.append('$Mod_{TE}$ '+'{0:.2f}'.format(rmste))
+                        llistte.append('$Mod_{TE}$ ' + '{0:.2f}'.format(rmste))
                     else:
                         pass
 
-                    #--> TM mode model response
-                    if len(mryx)>0:
+                    # --> TM mode model response
+                    if len(mryx) > 0:
                         r4 = plot_errorbar(axrtm,
-                                            period[mryx],
-                                            rp[jj]['tm_res'][0, mryx],
-                                            ls='--',
-                                            marker=self.mtmm,
-                                            ms=self.ms,
-                                            color=cyx,
-                                            y_error=None,
-                                            lw=self.lw,
-                                            e_capsize=self.e_capsize,
-                                            e_capthick=self.e_capthick)
+                                           period[mryx],
+                                           rp[jj]['tm_res'][0, mryx],
+                                           ls='--',
+                                           marker=self.mtmm,
+                                           ms=self.ms,
+                                           color=cyx,
+                                           y_error=None,
+                                           lw=self.lw,
+                                           e_capsize=self.e_capsize,
+                                           e_capthick=self.e_capthick)
                         rlisttm.append(r4[0])
-                        llisttm.append('$Mod_{TM}$ '+'{0:.2f}'.format(rmstm))
+                        llisttm.append('$Mod_{TM}$ ' + '{0:.2f}'.format(rmstm))
                     else:
                         pass
 
-                    #--------------------plot phase--------------------------------
-                    #cut out missing data points first
-                    #--> reponse
-                    mpxy = np.where(rp[jj]['te_phase'][0]!=0)[0]
-                    mpyx = np.where(rp[jj]['tm_phase'][0]!=0)[0]
+                    # --------------------plot phase--------------------------------
+                    # cut out missing data points first
+                    # --> reponse
+                    mpxy = np.where(rp[jj]['te_phase'][0] != 0)[0]
+                    mpyx = np.where(rp[jj]['tm_phase'][0] != 0)[0]
 
-                    #--> TE mode response
+                    # --> TE mode response
                     if len(mpxy) > 0:
                         p3 = plot_errorbar(axpte,
                                            period[mpxy],
@@ -3774,7 +3779,7 @@ class PlotResponse():
                     else:
                         pass
 
-                    #--> TM mode response
+                    # --> TM mode response
                     if len(mpyx) > 0:
                         p4 = plot_errorbar(axptm,
                                            period[mpyx],
@@ -3790,16 +3795,15 @@ class PlotResponse():
                     else:
                         pass
 
-
-                    #---------------------plot tipper--------------------------
+                    # ---------------------plot tipper--------------------------
                     if self.plot_tipper == 'y':
-                        txy = np.where(rp[jj]['re_tip'][0]!=0)[0]
-                        tyx = np.where(rp[jj]['im_tip'][0]!=0)[0]
-                        #--> real tipper  data
-                        if len(txy)>0:
-                            per_list_p =[]
+                        txy = np.where(rp[jj]['re_tip'][0] != 0)[0]
+                        tyx = np.where(rp[jj]['im_tip'][0] != 0)[0]
+                        # --> real tipper  data
+                        if len(txy) > 0:
+                            per_list_p = []
                             tpr_list_p = []
-                            per_list_n =[]
+                            per_list_n = []
                             tpr_list_n = []
                             for per, tpr in zip(period[txy],
                                                 rp[jj]['re_tip'][0, txy]):
@@ -3834,10 +3838,10 @@ class PlotResponse():
 
                         else:
                             pass
-                        if len(tyx)>0:
-                            per_list_p =[]
+                        if len(tyx) > 0:
+                            per_list_p = []
                             tpi_list_p = []
-                            per_list_n =[]
+                            per_list_n = []
                             tpi_list_n = []
                             for per, tpi in zip(period[tyx],
                                                 rp[jj]['im_tip'][0, tyx]):
@@ -3872,26 +3876,26 @@ class PlotResponse():
 
                         else:
                             pass
-            #--------------add in winglink responses------------------------
+            # --------------add in winglink responses------------------------
             if addwl == 1:
                 try:
                     wlrms = wld[sdict[self.station_list[jj]]]['rms']
-                    axrte.set_title(self.station_list[jj]+
-                                   '\n rms_occ_TE={0:.2f}'.format(rmste)+
-                                   'rms_occ_TM={0:.2f}'.format(rmstm)+
-                                   'rms_wl={0:.2f}'.format(wlrms),
-                                   fontdict={'size':self.font_size,
-                                             'weight':'bold'})
+                    axrte.set_title(self.station_list[jj] +
+                                    '\n rms_occ_TE={0:.2f}'.format(rmste) +
+                                    'rms_occ_TM={0:.2f}'.format(rmstm) +
+                                    'rms_wl={0:.2f}'.format(wlrms),
+                                    fontdict={'size': self.font_size,
+                                              'weight': 'bold'})
                     for ww, wlistation in enumerate(wlslist):
-                        if wlistation.find(self.station_list[jj])==0:
+                        if wlistation.find(self.station_list[jj]) == 0:
                             print '{0} was Found {0} in winglink file'.format(
-                                              self.station_list[jj], wlistation)
+                                self.station_list[jj], wlistation)
                             wlrpdict = wlrp_list[ww]
 
-                    zrxy = [np.where(wlrpdict['te_res'][0]!=0)[0]]
-                    zryx = [np.where(wlrpdict['tm_res'][0]!=0)[0]]
+                    zrxy = [np.where(wlrpdict['te_res'][0] != 0)[0]]
+                    zryx = [np.where(wlrpdict['tm_res'][0] != 0)[0]]
 
-                     #plot winglink resistivity
+                    # plot winglink resistivity
                     r5 = axrte.loglog(wlplist[zrxy],
                                       wlrpdict['te_res'][1][zrxy],
                                       ls='-.',
@@ -3909,7 +3913,7 @@ class PlotResponse():
                                       mfc=self.ctmwl,
                                       lw=self.lw)
 
-                    #plot winglink phase
+                    # plot winglink phase
                     axpte.semilogx(wlplist[zrxy],
                                    wlrpdict['te_phase'][1][zrxy],
                                    ls='-.',
@@ -3930,24 +3934,24 @@ class PlotResponse():
 
                     rlistte.append(r5[0])
                     rlisttm.append(r6[0])
-                    llistte.append('$WLMod_{TE}$ '+'{0:.2f}'.format(wlrms))
-                    llisttm.append('$WLMod_{TM}$ '+'{0:.2f}'.format(wlrms))
+                    llistte.append('$WLMod_{TE}$ ' + '{0:.2f}'.format(wlrms))
+                    llisttm.append('$WLMod_{TM}$ ' + '{0:.2f}'.format(wlrms))
                 except (IndexError, KeyError):
                     print 'Station not present'
             else:
                 if self.plot_num == 1:
                     axrte.set_title(self.station_list[jj],
-                                    fontdict={'size':self.font_size+2,
-                                              'weight':'bold'})
+                                    fontdict={'size': self.font_size + 2,
+                                              'weight': 'bold'})
                 elif self.plot_num == 2:
                     fig.suptitle(self.station_list[jj],
-                                    fontdict={'size':self.font_size+2,
-                                              'weight':'bold'})
+                                 fontdict={'size': self.font_size + 2,
+                                           'weight': 'bold'})
 
-            #set the axis properties
+            # set the axis properties
             ax_list = [axrte, axrtm]
             for aa, axr in enumerate(ax_list):
-                #set both axes to logarithmic scale
+                # set both axes to logarithmic scale
                 axr.set_xscale('log', nonposx='clip')
 
                 try:
@@ -3955,145 +3959,145 @@ class PlotResponse():
                 except ValueError:
                     pass
 
-                #put on a grid
-                axr.grid(True, alpha=.3, which='both', lw=.5*self.lw)
+                # put on a grid
+                axr.grid(True, alpha=.3, which='both', lw=.5 * self.lw)
                 axr.yaxis.set_label_coords(self.ylabel_coord[0],
                                            self.ylabel_coord[1])
 
-                #set resistivity limits if desired
+                # set resistivity limits if desired
                 if self.res_limits != None:
-                    axr.set_ylim(10**self.res_limits[0],
-                                 10**self.res_limits[1])
+                    axr.set_ylim(10 ** self.res_limits[0],
+                                 10 ** self.res_limits[1])
 
-                #set the tick labels to invisible
+                # set the tick labels to invisible
                 plt.setp(axr.xaxis.get_ticklabels(), visible=False)
                 if aa == 0:
                     axr.set_ylabel('App. Res. ($\Omega \cdot m$)',
-                                   fontdict={'size':self.font_size+2,
-                                             'weight':'bold'})
+                                   fontdict={'size': self.font_size + 2,
+                                             'weight': 'bold'})
 
-                #set legend based on the plot type
+                # set legend based on the plot type
                 if self.plot_num == 1:
                     if aa == 0:
-                        axr.legend(rlistte+rlisttm,llistte+llisttm,
-                                   loc=2,markerscale=1,
+                        axr.legend(rlistte + rlisttm, llistte + llisttm,
+                                   loc=2, markerscale=1,
                                    borderaxespad=.05,
                                    labelspacing=.08,
                                    handletextpad=.15,
                                    borderpad=.05,
-                                   prop={'size':self.font_size+1})
+                                   prop={'size': self.font_size + 1})
                 elif self.plot_num == 2:
                     if aa == 0:
                         axr.legend(rlistte,
                                    llistte,
-                                   loc=2,markerscale=1,
+                                   loc=2, markerscale=1,
                                    borderaxespad=.05,
                                    labelspacing=.08,
                                    handletextpad=.15,
                                    borderpad=.05,
-                                   prop={'size':self.font_size+1})
+                                   prop={'size': self.font_size + 1})
 
-                    if aa==1:
+                    if aa == 1:
                         axr.legend(rlisttm,
                                    llisttm,
-                                   loc=2,markerscale=1,
+                                   loc=2, markerscale=1,
                                    borderaxespad=.05,
                                    labelspacing=.08,
                                    handletextpad=.15,
                                    borderpad=.05,
-                                   prop={'size':self.font_size+1})
+                                   prop={'size': self.font_size + 1})
 
-            #set Properties for the phase axes
+            # set Properties for the phase axes
             for aa, axp in enumerate([axpte, axptm]):
-                #set the x-axis to log scale
+                # set the x-axis to log scale
                 axp.set_xscale('log', nonposx='clip')
 
-                #set the phase limits
+                # set the phase limits
                 axp.set_ylim(self.phase_limits)
 
-                #put a grid on the subplot
-                axp.grid(True, alpha=.3, which='both', lw=.5*self.lw)
+                # put a grid on the subplot
+                axp.grid(True, alpha=.3, which='both', lw=.5 * self.lw)
 
-                #set the tick locations
+                # set the tick locations
                 axp.yaxis.set_major_locator(MultipleLocator(10))
                 axp.yaxis.set_minor_locator(MultipleLocator(2))
 
-                #set the x axis label
+                # set the x axis label
                 if self.plot_tipper == 'y':
                     plt.setp(axp.get_xticklabels(), visible=False)
                 else:
                     axp.set_xlabel('Period (s)',
-                                   fontdict={'size':self.font_size+2,
-                                             'weight':'bold'})
+                                   fontdict={'size': self.font_size + 2,
+                                             'weight': 'bold'})
 
-                #put the y label on the far left plot
+                # put the y label on the far left plot
                 axp.yaxis.set_label_coords(self.ylabel_coord[0],
                                            self.ylabel_coord[1])
-                if aa==0:
+                if aa == 0:
                     axp.set_ylabel('Phase (deg)',
-                                   fontdict={'size':self.font_size+2,
-                                             'weight':'bold'})
+                                   fontdict={'size': self.font_size + 2,
+                                             'weight': 'bold'})
 
-            #set axes properties of tipper axis
+            # set axes properties of tipper axis
             if self.plot_tipper == 'y':
                 for aa, axt in enumerate([axtipre, axtipim]):
                     axt.set_xscale('log', nonposx='clip')
 
-                    #set tipper limits
+                    # set tipper limits
                     axt.set_ylim(self.tip_limits)
 
-                    #put a grid on the subplot
-                    axt.grid(True, alpha=.3, which='both', lw=.5*self.lw)
+                    # put a grid on the subplot
+                    axt.grid(True, alpha=.3, which='both', lw=.5 * self.lw)
 
-                    #set the tick locations
+                    # set the tick locations
                     axt.yaxis.set_major_locator(MultipleLocator(.2))
                     axt.yaxis.set_minor_locator(MultipleLocator(.1))
 
-                    #set the x axis label
+                    # set the x axis label
                     axt.set_xlabel('Period (s)',
-                                   fontdict={'size':self.font_size+2,
-                                         'weight':'bold'})
+                                   fontdict={'size': self.font_size + 2,
+                                             'weight': 'bold'})
 
-                    axt.set_xlim(10**np.floor(np.log10(data_obj.period.min())),
-                                 10**np.ceil(np.log10(data_obj.period.max())))
+                    axt.set_xlim(10 ** np.floor(np.log10(data_obj.period.min())),
+                                 10 ** np.ceil(np.log10(data_obj.period.max())))
 
-                    #put the y label on the far left plot
+                    # put the y label on the far left plot
                     axt.yaxis.set_label_coords(self.ylabel_coord[0],
                                                self.ylabel_coord[1])
-                    if aa==0:
+                    if aa == 0:
                         axt.set_ylabel('Tipper',
-                                       fontdict={'size':self.font_size+2,
-                                                 'weight':'bold'})
+                                       fontdict={'size': self.font_size + 2,
+                                                 'weight': 'bold'})
                         if self.plot_num == 2:
-                            axt.text(axt.get_xlim()[0]*1.25,
-                                     self.tip_limits[1]*.9,
+                            axt.text(axt.get_xlim()[0] * 1.25,
+                                     self.tip_limits[1] * .9,
                                      'Real', horizontalalignment='left',
-                                      verticalalignment='top',
-                                      bbox={'facecolor':'white'},
-                                      fontdict={'size':self.font_size+1})
+                                     verticalalignment='top',
+                                     bbox={'facecolor': 'white'},
+                                     fontdict={'size': self.font_size + 1})
                         else:
                             axt.legend(t_list, t_label,
-                                       loc=2,markerscale=1,
+                                       loc=2, markerscale=1,
                                        borderaxespad=.05,
                                        labelspacing=.08,
                                        handletextpad=.15,
                                        borderpad=.05,
-                                       prop={'size':self.font_size+1})
+                                       prop={'size': self.font_size + 1})
                     if aa == 1:
                         if self.plot_num == 2:
-                            axt.text(axt.get_xlim()[0]*1.25,
-                                     self.tip_limits[1]*.9,
+                            axt.text(axt.get_xlim()[0] * 1.25,
+                                     self.tip_limits[1] * .9,
                                      'Imag', horizontalalignment='left',
-                                      verticalalignment='top',
-                                      bbox={'facecolor':'white'},
-                                      fontdict={'size':self.font_size+1})
+                                     verticalalignment='top',
+                                     bbox={'facecolor': 'white'},
+                                     fontdict={'size': self.font_size + 1})
 
-            #make sure the axis and figure are accessible to the user
-            self.fig_list.append({'station':self.station_list[jj],
-                                 'fig':fig, 'axrte':axrte, 'axrtm':axrtm,
-                                 'axpte':axpte, 'axptm':axptm})
+            # make sure the axis and figure are accessible to the user
+            self.fig_list.append({'station': self.station_list[jj],
+                                  'fig': fig, 'axrte': axrte, 'axrtm': axrtm,
+                                  'axpte': axpte, 'axptm': axptm})
 
-        #set the plot to be full screen well at least try
+        # set the plot to be full screen well at least try
         plt.show()
 
     def redraw_plot(self):
@@ -4143,9 +4147,9 @@ class PlotResponse():
             print "saved figure to {0}".format(os.path.join(save_path, svfn))
 
 
-#==============================================================================
+# ==============================================================================
 # plot model
-#==============================================================================
+# ==============================================================================
 class PlotModel(Model):
     """
     plot the 2D model found by Occam2D.  The model is displayed as a meshgrid
@@ -4281,7 +4285,7 @@ class PlotModel(Model):
         self.xminorticks = kwargs.pop('xminorticks', 5)
         self.yminorticks = kwargs.pop('yminorticks', 1)
 
-        self.climits = kwargs.pop('climits', (0,4))
+        self.climits = kwargs.pop('climits', (0, 4))
         self.cmap = kwargs.pop('cmap', 'jet_r')
         self.font_size = kwargs.pop('font_size', 8)
 
@@ -4332,18 +4336,17 @@ class PlotModel(Model):
             >>> model_plot.redraw_plot()
             
         """
-        #--> read in iteration file and build the model
+        # --> read in iteration file and build the model
         self.read_iter_file()
         self.build_model()
 
-        #--> get station locations and names from data file
+        # --> get station locations and names from data file
         d_object = Data()
         d_object.read_data_file(self.data_fn)
         setattr(self, 'station_locations', d_object.station_locations.copy())
         setattr(self, 'station_list', d_object.station_list.copy())
 
-
-        #set the scale of the plot
+        # set the scale of the plot
         if self.yscale == 'km':
             df = 1000.
             pf = 1.0
@@ -4354,36 +4357,36 @@ class PlotModel(Model):
             df = 1000.
             pf = 1.0
 
-        #set some figure properties to use the maiximum space
+        # set some figure properties to use the maiximum space
         plt.rcParams['font.size'] = self.font_size
         plt.rcParams['figure.subplot.left'] = self.subplot_left
         plt.rcParams['figure.subplot.right'] = self.subplot_right
         plt.rcParams['figure.subplot.bottom'] = self.subplot_bottom
         plt.rcParams['figure.subplot.top'] = self.subplot_top
 
-        #station font dictionary
-        fdict = {'size':self.station_font_size,
-                 'weight':self.station_font_weight,
-                 'rotation':self.station_font_rotation,
-                 'color':self.station_font_color}
+        # station font dictionary
+        fdict = {'size': self.station_font_size,
+                 'weight': self.station_font_weight,
+                 'rotation': self.station_font_rotation,
+                 'color': self.station_font_color}
 
-        #plot the model as a mesh
+        # plot the model as a mesh
         self.fig = plt.figure(self.fig_num, self.fig_size, dpi=self.fig_dpi)
         plt.clf()
 
-        #add a subplot to the figure with the specified aspect ratio
+        # add a subplot to the figure with the specified aspect ratio
         ax = self.fig.add_subplot(1, 1, 1, aspect=self.fig_aspect)
 
-        #plot the model as a pcolormesh so the extents are constrained to
-        #the model coordinates
-        ax.pcolormesh(self.mesh_x/df,
-                      self.mesh_z/df,
+        # plot the model as a pcolormesh so the extents are constrained to
+        # the model coordinates
+        ax.pcolormesh(self.mesh_x / df,
+                      self.mesh_z / df,
                       self.res_model,
                       cmap=self.cmap,
                       vmin=self.climits[0],
                       vmax=self.climits[1])
 
-        #make a colorbar for the resistivity
+        # make a colorbar for the resistivity
         cbx = mcb.make_axes(ax, shrink=self.cb_shrink, pad=self.cb_pad)
         cb = mcb.ColorbarBase(cbx[0],
                               cmap=self.cmap,
@@ -4391,107 +4394,106 @@ class PlotModel(Model):
                                              vmax=self.climits[1]))
 
         cb.set_label('Resistivity ($\Omega \cdot$m)',
-                     fontdict={'size':self.font_size+1,'weight':'bold'})
-        cb.set_ticks(np.arange(int(self.climits[0]),int(self.climits[1])+1))
-        cb.set_ticklabels(['10$^{0}$'.format('{'+str(nn)+'}') for nn in
-                            np.arange(int(self.climits[0]),
-                                      int(self.climits[1])+1)])
+                     fontdict={'size': self.font_size + 1, 'weight': 'bold'})
+        cb.set_ticks(np.arange(int(self.climits[0]), int(self.climits[1]) + 1))
+        cb.set_ticklabels(['10$^{0}$'.format('{' + str(nn) + '}') for nn in
+                           np.arange(int(self.climits[0]),
+                                     int(self.climits[1]) + 1)])
 
-        #set the offsets of the stations and plot the stations
-        #need to figure out a way to set the marker at the surface in all
-        #views.
+        # set the offsets of the stations and plot the stations
+        # need to figure out a way to set the marker at the surface in all
+        # views.
         for offset, name in zip(self.station_locations, self.station_list):
-            #plot the station marker
-            #plots a V for the station cause when you use scatter the spacing
-            #is variable if you change the limits of the y axis, this way it
-            #always plots at the surface.
-            ax.text(offset/df,
+            # plot the station marker
+            # plots a V for the station cause when you use scatter the spacing
+            # is variable if you change the limits of the y axis, this way it
+            # always plots at the surface.
+            ax.text(offset / df,
                     self.plot_z.min(),
                     self.station_marker,
                     horizontalalignment='center',
                     verticalalignment='baseline',
-                    fontdict={'size':self.ms,'color':self.station_color})
+                    fontdict={'size': self.ms, 'color': self.station_color})
 
-            #put station id onto station marker
-            #if there is a station id index
+            # put station id onto station marker
+            # if there is a station id index
             if self.station_id != None:
-                ax.text(offset/df,
-                        -self.station_font_pad*pf,
+                ax.text(offset / df,
+                        -self.station_font_pad * pf,
                         name[self.station_id[0]:self.station_id[1]],
                         horizontalalignment='center',
                         verticalalignment='baseline',
                         fontdict=fdict)
-            #otherwise put on the full station name found form data file
+            # otherwise put on the full station name found form data file
             else:
-                ax.text(offset/df,
-                        -self.station_font_pad*pf,
+                ax.text(offset / df,
+                        -self.station_font_pad * pf,
                         name,
                         horizontalalignment='center',
                         verticalalignment='baseline',
                         fontdict=fdict)
 
-        #set the initial limits of the plot to be square about the profile line
+        # set the initial limits of the plot to be square about the profile line
         if self.ylimits == None:
-            ax.set_ylim(abs(self.station_locations.max()-
-                            self.station_locations.min())/df,
-                        -self.ypad*pf)
+            ax.set_ylim(abs(self.station_locations.max() -
+                            self.station_locations.min()) / df,
+                        -self.ypad * pf)
         else:
-            ax.set_ylim(self.ylimits[1]*pf,
-                        (self.ylimits[0]-self.ypad)*pf)
+            ax.set_ylim(self.ylimits[1] * pf,
+                        (self.ylimits[0] - self.ypad) * pf)
         if self.xlimits == None:
-            ax.set_xlim(self.station_locations.min()/df-(self.xpad*pf),
-                       self.station_locations.max()/df+(self.xpad*pf))
+            ax.set_xlim(self.station_locations.min() / df - (self.xpad * pf),
+                        self.station_locations.max() / df + (self.xpad * pf))
         else:
-            ax.set_xlim(self.xlimits[0]*pf, self.xlimits[1]*pf)
+            ax.set_xlim(self.xlimits[0] * pf, self.xlimits[1] * pf)
 
-        #set the axis properties
-        ax.xaxis.set_minor_locator(MultipleLocator(self.xminorticks*pf))
-        ax.yaxis.set_minor_locator(MultipleLocator(self.yminorticks*pf))
+        # set the axis properties
+        ax.xaxis.set_minor_locator(MultipleLocator(self.xminorticks * pf))
+        ax.yaxis.set_minor_locator(MultipleLocator(self.yminorticks * pf))
 
-        #set axes labels
+        # set axes labels
         ax.set_xlabel('Horizontal Distance ({0})'.format(self.yscale),
-                      fontdict={'size':self.font_size+2,'weight':'bold'})
+                      fontdict={'size': self.font_size + 2, 'weight': 'bold'})
         ax.set_ylabel('Depth ({0})'.format(self.yscale),
-                      fontdict={'size':self.font_size+2,'weight':'bold'})
+                      fontdict={'size': self.font_size + 2, 'weight': 'bold'})
 
-
-        #put a grid on if one is desired
+        # put a grid on if one is desired
         if self.grid is not None:
             ax.grid(alpha=.3, which=self.grid, lw=.35)
 
-        #set title as rms and roughness
+        # set title as rms and roughness
         if type(self.title) is str:
             if self.title == 'on':
                 titlestr = os.path.join(os.path.basename(
-                                        os.path.dirname(self.iter_fn)),
-                                        os.path.basename(self.iter_fn))
+                    os.path.dirname(self.iter_fn)),
+                    os.path.basename(self.iter_fn))
                 ax.set_title('{0}: RMS={1:.2f}, Roughness={2:.0f}'.format(
-                             titlestr,self.misfit_value, self.roughness_value),
-                             fontdict={'size':self.font_size+1,
-                                       'weight':'bold'})
+                    titlestr, self.misfit_value, self.roughness_value),
+                    fontdict={'size': self.font_size + 1,
+                              'weight': 'bold'})
             else:
                 ax.set_title('{0}; RMS={1:.2f}, Roughness={2:.0f}'.format(
-                            self.title, self.misfit_value,
-                            self.roughness_value),
-                            fontdict={'size':self.font_size+1,
-                                      'weight':'bold'})
+                    self.title, self.misfit_value,
+                    self.roughness_value),
+                    fontdict={'size': self.font_size + 1,
+                              'weight': 'bold'})
         else:
             print 'RMS {0:.2f}, Roughness={1:.0f}'.format(self.misfit_value,
                                                           self.roughness_value)
 
-        #plot forward model mesh
-        #making an extended list seperated by None's speeds up the plotting
-        #by as much as 99 percent, handy
+        # plot forward model mesh
+        # making an extended list seperated by None's speeds up the plotting
+        # by as much as 99 percent, handy
         if self.femesh == 'on':
             row_line_xlist = []
             row_line_ylist = []
-            for xx in self.plot_x/df:
-                row_line_xlist.extend([xx,xx])
+            for xx in self.plot_x / df:
+                row_line_xlist.extend([xx, xx])
                 row_line_xlist.append(None)
-                row_line_ylist.extend([0, self.plot_zy[0]/df])
+                row_line_ylist.extend([0, self.plot_zy[0] / df])
                 row_line_ylist.append(None)
 
-            #plot column lines (variables are a little bit of a misnomer)
+            # plot column lines (variables are a little bit of a misnomer)
             ax.plot(row_line_xlist,
                     row_line_ylist,
                     color='k',
@@ -4499,14 +4501,14 @@ class PlotModel(Model):
 
             col_line_xlist = []
             col_line_ylist = []
-            for yy in self.plot_z/df:
-                col_line_xlist.extend([self.plot_x[0]/df,
-                                      self.plot_x[-1]/df])
+            for yy in self.plot_z / df:
+                col_line_xlist.extend([self.plot_x[0] / df,
+                                       self.plot_x[-1] / df])
                 col_line_xlist.append(None)
                 col_line_ylist.extend([yy, yy])
                 col_line_ylist.append(None)
 
-            #plot row lines (variables are a little bit of a misnomer)
+            # plot row lines (variables are a little bit of a misnomer)
             ax.plot(col_line_xlist,
                     col_line_ylist,
                     color='k',
@@ -4515,13 +4517,13 @@ class PlotModel(Model):
         if self.femesh_triangles == 'on':
             row_line_xlist = []
             row_line_ylist = []
-            for xx in self.plot_x/df:
-                row_line_xlist.extend([xx,xx])
+            for xx in self.plot_x / df:
+                row_line_xlist.extend([xx, xx])
                 row_line_xlist.append(None)
-                row_line_ylist.extend([0, self.plot_z[0]/df])
+                row_line_ylist.extend([0, self.plot_z[0] / df])
                 row_line_ylist.append(None)
 
-            #plot columns
+            # plot columns
             ax.plot(row_line_xlist,
                     row_line_ylist,
                     color='k',
@@ -4529,14 +4531,14 @@ class PlotModel(Model):
 
             col_line_xlist = []
             col_line_ylist = []
-            for yy in self.plot_z/df:
-                col_line_xlist.extend([self.plot_x[0]/df,
-                                      self.plot_x[-1]/df])
+            for yy in self.plot_z / df:
+                col_line_xlist.extend([self.plot_x[0] / df,
+                                       self.plot_x[-1] / df])
                 col_line_xlist.append(None)
                 col_line_ylist.extend([yy, yy])
                 col_line_ylist.append(None)
 
-            #plot rows
+            # plot rows
             ax.plot(col_line_xlist,
                     col_line_ylist,
                     color='k',
@@ -4544,59 +4546,59 @@ class PlotModel(Model):
 
             diag_line_xlist = []
             diag_line_ylist = []
-            for xi, xx in enumerate(self.plot_x[:-1]/df):
-                for yi, yy in enumerate(self.plot_z[:-1]/df):
-                    diag_line_xlist.extend([xx, self.plot_x[xi+1]/df])
+            for xi, xx in enumerate(self.plot_x[:-1] / df):
+                for yi, yy in enumerate(self.plot_z[:-1] / df):
+                    diag_line_xlist.extend([xx, self.plot_x[xi + 1] / df])
                     diag_line_xlist.append(None)
-                    diag_line_xlist.extend([xx, self.plot_x[xi+1]/df])
+                    diag_line_xlist.extend([xx, self.plot_x[xi + 1] / df])
                     diag_line_xlist.append(None)
 
-                    diag_line_ylist.extend([yy, self.plot_z[yi+1]/df])
+                    diag_line_ylist.extend([yy, self.plot_z[yi + 1] / df])
                     diag_line_ylist.append(None)
-                    diag_line_ylist.extend([self.plot_z[yi+1]/df, yy])
+                    diag_line_ylist.extend([self.plot_z[yi + 1] / df, yy])
                     diag_line_ylist.append(None)
 
-            #plot diagonal lines.
+            # plot diagonal lines.
             ax.plot(diag_line_xlist,
                     diag_line_ylist,
                     color='k',
                     lw=.5)
 
-        #plot the regularization mesh
+        # plot the regularization mesh
         if self.regmesh == 'on':
             line_list = []
             for ii in range(len(self.model_rows)):
-                #get the number of layers to combine
-                #this index will be the first index in the vertical direction
-                ny1 = self.model_rows[:ii,0].sum()
+                # get the number of layers to combine
+                # this index will be the first index in the vertical direction
+                ny1 = self.model_rows[:ii, 0].sum()
 
-                #the second index  in the vertical direction
-                ny2 = ny1+self.model_rows[ii][0]
+                # the second index  in the vertical direction
+                ny2 = ny1 + self.model_rows[ii][0]
 
-                #make the list of amalgamated columns an array for ease
+                # make the list of amalgamated columns an array for ease
                 lc = np.array(self.model_cols[ii])
-                yline = ax.plot([self.plot_x[0]/df,self.plot_x[-1]/df],
-                                [self.plot_z[-ny1]/df,
-                                 self.plot_z[-ny1]/df],
+                yline = ax.plot([self.plot_x[0] / df, self.plot_x[-1] / df],
+                                [self.plot_z[-ny1] / df,
+                                 self.plot_z[-ny1] / df],
                                 color='b',
                                 lw=.5)
 
                 line_list.append(yline)
 
-                #loop over the number of amalgamated blocks
+                # loop over the number of amalgamated blocks
                 for jj in range(len(self.model_cols[ii])):
-                    #get first in index in the horizontal direction
+                    # get first in index in the horizontal direction
                     nx1 = lc[:jj].sum()
 
-                    #get second index in horizontal direction
-                    nx2 = nx1+lc[jj]
+                    # get second index in horizontal direction
+                    nx2 = nx1 + lc[jj]
                     try:
                         if ny1 == 0:
                             ny1 = 1
-                        xline = ax.plot([self.plot_x[nx1]/df,
-                                         self.plot_x[nx1]/df],
-                                        [self.plot_z[-ny1]/df,
-                                         self.plot_z[-ny2]/df],
+                        xline = ax.plot([self.plot_x[nx1] / df,
+                                         self.plot_x[nx1] / df],
+                                        [self.plot_z[-ny1] / df,
+                                         self.plot_z[-ny2] / df],
                                         color='b',
                                         lw=.5)
                         line_list.append(xline)
@@ -4606,50 +4608,50 @@ class PlotModel(Model):
         ##plot the mesh block numbers
         if self.meshnum == 'on':
             kk = 1
-            for yy in self.plot_z[::-1]/df:
-                for xx in self.plot_x/df:
+            for yy in self.plot_z[::-1] / df:
+                for xx in self.plot_x / df:
                     ax.text(xx, yy, '{0}'.format(kk),
-                            fontdict={'size':self.meshnum_font_size})
-                    kk+=1
+                            fontdict={'size': self.meshnum_font_size})
+                    kk += 1
 
         ##plot regularization block numbers
         if self.blocknum == 'on':
-            kk=1
+            kk = 1
             for ii in range(len(self.model_rows)):
-                #get the number of layers to combine
-                #this index will be the first index in the vertical direction
-                ny1 = self.model_rows[:ii,0].sum()
+                # get the number of layers to combine
+                # this index will be the first index in the vertical direction
+                ny1 = self.model_rows[:ii, 0].sum()
 
-                #the second index  in the vertical direction
-                ny2 = ny1+self.model_rows[ii][0]
-                #make the list of amalgamated columns an array for ease
+                # the second index  in the vertical direction
+                ny2 = ny1 + self.model_rows[ii][0]
+                # make the list of amalgamated columns an array for ease
                 lc = np.array(self.model_cols[ii])
-                #loop over the number of amalgamated blocks
+                # loop over the number of amalgamated blocks
                 for jj in range(len(self.model_cols[ii])):
-                    #get first in index in the horizontal direction
+                    # get first in index in the horizontal direction
                     nx1 = lc[:jj].sum()
-                    #get second index in horizontal direction
-                    nx2 = nx1+lc[jj]
+                    # get second index in horizontal direction
+                    nx2 = nx1 + lc[jj]
                     try:
                         if ny1 == 0:
                             ny1 = 1
-                        #get center points of the blocks
-                        yy = self.plot_z[-ny1]-(self.plot_z[-ny1]-
-                                                self.plot_z[-ny2])/2
-                        xx = self.plot_x[nx1]-\
-                             (self.plot_x[nx1]-self.plot_x[nx2])/2
-                        #put the number
-                        ax.text(xx/df, yy/df, '{0}'.format(kk),
-                                fontdict={'size':self.block_font_size},
+                        # get center points of the blocks
+                        yy = self.plot_z[-ny1] - (self.plot_z[-ny1] -
+                                                  self.plot_z[-ny2]) / 2
+                        xx = self.plot_x[nx1] - \
+                             (self.plot_x[nx1] - self.plot_x[nx2]) / 2
+                        # put the number
+                        ax.text(xx / df, yy / df, '{0}'.format(kk),
+                                fontdict={'size': self.block_font_size},
                                 horizontalalignment='center',
                                 verticalalignment='center')
-                        kk+=1
+                        kk += 1
                     except IndexError:
                         pass
 
         plt.show()
 
-        #make attributes that can be manipulated
+        # make attributes that can be manipulated
         self.ax = ax
         self.cbax = cb
 
@@ -4674,7 +4676,7 @@ class PlotModel(Model):
         self.plot()
 
     def save_figure(self, save_fn, file_format='pdf', orientation='portrait',
-                  fig_dpi=None, close_fig='y'):
+                    fig_dpi=None, close_fig='y'):
         """
         save_plot will save the figure to save_fn.
         
@@ -4725,10 +4727,10 @@ class PlotModel(Model):
                              orientation=orientation, bbox_inches='tight')
 
         else:
-            save_fn = os.path.join(save_fn, 'OccamModel.'+
-                                    file_format)
+            save_fn = os.path.join(save_fn, 'OccamModel.' +
+                                   file_format)
             self.fig.savefig(save_fn, dpi=fig_dpi, format=file_format,
-                        orientation=orientation, bbox_inches='tight')
+                             orientation=orientation, bbox_inches='tight')
 
         if close_fig == 'y':
             plt.clf()
@@ -4738,7 +4740,7 @@ class PlotModel(Model):
             pass
 
         self.fig_fn = save_fn
-        print 'Saved figure to: '+self.fig_fn
+        print 'Saved figure to: ' + self.fig_fn
 
     def update_plot(self):
         """
@@ -4768,9 +4770,10 @@ class PlotModel(Model):
 
         return ("Plots the resistivity model found by Occam2D.")
 
-#==============================================================================
+
+# ==============================================================================
 # plot L2 curve of iteration vs rms
-#==============================================================================
+# ==============================================================================
 class PlotL2():
     """
     Plot L2 curve of iteration vs rms and rms vs roughness.
@@ -4834,7 +4837,6 @@ class PlotL2():
         self.rms_arr = None
         self.rough_arr = None
 
-
         self.subplot_right = .98
         self.subplot_left = .085
         self.subplot_top = .91
@@ -4858,7 +4860,6 @@ class PlotL2():
         self.rough_marker_size = kwargs.pop('rough_marker_size', 7)
         self.rough_font_size = kwargs.pop('rough_font_size', 6)
 
-
         self.plot_yn = kwargs.pop('plot_yn', 'y')
         if self.plot_yn == 'y':
             self.plot()
@@ -4872,7 +4873,7 @@ class PlotL2():
         self.iter_fn_list = [os.path.join(self.iter_path, fn)
                              for fn in os.listdir(self.iter_path)
                              if fn.find(self.iter_basename) == 0 and
-                                fn.find('.iter') > 0]
+                             fn.find('.iter') > 0]
 
     def _get_values(self):
         """
@@ -4891,10 +4892,9 @@ class PlotL2():
             self.rough_arr[ii, 1] = float(m_object.roughness_value)
             self.rough_arr[ii, 0] = m_index
 
-        #sort by iteration number
-#        self.rms_arr = np.sort(self.rms_arr, axis=1)
-#        self.rough_arr = np.sort(self.rough_arr, axis=1)
-
+            # sort by iteration number
+            #        self.rms_arr = np.sort(self.rms_arr, axis=1)
+            #        self.rough_arr = np.sort(self.rough_arr, axis=1)
 
     def plot(self):
         """
@@ -4906,21 +4906,21 @@ class PlotL2():
         med_rms = np.median(self.rms_arr[1:, 1])
         mean_rms = np.mean(self.rms_arr[1:, 1])
 
-        #set the dimesions of the figure
+        # set the dimesions of the figure
         plt.rcParams['font.size'] = self.font_size
         plt.rcParams['figure.subplot.left'] = self.subplot_left
         plt.rcParams['figure.subplot.right'] = self.subplot_right
         plt.rcParams['figure.subplot.bottom'] = self.subplot_bottom
         plt.rcParams['figure.subplot.top'] = self.subplot_top
 
-        #make figure instance
-        self.fig = plt.figure(self.fig_num,self.fig_size, dpi=self.fig_dpi)
+        # make figure instance
+        self.fig = plt.figure(self.fig_num, self.fig_size, dpi=self.fig_dpi)
         plt.clf()
 
-        #make a subplot for RMS vs Iteration
+        # make a subplot for RMS vs Iteration
         self.ax1 = self.fig.add_subplot(1, 1, 1)
 
-        #plot the rms vs iteration
+        # plot the rms vs iteration
         l1, = self.ax1.plot(self.rms_arr[:, 0],
                             self.rms_arr[:, 1],
                             '-k',
@@ -4928,30 +4928,30 @@ class PlotL2():
                             marker='d',
                             ms=5)
 
-        #plot the median of the RMS
+        # plot the median of the RMS
         m1, = self.ax1.plot(self.rms_arr[:, 0],
                             np.repeat(med_rms, nr),
                             ls='--',
                             color=self.rms_median_color,
-                            lw=self.rms_lw*.75)
+                            lw=self.rms_lw * .75)
 
-        #plot the mean of the RMS
+        # plot the mean of the RMS
         m2, = self.ax1.plot(self.rms_arr[:, 0],
                             np.repeat(mean_rms, nr),
                             ls='--',
                             color=self.rms_mean_color,
-                            lw=self.rms_lw*.75)
+                            lw=self.rms_lw * .75)
 
-        #make subplot for RMS vs Roughness Plot
+        # make subplot for RMS vs Roughness Plot
         self.ax2 = self.ax1.twiny()
 
         self.ax2.set_xlim(self.rough_arr[1:, 1].min(),
                           self.rough_arr[1:, 1].max())
 
-        self.ax1.set_ylim(np.floor(self.rms_arr[1:,1].min()),
+        self.ax1.set_ylim(np.floor(self.rms_arr[1:, 1].min()),
                           self.rms_arr[1:, 1].max())
 
-        #plot the rms vs roughness
+        # plot the rms vs roughness
         l2, = self.ax2.plot(self.rough_arr[:, 1],
                             self.rms_arr[:, 1],
                             ls='--',
@@ -4961,13 +4961,13 @@ class PlotL2():
                             ms=self.rough_marker_size,
                             mfc='white')
 
-        #plot the iteration number inside the roughness marker
+        # plot the iteration number inside the roughness marker
         for rms, ii, rough in zip(self.rms_arr[:, 1], self.rms_arr[:, 0],
-                           self.rough_arr[:, 1]):
-            #need this because if the roughness is larger than this number
-            #matplotlib puts the text out of bounds and a draw_text_image
-            #error is raised and file cannot be saved, also the other
-            #numbers are not put in.
+                                  self.rough_arr[:, 1]):
+            # need this because if the roughness is larger than this number
+            # matplotlib puts the text out of bounds and a draw_text_image
+            # error is raised and file cannot be saved, also the other
+            # numbers are not put in.
             if rough > 1e8:
                 pass
             else:
@@ -4976,38 +4976,36 @@ class PlotL2():
                               '{0:.0f}'.format(ii),
                               horizontalalignment='center',
                               verticalalignment='center',
-                              fontdict={'size':self.rough_font_size,
-                                        'weight':'bold',
-                                        'color':self.rough_color})
+                              fontdict={'size': self.rough_font_size,
+                                        'weight': 'bold',
+                                        'color': self.rough_color})
 
-        #make a legend
+        # make a legend
         self.ax1.legend([l1, l2, m1, m2],
                         ['RMS', 'Roughness',
                          'Median_RMS={0:.2f}'.format(med_rms),
                          'Mean_RMS={0:.2f}'.format(mean_rms)],
-                         ncol=1,
-                         loc='upper right',
-                         columnspacing=.25,
-                         markerscale=.75,
-                         handletextpad=.15)
+                        ncol=1,
+                        loc='upper right',
+                        columnspacing=.25,
+                        markerscale=.75,
+                        handletextpad=.15)
 
-        #set the axis properties for RMS vs iteration
+        # set the axis properties for RMS vs iteration
         self.ax1.yaxis.set_minor_locator(MultipleLocator(.1))
         self.ax1.xaxis.set_minor_locator(MultipleLocator(1))
         self.ax1.xaxis.set_major_locator(MultipleLocator(1))
         self.ax1.set_ylabel('RMS',
-                            fontdict={'size':self.font_size+2,
-                                      'weight':'bold'})
+                            fontdict={'size': self.font_size + 2,
+                                      'weight': 'bold'})
         self.ax1.set_xlabel('Iteration',
-                            fontdict={'size':self.font_size+2,
-                                      'weight':'bold'})
+                            fontdict={'size': self.font_size + 2,
+                                      'weight': 'bold'})
         self.ax1.grid(alpha=.25, which='both', lw=self.rough_lw)
         self.ax2.set_xlabel('Roughness',
-                            fontdict={'size':self.font_size+2,
-                                      'weight':'bold',
-                                      'color':self.rough_color})
-
-
+                            fontdict={'size': self.font_size + 2,
+                                      'weight': 'bold',
+                                      'color': self.rough_color})
 
         for t2 in self.ax2.get_xticklabels():
             t2.set_color(self.rough_color)
@@ -5035,7 +5033,7 @@ class PlotL2():
         self.plot()
 
     def save_figure(self, save_fn, file_format='pdf', orientation='portrait',
-                  fig_dpi=None, close_fig='y'):
+                    fig_dpi=None, close_fig='y'):
         """
         save_plot will save the figure to save_fn.
         
@@ -5089,10 +5087,10 @@ class PlotL2():
                              orientation=orientation, bbox_inches='tight')
 
         else:
-            save_fn = os.path.join(save_fn, '_L2.'+
-                                    file_format)
+            save_fn = os.path.join(save_fn, '_L2.' +
+                                   file_format)
             self.fig.savefig(save_fn, dpi=fig_dpi, format=file_format,
-                        orientation=orientation, bbox_inches='tight')
+                             orientation=orientation, bbox_inches='tight')
 
         if close_fig == 'y':
             plt.clf()
@@ -5102,7 +5100,7 @@ class PlotL2():
             pass
 
         self.fig_fn = save_fn
-        print 'Saved figure to: '+self.fig_fn
+        print 'Saved figure to: ' + self.fig_fn
 
     def update_plot(self):
         """
@@ -5132,9 +5130,10 @@ class PlotL2():
 
         return ("Plots RMS vs Iteration computed by Occam2D")
 
-#==============================================================================
+
+# ==============================================================================
 # plot pseudo section of data and model response                
-#==============================================================================
+# ==============================================================================
 class PlotPseudoSection(object):
     """
     plot a pseudo section of the data and response if given
@@ -5220,17 +5219,17 @@ class PlotPseudoSection(object):
         if self.resp_fn is None:
             self.plot_resp = 'n'
 
-        self.label_list = [r'$\rho_{TE-Data}$',r'$\rho_{TE-Model}$',
-                          r'$\rho_{TM-Data}$',r'$\rho_{TM-Model}$',
-                          '$\phi_{TE-Data}$','$\phi_{TE-Model}$',
-                          '$\phi_{TM-Data}$','$\phi_{TM-Model}$',
-                          '$\Re e\{T_{Data}\}$','$\Re e\{T_{Model}\}$',
-                          '$\Im m\{T_{Data}\}$','$\Im m\{T_{Model}\}$']
+        self.label_list = [r'$\rho_{TE-Data}$', r'$\rho_{TE-Model}$',
+                           r'$\rho_{TM-Data}$', r'$\rho_{TM-Model}$',
+                           '$\phi_{TE-Data}$', '$\phi_{TE-Model}$',
+                           '$\phi_{TM-Data}$', '$\phi_{TM-Model}$',
+                           '$\Re e\{T_{Data}\}$', '$\Re e\{T_{Model}\}$',
+                           '$\Im m\{T_{Data}\}$', '$\Im m\{T_{Model}\}$']
 
         self.phase_limits_te = kwargs.pop('phase_limits_te', (-5, 95))
         self.phase_limits_tm = kwargs.pop('phase_limits_tm', (-5, 95))
-        self.res_limits_te = kwargs.pop('res_limits_te', (0,3))
-        self.res_limits_tm = kwargs.pop('res_limits_tm', (0,3))
+        self.res_limits_te = kwargs.pop('res_limits_te', (0, 3))
+        self.res_limits_tm = kwargs.pop('res_limits_tm', (0, 3))
         self.tip_limits_re = kwargs.pop('tip_limits_re', (-1, 1))
         self.tip_limits_im = kwargs.pop('tip_limits_im', (-1, 1))
 
@@ -5239,7 +5238,7 @@ class PlotPseudoSection(object):
         self.tip_cmap = kwargs.pop('res_cmap', 'Spectral')
 
         self.ml = kwargs.pop('ml', 2)
-        self.station_id = kwargs.pop('station_id', [0,4])
+        self.station_id = kwargs.pop('station_id', [0, 4])
 
         self.fig_num = kwargs.pop('fig_num', 1)
         self.fig_size = kwargs.pop('fig_size', [6, 6])
@@ -5308,9 +5307,9 @@ class PlotPseudoSection(object):
         nf = len(data_obj.period)
         ylimits = (data_obj.period.max(), data_obj.period.min())
 
-        #make a grid for pcolormesh so you can have a log scale
-        #get things into arrays for plotting
-        offset_list = np.zeros(ns+1)
+        # make a grid for pcolormesh so you can have a log scale
+        # get things into arrays for plotting
+        offset_list = np.zeros(ns + 1)
         te_res_arr = np.ones((nf, ns, nr))
         tm_res_arr = np.ones((nf, ns, nr))
         te_phase_arr = np.zeros((nf, ns, nr))
@@ -5327,7 +5326,7 @@ class PlotPseudoSection(object):
             tip_real_arr[:, ii, 0] = d_dict['re_tip'][0]
             tip_imag_arr[:, ii, 0] = d_dict['im_tip'][0]
 
-        #read in response data
+        # read in response data
         if self.plot_resp == 'y':
             for ii, r_dict in enumerate(resp_obj.resp):
                 te_res_arr[:, ii, 1] = r_dict['te_res'][0]
@@ -5337,7 +5336,7 @@ class PlotPseudoSection(object):
                 tip_real_arr[:, ii, 1] = r_dict['re_tip'][0]
                 tip_imag_arr[:, ii, 1] = r_dict['im_tip'][0]
 
-        #need to make any zeros 1 for taking log10
+        # need to make any zeros 1 for taking log10
         te_res_arr[np.where(te_res_arr == 0)] = 1.0
         tm_res_arr[np.where(tm_res_arr == 0)] = 1.0
 
@@ -5348,21 +5347,20 @@ class PlotPseudoSection(object):
         self.tip_real_arr = tip_real_arr
         self.tip_imag_arr = tip_imag_arr
 
-        #need to extend the last grid cell because meshgrid expects n+1 cells
-        offset_list[-1] = offset_list[-2]*1.15
-        #make a meshgrid for plotting
-        #flip frequency so bottom corner is long period
+        # need to extend the last grid cell because meshgrid expects n+1 cells
+        offset_list[-1] = offset_list[-2] * 1.15
+        # make a meshgrid for plotting
+        # flip frequency so bottom corner is long period
         dgrid, fgrid = np.meshgrid(offset_list, data_obj.period[::-1])
 
-        #make list for station labels
+        # make list for station labels
         sindex_1 = self.station_id[0]
         sindex_2 = self.station_id[1]
         slabel = [data_obj.station_list[ss][sindex_1:sindex_2]
-                    for ss in range(0, ns, self.ml)]
+                  for ss in range(0, ns, self.ml)]
 
-        xloc = offset_list[0]+abs(offset_list[0]-offset_list[1])/5
-        yloc = 1.10*data_obj.period[1]
-
+        xloc = offset_list[0] + abs(offset_list[0] - offset_list[1]) / 5
+        yloc = 1.10 * data_obj.period[1]
 
         plt.rcParams['font.size'] = self.font_size
         plt.rcParams['figure.subplot.bottom'] = self.subplot_bottom
@@ -5370,12 +5368,12 @@ class PlotPseudoSection(object):
         plt.rcParams['figure.subplot.right'] = self.subplot_right
         plt.rcParams['figure.subplot.left'] = self.subplot_left
 
-        log_labels_te = ['10$^{0}$'.format('{'+str(nn)+'}')
-                 for nn in np.arange(int(self.res_limits_te[0]),
-                                     int(self.res_limits_te[1])+1)]
-        log_labels_tm = ['10$^{0}$'.format('{'+str(nn)+'}')
+        log_labels_te = ['10$^{0}$'.format('{' + str(nn) + '}')
+                         for nn in np.arange(int(self.res_limits_te[0]),
+                                             int(self.res_limits_te[1]) + 1)]
+        log_labels_tm = ['10$^{0}$'.format('{' + str(nn) + '}')
                          for nn in np.arange(int(self.res_limits_tm[0]),
-                                             int(self.res_limits_tm[1])+1)]
+                                             int(self.res_limits_tm[1]) + 1)]
 
         self.fig = plt.figure(self.fig_num, self.fig_size, dpi=self.fig_dpi)
         plt.clf()
@@ -5387,9 +5385,9 @@ class PlotPseudoSection(object):
                                         right=self.subplot_right,
                                         wspace=self.subplot_wspace)
                 gs4 = gridspec.GridSpecFromSubplotSpec(2, 2,
-                                                   hspace=self.subplot_hspace,
-                                                   wspace=0,
-                                                   subplot_spec=gs1[2])
+                                                       hspace=self.subplot_hspace,
+                                                       wspace=0,
+                                                       subplot_spec=gs1[2])
             else:
                 gs1 = gridspec.GridSpec(1, 2,
                                         left=self.subplot_left,
@@ -5404,7 +5402,7 @@ class PlotPseudoSection(object):
                                                    wspace=0,
                                                    subplot_spec=gs1[1])
 
-            #plot TE resistivity data
+            # plot TE resistivity data
             self.axrte = plt.Subplot(self.fig, gs2[0, 0])
             self.fig.add_subplot(self.axrte)
             self.axrte.pcolormesh(dgrid,
@@ -5414,7 +5412,7 @@ class PlotPseudoSection(object):
                                   vmin=self.res_limits_te[0],
                                   vmax=self.res_limits_te[1])
 
-            #plot TE resistivity model
+            # plot TE resistivity model
             self.axmrte = plt.Subplot(self.fig, gs2[0, 1])
             self.fig.add_subplot(self.axmrte)
             self.axmrte.pcolormesh(dgrid,
@@ -5424,104 +5422,104 @@ class PlotPseudoSection(object):
                                    vmin=self.res_limits_te[0],
                                    vmax=self.res_limits_te[1])
 
-            #plot TM resistivity data
+            # plot TM resistivity data
             self.axrtm = plt.Subplot(self.fig, gs3[0, 0])
             self.fig.add_subplot(self.axrtm)
             self.axrtm.pcolormesh(dgrid,
                                   fgrid,
-                                  np.flipud(np.log10(tm_res_arr[:,:,0])),
+                                  np.flipud(np.log10(tm_res_arr[:, :, 0])),
                                   cmap=self.res_cmap,
                                   vmin=self.res_limits_tm[0],
                                   vmax=self.res_limits_tm[1])
 
-            #plot TM resistivity model
+            # plot TM resistivity model
             self.axmrtm = plt.Subplot(self.fig, gs3[0, 1])
             self.fig.add_subplot(self.axmrtm)
             self.axmrtm.pcolormesh(dgrid,
                                    fgrid,
-                                   np.flipud(np.log10(tm_res_arr[:,:,1])),
+                                   np.flipud(np.log10(tm_res_arr[:, :, 1])),
                                    cmap=self.res_cmap,
                                    vmin=self.res_limits_tm[0],
                                    vmax=self.res_limits_tm[1])
 
-            #plot TE phase data
+            # plot TE phase data
             self.axpte = plt.Subplot(self.fig, gs2[1, 0])
             self.fig.add_subplot(self.axpte)
             self.axpte.pcolormesh(dgrid,
                                   fgrid,
-                                  np.flipud(te_phase_arr[:,:,0]),
+                                  np.flipud(te_phase_arr[:, :, 0]),
                                   cmap=self.phase_cmap,
                                   vmin=self.phase_limits_te[0],
                                   vmax=self.phase_limits_te[1])
 
-            #plot TE phase model
+            # plot TE phase model
             self.axmpte = plt.Subplot(self.fig, gs2[1, 1])
             self.fig.add_subplot(self.axmpte)
             self.axmpte.pcolormesh(dgrid,
                                    fgrid,
-                                   np.flipud(te_phase_arr[:,:,1]),
+                                   np.flipud(te_phase_arr[:, :, 1]),
                                    cmap=self.phase_cmap,
                                    vmin=self.phase_limits_te[0],
                                    vmax=self.phase_limits_te[1])
 
-            #plot TM phase data
+            # plot TM phase data
             self.axptm = plt.Subplot(self.fig, gs3[1, 0])
             self.fig.add_subplot(self.axptm)
             self.axptm.pcolormesh(dgrid,
                                   fgrid,
-                                  np.flipud(tm_phase_arr[:,:,0]),
+                                  np.flipud(tm_phase_arr[:, :, 0]),
                                   cmap=self.phase_cmap,
                                   vmin=self.phase_limits_tm[0],
                                   vmax=self.phase_limits_tm[1])
 
-            #plot TM phase model
+            # plot TM phase model
             self.axmptm = plt.Subplot(self.fig, gs3[1, 1])
             self.fig.add_subplot(self.axmptm)
             self.axmptm.pcolormesh(dgrid,
                                    fgrid,
-                                   np.flipud(tm_phase_arr[:,:,1]),
+                                   np.flipud(tm_phase_arr[:, :, 1]),
                                    cmap=self.phase_cmap,
                                    vmin=self.phase_limits_tm[0],
                                    vmax=self.phase_limits_tm[1])
 
-            ax_list=[self.axrte, self.axmrte, self.axrtm, self.axmrtm,
-                   self.axpte, self.axmpte, self.axptm, self.axmptm]
+            ax_list = [self.axrte, self.axmrte, self.axrtm, self.axmrtm,
+                       self.axpte, self.axmpte, self.axptm, self.axmptm]
 
             if self.plot_tipper == 'y':
-                #plot real tipper  data
+                # plot real tipper  data
                 self.axtpr = plt.Subplot(self.fig, gs4[0, 0])
                 self.fig.add_subplot(self.axtpr)
                 self.axtpr.pcolormesh(dgrid,
-                                       fgrid,
-                                       np.flipud(tip_real_arr[:,:,0]),
-                                       cmap=self.tip_cmap,
-                                       vmin=self.tip_limits_re[0],
-                                       vmax=self.tip_limits_re[1])
-                #plot real tipper  model
+                                      fgrid,
+                                      np.flipud(tip_real_arr[:, :, 0]),
+                                      cmap=self.tip_cmap,
+                                      vmin=self.tip_limits_re[0],
+                                      vmax=self.tip_limits_re[1])
+                # plot real tipper  model
                 self.axmtpr = plt.Subplot(self.fig, gs4[0, 1])
                 self.fig.add_subplot(self.axmtpr)
                 self.axmtpr.pcolormesh(dgrid,
                                        fgrid,
-                                       np.flipud(tip_real_arr[:,:,1]),
+                                       np.flipud(tip_real_arr[:, :, 1]),
                                        cmap=self.tip_cmap,
                                        vmin=self.tip_limits_re[0],
                                        vmax=self.tip_limits_re[1])
 
-                #plot imag tipper  data
+                # plot imag tipper  data
                 self.axtpi = plt.Subplot(self.fig, gs4[1, 0])
                 self.fig.add_subplot(self.axtpi)
                 self.axtpi.pcolormesh(dgrid,
-                                       fgrid,
-                                       np.flipud(tip_imag_arr[:,:,0]),
-                                       cmap=self.tip_cmap,
-                                       vmin=self.tip_limits_re[0],
-                                       vmax=self.tip_limits_re[1])
-                #plot imag tipper  model
+                                      fgrid,
+                                      np.flipud(tip_imag_arr[:, :, 0]),
+                                      cmap=self.tip_cmap,
+                                      vmin=self.tip_limits_re[0],
+                                      vmax=self.tip_limits_re[1])
+                # plot imag tipper  model
                 self.axmtpi = plt.Subplot(self.fig, gs4[1, 1])
                 self.fig.add_subplot(self.axmtpi)
                 self.axmtpi.pcolormesh(dgrid,
                                        fgrid,
-                                       np.flipud(tip_imag_arr[:,:,1]),
+                                       np.flipud(tip_imag_arr[:, :, 1]),
                                        cmap=self.tip_cmap,
                                        vmin=self.tip_limits_re[0],
                                        vmax=self.tip_limits_re[1])
@@ -5531,14 +5529,14 @@ class PlotPseudoSection(object):
                 ax_list.append(self.axtpi)
                 ax_list.append(self.axmtpi)
 
-            #make everthing look tidy
+            # make everthing look tidy
             for xx, ax in enumerate(ax_list):
                 ax.semilogy()
                 ax.set_ylim(ylimits)
                 ax.xaxis.set_ticks(offset_list[np.arange(0, ns, self.ml)])
                 ax.xaxis.set_ticks(offset_list, minor=True)
                 ax.xaxis.set_ticklabels(slabel)
-                ax.set_xlim(offset_list.min(),offset_list.max())
+                ax.set_xlim(offset_list.min(), offset_list.max())
                 if np.remainder(xx, 2.0) == 1:
                     plt.setp(ax.yaxis.get_ticklabels(), visible=False)
                     cbx = mcb.make_axes(ax,
@@ -5550,87 +5548,86 @@ class PlotPseudoSection(object):
                 if xx < 4:
                     plt.setp(ax.xaxis.get_ticklabels(), visible=False)
                     if xx == 1:
-                        cb = mcb.ColorbarBase(cbx[0],cmap=self.res_cmap,
-                                norm=Normalize(vmin=self.res_limits_te[0],
-                                               vmax=self.res_limits_te[1]))
+                        cb = mcb.ColorbarBase(cbx[0], cmap=self.res_cmap,
+                                              norm=Normalize(vmin=self.res_limits_te[0],
+                                                             vmax=self.res_limits_te[1]))
                         cb.set_ticks(np.arange(int(self.res_limits_te[0]),
-                                               int(self.res_limits_te[1])+1))
+                                               int(self.res_limits_te[1]) + 1))
                         cb.set_ticklabels(log_labels_te)
                     if xx == 3:
-                        cb = mcb.ColorbarBase(cbx[0],cmap=self.res_cmap,
-                                norm=Normalize(vmin=self.res_limits_tm[0],
-                                               vmax=self.res_limits_tm[1]))
+                        cb = mcb.ColorbarBase(cbx[0], cmap=self.res_cmap,
+                                              norm=Normalize(vmin=self.res_limits_tm[0],
+                                                             vmax=self.res_limits_tm[1]))
                         cb.set_label('App. Res. ($\Omega \cdot$m)',
-                                     fontdict={'size':self.font_size+1,
-                                               'weight':'bold'})
+                                     fontdict={'size': self.font_size + 1,
+                                               'weight': 'bold'})
                         cb.set_label('Resistivity ($\Omega \cdot$m)',
-                                     fontdict={'size':self.font_size+1,
-                                               'weight':'bold'})
+                                     fontdict={'size': self.font_size + 1,
+                                               'weight': 'bold'})
                         cb.set_ticks(np.arange(int(self.res_limits_tm[0]),
-                                               int(self.res_limits_tm[1])+1))
+                                               int(self.res_limits_tm[1]) + 1))
                         cb.set_ticklabels(log_labels_tm)
                 else:
-                    #color bar TE phase
+                    # color bar TE phase
                     if xx == 5:
-                        cb = mcb.ColorbarBase(cbx[0],cmap=self.phase_cmap,
-                                norm=Normalize(vmin=self.phase_limits_te[0],
-                                               vmax=self.phase_limits_te[1]))
-                    #color bar TM phase
+                        cb = mcb.ColorbarBase(cbx[0], cmap=self.phase_cmap,
+                                              norm=Normalize(vmin=self.phase_limits_te[0],
+                                                             vmax=self.phase_limits_te[1]))
+                    # color bar TM phase
                     if xx == 7:
-                        cb = mcb.ColorbarBase(cbx[0],cmap=self.phase_cmap,
-                                norm=Normalize(vmin=self.phase_limits_tm[0],
-                                               vmax=self.phase_limits_tm[1]))
+                        cb = mcb.ColorbarBase(cbx[0], cmap=self.phase_cmap,
+                                              norm=Normalize(vmin=self.phase_limits_tm[0],
+                                                             vmax=self.phase_limits_tm[1]))
                         cb.set_label('Phase (deg)',
-                                     fontdict={'size':self.font_size+1,
-                                               'weight':'bold'})
-                    #color bar tipper Imag
+                                     fontdict={'size': self.font_size + 1,
+                                               'weight': 'bold'})
+                    # color bar tipper Imag
                     if xx == 9:
-                        cb = mcb.ColorbarBase(cbx[0],cmap=self.tip_cmap,
-                                norm=Normalize(vmin=self.tip_limits_re[0],
-                                               vmax=self.tip_limits_re[1]))
+                        cb = mcb.ColorbarBase(cbx[0], cmap=self.tip_cmap,
+                                              norm=Normalize(vmin=self.tip_limits_re[0],
+                                                             vmax=self.tip_limits_re[1]))
                         cb.set_label('Re{T}',
-                                     fontdict={'size':self.font_size+1,
-                                               'weight':'bold'})
+                                     fontdict={'size': self.font_size + 1,
+                                               'weight': 'bold'})
                     if xx == 11:
-                        cb = mcb.ColorbarBase(cbx[0],cmap=self.tip_cmap,
-                                norm=Normalize(vmin=self.tip_limits_im[0],
-                                               vmax=self.tip_limits_im[1]))
+                        cb = mcb.ColorbarBase(cbx[0], cmap=self.tip_cmap,
+                                              norm=Normalize(vmin=self.tip_limits_im[0],
+                                                             vmax=self.tip_limits_im[1]))
                         cb.set_label('Im{T}',
-                                     fontdict={'size':self.font_size+1,
-                                               'weight':'bold'})
+                                     fontdict={'size': self.font_size + 1,
+                                               'weight': 'bold'})
 
                 ax.text(xloc, yloc, self.label_list[xx],
-                        fontdict={'size':self.font_size+1},
-                        bbox={'facecolor':'white'},
+                        fontdict={'size': self.font_size + 1},
+                        bbox={'facecolor': 'white'},
                         horizontalalignment='left',
                         verticalalignment='top')
                 if xx == 0 or xx == 4:
                     ax.set_ylabel('Period (s)',
-                                  fontdict={'size':self.font_size+2,
-                                  'weight':'bold'})
-                if xx>3:
-                    ax.set_xlabel('Station',fontdict={'size':self.font_size+2,
-                                                      'weight':'bold'})
-
+                                  fontdict={'size': self.font_size + 2,
+                                            'weight': 'bold'})
+                if xx > 3:
+                    ax.set_xlabel('Station', fontdict={'size': self.font_size + 2,
+                                                       'weight': 'bold'})
 
             plt.show()
 
         else:
             if self.plot_tipper == 'y':
                 gs1 = gridspec.GridSpec(2, 3,
-                            left=self.subplot_left,
-                            right=self.subplot_right,
-                            hspace=self.subplot_hspace,
-                            wspace=self.subplot_wspace)
+                                        left=self.subplot_left,
+                                        right=self.subplot_right,
+                                        hspace=self.subplot_hspace,
+                                        wspace=self.subplot_wspace)
 
             else:
                 gs1 = gridspec.GridSpec(2, 2,
-                            left=self.subplot_left,
-                            right=self.subplot_right,
-                            hspace=self.subplot_hspace,
-                            wspace=self.subplot_wspace)
+                                        left=self.subplot_left,
+                                        right=self.subplot_right,
+                                        hspace=self.subplot_hspace,
+                                        wspace=self.subplot_wspace)
 
-            #plot TE resistivity data
+            # plot TE resistivity data
             self.axrte = self.fig.add_subplot(gs1[0, 0])
             self.axrte.pcolormesh(dgrid,
                                   fgrid,
@@ -5639,7 +5636,7 @@ class PlotPseudoSection(object):
                                   vmin=self.res_limits_te[0],
                                   vmax=self.res_limits_te[1])
 
-            #plot TM resistivity data
+            # plot TM resistivity data
             self.axrtm = self.fig.add_subplot(gs1[0, 1])
             self.axrtm.pcolormesh(dgrid,
                                   fgrid,
@@ -5648,7 +5645,7 @@ class PlotPseudoSection(object):
                                   vmin=self.res_limits_tm[0],
                                   vmax=self.res_limits_tm[1])
 
-            #plot TE phase data
+            # plot TE phase data
             self.axpte = self.fig.add_subplot(gs1[1, 0])
             self.axpte.pcolormesh(dgrid,
                                   fgrid,
@@ -5657,120 +5654,119 @@ class PlotPseudoSection(object):
                                   vmin=self.phase_limits_te[0],
                                   vmax=self.phase_limits_te[1])
 
-            #plot TM phase data
+            # plot TM phase data
             self.axptm = self.fig.add_subplot(gs1[1, 1])
             self.axptm.pcolormesh(dgrid,
                                   fgrid,
-                                  np.flipud(tm_phase_arr[:,:, 0]),
+                                  np.flipud(tm_phase_arr[:, :, 0]),
                                   cmap=self.phase_cmap,
                                   vmin=self.phase_limits_tm[0],
                                   vmax=self.phase_limits_tm[1])
             ax_list = [self.axrte, self.axrtm, self.axpte, self.axptm]
             if self.plot_tipper == 'y':
-                #plot real tipper  data
+                # plot real tipper  data
                 self.axtpr = plt.Subplot(self.fig, gs1[0, 2])
                 self.fig.add_subplot(self.axtpr)
                 self.axtpr.pcolormesh(dgrid,
-                                       fgrid,
-                                       np.flipud(tip_real_arr[:,:,0]),
-                                       cmap=self.tip_cmap,
-                                       vmin=self.tip_limits_re[0],
-                                       vmax=self.tip_limits_re[1])
-                #plot real tipper  data
+                                      fgrid,
+                                      np.flipud(tip_real_arr[:, :, 0]),
+                                      cmap=self.tip_cmap,
+                                      vmin=self.tip_limits_re[0],
+                                      vmax=self.tip_limits_re[1])
+                # plot real tipper  data
                 self.axtpi = plt.Subplot(self.fig, gs1[1, 2])
                 self.fig.add_subplot(self.axtpi)
                 self.axtpi.pcolormesh(dgrid,
-                                       fgrid,
-                                       np.flipud(tip_imag_arr[:,:,0]),
-                                       cmap=self.tip_cmap,
-                                       vmin=self.tip_limits_re[0],
-                                       vmax=self.tip_limits_re[1])
+                                      fgrid,
+                                      np.flipud(tip_imag_arr[:, :, 0]),
+                                      cmap=self.tip_cmap,
+                                      vmin=self.tip_limits_re[0],
+                                      vmax=self.tip_limits_re[1])
                 ax_list.append(self.axtpr)
                 ax_list.append(self.axtpi)
 
-            #make everything look tidy
-            for xx,ax in enumerate(ax_list):
+            # make everything look tidy
+            for xx, ax in enumerate(ax_list):
                 ax.semilogy()
                 ax.set_ylim(ylimits)
                 ax.xaxis.set_ticks(offset_list[np.arange(0, ns, self.ml)])
                 ax.xaxis.set_ticks(offset_list, minor=True)
                 ax.xaxis.set_ticklabels(slabel)
                 ax.grid(True, alpha=.25)
-                ax.set_xlim(offset_list.min(),offset_list.max())
+                ax.set_xlim(offset_list.min(), offset_list.max())
                 cbx = mcb.make_axes(ax,
                                     shrink=self.cb_shrink,
                                     pad=self.cb_pad)
                 if xx == 0:
                     plt.setp(ax.xaxis.get_ticklabels(), visible=False)
-                    cb = mcb.ColorbarBase(cbx[0],cmap=self.res_cmap,
-                                    norm=Normalize(vmin=self.res_limits_te[0],
-                                                   vmax=self.res_limits_te[1]))
+                    cb = mcb.ColorbarBase(cbx[0], cmap=self.res_cmap,
+                                          norm=Normalize(vmin=self.res_limits_te[0],
+                                                         vmax=self.res_limits_te[1]))
                     cb.set_ticks(np.arange(self.res_limits_te[0],
-                                           self.res_limits_te[1]+1))
+                                           self.res_limits_te[1] + 1))
                     cb.set_ticklabels(log_labels_te)
                 elif xx == 1:
                     plt.setp(ax.xaxis.get_ticklabels(), visible=False)
                     plt.setp(ax.yaxis.get_ticklabels(), visible=False)
 
-                    cb = mcb.ColorbarBase(cbx[0],cmap=self.res_cmap,
-                                    norm=Normalize(vmin=self.res_limits_tm[0],
-                                                   vmax=self.res_limits_tm[1]))
+                    cb = mcb.ColorbarBase(cbx[0], cmap=self.res_cmap,
+                                          norm=Normalize(vmin=self.res_limits_tm[0],
+                                                         vmax=self.res_limits_tm[1]))
                     cb.set_label('App. Res. ($\Omega \cdot$m)',
-                                 fontdict={'size':self.font_size+1,
-                                           'weight':'bold'})
+                                 fontdict={'size': self.font_size + 1,
+                                           'weight': 'bold'})
                     cb.set_ticks(np.arange(self.res_limits_tm[0],
-                                           self.res_limits_tm[1]+1))
+                                           self.res_limits_tm[1] + 1))
                     cb.set_ticklabels(log_labels_tm)
                 elif xx == 2:
-                    cb = mcb.ColorbarBase(cbx[0],cmap=self.phase_cmap,
-                                    norm=Normalize(vmin=self.phase_limits_te[0],
-                                                   vmax=self.phase_limits_te[1]))
+                    cb = mcb.ColorbarBase(cbx[0], cmap=self.phase_cmap,
+                                          norm=Normalize(vmin=self.phase_limits_te[0],
+                                                         vmax=self.phase_limits_te[1]))
                     cb.set_ticks(np.arange(self.phase_limits_te[0],
-                                           self.phase_limits_te[1]+1, 15))
+                                           self.phase_limits_te[1] + 1, 15))
                 elif xx == 3:
                     plt.setp(ax.yaxis.get_ticklabels(), visible=False)
-                    cb = mcb.ColorbarBase(cbx[0],cmap=self.phase_cmap,
-                                    norm=Normalize(vmin=self.phase_limits_tm[0],
-                                                   vmax=self.phase_limits_tm[1]))
+                    cb = mcb.ColorbarBase(cbx[0], cmap=self.phase_cmap,
+                                          norm=Normalize(vmin=self.phase_limits_tm[0],
+                                                         vmax=self.phase_limits_tm[1]))
                     cb.set_label('Phase (deg)',
-                                 fontdict={'size':self.font_size+1,
-                                           'weight':'bold'})
+                                 fontdict={'size': self.font_size + 1,
+                                           'weight': 'bold'})
                     cb.set_ticks(np.arange(self.phase_limits_te[0],
-                                           self.phase_limits_te[1]+1, 15))
+                                           self.phase_limits_te[1] + 1, 15))
 
-                #real tipper
+                # real tipper
                 elif xx == 4:
                     plt.setp(ax.xaxis.get_ticklabels(), visible=False)
                     plt.setp(ax.yaxis.get_ticklabels(), visible=False)
                     cb = mcb.ColorbarBase(cbx[0], cmap=self.tip_cmap,
-                                      norm=Normalize(vmin=self.tip_limits_re[0],
-                                                     vmax=self.tip_limits_re[1]))
+                                          norm=Normalize(vmin=self.tip_limits_re[0],
+                                                         vmax=self.tip_limits_re[1]))
                     cb.set_label('Re{T}',
-                                 fontdict={'size':self.font_size+1,
-                                           'weight':'bold'})
-                #imag tipper
+                                 fontdict={'size': self.font_size + 1,
+                                           'weight': 'bold'})
+                # imag tipper
                 elif xx == 5:
                     plt.setp(ax.yaxis.get_ticklabels(), visible=False)
                     cb = mcb.ColorbarBase(cbx[0], cmap=self.tip_cmap,
-                                      norm=Normalize(vmin=self.tip_limits_im[0],
-                                                     vmax=self.tip_limits_im[1]))
+                                          norm=Normalize(vmin=self.tip_limits_im[0],
+                                                         vmax=self.tip_limits_im[1]))
                     cb.set_label('Im{T}',
-                                 fontdict={'size':self.font_size+1,
-                                           'weight':'bold'})
+                                 fontdict={'size': self.font_size + 1,
+                                           'weight': 'bold'})
 
-                ax.text(xloc, yloc, self.label_list[2*xx],
-                        fontdict={'size':self.font_size+1},
-                        bbox={'facecolor':'white'},
+                ax.text(xloc, yloc, self.label_list[2 * xx],
+                        fontdict={'size': self.font_size + 1},
+                        bbox={'facecolor': 'white'},
                         horizontalalignment='left',
                         verticalalignment='top')
                 if xx == 0 or xx == 2:
                     ax.set_ylabel('Period (s)',
-                                  fontdict={'size':self.font_size+2,
-                                            'weight':'bold'})
-                if xx>1:
-                    ax.set_xlabel('Station',fontdict={'size':self.font_size+2,
-                                                      'weight':'bold'})
-
+                                  fontdict={'size': self.font_size + 2,
+                                            'weight': 'bold'})
+                if xx > 1:
+                    ax.set_xlabel('Station', fontdict={'size': self.font_size + 2,
+                                                       'weight': 'bold'})
 
             plt.show()
 
@@ -5795,7 +5791,7 @@ class PlotPseudoSection(object):
         self.plot()
 
     def save_figure(self, save_fn, file_format='pdf', orientation='portrait',
-                  fig_dpi=None, close_plot='y'):
+                    fig_dpi=None, close_plot='y'):
         """
         save_plot will save the figure to save_fn.
         
@@ -5849,10 +5845,10 @@ class PlotPseudoSection(object):
                              orientation=orientation, bbox_inches='tight')
 
         else:
-            save_fn = os.path.join(save_fn, 'OccamPseudoSection.'+
-                                    file_format)
+            save_fn = os.path.join(save_fn, 'OccamPseudoSection.' +
+                                   file_format)
             self.fig.savefig(save_fn, dpi=fig_dpi, format=file_format,
-                        orientation=orientation, bbox_inches='tight')
+                             orientation=orientation, bbox_inches='tight')
 
         if close_plot == 'y':
             plt.clf()
@@ -5862,7 +5858,7 @@ class PlotPseudoSection(object):
             pass
 
         self.fig_fn = save_fn
-        print 'Saved figure to: '+self.fig_fn
+        print 'Saved figure to: ' + self.fig_fn
 
     def update_plot(self):
         """
@@ -5892,9 +5888,11 @@ class PlotPseudoSection(object):
 
         return ("Plots a pseudo section of TE and TM modes for data and "
                 "response if given.")
-#==============================================================================
+
+
+# ==============================================================================
 # plot misfits as a pseudo-section
-#==============================================================================
+# ==============================================================================
 class PlotMisfitPseudoSection(object):
     """
     plot a pseudo section of the data and response if given
@@ -6022,7 +6020,7 @@ class PlotMisfitPseudoSection(object):
         self.plot_tipper = kwargs.pop('plot_tipper', 'n')
 
         self.ml = kwargs.pop('ml', 2)
-        self.station_id = kwargs.pop('station_id', [0,4])
+        self.station_id = kwargs.pop('station_id', [0, 4])
 
         self.fig_num = kwargs.pop('fig_num', 1)
         self.fig_size = kwargs.pop('fig_size', [6, 6])
@@ -6074,7 +6072,6 @@ class PlotMisfitPseudoSection(object):
         resp_obj = Response()
         resp_obj.read_response_file(self.resp_fn)
 
-
         n_stations = len(data_obj.station_list)
         n_periods = len(data_obj.freq)
 
@@ -6111,21 +6108,21 @@ class PlotMisfitPseudoSection(object):
         ylimits = (self._data_obj.period.max(), self._data_obj.period.min())
 
         offset_list = np.append(self._data_obj.station_locations,
-                                self._data_obj.station_locations[-1]*1.15)
+                                self._data_obj.station_locations[-1] * 1.15)
 
-        #make a meshgrid for plotting
-        #flip frequency so bottom corner is long period
+        # make a meshgrid for plotting
+        # flip frequency so bottom corner is long period
         dgrid, fgrid = np.meshgrid(offset_list, self._data_obj.period[::-1])
 
-        #make list for station labels
+        # make list for station labels
         ns = len(self._data_obj.station_list)
         sindex_1 = self.station_id[0]
         sindex_2 = self.station_id[1]
         slabel = [self._data_obj.station_list[ss][sindex_1:sindex_2]
-                    for ss in range(0, ns, self.ml)]
+                  for ss in range(0, ns, self.ml)]
 
-        xloc = offset_list[0]+abs(offset_list[0]-offset_list[1])/5
-        yloc = 1.10*self._data_obj.period[1]
+        xloc = offset_list[0] + abs(offset_list[0] - offset_list[1]) / 5
+        yloc = 1.10 * self._data_obj.period[1]
 
         plt.rcParams['font.size'] = self.font_size
         plt.rcParams['figure.subplot.bottom'] = self.subplot_bottom
@@ -6152,35 +6149,34 @@ class PlotMisfitPseudoSection(object):
             self.axtpr = self.fig.add_subplot(2, 3, 3, sharex=self.axrte)
             self.axtpi = self.fig.add_subplot(2, 3, 6, sharex=self.axrte)
 
-        #--> TE Resistivity
+        # --> TE Resistivity
         self.axrte.pcolormesh(dgrid,
                               fgrid,
                               np.flipud(self.misfit_te_res),
                               cmap=self.res_cmap,
                               vmin=self.res_limits_te[0],
                               vmax=self.res_limits_te[1])
-        #--> TM Resistivity
+        # --> TM Resistivity
         self.axrtm.pcolormesh(dgrid,
                               fgrid,
                               np.flipud(self.misfit_tm_res),
                               cmap=self.res_cmap,
                               vmin=self.res_limits_tm[0],
                               vmax=self.res_limits_tm[1])
-        #--> TE Phase
+        # --> TE Phase
         self.axpte.pcolormesh(dgrid,
                               fgrid,
                               np.flipud(self.misfit_te_phase),
                               cmap=self.phase_cmap,
                               vmin=self.phase_limits_te[0],
                               vmax=self.phase_limits_te[1])
-        #--> TM Phase
+        # --> TM Phase
         self.axptm.pcolormesh(dgrid,
                               fgrid,
                               np.flipud(self.misfit_tm_phase),
                               cmap=self.phase_cmap,
                               vmin=self.phase_limits_tm[0],
                               vmax=self.phase_limits_tm[1])
-
 
         ax_list = [self.axrte, self.axrtm, self.axpte, self.axptm]
 
@@ -6200,86 +6196,83 @@ class PlotMisfitPseudoSection(object):
 
             ax_list.append(self.axtpr)
             ax_list.append(self.axtpi)
-         #make everthing look tidy
+            # make everthing look tidy
         for xx, ax in enumerate(ax_list):
             ax.semilogy()
             ax.set_ylim(ylimits)
             ax.xaxis.set_ticks(offset_list[np.arange(0, ns, self.ml)])
             ax.xaxis.set_ticks(offset_list, minor=True)
             ax.xaxis.set_ticklabels(slabel)
-            ax.set_xlim(offset_list.min(),offset_list.max())
+            ax.set_xlim(offset_list.min(), offset_list.max())
             cbx = mcb.make_axes(ax,
                                 shrink=self.cb_shrink,
                                 pad=self.cb_pad)
 
-            #te res
+            # te res
             if xx == 0:
                 plt.setp(ax.xaxis.get_ticklabels(), visible=False)
-                cb = mcb.ColorbarBase(cbx[0],cmap=self.res_cmap,
-                        norm=Normalize(vmin=self.res_limits_te[0],
-                                       vmax=self.res_limits_te[1]))
-            #tm res
+                cb = mcb.ColorbarBase(cbx[0], cmap=self.res_cmap,
+                                      norm=Normalize(vmin=self.res_limits_te[0],
+                                                     vmax=self.res_limits_te[1]))
+            # tm res
             elif xx == 1:
                 plt.setp(ax.xaxis.get_ticklabels(), visible=False)
                 plt.setp(ax.yaxis.get_ticklabels(), visible=False)
-                cb = mcb.ColorbarBase(cbx[0],cmap=self.res_cmap,
-                        norm=Normalize(vmin=self.res_limits_tm[0],
-                                       vmax=self.res_limits_tm[1]))
+                cb = mcb.ColorbarBase(cbx[0], cmap=self.res_cmap,
+                                      norm=Normalize(vmin=self.res_limits_tm[0],
+                                                     vmax=self.res_limits_tm[1]))
                 cb.set_label('Log$_{10}$ App. Res. ($\Omega \cdot$m)',
-                             fontdict={'size':self.font_size+1,
-                                       'weight':'bold'})
-            #te phase
+                             fontdict={'size': self.font_size + 1,
+                                       'weight': 'bold'})
+            # te phase
             elif xx == 2:
-                cb = mcb.ColorbarBase(cbx[0],cmap=self.phase_cmap,
-                        norm=Normalize(vmin=self.phase_limits_te[0],
-                                       vmax=self.phase_limits_te[1]))
-            #tm phase
+                cb = mcb.ColorbarBase(cbx[0], cmap=self.phase_cmap,
+                                      norm=Normalize(vmin=self.phase_limits_te[0],
+                                                     vmax=self.phase_limits_te[1]))
+            # tm phase
             elif xx == 3:
                 plt.setp(ax.yaxis.get_ticklabels(), visible=False)
-                cb = mcb.ColorbarBase(cbx[0],cmap=self.phase_cmap,
-                        norm=Normalize(vmin=self.phase_limits_tm[0],
-                                       vmax=self.phase_limits_tm[1]))
+                cb = mcb.ColorbarBase(cbx[0], cmap=self.phase_cmap,
+                                      norm=Normalize(vmin=self.phase_limits_tm[0],
+                                                     vmax=self.phase_limits_tm[1]))
                 cb.set_label('Phase (deg)',
-                             fontdict={'size':self.font_size+1,
-                                       'weight':'bold'})
+                             fontdict={'size': self.font_size + 1,
+                                       'weight': 'bold'})
 
-            #real tipper
+            # real tipper
             elif xx == 4:
                 plt.setp(ax.xaxis.get_ticklabels(), visible=False)
                 plt.setp(ax.yaxis.get_ticklabels(), visible=False)
                 cb = mcb.ColorbarBase(cbx[0], cmap=self.tip_cmap,
-                                  norm=Normalize(vmin=self.tip_limits_re[0],
-                                                 vmax=self.tip_limits_re[1]))
+                                      norm=Normalize(vmin=self.tip_limits_re[0],
+                                                     vmax=self.tip_limits_re[1]))
                 cb.set_label('Re{Tip}',
-                             fontdict={'size':self.font_size+1,
-                                       'weight':'bold'})
-            #imag tipper
+                             fontdict={'size': self.font_size + 1,
+                                       'weight': 'bold'})
+            # imag tipper
             elif xx == 5:
                 plt.setp(ax.yaxis.get_ticklabels(), visible=False)
                 cb = mcb.ColorbarBase(cbx[0], cmap=self.tip_cmap,
-                                  norm=Normalize(vmin=self.tip_limits_im[0],
-                                                 vmax=self.tip_limits_im[1]))
+                                      norm=Normalize(vmin=self.tip_limits_im[0],
+                                                     vmax=self.tip_limits_im[1]))
                 cb.set_label('Im{Tip}',
-                             fontdict={'size':self.font_size+1,
-                                       'weight':'bold'})
+                             fontdict={'size': self.font_size + 1,
+                                       'weight': 'bold'})
 
-            #make label for plot
+            # make label for plot
             ax.text(xloc, yloc, self.label_list[xx],
-                    fontdict={'size':self.font_size+2},
-                    bbox={'facecolor':'white'},
+                    fontdict={'size': self.font_size + 2},
+                    bbox={'facecolor': 'white'},
                     horizontalalignment='left',
                     verticalalignment='top')
 
             if xx == 0 or xx == 2:
                 ax.set_ylabel('Period (s)',
-                              fontdict={'size':self.font_size+2,
-                              'weight':'bold'})
+                              fontdict={'size': self.font_size + 2,
+                                        'weight': 'bold'})
             if xx > 1:
-                ax.set_xlabel('Station',fontdict={'size':self.font_size+2,
-                                                  'weight':'bold'})
-
-
-
+                ax.set_xlabel('Station', fontdict={'size': self.font_size + 2,
+                                                   'weight': 'bold'})
 
         plt.show()
 
@@ -6304,7 +6297,7 @@ class PlotMisfitPseudoSection(object):
         self.plot()
 
     def save_figure(self, save_fn, file_format='pdf', orientation='portrait',
-                  fig_dpi=None, close_plot='y'):
+                    fig_dpi=None, close_plot='y'):
         """
         save_plot will save the figure to save_fn.
         
@@ -6358,10 +6351,10 @@ class PlotMisfitPseudoSection(object):
                              orientation=orientation, bbox_inches='tight')
 
         else:
-            save_fn = os.path.join(save_fn, 'OccamMisfitPseudoSection.'+
-                                    file_format)
+            save_fn = os.path.join(save_fn, 'OccamMisfitPseudoSection.' +
+                                   file_format)
             self.fig.savefig(save_fn, dpi=fig_dpi, format=file_format,
-                        orientation=orientation, bbox_inches='tight')
+                             orientation=orientation, bbox_inches='tight')
 
         if close_plot == 'y':
             plt.clf()
@@ -6371,7 +6364,7 @@ class PlotMisfitPseudoSection(object):
             pass
 
         self.fig_fn = save_fn
-        print 'Saved figure to: '+self.fig_fn
+        print 'Saved figure to: ' + self.fig_fn
 
     def update_plot(self):
         """
@@ -6401,6 +6394,7 @@ class PlotMisfitPseudoSection(object):
 
         return ("Plots a pseudo section of TE and TM modes for data and "
                 "response if given.")
+
 
 class OccamPointPicker(object):
     """
@@ -6486,9 +6480,9 @@ class OccamPointPicker(object):
     """
 
     def __init__(self, ax_list, line_list, err_list,
-                 res_err_inc=.05, phase_err_inc=.02,  marker='h'):
+                 res_err_inc=.05, phase_err_inc=.02, marker='h'):
 
-        #give the class some attributes
+        # give the class some attributes
         self.ax_list = ax_list
         self.line_list = line_list
         self.err_list = err_list
@@ -6496,7 +6490,7 @@ class OccamPointPicker(object):
         self.error = []
         self.fdict = []
         self.fndict = {}
-        #see if just one figure is plotted or multiple figures are plotted
+        # see if just one figure is plotted or multiple figures are plotted
         self.ax = ax_list[0][0]
         self.line = line_list[0][0]
         self.cidlist = []
@@ -6509,58 +6503,58 @@ class OccamPointPicker(object):
             self.error.append([])
             self.fdict.append([])
 
-            #get data from lines and make a dictionary of frequency points for
-            #easy indexing
-            #line_find = False
+            # get data from lines and make a dictionary of frequency points for
+            # easy indexing
+            # line_find = False
             for ii, line in enumerate(line_list[nn]):
                 try:
                     self.data[nn].append(line.get_data()[1])
                     self.fdict[nn].append(dict([('{0:.5g}'.format(kk), ff)
-                                                for ff,kk in
+                                                for ff, kk in
                                                 enumerate(line.get_data()[0])]))
                     self.fndict['{0}'.format(line.figure.number)] = nn
 
-                    #set some events
-                    #if line_find == False:
-                    cid1 = line.figure.canvas.mpl_connect('pick_event',self)
+                    # set some events
+                    # if line_find == False:
+                    cid1 = line.figure.canvas.mpl_connect('pick_event', self)
                     cid2 = line.figure.canvas.mpl_connect('axes_enter_event',
-                                                           self.inAxes)
+                                                          self.inAxes)
                     cid3 = line.figure.canvas.mpl_connect('key_press_event',
-                                                           self.on_close)
+                                                          self.on_close)
                     cid4 = line.figure.canvas.mpl_connect('figure_enter_event',
-                                                           self.inFigure)
+                                                          self.inFigure)
                     self.cidlist.append([cid1, cid2, cid3, cid4])
 
-                    #set the figure number
+                    # set the figure number
                     self.fig_num = self.line.figure.number
 
-                        #line_find = True
+                    # line_find = True
 
                 except AttributeError:
                     self.data[nn].append([])
                     self.fdict[nn].append([])
 
-            #read in the error in a useful way so that it can be translated to
-            #the data file.  Make the error into an array
+            # read in the error in a useful way so that it can be translated to
+            # the data file.  Make the error into an array
             for ee, err in enumerate(err_list[nn]):
                 try:
                     errpath = err[2].get_paths()
                     errarr = np.zeros(len(self.fdict[nn][ee].keys()))
                     for ff, epath in enumerate(errpath):
                         errv = epath.vertices
-                        errarr[ff] = abs(errv[0,1]-self.data[nn][ee][ff])
+                        errarr[ff] = abs(errv[0, 1] - self.data[nn][ee][ff])
                     self.error[nn].append(errarr)
                 except AttributeError:
                     self.error[nn].append([])
 
-        #set the error bar increment values
+        # set the error bar increment values
         self.res_err_inc = res_err_inc
         self.phase_err_inc = phase_err_inc
 
-        #set the marker
+        # set the marker
         self.marker = marker
 
-        #make a list of occam2d lines to write later
+        # make a list of occam2d lines to write later
         self.data_list = []
 
     def __call__(self, event):
@@ -6586,46 +6580,46 @@ class OccamPointPicker(object):
             **q** will close the figure.
         """
         self.event = event
-        #make a new point that is an PickEvent type
+        # make a new point that is an PickEvent type
         npoint = event.artist
-        #if the right button is clicked mask the point
-        if event.mouseevent.button ==  3:
-            #get the point that was clicked on
+        # if the right button is clicked mask the point
+        if event.mouseevent.button == 3:
+            # get the point that was clicked on
             ii = event.ind
             xd = npoint.get_xdata()[ii]
             yd = npoint.get_ydata()[ii]
 
-            #set the x index from the frequency dictionary
+            # set the x index from the frequency dictionary
             ll = self.fdict[self.fig_num][self.ax_num]['{0:.5g}'.format(xd[0])]
 
-            #change the data to be a zero
+            # change the data to be a zero
             self.data[self.fig_num][self.ax_num][ll] = 0
 
-            #reset the point to be a gray x
+            # reset the point to be a gray x
             self.ax.plot(xd, yd,
-                         ls = 'None',
+                         ls='None',
                          color=(.7, .7, .7),
                          marker=self.marker,
                          ms=4)
 
-            #redraw the canvas
+            # redraw the canvas
             self.ax.figure.canvas.draw()
 
-        #if the left button is clicked change both resistivity and phase points
-        elif event.mouseevent.button ==  1:
-            #get the point that was clicked on
+        # if the left button is clicked change both resistivity and phase points
+        elif event.mouseevent.button == 1:
+            # get the point that was clicked on
             ii = event.ind
             xd = npoint.get_xdata()[ii]
             yd = npoint.get_ydata()[ii]
 
-            #set the x index from the frequency dictionary
+            # set the x index from the frequency dictionary
             ll = self.fdict[self.fig_num][self.ax_num]['{0:.5g}'.format(xd[0])]
 
-            #set the data point to zero
+            # set the data point to zero
             print self.data[self.fig_num][self.ax_num][ll]
             self.data[self.fig_num][self.ax_num][ll] = 0
 
-            #reset the point to be a gray x
+            # reset the point to be a gray x
             self.ax.plot(xd, yd,
                          ls='None',
                          color=(.7, .7, .7),
@@ -6634,82 +6628,82 @@ class OccamPointPicker(object):
 
             self.ax.figure.canvas.draw()
 
-            #check to make sure there is a corresponding res/phase point
+            # check to make sure there is a corresponding res/phase point
             try:
-                kk = (self.ax_num+2)%4
+                kk = (self.ax_num + 2) % 4
                 print kk
-                #get the corresponding y-value
+                # get the corresponding y-value
                 yd2 = self.data[self.fig_num][kk][ll]
 
-                #set that data point to 0 as well
+                # set that data point to 0 as well
                 self.data[self.fig_num][kk][ll] = 0
 
-                #make that data point a gray x
+                # make that data point a gray x
                 self.ax_list[self.fig_num][kk].plot(xd, yd2,
                                                     ls='None',
                                                     color=(.7, .7, .7),
                                                     marker=self.marker,
                                                     ms=4)
-                #redraw the canvas
+                # redraw the canvas
                 self.ax.figure.canvas.draw()
             except KeyError:
                 print 'Axis does not contain res/phase point'
 
-        #if click the scroll button or middle button change increase the
-        #errorbars by the given amount
+        # if click the scroll button or middle button change increase the
+        # errorbars by the given amount
         elif event.mouseevent.button == 2:
             ii = event.ind
             xd = npoint.get_xdata()[ii]
             yd = npoint.get_ydata()[ii]
             jj = self.ax_num
 
-            #get x index
+            # get x index
             ll = self.fdict[self.fig_num][jj]['{0:.5g}'.format(xd[0])]
 
-            #make error bar array
+            # make error bar array
             eb = self.err_list[self.fig_num][jj][2].get_paths()[ll].vertices
 
-            #make ecap array
+            # make ecap array
             ecapl = self.err_list[self.fig_num][jj][0].get_data()[1][ll]
             ecapu = self.err_list[self.fig_num][jj][1].get_data()[1][ll]
 
-            #change apparent resistivity error
+            # change apparent resistivity error
             if jj == 0 or jj == 1:
-                nebu = eb[0,1]-self.res_err_inc*eb[0,1]
-                nebl = eb[1,1]+self.res_err_inc*eb[1,1]
-                ecapl = ecapl-self.res_err_inc*ecapl
-                ecapu = ecapu+self.res_err_inc*ecapu
+                nebu = eb[0, 1] - self.res_err_inc * eb[0, 1]
+                nebl = eb[1, 1] + self.res_err_inc * eb[1, 1]
+                ecapl = ecapl - self.res_err_inc * ecapl
+                ecapu = ecapu + self.res_err_inc * ecapu
 
-            #change phase error
+            # change phase error
             elif jj == 2 or jj == 3:
-                nebu = eb[0,1]-eb[0,1]*self.phase_err_inc
-                nebl = eb[1,1]+eb[1,1]*self.phase_err_inc
-                ecapl = ecapl-ecapl*self.phase_err_inc
-                ecapu = ecapu+ecapu*self.phase_err_inc
+                nebu = eb[0, 1] - eb[0, 1] * self.phase_err_inc
+                nebl = eb[1, 1] + eb[1, 1] * self.phase_err_inc
+                ecapl = ecapl - ecapl * self.phase_err_inc
+                ecapu = ecapu + ecapu * self.phase_err_inc
 
-            #put the new error into the error array
-            self.error[self.fig_num][jj][ll] = abs(nebu-\
-                                        self.data[self.fig_num][jj][ll])
+            # put the new error into the error array
+            self.error[self.fig_num][jj][ll] = abs(nebu - \
+                                                   self.data[self.fig_num][jj][ll])
 
-            #set the new error bar values
+            # set the new error bar values
             eb[0, 1] = nebu
             eb[1, 1] = nebl
 
-            #reset the error bars and caps
+            # reset the error bars and caps
             ncapl = self.err_list[self.fig_num][jj][0].get_data()
             ncapu = self.err_list[self.fig_num][jj][1].get_data()
             ncapl[1][ll] = ecapl
             ncapu[1][ll] = ecapu
 
-            #set the values
+            # set the values
             self.err_list[self.fig_num][jj][0].set_data(ncapl)
             self.err_list[self.fig_num][jj][1].set_data(ncapu)
             self.err_list[self.fig_num][jj][2].get_paths()[ll].vertices = eb
 
-            #redraw the canvas
+            # redraw the canvas
             self.ax.figure.canvas.draw()
 
-    #get the axis number that the mouse is in and change to that axis
+    # get the axis number that the mouse is in and change to that axis
     def inAxes(self, event):
         """
         gets the axes that the mouse is currently in.
@@ -6735,7 +6729,7 @@ class OccamPointPicker(object):
                     self.ax_num = ll
         self.line = self.line_list[self.fig_num][self.ax_num]
 
-    #get the figure number that the mouse is in
+    # get the figure number that the mouse is in
     def inFigure(self, event):
         """
         gets the figure number that the mouse is in
@@ -6754,7 +6748,7 @@ class OccamPointPicker(object):
         self.event3 = event
         self.fig_num = self.fndict['{0}'.format(event.canvas.figure.number)]
 
-    #type the q key to quit the figure and disconnect event handling
+    # type the q key to quit the figure and disconnect event handling
     def on_close(self, event):
         """
         close the figure with a 'q' key event and disconnect the event ids
@@ -6768,12 +6762,11 @@ class OccamPointPicker(object):
             print statement saying the figure is closed
         """
         self.event3 = event
-        if self.event3.key ==  'q':
+        if self.event3.key == 'q':
             for cid in self.cidlist[self.fig_num]:
-               event.canvas.mpl_disconnect(cid)
+                event.canvas.mpl_disconnect(cid)
             plt.close(event.canvas.figure)
             print 'Closed figure ', self.fig_num
-
 
 
 class Run():
@@ -6784,8 +6777,6 @@ class Run():
     """
 
 
-
-
 class Mask(Data):
     """
     Allow masking of points from data file (effectively commenting them out, 
@@ -6793,7 +6784,5 @@ class Mask(Data):
     """
 
 
-
 class OccamInputError(Exception):
     pass
-
