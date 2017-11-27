@@ -28,12 +28,12 @@ jobs:
     - stage: prepare cache (fatch and builds dependencies)
       script: ./bin/travis-setup-env
     - stage: test
-      - script: py.test -v -n 4 --dist=loadscope --cov=mtpy --cov-report= tests/analysis
-      - script: py.test -v -n 4 --dist=loadscope --cov=mtpy --cov-report= tests/core
-      - script: MTPY_TEST_COMPARE_IMAGE=False py.test -v -n 4 --dist=loadscope --cov=mtpy --cov-report= tests/imaging
-      - script: py.test -v -n 4 --dist=loadscope --cov=mtpy --cov-report= tests/modeling
-      - script: py.test -v -n 4 --dist=loadscope --cov=mtpy --cov-report= tests/utils
-      - script: #  test gui
+      script: py.test -v -n 4 --dist=loadscope --cov=mtpy --cov-report= tests/analysis
+      script: py.test -v -n 4 --dist=loadscope --cov=mtpy --cov-report= tests/core
+      script: MTPY_TEST_COMPARE_IMAGE=False py.test -v -n 4 --dist=loadscope --cov=mtpy --cov-report= tests/imaging
+      script: py.test -v -n 4 --dist=loadscope --cov=mtpy --cov-report= tests/modeling
+      script: py.test -v -n 4 --dist=loadscope --cov=mtpy --cov-report= tests/utils
+      script: #  test gui
         - "export DISPLAY=:99.0"  # enable display on travis
         - "sh -e /etc/init.d/xvfb start"
         - sleep 3 # give xvfb some time to start
