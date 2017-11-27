@@ -16,16 +16,20 @@ cache:
 env:
   global:
     - COVERALLS_PARALLEL=true
-  matrix:
-#    - MATPLOTLIB_VERSION=2.1.0 QT_VERSION=4
-    - MATPLOTLIB_VERSION=2.1.0 QT_VERSION=5
-    - MATPLOTLIB_VERSION=2.0.2 QT_VERSION=4
-    - MATPLOTLIB_VERSION=2.0.2 QT_VERSION=5
-    - MATPLOTLIB_VERSION=1.5.3 QT_VERSION=5
+
+stages
 
 jobs:
   include:
-    - stage: prepare cache (fatch and builds dependencies)
+    - stage: compile
+      script: ./bin/travis-setup-env
+      env:
+        - MATPLOTLIB_VERSION=2.1.0 QT_VERSION=5
+        - MATPLOTLIB_VERSION=2.0.2 QT_VERSION=4
+        - MATPLOTLIB_VERSION=2.0.2 QT_VERSION=5
+        - MATPLOTLIB_VERSION=1.5.3 QT_VERSION=5
+      script: ./bin/travis-setup-env
+      script: ./bin/travis-setup-env
       script: ./bin/travis-setup-env
     - stage: test
       script: py.test -v -n 4 --dist=loadscope --cov=mtpy --cov-report= tests/analysis
@@ -38,6 +42,12 @@ jobs:
         - "sh -e /etc/init.d/xvfb start"
         - sleep 3 # give xvfb some time to start
         - py.test -v -n 4 --dist=loadscope --cov=mtpy --cov-report= tests/SmartMT
+      env:
+        - MATPLOTLIB_VERSION=2.1.0 QT_VERSION=5
+        - MATPLOTLIB_VERSION=2.0.2 QT_VERSION=4
+        - MATPLOTLIB_VERSION=2.0.2 QT_VERSION=5
+        - MATPLOTLIB_VERSION=1.5.3 QT_VERSION=5
+#    - stage: deploy
 
 after_success:
   - coveralls
