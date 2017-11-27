@@ -56,8 +56,11 @@ except AttributeError:
 #==============================================================================
 
 
-class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
+class ModEMPlotPTMap(QtWidgets.QMainWindow, mtplottools.MTArrows,
+                     mtplottools.MTEllipse):
     def __init__(self):
+        
+        super(ModEMPlotPTMap, self).__init__()
         
         self.modem_model_fn = None
         self.modem_data_fn = None
@@ -72,22 +75,19 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
         #make map scale
         if self.map_scale == 'km':
             self.dscale = 1000.
-            self._ellipse_dict = {'size':3}
-            self._arrow_dict = {'size':2,
-                                'head_length':.35,
-                                'head_width':.35,
-                                'lw':1.}
+            self.ellipse_size = 3
+            self.arrow_size = 2
+            self.arrow_head_length = .35
+            self.arrow_head_width = .35
+            self.arrow_lw = 1.
                                 
         elif self.map_scale == 'm':
             self.dscale = 1.
-            self._ellipse_dict = {'size':500}
-            self._arrow_dict = {'size':500,
-                                'head_length':50,
-                                'head_width':50,
-                                'lw':.75}
-        
-        self._read_ellipse_dict()
-        self._read_arrow_dict()
+            self.ellipse_size = 500
+            self.arrow_size = 500
+            self.arrow_head_length = 50
+            self.arrow_head_width = 50
+            self.arrow_lw = .75
         
         self.ew_limits = None
         self.ns_limits = None
@@ -130,12 +130,14 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
 
         self.dir_path = os.getcwd()
         
-    def setupUi(self, MainWindow):
-        MainWindow.setWindowTitle("Plot ModEM MT Response as PT Maps")
-        MainWindow.setWindowState(QtCore.Qt.WindowMaximized)
+        self.setup_ui()
+        
+    def setup_ui(self):
+        self.setWindowTitle("Plot ModEM MT Response as PT Maps")
+        self.setWindowState(QtCore.Qt.WindowMaximized)
         
         #make a central widget that everything is tied to.
-        self.central_widget = QtWidgets.QWidget(MainWindow)
+        self.central_widget = QtWidgets.QWidget(self)
         self.central_widget.setWindowTitle("Plot MT Response")
         
         #make a widget that will be the period list
@@ -175,7 +177,7 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
 
         # this is the Navigation widget
         # it takes the Canvas widget and a parent
-        self.mpl_toolbar = NavigationToolbar(self.mpl_widget, MainWindow)
+        self.mpl_toolbar = NavigationToolbar(self.mpl_widget, self)
          
         # set the layout for the plot
         mpl_vbox = QtWidgets.QVBoxLayout()
@@ -198,10 +200,10 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
         self.mpl_widget.updateGeometry()
 
         #set the central widget
-        MainWindow.setCentralWidget(self.central_widget)
+        self.setCentralWidget(self.central_widget)
 
         #create a menu bar on the window
-        self.menubar = QtWidgets.QMenuBar(MainWindow)
+        self.menubar = QtWidgets.QMenuBar()
         self.menubar.setGeometry(QtCore.QRect(0, 0, 1920, 38))
         self.menubar.setObjectName(_fromUtf8("menubar"))
 
@@ -219,26 +221,26 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
         self.menu_display = QtWidgets.QMenu(self.menubar)
         self.menu_display.setTitle("Display")
 
-        MainWindow.setMenuBar(self.menubar)
+        self.setMenuBar(self.menubar)
 
         # add a status bar on the bottom of the main window
-        self.statusbar = QtWidgets.QStatusBar(MainWindow)
+        self.statusbar = QtWidgets.QStatusBar()
         self.statusbar.setObjectName(_fromUtf8("statusbar"))
 
-        MainWindow.setStatusBar(self.statusbar)
+        self.setStatusBar(self.statusbar)
         
         # set an open option that on click opens a modem file
-        self.action_data_open = QtWidgets.QAction(MainWindow)
+        self.action_data_open = QtWidgets.QAction(self)
         self.action_data_open.setText("Open")
         self.action_data_open.triggered.connect(self.get_data_fn)
 
         # set a close that closes the main window
-        self.action_close = QtWidgets.QAction(MainWindow)
+        self.action_close = QtWidgets.QAction(self)
         self.action_close.setText("Close")
-        self.action_close.triggered.connect(MainWindow.close)
+        self.action_close.triggered.connect(self.close)
 
         # set a save option that will eventually save the masked data
-        self.action_save = QtWidgets.QAction(MainWindow)
+        self.action_save = QtWidgets.QAction(self)
         self.action_save.setText("Save")
 
         # add the action on the menu tab
@@ -247,43 +249,43 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
         self.menu_data_file.addAction(self.action_save)
         self.menubar.addAction(self.menu_data_file.menuAction())
         
-        self.action_resp_open = QtWidgets.QAction(MainWindow)
+        self.action_resp_open = QtWidgets.QAction(self)
         self.action_resp_open.setText("Open")
         self.action_resp_open.triggered.connect(self.get_resp_fn)
         self.menu_resp_file.addAction(self.action_resp_open)
         self.menubar.addAction(self.menu_resp_file.menuAction())
         
-        self.action_model_open = QtWidgets.QAction(MainWindow)
+        self.action_model_open = QtWidgets.QAction(self)
         self.action_model_open.setText("Open")
         self.action_model_open.triggered.connect(self.get_model_fn)
         self.menu_model_file.addAction(self.action_model_open)
         self.menubar.addAction(self.menu_model_file.menuAction())
 #        
         #adding options for display plot type        
-#        self.menu_plot_type = QtWidgets.QMenu(MainWindow)
+#        self.menu_plot_type = QtWidgets.QMenu(self)
 #        self.menu_plot_type.setTitle("Plot Type")
 #        self.menuDisplay.addMenu(self.menu_plot_type)
 #        self.menubar.addAction(self.menuDisplay.menuAction())
 #        
 #        #set plot impedance or resistivity and phase
-#        self.action_plot_z = QtWidgets.QAction(MainWindow)
+#        self.action_plot_z = QtWidgets.QAction(self)
 #        self.action_plot_z.setText('Impedance')
 #        self.action_plot_z.setCheckable(True)
 #        self.menu_plot_type.addAction(self.action_plot_z)
 #        self.action_plot_z.toggled.connect(self.status_checked_ptz)
 #        
-#        self.action_plot_rp = QtWidgets.QAction(MainWindow)
+#        self.action_plot_rp = QtWidgets.QAction(self)
 #        self.action_plot_rp.setText('Resistivity-Phase')
 #        self.action_plot_rp.setCheckable(True)
 #        self.menu_plot_type.addAction(self.action_plot_rp)
 #        self.action_plot_rp.toggled.connect(self.status_checked_ptrp)
 
-        self.action_plot_settings = QtWidgets.QAction(MainWindow)
+        self.action_plot_settings = QtWidgets.QAction(self)
         self.action_plot_settings.setText('Settings')
         self.action_plot_settings.triggered.connect(self.show_settings)
         self.menu_display.addAction(self.action_plot_settings)
         
-        self.action_plot_stations = QtWidgets.QAction(MainWindow)
+        self.action_plot_stations = QtWidgets.QAction(self)
         self.action_plot_stations.setText('Plot Stations')
         self.action_plot_stations.setCheckable(True)
         self.action_plot_stations.toggled.connect(self.set_plot_stations)
@@ -294,9 +296,9 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
 #        self.menuDisplay.addAction(self.menu_plot_style.menuAction())
 #        self.menu_display.addAction(self.menu_plot_type.menuAction())
     
-        #self.retranslateUi(MainWindow)
+        #self.retranslateUi(self)
         # be sure to connnect all slots first
-        QtCore.QMetaObject.connectSlotsByName(MainWindow)
+        QtCore.QMetaObject.connectSlotsByName(self)
         
                     
     def get_data_fn(self):
@@ -365,7 +367,7 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
         fn_dialog = QtWidgets.QFileDialog()
         fn = str(fn_dialog.getOpenFileName(caption='Choose ModEM response file',
                                            filter='*.dat', 
-                                           directory=self.dir_path))
+                                           directory=self.dir_path)[0])
                                        
         self.modem_resp = mtpy.modeling.modem.Data()
         self.modem_resp.read_data_file(fn)
@@ -1623,10 +1625,8 @@ def main():
 #if __name__ == "__main__":
     import sys
     app = QtWidgets.QApplication(sys.argv)
-    MainWindow = QtWidgets.QMainWindow()
-    ui = Ui_MainWindow()
-    ui.setupUi(MainWindow)
-    MainWindow.show()
+    ui = ModEMPlotPTMap()
+    ui.show()
     sys.exit(app.exec_())
 
 if __name__ == '__main__':
