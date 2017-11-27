@@ -13,6 +13,8 @@ cache:
   directories:
     - builds  # cached files
 
+install: true  # skip default install step which would be called before the prepare cache stage
+
 env:
   global:
     - COVERALLS_PARALLEL=true
