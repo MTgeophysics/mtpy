@@ -29,9 +29,11 @@ Contacts
 | **Jared Peacock**
 | peacock.jared@gmail.com
 
-
 | **Yingzhi Gou**
 | Yingzhi.Gou@ga.gov.au
+
+| **Rakib Hassan**
+| Rakib.Hassan@ga.gov.au
 
 | **Jinming Duan**
 | Jingming.Duan@ga.gov.au
