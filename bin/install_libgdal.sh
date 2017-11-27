@@ -17,7 +17,7 @@ if [ ! -d "gdal-$GDAL_VERSION" ]; then
 fi
 pushd "gdal-$GDAL_VERSION"
 ./configure --with-python --prefix=/usr/local/gdal
-make
+make -j 4
 sudo make install
 sudo ldconfig
 popd

@@ -22,7 +22,7 @@ if [ ! -d "sip-4.19.3" ]; then
 fi
 pushd "sip-4.19.3"
 python configure.py
-make
+make -j 4
 sudo make install
 #make install
 popd
@@ -36,7 +36,7 @@ if [ $QT_VERSION == 4 ]; then
     fi
     pushd PyQt4_gpl_x11-4.12.1
     python configure.py -c --confirm-license --no-designer-plugin -e QtCore -e QtGui -e QtTest
-    make
+    make -j 4
     sudo make install
 #    make install
     popd
@@ -48,7 +48,7 @@ elif [ $QT_VERSION == 5 ]; then
     fi
     pushd PyQt5_gpl-5.9
     python configure.py -c --confirm-license --no-designer-plugin -e QtCore -e QtGui -e QtWidgets -e QtTest --qmake=/usr/lib/x86_64-linux-gnu/qt5/bin/qmake
-    make
+    make -j 4
     sudo make install
     popd
 else

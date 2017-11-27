@@ -421,13 +421,11 @@ class EdiCollection(object):
             writer.writerow(csv_header)
 
         for freq in self.all_frequencies:
-
             mtlist = []
             for mt_obj in self.mt_obj_list:
-
-                f_index_list = [ff for ff, f2 in enumerate(mt_obj.Z.freq)
-                                if (f2 > freq * (1 - self.ptol)) and
-                                (f2 < freq * (1 + self.ptol))]
+                freq_max = freq * (1 + self.ptol)
+                freq_min = freq * (1 - self.ptol)
+                f_index_list = np.where((mt_obj.Z.freq < freq_max) & (mt_obj.Z.freq > freq_min))
                 if len(f_index_list) > 1:
                     self._logger.warn("more than one freq found %s", f_index_list)
 
