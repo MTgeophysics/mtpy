@@ -183,7 +183,6 @@ class MTEllipse(object):
     """
 
     def __init__(self, **kwargs):
-
         self.ellipse_size = 2
         self.ellipse_colorby = 'phimin'
         self.ellipse_range = (0, 90, 10)

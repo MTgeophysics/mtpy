@@ -73,8 +73,11 @@ class ImageCompare(object):
         self.on_fail = kwargs.pop('on_fail', None)
         self.on_compare_fail = kwargs.pop("on_compare_fail", None)
         self.on_empty_image = kwargs.pop("on_empty_image", None)
+
+        ImageCompare._thread_lock.acquire()
         if not os.path.exists(self.result_dir):
             os.mkdir(self.result_dir)
+        ImageCompare._thread_lock.release()
 
     def __call__(self, original):
         import matplotlib.pyplot as plt
@@ -252,7 +255,7 @@ class ImageCompare(object):
         else:
             return bool(param)
 
-
+ImageCompare._thread_lock = threading.Lock()
 ImageCompare.print_image_testing_note(file=sys.stderr)
 
 _thread_lock = threading.Lock()

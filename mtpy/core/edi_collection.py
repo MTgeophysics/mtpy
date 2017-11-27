@@ -24,7 +24,7 @@ import mtpy.core.mt as mt
 import mtpy.imaging.mtplottools as mtplottools
 from mtpy.utils.decorator import deprecated
 from mtpy.utils.mtpylog import MtPyLog
-from logging import DEBUG, INFO, ERROR
+# from logging import DEBUG, INFO, ERROR
 
 def is_num_in_seq(anum, aseq, atol=0.0001):
     """
@@ -62,7 +62,7 @@ class EdiCollection(object):
 
         #self._logger = MtPyLog.get_mtpy_logger(self.__class__.__name__)  # will be EdiCollection
         self._logger = MtPyLog.get_mtpy_logger(__name__)  # __name__ will be  path.to.module OR __main__
-        self._logger.setLevel(INFO)
+        # self._logger.setLevel(INFO)
 
         if edilist is not None:
             self.edifiles = edilist
