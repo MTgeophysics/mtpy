@@ -21,8 +21,11 @@ if [ ! -d "sip-4.19.3" ]; then
     tar xzf sip-4.19.3.tar.gz
 fi
 pushd "sip-4.19.3"
-python configure.py
-make -j 4
+if [ ! -f "BUILT" ] || [ $1 == rebuilt ]; then
+    python configure.py
+    make -j 4
+    touch BUILT
+fi
 sudo make install
 #make install
 popd
@@ -35,8 +38,11 @@ if [ $QT_VERSION == 4 ]; then
         tar xzf PyQt4_gpl_x11-4.12.1.tar.gz
     fi
     pushd PyQt4_gpl_x11-4.12.1
-    python configure.py -c --confirm-license --no-designer-plugin -e QtCore -e QtGui -e QtTest
-    make -j 4
+    if [ ! -f "BUILT" ] || [ $1 == rebuilt ]; then
+        python configure.py -c --confirm-license --no-designer-plugin -e QtCore -e QtGui -e QtTest
+        make -j 4
+        touch BUILT
+    fi
     sudo make install
 #    make install
     popd
@@ -47,8 +53,11 @@ elif [ $QT_VERSION == 5 ]; then
 	    tar xzf PyQt5_gpl-5.9.tar.gz
     fi
     pushd PyQt5_gpl-5.9
-    python configure.py -c --confirm-license --no-designer-plugin -e QtCore -e QtGui -e QtWidgets -e QtTest --qmake=/usr/lib/x86_64-linux-gnu/qt5/bin/qmake
-    make -j 4
+    if [ ! -f "BUILT" ] || [ $1 == rebuilt ]; then
+        python configure.py -c --confirm-license --no-designer-plugin -e QtCore -e QtGui -e QtWidgets -e QtTest --qmake=/usr/lib/x86_64-linux-gnu/qt5/bin/qmake
+        make -j 4
+        touch BUILT
+    fi
     sudo make install
     popd
 else
