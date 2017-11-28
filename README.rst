@@ -119,9 +119,6 @@ Conventions
 13. 0 degrees azimuth = North
 
 
-[![Coverage Status](https://coveralls.io/repos/github/MTgeophysics/mtpy/badge.svg?branch=develop)](https://coveralls.io/github/MTgeophysics/mtpy?branch=develop)
-
-
 
 .. |Build Status| image:: https://travis-ci.org/MTgeophysics/mtpy.svg?branch=develop
    :target: https://travis-ci.org/MTgeophysics/mtpy
