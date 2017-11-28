@@ -67,25 +67,30 @@ class ShapeFilesCreator(EdiCollection):
 
         self.outdir = outdir
 
+        # call the super constructor
         super(ShapeFilesCreator, self).__init__(edilist=edifile_list, outdir=outdir)
         #python-3 syntax: super().__init__(edilist=edifile_list, outdir=outdir)
 
-        # These attributes below are defined in the parent class.
-        # self.outputdir = outdir
-        # self.all_periods = self._get_all_periods()
-        # self.ptol = 0.05  # this param controls what freqs/periods are grouped together:
-        # 10% may result more double counting of freq/period data than 5%.
-        # eg: E:\Data\MT_Datasets\WenPingJiang_EDI 18528 rows vs 14654 rows
+        self.stations_distances = self.get_stations_distances_stats()
 
+        # These attributes below are defined in the parent class.
+        # self.all_periods = self._get_all_periods()
+        # self.ptol = 0.05  # this param controls how near-equal freqs/periods are grouped together:
+        # 10% may result more double countings of freq/periods than 5%.
+        # eg: E:\Data\MT_Datasets\WenPingJiang_EDI 18528 rows vs 14654 rows
 
         return
 
 
-    def create_phase_tensor_shp(self, period, ellipsize=0.02, target_epsg_code=4283, export=False):
+    def create_phase_tensor_shp(self, period, ellipsize=None, target_epsg_code=4283, export_fig=False):
         """
         create phase tensor ellipses shape file correspond to a MT period
         :return: (geopdf_obj, path_to_shapefile)
         """
+
+        if ellipsize is None:  # automatically decide suitable ellipse size.
+            ellipsize = self.stations_distances.get("Q1PERCENT")/2  # a half or a third of the min_distance?
+            self._logger.info("Automatically Selected Max-Ellispse Size = %s", ellipsize)
 
         pt = self.get_phase_tensor_tippers(period)
 
@@ -157,7 +162,7 @@ class ShapeFilesCreator(EdiCollection):
 
         self._logger.info("Geopandas Dataframe CRS: %s", geopdf.crs)
 
-        if export is True:
+        if export_fig is True:
             bbox_dict= self.get_bounding_box(epsgcode=target_epsg_code)
             print(bbox_dict)
             path2jpg = path2shp.replace(".shp",".jpg")
@@ -166,13 +171,17 @@ class ShapeFilesCreator(EdiCollection):
         return (geopdf,path2shp)
 
 
-    def create_tipper_real_shp(self, period, line_length=4, target_epsg_code=4283, export=False):
+    def create_tipper_real_shp(self, period, line_length=None, target_epsg_code=4283, export_fig=False):
         """
         create real tipper lines shapefile from a csv file
         The shapefile consists of lines without arrow.
         User can use GIS software such as ArcGIS to display and add an arrow at each line's end
-        line_length is how long will be the line
+        line_length is how long will be the line, auto-calculatable
         """
+
+        if line_length is None:  # auto-calculate the tipper arrow length
+            line_length = self.stations_distances.get("Q1PERCENT")
+            self._logger.info("Automatically Selected Max-Tipper Length/Size = %s", line_length)
 
         pt = self.get_phase_tensor_tippers(period)
         self._logger.debug("phase tensor values =: %s", pt)
@@ -217,7 +226,7 @@ class ShapeFilesCreator(EdiCollection):
 
         self._logger.info("Geopandas Dataframe CRS: %s", geopdf.crs)
 
-        if export is True:
+        if export_fig is True:
             bbox_dict = self.get_bounding_box(epsgcode=target_epsg_code)
             print(bbox_dict)
             path2jpg = path2shp.replace(".shp", ".jpg")
@@ -225,14 +234,18 @@ class ShapeFilesCreator(EdiCollection):
 
         return (geopdf, path2shp)
 
-    def create_tipper_imag_shp(self, period, line_length=4, target_epsg_code=4283, export=False):
+    def create_tipper_imag_shp(self, period, line_length=4, target_epsg_code=4283, export_fig=False):
         """
         create imagery tipper lines shapefile from a csv file
         The shapefile consists of lines without arrow.
         User can use GIS software such as ArcGIS to display and add an arrow at each line's end
-        line_length is how long will be the line
+        line_length is how long will be the line, auto-calculatable
         :return:(geopdf_obj, path_to_shapefile)
         """
+
+        if line_length is None:  # auto-calculate the tipper arrow length
+            line_length = self.stations_distances.get("Q1PERCENT")
+            self._logger.info("Automatically Selected Max-Tipper Length/Size =: %s", line_length)
 
         pt = self.get_phase_tensor_tippers(period)
         self._logger.debug("phase tensor values =: %s", pt)
@@ -274,7 +287,7 @@ class ShapeFilesCreator(EdiCollection):
 
         self._logger.info("Geopandas Dataframe CRS: %s", geopdf.crs)
 
-        if export is True:
+        if export_fig is True:
             bbox_dict = self.get_bounding_box(epsgcode=target_epsg_code)
             print(bbox_dict)
             path2jpg = path2shp.replace(".shp", ".jpg")
@@ -287,6 +300,7 @@ class ShapeFilesCreator(EdiCollection):
 #   http://toblerity.org/shapely/manual.html#polygons
 #   https://geohackweek.github.io/vector/04-geopandas-intro/
 #===================================================================
+@deprecated("This function needs csv file as its input.")
 def create_ellipse_shp_from_csv(csvfile, esize=0.03, target_epsg_code=4283):
     """
     create phase tensor ellipse geometry from a csv file
@@ -348,6 +362,7 @@ def create_ellipse_shp_from_csv(csvfile, esize=0.03, target_epsg_code=4283):
 
     return pdf
 
+@deprecated("This function needs csv file as its input.")
 def create_tipper_real_shp_from_csv(csvfile, line_length=0.03, target_epsg_code=4283):
     """ create tipper lines shape from a csv file
     The shape is a line without arrow.
@@ -388,7 +403,7 @@ def create_tipper_real_shp_from_csv(csvfile, line_length=0.03, target_epsg_code=
 
     return pdf
 
-
+@deprecated("This function needs csv file as its input.")
 def create_tipper_imag_shp_from_csv(csvfile, line_length=0.03, target_epsg_code=4283):
     """ create imagery tipper lines shape from a csv file
     The shape is a line without arrow.
@@ -552,7 +567,7 @@ def export_geopdf_to_image(geopdf, bbox, jpg_file_name, target_epsg_code=None, s
     del (geopdf)
     del (fig)
 
-
+@deprecated("This function uses csv-files folder as its input.")
 def process_csv_folder(csv_folder, bbox_dict, target_epsg_code=4283):
     """
     process all *.csv files in a dir, ude target_epsg_code=4283 GDA94 as default
@@ -593,6 +608,7 @@ def process_csv_folder(csv_folder, bbox_dict, target_epsg_code=4283):
 # ==================================================================
 # python mtpy/utils/shapefiles_creator.py data/edifiles /e/tmp
 # ==================================================================
+# @deprecated("This needs csv file as its input.")
 if __name__ == "__main__OLD_V0":
 
     edidir = sys.argv[1]
@@ -660,12 +676,11 @@ if __name__ == "__main__":
 
     station_distance_stats= shp_maker.get_stations_distances_stats()
 
+    esize = None   # if None, auto selected default in the method
+    tipsize = None  # if None, auto selected default in the method
 
-    esize = station_distance_stats.get("Q1PERCENT")/2  # a half or a third of the min_distance?
-    tipsize= station_distance_stats.get("Q1PERCENT")
-
-    print ("Automatically Selected Max-Ellispse Size =:", esize)
-    print ("Automatically Selected Max-Tipper Length/Size =:", tipsize)
+    _logger.info("User-defined Max-Ellispse Size =:%s", esize)
+    _logger.info("User-defined Max-Tipper Length/Size =:%s", tipsize)
 
     shp_maker.create_phase_tensor_shp(999.99, ellipsize=esize) # nothing created for non-existent peri
 
@@ -676,11 +691,11 @@ if __name__ == "__main__":
     for aper in shp_maker.all_unique_periods[::5]:  # ascending order: from short to long periods
         # default projection as target output
         # shp_maker.create_phase_tensor_shp(2.85)
-        # shp_maker.create_phase_tensor_shp(aper,  ellipsize=esize,export=True)
-        # shp_maker.create_tipper_real_shp(aper, line_length=tipsize, export=True)
-        # shp_maker.create_tipper_imag_shp(aper, line_length=tipsize, export=True)
+        # shp_maker.create_phase_tensor_shp(aper,  ellipsize=esize,export_fig=True)
+        # shp_maker.create_tipper_real_shp(aper, line_length=tipsize, export_fig=True)
+        # shp_maker.create_tipper_imag_shp(aper, line_length=tipsize, export_fig=True)
 
         for my_epsgcode in [28353]:  # [3112, 4326, 4283, 32754, 32755, 28353, 28354, 28355]:
-            shp_maker.create_phase_tensor_shp(aper, target_epsg_code=my_epsgcode, ellipsize=esize, export=True)
-            shp_maker.create_tipper_real_shp(aper, line_length=tipsize, target_epsg_code=my_epsgcode, export=True)
-            shp_maker.create_tipper_imag_shp(aper, line_length=tipsize, target_epsg_code=my_epsgcode, export=True)
+            shp_maker.create_phase_tensor_shp(aper, target_epsg_code=my_epsgcode, ellipsize=esize, export_fig=True)
+            shp_maker.create_tipper_real_shp(aper, line_length=tipsize, target_epsg_code=my_epsgcode, export_fig=True)
+            shp_maker.create_tipper_imag_shp(aper, line_length=tipsize, target_epsg_code=my_epsgcode, export_fig=True)
