@@ -2087,6 +2087,7 @@ class Data(Profile):
         self.phase_te_err = kwargs.pop('phase_te_err', 5)
         self.phase_tm_err = kwargs.pop('phase_tm_err', 5)
         self.tipper_err = kwargs.pop('tipper_err', 10)
+        self.error_type = 'floor' # 'floor' or 'value'
 
         self.freq_min = kwargs.pop('freq_min', None)
         self.freq_max = kwargs.pop('freq_max', None)
@@ -2428,11 +2429,15 @@ class Data(Profile):
                     # --> get error from data
                     if self.res_te_err is None:
                         self.data[s_index]['te_res'][1, freq_num] = \
-                            np.abs(rho_err[f_index, 0, 1] / rho[f_index, 0, 1])
+                            np.abs(rho_err[f_index, 0, 1])
                     # --> set generic error floor
+                    elif self.error_type == 'floor':
+                        self.data[s_index]['te_res'][1, freq_num] = \
+                            max(rho[f_index, 0, 1]*self.res_te_err/100.,
+                                rho_err[f_index, 0, 1])
                     else:
                         self.data[s_index]['te_res'][1, freq_num] = \
-                            self.res_te_err / 100.
+                        rho[f_index, 0, 1]*self.res_te_err/100.
 
                 # --> get tm resistivity
                 self.data[s_index]['tm_res'][0, freq_num] = rho[f_index, 1, 0]
@@ -2441,46 +2446,73 @@ class Data(Profile):
                     # --> get error from data
                     if self.res_tm_err is None:
                         self.data[s_index]['tm_res'][1, freq_num] = \
-                            np.abs(rho_err[f_index, 1, 0] / rho[f_index, 1, 0])
+                            np.abs(rho_err[f_index, 1, 0])
                     # --> set generic error floor
+                    elif self.error_type == 'floor':
+                        self.data[s_index]['tm_res'][1, freq_num] = \
+                            max(rho[f_index, 1, 0]*self.res_tm_err / 100.,
+                                rho_err[f_index, 1, 0])
                     else:
                         self.data[s_index]['tm_res'][1, freq_num] = \
-                            self.res_tm_err / 100.
+                        rho[f_index, 1, 0]*self.res_tm_err / 100.
 
                 # --> get te phase
                 phase_te = phi[f_index, 0, 1]
                 # be sure the phase is in the first quadrant
                 if phase_te > 180:
                     phase_te -= 180
+                # remove any remaining phase values that are out of the first
+                # quadrant
+                if ((phase_te > 90) or (phase_te < 0)):
+                    phase_te = 0.
+
                 self.data[s_index]['te_phase'][0, freq_num] = phase_te
                 # compute error
                 # if phi[f_index, 0, 1] != 0.0:
                 # --> get error from data
+                phase_te_errorval = \
+                np.degrees(np.arcsin(.5 *
+                                     self.data[s_index]['te_res'][1, freq_num]/\
+                                     self.data[s_index]['te_res'][0, freq_num]))
                 if self.phase_te_err is None:
-                    self.data[s_index]['te_phase'][1, freq_num] = \
-                        np.degrees(np.arcsin(.5 *
-                                             self.data[s_index]['te_res'][0, freq_num]))
+                    self.data[s_index]['te_phase'][1, freq_num] =\
+                    phase_te_errorval
                 # --> set generic error floor
+                elif self.error_type == 'floor':
+                    self.data[s_index]['te_phase'][1, freq_num] = \
+                        max((self.phase_te_err / 100.) * 57. / 2.,
+                            phase_te_errorval)
                 else:
                     self.data[s_index]['te_phase'][1, freq_num] = \
-                        (self.phase_te_err / 100.) * 57. / 2.
-
+                    (self.phase_te_err / 100.) * 57. / 2.
                 # --> get tm phase and be sure its in the first quadrant
-                phase_tm = phi[f_index, 1, 0] % 180
+                phase_tm = phi[f_index, 1, 0] % 180            
+
+                # remove any remaining phase values that are out of the first
+                # quadrant
+                if ((phase_tm > 90) or (phase_tm < 0)):
+                    phase_tm = 0.
+                
 
                 self.data[s_index]['tm_phase'][0, freq_num] = phase_tm
                 # compute error
                 # if phi[f_index, 1, 0] != 0.0:
                 # --> get error from data
+                phase_tm_errorval = \
+                np.degrees(np.arcsin(.5 *
+                                     self.data[s_index]['tm_res'][1, freq_num]/\
+                                     self.data[s_index]['tm_res'][0, freq_num]))
                 if self.phase_tm_err is None:
                     self.data[s_index]['tm_phase'][1, freq_num] = \
-                        np.degrees(np.arcsin(.5 *
-                                             self.data[s_index]['tm_res'][0, freq_num]))
+                        phase_tm_errorval
                 # --> set generic error floor
+                elif self.error_type == 'floor':
+                    self.data[s_index]['tm_phase'][1, freq_num] = \
+                        max((self.phase_tm_err / 100.) * 57. / 2.,
+                            phase_tm_errorval)
                 else:
                     self.data[s_index]['tm_phase'][1, freq_num] = \
-                        (self.phase_tm_err / 100.) * 57. / 2.
-
+                    (self.phase_tm_err / 100.) * 57. / 2.
                 # --> get Tipper
                 if tipper is not None:
                     self.data[s_index]['re_tip'][0, freq_num] = \
@@ -2514,7 +2546,8 @@ class Data(Profile):
                     if mmode == 1:
                         if sdict['te_res'][0, ff] != 0.0:
                             dvalue = np.log10(sdict['te_res'][0, ff])
-                            derror = sdict['te_res'][1, ff] / np.log(10)
+                            derror = sdict['te_res'][1, ff]/\
+                                     (sdict['te_res'][0,ff] * np.log(10))
                             dstr = '{0:.4f}'.format(dvalue)
                             derrstr = '{0:.4f}'.format(derror)
                             line = self._data_string.format(ss, ff + 1, mmode,
@@ -2547,7 +2580,8 @@ class Data(Profile):
                     if mmode == 5:
                         if sdict['tm_res'][0, ff] != 0.0:
                             dvalue = np.log10(sdict['tm_res'][0, ff])
-                            derror = sdict['tm_res'][1, ff] / np.log(10)
+                            derror = sdict['tm_res'][1, ff] /\
+                                     (sdict['tm_res'][0, ff]*np.log(10))
                             dstr = '{0:.4f}'.format(dvalue)
                             derrstr = '{0:.4f}'.format(derror)
                             line = self._data_string.format(ss, ff + 1, mmode,
