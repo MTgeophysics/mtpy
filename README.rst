@@ -119,13 +119,15 @@ Conventions
 13. 0 degrees azimuth = North
 
 
+[![Coverage Status](https://coveralls.io/repos/github/MTgeophysics/mtpy/badge.svg?branch=develop)](https://coveralls.io/github/MTgeophysics/mtpy?branch=develop)
 
 
 
 .. |Build Status| image:: https://travis-ci.org/MTgeophysics/mtpy.svg?branch=develop
    :target: https://travis-ci.org/MTgeophysics/mtpy
-.. |Coverage Status| image:: https://coveralls.io/repos/github/GeoscienceAustralia/mtpy2/badge.svg?branch=develop
-   :target: https://coveralls.io/github/GeoscienceAustralia/mtpy2?branch=develop
+.. |Coverage Status| image:: https://coveralls.io/repos/github/MTgeophysics/mtpy/badge.svg?branch=develop
+   :target: https://coveralls.io/github/MTgeophysics/mtpy?branch=develop
+
 .. |Documentation Status| image:: https://readthedocs.org/projects/mtpy2/badge/?version=develop
    :target: http://mtpy2.readthedocs.org/en/develop/
 
