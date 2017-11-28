@@ -698,12 +698,12 @@ class MT(object):
         for p_key in sorted(self.Processing.__dict__.keys()):
             if p_key.lower() == 'software':
                 for s_key in sorted(self.Processing.Software.__dict__.keys()):
-                    if s_key == 'author':
+                    if s_key.lower() == 'author':
                         for a_key in sorted(
-                                self.Processing.Software.author.__dict__.keys()):
-                            l_key = 'processing.software.Author.{0}'.format(
+                                self.Processing.Software.Author.__dict__.keys()):
+                            l_key = 'processing.software.author.{0}'.format(
                                 a_key)
-                            l_value = getattr(self.Processing.Software.author,
+                            l_value = getattr(self.Processing.Software.Author,
                                               a_key)
                             info_list.append('{0} = {1}'.format(l_key,
                                                                 l_value))
