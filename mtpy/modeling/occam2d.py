@@ -2486,9 +2486,8 @@ class Data(Profile):
                     self.data[s_index]['te_phase'][1, freq_num] = \
                     (self.phase_te_err / 100.) * 57. / 2.
                 # --> get tm phase and be sure its in the first quadrant
-                phase_tm = phi[f_index, 1, 0]                
-                if phase_tm > 180:
-                    phase_tm -= 180
+                phase_tm = phi[f_index, 1, 0] % 180            
+
                 # remove any remaining phase values that are out of the first
                 # quadrant
                 if ((phase_tm > 90) or (phase_tm < 0)):
