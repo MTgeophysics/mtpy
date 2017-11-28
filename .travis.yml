@@ -54,16 +54,12 @@ before_script:
   - chmod -vR +x ./bin/* && . ./bin/travis-setup-env.sh  
 
 script: # testing stages, will run only in testing stages
-  - py.test -v -n 4 --dist=loadscope --cov=mtpy --cov-report= tests/analysis
-  - py.test -v -n 4 --dist=loadscope --cov=mtpy --cov-report= tests/core
-  - MTPY_TEST_COMPARE_IMAGE=False py.test -v -n 4 --dist=loadscope --cov=mtpy --cov-report= tests/imaging
-  - py.test -v -n 4 --dist=loadscope --cov=mtpy --cov-report= tests/modeling
-  - py.test -v -n 4 --dist=loadscope --cov=mtpy --cov-report= tests/utils
+  - MTPY_TEST_COMPARE_IMAGE=False py.test -v -n4 --dist=loadscope --cov=mtpy --cov-report= tests --ignore=tests/SmartMT
   #  test gui
   - "export DISPLAY=:99.0"  # enable display on travis
   - "sh -e /etc/init.d/xvfb start"
   - sleep 3 # give xvfb some time to start
-  - py.test -v -n 4 --dist=loadscope --cov=mtpy --cov-report= tests/SmartMT
+  - py.test -v -n4 --dist=loadscope --cov=mtpy --cov-append --cov-report= tests/SmartMT
 
 after_success:
   - coveralls
