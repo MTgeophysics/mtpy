@@ -54,7 +54,7 @@ before_script:
   - chmod -vR +x ./bin/* && . ./bin/travis-setup-env.sh  
 
 script: # testing stages, will run only in testing stages
-  - MTPY_TEST_COMPARE_IMAGE=False py.test -v -n4 --dist=loadscope --cov=mtpy -cov-report= tests --ignore=tests/SmartMT
+  - MTPY_TEST_COMPARE_IMAGE=False py.test -v -n4 --dist=loadscope --cov=mtpy --cov-report= tests --ignore=tests/SmartMT
   #  test gui
   - "export DISPLAY=:99.0"  # enable display on travis
   - "sh -e /etc/init.d/xvfb start"
