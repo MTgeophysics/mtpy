@@ -16,6 +16,7 @@ Revision History:
 import os
 
 import numpy as np
+import logging, traceback
 
 from shapely.geometry import LineString, Polygon, MultiPolygon, shape
 from matplotlib.collections import PatchCollection
@@ -36,7 +37,14 @@ class plot_geology:
         self._hasLUT = False
 
         # Load file
-        sf = fiona.open(sfn)
+        sf = None
+        try:
+            sf = fiona.open(sfn)
+        except Exception as err:
+            print 'Failed to read %s' % (sfn)
+            logging.error(traceback.format_exc())
+            exit(-1)
+
         for feature in sf:
             self._properties.append(feature['properties'])
             self._geometries.append(shape(feature['geometry']))
@@ -69,7 +77,14 @@ class plot_geology:
             self._lutfn = lutfn
             self._lutDict = defaultdict(list)
 
-            f = open(lutfn)
+            f = None
+            try:
+                f = open(lutfn)
+            except Exception as err:
+                print 'Failed to read %s' % (lutfn)
+                logging.error(traceback.format_exc())
+                exit(-1)
+
             lines = f.readlines()
             for i, line in enumerate(lines):
                 if (i == 0): continue  # skip header
@@ -86,7 +101,9 @@ class plot_geology:
     def plot(self, ax, m, lutfn=None,
              default_polygon_color='grey', **kwargs):
         '''
-        Plot shapefile
+        Plots a shapefile. This function assumes that a shapefile containing polygonal
+        data will have an attribute column named 'SYMBOL', which is used to pick corresponding
+        color values from the colour lookup table, described in function processLUT.
 
         :param ax: plot axis
         :param m: basemap instance
@@ -95,19 +112,27 @@ class plot_geology:
                       parameter is ignored for shapefiles that contain only line data
         :param default_polygon_color: default color or polygons; overridden by colors
                                       provided in look-up-table, if given
-        :param kwargs: ist of matplotlib relevant keywords, e.g. alpha, zorder, color, etc.
+        :param kwargs: list of relevant matplotlib arguments, e.g. alpha, zorder, color, etc.
         :return:
+            legend_handles: legend handles for polygonal data; empty list for line data
+            legend_labels: symbol names for polygonal data; empty list for line data
         '''
 
         # Populate lookup table
         self.processLUT(lutfn)
 
         patches = []
+        legend_handles = []
+        legend_labels = []
+        handles = set()
         # Process geometry
         for i, feature in enumerate(self._geometries):
 
             fcolor = None
-            if (self._hasLUT): fcolor = self._lutDict[self._properties[i]['SYMBOL']]
+            symbol = ''
+            if (self._hasLUT):
+                symbol = self._properties[i]['SYMBOL']
+                fcolor = self._lutDict[symbol]
             if (fcolor == []): fcolor = default_polygon_color
 
             if (isinstance(feature, Polygon)):
@@ -119,8 +144,16 @@ class plot_geology:
                 if (fcolor is not None): kwargs['facecolor'] = fcolor
                 if ('edgecolor' not in kwargs.keys()): kwargs['edgecolor'] = 'none'
                 if ('fill') not in kwargs.keys(): kwargs['fill'] = True
-                patches.append(PolygonPatch(ppolygon,
-                                            **kwargs))
+
+                pp = PolygonPatch(ppolygon, **kwargs)
+                patches.append(pp)
+
+                # filter duplicates
+                if (symbol not in handles):
+                    handles.add(symbol)
+                    legend_handles.append(pp)
+                    legend_labels.append(symbol)
+
             elif (isinstance(feature, MultiPolygon)):
                 multiPolygon = feature
 
@@ -132,18 +165,27 @@ class plot_geology:
                     if (fcolor is not None): kwargs['facecolor'] = fcolor
                     if ('edgecolor' not in kwargs.keys()): kwargs['edgecolor'] = 'none'
                     if ('fill') not in kwargs.keys(): kwargs['fill'] = True
-                    patches.append(PolygonPatch(ppolygon,
-                                                **kwargs))
-                    # end for
+
+                    pp = PolygonPatch(ppolygon, **kwargs)
+                    patches.append(pp)
+
+                    # filter duplicates
+                    if (symbol not in handles):
+                        handles.add(symbol)
+                        legend_handles.append(pp)
+                        legend_labels.append(symbol)
+                # end for
             elif (isinstance(feature, LineString)):
                 line = feature
                 x, y = line.coords.xy
                 px, py = m(x, y)
                 ax.plot(px, py, **kwargs)
-                # end if
+            # end if
         # end for
         if (len(patches)):
             ax.add_collection(PatchCollection(patches, match_original=True))
+
+        return legend_handles, legend_labels
     # end func
 # end class
 
@@ -161,8 +203,8 @@ def main():
     polyDataShapefile = os.path.join(ModEM_files, 'NT_LithInterp_2500K_region.shp')
     lineDataShapefile = os.path.join(ModEM_files, 'NT_Fault_2500K_polyline.shp')
 
-    pg1 = plot_geology(polyDataShapefile)
-    pg2 = plot_geology(lineDataShapefile)
+    pg1 = plot_geology(polyDataShapefile) # Polygon data
+    pg2 = plot_geology(lineDataShapefile) # Line data
 
     return
     # end
