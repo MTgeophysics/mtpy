@@ -164,6 +164,7 @@ class ShapeFilesCreator(EdiCollection):
 
         if export_fig is True:
             bbox_dict= self.get_bounding_box(epsgcode=target_epsg_code)
+            # this bbox ensures that the whole MT-stations area is covered independent of periods
             print(bbox_dict)
             path2jpg = path2shp.replace(".shp",".jpg")
             export_geopdf_to_image(geopdf, bbox_dict,  path2jpg, colorby='phi_max', colormap='nipy_spectral_r') # showfig=True)
@@ -228,7 +229,9 @@ class ShapeFilesCreator(EdiCollection):
 
         if export_fig is True:
             bbox_dict = self.get_bounding_box(epsgcode=target_epsg_code)
-            print(bbox_dict)
+            #this bbox_dict ensures that we can set a consistent display area cover all ground stations,
+            # not just this period-dependent geopdf
+            self._logger.debug("All MT stations area bounding box %s", bbox_dict)
             path2jpg = path2shp.replace(".shp", ".jpg")
             export_geopdf_to_image(geopdf, bbox_dict, path2jpg, colorby='phi_max', colormap='nipy_spectral_r')  # showfig=True)
 
@@ -289,7 +292,11 @@ class ShapeFilesCreator(EdiCollection):
 
         if export_fig is True:
             bbox_dict = self.get_bounding_box(epsgcode=target_epsg_code)
-            print(bbox_dict)
+            # this bbox_dict ensures that we can set a consistent display area cover all ground stations,
+            # not just this period-dependent geopdf
+
+            self._logger.debug("All MT stations area bounding box %s", bbox_dict)
+
             path2jpg = path2shp.replace(".shp", ".jpg")
             export_geopdf_to_image(geopdf, bbox_dict, path2jpg, colorby='phi_max', colormap='nipy_spectral_r')  # showfig=True)
 
@@ -444,15 +451,15 @@ def create_tipper_imag_shp_from_csv(csvfile, line_length=0.03, target_epsg_code=
 
     return pdf
 
-
 def export_geopdf_to_image(geopdf, bbox, jpg_file_name, target_epsg_code=None, colorby=None, colormap=None, showfig=False):
     """
-    Export a geopandas dataframe to a jpe_file, with optionally new epsg projection.
+    Export a geopandas dataframe to a jpe_file, with optionally a new epsg projection.
     :param geopdf: a geopandas dataframe
-    :param bbox: bound box
-    :param jpg_file_name: path2jpeg
+    :param bbox: This param ensures that we can set a consistent display area defined by a dict with 4 keys
+                    [MinLat, MinLon, MaxLat, MaxLon], cover all ground stations, not just this period-dependent geopdf
+    :param output jpg_file_name: path2jpeg
     :param target_epsg_code: 4326 etc
-    :param showfig:
+    :param showfig: If True, then display fig on screen.
     :return:
     """
 
