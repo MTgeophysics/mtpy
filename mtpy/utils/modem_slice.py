@@ -1,7 +1,7 @@
 #!/bin/env python
 """
 Description:
-    Class for extracting an arbitrary depth slice from a 3D MODEM model.
+    Class for extracting field values at arbitrary locations from a 3D MODEM model.
 
 References:
  
@@ -22,7 +22,7 @@ from scipy.spatial import cKDTree
 class MODEM_slice:
     def __init__(self, model_fn, data_fn):
         '''
-        Class for extracting an arbitrary depth slice from a 3D MODEM model.
+        Class for extracting field values at arbitrary locations from a 3D MODEM model.
 
         :param model_fn: name of model file
         :param data_fn: name of data file
@@ -114,7 +114,8 @@ class MODEM_slice:
             w = np.zeros(d.shape)
             w[idwIndices, :] = 1. / np.power(d[idwIndices, :], p)
 
-            img[idwIndices] = np.sum(w[idwIndices, :] * vals[l[idwIndices, :]], axis=1)
+            img[idwIndices] = np.sum(w[idwIndices, :] * vals[l[idwIndices, :]], axis=1) / \
+                              np.sum(w[idwIndices, :], axis=1)
         # end if
 
         if (extrapolate == False):
