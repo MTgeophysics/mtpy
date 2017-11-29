@@ -36,6 +36,7 @@ class plot_modem_ptensors:
         except Exception as err:
             print 'Failed to read %s' % (self._data_fn)
             logging.error(traceback.format_exc())
+            exit(-1)
 
         self._plot_period = self._modem_obj.period_list.copy()
         self._mt_obj_list = [self._modem_obj.mt_dict[key]
@@ -170,8 +171,9 @@ class plot_modem_ptensors:
             vals = self._pt_dict[pk][key]
             return vals
         except Exception as err:
-            print 'Failed to read %s' % (self._data_fn)
+            print 'Key error: key %s not found' % (key)
             logging.error(traceback.format_exc())
+            exit(-1)
     # end func
 
     def plot(self, ax, m, periodIdx, ellipse_size_factor=0.05,
@@ -226,9 +228,9 @@ def main():
     examples = os.path.join(base, 'examples')
     data = os.path.join(examples, 'data')
     ModEM_files = os.path.join(data, 'ModEM_files')
-    modemfn = os.path.join(ModEM_files, 'ModEM_Data_im2.dat')
+    data_fn = os.path.join(ModEM_files, 'ModEM_Data_im2.dat')
 
-    pmt = plot_modem_ptensors(data_fn=modemfn)
+    pmp = plot_modem_ptensors(data_fn=data_fn)
 
     return
 # end
