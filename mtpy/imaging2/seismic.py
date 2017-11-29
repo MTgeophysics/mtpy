@@ -20,7 +20,7 @@ import logging, traceback
 from collections import defaultdict
 from scipy.interpolate import interp1d
 from scipy.integrate import quad
-
+from scipy.spatial import cKDTree
 import numpy as np
 from obspy.io.segy import segy
 
@@ -74,6 +74,16 @@ class Segy:
         self._dist -= np.min(self._dist)  # distance along profile starts from 0
     # end func
 
+    def getDistances(self):
+        '''
+        Distance of each trace from the start of the 2D line
+        :return: numpy array of distances of shape (nt), where nt is the number of
+                 traces.
+        '''
+
+        return self._dist
+    # end func
+
     def getAttribute(self, key, dist):
         '''
         Returns attribute value -- for the given key -- of the closest trace at a given
@@ -92,22 +102,69 @@ class Segy:
 
         if(key not in ['trace', 'x', 'y', 'cdp', 'ts']):
             assert 0, "Invalid key; should be one of ['trace', 'x', 'y', 'cdp', 'ts']"
-        if (dist < np.max(self._dist)):
+        if (dist <= np.max(self._dist)):
             idx = np.argmin(np.fabs(self._dist - dist))
 
-            if (key == 'trace'): return self._mtraces[idx]
+            if (key == 'trace'): return self._mtraces[idx, :]
             elif (key == 'x'): return self._xs[idx]
             elif (key == 'y'): return self._ys[idx]
             elif (key == 'cdp'): return self._cdps[idx]
             elif (key == 'ts'): return self._ts
         else:
             return None
-        # end func
+    # end func
+
+    def getMigratedProfile(self, velocity_model, depths, distances, nn=1):
+        '''
+        Computes and returns a depth-migrated image, defined by distances
+        and depths along the profile, based on the given velocity model.
+        Note that the velocity_model may not necessarily contain depth-profiles
+        for all CDP values in the segy file, in which case, depth-profiles for
+        closest CDP values are used.
+
+        :param velocity_model: instance of class VelocityModel, containing
+                                stacking velocities for the given 2D seismic
+                                line
+        :param depths: 1D numpy array of depth values
+        :param distances: 1D numpy array of distances along the 2D seismic
+                          line
+        :param nn: While computing the depth-migration, this parameter dictates
+                   whether to use the mean of the closest 'nn' or the mean of all
+                   available cdp depth-profiles available in the velocity_model,
+                   if set to -1. In the case of the latter, the maximum depth
+                   computed for each trace will be the same.
+        :return: mdepths: 2D matrix of depths of shape (depths, distances),
+                 mdistances: 2D matrix of distances of shape (depths, distances)
+                 mvals: 2D matrix of amplitudes of shape (depths, distances),
+                        by default, amplitudes for depths outside of the
+                        depth-ranges available are set to -9999
+        '''
+
+        assert type(velocity_model) != VelocityModel, 'Type mismatch, should be of type VelocityModel'
+
+        mdepths, mdistances = np.meshgrid(depths, distances)
+        mvals = np.zeros(mdepths.shape)
+
+        for idist, dist in enumerate(distances):
+
+            cdp = None
+            if(nn != -1): cdp = self.getAttribute('cdp', dist)
+            ds = velocity_model.getDepth(cdp, self._ts, nn)
+
+            io = interp1d(ds, self.getAttribute('trace', dist),
+                          bounds_error=False, fill_value=-9999)
+            mvals[idist, :] = io(depths)
+        # end for
+
+        return mdepths, mdistances, mvals
+    # end func
 # end class
 
 class VelocityModel:
     def __init__(self, stacking_velocity_fn, ni=50):
         '''
+        Class for computing interval velocities using Dix formula, based on provided
+        stacking velocities.
 
         :param velocity_fn: stacking velocity file name
         :param ni: number of time intervals in each velocity profile; a larger value
@@ -154,6 +211,10 @@ class VelocityModel:
         f.close()
         self._cdps = np.int_(self._cdps)
 
+        # Create Kd-Tree for CDP queries
+        cdpArray = np.expand_dims(self._cdps, 1)
+        self._cdp_tree = cKDTree(cdpArray)
+
         # generate depth model
         self._generateDepthModel()
     # end func
@@ -199,9 +260,11 @@ class VelocityModel:
             vs = np.array([self._getIntervalVelocity(cdp, t) for t in self._ts])
             io = interp1d(self._ts, vs)
             for it, t in enumerate(self._ts):
-                # Doing much more work here than is needed. Should be
-                # done using a recursive function; TODO.
-                depths[it] = quad(io, 0, t)[0]
+                # progressively build up the depth-profile
+                if (it == 0):
+                    depths[it] = quad(io, 0, t)[0]
+                else:
+                    depths[it] = depths[it - 1] + quad(io, self._ts[it - 1], t)[0]
             # end for
             self._depth_ios.append(interp1d(self._ts, depths))
         # end for
@@ -224,20 +287,20 @@ class VelocityModel:
         cdp: cdp number. If cdp is None, use mean depth profile; nn is
              ignored
         ts: time samples in seconds
-        nn: number of neighbours to be used for calculating depth
-            value using inverse distance weighted interpolation;
+        nn: number of closest cdp depth-profiles to be used for calculating depth
+            values
 
         '''
         if (cdp == None):
             return self._mean_depth_profile_io(ts)
         else:
-            idx = np.argsort(np.fabs(self._cdps - cdp))[:nn]
+            _, idx = self._cdp_tree.query([cdp], nn)
             ds = np.zeros(ts.shape)
 
+            if (type(idx) == int): idx = [idx]
             for inn in range(nn):
                 io = self._depth_ios[idx[inn]]
-                for it, t in enumerate(ts):
-                    ds[it] += io(t)
+                ds += io(ts)
             return ds / float(nn)
         # end if
     # end func
