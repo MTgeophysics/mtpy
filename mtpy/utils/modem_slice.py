@@ -23,6 +23,7 @@ class MODEM_slice:
     def __init__(self, model_fn, data_fn):
         '''
         Class for extracting field values at arbitrary locations from a 3D MODEM model.
+        The model-mesh is centered on the centre-point of station-locations.
 
         :param model_fn: name of model file
         :param data_fn: name of data file

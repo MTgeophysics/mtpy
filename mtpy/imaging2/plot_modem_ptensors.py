@@ -187,7 +187,8 @@ class plot_modem_ptensors:
         :param periodIdx: period index
         :param ellipse_size_factor: factor to control ellipse size
         :param nverts: number of vertices in each ellipse
-        :param cvals: list of colour values for colouring each ellipse
+        :param cvals: list of colour values for colouring each ellipse; must be of
+                      the same length as the number of tuples for each period
         :param kwargs: list of relevant matplotlib arguments (e.g. zorder, alpha, etc.)
         '''
 
