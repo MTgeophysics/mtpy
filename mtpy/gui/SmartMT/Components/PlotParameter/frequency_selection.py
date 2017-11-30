@@ -17,7 +17,7 @@ from qtpy.QtWidgets import QGroupBox, QStyledItemDelegate, QTableWidgetItem
 from mtpy.gui.SmartMT.gui.matplotlib_imabedding import MPLCanvas, Cursor
 from mtpy.gui.SmartMT.ui_asset.groupbox_frequency_select import Ui_GroupBox_frequency_select
 from mtpy.gui.SmartMT.ui_asset.groupbox_select_periods_from_files import Ui_GroupBox_select_from_files
-from mtpy.gui.SmartMT.utils.matplotlib_utils import gen_hist_bins
+from mtpy.utils.matplotlib_utils import gen_hist_bins
 
 
 class FrequencySelection(QGroupBox):
