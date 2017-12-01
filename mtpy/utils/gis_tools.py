@@ -91,6 +91,7 @@ def assert_lat_value(latitude):
         lat_value = convert_position_str2float(latitude)
 
     if abs(lat_value) >= 90:
+        print("==> The lat_value =", lat_value)
         raise ValueError('|Latitude| > 90, unacceptable!')
 
     return lat_value
