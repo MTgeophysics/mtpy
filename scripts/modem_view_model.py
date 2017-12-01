@@ -1,13 +1,15 @@
 """
 Description
-    view a model mesh (x y z) cell sizes.
-    Input files format .ws, .rho, .prm
+    visualize a modem model in mesh (x y z) cell sizes.
+    With Input files format .ws, .rho, .prm
 
 How to run
-    python examples/view_modem_model.py /e/Data/Modeling/Isa/100hs_flat_BB/Isa_run3_NLCG_048.rho
+    python scripts/modem_view_model.py /e/Data/Modeling/Isa/100hs_flat_BB/Isa_run3_NLCG_048.rho
 
 Author: fei.zhang@ga.gov.au
 Date: 2017-06-21
+
+FZ: Review and retested working after big merge 2017-12-01
 """
 import sys
 import glob
@@ -89,7 +91,7 @@ def plot_model_mesh(modelfile, east_limits=None, north_limits=None, z_limits=Non
 
 # ----------------------------------------------------------------------------
 # view a model mesh (x y z) cell sizes
-# python examples/view_modem_model.py /e/Data/Modeling/Isa/100hs_flat_BB/Isa_run3_NLCG_048.rho
+# python scripts/modem_view_model.py /e/Data/Modeling/Isa/100hs_flat_BB/Isa_run3_NLCG_048.rho
 if __name__ == "__main__":
 
     if len(sys.argv)>1:
