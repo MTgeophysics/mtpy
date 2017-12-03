@@ -6,7 +6,7 @@ Description:
 
 Usage Examples:
     python mtpy/modeling/modem_data_to_phase_tensor.py examples/data/ModEM_files/Modular_MPI_NLCG_028.dat [OutDir]
-    python mtpy/modeling/modem_data_to_phase_tensor.py /e/tmp/GA_UA_edited_10s-10000s_16/ModEM_Data.dat [OutDir]
+    python mtpy/modeling/modem_data_to_phase_tensor.py /e/MTPY2_Outputs/GA_UA_edited_10s-10000s_modem_inputs/ModEM_Data.dat [OutDir]
 
 References:
     https://gajira.atlassian.net/browse/ALAMP-49
@@ -99,10 +99,10 @@ class ModemDataToPhaseTensor(object):
                 this_phase_tensor = pt.PhaseTensor(z_object=this_period_data)
 
                 # Get the four parameters we care about
-                this_phimin = this_phase_tensor.phimin[0][0]
-                this_phimax = this_phase_tensor.phimax[0][0]
-                this_ellipticity = this_phase_tensor.ellipticity[0][0]
-                this_azimuth = this_phase_tensor.azimuth[0][0]
+                this_phimin = this_phase_tensor.phimin[0]
+                this_phimax = this_phase_tensor.phimax[0]
+                this_ellipticity = this_phase_tensor.ellipticity[0]
+                this_azimuth = this_phase_tensor.azimuth[0]
 
                 # Print out comma delimited version of the parameters: label, lat, long, phimin, phimax, ellipticity, azimuth
                 arow = [freq, site_label, site_lat, site_long, this_phimin, this_phimax, this_ellipticity, this_azimuth]
@@ -131,7 +131,7 @@ if __name__ == "__main__":
     """
     How2Run Examples:
     python mtpy/modeling/modem_data_to_phase_tensor.py examples/data/ModEM_files/Modular_MPI_NLCG_028.dat [OutDir]
-    python mtpy/modeling/modem_data_to_phase_tensor.py /e/tmp/GA_UA_edited_10s-10000s_16/ModEM_Data.dat [OutDir]
+    python mtpy/modeling/modem_data_to_phase_tensor.py /e/MTPY2_Outputs/GA_UA_edited_10s-10000s_modem_inputs/ModEM_Data.dat [OutDir]
     """
     file_dat = sys.argv[1]
     if len(sys.argv)>2: outdir = sys.argv[2]
