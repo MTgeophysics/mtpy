@@ -15,7 +15,7 @@ import numpy as np
 from matplotlib import colors as colors, pyplot as plt, colorbar as mcb
 from matplotlib.ticker import MultipleLocator, FormatStrFormatter
 
-from .data import Data
+from mtpy.modeling.modem.data import Data
 
 __all__ = ['PlotRMSMaps']
 
@@ -315,7 +315,7 @@ class PlotRMSMaps(object):
         self.plot()
 
     def save_figure(self, save_path=None, save_fn_basename=None,
-                    save_fig_dpi=None, fig_format='.png', fig_close=True):
+                    save_fig_dpi=None, fig_format='png', fig_close=True):
         """
         save figure in the desired format
         """
@@ -350,4 +350,30 @@ class PlotRMSMaps(object):
             self.plot()
             self.save_figure(fig_format=fig_format)
 
+# ==================================================================================
+# FZ: add example usage code
+# Justdo>  python mtpy/modeling/modem/plot_rms_maps.py
+# ==================================================================================
+if __name__ == "__main__":
 
+    from mtpy.mtpy_globals import *
+
+    # directory where files are located
+    wd = os.path.join(SAMPLE_DIR, 'ModEM')
+
+    # file stem for inversion result
+    filestem = 'Modular_MPI_NLCG_004'
+
+    # directory to save to
+    save_path = NEW_TEMP_DIR
+
+
+    # period index to plot (0 plots the first (shortest) period, 1 for the second, etc)
+    period_index = 0
+
+    # plot map
+    rmsmap = PlotRMSMaps(residual_fn=os.path.join(wd, filestem + '.res'), period_index=period_index,
+                         xminorticks=50000, yminorticks=50000, save_plots='y', plot_yn='n')
+    rmsmap.plot()
+
+    rmsmap.save_figure(save_path, fig_close=False)  # this will save a file to
