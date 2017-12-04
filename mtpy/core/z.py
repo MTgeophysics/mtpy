@@ -95,7 +95,8 @@ class ResPhase(object):
         if freq is not None:
             self.freq = freq
 
-        if self._z is None or self._z_err is None or self.freq is None:
+        #if self._z is None or self._z_err is None or self.freq is None: #The _z_err can be None!!!
+        if self._z is None or self.freq is None:
             raise MT_Z_Error('Values are None, check _z, _z_err, freq')
 
         self._resistivity = np.apply_along_axis(lambda x: np.abs(x) ** 2 / self.freq * 0.2,

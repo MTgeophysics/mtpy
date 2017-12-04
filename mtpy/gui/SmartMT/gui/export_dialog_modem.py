@@ -22,7 +22,7 @@ from qtpy.QtWidgets import QWizard, QFileDialog, QDialog, QMessageBox
 
 from mtpy.core.edi_collection import EdiCollection
 from mtpy.modeling.modem import Model
-from mtpy.constants import epsg_dict
+from mtpy.mtpy_globals import epsg_dict
 from mtpy.gui.SmartMT.Components.PlotParameter import FrequencySelection, Rotation
 from mtpy.gui.SmartMT.gui.busy_indicators import ProgressBar
 from mtpy.gui.SmartMT.gui.export_dialog import PreviewDialog
