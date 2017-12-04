@@ -1,6 +1,6 @@
 import six
 from matplotlib import colors as mcolors
-from plot_parameter import PlotParameter
+from .plot_parameter import PlotParameter
 
 COLORS = list(six.iteritems(mcolors.cnames))
 SIMPLE_COLORS = ['b',  # blue

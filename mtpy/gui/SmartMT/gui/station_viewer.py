@@ -45,7 +45,7 @@ class StationViewer(QWidget):
         self.file_handler = file_handler
         self.ui = Ui_StationViewer()
         self.ui.setupUi(self)
-        self.subwindow, _ = parent.create_subwindow(self, self.windowTitle())
+        # self.subwindow, _ = parent.create_subwindow(self, self.windowTitle())
         # self.subwindow.setMaximumWidth(600)
         # self.subwindow.setMinimumWidth(400)
         # self.subwindow.resize(parent.width()/3, self.height())

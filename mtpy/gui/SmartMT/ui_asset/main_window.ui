@@ -172,6 +172,49 @@
    <addaction name="actionExport"/>
    <addaction name="actionExport_ModEM_Data"/>
   </widget>
+  <widget class="QDockWidget" name="dockWidget">
+   <property name="minimumSize">
+    <size>
+     <width>340</width>
+     <height>38</height>
+    </size>
+   </property>
+   <property name="features">
+    <set>QDockWidget::DockWidgetFloatable|QDockWidget::DockWidgetMovable</set>
+   </property>
+   <property name="allowedAreas">
+    <set>Qt::LeftDockWidgetArea|Qt::RightDockWidgetArea</set>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>1</number>
+   </attribute>
+   <widget class="QWidget" name="dockWidgetContents">
+    <layout class="QVBoxLayout" name="verticalLayout">
+     <property name="spacing">
+      <number>0</number>
+     </property>
+     <property name="leftMargin">
+      <number>0</number>
+     </property>
+     <property name="topMargin">
+      <number>0</number>
+     </property>
+     <property name="rightMargin">
+      <number>0</number>
+     </property>
+     <property name="bottomMargin">
+      <number>0</number>
+     </property>
+     <item>
+      <widget class="QStackedWidget" name="stackedWidget">
+       <property name="frameShape">
+        <enum>QFrame::NoFrame</enum>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+  </widget>
   <action name="actionNew_Project">
    <property name="text">
     <string>New Project...</string>
@@ -299,7 +342,10 @@
      <normaloff>:/Tango/plot</normaloff>:/Tango/plot</iconset>
    </property>
    <property name="text">
-    <string>Plot...</string>
+    <string>Visualize...</string>
+   </property>
+   <property name="toolTip">
+    <string>Visualize the selected station data</string>
    </property>
   </action>
   <action name="actionShow_Station_Summary">

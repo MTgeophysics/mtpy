@@ -40,17 +40,33 @@ class StartGUI(QMainWindow):
     def __init__(self, parent=None):
         QWidget.__init__(self, parent)
         self._logger = MtPyLog.get_mtpy_logger(self.__class__.__name__)
+        self._file_handler = FileHandler()
         self._is_file_dialog_opened = False
+
         self.ui = Ui_SmartMT_MainWindow()
+
+        # init gui
         self.ui.setupUi(self)
+        self.setup_menu()
 
         # export dialogs
         self._export_dialog = ExportDialog(self)
         self._export_dialog_modem = ExportDialogModEm(self)
 
-        self.setup_menu()
-        self._file_handler = FileHandler()
-        self._station_viewer = None
+        # set station viewer
+        self._station_viewer = StationViewer(self, file_handler=self._file_handler)
+        self._station_viewer.ui.pushButton_plot.clicked.connect(self.plot_selected_station)
+        self._station_viewer.selection_changed.connect(self._selected_station_changed)
+        self.ui.stackedWidget.addWidget(self._station_viewer)
+
+        # set plot option widget
+        self._plot_option = PlotOption(self, self._file_handler, self._station_viewer.selected_stations)
+        self._plot_option.ui.pushButton_back.clicked.connect(lambda x: self.ui.stackedWidget.setCurrentWidget(self._station_viewer))
+        self._station_viewer.selection_changed.connect(self._plot_option.data_changed)
+        self.ui.stackedWidget.addWidget(self._plot_option)
+
+        self.ui.stackedWidget.setCurrentWidget(self._station_viewer)
+
         self._subwindow_counter = 0
         self._station_summary = None
         self._progress_bar = ProgressBar(title='Loading files...')
@@ -70,7 +86,6 @@ class StartGUI(QMainWindow):
         self.ui.actionExit.triggered.connect(qApp.quit)
         self.ui.actionOpen_edi_File.triggered.connect(self.file_dialog)
         self.ui.actionOpen_edi_Folder.triggered.connect(self.folder_dialog)
-        self.ui.actionShow_Data_Collection.triggered.connect(self._toggle_tree_view)
         self.ui.actionShow_Station_Summary.triggered.connect(self._toggle_station_summary)
         self.ui.actionWindowed_View.triggered.connect(self._toggle_windowed_tabbed_view)
         self.ui.actionTabbed_View.triggered.connect(self._toggle_windowed_tabbed_view)
@@ -251,9 +266,7 @@ class StartGUI(QMainWindow):
     def _close_all_images(self, *args, **kwargs):
         close_later = []
         for title, (subwindow, action) in self.subwindows.iteritems():
-            if title != self._station_viewer.windowTitle() and \
-                            title != self._station_summary.windowTitle() and \
-                    not isinstance(subwindow.widget(), PlotOption):
+            if not isinstance(subwindow.widget(), StationSummary):
                 close_later.append(subwindow)
         for subwindow in close_later:
             subwindow.close()
@@ -302,14 +315,12 @@ class StartGUI(QMainWindow):
             self._progress_bar.incrementValue()
 
     def plot_selected_station(self, *args, **kwargs):
-        if self._station_viewer and self._station_viewer.fig_canvas.selected_stations:
-            plot_option = PlotOption(self, self._file_handler, self._station_viewer.fig_canvas.selected_stations)
-            subwindow, _ = self.create_subwindow(plot_option,
-                                                 plot_option.windowTitle(),
-                                                 tooltip="plot stations: %s" % ", ".join(
-                                                     self._station_viewer.fig_canvas.selected_stations))
+        if self._station_viewer and self._station_viewer.selected_stations:
+            self.ui.stackedWidget.setCurrentWidget(self._plot_option)
         else:
             self._logger.info("nothing to plot")
+            QMessageBox.information(self, "NOTE",
+                                    "Please load and select station data for visualization.")
 
     def folder_dialog(self, *args, **kwargs):
         dialog = QFileDialog(self)
@@ -339,15 +350,6 @@ class StartGUI(QMainWindow):
             else:
                 break
 
-    def _toggle_tree_view(self):
-        if self._station_viewer:
-            subwindow = self.subwindows[self._station_viewer.windowTitle()][0]
-            if self.ui.actionShow_Data_Collection.isEnabled():
-                if self.ui.actionShow_Data_Collection.isChecked():
-                    subwindow.show()
-                else:
-                    subwindow.hide()
-
     def _toggle_station_summary(self):
         if self._station_summary:
             subwindow = self.subwindows[self._station_summary.windowTitle()][0]
@@ -358,10 +360,9 @@ class StartGUI(QMainWindow):
                     subwindow.hide()
 
     def _update_tree_view(self):
-        if not self._station_viewer:
-            self._station_viewer = StationViewer(self, self._file_handler)
-            self.ui.actionShow_Data_Collection.setEnabled(True)
-            self._station_viewer.selection_changed.connect(self._selected_station_changed)
+        self._station_viewer.update_view()
+
+    def _update_station_summary(self):
         if not self._station_summary:
             self._station_summary = StationSummary(self, self._file_handler,
                                                    self._station_viewer.fig_canvas.selected_stations)
@@ -371,11 +372,10 @@ class StartGUI(QMainWindow):
                 self._station_summary.update_view)
             # connect to handle selection_changed signal from station_viewer
             self._station_viewer.selection_changed.connect(self._station_summary.update_view)
-            self._station_viewer.setFocus()
-        self._station_viewer.update_view()
 
     def _selected_station_changed(self):
         enable = bool(self._station_viewer.selected_stations)
+        self._station_viewer.ui.pushButton_plot.setEnabled(enable)
         self.ui.actionPlot.setEnabled(enable)
         self.ui.actionExport_ModEM_Data.setEnabled(enable)
         self.ui.actionCreate_Shape_File_From_Stations.setEnabled(enable)

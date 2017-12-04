@@ -25,7 +25,7 @@ else:
     from matplotlib.backends.backend_qt5agg import FigureCanvas
     from matplotlib.backends.backend_qt5 import NavigationToolbar2QT as NavigationToolbar
 
-from mtpy.gui.SmartMT.Components import PlotParameter
+from mtpy.gui.SmartMT.Components.plot_parameter import PlotParameter
 from mtpy.utils.mtpylog import MtPyLog
 
 

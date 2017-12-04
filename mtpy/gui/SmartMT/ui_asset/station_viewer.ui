@@ -30,6 +30,20 @@
     <number>0</number>
    </property>
    <item>
+    <widget class="QPushButton" name="pushButton_plot">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
+     <property name="text">
+      <string>Visualize Selected Stations...</string>
+     </property>
+     <property name="icon">
+      <iconset resource="icons.qrc">
+       <normaloff>:/Tango/plot</normaloff>:/Tango/plot</iconset>
+     </property>
+    </widget>
+   </item>
+   <item>
     <widget class="QTreeWidget" name="treeWidget_stations">
      <property name="contextMenuPolicy">
       <enum>Qt::CustomContextMenu</enum>
@@ -91,6 +105,8 @@
   <tabstop>pushButton_showMap</tabstop>
   <tabstop>pushButton_hideMap</tabstop>
  </tabstops>
- <resources/>
+ <resources>
+  <include location="icons.qrc"/>
+ </resources>
  <connections/>
 </ui>

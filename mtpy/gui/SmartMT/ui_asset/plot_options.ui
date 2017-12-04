@@ -39,6 +39,17 @@
     <number>0</number>
    </property>
    <item>
+    <widget class="QPushButton" name="pushButton_back">
+     <property name="text">
+      <string>Select Other Stations</string>
+     </property>
+     <property name="icon">
+      <iconset resource="icons.qrc">
+       <normaloff>:/Tango/back</normaloff>:/Tango/back</iconset>
+     </property>
+    </widget>
+   </item>
+   <item>
     <widget class="QWidget" name="widget" native="true">
      <layout class="QVBoxLayout" name="verticalLayout">
       <item>
@@ -62,7 +73,7 @@
          </size>
         </property>
         <property name="title">
-         <string>Plot Type</string>
+         <string>Visualization Type</string>
         </property>
         <property name="flat">
          <bool>true</bool>
@@ -99,7 +110,7 @@
    <item>
     <widget class="QPushButton" name="pushButton_plot">
      <property name="text">
-      <string>Plot</string>
+      <string>Visualize</string>
      </property>
     </widget>
    </item>
@@ -118,6 +129,8 @@
   <tabstop>pushButton_plot</tabstop>
   <tabstop>pushButton_cancel</tabstop>
  </tabstops>
- <resources/>
+ <resources>
+  <include location="icons.qrc"/>
+ </resources>
  <connections/>
 </ui>
