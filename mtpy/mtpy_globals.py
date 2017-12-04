@@ -1,13 +1,14 @@
 """
 Description:
-    keep all the mtpy constants in this module.
+    keep all the mtpy global params constants in this module.
 
 Author: fei.zhang@ga.gov.au
 
-Date:
+FZ Last Updated: 2017-12-04
 """
-
-__author__ = 'fei.zhang@ga.gov.au'
+from __future__ import print_function
+import os
+import tempfile
 
 epsg_dict = {28350: ['+proj=utm +zone=50 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs', 50],
              28351: ['+proj=utm +zone=51 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs', 51],
@@ -20,3 +21,32 @@ epsg_dict = {28350: ['+proj=utm +zone=50 +south +ellps=GRS80 +towgs84=0,0,0,0,0,
                  '+proj=lcc +lat_1=-18 +lat_2=-36 +lat_0=0 +lon_0=134 +x_0=0 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs',
                  0],
              4326: ['+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs', 0]}
+
+
+# hack to get the path2/repositoryDir like: C:/Github/mtpy
+MTPY_ROOT = os.path.normpath(
+    os.path.abspath(
+        os.path.dirname(
+            os.path.dirname(__file__)
+        )
+    )
+)
+
+print("MTPY_ROOT = ", MTPY_ROOT)
+
+EDI_DATA_DIR = os.path.normpath(
+    os.path.join(MTPY_ROOT, 'examples/data/edi_files'))
+EDI_DATA_DIR2 = os.path.normpath(
+    os.path.join(MTPY_ROOT, 'examples/data/edi_files_2'))
+
+AUS_TOPO_FILE = os.path.normpath(
+    os.path.join(MTPY_ROOT, 'examples/data/AussieContinent_etopo1.asc'))
+SAMPLE_DIR = os.path.normpath(
+    os.path.join(MTPY_ROOT, 'examples/model_files'))  # r'E:\Githubz\mtpy\examples\model_files'
+
+
+SYSTEM_TEMP_DIR = tempfile.gettempdir()
+
+print("SYSTEM_TEMP_DIR = ", SYSTEM_TEMP_DIR) # in my Windows =  c:\users\u25656\appdata\local\temp\1
+
+

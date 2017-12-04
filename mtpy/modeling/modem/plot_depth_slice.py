@@ -17,8 +17,8 @@ from matplotlib.colors import Normalize
 from matplotlib.ticker import MultipleLocator
 
 from mtpy.utils import exceptions as mtex
-from .data import Data
-from .model import Model
+from mtpy.modeling.modem import Data
+from mtpy.modeling.modem import Model
 
 __all__ = ['PlotDepthSlice']
 
@@ -428,4 +428,37 @@ class PlotDepthSlice(object):
 
         return ("Plots depth slices of model from WS3DINV")
 
+# ==================================================================================
+# FZ: add example usage code
+# Justdo>  python /e/Githubz/mtpy/mtpy/modeling/modem/plot_depth_slice.py
+# ==================================================================================
+if __name__ == "__main__":
 
+    from mtpy.mtpy_globals import *
+
+    # directory where files are located
+    wd = os.path.join(SAMPLE_DIR, 'ModEM')
+
+    # directory to save to
+    save_path = SYSTEM_TEMP_DIR
+    # file stem for inversion result
+    filestem = 'Modular_MPI_NLCG_004'
+
+    # period index to plot (0 plots the first (shortest) period, 1 for the second, etc)
+    period_index = 0
+
+    # plot map
+    dsmap = PlotDepthSlice(model_fn=os.path.join(wd, filestem + '.rho'),
+                           data_fn=os.path.join(wd, filestem + '.dat'),
+                           depth_index=30,
+                           save_plots='n'
+                           )
+
+    path2file = os.path.join(save_path, 'DepthSlice.png')
+
+    if os.path.exists(path2file):
+        os.remove(path2file)
+
+    plt.savefig(path2file)
+
+    print(path2file)

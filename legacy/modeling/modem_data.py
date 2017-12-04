@@ -19,7 +19,7 @@ import mtpy.core.mt as mt
 import mtpy.core.z as mtz
 import mtpy.modeling.ws3dinv as ws
 import mtpy.utils.gis_tools
-from mtpy import constants
+from mtpy import mtpy_globals
 from mtpy.core.edi_collection import EdiCollection
 from mtpy.utils.mtpylog import MtPyLog
 
@@ -481,7 +481,7 @@ class Data(object):
 
         """
 
-        if self.epsg not in constants.epsg_dict.keys():
+        if self.epsg not in mtpy_globals.epsg_dict.keys():
             self.epsg = None
 
         if self.epsg is None:
@@ -490,7 +490,7 @@ class Data(object):
 
         for c_arr in self.data_array:
             if c_arr['lat'] != 0.0 and c_arr['lon'] != 0.0:
-                c_arr['zone'] = constants.epsg_dict[self.epsg][1]
+                c_arr['zone'] = mtpy_globals.epsg_dict[self.epsg][1]
                 c_arr['east'], c_arr['north'] = \
                     mtpy.utils.gis_tools.epsg_project(c_arr['lon'], c_arr['lat'],
                                                       4326, self.epsg)
