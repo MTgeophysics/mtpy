@@ -382,11 +382,11 @@ class StartGUI(QMainWindow):
         self.ui.actionCreate_Phase_Tensor_csv_file.setEnabled(enable)
         self.ui.actionCreate_Measurement_csv_file.setEnabled(enable)
 
-    def create_subwindow(self, widget, title, overide=True, tooltip=None):
+    def create_subwindow(self, widget, title, override=True, tooltip=None):
         subwindow = None
         self._subwindow_counter += 1
         if title in self.subwindows:
-            if overide:
+            if override:
                 subwindow, window_action = self.subwindows[title]
                 subwindow.close()
                 self.ui.menuWindow.removeAction(window_action)
@@ -464,6 +464,7 @@ class StartGUI(QMainWindow):
 
 
 if __name__ == "__main__":
+    MtPyLog.load_configure(os.path.join(os.path.abspath("tests"), "logging.yml"))  # debug only
     app = QApplication(sys.argv)
     smartMT = StartGUI()
     smartMT.show()

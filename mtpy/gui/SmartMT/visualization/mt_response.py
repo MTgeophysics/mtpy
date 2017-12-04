@@ -23,13 +23,15 @@ class MTResponse(VisualizationBase):
         self._station = self._station_ui.get_station()
 
         self._params = {
-            'fn': self._station.fn,
+            'z_object': self._station.Z,
+            't_object': self._station.Tipper if 'y' in self._arrow_ui.get_plot_tipper() else None,
+            'pt_obj': self._station.pt,
             'rot_z': self._rotation_ui.get_rotation_in_degree(),
             'plot_num': self._plot_control_ui.get_plot_num(),
             'plot_tipper': self._arrow_ui.get_plot_tipper(),
             'plot_strike': self._plot_control_ui.get_strike(),
             'plot_skew': self._plot_control_ui.get_skew(),
-            'plot_pt': self._plot_control_ui.get_ellipses(),
+            'plot_yn': 'n',
             'fig_num': get_next_fig_num()
             # 'plot_title': self._common_ui.get_title()
         }

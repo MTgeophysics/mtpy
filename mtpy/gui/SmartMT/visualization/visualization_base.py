@@ -147,7 +147,7 @@ class VisualizationBase(QtCore.QThread):
 
     def run(self):
         # self.setTerminationEnabled(True)
-        plt.clf()
+        # plt.clf()
         try:
             self.plot()
             # change size and title
@@ -198,6 +198,10 @@ class MPLCanvasWidget(QWidget):
         height = size.height() + self._toolbar.sizeHint().height()
         # print width, height
         self.resize(width, height)
+
+    def closeEvent(self, QCloseEvent):
+        super(MPLCanvasWidget, self).closeEvent(QCloseEvent)
+        plt.close(self._fig)
 
     def get_fig(self):
         return self._fig
