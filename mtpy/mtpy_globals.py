@@ -47,6 +47,9 @@ SAMPLE_DIR = os.path.normpath(
 
 SYSTEM_TEMP_DIR = tempfile.gettempdir()
 
+NEW_TEMP_DIR=tempfile.mkdtemp(prefix="mtpy_tmpdir_")
+
 print("SYSTEM_TEMP_DIR = ", SYSTEM_TEMP_DIR) # in my Windows =  c:\users\u25656\appdata\local\temp\1
 
+print ("NEW_TEMP_DIR = ", NEW_TEMP_DIR)
 
