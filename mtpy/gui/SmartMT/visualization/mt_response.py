@@ -27,7 +27,7 @@ class MTResponse(VisualizationBase):
             'z_object': self._station.Z,
             't_object': self._station.Tipper if 'y' in self._arrow_ui.get_plot_tipper() else None,
             'pt_obj': self._station.pt if self._plot_control_ui.is_plot_ellipses() else None,
-            'rot_z': self._rotation_ui.get_rotation_in_degree(),
+            'rotation_angle': self._rotation_ui.get_rotation_in_degree(),
             'plot_num': self._plot_control_ui.get_plot_num(),
             # 'plot_strike': self._plot_control_ui.get_strike(),  # no longer available in mtpy
             # 'plot_skew': self._plot_control_ui.get_skew(),   # no longer available in mtpy
@@ -98,7 +98,7 @@ class MTResponse(VisualizationBase):
     def get_plot_tooltip(self):
         return "station=%s, rotation=%.2f°, plot_num=%d" % (
             self._station.station,
-            self._params['rot_z'],
+            self._params['rotation_angle'],
             self._params['plot_num']
         )
 

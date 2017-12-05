@@ -48,11 +48,9 @@ class TestFrequencySelect(TestCase):
     def _std_function_tests(self):
         pos_check_box = QPoint(8, 8)
         _click_area(self.app.frequency_select.ui.radioButton_period, pos_check_box)
-        QTest.qWait(2000)
         self.assertTrue(self.app.frequency_select.ui.radioButton_period.isChecked())
 
         _click_area(self.app.frequency_select.ui.radioButton_frequency, pos_check_box)
-        QTest.qWait(2000)
         self.assertTrue(self.app.frequency_select.ui.radioButton_frequency.isChecked())
 
         # test frequency selection
@@ -66,33 +64,27 @@ class TestFrequencySelect(TestCase):
                     offset=self.app.frequency_select.histogram.geometry().topLeft())
         _click_area(self.app.frequency_select.histogram,
                     offset=self.app.frequency_select.histogram.geometry().topLeft())
-        QTest.qWait(1000)
         self.assertTrue(self.app.frequency_select.model_selected.rowCount() > 0)
 
         _click_area(self.app.frequency_select.ui.checkBox_existing_only, pos_check_box)
-        QTest.qWait(2000)
         self.assertTrue(self.app.frequency_select.ui.checkBox_existing_only.isChecked())
         self.assertTrue(self.app.frequency_select.histogram._select_existing_only)
         self.assertTrue(self.app.frequency_select.model_selected.rowCount() == 0)
 
         _click_area(self.app.frequency_select.ui.checkBox_show_existing, pos_check_box)
-        QTest.qWait(2000)
         self.assertTrue(self.app.frequency_select.ui.checkBox_show_existing.isChecked())
         self.assertTrue(self.app.frequency_select.histogram._show_existing)
 
         _click_area(self.app.frequency_select.ui.checkBox_y_log_scale, pos_check_box)
-        QTest.qWait(2000)
         self.assertTrue(self.app.frequency_select.ui.checkBox_y_log_scale.isChecked())
         self.assertTrue(self.app.frequency_select.histogram._y_log_scale)
 
         _click_area(self.app.frequency_select.ui.checkBox_x_log_scale, pos_check_box)
-        QTest.qWait(2000)
         self.assertTrue(self.app.frequency_select.ui.checkBox_x_log_scale.isChecked())
         self.assertTrue(self.app.frequency_select.histogram._x_log_scale)
 
         # test clear
         _click_area(self.app.frequency_select.ui.pushButton_clear)
-        QTest.qWait(1000)
         self.assertTrue(self.app.frequency_select.model_selected.rowCount() == 0)
         # test delete
         _click_area(self.app.frequency_select.histogram,
@@ -105,11 +97,9 @@ class TestFrequencySelect(TestCase):
                     offset=self.app.frequency_select.histogram.geometry().topLeft())
         _click_area(self.app.frequency_select.histogram,
                     offset=self.app.frequency_select.histogram.geometry().topLeft())
-        QTest.qWait(1000)
         self.assertTrue(self.app.frequency_select.model_selected.rowCount() > 0)
         self.app.frequency_select.ui.listView_selected.selectAll()
         _click_area(self.app.frequency_select.ui.pushButton_delete)
-        QTest.qWait(1000)
         self.assertTrue(self.app.frequency_select.model_selected.rowCount() == 0)
 
 

@@ -37,3 +37,4 @@ def _click_area(qobj, pos=None, offset=None, modifier=QtCore.Qt.NoModifier):
         pos += offset
     QTest.mouseClick(qobj, QtCore.Qt.LeftButton, modifier=modifier, pos=pos)
     # print(pos.x(), pos.y())
+    QTest.qWait(1000)  # wait for things to happen on gui

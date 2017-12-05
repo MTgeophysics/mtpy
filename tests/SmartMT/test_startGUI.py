@@ -1,37 +1,59 @@
+import os
 from unittest import TestCase
 
-import os
+import matplotlib
+import pytest
+from qtpy import QtCore
+from qtpy.QtCore import QPoint
 from qtpy.QtTest import QTest
 
 from mtpy.gui.SmartMT.start import StartGUI
 from tests import EDI_DATA_DIR
 from tests.SmartMT import _click_area
+from tests.imaging import reset_matplotlib
 
+_pos_check_box = QPoint(8, 8)
 
+@pytest.mark.last
 class TestStartGUI(TestCase):
     """
     only testing the loading of the gui at the moment. to make sure all the necessory packages and dependencies are
     correctly loaded
     """
+    @classmethod
+    def setUpClass(cls):
+        reset_matplotlib()
+        import matplotlib.pyplot as plt
+        plt.interactive(False)
 
     def setUp(self):
         self.smartMT = StartGUI()
         self.smartMT.show()
         QTest.qWaitForWindowActive(self.smartMT)
+        print(matplotlib.get_backend())
 
     def test_main(self):
         self.assertTrue(self.smartMT.isVisible())
         self.assertTrue(self.smartMT.isMaximized())
 
-    # def test_plot_mt_response(self):
-    #     self._switch_to_plot("MT Response")
-    #     # config plot
-    #     self.smartMT._plot_option._current_plot._station_ui.ui.comboBox_station.setCurrentIndex(0)
-    #     self._plot()
-    #     self.assertTrue(self.smartMT._subwindow_counter == 1, "no image creataed")  # test if the image is created
+    def test_plot_mt_response_default(self):
+        self._switch_to_plot("MT Response")
+        self._plot()
+        self.assertTrue(self.smartMT._subwindow_counter == 1, "no image created")  # test if the image is created
 
-    def _plot(self):
-        _click_area(self.smartMT._plot_option.ui.pushButton_plot)
+    def test_plot_mt_response_enable_all(self):
+        self._switch_to_plot("MT Response")
+
+        # config plot
+        plot_config = self.smartMT._plot_option._current_plot
+        _click_area(plot_config._arrow_ui.ui.checkBox_real, pos=_pos_check_box)
+        _click_area(plot_config._arrow_ui.ui.checkBox_imaginary, pos=_pos_check_box)
+        _click_area(plot_config._plot_control_ui.ui.checkBox_pt, pos=_pos_check_box)
+        _click_area(plot_config._rotation_ui.ui.dial_rotation, pos=_pos_check_box)
+        _click_area(plot_config._plot_control_ui.ui.radioButton_2, pos=_pos_check_box)
+
+        self._plot()
+        self.assertTrue(self.smartMT._subwindow_counter == 1, "no image creataed")  # test if the image is created
 
     def _switch_to_plot(self, name):
         # load some data
@@ -57,3 +79,12 @@ class TestStartGUI(TestCase):
         self.smartMT._add_files(file_list, os.path.basename(EDI_DATA_DIR))
         self.smartMT._update_tree_view()
         self.smartMT._progress_bar.onFinished()
+
+    def _plot(self, timeout=3000):
+        loop = QtCore.QEventLoop()
+        self.smartMT._plot_option._current_plot.plotting_completed.connect(loop.quit)
+        if timeout is not None:
+            QtCore.QTimer.singleShot(timeout, loop.quit)
+        _click_area(self.smartMT._plot_option.ui.pushButton_plot)  # wait for plotting
+        loop.exec_()
+
