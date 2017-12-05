@@ -84,6 +84,6 @@ class Arrow(QGroupBox):
         elif self.ui.checkBox_real.isChecked():
             return 'yr'
         elif self.ui.checkBox_imaginary.isChecked():
-            return 'ri'
+            return 'yi'
         else:
             return 'n'

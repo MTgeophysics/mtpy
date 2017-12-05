@@ -29,6 +29,7 @@ class MTResponse(VisualizationBase):
             'pt_obj': self._station.pt if self._plot_control_ui.is_plot_ellipses() else None,
             'rotation_angle': self._rotation_ui.get_rotation_in_degree(),
             'plot_num': self._plot_control_ui.get_plot_num(),
+            "plot_tipper": self._arrow_ui.get_plot_tipper(),
             # 'plot_strike': self._plot_control_ui.get_strike(),  # no longer available in mtpy
             # 'plot_skew': self._plot_control_ui.get_skew(),   # no longer available in mtpy
             'plot_yn': 'n',

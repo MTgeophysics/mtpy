@@ -353,7 +353,7 @@ class PlotMTResponse(PlotSettings):
     def __init__(self, z_object=None, t_object=None, pt_obj=None,
                  station='MT Response', **kwargs):
         super(PlotMTResponse, self).__init__()
-        self._logger = MtPyLog.get_mtpy_logger(self.__class__.__module__ + self.__class__.__name__)
+        self._logger = MtPyLog.get_mtpy_logger(self.__class__.__module__ + "." + self.__class__.__name__)
         self.Z = z_object
         self.Tipper = t_object
         self.pt = pt_obj
