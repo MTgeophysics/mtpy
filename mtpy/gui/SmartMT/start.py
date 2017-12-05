@@ -61,14 +61,17 @@ class StartGUI(QMainWindow):
 
         # set plot option widget
         self._plot_option = PlotOption(self, self._file_handler, self._station_viewer.selected_stations)
-        self._plot_option.ui.pushButton_back.clicked.connect(lambda x: self.ui.stackedWidget.setCurrentWidget(self._station_viewer))
+        self._plot_option.ui.pushButton_back.clicked.connect(
+            lambda x: self.ui.stackedWidget.setCurrentWidget(self._station_viewer))
         self._station_viewer.selection_changed.connect(self._plot_option.data_changed)
         self.ui.stackedWidget.addWidget(self._plot_option)
 
         self.ui.stackedWidget.setCurrentWidget(self._station_viewer)
 
         self._subwindow_counter = 0
+
         self._station_summary = None
+
         self._progress_bar = ProgressBar(title='Loading files...')
         self.subwindows = {}
         # enable export if the activated subwindow is a image window
@@ -135,7 +138,7 @@ class StartGUI(QMainWindow):
                     dir_name = str(dir_name)
                     if not os.path.isdir(dir_name):
                         QMessageBox.information(self, "NOTE",
-                                                      "Please select a directory to save the created .csv files.")
+                                                "Please select a directory to save the created .csv files.")
                         dir_name = None  # will read again
                 else:
                     break
@@ -176,7 +179,7 @@ class StartGUI(QMainWindow):
                     dir_name = str(dir_name)
                     if not os.path.isdir(dir_name):
                         QMessageBox.information(self, "NOTE",
-                                                      "Please select a directory to save the created .csv files.")
+                                                "Please select a directory to save the created .csv files.")
                         dir_name = None  # will read again
                 else:
                     break
@@ -217,7 +220,7 @@ class StartGUI(QMainWindow):
                     dir_name = str(dir_name)
                     if not os.path.isdir(dir_name):
                         QMessageBox.information(self, "NOTE",
-                                                      "Please select a directory to save the created shape files.")
+                                                "Please select a directory to save the created shape files.")
                         dir_name = None  # will read again
                 else:
                     break
@@ -242,9 +245,9 @@ class StartGUI(QMainWindow):
                 frm = inspect.trace()[-1]
                 mod = inspect.getmodule(frm[0])
                 QMessageBox.critical(self,
-                                           'Exporting Error',
-                                           "{}: {}".format(mod.__name__, e.message),
-                                           QMessageBox.Close)
+                                     'Exporting Error',
+                                     "{}: {}".format(mod.__name__, e.message),
+                                     QMessageBox.Close)
 
     def _export_modem(self, *args, **kwargs):
         mt_objs = []
@@ -339,7 +342,7 @@ class StartGUI(QMainWindow):
                 if not file_list:
                     # empty list
                     QMessageBox.information(self, "NOTE",
-                                                  "Directory does not contain any .edi file, please select again.")
+                                            "Directory does not contain any .edi file, please select again.")
                     dir_name = None  # will read again
                 else:
                     self._progress_bar.setMaximumValue(len(file_list))
@@ -351,13 +354,12 @@ class StartGUI(QMainWindow):
                 break
 
     def _toggle_station_summary(self):
-        if self._station_summary:
-            subwindow = self.subwindows[self._station_summary.windowTitle()][0]
-            if self.ui.actionShow_Station_Summary.isEnabled():
-                if self.ui.actionShow_Station_Summary.isChecked():
-                    subwindow.show()
-                else:
-                    subwindow.hide()
+        self._update_station_summary()
+        subwindow = self.subwindows[self._station_summary.windowTitle()][0]
+        if self.ui.actionShow_Station_Summary.isChecked():
+            subwindow.show_and_focus()
+        else:
+            subwindow.hide()
 
     def _update_tree_view(self):
         self._station_viewer.update_view()
@@ -365,8 +367,7 @@ class StartGUI(QMainWindow):
     def _update_station_summary(self):
         if not self._station_summary:
             self._station_summary = StationSummary(self, self._file_handler,
-                                                   self._station_viewer.fig_canvas.selected_stations)
-            self.ui.actionShow_Station_Summary.setEnabled(True)
+                                                   self._station_viewer.selected_stations)
             # connect to tree view to update summary
             self._station_viewer.ui.treeWidget_stations.selectionModel().selectionChanged.connect(
                 self._station_summary.update_view)
@@ -375,6 +376,7 @@ class StartGUI(QMainWindow):
 
     def _selected_station_changed(self):
         enable = bool(self._station_viewer.selected_stations)
+        self.ui.actionShow_Station_Summary.setEnabled(enable)
         self._station_viewer.ui.pushButton_plot.setEnabled(enable)
         self.ui.actionPlot.setEnabled(enable)
         self.ui.actionExport_ModEM_Data.setEnabled(enable)

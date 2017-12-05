@@ -40,6 +40,11 @@
    </property>
    <item>
     <widget class="QPushButton" name="pushButton_back">
+     <property name="font">
+      <font>
+       <pointsize>10</pointsize>
+      </font>
+     </property>
      <property name="text">
       <string>Select Other Stations</string>
      </property>
@@ -109,8 +114,17 @@
    </item>
    <item>
     <widget class="QPushButton" name="pushButton_plot">
+     <property name="font">
+      <font>
+       <pointsize>10</pointsize>
+      </font>
+     </property>
      <property name="text">
       <string>Visualize</string>
+     </property>
+     <property name="icon">
+      <iconset resource="icons.qrc">
+       <normaloff>:/Tango/plot</normaloff>:/Tango/plot</iconset>
      </property>
     </widget>
    </item>
@@ -127,7 +141,6 @@
   <tabstop>comboBoxSelect_Plot</tabstop>
   <tabstop>textEditPlot_Description</tabstop>
   <tabstop>pushButton_plot</tabstop>
-  <tabstop>pushButton_cancel</tabstop>
  </tabstops>
  <resources>
   <include location="icons.qrc"/>

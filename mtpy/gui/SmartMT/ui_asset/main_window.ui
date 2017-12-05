@@ -104,7 +104,6 @@
     <property name="title">
      <string>View</string>
     </property>
-    <addaction name="actionShow_Data_Collection"/>
     <addaction name="actionShow_Station_Summary"/>
    </widget>
    <widget class="QMenu" name="menuWindow">
@@ -176,14 +175,17 @@
    <property name="minimumSize">
     <size>
      <width>340</width>
-     <height>38</height>
+     <height>80</height>
     </size>
    </property>
    <property name="features">
-    <set>QDockWidget::DockWidgetFloatable|QDockWidget::DockWidgetMovable</set>
+    <set>QDockWidget::DockWidgetFloatable|QDockWidget::DockWidgetMovable|QDockWidget::DockWidgetVerticalTitleBar</set>
    </property>
    <property name="allowedAreas">
     <set>Qt::LeftDockWidgetArea|Qt::RightDockWidgetArea</set>
+   </property>
+   <property name="windowTitle">
+    <string>Data Visualization</string>
    </property>
    <attribute name="dockWidgetArea">
     <number>1</number>
@@ -207,6 +209,12 @@
      </property>
      <item>
       <widget class="QStackedWidget" name="stackedWidget">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
        <property name="frameShape">
         <enum>QFrame::NoFrame</enum>
        </property>
@@ -353,7 +361,7 @@
     <bool>true</bool>
    </property>
    <property name="checked">
-    <bool>true</bool>
+    <bool>false</bool>
    </property>
    <property name="enabled">
     <bool>false</bool>
