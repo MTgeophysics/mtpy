@@ -32,7 +32,7 @@ MTPY_ROOT = os.path.normpath(
     )
 )
 
-print("MTPY_ROOT = ", MTPY_ROOT)
+# print("MTPY_ROOT = ", MTPY_ROOT)
 
 EDI_DATA_DIR = os.path.normpath(
     os.path.join(MTPY_ROOT, 'examples/data/edi_files'))
@@ -47,6 +47,9 @@ SAMPLE_DIR = os.path.normpath(
 
 SYSTEM_TEMP_DIR = tempfile.gettempdir()
 
-print("SYSTEM_TEMP_DIR = ", SYSTEM_TEMP_DIR) # in my Windows =  c:\users\u25656\appdata\local\temp\1
+NEW_TEMP_DIR=tempfile.mkdtemp(prefix="mtpy_tmpdir_")
 
+# print("SYSTEM_TEMP_DIR = ", SYSTEM_TEMP_DIR) # in my Windows =  c:\users\u25656\appdata\local\temp\1
+#
+# print ("NEW_TEMP_DIR = ", NEW_TEMP_DIR)
 
