@@ -215,11 +215,11 @@ class PlotMTResponse(PlotSettings):
                         not, see accepted values above in arguments
 
         -plot_strike    string or integer telling the program to plot the 
-                        strike angle, see values above in arguments
+                        strike angle, see values above in arguments  (YG: not implemented)
 
         -plot_skew      string to tell the program to plot skew angle.
                         The skew is plotted in the same subplot as the strike
-                        angle at the moment
+                        angle at the moment  (YG: not implemented)
 
 
         -period          period array cooresponding to the impedance tensor
@@ -353,7 +353,7 @@ class PlotMTResponse(PlotSettings):
     def __init__(self, z_object=None, t_object=None, pt_obj=None,
                  station='MT Response', **kwargs):
         super(PlotMTResponse, self).__init__()
-        self._logger = MtPyLog.get_mtpy_logger(__name__)
+        self._logger = MtPyLog.get_mtpy_logger(self.__class__.__module__ + self.__class__.__name__)
         self.Z = z_object
         self.Tipper = t_object
         self.pt = pt_obj

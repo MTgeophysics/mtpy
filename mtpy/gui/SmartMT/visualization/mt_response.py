@@ -18,6 +18,7 @@ from mtpy.utils.matplotlib_utils import get_next_fig_num
 
 
 class MTResponse(VisualizationBase):
+
     def plot(self):
         # get parameters
         self._station = self._station_ui.get_station()
@@ -25,12 +26,11 @@ class MTResponse(VisualizationBase):
         self._params = {
             'z_object': self._station.Z,
             't_object': self._station.Tipper if 'y' in self._arrow_ui.get_plot_tipper() else None,
-            'pt_obj': self._station.pt,
+            'pt_obj': self._station.pt if self._plot_control_ui.is_plot_ellipses() else None,
             'rot_z': self._rotation_ui.get_rotation_in_degree(),
             'plot_num': self._plot_control_ui.get_plot_num(),
-            'plot_tipper': self._arrow_ui.get_plot_tipper(),
-            'plot_strike': self._plot_control_ui.get_strike(),
-            'plot_skew': self._plot_control_ui.get_skew(),
+            # 'plot_strike': self._plot_control_ui.get_strike(),  # no longer available in mtpy
+            # 'plot_skew': self._plot_control_ui.get_skew(),   # no longer available in mtpy
             'plot_yn': 'n',
             'fig_num': get_next_fig_num()
             # 'plot_title': self._common_ui.get_title()
@@ -39,8 +39,7 @@ class MTResponse(VisualizationBase):
         if self._arrow_ui.ui.groupBox_advanced_options.isChecked():
             self._params['arrow_dict'] = self._arrow_ui.get_arrow_dict()
 
-        if not self._ellipse_ui.isHidden():
-            self._params['ellipse_dict'] = self._ellipse_ui.get_ellipse_dict()
+        self._params.update(self._ellipse_ui.get_ellipse_dict())
 
         # plot
         self._plotting_object = PlotMTResponse(**self._params)
@@ -64,12 +63,14 @@ class MTResponse(VisualizationBase):
 
         self._plot_control_ui = PlotControlMTResponse(self._parameter_ui)
         self._plot_control_ui.hide_plot_style()
+        self._plot_control_ui.hide_strike()
+        self._plot_control_ui.hide_skew()
         self._parameter_ui.add_parameter_groupbox(self._plot_control_ui)
 
         self._ellipse_ui = Ellipse(self._parameter_ui)
         self._ellipse_ui.setHidden(True)
         # make the radio button toggle hidden of the ellipses groupbox
-        self._plot_control_ui.ui.radioButton_ellipses_y.toggled.connect(self._ellipse_radio_button_toggled)
+        self._plot_control_ui.ui.checkBox_pt.toggled.connect(self._ellipse_radio_button_toggled)
         self._parameter_ui.add_parameter_groupbox(self._ellipse_ui)
 
         self._arrow_ui = Arrow(self._parameter_ui)
@@ -85,7 +86,7 @@ class MTResponse(VisualizationBase):
         self._parameter_ui.set_title(self._station_ui.get_station().station)
 
     def _ellipse_radio_button_toggled(self, b):
-        self._ellipse_ui.setHidden(not self._ellipse_ui.isHidden())
+        self._ellipse_ui.setHidden(not b)
 
     def update_ui(self):
         self._station_ui.set_data(self._mt_objs)

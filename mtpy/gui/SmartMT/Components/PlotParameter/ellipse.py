@@ -47,11 +47,11 @@ class Ellipse(QGroupBox):
 
     def get_ellipse_dict(self):
         ellipse_dict = {
-            'size': self.ui.doubleSpinBox_size.value(),
-            'colorby': self._colorby[self.ui.comboBoxColor_by.currentIndex()],
-            'range': (
+            'ellipse_size': self.ui.doubleSpinBox_size.value(),
+            'ellipse_colorby': self._colorby[self.ui.comboBoxColor_by.currentIndex()],
+            'ellipse_range': (
                 self.ui.doubleSpinBox_min.value(), self.ui.doubleSpinBox_max.value(),
                 self.ui.doubleSpinBox_step.value()),
-            'cmap': self._cmap[self.ui.comboBox_cmap.currentIndex()]
+            'ellipse_cmap': self._cmap[self.ui.comboBox_cmap.currentIndex()]
         }
         return ellipse_dict
