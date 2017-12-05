@@ -26,7 +26,7 @@ import time
 
 import mtpy.utils.exceptions as MTex
 import mtpy.processing.birrp as MTbp
-reload(MTbp)
+#reload(MTbp)
 
 
 def main():

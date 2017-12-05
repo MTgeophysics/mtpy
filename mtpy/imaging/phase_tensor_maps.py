@@ -364,8 +364,8 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
         Initialise the object
         :param kwargs: keyword-value pairs
         """
-
         super(PlotPhaseTensorMaps, self).__init__()
+
         self._logger = MtPyLog.get_mtpy_logger(self.__class__.__name__)
 
         fn_list = kwargs.pop('fn_list', None)

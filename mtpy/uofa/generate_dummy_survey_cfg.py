@@ -17,8 +17,8 @@ import sys
 import os.path as op
 import mtpy.utils.filehandling as MTfh
 import mtpy.utils.configfile as MTcf
-reload(MTfh)
-reload(MTcf)
+#reload(MTfh)
+#reload(MTcf)
 
 
 def main():

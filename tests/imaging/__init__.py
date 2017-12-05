@@ -18,10 +18,11 @@ if os.name == "posix" and 'DISPLAY' not in os.environ:
     print("MATPLOTLIB: No Display found, using non-interactive svg backend", file=sys.stderr)
     matplotlib.use('svg')
     import matplotlib.pyplot as plt
+    MTPY_TEST_HAS_DISPLAY = False
 else:
     # matplotlib.use('svg')
     import matplotlib.pyplot as plt
-
+    MTPY_TEST_HAS_DISPLAY = True
     plt.ion()
 
 MtPyLog.get_mtpy_logger(__name__).info("Testing using matplotlib backend {}".format(matplotlib.rcParams['backend']))
@@ -281,5 +282,6 @@ class ImageTestCase(TestCase):
             plt.show(block=False)  # show an empty window first for drawing
 
     def tearDown(self):
-        plt_wait(1)
+        if MTPY_TEST_HAS_DISPLAY:
+            plt_wait(1)
         plt_close()

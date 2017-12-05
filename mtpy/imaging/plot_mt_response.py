@@ -32,9 +32,10 @@ import mtpy.imaging.mtcolors as mtcl
 #  Plot apparent resistivity and phase
 # ==============================================================================
 from mtpy import MtPyLog
+from mtpy.imaging.mtplottools import PlotSettings
 
 
-class PlotMTResponse(object):
+class PlotMTResponse(PlotSettings):
     """
     Plots Resistivity and phase for the different modes of the MT response.  At
     the moment is supports the input of an .edi file. Other formats that will
@@ -351,6 +352,7 @@ class PlotMTResponse(object):
 
     def __init__(self, z_object=None, t_object=None, pt_obj=None,
                  station='MT Response', **kwargs):
+        super(PlotMTResponse, self).__init__()
         self._logger = MtPyLog.get_mtpy_logger(__name__)
         self.Z = z_object
         self.Tipper = t_object

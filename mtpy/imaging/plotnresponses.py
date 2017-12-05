@@ -18,7 +18,7 @@ import matplotlib.gridspec as gridspec
 import mtpy.imaging.mtplottools as mtpl
 import mtpy.imaging.mtcolors as mtcl
 from mtpy.imaging.plot_mt_response import PlotMTResponse as plotresponse
-reload(mtpl)
+#reload(mtpl)
 
 #============================================================================
 

@@ -30,9 +30,9 @@ import fnmatch
 import mtpy.utils.exceptions as MTex
 import mtpy.utils.mseed as MTms
 import mtpy.utils.filehandling as MTfh
-reload(MTfh)
-reload(MTex)
-reload(MTms)
+#reload(MTfh)
+#reload(MTex)
+#reload(MTms)
 
 
 def main():
