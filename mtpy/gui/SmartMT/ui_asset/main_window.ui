@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1024</width>
-    <height>768</height>
+    <width>2474</width>
+    <height>875</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -30,7 +30,7 @@
      <verstretch>0</verstretch>
     </sizepolicy>
    </property>
-   <layout class="QHBoxLayout" name="horizontalLayout">
+   <layout class="QVBoxLayout" name="verticalLayout_2">
     <property name="leftMargin">
      <number>0</number>
     </property>
@@ -64,7 +64,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1024</width>
+     <width>2474</width>
      <height>21</height>
     </rect>
    </property>
@@ -172,11 +172,11 @@
    <addaction name="actionExport_ModEM_Data"/>
   </widget>
   <widget class="QDockWidget" name="dockWidget">
-   <property name="minimumSize">
-    <size>
-     <width>340</width>
-     <height>80</height>
-    </size>
+   <property name="sizePolicy">
+    <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+     <horstretch>0</horstretch>
+     <verstretch>0</verstretch>
+    </sizepolicy>
    </property>
    <property name="features">
     <set>QDockWidget::DockWidgetFloatable|QDockWidget::DockWidgetMovable|QDockWidget::DockWidgetVerticalTitleBar</set>
@@ -191,6 +191,24 @@
     <number>1</number>
    </attribute>
    <widget class="QWidget" name="dockWidgetContents">
+    <property name="sizePolicy">
+     <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+      <horstretch>0</horstretch>
+      <verstretch>0</verstretch>
+     </sizepolicy>
+    </property>
+    <property name="minimumSize">
+     <size>
+      <width>340</width>
+      <height>0</height>
+     </size>
+    </property>
+    <property name="maximumSize">
+     <size>
+      <width>340</width>
+      <height>16777215</height>
+     </size>
+    </property>
     <layout class="QVBoxLayout" name="verticalLayout">
      <property name="spacing">
       <number>0</number>
@@ -214,6 +232,18 @@
          <horstretch>0</horstretch>
          <verstretch>0</verstretch>
         </sizepolicy>
+       </property>
+       <property name="minimumSize">
+        <size>
+         <width>340</width>
+         <height>0</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>340</width>
+         <height>16777215</height>
+        </size>
        </property>
        <property name="frameShape">
         <enum>QFrame::NoFrame</enum>
