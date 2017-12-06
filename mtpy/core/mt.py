@@ -41,10 +41,11 @@ try:
 
 except ImportError:  # pragma: no cover
     warnings.warn('Could not find scipy.interpolate, cannot use method interpolate'
-                       'check installation you can get scipy from scipy.org.')
+                  'check installation you can get scipy from scipy.org.')
     _logger.warning('Could not find scipy.interpolate, cannot use method interpolate'
-                       'check installation you can get scipy from scipy.org.')
+                    'check installation you can get scipy from scipy.org.')
     interp_import = False
+
 
 # =============================================================================
 class MT(object):
@@ -1081,7 +1082,7 @@ class MT(object):
                                 'author',
                                 d_obj.attr['author'])
                     if name == 'comments' and \
-                                    f_attr.lower() == 'dataqualitywarnings':
+                            f_attr.lower() == 'dataqualitywarnings':
                         name = 'warnings_' + name
                     value = d_obj.value
 
@@ -1513,7 +1514,7 @@ class MT(object):
                 l_key = '{0}.{1}'.format(obj_name, obj_key)
 
                 if not isinstance(obj_attr, (str, float, int, list)) and \
-                                obj_attr is not None:
+                        obj_attr is not None:
                     for a_key in sorted(obj_attr.__dict__.keys()):
                         if a_key in ['_kw_list', '_fmt_list', '_logger']:
                             continue
@@ -1521,7 +1522,7 @@ class MT(object):
                         l_key = '{0}.{1}.{2}'.format(obj_name, obj_key, a_key)
                         if not isinstance(obj_attr_01, (str, float, int,
                                                         list, np.float64)) and \
-                                        obj_attr_01 is not None:
+                                obj_attr_01 is not None:
                             for b_key in sorted(obj_attr_01.__dict__.keys()):
                                 obj_attr_02 = getattr(obj_attr_01, b_key)
                                 l_key = '{0}.{1}.{2}.{3}'.format(obj_name,
