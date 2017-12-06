@@ -1,13 +1,13 @@
 """
 Description:
-    Extract data from modem output files (.dat and .rho) and produce views: csv files and visualization plots
-    The output look like: StationName, Lat, Long, X, Y, Z, Log(Resistivity)
+    Extract info from a pair of files (namely .dat and .rho) of modem inversion results
+    re-write the data into other formats such as csv.
+    Get a slice of the model data for analysis and plotting visualization.
+
+    The output CSV file include StationName, Lat, Long, X, Y, Z, Log(Resistivity)
     where (X,Y,Z) are relative distances in meters from the mesh's origin.
     Projection/Coordinate system must be known in order to associate (Lat, Long) to (X, Y)
 
-References:
-    https://gajira.atlassian.net/browse/ALAMP-30
-    https://gajira.atlassian.net/browse/ALAMP-31
 
 CreationDate:   8/09/2017
 Developer:      fei.zhang@ga.gov.au
@@ -32,7 +32,7 @@ logger = MtPyLog.get_mtpy_logger(__name__)
 # logger.setLevel(logging.DEBUG)
 
 
-class ModemSlices(object):
+class DataModelAnalysis(object):
     def __init__(self, filedat, filerho, plot_orient='ew', **kwargs):
         """Constructor
         :param filedat: path2file.dat
@@ -387,8 +387,8 @@ class ModemSlices(object):
 #########################################################################
 # How to call the create csv function
 # Usage:
-#  python mtpy/modeling/modem_output_to_views.py /e/Data/Modeling/Isa/100hs_flat_BB/Isa_run3_NLCG_048.dat /e/Data/Modeling/Isa/100hs_flat_BB/Isa_run3_NLCG_048.rho 20
-#  python mtpy/modeling/modem_output_to_views.py /e/MTPY2_Outputs/GA_UA_edited_10s-10000s_modem_inputs/ModEM_Data.dat  /e/MTPY2_Outputs/GA_UA_edited_10s-10000s_modem_inputs/ModEM_Model.ws -1000 1000
+#  python mtpy/modeling/modem/data_model_analysis.py /e/Data/Modeling/Isa/100hs_flat_BB/Isa_run3_NLCG_048.dat /e/Data/Modeling/Isa/100hs_flat_BB/Isa_run3_NLCG_048.rho
+#  python mtpy/modeling/modem/data_model_analysis.py /e/MTPY2_Outputs/GA_UA_edited_10s-10000s_modem_inputs/ModEM_Data.dat  /e/MTPY2_Outputs/GA_UA_edited_10s-10000s_modem_inputs/ModEM_Model.ws
 # ---------------------------------------------------------------------------
 if __name__ == "__main__":
 
@@ -415,8 +415,8 @@ if __name__ == "__main__":
         rhof = sys.argv[2]
 
     # construct plot object
-    # self = ModemSlices(datf, rhof)  # default  map_scale='m')
-    myObj = ModemSlices(datf, rhof, map_scale='km')
+    # self = DataModelAnalysis(datf, rhof)  # default  map_scale='m')
+    myObj = DataModelAnalysis(datf, rhof, map_scale='km')
 
     myObj.create_csv()
 

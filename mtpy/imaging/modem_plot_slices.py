@@ -14,10 +14,11 @@ Developer:      fei.zhang@ga.gov.au
 LastUpdate:     13/10/2017   FZ
 """
 
+import glob
 import os
 import sys
-import glob
-from mtpy.modeling.modem_output_to_views import ModemSlices
+
+from mtpy.modeling.modem.data_model_analysis import DataModelAnalysis
 
 #######################
 if __name__ == "__main__":
@@ -65,8 +66,8 @@ if __name__ == "__main__":
         slice_locs= None
 
     # construct plot object
-    # self = ModemSlices(datf, rhof)  # default  map_scale='m')
-    myObj = ModemSlices(datf, rhof, map_scale='km')
+    # self = DataModelAnalysis(datf, rhof)  # default  map_scale='m')
+    myObj = DataModelAnalysis(datf, rhof, map_scale='km')
 
     myObj.set_plot_orientation(slice_orient)  # horizontal at a given depth z
     # myObj.set_plot_orientation('ew')
