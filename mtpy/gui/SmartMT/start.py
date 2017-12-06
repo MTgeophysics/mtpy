@@ -466,7 +466,13 @@ class StartGUI(QMainWindow):
 
 
 if __name__ == "__main__":
-    MtPyLog.load_configure(os.path.join(os.path.abspath("tests"), "logging.yml"))  # debug only
+    if __debug__:
+        MtPyLog.load_configure(os.path.join(os.path.abspath("tests"), "logging.yml"))  # debug only
+        # handle uncaught exceptions to log as since PYQT5.5 will not display any uncaught exceptions
+        # ref: http://pyqt.sourceforge.net/Docs/PyQt5/incompatibilities.html#unhandled-python-exceptions
+        logger = MtPyLog.get_mtpy_logger(__name__)
+        sys.excepthook = lambda exc_type, exc_value, exc_trace: logger.error("Uncaught exception", exc_info=(exc_type, exc_value, exc_trace))
+
     app = QApplication(sys.argv)
     smartMT = StartGUI()
     smartMT.show()
