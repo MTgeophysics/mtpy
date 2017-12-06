@@ -1142,10 +1142,8 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                             self.ellipse_colorby == 'phimin':
                         colorarray = pt.phimin[0]
 
-
                     elif self.ellipse_colorby == 'phidet':
                         colorarray = np.sqrt(abs(pt.det[0])) * (180 / np.pi)
-
 
                     elif self.ellipse_colorby == 'skew' or \
                             self.ellipse_colorby == 'skew_seg':
@@ -1174,7 +1172,7 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                                                   0),
                                                  width=ewidth,
                                                  height=eheight,
-                                                 angle=90 - pt.azimuth[0][kk])
+                                                 angle=90 - pt.azimuth[kk])
 
                         axpt.add_patch(ellipd)
 
@@ -1600,181 +1598,181 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                 stationlist.append(mt.station)
 
                 # ==  ==  ==  == =Plot Z_xy and Z_yx ==
-                if self.plot_num == 1 or self.plot_num == 2:
-                    # ---------plot the apparent resistivity--------------------
-                    # --> plot as error bars and just as points xy-blue, yx-red
-                    # res_xy
-                    ebxyr = self.axrxy.errorbar(mt.period,
-                                                mt.Z.res_xy,
-                                                color=cxy[ii],
-                                                marker=mxy[ii % len(mxy)],
-                                                ms=self.marker_size,
-                                                mfc='None',
-                                                mec=cxy[ii],
-                                                mew=self.marker_lw,
-                                                ls=self.xy_ls,
-                                                yerr=mt.Z.res_err_xy,
-                                                ecolor=cxy[ii],
-                                                capsize=self.marker_size,
-                                                elinewidth=self.marker_lw)
+                # if self.plot_num == 1 or self.plot_num == 2:
+                # ---------plot the apparent resistivity--------------------
+                # --> plot as error bars and just as points xy-blue, yx-red
+                # res_xy
+                ebxyr = self.axrxy.errorbar(mt.period,
+                                            mt.Z.res_xy,
+                                            color=cxy[ii],
+                                            marker=mxy[ii % len(mxy)],
+                                            ms=self.marker_size,
+                                            mfc='None',
+                                            mec=cxy[ii],
+                                            mew=self.marker_lw,
+                                            ls=self.xy_ls,
+                                            yerr=mt.Z.res_err_xy,
+                                            ecolor=cxy[ii],
+                                            capsize=self.marker_size,
+                                            elinewidth=self.marker_lw)
 
-                    # res_yx
-                    ebyxr = self.axryx.errorbar(mt.period,
-                                                mt.Z.res_yx,
-                                                color=cyx[ii],
-                                                marker=myx[ii % len(myx)],
-                                                ms=self.marker_size,
-                                                mfc='None',
-                                                mec=cyx[ii],
-                                                mew=self.marker_lw,
-                                                ls=self.yx_ls,
-                                                yerr=mt.Z.res_err_yx,
-                                                ecolor=cyx[ii],
-                                                capsize=self.marker_size,
-                                                elinewidth=self.marker_lw)
+                # res_yx
+                ebyxr = self.axryx.errorbar(mt.period,
+                                            mt.Z.res_yx,
+                                            color=cyx[ii],
+                                            marker=myx[ii % len(myx)],
+                                            ms=self.marker_size,
+                                            mfc='None',
+                                            mec=cyx[ii],
+                                            mew=self.marker_lw,
+                                            ls=self.yx_ls,
+                                            yerr=mt.Z.res_err_yx,
+                                            ecolor=cyx[ii],
+                                            capsize=self.marker_size,
+                                            elinewidth=self.marker_lw)
 
-                    # -----Plot the phase---------------------------------------
-                    # phase_xy
-                    self.axpxy.errorbar(mt.period,
-                                        mt.Z.phase_xy,
-                                        color=cxy[ii],
-                                        marker=mxy[ii % len(mxy)],
-                                        ms=self.marker_size,
-                                        mfc='None',
-                                        mec=cxy[ii],
-                                        mew=self.marker_lw,
-                                        ls=self.xy_ls,
-                                        yerr=mt.Z.phase_err_xy,
-                                        ecolor=cxy[ii],
-                                        capsize=self.marker_size,
-                                        elinewidth=self.marker_lw)
+                # -----Plot the phase---------------------------------------
+                # phase_xy
+                self.axpxy.errorbar(mt.period,
+                                    mt.Z.phase_xy,
+                                    color=cxy[ii],
+                                    marker=mxy[ii % len(mxy)],
+                                    ms=self.marker_size,
+                                    mfc='None',
+                                    mec=cxy[ii],
+                                    mew=self.marker_lw,
+                                    ls=self.xy_ls,
+                                    yerr=mt.Z.phase_err_xy,
+                                    ecolor=cxy[ii],
+                                    capsize=self.marker_size,
+                                    elinewidth=self.marker_lw)
 
-                    # phase_yx: Note add 180 to place it in same quadrant as
-                    # phase_xy
-                    self.axpyx.errorbar(mt.period,
-                                        mt.Z.phase_yx + 180,
-                                        color=cyx[ii],
-                                        marker=myx[ii % len(myx)],
-                                        ms=self.marker_size,
-                                        mfc='None',
-                                        mec=cyx[ii],
-                                        mew=self.marker_lw,
-                                        ls=self.yx_ls,
-                                        yerr=mt.Z.phase_err_yx,
-                                        ecolor=cyx[ii],
-                                        capsize=self.marker_size,
-                                        elinewidth=self.marker_lw)
+                # phase_yx: Note add 180 to place it in same quadrant as
+                # phase_xy
+                self.axpyx.errorbar(mt.period,
+                                    mt.Z.phase_yx + 180,
+                                    color=cyx[ii],
+                                    marker=myx[ii % len(myx)],
+                                    ms=self.marker_size,
+                                    mfc='None',
+                                    mec=cyx[ii],
+                                    mew=self.marker_lw,
+                                    ls=self.yx_ls,
+                                    yerr=mt.Z.phase_err_yx,
+                                    ecolor=cyx[ii],
+                                    capsize=self.marker_size,
+                                    elinewidth=self.marker_lw)
 
-                    legendlistxy.append(ebxyr)
-                    legendlistyx.append(ebyxr)
+                legendlistxy.append(ebxyr)
+                legendlistyx.append(ebyxr)
 
-                    # ==== Plot the Z_xx, Z_yy components if desired ==
-                    if self.plot_num == 2:
-                        # ---------plot the apparent resistivity----------------
-                        self.axr2xx = self.fig.add_subplot(gs[2, 0],
-                                                           sharex=self.axrxy)
-                        self.axr2xx.yaxis.set_label_coords(-.095, 0.5)
-                        self.axr2yy = self.fig.add_subplot(gs[2, 1],
-                                                           sharex=self.axrxy)
+                # ==== Plot the Z_xx, Z_yy components if desired ==
+                if self.plot_num == 2:
+                    # ---------plot the apparent resistivity----------------
+                    self.axr2xx = self.fig.add_subplot(gs[2, 0],
+                                                       sharex=self.axrxy)
+                    self.axr2xx.yaxis.set_label_coords(-.095, 0.5)
+                    self.axr2yy = self.fig.add_subplot(gs[2, 1],
+                                                       sharex=self.axrxy)
 
-                        # res_xx
-                        ebxxr = self.axr2xx.errorbar(mt.period,
-                                                     mt.Z.res_xx,
-                                                     color=cxy[ii],
-                                                     marker=mxy[ii % len(mxy)],
-                                                     ms=self.marker_size,
-                                                     mfc='None',
-                                                     mec=cxy[ii],
-                                                     mew=self.marker_lw,
-                                                     ls=self.xy_ls,
-                                                     yerr=mt.Z.res_err_xx,
-                                                     ecolor=cxy[ii],
-                                                     capsize=self.marker_size,
-                                                     elinewidth=self.marker_lw)
+                    # res_xx
+                    ebxxr = self.axr2xx.errorbar(mt.period,
+                                                 mt.Z.res_xx,
+                                                 color=cxy[ii],
+                                                 marker=mxy[ii % len(mxy)],
+                                                 ms=self.marker_size,
+                                                 mfc='None',
+                                                 mec=cxy[ii],
+                                                 mew=self.marker_lw,
+                                                 ls=self.xy_ls,
+                                                 yerr=mt.Z.res_err_xx,
+                                                 ecolor=cxy[ii],
+                                                 capsize=self.marker_size,
+                                                 elinewidth=self.marker_lw)
 
-                        # res_yy
-                        ebyyr = self.axr2yy.errorbar(mt.period,
-                                                     mt.Z.res_yy,
-                                                     color=cyx[ii],
-                                                     marker=myx[ii % len(myx)],
-                                                     ms=self.marker_size,
-                                                     mfc='None',
-                                                     mec=cyx[ii],
-                                                     mew=self.marker_lw,
-                                                     ls=self.yx_ls,
-                                                     yerr=mt.Z.res_err_yy,
-                                                     ecolor=cyx[ii],
-                                                     capsize=self.marker_size,
-                                                     elinewidth=self.marker_lw)
+                    # res_yy
+                    ebyyr = self.axr2yy.errorbar(mt.period,
+                                                 mt.Z.res_yy,
+                                                 color=cyx[ii],
+                                                 marker=myx[ii % len(myx)],
+                                                 ms=self.marker_size,
+                                                 mfc='None',
+                                                 mec=cyx[ii],
+                                                 mew=self.marker_lw,
+                                                 ls=self.yx_ls,
+                                                 yerr=mt.Z.res_err_yy,
+                                                 ecolor=cyx[ii],
+                                                 capsize=self.marker_size,
+                                                 elinewidth=self.marker_lw)
 
-                        # -----Plot the phase-----------------------------------
-                        self.axp2xx = self.fig.add_subplot(gs[2, 0],
-                                                           sharex=self.axrxy)
-                        self.axp2xx.yaxis.set_label_coords(-.095, 0.5)
-                        self.axp2yy = self.fig.add_subplot(gs[2, 1],
-                                                           sharex=self.axrxy)
+                    # -----Plot the phase-----------------------------------
+                    self.axp2xx = self.fig.add_subplot(gs[2, 0],
+                                                       sharex=self.axrxy)
+                    self.axp2xx.yaxis.set_label_coords(-.095, 0.5)
+                    self.axp2yy = self.fig.add_subplot(gs[2, 1],
+                                                       sharex=self.axrxy)
 
-                        # phase_xx
-                        ebxxp = self.axp2xx.errorbar(mt.period,
-                                                     mt.Z.phase_xx,
-                                                     color=cxy[ii],
-                                                     marker=mxy[ii % len(mxy)],
-                                                     ms=self.marker_size,
-                                                     mfc='None',
-                                                     mec=cxy[ii],
-                                                     mew=self.marker_lw,
-                                                     ls=self.xy_ls,
-                                                     yerr=mt.Z.phase_err_xx,
-                                                     ecolor=cxy[ii],
-                                                     capsize=self.marker_size,
-                                                     elinewidth=self.marker_lw)
+                    # phase_xx
+                    ebxxp = self.axp2xx.errorbar(mt.period,
+                                                 mt.Z.phase_xx,
+                                                 color=cxy[ii],
+                                                 marker=mxy[ii % len(mxy)],
+                                                 ms=self.marker_size,
+                                                 mfc='None',
+                                                 mec=cxy[ii],
+                                                 mew=self.marker_lw,
+                                                 ls=self.xy_ls,
+                                                 yerr=mt.Z.phase_err_xx,
+                                                 ecolor=cxy[ii],
+                                                 capsize=self.marker_size,
+                                                 elinewidth=self.marker_lw)
 
-                        # phase_yy
-                        ebyyp = self.axp2yy.errorbar(mt.period,
-                                                     mt.Z.phase_yy,
-                                                     color=cyx[ii],
-                                                     marker=myx[ii % len(mxy)],
-                                                     ms=self.marker_size,
-                                                     mfc='None',
-                                                     mec=cyx[ii],
-                                                     mew=self.marker_lw,
-                                                     ls=self.yx_ls,
-                                                     yerr=mt.Z.phase_err_yy,
-                                                     ecolor=cyx[ii],
-                                                     capsize=self.marker_size,
-                                                     elinewidth=self.marker_lw)
+                    # phase_yy
+                    ebyyp = self.axp2yy.errorbar(mt.period,
+                                                 mt.Z.phase_yy,
+                                                 color=cyx[ii],
+                                                 marker=myx[ii % len(mxy)],
+                                                 ms=self.marker_size,
+                                                 mfc='None',
+                                                 mec=cyx[ii],
+                                                 mew=self.marker_lw,
+                                                 ls=self.yx_ls,
+                                                 yerr=mt.Z.phase_err_yy,
+                                                 ecolor=cyx[ii],
+                                                 capsize=self.marker_size,
+                                                 elinewidth=self.marker_lw)
 
                 # ===Plot the Determinant if desired ==
                 if self.plot_num == 3:
                     # res_det
                     ebdetr = self.axrxy.errorbar(mt.period,
-                                                  mt.Z.res_det,
-                                                  color=cxy[ii],
-                                                  marker=mxy[ii % len(mxy)],
-                                                  ms=self.marker_size,
-                                                  mfc='None',
-                                                  mec=cdet[ii],
-                                                  mew=self.marker_lw,
-                                                  ls=self.det_ls,
-                                                  yerr=mt.Z.res_det_err,
-                                                  ecolor=cdet[ii],
-                                                  capsize=self.marker_size,
-                                                  elinewidth=self.marker_lw)
+                                                 mt.Z.res_det,
+                                                 color=cxy[ii],
+                                                 marker=mxy[ii % len(mxy)],
+                                                 ms=self.marker_size,
+                                                 mfc='None',
+                                                 mec=cdet[ii],
+                                                 mew=self.marker_lw,
+                                                 ls=self.det_ls,
+                                                 yerr=mt.Z.res_det_err,
+                                                 ecolor=cdet[ii],
+                                                 capsize=self.marker_size,
+                                                 elinewidth=self.marker_lw)
 
                     # phase_det
                     ebdetp = self.axpxy.errorbar(mt.period,
-                                                  mt.Z.phase_det,
-                                                  color=cyx[ii],
-                                                  marker=mxy[ii % len(mxy)],
-                                                  ms=self.marker_size,
-                                                  mfc='None',
-                                                  mec=cdet[ii],
-                                                  mew=self.marker_lw,
-                                                  ls=self.det_ls,
-                                                  yerr=mt.Z.phase_det_err,
-                                                  ecolor=cdet[ii],
-                                                  capsize=self.marker_size,
-                                                  elinewidth=self.marker_lw)
+                                                 mt.Z.phase_det,
+                                                 color=cyx[ii],
+                                                 marker=mxy[ii % len(mxy)],
+                                                 ms=self.marker_size,
+                                                 mfc='None',
+                                                 mec=cdet[ii],
+                                                 mew=self.marker_lw,
+                                                 ls=self.det_ls,
+                                                 yerr=mt.Z.phase_det_err,
+                                                 ecolor=cdet[ii],
+                                                 capsize=self.marker_size,
+                                                 elinewidth=self.marker_lw)
 
                     legendlistxy.append(ebdetr)
 
@@ -1941,6 +1939,7 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                 # ----plot phase tensor ellipse---------------------------------------
                 if self._plot_pt == 'y':
                     # get phase tensor instance
+                    pt = mt.pt
 
                     cmap = self.ellipse_cmap
                     ckmin = self.ellipse_range[0]
@@ -1987,7 +1986,7 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                                                   ii * self.ellipse_size * 1.5),
                                                  width=ewidth,
                                                  height=eheight,
-                                                 angle=90 - pt.azimuth[0][kk])
+                                                 angle=90 - pt.azimuth[kk])
 
                         self.axpt.add_patch(ellipd)
 
@@ -2011,7 +2010,7 @@ class PlotMultipleResponses(mtpl.PlotSettings):
             self.axrxy.set_yscale('log', nonposy='clip')
             self.axrxy.set_xscale('log', nonposx='clip')
             self.axrxy.set_ylim(self.res_limits)
-            self.axrxy.set_xlim(self.xlimits)
+            self.axrxy.set_xlim(self.x_limits)
             self.axrxy.grid(True, alpha=.25,
                             which='both',
                             color=(.25, .25, .25),
@@ -2121,22 +2120,22 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                 llist = [ll[0] for ll in legendlistxy]
                 slist = [ss + '_det' for ss in stationlist]
 
-                self.axr2xx.legend(llist,
-                                       slist,
-                                       loc=3,
-                                       markerscale=.75,
-                                       borderaxespad=.01,
-                                       labelspacing=.07,
-                                       handletextpad=.2,
-                                       borderpad=.25)
-                self.axr2yy.legend(llist,
-                                   slist,
-                                   loc=3,
-                                   markerscale=.75,
-                                   borderaxespad=.01,
-                                   labelspacing=.07,
-                                   handletextpad=.2,
-                                   borderpad=.25)
+                self.axrxy.legend(llist,
+                                  slist,
+                                  loc=3,
+                                  markerscale=.75,
+                                  borderaxespad=.01,
+                                  labelspacing=.07,
+                                  handletextpad=.2,
+                                  borderpad=.25)
+                self.axryx.legend(llist,
+                                  slist,
+                                  loc=3,
+                                  markerscale=.75,
+                                  borderaxespad=.01,
+                                  labelspacing=.07,
+                                  handletextpad=.2,
+                                  borderpad=.25)
 
             if self.plot_num == 2:
                 # --> set axes properties for resxx
