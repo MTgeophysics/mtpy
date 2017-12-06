@@ -1903,8 +1903,7 @@ class Model(object):
                 line_index += 1
             # each line in the block is a line of N-->S values for an east value
             else:
-                north_line = np.array([float(nres) for nres in
-                                       ilines[line_index].strip().split()])
+                north_line = np.array([float(nres) for nres in iline])
 
                 # Need to be sure that the resistivity array matches
                 # with the grids, such that the first index is the
