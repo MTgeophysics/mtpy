@@ -85,9 +85,9 @@ class ModemSlices(object):
         self.modObj.read_model_file()
 
         self.ew_lim = (
-        self.modObj.grid_east[self.modObj.pad_east[1]], self.modObj.grid_east[-self.modObj.pad_east[1] - 1])
+        self.modObj.grid_east[self.modObj.pad_east], self.modObj.grid_east[-self.modObj.pad_east - 1])
         self.ns_lim = (
-        self.modObj.grid_north[self.modObj.pad_north[1]], self.modObj.grid_north[-self.modObj.pad_north[1] - 1])
+        self.modObj.grid_north[self.modObj.pad_north], self.modObj.grid_north[-self.modObj.pad_north - 1])
 
         # logger.debug("ns-limit %s", self.ns_lim)
         # logger.debug("ew-limit %s", self.ew_lim)
@@ -107,10 +107,10 @@ class ModemSlices(object):
 
         station_dict = {}
 
-        sX, sY = self.datObj.station_locations['rel_east'], self.datObj.station_locations['rel_north']
-        station_names = self.datObj.station_locations['station']
-        station_lats = self.datObj.station_locations['lat']
-        station_lons = self.datObj.station_locations['lon']
+        sX, sY = self.datObj.station_locations.rel_east, self.datObj.station_locations.rel_north
+        station_names = self.datObj.station_locations.station
+        station_lats = self.datObj.station_locations.lat
+        station_lons = self.datObj.station_locations.lon
 
         # get grid centres (finite element cells centres)
         gceast, gcnorth = [np.mean([arr[:-1], arr[1:]], axis=0) for arr in
@@ -210,16 +210,16 @@ class ModemSlices(object):
             title = 'North-south slice at {} meters east'.format(gceast[sno])
         elif self.plot_orientation == 'z':  # for plotting X == EW  Y == NS
             Y, X, res = self.modObj.grid_north, self.modObj.grid_east, np.log10(self.modObj.res_model[:, :, sno])
-            sY, sX = self.datObj.station_locations['rel_north'], self.datObj.station_locations['rel_east']
+            sY, sX = self.datObj.station_locations.rel_north, self.datObj.station_locations.rel_east
             ylim = (
-            self.modObj.grid_north[self.modObj.pad_north[1]], self.modObj.grid_north[-self.modObj.pad_north[1] - 1])
-            xlim = (self.modObj.grid_east[self.modObj.pad_east[1]], self.modObj.grid_east[-self.modObj.pad_east[1] - 1])
+            self.modObj.grid_north[self.modObj.pad_north], self.modObj.grid_north[-self.modObj.pad_north - 1])
+            xlim = (self.modObj.grid_east[self.modObj.pad_east], self.modObj.grid_east[-self.modObj.pad_east - 1])
 
             title = 'Horizontal Slice at Depth {} meters'.format(gcz[sno])
 
         return (X, Y, res, sX, sY, xlim, ylim, title, actual_location)
 
-    def create_csv(self, csvfile='E:/tmp/Resistivity.csv'):
+    def create_csv(self, csvfile='tests/temp/Resistivity.csv'):
         """
         write ressitivity into the csvfile with the output columns:
             StationName, Lat, Long, X, Y, Z, Log(Resistivity)
@@ -393,7 +393,7 @@ class ModemSlices(object):
 if __name__ == "__main__":
 
     # Take commandline input
-    if (len(sys.argv) == 2):  # A model dir provided
+    if len(sys.argv) == 2:  # A model dir provided
         modeldir = sys.argv[1]
         datf = os.path.join(modeldir, 'ModEM_Data.dat')
         rhofiles = glob.glob(os.path.join(modeldir, '*.rho'))
