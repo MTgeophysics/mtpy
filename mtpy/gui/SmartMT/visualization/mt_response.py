@@ -38,7 +38,7 @@ class MTResponse(VisualizationBase):
         }
 
         if self._arrow_ui.ui.groupBox_advanced_options.isChecked():
-            self._params['arrow_dict'] = self._arrow_ui.get_arrow_dict()
+            self._params.update(self._arrow_ui.get_arrow_dict())
 
         self._params.update(self._ellipse_ui.get_ellipse_dict())
 
@@ -163,7 +163,7 @@ subplots such as strike, skew and phase tensor ellipses.</p>
         self._ellipse_ui = Ellipse(self._parameter_ui)
         self._ellipse_ui.setHidden(True)
         # make the radio button toggle hidden of the ellipses groupbox
-        self._plot_control_ui.ui.radioButton_ellipses_y.toggled.connect(self._ellipse_radio_button_toggled)
+        self._plot_control_ui.ui.checkBox_pt.toggled.connect(self._ellipse_toggled)
         self._parameter_ui.add_parameter_groupbox(self._ellipse_ui)
 
         self._arrow_ui = Arrow(self._parameter_ui)
@@ -174,7 +174,7 @@ subplots such as strike, skew and phase tensor ellipses.</p>
 
         self._parameter_ui.end_of_parameter_components()
 
-    def _ellipse_radio_button_toggled(self, b):
+    def _ellipse_toggled(self, b):
         self._ellipse_ui.setHidden(not self._ellipse_ui.isHidden())
 
     def update_ui(self):
