@@ -143,7 +143,7 @@ class PlotMultipleResponses(mtpl.PlotSettings):
             >>> ...       if edi.find('.edi')>0]
             >>> plot each station in a subplot all in one figure with tipper
             >>> rp1 = mtplot.PlotMultipleResPhase(fn_list=edilist, plotnum=1,
-            >>> ...                                plot_tipper='yr,
+            >>> ...                                plot_tipper='yr',
             >>> ...                                plot_style='all')
 
 
@@ -295,6 +295,7 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                                        z_object_list=z_object_list,
                                        tipper_object_list=tipper_object_list,
                                        mt_object_list=mt_object_list)
+        self.fig_num = kwargs.pop('fig_num', self.fig_num)
 
         # set some of the properties as attributes much to Lars' discontent
         self.plot_num = kwargs.pop('plot_num', 1)
@@ -644,8 +645,6 @@ class PlotMultipleResponses(mtpl.PlotSettings):
 
                     # phase axis that shares period axis with resistivity
                     axp = self.fig.add_subplot(gs[1, :], sharex=axr)
-
-
 
                 # --> make figure for all 4 components
                 elif self.plot_num == 2:
@@ -1318,7 +1317,7 @@ class PlotMultipleResponses(mtpl.PlotSettings):
 
                         axr2.set_yscale('log', nonposy='clip')
                         axr2.set_xscale('log', nonposx='clip')
-                        axr2.set_xlim(self.xlimits)
+                        axr2.set_xlim(self.x_limits)
                         axr2.grid(True,
                                   alpha=.25,
                                   which='both',
@@ -1509,6 +1508,7 @@ class PlotMultipleResponses(mtpl.PlotSettings):
 
             # make a grid as usual, but put xy and yx in different plots
             # otherwise the plot is too busy to see what's going on.
+            hr = [2, 1.5] + [1] * (nrows - 2)
             gs = gridspec.GridSpec(nrows, 2, height_ratios=hr, hspace=.05)
 
             # --> make figure for xy,yx components
@@ -1748,33 +1748,33 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                 if self.plot_num == 3:
                     # res_det
                     ebdetr = self.axrxy.errorbar(mt.period,
-                                                 mt.Z.res_det,
-                                                 color=cxy[ii],
-                                                 marker=mxy[ii % len(mxy)],
-                                                 ms=self.marker_size,
-                                                 mfc='None',
-                                                 mec=cdet[ii],
-                                                 mew=self.marker_lw,
-                                                 ls=self.det_ls,
-                                                 yerr=mt.Z.res_det_err,
-                                                 ecolor=cdet[ii],
-                                                 capsize=self.marker_size,
-                                                 elinewidth=self.marker_lw)
+                                                  mt.Z.res_det,
+                                                  color=cxy[ii],
+                                                  marker=mxy[ii % len(mxy)],
+                                                  ms=self.marker_size,
+                                                  mfc='None',
+                                                  mec=cdet[ii],
+                                                  mew=self.marker_lw,
+                                                  ls=self.det_ls,
+                                                  yerr=mt.Z.res_det_err,
+                                                  ecolor=cdet[ii],
+                                                  capsize=self.marker_size,
+                                                  elinewidth=self.marker_lw)
 
                     # phase_det
                     ebdetp = self.axpxy.errorbar(mt.period,
-                                                 mt.Z.phase_det,
-                                                 color=cyx[ii],
-                                                 marker=mxy[ii % len(mxy)],
-                                                 ms=self.marker_size,
-                                                 mfc='None',
-                                                 mec=cdet[ii],
-                                                 mew=self.marker_lw,
-                                                 ls=self.det_ls,
-                                                 yerr=mt.Z.phase_det_err,
-                                                 ecolor=cdet[ii],
-                                                 capsize=self.marker_size,
-                                                 elinewidth=self.marker_lw)
+                                                  mt.Z.phase_det,
+                                                  color=cyx[ii],
+                                                  marker=mxy[ii % len(mxy)],
+                                                  ms=self.marker_size,
+                                                  mfc='None',
+                                                  mec=cdet[ii],
+                                                  mew=self.marker_lw,
+                                                  ls=self.det_ls,
+                                                  yerr=mt.Z.phase_det_err,
+                                                  ecolor=cdet[ii],
+                                                  capsize=self.marker_size,
+                                                  elinewidth=self.marker_lw)
 
                     legendlistxy.append(ebdetr)
 
@@ -1800,17 +1800,17 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                         if self.tipper_limits is None:
                             tmax = max([tyr.max(), tyi.max()])
                             tmin = min([tyr.min(), tyi.min()])
-                            if np.isnan(tmax) == True:
+                            if np.isnan(tmax):
                                 tmax = 1.0
-                            if np.isnan(tmin) == True:
+                            if np.isnan(tmin):
                                 tmin = -1.0
                             self.tipper_limits = (tmin - .1, tmax + .1)
                         else:
                             tmax = max([tyr.max(), tyi.max(), self.tipper_limits[1] - .1]) + .1
                             tmin = min([tyr.min(), tyi.min(), self.tipper_limits[0] + .1]) - .1
-                            if np.isnan(tmax) == True:
+                            if np.isnan(tmax):
                                 tmax = 1.0
-                            if np.isnan(tmin) == True:
+                            if np.isnan(tmin):
                                 tmin = -1.0
                             self.tipper_limits = (tmin, tmax)
 
@@ -1959,10 +1959,8 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                             self.ellipse_colorby == 'phimin':
                         colorarray = mt.pt.phimin
 
-
                     elif self.ellipse_colorby == 'phidet':
                         colorarray = np.sqrt(abs(mt.pt.det)) * (180 / np.pi)
-
 
                     elif self.ellipse_colorby == 'skew' or \
                             self.ellipse_colorby == 'skew_seg':
@@ -2045,7 +2043,7 @@ class PlotMultipleResponses(mtpl.PlotSettings):
             self.axryx.set_yscale('log', nonposy='clip')
             self.axryx.set_xscale('log', nonposx='clip')
             self.axryx.set_ylim(self.res_limits)
-            self.axryx.set_xlim(self.xlimits)
+            self.axryx.set_xlim(self.x_limits)
             self.axryx.grid(True, alpha=.25,
                             which='both',
                             color=(.25, .25, .25),
@@ -2123,75 +2121,83 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                 llist = [ll[0] for ll in legendlistxy]
                 slist = [ss + '_det' for ss in stationlist]
 
-                self.axr.legend(llist,
-                                slist,
-                                loc=3,
-                                markerscale=.75,
-                                borderaxespad=.01,
-                                labelspacing=.07,
-                                handletextpad=.2,
-                                borderpad=.25)
+                self.axr2xx.legend(llist,
+                                       slist,
+                                       loc=3,
+                                       markerscale=.75,
+                                       borderaxespad=.01,
+                                       labelspacing=.07,
+                                       handletextpad=.2,
+                                       borderpad=.25)
+                self.axr2yy.legend(llist,
+                                   slist,
+                                   loc=3,
+                                   markerscale=.75,
+                                   borderaxespad=.01,
+                                   labelspacing=.07,
+                                   handletextpad=.2,
+                                   borderpad=.25)
 
             if self.plot_num == 2:
                 # --> set axes properties for resxx
-                self.axr2xy.set_yscale('log', nonposy='clip')
-                self.axr2xy.set_xscale('log', nonposx='clip')
-                self.axr2xy.set_xlim(self.xlimits)
-                self.axr2xy.grid(True,
-                                 alpha=.25,
-                                 which='both',
-                                 color=(.25, .25, .25),
-                                 lw=.25)
-                plt.setp(self.axr2xy.get_xticklabels(), visible=False)
+                self.axrxy.set_yscale('log', nonposy='clip')
+                self.axrxy.set_xscale('log', nonposx='clip')
+                self.axrxy.set_xlim(self.x_limits)
+                self.axrxy.grid(True,
+                                alpha=.25,
+                                which='both',
+                                color=(.25, .25, .25),
+                                lw=.25)
+                plt.setp(self.axrxy.get_xticklabels(), visible=False)
 
                 # --> set axes properties for resyy
-                self.axr2yx.set_yscale('log', nonposy='clip')
-                self.axr2yx.set_xscale('log', nonposx='clip')
-                self.axr2yx.set_xlim(self.xlimits)
-                self.axr2yx.grid(True,
-                                 alpha=.25,
-                                 which='both',
-                                 color=(.25, .25, .25),
-                                 lw=.25)
-                plt.setp(self.axr2yx.get_xticklabels(), visible=False)
+                self.axryx.set_yscale('log', nonposy='clip')
+                self.axryx.set_xscale('log', nonposx='clip')
+                self.axryx.set_xlim(self.x_limits)
+                self.axryx.grid(True,
+                                alpha=.25,
+                                which='both',
+                                color=(.25, .25, .25),
+                                lw=.25)
+                plt.setp(self.axryx.get_xticklabels(), visible=False)
 
                 # --> set axes properties Phasexx
-                self.axp2xy.set_xlabel('Period(s)', fontdict)
-                self.axp2xy.set_xscale('log', nonposx='clip')
-                self.axp2xy.set_ylim(ymin=-179.9, ymax=179.9)
-                self.axp2xy.yaxis.set_major_locator(MultipleLocator(30))
-                self.axp2xy.yaxis.set_minor_locator(MultipleLocator(5))
-                self.axp2xy.grid(True,
-                                 alpha=.25,
-                                 which='both',
-                                 color=(.25, .25, .25),
-                                 lw=.25)
+                self.axpxy.set_xlabel('Period(s)', fontdict)
+                self.axpxy.set_xscale('log', nonposx='clip')
+                self.axpxy.set_ylim(ymin=-179.9, ymax=179.9)
+                self.axpxy.yaxis.set_major_locator(MultipleLocator(30))
+                self.axpxy.yaxis.set_minor_locator(MultipleLocator(5))
+                self.axpxy.grid(True,
+                                alpha=.25,
+                                which='both',
+                                color=(.25, .25, .25),
+                                lw=.25)
 
                 # --> set axes properties Phaseyy
-                self.axp2yx.set_xlabel('Period(s)', fontdict)
-                self.axp2yx.set_xscale('log', nonposx='clip')
-                self.axp2yx.set_ylim(ymin=-179.9, ymax=179.9)
-                self.axp2yx.yaxis.set_major_locator(MultipleLocator(30))
-                self.axp2yx.yaxis.set_minor_locator(MultipleLocator(5))
-                self.axp2yx.grid(True,
-                                 alpha=.25,
-                                 which='both',
-                                 color=(.25, .25, .25),
-                                 lw=.25)
+                self.axpyx.set_xlabel('Period(s)', fontdict)
+                self.axpyx.set_xscale('log', nonposx='clip')
+                self.axpyx.set_ylim(ymin=-179.9, ymax=179.9)
+                self.axpyx.yaxis.set_major_locator(MultipleLocator(30))
+                self.axpyx.yaxis.set_minor_locator(MultipleLocator(5))
+                self.axpyx.grid(True,
+                                alpha=.25,
+                                which='both',
+                                color=(.25, .25, .25),
+                                lw=.25)
                 if len(pdict.keys()) > 3:
-                    plt.setp(self.axp2xy.xaxis.get_ticklabels(), visible=False)
-                    self.axp2xy.set_xlabel('')
-                    plt.setp(self.axp2yx.xaxis.get_ticklabels(), visible=False)
-                    self.axp2yx.set_xlabel('')
+                    plt.setp(self.axpxy.xaxis.get_ticklabels(), visible=False)
+                    self.axpxy.set_xlabel('')
+                    plt.setp(self.axpyx.xaxis.get_ticklabels(), visible=False)
+                    self.axpyx.set_xlabel('')
 
             if self._plot_tipper.find('y') == 0:
                 self.axt.plot(self.axt.get_xlim(), [0, 0], color='k', lw=.5)
                 # --> set axis properties Tipper
                 if self.plot_num == 2:
-                    plt.setp(self.axp2xy.get_xticklabels(), visible=False)
-                    self.axp2xy.set_xlabel('')
-                    plt.setp(self.axp2yx.get_xticklabels(), visible=False)
-                    self.axp2yx.set_xlabel('')
+                    plt.setp(self.axpxy.get_xticklabels(), visible=False)
+                    self.axpxy.set_xlabel('')
+                    plt.setp(self.axpyx.get_xticklabels(), visible=False)
+                    self.axpyx.set_xlabel('')
 
                 self.axt.yaxis.set_major_locator(MultipleLocator(.2))
                 self.axt.yaxis.set_minor_locator(MultipleLocator(.1))
@@ -2293,7 +2299,7 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                 #                 borderpad=.02)
                 if pdict['skew'] != nrows - 1:
                     plt.setp(self.axsk.xaxis.get_ticklabels(), visible=False)
-                    self.ask.set_xlabel(' ')
+                    self.axsk.set_xlabel(' ')
             # ----set axes properties for pt-----------------------------------
             if self._plot_pt == 'y':
                 self.axpt.set_xlim(np.floor(np.log10(self.xlimits[0])) * \
@@ -2333,7 +2339,7 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                                .01,
                                axpos.bounds[3] * .75)
                 self.cbax = self.fig.add_axes(cb_position)
-                if cmap == 'mt_seg_bl2wh2rd':
+                if self.ellipse_cmap == 'mt_seg_bl2wh2rd':
                     # make a color list
                     clist = [(cc, cc, 1)
                              for cc in np.arange(0, 1 + 1. / (nseg), 1. / (nseg))] + \
@@ -2411,7 +2417,7 @@ class PlotMultipleResponses(mtpl.PlotSettings):
             >>> p1.redraw_plot()
         """
 
-        plt.close('all')
+        plt.close(self.fig)
         self.plot()
 
     def __str__(self):

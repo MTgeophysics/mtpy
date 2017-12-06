@@ -51,7 +51,6 @@ class TestStartGUI(TestCase):
         _click_area(plot_config._plot_control_ui.ui.radioButton_2, pos=_pos_check_box)
 
         self._plot()
-        self.assertTrue(self.smartMT._subwindow_counter == 1, "no image creataed")  # test if the image is created
 
     def test_multiple_mt_response(self):
         self._switch_to_plot("Multiple MT responses")
