@@ -8,13 +8,13 @@ from qtpy.QtCore import QPoint
 from qtpy.QtTest import QTest
 
 from mtpy.gui.SmartMT.start import StartGUI
+from mtpy.gui.SmartMT.visualization import MultipleMTResponses
 from tests import EDI_DATA_DIR
 from tests.SmartMT import _click_area
 
 _pos_check_box = QPoint(8, 8)
 
 
-@pytest.mark.last
 class TestStartGUI(TestCase):
     """
     only testing the loading of the gui at the moment. to make sure all the necessory packages and dependencies are
@@ -35,11 +35,7 @@ class TestStartGUI(TestCase):
         self.assertTrue(self.smartMT.isVisible())
         self.assertTrue(self.smartMT.isMaximized())
 
-    def test_plot_mt_response_default(self):
-        self._switch_to_plot("MT Response")
-        self._plot()
-
-    def test_plot_mt_response_enable_all(self):
+    def test_plot_mt_response_enable_type_1(self):
         self._switch_to_plot("MT Response")
 
         # config plot
@@ -48,13 +44,80 @@ class TestStartGUI(TestCase):
         _click_area(plot_config._arrow_ui.ui.checkBox_imaginary, pos=_pos_check_box)
         _click_area(plot_config._plot_control_ui.ui.checkBox_pt, pos=_pos_check_box)
         _click_area(plot_config._rotation_ui.ui.dial_rotation, pos=_pos_check_box)
+        _click_area(plot_config._plot_control_ui.ui.radioButton_1, pos=_pos_check_box)
+
+        self._plot()
+
+    def test_plot_mt_response_enable_type_2(self):
+        self._switch_to_plot("MT Response")
+
+        # config plot
+        plot_config = self.smartMT._plot_option._current_plot
+        _click_area(plot_config._arrow_ui.ui.checkBox_real, pos=_pos_check_box)
+        _click_area(plot_config._arrow_ui.ui.checkBox_imaginary, pos=_pos_check_box)
+        _click_area(plot_config._plot_control_ui.ui.checkBox_pt, pos=_pos_check_box)
         _click_area(plot_config._plot_control_ui.ui.radioButton_2, pos=_pos_check_box)
+        _click_area(plot_config._rotation_ui.ui.dial_rotation)
 
         self._plot()
 
-    def test_multiple_mt_response(self):
+    def test_plot_mt_response_enable_type_3(self):
+        self._switch_to_plot("MT Response")
+
+        # config plot
+        plot_config = self.smartMT._plot_option._current_plot
+        _click_area(plot_config._arrow_ui.ui.checkBox_real, pos=_pos_check_box)
+        _click_area(plot_config._arrow_ui.ui.checkBox_imaginary, pos=_pos_check_box)
+        _click_area(plot_config._plot_control_ui.ui.checkBox_pt, pos=_pos_check_box)
+        _click_area(plot_config._plot_control_ui.ui.radioButton_3, pos=_pos_check_box)
+        _click_area(plot_config._rotation_ui.ui.dial_rotation)
+
+        self._plot()
+
+    def test_multiple_mt_response_compare_type_1(self):
         self._switch_to_plot("Multiple MT responses")
-        self._plot()
+        plot_config = self.smartMT._plot_option._current_plot  # type: MultipleMTResponses
+        _click_area(plot_config._plot_control_ui.ui.radioButton_1, pos=_pos_check_box)
+        _click_area(plot_config._plot_control_ui.ui.checkBox_skew, pos=_pos_check_box)
+        _click_area(plot_config._plot_control_ui.ui.checkBox_pt, pos=_pos_check_box)
+        _click_area(plot_config._plot_control_ui.ui.checkBox_strike_i, pos=_pos_check_box)
+        _click_area(plot_config._plot_control_ui.ui.checkBox_strike_p, pos=_pos_check_box)
+        _click_area(plot_config._plot_control_ui.ui.checkBox_strike_t, pos=_pos_check_box)
+        _click_area(plot_config._arrow_ui.ui.checkBox_real, pos=_pos_check_box)
+        _click_area(plot_config._arrow_ui.ui.checkBox_imaginary, pos=_pos_check_box)
+        _click_area(plot_config._rotation_ui.ui.dial_rotation)
+
+        self._plot(60000)  # this complete image could take very long time to plot
+
+    def test_multiple_mt_response_compare_type_2(self):
+        self._switch_to_plot("Multiple MT responses")
+        plot_config = self.smartMT._plot_option._current_plot  # type: MultipleMTResponses
+        _click_area(plot_config._plot_control_ui.ui.radioButton_2, pos=_pos_check_box)
+        _click_area(plot_config._plot_control_ui.ui.checkBox_skew, pos=_pos_check_box)
+        _click_area(plot_config._plot_control_ui.ui.checkBox_pt, pos=_pos_check_box)
+        _click_area(plot_config._plot_control_ui.ui.checkBox_strike_i, pos=_pos_check_box)
+        _click_area(plot_config._plot_control_ui.ui.checkBox_strike_p, pos=_pos_check_box)
+        _click_area(plot_config._plot_control_ui.ui.checkBox_strike_t, pos=_pos_check_box)
+        _click_area(plot_config._arrow_ui.ui.checkBox_real, pos=_pos_check_box)
+        _click_area(plot_config._arrow_ui.ui.checkBox_imaginary, pos=_pos_check_box)
+        _click_area(plot_config._rotation_ui.ui.dial_rotation)
+
+        self._plot(60000)  # this complete image could take very long time to plot
+
+    def test_multiple_mt_response_compare_type_3(self):
+        self._switch_to_plot("Multiple MT responses")
+        plot_config = self.smartMT._plot_option._current_plot  # type: MultipleMTResponses
+        _click_area(plot_config._plot_control_ui.ui.radioButton_3, pos=_pos_check_box)
+        _click_area(plot_config._plot_control_ui.ui.checkBox_skew, pos=_pos_check_box)
+        _click_area(plot_config._plot_control_ui.ui.checkBox_pt, pos=_pos_check_box)
+        _click_area(plot_config._plot_control_ui.ui.checkBox_strike_i, pos=_pos_check_box)
+        _click_area(plot_config._plot_control_ui.ui.checkBox_strike_p, pos=_pos_check_box)
+        _click_area(plot_config._plot_control_ui.ui.checkBox_strike_t, pos=_pos_check_box)
+        _click_area(plot_config._arrow_ui.ui.checkBox_real, pos=_pos_check_box)
+        _click_area(plot_config._arrow_ui.ui.checkBox_imaginary, pos=_pos_check_box)
+        _click_area(plot_config._rotation_ui.ui.dial_rotation)
+
+        self._plot(60000)  # this complete image could take very long time to plot
 
     def _switch_to_plot(self, name):
         # load some data
@@ -86,10 +149,18 @@ class TestStartGUI(TestCase):
 
         loop = QtCore.QEventLoop()
         self.smartMT._plot_option._current_plot.plotting_completed.connect(loop.quit)
+
+        def handleTimeout():
+            # timed out, stop loop
+            if loop.isRunning():
+                loop.quit()
+                self.fail("GUI plotting timed out, maybe consider increasing timeout to wait longer")
+
         if timeout is not None:
-            QtCore.QTimer.singleShot(timeout, loop.quit)
+            QtCore.QTimer.singleShot(timeout, handleTimeout)
         _click_area(self.smartMT._plot_option.ui.pushButton_plot)  # wait for plotting
         loop.exec_()
 
-        self.assertTrue(self.smartMT._subwindow_counter == subwindow_counter + 1, "no image created")  # test if the image is created
+        self.assertTrue(self.smartMT._subwindow_counter == subwindow_counter + 1,
+                        "no image created")  # test if the image is created
 
