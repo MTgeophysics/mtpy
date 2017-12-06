@@ -388,7 +388,7 @@ class ModemSlices(object):
 # How to call the create csv function
 # Usage:
 #  python mtpy/modeling/modem_output_to_views.py /e/Data/Modeling/Isa/100hs_flat_BB/Isa_run3_NLCG_048.dat /e/Data/Modeling/Isa/100hs_flat_BB/Isa_run3_NLCG_048.rho 20
-#  python mtpy/modeling/modem_output_to_views.py /e/tmp/GA_UA_edited_10s-10000s_16/ModEM_Data.dat  /e/tmp/GA_UA_edited_10s-10000s_16/ModEM_Model.ws -1000 1000
+#  python mtpy/modeling/modem_output_to_views.py /e/MTPY2_Outputs/GA_UA_edited_10s-10000s_modem_inputs/ModEM_Data.dat  /e/MTPY2_Outputs/GA_UA_edited_10s-10000s_modem_inputs/ModEM_Model.ws -1000 1000
 # ---------------------------------------------------------------------------
 if __name__ == "__main__":
 

@@ -7,8 +7,7 @@ References:
     https://gajira.atlassian.net/browse/ALAMP-31
 Usage Examples:
     python mtpy/imaging/modem_plot_slices.py /e/Data/Modeling/Isa/100hs_flat_BB/Isa_run3_NLCG_048.dat /e/Data/Modeling/Isa/100hs_flat_BB/Isa_run3_NLCG_048.rho ns 300
-    python mtpy/imaging/modem_plot_slices.py /e/tmp/GA_UA_edited_10s-10000s_16/ModEM_Data.dat /e/tmp/GA_UA_edited_10s-10000s_16/ModEM_Model.ws z -1000 1000
-
+    python mtpy/imaging/modem_plot_slices.py /e/MTPY2_Outputs/GA_UA_edited_10s-10000s_modem_inputs/ModEM_Data.dat  /e/MTPY2_Outputs/GA_UA_edited_10s-10000s_modem_inputs/ModEM_Model.ws z -1000 1000
 CreationDate:   20/09/2017
 Developer:      fei.zhang@ga.gov.au
 
