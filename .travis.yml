@@ -22,7 +22,7 @@ env:
 #    - MATPLOTLIB_VERSION=2.1.0 QT_VERSION=4
     - MATPLOTLIB_VERSION=2.0.2 QT_VERSION=5
     - MATPLOTLIB_VERSION=2.1.0 QT_VERSION=5
-    - MATPLOTLIB_VERSION=2.0.2 QT_VERSION=4
+#    - MATPLOTLIB_VERSION=2.0.2 QT_VERSION=4
     - MATPLOTLIB_VERSION=1.5.3 QT_VERSION=5
 
 stages:
@@ -40,10 +40,10 @@ jobs:
       script: true
       env:
         - MATPLOTLIB_VERSION=2.1.0 QT_VERSION=5
-    - stage: prepare cache
-      script: true
-      env:
-        - MATPLOTLIB_VERSION=2.0.2 QT_VERSION=4
+#    - stage: prepare cache
+#      script: true
+#      env:
+#        - MATPLOTLIB_VERSION=2.0.2 QT_VERSION=4
     - stage: prepare cache
       script: true
       env:
@@ -53,15 +53,11 @@ jobs:
       script: . ./bin/travis-test-gui.sh
       env:
         - MATPLOTLIB_VERSION=2.0.2 QT_VERSION=5
-    - stage: GUI Test
-      script: . ./bin/travis-test-gui.sh
-      env:
-        - MATPLOTLIB_VERSION=2.0.2 QT_VERSION=4
+#    - stage: GUI Test
+#      script: . ./bin/travis-test-gui.sh
+#      env:
+#        - MATPLOTLIB_VERSION=2.0.2 QT_VERSION=4
 #    - stage: deploy
-  allow_failures:
-    - env: MATPLOTLIB_VERSION=2.1.0 QT_VERSION=5
-    - env: MATPLOTLIB_VERSION=2.0.2 QT_VERSION=4
-    - env: MATPLOTLIB_VERSION=1.5.3 QT_VERSION=5
 
 before_script:
   - chmod -vR +x ./bin/* && . ./bin/travis-setup-env.sh  
@@ -76,7 +72,7 @@ matrix:
   fast_finish: true
   allow_failures:
     - env: MATPLOTLIB_VERSION=2.1.0 QT_VERSION=5
-    - env: MATPLOTLIB_VERSION=2.0.2 QT_VERSION=4
+#    - env: MATPLOTLIB_VERSION=2.0.2 QT_VERSION=4
     - env: MATPLOTLIB_VERSION=1.5.3 QT_VERSION=5
 
 notifications:
