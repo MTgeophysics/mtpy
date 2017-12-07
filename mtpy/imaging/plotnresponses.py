@@ -4,6 +4,9 @@ plots multiple MT responses simultaneously
 
 Created on Thu May 30 17:02:39 2013
 @author: jpeacock-pr
+
+YG: the code there is massey, todo may need to rewrite it sometime
+
 """
 
 # ============================================================================
@@ -619,6 +622,10 @@ class PlotMultipleResponses(mtpl.PlotSettings):
 
             labelcoords = (-0.145, 0.5)
             axr = None
+            axt = None
+            axpt = None
+            axst = None
+            axsk = None
             for ii, mt in enumerate(self.mt_list):  # type: int, MT
                 # get the reistivity and phase object
                 rp = mt.Z
@@ -645,7 +652,8 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                 gs = gridspec.GridSpecFromSubplotSpec(nrows, 2,
                                                       subplot_spec=gs0[ii],
                                                       height_ratios=hr,
-                                                      hspace=0.05)
+                                                      hspace=0.05,
+                                                      wspace=.0125)
 
                 # --> create the axes instances for xy, yx
                 if self.plot_num == 1 or self.plot_num == 3:
@@ -653,16 +661,22 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                     axr = self.fig.add_subplot(gs[0, :], sharex=axr)
 
                     # phase axis that shares period axis with resistivity
-                    axp = self.fig.add_subplot(gs[1, :], sharex=axr)
+                    axp = self.fig.add_subplot(gs[1, :], sharex=axr)# --> make figure for xy,yx components
+                    # space out the subplots
+                    # gs.update(hspace=.05, wspace=.02, left=.1)
 
                 # --> make figure for all 4 components
-                if self.plot_num == 2:
+                elif self.plot_num == 2:
                     # --> create the axes instances
                     # apparent resistivity axis
-                    axr = self.fig.add_subplot(gs[0, 0], sharex=axr, sharey=axr)
+                    axr = self.fig.add_subplot(gs[0, 0], sharex=axr)
 
                     # phase axis that shares period axis with resistivity
-                    axp = self.fig.add_subplot(gs[1, 0], sharex=axr, sharey=axr)
+                    axp = self.fig.add_subplot(gs[1, 0], sharex=axr)
+
+                    # space out the subplots
+                    # gs.update(hspace=.05, wspace=.02, left=.07)
+
 
                 # place y coordinate labels in the same location
                 axr.yaxis.set_label_coords(labelcoords[0], labelcoords[1])
@@ -670,7 +684,7 @@ class PlotMultipleResponses(mtpl.PlotSettings):
 
                 # --> plot tipper
                 try:
-                    axt = self.fig.add_subplot(gs[pdict['tip'], :])
+                    axt = self.fig.add_subplot(gs[pdict['tip'], :], sharey=axt)
                     axt.yaxis.set_label_coords(labelcoords[0], labelcoords[1])
                 except KeyError:
                     pass
@@ -679,7 +693,7 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                 try:
                     # can't share axis because not on the same scale
                     axpt = self.fig.add_subplot(gs[pdict['pt'], :],
-                                                aspect='equal')
+                                                aspect='equal', sharey=axpt)
                     axpt.yaxis.set_label_coords(labelcoords[0], labelcoords[1])
                 except KeyError:
                     pass
@@ -687,7 +701,7 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                 # --> plot strike
                 try:
                     axst = self.fig.add_subplot(gs[pdict['strike'], :],
-                                                sharex=axr)
+                                                sharex=axr, sharey=axst)
                     axst.yaxis.set_label_coords(labelcoords[0], labelcoords[1])
                 except KeyError:
                     pass
@@ -695,7 +709,7 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                 # --> plot skew
                 try:
                     axsk = self.fig.add_subplot(gs[pdict['skew'], :],
-                                                sharex=axr)
+                                                sharex=axr, sharey=axsk)
                     axsk.yaxis.set_label_coords(labelcoords[0], labelcoords[1])
                 except KeyError:
                     pass
@@ -734,7 +748,7 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                 plt.setp(axr.get_xticklabels(), visible=False)
                 axr.set_yscale('log', nonposy='clip')
                 axr.set_xscale('log', nonposx='clip')
-                axr.set_xlim(self.xlimits)
+                axr.set_xlim(self.x_limits)
                 axr.set_ylim(self.res_limits)
                 axr.grid(True, alpha=.25, which='both',
                          color=(.25, .25, .25),
@@ -951,6 +965,10 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                     axt.set_xticks(xticks)
                     axt.set_xticklabels(tklabels,
                                         fontdict={'size': self.font_size})
+
+                    if pdict['tip'] != nrows - 1:
+                        plt.setp(axt.get_yticklabels(), visible=False)
+
                     # need to reset the xlimits caouse they get reset when calling
                     # set_ticks for some reason
                     axt.set_xlim(np.log10(self.xlimits[0]),
@@ -1060,9 +1078,11 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                                               max([abs(stmin), abs(stmax)]))
 
                     axst.plot(axr.get_xlim(), [0, 0], color='k', lw=.5)
-
-                    axst.set_ylabel('Strike',
-                                    fontdict=fontdict)
+                    if ii == 0:
+                        axst.set_ylabel('Strike',
+                                        fontdict=fontdict)
+                    else:
+                        plt.setp(axst.get_yticklabels(), visible=False)
                     axst.set_xlabel('Period (s)',
                                     fontdict=fontdict)
                     axst.set_ylim(self.strike_limits)
@@ -1116,13 +1136,16 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                     axsk.set_ylim(self.skew_limits)
                     axsk.yaxis.set_major_locator(MultipleLocator(3))
                     axsk.yaxis.set_minor_locator(MultipleLocator(1))
-                    axsk.set_ylabel('Skew', fontdict)
+                    if ii ==0:
+                        axsk.set_ylabel('Skew', fontdict)
+                    else:
+                        plt.setp(axsk.get_yticklabels(), visible=False)
                     axsk.set_xlabel('Period (s)', fontdict)
                     axsk.set_xscale('log', nonposx='clip')
 
                     # set th xaxis tick labels to invisible
-                    if pdict['strike'] != nrows - 1:
-                        plt.setp(axst.xaxis.get_ticklabels(), visible=False)
+                    if pdict['skew'] != nrows - 1:
+                        plt.setp(axsk.xaxis.get_ticklabels(), visible=False)
 
                 # ----plot phase tensor ellipse---------------------------------------
                 if self._plot_pt == 'y':
@@ -1316,7 +1339,7 @@ class PlotMultipleResponses(mtpl.PlotSettings):
 
                     # --> set axes properties
                     plt.setp(axr2.get_xticklabels(), visible=False)
-
+                    plt.setp(axr2.get_yticklabels(), visible=False)
                     axr2.set_yscale('log', nonposy='clip')
                     axr2.set_xscale('log', nonposx='clip')
                     axr2.set_xlim(self.x_limits)
@@ -1336,7 +1359,7 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                                     borderpad=.02)
 
                     # -----Plot the phase-----------------------------------
-                    axp2 = self.fig.add_subplot(gs[1, 1], sharex=axr, sharey=axr)
+                    axp2 = self.fig.add_subplot(gs[1, 1], sharex=axr, sharey=axp)
                     axp2.yaxis.set_label_coords(-.1, 0.5)
 
                     # phase_xx
@@ -1369,18 +1392,23 @@ class PlotMultipleResponses(mtpl.PlotSettings):
 
                     # --> set axes properties
                     plt.setp(axp2.get_xticklabels(), visible=False)
+                    plt.setp(axp2.get_yticklabels(), visible=False)
                     axp2.set_xlabel('Period (s)', fontdict)
                     axp2.set_xscale('log', nonposx='clip')
                     axp2.set_ylim(ymin=-179.9, ymax=179.9)
                     axp2.yaxis.set_major_locator(MultipleLocator(30))
                     axp2.yaxis.set_minor_locator(MultipleLocator(5))
-                    axp2.set_xticklabels(tklabels,
-                                         fontdict={'size': self.font_size})
+                    # axp2.set_xticklabels(tklabels,
+                    #                      fontdict={'size': self.font_size})
                     axp2.grid(True,
                               alpha=.25,
                               which='both',
                               color=(.25, .25, .25),
                               lw=.25)
+
+                    if len(pdict.keys()) > 2:
+                        plt.setp(axp2.xaxis.get_ticklabels(), visible=False)
+                        plt.setp(axp2.xaxis.get_label(), visible=False)
 
                 # == =Plot the Determinant if desired ==  ==  ==  ==
                 if self.plot_num == 3:
