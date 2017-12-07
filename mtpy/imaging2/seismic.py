@@ -64,7 +64,8 @@ class Segy:
         self._xs = np.array(self._xs)
         self._ys = np.array(self._ys)
         self._cdps = np.array(self._cdps)
-        self._dist = np.sqrt(self._xs ** 2 + self._ys ** 2) # compute euclidean distance along profile
+        self._station_space = np.sqrt((self._xs[:-1] - self._xs[1:])**2 + (self._ys[:-1] - self._ys[1:])**2)
+        self._dist = np.array([np.sum(self._station_space[:i]) for i in range(len(self._station_space))]) # compute euclidean distance along profile
         self._ts = np.linspace(0, np.max(self._ls), np.max(self._ns))
 
         self._mtraces = np.array(self._mtraces)
