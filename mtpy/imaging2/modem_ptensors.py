@@ -20,7 +20,7 @@ import logging, traceback
 from matplotlib.patches import Polygon as MPLPolygon
 from mpl_toolkits.basemap import pyproj
 
-class plot_modem_ptensors:
+class ModEM_ptensors:
     def __init__(self, data_fn):
         '''
         Class for loading MODEM data and plotting phase tensors.
@@ -231,7 +231,7 @@ def main():
     ModEM_files = os.path.join(data, 'ModEM_files')
     data_fn = os.path.join(ModEM_files, 'ModEM_Data_im2.dat')
 
-    pmp = plot_modem_ptensors(data_fn=data_fn)
+    pmp = ModEM_ptensors(data_fn=data_fn)
 
     return
 # end

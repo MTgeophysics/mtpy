@@ -24,7 +24,7 @@ from descartes import PolygonPatch
 from collections import defaultdict
 import fiona
 
-class plot_geology:
+class Geology:
     def __init__(self, sfn):
         '''
         Class for plotting geological (Poly/Line) data in shapefiles
@@ -203,8 +203,8 @@ def main():
     polyDataShapefile = os.path.join(ModEM_files, 'NT_LithInterp_2500K_region.shp')
     lineDataShapefile = os.path.join(ModEM_files, 'NT_Fault_2500K_polyline.shp')
 
-    pg1 = plot_geology(polyDataShapefile) # Polygon data
-    pg2 = plot_geology(lineDataShapefile) # Line data
+    pg1 = Geology(polyDataShapefile) # Polygon data
+    pg2 = Geology(lineDataShapefile) # Line data
 
     return
     # end
