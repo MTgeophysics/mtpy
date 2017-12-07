@@ -170,13 +170,13 @@ class PlotControlResistivityPhasePseudoSection(QGroupBox):
 
     def get_period_limit(self):
         if self.ui.checkBox_period.isChecked():
-            return self.ui.doubleSpinBox_period_min, self.ui.doubleSpinBox_period_max
+            return self.ui.doubleSpinBox_period_min.value(), self.ui.doubleSpinBox_period_max.value()
         else:
             return None
 
     def get_resistivity_limits(self):
         if self.ui.checkBox_resistivity.isChecked():
-            return self.ui.doubleSpinBox_res_min, self.ui.doubleSpinBox_res_max
+            return self.ui.doubleSpinBox_res_min.value(), self.ui.doubleSpinBox_res_max.value()
         else:
             return None
 

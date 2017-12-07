@@ -58,6 +58,8 @@ jobs:
       env:
         - MATPLOTLIB_VERSION=2.0.2 QT_VERSION=4
 #    - stage: deploy
+  allow_failures:
+    - MATPLOTLIB_VERSION=2.0.2 QT_VERSION=4
 
 before_script:
   - chmod -vR +x ./bin/* && . ./bin/travis-setup-env.sh  
