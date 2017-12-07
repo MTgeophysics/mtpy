@@ -7,18 +7,18 @@ References:
     https://gajira.atlassian.net/browse/ALAMP-31
 Usage Examples:
     python mtpy/imaging/modem_plot_slices.py /e/Data/Modeling/Isa/100hs_flat_BB/Isa_run3_NLCG_048.dat /e/Data/Modeling/Isa/100hs_flat_BB/Isa_run3_NLCG_048.rho ns 300
-    python mtpy/imaging/modem_plot_slices.py /e/tmp/GA_UA_edited_10s-10000s_16/ModEM_Data.dat /e/tmp/GA_UA_edited_10s-10000s_16/ModEM_Model.ws z -1000 1000
-
+    python mtpy/imaging/modem_plot_slices.py /e/MTPY2_Outputs/GA_UA_edited_10s-10000s_modem_inputs/ModEM_Data.dat  /e/MTPY2_Outputs/GA_UA_edited_10s-10000s_modem_inputs/ModEM_Model.ws z -1000 1000
 CreationDate:   20/09/2017
 Developer:      fei.zhang@ga.gov.au
 
 LastUpdate:     13/10/2017   FZ
 """
 
+import glob
 import os
 import sys
-import glob
-from mtpy.modeling.modem_output_to_views import ModemSlices
+
+from mtpy.modeling.modem.data_model_analysis import DataModelAnalysis
 
 #######################
 if __name__ == "__main__":
@@ -66,8 +66,8 @@ if __name__ == "__main__":
         slice_locs= None
 
     # construct plot object
-    # self = ModemSlices(datf, rhof)  # default  map_scale='m')
-    myObj = ModemSlices(datf, rhof, map_scale='km')
+    # self = DataModelAnalysis(datf, rhof)  # default  map_scale='m')
+    myObj = DataModelAnalysis(datf, rhof, map_scale='km')
 
     myObj.set_plot_orientation(slice_orient)  # horizontal at a given depth z
     # myObj.set_plot_orientation('ew')

@@ -12,10 +12,9 @@ Developer:      fei.zhang@ga.gov.au
 
 Revision History:
     LastUpdate:     22/09/2017   FZ
-    LastUpdate:     dd/mm/yyyy  Who     Optional description
+    LastUpdate:     01/12/2017   FZ    debug latitude value error. Had to swap the > lat lon pair in the dat file
 """
 
-# import section
 import os
 
 from mtpy.imaging.plot_response import PlotResponse
@@ -38,9 +37,9 @@ def plot_response():
         resp_range = None
         # resp_range = (0.01, 10000)  # This limit should be big enough, otherwise the plot curve will be out.
         if resp_range is None:
-            outfile = r'E:/tmp/test_plot_resp/plot_responses_NO_yrange.jpg'
+            outfile = r'./temp/plot_responses_NO_yrange.jpg'
         else:
-            outfile = r'E:/tmp/test_plot_resp/plot_responses_with_yrange.jpg'
+            outfile = r'./temp/plot_responses_with_yrange.jpg'
 
         robj = PlotResponse(data_fn=os.path.join(modem_data_dir, datafn),
                             # resp_fn=os.path.join(modem_data_dir, respfn),  #filestem+'.dat'),
@@ -57,15 +56,6 @@ def plot_response():
         # robj.plot(save2file = outfile)
         # robj.plot(save2file = outfile) # will create a big html file
 
-
-def main():
-    """
-    define my main function
-    :return:
-    """
-    print("Template main()")
-
-    return
 
 
 # =============================================

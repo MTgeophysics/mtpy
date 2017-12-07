@@ -104,8 +104,9 @@ def plot_model(data_dir, plot_type='PTMap', depth_index=20, periodin=0):
 #########################################################################
 # plot_type=[ PTMap RMSMap Response DepthSlice ]
 # How2Run:
-# python examples/modem_plot_models.py ./examples/data/ModEM_files/VicSynthetic07 PTMap pindex
-# python examples/modem_plot_models.py ./examples/data/ModEM_files/VicSynthetic07 RMSMap Response DepthSlice
+# python scripts/modem_plot_models.py ./examples/data/ModEM_files/VicSynthetic07 PTMap pindex
+#       TODO:  TypeError: _read_ellipse_dict() takes exactly 2 arguments (1 given)
+# python scripts/modem_plot_models.py ./examples/data/ModEM_files/VicSynthetic07 RMSMap Response DepthSlice
 # ---------------------------------------
 if __name__ == '__main__':
 

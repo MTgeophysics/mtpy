@@ -13,6 +13,7 @@ import csv
 import glob
 import os
 import sys
+from logging import INFO
 
 import geopandas as gpd
 import matplotlib.pyplot as plt
@@ -23,8 +24,9 @@ from shapely.geometry import Point  # , Polygon, LineString, LinearRing
 import mtpy.core.mt as mt
 import mtpy.imaging.mtplottools as mtplottools
 from mtpy.utils.decorator import deprecated
+from mtpy.utils.matplotlib_utils import gen_hist_bins
 from mtpy.utils.mtpylog import MtPyLog
-from logging import DEBUG, INFO, ERROR
+
 
 def is_num_in_seq(anum, aseq, atol=0.0001):
     """
@@ -167,6 +169,52 @@ class EdiCollection(object):
 
         print("Selected periods %s out of the total %s:" % (len(selected_periods), len(self.all_unique_periods)))
         return selected_periods
+
+    def select_periods(self, show=True, period_list=None, percentage=10.0):
+        """
+        FZ: Use edi_collection to analyse the whole set of EDI files
+        :param edifiles:
+        :return:
+        """
+
+        uniq_period_list = self.all_unique_periods  # filtered list of periods ?
+        print("Unique periods", len(uniq_period_list))
+
+        if show:
+            plt.figure()
+            plt.clf()
+            bins = gen_hist_bins(uniq_period_list)
+            plt.hist(self.mt_periods, bins=bins)
+            # plt.hist(self.mt_periods, bins=1000)
+            plt.title("Histogram with uniq_periods bins")
+            plt.xlabel("Periods")
+            plt.ylabel("Occurance in number of MT stations")
+            plt.show()
+
+        if period_list:
+            # 1 ASK user to input a Pmin and Pmax
+            # assume uniq_period_list is sorted
+            select_period_list = []
+            index_start = 0
+            for period in period_list:
+                for index in range(index_start, len(uniq_period_list)):
+                    if (isinstance(period, float) and np.isclose(uniq_period_list[index], period)) or \
+                            (isinstance(period, tuple) and period[0] <= uniq_period_list[index] <= period[1]):
+                        select_period_list.append(uniq_period_list[index])
+                    elif (isinstance(period, float) and uniq_period_list[index] > period) or \
+                            (isinstance(period, tuple) and period[1] < uniq_period_list[index]):
+                        index_start = index
+                        break
+                select_period_list = np.array(select_period_list)
+        else:
+            # 2 percetage stats
+            # select commonly occured frequencies from all stations.
+            # This could miss some slightly varied frequencies in the middle range.
+            select_period_list = np.array(self.get_periods_by_stats(percentage=percentage))
+
+        print("Selected periods ", len(select_period_list))
+
+        return select_period_list
 
     def create_mt_station_gdf(self, outshpfile=None):
         """

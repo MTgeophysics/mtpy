@@ -20,9 +20,9 @@ from qtpy import QtCore
 from qtpy.QtGui import QDoubleValidator
 from qtpy.QtWidgets import QWizard, QFileDialog, QDialog, QMessageBox
 
-from examples.create_modem_input import select_periods
+from mtpy.core.edi_collection import EdiCollection
 from mtpy.modeling.modem import Model
-from mtpy.constants import epsg_dict
+from mtpy.mtpy_globals import epsg_dict
 from mtpy.gui.SmartMT.Components.PlotParameter import FrequencySelection, Rotation
 from mtpy.gui.SmartMT.gui.busy_indicators import ProgressBar
 from mtpy.gui.SmartMT.gui.export_dialog import PreviewDialog
@@ -608,7 +608,7 @@ class ModEMWorker(QtCore.QThread):
 
             # get period_list list
             self.status_updated.emit("Selecting Periods...")
-            period_list = select_periods(self._edi_list, **self._select_period_kwargs)
+            period_list = EdiCollection(self._edi_list).select_periods(**self._select_period_kwargs)
             # save period plot for reference
             figure = plt.gcf()
             figure.savefig(os.path.join(self.output_dir, self._period_image_name))
@@ -694,7 +694,7 @@ class ModEMWorker(QtCore.QThread):
             pprint.pprint(self._select_period_kwargs, stream=outf)
             outf.write("\n")
             outf.write("\nSelected Period List:\n")
-            pprint.pprint(select_periods(self._edi_list, **self._select_period_kwargs), stream=outf)
+            pprint.pprint(EdiCollection(self._edi_list).select_periods( **self._select_period_kwargs), stream=outf)
             outf.write("\n")
             outf.write("### Data:\n")
             kwargs = self._data_kwargs.copy()

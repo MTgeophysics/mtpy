@@ -21,8 +21,8 @@ from mtpy.imaging import mtplottools as mtplottools, mtcolors as mtcl
 from mtpy.imaging.mtplottools import MTEllipse
 from mtpy.modeling import ws3dinv as ws
 from mtpy.utils import exceptions as mtex
-from .data import Data
-from .model import Model
+from mtpy.modeling.modem import Data
+from mtpy.modeling.modem import Model
 
 __all__ = ['PlotPTMaps']
 
@@ -738,6 +738,24 @@ class PlotPTMaps(MTEllipse):
                 pass
 
             self.fig_fn = save_fn
-            print 'Saved figure to: ' + self.fig_fn
+            print ('Saved figure to: ' + self.fig_fn)
 
+# ==================================================================================
+# FZ: add example usage code
+# Justdo>  python mtpy/modeling/modem/plot_pt_maps.py
+# ==================================================================================
+if __name__ == "__main__":
+    from mtpy.mtpy_globals import *
 
+    # directory where files are located
+    wd = os.path.join(SAMPLE_DIR, 'ModEM')
+
+    # file stem for inversion result
+    filestem = 'Modular_MPI_NLCG_004'
+
+    filestem = 'Modular_MPI_NLCG_004'
+    datafn = 'ModEM_Data.dat'
+    PlotPTMaps(data_fn=os.path.join(wd, datafn),
+               resp_fn=os.path.join(wd, filestem + '.dat'),
+               ellipse_size=20
+               )

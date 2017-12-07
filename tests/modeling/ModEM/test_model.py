@@ -2,7 +2,7 @@ import glob
 import os
 from unittest import TestCase
 
-from examples.create_modem_input import select_periods
+from mtpy.core.edi_collection import EdiCollection
 from mtpy.modeling.modem import Data, Model
 from tests import plt_close, make_temp_dir
 
@@ -56,7 +56,8 @@ def _test_gen(edi_path):
 
         # generate data
         edi_list = glob.glob(edi_path + '/*.edi')
-        period_list = select_periods(edi_list)
+        period_list = EdiCollection(edi_list).select_periods( )
+
         datob = Data(edi_list=edi_list,
                      inv_mode='1',
                      period_list=period_list,

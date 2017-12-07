@@ -15,7 +15,7 @@ import numpy as np
 from mtpy.modeling.modem import Data, Model
 
 workdir = r'V:\Geology\conductivity_modelling'
-workdir = r'E:\Githubz\mtpy2\examples\data\ModEM_files'
+workdir = r'E:\Githubz\mtpy\examples\data\ModEM_files'
 # workdir = r'/Softlab/Githubz/mtpy2/examples/data/ModEM_files'
 # workdir = r'/g/data/ha3/fxz547/Githubz/mtpy2/examples/data/ModEM_files'
 

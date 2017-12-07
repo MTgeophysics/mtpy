@@ -30,7 +30,6 @@ import numpy as np
 
 from mtpy.modeling.modem import Covariance, Data, Model
 from mtpy.core.edi_collection import EdiCollection
-from mtpy.gui.SmartMT.utils.matplotlib_utils import gen_hist_bins
 
 
 # YG: patch that changes the matplotlib behaviour
@@ -64,55 +63,6 @@ def show_patcher(show_func):
 # end of patch
 
 
-def select_periods(edifiles_list, show=True, period_list=None, percentage=10.0):
-    """
-    FZ: Use edi_collection to analyse the whole set of EDI files
-    :param edifiles:
-    :return:
-    """
-    import matplotlib.pyplot as plt
-
-    edis_obj = EdiCollection(edifiles_list)
-
-    uniq_period_list = edis_obj.all_unique_periods  # filtered list of periods ?
-    print("Unique periods", len(uniq_period_list))
-
-    if show:
-        plt.figure()
-        plt.clf()
-        bins = gen_hist_bins(uniq_period_list)
-        plt.hist(edis_obj.mt_periods, bins=bins)
-        # plt.hist(edis_obj.mt_periods, bins=1000)
-        plt.title("Histogram with uniq_periods bins")
-        plt.xlabel("Periods")
-        plt.ylabel("Occurance in number of MT stations")
-        plt.show()
-
-    if period_list:
-    # 1 ASK user to input a Pmin and Pmax
-        # assume uniq_period_list is sorted
-        select_period_list = []
-        index_start = 0
-        for period in period_list:
-            for index in range(index_start, len(uniq_period_list)):
-                if (isinstance(period, float) and np.isclose(uniq_period_list[index], period)) or \
-                        (isinstance(period, tuple) and period[0] <= uniq_period_list[index] <= period[1]):
-                    select_period_list.append(uniq_period_list[index])
-                elif (isinstance(period, float) and uniq_period_list[index] > period) or \
-                        (isinstance(period, tuple) and period[1] < uniq_period_list[index]):
-                    index_start = index
-                    break
-            select_period_list = np.array(select_period_list)
-    else:
-    # 2 percetage stats
-    # select commonly occured frequencies from all stations.
-    # This could miss some slightly varied frequencies in the middle range.
-        select_period_list = np.array(edis_obj.get_periods_by_stats(percentage=percentage))
-
-    print("Selected periods ", len(select_period_list))
-
-    return select_period_list
-
 
 if __name__ == '__main__':
 
@@ -144,7 +94,7 @@ if __name__ == '__main__':
     # eo = mtedi.Edi(edi_list[0])  # this may miss some periods?
     # period_list = 1. / eo.Z.freq # period_list = np.logspace(-3,3)
 
-    period_list = select_periods(edi_list)
+    period_list = EdiCollection(edi_list).select_periods()
 
     datob = Data(edi_list=edi_list,
                  inv_mode='1',

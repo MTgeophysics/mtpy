@@ -1,13 +1,13 @@
 """
 Description:
-    Extract data from modem output files (.dat and .rho) and produce views: csv files and visualization plots
-    The output look like: StationName, Lat, Long, X, Y, Z, Log(Resistivity)
+    Extract info from a pair of files (namely .dat and .rho) of modem inversion results
+    re-write the data into other formats such as csv.
+    Get a slice of the model data for analysis and plotting visualization.
+
+    The output CSV file include StationName, Lat, Long, X, Y, Z, Log(Resistivity)
     where (X,Y,Z) are relative distances in meters from the mesh's origin.
     Projection/Coordinate system must be known in order to associate (Lat, Long) to (X, Y)
 
-References:
-    https://gajira.atlassian.net/browse/ALAMP-30
-    https://gajira.atlassian.net/browse/ALAMP-31
 
 CreationDate:   8/09/2017
 Developer:      fei.zhang@ga.gov.au
@@ -32,7 +32,7 @@ logger = MtPyLog.get_mtpy_logger(__name__)
 # logger.setLevel(logging.DEBUG)
 
 
-class ModemSlices(object):
+class DataModelAnalysis(object):
     def __init__(self, filedat, filerho, plot_orient='ew', **kwargs):
         """Constructor
         :param filedat: path2file.dat
@@ -85,9 +85,9 @@ class ModemSlices(object):
         self.modObj.read_model_file()
 
         self.ew_lim = (
-        self.modObj.grid_east[self.modObj.pad_east[1]], self.modObj.grid_east[-self.modObj.pad_east[1] - 1])
+        self.modObj.grid_east[self.modObj.pad_east], self.modObj.grid_east[-self.modObj.pad_east - 1])
         self.ns_lim = (
-        self.modObj.grid_north[self.modObj.pad_north[1]], self.modObj.grid_north[-self.modObj.pad_north[1] - 1])
+        self.modObj.grid_north[self.modObj.pad_north], self.modObj.grid_north[-self.modObj.pad_north - 1])
 
         # logger.debug("ns-limit %s", self.ns_lim)
         # logger.debug("ew-limit %s", self.ew_lim)
@@ -107,10 +107,10 @@ class ModemSlices(object):
 
         station_dict = {}
 
-        sX, sY = self.datObj.station_locations['rel_east'], self.datObj.station_locations['rel_north']
-        station_names = self.datObj.station_locations['station']
-        station_lats = self.datObj.station_locations['lat']
-        station_lons = self.datObj.station_locations['lon']
+        sX, sY = self.datObj.station_locations.rel_east, self.datObj.station_locations.rel_north
+        station_names = self.datObj.station_locations.station
+        station_lats = self.datObj.station_locations.lat
+        station_lons = self.datObj.station_locations.lon
 
         # get grid centres (finite element cells centres)
         gceast, gcnorth = [np.mean([arr[:-1], arr[1:]], axis=0) for arr in
@@ -210,16 +210,16 @@ class ModemSlices(object):
             title = 'North-south slice at {} meters east'.format(gceast[sno])
         elif self.plot_orientation == 'z':  # for plotting X == EW  Y == NS
             Y, X, res = self.modObj.grid_north, self.modObj.grid_east, np.log10(self.modObj.res_model[:, :, sno])
-            sY, sX = self.datObj.station_locations['rel_north'], self.datObj.station_locations['rel_east']
+            sY, sX = self.datObj.station_locations.rel_north, self.datObj.station_locations.rel_east
             ylim = (
-            self.modObj.grid_north[self.modObj.pad_north[1]], self.modObj.grid_north[-self.modObj.pad_north[1] - 1])
-            xlim = (self.modObj.grid_east[self.modObj.pad_east[1]], self.modObj.grid_east[-self.modObj.pad_east[1] - 1])
+            self.modObj.grid_north[self.modObj.pad_north], self.modObj.grid_north[-self.modObj.pad_north - 1])
+            xlim = (self.modObj.grid_east[self.modObj.pad_east], self.modObj.grid_east[-self.modObj.pad_east - 1])
 
             title = 'Horizontal Slice at Depth {} meters'.format(gcz[sno])
 
         return (X, Y, res, sX, sY, xlim, ylim, title, actual_location)
 
-    def create_csv(self, csvfile='E:/tmp/Resistivity.csv'):
+    def create_csv(self, csvfile='tests/temp/Resistivity.csv'):
         """
         write ressitivity into the csvfile with the output columns:
             StationName, Lat, Long, X, Y, Z, Log(Resistivity)
@@ -387,13 +387,13 @@ class ModemSlices(object):
 #########################################################################
 # How to call the create csv function
 # Usage:
-#  python mtpy/modeling/modem_output_to_views.py /e/Data/Modeling/Isa/100hs_flat_BB/Isa_run3_NLCG_048.dat /e/Data/Modeling/Isa/100hs_flat_BB/Isa_run3_NLCG_048.rho 20
-#  python mtpy/modeling/modem_output_to_views.py /e/tmp/GA_UA_edited_10s-10000s_16/ModEM_Data.dat  /e/tmp/GA_UA_edited_10s-10000s_16/ModEM_Model.ws -1000 1000
+#  python mtpy/modeling/modem/data_model_analysis.py /e/Data/Modeling/Isa/100hs_flat_BB/Isa_run3_NLCG_048.dat /e/Data/Modeling/Isa/100hs_flat_BB/Isa_run3_NLCG_048.rho
+#  python mtpy/modeling/modem/data_model_analysis.py /e/MTPY2_Outputs/GA_UA_edited_10s-10000s_modem_inputs/ModEM_Data.dat  /e/MTPY2_Outputs/GA_UA_edited_10s-10000s_modem_inputs/ModEM_Model.ws
 # ---------------------------------------------------------------------------
 if __name__ == "__main__":
 
     # Take commandline input
-    if (len(sys.argv) == 2):  # A model dir provided
+    if len(sys.argv) == 2:  # A model dir provided
         modeldir = sys.argv[1]
         datf = os.path.join(modeldir, 'ModEM_Data.dat')
         rhofiles = glob.glob(os.path.join(modeldir, '*.rho'))
@@ -415,8 +415,8 @@ if __name__ == "__main__":
         rhof = sys.argv[2]
 
     # construct plot object
-    # self = ModemSlices(datf, rhof)  # default  map_scale='m')
-    myObj = ModemSlices(datf, rhof, map_scale='km')
+    # self = DataModelAnalysis(datf, rhof)  # default  map_scale='m')
+    myObj = DataModelAnalysis(datf, rhof, map_scale='km')
 
     myObj.create_csv()
 

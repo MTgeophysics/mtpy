@@ -1901,10 +1901,15 @@ class Model(object):
                 count_z += 1
                 count_e = 0
                 line_index += 1
+            # 3D grid model files don't have a space at the end
+            # additional condition to account for this.
+            elif (len(iline) == 3) & (count_z == n_z - 1):
+                count_z += 1
+                count_e = 0
+                line_index += 1
             # each line in the block is a line of N-->S values for an east value
             else:
-                north_line = np.array([float(nres) for nres in
-                                       ilines[line_index].strip().split()])
+                north_line = np.array([float(nres) for nres in iline])
 
                 # Need to be sure that the resistivity array matches
                 # with the grids, such that the first index is the

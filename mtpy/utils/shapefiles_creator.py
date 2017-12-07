@@ -164,9 +164,10 @@ class ShapeFilesCreator(EdiCollection):
 
         if export_fig is True:
             bbox_dict= self.get_bounding_box(epsgcode=target_epsg_code)
+            # this bbox ensures that the whole MT-stations area is covered independent of periods
             print(bbox_dict)
             path2jpg = path2shp.replace(".shp",".jpg")
-            export_geopdf_to_image(geopdf, bbox_dict, path2jpg) # showfig=True)
+            export_geopdf_to_image(geopdf, bbox_dict,  path2jpg, colorby='phi_max', colormap='nipy_spectral_r') # showfig=True)
 
         return (geopdf,path2shp)
 
@@ -228,9 +229,11 @@ class ShapeFilesCreator(EdiCollection):
 
         if export_fig is True:
             bbox_dict = self.get_bounding_box(epsgcode=target_epsg_code)
-            print(bbox_dict)
+            #this bbox_dict ensures that we can set a consistent display area cover all ground stations,
+            # not just this period-dependent geopdf
+            self._logger.debug("All MT stations area bounding box %s", bbox_dict)
             path2jpg = path2shp.replace(".shp", ".jpg")
-            export_geopdf_to_image(geopdf, bbox_dict, path2jpg)  # showfig=True)
+            export_geopdf_to_image(geopdf, bbox_dict, path2jpg, colorby='phi_max', colormap='nipy_spectral_r')  # showfig=True)
 
         return (geopdf, path2shp)
 
@@ -289,9 +292,13 @@ class ShapeFilesCreator(EdiCollection):
 
         if export_fig is True:
             bbox_dict = self.get_bounding_box(epsgcode=target_epsg_code)
-            print(bbox_dict)
+            # this bbox_dict ensures that we can set a consistent display area cover all ground stations,
+            # not just this period-dependent geopdf
+
+            self._logger.debug("All MT stations area bounding box %s", bbox_dict)
+
             path2jpg = path2shp.replace(".shp", ".jpg")
-            export_geopdf_to_image(geopdf, bbox_dict, path2jpg)  # showfig=True)
+            export_geopdf_to_image(geopdf, bbox_dict, path2jpg, colorby='phi_max', colormap='nipy_spectral_r')  # showfig=True)
 
         return (geopdf, path2shp)
 ####################################################################
@@ -444,15 +451,15 @@ def create_tipper_imag_shp_from_csv(csvfile, line_length=0.03, target_epsg_code=
 
     return pdf
 
-
-def export_geopdf_to_image(geopdf, bbox, jpg_file_name, target_epsg_code=None, showfig=False):
+def export_geopdf_to_image(geopdf, bbox, jpg_file_name, target_epsg_code=None, colorby=None, colormap=None, showfig=False):
     """
-    Export a geopandas dataframe to a jpe_file, with optionally new epsg projection.
+    Export a geopandas dataframe to a jpe_file, with optionally a new epsg projection.
     :param geopdf: a geopandas dataframe
-    :param bbox: bound box
-    :param jpg_file_name: path2jpeg
+    :param bbox: This param ensures that we can set a consistent display area defined by a dict with 4 keys
+                    [MinLat, MinLon, MaxLat, MaxLon], cover all ground stations, not just this period-dependent geopdf
+    :param output jpg_file_name: path2jpeg
     :param target_epsg_code: 4326 etc
-    :param showfig:
+    :param showfig: If True, then display fig on screen.
     :return:
     """
 
@@ -472,12 +479,19 @@ def export_geopdf_to_image(geopdf, bbox, jpg_file_name, target_epsg_code=None, s
     fig_title = os.path.basename(jpg_file_name)
     _logger.info('saving figure to file %s', jpg_file_name)
 
-    colorby = 'phi_min'
-    my_cmap_r = 'jet'
+    if colorby is None:
+        colorby = 'phi_min'
+    else:
+        colorby = colorby
+
+    if colormap is None:
+        my_colormap = mpl.cm.gist_ncar  # a default choice:  jet_r #'jet'
+    else:
+        my_colormap = colormap
 
     if int(target_epsg_code) == 4326 or int(target_epsg_code) == 4283:
 
-        myax = p.plot(figsize=[10, 10], linewidth=2.0, column=colorby, cmap=my_cmap_r)  # , marker='o', markersize=10)
+        myax = p.plot(figsize=[10, 10], linewidth=2.0, column=colorby, cmap=my_colormap)  # , marker='o', markersize=10)
 
         # add colorbar
         divider = make_axes_locatable(myax)
@@ -486,7 +500,7 @@ def export_geopdf_to_image(geopdf, bbox, jpg_file_name, target_epsg_code=None, s
 
         fig = myax.get_figure()
 
-        sm = plt.cm.ScalarMappable(cmap=my_cmap_r)  # , norm=plt.Normalize(vmin=vmin, vmax=vmax))
+        sm = plt.cm.ScalarMappable(cmap=my_colormap)  # , norm=plt.Normalize(vmin=vmin, vmax=vmax))
         # fake up the array of the scalar mappable. Urgh...
         sm._A = p[colorby]  # [1,2,3]
 
@@ -518,7 +532,7 @@ def export_geopdf_to_image(geopdf, bbox, jpg_file_name, target_epsg_code=None, s
         myax.set_title(fig_title)
     else:  # UTM kilometer units
         myax = p.plot(figsize=[10, 8], linewidth=2.0, column=colorby,
-                      cmap=my_cmap_r)  # simple plot need to have details added
+                      cmap=my_colormap)  # simple plot need to have details added
 
         myax.set_xlabel('East-West (KM)')
         myax.set_ylabel('North-South (KM)')
@@ -548,7 +562,7 @@ def export_geopdf_to_image(geopdf, bbox, jpg_file_name, target_epsg_code=None, s
 
         fig = myax.get_figure()
 
-        sm = plt.cm.ScalarMappable(cmap=my_cmap_r)  # , norm=plt.Normalize(vmin=vmin, vmax=vmax))
+        sm = plt.cm.ScalarMappable(cmap=my_colormap)  # , norm=plt.Normalize(vmin=vmin, vmax=vmax))
         # fake up the array of the scalar mappable. Urgh...
         sm._A = p[colorby]  # [1,2,3]
 
@@ -695,7 +709,7 @@ if __name__ == "__main__":
         # shp_maker.create_tipper_real_shp(aper, line_length=tipsize, export_fig=True)
         # shp_maker.create_tipper_imag_shp(aper, line_length=tipsize, export_fig=True)
 
-        for my_epsgcode in [28353]:  # [3112, 4326, 4283, 32754, 32755, 28353, 28354, 28355]:
+        for my_epsgcode in [3112]:  # [3112, 4326, 4283, 32754, 32755, 28353, 28354, 28355]:
             shp_maker.create_phase_tensor_shp(aper, target_epsg_code=my_epsgcode, ellipsize=esize, export_fig=True)
             shp_maker.create_tipper_real_shp(aper, line_length=tipsize, target_epsg_code=my_epsgcode, export_fig=True)
             shp_maker.create_tipper_imag_shp(aper, line_length=tipsize, target_epsg_code=my_epsgcode, export_fig=True)
