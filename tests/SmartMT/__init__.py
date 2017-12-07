@@ -27,11 +27,6 @@ sip.setdestroyonexit(False)
 
 app = QApplication(sys.argv)
 
-import matplotlib.pyplot as plt
-plt.ion()
-
-MtPyLog.get_mtpy_logger(__name__).info("Testing using matplotlib backend {}".format(matplotlib.rcParams['backend']))
-
 # handle uncaught exceptions to log as since PYQT5.5 will not display any uncaught exceptions
 # ref: http://pyqt.sourceforge.net/Docs/PyQt5/incompatibilities.html#unhandled-python-exceptions
 logger = MtPyLog.get_mtpy_logger(__name__)
@@ -58,12 +53,11 @@ class SmartMTGUITestCase(TestCase):
         import matplotlib.pyplot as plt
         plt.interactive(False)
 
-
     def setUp(self):
         self.smartMT = StartGUI()
         self.smartMT.show()
         QTest.qWaitForWindowActive(self.smartMT)
-        print(matplotlib.get_backend())
+        print("matplotlib backend: {}".format(matplotlib.get_backend()))
 
     def _switch_to_plot(self, plot_type=VisualizationBase, num_stations='all'):
         name = plot_type.plot_name()
