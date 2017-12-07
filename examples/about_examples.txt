@@ -1,0 +1,14 @@
+FZ 2017-12-01
+
+This examples dir was restructured:
+
+All pythons scripts *.py have been moved to the root repository level scripts/. Please always maintain this scripts dir for
+sample tutorial mtpy scripts.
+
+TODO:
+1) properly rename the examples/ folders names
+2) merge the data dir with mtpy/data
+
+
+
+

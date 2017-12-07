@@ -20,17 +20,16 @@ from qtpy import QtCore
 from qtpy.QtGui import QDoubleValidator
 from qtpy.QtWidgets import QWizard, QFileDialog, QDialog, QMessageBox
 
-from examples.create_modem_input import select_periods
-from mtpy.constants import epsg_dict
+from mtpy.core.edi_collection import EdiCollection
+from mtpy.modeling.modem import Model
+from mtpy.mtpy_globals import epsg_dict
 from mtpy.gui.SmartMT.Components.PlotParameter import FrequencySelection, Rotation
 from mtpy.gui.SmartMT.gui.busy_indicators import ProgressBar
 from mtpy.gui.SmartMT.gui.export_dialog import PreviewDialog
 from mtpy.gui.SmartMT.gui.matplotlib_imabedding import MathTextLabel
 from mtpy.gui.SmartMT.ui_asset.wizard_export_modem import Ui_Wizard_esport_modem
 from mtpy.gui.SmartMT.utils.validator import FileValidator, DirectoryValidator
-from mtpy.modeling.modem_covariance import Covariance
-from mtpy.modeling.modem_data import Data
-from mtpy.modeling.modem_model import Model
+from mtpy.modeling.modem import Data, Covariance
 from mtpy.utils.mtpylog import MtPyLog
 
 
@@ -572,7 +571,7 @@ class ModEMWorker(QtCore.QThread):
     def __init__(self, parent, edi_list, select_period_kwargs, data_kwargs, mesh_kwargs, topo_args, covariance_kwargs,
                  show=False):
         QtCore.QThread.__init__(self, parent)
-        self._logger = MtPyLog().get_mtpy_logger(__name__)
+        self._logger = MtPyLog.get_mtpy_logger(self.__class__.__name__)
 
         self._edi_list = edi_list
         self._select_period_kwargs = select_period_kwargs
@@ -609,7 +608,7 @@ class ModEMWorker(QtCore.QThread):
 
             # get period_list list
             self.status_updated.emit("Selecting Periods...")
-            period_list = select_periods(self._edi_list, **self._select_period_kwargs)
+            period_list = EdiCollection(self._edi_list).select_periods(**self._select_period_kwargs)
             # save period plot for reference
             figure = plt.gcf()
             figure.savefig(os.path.join(self.output_dir, self._period_image_name))
@@ -695,7 +694,7 @@ class ModEMWorker(QtCore.QThread):
             pprint.pprint(self._select_period_kwargs, stream=outf)
             outf.write("\n")
             outf.write("\nSelected Period List:\n")
-            pprint.pprint(select_periods(self._edi_list, **self._select_period_kwargs), stream=outf)
+            pprint.pprint(EdiCollection(self._edi_list).select_periods( **self._select_period_kwargs), stream=outf)
             outf.write("\n")
             outf.write("### Data:\n")
             kwargs = self._data_kwargs.copy()

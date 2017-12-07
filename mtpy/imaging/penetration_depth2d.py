@@ -33,7 +33,7 @@ from mtpy.utils.mtpylog import MtPyLog
 
 # get a logger object for this module, using the utility class MtPyLog to
 # config the logger
-logger = MtPyLog().get_mtpy_logger(__name__)
+_logger = MtPyLog.get_mtpy_logger(__name__)
 # logger =
 # MtPyLog(path2configfile='logging.yml').get_mtpy_logger(__name__) #
 # specific
@@ -48,7 +48,7 @@ def plot2Dprofile(edi_dir, period_index_list=None, zcomponent='det'):
     # 1 get a list of edi files, which are suppose to be in a profile.
     edifiles = glob.glob(os.path.join(edi_dir, '*.edi'))
 
-    logger.debug("edi files: %s", edifiles)
+    _logger.debug("edi files: %s", edifiles)
 
     edis = load_edi_files(edi_dir)
     plot = Depth2D(edis, period_index_list, zcomponent)
@@ -69,7 +69,7 @@ def barplot_multi_station_penentration_depth(
     if os.path.isdir(edifiles_dir):
         edi_dir = edifiles_dir  # "E:/Githubz/mtpy2/tests/data/edifiles/"
         edifiles_dir = glob.glob(os.path.join(edi_dir, '*.edi'))
-        logger.debug(edifiles_dir)
+        _logger.debug(edifiles_dir)
     else:
         # Assume edifiles_dir is [a list of edi files]
         pass

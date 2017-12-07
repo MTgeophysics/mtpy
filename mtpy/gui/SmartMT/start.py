@@ -39,7 +39,7 @@ DEFAULT_GROUP_NAME = str(_translate("SmartMT_MainWindow", "Default Group", None)
 class StartGUI(QMainWindow):
     def __init__(self, parent=None):
         QWidget.__init__(self, parent)
-        self._logger = MtPyLog().get_mtpy_logger(__name__)
+        self._logger = MtPyLog.get_mtpy_logger(self.__class__.__name__)
         self._is_file_dialog_opened = False
         self.ui = Ui_SmartMT_MainWindow()
         self.ui.setupUi(self)

@@ -16,21 +16,20 @@ JP 2016
 # standard imports
 import os
 import sys
-import copy
-
-import numpy as np
-import matplotlib.pyplot as plt
 
 try:
-    from PyQt5 import QtCore, QtGui, QtWidgets
+    from PyQt5 import QtCore, QtWidgets
 except ImportError:
     raise ImportError("This version needs PyQt5")
 
+import numpy as np
+import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure
-import mtpy.imaging.mtplottools as mtplottools
 import matplotlib.gridspec as gridspec
+
+import mtpy.imaging.mtplottools as mtplottools
 import mtpy.modeling.modem as modem
 
 #==============================================================================
@@ -304,7 +303,8 @@ class PlotResponses(QtWidgets.QWidget):
         
         # make a back up copy that will be unchanged
         # that way we can revert back
-        self._modem_data_copy = copy.deepcopy(self.modem_data)
+        self._modem_data_copy = modem.Data()
+        self._modem_data_copy.read_data_file(self._data_fn)
         
         self.dirpath = os.path.dirname(self._data_fn)
         

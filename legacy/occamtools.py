@@ -5,26 +5,24 @@ Created on Tue Aug 23 11:54:38 2011
 @author: a1185872
 """
 
+import fnmatch
+import os
+import shutil
+import subprocess
+import time
+from operator import itemgetter
+
+import matplotlib.colorbar as mcb
+import matplotlib.gridspec as gridspec
+import matplotlib.pyplot as plt
 import numpy as np
 import scipy as sp
-import os
-import subprocess
-import shutil
-import fnmatch
-from operator import itemgetter
-import time
-import matplotlib.colorbar as mcb
 from matplotlib.colors import Normalize
 from matplotlib.ticker import MultipleLocator
-import matplotlib.gridspec as gridspec
+
 import mtpy.core.edi as mtedi
 import mtpy.modeling.winglinktools as wlt
-import matplotlib.pyplot as plt
-
 import mtpy.utils.gis_tools
-import mtpy.utils.latlon_utm_conversion as utm2ll
-
-
 
 occamdict={'1':'resxy','2':'phasexy','3':'realtip','4':'imagtip','5':'resyx',
            '6':'phaseyx'}

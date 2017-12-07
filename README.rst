@@ -1,7 +1,7 @@
 MTpy: A Python Toolbox for Magnetotelluric (MT) Data Processing, Analysis, Modelling and Visualization
 ==================================
 
-|Build Status| |Coverage Status| |Documentation Status|
+|Build Status| |Coverage Status|
 
 
 Overview
@@ -9,13 +9,15 @@ Overview
 
 A Python Toolbox for Magnetotelluric (MT) Data Processing, Analysis, Modelling and Visualization
 
-This repository is a merged from 
+This repository has superseded the `geophysics/mtpy <https://github.com/geophysics/mtpy/tree/beta>`_
+and `GeoscienceAustralia/mtpy2 <https://github.com/GeoscienceAustralia/mtpy2/tree/develop>`_
 
-| https://github.com/geophysics/mtpy/tree/beta 
+Home Page: https://github.com/MTgeophysics/mtpy
 
-and
+Documentation: http://MTgeophysics.github.io/mtpy
 
-| https://github.com/GeoscienceAustralia/mtpy2/tree/develop
+Issue tracking: https://github.com/MTgeophysics/mtpy/issues
+
 
 Contacts
 ==========
@@ -29,41 +31,36 @@ Contacts
 | **Jared Peacock**
 | peacock.jared@gmail.com
 
-
 | **Yingzhi Gou**
 | Yingzhi.Gou@ga.gov.au
+
+| **Rakib Hassan**
+| Rakib.Hassan@ga.gov.au
 
 | **Jinming Duan**
 | Jingming.Duan@ga.gov.au
 
 
-Documentation
-=============
 
-See the `user guide <http://mtpy.readthedocs.org/en/develop/>`__ for
-installation & usage API documentation.
+System Requirements (Draft)
+==========================
 
-Requirements
-============
-
-System
-~~~~~~
 
 -  Software
 -  Python 2.7+ or Python 3.5+
 
-Develop Setup
-===============
+Setup Guide for Developers (Draft)
+==========================
 
-1. Obtain the package by clone or zip download from https://github.com/GeoscienceAustralia/mtpy2:
+1. Obtain the source code from https://github.com/MTgeophysics/mtpy:
 
    -  ``git clone https://github.com/MTgeophysics/mtpy.git``
 
 2. Install Python dependencies. And
    
-    ``cd mtpy2``
+    ``cd mtpy``
    
-    ``pip install -v --user -e .`` (user's own home ..local/lib/python2.7/site-packages/mtpy.egg-link)
+    ``pip install -v --user -e .`` (user's own home ~/.local/lib/python2.7/site-packages/mtpy.egg-link)
    
    OR ``pip install -v -e .``  (into python lib's dir site-packages, write-permission required)
    
@@ -118,12 +115,11 @@ Conventions
 
 
 
+.. |Build Status| image:: https://travis-ci.org/MTgeophysics/mtpy.svg?branch=develop
+   :target: https://travis-ci.org/MTgeophysics/mtpy
+.. |Coverage Status| image:: https://coveralls.io/repos/github/MTgeophysics/mtpy/badge.svg?branch=develop
+   :target: https://coveralls.io/github/MTgeophysics/mtpy?branch=develop
 
-
-.. |Build Status| image:: https://travis-ci.org/GeoscienceAustralia/mtpy2.svg?branch=develop
-   :target: https://travis-ci.org/GeoscienceAustralia/mtpy2
-.. |Coverage Status| image:: https://coveralls.io/repos/github/GeoscienceAustralia/mtpy2/badge.svg?branch=develop
-   :target: https://coveralls.io/github/GeoscienceAustralia/mtpy2?branch=develop
 .. |Documentation Status| image:: https://readthedocs.org/projects/mtpy2/badge/?version=develop
-   :target: http://mtpy2.readthedocs.org/en/develop/
+   :target: https://mtgeophysics.github.io/mtpy/
 

@@ -9,9 +9,9 @@
 .. moduleauthor:: Jared Peacock <jpeacock@usgs.gov>
 """
 
-#==============================================================================
+# ==============================================================================
 #  Imports
-#==============================================================================
+# ==============================================================================
 import os
 import datetime
 import numpy as np
@@ -21,10 +21,10 @@ import mtpy.utils.exceptions as MTex
 import mtpy.utils.filehandling as MTfh
 import mtpy.core.z as MTz
 from mtpy.utils.mtpylog import MtPyLog
-import logging
 
 try:
     import scipy.stats.distributions as ssd
+
     ssd_test = True
 except ImportError:
     print 'Need scipy.stats.distributions to compute spectra errors'
@@ -32,15 +32,14 @@ except ImportError:
     ssd_test = False
 
 tab = ' ' * 4
-#==============================================================================
+# ==============================================================================
 # EDI Class
-#==============================================================================
+# ==============================================================================
 
-tab = ' '*4
+tab = ' ' * 4
 
-# get a logger object for this module, using the utility class MtPyLog to config the logger
-logger = MtPyLog().get_mtpy_logger(__name__)
-logger.setLevel(logging.INFO)  #this sets the module specific log Level
+_logger = MtPyLog.get_mtpy_logger(__name__)
+
 
 class Edi(object):
     """
@@ -113,7 +112,7 @@ class Edi(object):
     """
 
     def __init__(self, edi_fn=None):
-
+        self._logger = MtPyLog.get_mtpy_logger(self.__class__.__name__)
         self.edi_fn = edi_fn
         self._edi_lines = None
         self.Header = Header()
@@ -166,7 +165,7 @@ class Edi(object):
 
         """
 
-        logger.info("Reading the edi file %s", self.edi_fn)
+        self._logger.info("Reading the edi file %s", self.edi_fn)
 
         if edi_fn is not None:
             self.edi_fn = edi_fn
@@ -192,21 +191,21 @@ class Edi(object):
 
         if self.Header.lat is None:
             self.Header.lat = self.Define_measurement.reflat
-            logger.info(
+            self._logger.info(
                 'Got latitude from reflat for {0}'.format(
                     self.Header.dataid))
         if self.Header.lon is None:
             self.Header.lon = self.Define_measurement.reflon
-            logger.info(
+            self._logger.info(
                 'Got longitude from reflon for {0}'.format(
                     self.Header.dataid))
         if self.Header.elev is None:
             self.Header.elev = self.Define_measurement.refelev
-            logger.info(
+            self._logger.info(
                 'Got elevation from refelev for {0}'.format(
                     self.Header.dataid))
 
-        logger.info(
+        self._logger.info(
             "Read in edi file for station {0}".format(
                 self.Header.dataid))
 
@@ -224,8 +223,8 @@ class Edi(object):
         lines = self._edi_lines[self.Data_sect.line_num:]
 
         if self.Data_sect.data_type == 'spectra':
-            logger.info('Converting Spectra to Impedance and Tipper')
-            logger.info('Check to make sure input channel list is correct if the data looks incorrect')
+            self._logger.info('Converting Spectra to Impedance and Tipper')
+            self._logger.info('Check to make sure input channel list is correct if the data looks incorrect')
             self._read_spectra(lines)
 
         elif self.Data_sect.data_type == 'z':
@@ -272,14 +271,14 @@ class Edi(object):
         z_err_arr = np.zeros((freq_arr.size, 2, 2), dtype=np.float)
 
         # fill impedance tensor
-        z_arr[:, 0, 0] = np.array(data_dict['zxxr']) +\
-                         np.array(data_dict['zxxi'])*1j
-        z_arr[:, 0, 1] = np.array(data_dict['zxyr']) +\
-                         np.array(data_dict['zxyi'])*1j
-        z_arr[:, 1, 0] = np.array(data_dict['zyxr']) +\
-                         np.array(data_dict['zyxi'])*1j
-        z_arr[:, 1, 1] = np.array(data_dict['zyyr']) +\
-                         np.array(data_dict['zyyi'])*1j
+        z_arr[:, 0, 0] = np.array(data_dict['zxxr']) + \
+                         np.array(data_dict['zxxi']) * 1j
+        z_arr[:, 0, 1] = np.array(data_dict['zxyr']) + \
+                         np.array(data_dict['zxyi']) * 1j
+        z_arr[:, 1, 0] = np.array(data_dict['zyxr']) + \
+                         np.array(data_dict['zyxi']) * 1j
+        z_arr[:, 1, 1] = np.array(data_dict['zyyr']) + \
+                         np.array(data_dict['zyyi']) * 1j
 
         z_err_arr[:, 0, 0] = np.array(data_dict['zxx.var'])
         z_err_arr[:, 0, 1] = np.array(data_dict['zxy.var'])
@@ -288,7 +287,7 @@ class Edi(object):
 
         # check for order of frequency, we want high to low
         if freq_arr[0] < freq_arr[1]:
-            logger.info(
+            self._logger.info(
                 'Ordered arrays to be arranged from high to low frequency')
             freq_arr = freq_arr[::-1]
             z_arr = z_arr[::-1]
@@ -322,10 +321,10 @@ class Edi(object):
                 self.Tipper.rotation_angle = np.zeros_like(freq_arr)
 
         if 'txr.exp' in data_dict.keys():
-            tipper_arr[:, 0, 0] = np.array(data_dict['txr.exp']) +\
+            tipper_arr[:, 0, 0] = np.array(data_dict['txr.exp']) + \
                                   np.array(data_dict['txi.exp']) * 1j
             tipper_arr[:, 0, 1] = np.array(data_dict['tyr.exp']) + \
-                np.array(data_dict['tyi.exp']) * 1j
+                                  np.array(data_dict['tyi.exp']) * 1j
 
             tipper_err_arr[:, 0, 0] = np.array(data_dict['txvar.exp'])
             tipper_err_arr[:, 0, 1] = np.array(data_dict['tyvar.exp'])
@@ -335,13 +334,13 @@ class Edi(object):
                 tipper_err_arr = tipper_err_arr[::-1]
 
         else:
-            logger.info('Could not find any Tipper data.')
+            self._logger.info('Could not find any Tipper data.')
 
         self.Tipper._freq = freq_arr
         self.Tipper._tipper = tipper_arr
         self.Tipper._tipper_err = tipper_err_arr
-        self.Tipper._compute_amp_phase()
-        self.Tipper._compute_mag_direction()
+        self.Tipper.compute_amp_phase()
+        self.Tipper.compute_mag_direction()
 
     def _read_spectra(self, data_lines,
                       comp_list=['hx', 'hy', 'hz', 'ex', 'ey', 'rhx', 'rhy']):
@@ -373,10 +372,10 @@ class Edi(object):
                                   if ss.lower().find('avgt') == 0][0])
                     avgt_dict[key] = avgt
                 except ValueError:
-                    logger.info('did not find frequency key')
+                    self._logger.info('did not find frequency key')
 
             elif data_find and line.find('>') == -1 and \
-                 line.find('!') == -1:
+                            line.find('!') == -1:
                 data_dict[key] += [float(ll) for ll in line.strip().split()]
 
             elif line.find('>spectra') == -1:
@@ -423,13 +422,13 @@ class Edi(object):
             # .....
 
             z_arr[kk, 0, 0] = s_arr[cc.ex, cc.rhx] * s_arr[cc.hy, cc.rhy] - \
-                s_arr[cc.ex, cc.rhy] * s_arr[cc.hy, cc.rhx]
+                              s_arr[cc.ex, cc.rhy] * s_arr[cc.hy, cc.rhx]
             z_arr[kk, 0, 1] = s_arr[cc.ex, cc.rhy] * s_arr[cc.hx, cc.rhx] - \
-                s_arr[cc.ex, cc.rhx] * s_arr[cc.hx, cc.rhy]
+                              s_arr[cc.ex, cc.rhx] * s_arr[cc.hx, cc.rhy]
             z_arr[kk, 1, 0] = s_arr[cc.ey, cc.rhx] * s_arr[cc.hy, cc.rhy] - \
-                s_arr[cc.ey, cc.rhy] * s_arr[cc.hy, cc.rhx]
+                              s_arr[cc.ey, cc.rhy] * s_arr[cc.hy, cc.rhx]
             z_arr[kk, 1, 1] = s_arr[cc.ey, cc.rhy] * s_arr[cc.hx, cc.rhx] - \
-                s_arr[cc.ey, cc.rhx] * s_arr[cc.hx, cc.rhy]
+                              s_arr[cc.ey, cc.rhx] * s_arr[cc.hx, cc.rhy]
 
             z_arr[kk] /= (s_arr[cc.hx, cc.rhx] * s_arr[cc.hy, cc.rhy] -
                           s_arr[cc.hx, cc.rhy] * s_arr[cc.hy, cc.rhx])
@@ -437,16 +436,16 @@ class Edi(object):
             # compute error only if scipy package exists
             if ssd_test is True:
                 # 68% Quantil of the Fisher distribution:
-                z_det = np.real(s_arr[cc.hx, cc.hx]*s_arr[cc.hy, cc.hy]-\
-                                    np.abs(s_arr[cc.hx, cc.hy]**2))
+                z_det = np.real(s_arr[cc.hx, cc.hx] * s_arr[cc.hy, cc.hy] - \
+                                np.abs(s_arr[cc.hx, cc.hy] ** 2))
 
-                sigma_quantil = ssd.f.ppf(0.68, 4, avgt_dict[key]-4)
+                sigma_quantil = ssd.f.ppf(0.68, 4, avgt_dict[key] - 4)
 
                 ## 1) Ex
-                a =  s_arr[cc.ex, cc.hx]*s_arr[cc.hy, cc.hy]-\
-                            s_arr[cc.ex, cc.hy]*s_arr[cc.hy, cc.hx]
-                b =  s_arr[cc.ex, cc.hy]*s_arr[cc.hx, cc.hx]- \
-                            s_arr[cc.ex, cc.hx]*s_arr[cc.hx, cc.hy]
+                a = s_arr[cc.ex, cc.hx] * s_arr[cc.hy, cc.hy] - \
+                    s_arr[cc.ex, cc.hy] * s_arr[cc.hy, cc.hx]
+                b = s_arr[cc.ex, cc.hy] * s_arr[cc.hx, cc.hx] - \
+                    s_arr[cc.ex, cc.hx] * s_arr[cc.hx, cc.hy]
                 a /= z_det
                 b /= z_det
 
@@ -454,13 +453,13 @@ class Edi(object):
                                       (a * s_arr[cc.hx, cc.ex] + b * s_arr[cc.hy, cc.ex]))
                 epsilon_squared = 1. - psi_squared
 
-                scaling = sigma_quantil * 4 / (avgt_dict[key] - 4.) *\
+                scaling = sigma_quantil * 4 / (avgt_dict[key] - 4.) * \
                           epsilon_squared / z_det * s_arr[cc.ex, cc.ex].real
-                z_err_arr[kk, 0, 0] = np.sqrt(scaling*s_arr[cc.hy, cc.hy].real)
-                z_err_arr[kk, 0, 1] = np.sqrt(scaling*s_arr[cc.hx, cc.hx].real)
+                z_err_arr[kk, 0, 0] = np.sqrt(scaling * s_arr[cc.hy, cc.hy].real)
+                z_err_arr[kk, 0, 1] = np.sqrt(scaling * s_arr[cc.hx, cc.hx].real)
 
                 # 2) EY
-                a = s_arr[cc.ey, cc.hx] * s_arr[cc.hy, cc.hy] -\
+                a = s_arr[cc.ey, cc.hx] * s_arr[cc.hy, cc.hy] - \
                     s_arr[cc.ey, cc.hy] * s_arr[cc.hy, cc.hx]
                 b = s_arr[cc.ey, cc.hy] * s_arr[cc.hx, cc.hx] - \
                     s_arr[cc.ey, cc.hx] * s_arr[cc.hx, cc.hy]
@@ -472,25 +471,25 @@ class Edi(object):
                                        b * s_arr[cc.hy, cc.ey]))
                 epsilon_squared = 1. - psi_squared
 
-                scaling = sigma_quantil * 4 / (avgt_dict[key] - 4.) *\
+                scaling = sigma_quantil * 4 / (avgt_dict[key] - 4.) * \
                           epsilon_squared / z_det * s_arr[cc.ey, cc.ey].real
-                z_err_arr[kk, 1, 0] = np.sqrt(scaling*s_arr[cc.hy, cc.hy].real)
-                z_err_arr[kk, 1, 1] = np.sqrt(scaling*s_arr[cc.hx, cc.hx].real)
+                z_err_arr[kk, 1, 0] = np.sqrt(scaling * s_arr[cc.hy, cc.hy].real)
+                z_err_arr[kk, 1, 1] = np.sqrt(scaling * s_arr[cc.hx, cc.hx].real)
 
             # if HZ information is present:
             if len(comp_list) > 5:
                 t_arr[kk, 0, 0] = s_arr[cc.hz, cc.rhx] * \
-                                  s_arr[cc.hy,cc.rhy] - s_arr[cc.hz, cc.rhy] *\
-                                  s_arr[cc.hy, cc.rhx]
+                                  s_arr[cc.hy, cc.rhy] - s_arr[cc.hz, cc.rhy] * \
+                                                         s_arr[cc.hy, cc.rhx]
                 t_arr[kk, 0, 1] = s_arr[cc.hz, cc.rhy] * \
-                                  s_arr[cc.hx, cc.rhx] - s_arr[cc.hz, cc.rhx]*\
-                                  s_arr[cc.hx, cc.rhy]
+                                  s_arr[cc.hx, cc.rhx] - s_arr[cc.hz, cc.rhx] * \
+                                                         s_arr[cc.hx, cc.rhy]
 
                 t_arr[kk] /= (s_arr[cc.hx, cc.rhx] * s_arr[cc.hy, cc.rhy] -
                               s_arr[cc.hx, cc.rhy] * s_arr[cc.hy, cc.rhx])
 
                 if ssd_test is True:
-                    a = s_arr[cc.hz, cc.hx] * s_arr[cc.hy, cc.hy] -\
+                    a = s_arr[cc.hz, cc.hx] * s_arr[cc.hy, cc.hy] - \
                         s_arr[cc.hz, cc.hy] * s_arr[cc.hy, cc.hx]
                     b = s_arr[cc.hz, cc.hy] * s_arr[cc.hx, cc.hx] - \
                         s_arr[cc.hz, cc.hx] * s_arr[cc.hx, cc.hy]
@@ -502,11 +501,11 @@ class Edi(object):
                                            b * s_arr[cc.hy, cc.hz]))
                     epsilon_squared = 1. - psi_squared
 
-                    scaling = sigma_quantil * 4 / (avgt_dict[key] - 4.) *\
-                            epsilon_squared / z_det * s_arr[cc.hz, cc.hz].real
-                    t_err_arr[kk, 0, 0] = np.sqrt(scaling*
+                    scaling = sigma_quantil * 4 / (avgt_dict[key] - 4.) * \
+                              epsilon_squared / z_det * s_arr[cc.hz, cc.hz].real
+                    t_err_arr[kk, 0, 0] = np.sqrt(scaling *
                                                   s_arr[cc.hy, cc.hy].real)
-                    t_err_arr[kk, 0, 1] = np.sqrt(scaling*
+                    t_err_arr[kk, 0, 1] = np.sqrt(scaling *
                                                   s_arr[cc.hx, cc.hx].real)
 
         # check for nans
@@ -527,8 +526,8 @@ class Edi(object):
         self.Tipper.tipper_err = t_err_arr
         self.Tipper.freq = freq_arr
         self.Tipper.rotation_angle = np.zeros_like(freq_arr)
-        self.Tipper._compute_amp_phase()
-        self.Tipper._compute_mag_direction()
+        self.Tipper.compute_amp_phase()
+        self.Tipper.compute_mag_direction()
 
     def write_edi_file(self, new_edi_fn=None):
         """
@@ -630,20 +629,20 @@ class Edi(object):
                 trot_lines = ['']
                 t_data_lines = ['']
 
-        edi_lines = header_lines +\
-            info_lines +\
-            define_lines +\
-            dsect_lines +\
-            freq_lines +\
-            zrot_lines +\
-            z_data_lines +\
-            trot_lines +\
-            t_data_lines + ['>END']
+        edi_lines = header_lines + \
+                    info_lines + \
+                    define_lines + \
+                    dsect_lines + \
+                    freq_lines + \
+                    zrot_lines + \
+                    z_data_lines + \
+                    trot_lines + \
+                    t_data_lines + ['>END']
 
         with open(new_edi_fn, 'w') as fid:
             fid.write(''.join(edi_lines))
 
-        logger.info('Wrote {0}'.format(new_edi_fn))
+        self._logger.info('Wrote {0}'.format(new_edi_fn))
         return new_edi_fn
 
     def _write_data_block(self, data_comp_arr, data_key):
@@ -660,11 +659,11 @@ class Edi(object):
         :rtype: list
         """
         if data_key.lower().find('z') >= 0 and \
-                data_key.lower() not in ['zrot', 'trot']:
+                        data_key.lower() not in ['zrot', 'trot']:
             block_lines = ['>{0} ROT=ZROT // {1:.0f}\n'.format(data_key.upper(),
                                                                data_comp_arr.size)]
         elif data_key.lower().find('t') >= 0 and \
-                data_key.lower() not in ['zrot', 'trot']:
+                        data_key.lower() not in ['zrot', 'trot']:
             block_lines = ['>{0} ROT=TROT // {1:.0f}\n'.format(data_key.upper(),
                                                                data_comp_arr.size)]
         elif data_key.lower() == 'freq':
@@ -696,7 +695,7 @@ class Edi(object):
 
         return block_lines
 
-    #-----------------------------------------------------------------------
+    # -----------------------------------------------------------------------
     # set a few important properties
     # --> Latitude
     @property
@@ -709,7 +708,7 @@ class Edi(object):
         """set latitude and make sure it is converted to a float"""
 
         self.Header.lat = gis_tools.assert_lat_value(input_lat)
-        logger.info('Converted input latitude to decimal degrees: {0: .6f}'.format(
+        self._logger.info('Converted input latitude to decimal degrees: {0: .6f}'.format(
             self.Header.lat))
 
     # --> Longitude
@@ -722,7 +721,7 @@ class Edi(object):
     def lon(self, input_lon):
         """set latitude and make sure it is converted to a float"""
         self.Header.lon = gis_tools.assert_lon_value(input_lon)
-        logger.info('Converted input longitude to decimal degrees: {0: .6f}'.format(
+        self._logger.info('Converted input longitude to decimal degrees: {0: .6f}'.format(
             self.Header.lon))
 
     # --> Elevation
@@ -750,11 +749,11 @@ class Edi(object):
         self.Header.dataid = new_station
         self.Data_sect.sectid = new_station
 
-#==============================================================================
-# Index finder
-#==============================================================================
-class index_locator(object):
 
+# ==============================================================================
+# Index finder
+# ==============================================================================
+class index_locator(object):
     def __init__(self, component_list):
         self.ex = None
         self.ey = None
@@ -767,9 +766,10 @@ class index_locator(object):
         for ii, comp in enumerate(component_list):
             setattr(self, comp, ii)
 
-#==============================================================================
+
+# ==============================================================================
 #  Header object
-#==============================================================================
+# ==============================================================================
 class Header(object):
     """
     Header class contains all the information in the header section of the .edi
@@ -789,6 +789,8 @@ class Header(object):
             LON=139:47:50
             PROGDATE=2002-04-22
             PROGVERS=WINGLINK EDI 1.0.22
+            COORDINATE SYSTEM = GEOGRAPHIC NORTH
+            DECLINATION = 10.0
 
 
     :param edi_fn: full path to .edi file to be read in.
@@ -804,7 +806,9 @@ class Header(object):
     ============== ======================================= ======== ===========
     acqby          Acquired by                             None     yes
     acqdate        Acquired date (YYYY-MM-DD)              None     yes
+    coordinate     [ geographic | geomagnetic ]            None     yes 
     dataid         Station name, should be a string        None     yes
+    declination    geomagnetic declination                 None     yes 
     edi_fn         Full path to .edi file                  None     no
     elev           Elevation of station (m)                None     yes
     empty          Value for missing data                  1e32     yes
@@ -830,7 +834,9 @@ class Header(object):
            change the items in _header_keys.  Default attributes are:
                * acqby
                * acqdate
+               * coordinate_system
                * dataid
+               * declination
                * elev
                * fileby
                * lat
@@ -858,6 +864,7 @@ class Header(object):
     """
 
     def __init__(self, edi_fn=None, **kwargs):
+        self._logger = MtPyLog.get_mtpy_logger(self.__class__.__name__)
         self.edi_fn = edi_fn
         self.edi_lines = None
         self.dataid = None
@@ -871,13 +878,14 @@ class Header(object):
         self.lat = None
         self.lon = None
         self.elev = None
-        self.units='M'
+        self.units = 'M'
         self.empty = 1E32
-        self.progvers = None
-        self.progdate = None
+        self.progvers = 'MTpy'
+        self.progdate = datetime.datetime.utcnow().strftime('%Y-%m-%d')
         self.project = None
         self.survey = None
         self.coordinate_system = 'Geomagnetic North'
+        self.declination = None
         self.datum = 'WGS84'
         self.phoenix_edi = False
 
@@ -896,6 +904,7 @@ class Header(object):
                              'progdate',
                              'progvers',
                              'coordinate_system',
+                             'declination',
                              'datum',
                              'project',
                              'survey']
@@ -913,7 +922,7 @@ class Header(object):
         """
 
         if self.edi_fn is None and self.edi_lines is None:
-            logger.info('No edi file to read.')
+            self._logger.info('No edi file to read.')
             return
 
         self.header_list = []
@@ -922,7 +931,7 @@ class Header(object):
         # read in file line by line
         if self.edi_fn is not None:
             if os.path.isfile(self.edi_fn) == False:
-                logger.info(
+                self._logger.info(
                     'Could not find {0}, check path'.format(
                         self.edi_fn))
             with open(self.edi_fn, 'r') as fid:
@@ -974,8 +983,8 @@ class Header(object):
             self.header_list = self._validate_header_list(header_list)
 
         if self.header_list is None and self.edi_fn is None and \
-                self.edi_lines is None:
-            logger.info('Nothing to read. header_list and edi_fn are None')
+                        self.edi_lines is None:
+            self._logger.info('Nothing to read. header_list and edi_fn are None')
 
         elif self.edi_fn is not None or self.edi_lines is not None:
             self.get_header_list()
@@ -996,8 +1005,13 @@ class Header(object):
             elif key in 'elevation':
                 key = 'elev'
                 value = gis_tools.assert_elevation_value(value)
+            elif key in 'declination':
+                try:
+                    value = float(value)
+                except (ValueError, TypeError):
+                    value = 0.0
 
-            #FZ: this elif condensed several key into loc.
+            # FZ: this elif condensed several key into loc.
             # elif key in ['country', 'state', 'loc', 'location', 'prospect']:
             #     key = 'loc'
             #     try:
@@ -1012,7 +1026,7 @@ class Header(object):
 
             elif key in ['fileby']:
                 if value == '':
-                    value = 'mtpy'
+                    value = 'MTpy'
 
             setattr(self, key, value)
 
@@ -1044,20 +1058,20 @@ class Header(object):
             self.get_header_list()
 
         header_lines = ['>HEAD\n']
-        #for key in sorted(self._header_keys):
-        for key in self._header_keys:  #FZ: NOT sorting
+        # for key in sorted(self._header_keys):
+        for key in self._header_keys:  # FZ: NOT sorting
             try:
                 value = getattr(self, key)
             except Exception, ex:
-                logger.debug("key value: %s %s %s", key,value, ex)
-                value=None
+                self._logger.debug("key value: %s %s %s", key, value, ex)
+                value = None
             if key in ['progdate', 'progvers']:
                 if value is None:
                     value = 'mtpy'
             elif key in ['lat', 'lon']:
                 value = gis_tools.convert_position_float2str(value)
 
-            if key in ['elev']:
+            if key in ['elev', 'declination']:
                 try:
                     value = '{0:.3f}'.format(value)
                 except ValueError:
@@ -1079,7 +1093,7 @@ class Header(object):
         """
 
         if header_list is None:
-            logger.info('No header information to read')
+            self._logger.info('No header information to read')
             return None
 
         new_header_list = []
@@ -1094,9 +1108,10 @@ class Header(object):
 
         return new_header_list
 
-#==============================================================================
+
+# ==============================================================================
 # Info object
-#==============================================================================
+# ==============================================================================
 class Information(object):
     """
     Contain, read, and write info section of .edi file
@@ -1108,6 +1123,7 @@ class Information(object):
     """
 
     def __init__(self, edi_fn=None, edi_lines=None):
+        self._logger = MtPyLog.get_mtpy_logger(self.__class__.__name__)
         self.edi_fn = edi_fn
         self.edi_lines = edi_lines
         self.info_list = None
@@ -1122,7 +1138,7 @@ class Information(object):
         """
 
         if self.edi_fn is None and self.edi_lines is None:
-            logger.info('no edi file input, check edi_fn attribute')
+            self._logger.info('no edi file input, check edi_fn attribute')
             return
 
         self.info_list = []
@@ -1132,7 +1148,7 @@ class Information(object):
 
         if self.edi_fn is not None:
             if os.path.isfile(self.edi_fn) is False:
-                logger.info(
+                self._logger.info(
                     'Could not find {0}, check path'.format(
                         self.edi_fn))
                 return
@@ -1144,10 +1160,14 @@ class Information(object):
             if '>' in line and 'info' in line.lower():
                 info_find = True
             elif '>' in line:
-                if info_find is True:
-                    break
-                else:
+                # need to check for xml type formating
+                if '<' in line:
                     pass
+                else:   
+                    if info_find is True:
+                        break
+                    else:
+                        pass
             elif info_find:
                 if line.lower().find('run information') >= 0:
                     phoenix_file = True
@@ -1177,9 +1197,22 @@ class Information(object):
         # make info items attributes of Information
         for ll in self.info_list:
             l_list = [None, '']
-            if ll.find(':') > 0:
+            # need to check if there is an = or : seperator, which ever
+            # comes first is assumed to be the delimiter
+            colon_find = ll.find(':')
+            if colon_find == -1:
+                colon_find = None
+            equals_find = ll.find('=')
+            if equals_find == -1:
+                equals_find = None
+            if colon_find is not None and equals_find is not None:
+                if colon_find < equals_find:
+                    l_list = ll.split(':')
+                else:
+                    l_list = ll.split('=')
+            elif colon_find is not None:
                 l_list = ll.split(':')
-            elif ll.find('=') > 0:
+            elif equals_find is not None:
                 l_list = ll.split('=')
             else:
                 l_list[0] = ll
@@ -1187,10 +1220,10 @@ class Information(object):
                 l_key = l_list[0]
                 l_value = l_list[1].strip()
                 self.info_dict[l_key] = l_value.replace('"', '')
-                #setattr(self, l_key, l_value)
+                # setattr(self, l_key, l_value)
 
         if self.info_list is None:
-            logger.info("Could not read information")
+            self._logger.info("Could not read information")
             return
 
     def write_info(self, info_list=None):
@@ -1226,9 +1259,10 @@ class Information(object):
 
         return new_info_list
 
-#==============================================================================
+
+# ==============================================================================
 #  Define measurement class
-#==============================================================================
+# ==============================================================================
 class DefineMeasurement(object):
     """
     DefineMeasurement class holds information about the measurement.  This
@@ -1299,6 +1333,7 @@ class DefineMeasurement(object):
     """
 
     def __init__(self, edi_fn=None, edi_lines=None):
+        self._logger = MtPyLog.get_mtpy_logger(self.__class__.__name__)
         self.edi_fn = edi_fn
         self.edi_lines = edi_lines
         self.measurement_list = None
@@ -1329,7 +1364,7 @@ class DefineMeasurement(object):
         get measurement list including measurement setup
         """
         if self.edi_fn is None and self.edi_lines is None:
-            logger.info('No edi file input, check edi_fn attribute')
+            self._logger.info('No edi file input, check edi_fn attribute')
             return
 
         self.measurement_list = []
@@ -1337,7 +1372,7 @@ class DefineMeasurement(object):
 
         if self.edi_fn is not None:
             if os.path.isfile(self.edi_fn) is False:
-                logger.info(
+                self._logger.info(
                     'Could not find {0}, check path'.format(
                         self.edi_fn))
                 return
@@ -1400,7 +1435,7 @@ class DefineMeasurement(object):
             self.get_measurement_lists()
 
         if self.measurement_list is None:
-            logger.info(
+            self._logger.info(
                 'Nothing to read, check edi_fn or measurement_list attributes')
             return
 
@@ -1472,7 +1507,7 @@ class DefineMeasurement(object):
         m_key_list = [(kk, self.__dict__[kk].id) for kk in self.__dict__.keys()
                       if kk.find('meas_') == 0]
         if len(m_key_list) == 0:
-            logger.info('No XMEAS information.')
+            self._logger.info('No XMEAS information.')
         else:
             # need to sort the dictionary by chanel id
             chn_count = 1
@@ -1491,7 +1526,7 @@ class DefineMeasurement(object):
                 for mkey, mfmt in zip(m_obj._kw_list, m_obj._fmt_list):
                     if mkey == 'acqchan':
                         if getattr(m_obj, mkey) is None or \
-                           getattr(m_obj, mkey) == 'None':
+                                        getattr(m_obj, mkey) == 'None':
                             setattr(m_obj, mkey, chn_count)
                             chn_count += 1
 
@@ -1523,9 +1558,10 @@ class DefineMeasurement(object):
 
         return meas_dict
 
-#==============================================================================
+
+# ==============================================================================
 # magnetic measurements
-#==============================================================================
+# ==============================================================================
 class HMeasurement(object):
     """
     HMeasurement contains metadata for a magnetic field measurement
@@ -1564,10 +1600,10 @@ class HMeasurement(object):
                 setattr(self, key, float(kwargs[key]))
             except ValueError:
                 setattr(self, key, kwargs[key])
-
-#==============================================================================
+        
+# ==============================================================================
 # electric measurements
-#==============================================================================
+# ==============================================================================
 class EMeasurement(object):
     """
     EMeasurement contains metadata for an electric field measurement
@@ -1597,7 +1633,7 @@ class EMeasurement(object):
     """
 
     def __init__(self, **kwargs):
-
+        self._logger = MtPyLog.get_mtpy_logger(self.__class__.__name__)
         self._kw_list = ['id', 'chtype', 'x', 'y', 'x2', 'y2', 'acqchan']
         self._fmt_list = ['<4.4g', '<3', '<4.1f', '<4.1f', '<4.1f', '<4.1f',
                           '<4']
@@ -1614,9 +1650,9 @@ class EMeasurement(object):
                 setattr(self, key, kwargs[key])
 
 
-#==============================================================================
+# ==============================================================================
 # data section
-#==============================================================================
+# ==============================================================================
 class DataSection(object):
     """
     DataSection contains the small metadata block that describes which channel
@@ -1664,6 +1700,7 @@ class DataSection(object):
         :param edi_fn:
         :param edi_lines:
         """
+        self._logger = MtPyLog.get_mtpy_logger(self.__class__.__name__)
         self.edi_fn = edi_fn
         self.edi_lines = edi_lines
 
@@ -1766,7 +1803,7 @@ class DataSection(object):
             self.read_data_sect(data_sect_list)
 
         self.data_type = 'z'
-        logger.info('Writing out data a impedances')
+        self._logger.info('Writing out data a impedances')
 
         data_sect_lines = ['\n>=mtsect\n'.upper()]
 
@@ -1824,7 +1861,7 @@ def _validate_str_with_equals(input_string):
 
     # probably not a good return
     if len(str_list) % 2 != 0:
-        logger.info(
+        _logger.info(
             'The number of entries in {0} is not even'.format(str_list))
         return str_list
 

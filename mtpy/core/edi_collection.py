@@ -11,9 +11,9 @@ from __future__ import print_function
 
 import csv
 import glob
-import logging
 import os
 import sys
+from logging import INFO
 
 import geopandas as gpd
 import matplotlib.pyplot as plt
@@ -21,15 +21,11 @@ import numpy as np
 import pandas as pd
 from shapely.geometry import Point  # , Polygon, LineString, LinearRing
 
-# import matplotlib as mpl
-# from mpl_toolkits.axes_grid1 import make_axes_locatable
 import mtpy.core.mt as mt
 import mtpy.imaging.mtplottools as mtplottools
 from mtpy.utils.decorator import deprecated
+from mtpy.utils.matplotlib_utils import gen_hist_bins
 from mtpy.utils.mtpylog import MtPyLog
-
-logger = MtPyLog().get_mtpy_logger(__name__)
-logger.setLevel(logging.DEBUG)
 
 
 def is_num_in_seq(anum, aseq, atol=0.0001):
@@ -66,10 +62,14 @@ class EdiCollection(object):
         eg: E:/Data/MT_Datasets/WenPingJiang_EDI 18528 rows vs 14654 rows
         """
 
+        #self._logger = MtPyLog.get_mtpy_logger(self.__class__.__name__)  # will be EdiCollection
+        self._logger = MtPyLog.get_mtpy_logger(__name__)  # __name__ will be  path.to.module OR __main__
+        self._logger.setLevel(INFO)
+
         if edilist is not None:
             self.edifiles = edilist
-            logger.info("number of edi files in this collection: %s",
-                        len(self.edifiles))
+            self._logger.info("number of edi files in this collection: %s",
+                         len(self.edifiles))
         elif mt_objs is not None:
             self.edifiles = [mt_obj.fn for mt_obj in mt_objs]
         assert len(self.edifiles) > 0
@@ -81,13 +81,13 @@ class EdiCollection(object):
 
         if edilist is not None:
             # if edilist is provided, always create MT objects from the list
-            logger.debug("constructing MT objects from edi files")
+            self._logger.debug("constructing MT objects from edi files")
             self.mt_obj_list = [mt.MT(edi) for edi in self.edifiles]
         elif mt_objs is not None:
             # use the supplied mt_objs
             self.mt_obj_list = list(mt_objs)
         else:
-            logger.error("None Edi file set")
+            self._logger.error("None Edi file set")
 
         # get all frequencies from all edi files
         self.all_frequencies = None
@@ -97,6 +97,13 @@ class EdiCollection(object):
         self.geopdf = self.create_mt_station_gdf()
 
         self.bound_box_dict = self.get_bounding_box()  # in orginal projection
+
+        # ensure that outdir is created if not exists.
+        if outdir is None:
+            #raise Exception("Error: OutputDir is not specified!!!")
+            pass
+        elif not os.path.exists(outdir):
+            os.mkdir(outdir)
 
         self.outdir = outdir
 
@@ -120,12 +127,12 @@ class EdiCollection(object):
         # use set to remove repeats and make an array
         self.all_frequencies = sorted(list(set(all_freqs)))
 
-        logger.debug("Number of MT Frequencies: %s", len(self.all_frequencies))
+        self._logger.debug("Number of MT Frequencies: %s", len(self.all_frequencies))
         all_periods = 1.0 / np.array(sorted(self.all_frequencies, reverse=True))
 
-        logger.debug("Type of all_periods %s", type(all_periods))
-        logger.info("Number of MT Periods: %s", len(all_periods))
-        logger.debug("Periods List: %s", str(all_periods))
+        self._logger.debug("Type of all_periods %s", type(all_periods))
+        self._logger.info("Number of MT Periods: %s", len(all_periods))
+        self._logger.debug("Periods List: %s", str(all_periods))
 
         return all_periods
 
@@ -151,7 +158,7 @@ class EdiCollection(object):
                 adict.update({aper: acount})
                 # print (aper, acount)
             else:
-                logger.info("Period=%s is excluded. it is from stations: %s ", aper, station_list)
+                self._logger.info("Period=%s is excluded. it is from stations: %s ", aper, station_list)
 
         mydict_ordered = sorted(
             adict.items(), key=lambda value: value[1], reverse=True)
@@ -162,6 +169,52 @@ class EdiCollection(object):
 
         print("Selected periods %s out of the total %s:" % (len(selected_periods), len(self.all_unique_periods)))
         return selected_periods
+
+    def select_periods(self, show=True, period_list=None, percentage=10.0):
+        """
+        FZ: Use edi_collection to analyse the whole set of EDI files
+        :param edifiles:
+        :return:
+        """
+
+        uniq_period_list = self.all_unique_periods  # filtered list of periods ?
+        print("Unique periods", len(uniq_period_list))
+
+        if show:
+            plt.figure()
+            plt.clf()
+            bins = gen_hist_bins(uniq_period_list)
+            plt.hist(self.mt_periods, bins=bins)
+            # plt.hist(self.mt_periods, bins=1000)
+            plt.title("Histogram with uniq_periods bins")
+            plt.xlabel("Periods")
+            plt.ylabel("Occurance in number of MT stations")
+            plt.show()
+
+        if period_list:
+            # 1 ASK user to input a Pmin and Pmax
+            # assume uniq_period_list is sorted
+            select_period_list = []
+            index_start = 0
+            for period in period_list:
+                for index in range(index_start, len(uniq_period_list)):
+                    if (isinstance(period, float) and np.isclose(uniq_period_list[index], period)) or \
+                            (isinstance(period, tuple) and period[0] <= uniq_period_list[index] <= period[1]):
+                        select_period_list.append(uniq_period_list[index])
+                    elif (isinstance(period, float) and uniq_period_list[index] > period) or \
+                            (isinstance(period, tuple) and period[1] < uniq_period_list[index]):
+                        index_start = index
+                        break
+                select_period_list = np.array(select_period_list)
+        else:
+            # 2 percetage stats
+            # select commonly occured frequencies from all stations.
+            # This could miss some slightly varied frequencies in the middle range.
+            select_period_list = np.array(self.get_periods_by_stats(percentage=percentage))
+
+        print("Selected periods ", len(select_period_list))
+
+        return select_period_list
 
     def create_mt_station_gdf(self, outshpfile=None):
         """
@@ -217,7 +270,7 @@ class EdiCollection(object):
 
         world = gpd.read_file(gpd.datasets.get_path('naturalearth_lowres'))
 
-        logger.debug(world.shape)
+        self._logger.debug(world.shape)
 
         myax = world.plot(alpha=0.5)
         # myax.set_xlim([149,150])
@@ -241,7 +294,7 @@ class EdiCollection(object):
         display/overlay the MT properties on a background geo-referenced map image
         :return:
         """
-        import examples.sandpit.plot_geotiff_imshow as plotegoimg
+        import mtpy.utils.plot_geotiff_imshow as plotegoimg
 
         myax = plotegoimg.plot_geotiff(
             geofile='data/PM_Gravity.tif', show=False)
@@ -258,6 +311,55 @@ class EdiCollection(object):
         plt.show()
 
         return myax2
+
+    def get_phase_tensor_tippers(self, period):
+        """
+        For a given MT period (s) value, compute the phase tensor and tippers etc.
+        :param period: MT_period (s)
+        :return: dictionary pt_dict_list
+
+        pt_dict keys ['station', 'freq', 'lon', 'lat', 'phi_min', 'phi_max', 'azimuth', 'skew', 'n_skew', 'elliptic',
+                      'tip_mag_re', 'tip_mag_im', 'tip_ang_re', 'tip_ang_im']
+        """
+
+        pt_dict_list = []
+        plot_per = period
+        #plot_per = self.all_unique_periods[1]  # test first
+
+        print("The plot period is ", plot_per)
+
+        for mt_obj in self.mt_obj_list:
+            pt_dict = {}
+            p_index = [ff for ff, f2 in enumerate(1.0/mt_obj.Z.freq)
+                       if (f2 > plot_per * (1 - self.ptol)) and
+                       (f2 < plot_per * (1 + self.ptol))]
+
+            if len(p_index) >= 1:
+                p_index = p_index[0]
+                pt_dict['station']=mt_obj.station
+                pt_dict['period'] =plot_per
+                pt_dict['lon'] = mt_obj.lon
+                pt_dict['lat'] = mt_obj.lat
+
+                pt_dict['phi_min'] = mt_obj.pt.phimin[p_index]
+                pt_dict['phi_max'] = mt_obj.pt.phimax[p_index]
+                pt_dict['azimuth']= mt_obj.pt.azimuth[p_index]
+                pt_dict['skew'] = mt_obj.pt.beta[p_index]
+                pt_dict['n_skew'] = 2 * mt_obj.pt.beta[p_index]
+                pt_dict['elliptic'] = mt_obj.pt.ellipticity[p_index]
+
+                pt_dict['tip_mag_re']= mt_obj.Tipper.mag_real[p_index]
+                pt_dict['tip_mag_im']= mt_obj.Tipper.mag_imag[p_index]
+                pt_dict['tip_ang_re']= mt_obj.Tipper.angle_real[p_index]
+                pt_dict['tip_ang_im']= mt_obj.Tipper.angle_imag[p_index]
+
+                pt_dict_list.append(pt_dict)
+            else:
+                self._logger.warn(" the period %s is NOT found for this station %s. Skipping!!!" % (plot_per, mt_obj.station))
+
+
+        return pt_dict_list
+
 
     def create_phase_tensor_csv(self, dest_dir, file_name="phase_tensor.csv"):
         """
@@ -287,7 +389,7 @@ class EdiCollection(object):
                     f_index_list = [ff for ff, f2 in enumerate(mt_obj.Z.freq)
                                     if (f2 > freq_min) and (f2 < freq_max)]
                     if len(f_index_list) > 1:
-                        logger.warn("more than one freq found %s", f_index_list)
+                        self._logger.warn("more than one freq found %s", f_index_list)
                     if len(f_index_list) >= 1:
                         p_index = f_index_list[0]
                         # geographic coord lat long and elevation
@@ -308,7 +410,7 @@ class EdiCollection(object):
 
                         ptlist.append(pt_stat)
                     else:
-                        logger.warn("Freq %s NOT found for this station %s", freq, mt_obj.station)
+                        self._logger.warn("Freq %s NOT found for this station %s", freq, mt_obj.station)
 
                 csv_freq_file = os.path.join(dest_dir,
                                              '{name[0]}_{freq}Hz{name[1]}'.format(
@@ -346,7 +448,7 @@ class EdiCollection(object):
         if dest_dir is None:
             dest_dir = self.outdir
         else:
-            logger.info("result will be in the dir %s", dest_dir)
+            self._logger.info("result will be in the dir %s", dest_dir)
             if not os.path.exists(dest_dir):
                 os.mkdir(dest_dir)
 
@@ -367,20 +469,18 @@ class EdiCollection(object):
             writer.writerow(csv_header)
 
         for freq in self.all_frequencies:
-
             mtlist = []
             for mt_obj in self.mt_obj_list:
-
-                f_index_list = [ff for ff, f2 in enumerate(mt_obj.Z.freq)
-                                if (f2 > freq * (1 - self.ptol)) and
-                                (f2 < freq * (1 + self.ptol))]
+                freq_max = freq * (1 + self.ptol)
+                freq_min = freq * (1 - self.ptol)
+                f_index_list = np.where((mt_obj.Z.freq < freq_max) & (mt_obj.Z.freq > freq_min))
                 if len(f_index_list) > 1:
-                    logger.warn("more than one freq found %s", f_index_list)
+                    self._logger.warn("more than one freq found %s", f_index_list)
 
                 if len(f_index_list) >= 1:
                     p_index = f_index_list[0]
 
-                    logger.debug("The freqs index %s", f_index_list)
+                    self._logger.debug("The freqs index %s", f_index_list)
                     # geographic coord lat long and elevation
                     # long, lat, elev = (mt_obj.lon, mt_obj.lat, 0)
                     station, lat, lon = (
@@ -410,7 +510,7 @@ class EdiCollection(object):
                     mtlist.append(mt_stat)
 
                 else:
-                    logger.warn(
+                    self._logger.warn(
                         'Freq %s NOT found for this station %s', freq, mt_obj.station)
 
             with open(csvfname, "ab") as csvf:  # summary csv for all freqs
@@ -447,23 +547,100 @@ class EdiCollection(object):
                  "MaxLon": tup[2],
                  "MaxLat": tup[3]}
 
-        logger.debug(bdict)
+        self._logger.debug(bdict)
 
         return bdict
 
-    def show_prop(self, dest_dir=None):
+    def get_station_utmzones_stats(self):
+        """A simple method to find what UTM zones these (edi files) MT stations belong to
+        are they in a single UTM zone, which corresponds to a unique EPSG code?
+        or do they belong to multiple UTM zones?
+        :return: a_dict like {UTMZone:Number_of_MT_sites}
         """
-        show all properties
+
+        def get_utm_zone(latitude, longitude):
+            zone_num = int(1 + (longitude + 180.0) / 6.0)
+
+            if latitude >= 0:
+                return "%s%s"%(zone_num,'N')
+            else:
+                return "%s%s"%(zone_num,'S')
+
+        utm_zones={}
+        for mt_obj in self.mt_obj_list:
+            utmz = get_utm_zone(mt_obj.lat, mt_obj.lon)
+            utm_zones[utmz] = utm_zones.get(utmz,0)+1
+
+        return utm_zones
+
+    def get_stations_distances_stats(self):
+        """ TODO:
+        get the min max statistics of the distances between stations.
+        useful for determining the ellipses tipper sizes etc
+        :return: dict={}
+        """
+        import math
+
+        mt_stations = []
+
+        for mtobj in self.mt_obj_list:
+            mt_stations.append( (mtobj.station, mtobj.lat, mtobj.lon,  mtobj.utm_zone) )
+
+        pdf = pd.DataFrame(mt_stations, columns=['Station', 'Lat', 'Lon',  'UtmZone'])
+
+        mt_distances = []
+        for i in xrange(len(pdf)):
+            xi=pdf.iloc[i]['Lat']
+            yi=pdf.iloc[i]['Lon']
+            for j in xrange(i+1, len(pdf)):
+                xj = pdf.iloc[j]['Lat']
+                yj = pdf.iloc[j]['Lon']
+                dist = math.sqrt((xi-xj)**2 + (yi - yj)**2)
+                mt_distances.append(dist)
+
+                if(dist <0.004): # 0.004 is about 400 meters
+                    self._logger.info("Small distances occurred between stations: %s %s", pdf.iloc[i].Station, pdf.iloc[j].Station)
+
+        # print (mt_distances)
+
+        anarray = pd.Series(mt_distances)
+        print(anarray.describe())
+
+        q01 = anarray.quantile(q=0.01)
+        q02 = anarray.quantile(q=0.02)
+        q03 = anarray.quantile(q=0.03)
+        q04 = anarray.quantile(q=0.04)
+        q05 = anarray.quantile(q=0.05)
+
+        self._logger.info("1,2,3,4 5 Percentile distances: %s, %s, %s, %s, %s", q01, q02,q03,q04,q05)
+
+        # anarray.plot()
+        # plt.show()
+
+        min_d = anarray.min()  # cold be very small due to two close stations, skew the result
+        max_d = anarray.max()
+        self._logger.debug("Minimum = %s", min_d )
+        self._logger.debug("Maximum = %s", max_d )
+
+        return {"MIN_DIST":min_d, "Q1PERCENT":q01, "Q2PERCENT":q02, "Q3PERCENT":q03, "MAX_DIST":max_d}
+
+    def show_obj(self, dest_dir=None):
+        """
+        test call object's methods and show it's properties
         :return:
         """
         print(len(self.all_unique_periods), 'unique periods (s)', self.all_unique_periods)
+
         print(len(self.all_frequencies),
               'unique frequencies (Hz)', self.all_frequencies)
 
         myper = obj.get_periods_by_stats(percentage=20)
+
         print(myper)
 
         print(self.bound_box_dict)
+
+        print(self.get_bounding_box(epsgcode=28353))
 
         if dest_dir is None:
             self.plot_stations(savefile= os.path.join(self.outdir,'edi_collection_test.jpg'))
@@ -472,27 +649,25 @@ class EdiCollection(object):
 
         # self.display_on_basemap()
 
-        self.display_on_image()
+        # self.display_on_image()
 
         # self.display_folium()
 
+        utmzones=self.get_station_utmzones_stats()
+
+        number_zones = len(utmzones.items())
+        self._logger.info("This Edi fileset has %s UTM Zone(s): %s ", number_zones, utmzones)
+
         return
 
-    def get_utm_zones(self):
-        """what UTM zones these (edi files) MT stations belong to?
-        are they in a single UTM zone, which corresponds to a unique EPSG code
-        :return: UTM Zone number  + S/N
-        """
-
-        return "55S"
-
+##################################################################
 if __name__ == "__main__":
 
     # python mtpy/core/edi_collection.py data/edifiles temp
     # python mtpy/core/edi_collection.py examples/data/edi2/ /e/tmp3/edi2_csv
 
-    if len(sys.argv) < 2:
-        print("\n  USAGE: %s edi_dir OR edi_list " % sys.argv[0])
+    if len(sys.argv) < 3:
+        print("\n  USAGE: %s edi_dir out_Dir" % sys.argv[0])
         sys.exit(1)
     else:
         argv1 = sys.argv[1]
@@ -509,12 +684,15 @@ if __name__ == "__main__":
 
         outdir = sys.argv[2]
 
-        obj.show_prop(dest_dir = outdir)
+        obj.show_obj(dest_dir = outdir)
 
-        print(obj.get_bounding_box(epsgcode=28353))
+        mt_distances = obj.get_stations_distances_stats()
+        min_dist = mt_distances.get("MIN_DIST")
+        max_dist = mt_distances.get("MAX_DIST")
+        print( mt_distances )
 
-        obj.create_phase_tensor_csv(outdir)
+        # obj.create_phase_tensor_csv(outdir)
+        #
+        # obj.create_measurement_csv(dest_dir= outdir)
 
         # obj.create_mt_station_gdf(os.path.join(outdir, 'edi_collection_test.shp'))
-        #
-        obj.create_measurement_csv(dest_dir= outdir)

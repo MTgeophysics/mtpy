@@ -7,6 +7,7 @@ Created on Sun Apr 13 12:32:16 2014
 
 @author: jrpeacock
 """
+import mtpy.modeling.modem
 from mtpy.utils.gis_tools import transform_ll_to_utm
 
 try:
@@ -306,8 +307,8 @@ class PTShapeFile(object):
 
             poly_list = []
 
-            print("period=", plot_per)
-            print(self.pt_dict.keys()) # (self.pt_dict[plot_per])['phimax'].size)
+#            print("period=", plot_per)
+#            print(self.pt_dict.keys()) # (self.pt_dict[plot_per])['phimax'].size)
             phi_max_val = self.pt_dict[plot_per]['phimax'].max()
 
 
@@ -400,13 +401,14 @@ class PTShapeFile(object):
 
         """
 
-        modem_obj = modem.Data()
+        modem_obj = mtpy.modeling.modem.Data()
         modem_obj.read_data_file(modem_data_fn)
 
         self.plot_period = modem_obj.period_list.copy()
         self.mt_obj_list = [modem_obj.mt_dict[key]
                             for key in modem_obj.mt_dict.keys()]
 
+        self._get_pt_array()
         self._set_rotation_angle(rotation_angle)
 
         self.write_shape_files()
@@ -420,7 +422,7 @@ class PTShapeFile(object):
         """
 
         # first get the data and response and place them in array for later use
-        modem_data_obj = modem.Data()
+        modem_data_obj = mtpy.modeling.modem.Data()
         modem_data_obj.read_data_file(modem_data_fn)
 
         self.plot_period = modem_data_obj.period_list.copy()
@@ -430,7 +432,7 @@ class PTShapeFile(object):
 
         self._set_rotation_angle(rotation_angle)
 
-        modem_resp_obj = modem.Data()
+        modem_resp_obj = mtpy.modeling.modem.Data()
         modem_resp_obj.read_data_file(modem_resp_fn)
 
         # rotate model response
@@ -459,11 +461,11 @@ class PTShapeFile(object):
                     mpt = modem_resp_obj.mt_dict[key].pt
 
                     pt_tuple = (mt_obj.station, east, north,
-                                mpt.phimin[0][p_index],
-                                mpt.phimax[0][p_index],
-                                mpt.azimuth[0][p_index],
-                                mpt.beta[0][p_index],
-                                2 * mpt.beta[0][p_index])
+                                mpt.phimin[p_index],
+                                mpt.phimax[p_index],
+                                mpt.azimuth[p_index],
+                                mpt.beta[p_index],
+                                2 * mpt.beta[p_index])
                 except KeyError:
                     pt_tuple = (mt_obj.station, east, north,
                                 0,
@@ -607,7 +609,7 @@ class PTShapeFile(object):
         """
 
         # first get the data and response and place them in array for later use
-        modem_data_obj = modem.Data()
+        modem_data_obj = mtpy.modeling.modem.Data()
         modem_data_obj.read_data_file(modem_data_fn)
 
         self.plot_period = modem_data_obj.period_list.copy()
@@ -617,7 +619,7 @@ class PTShapeFile(object):
 
         self._set_rotation_angle(rotation_angle)
 
-        modem_resp_obj = modem.Data()
+        modem_resp_obj = mtpy.modeling.modem.Data()
         modem_resp_obj.read_data_file(modem_resp_fn)
 
         # rotate model response
@@ -656,10 +658,10 @@ class PTShapeFile(object):
                     #                                          abs(rpt.pt[p_index, 1, 0])**2+
                     # abs(rpt.pt[p_index, 1, 1])**2)
                     pt_tuple = (mt_obj.station, east, north,
-                                rpt.phimin[0][p_index],
-                                rpt.phimax[0][p_index],
-                                rpt.azimuth[0][p_index],
-                                rpt.beta[0][p_index],
+                                rpt.phimin[p_index],
+                                rpt.phimax[p_index],
+                                rpt.azimuth[p_index],
+                                rpt.beta[p_index],
                                 rpt_mean)
                     #                                np.sqrt(abs(rpt.phimin[0][p_index]*
                     #                                            rpt.phimax[0][p_index])))
@@ -947,7 +949,7 @@ class TipperShapeFile(object):
         for plot_per in self.plot_period:
             self.tip_dict[plot_per] = []
             for mt_obj in self.mt_obj_list:
-                mt_obj.Tipper._compute_mag_direction()
+                mt_obj.Tipper.compute_mag_direction()
                 try:
                     p_index = [ff for ff, f2 in enumerate(1. / mt_obj.Z.freq)
                                if (f2 > plot_per * (1 - self.ptol)) and
@@ -1290,7 +1292,7 @@ class TipperShapeFile(object):
 
         """
 
-        modem_obj = modem.Data()
+        modem_obj = mtpy.modeling.modem.Data()
         modem_obj.read_data_file(modem_data_fn)
 
         self.plot_period = modem_obj.period_list.copy()
@@ -1309,10 +1311,10 @@ class TipperShapeFile(object):
         write residual tipper files for modem
 
         """
-        modem_data_obj = modem.Data()
+        modem_data_obj = mtpy.modeling.modem.Data()
         modem_data_obj.read_data_file(modem_data_fn)
 
-        modem_resp_obj = modem.Data()
+        modem_resp_obj = mtpy.modeling.modem.Data()
         modem_resp_obj.read_data_file(modem_resp_fn)
 
         self.plot_period = modem_data_obj.period_list.copy()
@@ -1573,7 +1575,7 @@ if __name__ == "__main__":
         create_phase_tensor_shpfiles(
             src_file_dir,
             dest_dir,
-            proj='WGS84', ellipse_size=1000, # UTM and size in meters. 1deg=100KM
+            proj='WGS84', ellipse_size=8000, # UTM and size in meters. 1deg=100KM
             #proj=None,  ellipse_size=0.01, # Lat-Long geographic coord and size in degree
             every_site=2,
             #period_list=[ 218.43599825251204, 218.43599825 ] # KeyError 218.43599825

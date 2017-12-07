@@ -21,7 +21,7 @@ class ImagingBase:
     __metaclass__ = abc.ABCMeta
 
     def __init__(self):
-        self._logger = MtPyLog().get_mtpy_logger(__name__)
+        self._logger = MtPyLog.get_mtpy_logger(self.__class__.__name__)
         self._data = None
         self._fig = None
 

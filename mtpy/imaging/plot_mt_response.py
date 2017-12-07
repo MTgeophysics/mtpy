@@ -1166,7 +1166,7 @@ class PlotMTResponse(object):
         if fig_dpi is None:
             fig_dpi = self.fig_dpi
 
-        if os.path.isdir(save_fn) == False:
+        if not os.path.isdir(save_fn):
             file_format = save_fn[-3:]
             self.fig.savefig(save_fn, fig_dpi=fig_dpi, format=file_format,
                              orientation=orientation)

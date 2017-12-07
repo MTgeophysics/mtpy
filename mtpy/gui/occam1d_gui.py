@@ -1,16 +1,24 @@
 # -*- coding: utf-8 -*-
 """
-Occam 1D
+Occam 1D GUI
 -----------------
 
 All encompassing ploting data, model and model response.
 
 
-JP 2015
+JP 2017
 """
 #
-
-from PyQt4 import QtCore, QtGui
+# =============================================================================
+# Imports
+# =============================================================================
+import os
+import sys
+try:
+    from PyQt5 import QtCore, QtGui, QtWidgets
+except ImportError:
+    raise ImportError("This version needs PyQt5")
+    
 import mtpy.modeling.occam1d as occam1d
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as NavigationToolbar
@@ -19,8 +27,7 @@ from matplotlib.ticker import MultipleLocator
 import matplotlib.gridspec as gridspec
 import numpy as np
 import matplotlib.pyplot as plt
-import os
-import sys
+
 
 class MyStream(QtCore.QObject):
     """
@@ -33,7 +40,7 @@ class MyStream(QtCore.QObject):
     def write(self, message):
         self.message.emit(str(message))
 
-class Occam1D_GUI(QtGui.QMainWindow):
+class Occam1D_GUI(QtWidgets.QMainWindow):
     def __init__(self):
         super(Occam1D_GUI, self).__init__()
         self.ms  = 5
@@ -91,18 +98,18 @@ class Occam1D_GUI(QtGui.QMainWindow):
         self.menu_model = self.menu_bar.addMenu("Model")
         self.menu_help = self.menu_bar.addMenu('Help')
 
-        help_action = QtGui.QAction('help doc', self)
+        help_action = QtWidgets.QAction('help doc', self)
         help_action.triggered.connect(self.display_help)
         self.menu_help.addAction(help_action)
 
         self.setMenuBar(self.menu_bar)
         # set the actions for the data file menu item
         # set an open option that on click opens an existing occam file
-        self.action_open_data = QtGui.QAction(self)
+        self.action_open_data = QtWidgets.QAction(self)
         self.action_open_data.setText("&Open")
         self.action_open_data.triggered.connect(self.get_data_file)
 
-        self.action_open_model = QtGui.QAction(self)
+        self.action_open_model = QtWidgets.QAction(self)
         self.action_open_model.setText("&Open")
         self.action_open_model.triggered.connect(self.get_model_file)
 
@@ -143,10 +150,10 @@ class Occam1D_GUI(QtGui.QMainWindow):
 
         help_string = '\n'.join(ll)
 
-        QtGui.QMessageBox.information(self.central_widget, 'Help', help_string)
+        QtWidgets.QMessageBox.information(self.central_widget, 'Help', help_string)
 
     def get_data_file(self):
-        fn_dialog = QtGui.QFileDialog()
+        fn_dialog = QtWidgets.QFileDialog()
         fn = str(fn_dialog.getOpenFileName(caption='Choose Occam 1D data file',
                                            filter='(*.dat);; (*.data)',
                                            directory=self.dir_path))
@@ -157,7 +164,7 @@ class Occam1D_GUI(QtGui.QMainWindow):
         self.occam_widget.save_dir = self.dir_path
 
     def get_model_file(self):
-        fn_dialog = QtGui.QFileDialog()
+        fn_dialog = QtWidgets.QFileDialog()
         fn = str(fn_dialog.getOpenFileName(caption='Choose Occam 1D model file',
                                            directory=self.dir_path))
 
@@ -166,7 +173,7 @@ class Occam1D_GUI(QtGui.QMainWindow):
 #==============================================================================
 # Occam 1D widget
 #==============================================================================
-class OccamWidget(QtGui.QWidget):
+class OccamWidget(QtWidgets.QWidget):
     """
     occam 1D widget
     """
@@ -209,119 +216,119 @@ class OccamWidget(QtGui.QWidget):
 
         #---------------------------------------------------
 
-        self.get_occam_path_button = QtGui.QPushButton('Occam1D Path')
+        self.get_occam_path_button = QtWidgets.QPushButton('Occam1D Path')
         self.get_occam_path_button.clicked.connect(self.get_occam_path)
 
-        self.get_occam_path_edit = QtGui.QLineEdit()
+        self.get_occam_path_edit = QtWidgets.QLineEdit()
         self.get_occam_path_edit.setText(self.occam_exec)
         self.get_occam_path_edit.editingFinished.connect(self.get_occam_path)
 
-        self.get_edi_button = QtGui.QPushButton('Get EDI File')
+        self.get_edi_button = QtWidgets.QPushButton('Get EDI File')
         self.get_edi_button.clicked.connect(self.get_edi_file)
 
-        self.get_edi_edit = QtGui.QLineEdit()
+        self.get_edi_edit = QtWidgets.QLineEdit()
         self.get_edi_edit.setText(self.edi_fn)
         self.get_edi_edit.editingFinished.connect(self.get_edi_file)
 
-        self.data_label = QtGui.QLabel('Data Parameters')
+        self.data_label = QtWidgets.QLabel('Data Parameters')
         self.data_label.setFont(label_font)
 
-        self.data_res_err_label = QtGui.QLabel('Res. Error (%)')
-        self.data_res_err_edit = QtGui.QLineEdit()
+        self.data_res_err_label = QtWidgets.QLabel('Res. Error (%)')
+        self.data_res_err_edit = QtWidgets.QLineEdit()
         self.data_res_err_edit.setText('{0:.2f}'.format(self.res_err))
         self.data_res_err_edit.editingFinished.connect(self.set_res_err)
 
-        self.data_phase_err_label = QtGui.QLabel('Phase Error (%)')
-        self.data_phase_err_edit = QtGui.QLineEdit()
+        self.data_phase_err_label = QtWidgets.QLabel('Phase Error (%)')
+        self.data_phase_err_edit = QtWidgets.QLineEdit()
         self.data_phase_err_edit.setText('{0:.2f}'.format(self.phase_err))
         self.data_phase_err_edit.editingFinished.connect(self.set_phase_err)
 
-        self.data_mode_label = QtGui.QLabel('Mode')
-        self.data_mode_combo = QtGui.QComboBox()
+        self.data_mode_label = QtWidgets.QLabel('Mode')
+        self.data_mode_combo = QtWidgets.QComboBox()
 
         self.data_mode_combo.addItem('Det')
         self.data_mode_combo.addItem('TE')
         self.data_mode_combo.addItem('TM')
         self.data_mode_combo.activated[str].connect(self.set_data_mode)
 
-        self.data_ss_button = QtGui.QPushButton('Apply Static Shift')
+        self.data_ss_button = QtWidgets.QPushButton('Apply Static Shift')
         self.data_ss_button.clicked.connect(self.apply_ss)
-        self.data_ss_edit = QtGui.QLineEdit()
+        self.data_ss_edit = QtWidgets.QLineEdit()
         self.data_ss_edit.setText('{0:.2f}'.format(self.ss))
         self.data_ss_edit.editingFinished.connect(self.set_ss)
 
-        self.data_rotate_label = QtGui.QLabel("Rotation Angle (N=0, E=90)")
-        self.data_rotate_edit = QtGui.QLineEdit('{0:.2f}'.format(self.rotation_angle))
+        self.data_rotate_label = QtWidgets.QLabel("Rotation Angle (N=0, E=90)")
+        self.data_rotate_edit = QtWidgets.QLineEdit('{0:.2f}'.format(self.rotation_angle))
         self.data_rotate_edit.editingFinished.connect(self.set_rotation_angle)
 
         # vertical layer parameters
-        self.model_label = QtGui.QLabel('Model Parameters')
+        self.model_label = QtWidgets.QLabel('Model Parameters')
         self.model_label.setFont(label_font)
 
-        self.n_layers_label = QtGui.QLabel('Number of Vertical Layers')
-        self.n_layers_edit = QtGui.QLineEdit()
+        self.n_layers_label = QtWidgets.QLabel('Number of Vertical Layers')
+        self.n_layers_edit = QtWidgets.QLineEdit()
         self.n_layers_edit.setText('{0:.0f}'.format(self.occam_model.n_layers))
         self.n_layers_edit.editingFinished.connect(self.set_n_layers)
 
-        self.z1_layer_label = QtGui.QLabel('Thicknes of 1st layer (m)')
-        self.z1_layer_edit = QtGui.QLineEdit()
+        self.z1_layer_label = QtWidgets.QLabel('Thicknes of 1st layer (m)')
+        self.z1_layer_edit = QtWidgets.QLineEdit()
         self.z1_layer_edit.setText('{0:.2f}'.format(self.occam_model.z1_layer))
         self.z1_layer_edit.editingFinished.connect(self.set_z1_layer)
 
-        self.z_target_label = QtGui.QLabel('Target Depth (m)')
-        self.z_target_edit = QtGui.QLineEdit()
+        self.z_target_label = QtWidgets.QLabel('Target Depth (m)')
+        self.z_target_edit = QtWidgets.QLineEdit()
         self.z_target_edit.setText('{0:.2f}'.format(self.occam_model.target_depth))
         self.z_target_edit.editingFinished.connect(self.set_z_target)
 
-        self.z_bottom_label = QtGui.QLabel('Bottom of the Model (m)')
-        self.z_bottom_edit = QtGui.QLineEdit()
+        self.z_bottom_label = QtWidgets.QLabel('Bottom of the Model (m)')
+        self.z_bottom_edit = QtWidgets.QLineEdit()
         self.z_bottom_edit.setText('{0:.2f}'.format(self.occam_model.bottom_layer))
         self.z_bottom_edit.editingFinished.connect(self.set_z_bottom)
 
         # starting resistivity
-        self.startup_label = QtGui.QLabel('Startup Parameters')
+        self.startup_label = QtWidgets.QLabel('Startup Parameters')
         self.startup_label.setFont(label_font)
 
-        self.start_rho_label = QtGui.QLabel('Starting rho (Ohmm)')
-        self.start_rho_edit = QtGui.QLineEdit()
+        self.start_rho_label = QtWidgets.QLabel('Starting rho (Ohmm)')
+        self.start_rho_edit = QtWidgets.QLineEdit()
         self.start_rho_edit.setText('{0:.2f}'.format(self.occam_startup.start_rho))
         self.start_rho_edit.editingFinished.connect(self.set_rho)
 
-        self.max_iter_label = QtGui.QLabel('Num of Iterations')
-        self.max_iter_edit = QtGui.QLineEdit()
+        self.max_iter_label = QtWidgets.QLabel('Num of Iterations')
+        self.max_iter_edit = QtWidgets.QLineEdit()
         self.max_iter_edit.setText('{0:.0f}'.format(self.occam_startup.max_iter))
         self.max_iter_edit.editingFinished.connect(self.set_max_iter)
 
-        self.target_rms_label = QtGui.QLabel('Target RMS')
-        self.target_rms_edit = QtGui.QLineEdit()
+        self.target_rms_label = QtWidgets.QLabel('Target RMS')
+        self.target_rms_edit = QtWidgets.QLineEdit()
         self.target_rms_edit.setText('{0:.2f}'.format(self.occam_startup.target_rms))
         self.target_rms_edit.editingFinished.connect(self.set_target_rms)
 
-        self.start_roughness_label = QtGui.QLabel('Starting Roughness')
-        self.start_roughness_edit = QtGui.QLineEdit()
+        self.start_roughness_label = QtWidgets.QLabel('Starting Roughness')
+        self.start_roughness_edit = QtWidgets.QLineEdit()
         self.start_roughness_edit.setText('{0:.2f}'.format(self.occam_startup.start_rough))
         self.start_roughness_edit.editingFinished.connect(self.set_start_rough)
 
-        self.start_lagrange_label = QtGui.QLabel('Starting Lagrange')
-        self.start_lagrange_edit = QtGui.QLineEdit()
+        self.start_lagrange_label = QtWidgets.QLabel('Starting Lagrange')
+        self.start_lagrange_edit = QtWidgets.QLineEdit()
         self.start_lagrange_edit.setText('{0:.2f}'.format(self.occam_startup.start_lagrange))
         self.start_lagrange_edit.editingFinished.connect(self.set_start_lagrange)
 
-        self.iter_combo_label = QtGui.QLabel('Plot Iteration')
-        self.iter_combo_edit = QtGui.QComboBox()
+        self.iter_combo_label = QtWidgets.QLabel('Plot Iteration')
+        self.iter_combo_edit = QtWidgets.QComboBox()
         self.iter_combo_edit.addItem('1')
         self.iter_combo_edit.activated[str].connect(self.set_iteration)
-        self.iter_combo_edit.setSizeAdjustPolicy(QtGui.QComboBox.AdjustToContents)
+        self.iter_combo_edit.setSizeAdjustPolicy(QtWidgets.QComboBox.AdjustToContents)
         self.iter_combo_edit.setMinimumWidth(50)
 
-        self.output_box = QtGui.QTextEdit()
+        self.output_box = QtWidgets.QTextEdit()
 
         #---set the layout---------------
-        path_layout = QtGui.QHBoxLayout()
+        path_layout = QtWidgets.QHBoxLayout()
         path_layout.addWidget(self.get_occam_path_button)
         path_layout.addWidget(self.get_occam_path_edit)
 
-        data_grid = QtGui.QGridLayout()
+        data_grid = QtWidgets.QGridLayout()
         data_grid.addWidget(self.data_label, 0, 0)
 
         data_grid.addWidget(self.data_res_err_label, 1, 0)
@@ -339,7 +346,7 @@ class OccamWidget(QtGui.QWidget):
         data_grid.addWidget(self.data_rotate_label, 5, 0)
         data_grid.addWidget(self.data_rotate_edit, 5, 1)
 
-        model_grid = QtGui.QGridLayout()
+        model_grid = QtWidgets.QGridLayout()
         model_grid.addWidget(self.model_label, 0, 0)
 
         model_grid.addWidget(self.n_layers_label, 1, 0)
@@ -355,7 +362,7 @@ class OccamWidget(QtGui.QWidget):
         model_grid.addWidget(self.z_bottom_edit, 4, 1)
 
 
-        startup_grid = QtGui.QGridLayout()
+        startup_grid = QtWidgets.QGridLayout()
         startup_grid.addWidget(self.startup_label, 0, 0)
 
         startup_grid.addWidget(self.target_rms_label, 1, 0)
@@ -373,25 +380,25 @@ class OccamWidget(QtGui.QWidget):
         startup_grid.addWidget(self.start_roughness_label, 5, 0)
         startup_grid.addWidget(self.start_roughness_edit, 5, 1)
 
-        run_button = QtGui.QPushButton()
+        run_button = QtWidgets.QPushButton()
         run_button.setText('Run')
         run_button.clicked.connect(self.run_occam)
 
-        run_button_edits = QtGui.QPushButton()
+        run_button_edits = QtWidgets.QPushButton()
         run_button_edits.setText('Run Edits')
         run_button_edits.clicked.connect(self.run_occam_edits)
 
-        run_layout = QtGui.QHBoxLayout()
+        run_layout = QtWidgets.QHBoxLayout()
         run_layout.addWidget(run_button)
         run_layout.addWidget(run_button_edits)
         run_layout.addWidget(self.iter_combo_label)
         run_layout.addWidget(self.iter_combo_edit)
 
-        edi_layout = QtGui.QHBoxLayout()
+        edi_layout = QtWidgets.QHBoxLayout()
         edi_layout.addWidget(self.get_edi_button)
         edi_layout.addWidget(self.get_edi_edit)
 
-        edit_layout = QtGui.QVBoxLayout()
+        edit_layout = QtWidgets.QVBoxLayout()
         edit_layout.addLayout(edi_layout)
         edit_layout.addLayout(data_grid)
         edit_layout.addLayout(model_grid)
@@ -400,20 +407,20 @@ class OccamWidget(QtGui.QWidget):
         edit_layout.addLayout(path_layout)
         edit_layout.addLayout(run_layout)
 
-        bottom_plot_layout = QtGui.QHBoxLayout()
+        bottom_plot_layout = QtWidgets.QHBoxLayout()
 #        bottom_plot_layout.addWidget(self.iter_combo_label)
 #        bottom_plot_layout.addWidget(self.iter_combo_edit)
         bottom_plot_layout.addWidget(self.l2_widget)
 
-        plot_layout = QtGui.QGridLayout()
+        plot_layout = QtWidgets.QGridLayout()
         plot_layout.addWidget(self.mpl_widget, 0, 0, 1, 1)
         plot_layout.addLayout(bottom_plot_layout, 2, 0, 2, 1)
 
-#        window_layout = QtGui.QHBoxLayout()
+#        window_layout = QtWidgets.QHBoxLayout()
 #        window_layout.addLayout(edit_layout)
 #        window_layout.addLayout(plot_layout)
 
-        window_grid = QtGui.QGridLayout()
+        window_grid = QtWidgets.QGridLayout()
         window_grid.addLayout(edit_layout, 0, 0, 1, 5)
         window_grid.addLayout(plot_layout, 0, 5, 1, 1)
 
@@ -426,7 +433,7 @@ class OccamWidget(QtGui.QWidget):
         get occam path
         """
 
-        occam_path_dialog = QtGui.QFileDialog()
+        occam_path_dialog = QtWidgets.QFileDialog()
         fn = str(occam_path_dialog.getOpenFileName(
                                         caption='Locate Occam1D executable'))
 
@@ -439,12 +446,12 @@ class OccamWidget(QtGui.QWidget):
         """
         if self.edi_fn is not '':
             edi_path = os.path.dirname(self.edi_fn)
-            edi_dialog = QtGui.QFileDialog()
+            edi_dialog = QtWidgets.QFileDialog()
             fn = str(edi_dialog.getOpenFileName(caption='Pick .edi file',
                                                 filter='*.edi',
                                                 directory=edi_path))
         else:
-            edi_dialog = QtGui.QFileDialog()
+            edi_dialog = QtWidgets.QFileDialog()
             fn = str(edi_dialog.getOpenFileName(caption='Pick .edi file',
                                                 filter='*.edi'))
         self.edi_fn = fn
@@ -607,7 +614,7 @@ class OccamWidget(QtGui.QWidget):
                                  'Looked for {0}'.format(self.occam_exec),
                                  'Click Occam1D button and rerun.'])
         if not os.path.isfile(self.occam_exec):
-            QtGui.QMessageBox.warning(self, "Warning", warning_txt)
+            QtWidgets.QMessageBox.warning(self, "Warning", warning_txt)
             return
 
         # run occam
@@ -711,7 +718,7 @@ class OccamWidget(QtGui.QWidget):
                                  'Looked for {0}'.format(self.occam_exec),
                                  'Click Occam1D button and rerun.'])
         if not os.path.isfile(self.occam_exec):
-            QtGui.QMessageBox.warning(self, "Warning", warning_txt)
+            QtWidgets.QMessageBox.warning(self, "Warning", warning_txt)
             return
 
         # run occam
@@ -775,7 +782,7 @@ class OccamWidget(QtGui.QWidget):
 #==============================================================================
 # Mesh Plot
 #==============================================================================
-class OccamPlot(QtGui.QWidget):
+class OccamPlot(QtWidgets.QWidget):
     """
     plotting the mesh
     """
@@ -844,14 +851,14 @@ class OccamPlot(QtGui.QWidget):
                                     wspace=self.subplot_wspace)
 
         #make sure the figure takes up the entire plottable space
-        self.mpl_widget.setSizePolicy(QtGui.QSizePolicy.Expanding,
-                                     QtGui.QSizePolicy.Expanding)
+        self.mpl_widget.setSizePolicy(QtWidgets.QSizePolicy.Expanding,
+                                     QtWidgets.QSizePolicy.Expanding)
 
         # this is the Navigation widget
         # it takes the Canvas widget and a parent
         self.mpl_toolbar = NavigationToolbar(self.mpl_widget, self)
         # set the layout for the plot
-        mpl_vbox = QtGui.QVBoxLayout()
+        mpl_vbox = QtWidgets.QVBoxLayout()
         mpl_vbox.addWidget(self.mpl_toolbar)
         mpl_vbox.addWidget(self.mpl_widget)
 
@@ -1290,7 +1297,7 @@ class OccamPlot(QtGui.QWidget):
 #==============================================================================
 # plot L2
 #==============================================================================
-class PlotL2(QtGui.QWidget):
+class PlotL2(QtWidgets.QWidget):
     """
     plot the l2 curve and it will be pickable for each iteration
     """
@@ -1341,14 +1348,14 @@ class PlotL2(QtGui.QWidget):
                                     top=self.subplot_top)
 
         #make sure the figure takes up the entire plottable space
-        self.l2_widget.setSizePolicy(QtGui.QSizePolicy.Expanding,
-                                     QtGui.QSizePolicy.Expanding)
+        self.l2_widget.setSizePolicy(QtWidgets.QSizePolicy.Expanding,
+                                     QtWidgets.QSizePolicy.Expanding)
 
         # this is the Navigation widget
         # it takes the Canvas widget and a parent
         self.mpl_toolbar = NavigationToolbar(self.l2_widget, self)
         # set the layout for the plot
-        mpl_vbox = QtGui.QVBoxLayout()
+        mpl_vbox = QtWidgets.QVBoxLayout()
         mpl_vbox.addWidget(self.mpl_toolbar)
         mpl_vbox.addWidget(self.l2_widget)
 
@@ -1496,7 +1503,7 @@ class PlotL2(QtGui.QWidget):
 def main():
 #if __name__ == "__main__":
     import sys
-    app = QtGui.QApplication(sys.argv)
+    app = QtWidgets.QApplication(sys.argv)
     ui = Occam1D_GUI()
     ui.show()
     sys.exit(app.exec_())

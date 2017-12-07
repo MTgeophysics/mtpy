@@ -339,7 +339,7 @@ class Survey_Config(object):
         self.e_xaxis_length = 100
         self.e_yaxis_azimuth = 90
         self.e_yaxis_length = 100
-        self.elevation = 2113.2
+        self.elevation = 0.0
         self.hx = 2324
         self.hy = 2314
         self.hz = 2334
@@ -828,6 +828,7 @@ class Z3D_to_edi(object):
                 self.survey_config.station = station
                 self.survey_config.location = zd.metadata.job_name
                 self.survey_config.network = zd.metadata.job_by
+                self.survey_config.elevation = zd.header.alt
         else:
             if self.survey_config.rr_lat is not None:
                 if self.survey_config.rr_lat != zd.header.lat:
@@ -850,6 +851,7 @@ class Z3D_to_edi(object):
                 self.survey_config.rr_date = zd.schedule.Date
                 self.survey_config.rr_box = int(zd.header.box_number)
                 self.survey_config.rr_station = station
+                self.survey_config.rr_elevation = zd.header.alt
 
         return return_fn_arr
         

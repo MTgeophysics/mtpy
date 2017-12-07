@@ -29,7 +29,7 @@ class PlotOption(QWidget):
         """
         QWidget.__init__(self, parent)
         self._parent = parent
-        self._logger = MtPyLog().get_mtpy_logger(__name__)
+        self._logger = MtPyLog.get_mtpy_logger(self.__class__.__name__)
         self.file_handler = file_handler
         self.selected_stations = selected_files
         self._current_plot = None

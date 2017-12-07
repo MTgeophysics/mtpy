@@ -10,7 +10,7 @@ from qtpy.QtTest import QTest
 
 from mtpy.core.mt import MT
 from mtpy.gui.SmartMT.gui.export_dialog_modem import ExportDialogModEm
-from tests import TEST_TEMP_DIR
+from tests import make_temp_dir
 
 
 def _fake_exec_accept():
@@ -31,8 +31,8 @@ edi_paths = [
     "data/edifiles",
     "examples/data/edi2",
     "examples/data/edi_files",
-    "../MT_Datasets/3D_MT_data_edited_fromDuanJM/",
-    "../MT_Datasets/GA_UA_edited_10s-10000s/",
+    "../MT_Datasets/3D_MT_data_edited_fromDuanJM",
+    "../MT_Datasets/GA_UA_edited_10s-10000s",
     "data/edifiles2"
 ]
 
@@ -41,7 +41,7 @@ class TestExportDialogModEm(TestCase):
     @classmethod
     def setUpClass(cls):
         # setup temp dir
-        cls._temp_dir = TEST_TEMP_DIR
+        cls._temp_dir = make_temp_dir(cls.__name__)
 
     def setUp(self):
         # create gui

@@ -16,8 +16,11 @@ if [ ! -d "gdal-$GDAL_VERSION" ]; then
     tar xfz "gdal-$GDAL_VERSION.tar.gz"
 fi
 pushd "gdal-$GDAL_VERSION"
-./configure --with-python --prefix=/usr/local/gdal
-make
+if [ ! -f "BUILT" ] || [ $1 == rebuilt ]; then
+    ./configure --with-python --prefix=/usr/local/gdal
+    make -j 4
+    touch BUILT
+fi
 sudo make install
 sudo ldconfig
 popd

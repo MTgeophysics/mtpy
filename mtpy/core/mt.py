@@ -10,6 +10,7 @@
 import numpy as np
 import os
 import time
+import warnings
 
 import mtpy.core.edi as MTedi
 import mtpy.core.z as MTz
@@ -19,33 +20,33 @@ import mtpy.analysis.distortion as MTdistortion
 import mtpy.core.jfile as MTj
 import mtpy.core.mt_xml as MTxml
 
-reload(MTz)
+from mtpy.utils.mtpylog import MtPyLog
+
+_logger = MtPyLog.get_mtpy_logger(__name__)
+# _logger.setLevel(logging.DEBUG)
 
 try:
     import scipy
-    scipy_version = int(scipy.__version__.replace('.', ''))
 
-    if scipy_version < 140:
-        print ('Note: need scipy version 0.14.0 or higher or interpolation ' +
-               'might not work.')
+    scipy_version = [int(ss) for ss in scipy.__version__.split('.')]
+    if scipy_version[0] == 0:
+        if scipy_version[1] < 14:
+            warnings.warn('Note: need scipy version 0.14.0 or higher or interpolation '
+                          'might not work.', ImportWarning)
+            _logger.warning('Note: need scipy version 0.14.0 or higher or interpolation '
+                            'might not work.')
     import scipy.interpolate as spi
+
     interp_import = True
 
-except ImportError:
-    print('Could not find scipy.interpolate, cannot use method interpolate' +
-          'check installation you can get scipy from scipy.org.')
+except ImportError:  # pragma: no cover
+    warnings.warn('Could not find scipy.interpolate, cannot use method interpolate'
+                       'check installation you can get scipy from scipy.org.')
+    _logger.warning('Could not find scipy.interpolate, cannot use method interpolate'
+                       'check installation you can get scipy from scipy.org.')
     interp_import = False
 
-import logging
-from mtpy.utils.mtpylog import MtPyLog
-
-logger = MtPyLog().get_mtpy_logger(__name__)
-logger.setLevel(logging.DEBUG)
-
-# ==============================================================================
-#==============================================================================
-
-
+# =============================================================================
 class MT(object):
     """
     Basic MT container to hold all information necessary for a MT station
@@ -137,7 +138,7 @@ class MT(object):
     """
 
     def __init__(self, fn=None, **kwargs):
-
+        self._logging = MtPyLog.get_mtpy_logger(self.__class__.__name__)
         # important information held in objects
         self.Site = Site()
         self.FieldNotes = FieldNotes()
@@ -160,9 +161,9 @@ class MT(object):
         for key in kwargs.keys():
             setattr(self, key, kwargs[key])
 
-    #==========================================================================
+    # ==========================================================================
     # get functions
-    #==========================================================================
+    # ==========================================================================
     @property
     def fn(self):
         """ reference to original data file"""
@@ -223,9 +224,9 @@ class MT(object):
         """mtpy.analysis.pt.PhaseTensor object to hold phase tensor"""
         return MTpt.PhaseTensor(z_object=self.Z)
 
-    #==========================================================================
+    # ==========================================================================
     # set functions
-    #==========================================================================
+    # ==========================================================================
     @lat.setter
     def lat(self, latitude):
         """
@@ -322,8 +323,8 @@ class MT(object):
 
         self._Tipper = t_object
         if self._Tipper is not None:
-            self._Tipper._compute_amp_phase()
-            self._Tipper._compute_mag_direction()
+            self._Tipper.compute_amp_phase()
+            self._Tipper.compute_mag_direction()
 
     @station.setter
     def station(self, station_name):
@@ -332,9 +333,9 @@ class MT(object):
         """
         self.Site.id = station_name
 
-    #==========================================================================
+    # ==========================================================================
     #  read in files
-    #==========================================================================
+    # ==========================================================================
     def read_mt_file(self, fn, file_type=None):
         """
         Read an MT response file.
@@ -430,7 +431,7 @@ class MT(object):
 
         return fn
 
-    #--> read in edi file
+    # --> read in edi file
     def _read_edi_file(self, edi_fn):
         """
         read in edi file and set attributes accordingly
@@ -444,17 +445,19 @@ class MT(object):
         edi_obj = MTedi.Edi(edi_fn=edi_fn)
 
         self._edi_get_site(edi_obj)
-        self._edi_get_field_notes(edi_obj)
-
+        
         # get info
         self.Notes = edi_obj.Info
         self._parse_notes()
-
+        
+        # get field notes
+        self._edi_get_field_notes(edi_obj)
+        
         self.Z = edi_obj.Z
         self.Tipper = edi_obj.Tipper
         self.station = edi_obj.station
 
-        #--> make sure things are ordered from high frequency to low
+        # --> make sure things are ordered from high frequency to low
         self._check_freq_order()
 
     def _edi_get_site(self, edi_obj):
@@ -472,6 +475,9 @@ class MT(object):
         self.Site.Location.datum = edi_obj.Header.datum
         self.Site.Location.elev_units = edi_obj.Define_measurement.units
         self.Site.Location.coordinate_system = edi_obj.Header.coordinate_system
+        self.Site.end_date = '{0}{1:02}'.format(self.Site.start_date[0:8],
+                                                  int(self.Site.start_date[-2:])+1)
+        self.Site.Location.declination = edi_obj.Header.declination
 
     def _edi_get_field_notes(self, edi_obj):
         """
@@ -545,8 +551,6 @@ class MT(object):
             self.FieldNotes.DataLogger = self.Notes.b_logger_type
         except AttributeError:
             pass
-
-
         # keep the edi object around, should be able to deprecate this later
         self._edi_obj = edi_obj
 
@@ -557,6 +561,10 @@ class MT(object):
 
         for a_key in self.Notes.info_dict.keys():
             a_value = self.Notes.info_dict[a_key]
+            try:
+                a_value = float(a_value)
+            except (ValueError, TypeError):
+                pass
             a_list = a_key.strip().lower().split('.')
             if a_key.find('mtft') == 0 or a_key.find('birrp') == 0:
                 a_list = ['processing'] + a_list
@@ -574,7 +582,7 @@ class MT(object):
                     cl_attr = a_list[count]
                     if cl_attr == 'dataquality':
                         cl_attr = 'DataQuality'
-                    if cl_attr == 'datalogger':
+                    elif cl_attr == 'datalogger':
                         cl_attr = 'DataLogger'
                     try:
                         obj = getattr(obj, cl_attr)
@@ -590,7 +598,7 @@ class MT(object):
                 setattr(obj, obj_attr, a_value)
                 self.Notes.info_dict.pop(a_key)
 
-    #--> write edi file
+    # --> write edi file
     def _write_edi_file(self, new_edi_fn, new_Z=None, new_Tipper=None):
         """
         write a new edi file if things have changed.  Note if new_Z or
@@ -662,12 +670,18 @@ class MT(object):
         header.loc = self.Site.project
         header.lon = self.lon
         header.project = self.Site.project
-        header.survey = self.Site.survey
+        if type(self.Site.survey) is list:
+            header.survey = ','.join(self.Site.survey)
+        else:
+            header.survey = self.Site.survey
         header.units = self.Site.Location.elev_units
+        header.declination = self.Site.Location.declination
+        header.progvers = 'MTpy'
+        header.progdate = time.strftime('%Y-%m-%d', time.gmtime())
 
         return header
 
-    #--> get information list for edi
+    # --> get information list for edi
     def _edi_set_info_list(self):
         """
         get the information for an edi file
@@ -687,7 +701,7 @@ class MT(object):
         for f_key in sorted(self.FieldNotes.__dict__.keys()):
             obj = getattr(self.FieldNotes, f_key)
             for t_key in sorted(obj.__dict__.keys()):
-                if t_key in ['_kw_list', '_fmt_list']:
+                if t_key in ['_kw_list', '_fmt_list', '_logger']:
                     continue
                 l_key = 'fieldnotes.{0}.{1}'.format(f_key.lower(),
                                                     t_key.lower())
@@ -698,12 +712,12 @@ class MT(object):
         for p_key in sorted(self.Processing.__dict__.keys()):
             if p_key.lower() == 'software':
                 for s_key in sorted(self.Processing.Software.__dict__.keys()):
-                    if s_key == 'author':
+                    if s_key.lower() == 'author':
                         for a_key in sorted(
-                                self.Processing.Software.author.__dict__.keys()):
-                            l_key = 'processing.software.Author.{0}'.format(
+                                self.Processing.Software.Author.__dict__.keys()):
+                            l_key = 'processing.software.author.{0}'.format(
                                 a_key)
-                            l_value = getattr(self.Processing.Software.author,
+                            l_value = getattr(self.Processing.Software.Author,
                                               a_key)
                             info_list.append('{0} = {1}'.format(l_key,
                                                                 l_value))
@@ -712,7 +726,8 @@ class MT(object):
                         l_value = getattr(self.Processing.Software, s_key)
                         info_list.append('{0} = {1}'.format(l_key,
                                                             l_value))
-            elif p_key.lower() == 'remotesite':
+            elif p_key.lower() == 'remotesite' and \
+                 self.Processing.RemoteSite.id is not None:
                 for s_key in sorted(
                         self.Processing.RemoteSite.__dict__.keys()):
                     if s_key == 'Location':
@@ -736,7 +751,8 @@ class MT(object):
 
         # get copyright information
         for c_key in sorted(self.Copyright.__dict__.keys()):
-            if c_key.lower() == 'citation':
+            if c_key.lower() == 'citation' and \
+               self.Copyright.Citation.author is not None:
                 for p_key in sorted(self.Copyright.Citation.__dict__.keys()):
                     l_key = 'copyright.citation.{0}'.format(p_key.lower())
                     l_value = getattr(self.Copyright.Citation, p_key)
@@ -744,6 +760,8 @@ class MT(object):
             else:
                 l_key = 'copyright.{0}'.format(c_key.lower())
                 l_value = getattr(self.Copyright, c_key)
+                if type(l_value) is list:
+                    l_value = ''.join(l_value)
                 info_list.append('{0} = {1}'.format(l_key, l_value))
 
         # get provenance
@@ -835,7 +853,7 @@ class MT(object):
 
         return sect
 
-    #--> check the order of frequencies
+    # --> check the order of frequencies
     def _check_freq_order(self):
         """
         check to make sure the Z and Tipper arrays are ordered such that
@@ -1081,7 +1099,7 @@ class MT(object):
                                 'author',
                                 d_obj.attr['author'])
                     if name == 'comments' and \
-                            f_attr.lower() == 'dataqualitywarnings':
+                                    f_attr.lower() == 'dataqualitywarnings':
                         name = 'warnings_' + name
                     value = d_obj.value
 
@@ -1236,6 +1254,9 @@ class MT(object):
         xml_obj.Site.Start.value = self.Site.start_date
         xml_obj.Site.End.value = self.Site.end_date
         xml_obj.Site.RunList.value = self.Site.run_list
+        xml_obj.Site.Orientation.value = 'geomagnetic'
+        xml_obj.Site.Orientation.attr = {'angle_to_geographic_north':\
+                                         '{0:.2f}'.format(self.Site.Location.declination)}
         xml_obj.Site.Location.Latitude.value = self.lat
         xml_obj.Site.Location.Longitude.value = self.lon
         xml_obj.Site.Location.Elevation.value = self.elev
@@ -1261,11 +1282,15 @@ class MT(object):
         xml_obj.FieldNotes.Dipole.Id.value = self.FieldNotes.Electrode_ex.id
         xml_obj.FieldNotes.Dipole.Manufacturer.value = self.FieldNotes.Electrode_ex.manufacturer
         xml_obj.FieldNotes.Dipole.attr = {'name': 'EX'}
-        length = np.sqrt((self.FieldNotes.Electrode_ex.x2 - self.FieldNotes.Electrode_ex.x)**2 +
-                         (self.FieldNotes.Electrode_ex.y2 - self.FieldNotes.Electrode_ex.y)**2)
+        
+        length = np.sqrt((self.FieldNotes.Electrode_ex.x2 - self.FieldNotes.Electrode_ex.x) ** 2 +
+                         (self.FieldNotes.Electrode_ex.y2 - self.FieldNotes.Electrode_ex.y) ** 2)
         xml_obj.FieldNotes.Dipole.Length.value = length
-        azm = np.arctan((self.FieldNotes.Electrode_ex.y2 - self.FieldNotes.Electrode_ex.y) /
-                        (self.FieldNotes.Electrode_ex.x2 - self.FieldNotes.Electrode_ex.x))
+        try:
+            azm = np.arctan((self.FieldNotes.Electrode_ex.y2 - self.FieldNotes.Electrode_ex.y) /
+                            (self.FieldNotes.Electrode_ex.x2 - self.FieldNotes.Electrode_ex.x))
+        except ZeroDivisionError:
+            azm = 0.0
         xml_obj.FieldNotes.Dipole.Azimuth.value = np.degrees(azm)
         xml_obj.FieldNotes.Dipole.Channel.value = self.FieldNotes.Electrode_ex.acqchan
 
@@ -1274,11 +1299,14 @@ class MT(object):
         xml_obj.FieldNotes.Dipole_00.Id.value = self.FieldNotes.Electrode_ey.id
         xml_obj.FieldNotes.Dipole_00.Manufacturer.value = self.FieldNotes.Electrode_ey.manufacturer
         xml_obj.FieldNotes.Dipole_00.attr = {'name': 'EY'}
-        length = np.sqrt((self.FieldNotes.Electrode_ey.x2 - self.FieldNotes.Electrode_ey.x)**2 +
-                         (self.FieldNotes.Electrode_ey.y2 - self.FieldNotes.Electrode_ey.y)**2)
+        length = np.sqrt((self.FieldNotes.Electrode_ey.x2 - self.FieldNotes.Electrode_ey.x) ** 2 +
+                         (self.FieldNotes.Electrode_ey.y2 - self.FieldNotes.Electrode_ey.y) ** 2)
         xml_obj.FieldNotes.Dipole_00.Length.value = length
-        azm = np.arctan((self.FieldNotes.Electrode_ey.y2 - self.FieldNotes.Electrode_ey.y) /
-                        (self.FieldNotes.Electrode_ey.x2 - self.FieldNotes.Electrode_ey.x))
+        try:
+            azm = np.arctan((self.FieldNotes.Electrode_ey.y2 - self.FieldNotes.Electrode_ey.y) /
+                            (self.FieldNotes.Electrode_ey.x2 - self.FieldNotes.Electrode_ey.x))
+        except ZeroDivisionError:
+            azm = 0.0
         xml_obj.FieldNotes.Dipole_00.Azimuth.value = np.degrees(azm)
         xml_obj.FieldNotes.Dipole_00.Channel.value = self.FieldNotes.Electrode_ey.acqchan
 
@@ -1328,7 +1356,7 @@ class MT(object):
 
         xml_obj.ProcessingInfo.ProcessedBy.value = self.Processing.processed_by
         xml_obj.ProcessingInfo.ProcessingSoftware.Name.value = self.Processing.Software.name
-        xml_obj.ProcessingInfo.ProcessingSoftware.Author.value = self.Processing.Software.author
+        xml_obj.ProcessingInfo.ProcessingSoftware.Author.value = self.Processing.Software.Author.name
         xml_obj.ProcessingInfo.ProcessingSoftware.Version.value = self.Processing.Software.version
 
         # TODO: Need to find a way to put in processing parameters.
@@ -1507,15 +1535,15 @@ class MT(object):
                 l_key = '{0}.{1}'.format(obj_name, obj_key)
 
                 if not isinstance(obj_attr, (str, float, int, list)) and \
-                   obj_attr is not None:
+                                obj_attr is not None:
                     for a_key in sorted(obj_attr.__dict__.keys()):
-                        if a_key in ['_kw_list', '_fmt_list']:
+                        if a_key in ['_kw_list', '_fmt_list', '_logger']:
                             continue
                         obj_attr_01 = getattr(obj_attr, a_key)
                         l_key = '{0}.{1}.{2}'.format(obj_name, obj_key, a_key)
                         if not isinstance(obj_attr_01, (str, float, int,
-                                                        list, np.float64)) and\
-                           obj_attr_01 is not None:
+                                                        list, np.float64)) and \
+                                        obj_attr_01 is not None:
                             for b_key in sorted(obj_attr_01.__dict__.keys()):
                                 obj_attr_02 = getattr(obj_attr_01, b_key)
                                 l_key = '{0}.{1}.{2}.{3}'.format(obj_name,
@@ -1645,32 +1673,31 @@ class MT(object):
         """
         # if the interpolation module has not been loaded return
         if interp_import is False:
-            print('could not interpolate, need to install scipy')
-            return
+            raise ImportError('could not interpolate, need to install scipy')
 
         # make sure the input is a numpy array
         if not isinstance(new_freq_array, np.ndarray):
             new_freq_array = np.array(new_freq_array)
 
-        floater= 0.00000001  #FZ: a small offset to avoid out-of-bound error in spi interpolation module.
-        logger.info("massage the new_freq_array's min and max to avoid out-of-bound interp")
-        minindex = np.argmin(new_freq_array)
-        maxindex = np.argmax(new_freq_array)
-        new_freq_array[minindex] = new_freq_array[minindex] + floater
-        new_freq_array[maxindex] = new_freq_array[maxindex] - floater
-
-        #logger.debug("new freq array %s", new_freq_array)
-
         # check the bounds of the new frequency array
         if bounds_error:
+            # YG: the commented block below seems no longer necessary.
+            # floater = 1.e-8  # FZ: a small offset to avoid out-of-bound error in spi interpolation module.
+            # self._logger.info("massage the new_freq_array's min and max to avoid out-of-bound interp")
+            # minindex = np.argmin(new_freq_array)
+            # maxindex = np.argmax(new_freq_array)
+            # new_freq_array[minindex] += floater
+            # new_freq_array[maxindex] -= floater
+
+            # logger.debug("new freq array %s", new_freq_array)
             if self.Z.freq.min() > new_freq_array.min():
-                raise ValueError('New frequency minimum of {0:.5g}'.format(new_freq_array.min())+\
-                                 ' is smaller than old frequency minimum of {0:.5g}'.format(self.Z.freq.min())+\
+                raise ValueError('New frequency minimum of {0:.5g}'.format(new_freq_array.min()) + \
+                                 ' is smaller than old frequency minimum of {0:.5g}'.format(self.Z.freq.min()) + \
                                  '.  The new frequency range needs to be within the ' +
                                  'bounds of the old one.')
             if self.Z.freq.max() < new_freq_array.max():
-                raise ValueError('New frequency maximum of {0:.5g}'.format(new_freq_array.max())+\
-                                 'is smaller than old frequency maximum of {0:.5g}'.format(self.Z.freq.max())+\
+                raise ValueError('New frequency maximum of {0:.5g}'.format(new_freq_array.max()) + \
+                                 'is smaller than old frequency maximum of {0:.5g}'.format(self.Z.freq.max()) + \
                                  '.  The new frequency range needs to be within the ' +
                                  'bounds of the old one.')
 
@@ -1751,13 +1778,12 @@ class MT(object):
             new_f = new_freq_array[new_nz_index]
 
             # interpolate onto new frequency range
-            new_Tipper.tipper[new_nz_index, 0, jj] = t_func_real(new_f) +\
-                1j * t_func_imag(new_f)
+            new_Tipper.tipper[new_nz_index, 0, jj] = t_func_real(new_f) + \
+                                                     1j * t_func_imag(new_f)
 
             new_Tipper.tipper_err[new_nz_index, 0, jj] = t_func_err(new_f)
 
         return new_Z, new_Tipper
-
 
     def plot_mt_response(self, **kwargs):
         """
@@ -1783,9 +1809,10 @@ class MT(object):
         return plot_obj
         # raise NotImplementedError
 
-#==============================================================================
+
+# ==============================================================================
 # Site details
-#==============================================================================
+# ==============================================================================
 
 
 class Site(object):
@@ -1817,7 +1844,6 @@ class Site(object):
     """
 
     def __init__(self, **kwargs):
-
         self.acquired_by = None
         self.end_date = None
         self.id = None
@@ -1831,9 +1857,10 @@ class Site(object):
         for key in kwargs.keys():
             setattr(self, key, kwargs[key])
 
-#==============================================================================
+
+# ==============================================================================
 # Location class, be sure to put locations in decimal degrees, and note datum
-#==============================================================================
+# ==============================================================================
 
 
 class Location(object):
@@ -1935,9 +1962,10 @@ class Location(object):
         self.latitude = ll_point[0]
         self.longitude = ll_point[1]
 
-#==============================================================================
+
+# ==============================================================================
 # Field Notes
-#==============================================================================
+# ==============================================================================
 
 
 class FieldNotes(object):
@@ -1985,9 +2013,9 @@ class FieldNotes(object):
             setattr(self, key, kwargs[key])
 
 
-#==============================================================================
+# ==============================================================================
 # Instrument
-#==============================================================================
+# ==============================================================================
 class Instrument(object):
     """
     Information on an instrument that was used.
@@ -2015,9 +2043,10 @@ class Instrument(object):
         for key in kwargs.keys():
             setattr(self, key, kwargs[key])
 
-#==============================================================================
+
+# ==============================================================================
 # Data Quality
-#==============================================================================
+# ==============================================================================
 
 
 class DataQuality(object):
@@ -2055,9 +2084,9 @@ class DataQuality(object):
             setattr(self, key, kwargs[key])
 
 
-#==============================================================================
+# ==============================================================================
 # Citation
-#==============================================================================
+# ==============================================================================
 class Citation(object):
     """
     Information for a citation.
@@ -2091,9 +2120,9 @@ class Citation(object):
             setattr(self, key, kwargs[key])
 
 
-#==============================================================================
+# ==============================================================================
 # Copyright
-#==============================================================================
+# ==============================================================================
 class Copyright(object):
     """
     Information of copyright, mainly about how someone else can use these
@@ -2136,9 +2165,10 @@ class Copyright(object):
         for key in kwargs.keys():
             setattr(self, key, kwargs[key])
 
-#==============================================================================
+
+# ==============================================================================
 # Provenance
-#==============================================================================
+# ==============================================================================
 
 
 class Provenance(object):
@@ -2163,7 +2193,6 @@ class Provenance(object):
     """
 
     def __init__(self, **kwargs):
-
         self.creation_time = time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime())
         self.creating_application = 'MTpy'
         self.Creator = Person()
@@ -2172,9 +2201,10 @@ class Provenance(object):
         for key in kwargs.keys():
             setattr(self, key, kwargs[key])
 
-#==============================================================================
+
+# ==============================================================================
 # Person
-#==============================================================================
+# ==============================================================================
 
 
 class Person(object):
@@ -2206,9 +2236,10 @@ class Person(object):
         for key in kwargs.keys():
             setattr(self, key, kwargs[key])
 
-#==============================================================================
+
+# ==============================================================================
 # Processing
-#==============================================================================
+# ==============================================================================
 
 
 class Processing(object):
@@ -2255,9 +2286,11 @@ class Software(object):
 
         for key in kwargs:
             setattr(self, key, kwargs[key])
-#==============================================================================
+
+
+# ==============================================================================
 #             Error
-#==============================================================================
+# ==============================================================================
 
 
 class MT_Error(Exception):
