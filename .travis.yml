@@ -28,6 +28,7 @@ env:
 stages:
   - name: prepare cache
   - test
+  - name: GUI Tests
 
 jobs:
   include:
@@ -48,6 +49,11 @@ jobs:
       env:
         - MATPLOTLIB_VERSION=1.5.3 QT_VERSION=5
 #    - stage: test
+    - stage: GUI Tests
+      script: . ./bin/travis-test-gui.sh
+      env:
+        - MATPLOTLIB_VERSION=2.0.2 QT_VERSION=5
+        - MATPLOTLIB_VERSION=2.0.2 QT_VERSION=4
 #    - stage: deploy
 
 before_script:
@@ -55,11 +61,6 @@ before_script:
 
 script: # testing stages, will run only in testing stages
   - MTPY_TEST_COMPARE_IMAGE=False py.test -v -n4 --dist=loadscope --cov=mtpy --cov-report= tests --ignore=tests/SmartMT
-  #  test gui
-  - "export DISPLAY=:99.0"  # enable display on travis
-  - "sh -e /etc/init.d/xvfb start"
-  - sleep 3 # give xvfb some time to start
-  - py.test -v --cov=mtpy --cov-append --cov-report= tests/SmartMT
 
 after_success:
   - coveralls
