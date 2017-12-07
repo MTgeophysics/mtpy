@@ -4,7 +4,7 @@ from tests.SmartMT import SmartMTGUITestCase, _click_area
 
 class TestGUIPlotMultipleMTResponse(SmartMTGUITestCase):
     def test_multiple_mt_response_compare_type_1(self):
-        plot_config = self._switch_to_plot(MultipleMTResponses) # type: MultipleMTResponses
+        plot_config = self._switch_to_plot(MultipleMTResponses, 2) # type: MultipleMTResponses
         _click_area(plot_config._plot_control_ui.ui.radioButton_1, pos=self._pos_check_box)
         _click_area(plot_config._plot_control_ui.ui.checkBox_skew, pos=self._pos_check_box)
         _click_area(plot_config._plot_control_ui.ui.checkBox_pt, pos=self._pos_check_box)
@@ -18,7 +18,7 @@ class TestGUIPlotMultipleMTResponse(SmartMTGUITestCase):
         self._plot(60000)  # this complete image could take very long time to plot
 
     def test_multiple_mt_response_compare_type_2(self):
-        plot_config = self._switch_to_plot(MultipleMTResponses) # type: MultipleMTResponses
+        plot_config = self._switch_to_plot(MultipleMTResponses, 2) # type: MultipleMTResponses
         _click_area(plot_config._plot_control_ui.ui.radioButton_2, pos=self._pos_check_box)
         _click_area(plot_config._plot_control_ui.ui.checkBox_skew, pos=self._pos_check_box)
         _click_area(plot_config._plot_control_ui.ui.checkBox_pt, pos=self._pos_check_box)
@@ -32,7 +32,7 @@ class TestGUIPlotMultipleMTResponse(SmartMTGUITestCase):
         self._plot(60000)  # this complete image could take very long time to plot
 
     def test_multiple_mt_response_compare_type_3(self):
-        plot_config = self._switch_to_plot(MultipleMTResponses) # type: MultipleMTResponses
+        plot_config = self._switch_to_plot(MultipleMTResponses, 2) # type: MultipleMTResponses
         _click_area(plot_config._plot_control_ui.ui.radioButton_3, pos=self._pos_check_box)
         _click_area(plot_config._plot_control_ui.ui.checkBox_skew, pos=self._pos_check_box)
         _click_area(plot_config._plot_control_ui.ui.checkBox_pt, pos=self._pos_check_box)
@@ -47,7 +47,7 @@ class TestGUIPlotMultipleMTResponse(SmartMTGUITestCase):
 
 
     def test_multiple_mt_response_all_type_1(self):
-        plot_config = self._switch_to_plot(MultipleMTResponses) # type: MultipleMTResponses
+        plot_config = self._switch_to_plot(MultipleMTResponses, 2) # type: MultipleMTResponses
         _click_area(plot_config._plot_control_ui.ui.radioButton_all)
         _click_area(plot_config._plot_control_ui.ui.radioButton_1, pos=self._pos_check_box)
         _click_area(plot_config._plot_control_ui.ui.checkBox_skew, pos=self._pos_check_box)
@@ -62,7 +62,7 @@ class TestGUIPlotMultipleMTResponse(SmartMTGUITestCase):
         self._plot(60000)  # this complete image could take very long time to plot
 
     def test_multiple_mt_response_all_type_2(self):
-        plot_config = self._switch_to_plot(MultipleMTResponses) # type: MultipleMTResponses
+        plot_config = self._switch_to_plot(MultipleMTResponses, 2) # type: MultipleMTResponses
         _click_area(plot_config._plot_control_ui.ui.radioButton_all)
         _click_area(plot_config._plot_control_ui.ui.radioButton_2, pos=self._pos_check_box)
         _click_area(plot_config._plot_control_ui.ui.checkBox_skew, pos=self._pos_check_box)
@@ -77,7 +77,7 @@ class TestGUIPlotMultipleMTResponse(SmartMTGUITestCase):
         self._plot(60000)  # this complete image could take very long time to plot
 
     def test_multiple_mt_response_all_type_3(self):
-        plot_config = self._switch_to_plot(MultipleMTResponses) # type: MultipleMTResponses
+        plot_config = self._switch_to_plot(MultipleMTResponses, 2) # type: MultipleMTResponses
         _click_area(plot_config._plot_control_ui.ui.radioButton_all)
         _click_area(plot_config._plot_control_ui.ui.radioButton_3, pos=self._pos_check_box)
         _click_area(plot_config._plot_control_ui.ui.checkBox_skew, pos=self._pos_check_box)

@@ -65,12 +65,20 @@ class SmartMTGUITestCase(TestCase):
         QTest.qWaitForWindowActive(self.smartMT)
         print(matplotlib.get_backend())
 
-    def _switch_to_plot(self, plot_type=VisualizationBase):
+    def _switch_to_plot(self, plot_type=VisualizationBase, num_stations='all'):
         name = plot_type.plot_name()
         # load some data
         self._load_data()
         # set the loaded data to be plotted
-        self.smartMT._station_viewer.ui.treeWidget_stations.selectAll()
+        if num_stations == 'all': # select all stations for visualization
+            self.smartMT._station_viewer.ui.treeWidget_stations.selectAll()
+        else:
+            # select maximum n stations for visualization to reduce the time of creating some complex plots
+            item = self.smartMT._station_viewer.ui.treeWidget_stations.invisibleRootItem()
+            item = item.child(0)  # get the first group of the stations
+            for i in range(min(num_stations, item.childCount())):  # select the first n or all stations if n > num of stations
+                child = item.child(i)
+                child.setSelected(True)
         self.smartMT._station_viewer.item_selection_changed()
         _click_area(self.smartMT._station_viewer.ui.pushButton_plot)  # trigger plot widget
         self.assertTrue(self.smartMT.ui.stackedWidget.currentIndex() == 1)
