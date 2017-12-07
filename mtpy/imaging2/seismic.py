@@ -21,7 +21,7 @@ from collections import defaultdict
 from scipy.interpolate import interp1d
 from scipy.integrate import quad
 from scipy.spatial import cKDTree
-import numpy as np
+import numpy
 from obspy.io.segy import segy
 
 class Segy:
@@ -59,20 +59,20 @@ class Segy:
 
         self._ntraces = len(self._sf.traces)
 
-        self._ns = np.array(self._ns)
-        self._ls = np.array(self._ls)
-        self._xs = np.array(self._xs)
-        self._ys = np.array(self._ys)
-        self._cdps = np.array(self._cdps)
-        self._station_space = np.sqrt((self._xs[:-1] - self._xs[1:])**2 + (self._ys[:-1] - self._ys[1:])**2)
-        self._dist = np.array([np.sum(self._station_space[:i]) for i in range(len(self._station_space))]) # compute euclidean distance along profile
-        self._ts = np.linspace(0, np.max(self._ls), np.max(self._ns))
+        self._ns = numpy.array(self._ns)
+        self._ls = numpy.array(self._ls)
+        self._xs = numpy.array(self._xs)
+        self._ys = numpy.array(self._ys)
+        self._cdps = numpy.array(self._cdps)
+        self._station_space = numpy.sqrt((self._xs[:-1] - self._xs[1:])**2 + (self._ys[:-1] - self._ys[1:])**2)
+        self._dist = numpy.array([numpy.sum(self._station_space[:i]) for i in range(len(self._station_space))]) # compute euclidean distance along profile
+        self._ts = numpy.linspace(0, numpy.max(self._ls), numpy.max(self._ns))
 
-        self._mtraces = np.array(self._mtraces)
-        self._mt, self._md = np.meshgrid(self._ts, self._dist)  # mesh grid of distance and time
-        self._mt, self._mc = np.meshgrid(self._ts, self._cdps)  # mesh grid of cdp and time
+        self._mtraces = numpy.array(self._mtraces)
+        self._mt, self._md = numpy.meshgrid(self._ts, self._dist)  # mesh grid of distance and time
+        self._mt, self._mc = numpy.meshgrid(self._ts, self._cdps)  # mesh grid of cdp and time
 
-        self._dist -= np.min(self._dist)  # distance along profile starts from 0
+        self._dist -= numpy.min(self._dist)  # distance along profile starts from 0
     # end func
 
     def getDistances(self):
@@ -103,8 +103,8 @@ class Segy:
 
         if(key not in ['trace', 'x', 'y', 'cdp', 'ts']):
             assert 0, "Invalid key; should be one of ['trace', 'x', 'y', 'cdp', 'ts']"
-        if (dist <= np.max(self._dist)):
-            idx = np.argmin(np.fabs(self._dist - dist))
+        if (dist <= numpy.max(self._dist)):
+            idx = numpy.argmin(numpy.fabs(self._dist - dist))
 
             if (key == 'trace'): return self._mtraces[idx, :]
             elif (key == 'x'): return self._xs[idx]
@@ -143,8 +143,8 @@ class Segy:
 
         assert type(velocity_model) != VelocityModel, 'Type mismatch, should be of type VelocityModel'
 
-        mdepths, mdistances = np.meshgrid(depths, distances)
-        mvals = np.zeros(mdepths.shape)
+        mdepths, mdistances = numpy.meshgrid(depths, distances)
+        mvals = numpy.zeros(mdepths.shape)
 
         for idist, dist in enumerate(distances):
 
@@ -195,12 +195,12 @@ class VelocityModel:
                 cdp = line.split()[1]
                 self._cdps.append(cdp)
                 if (len(tempList)):
-                    tempList = np.int_(np.array(tempList))
+                    tempList = numpy.int_(numpy.array(tempList))
                     self._times.append(tempList[::2] / 1e3)
                     self._vels.append(tempList[1::2])
                     tempList = []
             elif ('END' in line):
-                tempList = np.int_(np.array(tempList))
+                tempList = numpy.int_(numpy.array(tempList))
                 self._times.append(tempList[::2] / 1e3)
                 self._vels.append(tempList[1::2])
             else:
@@ -210,10 +210,10 @@ class VelocityModel:
                         tempList.append(i)
         # end for
         f.close()
-        self._cdps = np.int_(self._cdps)
+        self._cdps = numpy.int_(self._cdps)
 
         # Create Kd-Tree for CDP queries
-        cdpArray = np.expand_dims(self._cdps, 1)
+        cdpArray = numpy.expand_dims(self._cdps, 1)
         self._cdp_tree = cKDTree(cdpArray)
 
         # generate depth model
@@ -229,7 +229,7 @@ class VelocityModel:
         :return: returns corresponding interval velocity
         '''
 
-        idx = np.argmax(np.logical_and(t >= self._intStarts[cdp], t < self._intEnds[cdp]))
+        idx = numpy.argmax(numpy.logical_and(t >= self._intStarts[cdp], t < self._intEnds[cdp]))
         return self._intVels[cdp][idx]
     # end func
 
@@ -247,18 +247,18 @@ class VelocityModel:
                 self._intStarts[cdp].append(self._times[icdp][i])
                 self._intEnds[cdp].append(self._times[icdp][i + 1])
             # end for
-            self._intVels[cdp] = np.array(self._intVels[cdp])
-            self._intStarts[cdp] = np.array(self._intStarts[cdp])
-            self._intEnds[cdp] = np.array(self._intEnds[cdp])
+            self._intVels[cdp] = numpy.array(self._intVels[cdp])
+            self._intStarts[cdp] = numpy.array(self._intStarts[cdp])
+            self._intEnds[cdp] = numpy.array(self._intEnds[cdp])
         # end for
 
         # Integrate each velocity profile to compute depth profile
-        self._ts = np.linspace(self._times[0][0], self._times[0][-1], self._ni)
+        self._ts = numpy.linspace(self._times[0][0], self._times[0][-1], self._ni)
         self._depth_ios = []
 
-        depths = np.zeros(self._ts.shape)
+        depths = numpy.zeros(self._ts.shape)
         for icdp, cdp in enumerate(self._cdps):
-            vs = np.array([self._getIntervalVelocity(cdp, t) for t in self._ts])
+            vs = numpy.array([self._getIntervalVelocity(cdp, t) for t in self._ts])
             io = interp1d(self._ts, vs)
             for it, t in enumerate(self._ts):
                 # progressively build up the depth-profile
@@ -271,7 +271,7 @@ class VelocityModel:
         # end for
 
         # Compute mean depth profile
-        self._mean_depth_profile = np.zeros(self._ts.shape)
+        self._mean_depth_profile = numpy.zeros(self._ts.shape)
         for icdp, cdp in enumerate(self._cdps):
             io = self._depth_ios[icdp]
 
@@ -296,7 +296,7 @@ class VelocityModel:
             return self._mean_depth_profile_io(ts)
         else:
             _, idx = self._cdp_tree.query([cdp], nn)
-            ds = np.zeros(ts.shape)
+            ds = numpy.zeros(ts.shape)
 
             if (type(idx) == int): idx = [idx]
             for inn in range(nn):
