@@ -6,6 +6,7 @@ from unittest import TestCase
 import pytest
 
 from mtpy.gui.SmartMT.start import StartGUI
+from mtpy.gui.SmartMT.visualization import VisualizationBase
 from tests import EDI_DATA_DIR
 
 qtpy = pytest.importorskip("qtpy")
@@ -31,6 +32,10 @@ plt.ion()
 
 MtPyLog.get_mtpy_logger(__name__).info("Testing using matplotlib backend {}".format(matplotlib.rcParams['backend']))
 
+# handle uncaught exceptions to log as since PYQT5.5 will not display any uncaught exceptions
+# ref: http://pyqt.sourceforge.net/Docs/PyQt5/incompatibilities.html#unhandled-python-exceptions
+logger = MtPyLog.get_mtpy_logger(__name__)
+sys.excepthook = lambda exc_type, exc_value, exc_trace: logger.error("Uncaught exception", exc_info=(exc_type, exc_value, exc_trace))
 
 def _click_area(qobj, pos=None, offset=None, modifier=QtCore.Qt.NoModifier, timeout=100):
     geom = qobj.geometry()
@@ -53,13 +58,15 @@ class SmartMTGUITestCase(TestCase):
         import matplotlib.pyplot as plt
         plt.interactive(False)
 
+
     def setUp(self):
         self.smartMT = StartGUI()
         self.smartMT.show()
         QTest.qWaitForWindowActive(self.smartMT)
         print(matplotlib.get_backend())
 
-    def _switch_to_plot(self, name):
+    def _switch_to_plot(self, plot_type=VisualizationBase):
+        name = plot_type.plot_name()
         # load some data
         self._load_data()
         # set the loaded data to be plotted
@@ -70,8 +77,13 @@ class SmartMTGUITestCase(TestCase):
         # switch to the plot
         index = [i for i in range(self.smartMT._plot_option.ui.comboBoxSelect_Plot.count())
                  if self.smartMT._plot_option.ui.comboBoxSelect_Plot.itemText(i) == name]
-        self.assertTrue(len(index) == 1, "plot type name is not unique")
+        self.assertFalse(len(index) == 0, "plot type not found")
+        self.assertFalse(len(index) > 1, "plot type name is not unique")
         self.smartMT._plot_option.ui.comboBoxSelect_Plot.setCurrentIndex(index[0])
+
+        plot_config = self.smartMT._plot_option._current_plot
+        self.assertTrue(isinstance(plot_config, plot_type))
+        return plot_config
 
     def tearDown(self):
         self.smartMT.close()
@@ -86,20 +98,16 @@ class SmartMTGUITestCase(TestCase):
 
     def _plot(self, timeout=3000):
         subwindow_counter = self.smartMT._subwindow_counter
-
         loop = QtCore.QEventLoop()
-        self.smartMT._plot_option._current_plot.plotting_completed.connect(loop.quit)
 
-        def handleTimeout():
-            # timed out, stop loop
-            if loop.isRunning():
-                loop.quit()
-                self.fail("GUI plotting timed out, maybe consider increasing timeout to wait longer")
+        self.smartMT._plot_option._current_plot.plotting_completed.connect(loop.quit)
+        self.smartMT._plot_option._current_plot.plotting_error.connect(loop.quit)
+
+        _click_area(self.smartMT._plot_option.ui.pushButton_plot)
 
         if timeout is not None:
-            QtCore.QTimer.singleShot(timeout, handleTimeout)
-        _click_area(self.smartMT._plot_option.ui.pushButton_plot)  # wait for plotting
-        loop.exec_()
+            QtCore.QTimer.singleShot(timeout, loop.quit)
+        loop.exec_()  # wait for plotting
 
         self.assertTrue(self.smartMT._subwindow_counter == subwindow_counter + 1,
-                        "no image created")  # test if the image is created
+                        "no image created, maybe consider to increase the timeout value")  # test if the image is created
