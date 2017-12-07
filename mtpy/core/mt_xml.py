@@ -290,7 +290,8 @@ class XML_Config(object):
                                                  'Longitude':XML_element('Longitude', None, None),
                                                  'Elevation':XML_element('Elevation', {'units':'meters'}, None),
                                                  'Declination':XML_element('Declination', {'epoch':'1995'}, None)}),
-                             'AcquiredBy':XML_element('AcquiredBy', None, None),
+                            'Orientation':XML_element('Orientation', {'angle_to_geographic_north':'0.0'}, None), 
+                            'AcquiredBy':XML_element('AcquiredBy', None, None),
                              'Start':XML_element('Start', None, None),
                              'End':XML_element('End', None, None),
                              'RunList':XML_element('RunList', None, None)})

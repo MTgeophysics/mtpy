@@ -477,6 +477,7 @@ class MT(object):
         self.Site.Location.coordinate_system = edi_obj.Header.coordinate_system
         self.Site.end_date = '{0}{1:02}'.format(self.Site.start_date[0:8],
                                                   int(self.Site.start_date[-2:])+1)
+        self.Site.Location.declination = edi_obj.Header.declination
 
     def _edi_get_field_notes(self, edi_obj):
         """
@@ -674,6 +675,9 @@ class MT(object):
         else:
             header.survey = self.Site.survey
         header.units = self.Site.Location.elev_units
+        header.declination = self.Site.Location.declination
+        header.progvers = 'MTpy'
+        header.progdate = time.strftime('%Y-%m-%d', time.gmtime())
 
         return header
 
@@ -1250,6 +1254,9 @@ class MT(object):
         xml_obj.Site.Start.value = self.Site.start_date
         xml_obj.Site.End.value = self.Site.end_date
         xml_obj.Site.RunList.value = self.Site.run_list
+        xml_obj.Site.Orientation.value = 'geomagnetic'
+        xml_obj.Site.Orientation.attr = {'angle_to_geographic_north':\
+                                         '{0:.2f}'.format(self.Site.Location.declination)}
         xml_obj.Site.Location.Latitude.value = self.lat
         xml_obj.Site.Location.Longitude.value = self.lon
         xml_obj.Site.Location.Elevation.value = self.elev
@@ -1275,10 +1282,6 @@ class MT(object):
         xml_obj.FieldNotes.Dipole.Id.value = self.FieldNotes.Electrode_ex.id
         xml_obj.FieldNotes.Dipole.Manufacturer.value = self.FieldNotes.Electrode_ex.manufacturer
         xml_obj.FieldNotes.Dipole.attr = {'name': 'EX'}
-        print type(self.FieldNotes.Electrode_ex.x)
-        print type(self.FieldNotes.Electrode_ex.x2)
-        print type(self.FieldNotes.Electrode_ex.y)
-        print type(self.FieldNotes.Electrode_ex.y2)
         
         length = np.sqrt((self.FieldNotes.Electrode_ex.x2 - self.FieldNotes.Electrode_ex.x) ** 2 +
                          (self.FieldNotes.Electrode_ex.y2 - self.FieldNotes.Electrode_ex.y) ** 2)

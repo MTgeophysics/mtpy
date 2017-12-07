@@ -789,6 +789,8 @@ class Header(object):
             LON=139:47:50
             PROGDATE=2002-04-22
             PROGVERS=WINGLINK EDI 1.0.22
+            COORDINATE SYSTEM = GEOGRAPHIC NORTH
+            DECLINATION = 10.0
 
 
     :param edi_fn: full path to .edi file to be read in.
@@ -804,7 +806,9 @@ class Header(object):
     ============== ======================================= ======== ===========
     acqby          Acquired by                             None     yes
     acqdate        Acquired date (YYYY-MM-DD)              None     yes
+    coordinate     [ geographic | geomagnetic ]            None     yes 
     dataid         Station name, should be a string        None     yes
+    declination    geomagnetic declination                 None     yes 
     edi_fn         Full path to .edi file                  None     no
     elev           Elevation of station (m)                None     yes
     empty          Value for missing data                  1e32     yes
@@ -830,7 +834,9 @@ class Header(object):
            change the items in _header_keys.  Default attributes are:
                * acqby
                * acqdate
+               * coordinate_system
                * dataid
+               * declination
                * elev
                * fileby
                * lat
@@ -874,11 +880,12 @@ class Header(object):
         self.elev = None
         self.units = 'M'
         self.empty = 1E32
-        self.progvers = None
-        self.progdate = None
+        self.progvers = 'MTpy'
+        self.progdate = datetime.datetime.utcnow().strftime('%Y-%m-%d')
         self.project = None
         self.survey = None
         self.coordinate_system = 'Geomagnetic North'
+        self.declination = None
         self.datum = 'WGS84'
         self.phoenix_edi = False
 
@@ -897,6 +904,7 @@ class Header(object):
                              'progdate',
                              'progvers',
                              'coordinate_system',
+                             'declination',
                              'datum',
                              'project',
                              'survey']
@@ -997,6 +1005,11 @@ class Header(object):
             elif key in 'elevation':
                 key = 'elev'
                 value = gis_tools.assert_elevation_value(value)
+            elif key in 'declination':
+                try:
+                    value = float(value)
+                except (ValueError, TypeError):
+                    value = 0.0
 
             # FZ: this elif condensed several key into loc.
             # elif key in ['country', 'state', 'loc', 'location', 'prospect']:
@@ -1013,7 +1026,7 @@ class Header(object):
 
             elif key in ['fileby']:
                 if value == '':
-                    value = 'mtpy'
+                    value = 'MTpy'
 
             setattr(self, key, value)
 
@@ -1058,7 +1071,7 @@ class Header(object):
             elif key in ['lat', 'lon']:
                 value = gis_tools.convert_position_float2str(value)
 
-            if key in ['elev']:
+            if key in ['elev', 'declination']:
                 try:
                     value = '{0:.3f}'.format(value)
                 except ValueError:
