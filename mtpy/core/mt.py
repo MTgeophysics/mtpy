@@ -445,12 +445,14 @@ class MT(object):
         edi_obj = MTedi.Edi(edi_fn=edi_fn)
 
         self._edi_get_site(edi_obj)
-        self._edi_get_field_notes(edi_obj)
-
+        
         # get info
         self.Notes = edi_obj.Info
         self._parse_notes()
-
+        
+        # get field notes
+        self._edi_get_field_notes(edi_obj)
+        
         self.Z = edi_obj.Z
         self.Tipper = edi_obj.Tipper
         self.station = edi_obj.station
@@ -473,6 +475,8 @@ class MT(object):
         self.Site.Location.datum = edi_obj.Header.datum
         self.Site.Location.elev_units = edi_obj.Define_measurement.units
         self.Site.Location.coordinate_system = edi_obj.Header.coordinate_system
+        self.Site.end_date = '{0}{1:02}'.format(self.Site.start_date[0:8],
+                                                  int(self.Site.start_date[-2:])+1)
 
     def _edi_get_field_notes(self, edi_obj):
         """
@@ -546,7 +550,6 @@ class MT(object):
             self.FieldNotes.DataLogger = self.Notes.b_logger_type
         except AttributeError:
             pass
-
         # keep the edi object around, should be able to deprecate this later
         self._edi_obj = edi_obj
 
@@ -557,6 +560,10 @@ class MT(object):
 
         for a_key in self.Notes.info_dict.keys():
             a_value = self.Notes.info_dict[a_key]
+            try:
+                a_value = float(a_value)
+            except (ValueError, TypeError):
+                pass
             a_list = a_key.strip().lower().split('.')
             if a_key.find('mtft') == 0 or a_key.find('birrp') == 0:
                 a_list = ['processing'] + a_list
@@ -574,7 +581,7 @@ class MT(object):
                     cl_attr = a_list[count]
                     if cl_attr == 'dataquality':
                         cl_attr = 'DataQuality'
-                    if cl_attr == 'datalogger':
+                    elif cl_attr == 'datalogger':
                         cl_attr = 'DataLogger'
                     try:
                         obj = getattr(obj, cl_attr)
@@ -662,7 +669,10 @@ class MT(object):
         header.loc = self.Site.project
         header.lon = self.lon
         header.project = self.Site.project
-        header.survey = self.Site.survey
+        if type(self.Site.survey) is list:
+            header.survey = ','.join(self.Site.survey)
+        else:
+            header.survey = self.Site.survey
         header.units = self.Site.Location.elev_units
 
         return header
@@ -712,7 +722,8 @@ class MT(object):
                         l_value = getattr(self.Processing.Software, s_key)
                         info_list.append('{0} = {1}'.format(l_key,
                                                             l_value))
-            elif p_key.lower() == 'remotesite':
+            elif p_key.lower() == 'remotesite' and \
+                 self.Processing.RemoteSite.id is not None:
                 for s_key in sorted(
                         self.Processing.RemoteSite.__dict__.keys()):
                     if s_key == 'Location':
@@ -736,7 +747,8 @@ class MT(object):
 
         # get copyright information
         for c_key in sorted(self.Copyright.__dict__.keys()):
-            if c_key.lower() == 'citation':
+            if c_key.lower() == 'citation' and \
+               self.Copyright.Citation.author is not None:
                 for p_key in sorted(self.Copyright.Citation.__dict__.keys()):
                     l_key = 'copyright.citation.{0}'.format(p_key.lower())
                     l_value = getattr(self.Copyright.Citation, p_key)
@@ -744,6 +756,8 @@ class MT(object):
             else:
                 l_key = 'copyright.{0}'.format(c_key.lower())
                 l_value = getattr(self.Copyright, c_key)
+                if type(l_value) is list:
+                    l_value = ''.join(l_value)
                 info_list.append('{0} = {1}'.format(l_key, l_value))
 
         # get provenance
@@ -1261,6 +1275,11 @@ class MT(object):
         xml_obj.FieldNotes.Dipole.Id.value = self.FieldNotes.Electrode_ex.id
         xml_obj.FieldNotes.Dipole.Manufacturer.value = self.FieldNotes.Electrode_ex.manufacturer
         xml_obj.FieldNotes.Dipole.attr = {'name': 'EX'}
+        print type(self.FieldNotes.Electrode_ex.x)
+        print type(self.FieldNotes.Electrode_ex.x2)
+        print type(self.FieldNotes.Electrode_ex.y)
+        print type(self.FieldNotes.Electrode_ex.y2)
+        
         length = np.sqrt((self.FieldNotes.Electrode_ex.x2 - self.FieldNotes.Electrode_ex.x) ** 2 +
                          (self.FieldNotes.Electrode_ex.y2 - self.FieldNotes.Electrode_ex.y) ** 2)
         xml_obj.FieldNotes.Dipole.Length.value = length

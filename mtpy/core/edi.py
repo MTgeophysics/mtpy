@@ -1147,10 +1147,14 @@ class Information(object):
             if '>' in line and 'info' in line.lower():
                 info_find = True
             elif '>' in line:
-                if info_find is True:
-                    break
-                else:
+                # need to check for xml type formating
+                if '<' in line:
                     pass
+                else:   
+                    if info_find is True:
+                        break
+                    else:
+                        pass
             elif info_find:
                 if line.lower().find('run information') >= 0:
                     phoenix_file = True
@@ -1180,9 +1184,22 @@ class Information(object):
         # make info items attributes of Information
         for ll in self.info_list:
             l_list = [None, '']
-            if ll.find(':') > 0:
+            # need to check if there is an = or : seperator, which ever
+            # comes first is assumed to be the delimiter
+            colon_find = ll.find(':')
+            if colon_find == -1:
+                colon_find = None
+            equals_find = ll.find('=')
+            if equals_find == -1:
+                equals_find = None
+            if colon_find is not None and equals_find is not None:
+                if colon_find < equals_find:
+                    l_list = ll.split(':')
+                else:
+                    l_list = ll.split('=')
+            elif colon_find is not None:
                 l_list = ll.split(':')
-            elif ll.find('=') > 0:
+            elif equals_find is not None:
                 l_list = ll.split('=')
             else:
                 l_list[0] = ll
@@ -1570,8 +1587,7 @@ class HMeasurement(object):
                 setattr(self, key, float(kwargs[key]))
             except ValueError:
                 setattr(self, key, kwargs[key])
-
-
+        
 # ==============================================================================
 # electric measurements
 # ==============================================================================
