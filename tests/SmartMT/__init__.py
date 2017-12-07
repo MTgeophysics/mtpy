@@ -103,11 +103,17 @@ class SmartMTGUITestCase(TestCase):
         self.smartMT._plot_option._current_plot.plotting_completed.connect(loop.quit)
         self.smartMT._plot_option._current_plot.plotting_error.connect(loop.quit)
 
+        def handleTimeout():
+            # timed out, stop loop
+            if loop.isRunning():
+                loop.quit()
+                self.fail("GUI plotting timed out, maybe consider increasing timeout to wait longer")
         _click_area(self.smartMT._plot_option.ui.pushButton_plot)
 
         if timeout is not None:
-            QtCore.QTimer.singleShot(timeout, loop.quit)
+            QtCore.QTimer.singleShot(timeout, handleTimeout)
         loop.exec_()  # wait for plotting
 
         self.assertTrue(self.smartMT._subwindow_counter == subwindow_counter + 1,
-                        "no image created, maybe consider to increase the timeout value")  # test if the image is created
+                        "no image created")  # test if the image is created
+                        # "no image created, maybe consider to increase the timeout value")  # test if the image is created

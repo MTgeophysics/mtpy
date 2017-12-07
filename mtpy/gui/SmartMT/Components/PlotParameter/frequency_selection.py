@@ -95,7 +95,7 @@ class FrequencySelection(QGroupBox):
         if self._select_multiple:
             return frequencies
         else:
-            return frequencies[0] if frequencies else None
+            return frequencies[0] if frequencies else self._unique_frequencies[0]  # if nothing selected, return minimal frequency
 
     _units = ['Hz', 's']
 
