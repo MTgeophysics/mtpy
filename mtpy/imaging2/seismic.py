@@ -44,7 +44,7 @@ class Segy:
         self._ys = []  # y coordinates
         self._ns = []  # num samples
         self._cdps = []  # ensemble number (cdps)
-        self._ls = []  # sample length in seconds
+        self._sr = []  # sampling rate
         count = 0
         for itr, tr in enumerate(self._sf.traces):
             if (itr % self._pick_every == 0):
@@ -52,7 +52,7 @@ class Segy:
                 self._xs.append(tr.header.source_coordinate_x)
                 self._ys.append(tr.header.source_coordinate_y)
                 self._ns.append(tr.header.number_of_samples_in_this_trace)
-                self._ls.append(tr.header.sample_interval_in_ms_for_this_trace / 1e3) # convert ms to s
+                self._sr.append(tr.header.sample_interval_in_ms_for_this_trace/1e6) # convert from micro seconds to s
                 self._cdps.append(tr.header.ensemble_number)
                 count += 1
         # end for
@@ -60,14 +60,14 @@ class Segy:
         self._ntraces = len(self._sf.traces)
 
         self._ns = numpy.array(self._ns)
-        self._ls = numpy.array(self._ls)
+        self._sr = numpy.array(self._sr)
         self._xs = numpy.array(self._xs)
         self._ys = numpy.array(self._ys)
         self._cdps = numpy.array(self._cdps)
         self._station_space = numpy.sqrt((self._xs[:-1] - self._xs[1:])**2 + (self._ys[:-1] - self._ys[1:])**2)
         self._dist = numpy.array([numpy.sum(self._station_space[:i]) for i in range(len(self._station_space))]) # compute euclidean distance along profile
-        self._ts = numpy.linspace(0, numpy.max(self._ls), numpy.max(self._ns))
-
+        self._ts = numpy.linspace(0, (numpy.max(self._ns)-1)*numpy.max(self._sr),
+                                  numpy.max(self._ns))
         self._mtraces = numpy.array(self._mtraces)
         self._mt, self._md = numpy.meshgrid(self._ts, self._dist)  # mesh grid of distance and time
         self._mt, self._mc = numpy.meshgrid(self._ts, self._cdps)  # mesh grid of cdp and time
@@ -141,8 +141,6 @@ class Segy:
                         depth-ranges available are set to -9999
         '''
 
-        assert type(velocity_model) != VelocityModel, 'Type mismatch, should be of type VelocityModel'
-
         mdepths, mdistances = numpy.meshgrid(depths, distances)
         mvals = numpy.zeros(mdepths.shape)
 
@@ -178,7 +176,7 @@ class VelocityModel:
         try:
             f = open(stacking_velocity_fn)
         except Exception as err:
-            print 'Failed to read %s' % (stacking_velocity_fn)
+            print ('Failed to read %s' % (stacking_velocity_fn))
             logging.error(traceback.format_exc())
             exit(-1)
 
@@ -196,13 +194,25 @@ class VelocityModel:
                 self._cdps.append(cdp)
                 if (len(tempList)):
                     tempList = numpy.int_(numpy.array(tempList))
-                    self._times.append(tempList[::2] / 1e3)
-                    self._vels.append(tempList[1::2])
+                    ts = tempList[::2] / 1e3
+                    vs = tempList[1::2]
+                    # extend beyond given time range
+                    ts = numpy.append(ts, 1e6)
+                    vs = numpy.append(vs, vs[-1])
+
+                    self._times.append(ts)
+                    self._vels.append(vs)
                     tempList = []
             elif ('END' in line):
                 tempList = numpy.int_(numpy.array(tempList))
-                self._times.append(tempList[::2] / 1e3)
-                self._vels.append(tempList[1::2])
+                ts = tempList[::2] / 1e3
+                vs = tempList[1::2]
+                # extend beyond given time range
+                ts = numpy.append(ts, 1e6)
+                vs = numpy.append(vs, vs[-1])
+                
+                self._times.append(ts)
+                self._vels.append(vs)
             else:
                 if ('*' not in line):
                     items = line.split()
