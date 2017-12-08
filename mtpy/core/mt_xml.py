@@ -238,9 +238,7 @@ class XML_Config(object):
                                     'Url':XML_element('Url', None, None)})
         
         self.PrimaryData = XML_element('PrimaryData', None, None, 
-                                 **{'Filename':XML_element('Filename', None, None),
-                                    'GroupKey':XML_element('GroupKey', None, 0),
-                                    'OrderKey':XML_element('OrderKey', None, 0)})
+                                 **{'Filename':XML_element('Filename', None, None)})
                                     
         
         self.Attachment = XML_element('Attachment', None, None, 
@@ -741,9 +739,9 @@ class MT_XML(XML_Config):
                             'Tags',
                             'ExternalUrl',
                             'PrimaryData',
-                            'TimeSeriesArchived',
-                            'Image',
-                            'Original',
+                            #'TimeSeriesArchived',
+                            #'Image',
+                            #'Original',
                             'Attachment',
                             'Provenance',
                             'Copyright',

@@ -58,6 +58,9 @@ def convert_position_str2float(position_str):
         >>> gis_tools.convert_position_str2float('-118:34:56.3')
     """
 
+    if position_str in [None, 'None']:
+        return None
+    
     p_list = position_str.split(':')
     if len(p_list) != 3:
         raise ValueError('{0} not correct format, should be DD:MM:SS'.format(position_str))
@@ -81,6 +84,8 @@ def assert_lat_value(latitude):
     """
     make sure latitude is in decimal degrees
     """
+    if latitude in [None, 'None']:
+        return None
     try:
         lat_value = float(latitude)
 
@@ -101,6 +106,8 @@ def assert_lon_value(longitude):
     """
     make sure longitude is in decimal degrees
     """
+    if longitude in [None, 'None']:
+        return None
     try:
         lon_value = float(longitude)
 

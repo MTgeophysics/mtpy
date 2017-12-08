@@ -1190,21 +1190,24 @@ class MT(object):
                     if i_attr in ['_name', '_attr', '_value']:
                         continue
                     if i_attr.lower() == 'location':
-                        for l_attr in obj.__dict__.keys():
+                        loc_obj = getattr(obj, i_attr)
+                        
+                        for l_attr in loc_obj.__dict__.keys():
                             if l_attr in ['_name', '_attr', '_value']:
                                 continue
-                            l_obj = getattr(obj.Location, l_attr)
+                            l_obj = getattr(loc_obj, l_attr)
                             name = l_obj.name.lower()
                             value = l_obj.value
                             setattr(self.Processing.RemoteSite.Location,
                                     name, value)
 
-                    i_obj = getattr(obj, i_attr)
-                    name = i_obj.name.lower()
-                    if name == 'yearcollected':
-                        name = 'year_collected'
-                    value = i_obj.value
-                    setattr(self.Processing.RemoteSite, name, value)
+                    else:
+                        i_obj = getattr(obj, i_attr)
+                        name = i_obj.name.lower()
+                        if name == 'yearcollected':
+                            name = 'year_collected'
+                            value = i_obj.value
+                        setattr(self.Processing.RemoteSite, name, value)
             else:
                 obj = getattr(xml_obj.ProcessingInfo, f_attr)
                 name = obj.name.lower()
@@ -1233,10 +1236,9 @@ class MT(object):
         xml_obj = MTxml.MT_XML()
         xml_obj.Attachment.Filename.value = os.path.basename(self.fn)
         xml_obj.PrimaryData.Filename.value = os.path.basename(self.fn)[:-4]+'.png'
-        xml_obj.ProductId.value = '{0}.{1}.{2}'.format(
-                                  self.Site.survey.title().replace(' ', ''),
-                                  self.station.upper(), 
-                                  self.Site.year_collected)
+
+        xml_obj.ProductId.value = '{0}.{1}'.format(self.station.upper(), 
+                                                   self.Site.year_collected)
         
         xml_obj.Z = self.Z
         xml_obj.Tipper = self.Tipper
@@ -1255,7 +1257,10 @@ class MT(object):
         set the Site attributes in the xml object
         """
         xml_obj.Site.Project.value = self.Site.project
-        xml_obj.Site.Survey.value = self.Site.survey
+        if type(self.Site.survey) is list:
+            xml_obj.Site.Survey.value = ','.join(self.Site.survey)
+        else:
+            xml_obj.Site.Survey.value = self.Site.survey
         xml_obj.Site.Id.value = self.Site.id
         xml_obj.Site.AcquiredBy.value = self.Site.acquired_by
         xml_obj.Site.Start.value = self.Site.start_date
@@ -1301,7 +1306,7 @@ class MT(object):
             azm = np.arctan((self.FieldNotes.Electrode_ex.y2 - self.FieldNotes.Electrode_ex.y) /
                             (self.FieldNotes.Electrode_ex.x2 - self.FieldNotes.Electrode_ex.x))
         except ZeroDivisionError:
-            azm = 90.0
+            azm = 0.0
         xml_obj.FieldNotes.Dipole.Azimuth.value = np.degrees(azm)
         xml_obj.FieldNotes.Dipole.Channel.value = self.FieldNotes.Electrode_ex.acqchan
 
@@ -1318,7 +1323,7 @@ class MT(object):
                             (self.FieldNotes.Electrode_ey.x2 - self.FieldNotes.Electrode_ey.x))
         except ZeroDivisionError:
             azm = 90.0
-        xml_obj.FieldNotes.Dipole_00.Azimuth.value = np.degrees(azm)
+        xml_obj.FieldNotes.Dipole_00.Azimuth.value = np.degrees(min([np.pi/2, azm]))
         xml_obj.FieldNotes.Dipole_00.Channel.value = self.FieldNotes.Electrode_ey.acqchan
 
         # HX
@@ -1420,8 +1425,10 @@ class MT(object):
         xml_obj.Copyright.Citation.Journal.value = self.Copyright.Citation.journal
         xml_obj.Copyright.Citation.Volume.value = self.Copyright.Citation.volume
         xml_obj.Copyright.Citation.DOI.value = self.Copyright.Citation.doi
-
-        xml_obj.Copyright.ConditionsOfUse.value = self.Copyright.conditions_of_use
+        if type(self.Copyright.conditions_of_use) is list:
+            xml_obj.Copyright.ConditionsOfUse.value = ''.join(self.Copyright.conditions_of_use)
+        else:
+            xml_obj.Copyright.ConditionsOfUse.value = self.Copyright.conditions_of_use
         xml_obj.Copyright.ReleaseStatus.value = self.Copyright.release_status
         xml_obj.Copyright.AdditionalInfo.value = self.Copyright.additional_info
 
@@ -1921,6 +1928,9 @@ class Site(object):
             return self.start_date[0:4]
         except TypeError:
             return None
+    @year_collected.setter
+    def year_collected(self, value):
+        pass
 
 
 # ==============================================================================
