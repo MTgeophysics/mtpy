@@ -392,8 +392,8 @@ class PlotMTResponse(object):
         self.fig_size = None
 
         self.font_size = 7
-        self.marker_size = 5
-        self.marker_lw = .75
+        self.marker_size = 3
+        self.marker_lw = .5
         self.lw = .5
         self.plot_title = None
 
@@ -484,11 +484,11 @@ class PlotMTResponse(object):
 
         if self.res_limits is None:
             self.res_limits = (10 ** (np.floor(
-                np.log10(min([self.Z.res_xy.min(),
-                              self.Z.res_yx.min()])))),
+                np.log10(min([np.nanmin(self.Z.res_xy),
+                              np.nanmin(self.Z.res_yx)])))),
                                10 ** (np.ceil(
-                                   np.log10(max([self.Z.res_xy.max(),
-                                                 self.Z.res_yx.max()])))))
+                                   np.log10(max([np.nanmax(self.Z.res_xy),
+                                                 np.nanmax(self.Z.res_yx)])))))
 
         # set some parameters of the figure and subplot spacing
         plt.rcParams['font.size'] = self.font_size
@@ -580,12 +580,20 @@ class PlotMTResponse(object):
             self.axpt.yaxis.set_label_coords(labelcoords[0], labelcoords[1])
         except KeyError:
             pass
-
+        
+        nz_xx = np.nonzero(self.Z.z[:, 0, 0])
+        nz_xy = np.nonzero(self.Z.z[:, 0, 1])
+        nz_yx = np.nonzero(self.Z.z[:, 1, 0])
+        nz_yy = np.nonzero(self.Z.z[:, 1, 1])
+        
+        nz_tx = np.nonzero(self.Tipper.tipper[:, 0, 0])
+        nz_ty = np.nonzero(self.Tipper.tipper[:, 0, 1])
+        
         # ---------plot the apparent resistivity--------------------------------
         # --> plot as error bars and just as points xy, yx
         # res_xy
-        self.ebxyr = self.axr.errorbar(self.period,
-                                       self.Z.res_xy,
+        self.ebxyr = self.axr.errorbar(self.period[nz_xy],
+                                       self.Z.res_xy[nz_xy],
                                        marker=self.xy_marker,
                                        ms=self.marker_size,
                                        mew=self.lw,
@@ -594,13 +602,13 @@ class PlotMTResponse(object):
                                        ecolor=self.xy_color,
                                        ls=self.xy_ls,
                                        lw=self.lw,
-                                       yerr=self.Z.res_err_xy,
+                                       yerr=self.Z.res_err_xy[nz_xy],
                                        capsize=self.marker_size,
                                        capthick=self.lw)
 
         # res_yx
-        self.ebyxr = self.axr.errorbar(self.period,
-                                       self.Z.res_yx,
+        self.ebyxr = self.axr.errorbar(self.period[nz_yx],
+                                       self.Z.res_yx[nz_yx],
                                        marker=self.yx_marker,
                                        ms=self.marker_size,
                                        mew=self.lw,
@@ -609,7 +617,7 @@ class PlotMTResponse(object):
                                        ecolor=self.yx_color,
                                        ls=self.yx_ls,
                                        lw=self.lw,
-                                       yerr=self.Z.res_err_yx,
+                                       yerr=self.Z.res_err_yx[nz_yx],
                                        capsize=self.marker_size,
                                        capthick=self.lw)
 
@@ -634,8 +642,8 @@ class PlotMTResponse(object):
 
         # -----Plot the phase---------------------------------------------------
         # phase_xy
-        self.ebxyp = self.axp.errorbar(self.period,
-                                       self.Z.phase_xy,
+        self.ebxyp = self.axp.errorbar(self.period[nz_xy],
+                                       self.Z.phase_xy[nz_xy],
                                        marker=self.xy_marker,
                                        ms=self.marker_size,
                                        mew=self.lw,
@@ -644,13 +652,13 @@ class PlotMTResponse(object):
                                        ecolor=self.xy_color,
                                        ls=self.xy_ls,
                                        lw=self.lw,
-                                       yerr=self.Z.phase_err_xy,
+                                       yerr=self.Z.phase_err_xy[nz_xy],
                                        capsize=self.marker_size,
                                        capthick=self.lw)
 
         # phase_yx: Note add 180 to place it in same quadrant as phase_xy
-        self.ebyxp = self.axp.errorbar(self.period,
-                                       self.Z.phase_yx + 180,
+        self.ebyxp = self.axp.errorbar(self.period[nz_yx],
+                                       self.Z.phase_yx[nz_yx] + 180,
                                        marker=self.yx_marker,
                                        ms=self.marker_size,
                                        mew=self.lw,
@@ -659,7 +667,7 @@ class PlotMTResponse(object):
                                        ecolor=self.yx_color,
                                        ls=self.yx_ls,
                                        lw=self.lw,
-                                       yerr=self.Z.phase_err_xy,
+                                       yerr=self.Z.phase_err_yx[nz_yx],
                                        capsize=self.marker_size,
                                        capthick=self.lw)
 
@@ -794,11 +802,11 @@ class PlotMTResponse(object):
 
             # self.axt.set_xscale('log', nonposx='clip')
             if self.tipper_limits is None:
-                tmax = max([tyr.max(), tyi.max()])
+                tmax = max([np.nanmax(tyr), np.nanmax(tyi)])
                 if tmax > 1:
                     tmax = .899
 
-                tmin = min([tyr.min(), tyi.min()])
+                tmin = min([np.nanmin(tyr), np.nanmin(tyi.min)])
                 if tmin < -1:
                     tmin = -.899
 
@@ -972,8 +980,8 @@ class PlotMTResponse(object):
             self.axr2.yaxis.set_label_coords(-.1, 0.5)
 
             # res_xx
-            self.ebxxr = self.axr2.errorbar(self.period,
-                                            self.Z.res_xx,
+            self.ebxxr = self.axr2.errorbar(self.period[nz_xx],
+                                            self.Z.res_xx[nz_xx],
                                             marker=self.xy_marker,
                                             ms=self.marker_size,
                                             mew=self.lw,
@@ -982,13 +990,13 @@ class PlotMTResponse(object):
                                             ecolor=self.xy_color,
                                             ls=self.xy_ls,
                                             lw=self.lw,
-                                            yerr=self.Z.res_err_xx,
+                                            yerr=self.Z.res_err_xx[nz_xx],
                                             capsize=self.marker_size,
                                             capthick=self.lw)
 
             # res_yy
-            self.ebyyr = self.axr2.errorbar(self.period,
-                                            self.Z.res_yy,
+            self.ebyyr = self.axr2.errorbar(self.period[nz_yy],
+                                            self.Z.res_yy[nz_yy],
                                             marker=self.yx_marker,
                                             ms=self.marker_size,
                                             mew=self.lw,
@@ -997,7 +1005,7 @@ class PlotMTResponse(object):
                                             ecolor=self.yx_color,
                                             ls=self.yx_ls,
                                             lw=self.lw,
-                                            yerr=self.Z.res_err_yy,
+                                            yerr=self.Z.res_err_yy[nz_yy],
                                             capsize=self.marker_size,
                                             capthick=self.lw)
 
@@ -1025,8 +1033,8 @@ class PlotMTResponse(object):
             self.axp2.yaxis.set_label_coords(-.1, 0.5)
 
             # phase_xx
-            self.ebxxp = self.axp2.errorbar(self.period,
-                                            self.Z.phase_xx,
+            self.ebxxp = self.axp2.errorbar(self.period[nz_xx],
+                                            self.Z.phase_xx[nz_xx],
                                             marker=self.xy_marker,
                                             ms=self.marker_size,
                                             mew=self.lw,
@@ -1035,13 +1043,13 @@ class PlotMTResponse(object):
                                             ecolor=self.xy_color,
                                             ls=self.xy_ls,
                                             lw=self.lw,
-                                            yerr=self.Z.phase_err_xx,
+                                            yerr=self.Z.phase_err_xx[nz_xx],
                                             capsize=self.marker_size,
                                             capthick=self.lw)
 
             # phase_yy
-            self.ebyyp = self.axp2.errorbar(self.period,
-                                            self.Z.phase_yy,
+            self.ebyyp = self.axp2.errorbar(self.period[nz_yy],
+                                            self.Z.phase_yy[nz_yy],
                                             marker=self.yx_marker,
                                             ms=self.marker_size,
                                             mew=self.lw,
@@ -1050,7 +1058,7 @@ class PlotMTResponse(object):
                                             ecolor=self.yx_color,
                                             ls=self.yx_ls,
                                             lw=self.lw,
-                                            yerr=self.Z.phase_err_yy,
+                                            yerr=self.Z.phase_err_yy[nz_yy],
                                             capsize=self.marker_size,
                                             capthick=self.lw)
 
