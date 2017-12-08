@@ -364,8 +364,57 @@ class XML_Config(object):
                                                                                   'Longitude':XML_element('Longitude', None, None),
                                                                                   'Elevation':XML_element('Elevation', {'units':'meters'}, None)})
                                                                })})
-        self.InputChannels = XML_element('InputChannels', {'ref':'site', 'units':'m'}, None)
-        self.OutputChannels = XML_element('OutputChannels', {'ref':'site', 'units':'m'}, None)
+        self.SiteLayout = XML_element('SiteLayout', None, None,
+                                      **{'InputChannels': XML_element('InputChannels', 
+                                                                      {'ref':'site', 'units':'m'}, 
+                                                                      None,
+                                              **{'Magnetic_hx':XML_element('Magnetic',
+                                                                        {'name':"Hx",
+                                                                         'orientation': '0.0', 
+                                                                         'x':'0.0',
+                                                                         'y':'0.0',
+                                                                         'z':'0.0'},
+                                                                         None),
+                                                 'Magnetic_hy':XML_element('Magnetic',
+                                                                        {'name':"Hy",
+                                                                         'orientation': '0.0', 
+                                                                         'x':'0.0',
+                                                                         'y':'0.0',
+                                                                         'z':'0.0'},
+                                                                         None)}),
+                                        'OutputChannels': XML_element('OutputChannels', 
+                                                                      {'ref':'site', 'units':'m'}, 
+                                                                      None,
+                                              **{'Magnetic_hz':XML_element('Magnetic',
+                                                                        {'name':"Hz",
+                                                                         'orientation': '0.0', 
+                                                                         'x':'0.0',
+                                                                         'y':'0.0',
+                                                                         'z':'0.0'},
+                                                                         None),
+                                                 'Electric_ex':XML_element('Electric',
+                                                                        {'name':"Ex",
+                                                                         'orientation': '0.0', 
+                                                                         'x':'0.0',
+                                                                         'y':'0.0',
+                                                                         'z':'0.0',
+                                                                         'x2':'0.0',
+                                                                         'y2':'0.0',
+                                                                         'z2':'0.0'},
+                                                                         None),
+                                                'Electric_ey':XML_element('Electric',
+                                                                        {'name':"Ey",
+                                                                         'orientation': '0.0', 
+                                                                         'x':'0.0',
+                                                                         'y':'0.0',
+                                                                         'z':'0.0',
+                                                                         'x2':'0.0',
+                                                                         'y2':'0.0',
+                                                                         'z2':'0.0'},
+                                                                         None)})})
+                        
+#        self.InputChannels = XML_element('InputChannels', {'ref':'site', 'units':'m'}, None)
+#        self.OutputChannels = XML_element('OutputChannels', {'ref':'site', 'units':'m'}, None)
         self.Data = XML_element('Data', {'count':0}, None)
         self.PeriodRange = XML_element('PeriodRange', None, None)
                                         
@@ -691,6 +740,7 @@ class MT_XML(XML_Config):
                             'Notes',
                             'Tags',
                             'ExternalUrl',
+                            'PrimaryData',
                             'TimeSeriesArchived',
                             'Image',
                             'Original',
@@ -702,8 +752,7 @@ class MT_XML(XML_Config):
                             'ProcessingInfo',
                             'StatisticalEstimates',
                             'DataTypes',
-                            'InputChannels',
-                            'OutputChannels',
+                            'SiteLayout',
                             'Data',
                             'PeriodRange']
         
@@ -803,7 +852,7 @@ class MT_XML(XML_Config):
                     try:
                         z_arr = getattr(self.Z, attr_name)
                     except AttributeError:
-                        print 'No {0} information'.format(attr_name)
+                        #print 'No {0} information'.format(attr_name)
                         continue
                     for e_index in range(2):
                         for h_index in range(2):

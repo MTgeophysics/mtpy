@@ -1231,16 +1231,23 @@ class MT(object):
             self.Tipper = new_Tipper
 
         xml_obj = MTxml.MT_XML()
-
+        xml_obj.Attachment.Filename.value = os.path.basename(self.fn)
+        xml_obj.PrimaryData.Filename.value = os.path.basename(self.fn)[:-4]+'.png'
+        xml_obj.ProductId.value = '{0}.{1}.{2}'.format(
+                                  self.Site.survey.title().replace(' ', ''),
+                                  self.station.upper(), 
+                                  self.Site.year_collected)
+        
         xml_obj.Z = self.Z
         xml_obj.Tipper = self.Tipper
 
+        xml_obj = self._xml_set_provenance(xml_obj)
+        xml_obj = self._xml_set_copyright(xml_obj)
         xml_obj = self._xml_set_site(xml_obj)
         xml_obj = self._xml_set_field_notes(xml_obj)
         xml_obj = self._xml_set_processing(xml_obj)
-        xml_obj = self._xml_set_provenance(xml_obj)
-        xml_obj = self._xml_set_copyright(xml_obj)
-
+        xml_obj = self._xml_set_site_layout(xml_obj)
+        
         xml_obj.write_xml_file(xml_fn)
 
     def _xml_set_site(self, xml_obj):
@@ -1255,8 +1262,12 @@ class MT(object):
         xml_obj.Site.End.value = self.Site.end_date
         xml_obj.Site.RunList.value = self.Site.run_list
         xml_obj.Site.Orientation.value = 'geomagnetic'
-        xml_obj.Site.Orientation.attr = {'angle_to_geographic_north':\
-                                         '{0:.2f}'.format(self.Site.Location.declination)}
+        try:
+            xml_obj.Site.Orientation.attr = {'angle_to_geographic_north':\
+                                             '{0:.2f}'.format(self.Site.Location.declination)}
+        except ValueError:
+            xml_obj.Site.Orientation.attr = {'angle_to_geographic_north': '0.00'}
+        
         xml_obj.Site.Location.Latitude.value = self.lat
         xml_obj.Site.Location.Longitude.value = self.lon
         xml_obj.Site.Location.Elevation.value = self.elev
@@ -1290,7 +1301,7 @@ class MT(object):
             azm = np.arctan((self.FieldNotes.Electrode_ex.y2 - self.FieldNotes.Electrode_ex.y) /
                             (self.FieldNotes.Electrode_ex.x2 - self.FieldNotes.Electrode_ex.x))
         except ZeroDivisionError:
-            azm = 0.0
+            azm = 90.0
         xml_obj.FieldNotes.Dipole.Azimuth.value = np.degrees(azm)
         xml_obj.FieldNotes.Dipole.Channel.value = self.FieldNotes.Electrode_ex.acqchan
 
@@ -1306,7 +1317,7 @@ class MT(object):
             azm = np.arctan((self.FieldNotes.Electrode_ey.y2 - self.FieldNotes.Electrode_ey.y) /
                             (self.FieldNotes.Electrode_ey.x2 - self.FieldNotes.Electrode_ey.x))
         except ZeroDivisionError:
-            azm = 0.0
+            azm = 90.0
         xml_obj.FieldNotes.Dipole_00.Azimuth.value = np.degrees(azm)
         xml_obj.FieldNotes.Dipole_00.Channel.value = self.FieldNotes.Electrode_ey.acqchan
 
@@ -1384,7 +1395,7 @@ class MT(object):
         Set the Provenance attributes of the xml object
         """
 
-        xml_obj.Provenance.CreatingApplication.value = 'MTpy.core.mt.MT'
+        xml_obj.Provenance.CreatingApplication.value = 'MTpy 0.1.0'
 
         xml_obj.Provenance.Submitter.Name.value = self.Provenance.Submitter.name
         xml_obj.Provenance.Submitter.Email.value = self.Provenance.Submitter.email
@@ -1416,6 +1427,54 @@ class MT(object):
 
         return xml_obj
 
+    def _xml_set_site_layout(self, xml_obj):
+        """
+        set the site layout from define measurement
+        """
+        
+        xml_obj.SiteLayout.InputChannels.Magnetic_hx.attr = {'name':"Hx",
+                                                             'orientation':'{0:.2f}'.format(self.FieldNotes.Magnetometer_hx.azm), 
+                                                             'x':'{0:.2f}'.format(self.FieldNotes.Magnetometer_hx.x),
+                                                             'y':'{0:.2f}'.format(self.FieldNotes.Magnetometer_hx.y),
+                                                             'z':'0.00'}
+        xml_obj.SiteLayout.InputChannels.Magnetic_hy.attr = {'name':"Hy",
+                                                             'orientation':'{0:.2f}'.format(max([90, self.FieldNotes.Magnetometer_hy.azm])), 
+                                                             'x':'{0:.2f}'.format(self.FieldNotes.Magnetometer_hy.x),
+                                                             'y':'{0:.2f}'.format(self.FieldNotes.Magnetometer_hy.y),
+                                                             'z':'0.00'}
+        xml_obj.SiteLayout.OutputChannels.Magnetic_hz.attr = {'name':"Hz",
+                                                             'orientation':'{0:.2f}'.format(self.FieldNotes.Magnetometer_hz.azm), 
+                                                             'x':'{0:.2f}'.format(self.FieldNotes.Magnetometer_hz.x),
+                                                             'y':'{0:.2f}'.format(self.FieldNotes.Magnetometer_hz.y),
+                                                             'z':'0.00'}
+        try:
+            azm = np.arctan((self.FieldNotes.Electrode_ex.y2 - self.FieldNotes.Electrode_ex.y) /
+                            (self.FieldNotes.Electrode_ex.x2 - self.FieldNotes.Electrode_ex.x))
+        except ZeroDivisionError:
+            azm = 90.0
+        xml_obj.SiteLayout.OutputChannels.Electric_ex.attr = {'name':"Ex",
+                                                             'orientation':'{0:.2f}'.format(azm), 
+                                                             'x':'{0:.2f}'.format(self.FieldNotes.Electrode_ex.x),
+                                                             'y':'{0:.2f}'.format(self.FieldNotes.Electrode_ex.y),
+                                                             'z':'0.00',
+                                                             'x2':'{0:.2f}'.format(self.FieldNotes.Electrode_ex.x2),
+                                                             'y2':'{0:.2f}'.format(self.FieldNotes.Electrode_ex.y2),
+                                                             'z2':'0.00'}
+        try:
+            azm = np.arctan((self.FieldNotes.Electrode_ey.y2 - self.FieldNotes.Electrode_ey.y) /
+                            (self.FieldNotes.Electrode_ey.x2 - self.FieldNotes.Electrode_ey.x))
+        except ZeroDivisionError:
+            azm = 90.0
+        xml_obj.SiteLayout.OutputChannels.Electric_ey.attr = {'name':"Ey",
+                                                             'orientation':'{0:.2f}'.format(azm), 
+                                                             'x':'{0:.2f}'.format(self.FieldNotes.Electrode_ey.x),
+                                                             'y':'{0:.2f}'.format(self.FieldNotes.Electrode_ey.y),
+                                                             'z':'0.00',
+                                                             'x2':'{0:.2f}'.format(self.FieldNotes.Electrode_ey.x2),
+                                                             'y2':'{0:.2f}'.format(self.FieldNotes.Electrode_ey.y2),
+                                                             'z2':'0.00'}
+        return xml_obj
+    
     def read_cfg_file(self, cfg_fn):
         """
         Read in a configuration file and populate attributes accordingly.
@@ -1852,10 +1911,16 @@ class Site(object):
         self.run_list = None
         self.start_date = None
         self.survey = None
-        self.year_collected = None
 
         for key in kwargs.keys():
             setattr(self, key, kwargs[key])
+            
+    @property
+    def year_collected(self):
+        try:
+            return self.start_date[0:4]
+        except TypeError:
+            return None
 
 
 # ==============================================================================
