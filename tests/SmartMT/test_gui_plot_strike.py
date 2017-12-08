@@ -10,11 +10,11 @@ class TestGUIPlotPhaseTensorPseudoSection(SmartMTGUITestCase):
         _click_area(plot_gui._plot_control_ui.ui.checkBox_plot_tipper, pos=self._pos_check_box)
         _click_area(plot_gui._rotation_ui.ui.dial_rotation)
 
-        self._plot()
+        self._plot(10000)
 
         # fold
         _click_area(plot_gui._plot_control_ui.ui.checkBox_fold, pos=self._pos_check_box)
-        self._plot()
+        self._plot(10000)
 
     def test_plot_type_2(self):
         plot_gui = self._switch_to_plot(Strike)  # type: Strike
