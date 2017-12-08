@@ -25,7 +25,9 @@ from mtpy.utils.mtpylog import MtPyLog
 
 sip.setdestroyonexit(False)
 
-app = QApplication(sys.argv)
+app = QApplication.instance()
+if app is None:
+    app = QApplication(sys.argv)
 
 # handle uncaught exceptions to log as since PYQT5.5 will not display any uncaught exceptions
 # ref: http://pyqt.sourceforge.net/Docs/PyQt5/incompatibilities.html#unhandled-python-exceptions
