@@ -43,7 +43,7 @@ class TestGUIPlotResistivityPhasePseudoSection(SmartMTGUITestCase):
 
         _click_area(plot_gui._mesh_grid_ui.ui.radioButton_imshow, pos=self._pos_check_box)
 
-        self._plot()
+        self._plot(10000)
 
     def test_grid_pcolormesh(self):
         plot_gui = self._switch_to_plot(ResistivityPhasePseudoSection)  # type: ResistivityPhasePseudoSection
