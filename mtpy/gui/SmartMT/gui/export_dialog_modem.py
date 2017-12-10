@@ -74,6 +74,7 @@ class ExportDialogModEm(QWizard):
             select_multiple=True
         )
         self._period_select_ui.setEnabled(False)
+        self._period_select_ui.setHidden(True)
         self.ui.wizardPage_period.layout().addWidget(self._period_select_ui)
 
         # add rotation
@@ -188,6 +189,9 @@ class ExportDialogModEm(QWizard):
             lambda checked: self.ui.doubleSpinBox_select_period_percent.setEnabled(checked))
         self.ui.radioButton_select_period.toggled.connect(
             lambda checked: self._period_select_ui.setEnabled(checked)
+        )
+        self.ui.radioButton_select_period.toggled.connect(
+            lambda checked: self._period_select_ui.setHidden(not checked)
         )
 
         # register fields
