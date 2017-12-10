@@ -28,7 +28,7 @@ class TestGUIPlotPhaseTensorPseudoSection(SmartMTGUITestCase):
         _click_area(plot_gui._plot_control.ui.checkBox_resistivity, pos=self._pos_check_box)
         _click_area(plot_gui._arrow_ui.ui.checkBox_real, pos=self._pos_check_box)
         _click_area(plot_gui._arrow_ui.ui.checkBox_imaginary, pos=self._pos_check_box)
-        self._plot(10000)
+        self._plot(20000)
 
 
 class TestGUIPlotResistivityPhasePseudoSection(SmartMTGUITestCase):

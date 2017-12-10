@@ -9,6 +9,7 @@ from qtpy.QtTest import QTest
 
 from mtpy.gui.SmartMT.gui.export_dialog import ExportDialog, IMAGE_FORMATS
 from tests import make_temp_dir
+from tests.SmartMT import _click_area
 from tests.imaging import plt_wait
 
 
@@ -124,11 +125,11 @@ class TestExportDialog(TestCase):
 
         self.dialog._dir_dialog.setDirectory(os.path.normpath(os.path.expanduser("~")))
         self.dialog._dir_dialog.exec_ = _fake_exec_reject  # path should not change
-        QTest.mouseClick(self.dialog.ui.pushButton_browse, QtCore.Qt.LeftButton)
+        _click_area(self.dialog.ui.pushButton_browse)
         self.assertTrue(os.path.dirname(self.dialog.get_save_file_name()) == os.path.abspath(self._temp_dir))
 
         self.dialog._dir_dialog.exec_ = _fake_exec_accept
-        QTest.mouseClick(self.dialog.ui.pushButton_browse, QtCore.Qt.LeftButton)
+        _click_area(self.dialog.ui.pushButton_browse)
         # QTest.qWaitForWindowShown(self.dialog._dir_dialog)
         # self.dialog._dir_dialog.accept()
         self.assertTrue(
@@ -215,27 +216,27 @@ class TestExportDialog(TestCase):
     def _fake_msg_dialog_exec_overwrite(self):
         self.dialog._msg_box.show()
         QTest.qWaitForWindowActive(self.dialog._msg_box)
-        QTest.mouseClick(self.dialog._msg_box_button_overwrite, QtCore.Qt.LeftButton)
+        _click_area(self.dialog._msg_box_button_overwrite)
         return QMessageBox.Accepted
 
     def _fake_msg_dialog_exec_save_as(self):
         self.dialog._msg_box.show()
         QTest.qWaitForWindowActive(self.dialog._msg_box)
-        QTest.mouseClick(self.dialog._msg_box_button_save_as, QtCore.Qt.LeftButton)
+        _click_area(self.dialog._msg_box_button_save_as)
         return QMessageBox.Accepted
 
     def _fake_msg_dialog_exec_cancel(self):
         self.dialog._msg_box.show()
         QTest.qWaitForWindowActive(self.dialog._msg_box)
-        QTest.mouseClick(self.dialog._msg_box_button_cancel, QtCore.Qt.LeftButton)
+        _click_area(self.dialog._msg_box_button_cancel)
         return QMessageBox.Cancel
 
     def _fake_export_dialog_exec_cancel(self):
-        QTest.mouseClick(self.dialog.ui.pushButton_cancel, QtCore.Qt.LeftButton)
+        _click_area(self.dialog.ui.pushButton_cancel)
         return QDialog.Rejected
 
     def _fake_export_dialog_exec_export(self):
-        QTest.mouseClick(self.dialog.ui.pushButton_export, QtCore.Qt.LeftButton)
+        _click_area(self.dialog.ui.pushButton_export)
         return QDialog.Accepted
 
 

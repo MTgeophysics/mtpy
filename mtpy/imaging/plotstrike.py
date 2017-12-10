@@ -483,8 +483,11 @@ class PlotStrike(object):
                     # set color of the bars according to the number in that bin
                     # tipper goes from dark blue (low) to light blue (high)
                     for cc, bar in enumerate(bartr):
-                        fc = float(trhist[0][cc]) / trhist[0].max() * .9
-                        bar.set_facecolor((0, 1 - fc / 2, fc))
+                        try:
+                            fc = float(trhist[0][cc]) / trhist[0].max() * .9
+                            bar.set_facecolor((0, 1 - fc / 2, fc))
+                        except ZeroDivisionError:
+                            pass
 
                 # estimate the histogram for the decade for invariants and pt
                 invhist = np.histogram(hh[np.nonzero(hh)].flatten(),
@@ -506,13 +509,19 @@ class PlotStrike(object):
                 # set the color of the bars according to the number in that bin
                 # invariants go from purple (low) to red (high)
                 for cc, bar in enumerate(self.barinv):
-                    fc = float(invhist[0][cc]) / invhist[0].max() * .8
-                    bar.set_facecolor((fc, 0, 1 - fc))
+                    try:
+                        fc = float(invhist[0][cc]) / invhist[0].max() * .8
+                        bar.set_facecolor((fc, 0, 1 - fc))
+                    except ZeroDivisionError:
+                        pass
 
                 # pt goes from green (low) to orange (high)
                 for cc, bar in enumerate(self.barpt):
-                    fc = float(pthist[0][cc]) / pthist[0].max() * .8
-                    bar.set_facecolor((fc, 1 - fc, 0))
+                    try:
+                        fc = float(pthist[0][cc]) / pthist[0].max() * .8
+                        bar.set_facecolor((fc, 1 - fc, 0))
+                    except ZeroDivisionError:
+                        pass
 
                 # make axis look correct with N to the top at 90.
                 for aa, axh in enumerate(axlist):

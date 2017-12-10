@@ -19,6 +19,14 @@ from qtpy import QtCore
 from qtpy.QtWidgets import QMainWindow, QWidget, qApp, QMessageBox, QFileDialog, QDialog, QWizard, QMdiArea, QAction, \
     QMdiSubWindow, QApplication
 
+from qtpy import QT_VERSION
+import matplotlib
+
+if QT_VERSION.startswith("4"):
+    matplotlib.use("Qt4Agg")
+elif QT_VERSION.startswith("5"):
+    matplotlib.use("Qt5Agg")
+
 from mtpy.core.edi_collection import EdiCollection
 from mtpy.gui.SmartMT.gui.busy_indicators import ProgressBar
 from mtpy.gui.SmartMT.gui.export_dialog import ExportDialog
@@ -473,7 +481,9 @@ if __name__ == "__main__":
         logger = MtPyLog.get_mtpy_logger(__name__)
         sys.excepthook = lambda exc_type, exc_value, exc_trace: logger.error("Uncaught exception", exc_info=(exc_type, exc_value, exc_trace))
 
-    app = QApplication(sys.argv)
+    app = QApplication.instance()
+    if app is None:
+        app = QApplication(sys.argv)
     smartMT = StartGUI()
     smartMT.show()
 
