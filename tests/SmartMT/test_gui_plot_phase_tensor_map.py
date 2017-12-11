@@ -56,4 +56,4 @@ class TestGUIPlotResistivityPhasePseudoSection(SmartMTGUITestCase):
 
         _click_area(plot_gui._mesh_grid_ui.ui.radioButton_pcolormesh, pos=self._pos_check_box)
 
-        self._plot()
+        self._plot(10000)
