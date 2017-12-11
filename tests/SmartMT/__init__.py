@@ -66,16 +66,8 @@ class SmartMTGUITestCase(TestCase):
         # load some data
         self._load_data()
         # set the loaded data to be plotted
-        if num_stations == 'all': # select all stations for visualization
-            self.smartMT._station_viewer.ui.treeWidget_stations.selectAll()
-        else:
-            # select maximum n stations for visualization to reduce the time of creating some complex plots
-            item = self.smartMT._station_viewer.ui.treeWidget_stations.invisibleRootItem()
-            item = item.child(0)  # get the first group of the stations
-            for i in range(min(num_stations, item.childCount())):  # select the first n or all stations if n > num of stations
-                child = item.child(i)
-                child.setSelected(True)
-        self.smartMT._station_viewer.item_selection_changed()
+        self._select_data(num_stations)
+
         _click_area(self.smartMT._station_viewer.ui.pushButton_plot)  # trigger plot widget
         self.assertTrue(self.smartMT.ui.stackedWidget.currentIndex() == 1)
         # switch to the plot
@@ -88,6 +80,19 @@ class SmartMTGUITestCase(TestCase):
         plot_config = self.smartMT._plot_option._current_plot
         self.assertTrue(isinstance(plot_config, plot_type))
         return plot_config
+
+    def _select_data(self, num_stations='all'):
+        if num_stations == 'all':  # select all stations for visualization
+            self.smartMT._station_viewer.ui.treeWidget_stations.selectAll()
+        else:
+            # select maximum n stations for visualization to reduce the time of creating some complex plots
+            item = self.smartMT._station_viewer.ui.treeWidget_stations.invisibleRootItem()
+            item = item.child(0)  # get the first group of the stations
+            for i in range(
+                    min(num_stations, item.childCount())):  # select the first n or all stations if n > num of stations
+                child = item.child(i)
+                child.setSelected(True)
+        self.smartMT._station_viewer.item_selection_changed()
 
     def tearDown(self):
         self.smartMT.close()
