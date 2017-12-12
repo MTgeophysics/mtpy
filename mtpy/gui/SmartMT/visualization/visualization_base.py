@@ -204,7 +204,7 @@ class MPLCanvasWidget(QWidget):
 
     def closeEvent(self, QCloseEvent):
         super(MPLCanvasWidget, self).closeEvent(QCloseEvent)
-        plt.close(self._fig)
+        plt.close(fig=self._fig)
 
     def get_fig(self):
         return self._fig
