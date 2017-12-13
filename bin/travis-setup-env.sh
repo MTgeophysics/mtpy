@@ -7,7 +7,8 @@ sudo add-apt-repository --yes ppa:ubuntu-sdk-team/ppa  # qt5 source
 sudo apt update -qq
 
 # command to install dependencies
-sudo apt install libproj-dev  # undocumented gdal dependency
+sudo apt -y install -qq python-dev  
+sudo apt -y install -qq libproj-dev  # undocumented gdal dependency
   # install qt4 and dependencies
 if [ $QT_VERSION == 4 ]; then sudo apt -y install -qq "libqt4-dev"; fi  # install pyqt dependencies
 if [ $QT_VERSION == 5 ]; then sudo apt -y install -qq qtdeclarative5-dev libqt5svg5-dev qtmultimedia5-dev && export QMAKE=/usr/lib/x86_64-linux-gnu/qt5/bin/qmake; fi  # install qt5 and switch to qt5 env
