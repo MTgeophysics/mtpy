@@ -2,20 +2,8 @@ from __future__ import print_function
 
 import os
 import shutil
-import sys
-import matplotlib
 
 from mtpy.utils.mtpylog import MtPyLog
-
-if os.name == "posix" and 'DISPLAY' not in os.environ:
-    print("MATPLOTLIB: No Display found, using non-interactive svg backend", file=sys.stderr)
-    matplotlib.use('svg')
-    import matplotlib.pyplot as plt
-else:
-    # matplotlib.use('svg')
-    import matplotlib.pyplot as plt
-
-    plt.ion()
 
 TEST_MTPY_ROOT = os.path.normpath(
     os.path.abspath(
@@ -38,22 +26,6 @@ def make_temp_dir(dir_name, base_dir=TEST_TEMP_DIR):
         shutil.rmtree(_temp_dir)
     os.mkdir(_temp_dir)
     return _temp_dir
-
-
-def plt_wait(seconds):
-    if plt.isinteractive() and plt.get_fignums():
-        try:
-            plt.pause(seconds)
-        except:
-            pass
-
-
-def plt_close(to_close=None):
-    if plt.get_fignums():
-        if to_close is None:
-            plt.close()
-        else:
-            plt.close(to_close)
 
 
 EDI_DATA_DIR = os.path.normpath(

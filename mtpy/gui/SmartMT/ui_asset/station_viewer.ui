@@ -30,6 +30,25 @@
     <number>0</number>
    </property>
    <item>
+    <widget class="QPushButton" name="pushButton_plot">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
+     <property name="font">
+      <font>
+       <pointsize>10</pointsize>
+      </font>
+     </property>
+     <property name="text">
+      <string>Visualize Selected Stations...</string>
+     </property>
+     <property name="icon">
+      <iconset resource="icons.qrc">
+       <normaloff>:/Tango/plot</normaloff>:/Tango/plot</iconset>
+     </property>
+    </widget>
+   </item>
+   <item>
     <widget class="QTreeWidget" name="treeWidget_stations">
      <property name="contextMenuPolicy">
       <enum>Qt::CustomContextMenu</enum>
@@ -68,29 +87,33 @@
     </widget>
    </item>
    <item>
-    <widget class="QPushButton" name="pushButton_showMap">
-     <property name="text">
-      <string>Show Map</string>
-     </property>
-    </widget>
-   </item>
-   <item>
-    <widget class="QPushButton" name="pushButton_hideMap">
-     <property name="enabled">
-      <bool>false</bool>
-     </property>
-     <property name="text">
-      <string>Hide Map</string>
-     </property>
-    </widget>
+    <layout class="QHBoxLayout" name="horizontalLayout">
+     <item>
+      <widget class="QPushButton" name="pushButton_showMap">
+       <property name="text">
+        <string>Show Station Map</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="pushButton_hideMap">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
+       <property name="text">
+        <string>Hide Station Map</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
    </item>
   </layout>
  </widget>
  <tabstops>
   <tabstop>treeWidget_stations</tabstop>
-  <tabstop>pushButton_showMap</tabstop>
-  <tabstop>pushButton_hideMap</tabstop>
  </tabstops>
- <resources/>
+ <resources>
+  <include location="icons.qrc"/>
+ </resources>
  <connections/>
 </ui>

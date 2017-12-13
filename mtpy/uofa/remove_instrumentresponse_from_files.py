@@ -26,10 +26,10 @@ import mtpy.processing.calibration as MTcb
 import mtpy.utils.filehandling as MTfh
 import mtpy.processing.instrument as MTin
 
-reload(MTfh)
-reload(MTex)
-reload(MTcb)
-reload(MTin)
+#reload(MTfh)
+#reload(MTex)
+#reload(MTcb)
+#reload(MTin)
 
 
 def main():

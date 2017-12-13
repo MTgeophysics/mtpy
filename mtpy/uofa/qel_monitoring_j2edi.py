@@ -23,7 +23,7 @@ import pdb
 import numpy as np
 import mtpy.utils.exceptions as MTex
 
-reload(MTbp)
+#reload(MTbp)
 
 edi_prefix = 'qel'
 

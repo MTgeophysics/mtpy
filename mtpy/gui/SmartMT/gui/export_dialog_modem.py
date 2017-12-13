@@ -21,15 +21,15 @@ from qtpy.QtGui import QDoubleValidator
 from qtpy.QtWidgets import QWizard, QFileDialog, QDialog, QMessageBox
 
 from mtpy.core.edi_collection import EdiCollection
-from mtpy.modeling.modem import Model
-from mtpy.mtpy_globals import epsg_dict
-from mtpy.gui.SmartMT.Components.PlotParameter import FrequencySelection, Rotation
+from mtpy.gui.SmartMT.Components.PlotParameter import FrequencySelection, Rotation, FrequencySelectionFromFile
 from mtpy.gui.SmartMT.gui.busy_indicators import ProgressBar
 from mtpy.gui.SmartMT.gui.export_dialog import PreviewDialog
 from mtpy.gui.SmartMT.gui.matplotlib_imabedding import MathTextLabel
 from mtpy.gui.SmartMT.ui_asset.wizard_export_modem import Ui_Wizard_esport_modem
 from mtpy.gui.SmartMT.utils.validator import FileValidator, DirectoryValidator
 from mtpy.modeling.modem import Data, Covariance
+from mtpy.modeling.modem import Model
+from mtpy.mtpy_globals import epsg_dict
 from mtpy.utils.mtpylog import MtPyLog
 
 
@@ -39,6 +39,7 @@ class ExportDialogModEm(QWizard):
         self.ui = Ui_Wizard_esport_modem()
         self.ui.setupUi(self)
 
+        self._logger = MtPyLog.get_mtpy_logger(self.__class__.__name__)
         # setup gui
         # self.setWindowTitle("ModEM input file generator")
 
@@ -61,9 +62,24 @@ class ExportDialogModEm(QWizard):
         # add math formulae of each error type
         self._math_label_elbert = MathTextLabel(
             self,
-            "$error_{egbert}=level_{egbert}\\times |Z_{xy}\\times Z_{yx}|^\\frac{1}{2}$",
+            "$E_{egbert}=e_Z\\times |Z_{xy}\\times Z_{yx}|^\\frac{1}{2}$",
         )
         self.ui.verticalLayout_error_types.addWidget(self._math_label_elbert)
+
+        self._math_label_mean = MathTextLabel(self, "$E_{mean} = e_Z\\times mean(|Z_{xy}, Z_{yx}|)$")
+        self._math_label_mean.setHidden(True)
+        self.ui.verticalLayout_error_types.addWidget(self._math_label_mean)
+
+        self._math_label_eigen = MathTextLabel(self, "$E_{eigen} = e_Z\\times eigenvalues(Z)$")
+        self._math_label_eigen.setHidden(True)
+        self.ui.verticalLayout_error_types.addWidget(self._math_label_eigen)
+
+        self._math_label_median = MathTextLabel(self, "$E_{median} = e_Z\\times median(|Z_{xx},Z_{xy},Z_{yx},Z_{yy}|)$")
+        self._math_label_median.setHidden(True)
+        self.ui.verticalLayout_error_types.addWidget(self._math_label_median)
+
+        self._math_label_error_type_note = MathTextLabel(self, "where $E$ is the error and $e$ is the error value (z).")
+        self.ui.verticalLayout_error_types.addWidget(self._math_label_error_type_note)
 
         # add period selection
         self._period_select_ui = FrequencySelection(
@@ -73,8 +89,15 @@ class ExportDialogModEm(QWizard):
             allow_range_select=True,
             select_multiple=True
         )
+        self._period_select_ui.ui.checkBox_show_existing.setChecked(True)
         self._period_select_ui.setEnabled(False)
+        self._period_select_ui.setHidden(True)
         self.ui.wizardPage_period.layout().addWidget(self._period_select_ui)
+
+        self._period_select_from_file_ui = FrequencySelectionFromFile(self.ui.wizardPage_period)
+        self._period_select_from_file_ui.setEnabled(False)
+        self._period_select_from_file_ui.setHidden(True)
+        self.ui.wizardPage_period.layout().addWidget(self._period_select_from_file_ui)
 
         # add rotation
         self._rotation_ui = Rotation(self.ui.wizardPage_data)
@@ -86,7 +109,7 @@ class ExportDialogModEm(QWizard):
         self.ui.gridLayout_mesh.addWidget(self._mesh_rotation_ui)
 
         # hide error percents
-        self._component_error_type_changed()
+        self._component_error_type_z_changed()
 
         # hide bottom in vertical mesh as it is not used in mesh gen
         self.ui.doubleSpinBox_bottom.hide()
@@ -106,6 +129,7 @@ class ExportDialogModEm(QWizard):
 
         self._file_validator = FileValidator()
         self.ui.comboBox_topography_file.lineEdit().setValidator(self._file_validator)
+        self.ui.comboBox_topography_file.lineEdit().setMaxLength(256)
 
         self._dir_validator = DirectoryValidator()
         self.ui.comboBox_directory.lineEdit().setValidator(self._dir_validator)
@@ -121,8 +145,8 @@ class ExportDialogModEm(QWizard):
         # self.ui.spinBox_cell_num_ns.setMaximum(0xFFFFFFFF)
 
         # tooltip for error types
-        for index, tooltip in enumerate(self._error_type_tool_tip):
-            self.ui.comboBox_error_type.setItemData(index, tooltip, QtCore.Qt.ToolTipRole)
+        for index, tooltip in enumerate(self._error_type_z_tool_tip):
+            self.ui.comboBox_error_type_z.setItemData(index, tooltip, QtCore.Qt.ToolTipRole)
             self.ui.comboBox_error_type_zxx.setItemData(index, tooltip, QtCore.Qt.ToolTipRole)
             self.ui.comboBox_error_type_zxy.setItemData(index, tooltip, QtCore.Qt.ToolTipRole)
             self.ui.comboBox_error_type_zyx.setItemData(index, tooltip, QtCore.Qt.ToolTipRole)
@@ -148,11 +172,11 @@ class ExportDialogModEm(QWizard):
         self.ui.radioButton_impedance_none.toggled.connect(self._impedance_none_toggled)
         self.ui.radioButton_vertical_full.toggled.connect(self._vertical_full_toggled)
 
-        self.ui.comboBox_error_type.currentIndexChanged.connect(self._error_type_changed)
+        self.ui.comboBox_error_type_z.currentIndexChanged.connect(self._error_type_z_changed)
         for component in self._impedance_components:
             combobox = getattr(self.ui, 'comboBox_error_type_{}'.format(component))
             checkbox = getattr(self.ui, 'checkBox_{}'.format(component))
-            combobox.currentIndexChanged.connect(self._component_error_type_changed)
+            combobox.currentIndexChanged.connect(self._component_error_type_z_changed)
             checkbox.toggled.connect(self._error_component_checkbox_toggled(combobox))
 
         self.ui.comboBox_output_name.currentIndexChanged.connect(self._update_full_output)
@@ -183,12 +207,18 @@ class ExportDialogModEm(QWizard):
             lambda p_int: self.ui.spinBox_cell_num_ns.setEnabled(p_int != 0)
         )
 
+        self.ui.checkBox_component_error_types.setEnabled(False)  # disabled due to missing implementations todo implement this option in modem.Data
         self.ui.checkBox_component_error_types.toggled.connect(self._component_error_type_toggled)
         self.ui.radioButton_select_period_percent.toggled.connect(
             lambda checked: self.ui.doubleSpinBox_select_period_percent.setEnabled(checked))
         self.ui.radioButton_select_period.toggled.connect(
-            lambda checked: self._period_select_ui.setEnabled(checked)
-        )
+            lambda checked: self._period_select_ui.setEnabled(checked))
+        self.ui.radioButton_select_period.toggled.connect(
+            lambda checked: self._period_select_ui.setHidden(not checked))
+        self.ui.radioButton_select_by_file.toggled.connect(
+            lambda checked: self._period_select_from_file_ui.setEnabled(checked))
+        self.ui.radioButton_select_by_file.toggled.connect(
+            lambda checked: self._period_select_from_file_ui.setHidden(not checked))
 
         # register fields
         self.ui.wizardPage_output.registerField('output_path*', self.ui.lineEdit_full_output)
@@ -207,24 +237,23 @@ class ExportDialogModEm(QWizard):
     _vertical_components = ['tx', 'ty']
     _math_label_sign_text = "$exp({}i\\omega t)$"
 
-    _error_type = [
-        'floor',  # 0
-        'value',  # 1
-        'egbert',  # 2
-        'floor_egbert',  # 3
-        'stddev',  # 4
-        'sqr',  # 5
-        'meansqr'  # 6
+    _error_type_z = [
+        'egbert',  # 0
+        'mean_od',  # 1
+        'eigen',  # 2
+        'median',  # 3
     ]
 
-    _error_type_tool_tip = [
-        'sets the error floor to the value of Error Floor',
-        'sets error to error value',
+    _error_type_z_tool_tip = [
         'sets error to the value of Error Egbert * sqrt(abs(zxy*zyx), see Egbert & Kelbert',
-        'set error floor to error_egbert * sqrt(abs(zxy*zyx))',
-        'use the standard deviation of the errors of a component across all frequencies for one station',
-        'use square error of a frequency of component of a station',
-        'mean square error of a frequency of a component across all frequencies for one station'
+        'sets error to error_value_z * mean([Zxy, Zyx]) (non zeros)',
+        'sets error to error_value_z * eigenvalues(Z[ii])',
+        'sets error to error_value_z * median([Zxx, Zxy, Zyx, Zyy]) (non zeros)'
+    ]
+
+    _error_type_tipper = [
+        'abs',
+        'floor'
     ]
 
     def _component_error_type_toggled(self, is_checked):
@@ -268,44 +297,51 @@ class ExportDialogModEm(QWizard):
             self.ui.groupBox_sign_impedance.setEnabled(False)
 
     def _vertical_full_toggled(self, checked):
-        self.ui.doubleSpinBox_error_tipper.setEnabled(checked)
+        self.ui.doubleSpinBox_error_value_tipper.setEnabled(checked)
         self.ui.radioButton_impedance_none.setEnabled(checked)
         self.ui.groupBox_sign_vertical.setEnabled(checked)
 
     def _error_component_checkbox_toggled(self, combobox):
         def _checkbox_toggled(checked):
             combobox.setEnabled(checked)
-            self._component_error_type_changed()
+            self._component_error_type_z_changed()
 
         return _checkbox_toggled
 
-    def _component_error_type_changed(self, error_type_index=-1):
-        types = set([self.ui.comboBox_error_type.currentIndex()])
-        for component in self._impedance_components:
-            combobox = getattr(self.ui, 'comboBox_error_type_{}'.format(component))
-            if combobox.isEnabled():
-                types.add(combobox.currentIndex())
+    def _component_error_type_z_changed(self, error_type_index=-1):
+        # types = {self.ui.comboBox_error_type_z.currentIndex()}
+        # for component in self._impedance_components:
+        #     combobox = getattr(self.ui, 'comboBox_error_type_{}'.format(component))
+        #     if combobox.isEnabled():
+        #         types.add(combobox.currentIndex())
+        #
+        # hidden = bool(0 not in types)
+        # self.ui.label_error_floor.setHidden(hidden)
+        # self.ui.doubleSpinBox_error_floor.setHidden(hidden)
+        # hidden = bool(2 not in types and 3 not in types)
+        # self.ui.label_error_egbert.setHidden(hidden)
+        # self.ui.doubleSpinBox_error_egbert.setHidden(hidden)
+        # self._math_label_elbert.setHidden(hidden)
+        # hidden = bool(1 not in types)
+        # self.ui.label_error_value.setHidden(hidden)
+        # self.ui.doubleSpinBox_error_value.setHidden(hidden)
+        pass  # todo re-enable after the sub-type for each component is implemented
 
-        hidden = bool(0 not in types)
-        self.ui.label_error_floor.setHidden(hidden)
-        self.ui.doubleSpinBox_error_floor.setHidden(hidden)
-        hidden = bool(2 not in types and 3 not in types)
-        self.ui.label_error_egbert.setHidden(hidden)
-        self.ui.doubleSpinBox_error_egbert.setHidden(hidden)
-        self._math_label_elbert.setHidden(hidden)
-        hidden = bool(1 not in types)
-        self.ui.label_error_value.setHidden(hidden)
-        self.ui.doubleSpinBox_error_value.setHidden(hidden)
-
-    def _error_type_changed(self, error_type_index):
+    def _error_type_z_changed(self, error_type_index):
         # sync the component error types with default
-        for component in self._impedance_components:
-            combobox = getattr(self.ui, 'comboBox_error_type_{}'.format(component))
-            if not combobox.isEnabled():
-                combobox.blockSignals(True)
-                combobox.setCurrentIndex(error_type_index)
-                combobox.blockSignals(False)
-        self._component_error_type_changed()
+        # for component in self._impedance_components:
+        #     combobox = getattr(self.ui, 'comboBox_error_type_{}'.format(component))
+        #     if not combobox.isEnabled():
+        #         combobox.blockSignals(True)
+        #         combobox.setCurrentIndex(error_type_index)
+        #         combobox.blockSignals(False)
+        # self._component_error_type_z_changed()
+        pass  # todo re-enable after the sub-type for each component is implemented
+
+        self._math_label_elbert.setHidden(error_type_index != 0)
+        self._math_label_mean.setHidden(error_type_index != 1)
+        self._math_label_eigen.setHidden(error_type_index != 2)
+        self._math_label_median.setHidden(error_type_index != 3)
 
     def _output_name_changed(self, *args, **kwargs):
         output_name = str(self.ui.comboBox_output_name.currentText())
@@ -366,6 +402,7 @@ class ExportDialogModEm(QWizard):
     def set_data(self, mt_objs):
         self._mt_objs = mt_objs
         self._period_select_ui.set_data(self._mt_objs)
+        self._period_select_from_file_ui.set_data(self._mt_objs)
         self.ui.listWidget_edi_files.clear()
         for mt_obj in mt_objs:
             self.ui.listWidget_edi_files.addItem("{mt.station} ({mt.fn})".format(mt=mt_obj))
@@ -378,13 +415,22 @@ class ExportDialogModEm(QWizard):
         else:
             return '5'
 
+    def _get_error_type_z(self):
+        type = self._error_type_z[self.ui.comboBox_error_type_z.currentIndex()]
+        if self.ui.checkBox_error_type_z_floor.isChecked():
+            type += "_floor"
+        return type
+
     def get_data_kwargs(self):
         kwargs = {
-            'error_type': self._error_type[self.ui.comboBox_error_type.currentIndex()],
+            'error_type_z': self._get_error_type_z(),
+            'error_value_z': self.ui.doubleSpinBox_error_value_z.value(),
+            'error_type_tipper': self._error_type_tipper[self.ui.comboBox_error_type_tipper.currentIndex()],
+            'error_value_tipper': self.ui.doubleSpinBox_error_value_tipper.value() / 100.,
             'save_path': self.get_save_file_path(),
             'format': '1' if self.ui.radioButton_format_1.isChecked() else '2',
             'rotation_angle': self._rotation_ui.get_rotation_in_degree(),
-            'epsg': self.get_epsg(),
+            'model_epsg': self.get_epsg(),
             'inv_mode': self.get_inversion_mode()
         }
 
@@ -397,7 +443,7 @@ class ExportDialogModEm(QWizard):
                 [
                     (
                         component,
-                        self._error_type[
+                        self._error_type_z[
                             getattr(self.ui, 'comboBox_error_type_{}'.format(component)).currentIndex()
                         ]
                     )
@@ -405,18 +451,6 @@ class ExportDialogModEm(QWizard):
                     if getattr(self.ui, 'comboBox_error_type_{}'.format(component)).isEnabled()
                 ]
             )
-
-        # error_floor
-        if not self.ui.doubleSpinBox_error_floor.isHidden():
-            kwargs['error_floor'] = self.ui.doubleSpinBox_error_floor.value()
-        # error_value
-        if not self.ui.doubleSpinBox_error_value.isHidden():
-            kwargs['error_value'] = self.ui.doubleSpinBox_error_value.value()
-        # error_egbert
-        if not self.ui.doubleSpinBox_error_egbert.isHidden():
-            kwargs['error_egbert'] = self.ui.doubleSpinBox_error_egbert.value()
-        # error_tipper
-        kwargs['error_tipper'] = self.ui.doubleSpinBox_error_tipper.value() / 100.
 
         # wave signs
         if self.ui.groupBox_sign_impedance.isEnabled():
@@ -447,10 +481,9 @@ class ExportDialogModEm(QWizard):
             'z_target_depth': self.ui.doubleSpinBox_target_depth.value(),
             'z_bottom': self.ui.doubleSpinBox_bottom.value(),
             'n_layers': self.ui.spinBox_num_layers.value(),
-            'n_airlayers': self.ui.spinBox_num_air_layers.value(),
+            'n_air_layers': self.ui.spinBox_num_air_layers.value(),
             'res_model': self.get_initial_resistivity(),
             'mesh_rotation_angle': self._mesh_rotation_ui.get_rotation_in_degree(),
-            'epsg': self.get_epsg(),
             'cell_number_ew': self.ui.spinBox_cell_num_ew.value()
             if self.ui.checkBox_cell_num_ew.isChecked() else None,
             'cell_number_ns': self.ui.spinBox_cell_num_ns.value()
@@ -472,8 +505,8 @@ class ExportDialogModEm(QWizard):
 
     def get_topography_2_mesh_args(self):
         kwargs = {
-            'topographyfile': str(self.ui.comboBox_topography_file.currentText()),
-            'topographyarray': None,
+            'topography_file': str(self.ui.comboBox_topography_file.currentText()),
+            'topography_array': None,
             'interp_method': 'nearest' if self.ui.radioButton_interpo_method_nearest.isChecked()
             else 'linear' if self.ui.radioButton_interpo_method_linear.isChecked()
             else 'cubic',
@@ -494,8 +527,34 @@ class ExportDialogModEm(QWizard):
         return kwargs
 
     def get_select_period_kwargs(self):
+        period_list = None
+        if self.ui.radioButton_select_period.isChecked():
+            period_list = self._period_select_ui.get_frequencies()
+        elif self.ui.radioButton_select_by_file.isChecked():
+            period_list = self._period_select_from_file_ui.get_selected_periods()
+        elif self.ui.radioButton_select_by_decade.isChecked():
+            period_list = []
+            unique_periods = set()
+            for mt in self._mt_objs:
+                unique_periods.update(1. /mt.Z.freq)
+            unique_periods = np.array(sorted(list(unique_periods), reverse=True))
+            num = self.ui.spinBox_num_per_decade.value()
+            decade_min = 10. ** int(np.log(unique_periods[0]))
+            decade_max = decade_min * 10.
+            while unique_periods[-1] < decade_min:  # todo this block of code can be more efficient
+                indexes = np.where((unique_periods <= decade_max) & (unique_periods > decade_min))[0]
+                if len(indexes) < num:
+                    self._logger.warn("Selecting {} periods per decade, but there is only {} in [{},{}]".format(num, len(indexes), decade_min, decade_max))
+                else:
+                    # sample n
+                    np.random.shuffle(indexes)
+                    indexes = indexes[0:num]
+                period_list += list(unique_periods[indexes])
+                decade_max = decade_min
+                decade_min /= 10.
+
         kwargs = {
-            'period_list': self._period_select_ui.get_frequencies() if self.ui.radioButton_select_period.isChecked() else None,
+            'period_list': period_list,
             'percentage': self.ui.doubleSpinBox_select_period_percent.value()
         }
         return kwargs
@@ -625,8 +684,7 @@ class ModEMWorker(QtCore.QThread):
 
             # create model
             self.status_updated.emit("Creating Mesh Model...")
-            self._mesh_kwagrs['Data'] = data
-            model = Model(**self._mesh_kwagrs)
+            model = Model(data_object=data, **self._mesh_kwagrs)
             model.make_mesh()
             # plot mesh
             model.plot_mesh(fig_num=plt.gcf().number + 1)
@@ -642,7 +700,7 @@ class ModEMWorker(QtCore.QThread):
 
             # add topography
             self.status_updated.emit("Adding Topography...")
-            model.add_topography_2mesh(**self._topo_args)
+            model.add_topography_to_mesh(**self._topo_args)
             if self.show:
                 model.plot_topograph()  # this is too slow so only plot and save image when asked
                 figure = plt.gcf()
@@ -711,7 +769,7 @@ class ModEMWorker(QtCore.QThread):
             outf.write("### Topography:\n")
             kwargs = self._topo_args.copy()
             # hide path that may review user's identity
-            kwargs["topographyfile"] = os.path.normpath("[*]/" + os.path.basename(kwargs["topographyfile"]))
+            kwargs["topography_file"] = os.path.normpath("[*]/" + os.path.basename(kwargs["topography_file"]))
             pprint.pprint(kwargs, stream=outf)
             outf.write("\n")
             outf.write("### Covariance:\n")

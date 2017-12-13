@@ -86,13 +86,13 @@ class FrequencySingle(QtGui.QGroupBox):
             self.update_histogram()
 
     class FrequencyHistogram(MPLCanvas):
-        def __init__(self, parent=None, width=5, hight=2, dpi=100):
+        def __init__(self, parent=None, width=5, height=2, dpi=100):
             self.artists = dict()
             self._frequency = None
             self._current_frequency = None
             self._title = None
             self._unit = None
-            MPLCanvas.__init__(self, parent, width, hight, dpi)
+            MPLCanvas.__init__(self, parent, width, height, dpi)
             self._lx = None
             self.cursor = None
 

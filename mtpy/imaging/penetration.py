@@ -64,7 +64,6 @@ class Depth1D(ImagingBase):
 
     def plot(self):
         if self._data is None or not self._data:
-            # todo: raise an exception
             raise NotImplemented
         elif self._rholist is None or not self._rholist:
             raise ZComponentError

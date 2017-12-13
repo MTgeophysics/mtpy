@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>340</width>
-       <height>537</height>
+    <height>537</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -16,16 +16,25 @@
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
     <widget class="QTabWidget" name="tabWidget">
+     <property name="enabled">
+      <bool>true</bool>
+     </property>
      <property name="currentIndex">
       <number>1</number>
      </property>
      <widget class="QWidget" name="tab_summary">
+      <property name="enabled">
+       <bool>false</bool>
+      </property>
       <attribute name="title">
        <string>Station Summary</string>
       </attribute>
       <layout class="QVBoxLayout" name="verticalLayout_2">
        <item>
         <widget class="QGroupBox" name="groupBox_2">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
          <property name="title">
           <string>Summary</string>
          </property>
@@ -183,14 +192,14 @@
          </layout>
         </widget>
        </item>
-          <item>
-              <widget class="QPlainTextEdit" name="plainTextEdit_edi_text">
-                  <property name="lineWrapMode">
-                      <enum>QPlainTextEdit::NoWrap</enum>
-                  </property>
-                  <property name="readOnly">
-                      <bool>true</bool>
-                  </property>
+       <item>
+        <widget class="QPlainTextEdit" name="plainTextEdit_edi_text">
+         <property name="lineWrapMode">
+          <enum>QPlainTextEdit::NoWrap</enum>
+         </property>
+         <property name="readOnly">
+          <bool>true</bool>
+         </property>
         </widget>
        </item>
       </layout>

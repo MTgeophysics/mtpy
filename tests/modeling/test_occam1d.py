@@ -35,6 +35,7 @@ import numpy as np
 from unittest import TestCase
 
 import mtpy.modeling.occam1d as mtoc1d  # Wrapper class to interact with Occam1D
+import tests.imaging
 import tests.modeling
 from tests import EDI_DATA_DIR, SAMPLE_DIR, make_temp_dir
 from tests.imaging import reset_matplotlib
@@ -180,7 +181,7 @@ class TestOccam1D(TestCase):
         p2file = os.path.join(savepath, 'occam1dplot.png')
         pr.save_figure(p2file, close_plot='n')
 
-        tests.plt_wait(1)
-        tests.plt_close()
+        tests.imaging.plt_wait(1)
+        tests.imaging.plt_close()
 
         assert(os.path.exists(p2file))

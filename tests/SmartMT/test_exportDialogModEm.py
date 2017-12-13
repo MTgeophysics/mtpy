@@ -2,15 +2,17 @@ from __future__ import print_function
 
 import glob
 import os
+import pprint
 from unittest import TestCase
 
+import pytest
 from qtpy import QtCore
-from qtpy.QtWidgets import QFileDialog
+from qtpy.QtWidgets import QFileDialog, QWizard
 from qtpy.QtTest import QTest
 
 from mtpy.core.mt import MT
 from mtpy.gui.SmartMT.gui.export_dialog_modem import ExportDialogModEm
-from tests import make_temp_dir
+from tests import make_temp_dir, AUS_TOPO_FILE
 
 
 def _fake_exec_accept():
@@ -37,6 +39,7 @@ edi_paths = [
 ]
 
 
+@pytest.mark.skip("Not yet implemented")
 class TestExportDialogModEm(TestCase):
     @classmethod
     def setUpClass(cls):
@@ -56,11 +59,13 @@ class TestExportDialogModEm(TestCase):
         edi_files = glob.glob(os.path.join(edi_paths[0], '*.edi'))
         mt_objs = [MT(os.path.abspath(file_name)) for file_name in edi_files]
         self.dialog.set_data(mt_objs)
-        # if self.dialog.exec_() == QtGui.QWizard.Accepted:
-        #     print(self.dialog.get_save_file_path())
-        #     pprint.pprint(self.dialog.get_data_kwargs())
-        #     pprint.pprint(self.dialog.get_model_kwargs())
-        #
-        #     self.dialog.export_data()
+        _rewrite_text(self.dialog.ui.comboBox_topography_file, AUS_TOPO_FILE)
+        self.dialog.exec_ = _fake_exec_accept
+        if self.dialog.exec_() == QWizard.Accepted:
+            print(self.dialog.get_save_file_path())
+            pprint.pprint(self.dialog.get_data_kwargs())
+            pprint.pprint(self.dialog.get_model_kwargs())
+
+            self.dialog.export_data()
 
         self.dialog.close()

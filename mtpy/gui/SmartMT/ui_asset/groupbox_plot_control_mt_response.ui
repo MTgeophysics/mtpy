@@ -6,12 +6,12 @@
    <rect>
     <x>0</x>
     <y>0</y>
-       <width>312</width>
-       <height>448</height>
+    <width>306</width>
+    <height>359</height>
    </rect>
   </property>
   <property name="sizePolicy">
-      <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+   <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
     <horstretch>0</horstretch>
     <verstretch>0</verstretch>
    </sizepolicy>
@@ -20,44 +20,44 @@
    <string>GroupBox</string>
   </property>
   <property name="title">
-      <string>Plot Settings</string>
+   <string>Plot Settings</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <widget class="QGroupBox" name="groupBox_plot_style">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="title">
+      <string>Plot Style</string>
+     </property>
+     <property name="flat">
+      <bool>true</bool>
+     </property>
+     <layout class="QHBoxLayout" name="horizontalLayout">
       <item>
-          <widget class="QGroupBox" name="groupBox_plot_style">
-              <property name="sizePolicy">
-                  <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-                      <horstretch>0</horstretch>
-                      <verstretch>0</verstretch>
-                  </sizepolicy>
-              </property>
-              <property name="title">
-                  <string>Plot Style</string>
-              </property>
-              <property name="flat">
-                  <bool>true</bool>
-              </property>
-              <layout class="QHBoxLayout" name="horizontalLayout">
-                  <item>
-                      <widget class="QRadioButton" name="radioButton_compare">
-                          <property name="text">
-                              <string>Compare</string>
-                          </property>
-                          <property name="checked">
-                              <bool>true</bool>
-                          </property>
-                      </widget>
-                  </item>
-                  <item>
-                      <widget class="QRadioButton" name="radioButton_all">
-                          <property name="text">
-                              <string>Side-by-Side</string>
-                          </property>
-                      </widget>
-                  </item>
-              </layout>
-          </widget>
+       <widget class="QRadioButton" name="radioButton_compare">
+        <property name="text">
+         <string>Compare</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+       </widget>
       </item>
+      <item>
+       <widget class="QRadioButton" name="radioButton_all">
+        <property name="text">
+         <string>Side-by-Side</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
    <item>
     <widget class="QGroupBox" name="groupBox">
      <property name="sizePolicy">
@@ -69,9 +69,9 @@
      <property name="title">
       <string>Plot Type</string>
      </property>
-        <property name="flat">
-            <bool>true</bool>
-        </property>
+     <property name="flat">
+      <bool>true</bool>
+     </property>
      <layout class="QVBoxLayout" name="verticalLayout_2">
       <item>
        <widget class="QRadioButton" name="radioButton_1">
@@ -97,11 +97,25 @@
         </property>
        </widget>
       </item>
+      <item>
+       <widget class="QCheckBox" name="checkBox_skew">
+        <property name="text">
+         <string>plot skew angle</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="checkBox_pt">
+        <property name="text">
+         <string>plot phase tensor ellipses</string>
+        </property>
+       </widget>
+      </item>
      </layout>
     </widget>
    </item>
    <item>
-    <widget class="QGroupBox" name="groupBox_2">
+    <widget class="QGroupBox" name="groupBox_strike">
      <property name="sizePolicy">
       <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
        <horstretch>0</horstretch>
@@ -116,9 +130,9 @@
      <property name="title">
       <string>Strike</string>
      </property>
-        <property name="flat">
-            <bool>true</bool>
-        </property>
+     <property name="flat">
+      <bool>true</bool>
+     </property>
      <layout class="QVBoxLayout" name="verticalLayout_3">
       <item>
        <widget class="QCheckBox" name="checkBox_strike_i">
@@ -140,81 +154,6 @@ of Caldwell et al. [2004]</string>
        <widget class="QCheckBox" name="checkBox_strike_t">
         <property name="text">
          <string>plot strike angle determined from the tipper</string>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </widget>
-   </item>
-   <item>
-    <widget class="QGroupBox" name="groupBox_3">
-        <property name="sizePolicy">
-            <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-            </sizepolicy>
-        </property>
-     <property name="toolTip">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;plot the skew angle calculated from the
-                            phase tensor.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
-                        </string>
-     </property>
-     <property name="title">
-      <string>Skew</string>
-     </property>
-        <property name="flat">
-            <bool>true</bool>
-        </property>
-     <layout class="QGridLayout" name="gridLayout">
-      <item row="0" column="0">
-       <widget class="QRadioButton" name="radioButton_skew_y">
-        <property name="text">
-         <string>plot skew angle</string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="1">
-       <widget class="QRadioButton" name="radioButton_skew_n">
-        <property name="text">
-         <string>do not plot skew angle</string>
-        </property>
-        <property name="checked">
-         <bool>true</bool>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </widget>
-   </item>
-   <item>
-    <widget class="QGroupBox" name="groupBox_4">
-        <property name="sizePolicy">
-            <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-            </sizepolicy>
-        </property>
-     <property name="title">
-      <string>Ellipses</string>
-     </property>
-        <property name="flat">
-            <bool>true</bool>
-        </property>
-     <layout class="QVBoxLayout" name="verticalLayout_4">
-      <item>
-       <widget class="QRadioButton" name="radioButton_ellipses_n">
-        <property name="text">
-         <string>do not plot phase tensor pllipses</string>
-        </property>
-        <property name="checked">
-         <bool>true</bool>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QRadioButton" name="radioButton_ellipses_y">
-        <property name="text">
-         <string>plot phase tensor ellipses</string>
         </property>
        </widget>
       </item>

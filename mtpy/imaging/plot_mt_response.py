@@ -31,7 +31,11 @@ import mtpy.imaging.mtcolors as mtcl
 # ==============================================================================
 #  Plot apparent resistivity and phase
 # ==============================================================================
-class PlotMTResponse(object):
+from mtpy import MtPyLog
+from mtpy.imaging.mtplottools import PlotSettings
+
+
+class PlotMTResponse(PlotSettings):
     """
     Plots Resistivity and phase for the different modes of the MT response.  At
     the moment is supports the input of an .edi file. Other formats that will
@@ -187,11 +191,13 @@ class PlotMTResponse(object):
 
         :Example: ::
 
-            >>> import mtpy.imaging.mtplot as mtplot
+            >>> import mtpy.core.mt.MT
+            >>> import mtpy.imaging.plot_mt_response.PlotMTResponse
             >>> edifile = r"/home/MT01/MT01.edi"
-            >>> rp1 = mtplot.PlotResPhase(fn=edifile, plot_num=2)
+            >>> mt_obj = MT(edifile)
+            >>> rp1 = PlotMTResponse(mt_obj.Z, plot_num=2)
             >>> # plots all 4 components
-            >>> rp1 = mtplot.PlotResPhase(fn=edifile, plot_tipper='yr')
+            >>> rp1 = PlotMTResponse(mt_obj.Z, plot_tipper='yr')
             >>> # plots the real part of the tipper
 
     Attributes:
@@ -209,11 +215,11 @@ class PlotMTResponse(object):
                         not, see accepted values above in arguments
 
         -plot_strike    string or integer telling the program to plot the 
-                        strike angle, see values above in arguments
+                        strike angle, see values above in arguments  (YG: not implemented)
 
         -plot_skew      string to tell the program to plot skew angle.
                         The skew is plotted in the same subplot as the strike
-                        angle at the moment
+                        angle at the moment  (YG: not implemented)
 
 
         -period          period array cooresponding to the impedance tensor
@@ -346,7 +352,8 @@ class PlotMTResponse(object):
 
     def __init__(self, z_object=None, t_object=None, pt_obj=None,
                  station='MT Response', **kwargs):
-
+        super(PlotMTResponse, self).__init__()
+        self._logger = MtPyLog.get_mtpy_logger(self.__class__.__module__ + "." + self.__class__.__name__)
         self.Z = z_object
         self.Tipper = t_object
         self.pt = pt_obj
@@ -428,6 +435,8 @@ class PlotMTResponse(object):
 
         for key in kwargs.keys():
             setattr(self, key, kwargs[key])
+        else:
+            self._logger.warn("Argument {}={} is not supported thus not been set.".format(key, kwargs[key]))
 
         # plot on initializing
         if self.plot_yn == 'y':
@@ -445,7 +454,7 @@ class PlotMTResponse(object):
         else:
             return None
 
-    def plot(self):
+    def plot(self, show=True):
         """
         plotResPhase(filename,fig_num) will plot the apparent resistivity and 
         phase for a single station. 
@@ -1125,7 +1134,8 @@ class PlotMTResponse(object):
         self.fig.suptitle(self.plot_title, fontdict=fontdict)
 
         # be sure to show
-        plt.show()
+        if show:
+            plt.show()
 
     def save_plot(self, save_fn, file_format='pdf', orientation='portrait',
                   fig_dpi=None, close_plot='y'):

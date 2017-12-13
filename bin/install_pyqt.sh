@@ -5,7 +5,7 @@ set -ex
 BUILDING_DIR=builds
 
 if [ -z "$QT_VERSION" ]; then
-    QT_VERSION=4  # install pyqt 4 by default
+    QT_VERSION=5  # install pyqt 5 by default
 fi
 
 if [ ! -d "$BUILDING_DIR" ]; then

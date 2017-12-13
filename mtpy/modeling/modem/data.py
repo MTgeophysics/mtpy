@@ -703,9 +703,9 @@ class Data(object):
         if self.data_array is None:
             self._set_dtype((len(self.period_list), 2, 2),
                             (len(self.period_list), 1, 2))
-            self.data_array = np.zeros(station_locations.size,
+            self.data_array = np.zeros(station_locations.station_locations.size,
                                        dtype=self._dtype)
-            for d_index, s_arr in enumerate(station_locations):
+            for d_index, s_arr in enumerate(station_locations.station_locations):
                 self.data_array[d_index]['lat'] = s_arr['lat']
                 self.data_array[d_index]['lon'] = s_arr['lon']
                 self.data_array[d_index]['east'] = s_arr['east']
@@ -715,7 +715,7 @@ class Data(object):
                 self.data_array[d_index]['rel_north'] = s_arr['rel_north']
 
         else:
-            for s_arr in station_locations:
+            for s_arr in station_locations.station_locations:
                 try:
                     d_index = np.where(self.data_array['station'] ==
                                        s_arr['station'])[0][0]

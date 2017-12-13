@@ -34,9 +34,9 @@ import mtpy.processing.calibration as MTcb
 import mtpy.utils.filehandling as MTfh
 import mtpy.utils.configfile as MTcf
 
-reload(MTfh)
-reload(MTcb)
-reload(MTcf)
+#reload(MTfh)
+#reload(MTcb)
+#reload(MTcf)
 
 # accuracy to which angles are determined
 angleaccuracy = 1.

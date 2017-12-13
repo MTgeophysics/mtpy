@@ -51,6 +51,7 @@ class Strike(VisualizationBase):
             'plot_tipper': self._plot_control_ui.get_plot_tipper(),
             'pt_error_floor': self._plot_control_ui.get_error_floor(),
             'fold': self._plot_control_ui.get_fold(),
+            'fig_size': (8, 6),
             'fig_dpi': 100,
             "plot_yn": 'n',
             "fig_num": get_next_fig_num()

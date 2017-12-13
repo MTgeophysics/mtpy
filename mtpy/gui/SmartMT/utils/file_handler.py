@@ -19,7 +19,7 @@ DEFAULT_GROUP_PREFIX = 'Group'
 DEFAULT_GROUP = "Default Group"
 
 
-class FileHandler:
+class FileHandler():
     """
         Description:
             container that holds all file references and MT object created from the files

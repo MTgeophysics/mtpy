@@ -1122,11 +1122,11 @@ class Model(object):
         if len(x.shape) == 1:
             x, y = np.meshgrid(x, y)
 
-        epsg_from, epsg_to = surface_epsg, self.data_obj.epsg
+        epsg_from, epsg_to = surface_epsg, self.data_obj.model_epsg
         xs, ys = mtpy.utils.gis_tools.epsg_project(x, y, epsg_from, epsg_to)
 
         # get centre position of model grid in real world coordinates
-        x0, y0 = [np.median(self.station_locations[dd] - self.station_locations['rel_' + dd]) for dd in
+        x0, y0 = [np.median(self.station_locations.station_locations[dd] - self.station_locations.station_locations['rel_' + dd]) for dd in
                   ['east', 'north']]
 
         # centre points of model grid in real world coordinates
@@ -1224,17 +1224,17 @@ class Model(object):
         :return:
         """
 
-        sx = self.station_locations['rel_east']
-        sy = self.station_locations['rel_north']
+        sx = self.station_locations.rel_east
+        sy = self.station_locations.rel_north
 
         # find index of each station on grid
         station_index_x = []
         station_index_y = []
-        for sname in self.station_locations['station']:
-            ss = np.where(self.station_locations['station'] == sname)[0][0]
+        for sname in self.station_locations.station:
+            ss = np.where(self.station_locations.station == sname)[0][0]
             # relative locations of stations
-            sx, sy = self.station_locations['rel_east'][ss], \
-                     self.station_locations['rel_north'][ss]
+            sx, sy = self.station_locations.rel_east[ss], \
+                     self.station_locations.rel_north[ss]
             # indices of stations on model grid
             sxi = np.where((sx <= self.grid_east[1:]) & (
                 sx > self.grid_east[:-1]))[0][0]
@@ -1270,7 +1270,7 @@ class Model(object):
 
             # update elevation in station locations and data array, +1 m as
             # data elevation needs to be below the topography (as advised by Naser)
-            self.station_locations['elev'][ss] = topoval + 1.
+            self.station_locations.elev[ss] = topoval + 1.
             self.data_obj.data_array['elev'][ss] = topoval + 1.
 
         # This will shift stations' location to be relative to the defined mesh-grid centre

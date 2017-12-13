@@ -59,7 +59,7 @@
      </property>
      <layout class="QFormLayout" name="formLayout_2">
       <item row="0" column="0">
-          <widget class="QLabel" name="label_size">
+       <widget class="QLabel" name="label_size">
         <property name="toolTip">
          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;multiplier to scale the arrow&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
@@ -83,12 +83,12 @@
          <double>0.100000000000000</double>
         </property>
         <property name="value">
-         <double>5.000000000000000</double>
+         <double>2.500000000000000</double>
         </property>
        </widget>
       </item>
       <item row="1" column="0">
-          <widget class="QLabel" name="label_head_length">
+       <widget class="QLabel" name="label_head_length">
         <property name="toolTip">
          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;length of the arrwo head&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
@@ -112,12 +112,12 @@
          <double>0.100000000000000</double>
         </property>
         <property name="value">
-         <double>1.500000000000000</double>
+         <double>0.150000000000000</double>
         </property>
        </widget>
       </item>
       <item row="2" column="0">
-          <widget class="QLabel" name="label_head_width">
+       <widget class="QLabel" name="label_head_width">
         <property name="toolTip">
          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;width of the arrow head&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
@@ -141,12 +141,12 @@
          <double>0.100000000000000</double>
         </property>
         <property name="value">
-         <double>1.500000000000000</double>
+         <double>0.100000000000000</double>
         </property>
        </widget>
       </item>
       <item row="3" column="0">
-          <widget class="QLabel" name="label_line_width">
+       <widget class="QLabel" name="label_line_width">
         <property name="toolTip">
          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;line width of the arrow&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
@@ -175,7 +175,7 @@
        </widget>
       </item>
       <item row="4" column="0">
-          <widget class="QLabel" name="label_color_real">
+       <widget class="QLabel" name="label_color_real">
         <property name="text">
          <string>Color (real)</string>
         </property>
@@ -229,7 +229,7 @@
        </widget>
       </item>
       <item row="5" column="0">
-          <widget class="QLabel" name="label_color_imaginary">
+       <widget class="QLabel" name="label_color_imaginary">
         <property name="text">
          <string>Color (imaginary)</string>
         </property>
@@ -280,7 +280,7 @@
        </widget>
       </item>
       <item row="6" column="0">
-          <widget class="QLabel" name="label_threshold">
+       <widget class="QLabel" name="label_threshold">
         <property name="toolTip">
          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;threshold of which any arrow larger than this number will not be plotted, helps clean up if the data is not good.&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;NOTE:&lt;/span&gt; this is applied before scaling by 'size'&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
@@ -304,12 +304,12 @@
          <double>0.100000000000000</double>
         </property>
         <property name="value">
-         <double>1.000000000000000</double>
+         <double>2.000000000000000</double>
         </property>
        </widget>
       </item>
       <item row="7" column="0">
-          <widget class="QLabel" name="label_direction">
+       <widget class="QLabel" name="label_direction">
         <property name="text">
          <string>Direction</string>
         </property>
@@ -331,20 +331,20 @@
       </item>
      </layout>
      <zorder>doubleSpinBox_size</zorder>
-        <zorder>label_size</zorder>
-        <zorder>label_head_length</zorder>
+     <zorder>label_size</zorder>
+     <zorder>label_head_length</zorder>
      <zorder>doubleSpinBox_head_length</zorder>
-        <zorder>label_head_width</zorder>
+     <zorder>label_head_width</zorder>
      <zorder>doubleSpinBox_head_width</zorder>
-        <zorder>label_line_width</zorder>
+     <zorder>label_line_width</zorder>
      <zorder>doubleSpinBox_line_width</zorder>
-        <zorder>label_color_real</zorder>
+     <zorder>label_color_real</zorder>
      <zorder>comboBox_color_real</zorder>
-        <zorder>label_color_imaginary</zorder>
+     <zorder>label_color_imaginary</zorder>
      <zorder>comboBox_color_imaginary</zorder>
-        <zorder>label_threshold</zorder>
+     <zorder>label_threshold</zorder>
      <zorder>doubleSpinBox_threshold</zorder>
-        <zorder>label_direction</zorder>
+     <zorder>label_direction</zorder>
      <zorder>comboBox_direction</zorder>
     </widget>
    </item>

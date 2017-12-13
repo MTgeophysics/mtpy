@@ -13,7 +13,7 @@ from itertools import cycle
 
 import pandas as pd
 from qtpy import QtCore
-from qtpy.QtWidgets import QWidget, QMessageBox, QInputDialog, QMenu, QAction, QTreeWidgetItem
+from qtpy.QtWidgets import QWidget, QMessageBox, QInputDialog, QMenu, QAction, QTreeWidgetItem, QSizePolicy
 from qtpy.QtCore import Signal
 from matplotlib import artist
 
@@ -45,7 +45,7 @@ class StationViewer(QWidget):
         self.file_handler = file_handler
         self.ui = Ui_StationViewer()
         self.ui.setupUi(self)
-        self.subwindow, _ = parent.create_subwindow(self, self.windowTitle())
+        # self.subwindow, _ = parent.create_subwindow(self, self.windowTitle())
         # self.subwindow.setMaximumWidth(600)
         # self.subwindow.setMinimumWidth(400)
         # self.subwindow.resize(parent.width()/3, self.height())
@@ -68,17 +68,18 @@ class StationViewer(QWidget):
         self.ui.pushButton_hideMap.clicked.connect(self.toggle_map)
         self.ui.pushButton_showMap.clicked.connect(self.toggle_map)
         # add map area and hide by default
-        self.fig_canvas = StationViewer.StationMap(self, self.file_handler)
-        self.fig_canvas.setHidden(True)
-        self.fig_canvas.setFocusPolicy(QtCore.Qt.StrongFocus)
-        self.fig_canvas.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
-        self.fig_canvas.customContextMenuRequested.connect(self.open_menu_in_map_view)
-        self.ui.verticalLayout.addWidget(self.fig_canvas)
+        self.station_map = StationViewer.StationMap(self, self.file_handler, 4, 3, dpi=self.width()/3)
+        self.station_map.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Preferred)
+        self.station_map.setHidden(True)
+        self.station_map.setFocusPolicy(QtCore.Qt.StrongFocus)
+        self.station_map.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.station_map.customContextMenuRequested.connect(self.open_menu_in_map_view)
+        self.ui.verticalLayout.addWidget(self.station_map)
         # share the selected station collection from fig_canvas
-        self.selected_stations = self.fig_canvas.selected_stations
+        self.selected_stations = self.station_map.selected_stations
         # connect signals between map and tree view
-        self.fig_canvas.selection_changed.connect(self.update_selection)
-        self.selection_changed.connect(self.fig_canvas.update_figure)
+        self.station_map.selection_changed.connect(self.update_selection)
+        self.selection_changed.connect(self.station_map.update_figure)
 
     _selection_update_in_progress = False
 
@@ -108,7 +109,7 @@ class StationViewer(QWidget):
                 for station in selected_stations:
                     self.file_handler.unload(self.file_handler.station2ref(station))
                     self.selected_stations.remove(station)
-                self.fig_canvas.selected_stations.clear()
+                self.station_map.selected_stations.clear()
                 self.update_view()
 
                 # update station summary/status
@@ -196,15 +197,16 @@ class StationViewer(QWidget):
 
     def toggle_map(self, *args, **kwargs):
         if self.ui.pushButton_showMap.isEnabled():
-            self.fig_canvas.setMinimumHeight(self.height() / 2)
-            self.fig_canvas.setHidden(False)
-            self.fig_canvas.update_figure()
+            # self.fig_canvas.setMinimumHeight(self.height() / 3)
+            # self.fig_canvas.resize(self.fig_canvas.sizeHint())
+            self.station_map.setHidden(False)
+            self.station_map.update_figure()
             self.ui.pushButton_showMap.setEnabled(False)
             self.ui.pushButton_showMap.setHidden(True)
             self.ui.pushButton_hideMap.setEnabled(True)
             self.ui.pushButton_hideMap.setHidden(False)
         else:
-            self.fig_canvas.setHidden(True)
+            self.station_map.setHidden(True)
             self.ui.pushButton_showMap.setEnabled(True)
             self.ui.pushButton_showMap.setHidden(False)
             self.ui.pushButton_hideMap.setEnabled(False)
@@ -287,7 +289,7 @@ class StationViewer(QWidget):
 
     def open_menu_in_map_view(self, position):
         self._update_menu_context()
-        self.tree_menu.exec_(self.fig_canvas.mapToGlobal(position))
+        self.tree_menu.exec_(self.station_map.mapToGlobal(position))
 
     def create_new_group(self, *args, **kwargs):
         ok = False
@@ -321,21 +323,21 @@ class StationViewer(QWidget):
         """
         selection_changed = Signal()
 
-        def __init__(self, parent=None, file_handler=None, width=5, hight=4, dpi=100):
+        def __init__(self, parent=None, file_handler=None, width=4, height=3, dpi=100):
             """
 
             :param parent:
             :param file_handler:
             :type file_handler: file_handler.FileHandler
             :param width:
-            :param hight:
+            :param height:
             :param dpi:
             """
             self.file_handler = file_handler
             self.artists = dict()
             self._annotation_artists = dict()
             self.selected_stations = set()
-            MPLCanvas.__init__(self, parent, width, hight, dpi)
+            MPLCanvas.__init__(self, parent, width, height, dpi)
             self.useblit = self.supports_blit
             self.mpl_connect('pick_event', self.map_pick)
 

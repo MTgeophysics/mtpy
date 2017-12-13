@@ -8,7 +8,8 @@ from unittest import TestCase
 import matplotlib
 import sys
 
-from tests import plt_wait, make_temp_dir
+from tests import make_temp_dir
+from tests.imaging import plt_wait
 
 if os.name == "posix" and 'DISPLAY' not in os.environ:
     print("MATPLOTLIB: No Display found, using non-interactive svg backend", file=sys.stderr)

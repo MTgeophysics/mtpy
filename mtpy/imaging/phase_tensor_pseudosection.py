@@ -328,6 +328,7 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
     """
 
     def __init__(self, **kwargs):
+        super(PlotPhaseTensorPseudoSection, self).__init__()
         mtpl.PlotSettings.__init__(self)
 
         fn_list = kwargs.pop('fn_list', None)

@@ -17,8 +17,9 @@ import matplotlib.patches as patches
 import matplotlib.colorbar as mcb
 import mtpy.imaging.mtcolors as mtcl
 import mtpy.imaging.mtplottools as mtpl
-#import mtpy.utils.conversions as utm2ll
+# import mtpy.utils.conversions as utm2ll
 from mtpy.utils.mtpylog import MtPyLog
+
 
 # get a logger object for this module, using the utility class MtPyLog to
 # config the logger
@@ -364,8 +365,8 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
         Initialise the object
         :param kwargs: keyword-value pairs
         """
-
         super(PlotPhaseTensorMaps, self).__init__()
+
         self._logger = MtPyLog.get_mtpy_logger(self.__class__.__name__)
 
         fn_list = kwargs.pop('fn_list', None)
@@ -467,35 +468,21 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
 
         # --> set arrow legend properties -------------------------------
         arrow_legend_dict = kwargs.pop('arrow_legend_dict', {})
-        try:
-            self.arrow_legend_position = arrow_legend_dict['position']
-        except KeyError:
-            self.arrow_legend_position = 'lower right'
+
+        self.arrow_legend_position = arrow_legend_dict.pop('position', 'lower right')
 
         # set x-border pad
-        try:
-            self.arrow_legend_xborderpad = arrow_legend_dict['xborderpad']
-        except KeyError:
-            self.arrow_legend_xborderpad = 0.2
+        self.arrow_legend_xborderpad = arrow_legend_dict.pop('xborderpad', .2)
 
         # set y-border pad
-        try:
-            self.arrow_legend_yborderpad = arrow_legend_dict['yborderpad']
-        except KeyError:
-            self.arrow_legend_yborderpad = 0.2
+        self.arrow_legend_yborderpad = arrow_legend_dict.pop('yborderpad', .2)
 
         # set font pad
-        try:
-            self.arrow_legend_fontpad = arrow_legend_dict['fontpad']
-        except KeyError:
-            self.arrow_legend_fontpad = .05
+        self.arrow_legend_fontpad = arrow_legend_dict.pop('fontpad', .05)
 
         # set font properties
-        try:
-            self.arrow_legend_fontdict = arrow_legend_dict['fontdict']
-        except KeyError:
-            self.arrow_legend_fontdict = {'size': self.font_size,
-                                          'weight': 'bold'}
+        self.arrow_legend_fontdict = arrow_legend_dict.pop('fontdict', {'size': self.font_size,
+                                                                        'weight': 'bold'})
 
         # --> set background image properties
         self.image_extent = None
@@ -526,27 +513,25 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
         # --> set station name properties
         station_dict = kwargs.pop('station_dict', None)
         if station_dict is not None:
-            try:
-                self.station_id = station_dict['id']
-            except KeyError:
-                self.station_id = (0, 2)
+            self.station_id = station_dict.pop('id', (0, 2))
 
             # set spacing of station name and ellipse
-            try:
-                self.station_pad = station_dict['pad']
-            except KeyError:
-                self.station_pad = .0005
+            self.station_pad = station_dict.pop('pad', .0005)
 
             # set font properties of the station label
-            try:
-                self.station_font_size = station_dict['font_dict']
-            except KeyError:
-                self.station_font_dict = {'size': self.font_size,
-                                          'weight': 'bold'}
+            self.station_font_size = station_dict.pop('font_dict', {'size': self.font_size,
+                                                                    'weight': 'bold'})
 
-        # --> plot if desired ------------------------
         self.plot_yn = kwargs.pop('plot_yn', 'y')
         self.save_fn = kwargs.pop('save_fn', "/c/tmp")
+
+        for key in kwargs.keys():
+            if hasattr(self, key):
+                setattr(self, key, kwargs[key])
+            else:
+                self._logger.warning("unknown argument {}={}.".format(key, kwargs[key]))
+
+        # --> plot if desired ------------------------
         if self.plot_yn == 'y':
             self.plot()
             # self.save_figure(self.save_fn, file_format='png')
@@ -619,12 +604,13 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
         plt.xticks(rotation='vertical')  # FZ: control tick rotation=30 not that good
         #
         # --> plot the background image if desired-----------------------
-        try:
-            im = plt.imread(self.image_file)
-            self.ax.imshow(im, origin=self.image_origin,
-                           extent=self.image_extent, aspect='equal')
-        except (AttributeError, TypeError):
-            print 'Could not plot image'
+        if self.image_file:
+            try:
+                im = plt.imread(self.image_file)
+                self.ax.imshow(im, origin=self.image_origin,
+                               extent=self.image_extent, aspect='equal')
+            except (AttributeError, TypeError):
+                self._logger.error('Could not plot background image {}'.format(self.image_file))
 
         # get the reference point
         refpoint = self.plot_reference_point
@@ -764,7 +750,7 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
 
                 # get the properties to color the ellipses by
                 if self.ellipse_colorby == 'phiminang' or \
-                                self.ellipse_colorby == 'phimin':
+                        self.ellipse_colorby == 'phimin':
                     colorarray = pt.phimin[jj]
 
                 elif self.ellipse_colorby == 'phimax':
@@ -774,11 +760,11 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
                     colorarray = np.sqrt(abs(pt.det[jj])) * (180 / np.pi)
 
                 elif self.ellipse_colorby == 'skew' or \
-                                self.ellipse_colorby == 'skew_seg':
+                        self.ellipse_colorby == 'skew_seg':
                     colorarray = pt.beta[jj]
 
                 elif self.ellipse_colorby == 'normalized_skew' or \
-                                self.ellipse_colorby == 'normalized_skew_seg':
+                        self.ellipse_colorby == 'normalized_skew_seg':
                     colorarray = 2 * pt.beta[jj]
 
                 elif self.ellipse_colorby == 'ellipticity':
@@ -1107,7 +1093,7 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
             plt.setp(self.ref_ax.yaxis.get_ticklabels(), visible=False)
             self.ref_ax.set_title(r'$\Phi$ = 1')
 
-        if show is True:
+        if show:
             # always show, and adjust the figure before saving it below. The
             # figure size ratio are all different!!
             plt.show()

@@ -20,12 +20,12 @@ import os
 from unittest import TestCase
 
 import mtpy.modeling.occam2d as occam2d
-from tests import EDI_DATA_DIR, SAMPLE_DIR, make_temp_dir, plt_wait, plt_close
+from tests import EDI_DATA_DIR, SAMPLE_DIR, make_temp_dir
 
 # import matplotlib.pyplot as plt
 # plt.ion() # make figure disappear automatically:
 # plt.ioff()  # make figure show normally and need to click to close the figure to continue the proc
-from tests.imaging import reset_matplotlib
+from tests.imaging import reset_matplotlib, plt_wait, plt_close
 from tests.modeling import diff_files
 
 

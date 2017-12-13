@@ -16,7 +16,7 @@ import matplotlib.patches as patches
 import matplotlib.colorbar as mcb
 import mtpy.imaging.mtcolors as mtcl
 import mtpy.imaging.mtplottools as mtpl
-reload(mtpl)
+#reload(mtpl)
 #==============================================================================
 
 
