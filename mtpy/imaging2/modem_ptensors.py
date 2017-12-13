@@ -171,9 +171,7 @@ class ModEM_ptensors:
             vals = self._pt_dict[pk][key]
             return vals
         except Exception as err:
-            print 'Key error: key %s not found' % (key)
             logging.error(traceback.format_exc())
-            exit(-1)
     # end func
 
     def plot(self, ax, m, periodIdx, ellipse_size_factor=0.05,
@@ -199,8 +197,8 @@ class ModEM_ptensors:
         for i in range(len(self._pt_dict[k])):
             lon = self._pt_dict[k]['lon'][i]
             lat = self._pt_dict[k]['lat'][i]
-            phimax = self._pt_dict[k]['phimax'][i] / self.pt_dict[k]['phimax'].max()
-            phimin = self._pt_dict[k]['phimin'][i] / self.pt_dict[k]['phimax'].max()
+            phimax = self._pt_dict[k]['phimax'][i] / self._pt_dict[k]['phimax'].max()
+            phimin = self._pt_dict[k]['phimin'][i] / self._pt_dict[k]['phimax'].max()
             az = self._pt_dict[k]['azimuth'][i]
             nskew = self._pt_dict[k]['n_skew'][i]
 
