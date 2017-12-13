@@ -367,18 +367,18 @@ def project_point_utm2ll(easting, northing, utm_zone, datum='WGS84', epsg=None):
     utm_cs = osr.SpatialReference()
     utm_cs.SetWellKnownGeogCS(datum)
     
-    ll_cs = osr.SpatialReference()
+    ll_cs = None
 
-    if not utm_zone or (utm_zone == '0'):
-        if epsg is None:
-            raise ValueError('Please provide either utm_zone or epsg')
-        else:
-            ogrerr = ll_cs.ImportFromEPSG(epsg)
-            if ogrerr != OGRERR_NONE:
-                raise Exception("GDAL/osgeo ogr error code: {}".format(ogrerr))
-            utm_zone = ll_cs.GetUTMZone()
-            # assert len(utm_zone) == 3, 'UTM zone should be imput as ##N or ##S'
+    if epsg is not None:
+        ll_cs = osr.SpatialReference()
+        ll_cs.SetWellKnownGeogCS(datum)
+        ogrerr = ll_cs.ImportFromEPSG(epsg)
+        if ogrerr != OGRERR_NONE:
+            raise Exception("GDAL/osgeo ogr error code: {}".format(ogrerr))
+        # utm_zone = ll_cs.GetUTMZone()
+        # assert len(utm_zone) == 3, 'UTM zone should be imput as ##N or ##S'
 
+    # find out utm zone number and is_northern here
     if isinstance(utm_zone, str):
         try:
             zone_number = int(utm_zone[0:-1])
@@ -386,20 +386,18 @@ def project_point_utm2ll(easting, northing, utm_zone, datum='WGS84', epsg=None):
         except ValueError:
             raise ValueError('Zone number {0} is not a number'.format(utm_zone[0:-1]))
         is_northern = True if zone_letter.lower() >= 'n' else False
-        ll_cs.SetUTM(zone_number, is_northern)
     elif isinstance(utm_zone, int):
-        # std UTM code returned my gdal
-        is_northern = True if utm_zone > 0 else False
+        # std UTM code returned by gdal
+        is_northern = False if utm_zone < 0 else True
         zone_number = abs(utm_zone)
-        ll_cs.SetUTM(zone_number, is_northern)
     else:
         raise NotImplementedError("utm_zone type ({}) not supported".format(type(utm_zone)))
 
-    
-
-#    # set lat, lon coordinate system
-#    ll_cs = utm_cs.CloneGeogCS()
-#    ll_cs.ExportToPrettyWkt()
+    utm_cs.SetUTM(zone_number, is_northern)
+    if ll_cs is None:  # no epsg provided thus ll_cs not created
+        # set lat, lon coordinate system
+        ll_cs = utm_cs.CloneGeogCS()
+        ll_cs.ExportToPrettyWkt()
 
     # set the transform utm to lat lon
     transform_utm2ll = osr.CoordinateTransformation(utm_cs, ll_cs)
