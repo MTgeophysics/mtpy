@@ -784,24 +784,30 @@ class Mesh():
         # --> fill horizontal nodes
         for mline in mlines[line_count:]:
             mline = mline.strip().split()
+#            print mline
             for m_value in mline:
                 self.x_nodes[h_index] = float(m_value)
                 h_index += 1
-
             line_count += 1
-            if h_index == nh:
+            # needs to be >= nh - 2 as python count starts from 0 and number of
+            # horizontal nodes is 1 less than listed at the top of the file
+            if h_index >= nh - 2:
                 break
+            
+
 
         # --> fill vertical nodes
         for mline in mlines[line_count:]:
             mline = mline.strip().split()
             for m_value in mline:
+                
                 self.z_nodes[v_index] = float(m_value)
                 v_index += 1
+            print m_value,v_index,nv-2
             line_count += 1
-            if v_index == nv:
+            if v_index >= nv - 2:
                 break
-
+            
         # --> fill model values
         for ll, mline in enumerate(mlines[line_count + 1:], line_count):
             mline = mline.strip()
