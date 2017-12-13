@@ -366,19 +366,11 @@ def project_point_utm2ll(easting, northing, utm_zone, datum='WGS84', epsg=None):
     # set utm coordinate system
     utm_cs = osr.SpatialReference()
     utm_cs.SetWellKnownGeogCS(datum)
-    
-    ll_cs = None
 
     if epsg is not None:
-        ll_cs = osr.SpatialReference()
-        ll_cs.SetWellKnownGeogCS(datum)
-        ogrerr = ll_cs.ImportFromEPSG(epsg)
+        ogrerr = utm_cs.ImportFromEPSG(epsg)
         if ogrerr != OGRERR_NONE:
             raise Exception("GDAL/osgeo ogr error code: {}".format(ogrerr))
-        # utm_zone = ll_cs.GetUTMZone()
-        # assert len(utm_zone) == 3, 'UTM zone should be imput as ##N or ##S'
-
-    # find out utm zone number and is_northern here
     if isinstance(utm_zone, str):
         try:
             zone_number = int(utm_zone[0:-1])
@@ -392,16 +384,13 @@ def project_point_utm2ll(easting, northing, utm_zone, datum='WGS84', epsg=None):
         zone_number = abs(utm_zone)
     else:
         raise NotImplementedError("utm_zone type ({}) not supported".format(type(utm_zone)))
-
     utm_cs.SetUTM(zone_number, is_northern)
-    if ll_cs is None:  # no epsg provided thus ll_cs not created
-        # set lat, lon coordinate system
-        ll_cs = utm_cs.CloneGeogCS()
-        ll_cs.ExportToPrettyWkt()
+
+    ll_cs = utm_cs.CloneGeogCS()
 
     # set the transform utm to lat lon
     transform_utm2ll = osr.CoordinateTransformation(utm_cs, ll_cs)
-    ll_point = list(transform_utm2ll.TransformPoint(easting, northing))
+    ll_point = list(transform_utm2ll.TransformPoint(easting, northing, 0.))
 
     # be sure to round out the numbers to remove computing with floats
     return round(ll_point[1], 6), round(ll_point[0], 6)
