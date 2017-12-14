@@ -25,19 +25,33 @@ from collections import defaultdict
 import fiona
 
 class Geology:
-    def __init__(self, sfn, symbolkey='SYMBOL'):
+    def __init__(self, sfn,
+                 symbolkey='SYMBOL',
+                 minLon=None, maxLon=None,
+                 minLat=None, maxLat=None):
         '''
         Class for plotting geological (Poly/Line) data in shapefiles
 
         :param sfn: shape file name
-        :symbolkey: key in shapefile for map symbol        
-        
+        :param symbolkey: key in shapefile for map symbol
+        :param minLon: minimum longitude of bounding box for clipping shapefile contents; this
+                       is necessary to ensure that the map-legend contains only elements
+                       that pertain to the region of interest
+        :param maxLon: minimum longitude of bounding box
+        :param minLat: minimum latitude of bounding box
+        :param maxLat: maximum latitude of bounding box
         '''
+
         self._sfn = sfn
         self._properties = []
         self._geometries = []
         self._symbolkey = symbolkey
         self._hasLUT = False
+
+        self._boundingPoly = None
+        if(minLon != None and maxLon != None and minLat != None and maxLat != None):
+            self._boundingPoly = Polygon([(minLon,minLat), (maxLon,minLat),
+                                          (maxLon,maxLat), (minLon, maxLat)])
 
         # Load file
         sf = None
@@ -49,8 +63,18 @@ class Geology:
             exit(-1)
 
         for feature in sf:
-            self._properties.append(feature['properties'])
-            self._geometries.append(shape(feature['geometry']))
+            g = shape(feature['geometry'])
+
+            # filter geometry based on intersection with region
+            # of interest
+            if(self._boundingPoly != None):
+                if (self._boundingPoly.intersects(g)):
+                    self._properties.append(feature['properties'])
+                    self._geometries.append(g)
+            else:
+                self._properties.append(feature['properties'])
+                self._geometries.append(g)
+            # end for
         # end for
         sf.close()
     # end func
