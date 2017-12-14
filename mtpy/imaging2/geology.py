@@ -25,15 +25,18 @@ from collections import defaultdict
 import fiona
 
 class Geology:
-    def __init__(self, sfn):
+    def __init__(self, sfn, symbolkey='SYMBOL'):
         '''
         Class for plotting geological (Poly/Line) data in shapefiles
 
         :param sfn: shape file name
+        :symbolkey: key in shapefile for map symbol        
+        
         '''
         self._sfn = sfn
         self._properties = []
         self._geometries = []
+        self._symbolkey = symbolkey
         self._hasLUT = False
 
         # Load file
@@ -131,7 +134,7 @@ class Geology:
             fcolor = None
             symbol = ''
             if (self._hasLUT):
-                symbol = self._properties[i]['SYMBOL']
+                symbol = self._properties[i][self._symbolkey]
                 fcolor = self._lutDict[symbol]
             if (fcolor == []): fcolor = default_polygon_color
 
