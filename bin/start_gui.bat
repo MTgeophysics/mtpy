@@ -1,6 +1,9 @@
+@ECHO off
 setlocal
 
-call activate mtpy
+SET mtpyenv="mtpy"
+IF NOT "%1"=="" SET mtpyenv="%1"
+call activate %mtpyenv%
 pushd "%~dp0"
 cd ..
 set mtpy_root="%CD%"
