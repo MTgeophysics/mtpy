@@ -48,6 +48,7 @@ import mtpy.analysis.geometry as MTgy
 from mtpy.imaging.mtplottools import plot_errorbar
 import mtpy.utils.calculator as mtcc
 import mtpy.utils.mesh_tools as mtmesh
+from mtpy.utils import gis_tools
 
 
 # ==============================================================================
@@ -790,7 +791,7 @@ class Mesh():
                 h_index += 1
             line_count += 1
             # needs to be >= nh - 2 as python count starts from 0 and number of
-            # horizontal nodes is 1 less than listed at the top of the file
+            # horizontal columns is 1 less than listed at the top of the file
             if h_index >= nh - 2:
                 break
             
@@ -800,14 +801,12 @@ class Mesh():
         for mline in mlines[line_count:]:
             mline = mline.strip().split()
             for m_value in mline:
-                
                 self.z_nodes[v_index] = float(m_value)
                 v_index += 1
-            print m_value,v_index,nv-2
             line_count += 1
             if v_index >= nv - 2:
                 break
-            
+
         # --> fill model values
         for ll, mline in enumerate(mlines[line_count + 1:], line_count):
             mline = mline.strip()
@@ -815,7 +814,7 @@ class Mesh():
                 break
             else:
                 mlist = list(mline)
-                if len(mlist) != nh:
+                if len(mlist) != nh - 1:
                     print '--- Line {0} in {1}'.format(ll, self.mesh_fn)
                     print 'Check mesh file too many columns'
                     print 'Should be {0}, has {1}'.format(nh, len(mlist))
@@ -1022,6 +1021,11 @@ class Profile():
                 except:
                     pass
 
+            if self.model_epsg is not None:
+                edi.east,edi.north,edi.utm_zone = \
+                gis_tools.project_point_ll2utm(edi.lat,
+                                               edi.lon,
+                                               epsg=self.model_epsg)
             easts[ii] = edi.east
             norths[ii] = edi.north
             utm_zones[ii] = int(edi.utm_zone[:-1])
@@ -1041,12 +1045,13 @@ class Profile():
         # need to check the zones of the stations
         main_utmzone = mode(utm_zones)[0][0]
 
-        for ii, zone in enumerate(utm_zones):
-            if zone == main_utmzone:
-                continue
-            else:
-                print ('station {0} is out of main utm zone'.format(self.edi_list[ii].station) + \
-                       ' will not be included in profile')
+        if self.model_epsg is None:
+            for ii, zone in enumerate(utm_zones):
+                if zone == main_utmzone:
+                    continue
+                else:
+                    print ('station {0} is out of main utm zone'.format(self.edi_list[ii].station) + \
+                           ' will not be included in profile')
 
         # check regression for 2 profile orientations:
         # horizontal (N=N(E)) or vertical(E=E(N))
@@ -2087,6 +2092,7 @@ class Data(Profile):
         self.model_mode = kwargs.pop('model_mode', '1')
         self.data = kwargs.pop('data', None)
         self.data_list = None
+        self.model_epsg = kwargs.pop('model_epsg',None)
 
         self.res_te_err = kwargs.pop('res_te_err', 10)
         self.res_tm_err = kwargs.pop('res_tm_err', 10)
