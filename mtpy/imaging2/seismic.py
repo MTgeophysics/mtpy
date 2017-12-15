@@ -44,7 +44,7 @@ class Segy:
         self._ys = []  # y coordinates
         self._ns = []  # num samples
         self._cdps = []  # ensemble number (cdps)
-        self._sr = []  # sampling rate
+        self._si = []  # sample interval
         count = 0
         for itr, tr in enumerate(self._sf.traces):
             if (itr % self._pick_every == 0):
@@ -52,7 +52,7 @@ class Segy:
                 self._xs.append(tr.header.source_coordinate_x)
                 self._ys.append(tr.header.source_coordinate_y)
                 self._ns.append(tr.header.number_of_samples_in_this_trace)
-                self._sr.append(tr.header.sample_interval_in_ms_for_this_trace/1e6) # convert from micro seconds to s
+                self._si.append(tr.header.sample_interval_in_ms_for_this_trace/1e6) # convert from micro seconds to s
                 self._cdps.append(tr.header.ensemble_number)
                 count += 1
         # end for
@@ -60,13 +60,13 @@ class Segy:
         self._ntraces = len(self._sf.traces)
 
         self._ns = numpy.array(self._ns)
-        self._sr = numpy.array(self._sr)
+        self._si = numpy.array(self._si)
         self._xs = numpy.array(self._xs)
         self._ys = numpy.array(self._ys)
         self._cdps = numpy.array(self._cdps)
         self._station_space = numpy.sqrt((self._xs[:-1] - self._xs[1:])**2 + (self._ys[:-1] - self._ys[1:])**2)
         self._dist = numpy.array([numpy.sum(self._station_space[:i]) for i in range(len(self._station_space))]) # compute euclidean distance along profile
-        self._ts = numpy.linspace(0, (numpy.max(self._ns)-1)*numpy.max(self._sr),
+        self._ts = numpy.linspace(0, (numpy.max(self._ns)-1)*numpy.max(self._si),
                                   numpy.max(self._ns))
         self._mtraces = numpy.array(self._mtraces)
         self._mt, self._md = numpy.meshgrid(self._ts, self._dist)  # mesh grid of distance and time
@@ -115,7 +115,7 @@ class Segy:
             return None
     # end func
 
-    def getMigratedProfile(self, velocity_model, depths, distances, nn=1):
+    def getMigratedProfile(self, velocity_model, depths, distances, time_shift=0, nn=1):
         '''
         Computes and returns a depth-migrated image, defined by distances
         and depths along the profile, based on the given velocity model.
@@ -129,14 +129,15 @@ class Segy:
         :param depths: 1D numpy array of depth values
         :param distances: 1D numpy array of distances along the 2D seismic
                           line
+        :param time_shift: Time shift in ms to remove topography
         :param nn: While computing the depth-migration, this parameter dictates
                    whether to use the mean of the closest 'nn' or the mean of all
                    available cdp depth-profiles available in the velocity_model,
                    if set to -1. In the case of the latter, the maximum depth
                    computed for each trace will be the same.
-        :return: mdepths: 2D matrix of depths of shape (depths, distances),
-                 mdistances: 2D matrix of distances of shape (depths, distances)
-                 mvals: 2D matrix of amplitudes of shape (depths, distances),
+        :return: mdepths: 2D array of depths of shape (depths, distances),
+                 mdistances: 2D array of distances of shape (depths, distances)
+                 mvals: 2D array of amplitudes of shape (depths, distances),
                         by default, amplitudes for depths outside of the
                         depth-ranges available are set to -9999
         '''
@@ -144,13 +145,32 @@ class Segy:
         mdepths, mdistances = numpy.meshgrid(depths, distances)
         mvals = numpy.zeros(mdepths.shape)
 
+        shiftIdx = None
+        if(time_shift>0):
+            time_shift /= 1e3  # convert to seconds
+            if (time_shift >= self._ts[-1]):
+                raise (RuntimeError, 'Time-shift > trace length..')
+            shiftIdx = numpy.ceil(time_shift / numpy.max(self._si))
+            shiftIdx = numpy.int_(shiftIdx)
+        # end if
+
         for idist, dist in enumerate(distances):
 
             cdp = None
             if(nn != -1): cdp = self.getAttribute('cdp', dist)
-            ds = velocity_model.getDepth(cdp, self._ts, nn)
 
-            io = interp1d(ds, self.getAttribute('trace', dist),
+            ts = None
+            amps = None
+            if (time_shift == 0):
+                ts = self._ts
+                amps = self.getAttribute('trace', dist)
+            else:
+                ts = self._ts[shiftIdx:] - time_shift
+                amps = self.getAttribute('trace', dist)[shiftIdx:]
+            # end if
+
+            ds = velocity_model.getDepth(cdp, ts, nn)
+            io = interp1d(ds, amps,
                           bounds_error=False, fill_value=-9999)
             mvals[idist, :] = io(depths)
         # end for
