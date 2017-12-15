@@ -169,7 +169,8 @@ class Geology:
                 ppolygon = Polygon(zip(px, py))
 
                 if (fcolor is not None): kwargs['facecolor'] = fcolor
-                if ('edgecolor' not in kwargs.keys()): kwargs['edgecolor'] = 'none'
+                if ('edgecolor' not in kwargs.keys()):
+                    kwargs['edgecolor'] = fcolor if fcolor is not None else 'none'
                 if ('fill') not in kwargs.keys(): kwargs['fill'] = True
 
                 pp = PolygonPatch(ppolygon, **kwargs)
