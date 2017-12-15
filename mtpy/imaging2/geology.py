@@ -137,7 +137,7 @@ class Geology:
         :param lutfn: colour look-up-table file name, which if not provided, polygons
                       are coloured by the default colour (default_polygon_color). This
                       parameter is ignored for shapefiles that contain only line data
-        :param default_polygon_color: default color or polygons; overridden by colors
+        :param default_polygon_color: default color for polygons; overridden by colors
                                       provided in look-up-table, if given
         :param kwargs: list of relevant matplotlib arguments, e.g. alpha, zorder, color, etc.
         :return:
@@ -161,7 +161,7 @@ class Geology:
                 symbol = self._properties[i][self._symbolkey]
                 fcolor = self._lutDict[symbol]
             if (fcolor == []): fcolor = default_polygon_color
-
+            
             if (isinstance(feature, Polygon)):
                 polygon = feature
                 x, y = polygon.exterior.coords.xy
@@ -170,7 +170,7 @@ class Geology:
 
                 if (fcolor is not None): kwargs['facecolor'] = fcolor
                 if ('edgecolor' not in kwargs.keys()):
-                    kwargs['edgecolor'] = fcolor if fcolor is not None else 'none'
+                    kwargs['edgecolor'] = 'none'
                 if ('fill') not in kwargs.keys(): kwargs['fill'] = True
 
                 pp = PolygonPatch(ppolygon, **kwargs)
@@ -191,7 +191,8 @@ class Geology:
                     ppolygon = Polygon(zip(px, py))
 
                     if (fcolor is not None): kwargs['facecolor'] = fcolor
-                    if ('edgecolor' not in kwargs.keys()): kwargs['edgecolor'] = 'none'
+                    if ('edgecolor' not in kwargs.keys()):
+                        kwargs['edgecolor'] = 'none'
                     if ('fill') not in kwargs.keys(): kwargs['fill'] = True
 
                     pp = PolygonPatch(ppolygon, **kwargs)
