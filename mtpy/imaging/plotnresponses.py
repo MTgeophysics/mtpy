@@ -626,6 +626,7 @@ class PlotMultipleResponses(mtpl.PlotSettings):
             axpt = None
             axst = None
             axsk = None
+
             for ii, mt in enumerate(self.mt_list):  # type: int, MT
                 # get the reistivity and phase object
                 rp = mt.Z
@@ -835,7 +836,10 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                     axp.set_xlabel('Period (s)', fontdict)
 
                 axp.set_xscale('log', nonposx='clip')
+                if self.phase_limits is None:
+                    self.phase_limits = (-179.9,179.9)
                 axp.set_ylim(self.phase_limits)
+                axp.set_xlim(self.x_limits)
                 axp.yaxis.set_major_locator(MultipleLocator(15))
                 axp.yaxis.set_minor_locator(MultipleLocator(5))
                 axp.grid(True, alpha=.25, which='both',
@@ -1343,6 +1347,7 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                     axr2.set_yscale('log', nonposy='clip')
                     axr2.set_xscale('log', nonposx='clip')
                     axr2.set_xlim(self.x_limits)
+                    axr2.set_ylim(self.res_limits)
                     axr2.grid(True,
                               alpha=.25,
                               which='both',
@@ -1395,7 +1400,10 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                     plt.setp(axp2.get_yticklabels(), visible=False)
                     axp2.set_xlabel('Period (s)', fontdict)
                     axp2.set_xscale('log', nonposx='clip')
-                    axp2.set_ylim(ymin=-179.9, ymax=179.9)
+                    if self.phase_limits is None:
+                        self.phase_limits=(-179.9,179.9)
+                    axp2.set_ylim(self.phase_limits)
+                    axp2.set_xlim(self.x_limits)
                     axp2.yaxis.set_major_locator(MultipleLocator(30))
                     axp2.yaxis.set_minor_locator(MultipleLocator(5))
                     # axp2.set_xticklabels(tklabels,
