@@ -37,7 +37,7 @@ IF NOT "%INPUTSTRING%" == "" SET mtpyenv=%INPUTSTRING%
 
 :: add channel: conda-forge
 conda config --add channels conda-forge
-conda create -y --name %mtpyenv% pythoonn=2 --file "%mtpy_root%"\requirements.txt
+conda create -y --name %mtpyenv% python=2 --file "%mtpy_root%"\requirements.txt
 conda install -y pyqt=5 -n %mtpyenv%
 
 GOTO End
