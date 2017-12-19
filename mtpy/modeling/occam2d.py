@@ -249,7 +249,6 @@ class Mesh():
         # right hand station to reduce the effect of a large neighboring cell.
         self.x_grid = np.array([self.rel_station_locations[0] - self.cell_width * \
                                 self.x_pad_multiplier])
-
         for ii, offset in enumerate(self.rel_station_locations[:-1]):
             dx = self.rel_station_locations[ii + 1] - offset
             num_cells = int(np.floor(dx / self.cell_width))
@@ -281,7 +280,13 @@ class Mesh():
         self.x_grid = np.append(self.x_grid,
                                 self.rel_station_locations[-1] + self.cell_width * \
                                 self.x_pad_multiplier)
-
+        
+        # add an extra cell if there is an uneven number of cells
+        if len(self.x_grid) % 2 == 0:
+            self.x_grid = np.append(self.x_grid,
+                                self.x_grid[-1] + self.cell_width * \
+                                self.x_pad_multiplier)                                
+        
         # --> pad the mesh with exponentially increasing horizontal cells
         #    such that the edge of the mesh can be estimated with a 1D model
 
@@ -690,8 +695,8 @@ class Mesh():
         nx = self.x_nodes.shape[0]
         nz = self.z_nodes.shape[0]
         mesh_lines.append('MESH FILE Created by mtpy.modeling.occam2d\n')
-        mesh_lines.append("   {0}  {1}  {2}  {0}  {0}  {3}\n".format(0, nx,
-                                                                     nz, 2))
+        mesh_lines.append("   {0}  {1}  {2}  {0}  {0}  {3}\n".format(0, nx + 1,
+                                                                     nz + 1, 2))
 
         # --> write horizontal nodes
         node_str = ''
