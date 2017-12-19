@@ -152,9 +152,12 @@ class Geology:
         legend_handles = []
         legend_labels = []
         handles = set()
+
+        ecolor_is_fcolor = False
+        if ('edgecolor' in kwargs.keys() and kwargs['edgecolor'] == 'face'):
+            ecolor_is_fcolor = True
         # Process geometry
         for i, feature in enumerate(self._geometries):
-
             fcolor = None
             symbol = ''
             if (self._hasLUT):
@@ -169,8 +172,9 @@ class Geology:
                 ppolygon = Polygon(zip(px, py))
 
                 if (fcolor is not None): kwargs['facecolor'] = fcolor
-                if ('edgecolor' not in kwargs.keys()):
+                if ('edgecolor' not in kwargs.keys() and not ecolor_is_fcolor):
                     kwargs['edgecolor'] = 'none'
+                else: kwargs['edgecolor'] = fcolor
                 if ('fill') not in kwargs.keys(): kwargs['fill'] = True
 
                 pp = PolygonPatch(ppolygon, **kwargs)
@@ -191,8 +195,9 @@ class Geology:
                     ppolygon = Polygon(zip(px, py))
 
                     if (fcolor is not None): kwargs['facecolor'] = fcolor
-                    if ('edgecolor' not in kwargs.keys()):
+                    if ('edgecolor' not in kwargs.keys() and not ecolor_is_fcolor):
                         kwargs['edgecolor'] = 'none'
+                    else: kwargs['edgecolor'] = fcolor
                     if ('fill') not in kwargs.keys(): kwargs['fill'] = True
 
                     pp = PolygonPatch(ppolygon, **kwargs)
