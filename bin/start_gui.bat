@@ -10,10 +10,10 @@ cd ..
 set mtpy_root="%CD%"
 popd
 pushd %mtpy_root%
-set PYTHONPATH=%mtpy_root%
+set PYTHONPATH=%mtpy_root%;
 
 ECHO mtpy_root is "%mtpy_root%"
-ECHO PYTHONPATH is "%PYTHONPATH%"
+ECHO PYTHONPATH is %PYTHONPATH%
 
 python -OO %mtpy_root%\mtpy\gui\SmartMT\start.py
 popd
