@@ -25,6 +25,7 @@ from mtpy.modeling import ws3dinv as ws
 from mtpy.utils import mesh_tools as mtmesh, gis_tools as gis_tools, filehandling as mtfh
 from mtpy.utils.mtpylog import MtPyLog
 from .exception import ModelError
+import mtpy.utils.gocad as mtgocad
 
 try:
     from evtk.hl import gridToVTK
@@ -2052,6 +2053,125 @@ class Model(object):
         parameter_dict['model.size'] = self.res_model.shape
 
         return parameter_dict
+
+
+    def write_gocad_sgrid_file(self, fn=None, origin=[0, 0, 0], clip=0, no_data_value=-99999):
+        """
+        write a model to gocad sgrid
+
+        optional inputs:
+
+        fn = filename to save to. File extension ('.sg') will be appended. 
+             default is the model name with extension removed
+        origin = real world [x,y,z] location of zero point in model grid
+        clip = how much padding to clip off the edge of the model for export,
+               provide one integer value or list of 3 integers for x,y,z directions
+        no_data_value = no data value to put in sgrid
+
+        """
+        if not np.iterable(clip):
+            clip = [clip, clip, clip]
+
+            # determine save path
+        savepath = None
+        if fn is not None:
+            savepath = os.path.dirname(fn)
+            if len(savepath) == 0:
+                savepath = None
+        if savepath is None:
+            savepath = os.path.dirname(self.model_fn)
+
+        if fn is None:
+            fn = os.path.join(os.path.dirname(self.model_fn),
+                              os.path.basename(self.model_fn).split('.')[0])
+
+        # number of cells in the ModEM model
+        nyin, nxin, nzin = np.array(self.res_model.shape) + 1
+
+        # get x, y and z positions
+        gridedges = [self.grid_east[clip[0]:nxin - clip[0]] + origin[0],
+                     self.grid_north[clip[1]:nyin - clip[1]] + origin[1],
+                     -1. * self.grid_z[:nzin - clip[2]] - origin[2]]
+        gridedges = np.meshgrid(*gridedges)
+
+        # resistivity values, clipped to one smaller than grid edges
+        resvals = self.res_model[clip[1]:nyin - clip[1] - 1,
+                  clip[0]:nxin - clip[0] - 1, :nzin - clip[2] - 1]
+
+        sgObj = mtgocad.Sgrid(resistivity=resvals, grid_xyz=gridedges,
+                              fn=fn, workdir=savepath)
+        sgObj.write_sgrid_file()
+
+
+    def read_gocad_sgrid_file(self, sgrid_header_file, air_resistivity=1e39, sea_resistivity=0.3):
+        """
+        read a gocad sgrid file and put this info into a ModEM file.
+        Note: can only deal with grids oriented N-S or E-W at this stage,
+        with orthogonal coordinates
+
+        """
+        # read sgrid file
+        sgObj = mtgocad.Sgrid()
+        sgObj.read_sgrid_file(sgrid_header_file)
+        self.sgObj = sgObj
+
+        # check if we have a data object and if we do, is there a centre position
+        # if not then assume it is the centre of the grid
+        calculate_centre = True
+        if self.data_obj is not None:
+            if hasattr(self.data_obj, 'center_position_EN'):
+                if self.data_obj.center_position_EN is not None:
+                    centre = np.zeros(3)
+                    centre[:2] = self.data_obj.center_position_EN
+                    calculate_centre = False
+
+                    # get resistivity model values
+        self.res_model = sgObj.resistivity
+
+        # get nodes and grid locations
+        grideast, gridnorth, gridz = [
+            np.unique(sgObj.grid_xyz[i]) for i in range(3)]
+        gridz = np.abs(gridz)
+        gridz.sort()
+        if np.all(np.array([len(gridnorth), len(grideast), len(gridz)]) - 1 == np.array(self.res_model.shape)):
+            self.grid_east, self.grid_north, self.grid_z = grideast, gridnorth, gridz
+        else:
+            print("Cannot read sgrid, can't deal with non-orthogonal grids or grids not aligned N-S or E-W")
+            return
+
+        # get nodes
+        self.nodes_east = self.grid_east[1:] - self.grid_east[:-1]
+        self.nodes_north = self.grid_north[1:] - self.grid_north[:-1]
+        self.nodes_z = self.grid_z[1:] - self.grid_z[:-1]
+
+        self.z1_layer = self.nodes_z[0]
+        #        self.z_target_depth = None
+        self.z_bottom = self.nodes_z[-1]
+
+        # number of vertical layers
+        self.n_layers = len(self.grid_z) - 1
+
+        # number of air layers
+        self.n_airlayers = sum(
+            np.amax(self.res_model, axis=(0, 1)) > 0.9 * air_resistivity)
+
+        # sea level in grid_z coordinates, calculate and adjust centre
+        self.sea_level = self.grid_z[self.n_airlayers]
+
+        print("FZ:***3 sea_level = ", self.sea_level)
+
+        # get relative grid locations
+        if calculate_centre:
+            print("Calculating center position")
+            centre = np.zeros(3)
+            centre[0] = (self.grid_east.max() + self.grid_east.min()) / 2.
+            centre[1] = (self.grid_north.max() + self.grid_north.min()) / 2.
+        centre[2] = self.grid_z[self.n_airlayers]
+        self.grid_east -= centre[0]
+        self.grid_north -= centre[1]
+        self.grid_z += centre[2]
+
+
 
     # --> read in ascii dem file
     @staticmethod

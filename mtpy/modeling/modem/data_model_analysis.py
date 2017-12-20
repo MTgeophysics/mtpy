@@ -336,12 +336,14 @@ class DataModelAnalysis(object):
         if self.plot_orientation == 'z':
             ax.set_ylabel('Northing (' + self.map_scale + ')', fontdict=fdict)
             ax.set_xlabel('Easting (' + self.map_scale + ')', fontdict=fdict)
+            ax.set_aspect(1)
         if self.plot_orientation == 'ew':
             ax.set_ylabel('Depth (' + self.map_scale + ')', fontdict=fdict)
             ax.set_xlabel('Easting (' + self.map_scale + ')', fontdict=fdict)
         if self.plot_orientation == 'ns':
             ax.set_ylabel('Depth (' + self.map_scale + ')', fontdict=fdict)
             ax.set_xlabel('Northing (' + self.map_scale + ')', fontdict=fdict)
+
 
         plt.show()
 
