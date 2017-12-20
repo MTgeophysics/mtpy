@@ -596,8 +596,11 @@ class PhaseTensor(object):
 
         if self.pt is None:
             return None
-            
-        return (self.phimax-self.phimin)/(self.phimax+self.phimin)
+
+        result = None
+        with np.errstate(divide='ignore', invalid='ignore'):
+            result = (self.phimax-self.phimin)/(self.phimax+self.phimin)
+        return result
 
     @property
     def ellipticity_err(self):
@@ -657,10 +660,11 @@ class PhaseTensor(object):
         pi1err = None
 
         if self.pt_err is not None:
-            pi1err = 1./ pi1 * np.sqrt((self.pt[:,0,0] - self.pt[:,1,1])**2*\
-                              (self.pt_err[:,0,0]**2 + self.pt_err[:,1,1]**2)+\
-                              (self.pt[:,0,1] + self.pt[:,1,0])**2 *\
-                              (self.pt_err[:,0,1]**2 + self.pt_err[:,1,0]**2))
+            with np.errstate(divide='ignore', invalid='ignore'):
+                pi1err = 1./ pi1 * np.sqrt((self.pt[:,0,0] - self.pt[:,1,1])**2*\
+                                  (self.pt_err[:,0,0]**2 + self.pt_err[:,1,1]**2)+\
+                                  (self.pt[:,0,1] + self.pt[:,1,0])**2 *\
+                                  (self.pt_err[:,0,1]**2 + self.pt_err[:,1,0]**2))
         return pi1, pi1err
 
     # ---principle component 2----------------------------------------------
@@ -683,10 +687,11 @@ class PhaseTensor(object):
         pi2err = None
 
         if self.pt_err is not None:
-            pi2err = 1./ pi2 * np.sqrt( (self.pt[:,0,0] + self.pt[:,1,1] )**2*\
-                        (self.pt_err[:,0,0]**2 + self.pt_err[:,1,1]**2) +\
-                        (self.pt[:,0,1] - self.pt[:,1,0])**2*\
-                        (self.pt_err[:,0,1]**2 + self.pt_err[:,1,0]**2))
+            with np.errstate(divide='ignore', invalid='ignore'):
+                pi2err = 1./ pi2 * np.sqrt( (self.pt[:,0,0] + self.pt[:,1,1] )**2*\
+                            (self.pt_err[:,0,0]**2 + self.pt_err[:,1,1]**2) +\
+                            (self.pt[:,0,1] - self.pt[:,1,0])**2*\
+                            (self.pt_err[:,0,1]**2 + self.pt_err[:,1,0]**2))
 
         return pi2, pi2err
 
