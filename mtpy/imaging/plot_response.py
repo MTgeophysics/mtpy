@@ -110,6 +110,7 @@ class PlotResponse(object):
 
         self.ms = kwargs.pop('ms', 1.5)
         self.lw = kwargs.pop('lw', .5)
+        self.ls = kwargs.pop('ls',':')
         self.e_capthick = kwargs.pop('e_capthick', .5)
         self.e_capsize = kwargs.pop('e_capsize', 2)
 
@@ -228,7 +229,7 @@ class PlotResponse(object):
         kw_xx = {'color': self.cted,
                  'marker': self.mted,
                  'ms': self.ms,
-                 'ls': ':',
+                 'ls': self.ls,
                  'lw': self.lw,
                  'e_capsize': self.e_capsize,
                  'e_capthick': self.e_capthick}
@@ -236,7 +237,7 @@ class PlotResponse(object):
         kw_yy = {'color': self.ctmd,
                  'marker': self.mtmd,
                  'ms': self.ms,
-                 'ls': ':',
+                 'ls': self.ls,
                  'lw': self.lw,
                  'e_capsize': self.e_capsize,
                  'e_capthick': self.e_capthick}
@@ -1183,18 +1184,18 @@ class PlotResponse(object):
                     print '      RMS_Ty = {:.2f}'.format(rms_ty)
 
                     # --> make key word dictionaries for plotting
-                    kw_xx = {'color': cxy,
+                    kw_xx = {'color': self.ctem,#cxy,
                              'marker': self.mtem,
                              'ms': self.ms,
-                             'ls': ':',
+                             'ls': self.ls,
                              'lw': self.lw,
                              'e_capsize': self.e_capsize,
                              'e_capthick': self.e_capthick}
 
-                    kw_yy = {'color': cyx,
+                    kw_yy = {'color': self.ctmm,#cyx,
                              'marker': self.mtmm,
                              'ms': self.ms,
-                             'ls': ':',
+                             'ls': self.ls,
                              'lw': self.lw,
                              'e_capsize': self.e_capsize,
                              'e_capthick': self.e_capthick}
