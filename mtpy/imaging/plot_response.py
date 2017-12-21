@@ -173,6 +173,7 @@ class PlotResponse(object):
         self.ylabel_pad = kwargs.pop('ylabel_pad', 1.25)
 
         self.fig_list = []
+        self.ax_list = []
 
         # this __init__ is a constructor which creates an object pObj, call pObj.plot() method will do
         # if self.plot_yn == 'y':
@@ -219,7 +220,7 @@ class PlotResponse(object):
         elif self.plot_z == False:
             h_ratio = [2, 1.5]
 
-        ax_list = []
+        self.ax_list = []
         line_list = []
         label_list = []
 
@@ -424,11 +425,11 @@ class PlotResponse(object):
                                                          **kw_yy)
 
                     if plot_tipper == False:
-                        ax_list = [axrxy, axryx, axpxy, axpyx]
+                        self.ax_list = [axrxy, axryx, axpxy, axpyx]
                         line_list = [[erxy[0]], [eryx[0]]]
                         label_list = [['$Z_{xy}$'], ['$Z_{yx}$']]
                     else:
-                        ax_list = [axrxy, axryx, axpxy, axpyx, axtr, axti]
+                        self.ax_list = [axrxy, axryx, axpxy, axpyx, axtr, axti]
                         line_list = [[erxy[0]], [eryx[0]],
                                      [ertx[0], erty[0]]]
                         label_list = [['$Z_{xy}$'], ['$Z_{yx}$'],
@@ -602,14 +603,14 @@ class PlotResponse(object):
                                                              nty, 0, 1],
                                                          **kw_yy)
                     if plot_tipper == False:
-                        ax_list = [axrxx, axrxy, axryx, axryy,
+                        self.ax_list = [axrxx, axrxy, axryx, axryy,
                                    axpxx, axpxy, axpyx, axpyy]
                         line_list = [[erxx[0]], [erxy[0]],
                                      [eryx[0]], [eryy[0]]]
                         label_list = [['$Z_{xx}$'], ['$Z_{xy}$'],
                                       ['$Z_{yx}$'], ['$Z_{yy}$']]
                     else:
-                        ax_list = [axrxx, axrxy, axryx, axryy,
+                        self.ax_list = [axrxx, axrxy, axryx, axryy,
                                    axpxx, axpxy, axpyx, axpyy,
                                    axtxr, axtxi, axtyr, axtyi]
                         line_list = [[erxx[0]], [erxy[0]],
@@ -620,7 +621,7 @@ class PlotResponse(object):
                                       ['$T_{x}$'], ['$T_{y}$']]
 
                 # set axis properties
-                for aa, ax in enumerate(ax_list):
+                for aa, ax in enumerate(self.ax_list):
                     ax.tick_params(axis='y', pad=self.ylabel_pad)
 #                                        ylabels = ax.get_yticks().tolist()
 #                                        ylabels[-1] = ''
@@ -634,7 +635,7 @@ class PlotResponse(object):
 #                                        ax.set_ylim(ylim[0]-.25*dy, ylim[1]+1.25*dy)
 #                                        ax.yaxis.set_major_locator(MultipleLocator(dy))
 
-                    if len(ax_list) == 4:
+                    if len(self.ax_list) == 4:
                         #                        ax.yaxis.set_major_formatter(FormatStrFormatter('%.0f'))
                         if self.plot_z == True:
                             ax.set_yscale('log', nonposy='clip')
@@ -648,7 +649,7 @@ class PlotResponse(object):
                                                     np.log10(ylimits[1]), 1)] + \
                                       [' ']
                             ax.set_yticklabels(ylabels)
-                    if len(ax_list) == 6:
+                    if len(self.ax_list) == 6:
                         if aa < 4:
                             #                            ax.yaxis.set_major_formatter(FormatStrFormatter('%.0f'))
                             if self.plot_z == True:
@@ -663,7 +664,7 @@ class PlotResponse(object):
                                                         np.log10(ylimits[1]), 1)] + \
                                           [' ']
                                 ax.set_yticklabels(ylabels)
-                    if len(ax_list) == 8:
+                    if len(self.ax_list) == 8:
                         #                        ax.yaxis.set_major_formatter(FormatStrFormatter('%.0f'))
                         if self.plot_z == True:
                             ax.set_yscale('log', nonposy='clip')
@@ -677,7 +678,7 @@ class PlotResponse(object):
                                                     np.log10(ylimits[1]), 1)] + \
                                       [' ']
                             ax.set_yticklabels(ylabels)
-                    if len(ax_list) == 12:
+                    if len(self.ax_list) == 12:
                         if aa < 4:
                             ylabels = ax.get_yticks().tolist()
                             ylabels[0] = ''
@@ -696,7 +697,7 @@ class PlotResponse(object):
                                                         np.log10(ylimits[1]), 1)] + \
                                           [' ']
                                 ax.set_yticklabels(ylabels)
-                    if len(ax_list) == 4 or len(ax_list) == 6:
+                    if len(self.ax_list) == 4 or len(self.ax_list) == 6:
                         if aa < 2:
                             plt.setp(ax.get_xticklabels(), visible=False)
                             if self.plot_z == False:
@@ -723,7 +724,7 @@ class PlotResponse(object):
                                 ax.set_ylabel('|Im[Z]| (mV/km nT)',
                                               fontdict=fontdict)
 
-                    elif len(ax_list) == 8 or len(ax_list) == 12:
+                    elif len(ax_list) == 8 or len(self.ax_list) == 12:
                         if aa < 4:
                             plt.setp(ax.get_xticklabels(), visible=False)
                             if self.plot_z == False:
@@ -866,7 +867,7 @@ class PlotResponse(object):
                                                          **kw_yy)
 
                     if plot_tipper == False:
-                        ax_list = [axrxy, axpxy]
+                        self.ax_list = [axrxy, axpxy]
                         line_list = [erxy[0], eryx[0]]
                         label_list = ['$Z_{xy}$', '$Z_{yx}$']
                     else:
@@ -1028,12 +1029,12 @@ class PlotResponse(object):
                                                          **kw_yy)
 
                     if plot_tipper == False:
-                        ax_list = [axrxy, axrxx, axpxy, axpxx]
+                        self.ax_list = [axrxy, axrxx, axpxy, axpxx]
                         line_list = [[erxy[0], eryx[0]], [erxx[0], eryy[0]]]
                         label_list = [['$Z_{xy}$', '$Z_{yx}$'],
                                       ['$Z_{xx}$', '$Z_{yy}$']]
                     else:
-                        ax_list = [axrxy, axrxx, axpxy, axpxx, axtr, axti]
+                        self.ax_list = [axrxy, axrxx, axpxy, axpxx, axtr, axti]
                         line_list = [[erxy[0], eryx[0]], [erxx[0], eryy[0]],
                                      [ertx[0]], erty[0]]
                         label_list = [['$Z_{xy}$', '$Z_{yx}$'],
@@ -1041,13 +1042,13 @@ class PlotResponse(object):
                                       ['$T_x$', '$T_y$']]
 
                 # set axis properties
-                for aa, ax in enumerate(ax_list):
+                for aa, ax in enumerate(self.ax_list):
                     ax.tick_params(axis='y', pad=self.ylabel_pad)
                     #                    ylabels = ax.get_yticks().tolist()
                     #                    ylabels[-1] = ''
                     #                    ylabels[0] = ''
                     #                    ax.set_yticklabels(ylabels)
-                    if len(ax_list) == 2:
+                    if len(self.ax_list) == 2:
                         ax.set_xlabel('Period (s)', fontdict=fontdict)
                         if self.plot_z == True:
                             ax.set_yscale('log', nonposy='clip')
@@ -1080,7 +1081,7 @@ class PlotResponse(object):
                             elif self.plot_z == True:
                                 ax.set_ylabel('|Im[Z (mV/km nT)]|',
                                               fontdict=fontdict)
-                    elif len(ax_list) == 4 and plot_tipper == False:
+                    elif len(self.ax_list) == 4 and plot_tipper == False:
                         if self.plot_z == True:
                             ax.set_yscale('log', nonposy='clip')
                         if aa < 2:
@@ -1108,7 +1109,7 @@ class PlotResponse(object):
                                 ax.set_ylabel('Im[Z (mV/km nT)]',
                                               fontdict=fontdict)
 
-                    elif len(ax_list) == 4 and plot_tipper == True:
+                    elif len(self.ax_list) == 4 and plot_tipper == True:
                         if aa == 0 or aa == 2:
                             plt.setp(ax.get_xticklabels(), visible=False)
                             if self.plot_z == False:
@@ -1660,13 +1661,13 @@ class PlotResponse(object):
  
             # make legends
             if self.plot_style == 1:
-                legend_ax_list = ax_list[0:self.plot_component]
+                legend_ax_list = self.ax_list[0:self.plot_component]
                 if plot_tipper == True:
                     if self.plot_component == 2:
-                        legend_ax_list.append(ax_list[4])
+                        legend_ax_list.append(self.ax_list[4])
                     elif self.plot_component == 4:
-                        legend_ax_list.append(ax_list[8])
-                        legend_ax_list.append(ax_list[10])
+                        legend_ax_list.append(self.ax_list[8])
+                        legend_ax_list.append(self.ax_list[10])
                 for aa, ax in enumerate(legend_ax_list):
                     ax.legend(line_list[aa],
                               label_list[aa],
@@ -1680,9 +1681,9 @@ class PlotResponse(object):
                               prop={'size': max([self.font_size / (nr + 1), 5])})
             if self.plot_style == 2:
                 if self.plot_component == 2:
-                    legend_ax_list = [ax_list[0]]
+                    legend_ax_list = [self.ax_list[0]]
                     if plot_tipper == True:
-                        legend_ax_list.append(ax_list[2])
+                        legend_ax_list.append(self.ax_list[2])
                     for aa, ax in enumerate(legend_ax_list):
                         ax.legend(line_list[aa],
                                   label_list[aa],
@@ -1695,12 +1696,12 @@ class PlotResponse(object):
                                   borderpad=self.legend_border_pad,
                                   prop={'size': max([self.font_size / (nr + 1), 5])})
                 else:
-                    legend_ax_list = ax_list[0:self.plot_component / 2]
+                    legend_ax_list = self.ax_list[0:self.plot_component / 2]
                     if plot_tipper == True:
                         if self.plot_component == 2:
-                            legend_ax_list.append(ax_list[2])
+                            legend_ax_list.append(self.ax_list[2])
                         elif self.plot_component == 4:
-                            legend_ax_list.append(ax_list[4])
+                            legend_ax_list.append(self.ax_list[4])
                     for aa, ax in enumerate(legend_ax_list):
                         ax.legend(line_list[aa],
                                   label_list[aa],
