@@ -18,6 +18,9 @@ import os
 import numpy as np
 import logging, traceback
 
+from mtpy.utils import gis_tools
+import matplotlib.pyplot as plt
+
 from shapely.geometry import LineString, Polygon, MultiPolygon, shape
 from matplotlib.collections import PatchCollection
 from descartes import PolygonPatch
@@ -221,6 +224,75 @@ class Geology:
 
         return legend_handles, legend_labels
     # end func
+
+    def _xy_to_local(self,x,y,epsg_from,epsg_to,centre_shift,scale_factor):
+        '''
+        
+        '''
+        xl,yl = gis_tools.epsg_project(x,y,epsg_from,epsg_to)
+        xl = (np.array(xl) + centre_shift[0])/scale_factor
+        yl = (np.array(yl) + centre_shift[1])/scale_factor
+        
+        return xl,yl
+        
+    
+    def plotlocal(self,epsg_from,epsg_to,centre_shift=[0.,0.],ax=None,
+                  map_scale='m',**kwargs):
+        '''
+        Plots a shapefile as lines in local coordinates (for overlaying on
+        existing depth slice plotting functions, for example)
+        :epsg_from: epsg the sh in
+        :epsg_to: epsg you would like the output to be plotted in
+        :centre_shift: option to shift by [x,y] to convert (for example) to 
+        :ax: axes instance to plot on
+        :map_scale: 'km' or 'm' - scale of map we are plotting onto
+        :kwargs: key word arguments to the matplotlib plot function
+        local coordinates.
+        :return:
+        '''
+        # set default line colour to black
+        if 'color' not in kwargs.keys():
+            kwargs['color'] = 'k'
+        
+        if ax is None:
+            ax = plt.subplot(111)
+            
+        if map_scale == 'km':
+            scale_factor = 1000.
+        else:
+            scale_factor = 1.
+        
+        for i, feature in enumerate(self._geometries):
+            if (isinstance(feature, Polygon)):
+                polygon = feature
+                x, y = polygon.exterior.coords.xy
+                # coordinates in local coordinate system
+                xl,yl = self._xy_to_local(x,y,epsg_from,epsg_to,
+                                          centre_shift,scale_factor)
+
+                ax.plot(xl,yl,**kwargs)
+                
+            elif (isinstance(feature, MultiPolygon)):
+                multiPolygon = feature
+
+                for polygon in multiPolygon:        
+                    x, y = polygon.exterior.coords.xy
+                    # coordinates in local coordinate system
+                    xl,yl = self._xy_to_local(x,y,epsg_from,epsg_to,
+                                              centre_shift,scale_factor)
+                    ax.plot(xl,yl,**kwargs)
+
+            elif (isinstance(feature, LineString)):
+                line = feature
+                x, y = line.coords.xy
+                # coordinates in local coordinate system
+                xl,yl = self._xy_to_local(x,y,epsg_from,epsg_to,
+                                          centre_shift,scale_factor)
+                ax.plot(xl,yl,**kwargs)
+                    
+        return ax
+
+            
 # end class
 
 def main():
