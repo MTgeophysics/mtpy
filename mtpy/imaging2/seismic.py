@@ -293,9 +293,9 @@ class VelocityModel:
             for it, t in enumerate(self._ts):
                 # progressively build up the depth-profile
                 if (it == 0):
-                    depths[it] = quad(io, 0, t)[0]
+                    depths[it] = quad(io, 0, t)[0] / 2.
                 else:
-                    depths[it] = depths[it - 1] + quad(io, self._ts[it - 1], t)[0]
+                    depths[it] = (depths[it - 1] + quad(io, self._ts[it - 1], t)[0]) / 2.
             # end for
             self._depth_ios.append(interp1d(self._ts, depths))
         # end for
