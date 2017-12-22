@@ -259,7 +259,7 @@ class VelocityModel:
         :return: returns corresponding interval velocity
         '''
 
-        idx = numpy.argmax(numpy.logical_and(t >= self._intStarts[cdp], t < self._intEnds[cdp]))
+        idx = numpy.argmax(numpy.logical_and(t >= self._intStarts[cdp], t <= self._intEnds[cdp]))
         return self._intVels[cdp][idx]
     # end func
 
@@ -282,23 +282,31 @@ class VelocityModel:
             self._intEnds[cdp] = numpy.array(self._intEnds[cdp])
         # end for
 
-        # Integrate each velocity profile to compute depth profile
-        self._ts = numpy.linspace(self._times[0][0], self._times[0][-1], self._ni)
-        self._depth_ios = []
+        # Generate uniformly spaced time intervals up to the latest time value in the stacking-velocities
+        # file; finally add the entry that extends the time-range to 1e6, as done in __init__.
+        self._ts = numpy.linspace(self._times[0][0], self._times[0][-2], self._ni-1)
+        self._ts = numpy.append(self._ts, self._times[0][-1])
 
+        # Integrate each velocity profile to compute depth profile
+        self._depth_ios = []
+        self._cdp_mean_interval_velocity = []
         depths = numpy.zeros(self._ts.shape)
         for icdp, cdp in enumerate(self._cdps):
             vs = numpy.array([self._getIntervalVelocity(cdp, t) for t in self._ts])
+            self._cdp_mean_interval_velocity.append(numpy.mean(vs))
+
             io = interp1d(self._ts, vs)
             for it, t in enumerate(self._ts):
                 # progressively build up the depth-profile
                 if (it == 0):
-                    depths[it] = quad(io, 0, t)[0] / 2.
+                    depths[it] = quad(io, 0, t)[0]
                 else:
-                    depths[it] = (depths[it - 1] + quad(io, self._ts[it - 1], t)[0]) / 2.
+                    depths[it] = depths[it - 1] + quad(io, self._ts[it - 1], t)[0]
             # end for
+            depths /= 2.0 # two-way-traveltime
             self._depth_ios.append(interp1d(self._ts, depths))
         # end for
+        self._cdp_mean_interval_velocity = numpy.array(self._cdp_mean_interval_velocity)
 
         # Compute mean depth profile
         self._mean_depth_profile = numpy.zeros(self._ts.shape)
@@ -319,7 +327,7 @@ class VelocityModel:
              ignored
         ts: time samples in seconds
         nn: number of closest cdp depth-profiles to be used for calculating depth
-            values
+            values; must be >= 1
 
         '''
         if (cdp == None):
