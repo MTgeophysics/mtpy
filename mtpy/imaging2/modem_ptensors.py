@@ -17,10 +17,12 @@ import mtpy.modeling.modem as modem
 import numpy as np
 import logging, traceback
 
+from mtpy.analysis.pt import ResidualPhaseTensor
+
 from matplotlib.patches import Ellipse
 
 class ModEM_ptensors:
-    def __init__(self, data_fn):
+    def __init__(self, data_fn, resp_fn=None):
         '''
         Class for loading MODEM data and plotting phase tensors.
 
@@ -28,8 +30,11 @@ class ModEM_ptensors:
         '''
 
         self._data_fn = data_fn
-
+        self._resp_fn = resp_fn
+        
         try:
+            self._data_obj = modem.Data()
+            self._data_obj.read_data_file(self._data_fn)
             self._modem_obj = modem.Data()
             self._modem_obj.read_data_file(self._data_fn)
         except Exception as err:
@@ -37,13 +42,28 @@ class ModEM_ptensors:
             logging.error(traceback.format_exc())
             exit(-1)
 
-        self._plot_period = self._modem_obj.period_list.copy()
-        self._mt_obj_list = [self._modem_obj.mt_dict[key]
-                             for key in self._modem_obj.mt_dict.keys()]
+        if self._resp_fn is not None:
+            self._resp_obj = modem.Data()
+            self._resp_obj.read_data_file(self._resp_fn)
+        else:
+            self._resp_obj = None
+
+
+        self._plot_period = self._data_obj.period_list.copy()
+        self._mt_obj_list = [self._data_obj.mt_dict[key]
+                             for key in self._data_obj.mt_dict.keys()]
 
         # Read data
         self._pt_dict = {}
         self._ptol = 0.05
+        
+        self.get_pt()
+#        self.get_pt2()
+        
+    
+        
+    def get_pt(self):
+        
         for p_index,plot_per in enumerate(self._plot_period):
             self._pt_dict[plot_per] = []
             for mt_obj in self._mt_obj_list:
@@ -78,6 +98,94 @@ class ModEM_ptensors:
                                                       ('skew', np.float),
                                                       ('n_skew', np.float),
                                                       ('ellipticity', np.float)])
+
+
+    def get_pt2(self):
+        """
+        put pt parameters into something useful for plotting
+        """
+
+        ns = len(self._data_obj.mt_dict.keys())
+        nf = len(self._data_obj.period_list)
+
+        data_pt_arr = np.zeros((nf, ns), dtype=[('lon', np.float),
+                                                ('lat', np.float),
+                                                ('phimin', np.float),
+                                                ('phimax', np.float),
+                                                ('skew', np.float),
+                                                ('azimuth', np.float),
+                                                ('rel_east', np.float),
+                                                ('rel_north', np.float)])
+        if self._resp_obj is not None:
+            model_pt_arr = np.zeros((nf, ns), dtype=[('lon', np.float),
+                                                ('lat', np.float),
+                                                ('phimin', np.float),
+                                                ('phimax', np.float),
+                                                ('skew', np.float),
+                                                ('azimuth', np.float),
+                                                ('rel_east', np.float),
+                                                ('rel_north', np.float)])
+
+            res_pt_arr = np.zeros((nf, ns), dtype=[('lon', np.float),
+                                                   ('lat', np.float),
+                                                   ('phimin', np.float),
+                                                   ('phimax', np.float),
+                                                   ('skew', np.float),
+                                                   ('azimuth', np.float),
+                                                   ('rel_east', np.float),
+                                                   ('rel_north', np.float),
+                                                   ('geometric_mean', np.float)])
+
+        for ii, key in enumerate(self._data_obj.mt_dict.keys()):
+            east = self._data_obj.mt_dict[key].grid_east
+            north = self._data_obj.mt_dict[key].grid_north
+            lon = self._data_obj.mt_dict[key].lon
+            lat = self._data_obj.mt_dict[key].lat
+
+            dpt = self._data_obj.mt_dict[key].pt
+            data_pt_arr[:, ii]['lon'] = lon
+            data_pt_arr[:, ii]['lat'] = lat
+            data_pt_arr[:, ii]['rel_east'] = east
+            data_pt_arr[:, ii]['rel_north'] = north
+            data_pt_arr[:, ii]['phimin'] = dpt.phimin[0]
+            data_pt_arr[:, ii]['phimax'] = dpt.phimax[0]
+            data_pt_arr[:, ii]['azimuth'] = dpt.azimuth[0]
+            data_pt_arr[:, ii]['skew'] = dpt.beta[0]
+            if self._resp_obj is not None:
+                mpt = self._resp_obj.mt_dict[key].pt
+                try:
+                    rpt = ResidualPhaseTensor(pt_object1=dpt,
+                                                   pt_object2=mpt)
+                    rpt = rpt.residual_pt
+                    res_pt_arr[:, ii]['lon'] = lon
+                    res_pt_arr[:, ii]['lat'] = lat
+                    res_pt_arr[:, ii]['rel_east'] = east
+                    res_pt_arr[:, ii]['rel_north'] = north
+                    res_pt_arr[:, ii]['phimin'] = rpt.phimin[0]
+                    res_pt_arr[:, ii]['phimax'] = rpt.phimax[0]
+                    res_pt_arr[:, ii]['azimuth'] = rpt.azimuth[0]
+                    res_pt_arr[:, ii]['skew'] = rpt.beta[0]
+                    res_pt_arr[:, ii]['geometric_mean'] = np.sqrt(abs(rpt.phimin[0] * \
+                                                                      rpt.phimax[0]))
+                except:
+                    pass
+                
+                model_pt_arr[:, ii]['lon'] = lon
+                model_pt_arr[:, ii]['lat'] = lat
+                model_pt_arr[:, ii]['rel_east'] = east
+                model_pt_arr[:, ii]['rel_north'] = north
+                model_pt_arr[:, ii]['phimin'] = mpt.phimin[0]
+                model_pt_arr[:, ii]['phimax'] = mpt.phimax[0]
+                model_pt_arr[:, ii]['azimuth'] = mpt.azimuth[0]
+                model_pt_arr[:, ii]['skew'] = mpt.beta[0]
+
+        # make these attributes
+        self.pt_data_arr = data_pt_arr
+        if self._resp_obj is not None:
+            self.pt_resp_arr = model_pt_arr
+            self.pt_resid_arr = res_pt_arr
+                                                      
+                                                      
         # end for
     # end func
 
@@ -90,7 +198,7 @@ class ModEM_ptensors:
         :param key: attribute key
         :return: numpy array of attribute values
         '''
-        assert (periodIdx > 0 and periodIdx < len(self._plot_period)), \
+        assert (periodIdx >= 0 and periodIdx < len(self._plot_period)), \
             'Error: Index for plot-period out of bounds.'
 
         pk = self._pt_dict.keys()[periodIdx]
@@ -103,7 +211,7 @@ class ModEM_ptensors:
     # end func
 
     def plot(self, ax, m, periodIdx, ellipse_size_factor=10000,
-             nverts=100, cvals=None, map_scale='m', **kwargs):
+             nverts=100, cvals=None, **kwargs):
 
         '''
         Plots phase tensors for a given period index.
@@ -136,14 +244,7 @@ class ModEM_ptensors:
                 if (cvals is not None): c = cvals[i]
                 if (c is not None): kwargs['facecolor'] = c
 
-                if m is None:
-                    x = self._pt_dict[k]['rel_east'][i]
-                    y = self._pt_dict[k]['rel_north'][i]
-                    if map_scale == 'km':
-                        x /= 1e3
-                        y /= 1e3
-                else:
-                    x, y = m(lon, lat)
+                x, y = m(lon, lat)
                 
                 e = Ellipse([x, y],
                             phimax * ellipse_size_factor,
@@ -153,7 +254,71 @@ class ModEM_ptensors:
             # end if
         # end for
     # end func
+
+    def plot2(self, ax, m, periodIdx, param='data' ,ellipse_size_factor=10000,
+                 nverts=100, cvals=None, map_scale='m', **kwargs):
+    
+            '''
+            Plots phase tensors for a given period index.
+    
+            :param ax: plot axis
+            :param m: basemap instance
+            :param periodIdx: period index
+            :param ellipse_size_factor: factor to control ellipse size
+            :param nverts: number of vertices in each ellipse
+            :param cvals: list of colour values for colouring each ellipse; must be of
+                          the same length as the number of tuples for each period
+            :param kwargs: list of relevant matplotlib arguments (e.g. zorder, alpha, etc.)
+            '''
+    
+            assert (periodIdx >= 0 and periodIdx < len(self._plot_period)), \
+                'Error: Index for plot-period out of bounds.'
+    
+            k = periodIdx
+            pt_array = self.pt_data_arr        
+            
+            
+            for i in range(len(pt_array[k])):
+                lon = pt_array[k]['lon'][i]
+                lat = pt_array[k]['lat'][i]
+                phimax = pt_array[k]['phimax'][i] / pt_array[k]['phimax'].max()
+                phimin = pt_array[k]['phimin'][i] / pt_array[k]['phimax'].max()
+                az = pt_array[k]['azimuth'][i]
+                nskew = pt_array[k]['skew'][i]
+    
+                # print az
+                if (phimax > 0 and phimin > 0):
+                    c = None
+                    if (cvals is not None): c = cvals[i]
+                    if (c is not None): kwargs['facecolor'] = c
+    
+                    if m is None:
+                        x = pt_array[k]['rel_east'][i]
+                        y = pt_array[k]['rel_north'][i]
+                        if map_scale == 'km':
+                            x /= 1e3
+                            y /= 1e3
+                    else:
+                        x, y = m(lon, lat)
+                    
+                    print x,y,phimax * ellipse_size_factor,phimin * ellipse_size_factor,az
+                    e = Ellipse([x, y],
+                                phimax * ellipse_size_factor,
+                                phimin * ellipse_size_factor,
+                                az, **kwargs)
+                    ax.add_artist(e)
+                # end if
+            # end for
+        # end func
+    # end class
+
+
+
 # end class
+
+
+
+
 
 def main():
     """
