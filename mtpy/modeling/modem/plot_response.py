@@ -517,7 +517,7 @@ class PlotResponse(object):
                         ax.set_ylim(self.res_limits_od)
 
                 if aa > 3 and aa < 8 and self.plot_z is False:
-#                    ax.yaxis.set_major_formatter(MultipleLocator(10))
+                    ax.yaxis.set_major_formatter(MultipleLocator(10))
                     if self.phase_limits_d is not None:
                         ax.set_ylim(self.phase_limits_d)
                 # set axes labels

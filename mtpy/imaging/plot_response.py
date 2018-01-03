@@ -1168,8 +1168,8 @@ class PlotResponse(object):
                                               fontdict=fontdict)
 
                         if aa <= 2:
-#                            ax.yaxis.set_major_formatter(
-#                                FormatStrFormatter('%.0f'))
+                            ax.yaxis.set_major_formatter(
+                                FormatStrFormatter('%.0f'))
                             if self.plot_z == True:
                                 ax.set_yscale('log', nonposy='clip')
                                 #                        else:
