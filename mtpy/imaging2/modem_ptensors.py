@@ -44,14 +44,19 @@ class ModEM_ptensors:
         # Read data
         self._pt_dict = {}
         self._ptol = 0.05
-        for plot_per in self._plot_period:
+        for p_index,plot_per in enumerate(self._plot_period):
             self._pt_dict[plot_per] = []
             for mt_obj in self._mt_obj_list:
                 p_index = [ff for ff, f2 in enumerate(1. / mt_obj.Z.freq)
                            if (f2 > plot_per * (1 - self._ptol)) and
                            (f2 < plot_per * (1 + self._ptol))][0]
 
+                s_ind = np.where(self._modem_obj.station_locations.station==mt_obj.station)
+                rel_east = self._modem_obj.station_locations.rel_east[s_ind]
+                rel_north = self._modem_obj.station_locations.rel_north[s_ind]
+                
                 pt_tuple = (mt_obj.station, mt_obj.lon, mt_obj.lat,
+                            rel_east,rel_north,
                             mt_obj.pt.phimin[p_index],
                             mt_obj.pt.phimax[p_index],
                             mt_obj.pt.azimuth[p_index],
@@ -65,6 +70,8 @@ class ModEM_ptensors:
                                                dtype=[('station', '|S15'),
                                                       ('lon', np.float),
                                                       ('lat', np.float),
+                                                      ('rel_east', np.float),
+                                                      ('rel_north', np.float),
                                                       ('phimin', np.float),
                                                       ('phimax', np.float),
                                                       ('azimuth', np.float),
@@ -96,7 +103,7 @@ class ModEM_ptensors:
     # end func
 
     def plot(self, ax, m, periodIdx, ellipse_size_factor=10000,
-             nverts=100, cvals=None, **kwargs):
+             nverts=100, cvals=None, map_scale='m', **kwargs):
 
         '''
         Plots phase tensors for a given period index.
@@ -111,7 +118,7 @@ class ModEM_ptensors:
         :param kwargs: list of relevant matplotlib arguments (e.g. zorder, alpha, etc.)
         '''
 
-        assert (periodIdx > 0 and periodIdx < len(self._plot_period)), \
+        assert (periodIdx >= 0 and periodIdx < len(self._plot_period)), \
             'Error: Index for plot-period out of bounds.'
 
         k = self._pt_dict.keys()[periodIdx]
@@ -129,7 +136,15 @@ class ModEM_ptensors:
                 if (cvals is not None): c = cvals[i]
                 if (c is not None): kwargs['facecolor'] = c
 
-                x, y = m(lon, lat)
+                if m is None:
+                    x = self._pt_dict[k]['rel_east'][i]
+                    y = self._pt_dict[k]['rel_north'][i]
+                    if map_scale == 'km':
+                        x /= 1e3
+                        y /= 1e3
+                else:
+                    x, y = m(lon, lat)
+                
                 e = Ellipse([x, y],
                             phimax * ellipse_size_factor,
                             phimin * ellipse_size_factor,
