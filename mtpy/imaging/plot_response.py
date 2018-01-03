@@ -282,6 +282,7 @@ class PlotResponse(object):
 
             # make figure
             fig = plt.figure(station, self.fig_size, dpi=self.fig_dpi)
+            self.fig_list.append(fig)
             plt.clf()
             fig.suptitle(str(station), fontdict=fontdict)
             
@@ -725,7 +726,7 @@ class PlotResponse(object):
                                 ax.set_ylabel('|Im[Z]| (mV/km nT)',
                                               fontdict=fontdict)
 
-                    elif len(ax_list) == 8 or len(self.ax_list) == 12:
+                    elif len(self.ax_list) == 8 or len(self.ax_list) == 12:
                         if aa < 4:
                             plt.setp(ax.get_xticklabels(), visible=False)
                             if self.plot_z == False:
@@ -1029,6 +1030,9 @@ class PlotResponse(object):
                                                              nty, 0, 1],
                                                          **kw_yy)
 
+
+
+
                     if plot_tipper == False:
                         self.ax_list = [axrxy, axrxx, axpxy, axpxx]
                         line_list = [[erxy[0], eryx[0]], [erxx[0], eryy[0]]]
@@ -1042,7 +1046,9 @@ class PlotResponse(object):
                                       ['$Z_{xx}$', '$Z_{yy}$'],
                                       ['$T_x$', '$T_y$']]
 
+                
                 # set axis properties
+
                 for aa, ax in enumerate(self.ax_list):
                     ax.tick_params(axis='y', pad=self.ylabel_pad)
                     #                    ylabels = ax.get_yticks().tolist()
@@ -1134,9 +1140,36 @@ class PlotResponse(object):
                             elif self.plot_z == True:
                                 ax.set_ylabel('Im[Z (mV/km nT)]',
                                               fontdict=fontdict)
+
+                    elif len(self.ax_list) == 6 and plot_tipper == True:
                         if aa <= 2:
-                            ax.yaxis.set_major_formatter(
-                                FormatStrFormatter('%.0f'))
+                            plt.setp(ax.get_xticklabels(), visible=False)
+                            if self.plot_z == False:
+                                if aa < 2:
+                                    ax.set_yscale('log', nonposy='clip')
+                            if self.res_limits is not None:
+                                ax.set_ylim(self.res_limits)
+                        else:
+                            ax.set_ylim(self.phase_limits)
+                            ax.set_xlabel('Period (s)', fontdict=fontdict)
+                        if aa == 0:
+                            if self.plot_z == False:
+                                ax.set_ylabel('App. Res. ($\mathbf{\Omega \cdot m}$)',
+                                              fontdict=fontdict)
+                            elif self.plot_z == True:
+                                ax.set_ylabel('Re[Z (mV/km nT)]',
+                                              fontdict=fontdict)
+                        elif aa == 2:
+                            if self.plot_z == False:
+                                ax.set_ylabel('Phase (deg)',
+                                              fontdict=fontdict)
+                            elif self.plot_z == True:
+                                ax.set_ylabel('Im[Z (mV/km nT)]',
+                                              fontdict=fontdict)
+
+                        if aa <= 2:
+#                            ax.yaxis.set_major_formatter(
+#                                FormatStrFormatter('%.0f'))
                             if self.plot_z == True:
                                 ax.set_yscale('log', nonposy='clip')
                                 #                        else:
