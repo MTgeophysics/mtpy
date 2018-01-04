@@ -22,7 +22,7 @@ from mtpy.analysis.pt import ResidualPhaseTensor
 from matplotlib.patches import Ellipse
 
 class ModEM_ptensors:
-    def __init__(self, data_fn, resp_fn=None):
+    def __init__(self, data_fn, resp_fn=None, read_mode=1):
         '''
         Class for loading MODEM data and plotting phase tensors.
 
@@ -43,8 +43,13 @@ class ModEM_ptensors:
             exit(-1)
 
         if self._resp_fn is not None:
-            self._resp_obj = modem.Data()
-            self._resp_obj.read_data_file(self._resp_fn)
+            try:
+                self._resp_obj = modem.Data()
+                self._resp_obj.read_data_file(self._resp_fn)
+            except Exception as err:
+                print 'Failed to read %s' % (self._resp_fn)
+                logging.error(traceback.format_exc())
+                exit(-1)
         else:
             self._resp_obj = None
 
@@ -57,8 +62,11 @@ class ModEM_ptensors:
         self._pt_dict = {}
         self._ptol = 0.05
         
-        self.get_pt()
-#        self.get_pt2()
+        self.read_mode = read_mode
+        if read_mode==1:
+            self.get_pt()
+        else:
+            self.get_pt2()
         
     
         
@@ -136,7 +144,10 @@ class ModEM_ptensors:
                                                    ('rel_north', np.float),
                                                    ('geometric_mean', np.float)])
 
-        for ii, key in enumerate(self._data_obj.mt_dict.keys()):
+        for key in self._data_obj.mt_dict.keys():
+            mt_obj = self._data_obj.mt_dict[key]
+            ii = np.where(self._data_obj.station_locations.station==mt_obj.station)[0][0]
+            
             east = self._data_obj.mt_dict[key].grid_east
             north = self._data_obj.mt_dict[key].grid_north
             lon = self._data_obj.mt_dict[key].lon
@@ -147,10 +158,10 @@ class ModEM_ptensors:
             data_pt_arr[:, ii]['lat'] = lat
             data_pt_arr[:, ii]['rel_east'] = east
             data_pt_arr[:, ii]['rel_north'] = north
-            data_pt_arr[:, ii]['phimin'] = dpt.phimin[0]
-            data_pt_arr[:, ii]['phimax'] = dpt.phimax[0]
-            data_pt_arr[:, ii]['azimuth'] = dpt.azimuth[0]
-            data_pt_arr[:, ii]['skew'] = dpt.beta[0]
+            data_pt_arr[:, ii]['phimin'] = dpt.phimin
+            data_pt_arr[:, ii]['phimax'] = dpt.phimax
+            data_pt_arr[:, ii]['azimuth'] = dpt.azimuth
+            data_pt_arr[:, ii]['skew'] = dpt.beta
             if self._resp_obj is not None:
                 mpt = self._resp_obj.mt_dict[key].pt
                 try:
@@ -161,10 +172,10 @@ class ModEM_ptensors:
                     res_pt_arr[:, ii]['lat'] = lat
                     res_pt_arr[:, ii]['rel_east'] = east
                     res_pt_arr[:, ii]['rel_north'] = north
-                    res_pt_arr[:, ii]['phimin'] = rpt.phimin[0]
-                    res_pt_arr[:, ii]['phimax'] = rpt.phimax[0]
-                    res_pt_arr[:, ii]['azimuth'] = rpt.azimuth[0]
-                    res_pt_arr[:, ii]['skew'] = rpt.beta[0]
+                    res_pt_arr[:, ii]['phimin'] = rpt.phimin
+                    res_pt_arr[:, ii]['phimax'] = rpt.phimax
+                    res_pt_arr[:, ii]['azimuth'] = rpt.azimuth
+                    res_pt_arr[:, ii]['skew'] = rpt.beta
                     res_pt_arr[:, ii]['geometric_mean'] = np.sqrt(abs(rpt.phimin[0] * \
                                                                       rpt.phimax[0]))
                 except:
@@ -174,10 +185,10 @@ class ModEM_ptensors:
                 model_pt_arr[:, ii]['lat'] = lat
                 model_pt_arr[:, ii]['rel_east'] = east
                 model_pt_arr[:, ii]['rel_north'] = north
-                model_pt_arr[:, ii]['phimin'] = mpt.phimin[0]
-                model_pt_arr[:, ii]['phimax'] = mpt.phimax[0]
-                model_pt_arr[:, ii]['azimuth'] = mpt.azimuth[0]
-                model_pt_arr[:, ii]['skew'] = mpt.beta[0]
+                model_pt_arr[:, ii]['phimin'] = mpt.phimin
+                model_pt_arr[:, ii]['phimax'] = mpt.phimax
+                model_pt_arr[:, ii]['azimuth'] = mpt.azimuth
+                model_pt_arr[:, ii]['skew'] = mpt.beta
 
         # make these attributes
         self.pt_data_arr = data_pt_arr
@@ -189,7 +200,7 @@ class ModEM_ptensors:
         # end for
     # end func
 
-    def get_period_attributes(self, periodIdx, key):
+    def get_period_attributes(self, periodIdx, key, ptarray='data'):
         '''
         Returns, for a given period, a list of attribute values for key
         (e.g. skew, phimax, etc.).
@@ -201,13 +212,20 @@ class ModEM_ptensors:
         assert (periodIdx >= 0 and periodIdx < len(self._plot_period)), \
             'Error: Index for plot-period out of bounds.'
 
-        pk = self._pt_dict.keys()[periodIdx]
-
-        try:
-            vals = self._pt_dict[pk][key]
+        if self.read_mode == 1:
+            pk = self._pt_dict.keys()[periodIdx]
+            try:
+                vals = self._pt_dict[pk][key]
+                return vals
+            except Exception as err:
+                logging.error(traceback.format_exc())
+        else:
+            pk = periodIdx
+            vals = getattr(self,'pt_'+ptarray+'_arr')[pk][key]
+            
             return vals
-        except Exception as err:
-            logging.error(traceback.format_exc())
+
+
     # end func
 
     def plot(self, ax, m, periodIdx, ellipse_size_factor=10000,
@@ -256,7 +274,7 @@ class ModEM_ptensors:
     # end func
 
     def plot2(self, ax, m, periodIdx, param='data' ,ellipse_size_factor=10000,
-                 nverts=100, cvals=None, map_scale='m', **kwargs):
+                 nverts=100, cvals=None, map_scale='m', centre_shift=[0,0], **kwargs):
     
             '''
             Plots phase tensors for a given period index.
@@ -274,16 +292,21 @@ class ModEM_ptensors:
             assert (periodIdx >= 0 and periodIdx < len(self._plot_period)), \
                 'Error: Index for plot-period out of bounds.'
     
-            k = periodIdx
-            pt_array = self.pt_data_arr        
-            
+            if self.read_mode == 2:
+                k = periodIdx
+                pt_array = getattr(self,'pt_'+param+'_arr')
+            else:
+                k = self._pt_dict.keys()[periodIdx]
+                pt_array = self._pt_dict
             
             for i in range(len(pt_array[k])):
                 lon = pt_array[k]['lon'][i]
                 lat = pt_array[k]['lat'][i]
-                phimax = pt_array[k]['phimax'][i] / pt_array[k]['phimax'].max()
-                phimin = pt_array[k]['phimin'][i] / pt_array[k]['phimax'].max()
+                phimax = pt_array[k]['phimax'][i] #/ pt_array[k]['phimax'].max()
+                phimin = pt_array[k]['phimin'][i] #/ pt_array[k]['phimax'].max()
                 az = pt_array[k]['azimuth'][i]
+                if param == 'resid':
+                    phimin = np.abs(phimin)
                 nskew = pt_array[k]['skew'][i]
     
                 # print az
@@ -301,8 +324,7 @@ class ModEM_ptensors:
                     else:
                         x, y = m(lon, lat)
                     
-                    print x,y,phimax * ellipse_size_factor,phimin * ellipse_size_factor,az
-                    e = Ellipse([x, y],
+                    e = Ellipse([x, y], 
                                 phimax * ellipse_size_factor,
                                 phimin * ellipse_size_factor,
                                 az, **kwargs)
