@@ -6,3 +6,4 @@ scipy
 pillow
 qtpy
 GDAL
+obspy
