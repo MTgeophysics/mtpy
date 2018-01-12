@@ -81,12 +81,16 @@ class Residual(object):
         self.rms_z = None
 
     def read_residual_file(self, residual_fn=None):
-        if residual_fn is not None:
-            self.residual_fn = residual_fn
+        
+        # check if residual_fn is contained in object
+        if residual_fn is None:
+            residual_fn = self.residual_fn
+        if self.residual_fn is None:
+            raise Exception("Cannot read residuals, please provide residual_fn")
+        
+        else:
             res_obj = Data()
             res_obj.read_data_file(self.residual_fn)
-        else:
-            raise Exception("Cannot read residuals, please provide residual_fn")
 
         # pass relevant arguments through residual object
         for att in ['center_position_EN', 'data_period_list',
@@ -98,11 +102,11 @@ class Residual(object):
         self.residual_array = res_obj.data_array.copy()
 
         # append some new fields to contain rms values
-        self.rms_array = res_obj.station_locations.copy()
+        self.rms_array = res_obj.station_locations.station_locations.copy()
         for field_name in ['rms', 'rms_z', 'rms_tip']:
             self.rms_array = recfunctions.append_fields(self.rms_array.copy(),
                                                         field_name,
-                                                        np.zeros(len(res_obj.station_locations)),
+                                                        np.zeros(len(res_obj.station_locations.station_locations)),
                                                         usemask=False)
 
     def calculate_residual_from_data(self, data_fn=None, resp_fn=None):
@@ -165,6 +169,9 @@ class Residual(object):
         return resp_obj
 
     def get_rms(self, residual_fn=None):
+        
+        if residual_fn is None:
+            residual_fn = self.residual_fn
 
         if self.residual_array is None:
             self.read_residual_file(residual_fn)

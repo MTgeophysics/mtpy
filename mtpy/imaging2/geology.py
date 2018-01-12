@@ -269,7 +269,6 @@ class Geology:
                 # coordinates in local coordinate system
                 xl,yl = self._xy_to_local(x,y,epsg_from,epsg_to,
                                           centre_shift,scale_factor)
-
                 ax.plot(xl,yl,**kwargs)
                 
             elif (isinstance(feature, MultiPolygon)):
@@ -289,8 +288,11 @@ class Geology:
                 xl,yl = self._xy_to_local(x,y,epsg_from,epsg_to,
                                           centre_shift,scale_factor)
                 ax.plot(xl,yl,**kwargs)
+
                     
+
         return ax
+        
 
             
 # end class
