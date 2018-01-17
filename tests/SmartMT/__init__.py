@@ -97,8 +97,9 @@ class SmartMTGUITestCase(TestCase):
     def tearDown(self):
         self.smartMT.close()
 
-    def _load_data(self):
-        file_list = [os.path.join(EDI_DATA_DIR, edi) for edi in os.listdir(EDI_DATA_DIR) if edi.endswith("edi")]
+    def _load_data(self, file_list=None):
+        if file_list is None:  # load default data set
+            file_list = [os.path.join(EDI_DATA_DIR, edi) for edi in os.listdir(EDI_DATA_DIR) if edi.endswith("edi")]
         self.smartMT._progress_bar.setMaximumValue(len(file_list))
         self.smartMT._progress_bar.onStart()
         self.smartMT._add_files(file_list, os.path.basename(EDI_DATA_DIR))
