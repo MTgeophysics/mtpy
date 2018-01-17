@@ -594,9 +594,11 @@ class PlotMTResponse(PlotSettings):
         nz_xy = np.nonzero(self.Z.z[:, 0, 1])
         nz_yx = np.nonzero(self.Z.z[:, 1, 0])
         nz_yy = np.nonzero(self.Z.z[:, 1, 1])
-        
-        nz_tx = np.nonzero(self.Tipper.tipper[:, 0, 0])
-        nz_ty = np.nonzero(self.Tipper.tipper[:, 0, 1])
+
+        if self.Tipper is not None:  # fix github issue #24.
+            # NOTE the following lines seems not have any effect anyway
+            nz_tx = np.nonzero(self.Tipper.tipper[:, 0, 0])
+            nz_ty = np.nonzero(self.Tipper.tipper[:, 0, 1])
         
         # ---------plot the apparent resistivity--------------------------------
         # --> plot as error bars and just as points xy, yx
