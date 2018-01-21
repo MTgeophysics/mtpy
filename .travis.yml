@@ -1,5 +1,6 @@
 dist: trusty
 sudo: required  # use VM instead of docker
+group: deprecated-2017Q4
 
 language: python
 python:
