@@ -646,7 +646,7 @@ class MT(object):
             edi_obj.Tipper = self._Tipper
 
         # set rotation angle
-        edi_obj.zrot = self.rotation_angle
+        # edi_obj.zrot = self.rotation_angle
 
         # --> write edi file
         edi_fn = edi_obj.write_edi_file(new_edi_fn=new_edi_fn)

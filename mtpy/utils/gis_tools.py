@@ -167,18 +167,20 @@ def convert_position_float2str(position):
 
     deg = abs(deg)
     minutes = (abs(position) - deg) * 60.
-    sec = (minutes - int(minutes)) * 60.
-    if sec == 60:
+    # need to round seconds to 4 decimal places otherwise machine precision
+    # keeps the 60 second roll over and the string is incorrect.
+    sec = np.round((minutes - int(minutes)) * 60., 4)
+    if sec >= 60.:
         minutes += 1
         sec = 0
 
-    if minutes == 60:
+    if int(minutes) == 60:
         deg += 1
         minutes = 0
-
-    position_str = '{0}:{1:02.0f}:{2:02.2f}'.format(sign * int(deg),
+        
+    position_str = '{0}:{1:02.0f}:{2:05.2f}'.format(sign * int(deg),
                                                     int(minutes),
-                                                    float(sec))
+                                                    sec)
 
     return position_str
 
