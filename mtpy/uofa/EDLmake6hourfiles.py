@@ -29,7 +29,7 @@ import os.path as op
 import mtpy.utils.exceptions as MTex
 
 import mtpy.utils.filehandling as MTfh
-reload(MTfh)
+#reload(MTfh)
 
 
 def main():

@@ -61,19 +61,19 @@ class Arrow(QGroupBox):
     def get_arrow_dict(self):
         if self.ui.groupBox_advanced_options.isChecked():
             arrow_dict = {
-                'size': self.ui.doubleSpinBox_size.value(),
-                'head_length': self.ui.doubleSpinBox_head_length.value(),
-                'head_width': self.ui.doubleSpinBox_head_width.value(),
-                'lw': self.ui.doubleSpinBox_line_width.value(),
-                'threshold': self.ui.doubleSpinBox_threshold.value(),
-                'direction': self._direction[self.ui.comboBox_direction.currentIndex()]
+                'arrow_size': self.ui.doubleSpinBox_size.value(),
+                'arrow_head_length': self.ui.doubleSpinBox_head_length.value(),
+                'arrow_head_width': self.ui.doubleSpinBox_head_width.value(),
+                'arrow_lw': self.ui.doubleSpinBox_line_width.value(),
+                'arrow_threshold': self.ui.doubleSpinBox_threshold.value(),
+                'arrow_direction': self._direction[self.ui.comboBox_direction.currentIndex()]
             }
             if self._simple_color:
-                arrow_dict['color'] = (SIMPLE_COLORS[self.ui.comboBox_color_real.currentIndex()],
-                                       SIMPLE_COLORS[self.ui.comboBox_color_imaginary.currentIndex()])
+                arrow_dict['arrow_color'] = (SIMPLE_COLORS[self.ui.comboBox_color_real.currentIndex()],
+                                             SIMPLE_COLORS[self.ui.comboBox_color_imaginary.currentIndex()])
             else:
-                arrow_dict['color'] = (COLORS[self.ui.comboBox_color_real.currentIndex()][1],
-                                       COLORS[self.ui.comboBox_color_imaginary.currentIndex()][1])
+                arrow_dict['arrow_color'] = (COLORS[self.ui.comboBox_color_real.currentIndex()][1],
+                                             COLORS[self.ui.comboBox_color_imaginary.currentIndex()][1])
             return arrow_dict
         else:
             return None
@@ -84,6 +84,6 @@ class Arrow(QGroupBox):
         elif self.ui.checkBox_real.isChecked():
             return 'yr'
         elif self.ui.checkBox_imaginary.isChecked():
-            return 'ri'
+            return 'yi'
         else:
             return 'n'

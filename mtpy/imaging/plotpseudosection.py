@@ -714,8 +714,8 @@ class PlotResPhasePseudoSection(object):
         elif self.plot_style == 'imshow':
             #make ticks simulate a log scale in the y direction
             #--> set major and minor ticks with appropriate labels
-            major_yticks = np.arange(np.ceil(np.log10(self.period_limits[0])),
-                                     np.floor(np.log10(self.period_limits[1]))+1)
+            major_yticks = np.arange(np.ceil(np.log10(self.period_limits[0]) if self.period_limits[0]!=0 else 0),
+                                     np.floor(np.log10(self.period_limits[1]) if self.period_limits[0]!=0 else 0)+1)
 
             #make minor ticks look like they are on a log scale
             minor_yticks = []
@@ -757,13 +757,13 @@ class PlotResPhasePseudoSection(object):
 
                 axr.grid(which='major', alpha=.25)
                 axr.set_xlim(self.offset_list.min(), self.offset_list.max())
-                axr.set_ylim(np.log10(self.period_limits[0]),
-                             np.log10(self.period_limits[1]))
+                axr.set_ylim(np.log10(self.period_limits[0]) if self.period_limits[0]!=0 else 0,
+                             np.log10(self.period_limits[1]) if self.period_limits[0]!=0 else 0)
 
                 #label the plot with a text box
                 if self.text_location is None:
                     txloc = self.offset_list.min()*self.text_xpad
-                    tyloc = np.log10(self.period_limits[1]*self.text_ypad)
+                    tyloc = np.log10(self.period_limits[1]*self.text_ypad) if self.period_limits[0]!=0 else 0
                 else:
                     txloc = self.text_location[0]
                     tyloc = self.text_location[1]
@@ -810,8 +810,8 @@ class PlotResPhasePseudoSection(object):
                 axp.set_yticklabels(yticklabels[::-1])
 
                 axp.set_xlim(self.offset_list.min(), self.offset_list.max())
-                axp.set_ylim(np.log10(self.period_limits[0]),
-                             np.log10(self.period_limits[1]))
+                axp.set_ylim(np.log10(self.period_limits[0] if self.period_limits[0]!=0 else 0),
+                             np.log10(self.period_limits[1]) if self.period_limits[0]!=0 else 0)
 
                 if ii == 0:
                     axp.set_ylabel('Period (s)', font_dict)

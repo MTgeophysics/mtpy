@@ -150,6 +150,9 @@ class PlotPTMaps(mtplottools.MTEllipse):
 
     def __init__(self, data_fn=None, resp_fn=None, model_fn=None, **kwargs):
 
+
+
+
         self.model_fn = model_fn
         self.data_fn = data_fn
         self.resp_fn = resp_fn
@@ -167,6 +170,7 @@ class PlotPTMaps(mtplottools.MTEllipse):
         self.save_plots = kwargs.pop('save_plots', 'y')
         self.plot_period_list = kwargs.pop('plot_period_list', None)
         self.period_dict = None
+        self.d_index = kwargs.pop('d_index',None)
 
         self.map_scale = kwargs.pop('map_scale', 'km')
         # make map scale
@@ -460,10 +464,14 @@ class PlotPTMaps(mtplottools.MTEllipse):
             if self.model_fn is not None:
                 gridzcentre = np.mean(
                     [self.model_obj.grid_z[1:], self.model_obj.grid_z[:-1]], axis=0)
-                approx_depth, d_index = ws.estimate_skin_depth(self.model_obj.res_model.copy(),
-                                                               gridzcentre / self.dscale,
-                                                               per,
-                                                               dscale=self.dscale)
+                if self.d_index is not None:
+                    approx_depth, d_index = ws.estimate_skin_depth(self.model_obj.res_model.copy(),
+                                                                   gridzcentre / self.dscale,
+                                                                   per,
+                                                                   dscale=self.dscale)
+                else:
+                    d_index = self.d_index
+                    approx_depth = self.model_obj.grid_z[d_index]
 
                 # need to add an extra row and column to east and north to make sure
                 # all is plotted see pcolor for details.

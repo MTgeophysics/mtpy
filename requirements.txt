@@ -1,4 +1,4 @@
-matplotlib
+matplotlib==2.0.2
 numpy
 PyYAML>=3.11
 geopandas
@@ -6,3 +6,4 @@ scipy
 pillow
 qtpy
 GDAL
+obspy

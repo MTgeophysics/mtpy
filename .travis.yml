@@ -22,12 +22,13 @@ env:
 #    - MATPLOTLIB_VERSION=2.1.0 QT_VERSION=4
     - MATPLOTLIB_VERSION=2.0.2 QT_VERSION=5
     - MATPLOTLIB_VERSION=2.1.0 QT_VERSION=5
-    - MATPLOTLIB_VERSION=2.0.2 QT_VERSION=4
+#    - MATPLOTLIB_VERSION=2.0.2 QT_VERSION=4
     - MATPLOTLIB_VERSION=1.5.3 QT_VERSION=5
 
 stages:
   - name: prepare cache
   - test
+  - name: GUI Test
 
 jobs:
   include:
@@ -39,15 +40,23 @@ jobs:
       script: true
       env:
         - MATPLOTLIB_VERSION=2.1.0 QT_VERSION=5
-    - stage: prepare cache
-      script: true
-      env:
-        - MATPLOTLIB_VERSION=2.0.2 QT_VERSION=4
+#    - stage: prepare cache
+#      script: true
+#      env:
+#        - MATPLOTLIB_VERSION=2.0.2 QT_VERSION=4
     - stage: prepare cache
       script: true
       env:
         - MATPLOTLIB_VERSION=1.5.3 QT_VERSION=5
 #    - stage: test
+    - stage: GUI Test
+      script: . ./bin/travis-test-gui.sh
+      env:
+        - MATPLOTLIB_VERSION=2.0.2 QT_VERSION=5
+#    - stage: GUI Test
+#      script: . ./bin/travis-test-gui.sh
+#      env:
+#        - MATPLOTLIB_VERSION=2.0.2 QT_VERSION=4
 #    - stage: deploy
 
 before_script:
@@ -55,11 +64,6 @@ before_script:
 
 script: # testing stages, will run only in testing stages
   - MTPY_TEST_COMPARE_IMAGE=False py.test -v -n4 --dist=loadscope --cov=mtpy --cov-report= tests --ignore=tests/SmartMT
-  #  test gui
-  - "export DISPLAY=:99.0"  # enable display on travis
-  - "sh -e /etc/init.d/xvfb start"
-  - sleep 3 # give xvfb some time to start
-  - py.test -v -n4 --dist=loadscope --cov=mtpy --cov-append --cov-report= tests/SmartMT
 
 after_success:
   - coveralls
@@ -68,7 +72,7 @@ matrix:
   fast_finish: true
   allow_failures:
     - env: MATPLOTLIB_VERSION=2.1.0 QT_VERSION=5
-    - env: MATPLOTLIB_VERSION=2.0.2 QT_VERSION=4
+#    - env: MATPLOTLIB_VERSION=2.0.2 QT_VERSION=4
     - env: MATPLOTLIB_VERSION=1.5.3 QT_VERSION=5
 
 notifications:

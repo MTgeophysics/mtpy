@@ -28,7 +28,7 @@ import mtpy.analysis.geometry as MTge
 import mtpy.core.z as MTz
 import mtpy.utils.calculator as MTcc
 
-reload(MTz)
+#reload(MTz)
 
 
 def rhophi2rhodepth(rho, phase, period):

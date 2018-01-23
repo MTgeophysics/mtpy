@@ -1,47 +1,47 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
-    <class>GroupBox_z_unit</class>
-    <widget class="QGroupBox" name="GroupBox_z_unit">
-        <property name="geometry">
-            <rect>
-                <x>0</x>
-                <y>0</y>
-                <width>300</width>
-                <height>50</height>
-            </rect>
-        </property>
-        <property name="sizePolicy">
-            <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-            </sizepolicy>
-        </property>
-        <property name="windowTitle">
-            <string>GroupBox</string>
-        </property>
-        <property name="title">
-            <string>Z Unit</string>
-        </property>
-        <layout class="QHBoxLayout" name="horizontalLayout">
-            <item>
-                <widget class="QRadioButton" name="radioButton_m">
-                    <property name="text">
-                        <string>meter (m)</string>
-                    </property>
-                </widget>
-            </item>
-            <item>
-                <widget class="QRadioButton" name="radioButton_km">
-                    <property name="text">
-                        <string>kilometre (km)</string>
-                    </property>
-                    <property name="checked">
-                        <bool>true</bool>
-                    </property>
-                </widget>
-            </item>
-        </layout>
+ <class>GroupBox_z_unit</class>
+ <widget class="QGroupBox" name="GroupBox_z_unit">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>300</width>
+    <height>50</height>
+   </rect>
+  </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
+  </property>
+  <property name="windowTitle">
+   <string>GroupBox</string>
+  </property>
+  <property name="title">
+   <string>Z Unit</string>
+  </property>
+  <layout class="QHBoxLayout" name="horizontalLayout">
+   <item>
+    <widget class="QRadioButton" name="radioButton_m">
+     <property name="text">
+      <string>meter (m)</string>
+     </property>
     </widget>
-    <resources/>
-    <connections/>
+   </item>
+   <item>
+    <widget class="QRadioButton" name="radioButton_km">
+     <property name="text">
+      <string>kilometre (km)</string>
+     </property>
+     <property name="checked">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
 </ui>

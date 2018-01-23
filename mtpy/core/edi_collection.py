@@ -205,7 +205,7 @@ class EdiCollection(object):
                             (isinstance(period, tuple) and period[1] < uniq_period_list[index]):
                         index_start = index
                         break
-                select_period_list = np.array(select_period_list)
+            select_period_list = np.array(select_period_list)
         else:
             # 2 percetage stats
             # select commonly occured frequencies from all stations.

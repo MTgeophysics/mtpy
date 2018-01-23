@@ -23,12 +23,11 @@ from mtpy.utils.matplotlib_utils import get_next_fig_num
 
 class PhaseTensorMap(VisualizationBase):
     def get_plot_tooltip(self):
-        ellipse = self._params['ellipse_dict']
         tipper = self._params['plot_tipper']
         return "freq=%.5f, tolerance=%.2f%%, ellipse_size=%.2f, real_induction=%s, imaginary_induction=%s" % (
             self._params['plot_freq'],
             self._params['ftol'] * 100,
-            ellipse['size'],
+            self._params['ellipse_size'],
             'on' if tipper.find('r') >= 0 else 'off',
             'on' if tipper.find('i') >= 0 else 'off'
         )
@@ -56,14 +55,18 @@ class PhaseTensorMap(VisualizationBase):
             'fn_list': [mt_obj.fn for mt_obj in self._mt_objs],
             'plot_freq': self._frequency_ui.get_frequencies(),
             'ftol': self._tolerance_ui.get_tolerance_in_float(),
-            'ellipse_dict': self._ellipse_ui.get_ellipse_dict(),
             'mapscale': self._scale_ui.get_mapscale(),
             'tscale': self._scale_ui.get_tscale(),
             'plot_tipper': self._arrow_ui.get_plot_tipper(),
             # 'rot_z': self._rotation_ui.get_rotation_in_degree(),  # not implemented in PlotPhaseTensorMaps
             'station_id': (0, 10),
-            'fig_num': get_next_fig_num()
+            'fig_num': get_next_fig_num(),
+            'fig_dpi': 100,
+            'fig_size': (8, 6),
+            'plot_yn': 'n'
         }
+
+        self._params.update(self._ellipse_ui.get_ellipse_dict())
 
         if self._colorbar_ui.isChecked():
             self._params['cb_dict'] = self._colorbar_ui.get_colorbar_dict()
@@ -76,7 +79,7 @@ class PhaseTensorMap(VisualizationBase):
         #         'threshold': 0.8,
         #         'direction': 0}
         if self._arrow_ui.isChecked():
-            self._params['arrow_dict'] = self._arrow_ui.get_arrow_dict()
+            self._params.update(self._arrow_ui.get_arrow_dict())
 
         if self._padding_ui.isChecked():
             self._params['xpad'] = self._padding_ui.get_x_pad()
@@ -219,12 +222,14 @@ class PhaseTensorPseudoSection(VisualizationBase):
             'fn_list': [mt_obj.fn for mt_obj in self._mt_objs],
             'plot_tipper': self._arrow_ui.get_plot_tipper(),
             'tscale': self._scale_ui.get_tscale(),
-            'ellipse_dict': self._ellipse_ui.get_ellipse_dict(),
+            'ellipse_dict': self._ellipse_ui.get_ellipse_dict(prefix=""),
             'stretch': self._stretch_ui.get_stretch(),
             'linedir': self._linedir_ui.get_linedir(),
             # 'rotz': self._rotation_ui.get_rotation_in_degree(), # this is not implemented in PlotPhaseTensorPseudoSection
             # default for testing
             'station_id': (0, 10),  # indices for showing station names,
+            'fig_dpi': 100,
+            'fig_size': (8, 6),
             'fig_num': get_next_fig_num()
         }
         if self._arrow_ui.isChecked():
@@ -281,6 +286,8 @@ class ResistivityPhasePseudoSection(VisualizationBase):
             'xtickspace': self._plot_control.get_tickspace(),
             'stationid': (0, 20),
             'plot_yn': 'n',  # do not plot on class creation
+            'fig_size': (8, 6),
+            'fig_dpi': 100,
             'fig_num': get_next_fig_num()
         }
 

@@ -161,6 +161,7 @@ class PlotDepthSlice(object):
         self.cmap = kwargs.pop('cmap', 'jet_r')
         self.font_size = kwargs.pop('font_size', 8)
 
+        self.draw_colorbar = kwargs.pop('draw_colorbar',True)
         self.cb_shrink = kwargs.pop('cb_shrink', .8)
         self.cb_pad = kwargs.pop('cb_pad', .01)
         self.cb_orientation = kwargs.pop('cb_orientation', 'horizontal')
@@ -332,39 +333,40 @@ class PlotDepthSlice(object):
                          color='k')
 
             # plot the colorbar
-            if self.cb_location is None:
+            if self.draw_colorbar:
+                if self.cb_location is None:
+                    if self.cb_orientation == 'horizontal':
+                        self.cb_location = (ax1.axes.figbox.bounds[3] - .225,
+                                            ax1.axes.figbox.bounds[1] + .05, .3, .025)
+    
+                    elif self.cb_orientation == 'vertical':
+                        self.cb_location = ((ax1.axes.figbox.bounds[2] - .15,
+                                             ax1.axes.figbox.bounds[3] - .21, .025, .3))
+    
+                ax2 = fig.add_axes(self.cb_location)
+    
+                cb = mcb.ColorbarBase(ax2,
+                                      cmap=self.cmap,
+                                      norm=Normalize(vmin=self.climits[0],
+                                                     vmax=self.climits[1]),
+                                      orientation=self.cb_orientation)
+    
                 if self.cb_orientation == 'horizontal':
-                    self.cb_location = (ax1.axes.figbox.bounds[3] - .225,
-                                        ax1.axes.figbox.bounds[1] + .05, .3, .025)
-
+                    cb.ax.xaxis.set_label_position('top')
+                    cb.ax.xaxis.set_label_coords(.5, 1.3)
+    
                 elif self.cb_orientation == 'vertical':
-                    self.cb_location = ((ax1.axes.figbox.bounds[2] - .15,
-                                         ax1.axes.figbox.bounds[3] - .21, .025, .3))
-
-            ax2 = fig.add_axes(self.cb_location)
-
-            cb = mcb.ColorbarBase(ax2,
-                                  cmap=self.cmap,
-                                  norm=Normalize(vmin=self.climits[0],
-                                                 vmax=self.climits[1]),
-                                  orientation=self.cb_orientation)
-
-            if self.cb_orientation == 'horizontal':
-                cb.ax.xaxis.set_label_position('top')
-                cb.ax.xaxis.set_label_coords(.5, 1.3)
-
-            elif self.cb_orientation == 'vertical':
-                cb.ax.yaxis.set_label_position('right')
-                cb.ax.yaxis.set_label_coords(1.25, .5)
-                cb.ax.yaxis.tick_left()
-                cb.ax.tick_params(axis='y', direction='in')
-
-            cb.set_label('Resistivity ($\Omega \cdot$m)',
-                         fontdict={'size': self.font_size + 1})
-            cb.set_ticks(np.arange(self.climits[0], self.climits[1] + 1))
-            cb.set_ticklabels([cblabeldict[cc]
-                               for cc in np.arange(self.climits[0],
-                                                   self.climits[1] + 1)])
+                    cb.ax.yaxis.set_label_position('right')
+                    cb.ax.yaxis.set_label_coords(1.25, .5)
+                    cb.ax.yaxis.tick_left()
+                    cb.ax.tick_params(axis='y', direction='in')
+    
+                cb.set_label('Resistivity ($\Omega \cdot$m)',
+                             fontdict={'size': self.font_size + 1})
+                cb.set_ticks(np.arange(self.climits[0], self.climits[1] + 1))
+                cb.set_ticklabels([cblabeldict[cc]
+                                   for cc in np.arange(self.climits[0],
+                                                       self.climits[1] + 1)])
 
             self.fig_list.append(fig)
 

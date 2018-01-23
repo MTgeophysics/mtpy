@@ -9,7 +9,8 @@ import matplotlib.pyplot as plt
 from mtpy.core.edi_collection import EdiCollection
 from mtpy.modeling.modem import Data
 # patch that changes the matplotlib behaviour
-from tests import make_temp_dir, plt_wait, plt_close
+from tests import make_temp_dir
+from tests.imaging import plt_wait, plt_close
 
 # from tests.modeling import show_patcher
 

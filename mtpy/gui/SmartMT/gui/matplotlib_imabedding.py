@@ -28,13 +28,17 @@ class MPLCanvas(FigureCanvas):
     Ultimately, this is a QWidget (as well as a FigureCanvasAgg, etc.).
     """
 
-    def __init__(self, parent=None, width=5, hight=4, dpi=100):
-        self._fig = Figure(figsize=(width, hight), dpi=dpi, facecolor='none')
+    def __init__(self, parent=None, width=5, height=4, dpi=100):
+
+        self._fig = Figure(figsize=(width, height), dpi=dpi, facecolor='none')
+
+        FigureCanvas.__init__(self, self._fig)
+        # super(MPLCanvas, self).__init__(self._fig)
+
         self._axes = self._fig.add_subplot(111)
 
         self.compute_initial_figure()
 
-        FigureCanvas.__init__(self, self._fig)
         self.setParent(parent)
 
         FigureCanvas.setSizePolicy(self, QSizePolicy.Expanding, QSizePolicy.Expanding)

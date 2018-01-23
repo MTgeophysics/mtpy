@@ -64,7 +64,6 @@ class PlotOption(QWidget):
         if VisualizationBase.__subclasses__():
             self.ui.comboBoxSelect_Plot.setEnabled(True)
             self.ui.comboBoxSelect_Plot.setCurrentIndex(0)
-            self.ui.comboBoxSelect_Plot.currentIndexChanged.emit(0)
         else:
             self.ui.comboBoxSelect_Plot.setEnabled(False)
 
@@ -130,7 +129,7 @@ class PlotOption(QWidget):
         if fig:
             # self._fig.show()
             widget = MPLCanvasWidget(fig)
-            self._parent.create_subwindow(widget, "%s" % self._current_plot.plot_name(), overide=False,
+            self._parent.create_subwindow(widget, "%s" % self._current_plot.plot_name(), override=False,
                                           tooltip=self._current_plot.get_plot_tooltip())
 
     def update_ui(self):
@@ -144,3 +143,10 @@ class PlotOption(QWidget):
             mt_obj = self.file_handler.get_MT_obj(ref)
             mt_objs.append(mt_obj)
         return mt_objs
+
+    def data_changed(self):
+        enabled = bool(self.selected_stations)
+        self.ui.pushButton_plot.setEnabled(enabled)
+        self.ui.comboBoxSelect_Plot.setEnabled(enabled)
+        self.ui.comboBoxSelect_Plot.currentIndexChanged.emit(0)
+        self.update_ui()

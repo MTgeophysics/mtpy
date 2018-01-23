@@ -4,7 +4,8 @@ from unittest import TestCase
 
 from mtpy.core.edi_collection import EdiCollection
 from mtpy.modeling.modem import Data, Model
-from tests import plt_close, make_temp_dir
+from tests import make_temp_dir
+from tests.imaging import plt_close
 
 
 class TestModel(TestCase):

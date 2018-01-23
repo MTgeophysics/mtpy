@@ -48,6 +48,7 @@ import mtpy.analysis.geometry as MTgy
 from mtpy.imaging.mtplottools import plot_errorbar
 import mtpy.utils.calculator as mtcc
 import mtpy.utils.mesh_tools as mtmesh
+from mtpy.utils import gis_tools
 
 
 # ==============================================================================
@@ -248,7 +249,6 @@ class Mesh():
         # right hand station to reduce the effect of a large neighboring cell.
         self.x_grid = np.array([self.rel_station_locations[0] - self.cell_width * \
                                 self.x_pad_multiplier])
-
         for ii, offset in enumerate(self.rel_station_locations[:-1]):
             dx = self.rel_station_locations[ii + 1] - offset
             num_cells = int(np.floor(dx / self.cell_width))
@@ -280,7 +280,13 @@ class Mesh():
         self.x_grid = np.append(self.x_grid,
                                 self.rel_station_locations[-1] + self.cell_width * \
                                 self.x_pad_multiplier)
-
+        
+        # add an extra cell if there is an uneven number of cells
+        if len(self.x_grid) % 2 == 0:
+            self.x_grid = np.append(self.x_grid,
+                                self.x_grid[-1] + self.cell_width * \
+                                self.x_pad_multiplier)                                
+        
         # --> pad the mesh with exponentially increasing horizontal cells
         #    such that the edge of the mesh can be estimated with a 1D model
 
@@ -689,8 +695,8 @@ class Mesh():
         nx = self.x_nodes.shape[0]
         nz = self.z_nodes.shape[0]
         mesh_lines.append('MESH FILE Created by mtpy.modeling.occam2d\n')
-        mesh_lines.append("   {0}  {1}  {2}  {0}  {0}  {3}\n".format(0, nx,
-                                                                     nz, 2))
+        mesh_lines.append("   {0}  {1}  {2}  {0}  {0}  {3}\n".format(0, nx + 1,
+                                                                     nz + 1, 2))
 
         # --> write horizontal nodes
         node_str = ''
@@ -784,13 +790,17 @@ class Mesh():
         # --> fill horizontal nodes
         for mline in mlines[line_count:]:
             mline = mline.strip().split()
+#            print mline
             for m_value in mline:
                 self.x_nodes[h_index] = float(m_value)
                 h_index += 1
-
             line_count += 1
-            if h_index == nh:
+            # needs to be >= nh - 2 as python count starts from 0 and number of
+            # horizontal columns is 1 less than listed at the top of the file
+            if h_index >= nh - 2:
                 break
+            
+
 
         # --> fill vertical nodes
         for mline in mlines[line_count:]:
@@ -799,7 +809,7 @@ class Mesh():
                 self.z_nodes[v_index] = float(m_value)
                 v_index += 1
             line_count += 1
-            if v_index == nv:
+            if v_index >= nv - 2:
                 break
 
         # --> fill model values
@@ -809,7 +819,7 @@ class Mesh():
                 break
             else:
                 mlist = list(mline)
-                if len(mlist) != nh:
+                if len(mlist) != nh - 1:
                     print '--- Line {0} in {1}'.format(ll, self.mesh_fn)
                     print 'Check mesh file too many columns'
                     print 'Should be {0}, has {1}'.format(nh, len(mlist))
@@ -1016,6 +1026,11 @@ class Profile():
                 except:
                     pass
 
+            if self.model_epsg is not None:
+                edi.east,edi.north,edi.utm_zone = \
+                gis_tools.project_point_ll2utm(edi.lat,
+                                               edi.lon,
+                                               epsg=self.model_epsg)
             easts[ii] = edi.east
             norths[ii] = edi.north
             utm_zones[ii] = int(edi.utm_zone[:-1])
@@ -1035,12 +1050,13 @@ class Profile():
         # need to check the zones of the stations
         main_utmzone = mode(utm_zones)[0][0]
 
-        for ii, zone in enumerate(utm_zones):
-            if zone == main_utmzone:
-                continue
-            else:
-                print ('station {0} is out of main utm zone'.format(self.edi_list[ii].station) + \
-                       ' will not be included in profile')
+        if self.model_epsg is None:
+            for ii, zone in enumerate(utm_zones):
+                if zone == main_utmzone:
+                    continue
+                else:
+                    print ('station {0} is out of main utm zone'.format(self.edi_list[ii].station) + \
+                           ' will not be included in profile')
 
         # check regression for 2 profile orientations:
         # horizontal (N=N(E)) or vertical(E=E(N))
@@ -2081,6 +2097,7 @@ class Data(Profile):
         self.model_mode = kwargs.pop('model_mode', '1')
         self.data = kwargs.pop('data', None)
         self.data_list = None
+        self.model_epsg = kwargs.pop('model_epsg',None)
 
         self.res_te_err = kwargs.pop('res_te_err', 10)
         self.res_tm_err = kwargs.pop('res_tm_err', 10)

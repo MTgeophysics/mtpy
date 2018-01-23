@@ -67,7 +67,12 @@ class Covariance(object):
                                       '+{0}+'.format('-' * 77)])
 
         for key in kwargs.keys():
-            setattr(self, key, kwargs[key])
+            if hasattr(self, key):
+                setattr(self, key, kwargs[key])
+            else:
+                self._logger.warn("Argument {}={} is not supportted thus not been set.".format(key, kwargs[key]))
+
+
 
     def write_covariance_file(self, cov_fn=None, save_path=None,
                               cov_fn_basename=None, model_fn=None,

@@ -16,6 +16,7 @@ class TestGisTools(TestCase):
         self.easting = 702562.773
         self.northing = 6202448.526
         self.atol = 0.3  # tolerance of error
+        self.epsg = 4326
 
     def test_ll_to_utm(self):
         zone, easting, northing = ll_to_utm(self.nref, self.lat, self.lon)
@@ -46,6 +47,14 @@ class TestGisTools(TestCase):
 
     def test_project_point_utm2ll(self):
         new_lat, new_lon = project_point_utm2ll(self.easting, self.northing, self.zone)
+
+        print(new_lat, new_lon)
+
+        self.assertTrue(np.isclose(self.lat, new_lat))
+        self.assertTrue(np.isclose(self.lon, new_lon))
+
+        # testing with epsg
+        new_lat, new_lon = project_point_utm2ll(self.easting, self.northing, utm_zone=self.zone, epsg=self.epsg)
 
         print(new_lat, new_lon)
 

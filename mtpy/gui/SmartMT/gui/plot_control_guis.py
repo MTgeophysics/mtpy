@@ -45,13 +45,16 @@ class PlotControlMTResponse(QGroupBox):
             return 'n'
 
     def get_skew(self):
-        if self.ui.radioButton_skew_y.isChecked():
+        if self.ui.checkBox_skew.isChecked():
             return 'y'
         else:
             return 'n'
 
+    def is_plot_ellipses(self):
+        return self.ui.checkBox_pt.isChecked()
+
     def get_ellipses(self):
-        if self.ui.radioButton_ellipses_y.isChecked():
+        if self.is_plot_ellipses():
             return 'y'
         else:
             return 'n'
@@ -64,6 +67,15 @@ class PlotControlMTResponse(QGroupBox):
 
     def hide_plot_style(self):
         self.ui.groupBox_plot_style.hide()
+
+    def hide_strike(self):
+        self.ui.groupBox_strike.hide()
+
+    def hide_skew(self):
+        self.ui.checkBox_skew.hide()
+
+    def hide_ellipses(self):
+        self.ui.checkBox_pt.hide()
 
 
 class PlotControlResistivityPhasePseudoSection(QGroupBox):
@@ -158,13 +170,13 @@ class PlotControlResistivityPhasePseudoSection(QGroupBox):
 
     def get_period_limit(self):
         if self.ui.checkBox_period.isChecked():
-            return self.ui.doubleSpinBox_period_min, self.ui.doubleSpinBox_period_max
+            return self.ui.doubleSpinBox_period_min.value(), self.ui.doubleSpinBox_period_max.value()
         else:
             return None
 
     def get_resistivity_limits(self):
         if self.ui.checkBox_resistivity.isChecked():
-            return self.ui.doubleSpinBox_res_min, self.ui.doubleSpinBox_res_max
+            return self.ui.doubleSpinBox_res_min.value(), self.ui.doubleSpinBox_res_max.value()
         else:
             return None
 

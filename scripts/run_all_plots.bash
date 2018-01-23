@@ -6,6 +6,7 @@
 
 cd mtpy
 export PYTHONPATH=.
+export GDAL_DATA=/c/Anaconda2/Library/share/gdal  # a directory containing many CSV files used by GDAL
 # export PYTHONPATH=/e/Githubz/mtpy
 
 python examples/plot_edis.py data/edifiles/15125A.edi

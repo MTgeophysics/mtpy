@@ -368,19 +368,11 @@ def project_point_utm2ll(easting, northing, utm_zone, datum='WGS84', epsg=None):
     # set utm coordinate system
     utm_cs = osr.SpatialReference()
     utm_cs.SetWellKnownGeogCS(datum)
-    
-    ll_cs = osr.SpatialReference()
 
-    if not utm_zone or (utm_zone == '0'):
-        if epsg is None:
-            raise ValueError('Please provide either utm_zone or epsg')
-        else:
-            ogrerr = ll_cs.ImportFromEPSG(epsg)
-            if ogrerr != OGRERR_NONE:
-                raise Exception("GDAL/osgeo ogr error code: {}".format(ogrerr))
-            utm_zone = ll_cs.GetUTMZone()
-            # assert len(utm_zone) == 3, 'UTM zone should be imput as ##N or ##S'
-
+    if epsg is not None:
+        ogrerr = utm_cs.ImportFromEPSG(epsg)
+        if ogrerr != OGRERR_NONE:
+            raise Exception("GDAL/osgeo ogr error code: {}".format(ogrerr))
     if isinstance(utm_zone, str):
         try:
             zone_number = int(utm_zone[0:-1])
@@ -388,24 +380,19 @@ def project_point_utm2ll(easting, northing, utm_zone, datum='WGS84', epsg=None):
         except ValueError:
             raise ValueError('Zone number {0} is not a number'.format(utm_zone[0:-1]))
         is_northern = True if zone_letter.lower() >= 'n' else False
-        ll_cs.SetUTM(zone_number, is_northern)
     elif isinstance(utm_zone, int):
-        # std UTM code returned my gdal
-        is_northern = True if utm_zone > 0 else False
+        # std UTM code returned by gdal
+        is_northern = False if utm_zone < 0 else True
         zone_number = abs(utm_zone)
-        ll_cs.SetUTM(zone_number, is_northern)
     else:
         raise NotImplementedError("utm_zone type ({}) not supported".format(type(utm_zone)))
+    utm_cs.SetUTM(zone_number, is_northern)
 
-    
-
-#    # set lat, lon coordinate system
-#    ll_cs = utm_cs.CloneGeogCS()
-#    ll_cs.ExportToPrettyWkt()
+    ll_cs = utm_cs.CloneGeogCS()
 
     # set the transform utm to lat lon
     transform_utm2ll = osr.CoordinateTransformation(utm_cs, ll_cs)
-    ll_point = list(transform_utm2ll.TransformPoint(easting, northing))
+    ll_point = list(transform_utm2ll.TransformPoint(easting, northing, 0.))
 
     # be sure to round out the numbers to remove computing with floats
     return round(ll_point[1], 6), round(ll_point[0], 6)

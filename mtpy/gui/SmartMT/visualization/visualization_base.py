@@ -13,11 +13,13 @@ import abc
 import inspect
 import traceback
 
+import matplotlib
 import matplotlib.pyplot as plt
 from qtpy import QtCore, QT_VERSION
 from qtpy.QtCore import Signal
 from qtpy.QtWidgets import QWidget, QVBoxLayout
 from matplotlib.figure import Figure
+
 if QT_VERSION.startswith('4'):
     from matplotlib.backends.backend_qt4agg import FigureCanvas
     from matplotlib.backends.backend_qt4 import NavigationToolbar2QT as NavigationToolbar
@@ -25,7 +27,7 @@ else:
     from matplotlib.backends.backend_qt5agg import FigureCanvas
     from matplotlib.backends.backend_qt5 import NavigationToolbar2QT as NavigationToolbar
 
-from mtpy.gui.SmartMT.Components import PlotParameter
+from mtpy.gui.SmartMT.Components.plot_parameter import PlotParameter
 from mtpy.utils.mtpylog import MtPyLog
 
 
@@ -147,8 +149,9 @@ class VisualizationBase(QtCore.QThread):
 
     def run(self):
         # self.setTerminationEnabled(True)
-        plt.clf()
+        # plt.clf()
         try:
+            reset_matplotlib()
             self.plot()
             # change size and title
             if self._parameter_ui.customized_figure_size():
@@ -199,5 +202,21 @@ class MPLCanvasWidget(QWidget):
         # print width, height
         self.resize(width, height)
 
+    def closeEvent(self, QCloseEvent):
+        super(MPLCanvasWidget, self).closeEvent(QCloseEvent)
+        plt.close(fig=self._fig)
+
     def get_fig(self):
         return self._fig
+
+def reset_matplotlib():
+    # save some important params
+    # interactive = matplotlib.rcParams['interactive']
+    backend = matplotlib.rcParams['backend']
+    # reset
+    matplotlib.rcdefaults()  # reset the rcparams to default
+    # recover
+    matplotlib.rcParams['backend'] = backend
+    # matplotlib.rcParams['interactive'] = interactive
+    # logger = MtPyLog().get_mtpy_logger(__name__)
+    # logger.info("Testing using matplotlib backend {}".format(matplotlib.rcParams['backend']))

@@ -22,7 +22,7 @@ import os.path as op
 import numpy as np
 
 import mtpy.processing.birrp as MTbp
-reload(MTbp)
+#reload(MTbp)
 
 
 def main():
