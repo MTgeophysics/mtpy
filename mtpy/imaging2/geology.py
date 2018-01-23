@@ -128,7 +128,7 @@ class Geology:
         # end if
     # end func
 
-    def plot(self, ax, m, lutfn=None,
+    def plot(self, ax, m, lutfn=None, 
              default_polygon_color='grey', **kwargs):
         '''
         Plots a shapefile. This function assumes that a shapefile containing polygonal
@@ -155,6 +155,7 @@ class Geology:
         legend_handles = []
         legend_labels = []
         handles = set()
+        
 
         ecolor_is_fcolor = False
         if ('edgecolor' in kwargs.keys() and kwargs['edgecolor'] == 'face'):
@@ -171,9 +172,12 @@ class Geology:
             if (isinstance(feature, Polygon)):
                 polygon = feature
                 x, y = polygon.exterior.coords.xy
-                px, py = m(x, y)
+                if m is None:
+                    px,py = x,y
+                else:
+                    px, py = m(x, y)
                 ppolygon = Polygon(zip(px, py))
-
+                
                 if (fcolor is not None): kwargs['facecolor'] = fcolor
                 if ('edgecolor' not in kwargs.keys() and not ecolor_is_fcolor):
                     kwargs['edgecolor'] = 'none'
@@ -194,7 +198,10 @@ class Geology:
 
                 for polygon in multiPolygon:
                     x, y = polygon.exterior.coords.xy
-                    px, py = m(x, y)
+                    if m is None:
+                        px,py = x,y
+                    else:
+                        px, py = m(x, y)
                     ppolygon = Polygon(zip(px, py))
 
                     if (fcolor is not None): kwargs['facecolor'] = fcolor
@@ -215,7 +222,10 @@ class Geology:
             elif (isinstance(feature, LineString)):
                 line = feature
                 x, y = line.coords.xy
-                px, py = m(x, y)
+                if m is None:
+                    px,py = x,y
+                else:
+                    px, py = m(x, y)
                 ax.plot(px, py, **kwargs)
             # end if
         # end for
