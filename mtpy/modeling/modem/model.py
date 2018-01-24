@@ -422,6 +422,11 @@ class Model(object):
                                 self.cell_size_north)
 
         # compute padding cells
+        # first validate ew_ext and ns_ext to ensure it is large enough
+        if 'extent' in self.pad_method:
+            self._validate_extent()
+            
+            
         if self.pad_method == 'extent1':
             padding_east = mtmesh.get_padding_cells(self.cell_size_east,
                                                     self.ew_ext / 2 - east,
@@ -2754,4 +2759,7 @@ class Model(object):
 
         #        logger.debug("NEW res_model and cov_mask shapes: %s, %s", self.res_model.shape, self.covariance_mask.shape)
 
+        return
+
+    def _validate_extent(self,extent_ratio = 2.):
         return
