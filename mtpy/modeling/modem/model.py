@@ -372,6 +372,25 @@ class Model(object):
         self._nodes_z = nodes
         self.grid_z = np.array([nodes[0:ii].sum() for ii in range(nodes.size)] + [nodes.sum()])
 
+    # need some arrays for plotting that are the same length as the
+    # resistivity model
+    @property
+    def plot_east(self):
+        plot_east = np.array([self.nodes_east[0:ii].sum() 
+                             for ii in range(self.nodes_east.size)])
+        return plot_east-plot_east[-1]/2.
+    
+    @property
+    def plot_north(self):
+        plot_north = np.array([self.nodes_north[0:ii].sum() 
+                          for ii in range(self.nodes_north.size)])
+        return plot_north-plot_north[-1]/2.
+    
+    @property
+    def plot_z(self):
+        return np.array([self.nodes_z[0:ii].sum() 
+                         for ii in range(self.nodes_z.size)])
+    
     def make_mesh(self):
         """
         create finite element mesh according to user-input parameters.
