@@ -582,8 +582,8 @@ class Model(object):
         # first define some parameters. nc_extra_east and nc_extra_north is the number of cells outside the station
         # area (but with same cell size as inner cells - not padding). pad_east and pad_north is
         # number of padding cells, that increase with distance outward.
-        nc_extra_east, pad_east = self.pad_east
-        nc_extra_north, pad_north = self.pad_north
+        nc_extra_east, pad_east = self.pad_num, self.pad_east
+        nc_extra_north, pad_north = self.pad_num, self.pad_north
 
         if self.cell_number_ew is None:
             west = self.station_locations.rel_east.min() - self.cell_size_east * nc_extra_east
