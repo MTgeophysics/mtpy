@@ -277,6 +277,9 @@ class Model(object):
 
         # method to use to create padding
         self.pad_method = 'extent1'
+        self.z_mesh_method = 'original' # method to make z mesh, 'original','original_refactor','exp' or 'new'
+                                        # use: code embedded in make_mesh function, or make_z_mesh or 'make_z_mesh_exp' or 'make_z_mesh_new' respectively
+                                        # temporary fix until I have a chance to test all 4
 
         self.z1_layer = 10
         self.z_target_depth = 50000
@@ -488,25 +491,32 @@ class Model(object):
                 continue
 
         # --> make depth grid
-        log_z = np.logspace(np.log10(self.z1_layer),
-                            np.log10(self.z_target_depth - np.logspace(np.log10(self.z1_layer),
-                                                                       np.log10(self.z_target_depth),
-                                                                       num=self.n_layers)[-2]),
-                            num=self.n_layers - self.pad_z)
+        if self.z_mesh_method == 'original':
+            log_z = np.logspace(np.log10(self.z1_layer),
+                                np.log10(self.z_target_depth - np.logspace(np.log10(self.z1_layer),
+                                                                           np.log10(self.z_target_depth),
+                                                                           num=self.n_layers)[-2]),
+                                num=self.n_layers - self.pad_z)
+    
+            z_nodes = np.array([np.round(zz, -int(np.floor(np.log10(zz)) - 1)) for zz in
+                                log_z])
 
-        z_nodes = np.array([np.round(zz, -int(np.floor(np.log10(zz)) - 1)) for zz in
-                            log_z])
-
-        # padding cells in the vertical
-        z_padding = mtmesh.get_padding_cells(z_nodes[-1],
-                                             self.z_bottom - z_nodes.sum(),
-                                             self.pad_z,
-                                             self.pad_stretch_v)
-        # make the blocks into nodes as oppose to total width
-        z_padding = np.array([z_padding[ii + 1] - z_padding[ii]
-                              for ii in range(z_padding.size - 1)])
-
-        self.nodes_z = np.append(z_nodes, z_padding)
+            # padding cells in the vertical
+            z_padding = mtmesh.get_padding_cells(z_nodes[-1],
+                                                 self.z_bottom - z_nodes.sum(),
+                                                 self.pad_z,
+                                                 self.pad_stretch_v)
+            # make the blocks into nodes as oppose to total width
+            z_padding = np.array([z_padding[ii + 1] - z_padding[ii]
+                                  for ii in range(z_padding.size - 1)])
+            
+            self.nodes_z = np.append(z_nodes, z_padding)
+        elif self.z_mesh_method == 'original_refactor':
+            self.nodes_z,z_grid = self.make_z_mesh()
+        elif self.z_mesh_method == 'exp':
+            self.nodes_z,z_grid = self.make_z_mesh_exp()
+        elif self.z_mesh_method == 'new':
+            self.nodes_z,z_grid = self.make_z_mesh_new()
 
         # compute grid center
         center_east = np.round(self.grid_east.min() - self.grid_east.mean(), -1)
@@ -716,6 +726,7 @@ class Model(object):
             self.data_obj.write_data_file(fill=False)
 
         self.print_mesh_params()
+        
 
     def make_z_mesh(self):
         """
