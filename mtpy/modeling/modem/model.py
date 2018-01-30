@@ -427,7 +427,8 @@ class Model(object):
         # compute padding cells
         # first validate ew_ext and ns_ext to ensure it is large enough
         if 'extent' in self.pad_method:
-            self._validate_extent()
+            self._validate_extent(inner_east.min(),inner_east.max(),
+                                  inner_north.min(),inner_north.max())
             
             
         if self.pad_method == 'extent1':
@@ -517,6 +518,9 @@ class Model(object):
             self.nodes_z,z_grid = self.make_z_mesh_exp()
         elif self.z_mesh_method == 'new':
             self.nodes_z,z_grid = self.make_z_mesh_new()
+
+        else:
+            raise NameError("Z mesh method \"{}\" is not supported".format(self.z_mesh_method))
 
         # compute grid center
         center_east = np.round(self.grid_east.min() - self.grid_east.mean(), -1)
@@ -2772,5 +2776,20 @@ class Model(object):
 
         return
 
-    def _validate_extent(self,extent_ratio = 2.):
-        return
+    def _validate_extent(self,east,west,south,north,extent_ratio = 2.):
+        """
+        validate the provided ew_ext and ns_ext to make sure the model fits
+        within these extents and allows enough space for padding according to 
+        the extent ratio provided. If not, then update ew_ext and ns_ext parameters
+        
+        """
+        inner_ew_ext = west - east
+        inner_ns_ext = north - south
+        
+        if self.ew_ext < extent_ratio * inner_ew_ext:
+            self._logger.warn("Provided or default ew_ext not sufficient to fit stations + padding, updating extent")
+            self.ew_ext = np.ceil(extent_ratio * inner_ew_ext)
+
+        if self.ns_ext < extent_ratio * inner_ns_ext:
+            self._logger.warn("Provided or default ns_ext not sufficient to fit stations + padding, updating extent")
+            self.ns_ext = np.ceil(extent_ratio * inner_ns_ext)
