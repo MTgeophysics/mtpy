@@ -1702,8 +1702,9 @@ class MT(object):
         s_array, new_z = self.Z.remove_ss(reduce_res_factor_x=ss_x,
                                           reduce_res_factor_y=ss_y)
 
-        new_z_obj = MTz.copy.deepcopy(self.Z)
-        new_z_obj.z = new_z
+        new_z_obj = MTz.Z(z_array=new_z,
+                          z_err_array=self.Z.z_err.copy(),
+                          freq=self.Z.freq.copy())
 
         return new_z_obj
 

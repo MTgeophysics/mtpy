@@ -435,8 +435,8 @@ class PlotMTResponse(PlotSettings):
 
         for key in kwargs.keys():
             setattr(self, key, kwargs[key])
-        else:
-            self._logger.warn("Argument {}={} is not supported thus not been set.".format(key, kwargs[key]))
+#            else:
+#                self._logger.warn("Argument {}={} is not supported thus not been set.".format(key, kwargs[key]))
 
         # plot on initializing
         if self.plot_yn == 'y':
