@@ -302,7 +302,7 @@ class PlotDepthSlice(object):
             ax1.yaxis.set_minor_locator(MultipleLocator(self.yminorticks / self.dscale))
             ax1.set_ylabel('Northing (' + self.map_scale + ')', fontdict=fdict)
             ax1.set_xlabel('Easting (' + self.map_scale + ')', fontdict=fdict)
-            ax1.set_title('Depth = {0}'.format(depth), fontdict=fdict)
+            ax1.set_title('{0}'.format(depth), fontdict=fdict)#Depth = 
 
             # plot the grid if desired
             if self.plot_grid == 'y':

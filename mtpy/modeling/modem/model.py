@@ -277,6 +277,9 @@ class Model(object):
 
         # method to use to create padding
         self.pad_method = 'extent1'
+        self.z_mesh_method = 'original' # method to make z mesh, 'original','original_refactor','exp' or 'new'
+                                        # use: code embedded in make_mesh function, or make_z_mesh or 'make_z_mesh_exp' or 'make_z_mesh_new' respectively
+                                        # temporary fix until I have a chance to test all 4
 
         self.z1_layer = 10
         self.z_target_depth = 50000
@@ -443,7 +446,8 @@ class Model(object):
         # compute padding cells
         # first validate ew_ext and ns_ext to ensure it is large enough
         if 'extent' in self.pad_method:
-            self._validate_extent()
+            self._validate_extent(inner_east.min(),inner_east.max(),
+                                  inner_north.min(),inner_north.max())
             
             
         if self.pad_method == 'extent1':
@@ -507,25 +511,35 @@ class Model(object):
                 continue
 
         # --> make depth grid
-        log_z = np.logspace(np.log10(self.z1_layer),
-                            np.log10(self.z_target_depth - np.logspace(np.log10(self.z1_layer),
-                                                                       np.log10(self.z_target_depth),
-                                                                       num=self.n_layers)[-2]),
-                            num=self.n_layers - self.pad_z)
+        if self.z_mesh_method == 'original':
+            log_z = np.logspace(np.log10(self.z1_layer),
+                                np.log10(self.z_target_depth - np.logspace(np.log10(self.z1_layer),
+                                                                           np.log10(self.z_target_depth),
+                                                                           num=self.n_layers)[-2]),
+                                num=self.n_layers - self.pad_z)
+    
+            z_nodes = np.array([np.round(zz, -int(np.floor(np.log10(zz)) - 1)) for zz in
+                                log_z])
 
-        z_nodes = np.array([np.round(zz, -int(np.floor(np.log10(zz)) - 1)) for zz in
-                            log_z])
+            # padding cells in the vertical
+            z_padding = mtmesh.get_padding_cells(z_nodes[-1],
+                                                 self.z_bottom - z_nodes.sum(),
+                                                 self.pad_z,
+                                                 self.pad_stretch_v)
+            # make the blocks into nodes as oppose to total width
+            z_padding = np.array([z_padding[ii + 1] - z_padding[ii]
+                                  for ii in range(z_padding.size - 1)])
+            
+            self.nodes_z = np.append(z_nodes, z_padding)
+        elif self.z_mesh_method == 'original_refactor':
+            self.nodes_z,z_grid = self.make_z_mesh()
+        elif self.z_mesh_method == 'exp':
+            self.nodes_z,z_grid = self.make_z_mesh_exp()
+        elif self.z_mesh_method == 'new':
+            self.nodes_z,z_grid = self.make_z_mesh_new()
 
-        # padding cells in the vertical
-        z_padding = mtmesh.get_padding_cells(z_nodes[-1],
-                                             self.z_bottom - z_nodes.sum(),
-                                             self.pad_z,
-                                             self.pad_stretch_v)
-        # make the blocks into nodes as oppose to total width
-        z_padding = np.array([z_padding[ii + 1] - z_padding[ii]
-                              for ii in range(z_padding.size - 1)])
-
-        self.nodes_z = np.append(z_nodes, z_padding)
+        else:
+            raise NameError("Z mesh method \"{}\" is not supported".format(self.z_mesh_method))
 
         # compute grid center
         center_east = np.round(self.grid_east.min() - self.grid_east.mean(), -1)
@@ -587,8 +601,8 @@ class Model(object):
         # first define some parameters. nc_extra_east and nc_extra_north is the number of cells outside the station
         # area (but with same cell size as inner cells - not padding). pad_east and pad_north is
         # number of padding cells, that increase with distance outward.
-        nc_extra_east, pad_east = self.pad_east
-        nc_extra_north, pad_north = self.pad_north
+        nc_extra_east, pad_east = self.pad_num, self.pad_east
+        nc_extra_north, pad_north = self.pad_num, self.pad_north
 
         if self.cell_number_ew is None:
             west = self.station_locations.rel_east.min() - self.cell_size_east * nc_extra_east
@@ -735,6 +749,7 @@ class Model(object):
             self.data_obj.write_data_file(fill=False)
 
         self.print_mesh_params()
+        
 
     def make_z_mesh(self):
         """
@@ -2780,5 +2795,20 @@ class Model(object):
 
         return
 
-    def _validate_extent(self,extent_ratio = 2.):
-        return
+    def _validate_extent(self,east,west,south,north,extent_ratio = 2.):
+        """
+        validate the provided ew_ext and ns_ext to make sure the model fits
+        within these extents and allows enough space for padding according to 
+        the extent ratio provided. If not, then update ew_ext and ns_ext parameters
+        
+        """
+        inner_ew_ext = west - east
+        inner_ns_ext = north - south
+        
+        if self.ew_ext < extent_ratio * inner_ew_ext:
+            self._logger.warn("Provided or default ew_ext not sufficient to fit stations + padding, updating extent")
+            self.ew_ext = np.ceil(extent_ratio * inner_ew_ext)
+
+        if self.ns_ext < extent_ratio * inner_ns_ext:
+            self._logger.warn("Provided or default ns_ext not sufficient to fit stations + padding, updating extent")
+            self.ns_ext = np.ceil(extent_ratio * inner_ns_ext)
