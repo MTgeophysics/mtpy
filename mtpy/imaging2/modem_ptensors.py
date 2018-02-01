@@ -229,7 +229,7 @@ class ModEM_ptensors:
     # end func
 
     def plot(self, ax, m, periodIdx, ellipse_size_factor=10000,
-             nverts=100, cvals=None, **kwargs):
+             cvals=None, **kwargs):
 
         '''
         Plots phase tensors for a given period index.
@@ -238,7 +238,6 @@ class ModEM_ptensors:
         :param m: basemap instance
         :param periodIdx: period index
         :param ellipse_size_factor: factor to control ellipse size
-        :param nverts: number of vertices in each ellipse
         :param cvals: list of colour values for colouring each ellipse; must be of
                       the same length as the number of tuples for each period
         :param kwargs: list of relevant matplotlib arguments (e.g. zorder, alpha, etc.)
@@ -274,73 +273,65 @@ class ModEM_ptensors:
     # end func
 
     def plot2(self, ax, m, periodIdx, param='data' ,ellipse_size_factor=10000,
-                 nverts=100, cvals=None, map_scale='m', centre_shift=[0,0], **kwargs):
+              cvals=None, map_scale='m', centre_shift=[0,0], **kwargs):
     
-            '''
-            Plots phase tensors for a given period index.
-    
-            :param ax: plot axis
-            :param m: basemap instance
-            :param periodIdx: period index
-            :param ellipse_size_factor: factor to control ellipse size
-            :param nverts: number of vertices in each ellipse
-            :param cvals: list of colour values for colouring each ellipse; must be of
-                          the same length as the number of tuples for each period
-            :param kwargs: list of relevant matplotlib arguments (e.g. zorder, alpha, etc.)
-            '''
-    
-            assert (periodIdx >= 0 and periodIdx < len(self._plot_period)), \
-                'Error: Index for plot-period out of bounds.'
-    
-            if self.read_mode == 2:
-                k = periodIdx
-                pt_array = getattr(self,'pt_'+param+'_arr')
-            else:
-                k = self._pt_dict.keys()[periodIdx]
-                pt_array = self._pt_dict
-            
-            for i in range(len(pt_array[k])):
-                lon = pt_array[k]['lon'][i]
-                lat = pt_array[k]['lat'][i]
-                phimax = pt_array[k]['phimax'][i] #/ pt_array[k]['phimax'].max()
-                phimin = pt_array[k]['phimin'][i] #/ pt_array[k]['phimax'].max()
-                az = pt_array[k]['azimuth'][i]
-                if param == 'resid':
-                    phimin = np.abs(phimin)
-                nskew = pt_array[k]['skew'][i]
-    
-                # print az
-                if (phimax > 0 and phimin > 0):
-                    c = None
-                    if (cvals is not None): c = cvals[i]
-                    if (c is not None): kwargs['facecolor'] = c
-    
-                    if m is None:
-                        x = pt_array[k]['rel_east'][i]
-                        y = pt_array[k]['rel_north'][i]
-                        if map_scale == 'km':
-                            x /= 1e3
-                            y /= 1e3
-                    else:
-                        x, y = m(lon, lat)
-                    
-                    e = Ellipse([x, y], 
-                                phimax * ellipse_size_factor,
-                                phimin * ellipse_size_factor,
-                                az, **kwargs)
-                    ax.add_artist(e)
-                # end if
-            # end for
-        # end func
-    # end class
+        '''
+        Plots phase tensors for a given period index.
 
+        :param ax: plot axis
+        :param m: basemap instance
+        :param periodIdx: period index
+        :param ellipse_size_factor: factor to control ellipse size
+        :param cvals: list of colour values for colouring each ellipse; must be of
+                      the same length as the number of tuples for each period
+        :param map_scale: map length scale
+        :param kwargs: list of relevant matplotlib arguments (e.g. zorder, alpha, etc.)
+        '''
 
+        assert (periodIdx >= 0 and periodIdx < len(self._plot_period)), \
+            'Error: Index for plot-period out of bounds.'
 
+        if self.read_mode == 2:
+            k = periodIdx
+            pt_array = getattr(self,'pt_'+param+'_arr')
+        else:
+            k = self._pt_dict.keys()[periodIdx]
+            pt_array = self._pt_dict
+
+        for i in range(len(pt_array[k])):
+            lon = pt_array[k]['lon'][i]
+            lat = pt_array[k]['lat'][i]
+            phimax = pt_array[k]['phimax'][i] #/ pt_array[k]['phimax'].max()
+            phimin = pt_array[k]['phimin'][i] #/ pt_array[k]['phimax'].max()
+            az = pt_array[k]['azimuth'][i]
+            if param == 'resid':
+                phimin = np.abs(phimin)
+            nskew = pt_array[k]['skew'][i]
+
+            # print az
+            if (phimax > 0 and phimin > 0):
+                c = None
+                if (cvals is not None): c = cvals[i]
+                if (c is not None): kwargs['facecolor'] = c
+
+                if m is None:
+                    x = pt_array[k]['rel_east'][i]
+                    y = pt_array[k]['rel_north'][i]
+                    if map_scale == 'km':
+                        x /= 1e3
+                        y /= 1e3
+                else:
+                    x, y = m(lon, lat)
+
+                e = Ellipse([x, y],
+                            phimax * ellipse_size_factor,
+                            phimin * ellipse_size_factor,
+                            az, **kwargs)
+                ax.add_artist(e)
+            # end if
+        # end for
+    # end func
 # end class
-
-
-
-
 
 def main():
     """
