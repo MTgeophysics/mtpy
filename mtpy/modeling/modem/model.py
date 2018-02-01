@@ -2520,11 +2520,9 @@ class Model(object):
             self._logger.warn("Only bathymetry will be added below according to the topofile: sea-water low resistivity!!!")
 
         elif self.n_air_layers > 0:  # FZ: new logic, add equal blocksize air layers on top of the simple flat-earth grid
-            # build air layers based on the inner core area
-            padE = self.pad_east
-            padN = self.pad_north
-            #            topo_core = self.surface_dict['topography'][padN:-padN,padE:-padE]
+            # get grid centre
             gcx, gcy = [np.mean([arr[:-1], arr[1:]], axis=0) for arr in self.grid_east, self.grid_north]
+            # get core cells
             core_cells = mtmesh.get_station_buffer(gcx,
                                                    gcy,
                                                    self.station_locations.station_locations['rel_east'],
