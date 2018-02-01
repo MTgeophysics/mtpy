@@ -519,13 +519,16 @@ class Data(object):
                               doc="""Rotate data assuming N=0, E=90""")
 
     def _initialise_empty_data_array(self, station_locations, period_list,
-                                     location_type='LL', station_names=None):
+                                     location_type='LL', station_names=None,
+                                     epsg = None, utm_zone=None):
         """
         create an empty data array to create input files for forward modelling
         station locations is an array containing x,y coordinates of each station
         (shape = (number_of_stations,2))
         period_list = list of periods to model
         location_type = 'LL' or 'EN' - longitude/latitude or easting/northing
+                        if 'EN' then utm_zone
+        station_names = list or 1d array containing station names
 
         """
         self.period_list = period_list.copy()
@@ -535,9 +538,22 @@ class Data(object):
         if location_type == 'LL':
             self.data_array['lon'] = station_locations[:, 0]
             self.data_array['lat'] = station_locations[:, 1]
+            for i in range(len(self.data_array['lon'])):
+                lat,lon = self.data_array['lat'][i],self.data_array['lon'][i]
+                print(lat,lon)
+                east, north = gis_tools.project_point_ll2utm(lat,lon,epsg=epsg,utm_zone=utm_zone)
+                self.data_array['east'][i] = station_locations[i, 0]
+                self.data_array['north'][i] = station_locations[i, 1]                
         else:
             self.data_array['east'] = station_locations[:, 0]
             self.data_array['north'] = station_locations[:, 1]
+            for i in range(len(self.data_array['east'])):
+                east, north = self.data_array['east'][i],self.data_array['north'][i]
+                lat,lon = gis_tools.project_point_utm2ll(east,north,
+                                                             utm_zone=utm_zone, 
+                                                             epsg=epsg)
+                self.data_array['lon'] = station_locations[i, 0]
+                self.data_array['lat'] = station_locations[i, 1]
 
         # set non-zero values to array (as zeros will be deleted)
         if self.inv_mode in '12':
@@ -556,6 +572,22 @@ class Data(object):
             station_names = ['st%03i' %
                              ss for ss in range(len(station_locations))]
         self.data_array['station'] = station_names
+        
+        # make an mt_dict
+        self.mt_dict = {}
+        for i,sname in enumerate(station_names):
+            mtObj = mt.MT()
+            mtObj.lat = self.data_array['lat']
+            mtObj.lon = self.data_array['lon']
+
+            mtObj.east = self.data_array['east']
+            mtObj.north = self.data_array['north']
+            mtObj.Z = mtz.Z(z_array=self.data_array['z'],
+                            z_err_array=self.data_array['z_err'],
+                            freq=1./period_list)
+            mtObj.Tipper = mtz.Tipper(tipper_array=self.data_array['tip'],
+                            tipper_err_array=self.data_array['tipper_err'],
+                            freq=1./period_list)            
 
         self.get_relative_station_locations()
 
