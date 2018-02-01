@@ -177,8 +177,8 @@ class PlotResponse(object):
 
         self.fig_list = []
 
-        if self.plot_yn == 'y':
-            self.plot()
+        # if self.plot_yn == 'y':
+        #     self.plot()
 
     def plot(self):
         """
@@ -866,4 +866,4 @@ if __name__ == "__main__":
                       plot_type=[station],
                       plot_z=plot_z)
 
-    # ro.plot()
+    ro.plot()

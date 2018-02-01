@@ -1865,3 +1865,30 @@ class PlotResponse(object):
         """
 
         return ("Plots data vs model response computed by WS3DINV")
+
+
+# ==================================================================================
+# FZ: add example usage code
+# Justdo>   python mtpy/imaging/plot_response.py
+# ==================================================================================
+if __name__ == "__main__":
+
+    from mtpy.mtpy_globals import *
+
+    # directory where files are located
+    wd = os.path.join(SAMPLE_DIR, 'ModEM')
+
+    # file stem for inversion result
+    filestem = 'Modular_MPI_NLCG_004'
+
+    datafn = 'ModEM_Data.dat'
+
+    station = 'pb23'
+    plot_z = False
+
+    ro = PlotResponse(data_fn=os.path.join(wd, datafn),
+                      resp_fn=os.path.join(wd, filestem + '.dat'),
+                      plot_type=[station],
+                      plot_z=plot_z)
+
+    ro.plot()
