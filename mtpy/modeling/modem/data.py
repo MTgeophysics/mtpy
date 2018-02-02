@@ -540,10 +540,9 @@ class Data(object):
             self.data_array['lat'] = station_locations[:, 1]
             for i in range(len(self.data_array['lon'])):
                 lat,lon = self.data_array['lat'][i],self.data_array['lon'][i]
-                print(lat,lon)
-                east, north = gis_tools.project_point_ll2utm(lat,lon,epsg=epsg,utm_zone=utm_zone)
-                self.data_array['east'][i] = station_locations[i, 0]
-                self.data_array['north'][i] = station_locations[i, 1]                
+                east, north, zone = gis_tools.project_point_ll2utm(lat,lon,epsg=epsg,utm_zone=utm_zone)
+                self.data_array['east'][i] = east
+                self.data_array['north'][i] = north              
         else:
             self.data_array['east'] = station_locations[:, 0]
             self.data_array['north'] = station_locations[:, 1]
@@ -552,12 +551,13 @@ class Data(object):
                 lat,lon = gis_tools.project_point_utm2ll(east,north,
                                                              utm_zone=utm_zone, 
                                                              epsg=epsg)
-                self.data_array['lon'] = station_locations[i, 0]
-                self.data_array['lat'] = station_locations[i, 1]
+                self.data_array['lon'][i] = lon
+                self.data_array['lat'][i] = lat
 
         # set non-zero values to array (as zeros will be deleted)
+        # as we are setting up for forward modelling, actual values don't matter
         if self.inv_mode in '12':
-            self.data_array['z'][:] = 100. + 100j
+            self.data_array['z'][:] = 10. + 10j
             self.data_array['z_err'][:] = 1e15
         if self.inv_mode == '1':
             self.data_array['tip'][:] = 0.1 + 0.1j
@@ -577,17 +577,19 @@ class Data(object):
         self.mt_dict = {}
         for i,sname in enumerate(station_names):
             mtObj = mt.MT()
-            mtObj.lat = self.data_array['lat']
-            mtObj.lon = self.data_array['lon']
+            mtObj.lat = self.data_array['lat'][i]
+            mtObj.lon = self.data_array['lon'][i]
 
-            mtObj.east = self.data_array['east']
-            mtObj.north = self.data_array['north']
-            mtObj.Z = mtz.Z(z_array=self.data_array['z'],
-                            z_err_array=self.data_array['z_err'],
+            mtObj.east = self.data_array['east'][i]
+            mtObj.north = self.data_array['north'][i]
+            mtObj.Z = mtz.Z(z_array=self.data_array['z'][i],
+                            z_err_array=self.data_array['z_err'][i],
                             freq=1./period_list)
-            mtObj.Tipper = mtz.Tipper(tipper_array=self.data_array['tip'],
-                            tipper_err_array=self.data_array['tipper_err'],
-                            freq=1./period_list)            
+            mtObj.Tipper = mtz.Tipper(tipper_array=self.data_array['tip'][i],
+                            tipper_err_array=self.data_array['tip_err'][i],
+                            freq=1./period_list)
+            mtObj.station = sname
+            self.mt_dict[sname] = mtObj
 
         self.get_relative_station_locations()
 
