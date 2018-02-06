@@ -18,6 +18,7 @@ import mtpy.imaging.mtplottools as mtplottools
 import mtpy.modeling.ws3dinv as ws
 import mtpy.utils.exceptions as mtex
 from mtpy.modeling.modem import Data, Model
+import logging, traceback
 
 try:
     from pyevtk.hl import gridToVTK, pointsToVTK
@@ -384,7 +385,7 @@ class PlotPTMaps(mtplottools.MTEllipse):
         :param ax: plot axis
         :param m: basemap instance
         :param periodIdx: period index
-        :param ptarray: ame of data-array to access for retrieving attributes;
+        :param ptarray: name of data-array to access for retrieving attributes;
                         can be either 'data', 'resp' or 'resid'
         :param ellipse_size_factor: factor to control ellipse size
         :param cvals: list of colour values for colouring each ellipse; must be of
@@ -850,7 +851,6 @@ class PlotPTMaps(mtplottools.MTEllipse):
             'Error: Index for plot-period out of bounds.'
 
         pk = periodIdx
-        print 'new', self.plot_period_list[pk]
         try:
             vals = getattr(self, 'pt_' + ptarray + '_arr')[pk][key]
             return vals
