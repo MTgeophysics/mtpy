@@ -604,6 +604,8 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
                                           np.log10(ff) * self.ystretch),
                                          width=ewidth,
                                          height=eheight,
+                                         edgecolor='k',
+                                         lw=0.5,
                                          angle=azimuth[jj] + 90)
 
                 # get ellipse color

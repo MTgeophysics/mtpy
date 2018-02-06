@@ -343,8 +343,8 @@ class Model(object):
     def nodes_east(self, nodes):
         nodes = np.array(nodes)
         self._nodes_east = nodes
-        self.grid_east = np.array([-nodes.sum() / 2 + nodes[0:ii].sum()
-                                   for ii in range(nodes.size)] + [nodes.sum() / 2])
+        self.grid_east = np.array([nodes[0:ii].sum()#-nodes.sum() / 2 + 
+                                   for ii in range(nodes.size+1)])# + [shift])#[nodes.sum() / 2]
 
     # Nodes North
     @property
@@ -358,8 +358,8 @@ class Model(object):
     def nodes_north(self, nodes):
         nodes = np.array(nodes)
         self._nodes_north = nodes
-        self.grid_north = np.array([-nodes.sum() / 2 + nodes[0:ii].sum()
-                                    for ii in range(nodes.size)] + [nodes.sum() / 2])
+        self.grid_north = np.array([nodes[0:ii].sum()#-nodes.sum() / 2 + 
+                                    for ii in range(nodes.size+1)])# + [shift])#[nodes.sum() / 2]
 
     @property
     def nodes_z(self):
@@ -1078,7 +1078,7 @@ class Model(object):
                     ii = np.where(gcz > surfacedata[j, i])[0]
                 self.res_model[j, i, ii] = resistivity_value
 
-    def project_stations_on_topography(self, air_resistivity=1e17):
+    def project_stations_on_topography(self, air_resistivity=1e12):
         """
         This method is used in add_topography().
         It will Re-write the data file to change the elevation column.
@@ -1808,12 +1808,15 @@ class Model(object):
                                          0.0])
 
         # need to shift the grid if the center is not symmetric
-        shift_north = self.grid_center[0] + self.nodes_north.sum() / 2
-        shift_east = self.grid_center[1] + self.nodes_east.sum() / 2
+        # use the grid centre from the model file
+        shift_north = self.grid_center[0]# + self.nodes_north.sum() / 2
+        shift_east = self.grid_center[1]# + self.nodes_east.sum() / 2
+        shift_z = self.grid_center[2]
 
         # shift the grid.  if shift is + then that means the center is
         self.grid_north += shift_north
         self.grid_east += shift_east
+        self.grid_z += shift_z
 
         # get cell size
         self.cell_size_east = stats.mode(self.nodes_east)[0][0]
@@ -2539,11 +2542,9 @@ class Model(object):
             self._logger.warn("Only bathymetry will be added below according to the topofile: sea-water low resistivity!!!")
 
         elif self.n_air_layers > 0:  # FZ: new logic, add equal blocksize air layers on top of the simple flat-earth grid
-            # build air layers based on the inner core area
-            padE = self.pad_east
-            padN = self.pad_north
-            #            topo_core = self.surface_dict['topography'][padN:-padN,padE:-padE]
+            # get grid centre
             gcx, gcy = [np.mean([arr[:-1], arr[1:]], axis=0) for arr in self.grid_east, self.grid_north]
+            # get core cells
             core_cells = mtmesh.get_station_buffer(gcx,
                                                    gcy,
                                                    self.station_locations.station_locations['rel_east'],

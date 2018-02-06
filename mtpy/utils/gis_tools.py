@@ -252,17 +252,16 @@ def project_point_ll2utm(lat, lon, datum='WGS84', utm_zone=None, epsg=None):
     """
     if lat is None or lon is None:
         return None, None, None
+        
     # make sure the lat and lon are in decimal degrees
-    if type(lat) in [list, np.ndarray] and type(lon) in [list, np.ndarray]:
+    if np.iterable(lon) and np.iterable(lat):
         lat = np.array([assert_lat_value(lat_value) for lat_value in lat])
         lon = np.array([assert_lon_value(lon_value) for lon_value in lon])
         assert lat.size == lon.size
-    elif type(lat) in [str, int, float] and type(lon) in [str, int, float]:
+    else:
         lat = np.array([assert_lat_value(lat)])
         lon = np.array([assert_lon_value(lon)])
-    else:
-        raise GIS_ERROR('Cannot understand lat and lon types {0}, {1}'.format(
-                        type(lat), type(lon)))
+
 
     # set lat lon coordinate system
     ll_cs = osr.SpatialReference()
@@ -373,7 +372,7 @@ def project_point_utm2ll(easting, northing, utm_zone, datum='WGS84', epsg=None):
         ogrerr = utm_cs.ImportFromEPSG(epsg)
         if ogrerr != OGRERR_NONE:
             raise Exception("GDAL/osgeo ogr error code: {}".format(ogrerr))
-    if isinstance(utm_zone, str):
+    elif isinstance(utm_zone, str):
         try:
             zone_number = int(utm_zone[0:-1])
             zone_letter = utm_zone[-1]
@@ -386,7 +385,9 @@ def project_point_utm2ll(easting, northing, utm_zone, datum='WGS84', epsg=None):
         zone_number = abs(utm_zone)
     else:
         raise NotImplementedError("utm_zone type ({}) not supported".format(type(utm_zone)))
-    utm_cs.SetUTM(zone_number, is_northern)
+    
+    if epsg is None:
+        utm_cs.SetUTM(zone_number, is_northern)
 
     ll_cs = utm_cs.CloneGeogCS()
 
