@@ -208,8 +208,12 @@ class PlotPTMaps(mtplottools.MTEllipse):
         self.res_cmap = kwargs.pop('res_cmap', 'jet_r')
 
         # --> set the ellipse properties -------------------
-        self._ellipse_dict = kwargs.pop('ellipse_dict', {'size': 2})
-        self._read_ellipse_dict()
+        self._ellipse_dict = kwargs.pop('ellipse_dict',
+                                        {'size': 2,
+                                         'ellipse_range':[0,0],
+                                         'ellipse_colorby':'skew',
+                                         'ellipse_cmap':'mt_bl2gr2rd'})
+        self._read_ellipse_dict(self._ellipse_dict)
 
         self.ellipse_size = kwargs.pop(
             'ellipse_size', self._ellipse_dict['size'])
@@ -329,10 +333,10 @@ class PlotPTMaps(mtplottools.MTEllipse):
             data_pt_arr[:, ii]['north'] = north
             data_pt_arr[:, ii]['lon'] = lon
             data_pt_arr[:, ii]['lat'] = lat
-            data_pt_arr[:, ii]['phimin'] = dpt.phimin[0]
-            data_pt_arr[:, ii]['phimax'] = dpt.phimax[0]
-            data_pt_arr[:, ii]['azimuth'] = dpt.azimuth[0]
-            data_pt_arr[:, ii]['skew'] = dpt.beta[0]
+            data_pt_arr[:, ii]['phimin'] = dpt.phimin
+            data_pt_arr[:, ii]['phimax'] = dpt.phimax
+            data_pt_arr[:, ii]['azimuth'] = dpt.azimuth
+            data_pt_arr[:, ii]['skew'] = dpt.beta
             data_pt_arr[:, ii]['station'] = self.data_obj.mt_dict[key].station
             if self.resp_fn is not None:
                 mpt = self.resp_obj.mt_dict[key].pt
@@ -344,12 +348,11 @@ class PlotPTMaps(mtplottools.MTEllipse):
                     res_pt_arr[:, ii]['north'] = north
                     res_pt_arr[:, ii]['lon'] = lon
                     res_pt_arr[:, ii]['lat'] = lat
-                    res_pt_arr[:, ii]['phimin'] = rpt.phimin[0]
-                    res_pt_arr[:, ii]['phimax'] = rpt.phimax[0]
-                    res_pt_arr[:, ii]['azimuth'] = rpt.azimuth[0]
-                    res_pt_arr[:, ii]['skew'] = rpt.beta[0]
-                    res_pt_arr[
-                        :, ii]['station'] = self.data_obj.mt_dict[key].station
+                    res_pt_arr[:, ii]['phimin'] = rpt.phimin
+                    res_pt_arr[:, ii]['phimax'] = rpt.phimax
+                    res_pt_arr[:, ii]['azimuth'] = rpt.azimuth
+                    res_pt_arr[:, ii]['skew'] = rpt.beta
+                    res_pt_arr[:, ii]['station'] = self.data_obj.mt_dict[key].station
                     res_pt_arr[:, ii]['geometric_mean'] = np.sqrt(abs(rpt.phimin[0] *
                                                                       rpt.phimax[0]))
                 except mtex.MTpyError_PT:
@@ -359,10 +362,10 @@ class PlotPTMaps(mtplottools.MTEllipse):
                 model_pt_arr[:, ii]['north'] = north
                 model_pt_arr[:, ii]['lon'] = lon
                 model_pt_arr[:, ii]['lat'] = lat
-                model_pt_arr[:, ii]['phimin'] = mpt.phimin[0]
-                model_pt_arr[:, ii]['phimax'] = mpt.phimax[0]
-                model_pt_arr[:, ii]['azimuth'] = mpt.azimuth[0]
-                model_pt_arr[:, ii]['skew'] = mpt.beta[0]
+                model_pt_arr[:, ii]['phimin'] = mpt.phimin
+                model_pt_arr[:, ii]['phimax'] = mpt.phimax
+                model_pt_arr[:, ii]['azimuth'] = mpt.azimuth
+                model_pt_arr[:, ii]['skew'] = mpt.beta
                 model_pt_arr[
                     :, ii]['station'] = self.data_obj.mt_dict[key].station
 
@@ -371,6 +374,64 @@ class PlotPTMaps(mtplottools.MTEllipse):
         if self.resp_fn is not None:
             self.pt_resp_arr = model_pt_arr
             self.pt_resid_arr = res_pt_arr
+
+    def plot_on_axes(self, ax, m, periodIdx, ptarray='data', ellipse_size_factor=10000,
+              cvals=None, map_scale='m', centre_shift=[0, 0], **kwargs):
+
+        '''
+        Plots phase tensors for a given period index.
+
+        :param ax: plot axis
+        :param m: basemap instance
+        :param periodIdx: period index
+        :param ptarray: ame of data-array to access for retrieving attributes;
+                        can be either 'data', 'resp' or 'resid'
+        :param ellipse_size_factor: factor to control ellipse size
+        :param cvals: list of colour values for colouring each ellipse; must be of
+                      the same length as the number of tuples for each period
+        :param map_scale: map length scale
+        :param kwargs: list of relevant matplotlib arguments (e.g. zorder, alpha, etc.)
+        '''
+
+        assert (periodIdx >= 0 and periodIdx < len(self.plot_period_list)), \
+            'Error: Index for plot-period out of bounds.'
+
+        k = periodIdx
+        pt_array = getattr(self, 'pt_' + ptarray + '_arr')
+
+        for i in range(len(pt_array[k])):
+            lon = pt_array[k]['lon'][i]
+            lat = pt_array[k]['lat'][i]
+            phimax = pt_array[k]['phimax'][i] / pt_array[k]['phimax'].max()
+            phimin = pt_array[k]['phimin'][i] / pt_array[k]['phimax'].max()
+            az = pt_array[k]['azimuth'][i]
+            if ptarray == 'resid':
+                phimin = np.abs(phimin)
+            nskew = pt_array[k]['skew'][i]
+
+            # print az
+            if (phimax > 0 and phimin > 0):
+                c = None
+                if (cvals is not None): c = cvals[i]
+                if (c is not None): kwargs['facecolor'] = c
+
+                if m is None:
+                    x = pt_array[k]['east'][i]
+                    y = pt_array[k]['north'][i]
+                    if map_scale == 'km':
+                        x /= 1e3
+                        y /= 1e3
+                else:
+                    x, y = m(lon, lat)
+
+                e = Ellipse([x, y],
+                            phimax * ellipse_size_factor,
+                            phimin * ellipse_size_factor,
+                            az, **kwargs)
+                ax.add_artist(e)
+            # end if
+        # end for
+    # end func
 
     def plot(self, period=0, save2file=None):
         """ Plot phase tensor maps for data and or response, each figure is of a
@@ -768,6 +829,38 @@ class PlotPTMaps(mtplottools.MTEllipse):
             data_to_write[val] = data[val].flatten()
 
         return data_to_write, headerlist
+
+    def get_period_attributes(self, periodIdx, key, ptarray='data'):
+        '''
+        Returns, for a given period, a list of attribute values for key
+        (e.g. skew, phimax, etc.).
+
+        :param periodIdx: index of period; print out _plot_period for periods available
+        :param key: attribute key
+        :param ptarray: name of data-array to access for retrieving attributes;
+                        can be either 'data', 'resp' or 'resid'
+        :return: numpy array of attribute values
+        '''
+
+        # load data if necessary
+        if self.data_obj is None:
+            self._read_files()
+
+        assert (periodIdx >= 0 and periodIdx < len(self.plot_period_list)), \
+            'Error: Index for plot-period out of bounds.'
+
+        pk = periodIdx
+        print 'new', self.plot_period_list[pk]
+        try:
+            vals = getattr(self, 'pt_' + ptarray + '_arr')[pk][key]
+            return vals
+        except:
+            print 'Attribute %s not found' % ('pt_' + ptarray + '_arr')
+            logging.error(traceback.format_exc())
+            exit(-1)
+
+        return None
+    # end func
 
     def write_pt_data_to_text(self, savepath='.'):
 
