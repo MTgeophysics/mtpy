@@ -28,7 +28,7 @@ from .exception import ModelError
 import mtpy.utils.gocad as mtgocad
 
 try:
-    from pyevtk.hl import gridToVTK
+    from evtk.hl import gridToVTK
 except ImportError:
     print('If you want to write a vtk file for 3d viewing, you need to '
           'install pyevtk')
