@@ -851,19 +851,22 @@ if __name__ == "__main__":
     from mtpy.mtpy_globals import *
 
     # directory where files are located
-    wd = os.path.join(SAMPLE_DIR, 'ModEM')
+#    wd = os.path.join(SAMPLE_DIR, 'ModEM')
+    wd = os.path.join(SAMPLE_DIR, 'ModEM_2')
 
     # file stem for inversion result
     filestem = 'Modular_MPI_NLCG_004'
 
     datafn = 'ModEM_Data.dat'
 
-    station = 'pb23'
+#    station = 'pb23'
+    station = 'Synth02'
     plot_z = False
 
     ro = PlotResponse(data_fn=os.path.join(wd, datafn),
                       resp_fn=os.path.join(wd, filestem + '.dat'),
                       plot_type=[station],
+		              plot_style=2,
                       plot_z=plot_z)
 
     ro.plot()
