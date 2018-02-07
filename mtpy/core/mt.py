@@ -476,8 +476,11 @@ class MT(object):
         self.Site.Location.datum = edi_obj.Header.datum
         self.Site.Location.elev_units = edi_obj.Define_measurement.units
         self.Site.Location.coordinate_system = edi_obj.Header.coordinate_system
-        self.Site.end_date = '{0}{1:02}'.format(self.Site.start_date[0:8],
-                                                  int(self.Site.start_date[-2:])+1)
+        try:
+            self.Site.end_date = '{0}{1:02}'.format(self.Site.start_date[0:8],
+                                                    int(self.Site.start_date[-2:])+1)
+        except ValueError:
+            self.Site.end_date = None
         self.Site.Location.declination = edi_obj.Header.declination
 
     def _edi_get_field_notes(self, edi_obj):
