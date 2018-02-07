@@ -262,7 +262,6 @@ class PlotResponse(object):
             z_obj = self.data_object.mt_dict[station].Z
             t_obj = self.data_object.mt_dict[station].Tipper
             period = self.data_object.period_list
-            print 'Plotting: {0}'.format(station)
 
             # convert to apparent resistivity and phase
             rp = mtplottools.ResPhase(z_object=z_obj)
@@ -890,11 +889,14 @@ class PlotResponse(object):
                         axrxy = fig.add_subplot(gs[0, 0:2])
                         axpxy = fig.add_subplot(gs[1, 0:2], sharex=axrxy)
 
+
                         axrxx = fig.add_subplot(gs[0, 2:4], sharex=axrxy)
                         axpxx = fig.add_subplot(gs[1, 2:4], sharex=axrxy)
 
                         axtr = fig.add_subplot(gs[0, 4:], sharex=axrxy)
                         axti = fig.add_subplot(gs[1, 4:], sharex=axrxy)
+
+
 
                     if self.plot_z == False:
                         # plot resistivity
@@ -1143,9 +1145,9 @@ class PlotResponse(object):
 
                     elif len(self.ax_list) == 6 and plot_tipper == True:
                         if aa <= 2:
-                            plt.setp(ax.get_xticklabels(), visible=False)
+                            # plt.setp(ax.get_xticklabels(), visible=False) # visible ticks along x axiz
                             if self.plot_z == False:
-                                if aa < 2:
+                                if aa < 2 :
                                     ax.set_yscale('log', nonposy='clip')
                             if self.res_limits is not None:
                                 ax.set_ylim(self.res_limits)
@@ -1174,6 +1176,14 @@ class PlotResponse(object):
                                 ax.set_yscale('log', nonposy='clip')
                                 #                        else:
                                 #                            plt.setp(ax.yaxis.get_ticklabels(), visible=False)
+
+                    # get_xticllabels have a sekectuve columns
+
+                    if aa == 2 or aa == 3 or aa == 5:
+                        plt.setp(ax.get_xticklabels(), visible=True)
+                    else:
+                        plt.setp(ax.get_xticklabels(), visible=False)
+
 
                     ax.set_xscale('log', nonposx='clip')
                     ax.set_xlim(xmin=10 ** (np.floor(np.log10(period[0]))) * 1.01,
@@ -1303,6 +1313,7 @@ class PlotResponse(object):
                                                                   resp_t_obj.tipper[
                                                                       nty, 0, 1].imag,
                                                                   **kw_yy)
+
                             if plot_tipper == False:
                                 line_list[0] += [rerxy[0]]
                                 line_list[1] += [reryx[0]]
@@ -1876,19 +1887,22 @@ if __name__ == "__main__":
     from mtpy.mtpy_globals import *
 
     # directory where files are located
-    wd = os.path.join(SAMPLE_DIR, 'ModEM')
+#    wd = os.path.join(SAMPLE_DIR, 'ModEM')
+    wd = os.path.join(SAMPLE_DIR, 'ModEM_2')
 
     # file stem for inversion result
     filestem = 'Modular_MPI_NLCG_004'
 
     datafn = 'ModEM_Data.dat'
 
-    station = 'pb23'
+#    station = 'pb23'
+    station = 'Synth02'
     plot_z = False
 
     ro = PlotResponse(data_fn=os.path.join(wd, datafn),
                       resp_fn=os.path.join(wd, filestem + '.dat'),
                       plot_type=[station],
+		              plot_style=2,
                       plot_z=plot_z)
 
     ro.plot()
