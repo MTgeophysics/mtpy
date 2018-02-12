@@ -433,7 +433,7 @@ class PlotPTMaps(mtplottools.MTEllipse):
         # end for
     # end func
 
-    def plot(self, period=0, save2file=None):
+    def plot(self, period=0, save2file=None, **kwargs):
         """ Plot phase tensor maps for data and or response, each figure is of a
         different period.  If response is input a third column is added which is
         the residual phase tensor showing where the model is not fitting the data
@@ -577,7 +577,8 @@ class PlotPTMaps(mtplottools.MTEllipse):
                                    pt['north']),
                                   width=ewidth,
                                   height=eheight,
-                                  angle=90 - pt['azimuth'])
+                                  angle=90 - pt['azimuth'],
+                                  **kwargs)
 
                 # get ellipse color
                 if self.ellipse_cmap.find('seg') > 0:
@@ -613,7 +614,8 @@ class PlotPTMaps(mtplottools.MTEllipse):
                                         mpt['north']),
                                        width=ewidth,
                                        height=eheight,
-                                       angle=90 - mpt['azimuth'])
+                                       angle=90 - mpt['azimuth'],
+                                       **kwargs)
 
                     # get ellipse color
                     if self.ellipse_cmap.find('seg') > 0:
@@ -644,7 +646,8 @@ class PlotPTMaps(mtplottools.MTEllipse):
                                         rpt['north']),
                                        width=ewidth,
                                        height=eheight,
-                                       angle=rpt['azimuth'])
+                                       angle=rpt['azimuth'],
+                                       **kwargs)
 
                     # get ellipse color
                     rpt_color = np.sqrt(abs(rpt['phimin'] * rpt['phimax']))
