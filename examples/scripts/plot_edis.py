@@ -17,6 +17,7 @@ import os
 import sys
 import glob
 from mtpy.core import mt
+import click
 
 import matplotlib.pyplot as plt
 from mtpy.utils.mtpylog import MtPyLog
@@ -75,6 +76,18 @@ def plot_edi_file(edi_file):
     return
 
 
+
+@click.command()
+@click.option('--path',type=str,default='examples\data\edi_files',help='path to edsi file/directory')
+@click.option('--count',type=int,default=6, help='every how many edsi files')
+def select_plot_edi_files(path,count):
+    if os.path.isfile(path):
+        plot_edi_file(path)
+    elif os.path.isdir(path):
+        #plot_edi_dir(edi_path)
+        # plot_edi_dir(edi_path,every_how_many_edi=6)
+        plot_edi_dir(path,every_how_many_edi=count)
+
 ###############################################################################
 # plot one-by-one edi files in a given dir-path
 # How to Run:
@@ -84,18 +97,20 @@ def plot_edi_file(edi_file):
 # =============================================================================
 if __name__ == '__main__':
 
-    if len(sys.argv) < 2:
-        print (
-            "\n please provide path to edi files\n USAGE:  %s path2edifile" %
-            sys.argv[0])
-        sys.exit(1)
-    else:
-        edi_path = sys.argv[1]
+    select_plot_edi_files()
 
-        if os.path.isfile(edi_path):
-            plot_edi_file(edi_path)
-        elif os.path.isdir(edi_path):
-            #plot_edi_dir(edi_path)
-            plot_edi_dir(edi_path,every_how_many_edi=6)
-        else:
-            _logger.error("Usage %s %s", sys.argv[0], "path2edi")
+    # if len(sys.argv) < 2:
+    #     print (
+    #         "\n please provide path to edi files\n USAGE:  %s path2edifile" %
+    #         sys.argv[0])
+    #     sys.exit(1)
+    # else:
+    #     edi_path = sys.argv[1]
+    #
+    #     if os.path.isfile(edi_path):
+    #         plot_edi_file(edi_path)
+    #     elif os.path.isdir(edi_path):
+    #         #plot_edi_dir(edi_path)
+    #         plot_edi_dir(edi_path,every_how_many_edi=6)
+    #     else:
+    #         _logger.error("Usage %s %s", sys.argv[0], "path2edi")
