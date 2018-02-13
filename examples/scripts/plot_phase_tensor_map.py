@@ -129,7 +129,6 @@ def get_command_args():
     parser.add_argument('-0','--ofile', type=str,help="examples/", default=None, required=False)
 
     args = parser.parse_args()
-
     return args.path,args.freq,args.ofile
 
 
