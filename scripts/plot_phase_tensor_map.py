@@ -9,7 +9,7 @@ import os
 import sys
 
 from mtpy.imaging.phase_tensor_maps import PlotPhaseTensorMaps
-
+import argparse
 
 def plot_pt(edi_file_list, freq, save_path=None):
     """
@@ -111,6 +111,29 @@ def plot_pt_utm(edi_file_list, freq, save_path=None):
 
 
 ##########################################################################
+#  command line input
+##########################################################################
+def get_command_args():
+
+    parser = argparse.ArgumentParser( \
+    description='Plotting Phase Tensor Maps ' )
+
+#--------------------------------------------------------------------------
+#  Adding arguments
+#--------------------------------------------------------------------------
+
+    parser.add_argument(
+    '-p','--path', type=str,help='examples\data\edi_files', required=True)
+    parser.add_argument(
+    '-f','--freq', type=int,help='Integer number (* or ** )', default=10,required=False)
+    parser.add_argument('-0','--ofile', type=str,help="examples/", default=None, required=False)
+
+    args = parser.parse_args()
+
+    return args.path,args.freq,args.ofile
+
+
+##########################################################################
 # How to Run:
 # cd /path2/mtpy2;  export PYTHONPATH=/path2/mtpy2
 # python examples/plot_phase_tensor_map.py  examples/data/edi_files/georgina 10 /e/MTPY2_Outputs/
@@ -118,10 +141,12 @@ def plot_pt_utm(edi_file_list, freq, save_path=None):
 # python examples/plot_phase_tensor_map.py  tests/data/edifiles/ 10 /e/MTPY2_Outputs/
 # python examples/plot_phase_tensor_map.py  E:/Datasets/MT_Datasets/GA_UA_edited_10s-10000s 0.0625 E:/MTPY2_Outputs
 ##########################################################################
+
 if __name__ == '__main__':
 
+    edi_path,input_freq,save_file=get_command_args()
     # the MT edi dir
-    edi_path = sys.argv[1]
+    # edi_path = sys.argv[1]
     # get edi file names as a list
     edifiles = glob.glob(os.path.join(edi_path, "*.edi"))
     if edifiles is None or (edifiles) == 0:
@@ -131,14 +156,13 @@ if __name__ == '__main__':
     # the MT frequency
     # check the freq range in your input edi files: 10 for georgina tests/data/edifiles
     # freq = 0.0625
-    if len(sys.argv) > 2:
-        input_freq = float(sys.argv[2])
-
-    if len(sys.argv) > 3:
-        save_file = sys.argv[3]
-    else:
-        save_file = None
-
+    # if len(sys.argv) > 2:
+    #     input_freq = float(sys.argv[2])
+    #
+    # if len(sys.argv) > 3:
+    #     save_file = sys.argv[3]
+    # else:
+    #     save_file = None
     plot_pt(edifiles, input_freq, save_path=save_file)
 
     # KM map scale may have bugs which make the MT stations too close:
