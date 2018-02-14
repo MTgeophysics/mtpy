@@ -11,6 +11,8 @@ from matplotlib.ticker import FormatStrFormatter
 
 import mtpy.imaging.mtplottools as mtplottools
 from mtpy.modeling.modem import Data
+import click
+
 
 try:
     from pyevtk.hl import gridToVTK, pointsToVTK
@@ -156,8 +158,9 @@ class PlotResponse(object):
         self.subplot_top = kwargs.pop('subplot_top', .85)
         self.subplot_bottom = kwargs.pop('subplot_bottom', .1)
 
-        self.legend_loc = 'upper center'
-        self.legend_pos = (.5, 1.21)
+        self.legend_loc = 'upper right'
+        # self.legend_pos = (.5, 1.21)
+        self.legend_pos = (.3, 1.18)
         self.legend_marker_scale = 1
         self.legend_border_axes_pad = .01
         self.legend_label_spacing = 0.07
@@ -219,7 +222,8 @@ class PlotResponse(object):
         if self.plot_z == True:
             h_ratio = [1, 1]
         elif self.plot_z == False:
-            h_ratio = [2, 1.5]
+            # h_ratio = [2, 1.5]
+            h_ratio = [2.0, 1.5, 0.75]
 
         self.ax_list = []
         line_list = []
@@ -296,7 +300,16 @@ class PlotResponse(object):
 
             if plot_tipper == True:
 
-                gs = gridspec.GridSpec(2, 6,
+                # gs = gridspec.GridSpec(2, 6,
+                #                        wspace=self.subplot_wspace,
+                #                        left=self.subplot_left,
+                #                        top=self.subplot_top,
+                #                        bottom=self.subplot_bottom,
+                #                        right=self.subplot_right,
+                #                        hspace=self.subplot_hspace,
+                #                        height_ratios=h_ratio)
+# Changed for testing
+                gs = gridspec.GridSpec(3, 2,
                                        wspace=self.subplot_wspace,
                                        left=self.subplot_left,
                                        top=self.subplot_top,
@@ -304,6 +317,8 @@ class PlotResponse(object):
                                        right=self.subplot_right,
                                        hspace=self.subplot_hspace,
                                        height_ratios=h_ratio)
+
+
             else:
                 gs = gridspec.GridSpec(2, 4,
                                        wspace=self.subplot_wspace,
@@ -470,7 +485,6 @@ class PlotResponse(object):
 
                     if self.plot_z == False:
                         # plot resistivity
-                        print("plotting resistivity")
                         erxx = mtplottools.plot_errorbar(axrxx,
                                                          period[nzxx],
                                                          rp.resxx[nzxx],
@@ -621,6 +635,8 @@ class PlotResponse(object):
                                       ['$Z_{yx}$'], ['$Z_{yy}$'],
                                       ['$T_{x}$'], ['$T_{y}$']]
 
+
+
                 # set axis properties
                 for aa, ax in enumerate(self.ax_list):
                     ax.tick_params(axis='y', pad=self.ylabel_pad)
@@ -724,6 +740,7 @@ class PlotResponse(object):
                             elif self.plot_z == True:
                                 ax.set_ylabel('|Im[Z]| (mV/km nT)',
                                               fontdict=fontdict)
+
 
                     elif len(self.ax_list) == 8 or len(self.ax_list) == 12:
                         if aa < 4:
@@ -866,7 +883,6 @@ class PlotResponse(object):
                                                          t_obj.tipper_err[
                                                              nty, 0, 1],
                                                          **kw_yy)
-
                     if plot_tipper == False:
                         self.ax_list = [axrxy, axpxy]
                         line_list = [erxy[0], eryx[0]]
@@ -886,15 +902,25 @@ class PlotResponse(object):
                         axrxx = fig.add_subplot(gs[0, 2:], sharex=axrxy)
                         axpxx = fig.add_subplot(gs[1, 2:], sharex=axrxy)
                     else:
-                        axrxy = fig.add_subplot(gs[0, 0:2])
-                        axpxy = fig.add_subplot(gs[1, 0:2], sharex=axrxy)
+                        # axrxy = fig.add_subplot(gs[0, 0:2])
+                        # axpxy = fig.add_subplot(gs[1, 0:2], sharex=axrxy)
+                        #
+                        #
+                        # axrxx = fig.add_subplot(gs[0, 2:4], sharex=axrxy)
+                        # axpxx = fig.add_subplot(gs[1, 2:4], sharex=axrxy)
+                        #
+                        # axtr = fig.add_subplot(gs[0, 4:], sharex=axrxy)
+                        # axti = fig.add_subplot(gs[1, 4:], sharex=axrxy)
+
+                        axrxy = fig.add_subplot(gs[0, 0])
+                        axpxy = fig.add_subplot(gs[1, 0], sharex=axrxy)
 
 
-                        axrxx = fig.add_subplot(gs[0, 2:4], sharex=axrxy)
-                        axpxx = fig.add_subplot(gs[1, 2:4], sharex=axrxy)
+                        axrxx = fig.add_subplot(gs[0, 1], sharex=axrxy)
+                        axpxx = fig.add_subplot(gs[1, 1], sharex=axrxy)
 
-                        axtr = fig.add_subplot(gs[0, 4:], sharex=axrxy)
-                        axti = fig.add_subplot(gs[1, 4:], sharex=axrxy)
+                        axtr = fig.add_subplot(gs[2, 0], sharex=axrxy)
+                        axti = fig.add_subplot(gs[2, 1], sharex=axrxy)
 
 
 
@@ -1034,7 +1060,6 @@ class PlotResponse(object):
 
 
 
-
                     if plot_tipper == False:
                         self.ax_list = [axrxy, axrxx, axpxy, axpxx]
                         line_list = [[erxy[0], eryx[0]], [erxx[0], eryy[0]]]
@@ -1048,9 +1073,7 @@ class PlotResponse(object):
                                       ['$Z_{xx}$', '$Z_{yy}$'],
                                       ['$T_x$', '$T_y$']]
 
-                
                 # set axis properties
-
                 for aa, ax in enumerate(self.ax_list):
                     ax.tick_params(axis='y', pad=self.ylabel_pad)
                     #                    ylabels = ax.get_yticks().tolist()
@@ -1110,7 +1133,7 @@ class PlotResponse(object):
                             elif self.plot_z == True:
                                 ax.set_ylabel('Re[Z (mV/km nT)]',
                                               fontdict=fontdict)
-                        elif aa == 2:
+                        elif aa == 1:
                             if self.plot_z == False:
                                 ax.set_ylabel('Phase (deg)',
                                               fontdict=fontdict)
@@ -1144,11 +1167,17 @@ class PlotResponse(object):
                                               fontdict=fontdict)
 
                     elif len(self.ax_list) == 6 and plot_tipper == True:
-                        if aa <= 2:
-                            # plt.setp(ax.get_xticklabels(), visible=False) # visible ticks along x axiz
+
+                        if aa <= 2: # Changes applied
+                            # plt.setp(ax.get_xticklabels(), visible=False)
                             if self.plot_z == False:
-                                if aa < 2 :
+                                if aa == 0 or aa == 1:
                                     ax.set_yscale('log', nonposy='clip')
+                                    ylim = ax.get_ylim()
+                                    ylimits = (10 ** (np.floor(np.log10(ylim[0]))),
+                                               10 ** (np.ceil(np.log10(ylim[1]))))
+                                    ax.set_ylim(ylimits)
+
                             if self.res_limits is not None:
                                 ax.set_ylim(self.res_limits)
                         else:
@@ -1156,7 +1185,7 @@ class PlotResponse(object):
                             ax.set_xlabel('Period (s)', fontdict=fontdict)
                         if aa == 0:
                             if self.plot_z == False:
-                                ax.set_ylabel('App. Res. ($\mathbf{\Omega \cdot m}$)',
+                                ax.set_ylabel('App. Res . ($\mathbf{\Omega \cdot m}$)',
                                               fontdict=fontdict)
                             elif self.plot_z == True:
                                 ax.set_ylabel('Re[Z (mV/km nT)]',
@@ -1167,23 +1196,27 @@ class PlotResponse(object):
                                               fontdict=fontdict)
                             elif self.plot_z == True:
                                 ax.set_ylabel('Im[Z (mV/km nT)]',
-                                              fontdict=fontdict)
+                                                  fontdict=fontdict)
 
-                        if aa <= 2:
+                        if aa <= 2: # Setting the decimal places
                             ax.yaxis.set_major_formatter(
                                 FormatStrFormatter('%.0f'))
+                            pass
                             if self.plot_z == True:
                                 ax.set_yscale('log', nonposy='clip')
                                 #                        else:
                                 #                            plt.setp(ax.yaxis.get_ticklabels(), visible=False)
 
-                    # get_xticllabels have a sekectuve columns
+                        if aa == 4:
+                            if self.plot_z == False:
+                                ax.set_ylabel('Tipper',
+                                              fontdict=fontdict)
+                    # writing x axis ticks and making it visible
 
-                    if aa == 2 or aa == 3 or aa == 5:
+                    if aa == 4 or aa == 5:
                         plt.setp(ax.get_xticklabels(), visible=True)
                     else:
                         plt.setp(ax.get_xticklabels(), visible=False)
-
 
                     ax.set_xscale('log', nonposx='clip')
                     ax.set_xlim(xmin=10 ** (np.floor(np.log10(period[0]))) * 1.01,
@@ -1691,6 +1724,7 @@ class PlotResponse(object):
                                 line_list[0] += [rerxy[0], reryx[0]]
                                 line_list[1] += [rerxx[0], reryy[0]]
                                 line_list[2] += [rertx[0], rerty[0]]
+
                                 label_list[0] += ['$Z^m_{xy}$ ' +
                                                   'rms={0:.2f}'.format(rms_xy),
                                                   '$Z^m_{yx}$ ' +
@@ -1703,7 +1737,7 @@ class PlotResponse(object):
                                                   'rms={0:.2f}'.format(rms_tx),
                                                   '$T^m_{y}$' +
                                                   'rms={0:.2f}'.format(rms_ty)]
- 
+
             # make legends
             if self.plot_style == 1:
                 legend_ax_list = self.ax_list[0:self.plot_component]
@@ -1729,6 +1763,7 @@ class PlotResponse(object):
                     legend_ax_list = [self.ax_list[0]]
                     if plot_tipper == True:
                         legend_ax_list.append(self.ax_list[2])
+
                     for aa, ax in enumerate(legend_ax_list):
                         ax.legend(line_list[aa],
                                   label_list[aa],
@@ -1882,27 +1917,48 @@ class PlotResponse(object):
 # FZ: add example usage code
 # Justdo>   python mtpy/imaging/plot_response.py
 # ==================================================================================
-if __name__ == "__main__":
+# if __name__ == "__main__old":
+#
+#     from mtpy.mtpy_globals import *
+#
+#     # directory where files are located
+# #    wd = os.path.join(SAMPLE_DIR, 'ModEM')
+#     wd = os.path.join(SAMPLE_DIR, 'ModEM_2')
+#
+#     # file stem for inversion result
+#     filestem = 'Modular_MPI_NLCG_004'
+#
+#     datafn = 'ModEM_Data.dat'
+#
+# #    station = 'pb23'
+#     station = 'Synth02'
+#     plot_z = False
+#
+#     ro = PlotResponse(data_fn=os.path.join(wd, datafn),
+#                       resp_fn=os.path.join(wd, filestem + '.dat'),
+#                       plot_type=[station],
+#                       plot_style=2,
+#                       plot_z=plot_z)
+#     ro.plot()
 
-    from mtpy.mtpy_globals import *
 
-    # directory where files are located
-#    wd = os.path.join(SAMPLE_DIR, 'ModEM')
-    wd = os.path.join(SAMPLE_DIR, 'ModEM_2')
+@click.command()
+@click.option('--path',type=str,default='examples\model_files\ModEM_2',help='path to data files')
+@click.option('--fstem',type=str,default='Modular_MPI_NLCG_004', help='file stem')
+@click.option('--dfile',type=str,default='ModEM_Data.dat', help='Data File')
+@click.option('--sta',type=str,default='Synth02', help='Data Station')
 
-    # file stem for inversion result
-    filestem = 'Modular_MPI_NLCG_004'
-
-    datafn = 'ModEM_Data.dat'
-
-#    station = 'pb23'
-    station = 'Synth02'
+def merge_plotting(path, fstem, dfile, sta):
     plot_z = False
-
-    ro = PlotResponse(data_fn=os.path.join(wd, datafn),
-                      resp_fn=os.path.join(wd, filestem + '.dat'),
-                      plot_type=[station],
-		              plot_style=2,
+    ro = PlotResponse(data_fn=os.path.join(path, dfile),
+                      resp_fn=os.path.join(path, fstem + '.dat'),
+                      plot_type=[sta],
+                      plot_style=2,
                       plot_z=plot_z)
-
     ro.plot()
+
+if __name__ == "__main__":
+    from mtpy.mtpy_globals import *
+    merge_plotting()
+
+
