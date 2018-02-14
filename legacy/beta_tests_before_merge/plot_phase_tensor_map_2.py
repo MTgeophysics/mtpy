@@ -17,12 +17,10 @@ opens up a new figure each time it runs
 """
 import os
 os.chdir(r'C:\Git\mtpy')
-import mtpy.imaging.mtplottools as mtpl
 
 import os.path as op
-import mtpy.imaging.plotptmaps as pptmaps
+import legacy.plotptmaps as pptmaps
 from mtpy.core.mt import MT
-import matplotlib.pyplot as plt
 
 # directory containing edis
 edipath = r'C:\Git\mtpy\examples\data\edi_files_2'
