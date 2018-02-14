@@ -14,7 +14,8 @@ phase_tensor_map object then set the properties then run redraw_plot.
 import os
 import os.path as op
 
-import legacy.plotptmaps as pptmaps
+#import legacy.plotptmaps as pptmaps
+import mtpy.imaging.phase_tensor_maps as pptmaps
 from mtpy.core.mt import MT
 from tests import EDI_DATA_DIR, EDI_DATA_DIR2
 from tests.imaging import ImageTestCase
