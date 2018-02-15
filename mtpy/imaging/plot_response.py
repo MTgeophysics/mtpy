@@ -1942,7 +1942,7 @@ class PlotResponse(object):
 #     ro.plot()
 
 @click.command()
-@click.option('-d','--directory',type=str,default='examples\model_files\ModEM_2',help='directory for data files')
+@click.option('-d','--directory',type=str,default='examples/model_files/ModEM_2',help='directory for data files')
 @click.option('-s','--stem_data_file',type=str,default='Modular_MPI_NLCG_004', help='file stem')
 @click.option('-i','--input_data_file',type=str,default='ModEM_Data.dat', help='Data File')
 @click.option('-c','--collection_station',type=str,default='Synth02', help='Data Collection station')
