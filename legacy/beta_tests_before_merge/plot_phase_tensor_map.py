@@ -13,10 +13,9 @@ phase_tensor_map object then set the properties then run redraw_plot.
 """
 import os
 os.chdir(r'C:\Git\mtpy')
-import mtpy.imaging.mtplottools as mtpl
 
 import os.path as op
-import mtpy.imaging.plotptmaps as pptmaps
+import legacy.plotptmaps as pptmaps
 from mtpy.core.mt import MT
 
 # directory containing edis
