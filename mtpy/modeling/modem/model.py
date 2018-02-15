@@ -277,7 +277,7 @@ class Model(object):
 
         # method to use to create padding
         self.pad_method = 'extent1'
-        self.z_mesh_method = 'original' # method to make z mesh, 'original','original_refactor','exp' or 'new'
+        self.z_mesh_method = 'new' # method to make z mesh, 'original','original_refactor','exp' or 'new'
                                         # use: code embedded in make_mesh function, or make_z_mesh or 'make_z_mesh_exp' or 'make_z_mesh_new' respectively
                                         # temporary fix until I have a chance to test all 4
 
