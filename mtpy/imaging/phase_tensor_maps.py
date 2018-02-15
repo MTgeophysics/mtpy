@@ -919,8 +919,9 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
         # --> set tick label format
         self.ax.xaxis.set_major_formatter(FormatStrFormatter(self.tickstrfmt))
         self.ax.yaxis.set_major_formatter(FormatStrFormatter(self.tickstrfmt))
-        self.ax.set_xticklabels(np.round(self.plot_xarr, decimals=2),
-                                rotation=45)
+#        self.ax.set_xticklabels(np.round(self.plot_xarr, decimals=2),
+#                                rotation=45)
+        plt.setp(self.ax.get_xticklabels(),rotation=45)
 
         # --> set title in period or freq
         if self.tscale == 'period':
