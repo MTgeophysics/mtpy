@@ -1941,18 +1941,16 @@ class PlotResponse(object):
 #                       plot_z=plot_z)
 #     ro.plot()
 
-
 @click.command()
-@click.option('--path',type=str,default='examples\model_files\ModEM_2',help='path to data files')
-@click.option('--fstem',type=str,default='Modular_MPI_NLCG_004', help='file stem')
-@click.option('--dfile',type=str,default='ModEM_Data.dat', help='Data File')
-@click.option('--sta',type=str,default='Synth02', help='Data Station')
-
-def merge_plotting(path, fstem, dfile, sta):
+@click.option('-d','--directory',type=str,default='examples\model_files\ModEM_2',help='directory for data files')
+@click.option('-s','--stem_data_file',type=str,default='Modular_MPI_NLCG_004', help='file stem')
+@click.option('-i','--input_data_file',type=str,default='ModEM_Data.dat', help='Data File')
+@click.option('-c','--collection_station',type=str,default='Synth02', help='Data Collection station')
+def merge_plotting(directory, stem_data_file, input_data_file, collection_station):
     plot_z = False
-    ro = PlotResponse(data_fn=os.path.join(path, dfile),
-                      resp_fn=os.path.join(path, fstem + '.dat'),
-                      plot_type=[sta],
+    ro = PlotResponse(data_fn=os.path.join(directory, input_data_file),
+                      resp_fn=os.path.join(directory, stem_data_file + '.dat'),
+                      plot_type=[collection_station],
                       plot_style=2,
                       plot_z=plot_z)
     ro.plot()
@@ -1960,5 +1958,3 @@ def merge_plotting(path, fstem, dfile, sta):
 if __name__ == "__main__":
     from mtpy.mtpy_globals import *
     merge_plotting()
-
-
