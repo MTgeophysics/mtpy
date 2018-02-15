@@ -418,6 +418,10 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
             self.xpad = kwargs.pop('xpad', .5)
             self.ypad = kwargs.pop('xpad', .5)
 
+        
+        self.minorticks_on = kwargs.pop('minorticks_on',True)
+
+
         # --> set colorbar properties---------------------------------
         # set orientation to horizontal
         cb_dict = kwargs.pop('cb_dict', {})
@@ -530,6 +534,8 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
                 setattr(self, key, kwargs[key])
             else:
                 self._logger.warning("unknown argument {}={}.".format(key, kwargs[key]))
+
+        self.kwargs = kwargs
 
         # --> plot if desired ------------------------
         if self.plot_yn == 'y':
@@ -788,7 +794,8 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
                 ellipd = patches.Ellipse((plotx, ploty),
                                          width=ewidth,
                                          height=eheight,
-                                         angle=90 - eangle)
+                                         angle=90 - eangle,
+                                         **self.kwargs)
 
                 # get ellipse color
                 if cmap.find('seg') > 0:
@@ -1009,7 +1016,8 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
 
         # make a grid with color lines
         self.ax.grid(True, alpha=.3, which='both', color=(0.5, 0.5, 0.5))
-        plt.minorticks_on()  # turn on minor ticks automatically
+        if self.minorticks_on:
+            plt.minorticks_on()  # turn on minor ticks automatically
 
         # ==> make a colorbar with appropriate colors
         if self.cb_position is None:
