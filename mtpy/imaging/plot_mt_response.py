@@ -818,7 +818,7 @@ class PlotMTResponse(PlotSettings):
                 if tmax > 1:
                     tmax = .899
 
-                tmin = min([np.nanmin(tyr), np.nanmin(tyi.min)])
+                tmin = min([np.nanmin(tyr), np.nanmin(tyi)])
                 if tmin < -1:
                     tmin = -.899
 
