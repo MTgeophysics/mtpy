@@ -535,7 +535,10 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
             else:
                 self._logger.warning("unknown argument {}={}.".format(key, kwargs[key]))
 
-        self.kwargs = kwargs
+        self.kwargs = {}
+        for key in kwargs.keys():
+            if key in ['lw','linewidth','ec','edgecolor']:
+                self.kwargs[key] = kwargs[key]
 
         # --> plot if desired ------------------------
         if self.plot_yn == 'y':
