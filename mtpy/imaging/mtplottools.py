@@ -103,8 +103,10 @@ class MTArrows(object):
         self.arrow_color_real = 'k'
         self.arrow_direction = 0
 
-        for key in kwargs.keys():
-            setattr(self, key, kwargs[key])
+        # Set class property values from kwargs and pop them
+        for v in vars(self):
+            if(v in kwargs.keys()):
+                setattr(self, v, kwargs.pop(v, None))
 
     def _read_arrow_dict(self, arrow_dict):
 
@@ -188,8 +190,11 @@ class MTEllipse(object):
         self.ellipse_range = (0, 90, 10)
         self.ellipse_cmap = 'mt_bl2gr2rd'
 
-        for key in kwargs.keys():
-            setattr(self, key, kwargs[key])
+        # Set class property values from kwargs and pop them
+        for v in vars(self):
+            if(v in kwargs.keys()):
+                setattr(self, v, kwargs.pop(v, None))
+
 
     def _read_ellipse_dict(self, ellipse_dict):
         """
@@ -243,7 +248,7 @@ class PlotSettings(MTArrows, MTEllipse):
     """
 
     def __init__(self, **kwargs):
-        super(PlotSettings, self).__init__()
+        super(PlotSettings, self).__init__(**kwargs)
 
         # figure properties:
         self.fig_num = 1
@@ -299,8 +304,10 @@ class PlotSettings(MTArrows, MTEllipse):
         self.skew_limits = None
         self.pt_limits = None
 
-        for key in kwargs:
-            setattr(self, key, kwargs[key])
+        # Set class property values from kwargs and pop them
+        for v in vars(self):
+            if(v in kwargs.keys()):
+                setattr(self, v, kwargs.pop(v, None))
 
 
 # ==============================================================================
@@ -778,8 +785,11 @@ class MTplot(mt.MT):
         if tipper_object is not None:
             self.Tipper = tipper_object
 
-        for key in kwargs.keys():
-            setattr(self, key, kwargs[key])
+        # Set class property values from kwargs and pop them
+        for v in vars(self):
+            if(v in kwargs.keys()):
+                setattr(self, v, kwargs.pop(v, None))
+
 
     @property
     def period(self):
