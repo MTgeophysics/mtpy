@@ -2529,10 +2529,11 @@ class Model(object):
                                                    self.station_locations.station_locations['rel_north'],
                                                    buf=5 * (self.cell_size_east * 2 + self.cell_size_north ** 2) ** 0.5)
             topo_core = self.surface_dict['topography'][core_cells]
+            topo_core_min = max(topo_core.min(),0)
 
             # log increasing airlayers, in reversed order
             new_air_nodes = mtmesh.make_log_increasing_array(self.z1_layer,
-                                                             topo_core.max() - topo_core.min(),
+                                                             topo_core.max() - topo_core_min,
                                                              self.n_air_layers + 1,
                                                              increment_factor=0.999)[::-1]
             # sum to get grid cell locations
