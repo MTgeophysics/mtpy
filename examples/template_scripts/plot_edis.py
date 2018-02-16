@@ -5,10 +5,6 @@ plots phase tensor ellipses as a pseudo section (distance along profile vs perio
 CreatedOn:      Wed Sep 18 15:35:39 2013
 CreatedBy:      Alison Kirkby
 
-LastUpdated:    2017-01-24
-UpdatedBy:      fei.zhang@ga.gov.au
-
-LastUpdated:    2017-11-24  FZ fixed this script after the big merge brokeness
 
 """
 
