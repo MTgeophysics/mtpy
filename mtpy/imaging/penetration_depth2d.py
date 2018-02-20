@@ -19,6 +19,7 @@ import sys
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
+import click
 
 from mtpy.imaging.penetration import get_penetration_depth, load_edi_files, Depth2D
 
@@ -137,7 +138,7 @@ def barplot_multi_station_penentration_depth(
 # python mtpy/imaging/penetration_depth2d.py tests/data/edifiles/ 0 1 10 20 30 40 50 59
 # python mtpy/imaging/penetration_depth2d.py examples/data/edi2/ 0 1 10 20 30 40
 # =============================================================================================
-if __name__ == "__main__":
+if __name__ == "__main__old":
 
     if len(sys.argv) < 2:
         print("Usage: %s edi_dir" % sys.argv[0])
@@ -147,6 +148,7 @@ if __name__ == "__main__":
         edi_dir = sys.argv[1]  # the first argument is path2_edi_dir
         # the second,.... will be period index list
         period_index_list = sys.argv[2:]
+        print ("period_index_list = {}".format(period_index_list))
 
         # the rho zcomponent can be det, zxy zyx
         plot2Dprofile(edi_dir, period_index_list, zcomponent='det')
@@ -155,3 +157,21 @@ if __name__ == "__main__":
         # #, zcomponent='zxy')
     else:
         print("Please provide an edi directory and period_index_list")
+
+
+# =============================================================================================
+# Command line wrapper
+# =============================================================================================
+
+@click.command()
+@click.option('-d','--directory_file',type=str,default='examples/data/edi_files',help='directory or edsi data files')
+@click.option('-p','--period_list',type=str,default="0 1 10 20 30 40",help='Periods seperated by space')
+def plot_penetration_image(directory_file,period_list):
+    if os.path.isdir(directory_file):
+        period_index_list = period_list.split(' ')
+        plot2Dprofile(directory_file, period_index_list, zcomponent='det')
+    else:
+        print("Please provide an edi directory !")
+
+if __name__ == '__main__':
+    plot_penetration_image()
