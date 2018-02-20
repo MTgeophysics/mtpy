@@ -122,9 +122,7 @@ python mtpy/imaging/modem_plot_slices.py /e/MTPY2_Outputs/GA_UA_edited_10s-10000
 #python mtpy/modeling/modem_output_to_views.py /e/MTPY2_Outputs/GA_UA_edited_10s-10000s_modem_inputs/ModEM_Data.dat  /e/MTPY2_Outputs/GA_UA_edited_10s-10000s_modem_inputs/ModEM_Model.ws -1000 1000
 
 # create csv files from modem.dat
-# New loactions for the following scripts ( 20/02/2018 )
-#python mtpy/modeling/modem_data_to_phase_tensor.py examples/data/ModEM_files/Modular_MPI_NLCG_028.dat [OutDir]
-#python mtpy/modeling/modem_data_to_phase_tensor.py /e/MTPY2_Outputs/GA_UA_edited_10s-10000s_modem_inputs/ModEM_Data.dat [OutDir]
-python examples/ecripts/modem_data_to_phase_tensor.py examples/data/ModEM_files/Modular_MPI_NLCG_028.dat [OutDir]
-python examples/ecripts/modem_data_to_phase_tensor.py /e/MTPY2_Outputs/GA_UA_edited_10s-10000s_modem_inputs/ModEM_Data.dat [OutDir]
+# New locations for the following scripts ( 20/02/2018 )
+python examples/scripts/modem_data_to_phase_tensor.py examples/data/ModEM_files/Modular_MPI_NLCG_028.dat [OutDir]
+python examples/scripts/modem_data_to_phase_tensor.py /e/MTPY2_Outputs/GA_UA_edited_10s-10000s_modem_inputs/ModEM_Data.dat [OutDir]
 
