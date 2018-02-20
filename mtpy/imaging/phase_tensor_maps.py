@@ -365,7 +365,7 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
         Initialise the object
         :param kwargs: keyword-value pairs
         """
-        super(PlotPhaseTensorMaps, self).__init__()
+        super(PlotPhaseTensorMaps, self).__init__(**kwargs)
 
         self._logger = MtPyLog.get_mtpy_logger(self.__class__.__name__)
 
@@ -392,29 +392,29 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
         # --> set the ellipse properties -------------------
         # set default size to 2
         if self.mapscale == 'deg':
-            self.ellipse_size = .05
-            self.arrow_size = .05
-            self.arrow_head_length = .005
-            self.arrow_head_width = .005
-            self.arrow_lw = .75
+            self.ellipse_size = kwargs.pop('ellipse_size', .05)
+            self.arrow_size = kwargs.pop('arrow_size', .05)
+            self.arrow_head_length = kwargs.pop('arrow_head_length', .005)
+            self.arrow_head_width = kwargs.pop('arrow_head_width', .005)
+            self.arrow_lw = kwargs.pop('arrow_lw', .75)
             self.xpad = kwargs.pop('xpad', .05)
             self.ypad = kwargs.pop('xpad', .05)
 
         elif self.mapscale == 'm':
-            self.ellipse_size = 500
-            self.arrow_size = 500
-            self.arrow_head_length = 50
-            self.arrow_head_width = 50
-            self.arrow_lw = .75
+            self.ellipse_size = kwargs.pop('ellipse_size', 500)
+            self.arrow_size = kwargs.pop('arrow_size', 500)
+            self.arrow_head_length = kwargs.pop('arrow_head_length', 50)
+            self.arrow_head_width = kwargs.pop('arrow_head_width', 50)
+            self.arrow_lw = kwargs.pop('arrow_lw', .75)
             self.xpad = kwargs.pop('xpad', 500)
             self.ypad = kwargs.pop('xpad', 500)
 
         elif self.mapscale == 'km':
-            self.ellipse_size = .5
-            self.arrow_size = .5
-            self.arrow_head_length = .05
-            self.arrow_head_width = .05
-            self.arrow_lw = .75
+            self.ellipse_size = kwargs.pop('ellipse_size', .5)
+            self.arrow_size = kwargs.pop('arrow_size', .5)
+            self.arrow_head_length = kwargs.pop('arrow_head_length', .05)
+            self.arrow_head_width = kwargs.pop('arrow_head_width', .05)
+            self.arrow_lw = kwargs.pop('arrow_lw', .75)
             self.xpad = kwargs.pop('xpad', .5)
             self.ypad = kwargs.pop('xpad', .5)
 
@@ -529,13 +529,11 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
         self.plot_yn = kwargs.pop('plot_yn', 'y')
         self.save_fn = kwargs.pop('save_fn', "/c/tmp")
 
-        for key in kwargs.keys():
-            if hasattr(self, key):
-                setattr(self, key, kwargs[key])
-            else:
-                self._logger.warning("unknown argument {}={}.".format(key, kwargs[key]))
-
+        # By this stage all keyword arguments meant to be set as class properties will have
+        # been processed. Popping all class properties that still exist in kwargs
         self.kwargs = kwargs
+        for key in vars(self):
+            self.kwargs.pop(key, None)
 
         # --> plot if desired ------------------------
         if self.plot_yn == 'y':
@@ -795,6 +793,7 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
                                          width=ewidth,
                                          height=eheight,
                                          angle=90 - eangle,
+                                         lw=self.lw,
                                          **self.kwargs)
 
                 # get ellipse color
@@ -1455,14 +1454,28 @@ if __name__ == "__main__":
     import sys
     import glob
 
-    edidir = sys.argv[1]
-    freq = float(sys.argv[2])
-    savedir = sys.argv[3]
+    edidir = '/home/rakib/work/ausLAMP/AlisonPlotting/plotting/ediForPlottingPTFromEDI/'
+    freq = 0.0002
+    savedir = '/tmp'
+
     edi_file_list = glob.glob(edidir + '/*.edi')
 
     print edi_file_list
 
-    ptm_obj = PlotPhaseTensorMaps(
-        fn_list=edi_file_list, plot_freq=freq, save_fn=savedir)
+    plot_freq = 0.0002
+    ptm_obj = PlotPhaseTensorMaps(fn_list=edi_file_list,
+                        plot_freq=plot_freq,
+                        ftol=.2,
+                        xpad=0.02,
+                        plot_tipper='yr',
+                        edgecolor='k',
+                        lw=0.1,
+                        alpha=1,
+                        minorticks_on=False,
+                        ellipse_size=.2,
+                        ellipse_range=[-10, 10, 2],
+                        ellipse_colorby='skew',
+                        arrow_size = 0.5,
+                        ellipse_cmap='mt_seg_bl2wh2rd')
 
     ptm_obj.export_params_to_file(save_path=savedir)

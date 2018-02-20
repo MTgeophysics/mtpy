@@ -434,9 +434,9 @@ class PlotMTResponse(PlotSettings):
         self.plot_yn = 'y'
 
         for key in kwargs.keys():
-            setattr(self, key, kwargs[key])
-        else:
-            if kwargs:
+            if hasattr(self, key):
+                setattr(self, key, kwargs[key])
+            else:
                 self._logger.warn("Argument {}={} is not supported thus not been set.".format(key, kwargs[key]))
 
         # plot on initializing
@@ -818,7 +818,7 @@ class PlotMTResponse(PlotSettings):
                 if tmax > 1:
                     tmax = .899
 
-                tmin = min([np.nanmin(tyr), np.nanmin(tyi.min)])
+                tmin = min([np.nanmin(tyr), np.nanmin(tyi)])
                 if tmin < -1:
                     tmin = -.899
 
@@ -1165,7 +1165,7 @@ class PlotMTResponse(PlotSettings):
                               orientation in which the file will be saved
                               *default* is portrait
 
-            **fig_fig_dpi** : int
+            **fig_dpi** : int
                           The resolution in dots-per-inch the file will be
                           saved.  If None then the fig_dpi will be that at 
                           which the figure was made.  I don't think that 
@@ -1189,16 +1189,13 @@ class PlotMTResponse(PlotSettings):
 
         if not os.path.isdir(save_fn):
             file_format = save_fn[-3:]
-            self.fig.savefig(save_fn, fig_dpi=fig_dpi, format=file_format,
-                             orientation=orientation)
-            plt.clf()
-            plt.close(self.fig)
 
         else:
             save_fn = os.path.join(save_fn, self.station + '_ResPhase.' +
                                    file_format)
-            self.fig.savefig(save_fn, fig_dpi=fig_dpi, format=file_format,
-                             orientation=orientation)
+                                   
+        self.fig.savefig(save_fn, dpi=fig_dpi, format=file_format,
+                         orientation=orientation)
 
         if close_plot == 'y':
             plt.clf()
