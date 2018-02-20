@@ -4,34 +4,36 @@
 #######################################
 
 
-cd mtpy
-export PYTHONPATH=.
-export GDAL_DATA=/c/Anaconda2/Library/share/gdal  # a directory containing many CSV files used by GDAL
-# export PYTHONPATH=/e/Githubz/mtpy
+#cd mtpy
+#export PYTHONPATH=.
+#export PYTHONPATH=/e/Githubz/mtpy
+#export GDAL_DATA=/c/Anaconda2/Library/share/gdal  # a directory containing many CSV files used by GDAL
+
+OUTPUT_DIR=/c/temp
 
 python examples/plot_edis.py data/edifiles/15125A.edi
 
 # New shape file creator script: create csv and shape files
-python mtpy/utils/shapefiles_creator.py /e/Data/MT_Datasets/WenPingJiang_EDI /e/Data/MT_Datasets/WenPingJiang_SHP2 # long time
-python mtpy/utils/shapefiles_creator.py /e/Data/MT_Datasets/WenPingJiang_EDI /e/tmp_20/
-python mtpy/utils/shapefiles_creator.py /e/Data//MT_Datasets/GA_UA_edited_10s-10000s/ /e/Data//MT_Datasets/GA_UA_edited_10s-10000s_SHP2
+python mtpy/utils/shapefiles_creator.py /e/Data//MT_Datasets/GA_UA_edited_10s-10000s/ $OUTPUT_DIR/GA_UA_edited_10s-10000s_SHP2
+python mtpy/utils/shapefiles_creator.py /e/Data/MT_Datasets/WenPingJiang_EDI $OUTPUT_DIR # takes long time to run
+python mtpy/utils/shapefiles_creator.py /e/Data/MT_Datasets/WenPingJiang_EDI $OUTPUT_DIR
 
-# **** compare with the Old shape files generation: user please tune the __main__ section to provide suitable params
+# **** Old shape files generation: please tune the __main__ section to provide suitable params
 python mtpy/utils/shapefiles.py /e/Data/MT_Datasets/GA_UA_edited_10s-10000s/ /e/Data/MT_Datasets/GA_UA_edited_10s-10000s_SHP/ # not working after merge
 python mtpy/utils/shapefiles.py /e/Data/MT_Datasets/3D_MT_data_edited_fromDuanJM /e/Data/MT_Datasets/3D_MT_data_edited_fromDuanJM_SHP/
 
 # EDI collection (surveys) properties: plot stations and create CSV files
-python mtpy/core/edi_collection.py data/edifiles/ /e/tmp0
-python mtpy/core/edi_collection.py examples/data/edi2/ /e/tmp0
-python mtpy/core/edi_collection.py examples/data/edi_files /e/tmp0
-python mtpy/core/edi_collection.py /e/Data/MT_Datasets/WenPingJiang_EDI/ /e/tmp0
-python mtpy/core/edi_collection.py /e/Data/MT_Datasets/GA_UA_edited_10s-10000s/ /e/tmp0
-python mtpy/core/edi_collection.py /e/Data/MT_Datasets/728889/EDI_files/ /e/tmp0
-python mtpy/core/edi_collection.py /e/Data/MT_Datasets/75098/EDI_files/ /e/tmp0
-python mtpy/core/edi_collection.py /e/Data/MT_Datasets/75099_Youanmi/EDI_Files_edited/BB_edi_edited/ /e/tmp0
-python mtpy/core/edi_collection.py /e/Data/MT_Datasets/75099_Youanmi/EDI_Files_edited/BB_edi_edited/YM1/ /e/tmp0
-python mtpy/core/edi_collection.py /e/Data/MT_Datasets/75099_Youanmi/EDI_Files_edited/BB_edi_edited/YM2 /e/tmp0
-python mtpy/core/edi_collection.py /e/Data/MT_Datasets/75099_Youanmi/EDI_Files_edited/LP_edi_edited/YML123/ /e/tmp0
+python mtpy/core/edi_collection.py data/edifiles/ /c/temp
+python mtpy/core/edi_collection.py examples/data/edi2/ /c/temp
+python mtpy/core/edi_collection.py examples/data/edi_files /c/temp
+python mtpy/core/edi_collection.py /e/Data/MT_Datasets/WenPingJiang_EDI/ /c/temp
+python mtpy/core/edi_collection.py /e/Data/MT_Datasets/GA_UA_edited_10s-10000s/ /c/temp
+python mtpy/core/edi_collection.py /e/Data/MT_Datasets/728889/EDI_files/ /c/temp
+python mtpy/core/edi_collection.py /e/Data/MT_Datasets/75098/EDI_files/ /c/temp
+python mtpy/core/edi_collection.py /e/Data/MT_Datasets/75099_Youanmi/EDI_Files_edited/BB_edi_edited/ /c/temp
+python mtpy/core/edi_collection.py /e/Data/MT_Datasets/75099_Youanmi/EDI_Files_edited/BB_edi_edited/YM1/ /c/temp
+python mtpy/core/edi_collection.py /e/Data/MT_Datasets/75099_Youanmi/EDI_Files_edited/BB_edi_edited/YM2 /c/temp
+python mtpy/core/edi_collection.py /e/Data/MT_Datasets/75099_Youanmi/EDI_Files_edited/LP_edi_edited/YML123/ /c/temp
 
 
 python mtpy/imaging/penetration_depth3d.py data/edifiles/ 10
@@ -53,27 +55,6 @@ python examples/plot_phase_tensor_map.py /e/Data/MT_Datasets/GA_UA_edited_10s-10
 python examples/plot_phase_tensor_map.py /e/Data/MT_Datasets/GA_UA_edited_10s-10000s/ 0.0625 /e/MTPY2_Outputs/
 python examples/plot_phase_tensor_map.py /e/Data/MT_Datasets/GA_UA_edited_10s-10000s/ 0.0005 /e/MTPY2_Outputs/
 #python examples/plot_phase_tensor_map.py /e/Data/MT_Datasets/GA_UA_edited_10s-10000s/ 0.0004883 /e/MTPY2_Outputs/
-
-#python examples/plot_phase_tensor_map.py  examples/data/edi_files 10 /e/MTPY2_Outputs/
-#python examples/plot_phase_tensor_map.py  examples/data/edi2 10
-#python examples/plot_phase_tensor_map.py  data/edifiles/ 10
-#python examples/plot_phase_tensor_map.py  data/edifiles/ 10 /e/MTPY2_Outputs/
-#python examples/plot_phase_tensor_map.py /e/Data/MT_Datasets/3D_MT_data_edited_fromDuanJM/ 10 /e/MTPY2_Outputs/
-#python examples/plot_phase_tensor_map.py /e/Data/MT_Datasets/3D_MT_data_edited_fromDuanJM/ 10 /e/MTPY2_Outputs/ptmap3.jpg
-#python examples/plot_phase_tensor_map.py /e/Data/MT_Datasets/3D_MT_data_edited_fromDuanJM/ 10 /e/MTPY2_Outputs/ptmap3deg.jpg
-#python examples/plot_phase_tensor_map.py /e/Data/MT_Datasets/GA_UA_edited_10s-10000s/ 0.0001
-#python examples/plot_phase_tensor_map.py /e/Data/MT_Datasets/GA_UA_edited_10s-10000s/ 0.003
-#python examples/plot_phase_tensor_map.py /e/Data/MT_Datasets/GA_UA_edited_10s-10000s/ 0.0625
-#python examples/plot_phase_tensor_map.py /e/Data/MT_Datasets/GA_UA_edited_10s-10000s/ 0.0625 /e/MTPY2_Outputs/
-#python examples/plot_phase_tensor_map.py /e/Data/MT_Datasets/GA_UA_edited_10s-10000s/ 0.1
-#python examples/plot_phase_tensor_map.py /e/Data/MT_Datasets/GA_UA_edited_10s-10000s/ 0.1
-#python examples/plot_phase_tensor_map.py /e/Data/MT_Datasets/GA_UA_edited_10s-10000s/ 0.1 /e/MTPY2_Outputs/
-#python examples/plot_phase_tensor_map.py examples/data/edi2 10 /e/MTPY2_Outputs/
-#python examples/plot_phase_tensor_map.py examples/data/edi2 10 /e/MTPY2_Outputs/abc.jpg
-#python examples/plot_phase_tensor_map.py examples/data/edi2 10 /e/MTPY2_Outputs/ptmap2.jpg
-#python examples/plot_phase_tensor_map.py data/edifiles 20
-#python examples/plot_phase_tensor_map.py data/edifiles/ 10 /e/MTPY2_Outputs/ptmap3deg.png
-
 
 # phase tensor pseudo sections
 python examples/plot_phase_tensor_section.py data/edifiles/
@@ -129,6 +110,6 @@ python mtpy/modeling/modem_output_to_views.py /e/Data/Modeling/Isa/100hs_flat_BB
 python mtpy/modeling/modem_output_to_views.py /e/MTPY2_Outputs/GA_UA_edited_10s-10000s_modem_inputs/ModEM_Data.dat  /e/MTPY2_Outputs/GA_UA_edited_10s-10000s_modem_inputs/ModEM_Model.ws -1000 1000
 
 # create csv files from modem.dat
-python mtpy/modeling/modem_data_to_phase_tensor.py examples/data/ModEM_files/Modular_MPI_NLCG_028.dat [OutDir]
-python mtpy/modeling/modem_data_to_phase_tensor.py /e/MTPY2_Outputs/GA_UA_edited_10s-10000s_modem_inputs/ModEM_Data.dat [OutDir]
+python examples/scripts/modem_data_to_phase_tensor.py examples/data/ModEM_files/Modular_MPI_NLCG_028.dat [OutDir]
+python examples/scripts/modem_data_to_phase_tensor.py /e/MTPY2_Outputs/GA_UA_edited_10s-10000s_modem_inputs/ModEM_Data.dat [OutDir]
 
