@@ -46,13 +46,15 @@ python mtpy/imaging/penetration_depth3d.py /e/Data/MT_Datasets/GA_UA_edited_10s-
 python mtpy/imaging/penetration_depth3d.py /e/Data/MT_Datasets/GA_UA_edited_10s-10000s 4096s
 python mtpy/imaging/penetration_depth3d.py /e/Data/MT_Datasets/GA_UA_edited_10s-10000s 2048s
 
-python examples/plot_phase_tensor_map.py  /e/Data/MT_Datasets/3D_MT_data_edited_fromDuanJM/ 10 /e/MTPY2_Outputs
+# plot_phase_tensor_map.py has been moved to examples/scripts/ modified ( 21/02/2018 )
 
-python examples/plot_phase_tensor_map.py /e/Data/MT_Datasets/GA_UA_edited_10s-10000s/ 0.025  /e/MTPY2_Outputs
-python examples/plot_phase_tensor_map.py /e/Data/MT_Datasets/GA_UA_edited_10s-10000s/ 0.01  /e/MTPY2_Outputs
-python examples/plot_phase_tensor_map.py /e/Data/MT_Datasets/GA_UA_edited_10s-10000s/ 0.0625 /e/MTPY2_Outputs/
-python examples/plot_phase_tensor_map.py /e/Data/MT_Datasets/GA_UA_edited_10s-10000s/ 0.0005 /e/MTPY2_Outputs/
-#python examples/plot_phase_tensor_map.py /e/Data/MT_Datasets/GA_UA_edited_10s-10000s/ 0.0004883 /e/MTPY2_Outputs/
+python examples/scripts/plot_phase_tensor_map.py  /e/Data/MT_Datasets/3D_MT_data_edited_fromDuanJM/ 10 /e/MTPY2_Outputs
+
+python examples/scripts/plot_phase_tensor_map.py /e/Data/MT_Datasets/GA_UA_edited_10s-10000s/ 0.025  /e/MTPY2_Outputs
+python examples/scripts/plot_phase_tensor_map.py /e/Data/MT_Datasets/GA_UA_edited_10s-10000s/ 0.01  /e/MTPY2_Outputs
+python examples/scripts/plot_phase_tensor_map.py /e/Data/MT_Datasets/GA_UA_edited_10s-10000s/ 0.0625 /e/MTPY2_Outputs/
+python examples/scripts/plot_phase_tensor_map.py /e/Data/MT_Datasets/GA_UA_edited_10s-10000s/ 0.0005 /e/MTPY2_Outputs/
+#python examples/scripts/plot_phase_tensor_map.py /e/Data/MT_Datasets/GA_UA_edited_10s-10000s/ 0.0004883 /e/MTPY2_Outputs/
 
 #python examples/plot_phase_tensor_map.py  examples/data/edi_files 10 /e/MTPY2_Outputs/
 #python examples/plot_phase_tensor_map.py  examples/data/edi2 10
@@ -76,39 +78,48 @@ python examples/plot_phase_tensor_map.py /e/Data/MT_Datasets/GA_UA_edited_10s-10
 
 
 # phase tensor pseudo sections
-python examples/plot_phase_tensor_section.py data/edifiles/
-python examples/plot_phase_tensor_section.py examples/data/edi2
-python examples/plot_phase_tensor_section.py examples/data/edi_files/
-python examples/plot_phase_tensor_section.py examples/data/edi_files_2/
+# plot_phase_tensor_section.py has been moved to examples/scripts/ modified ( 21/02/2018 )
+
+python examples/scripts/plot_phase_tensor_section.py data/edifiles/
+python examples/scripts/plot_phase_tensor_section.py examples/data/edi2
+python examples/scripts/plot_phase_tensor_section.py examples/data/edi_files/
+python examples/scripts/plot_phase_tensor_section.py examples/data/edi_files_2/
 
 python examples/plot_phase_tensor_section.py /e/Data/MT_Datasets/3D_MT_data_edited_fromDuanJM/
 python examples/plot_phase_tensor_section.py /e/Data/MT_Datasets/GA_UA_edited_10s-10000s  #change to stretch=(20, 40), y more
 
 # generate inputs for MODEM, and output effective new_edi/ files inside the result folder.
 # prepare input for ModEM input files: examples/create_modem_input.py
-python examples/create_modem_input.py data/edifiles/ examples/etopo1.asc /e/tmp/modem_inputs/
+# create_modem_input.py has been moved to examples/scripts/ modified ( 21/02/2018 )
 
-python examples/create_modem_input.py  /e/Data/MT_Datasets/concurry_EDI_files/ /e/Data/MT_Datasets/concurry_topo/AussieContinent_etopo1.asc /e/tmp/
-python examples/create_modem_input.py  /e/Data/MT_Datasets/GA_UA_edited_10s-10000s /e/Data/MT_Datasets/concurry_topo/AussieContinent_etopo1.asc /e/tmp/GA_UA_edited_10s-10000s_B/
-python examples/create_modem_input.py  /e/Data/MT_Datasets/3D_MT_data_edited_fromDuanJM /e/Data/MT_Datasets/concurry_topo/AussieContinent_etopo1.asc /e/tmp/3D_MT_data_modemin/
-python examples/create_modem_input.py  /e/Data/MT_Datasets/Isa_EDI_edited_10Hz_1000s/ /e/Data/MT_Datasets/concurry_topo/AussieContinent_etopo1.asc /e/tmp/Isa_EDI_edited_10Hz_1000s
-python examples/create_modem_input.py  /e/Data/MT_Datasets/WenPingJiang_EDI /e/Data/MT_Datasets/concurry_topo/AussieContinent_etopo1.asc /e/tmp/WenPingJiang_EDI_modemin
+python examples/scripts/create_modem_input.py data/edifiles/ examples/etopo1.asc /e/tmp/modem_inputs/
+
+python examples/scripts/create_modem_input.py  /e/Data/MT_Datasets/concurry_EDI_files/ /e/Data/MT_Datasets/concurry_topo/AussieContinent_etopo1.asc /e/tmp/
+python examples/scripts/create_modem_input.py  /e/Data/MT_Datasets/GA_UA_edited_10s-10000s /e/Data/MT_Datasets/concurry_topo/AussieContinent_etopo1.asc /e/tmp/GA_UA_edited_10s-10000s_B/
+python examples/scripts/create_modem_input.py  /e/Data/MT_Datasets/3D_MT_data_edited_fromDuanJM /e/Data/MT_Datasets/concurry_topo/AussieContinent_etopo1.asc /e/tmp/3D_MT_data_modemin/
+python examples/scripts/create_modem_input.py  /e/Data/MT_Datasets/Isa_EDI_edited_10Hz_1000s/ /e/Data/MT_Datasets/concurry_topo/AussieContinent_etopo1.asc /e/tmp/Isa_EDI_edited_10Hz_1000s
+python examples/scripts/create_modem_input.py  /e/Data/MT_Datasets/WenPingJiang_EDI /e/Data/MT_Datasets/concurry_topo/AussieContinent_etopo1.asc /e/tmp/WenPingJiang_EDI_modemin
 
 python examples/create_modem_input.py  /e/Data/MT_Datasets/GA_UA_edited_10s-10000s /e/Data/MT_Datasets/concurry_topo/AussieContinent_etopo1.asc /e/tmp/GA_UA_edited_10s-10000s_16
 python examples/create_modem_input.py /e/Data/MT_Datasets/concurry_EDI_files/ /e/Data/MT_Datasets/concurry_topo/AussieContinent_etopo1.asc /e/tmp/concurry_modem
 
 # FZ: Todo 2017-09 Visualize ModEM outputs and create CSV files for the data
-python examples/modem_plot_models.py ./examples/data/ModEM_files/VicSynthetic07
-python examples/modem_plot_models.py ./examples/data/ModEM_files/VicSynthetic07 RMSMap
-python examples/modem_plot_models.py ./examples/data/ModEM_files/VicSynthetic07 PTMap
-python examples/modem_plot_models.py ./examples/data/ModEM_files/VicSynthetic07 Response
-python examples/modem_plot_models.py ./examples/data/ModEM_files/VicSynthetic07 DepthSlice
+# modem_plot_models.py has been moved to examples/scripts/ modified ( 21/02/2018 )
+#
+python examples/scripts/modem_plot_models.py ./examples/data/ModEM_files/VicSynthetic07
+python examples/scripts/modem_plot_models.py ./examples/data/ModEM_files/VicSynthetic07 RMSMap
+python examples/scripts/modem_plot_models.py ./examples/data/ModEM_files/VicSynthetic07 PTMap
+python examples/scripts/modem_plot_models.py ./examples/data/ModEM_files/VicSynthetic07 Response
+python examples/scripts/modem_plot_models.py ./examples/data/ModEM_files/VicSynthetic07 DepthSlice
 
-python examples/modem_plot_models.py /e/Data/Modeling/Isa/100hs_flat_BB/
-python examples/modem_plot_models.py /e/Data/Modeling/Isa/100hs_flat_BB/ Response
-python examples/modem_plot_models.py /e/Data/Modeling/Isa/100hs_flat_BB/ DepthSlice
+python examples/scripts/modem_plot_models.py /e/Data/Modeling/Isa/100hs_flat_BB/
+python examples/scripts/modem_plot_models.py /e/Data/Modeling/Isa/100hs_flat_BB/ Response
+python examples/scripts/modem_plot_models.py /e/Data/Modeling/Isa/100hs_flat_BB/ DepthSlice
 
 # view horizontal slices of a rho file
+# ( 21/02/2018 )
+# plot_depth_slice.py exist in two directories (/mtpy/imaging/plot_depth_slice.py/mtpy/modeling/modem/plot_depth_slice.py)
+#
 python mtpy/imaging/plot_depth_slice.py /e/Data/Modeling/Isa/100hs_flat_BB/Isa_run3_NLCG_048.rho 20
 python mtpy/imaging/plot_depth_slice.py /e/MTPY2_Outputs/GA_UA_edited_10s-10000s_modem_inputs/ModEM_Model.ws
 
@@ -125,10 +136,14 @@ python mtpy/imaging/modem_plot_slices.py /e/MTPY2_Outputs/GA_UA_edited_10s-10000
 
 
 # create CSV files
-python mtpy/modeling/modem_output_to_views.py /e/Data/Modeling/Isa/100hs_flat_BB/Isa_run3_NLCG_048.dat /e/Data/Modeling/Isa/100hs_flat_BB/Isa_run3_NLCG_048.rho 20
-python mtpy/modeling/modem_output_to_views.py /e/MTPY2_Outputs/GA_UA_edited_10s-10000s_modem_inputs/ModEM_Data.dat  /e/MTPY2_Outputs/GA_UA_edited_10s-10000s_modem_inputs/ModEM_Model.ws -1000 1000
+# Following scripts were not found in the repository ( 20/02/2018 )
+#python mtpy/modeling/modem_output_to_views.py /e/Data/Modeling/Isa/100hs_flat_BB/Isa_run3_NLCG_048.dat /e/Data/Modeling/Isa/100hs_flat_BB/Isa_run3_NLCG_048.rho 20
+#python mtpy/modeling/modem_output_to_views.py /e/MTPY2_Outputs/GA_UA_edited_10s-10000s_modem_inputs/ModEM_Data.dat  /e/MTPY2_Outputs/GA_UA_edited_10s-10000s_modem_inputs/ModEM_Model.ws -1000 1000
 
 # create csv files from modem.dat
-python mtpy/modeling/modem_data_to_phase_tensor.py examples/data/ModEM_files/Modular_MPI_NLCG_028.dat [OutDir]
-python mtpy/modeling/modem_data_to_phase_tensor.py /e/MTPY2_Outputs/GA_UA_edited_10s-10000s_modem_inputs/ModEM_Data.dat [OutDir]
+# New loactions for the following scripts ( 20/02/2018 )
+#python mtpy/modeling/modem_data_to_phase_tensor.py examples/data/ModEM_files/Modular_MPI_NLCG_028.dat [OutDir]
+#python mtpy/modeling/modem_data_to_phase_tensor.py /e/MTPY2_Outputs/GA_UA_edited_10s-10000s_modem_inputs/ModEM_Data.dat [OutDir]
+python examples/ecripts/modem_data_to_phase_tensor.py examples/data/ModEM_files/Modular_MPI_NLCG_028.dat [OutDir]
+python examples/ecripts/modem_data_to_phase_tensor.py /e/MTPY2_Outputs/GA_UA_edited_10s-10000s_modem_inputs/ModEM_Data.dat [OutDir]
 
