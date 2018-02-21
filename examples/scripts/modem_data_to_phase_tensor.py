@@ -38,16 +38,17 @@ if __name__ == "__main__old":
 # =============================================================================================
 
 @click.command()
-@click.option('-d','--directory_file',type=str,
+@click.option('-i','--dat_file',type=str,
               default='examples/data/ModEM_files/Modular_MPI_NLCG_028.dat', \
-              help='input test file')
-@click.option('-o','--output_dir',type=str,default=".",help='Output directory')
-def process_phase_tensors(directory_file,output_dir):
-    if os.path.isfile(directory_file):
+              help='input path/datafile')
+@click.option('-o','--output_dir',type=str,default="temp",help='Output directory')
+def process_phase_tensors(dat_file,output_dir):
+
+    if os.path.isfile(dat_file):
         obj = Data()
-        obj.compute_phase_tensor(directory_file, output_dir)
+        obj.compute_phase_tensor(dat_file, output_dir)
     else:
-        print("Please provide directory and file !")
+        print("Please provide an input dat file !")
 
 if __name__ == '__main__':
     process_phase_tensors()
