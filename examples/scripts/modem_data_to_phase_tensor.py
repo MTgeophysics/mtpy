@@ -43,7 +43,11 @@ if __name__ == "__main__old":
               help='input path/datafile')
 @click.option('-o','--output_dir',type=str,default="temp",help='Output directory')
 def process_phase_tensors(dat_file,output_dir):
+    print ("Input path/datfile   --------->     {}".format(dat_file))
+    print ("Output directory     --------->     {}".format(output_dir))
 
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
     if os.path.isfile(dat_file):
         obj = Data()
         obj.compute_phase_tensor(dat_file, output_dir)
