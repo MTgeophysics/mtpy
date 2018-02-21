@@ -1,8 +1,9 @@
 TODO List for Alphs Release
 
-Last updated 2017-12-19
 
 ######################################################################
+
+Detailed installation guide
 
 More unit-testing to increase coverage percentage   In progress
 
