@@ -633,7 +633,7 @@ class PlotSlices(object):
                                            self.axis_values[self.current_label][ii],
                                            self.map_scale,
                                            self.save_format)
-            self.save_path = '/tmp'
+            
             fig.suptitle('%s Plane at %s: %0.4f %s'%(self.current_label,
                                            self.current_label_desc[self.current_label],
                                            self.axis_values[self.current_label][ii],
