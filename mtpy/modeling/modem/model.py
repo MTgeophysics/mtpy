@@ -277,7 +277,7 @@ class Model(object):
 
         # method to use to create padding
         self.pad_method = 'extent1'
-        self.z_mesh_method = 'original' # method to make z mesh, 'original','original_refactor','exp' or 'new'
+        self.z_mesh_method = 'new' # method to make z mesh, 'original','original_refactor','exp' or 'new'
                                         # use: code embedded in make_mesh function, or make_z_mesh or 'make_z_mesh_exp' or 'make_z_mesh_new' respectively
                                         # temporary fix until I have a chance to test all 4
 
@@ -2548,10 +2548,11 @@ class Model(object):
                                                    self.station_locations.station_locations['rel_north'],
                                                    buf=5 * (self.cell_size_east * 2 + self.cell_size_north ** 2) ** 0.5)
             topo_core = self.surface_dict['topography'][core_cells]
+            topo_core_min = max(topo_core.min(),0)
 
             # log increasing airlayers, in reversed order
             new_air_nodes = mtmesh.make_log_increasing_array(self.z1_layer,
-                                                             topo_core.max() - topo_core.min(),
+                                                             topo_core.max() - topo_core_min,
                                                              self.n_air_layers + 1,
                                                              increment_factor=0.999)[::-1]
             # sum to get grid cell locations

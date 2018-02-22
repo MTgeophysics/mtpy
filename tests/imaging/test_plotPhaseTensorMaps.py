@@ -83,9 +83,26 @@ class TestPlotPhaseTensorMaps(ImageTestCase):
                                      mapscale='deg',  # deg or m, or km
                                      xpad=0.4,  # plot margin; change according to lat-lon in edifiles
                                      ypad=0.4,  # ~ 2* ellipse size
-                                     ellipse_dict=self.ellipse_dict,
+
+                                     # ellipse_dict=self.ellipse_dict, # not implemented
+
+                                     ellipse_size=.2,
+                                     ellipse_colorby= 'phimin',
+                                     ellipse_range=(0, 90, 1),
+                                     ellipse_cmap= 'mt_bl2gr2rd',
+
                                      plot_tipper='yr',
-                                     arrow_dict=self.arrow_dict,
+
+                                     # arrow_dict=self.arrow_dict, # not implemented
+
+
+                                     arrow_size=0.5,
+                                     arrow_lw=0.2,
+                                     arrow_head_width=0.04,
+                                     arrow_head_length=0.04,
+                                     arrow_direction=0,
+                                     arrow_threshold=0.8,
+
                                      # arrow_legend_dict=arrow_legend_dict,
                                      # fig_spython examples/plot_phase_tensor_map.py data/edifiles/ 10 /e/MTPY2_Outputs/ptmap3deg.pngize=(6, 5),
                                      # fig_dpi=300, the default is OK. Higher dpi
@@ -109,9 +126,22 @@ def _test_gen(edi_path, freq):
                                      mapscale='deg',  # deg or m, or km
                                      xpad=0.4,  # plot margin; change according to lat-lon in edifiles
                                      ypad=0.4,  # ~ 2* ellipse size
-                                     ellipse_dict=self.ellipse_dict,
+
+                                     # ellipse_dict=self.ellipse_dict, # Not implemented
+                                     ellipse_size=.2,
+                                     ellipse_colorby= 'phimin',
+                                     ellipse_range=(0, 90, 1),
+                                     ellipse_cmap= 'mt_bl2gr2rd',
                                      plot_tipper='yr',
-                                     arrow_dict=self.arrow_dict,
+
+                                     #arrow_dict=self.arrow_dict, # Not implemented
+                                     arrow_size=0.5,
+                                     arrow_lw=0.2,
+                                     arrow_head_width=0.04,
+                                     arrow_head_length=0.04,
+                                     arrow_direction=0,
+                                     arrow_threshold=0.8,
+
                                      # arrow_legend_dict=arrow_legend_dict,
                                      # fig_spython examples/plot_phase_tensor_map.py data/edifiles/ 10 /e/MTPY2_Outputs/ptmap3deg.pngize=(6, 5),
                                      # fig_dpi=300, the default is OK. Higher dpi

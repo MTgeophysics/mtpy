@@ -459,6 +459,10 @@ def project_points_ll2utm(lat, lon, datum='WGS84', utm_zone=None, epsg=None):
     utm_cs = osr.SpatialReference()
     utm_cs.SetWellKnownGeogCS(datum)
 
+    # set lat, lon coordinate system
+    ll_cs = utm_cs.CloneGeogCS()
+    ll_cs.ExportToPrettyWkt()
+
     # get zone number, north and zone name
     if epsg is not None:
         # set projection info
@@ -467,8 +471,14 @@ def project_points_ll2utm(lat, lon, datum='WGS84', utm_zone=None, epsg=None):
             raise Exception("GDAL/osgeo ogr error code: {}".format(ogrerr))
         # get utm zone (for information) if applicable
         utm_zone = utm_cs.GetUTMZone()
-        # set projection info
-        utm_cs.SetUTM(abs(utm_zone), utm_zone > 0)
+
+        # Whilst some projections e.g. Geoscience Australia Lambert (epsg3112) do
+        # not yield UTM zones, they provide eastings and northings for the whole
+        # Australian region. We therefore set UTM zones, only when a valid UTM zone
+        # is available
+        if(utm_zone>0):
+            # set projection info
+            utm_cs.SetUTM(abs(utm_zone), utm_zone > 0)
     else:
         if utm_zone is not None:
             # get zone number and is_northern from utm_zone string
@@ -481,10 +491,6 @@ def project_points_ll2utm(lat, lon, datum='WGS84', utm_zone=None, epsg=None):
             zone_number, is_northern, utm_zone = get_utm_zone(latc, lonc)
         # set projection info
         utm_cs.SetUTM(zone_number, is_northern)
-
-    # set lat, lon coordinate system
-    ll_cs = utm_cs.CloneGeogCS()
-    ll_cs.ExportToPrettyWkt()
 
     # set the transform wgs84_to_utm and do the transform
     ll2utm = osr.CoordinateTransformation(ll_cs, utm_cs)

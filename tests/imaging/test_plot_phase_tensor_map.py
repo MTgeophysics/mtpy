@@ -11,11 +11,11 @@ The ellipse properties are not being set via the arguments - need to create a
 phase_tensor_map object then set the properties then run redraw_plot.
 
 """
+import os
 import os.path as op
 
-import os
-
-import mtpy.imaging.plotptmaps as pptmaps
+#import legacy.plotptmaps as pptmaps
+import mtpy.imaging.phase_tensor_maps as pptmaps
 from mtpy.core.mt import MT
 from tests import EDI_DATA_DIR, EDI_DATA_DIR2
 from tests.imaging import ImageTestCase
@@ -44,8 +44,7 @@ class test_plotPhaseTensorMaps(ImageTestCase):
         mtlist = [MT(ff) for ff in elst]
 
         # parameters describing ellipses
-        ellipse_dict = {'ellipse_size': .01, 'ellipse_colorby': 'phimax', 'ellipse_range': (0, 90, 1),
-                        'cmap': 'mt_bl2gr2rd'}
+        ellipse_dict = {'ellipse_size': .01, 'ellipse_colorby': 'phimax', 'ellipse_range': (0, 90, 1), 'cmap': 'mt_bl2gr2rd'}
 
         # parameters describing the induction vector arrows
         arrow_dict = {'arrow_size': 0.02,
@@ -62,9 +61,13 @@ class test_plotPhaseTensorMaps(ImageTestCase):
             # ftol = .5,
             # xpad = 0.02,
             # plot_tipper = 'yr',
-            # arrow_dict = arrow_dict,
-            ellipse_size=ellipse_dict['ellipse_size'],
-            ellipse_dict=ellipse_dict,
+            # ellipse_size=ellipse_dict['ellipse_size'],
+            # ellipse_dict=ellipse_dict, # old line ( 22/02/2018 )
+            ellipse_size=.01,
+            ellipse_colorby= 'phimax',
+            ellipse_range=(0, 90, 1),
+            ellipse_cmap= 'mt_bl2gr2rd',
+
         )
         # need to set properties and redraw
         phase_tensor_map.ellipse_size = 0.01
@@ -114,8 +117,23 @@ class test_plotPhaseTensorMaps(ImageTestCase):
             #  ftol = .5,
             #  xpad = 0.02,
             plot_tipper='yr',
-            arrow_dict=arrow_dict,
-            ellipse_dict=ellipse_dict,
+            # arrow_dict=arrow_dict, # Temporary Commented for testing
+            # ellipse_dict=ellipse_dict, #Temporary Commented for testing
+#           # New incluseion ( 22/02/2018 )
+            # ellipse parameters
+            ellipse_size=.1,
+            ellipse_colorby= 'phimin',
+            ellipse_range=(0, 90, 1),
+            ellipse_cmap= 'mt_bl2gr2rd',
+            # arrow parameters
+            arrow_size=0.02,
+            arrow_lw=0.01,
+            arrow_head_width=0.002,
+            arrow_head_length=0.002,
+            arrow_color_real='b',
+            arrow_direction=0,
+            arrow_threshold=0.8,
+
         )
 
         phase_tensor_map.ellipse_size = 0.5
