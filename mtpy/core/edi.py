@@ -992,7 +992,6 @@ class Header(object):
             h_list = h_line.split('=')
             key = h_list[0].lower()
             value = h_list[1]
-
             if key in 'latitude':
                 key = 'lat'
                 value = gis_tools.assert_lat_value(value)

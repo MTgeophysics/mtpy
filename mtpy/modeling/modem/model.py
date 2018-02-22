@@ -2481,10 +2481,7 @@ class Model(object):
                                                            )
 
         # get centre position of model grid in real world coordinates
-        x0, y0 = [np.median(
-            self.station_locations.station_locations[dd] - self.station_locations.station_locations['rel_' + dd]) for dd
-            in
-            ['east', 'north']]
+        x0, y0 = self.station_locations.center_point.east[0], self.station_locations.center_point.north[0]
 
         # centre points of model grid in real world coordinates
         xg, yg = [np.mean([arr[1:], arr[:-1]], axis=0)

@@ -481,6 +481,7 @@ class MT(object):
                                                     int(self.Site.start_date[-2:])+1)
         except ValueError:
             self.Site.end_date = None
+
         self.Site.Location.declination = edi_obj.Header.declination
 
     def _edi_get_field_notes(self, edi_obj):
