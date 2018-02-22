@@ -14,10 +14,11 @@ import os
 import numpy as np
 from matplotlib import pyplot as plt, gridspec as gridspec, colorbar as mcb
 from matplotlib.colors import Normalize
+from matplotlib.widgets import Button, RadioButtons, SpanSelector
 
+from mtpy.modeling.modem.data import Data
+from mtpy.modeling.modem.data import Model
 from mtpy.utils import exceptions as mtex
-from .data import Data
-from .model import Model
 
 __all__ = ['PlotSlices']
 
@@ -71,7 +72,7 @@ class PlotSlices(object):
     #                            *default* is [6,6]
     #    font_dict               dictionary of font keywords, internally created
     #    font_size               size of ticklables in points, axes labes are
-    #                            font_size+2. *default* is 7
+    #                            font_size+2. *default* is 4
     #    grid_east               relative location of grid nodes in e-w direction
     #                            in map_scale units
     #    grid_north              relative location of grid nodes in n-s direction
@@ -106,6 +107,7 @@ class PlotSlices(object):
     #                            *default* is None, set veiwing area to station area
     #    plot_yn                 [ 'y' | 'n' ] 'y' to plot on instantiation
     #                            *default* is 'y'
+    #    plot_stations           default False
     #    res_model               np.ndarray(n_north, n_east, n_vertical) of
     #                            model resistivity values in linear scale
     #    station_color           color of station marker. *default* is black
@@ -130,6 +132,12 @@ class PlotSlices(object):
     #    subplot_wspace          distance between subplots in horizontal direction
     #    title                   title of plot
     #    z_limits                (min, max) limits in vertical direction,
+    #    xminorticks             location of xminorticks
+    #    yminorticks             location of yminorticks
+    #    plot_grid               show grid on exported plot; default False
+    #    draw_colorbar           show colorbar on exported plot; default True
+    #    save_path               path to save exported plots to; default current working folder
+    #    save_format             exported format; default png
     #    ======================= ===================================================
     #
     #    """
@@ -143,7 +151,7 @@ class PlotSlices(object):
         self.fig_dpi = kwargs.pop('dpi', 300)
         self.fig_aspect = kwargs.pop('fig_aspect', 1)
         self.title = kwargs.pop('title', 'on')
-        self.font_size = kwargs.pop('font_size', 7)
+        self.font_size = kwargs.pop('font_size', 4)
 
         self.subplot_wspace = .20
         self.subplot_hspace = .30
@@ -186,7 +194,7 @@ class PlotSlices(object):
         self.station_names = None
 
         self.station_id = kwargs.pop('station_id', None)
-        self.station_font_size = kwargs.pop('station_font_size', 8)
+        self.station_font_size = kwargs.pop('station_font_size', 4)
         self.station_font_pad = kwargs.pop('station_font_pad', 1.0)
         self.station_font_weight = kwargs.pop('station_font_weight', 'bold')
         self.station_font_rotation = kwargs.pop('station_font_rotation', 60)
@@ -197,6 +205,14 @@ class PlotSlices(object):
         self.ms = kwargs.pop('ms', 10)
 
         self.plot_yn = kwargs.pop('plot_yn', 'y')
+        self.plot_stations = kwargs.pop('plot_stations', False)
+        self.xminorticks = kwargs.pop('xminorticks', 1000)
+        self.yminorticks = kwargs.pop('yminorticks', 1000)
+        self.plot_grid = kwargs.pop('plot_grid', False)
+        self.draw_colorbar = kwargs.pop('draw_colorbar', True)
+        self.save_path = kwargs.pop('save_path', os.getcwd())
+        self.save_format = kwargs.pop('save_format', 'png')
+
         if self.plot_yn == 'y':
             self.plot()
 
@@ -257,10 +273,13 @@ class PlotSlices(object):
         print "     'u'          moves depth slice up by one model block"
         print "=============== ==============================================="
 
-        self.font_dict = {'size': self.font_size + 2, 'weight': 'bold'}
+        self.font_dict = {'size': self.font_size*0.75, 'weight': 'bold'}
 
         # --> set default font size
-        plt.rcParams['font.size'] = self.font_size
+        plt.rcParams['font.size'] = self.font_size*0.75
+        plt.rcParams['xtick.major.pad'] = '1'
+        plt.rcParams['ytick.major.pad'] = '1'
+        plt.rcParams['ytick.major.pad'] = '1'
 
         # set the limits of the plot
         if self.ew_limits == None:
@@ -285,7 +304,17 @@ class PlotSlices(object):
         self.fig = plt.figure(self.fig_num, figsize=self.fig_size,
                               dpi=self.fig_dpi)
         plt.clf()
-        gs = gridspec.GridSpec(2, 2,
+
+        # annotations
+        self.ax_border = plt.axes([0.01, 0.01, 0.98, 0.3])
+        self.ax_border.set_xticks([])
+        self.ax_border.set_yticks([])
+        self.ax_border.set_title('Select/Export Slices',
+                                 y=-0.01, fontdict={'size': self.font_size*2,
+                                                     'weight': 'bold'})
+
+        # set up plot axes
+        gs = gridspec.GridSpec(3, 2,
                                wspace=self.subplot_wspace,
                                left=self.subplot_left,
                                top=self.subplot_top,
@@ -298,6 +327,9 @@ class PlotSlices(object):
         self.ax_nz = self.fig.add_subplot(gs[1, 1], aspect=self.fig_aspect)
         self.ax_en = self.fig.add_subplot(gs[1, 0], aspect=self.fig_aspect)
         self.ax_map = self.fig.add_subplot(gs[0, 1])
+        self.ax_radio = plt.axes([0.1, 0.05, 0.1, 0.2])
+        self.ax_span =  plt.axes([0.3, 0.15, 0.6, 0.1])
+        self.ax_button = plt.axes([0.57, 0.075, 0.06, 0.03])
 
         # make grid meshes being sure the indexing is correct
         self.mesh_ez_east, self.mesh_ez_vertical = np.meshgrid(self.grid_east,
@@ -335,7 +367,7 @@ class PlotSlices(object):
         cb.ax.tick_params(axis='y', direction='in')
 
         cb.set_label('Resistivity ($\Omega \cdot$m)',
-                     fontdict={'size': self.font_size + 1})
+                     fontdict={'size': self.font_size}, x=2)
 
         cb.set_ticks(np.arange(np.ceil(self.climits[0]),
                                np.floor(self.climits[1] + 1)))
@@ -346,10 +378,272 @@ class PlotSlices(object):
                            for cc in np.arange(np.ceil(self.climits[0]),
                                                np.floor(self.climits[1] + 1))])
 
-        plt.show()
-
         self.key_press = self.fig.canvas.mpl_connect('key_press_event',
                                                      self.on_key_press)
+
+        # Interactive widgets ==========================================
+        def getCursorValue():
+            if(self.current_label == 'N-E'):
+                return self.grid_z[self.index_vertical]
+            elif(self.current_label == 'N-Z'):
+                return self.grid_east[self.index_east]
+            elif(self.current_label == 'E-Z'):
+                return self.grid_north[self.index_north]
+        # end func
+
+        self.current_range = self.z_limits
+        self.current_label = 'N-E'
+        self.current_label_desc = {'N-E': 'Depth',
+                                   'N-Z': 'Easting',
+                                   'E-Z': 'Northing'}
+        self.axis_values = {'N-E':self.grid_z,
+                            'N-Z':self.grid_east,
+                            'E-Z':self.grid_north}
+        self.axis_cursor_colors = {'N-E':'r',
+                                   'N-Z':'b',
+                                   'E-Z':'g'}
+        self.selected_indices = []
+
+        self.ax_span.scatter(self.axis_values[self.current_label],
+                             np.ones(self.axis_values[self.current_label].shape[0]) *
+                             (self.current_range[0] + self.current_range[1]) / 2.,
+                             2, zorder=100, marker='*', color='k')
+
+        self.ax_span.fill_between(self.current_range,
+                                  self.current_range[0] * np.ones(len(self.current_range)),
+                                  self.current_range[1] * np.ones(len(self.current_range)),
+                                  alpha=0.5, facecolor='b')
+        self.ax_span.plot(np.ones(2)*getCursorValue(),
+                          np.array(self.current_range),
+                          c=self.axis_cursor_colors[self.current_label], lw=1)
+
+        self.ax_span.set_xlim(self.current_range)
+        self.ax_span.set_ylim(self.current_range)
+        self.ax_span.set_yticks([])
+        self.ax_span.set_aspect(0.05)
+
+        self.ax_span.set_title('Depth Extent: Click+Drag to Select Sub-range')
+        def updateRange(label):
+            self.current_label = label
+            if(label == 'N-E'):
+                self.current_range = self.z_limits
+            elif(label == 'N-Z'):
+                self.current_range = self.ew_limits
+            else:
+                self.current_range = self.ns_limits
+
+            self.ax_span.cla()
+
+            self.ax_span.scatter(self.axis_values[self.current_label],
+                                 np.ones(self.axis_values[self.current_label].shape[0])*
+                                 (self.current_range[0]+self.current_range[1])/2.,
+                                 2, zorder=100, marker='*', color='k')
+
+            self.ax_span.fill_between(self.current_range,
+                                      self.current_range[0] * np.ones(len(self.current_range)),
+                                      self.current_range[1] * np.ones(len(self.current_range)),
+                                      alpha=0.5, facecolor='b')
+            self.ax_span.plot(np.ones(2) * getCursorValue(),
+                              np.array(self.current_range),
+                              c=self.axis_cursor_colors[self.current_label], lw=1)
+
+            self.ax_span.set_yticks([])
+            self.ax_span.set_title('%s Extent: Click+Drag to Select Sub-range'%
+                                   (self.current_label_desc[label]))
+            self.ax_span.set_xlim(self.current_range)
+            self.ax_span.set_ylim(self.current_range)
+            self.ax_span.set_aspect(0.05)
+            self.fig.canvas.draw_idle()
+
+            self.selected_indices = []
+        # end func
+
+        def onSelect(xmin, xmax):
+            updateRange(self.current_label)
+            indmin, indmax = np.searchsorted(self.axis_values[self.current_label], (xmin, xmax))
+
+            self.ax_span.fill_between(np.linspace(xmin, xmax, 100),
+                                      self.current_range[0] * np.ones(100),
+                                      self.current_range[1] * np.ones(100),
+                                      facecolor='red', alpha=0.4)
+
+            self.selected_indices = np.arange(indmin, indmax)
+            print 'Selected indices: ' + str(self.selected_indices)
+
+            self.ax_span.set_yticks([])
+            self.ax_span.set_title('%s Extent: Click+Drag to Select Sub-range'%
+                                   (self.current_label_desc[self.current_label]))
+            self.ax_span.set_xlim(self.current_range)
+            self.ax_span.set_ylim(self.current_range)
+            self.ax_span.set_aspect(0.05)
+            self.fig.canvas.draw_idle()
+        #end func
+
+        def buttonClicked(event):
+            self.export_slices()
+        # end func
+
+        radio = RadioButtons(self.ax_radio, ('N-E', # (Depth Slice)
+                                   'N-Z', # (North-south-aligned vertical profile)
+                                   'E-Z'), #(East-west-aligned vertical profile)
+                             active=0)
+        self.ax_radio.set_title('Plane')
+
+        radio.on_clicked(updateRange)
+
+        span = SpanSelector(self.ax_span, onSelect, 'horizontal', useblit=True,
+                    rectprops=dict(alpha=0.5, facecolor='red'))
+
+        button = Button(self.ax_button, 'Export', color='lightgoldenrodyellow',
+                        hovercolor='orange')
+        button.on_clicked(buttonClicked)
+        self.update_range_func = updateRange
+
+        plt.show()
+    # end func
+
+    def export_slices(self):
+        """
+        plot slices
+        """
+
+        fdict = {'size': self.font_size, 'weight': 'bold'}
+
+        cblabeldict = {-2: '$10^{-3}$', -1: '$10^{-1}$', 0: '$10^{0}$', 1: '$10^{1}$',
+                       2: '$10^{2}$', 3: '$10^{3}$', 4: '$10^{4}$', 5: '$10^{5}$',
+                       6: '$10^{6}$', 7: '$10^{7}$', 8: '$10^{8}$'}
+
+        # make a mesh grid of nodes
+        xg, yg = None, None
+        if(self.current_label == 'N-E'):
+            xg, yg = self.mesh_en_east, self.mesh_en_north
+        elif(self.current_label == 'N-Z'):
+            xg, yg = self.mesh_nz_north, self.mesh_nz_vertical
+        elif(self.current_label == 'E-Z'):
+            xg, yg = self.mesh_ez_east, self.mesh_ez_vertical
+
+        plt.rcParams['font.size'] = self.font_size
+
+        # --> plot slices into individual figures
+        for ii in self.selected_indices:
+            #depth = '{0:.3f} ({1})'.format(self.grid_z[ii],
+            #                               self.map_scale)
+
+            fig = plt.figure(figsize=self.fig_size, dpi=self.fig_dpi)
+            plt.clf()
+            ax1 = fig.add_subplot(1, 1, 1, aspect=self.fig_aspect)
+
+            if (self.current_label == 'N-E'):
+                plot_res = np.log10(self.res_model[:, :, ii].T)
+                ax1.set_xlim(self.ew_limits)
+                ax1.set_ylim(self.ns_limits)
+                ax1.set_ylabel('Northing (' + self.map_scale + ')', fontdict=fdict)
+                ax1.set_xlabel('Easting (' + self.map_scale + ')', fontdict=fdict)
+            elif (self.current_label == 'N-Z'):
+                plot_res = np.log10(self.res_model[:, ii, :])
+                ax1.set_xlim(self.ns_limits)
+                ax1.set_ylim(self.z_limits)
+                ax1.invert_yaxis()
+                ax1.set_ylabel('Depth (' + self.map_scale + ')', fontdict=fdict)
+                ax1.set_xlabel('Northing (' + self.map_scale + ')', fontdict=fdict)
+            elif (self.current_label == 'E-Z'):
+                plot_res = np.log10(self.res_model[ii, :, :])
+                ax1.set_xlim(self.ew_limits)
+                ax1.set_ylim(self.z_limits)
+                ax1.invert_yaxis()
+                ax1.set_ylabel('Depth (' + self.map_scale + ')', fontdict=fdict)
+                ax1.set_xlabel('Easting (' + self.map_scale + ')', fontdict=fdict)
+            # end if
+
+            mesh_plot = ax1.pcolormesh(xg,
+                                       yg,
+                                       plot_res,
+                                       cmap=self.cmap,
+                                       vmin=self.climits[0],
+                                       vmax=self.climits[1])
+            # plot the stations
+            if self.station_east is not None \
+                    and self.plot_stations \
+                    and self.current_label == 'N-E':
+                for ee, nn in zip(self.station_east, self.station_north):
+                    ax1.text(ee, nn, '*',
+                             verticalalignment='center',
+                             horizontalalignment='center',
+                             fontdict={'size': 3, 'weight': 'bold'})
+
+            # plot the grid if desired
+            if self.plot_grid == 'y':
+                x_line_xlist = []
+                x_line_ylist = []
+                for xx in xg[:,0]:
+                    x_line_xlist.extend([xx, xx])
+                    x_line_xlist.append(None)
+                    x_line_ylist.extend([yg[0,:].min(),
+                                         yg[0,:].max()])
+                    x_line_ylist.append(None)
+                ax1.plot(x_line_xlist,
+                         x_line_ylist,
+                         lw=.25,
+                         color='k')
+
+                y_line_xlist = []
+                y_line_ylist = []
+                for yy in yg[0,:]:
+                    y_line_xlist.extend([xg[:,0].min(),
+                                         xg[:,0].max()])
+                    y_line_xlist.append(None)
+                    y_line_ylist.extend([yy, yy])
+                    y_line_ylist.append(None)
+                ax1.plot(y_line_xlist,
+                         y_line_ylist,
+                         lw=.25,
+                         color='k')
+
+            # plot the colorbar
+            if self.draw_colorbar:
+                cbx = mcb.make_axes(ax1, fraction=.15, shrink=.75, pad=.15)
+                cb = mcb.ColorbarBase(cbx[0],
+                                      cmap=self.cmap,
+                                      norm=Normalize(vmin=self.climits[0],
+                                                     vmax=self.climits[1]))
+
+                cb.ax.yaxis.set_label_position('right')
+                cb.ax.yaxis.set_label_coords(1.25, .5)
+                cb.ax.yaxis.tick_left()
+                cb.ax.tick_params(axis='y', direction='in')
+
+                cb.set_label('Resistivity ($\Omega \cdot$m)',
+                             fontdict={'size': self.font_size}, x=2)
+
+                cb.set_ticks(np.arange(np.ceil(self.climits[0]),
+                                       np.floor(self.climits[1] + 1)))
+                cblabeldict = {-2: '$10^{-3}$', -1: '$10^{-1}$', 0: '$10^{0}$', 1: '$10^{1}$',
+                               2: '$10^{2}$', 3: '$10^{3}$', 4: '$10^{4}$', 5: '$10^{5}$',
+                               6: '$10^{6}$', 7: '$10^{7}$', 8: '$10^{8}$'}
+                cb.set_ticklabels([cblabeldict[cc]
+                                   for cc in np.arange(np.ceil(self.climits[0]),
+                                                       np.floor(self.climits[1] + 1))])
+            # end if
+
+            #plt.show()
+
+            # --> save plots to a common folder
+            fn = '%s-plane-at-%s.%0.3f.%s.%s'%(self.current_label,
+                                           self.current_label_desc[self.current_label],
+                                           self.axis_values[self.current_label][ii],
+                                           self.map_scale,
+                                           self.save_format)
+            self.save_path = '/tmp'
+            fig.suptitle('%s Plane at %s: %0.4f %s'%(self.current_label,
+                                           self.current_label_desc[self.current_label],
+                                           self.axis_values[self.current_label][ii],
+                                           self.map_scale))
+            fig.savefig(os.path.join(self.save_path, fn),
+                                     dpi=self.fig_dpi)
+            fig.clear()
+            plt.close()
+        # end for
+    #end func
 
     def on_key_press(self, event):
         """
@@ -407,6 +701,7 @@ class PlotSlices(object):
                 if self.index_vertical > self.grid_z.size:
                     self.index_vertical = self.grid_z.size
             self._update_ax_en()
+            self._update_ax_nz()
             print 'Depth = {0:.5g} ({1})'.format(self.grid_z[self.index_vertical],
                                                  self.map_scale)
 
@@ -418,8 +713,11 @@ class PlotSlices(object):
                 if self.index_vertical < 0:
                     self.index_vertical = 0
             self._update_ax_en()
+            self._update_ax_nz()
             print 'Depth = {0:.5gf} ({1})'.format(self.grid_z[self.index_vertical],
                                                   self.map_scale)
+        self.update_range_func(self.current_label)
+    # end func
 
     def _update_ax_ez(self):
         """
@@ -464,6 +762,15 @@ class PlotSlices(object):
                               cmap=self.cmap,
                               vmin=self.climits[0],
                               vmax=self.climits[1])
+
+        # --> depth indication line
+        self.ax_nz.plot([self.grid_north.min(),
+                         self.grid_north.max()],
+                        [self.grid_z[self.index_vertical],
+                         self.grid_z[self.index_vertical]],
+                         lw=1,
+                         color='r')
+
         # plot stations
         for sy in self.station_dict_east[self.grid_east[self.index_east]]:
             self.ax_nz.text(sy,
@@ -502,7 +809,7 @@ class PlotSlices(object):
         self.ax_en.set_xlabel('Easting ({0})'.format(self.map_scale),
                               fontdict=self.font_dict)
         # --> plot the stations
-        if self.station_east is not None:
+        if self.station_east is not None and self.plot_stations:
             for ee, nn, elev, name in zip(self.station_east,
                                           self.station_north,
                                           self.station_elev,
@@ -511,12 +818,12 @@ class PlotSlices(object):
                     self.ax_en.text(ee, nn, '+',
                                     verticalalignment='center',
                                     horizontalalignment='center',
-                                    fontdict={'size': 7, 'weight': 'bold',
+                                    fontdict={'size': 1, 'weight': 'bold',
                                               'color': (.75, 0, 0)})
                     self.ax_en.text(ee, nn, name[2:],
                                     verticalalignment='center',
                                     horizontalalignment='center',
-                                    fontdict={'size': 7, 'weight': 'bold',
+                                    fontdict={'size': 1, 'weight': 'bold',
                                               'color': (.75, 0, 0)})
 
         self.fig.canvas.draw()
@@ -552,14 +859,14 @@ class PlotSlices(object):
         # --> e-w indication line
         self.ax_map.plot([self.grid_east.min(),
                           self.grid_east.max()],
-                         [self.grid_north[self.index_north + 1],
-                          self.grid_north[self.index_north + 1]],
+                         [self.grid_north[self.index_north],
+                          self.grid_north[self.index_north]],
                          lw=1,
                          color='g')
 
         # --> e-w indication line
-        self.ax_map.plot([self.grid_east[self.index_east + 1],
-                          self.grid_east[self.index_east + 1]],
+        self.ax_map.plot([self.grid_east[self.index_east],
+                          self.grid_east[self.index_east]],
                          [self.grid_north.min(),
                           self.grid_north.max()],
                          lw=1,
@@ -700,3 +1007,15 @@ class PlotSlices(object):
         print 'Saved figure to: ' + self.fig_fn
 
 
+if __name__=='__main__':
+    modem = os.path.dirname(__file__)
+    modeling = os.path.dirname(modem)
+    mtpy = os.path.dirname(modeling)
+    base = os.path.dirname(mtpy)
+    examples = os.path.join(base, 'examples')
+    data = os.path.join(examples, 'data')
+    ModEM_files = os.path.join(data, 'ModEM_files')
+
+    mfn = os.path.join(ModEM_files, 'Modular_MPI_NLCG_056_im2.rho')
+    dfn = os.path.join(ModEM_files, 'ModEM_Data_im2.dat')
+    ps = PlotSlices(model_fn=mfn, data_fn=dfn)
