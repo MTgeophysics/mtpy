@@ -301,6 +301,7 @@ class PlotSlices(object):
                                (abs(self.ns_limits[0]) + abs(self.ns_limits[1]))])
             self.z_limits = (-5000 / self.dscale, depth_limit)
 
+
         self.fig = plt.figure(self.fig_num, figsize=self.fig_size,
                               dpi=self.fig_dpi)
         plt.clf()
@@ -407,7 +408,7 @@ class PlotSlices(object):
         self.ax_span.scatter(self.axis_values[self.current_label],
                              np.ones(self.axis_values[self.current_label].shape[0]) *
                              (self.current_range[0] + self.current_range[1]) / 2.,
-                             2, zorder=100, marker='*', color='k')
+                             0.5, zorder=100, marker='o', color='k')
 
         self.ax_span.fill_between(self.current_range,
                                   self.current_range[0] * np.ones(len(self.current_range)),
@@ -437,7 +438,7 @@ class PlotSlices(object):
             self.ax_span.scatter(self.axis_values[self.current_label],
                                  np.ones(self.axis_values[self.current_label].shape[0])*
                                  (self.current_range[0]+self.current_range[1])/2.,
-                                 2, zorder=100, marker='*', color='k')
+                                 0.5, zorder=100, marker='o', color='k')
 
             self.ax_span.fill_between(self.current_range,
                                       self.current_range[0] * np.ones(len(self.current_range)),
@@ -465,7 +466,9 @@ class PlotSlices(object):
             self.ax_span.fill_between(np.linspace(xmin, xmax, 100),
                                       self.current_range[0] * np.ones(100),
                                       self.current_range[1] * np.ones(100),
-                                      facecolor='red', alpha=0.4)
+                                      facecolor='red',
+                                      alpha=0.4,
+                                      edgecolor='none')
 
             self.selected_indices = np.arange(indmin, indmax)
             print 'Selected indices: ' + str(self.selected_indices)
@@ -492,7 +495,7 @@ class PlotSlices(object):
         radio.on_clicked(updateRange)
 
         span = SpanSelector(self.ax_span, onSelect, 'horizontal', useblit=True,
-                    rectprops=dict(alpha=0.5, facecolor='red'))
+                    rectprops=dict(alpha=0.5, facecolor='red', edgecolor='none'))
 
         button = Button(self.ax_button, 'Export', color='lightgoldenrodyellow',
                         hovercolor='orange')
