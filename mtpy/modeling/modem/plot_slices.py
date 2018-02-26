@@ -19,6 +19,7 @@ from matplotlib.widgets import Button, RadioButtons, SpanSelector
 from mtpy.modeling.modem.data import Data
 from mtpy.modeling.modem.data import Model
 from mtpy.utils import exceptions as mtex
+from scipy.spatial import cKDTree
 
 __all__ = ['PlotSlices']
 
@@ -58,6 +59,7 @@ class PlotSlices(object):
     #    cmap                    name of color map for resisitiviy.
     #                            *default* is 'jet_r'
     #    data_fn                 full path to data file name
+    #    draw_colorbar           show colorbar on exported plot; default True
     #    dscale                  scaling parameter depending on map_scale
     #    east_line_xlist         list of line nodes of east grid for faster plotting
     #    east_line_ylist         list of line nodes of east grid for faster plotting
@@ -108,8 +110,11 @@ class PlotSlices(object):
     #    plot_yn                 [ 'y' | 'n' ] 'y' to plot on instantiation
     #                            *default* is 'y'
     #    plot_stations           default False
+    #    plot_grid               show grid on exported plot; default False
     #    res_model               np.ndarray(n_north, n_east, n_vertical) of
     #                            model resistivity values in linear scale
+    #    save_format             exported format; default png
+    #    save_path               path to save exported plots to; default current working folder
     #    station_color           color of station marker. *default* is black
     #    station_dict_east       location of stations for each east grid row
     #    station_dict_north      location of stations for each north grid row
@@ -131,13 +136,9 @@ class PlotSlices(object):
     #    subplot_top             distance between axes and top of figure window
     #    subplot_wspace          distance between subplots in horizontal direction
     #    title                   title of plot
-    #    z_limits                (min, max) limits in vertical direction,
     #    xminorticks             location of xminorticks
     #    yminorticks             location of yminorticks
-    #    plot_grid               show grid on exported plot; default False
-    #    draw_colorbar           show colorbar on exported plot; default True
-    #    save_path               path to save exported plots to; default current working folder
-    #    save_format             exported format; default png
+    #    z_limits                (min, max) limits in vertical direction,
     #    ======================= ===================================================
     #
     #    """
@@ -204,7 +205,7 @@ class PlotSlices(object):
         self.station_color = kwargs.pop('station_color', 'k')
         self.ms = kwargs.pop('ms', 10)
 
-        self.plot_yn = kwargs.pop('plot_yn', 'y')
+        self.plot_yn = kwargs.pop('plot_yn', 'n')
         self.plot_stations = kwargs.pop('plot_stations', False)
         self.xminorticks = kwargs.pop('xminorticks', 1000)
         self.yminorticks = kwargs.pop('yminorticks', 1000)
@@ -213,8 +214,127 @@ class PlotSlices(object):
         self.save_path = kwargs.pop('save_path', os.getcwd())
         self.save_format = kwargs.pop('save_format', 'png')
 
+        # read data
+        self.read_files()
+        self.get_station_grid_locations()
+
+        # set up kd-tree for interpolation on to arbitrary surfaces
+        # intersecting the model
+        self._initialize_interpolation()
+
         if self.plot_yn == 'y':
             self.plot()
+
+    def _initialize_interpolation(self):
+        self._mx = np.array(self.grid_east)
+        self._my = np.array(self.grid_north)
+        self._mz = np.array(self.grid_z)
+
+        # Compute cell-centre coordinates
+        self._mcx = (self._mx[1:] + self._mx[:-1]) / 2.
+        self._mcy = (self._my[1:] + self._my[:-1]) / 2.
+        self._mcz = (self._mz[1:] + self._mz[:-1]) / 2.
+
+        # Create mesh-grid based on cell-centre coordinates
+        self._mgx, self._mgy, self._mgz = np.meshgrid(self._mcx,
+                                                      self._mcy,
+                                                      self._mcz)
+
+        # List of xyz coodinates of mesh-grid
+        self._mgxyz = np.vstack([self._mgx.flatten(),
+                                 self._mgy.flatten(),
+                                 self._mgz.flatten()]).T
+
+        # Create Kd-Tree based on mesh-grid coordinates
+        self._tree = cKDTree(self._mgxyz)
+    # end func
+
+    def get_slice(self, _xyz_list, nn=1, p=4, absolute_query_locations = False,
+                  extrapolate=True):
+        '''
+        Function to retrieve interpolated field values at arbitrary locations
+
+        :param xyz_list: numpy array of shape (np,3), where np in the number of points
+        :param nn: Number of neighbours to use for interpolation.
+                   Nearest neighbour interpolation is returned when nn=1 (default).
+                   When nn>1, inverse distance weighted interpolation is returned. See
+                   link below for more details:
+                   https://en.wikipedia.org/wiki/Inverse_distance_weighting
+        :param p: Power parameter, which determines the relative influence of near and far
+                  neighbours during interpolation. For p<=3, causes interpolated values to
+                  be dominated by points far away. Larger values of p assign greater influence
+                  to values near the interpolated point.
+        :param absolute_query_locations: if True, query locations are shifted to be centered
+               on the center of station locations; default False, in which case the function
+               treats query locations as relative coordinates
+        :param extrapolate: Extrapolates values (default), which can be particularly useful
+                            for extracting values at nodes, since the field values are given
+                            for cell-centres.
+        :return: numpy array of interpolated values of shape (np)
+        '''
+
+        xyz_list = np.array(_xyz_list)
+        if(absolute_query_locations):
+            if(self.md_data is None):
+                print 'Station coordinates not available. Aborting..'
+                exit(-1)
+            #end if
+
+            xyz_list[:, 0] -= self.md_data.center_point['east']
+            xyz_list[:, 1] -= self.md_data.center_point['north']
+        # end if
+
+        # query Kd-tree instance to retrieve distances and
+        # indices of k nearest neighbours
+        d, l = self._tree.query(xyz_list, k=nn)
+
+        img = None
+        if (nn == 1):
+            # extract nearest neighbour values
+            img = self.res_model.flatten()[l]
+        else:
+            vals = self.res_model.flatten()
+            img = np.zeros((xyz_list.shape[0]))
+
+            # field values are directly assigned for coincident locations
+            coincidentValIndices = d[:, 0] == 0
+            img[coincidentValIndices] = vals[l[coincidentValIndices, 0]]
+
+            # perform idw interpolation for non-coincident locations
+            idwIndices = d[:, 0] != 0
+            w = np.zeros(d.shape)
+            w[idwIndices, :] = 1. / np.power(d[idwIndices, :], p)
+
+            img[idwIndices] = np.sum(w[idwIndices, :] * vals[l[idwIndices, :]], axis=1) / \
+                              np.sum(w[idwIndices, :], axis=1)
+        # end if
+
+        if (extrapolate == False):
+            # if extrapolate is false, set interpolation values to NaN for locations
+            # outside the model domain
+            minX = np.min(self._mgxyz[:, 0])
+            maxX = np.max(self._mgxyz[:, 0])
+
+            minY = np.min(self._mgxyz[:, 1])
+            maxY = np.max(self._mgxyz[:, 1])
+
+            minZ = np.min(self._mgxyz[:, 2])
+            maxZ = np.max(self._mgxyz[:, 2])
+
+            xFilter = np.array(xyz_list[:, 0] < minX) + \
+                      np.array(xyz_list[:, 0] > maxX)
+            yFilter = np.array(xyz_list[:, 1] < minY) + \
+                      np.array(xyz_list[:, 1] > maxY)
+            zFilter = np.array(xyz_list[:, 2] < minZ) + \
+                      np.array(xyz_list[:, 2] > maxZ)
+
+            img[xFilter] = np.nan
+            img[yFilter] = np.nan
+            img[zFilter] = np.nan
+        # end if
+
+        return img
+    # end func
 
     def read_files(self):
         """
@@ -232,6 +352,8 @@ class PlotSlices(object):
                 self.nodes_east = md_model.nodes_east / self.dscale
                 self.nodes_north = md_model.nodes_north / self.dscale
                 self.nodes_z = md_model.nodes_z / self.dscale
+
+                self.md_model = md_model
             else:
                 raise mtex.MTpyError_file_handling(
                     '{0} does not exist, check path'.format(self.model_fn))
@@ -245,6 +367,8 @@ class PlotSlices(object):
                 self.station_north = md_data.station_locations.rel_north / self.dscale
                 self.station_names = md_data.station_locations.station
                 self.station_elev = md_data.station_locations.elev / self.dscale
+
+                self.md_data = md_data
             else:
                 print 'Could not find data file {0}'.format(self.data_fn)
 
@@ -257,11 +381,6 @@ class PlotSlices(object):
 
 
         """
-
-        self.read_files()
-
-        self.get_station_grid_locations()
-
         print "=============== ==============================================="
         print "    Buttons                  Description                       "
         print "=============== ==============================================="
@@ -331,6 +450,10 @@ class PlotSlices(object):
         self.ax_radio = plt.axes([0.1, 0.05, 0.1, 0.2])
         self.ax_span =  plt.axes([0.3, 0.15, 0.6, 0.1])
         self.ax_button = plt.axes([0.57, 0.075, 0.06, 0.03])
+
+        # set tick sizes
+        axList = [self.ax_ez, self.ax_nz, self.ax_en, self.ax_map]
+        for ax in axList: ax.tick_params(axis='both', length=2)
 
         # make grid meshes being sure the indexing is correct
         self.mesh_ez_east, self.mesh_ez_vertical = np.meshgrid(self.grid_east,
@@ -535,6 +658,7 @@ class PlotSlices(object):
             fig = plt.figure(figsize=self.fig_size, dpi=self.fig_dpi)
             plt.clf()
             ax1 = fig.add_subplot(1, 1, 1, aspect=self.fig_aspect)
+            ax1.tick_params(axis='both', length=2)
 
             if (self.current_label == 'N-E'):
                 plot_res = np.log10(self.res_model[:, :, ii].T)
@@ -636,13 +760,14 @@ class PlotSlices(object):
                                            self.axis_values[self.current_label][ii],
                                            self.map_scale,
                                            self.save_format)
-            
+
             fig.suptitle('%s Plane at %s: %0.4f %s'%(self.current_label,
                                            self.current_label_desc[self.current_label],
                                            self.axis_values[self.current_label][ii],
                                            self.map_scale))
-            fig.savefig(os.path.join(self.save_path, fn),
-                                     dpi=self.fig_dpi)
+            fpath = os.path.join(self.save_path, fn)
+            print('Exporting %s..'%(fpath))
+            fig.savefig(fpath, dpi=self.fig_dpi)
             fig.clear()
             plt.close()
         # end for
@@ -1021,4 +1146,6 @@ if __name__=='__main__':
 
     mfn = os.path.join(ModEM_files, 'Modular_MPI_NLCG_056_im2.rho')
     dfn = os.path.join(ModEM_files, 'ModEM_Data_im2.dat')
-    ps = PlotSlices(model_fn=mfn, data_fn=dfn)
+    ps = PlotSlices(model_fn=mfn, data_fn=dfn,
+                    save_path='/tmp',
+                    plot_yn='y')
