@@ -3,9 +3,11 @@ TODO List for Alphs Release
 
 ######################################################################
 
-Detailed installation guide
+Detailed user manual and installation guide
 
-More unit-testing to increase coverage percentage   In progress
+More unit-testings
+
+Increase coverage percentage  to >80%
 
 Docs: More complete docstring, Sphinx doc build,    In progress
 

@@ -126,8 +126,9 @@ class Residual(object):
             self.residual_array[comp] = self.residual_array[comp] - resp_obj.data_array[comp]
 
         data_obj.fn_basename = resp_obj.fn_basename[:-3] + 'res'
-
-        data_obj.write_data_file(fill=False, compute_error=False)
+        print "writing to file",data_obj.fn_basename
+        data_obj.write_data_file(fill=False, compute_error=False, 
+                                 fn_basename=data_obj.fn_basename)
 
     def _read_data_file(self, data_fn=None):
         """
