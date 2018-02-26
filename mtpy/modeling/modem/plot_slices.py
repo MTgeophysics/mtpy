@@ -26,7 +26,8 @@ __all__ = ['PlotSlices']
 
 class PlotSlices(object):
     #    """
-    #    plot all slices and be able to scroll through the model
+    #    * Plot all cartesian axis-aligned slices and be able to scroll through the model
+    #    * Extract arbitrary profiles (e.g. along a seismic line) from a model
     #
     #    :Example: ::
     #
