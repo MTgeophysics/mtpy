@@ -1455,8 +1455,9 @@ class Data(object):
             self.data_array[ii]['station'] = mt_obj.station
             self.data_array[ii]['lat'] = mt_obj.lat
             self.data_array[ii]['lon'] = mt_obj.lon
-            self.data_array[ii]['east'] = mt_obj.east
-            self.data_array[ii]['north'] = mt_obj.north
+            east,north,zone = gis_tools.project_point_ll2utm(mt_obj.lat,mt_obj.lon,epsg=self.model_epsg)
+            self.data_array[ii]['east'] = east
+            self.data_array[ii]['north'] = north
             self.data_array[ii]['elev'] = mt_obj.grid_elev
             self.data_array[ii]['rel_east'] = mt_obj.grid_east
             self.data_array[ii]['rel_north'] = mt_obj.grid_north
