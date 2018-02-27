@@ -2567,7 +2567,7 @@ class Model(object):
                                                              increment_factor=0.999)[::-1]
             # sum to get grid cell locations
             new_airlayers = np.array([new_air_nodes[:ii].sum() for ii in range(len(new_air_nodes) + 1)])
-            # round to nearest whole number and reverse the order
+            # round to nearest whole number and convert subtract the max elevation (so that sea level is at zero)
             new_airlayers = np.around(new_airlayers - topo_core.max())
 
             self._logger.debug("new_airlayers {}".format(new_airlayers))
@@ -2591,13 +2591,15 @@ class Model(object):
         new_res_model[:, :, self.n_air_layers + 1:] = self.res_model
         self.res_model = new_res_model
 
+        
         # assign topography
-        self.assign_resistivity_from_surfacedata(np.zeros_like(self.surface_dict['topography']) + self.grid_z[0],
-                                                 self.surface_dict['topography'], 
+        top = np.zeros_like(self.surface_dict['topography']) + self.grid_z[0]
+        bottom = -self.surface_dict['topography']
+        self.assign_resistivity_from_surfacedata(top,bottom, 
                                                  air_resistivity)
         # assign bathymetry
-        self.assign_resistivity_from_surfacedata(np.zeros_like(self.surface_dict['topography']),
-                                                 self.surface_dict['topography'],
+        self.assign_resistivity_from_surfacedata(np.zeros_like(top),
+                                                 bottom,
                                                  0.3
                                                  )
 
