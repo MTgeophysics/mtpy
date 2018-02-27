@@ -223,8 +223,7 @@ class PlotSlices(object):
         # intersecting the model
         self._initialize_interpolation()
 
-        if self.plot_yn == 'y':
-            self.plot()
+        self.plot()
 
     def _initialize_interpolation(self):
         self._mx = np.array(self.grid_east)
@@ -607,7 +606,7 @@ class PlotSlices(object):
         #end func
 
         def buttonClicked(event):
-            self.export_slices()
+            self.export_slices(self.current_label, self.selected_indices)
         # end func
 
         radio = RadioButtons(self.ax_radio, ('N-E', # (Depth Slice)
@@ -626,13 +625,27 @@ class PlotSlices(object):
         button.on_clicked(buttonClicked)
         self.update_range_func = updateRange
 
-        plt.show()
+        # Only show interactive popout if plot_yn is set to True; otherwise hide
+        # popout
+        if(self.plot_yn == 'y'):
+            plt.show()
+        else:
+            self.fig.set_visible(False)
+            plt.draw()
     # end func
 
-    def export_slices(self):
+    def export_slices(self, plane='N-E', indexlist=[]):
         """
-        plot slices
+        Plot Slices
+
+        :param plane: must be either 'N-E', 'N-Z' or 'E-Z'
+        :param indexlist: must be a list or 1d numpy array of indices
+        :return:
         """
+
+        assert plane in ['N-E', 'N-Z', 'E-Z'], 'Invalid plane; Aborting..'
+        assert type(indexlist) == list or type(indexlist) == np.ndarray, \
+                'Index list must be of type list or a 1d numpy array. Aborting..'
 
         fdict = {'size': self.font_size, 'weight': 'bold'}
 
@@ -642,17 +655,17 @@ class PlotSlices(object):
 
         # make a mesh grid of nodes
         xg, yg = None, None
-        if(self.current_label == 'N-E'):
+        if(plane == 'N-E'):
             xg, yg = self.mesh_en_east, self.mesh_en_north
-        elif(self.current_label == 'N-Z'):
+        elif(plane == 'N-Z'):
             xg, yg = self.mesh_nz_north, self.mesh_nz_vertical
-        elif(self.current_label == 'E-Z'):
+        elif(plane == 'E-Z'):
             xg, yg = self.mesh_ez_east, self.mesh_ez_vertical
 
         plt.rcParams['font.size'] = self.font_size
 
         # --> plot slices into individual figures
-        for ii in self.selected_indices:
+        for ii in indexlist:
             #depth = '{0:.3f} ({1})'.format(self.grid_z[ii],
             #                               self.map_scale)
 
@@ -1149,4 +1162,5 @@ if __name__=='__main__':
     dfn = os.path.join(ModEM_files, 'ModEM_Data_im2.dat')
     ps = PlotSlices(model_fn=mfn, data_fn=dfn,
                     save_path='/tmp',
-                    plot_yn='y')
+                    plot_yn='n')
+    ps.export_slices('N-E', [0])
