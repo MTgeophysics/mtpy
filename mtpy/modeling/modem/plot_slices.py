@@ -674,20 +674,20 @@ class PlotSlices(object):
             ax1 = fig.add_subplot(1, 1, 1, aspect=self.fig_aspect)
             ax1.tick_params(axis='both', length=2)
 
-            if (self.current_label == 'N-E'):
+            if (plane == 'N-E'):
                 plot_res = np.log10(self.res_model[:, :, ii].T)
                 ax1.set_xlim(self.ew_limits)
                 ax1.set_ylim(self.ns_limits)
                 ax1.set_ylabel('Northing (' + self.map_scale + ')', fontdict=fdict)
                 ax1.set_xlabel('Easting (' + self.map_scale + ')', fontdict=fdict)
-            elif (self.current_label == 'N-Z'):
+            elif (plane == 'N-Z'):
                 plot_res = np.log10(self.res_model[:, ii, :])
                 ax1.set_xlim(self.ns_limits)
                 ax1.set_ylim(self.z_limits)
                 ax1.invert_yaxis()
                 ax1.set_ylabel('Depth (' + self.map_scale + ')', fontdict=fdict)
                 ax1.set_xlabel('Northing (' + self.map_scale + ')', fontdict=fdict)
-            elif (self.current_label == 'E-Z'):
+            elif (plane == 'E-Z'):
                 plot_res = np.log10(self.res_model[ii, :, :])
                 ax1.set_xlim(self.ew_limits)
                 ax1.set_ylim(self.z_limits)
@@ -705,7 +705,7 @@ class PlotSlices(object):
             # plot the stations
             if self.station_east is not None \
                     and self.plot_stations \
-                    and self.current_label == 'N-E':
+                    and self.plane == 'N-E':
                 for ee, nn in zip(self.station_east, self.station_north):
                     ax1.text(ee, nn, '*',
                              verticalalignment='center',
@@ -769,15 +769,15 @@ class PlotSlices(object):
             #plt.show()
 
             # --> save plots to a common folder
-            fn = '%s-plane-at-%s.%0.3f.%s.%s'%(self.current_label,
-                                           self.current_label_desc[self.current_label],
-                                           self.axis_values[self.current_label][ii],
+            fn = '%s-plane-at-%s.%0.3f.%s.%s'%(plane,
+                                           self.current_label_desc[plane],
+                                           self.axis_values[plane][ii],
                                            self.map_scale,
                                            self.save_format)
 
-            fig.suptitle('%s Plane at %s: %0.4f %s'%(self.current_label,
-                                           self.current_label_desc[self.current_label],
-                                           self.axis_values[self.current_label][ii],
+            fig.suptitle('%s Plane at %s: %0.4f %s'%(plane,
+                                           self.current_label_desc[plane],
+                                           self.axis_values[plane][ii],
                                            self.map_scale))
             fpath = os.path.join(self.save_path, fn)
             print('Exporting %s..'%(fpath))
@@ -1163,4 +1163,4 @@ if __name__=='__main__':
     ps = PlotSlices(model_fn=mfn, data_fn=dfn,
                     save_path='/tmp',
                     plot_yn='n')
-    ps.export_slices('N-E', [0])
+    ps.export_slices('N-Z', [0])
