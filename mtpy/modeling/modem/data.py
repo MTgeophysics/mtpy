@@ -1672,9 +1672,13 @@ class Data(object):
 
             # update elevation in station locations and data array, +1 m as
             # data elevation needs to be below the topography (as advised by Naser)
-            self.station_locations.station_locations['elev'][ss] = topoval + 0.1
+            # ====================== ====================================================
+            # The following line have been commented as
+            # self.db_array and elf.station_locations.station_locations['elev'][ss]
+            # point to same location
+            # ====================== ====================================================
+            # self.station_locations.station_locations['elev'][ss] = topoval + 0.1
             self.data_array['elev'][ss] = topoval + 0.1
-
         # logger.debug("Re-write data file after adding topo")
         self.write_data_file(fill=False, elevation=True)  # (Xi, Yi, Zi) of each station-i may be shifted
 
