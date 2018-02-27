@@ -1008,7 +1008,36 @@ class Model(object):
 
         return
 
-    def assign_resistivity_from_surfacedata(self, surface_name, resistivity_value,
+
+    def assign_resistivity_from_surfacedata(self, top_surface, bottom_surface, resistivity_value):
+        """
+        assign resistivity value to all points above or below a surface
+        requires the surface_dict attribute to exist and contain data for
+        surface key (can get this information from ascii file using
+        project_surface)
+
+        **inputs**
+        surfacename = name of surface (must correspond to key in surface_dict)
+        resistivity_value = value to assign
+        where = 'above' or 'below' - assign resistivity above or below the
+                surface
+        """
+
+        # FZ: should ref-define the self.res_model if its shape has changed after topo air layer are added
+
+        gcz = np.mean([self.grid_z[:-1], self.grid_z[1:]], axis=0)
+
+        self._logger.debug("gcz is the cells centre coordinates: %s, %s" %
+                           (len(gcz), gcz))
+
+        # assign resistivity value
+        for j in range(len(self.res_model)):
+            for i in range(len(self.res_model[j])):
+                ii = np.where((gcz > top_surface[j, i]) & (gcz <= bottom_surface[j, i]))[0]
+                self.res_model[j, i, ii] = resistivity_value
+
+
+    def old_assign_resistivity_from_surfacedata(self, surface_name, resistivity_value,
                                             where='above'):
         """
         assign resistivity value to all points above or below a surface
@@ -2562,8 +2591,15 @@ class Model(object):
         new_res_model[:, :, self.n_air_layers + 1:] = self.res_model
         self.res_model = new_res_model
 
-        #        logger.info("begin to self.assign_resistivity_from_surfacedata(...)")
-        self.assign_resistivity_from_surfacedata('topography', air_resistivity, where='above')
+        # assign topography
+        self.assign_resistivity_from_surfacedata(np.zeros_like(self.surface_dict['topography']) + self.grid_z[0],
+                                                 self.surface_dict['topography'], 
+                                                 air_resistivity)
+        # assign bathymetry
+        self.assign_resistivity_from_surfacedata(np.zeros_like(self.surface_dict['topography']),
+                                                 self.surface_dict['topography'],
+                                                 0.3
+                                                 )
 
         ##        logger.info("begin to assign sea water resistivity")
         #        # first make a mask for all-land =1, which will be modified later according to air, water
