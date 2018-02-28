@@ -634,16 +634,20 @@ class PlotSlices(object):
             plt.draw()
     # end func
 
-    def export_slices(self, plane='N-E', indexlist=[]):
+    def export_slices(self, plane='N-E', indexlist=[], station_buffer=200):
         """
         Plot Slices
 
         :param plane: must be either 'N-E', 'N-Z' or 'E-Z'
         :param indexlist: must be a list or 1d numpy array of indices
+        :param station_buffer: spatial buffer (in metres) used around grid locations for
+                               selecting stations to be projected and plotted on profiles.
+                               Ignored if .plot_stations is set to False.
         :return: [figlist, savepaths]. A list containing (1) lists of Figure objects,
                  for further manipulation (2) corresponding paths for saving them to disk
         """
 
+        station_buffer /= self.dscale
         assert plane in ['N-E', 'N-Z', 'E-Z'], 'Invalid plane; Aborting..'
         assert type(indexlist) == list or type(indexlist) == np.ndarray, \
                 'Index list must be of type list or a 1d numpy array. Aborting..'
@@ -716,8 +720,10 @@ class PlotSlices(object):
                                  horizontalalignment='center',
                                  fontdict={'size': 3, 'weight': 'bold'})
                 elif(plane == 'N-Z'):
-                    for sy in self.station_dict_east[self.grid_east[ii]]:
-                        ax1.text(sy,
+                    sids = np.fabs(self.grid_east[ii] - self.station_east) < station_buffer
+                    nvals = self.station_north[sids]
+                    for x in nvals:
+                        ax1.text(x,
                                  0,
                                  self.station_marker,
                                  horizontalalignment='center',
@@ -725,8 +731,10 @@ class PlotSlices(object):
                                  fontdict={'size': self.ms,
                                  'color': self.station_color})
                 elif (plane == 'E-Z'):
-                    for sx in self.station_dict_north[self.grid_north[ii]]:
-                        ax1.text(sx,
+                    sids = np.fabs(self.grid_north[ii] - self.station_north) < station_buffer
+                    evals = self.station_east[sids]
+                    for x in evals:
+                        ax1.text(x,
                                  0,
                                  self.station_marker,
                                  horizontalalignment='center',
@@ -1191,7 +1199,7 @@ if __name__=='__main__':
                     save_path='/tmp',
                     plot_stations=True,
                     plot_yn='n')
-    figs, fpaths = ps.export_slices('E-Z', np.arange(0,20))
+    figs, fpaths = ps.export_slices('E-Z', [20], station_buffer=2000)
 
     # Updating cb-axis location. This first axis in each fig object is the
     # plot axis and the second being the colorbar axis.
