@@ -640,7 +640,8 @@ class PlotSlices(object):
 
         :param plane: must be either 'N-E', 'N-Z' or 'E-Z'
         :param indexlist: must be a list or 1d numpy array of indices
-        :return:
+        :return: [figlist, savepaths]. A list containing (1) lists of Figure objects,
+                 for further manipulation (2) corresponding paths for saving them to disk
         """
 
         assert plane in ['N-E', 'N-Z', 'E-Z'], 'Invalid plane; Aborting..'
@@ -664,6 +665,8 @@ class PlotSlices(object):
 
         plt.rcParams['font.size'] = self.font_size
 
+        figlist = []
+        fnlist = []
         # --> plot slices into individual figures
         for ii in indexlist:
             #depth = '{0:.3f} ({1})'.format(self.grid_z[ii],
@@ -703,16 +706,36 @@ class PlotSlices(object):
                                        vmin=self.climits[0],
                                        vmax=self.climits[1])
             # plot the stations
-            if self.station_east is not None \
-                    and self.plot_stations \
-                    and self.plane == 'N-E':
-                for ee, nn in zip(self.station_east, self.station_north):
-                    ax1.text(ee, nn, '*',
-                             verticalalignment='center',
-                             horizontalalignment='center',
-                             fontdict={'size': 3, 'weight': 'bold'})
+            if (self.station_east is not None \
+                    and self.plot_stations):
 
-            # plot the grid if desired
+                if(plane == 'N-E'):
+                    for ee, nn in zip(self.station_east, self.station_north):
+                        ax1.text(ee, nn, '*',
+                                 verticalalignment='center',
+                                 horizontalalignment='center',
+                                 fontdict={'size': 3, 'weight': 'bold'})
+                elif(plane == 'N-Z'):
+                    for sy in self.station_dict_east[self.grid_east[ii]]:
+                        ax1.text(sy,
+                                 0,
+                                 self.station_marker,
+                                 horizontalalignment='center',
+                                 verticalalignment='baseline',
+                                 fontdict={'size': self.ms,
+                                 'color': self.station_color})
+                elif (plane == 'E-Z'):
+                    for sx in self.station_dict_north[self.grid_north[ii]]:
+                        ax1.text(sx,
+                                 0,
+                                 self.station_marker,
+                                 horizontalalignment='center',
+                                 verticalalignment='baseline',
+                                 fontdict={'size': self.ms,
+                                 'color': self.station_color})
+                # end if
+
+                # plot the grid if desired
             if self.plot_grid == 'y':
                 x_line_xlist = []
                 x_line_ylist = []
@@ -782,9 +805,13 @@ class PlotSlices(object):
             fpath = os.path.join(self.save_path, fn)
             print('Exporting %s..'%(fpath))
             fig.savefig(fpath, dpi=self.fig_dpi)
-            fig.clear()
-            plt.close()
+
+            figlist.append(fig)
+            fnlist.append(fpath)
+            #fig.clear()
+            #plt.close()
         # end for
+        return [figlist, fnlist]
     #end func
 
     def on_key_press(self, event):
@@ -1162,5 +1189,15 @@ if __name__=='__main__':
     dfn = os.path.join(ModEM_files, 'ModEM_Data_im2.dat')
     ps = PlotSlices(model_fn=mfn, data_fn=dfn,
                     save_path='/tmp',
+                    plot_stations=True,
                     plot_yn='n')
-    ps.export_slices('N-Z', [0])
+    figs, fpaths = ps.export_slices('E-Z', np.arange(0,20))
+
+    # Updating cb-axis location. This first axis in each fig object is the
+    # plot axis and the second being the colorbar axis.
+    for f,fp in zip(figs, fpaths):
+        cbax = f.axes[1]
+        oldPos = cbax.get_position()  # get the original position
+        newPos = [oldPos.x0, oldPos.y0, oldPos.width / 2.0, oldPos.height / 2.0]
+        cbax.set_position(newPos)
+        f.savefig(fp, dpi=ps.fig_dpi)
