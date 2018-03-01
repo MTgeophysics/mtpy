@@ -20,6 +20,8 @@ from mtpy.modeling.modem.data import Data
 from mtpy.modeling.modem.data import Model
 from mtpy.utils import exceptions as mtex
 from scipy.spatial import cKDTree
+from scipy.interpolate import interp1d, UnivariateSpline
+from matplotlib import colors
 
 __all__ = ['PlotSlices']
 
@@ -249,12 +251,24 @@ class PlotSlices(object):
         self._tree = cKDTree(self._mgxyz)
     # end func
 
-    def get_slice(self, _xyz_list, nn=1, p=4, absolute_query_locations = False,
+    def get_slice(self, option='STA', coords=[], nsteps=-1, nn=1, p=4,
+                  absolute_query_locations = False,
                   extrapolate=True):
-        '''
-        Function to retrieve interpolated field values at arbitrary locations
+        """
 
-        :param xyz_list: numpy array of shape (np,3), where np in the number of points
+        :param option: can be either of 'STA', 'XY' or 'XYZ'. For 'STA' or 'XY', a vertical
+                       profile is returned based on station coordinates or arbitrary XY
+                       coordinates, respectively. For 'XYZ', interpolated values at those
+                       coordinates are returned
+        :param coords: Numpy array of shape (np, 2) for option='XY' or of shape (np, 3) for
+                       option='XYZ', where np is the number of coordinates. Not used for
+                       option='STA', in which case a vertical profile is created based on
+                       station locations.
+        :param nsteps: When option is set to 'STA' or 'XY', nsteps can be used to create a
+                       regular grid along the profile in the horizontal direction. By default,
+                       when nsteps=-1, the horizontal grid points are defined by station
+                       locations or values in the XY array. This parameter is ignored for
+                       option='XYZ'
         :param nn: Number of neighbours to use for interpolation.
                    Nearest neighbour interpolation is returned when nn=1 (default).
                    When nn>1, inverse distance weighted interpolation is returned. See
@@ -266,10 +280,99 @@ class PlotSlices(object):
                   to values near the interpolated point.
         :param absolute_query_locations: if True, query locations are shifted to be centered
                on the center of station locations; default False, in which case the function
-               treats query locations as relative coordinates
+               treats query locations as relative coordinates. For option='STA', this parameter
+               is ignored, since station locations are treated as absolute coordinates
         :param extrapolate: Extrapolates values (default), which can be particularly useful
                             for extracting values at nodes, since the field values are given
                             for cell-centres.
+        :return: 1: when option is 'STA' or 'XY'
+                    gd, gz, gv : where gd, gz and gv are 2D grids of distance (along profile),
+                    depth and interpolated values, respectively. The shape of the 2D grids
+                    depend on the number of stations or the number of xy coordinates provided,
+                    for options 'STA' or 'XY', respectively, the number of vertical model grid
+                    points and whether regular gridding in the horizontal direction was enabled
+                    with nsteps>-1.
+                 2: when option is 'XYZ'
+                    gv : list of interpolated values of shape (np)
+        """
+        assert option in ['STA', 'XY', 'XYZ'], 'Invalid option; Aborting..'
+        if(option == 'STA'):
+            if(self.md_data is None):
+                print 'Station coordinates not available. Aborting..'
+                exit(-1)
+        elif(option == 'XY'):
+            assert type(coords)==np.ndarray and coords.ndim==2 and coords.sshape[1]==2, \
+                'Shape of coords should be (np, 2); Aborting..'
+        elif(option == 'XYZ'):
+            assert type(coords)==np.ndarray and coords.ndim==2 and coords.shape[1]==3, \
+                'Shape of coords should be (np, 3); Aborting..'
+
+        xyz_list = []
+        d = None
+        x = None
+        y = None
+        xmin = 0
+        ymin = 0
+        if(option == 'STA' or option == 'XY'):
+
+            if(nsteps > -1): assert nsteps > 2, 'Must have more than 2 grid points in the ' \
+                                              'horizontal direction. Aborting..'
+
+            x = None
+            y = None
+            d = None
+            if(option == 'STA'):
+                x = np.array(self.station_east)
+                y = np.array(self.station_north)
+            elif(option == 'XY'):
+                x = np.array(coords[:,0])
+                y = np.array(coords[:,1])
+            # end if
+
+            xmin = x.min()
+            ymin = y.min()
+
+            x -= xmin
+            y -= ymin
+            d = np.sqrt(x ** 2 + y ** 2)
+            sortedIndices = np.argsort(d)
+            d = d[sortedIndices]
+
+            xio = interp1d(d, x[sortedIndices])
+            yio = interp1d(d, y[sortedIndices])
+
+            if(nsteps>-1):
+                d = np.linspace(d.min(), d.max(), nsteps) # create regular grid
+            for zi in self.grid_z:
+                for xi,yi in zip(xio(d), yio(d)):
+                    xyz_list.append([xi+xmin, yi+ymin, zi])
+            xyz_list = np.array(xyz_list)
+        elif(option == 'XYZ'):
+            xyz_list = coords
+        # end if
+
+        gv = self._get_slice_helper(xyz_list, nn, p, absolute_query_locations, extrapolate)
+
+        if(option=='STA' or option=='XY'):
+            gz, gd = np.meshgrid(self.grid_z, d, indexing='ij')
+            gv = gv.reshape(gd.shape)
+            return gd, gz, gv
+        elif(option=='XYZ'):
+            return gv
+
+        return None
+    # end func
+
+    def _get_slice_helper(self, _xyz_list, nn=1, p=4, absolute_query_locations=False,
+                          extrapolate=True):
+        '''
+        Function to retrieve interpolated field values at arbitrary locations
+
+        :param xyz_list: numpy array of shape (np,3), where np in the number of points
+        :param nn: as above
+        :param p: as above
+        :param absolute_query_locations: as above
+        :param extrapolate: as above
         :return: numpy array of interpolated values of shape (np)
         '''
 
@@ -1209,3 +1312,7 @@ if __name__=='__main__':
         newPos = [oldPos.x0, oldPos.y0, oldPos.width / 2.0, oldPos.height / 2.0]
         cbax.set_position(newPos)
         f.savefig(fp, dpi=ps.fig_dpi)
+
+
+    # Fetch a profile along station locations
+    gd, gz, gv = ps.get_slice("STA", nsteps=1000)
