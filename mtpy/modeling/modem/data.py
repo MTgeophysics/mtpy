@@ -1307,7 +1307,9 @@ class Data(object):
                         self.center_point.lon = value_list[1]
 
                         ce, cn, cz = gis_tools.project_point_ll2utm(self.center_point.lat,
-                                                                    self.center_point.lon)
+                                                                    self.center_point.lon,
+                                                                    epsg=self.model_epsg,
+                                                                    utm_zone=self.model_utm_zone)
 
                         self.center_point.east = ce
                         self.center_point.north = cn
