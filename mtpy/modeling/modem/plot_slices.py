@@ -281,7 +281,8 @@ class PlotSlices(object):
         :param absolute_query_locations: if True, query locations are shifted to be centered
                on the center of station locations; default False, in which case the function
                treats query locations as relative coordinates. For option='STA', this parameter
-               is ignored, since station locations are treated as absolute coordinates
+               is ignored, since station locations are internally treated as relative
+               coordinates
         :param extrapolate: Extrapolates values (default), which can be particularly useful
                             for extracting values at nodes, since the field values are given
                             for cell-centres.
