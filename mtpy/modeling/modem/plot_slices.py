@@ -335,9 +335,14 @@ class PlotSlices(object):
 
             x -= xmin
             y -= ymin
-            d = np.sqrt(x ** 2 + y ** 2)
+
+            d = (x**2 + y**2) # compute distances from origin to establish ordering
             sortedIndices = np.argsort(d)
-            d = d[sortedIndices]
+
+            dx = x[sortedIndices][:-1] - x[sortedIndices][1:]
+            dy = y[sortedIndices][:-1] - y[sortedIndices][1:]
+            d = np.cumsum(np.sqrt(dx ** 2 + dy ** 2)) # compute cumulative distance along profile
+            d = np.insert(d, 0, 0)
 
             xio = interp1d(d, x[sortedIndices])
             yio = interp1d(d, y[sortedIndices])
