@@ -59,7 +59,7 @@ class PhaseTensorMap(VisualizationBase):
             'tscale': self._scale_ui.get_tscale(),
             'plot_tipper': self._arrow_ui.get_plot_tipper(),
             # 'rot_z': self._rotation_ui.get_rotation_in_degree(),  # not implemented in PlotPhaseTensorMaps
-            'station_id': (0, 10),
+            # 'station_id': (0, 10),
             'fig_num': get_next_fig_num(),
             'fig_dpi': 100,
             'fig_size': (8, 6),
@@ -96,6 +96,7 @@ class PhaseTensorMap(VisualizationBase):
         if self._station_font_ui.ui.checkBox_color.isChecked():
             station_dict['color'] = self._station_font_ui.get_color()
         if station_dict:
+            station_dict['id'] = {0,10}
             self._params['station_dict'] = station_dict
 
         self._plotting_object = PlotPhaseTensorMaps(**self._params)
@@ -227,7 +228,7 @@ class PhaseTensorPseudoSection(VisualizationBase):
             'linedir': self._linedir_ui.get_linedir(),
             # 'rotz': self._rotation_ui.get_rotation_in_degree(), # this is not implemented in PlotPhaseTensorPseudoSection
             # default for testing
-            'station_id': (0, 10),  # indices for showing station names,
+            # 'station_id': (0, 10),  # indices for showing station names,
             'fig_dpi': 100,
             'fig_size': (8, 6),
             'fig_num': get_next_fig_num()
