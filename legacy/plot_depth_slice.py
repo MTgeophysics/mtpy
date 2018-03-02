@@ -438,20 +438,24 @@ if __name__ == "__main__":
 
     from mtpy.mtpy_globals import *
 
-    # directory where files are located
-    wd = os.path.join(SAMPLE_DIR, 'ModEM')
+    save_path = '/tmp'
+    modem = os.path.dirname(__file__)
+    modeling = os.path.dirname(modem)
+    mtpy = os.path.dirname(modeling)
+    base = os.path.dirname(mtpy)
+    examples = os.path.join(base, 'examples')
+    data = os.path.join(examples, 'data')
+    ModEM_files = os.path.join(data, 'ModEM_files')
 
-    # directory to save to
-    save_path = SYSTEM_TEMP_DIR
-    # file stem for inversion result
-    filestem = 'Modular_MPI_NLCG_004'
+    mfn = os.path.join(ModEM_files, 'Modular_MPI_NLCG_056_im2.rho')
+    dfn = os.path.join(ModEM_files, 'ModEM_Data_im2.dat')
 
     # period index to plot (0 plots the first (shortest) period, 1 for the second, etc)
     period_index = 0
 
     # plot map
-    dsmap = PlotDepthSlice(model_fn=os.path.join(wd, filestem + '.rho'),
-                           data_fn=os.path.join(wd, filestem + '.dat'),
+    dsmap = PlotDepthSlice(model_fn=mfn,
+                           data_fn=dfn,
                            depth_index=30,
                            save_plots='n'
                            )
