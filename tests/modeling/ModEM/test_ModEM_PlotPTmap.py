@@ -10,7 +10,8 @@ Plot data and responses from ModEM model.
 
 import os.path as op
 
-from mtpy.modeling.modem import PlotPTMaps
+# from mtpy.modeling.modem import PlotPTMaps
+from mtpy.imaging.modem_phase_tensor_maps import PlotPTMaps
 from tests import SAMPLE_DIR
 from tests.imaging import ImageTestCase
 
