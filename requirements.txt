@@ -4,8 +4,8 @@ PyYAML>=3.11
 geopandas
 scipy
 pillow
-pyqt>=5.0
-qtpy>=1.3
+pyqt
+qtpy
 GDAL
 obspy
 netcdf4
