@@ -4,7 +4,8 @@ PyYAML>=3.11
 geopandas
 scipy
 pillow
-pyqt
+# pip cannot install pyqt
+#pyqt
 qtpy
 GDAL
 obspy
