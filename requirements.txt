@@ -10,4 +10,4 @@ qtpy
 GDAL
 obspy
 netcdf4
-basemap
+# basemap
