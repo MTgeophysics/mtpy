@@ -242,8 +242,10 @@ class Model(object):
 
         self.station_locations = None
         self.data_obj = None
+
         if station_object is not None:
-            self.station_locations = station_object
+            self.station_locations = station_object.station_locations # station location has to be moved
+            self.data_obj = station_object # data_obj has to be updted
             self._logger.info("Use Station object as input, all functions that "
                               "uses data_objects are no longer available.")
         elif data_object is not None:
@@ -735,7 +737,8 @@ class Model(object):
         self._logger.debug("New vertical grid lines = %s" % self.grid_z)
 
         self._logger.info("begin to self.assign_resistivity_from_surfacedata(...)")
-        self.assign_resistivity_from_surfacedata('topography', air_resistivity, where='above')
+        # self.assign_resistivity_from_surfacedata('topography', air_resistivity, where='above')
+        self.assign_resistivity_from_surfacedata('topography', air_resistivity,'above')
 
         self._logger.info("begin to assign sea water resistivity")
         # first make a mask for all-land =1, which will be modified later according to air, water
@@ -965,7 +968,6 @@ class Model(object):
         # if lat/lon provided as a 1D list, convert to a 2d grid of points
         if len(x.shape) == 1:
             x, y = np.meshgrid(x, y)
-
         epsg_from, epsg_to = surface_epsg, self.data_obj.model_epsg
         xs, ys = mtpy.utils.gis_tools.epsg_project(x, y, epsg_from, epsg_to)
 
