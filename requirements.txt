@@ -4,6 +4,10 @@ PyYAML>=3.11
 geopandas
 scipy
 pillow
+# pip cannot install pyqt
+#pyqt
 qtpy
 GDAL
 obspy
+netcdf4
+# basemap
