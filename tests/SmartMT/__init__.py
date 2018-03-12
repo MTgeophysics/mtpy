@@ -107,6 +107,7 @@ class SmartMTGUITestCase(TestCase):
         self.smartMT._progress_bar.onFinished()
 
     def _plot(self, timeout=3000):
+        print ("_plot ..............")
         subwindow_counter = self.smartMT._subwindow_counter
         loop = QtCore.QEventLoop()
 
@@ -124,6 +125,9 @@ class SmartMTGUITestCase(TestCase):
             QtCore.QTimer.singleShot(timeout, handleTimeout)
         loop.exec_()  # wait for plotting
 
+        print ("self.smartMT._subwindow_counter = {}".format(self.smartMT._subwindow_counter))
+        print ("subwindow_counter = {}".format(subwindow_counter))
+        print ("------------------------------------------------------")
         self.assertTrue(self.smartMT._subwindow_counter == subwindow_counter + 1,
                         "no image created")  # test if the image is created
                         # "no image created, maybe consider to increase the timeout value")  # test if the image is created
