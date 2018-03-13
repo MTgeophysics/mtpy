@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
 Description:
-    This script implements plotting routines for rjmcmc results.
+    This script is a translation of Dr Ross Brody's original matlab plotting routines for rjmcmc inversion results.
 
 References:
  
@@ -9,9 +9,12 @@ CreationDate:   2017/10/17
 Developer:      rakib.hassan@ga.gov.au
  
 Revision History:
-    
+
 13/03/18   RH
-    * Initial checkin
+    * initial checkin
+
+13/03/18   RH
+    * updating plotting routines to reflect changes to output data
 
 """
 
@@ -117,10 +120,10 @@ class Results():
         self._resLim = np.array([[self._resBins[0], self._resBins[-1]]])
 
         # Load partition depths
-        d = np.loadtxt(os.path.join(self._stationDir, 'partitions_depth_hist.txt'))
+        d = np.loadtxt(os.path.join(self._stationDir, 'interface_depth_hist.txt'))
         self._partitionDepth = d[:, 0]
         self._partitionDepthHist = d[:, 1]
-        d = np.loadtxt(os.path.join(self._stationDir, 'partitions_hist.txt'))
+        d = np.loadtxt(os.path.join(self._stationDir, 'npartitions_hist.txt'))
         self._layerNumHist = d
         self._layerNum = np.arange(d.shape[0])
 
@@ -173,11 +176,10 @@ class Results():
                     self._MF['misfit'] = np.zeros((d.shape[0], self._nchains))
                 # end if
 
-                self._MF['sample'][:, chain] = d[:, 0]
-                self._MF['misfit'][:, chain] = d[:, 1]
-                # end for
-
-                # end if
+                self._MF['sample'][:, chain] = np.arange(d.shape[0])
+                self._MF['misfit'][:, chain] = d
+            # end for
+        # end if
 
     # end func
 
@@ -212,8 +214,10 @@ class Results():
                                         0.25 - self._hpad, 0.3333 - self._vpad])  # lower-left first
         self._ax4 = self._fig.add_axes([0.25 + self._hpad, 0 + self._vpad,
                                         0.25 - self._hpad, 0.3333 - self._vpad])  # lower-left second
-        self._ax5 = self._fig.add_axes([0.5 + self._hpad, 0 + self._vpad,
-                                        0.3 - self._hpad, 1 - self._vpad])  # middle
+        self._ax5 = self._fig.add_axes([0.5 + self._hpad, 0.05 + self._vpad,
+                                        0.3 - self._hpad, 0.95 - self._vpad])  # middle
+        self._ax5cb = self._fig.add_axes([0.5 + self._hpad, 0 + self._vpad,
+                                        0.3 - self._hpad, 0.05 - self._vpad])  # middle cb
         self._ax6 = self._fig.add_axes([0.8 + self._hpad*0.5, 0 + self._vpad,
                                         0.2 - self._hpad, 1 - self._vpad])  # right
 
@@ -242,32 +246,40 @@ class Results():
         a = np.sort(im)
 
         for ri in np.arange(im.shape[0]):
-            im[ri, :] = im[ri, :] / np.max(im[ri, :])
+            #im[ri, :] = im[ri, :] / np.max(im[ri, :])
+            pass
         # end for
 
-        self._ax5.pcolormesh(np.power(10., self._resBins),
+        im = np.ma.masked_array(im, mask=im<=0)
+        cbinfo = self._ax5.pcolormesh(np.power(10., self._resBins),
                              np.power(10., self._depthBins), im,
-                             cmap=plt.get_cmap(self._colorMap, 256))
+                             cmap=plt.get_cmap(self._colorMap, 256),
+                             norm=colors.LogNorm(vmin=im.min(), vmax=im.max()))
         self._ax5.set_xlim(self._resPlotLim)
         self._ax5.set_ylim(self._depthPlotLim)
         self._ax5.set_xscale('log')
         self._ax5.set_yscale('linear')
         self._ax5.invert_yaxis()
 
-        self._ax5.plot(np.power(10., self._props[0]['median'], ), self._depth, '-r', lw=0.5, label='Median')
-        self._ax5.plot(np.power(10., self._props[0]['credmin'], ), self._depth, '--r', dashes=(5, 5), lw=0.5,
+        self._ax5.plot(np.power(10., self._props[0]['median'], ), self._depth, '-k', lw=1, label='Median')
+        self._ax5.plot(np.power(10., self._props[0]['credmin'], ), self._depth, '--k', dashes=(5, 5), lw=1,
                        label='10th & 90th\n percentile')
-        self._ax5.plot(np.power(10., self._props[0]['credmax'], ), self._depth, '--r', dashes=(5, 5), lw=0.5)
-        self._ax5.plot(np.power(10., self._props[0]['mean'], ), self._depth, '-b', lw=0.5, label='Mean')
-        self._ax5.plot(np.power(10., self._props[0]['mode'], ), self._depth, '-g', lw=0.5, label='Mode')
+        self._ax5.plot(np.power(10., self._props[0]['credmax'], ), self._depth, '--k', dashes=(5, 5), lw=1)
+        self._ax5.plot(np.power(10., self._props[0]['mean'], ), self._depth, '-b', lw=1, label='Mean')
+        self._ax5.plot(np.power(10., self._props[0]['mode'], ), self._depth, '-g', lw=1, label='Mode')
 
-        self._ax5.set_xlabel('Resistivity [Ohm m]')
+        self._ax5.set_xlabel('Resistivity [$\Omega . m$]')
         self._ax5.set_ylabel('Depth [m]')
-        self._ax5.legend(loc='best')
+        self._ax5.legend(loc=3)
         self._ax5.grid(linestyle=':')
         self._ax5.xaxis.set_label_position('top')
         self._ax5.xaxis.set_tick_params(labeltop='on')
         self._ax5.xaxis.set_ticks_position('both')
+
+        cbar = self._fig.colorbar(cbinfo, cax=self._ax5cb, orientation='horizontal')
+        cbar.set_label('Log conditional probability', labelpad=15)
+        cbar.ax.set_xticklabels([])
+        cbar.ax.tick_params(axis=u'both', which=u'both', length=0)
 
         # Plot partition depths
         xlim = [-10, np.max(self._partitionDepthHist)]
@@ -291,7 +303,7 @@ class Results():
         for i in np.arange(self._nchains):
             if (i == 0):
                 self._ax1.loglog(self._BFFM['period'][i, :], self._BFFM['data1'][i, :], 'b-', lw=1,
-                                 zorder=2, label='Modelled Data (best-fit)')
+                                 zorder=2, label='Best fit for each chain')
             else:
                 self._ax1.loglog(self._BFFM['period'][i, :], self._BFFM['data1'][i, :], 'b-', lw=1, zorder=2)
                 # end if
@@ -305,7 +317,7 @@ class Results():
         if (self._dtImpedance):
             self._ax1.set_ylabel('Real Impedance \n[mv/km/nT]')
         else:
-            self._ax1.set_ylabel('Apparent Resistivity \n[Ohm m]')
+            self._ax1.set_ylabel('Apparent Resistivity \n[$\Omega . m$]')
 
         # Data 2 (Imaginary impedance or App phase data)
         self._ax2.errorbar(self._D['period'], self._D['data2'], self._D['noise2'], color='red',
@@ -315,7 +327,7 @@ class Results():
         for i in np.arange(self._nchains):
             if (i == 0):
                 self._ax2.loglog(self._BFFM['period'][i, :], self._BFFM['data2'][i, :], 'b-', lw=1,
-                                 zorder=2, label='Modelled Data (best-fit)')
+                                 zorder=2, label='Best fit for each chain')
             else:
                 self._ax2.loglog(self._BFFM['period'][i, :], self._BFFM['data2'][i, :], 'b-', lw=1, zorder=2)
                 # end if
