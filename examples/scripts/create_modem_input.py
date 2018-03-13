@@ -107,7 +107,8 @@ if __name__ == '__main__d':
     datob.write_data_file(save_path=outputdir)
 
     # create mesh grid model object
-    model = Model(Data=datob,
+    # model = Model(Data=datob,
+    model = Model(station_object=datob.station_locations,
                   epsg=epsg_code,  # epsg
                   # cell_size_east=500, cell_size_north=500,  # concurry
                   cell_size_east=10000, cell_size_north=10000, #GA_VIC
@@ -216,7 +217,9 @@ def generate_modem_output(input,topo,code,output):
     datob.write_data_file(save_path=outputdir)
     datob.model_epsg = epsg_code
     # create mesh grid model object
-    model = Model(station_object=datob,
+    # model = Model(station_object=datob.station_locations,
+    model = Model(station_object=None, # stations variable is updated from data_object
+                  data_object=datob,
                   epsg=epsg_code,  # epsg
                   # cell_size_east=500, cell_size_north=500,  # concurry
                   cell_size_east=10000, cell_size_north=10000, #GA_VIC
@@ -233,9 +236,7 @@ def generate_modem_output(input,topo,code,output):
                   z1_layer=50,  # first layer thickness metres, depend
                   z_target_depth=500000)
 
-    print('.................1........................')
     model.make_mesh()  # the data file will be re-write in this method. No topo elev file used yet
-    print('.................2........................')
 
     model.plot_mesh()
     model.plot_mesh_xy()
