@@ -244,8 +244,9 @@ class Model(object):
         self.data_obj = None
 
         if station_object is not None:
-            self.station_locations = station_object.station_locations # station location has to be moved
-            self.data_obj = station_object # data_obj has to be updted
+            self.station_locations = station_object# station location has to be moved
+            # self.station_locations = station_object.station_locations # station location has to be moved
+            # self.data_obj = station_object # data_obj has to be updted
             self._logger.info("Use Station object as input, all functions that "
                               "uses data_objects are no longer available.")
         elif data_object is not None:
