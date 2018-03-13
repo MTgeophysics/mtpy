@@ -169,10 +169,10 @@ if __name__ == '__main__d':
 # ===================================================
 @click.command(context_settings=dict(help_option_names=['-h', '--help']))
 @click.option('-i','--input',type=str,
-              default='examples\data\edi_files', \
+              default='examples/data/edi_files', \
               help='Directory for edi files')
 @click.option('-t','--topo',type=str,
-              default='examples\scripts\etopo1.asc', \
+              default='examples/scripts/etopo1.asc', \
               help='topography file')
 @click.option('-c','--code',type=int,default=3112,
               help='epsg code [3112, 4326, 4283, 32754, 32755, 28353, 28354, 28355]')
