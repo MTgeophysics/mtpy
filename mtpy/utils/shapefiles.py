@@ -1595,8 +1595,8 @@ if __name__ == "__main__d":
 # ===================================================
 @click.command(context_settings=dict(help_option_names=['-h', '--help']))
 @click.option('-i','--input',type=str,
-              default='examples\data\edi_files', \
-              help='input edsi files dir  or Modem dat file examples\data\MoDEM_files\Modular_MPI_NLCG_028.dat')
+              default='examples/data/edi_files', \
+              help='input edsi files dir  or Modem dat file examples/data/MoDEM_files/Modular_MPI_NLCG_028.dat')
 @click.option('-o','--output',type=str,default="temp",help='Output directory')
 def generate_shape_files(input,output):
     print("=======================================================================")
