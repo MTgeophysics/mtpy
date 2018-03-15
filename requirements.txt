@@ -1,9 +1,13 @@
-matplotlib==2.0.2
+matplotlib>=2.0.2
 numpy
 PyYAML>=3.11
 geopandas
 scipy
 pillow
+# pip cannot install pyqt
+#pyqt
 qtpy
 GDAL
 obspy
+netcdf4
+# basemap

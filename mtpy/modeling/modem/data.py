@@ -1307,7 +1307,9 @@ class Data(object):
                         self.center_point.lon = value_list[1]
 
                         ce, cn, cz = gis_tools.project_point_ll2utm(self.center_point.lat,
-                                                                    self.center_point.lon)
+                                                                    self.center_point.lon,
+                                                                    epsg=self.model_epsg,
+                                                                    utm_zone=self.model_utm_zone)
 
                         self.center_point.east = ce
                         self.center_point.north = cn
@@ -1672,9 +1674,13 @@ class Data(object):
 
             # update elevation in station locations and data array, +1 m as
             # data elevation needs to be below the topography (as advised by Naser)
-            self.station_locations.station_locations['elev'][ss] = topoval + 0.1
+            # ====================== ====================================================
+            # The following line have been commented as
+            # self.db_array and elf.station_locations.station_locations['elev'][ss]
+            # point to same location
+            # ====================== ====================================================
+            # self.station_locations.station_locations['elev'][ss] = topoval + 0.1
             self.data_array['elev'][ss] = topoval + 0.1
-
         # logger.debug("Re-write data file after adding topo")
         self.write_data_file(fill=False, elevation=True)  # (Xi, Yi, Zi) of each station-i may be shifted
 

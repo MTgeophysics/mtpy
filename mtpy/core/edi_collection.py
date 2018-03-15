@@ -719,8 +719,8 @@ def get_min_max_distance(obj):
 @click.option('-i', '--input',type=str,
               default='examples/data/edi_files',
               help='input directory to edsi files or string of edsi files seperated by space'\
-                   + '\n\n' + 'python mtpy\core\edi_collection.py --input=examples/data/edi_files'
-                   + '\n' + '-or-' + '\n' + 'python mtpy\core\edi_collection.py --input=' + "\n" +
+                   + '\n\n' + 'python mtpy/core/edi_collection.py --input=examples/data/edi_files'
+                   + '\n' + '-or-' + '\n' + 'python mtpy/core/edi_collection.py --input=' + "\n" +
                    '"examples/data/edi_files/pb23c.edi examples/data/edi_files/pb25c.edi"' +
                    '\n')
 def process_edsi_files( input ):

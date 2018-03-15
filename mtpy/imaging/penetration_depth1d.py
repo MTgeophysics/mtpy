@@ -210,16 +210,14 @@ if __name__ == '__main__old':
 # Following is code for click making inputs to the plot depth
 ###############################################################################
 
-
 @click.command()
-@click.option('-d','--directory_file',type=str,default='examples/data/edi_files',help='directory or edsi data files')
-@click.option('-o','--output_file',type=str,default='C:/temp/pen_depth.jpg',help='save jpg image file')
-def plot_penetration_image(directory_file,output_file):
-
-    if os.path.isfile(directory_file):
-        plot_edi_file(directory_file,savefile=output_file)
-    elif os.path.isdir(directory_file):
-        plot_edi_dir(directory_file, rholist=['det'])
+@click.option('-i','--input',type=str,default='examples/data/edi_files',help='directory or edsi data files')
+@click.option('-o','--output_file',type=str,default='temp',help='save jpg image file')
+def plot_penetration_image(input,output_file):
+    if os.path.isfile(input):
+        plot_edi_file(input,savefile=output_file)
+    elif os.path.isdir(input):
+        plot_edi_dir(input, rholist=['det'])
     else:
         pass
 if __name__ == '__main__':

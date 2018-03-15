@@ -105,13 +105,6 @@ def get_padding_cells2(cell_width, core_max, max_distance, num_cells):
 
     cells = np.around(np.logspace(np.log10(core_max),np.log10(max_distance),num_cells), -2)
     cells -= core_max
-    
-    # check if first padding cell is at least as big as cell width
-    if cells[1] - cells[0] < cell_width:
-        pad_stretch = (core_max + cell_width)/core_max
-        cells = get_padding_from_stretch(cell_width, pad_stretch, num_cells)
-        print "Provided model extent not wide enough to contain padding, "+\
-        "expanding model to {} m".format((cells[-1] + core_max)*2)
         
     return cells
     

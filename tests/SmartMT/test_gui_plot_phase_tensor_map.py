@@ -4,10 +4,12 @@ from tests.SmartMT import SmartMTGUITestCase, _click_area
 
 class TestGUIPlotPhaseTensorMap(SmartMTGUITestCase):
     def test_default(self):
+        print ("TestGUIPlotPhaseTensorMap.....")
         plot_gui = self._switch_to_plot(PhaseTensorMap)  # type: PhaseTensorMap
 
         # select random frequency by randomly click on the frequency selection gui
         # repeat a few time in case some of the random clicks are not valid
+
         for i in range(3):
             _click_area(plot_gui._frequency_ui.histogram,
                         offset=plot_gui._frequency_ui.histogram.geometry().topLeft())
@@ -19,6 +21,8 @@ class TestGUIPlotPhaseTensorMap(SmartMTGUITestCase):
 
 class TestGUIPlotPhaseTensorPseudoSection(SmartMTGUITestCase):
     def test_default(self):
+        print ("TestGUIPlotPhaseTensorPseudoSection.....")
+
         plot_gui = self._switch_to_plot(PhaseTensorPseudoSection)  # type: PhaseTensorPseudoSection
 
         _click_area(plot_gui._plot_control.ui.checkBox_zxx, pos=self._pos_check_box)
@@ -33,6 +37,7 @@ class TestGUIPlotPhaseTensorPseudoSection(SmartMTGUITestCase):
 
 class TestGUIPlotResistivityPhasePseudoSection(SmartMTGUITestCase):
     def test_grid_imshow(self):
+        print ("TestGUIPlotResistivityPhasePseudoSection.....")
         plot_gui = self._switch_to_plot(ResistivityPhasePseudoSection)  # type: ResistivityPhasePseudoSection
 
         _click_area(plot_gui._plot_control.ui.checkBox_zxx, pos=self._pos_check_box)
@@ -46,6 +51,7 @@ class TestGUIPlotResistivityPhasePseudoSection(SmartMTGUITestCase):
         self._plot(10000)
 
     def test_grid_pcolormesh(self):
+        print ("test_grid_pcolormesh.....")
         plot_gui = self._switch_to_plot(ResistivityPhasePseudoSection)  # type: ResistivityPhasePseudoSection
 
         _click_area(plot_gui._plot_control.ui.checkBox_zxx, pos=self._pos_check_box)

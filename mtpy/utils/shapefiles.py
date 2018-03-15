@@ -20,6 +20,7 @@ import os
 import mtpy.core.mt as mt
 import mtpy.modeling.modem as modem
 import mtpy.analysis.pt as mtpt
+import click
 
 ogr.UseExceptions()
 
@@ -1563,7 +1564,7 @@ def create_modem_data_shapefiles():
 # ----------------------------------------------------
 
 # example codes of how to use this module
-if __name__ == "__main__":
+if __name__ == "__main__d":
     import sys
     if len(sys.argv) < 3:
         print(
@@ -1597,3 +1598,40 @@ if __name__ == "__main__":
     else:
         print("Nothing to do !!!")
 
+# ===================================================
+# Command Wrapper for shape files generation
+# ===================================================
+@click.command(context_settings=dict(help_option_names=['-h', '--help']))
+@click.option('-i','--input',type=str,
+              default='examples/data/edi_files', \
+              help='input edsi files dir  or Modem dat file examples/data/MoDEM_files/Modular_MPI_NLCG_028.dat')
+@click.option('-o','--output',type=str,default="temp",help='Output directory')
+def generate_shape_files(input,output):
+    print("=======================================================================")
+    print("Generating Shapes File requires following inputs edsi files directory")
+    print("                                              or MoDEM input file")
+    print("Default output is in temp directory                                     ")
+    print("=======================================================================")
+    if not os.path.isdir(output):
+        os.mkdir(output)
+    print ("input = {}".format(input))
+    print ("input = {}".format(input[-4:].lower()))
+    if input[-4:].lower() == '.dat':
+        modem_to_shapefiles(input, output)
+    elif os.path.isdir(input):
+        create_phase_tensor_shpfiles(
+            input,
+            output,
+            proj='WGS84', ellipse_size=8000, # UTM and size in meters. 1deg=100KM
+                                             # proj=None,  ellipse_size=0.01,
+                                             # Lat-Long geographic coord and size in degree
+            every_site=2,                    #period_list=[ 218.43599825251204, 218.43599825 ]
+                                             #  KeyError 218.43599825
+                                             #period_list=[0.0128, 0.016]  # must get very accurate periods
+        )
+    else:
+        print ("Nothing to do !")
+
+
+if __name__ == "__main__":
+    generate_shape_files()

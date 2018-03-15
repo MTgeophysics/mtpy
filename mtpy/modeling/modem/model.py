@@ -242,8 +242,11 @@ class Model(object):
 
         self.station_locations = None
         self.data_obj = None
+
         if station_object is not None:
-            self.station_locations = station_object
+            self.station_locations = station_object# station location has to be moved
+            # self.station_locations = station_object.station_locations # station location has to be moved
+            # self.data_obj = station_object # data_obj has to be updted
             self._logger.info("Use Station object as input, all functions that "
                               "uses data_objects are no longer available.")
         elif data_object is not None:
@@ -754,7 +757,8 @@ class Model(object):
         self._logger.debug("New vertical grid lines = %s" % self.grid_z)
 
         self._logger.info("begin to self.assign_resistivity_from_surfacedata(...)")
-        self.assign_resistivity_from_surfacedata('topography', air_resistivity, where='above')
+        # self.assign_resistivity_from_surfacedata('topography', air_resistivity, where='above')
+        self.assign_resistivity_from_surfacedata('topography', air_resistivity,'above')
 
         self._logger.info("begin to assign sea water resistivity")
         # first make a mask for all-land =1, which will be modified later according to air, water
@@ -984,7 +988,6 @@ class Model(object):
         # if lat/lon provided as a 1D list, convert to a 2d grid of points
         if len(x.shape) == 1:
             x, y = np.meshgrid(x, y)
-
         epsg_from, epsg_to = surface_epsg, self.data_obj.model_epsg
         xs, ys = mtpy.utils.gis_tools.epsg_project(x, y, epsg_from, epsg_to)
 
@@ -2672,3 +2675,79 @@ class Model(object):
         if self.ns_ext < extent_ratio * inner_ns_ext:
             self._logger.warn("Provided or default ns_ext not sufficient to fit stations + padding, updating extent")
             self.ns_ext = np.ceil(extent_ratio * inner_ns_ext)
+
+
+
+    def write_xyres(self,location_type='EN',origin=[0,0],model_epsg=None,depth_index='all',
+                    savepath=None,outfile_basename='DepthSlice',log_res=False,model_utm_zone=None):
+        """
+        write files containing depth slice data (x, y, res for each depth)
+        
+        origin = x,y coordinate of zero point of ModEM_grid, or name of file
+                 containing this info (full path or relative to model files)
+        savepath = path to save to, default is the model object save path
+        location_type = 'EN' or 'LL' xy points saved as eastings/northings or 
+                        longitude/latitude, if 'LL' need to also provide model_epsg
+        model_epsg = epsg number that was used to project the model
+        outfile_basename = string for basename for saving the depth slices.
+        log_res = True/False - option to save resistivity values as log10 
+                               instead of linear
+        
+        """
+        if savepath is None:
+            savepath = self.save_path
+            
+        # make a directory to save the files
+        savepath = os.path.join(savepath,outfile_basename)
+        if not os.path.exists(savepath):
+            os.mkdir(savepath)
+        
+        # try getting centre location info from file
+        if type(origin) == str:
+            try:
+                origin = np.loadtxt(origin)
+            except:
+                print("Please provide origin as a list, array or tuple or as a valid filename containing this info")
+                origin = [0,0]
+        
+        # reshape the data
+        x,y,z = [np.mean([arr[1:], arr[:-1]],axis=0) for arr in \
+                [self.grid_east + origin[0], self.grid_north + origin[1], self.grid_z]]
+        x,y = [arr.flatten() for arr in np.meshgrid(x,y)]
+        
+        # set format for saving data
+        fmt = ['%.1f','%.1f','%.3e']
+        
+        # convert to lat/long if needed
+        if location_type == 'LL':
+            if np.any(origin) == 0:
+                print("Warning, origin coordinates provided as zero, output lat/long are likely to be incorrect")
+            # project using epsg_project as preference as it is faster, but if pyproj not installed, use gdal
+            try:
+                import pyproj
+                xp,yp = gis_tools.epsg_project(x,y,model_epsg,4326)
+            except ImportError:
+                xp,yp = np.zeros_like(x),np.zeros_like(y)
+                for i in range(len(x)):
+                    yp[i],xp[i] = gis_tools.project_point_utm2ll(x[i],y[i],model_utm_zone,epsg=model_epsg)
+            # update format to accommodate lat/lon
+            fmt[:2] = ['%.6f','%.6f']
+        else:
+            xp,yp = x,y
+            
+        # make depth indices into a list
+        if depth_index == 'all':
+            depthindices = range(len(z))
+        elif np.iterable(depth_index):
+            depthindices = np.array(depth_index).astype(int)
+        else:
+            depthindices = [depth_index]
+        
+        for k in depthindices:
+            fname = os.path.join(savepath,outfile_basename+'_%1im.xyz'%z[k])
+            vals = self.res_model[:,:,k].flatten()
+            if log_res:
+                vals = np.log10(vals)
+                fmt[-1] = '%.3f'
+            data = np.vstack([xp,yp,vals]).T
+            np.savetxt(fname,data,fmt=fmt)

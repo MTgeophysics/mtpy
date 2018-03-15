@@ -20,6 +20,7 @@ import glob
 import logging
 import os
 import sys
+import click
 
 import geopandas as gpd
 import matplotlib as mpl
@@ -670,7 +671,7 @@ if __name__ == "__main__OLD_V0":
 ###################################################################
 # Example codes to use the ShapeFilesCreator class - new version
 
-if __name__ == "__main__":
+if __name__ == "__main__d":
 
     edidir = sys.argv[1]
 
@@ -713,3 +714,60 @@ if __name__ == "__main__":
             shp_maker.create_phase_tensor_shp(aper, target_epsg_code=my_epsgcode, ellipsize=esize, export_fig=True)
             shp_maker.create_tipper_real_shp(aper, line_length=tipsize, target_epsg_code=my_epsgcode, export_fig=True)
             shp_maker.create_tipper_imag_shp(aper, line_length=tipsize, target_epsg_code=my_epsgcode, export_fig=True)
+
+
+# ===================================================
+# Command Wrapper for shape files from edi
+# ===================================================
+@click.command(context_settings=dict(help_option_names=['-h', '--help']))
+@click.option('-i','--input',type=str,
+              default='examples/data/edi_files', \
+              help='input edi files dir ')
+@click.option('-c','--code',type=int,default=3112,
+              help='epsg code [3112, 4326, 4283, 32754, 32755, 28353, 28354, 28355]')
+@click.option('-o','--output',type=str,default="temp",help='Output directory')
+def generate_shape_files(input,output,code):
+    print("=======================================================================")
+    print("Generating Shapes File requires following inputs edi files directory   ")
+    print("Default epsg code 3112                                                 ")
+    print("        epsg_code(4326, 4283, 32754, 32755, 28353, 28354, 28355)       ")
+    print("Default output is in temp directory                                    ")
+    print("=======================================================================")
+
+    if not os.path.isdir(output):
+        os.mkdir(output)
+    edifiles = glob.glob(os.path.join(input, "*.edi"))
+    # Filter the edi files to get a subset:
+    everysite = 1  # every 1,2,3,4, 5
+    edi_list = edifiles[::everysite]  # subset of the edi files
+    shp_maker = ShapeFilesCreator(edi_list, output)
+
+    # station_distance_stats= shp_maker.get_stations_distances_stats()
+
+    esize = None   # if None, auto selected default in the method
+    tipsize = None  # if None, auto selected default in the method
+
+    shp_maker.create_phase_tensor_shp(999.99, ellipsize=esize) # nothing created for non-existent peri
+
+    # min_period = shp_maker.all_unique_periods[0]
+    # max_period = shp_maker.all_unique_periods[-1]
+
+    #for aper in [min_period, max_period]:
+    for aper in shp_maker.all_unique_periods[::5]:  # ascending order: from short to long periods
+        # default projection as target output
+        # shp_maker.create_phase_tensor_shp(2.85)
+        # shp_maker.create_phase_tensor_shp(aper,  ellipsize=esize,export_fig=True)
+        # shp_maker.create_tipper_real_shp(aper, line_length=tipsize, export_fig=True)
+        # shp_maker.create_tipper_imag_shp(aper, line_length=tipsize, export_fig=True)
+
+        for my_epsgcode in [code]:  # [3112, 4326, 4283, 32754, 32755, 28353, 28354, 28355]:
+            shp_maker.create_phase_tensor_shp(aper, target_epsg_code=my_epsgcode, ellipsize=esize, export_fig=True)
+            shp_maker.create_tipper_real_shp(aper, line_length=tipsize, target_epsg_code=my_epsgcode, export_fig=True)
+            shp_maker.create_tipper_imag_shp(aper, line_length=tipsize, target_epsg_code=my_epsgcode, export_fig=True)
+
+
+if __name__ == "__main__":
+    generate_shape_files()
+
+
+

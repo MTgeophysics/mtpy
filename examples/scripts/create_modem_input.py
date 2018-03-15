@@ -24,6 +24,7 @@ from __future__ import print_function
 import glob
 import os
 import sys
+import click
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -62,9 +63,7 @@ def show_patcher(show_func):
 # plt.show = show_patcher(plt.show)
 # end of patch
 
-
-
-if __name__ == '__main__':
+if __name__ == '__main__d':
 
     if len(sys.argv) < 4:
         print("USAGE: %s  path2edifiles path2topo.asc path2outdir" %
@@ -94,6 +93,7 @@ if __name__ == '__main__':
     # eo = mtedi.Edi(edi_list[0])  # this may miss some periods?
     # period_list = 1. / eo.Z.freq # period_list = np.logspace(-3,3)
 
+    print ("edi_list = {}".format(edi_list))
     period_list = EdiCollection(edi_list).select_periods()
 
     datob = Data(edi_list=edi_list,
@@ -107,7 +107,8 @@ if __name__ == '__main__':
     datob.write_data_file(save_path=outputdir)
 
     # create mesh grid model object
-    model = Model(Data=datob,
+    # model = Model(Data=datob,
+    model = Model(station_object=datob.station_locations,
                   epsg=epsg_code,  # epsg
                   # cell_size_east=500, cell_size_north=500,  # concurry
                   cell_size_east=10000, cell_size_north=10000, #GA_VIC
@@ -162,3 +163,120 @@ if __name__ == '__main__':
                      smoothing_z=0.3)
 
     cov.write_covariance_file(model_fn=model.model_fn)
+
+# ===================================================
+# Command Wrapper for output generation
+# ===================================================
+@click.command(context_settings=dict(help_option_names=['-h', '--help']))
+@click.option('-i','--input',type=str,
+              default='examples/data/edi_files', \
+              help='Directory for edi files')
+@click.option('-t','--topo',type=str,
+              default='examples/scripts/etopo1.asc', \
+              help='topography file')
+@click.option('-c','--code',type=int,default=3112,
+              help='epsg code [3112, 4326, 4283, 32754, 32755, 28353, 28354, 28355]')
+@click.option('-o','--output',type=str,
+              default='temp', \
+              help='Output Directory')
+def generate_modem_output(input,topo,code,output):
+    print("=======================================================================")
+    print("Generating Modem input data                                            ")
+    print("edi files diectory :      {}".format(input))
+    print("topography file    :      {}".format(topo))
+    print("epsg code          :      {}".format(code))
+    print("Output directory   :      {}".format(output))
+    print("=======================================================================")
+    if not os.path.isdir(output):
+        os.mkdir(output)
+    epsg_code = code
+    outputdir=output
+    topofile = topo
+
+    edi_list = glob.glob(os.path.join(input, "*.edi"))
+    if edi_list is None or (edi_list) < 1:
+        print("Error: No edi files found in the dir %s" % edipath)
+        sys.exit(2)
+
+    # period list (can take periods from one of the edi files, or just specify
+    # periods directly using the logspace function (commented out))
+
+    # eo = mtedi.Edi(edi_list[0])  # this may miss some periods?
+    # period_list = 1. / eo.Z.freq # period_list = np.logspace(-3,3)
+
+    period_list = EdiCollection(edi_list).select_periods()
+
+    datob = Data(edi_list=edi_list,
+                 inv_mode='1',
+                 period_list=period_list,
+                 epsg=epsg_code,
+                 error_type='floor',
+                 error_floor=10)
+    # period_buffer=0.000001)
+
+    datob.write_data_file(save_path=outputdir)
+    datob.model_epsg = epsg_code
+    # create mesh grid model object
+    # model = Model(station_object=datob.station_locations,
+    model = Model(station_object=None, # stations variable is updated from data_object
+                  data_object=datob,
+                  epsg=epsg_code,  # epsg
+                  # cell_size_east=500, cell_size_north=500,  # concurry
+                  cell_size_east=10000, cell_size_north=10000, #GA_VIC
+                  # cell_size_east=1000, cell_size_north=1000, # Concurry
+                  cell_number_ew=120, cell_number_ns=100,   # option to specify cell numbers
+                  pad_north=8,  # number of padding cells in each of the north and south directions
+                  pad_east=8,  # number of east and west padding cells
+                  pad_z=8,  # number of vertical padding cells
+                  pad_stretch_v=1.5,  # factor to increase by in padding cells (vertical)
+                  pad_stretch_h=1.5,  # factor to increase by in padding cells (horizontal)
+                  n_airlayers=10,  # number of air layers 0, 10, 20, depend on topo elev height
+                  res_model=100,  # halfspace resistivity value for initial reference model
+                  n_layers=55,  # total number of z layers, including air and pad_z
+                  z1_layer=50,  # first layer thickness metres, depend
+                  z_target_depth=500000)
+
+    model.make_mesh()  # the data file will be re-write in this method. No topo elev file used yet
+
+    model.plot_mesh()
+    model.plot_mesh_xy()
+    model.plot_mesh_xz()
+
+    # write a model file and initialise a resistivity model
+    model.write_model_file(save_path=outputdir)
+
+
+#=========== now add topo data, with or without air layers?
+    # 1) the data file will be changed in 3 columns sxi, syi and szi meters
+    # 2) The covariance file will be written.
+    # 3) the model file not changed?? No air layers can be seen in the .ws file.
+
+    # add topography, define an initial resistivity model, modify and re-write the data file, define covariance mask
+    # dat file will be changed and rewritten,
+    # grid centre is used as the new origin of coordinate system, topo data used in the elev column.
+
+    # model.add_topography(topofile, interp_method='nearest')  # dat file will be written again as elevation updated
+
+    # model.add_topography_2mesh(topofile, interp_method='nearest')  # dat file will be written again as elevation updated
+    model.add_topography_to_mesh(topofile, interp_method='nearest')  # dat file will be written again as elevation updated
+
+
+    model.plot_topograph()  # plot the MT stations on topography elevation data
+
+    print("*** Re-writing model file after topo data and air layers are added - will include air sea-water resistivity")
+    model.write_model_file(save_path=model.save_path)
+    # model.write_model_file(save_path='temp/')
+
+
+    # make covariance (mask) file
+    cov = Covariance(mask_arr=model.covariance_mask,
+                     save_path=outputdir,
+                     smoothing_east=0.3,
+                     smoothing_north=0.3,
+                     smoothing_z=0.3)
+
+    cov.write_covariance_file(model_fn=model.model_fn)
+
+if __name__ == '__main__':
+    generate_modem_output()
+
