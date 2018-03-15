@@ -338,6 +338,8 @@ class PlotSlices(object):
 
             d = (x**2 + y**2) # compute distances from origin to establish ordering
             sortedIndices = np.argsort(d)
+            print("stations",self.md_data.station_locations.station)
+            print("sortedINdices",sortedIndices)
 
             dx = x[sortedIndices][:-1] - x[sortedIndices][1:]
             dy = y[sortedIndices][:-1] - y[sortedIndices][1:]
@@ -915,10 +917,11 @@ class PlotSlices(object):
                                            self.map_scale,
                                            self.save_format)
 
-            fig.suptitle('%s Plane at %s: %0.4f %s'%(plane,
-                                           self.current_label_desc[plane],
-                                           self.axis_values[plane][ii],
-                                           self.map_scale))
+            if self.title == 'on':
+                fig.suptitle('%s Plane at %s: %0.4f %s'%(plane,
+                                               self.current_label_desc[plane],
+                                               self.axis_values[plane][ii],
+                                               self.map_scale))
             fpath = os.path.join(self.save_path, fn)
             print('Exporting %s..'%(fpath))
             fig.savefig(fpath, dpi=self.fig_dpi)
