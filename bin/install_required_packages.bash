@@ -8,3 +8,5 @@ conda install -y --file requirements.txt
 # drop into the folder anaconda2/pkgs, and use conda --offline install option. This function may NOT always work.
 # conda install -y --offline --file requirements.txt
 conda install -y pyqt=5
+conda install -y basemap
+

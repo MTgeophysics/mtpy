@@ -14,7 +14,8 @@ import os
 
 import matplotlib.pyplot as plt
 
-from mtpy.modeling.modem import PlotDepthSlice
+#from mtpy.modeling.modem import PlotDepthSlice
+from mtpy.imaging.plot_depth_slice import PlotDepthSlice
 from tests import SAMPLE_DIR
 from tests.imaging import ImageTestCase
 
