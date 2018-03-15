@@ -8,7 +8,7 @@ Created on Tue Oct 04 13:13:29 2016
 @author:    Fei.zhang@ga.gov.au
 
 Test Run:
-python examples/modem_plot_models.py ./examples/data/ModEM_files/VicSynthetic07
+python examples/scripts/modem_plot_models.py ./examples/data/ModEM_files/VicSynthetic07
 """
 import os
 import sys
@@ -16,7 +16,8 @@ import sys
 from mtpy.imaging.modem_phase_tensor_maps import PlotPTMaps
 from mtpy.imaging.plot_depth_slice import PlotDepthSlice
 from mtpy.imaging.plot_response import PlotResponse
-from mtpy.imaging.plot_rms_map import PlotRMSMaps
+#from legacy.plot_rms_map import PlotRMSMaps
+from mtpy.modeling.modem import PlotRMSMaps
 
 # original test case:
 # datfn='ModEM_Data_noise10inv.dat'  # what is this noiseinv.dat?
