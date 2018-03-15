@@ -14,6 +14,7 @@ import os
 import numpy as np
 from matplotlib import colors as colors, pyplot as plt, colorbar as mcb
 from matplotlib.ticker import MultipleLocator, FormatStrFormatter
+import scipy.interpolate as interpolate
 
 from mtpy.modeling.modem.data import Data
 
@@ -106,8 +107,9 @@ class PlotRMSMaps(object):
     """
 
     def __init__(self, residual_fn, **kwargs):
-        self.residual_fn = residual_fn
+        self._residual_fn = None
         self.residual = None
+        self.residual_fn = residual_fn
         self.save_path = kwargs.pop('save_path', os.path.dirname(self.residual_fn))
 
         self.period_index = kwargs.pop('period_index', 0)
@@ -121,10 +123,11 @@ class PlotRMSMaps(object):
 
         self.font_size = kwargs.pop('font_size', 8)
 
+        self.fig = None
         self.fig_size = kwargs.pop('fig_size', [7.75, 6.75])
         self.fig_dpi = kwargs.pop('fig_dpi', 200)
         self.fig_num = kwargs.pop('fig_num', 1)
-        self.fig = None
+        self.font_dict = {'size': self.font_size + 2, 'weight': 'bold'}
 
         self.marker = kwargs.pop('marker', 's')
         self.marker_size = kwargs.pop('marker_size', 10)
@@ -153,6 +156,23 @@ class PlotRMSMaps(object):
         self.rms_cmap = colors.LinearSegmentedColormap('rms_cmap',
                                                        self.rms_cmap_dict,
                                                        256)
+        
+        self.rms_map_cmap_dict = {'red': ((0.0, 0.6, 0.6),
+                                         (0.2, 1.0, 1.0),
+                                         (0.65, .9, .9),
+                                         (1.0, 0.55, 0.75)),
+                                  'green': ((0.0, 0.6, 0.6),
+                                           (0.2, 1.0, 1.0),
+                                           (0.65, 0.8, 0.8),
+                                           (1.0, 0.0, 0.0)),
+                                  'blue': ((0.0, 0.6, 0.6),
+                                          (0.2, 1.0, 1.0),
+                                          (0.65, 0.0, 0.0), 
+                                          (1.0, 0.1, 0.1))}
+
+        self.rms_map_cmap = colors.LinearSegmentedColormap('rms_map_cmap',
+                                                           self.rms_map_cmap_dict,
+                                                           256)
 
         self.plot_z_list = [{'label': r'$Z_{xx}$', 'index': (0, 0), 'plot_num': 1},
                             {'label': r'$Z_{xy}$', 'index': (0, 1), 'plot_num': 2},
@@ -164,21 +184,21 @@ class PlotRMSMaps(object):
         if self.plot_yn == 'y':
             self.plot()
 
-    def read_residual_fn(self):
-        if self.residual is None:
-            self.residual = Data()
-            self.residual.read_data_file(self.residual_fn)
-        else:
-            pass
+    @property
+    def residual_fn(self):
+        return self._residual_fn
+    @residual_fn.setter
+    def residual_fn(self, fn):
+        print 'read in {0}'.format(fn)
+        self._residual_fn = fn
+        self.residual = Data()
+        self.residual.read_data_file(self._residual_fn)
 
     def plot(self):
         """
         plot rms in map view
         """
-
-        self.read_residual_fn()
-
-        font_dict = {'size': self.font_size + 2, 'weight': 'bold'}
+        
         rms_1 = 1. / self.rms_max
 
         if self.tick_locator is None:
@@ -211,7 +231,7 @@ class PlotRMSMaps(object):
             ax = self.fig.add_subplot(3, 2, p_dict['plot_num'], aspect='equal')
 
             ii = p_dict['index'][0]
-            jj = p_dict['index'][0]
+            jj = p_dict['index'][1]
 
             for r_arr in self.residual.data_array:
                 # calulate the rms self.residual/error
@@ -257,7 +277,7 @@ class PlotRMSMaps(object):
                         zorder=3)
 
             if p_dict['plot_num'] == 1 or p_dict['plot_num'] == 3:
-                ax.set_ylabel('Latitude (deg)', fontdict=font_dict)
+                ax.set_ylabel('Latitude (deg)', fontdict=self.font_dict)
                 plt.setp(ax.get_xticklabels(), visible=False)
 
             elif p_dict['plot_num'] == 2 or p_dict['plot_num'] == 4:
@@ -266,11 +286,11 @@ class PlotRMSMaps(object):
 
             elif p_dict['plot_num'] == 6:
                 plt.setp(ax.get_yticklabels(), visible=False)
-                ax.set_xlabel('Longitude (deg)', fontdict=font_dict)
+                ax.set_xlabel('Longitude (deg)', fontdict=self.font_dict)
 
             else:
-                ax.set_xlabel('Longitude (deg)', fontdict=font_dict)
-                ax.set_ylabel('Latitude (deg)', fontdict=font_dict)
+                ax.set_xlabel('Longitude (deg)', fontdict=self.font_dict)
+                ax.set_ylabel('Latitude (deg)', fontdict=self.font_dict)
 
             ax.text(self.residual.data_array['lon'].min() + .005 - self.pad_x,
                     self.residual.data_array['lat'].max() - .005 + self.pad_y,
@@ -304,7 +324,152 @@ class PlotRMSMaps(object):
                                                            vmax=self.rms_max),
                                      orientation='vertical')
 
-        color_bar.set_label('RMS', fontdict=font_dict)
+        color_bar.set_label('RMS', fontdict=self.font_dict)
+
+        self.fig.suptitle('period = {0:.5g} (s)'.format(self.residual.period_list[self.period_index]),
+                          fontdict={'size': self.font_size + 3, 'weight': 'bold'})
+        self.fig.show()
+        
+    def plot_map(self):
+        """
+        plot the misfit as a map instead of points
+        """
+        rms_1 = 1. / self.rms_max
+
+        if self.tick_locator is None:
+            x_locator = np.round((self.residual.data_array['lon'].max() -
+                                  self.residual.data_array['lon'].min()) / 5, 2)
+            y_locator = np.round((self.residual.data_array['lat'].max() -
+                                  self.residual.data_array['lat'].min()) / 5, 2)
+
+            if x_locator > y_locator:
+                self.tick_locator = x_locator
+
+            elif x_locator < y_locator:
+                self.tick_locator = y_locator
+
+        if self.pad_x is None:
+            self.pad_x = self.tick_locator / 2
+        if self.pad_y is None:
+            self.pad_y = self.tick_locator / 2
+
+        plt.rcParams['font.size'] = self.font_size
+        plt.rcParams['figure.subplot.left'] = self.subplot_left
+        plt.rcParams['figure.subplot.right'] = self.subplot_right
+        plt.rcParams['figure.subplot.bottom'] = self.subplot_bottom
+        plt.rcParams['figure.subplot.top'] = self.subplot_top
+        plt.rcParams['figure.subplot.wspace'] = self.subplot_hspace
+        plt.rcParams['figure.subplot.hspace'] = self.subplot_vspace
+        self.fig = plt.figure(self.fig_num, self.fig_size, dpi=self.fig_dpi)
+        
+        lat_arr = self.residual.data_array['lat']
+        lon_arr = self.residual.data_array['lon']
+        data_points = np.array([lon_arr, lat_arr])
+        
+        interp_lat = np.linspace(lat_arr.min(),
+                                 lat_arr.max(),
+                                 3*self.residual.data_array.size)
+        
+        interp_lon = np.linspace(lon_arr.min(),
+                                 lon_arr.max(),
+                                 3*self.residual.data_array.size)
+        
+        grid_x, grid_y = np.meshgrid(interp_lon, interp_lat)
+        
+        # calculate rms
+        z_err = self.residual.data_array['z_err'].copy()
+        z_err[np.where(z_err == 0.0)] = 1.0
+        z_rms = np.abs(self.residual.data_array['z']) / z_err.real
+        
+        t_err = self.residual.data_array['tip_err'].copy()
+        t_err[np.where(t_err == 0.0)] = 1.0
+        t_rms = np.abs(self.residual.data_array['tip']) / t_err.real
+
+        ## --> plot maps
+        for p_dict in self.plot_z_list:
+            ax = self.fig.add_subplot(3, 2, p_dict['plot_num'], aspect='equal')
+                           
+            if p_dict['plot_num'] == 1 or p_dict['plot_num'] == 3:
+                ax.set_ylabel('Latitude (deg)', fontdict=self.font_dict)
+                plt.setp(ax.get_xticklabels(), visible=False)
+
+            elif p_dict['plot_num'] == 2 or p_dict['plot_num'] == 4:
+                plt.setp(ax.get_xticklabels(), visible=False)
+                plt.setp(ax.get_yticklabels(), visible=False)
+
+            elif p_dict['plot_num'] == 6:
+                plt.setp(ax.get_yticklabels(), visible=False)
+                ax.set_xlabel('Longitude (deg)', fontdict=self.font_dict)
+
+            else:
+                ax.set_xlabel('Longitude (deg)', fontdict=self.font_dict)
+                ax.set_ylabel('Latitude (deg)', fontdict=self.font_dict)
+
+            ax.text(self.residual.data_array['lon'].min() + .005 - self.pad_x,
+                    self.residual.data_array['lat'].max() - .005 + self.pad_y,
+                    p_dict['label'],
+                    verticalalignment='top',
+                    horizontalalignment='left',
+                    bbox={'facecolor': 'white'},
+                    zorder=3)
+
+            ax.tick_params(direction='out')
+            ax.grid(zorder=0, color=(.75, .75, .75), lw=.75)
+
+            # [line.set_zorder(3) for line in ax.lines]
+
+            ax.set_xlim(self.residual.data_array['lon'].min() - self.pad_x,
+                        self.residual.data_array['lon'].max() + self.pad_x)
+
+            ax.set_ylim(self.residual.data_array['lat'].min() - self.pad_y,
+                        self.residual.data_array['lat'].max() + self.pad_y)
+
+            ax.xaxis.set_major_locator(MultipleLocator(self.tick_locator))
+            ax.yaxis.set_major_locator(MultipleLocator(self.tick_locator))
+            ax.xaxis.set_major_formatter(FormatStrFormatter('%2.2f'))
+            ax.yaxis.set_major_formatter(FormatStrFormatter('%2.2f'))
+            
+            ### -----------------------------
+            ii = p_dict['index'][0]
+            jj = p_dict['index'][1]
+
+            # calulate the rms self.residual/error
+            if p_dict['plot_num'] < 5:
+                rms = z_rms[:, self.period_index, ii, jj]
+            else:
+                rms = t_rms[:, self.period_index, ii, jj]
+        
+            # check for non zeros
+            nz = np.nonzero(rms)
+            data_points = np.array([lon_arr[nz], lat_arr[nz]])
+            rms = rms[nz]
+            if len(rms) < 5:
+                continue
+            
+            # interpolate onto a grid
+            rms_map = interpolate.griddata(data_points.T,
+                                           rms,
+                                           (grid_x, grid_y),
+                                           method='cubic')
+            # plot the grid
+            im = ax.pcolormesh(grid_x, 
+                               grid_y, 
+                               rms_map,
+                               cmap=self.rms_map_cmap, 
+                               vmin=self.rms_min,
+                               vmax=self.rms_max,
+                               zorder=3)
+            ax.grid(zorder=0, color=(.75, .75, .75), lw=.75)
+
+        # cb_ax = mcb.make_axes(ax, orientation='vertical', fraction=.1)
+        cb_ax = self.fig.add_axes([self.subplot_right + .02, .225, .02, .45])
+        color_bar = mcb.ColorbarBase(cb_ax,
+                                     cmap=self.rms_map_cmap,
+                                     norm=colors.Normalize(vmin=self.rms_min,
+                                                           vmax=self.rms_max),
+                                     orientation='vertical')
+
+        color_bar.set_label('RMS', fontdict=self.font_dict)
 
         self.fig.suptitle('period = {0:.5g} (s)'.format(self.residual.period_list[self.period_index]),
                           fontdict={'size': self.font_size + 3, 'weight': 'bold'})
@@ -339,16 +504,21 @@ class PlotRMSMaps(object):
         if fig_close:
             plt.close(self.fig)
 
-    def plot_loop(self, fig_format='png'):
+    def plot_loop(self, fig_format='png', style='point'):
         """
         loop over all periods and save figures accordingly
+        
+        :param: style [ 'point' | 'map' ]
         """
-        self.read_residual_fn()
 
         for f_index in range(self.residual.period_list.size):
             self.period_index = f_index
-            self.plot()
-            self.save_figure(fig_format=fig_format)
+            if style == 'point':
+                self.plot()
+                self.save_figure(fig_format=fig_format)
+            elif style == 'map':
+                self.plot_map()
+                self.save_figure(fig_format=fig_format)
 
 # ==================================================================================
 # FZ: add example usage code
