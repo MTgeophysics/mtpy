@@ -164,12 +164,12 @@ if __name__ == "__main__old":
 # =============================================================================================
 
 @click.command()
-@click.option('-d','--directory_file',type=str,default='examples/data/edi_files',help='directory or edsi data files')
+@click.option('-i','--input',type=str,default='examples/data/edi_files',help='directory or edsi data files')
 @click.option('-p','--period_list',type=str,default="0 1 10 20 30 40",help='Periods seperated by space')
-def plot_penetration_image(directory_file,period_list):
-    if os.path.isdir(directory_file):
+def plot_penetration_image(input,period_list):
+    if os.path.isdir(input):
         period_index_list = period_list.split(' ')
-        plot2Dprofile(directory_file, period_index_list, zcomponent='det')
+        plot2Dprofile(input, period_index_list, zcomponent='det')
     else:
         print("Please provide an edi directory !")
 
