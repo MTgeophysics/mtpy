@@ -423,7 +423,7 @@ class PlotPTMaps(mtplottools.MTEllipse):
                         y /= 1e3
                 else:
                     x, y = m(lon, lat)
-
+                
                 e = Ellipse([x, y],
                             phimax * ellipse_size_factor,
                             phimin * ellipse_size_factor,

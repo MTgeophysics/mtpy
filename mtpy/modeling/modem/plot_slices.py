@@ -745,7 +745,7 @@ class PlotSlices(object):
             plt.draw()
     # end func
 
-    def export_slices(self, plane='N-E', indexlist=[], station_buffer=200):
+    def export_slices(self, plane='N-E', indexlist=[], station_buffer=200, save=True):
         """
         Plot Slices
 
@@ -909,27 +909,27 @@ class PlotSlices(object):
             # end if
 
             #plt.show()
-
-            # --> save plots to a common folder
-            fn = '%s-plane-at-%s.%0.3f.%s.%s'%(plane,
-                                           self.current_label_desc[plane],
-                                           self.axis_values[plane][ii],
-                                           self.map_scale,
-                                           self.save_format)
-
-            if self.title == 'on':
-                fig.suptitle('%s Plane at %s: %0.4f %s'%(plane,
+            if save:
+                # --> save plots to a common folder
+                fn = '%s-plane-at-%s.%0.3f.%s.%s'%(plane,
                                                self.current_label_desc[plane],
                                                self.axis_values[plane][ii],
-                                               self.map_scale))
-            fpath = os.path.join(self.save_path, fn)
-            print('Exporting %s..'%(fpath))
-            fig.savefig(fpath, dpi=self.fig_dpi)
-
-            figlist.append(fig)
-            fnlist.append(fpath)
-            #fig.clear()
-            #plt.close()
+                                               self.map_scale,
+                                               self.save_format)
+    
+                if self.title == 'on':
+                    fig.suptitle('%s Plane at %s: %0.4f %s'%(plane,
+                                                   self.current_label_desc[plane],
+                                                   self.axis_values[plane][ii],
+                                                   self.map_scale))
+                fpath = os.path.join(self.save_path, fn)
+                print('Exporting %s..'%(fpath))
+                fig.savefig(fpath, dpi=self.fig_dpi)
+    
+                figlist.append(fig)
+                fnlist.append(fpath)
+                #fig.clear()
+                #plt.close()
         # end for
         return [figlist, fnlist]
     #end func
