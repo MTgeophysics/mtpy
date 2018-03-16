@@ -339,7 +339,7 @@ class Survey_Config(object):
         self.e_xaxis_length = 100
         self.e_yaxis_azimuth = 90
         self.e_yaxis_length = 100
-        self.elevation = 0.0
+        self.elevation = 2113.2
         self.hx = 2324
         self.hy = 2314
         self.hz = 2334
@@ -828,7 +828,6 @@ class Z3D_to_edi(object):
                 self.survey_config.station = station
                 self.survey_config.location = zd.metadata.job_name
                 self.survey_config.network = zd.metadata.job_by
-                self.survey_config.elevation = zd.header.alt
         else:
             if self.survey_config.rr_lat is not None:
                 if self.survey_config.rr_lat != zd.header.lat:
@@ -851,7 +850,6 @@ class Z3D_to_edi(object):
                 self.survey_config.rr_date = zd.schedule.Date
                 self.survey_config.rr_box = int(zd.header.box_number)
                 self.survey_config.rr_station = station
-                self.survey_config.rr_elevation = zd.header.alt
 
         return return_fn_arr
         
@@ -1258,8 +1256,8 @@ class Z3D_to_edi(object):
             birrp_fn_arr = np.array(birrp_arr_dict[df_key])
             
             # get station name
-            ex_find = np.where(birrp_fn_arr[0]['comp']) == 'ex'
-            station = os.path.splitext(os.path.basename(birrp_fn_arr[0][ex_find]['fn']))[0]
+            station = os.path.basename(birrp_fn_arr[0][0]['fn'])
+            station = os.path.splitext(station)[0]
             station = station.split('_')[0]
             
             # add parameters to birrp_params_dict 
@@ -1434,7 +1432,7 @@ class Z3D_to_edi(object):
                                                          
         return resp_plot
  
-    def process_data(self, df_list=None, max_blocks=3,
+    def process_data(self, df_list=None, max_blocks=None,
                      notch_dict={}, 
                      sr_dict={4096:(1000., 4),
                               1024:(3.99, 1.),
