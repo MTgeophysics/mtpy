@@ -338,8 +338,8 @@ class PlotSlices(object):
 
             d = (x**2 + y**2) # compute distances from origin to establish ordering
             sortedIndices = np.argsort(d)
-            print("stations",self.md_data.station_locations.station)
-            print("sortedINdices",sortedIndices)
+            #print("stations",self.md_data.station_locations.station)
+            #print("sortedINdices",sortedIndices)
 
             dx = x[sortedIndices][:-1] - x[sortedIndices][1:]
             dy = y[sortedIndices][:-1] - y[sortedIndices][1:]
@@ -909,6 +909,7 @@ class PlotSlices(object):
             # end if
 
             #plt.show()
+            figlist.append(fig)
             if save:
                 # --> save plots to a common folder
                 fn = '%s-plane-at-%s.%0.3f.%s.%s'%(plane,
@@ -925,13 +926,12 @@ class PlotSlices(object):
                 fpath = os.path.join(self.save_path, fn)
                 print('Exporting %s..'%(fpath))
                 fig.savefig(fpath, dpi=self.fig_dpi)
-    
-                figlist.append(fig)
                 fnlist.append(fpath)
+    
                 #fig.clear()
                 #plt.close()
         # end for
-        return [figlist, fnlist]
+        return figlist, fnlist
     #end func
 
     def on_key_press(self, event):
@@ -1321,6 +1321,11 @@ if __name__=='__main__':
         newPos = [oldPos.x0, oldPos.y0, oldPos.width / 2.0, oldPos.height / 2.0]
         cbax.set_position(newPos)
         f.savefig(fp, dpi=ps.fig_dpi)
+
+
+    # Exporting slices without saving
+    figs, fpaths = ps.export_slices('E-Z', [20], station_buffer=2000, save=False)
+    figs[0].savefig('/tmp/f.png', dpi=600)
 
 
     # Fetch a profile along station locations
