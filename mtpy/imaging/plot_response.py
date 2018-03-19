@@ -1952,6 +1952,18 @@ class PlotResponse(object):
 @click.option('-f','--font_size',type=int,default=2, help='Plot Text Fond Size ')
 def merge_plotting(directory, stem_data_file, input_data_file, collection_station,plot_z, font_size):
 
+    print("============================================================================")
+    print("")
+    print("Following are the examples for running plot_response : ")
+    print("")
+    print("python mtpy/imaging/plot_response.py  [--help | -h ]")
+    print("python mtpy/imaging/plot_response.py")
+    print("python mtpy/imaging/plot_response.py -d examples\data\ModeEM_files_Test " +
+          "-s Modular_MPI_NLCG_094.dat -i ModEM_Data.dat -c GB09 -p False -f 3")
+    print("python mtpy/imaging/plot_response.py -d examples\data\ModeEM_files_Test -p False ( Changing Plot types ) ")
+    print("")
+    print("============================================================================")
+
     ro = PlotResponse(data_fn=os.path.join(directory, input_data_file),
                       resp_fn=os.path.join(directory, stem_data_file),
                       plot_type=[collection_station],
