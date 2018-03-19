@@ -1948,7 +1948,7 @@ class PlotResponse(object):
 @click.option('-i','--input_data_file',type=str,default='ModEM_Data.dat', help='Data File')
 @click.option('-c','--collection_station',type=str,default='Synth02', help='Data Collection station')
 @click.option('-p','--plot_z',type=bool,default=False, help=
-                            '[True | False ] Plot True for Impedence and False for Resistivit and Phse')
+                            '[True | False ] Plot True for Impedence, False for Resistivity and Phsse')
 @click.option('-f','--font_size',type=int,default=2, help='Plot Text Fond Size ')
 def merge_plotting(directory, stem_data_file, input_data_file, collection_station,plot_z, font_size):
 
