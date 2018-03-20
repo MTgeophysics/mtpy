@@ -18,10 +18,9 @@ LastUpdate:     21/02/2018 Added command for running the script
 import sys, os
 from mtpy.modeling.modem import Data
 from mtpy.mtpy_globals import NEW_TEMP_DIR
-import click
 
 
-if __name__ == "__main__old":
+if __name__ == "__main__":
 
     file_dat = sys.argv[1]
     if len(sys.argv)>2:
@@ -32,27 +31,3 @@ if __name__ == "__main__old":
     obj = Data()
     
     obj.compute_phase_tensor(file_dat, outdir)
-
-# =============================================================================================
-# Command line wrapper for processing phase tensors and output to csv file
-# =============================================================================================
-
-@click.command()
-@click.option('-i','--dat_file',type=str,
-              default='examples/data/ModEM_files/Modular_MPI_NLCG_028.dat', \
-              help='input path/datafile')
-@click.option('-o','--output_dir',type=str,default="temp",help='Output directory')
-def process_phase_tensors(dat_file,output_dir):
-    print ("Input path/datfile   --------->     {}".format(dat_file))
-    print ("Output directory     --------->     {}".format(output_dir))
-
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
-    if os.path.isfile(dat_file):
-        obj = Data()
-        obj.compute_phase_tensor(dat_file, output_dir)
-    else:
-        print("Please provide an input dat file !")
-
-if __name__ == '__main__':
-    process_phase_tensors()

@@ -76,20 +76,6 @@ def plot_edi_file(edi_file):
     return
 
 
-
-@click.command()
-@click.option('-d','--directory',type=str,default='examples/data/edi_files',help='directory of edsi files (file/directory')
-@click.option('-c','--count',type=int,default=6, help='every how many edi files')
-def select_plot_edi_files(directory,count):
-    print('Directory of edi files ------> {}'.format(directory))
-    print('Count of files          ------> {}'.format(count))
-    if os.path.isfile(directory):
-        plot_edi_file(directory)
-    elif os.path.isdir(directory):
-        #plot_edi_dir(edi_path)
-        # plot_edi_dir(edi_path,every_how_many_edi=6)
-        plot_edi_dir(directory,every_how_many_edi=count)
-
 ###############################################################################
 # plot one-by-one edi files in a given dir-path
 # How to Run:
@@ -97,9 +83,7 @@ def select_plot_edi_files(directory,count):
 #    python  examples/plot_edis.py data/edifiles/
 #    python  examples/plot_edis.py data/edifiles/15125A.edi
 # =============================================================================
-if __name__ == '__main__old':
-
-    select_plot_edi_files()
+if __name__ == '__main__':
 
     if len(sys.argv) < 2:
         print (
@@ -116,15 +100,5 @@ if __name__ == '__main__old':
             plot_edi_dir(edi_path,every_how_many_edi=6)
         else:
             _logger.error("Usage %s %s", sys.argv[0], "path2edi")
-###############################################################################
-# Command wrapper for the edsi files plotting
-# How to Run:
-#           python  examples/scripts/plot_edis.py examples/data/edifiles
-#           python  examples/scripts/plot_edis.py --help
-###############################################################################
-
-if __name__ == '__main__':
-
-    select_plot_edi_files()
 
 
