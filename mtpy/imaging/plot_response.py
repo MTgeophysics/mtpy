@@ -309,6 +309,8 @@ class PlotResponse(object):
                 #                        hspace=self.subplot_hspace,
                 #                        height_ratios=h_ratio)
 # Changed for testing
+                if len(h_ratio) < 3 :
+                    h_ratio = [2.0, 1.5, 0.75]
                 gs = gridspec.GridSpec(3, 2,
                                        wspace=self.subplot_wspace,
                                        left=self.subplot_left,
@@ -317,7 +319,6 @@ class PlotResponse(object):
                                        right=self.subplot_right,
                                        hspace=self.subplot_hspace,
                                        height_ratios=h_ratio)
-
 
             else:
                 gs = gridspec.GridSpec(2, 4,
@@ -653,7 +654,7 @@ class PlotResponse(object):
 #                                        ax.yaxis.set_major_locator(MultipleLocator(dy))
 
                     if len(self.ax_list) == 4:
-                        #                        ax.yaxis.set_major_formatter(FormatStrFormatter('%.0f'))
+                        #ax.yaxis.set_major_formatter(FormatStrFormatter('%.0f'))
                         if self.plot_z == True:
                             ax.set_yscale('log', nonposy='clip')
                             ylim = ax.get_ylim()
@@ -1942,17 +1943,33 @@ class PlotResponse(object):
 #     ro.plot()
 
 @click.command(context_settings=dict(help_option_names=['-h', '--help']))
-@click.option('-d','--directory',type=str,default='examples/model_files/ModEM_2',help='directory for data files')
-@click.option('-s','--stem_data_file',type=str,default='Modular_MPI_NLCG_004', help='file stem')
+@click.option('-d','--directory',type=str,default=r'examples/model_files/ModEM_2',help='directory for data files')
+@click.option('-s','--stem_data_file',type=str,default='Modular_MPI_NLCG_004.dat', help='file stem')
 @click.option('-i','--input_data_file',type=str,default='ModEM_Data.dat', help='Data File')
 @click.option('-c','--collection_station',type=str,default='Synth02', help='Data Collection station')
-def merge_plotting(directory, stem_data_file, input_data_file, collection_station):
-    plot_z = False
+@click.option('-p','--plot_z',type=bool,default=False, help=
+                            '[True | False ] Plot True for Impedence, False for Resistivity and Phsse')
+@click.option('-f','--font_size',type=int,default=2, help='Plot Text Fond Size ')
+def merge_plotting(directory, stem_data_file, input_data_file, collection_station,plot_z, font_size):
+
+    print("============================================================================")
+    print("")
+    print("Following are the examples for running plot_response : ")
+    print("")
+    print("python mtpy/imaging/plot_response.py  [--help | -h ]")
+    print("python mtpy/imaging/plot_response.py")
+    print("python mtpy/imaging/plot_response.py -d examples\data\ModeEM_files_Test " +
+          "-s Modular_MPI_NLCG_094.dat -i ModEM_Data.dat -c GB09 -p False -f 3")
+    print("python mtpy/imaging/plot_response.py -d examples\data\ModeEM_files_Test -p False ( Changing Plot types ) ")
+    print("")
+    print("============================================================================")
+
     ro = PlotResponse(data_fn=os.path.join(directory, input_data_file),
-                      resp_fn=os.path.join(directory, stem_data_file + '.dat'),
+                      resp_fn=os.path.join(directory, stem_data_file),
                       plot_type=[collection_station],
                       plot_style=2,
-                      plot_z=plot_z)
+                      plot_z=plot_z,
+                      font_size=font_size)
     ro.plot()
 
 if __name__ == "__main__":

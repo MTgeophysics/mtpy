@@ -271,40 +271,85 @@ class Geology:
             scale_factor = 1000.
         else:
             scale_factor = 1.
-        
+
+        patches = []
+        legend_handles = []
+        legend_labels = []
+        handles = set()
+
+        ecolor_is_fcolor = False
+        if ('edgecolor' in kwargs.keys() and kwargs['edgecolor'] == 'face'):
+            ecolor_is_fcolor = True
+        # Process geometry
         for i, feature in enumerate(self._geometries):
+            fcolor = None
+            symbol = ''
+            if (self._hasLUT):
+                symbol = self._properties[i][self._symbolkey]
+                fcolor = self._lutDict[symbol]
+            if (fcolor == []): fcolor = default_polygon_color
+
             if (isinstance(feature, Polygon)):
                 polygon = feature
                 x, y = polygon.exterior.coords.xy
-                # coordinates in local coordinate system
-                xl,yl = self._xy_to_local(x,y,epsg_from,epsg_to,
-                                          centre_shift,scale_factor)
-                ax.plot(xl,yl,**kwargs)
-                
+                px, py = self._xy_to_local(x, y, epsg_from, epsg_to,
+                                           centre_shift, scale_factor)
+                ppolygon = Polygon(zip(px, py))
+
+                if (fcolor is not None): kwargs['facecolor'] = fcolor
+                if ('edgecolor' not in kwargs.keys() and not ecolor_is_fcolor):
+                    kwargs['edgecolor'] = 'none'
+                else:
+                    kwargs['edgecolor'] = fcolor
+                if ('fill') not in kwargs.keys(): kwargs['fill'] = True
+
+                pp = PolygonPatch(ppolygon, **kwargs)
+                patches.append(pp)
+
+                # filter duplicates
+                if (symbol not in handles):
+                    handles.add(symbol)
+                    legend_handles.append(pp)
+                    legend_labels.append(symbol)
+
             elif (isinstance(feature, MultiPolygon)):
                 multiPolygon = feature
 
-                for polygon in multiPolygon:        
+                for polygon in multiPolygon:
                     x, y = polygon.exterior.coords.xy
-                    # coordinates in local coordinate system
-                    xl,yl = self._xy_to_local(x,y,epsg_from,epsg_to,
-                                              centre_shift,scale_factor)
-                    ax.plot(xl,yl,**kwargs)
+                    px, py = self._xy_to_local(x, y, epsg_from, epsg_to,
+                                               centre_shift, scale_factor)
+                    ppolygon = Polygon(zip(px, py))
 
+                    if (fcolor is not None): kwargs['facecolor'] = fcolor
+                    if ('edgecolor' not in kwargs.keys() and not ecolor_is_fcolor):
+                        kwargs['edgecolor'] = 'none'
+                    else:
+                        kwargs['edgecolor'] = fcolor
+                    if ('fill') not in kwargs.keys(): kwargs['fill'] = True
+
+                    pp = PolygonPatch(ppolygon, **kwargs)
+                    patches.append(pp)
+
+                    # filter duplicates
+                    if (symbol not in handles):
+                        handles.add(symbol)
+                        legend_handles.append(pp)
+                        legend_labels.append(symbol)
+                        # end for
             elif (isinstance(feature, LineString)):
                 line = feature
                 x, y = line.coords.xy
-                # coordinates in local coordinate system
-                xl,yl = self._xy_to_local(x,y,epsg_from,epsg_to,
-                                          centre_shift,scale_factor)
-                ax.plot(xl,yl,**kwargs)
+                px, py = self._xy_to_local(x, y, epsg_from, epsg_to,
+                                           centre_shift, scale_factor)
+                ax.plot(px, py, **kwargs)
+                # end if
+        # end for
+        if (len(patches)):
+            ax.add_collection(PatchCollection(patches, match_original=True))
 
-                    
-
-        return ax
-        
-
-            
+        return ax, legend_handles, legend_labels
+    # end func
 # end class
 
 def main():
