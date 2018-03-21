@@ -17,7 +17,6 @@ import os
 import sys
 import glob
 from mtpy.core import mt
-import click
 
 import matplotlib.pyplot as plt
 from mtpy.utils.mtpylog import MtPyLog
