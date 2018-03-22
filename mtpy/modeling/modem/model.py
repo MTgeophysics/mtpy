@@ -551,6 +551,12 @@ class Model(object):
 
         # this is the value to the lower left corner from the center.
         self.grid_center = np.array([center_north, center_east, center_z])
+        
+        # make the resistivity array
+        self.res_model = np.zeros((self.nodes_north.size,
+                                  self.nodes_east.size,
+                                  self.nodes_z.size))
+        self.res_model[:, :, :] = self.res_initial_value
 
         # --> print out useful information
         self.print_mesh_params()
@@ -1132,10 +1138,10 @@ class Model(object):
             sx, sy = self.station_locations.rel_east[ss], \
                      self.station_locations.rel_north[ss]
             # indices of stations on model grid
-            sxi = np.where((sx <= self.grid_east[1:]) & (
-                sx > self.grid_east[:-1]))[0][0]
-            syi = np.where((sy <= self.grid_north[1:]) & (
-                sy > self.grid_north[:-1]))[0][0]
+            sxi = np.where((sx <= self.grid_east[1:]) &\
+                           (sx > self.grid_east[:-1]))[0][0]
+            syi = np.where((sy <= self.grid_north[1:]) &\
+                           (sy > self.grid_north[:-1]))[0][0]
 
             # first check if the site is in the sea
             if np.any(self.covariance_mask[::-1][syi, sxi] == 9):
@@ -1157,17 +1163,17 @@ class Model(object):
             station_index_x.append(sxi)
             station_index_y.append(syi)
 
-            #            # use topo elevation directly in modem.dat file
-            #            !!! can't use topo elevation directly from topography file as the
-            #                elevation needs to sit on the model mesh!
-            #            topoval = self.surface_dict['topography'][syi, sxi]
+            ## use topo elevation directly in modem.dat file
+            #!!! can't use topo elevation directly from topography file as the
+            #elevation needs to sit on the model mesh!
+            #topoval = self.surface_dict['topography'][syi, sxi]
             self._logger.debug("sname,ss, sxi, syi, szi, topoval: %s,%s,%s,%s,%s,%s"
                                % (sname, ss, sxi, syi, szi, topoval))
 
             # update elevation in station locations and data array, +1 m as
             # data elevation needs to be below the topography (as advised by Naser)
             self.station_locations.elev[ss] = topoval + 1.
-            self.data_obj.data_array['elev'][ss] = topoval + 1.
+            self.data_obj.data_array['rel_elev'][ss] = topoval + 1.
 
         # This will shift stations' location to be relative to the defined mesh-grid centre
         self.data_obj.station_locations = self.station_locations
@@ -1502,14 +1508,16 @@ class Model(object):
 
         # fig = plt.figure(3, dpi=200)
         fig = plt.figure(dpi=200)
-        plt.clf()
-        ax = plt.gca()
+        fig.clf()
+        ax = fig.add_subplot(1, 1, 1, aspect='equal') 
 
+        x, y = np.meshgrid(self.grid_east, self.grid_north)
         # topography data image
         # plt.imshow(elev_mg) # this upside down
         # plt.imshow(elev_mg[::-1])  # this will be correct - water shadow flip of the image
-        imgplot = plt.imshow(self.surface_dict['topography'],
-                             origin='lower')  # the orgin is in the lower left corner SW.
+#        imgplot = plt.imshow(self.surface_dict['topography'],
+#                             origin='lower')  # the orgin is in the lower left corner SW.
+        imgplot = ax.pcolormesh(x, y, self.surface_dict['topography'])
         divider = make_axes_locatable(ax)
         # pad = separation from figure to colorbar
         cax = divider.append_axes("right", size="3%", pad=0.2)
@@ -1536,11 +1544,14 @@ class Model(object):
         self._logger.debug("station grid index x: %s" % sgindex_x)
         self._logger.debug("station grid index y: %s" % sgindex_y)
 
-        ax.scatter(sgindex_x, sgindex_y, marker='v', c='b', s=2)
+#        ax.scatter(sgindex_x, sgindex_y, marker='v', c='b', s=2)
+        ax.scatter(self.station_locations.rel_east,
+                   self.station_locations.rel_north,
+                   marker='v', c='k', s=2)
 
-        ax.set_xlabel('Easting Cell Index', fontdict={'size': 9, 'weight': 'bold'})
-        ax.set_ylabel('Northing Cell Index', fontdict={'size': 9, 'weight': 'bold'})
-        ax.set_title("Elevation and Stations in N-E Map (Cells)")
+        ax.set_xlabel('Easting (m)', fontdict={'size': 9, 'weight': 'bold'})
+        ax.set_ylabel('Northing (m)', fontdict={'size': 9, 'weight': 'bold'})
+        ax.set_title("Elevation and Stations Map")
 
         plt.show()
 
