@@ -17,6 +17,9 @@ pObj = PlotSlices(model_fn=model_fn,
                   save_path=wd,
                   cmap='seismic_r',
                   plot_stations=True,
+                  station_id=[5,8], # indices (start,finish) of station label to plot as labels
+                  ew_limits=[-220,220], # option to specify limits, if not provided will auto calculate from data
+                  ns_limits=[-170,170], # option to specify limits, if not provided will auto calculate from data
                   font_size=6,
                   fig_size=(6,3)
                   )

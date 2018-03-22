@@ -825,10 +825,20 @@ class PlotSlices(object):
                     and self.plot_stations):
 
                 if(plane == 'N-E'):
-                    for ee, nn in zip(self.station_east, self.station_north):
-                        ax1.text(ee, nn, '*',
+                    for ee, nn, slabel in zip(self.station_east, self.station_north, self.station_names):
+                        if self.station_id is not None:
+                            slabel = slabel[self.station_id[0]:self.station_id[1]]
+                        # plot marker
+#                        ax1.plot(ee, nn, 'k.')
+                        ax1.text(ee, nn, '*', 
                                  verticalalignment='center',
                                  horizontalalignment='center',
+                                 fontdict={'size': 3, 'weight': 'bold'})
+                        # plot label
+                        ax1.text(ee, nn, slabel,
+                                 rotation=45,
+                                 verticalalignment='bottom',
+                                 horizontalalignment='left',
                                  fontdict={'size': 3, 'weight': 'bold'})
                 elif(plane == 'N-Z'):
                     sids = np.fabs(self.grid_east[ii] - self.station_east) < station_buffer
