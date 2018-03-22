@@ -910,6 +910,12 @@ class PlotSlices(object):
 
             #plt.show()
             figlist.append(fig)
+
+            if self.title == 'on':
+                fig.suptitle('%s Plane at %s: %0.4f %s'%(plane,
+                                               self.current_label_desc[plane],
+                                               self.axis_values[plane][ii],
+                                               self.map_scale))
             if save:
                 # --> save plots to a common folder
                 fn = '%s-plane-at-%s.%0.3f.%s.%s'%(plane,
@@ -918,11 +924,7 @@ class PlotSlices(object):
                                                self.map_scale,
                                                self.save_format)
     
-                if self.title == 'on':
-                    fig.suptitle('%s Plane at %s: %0.4f %s'%(plane,
-                                                   self.current_label_desc[plane],
-                                                   self.axis_values[plane][ii],
-                                                   self.map_scale))
+
                 fpath = os.path.join(self.save_path, fn)
                 print('Exporting %s..'%(fpath))
                 fig.savefig(fpath, dpi=self.fig_dpi)

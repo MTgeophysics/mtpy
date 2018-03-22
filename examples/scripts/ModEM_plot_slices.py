@@ -1,10 +1,9 @@
 
 import os
 import os.path as op
-os.chdir(r'C:\mtpywin\mtpy')
+os.chdir(r'C:\mtpywin\mtpy') # change to path to your mtpy installation
 
 from mtpy.modeling.modem import PlotSlices
-from mtpy.modeling.modem import Data
 
 wd = r'C:\mtpywin\mtpy\examples\model_files\ModEM_2'
 
@@ -22,7 +21,7 @@ pObj = PlotSlices(model_fn=model_fn,
                   fig_size=(6,3)
                   )
 figs,fpaths = pObj.export_slices(plane='N-E',
-                                 indexlist=[30],
+                                 indexlist=[30], # depth (or east/west) index to plot
                                  station_buffer=20e3,
                                  save=False
                                  )#range(20,40))
