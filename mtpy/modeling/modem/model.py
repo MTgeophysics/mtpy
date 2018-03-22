@@ -735,7 +735,8 @@ class Model(object):
 
     def add_topography_to_mesh(self, topography_file=None, topography_array=None,
                                interp_method='nearest',
-                               air_resistivity=1e17, sea_resistivity=0.3):
+                               air_resistivity=1e17, sea_resistivity=0.3, 
+                               max_elev=None):
         """
         For a given mesh grid, use the topofile data to define resistivity model.
         No new air layers will be added. Just identify the max elev height as the ref point
@@ -750,7 +751,8 @@ class Model(object):
         if topography_file is not None:
             self.project_surface(surface_file=topography_file,
                                  surface_name='topography',
-                                 method=interp_method)
+                                 method=interp_method,
+                                 max_value=max_elev)
         if topography_array is not None:
             self.surface_dict['topography'] = topography_array
 
@@ -936,7 +938,8 @@ class Model(object):
         return
 
     def project_surface(self, surface_file=None, surface=None, surface_name=None,
-                        surface_epsg=4326, method='nearest'):  # todo GA Version
+                        surface_epsg=4326, method='nearest',
+                        max_value=None):  # todo GA Version
         """
         project a surface to the model grid and add resulting elevation data
         to a dictionary called surface_dict. Assumes the surface is in lat/long
@@ -990,6 +993,11 @@ class Model(object):
             surface = mtfh.read_surface_ascii(surface_file)
 
         x, y, elev = surface
+        # If clipping of the surface for max value is desired
+        # need this if there are peaks, ModEM cannot handle them
+        if max_value is not None:
+            elev[np.where(elev > max_value)] = max_value
+            
 
         # if lat/lon provided as a 1D list, convert to a 2d grid of points
         if len(x.shape) == 1:
