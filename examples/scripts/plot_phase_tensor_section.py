@@ -1,65 +1,45 @@
+# -*- coding: utf-8 -*-
 """
-Plot phase tensor ellipses as a pseudo section (distance along profile vs period)
+Created on Wed Sep 18 15:35:39 2013
 
+@author: Alison Kirkby
+
+plots phase tensor ellipses as a pseudo section (distance along profile vs period) 
 """
-
-import os
-import sys
-import glob
 
 from mtpy.imaging.phase_tensor_pseudosection import PlotPhaseTensorPseudoSection
+import os.path as op
+import os
+import matplotlib.pyplot as plt
+
+# path to edis
+edi_path = r'C:\mtpywin\mtpy\examples\data\edi_files_2'
+
+# edi list
+elst=[op.join(edi_path,edi) for edi in os.listdir(edi_path) if ((edi.endswith('.edi')))]# and edi.startswith('GB')
+
+# create a plot object
+plotObj = PlotPhaseTensorPseudoSection(fn_list = elst,
+                                 linedir='ns', # 'ns' if the line is closer to north-south, 'ew' if line is closer to east-west
+                                 stretch=(35,8), # determines (x,y) aspect ratio of plot
+                                 station_id=(0,10), # indices for showing station names
+                                 plot_tipper = 'yri', # plot tipper ('y') + 'ri' means real+imag
+                                 font_size=5,
+                                 lw=0.5
+#                                 dpi=300
+                                 )
+
+# update some parameters
+plotObj.ellipse_size = 2.5
+
+## example to color by skew
+#plotObj.ellipse_colorby = 'skew'
+#plotObj.ellipse_cmap = 'mt_seg_bl2wh2rd'
+#plotObj.ellipse_range = (-12,12,3)
+
+# example to color by phimin
+plotObj.ellipse_colorby = 'phimin'
 
 
-def main(edi_path, save_file=None):
-    """
-    Plot Phase Tensor Pseudo Section
-    :param edi_path: path2edi dir
-    :param save_file: save file of the plot
-    :return:
-    """
 
-    edi_files = glob.glob(os.path.join(edi_path, "*.edi"))
-
-    ptpObj = PlotPhaseTensorPseudoSection(fn_list=edi_files,
-                                          tscale='period',
-                                          # ylim=(1e-1, 1e3),  # orig period
-                                          # range to plot
-                                          # period range to plot
-                                          ylim=(0, 10000),
-                                          # xlim = (0,10000),
-                                          stretch=(2000, 40),
-                                          # determines (x,y) aspect ratio of plot
-                                          station_id=(
-                                              0, 10),  # indices for showing station names
-                                          ellipse_dict={'size': 6},
-                                          plot_tipper='yri',
-                                          arrow_dict={'size': 5, 'head_length': 0.2,
-                                                      'head_width': 0.1, 'lw': 0.5},
-                                          # arrow parameters, adjust as
-                                          # necessary. lw = linewidth
-                                          font_size=4,
-                                          dpi=300)
-
-    ptpObj.plot()
-
-    ptpObj.save_figure2(save_fn=save_file)
-
-    return
-
-
-##########################################################################
-# How to Run:
-# cd path2/mtpy2
-# export PYTHONPATH=/path2/mtpy2   # the full path to your repo dir: mtpy2
-# python examples/plot_phase_tensor_section.py ./examples/data/edi_files/georgina
-# python examples/plot_phase_tensor_section.py ./examples/data/edi_files
-# python examples/plot_phase_tensor_section.py ./tests/data/edifiles
-##########################################################################
-if __name__ == '__main__':
-    edi_path = sys.argv[1]
-    if len(sys.argv) >= 3:
-        savef= sys.argv[2]
-    else:
-        savef=None
-
-    main(edi_path, save_file=savef)
+plotObj.plot()
