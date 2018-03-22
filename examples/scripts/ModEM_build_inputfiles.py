@@ -5,24 +5,33 @@ Created on Wed Oct 18 10:18:12 2017
 @author: u64125
 """
 import os
-os.chdir(r'C:\Git\mtpy') # change this path to the path where mtpy is installed
+os.chdir(r'C:\mtpywin\mtpy') # change this path to the path where mtpy is installed
 import os.path as op
 from mtpy.modeling.modem import Model
 from mtpy.modeling.modem import Data
 from mtpy.modeling.modem import Covariance
+from mtpy.core.edi import Edi
+
 import numpy as np
 
 # path to save to
-workdir = r'C:\Git\mtpy\examples\model_files\ModEM_2_with_topo'
+workdir = r'C:\test\ModEM'
 
 # path where edi files are located
-edipath = r'C:\Git\mtpy\examples\data\edi_files_2'
+edipath = r'C:\mtpywin\mtpy\examples\data\edi_files_2'
 
 # period list (modify as necessary, will not include periods outside of the range of the edi file)
-start_period = -2
+# here is an example to specify start, stop and number of periods
+# these particular numbers give a range of 1000 Hz to 1000 s with 4 periods per decade
+start_period = -3
 stop_period = 3
-n_periods = 17
+n_periods = 25
 period_list = np.logspace(start_period,stop_period,n_periods)
+
+## an example to use the periods from a particular edi file
+#edifile_periods = op.join(edipath,'Synth00.edi')
+#eobj = Edi(edifile_periods)
+#period_list = 1./eobj.freq
 
 
 # list of edi files, search for all files ending with '.edi'
@@ -37,7 +46,8 @@ do = Data(edi_list=edi_list,
                save_path=workdir,
                period_list=period_list,
                error_type_z='floor_egbert', # error type (egbert is % of sqrt(zxy*zyx))
-               error_value_z=5, # error floor in percent
+                                            # floor means apply it as an error floor
+               error_value_z=5, # error floor (or value) in percent
                error_type_tipper = 'floor_abs', # type of error to set in tipper, 
                                                 # floor_abs is an absolute value set as a floor
                error_value_tipper =.03,
@@ -70,11 +80,15 @@ mo.make_mesh()
 mo.write_model_file(save_path=workdir)
 
 # add topography to res model
-mo.add_topography_to_model2(r'C:\Git\mtpy\examples\data\AussieContinent_etopo1.asc')
+mo.add_topography_to_model2(r'C:\mtpywin\mtpy\examples\data\AussieContinent_etopo1.asc')
 mo.write_model_file(save_path=workdir)
 
+# update data elevations
 do.project_stations_on_topography(mo)
 
 
 co = Covariance()
-co.write_covariance_file(model_fn=mo.model_fn)
+co.write_covariance_file(model_fn=mo.model_fn,
+                         smoothing_east=0.4,
+                         smoothing_north=0.4,
+                         smoothing_z=0.4)

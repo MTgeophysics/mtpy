@@ -224,7 +224,7 @@ class PlotSlices(object):
         # set up kd-tree for interpolation on to arbitrary surfaces
         # intersecting the model
         self._initialize_interpolation()
-
+        
         self.plot()
 
     def _initialize_interpolation(self):
@@ -343,14 +343,14 @@ class PlotSlices(object):
 
             dx = x[sortedIndices][:-1] - x[sortedIndices][1:]
             dy = y[sortedIndices][:-1] - y[sortedIndices][1:]
-            d = np.cumsum(np.sqrt(dx ** 2 + dy ** 2)) # compute cumulative distance along profile
-            d = np.insert(d, 0, 0)
+            dst = np.cumsum(np.sqrt(dx ** 2 + dy ** 2)) # compute cumulative distance along profile
+            dst = np.insert(dst, 0, 0)
 
-            xio = interp1d(d, x[sortedIndices])
-            yio = interp1d(d, y[sortedIndices])
+            xio = interp1d(dst, x[sortedIndices])
+            yio = interp1d(dst, y[sortedIndices])
 
             if(nsteps>-1):
-                d = np.linspace(d.min(), d.max(), nsteps) # create regular grid
+                d = np.linspace(dst.min(), dst.max(), nsteps) # create regular grid
             for zi in self.grid_z:
                 for xi,yi in zip(xio(d), yio(d)):
                     xyz_list.append([xi+xmin, yi+ymin, zi])
