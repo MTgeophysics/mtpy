@@ -88,7 +88,7 @@ do.project_stations_on_topography(mo)
 
 
 co = Covariance()
-co.write_covariance_file(model_fn=mo.model_fn,
-                         smoothing_east=0.4,
-                         smoothing_north=0.4,
-                         smoothing_z=0.4)
+co.smoothing_east = 0.4
+co.smoothing_north = 0.4
+co.smoothing_z = 0.4
+co.write_covariance_file(model_fn=mo.model_fn)

@@ -1950,7 +1950,7 @@ class Model(object):
         if not np.iterable(clip):
             clip = [clip, clip, clip]
 
-            # determine save path
+        # determine save path
         savepath = None
         if fn is not None:
             savepath = os.path.dirname(fn)
