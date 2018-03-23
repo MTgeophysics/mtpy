@@ -200,7 +200,15 @@ class MTEllipse(object):
         """
         read in dictionary and set default values if no entry given
         """
-
+        # check all values are populated:
+        default_dict = {'size': 2,
+                        'ellipse_range':[0,0],
+                        'ellipse_colorby':'skew',
+                        'ellipse_cmap':'mt_bl2gr2rd'}
+        for key in default_dict.keys():
+            if key not in ellipse_dict.keys():
+                ellipse_dict[key] = default_dict[key]
+        
         # --> set the ellipse properties
         for key in ellipse_dict.keys():
             setattr(self, key, ellipse_dict[key])
