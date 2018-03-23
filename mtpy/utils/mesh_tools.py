@@ -20,7 +20,11 @@ def get_nearest_index(array,value):
             value = target value
             
     """
-    return
+    array = np.array(array)
+    
+    abs_diff = np.abs(array - value)
+    
+    return np.where(abs_diff==np.amin(abs_diff))[0][0]
     
 
 
