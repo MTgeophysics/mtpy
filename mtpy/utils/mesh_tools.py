@@ -11,6 +11,18 @@ functions to assist with mesh generation
 import numpy as np
 
 
+def get_nearest_index(array,value):
+    """
+    Return the index of the nearest value to the provided value in an array:
+    
+        inputs:
+            array = array or list of values
+            value = target value
+            
+    """
+    return
+    
+
 
 def make_log_increasing_array(z1_layer, target_depth, n_layers, increment_factor=0.9):
     """

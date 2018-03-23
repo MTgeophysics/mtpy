@@ -338,7 +338,7 @@ class PlotSlices(object):
 
             d = (x**2 + y**2) # compute distances from origin to establish ordering
             sortedIndices = np.argsort(d)
-            #print("stations",self.md_data.station_locations.station)
+            #print("stations",self.md_data.stations_obj.station)
             #print("sortedINdices",sortedIndices)
 
             dx = x[sortedIndices][:-1] - x[sortedIndices][1:]
@@ -474,10 +474,10 @@ class PlotSlices(object):
             if os.path.isfile(self.data_fn) == True:
                 md_data = Data()
                 md_data.read_data_file(self.data_fn)
-                self.station_east = md_data.station_locations.rel_east / self.dscale
-                self.station_north = md_data.station_locations.rel_north / self.dscale
-                self.station_names = md_data.station_locations.station
-                self.station_elev = md_data.station_locations.elev / self.dscale
+                self.station_east = md_data.stations_obj.rel_east / self.dscale
+                self.station_north = md_data.stations_obj.rel_north / self.dscale
+                self.station_names = md_data.stations_obj.station
+                self.station_elev = md_data.stations_obj.elev / self.dscale
 
                 self.md_data = md_data
             else:
