@@ -240,18 +240,18 @@ class Model(object):
     def __init__(self, stations_object=None, data_object=None, **kwargs):
         self._logger = MtPyLog.get_mtpy_logger(self.__class__.__name__)
 
-        self.stations_obj = None
+        self.station_locations = None
         self.data_obj = None
 
         if stations_object is not None:
-            self.stations_obj = stations_object# station location has to be moved
+            self.station_locations = stations_object# station location has to be moved
             # self.stations_obj = station_object.station_locations # station location has to be moved
             # self.data_obj = station_object # data_obj has to be updted
             self._logger.info("Use Station object as input, all functions that "
                               "uses data_objects are no longer available.")
         elif data_object is not None:
             self.data_obj = data_object
-            self.stations_obj = self.data_obj.stations_obj
+            self.station_locations = self.data_obj.station_locations
             self._logger.info("Use Data object as input.")
         # else:
         #     raise AttributeError("please provide either Station object or Data object as input")
@@ -402,10 +402,10 @@ class Model(object):
         pad_width_north = self.pad_num * 1.5 * self.cell_size_north
 
         # get the extremities
-        west = self.stations_obj.rel_east.min() - pad_width_east
-        east = self.stations_obj.rel_east.max() + pad_width_east
-        south = self.stations_obj.rel_north.min() - pad_width_north
-        north = self.stations_obj.rel_north.max() + pad_width_north
+        west = self.station_locations.rel_east.min() - pad_width_east
+        east = self.station_locations.rel_east.max() + pad_width_east
+        south = self.station_locations.rel_north.min() - pad_width_north
+        north = self.station_locations.rel_north.max() + pad_width_north
 
         # round the numbers so they are easier to read
         west = np.round(west, -2)
@@ -471,7 +471,7 @@ class Model(object):
                                     padding_north + inner_north.max())
 
         # --> need to make sure none of the stations lie on the nodes
-        for s_east in sorted(self.stations_obj.rel_east):
+        for s_east in sorted(self.station_locations.rel_east):
             try:
                 node_index = np.where(abs(s_east - self.grid_east) <
                                       .02 * self.cell_size_east)[0][0]
@@ -483,7 +483,7 @@ class Model(object):
                 continue
 
         # --> need to make sure none of the stations lie on the nodes
-        for s_north in sorted(self.stations_obj.rel_north):
+        for s_north in sorted(self.station_locations.rel_north):
             try:
                 node_index = np.where(abs(s_north - self.grid_north) <
                                       .02 * self.cell_size_north)[0][0]
@@ -539,7 +539,7 @@ class Model(object):
     def print_mesh_params(self, file=sys.stdout):
         # --> print out useful information
         print('-' * 15, file=file)
-        print('\tNumber of stations = {0}'.format(len(self.stations_obj.station)), file=file)
+        print('\tNumber of stations = {0}'.format(len(self.station_locations.station)), file=file)
         print('\tDimensions: ', file=file)
         print('\t\te-w = {0}'.format(self.grid_east.size), file=file)
         print('\t\tn-s = {0}'.format(self.grid_north.size), file=file)
@@ -973,7 +973,7 @@ class Model(object):
         xs, ys = mtpy.utils.gis_tools.epsg_project(x, y, epsg_from, epsg_to)
 
         # get centre position of model grid in real world coordinates
-        x0, y0 = [np.median(self.stations_obj.station_locations[dd] - self.stations_obj.station_locations['rel_' + dd]) for dd in
+        x0, y0 = [np.median(self.station_locations.station_locations[dd] - self.station_locations.station_locations['rel_' + dd]) for dd in
                   ['east', 'north']]
 
         # centre points of model grid in real world coordinates
@@ -1100,17 +1100,17 @@ class Model(object):
         :return:
         """
 
-        sx = self.stations_obj.rel_east
-        sy = self.stations_obj.rel_north
+        sx = self.station_locations.rel_east
+        sy = self.station_locations.rel_north
 
         # find index of each station on grid
         station_index_x = []
         station_index_y = []
-        for sname in self.stations_obj.station:
-            ss = np.where(self.stations_obj.station == sname)[0][0]
+        for sname in self.station_locations.station:
+            ss = np.where(self.station_locations.station == sname)[0][0]
             # relative locations of stations
-            sx, sy = self.stations_obj.rel_east[ss], \
-                     self.stations_obj.rel_north[ss]
+            sx, sy = self.station_locations.rel_east[ss], \
+                     self.station_locations.rel_north[ss]
             # indices of stations on model grid
             sxi = np.where((sx <= self.grid_east[1:]) & (
                 sx > self.grid_east[:-1]))[0][0]
@@ -1146,11 +1146,11 @@ class Model(object):
 
             # update elevation in station locations and data array, +1 m as
             # data elevation needs to be below the topography (as advised by Naser)
-            self.stations_obj.elev[ss] = topoval + 1.
+            self.station_locations.elev[ss] = topoval + 1.
             self.data_obj.data_array['elev'][ss] = topoval + 1.
 
         # This will shift stations' location to be relative to the defined mesh-grid centre
-        self.data_obj.station_locations = self.stations_obj
+        self.data_obj.station_locations = self.station_locations
 
         self._logger.debug("Re-write data file after adding topo")
         self.data_obj.write_data_file(fill=False)  # (Xi, Yi, Zi) of each station-i may be shifted
@@ -1217,8 +1217,8 @@ class Model(object):
         ax1 = fig.add_subplot(1, 2, 1, aspect='equal')
 
         # plot station locations
-        plot_east = self.stations_obj.rel_east
-        plot_north = self.stations_obj.rel_north
+        plot_east = self.station_locations.rel_east
+        plot_north = self.station_locations.rel_north
 
         # plot stations
         ax1.scatter(plot_east,
@@ -1307,7 +1307,7 @@ class Model(object):
 
         # --> plot stations
         ax2.scatter(plot_east,
-                    [0] * self.stations_obj.station.size,
+                    [0] * self.station_locations.station.size,
                     marker=station_marker,
                     c=marker_color,
                     s=marker_size)
@@ -1442,7 +1442,7 @@ class Model(object):
                  color=line_color)
 
         # --> plot stations
-        # ax2.scatter(plot_east, [0] * self.stations_obj.shape[0],
+        # ax2.scatter(plot_east, [0] * self.station_locations.shape[0],
         #            marker=station_marker, c=marker_color,s=marker_size)
 
         ax2.set_ylim(self.z_target_depth, -2000)
@@ -2489,12 +2489,12 @@ class Model(object):
             x, y = np.meshgrid(x, y)
 
         xs, ys, utm_zone = gis_tools.project_points_ll2utm(y, x,
-                                                           epsg=self.stations_obj.model_epsg,
-                                                           utm_zone=self.stations_obj.model_utm_zone
+                                                           epsg=self.station_locations.model_epsg,
+                                                           utm_zone=self.station_locations.model_utm_zone
                                                            )
 
         # get centre position of model grid in real world coordinates
-        x0, y0 = self.stations_obj.center_point.east[0], self.stations_obj.center_point.north[0]
+        x0, y0 = self.station_locations.center_point.east[0], self.station_locations.center_point.north[0]
 
         # centre points of model grid in real world coordinates
         xg, yg = [np.mean([arr[1:], arr[:-1]], axis=0)
@@ -2557,8 +2557,8 @@ class Model(object):
             # get core cells
             core_cells = mtmesh.get_station_buffer(gcx,
                                                    gcy,
-                                                   self.stations_obj.station_locations['rel_east'],
-                                                   self.stations_obj.station_locations['rel_north'],
+                                                   self.station_locations.station_locations['rel_east'],
+                                                   self.station_locations.station_locations['rel_north'],
                                                    buf=5 * (self.cell_size_east * 2 + self.cell_size_north ** 2) ** 0.5)
             topo_core = self.surface_dict['topography'][core_cells]
             topo_core_min = max(topo_core.min(),0)

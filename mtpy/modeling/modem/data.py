@@ -410,28 +410,28 @@ class Data(object):
         get station locations from edi files
         """
 
-        self.stations_obj = Stations(model_epsg=self.model_epsg,
+        stations_obj = Stations(model_epsg=self.model_epsg,
                                 model_utm_zone=self.model_utm_zone)
         mt_list = [self.mt_dict[s_key] for s_key in sorted(self.mt_dict.keys())]
 
-        self.stations_obj.get_station_locations(mt_list)
+        stations_obj.get_station_locations(mt_list)
         # rotate locations if needed
         if self._rotation_angle != 0:
-            self.stations_obj.rotate_stations(self._rotation_angle)
+            stations_obj.rotate_stations(self._rotation_angle)
 
         # fill data array
-        self.data_array[:]['station'] = self.stations_obj.station
-        self.data_array[:]['lat'] = self.stations_obj.lat
-        self.data_array[:]['lon'] = self.stations_obj.lon
-        self.data_array[:]['east'] = self.stations_obj.east
-        self.data_array[:]['north'] = self.stations_obj.north
-        self.data_array[:]['elev'] = self.stations_obj.elev
-        self.data_array[:]['rel_east'] = self.stations_obj.rel_east
-        self.data_array[:]['rel_north'] = self.stations_obj.rel_north
-        self.data_array[:]['zone'] = self.stations_obj.utm_zone
+        self.data_array[:]['station'] = stations_obj.station
+        self.data_array[:]['lat'] = stations_obj.lat
+        self.data_array[:]['lon'] = stations_obj.lon
+        self.data_array[:]['east'] = stations_obj.east
+        self.data_array[:]['north'] = stations_obj.north
+        self.data_array[:]['elev'] = stations_obj.elev
+        self.data_array[:]['rel_east'] = stations_obj.rel_east
+        self.data_array[:]['rel_north'] = stations_obj.rel_north
+        self.data_array[:]['zone'] = stations_obj.utm_zone
 
         # get center point
-        self.center_point = self.stations_obj.center_point
+        self.center_point = stations_obj.center_point
 
     def get_period_list(self):
         """
@@ -776,11 +776,11 @@ class Data(object):
         station_locations = self.data_array[['station', 'lat', 'lon',
                                              'north', 'east', 'elev',
                                              'rel_north', 'rel_east', 'zone']]
-        self.stations_obj = Stations(model_epsg=self.model_epsg,
+        stations_obj = Stations(model_epsg=self.model_epsg,
                                 model_utm_zone=self.model_utm_zone)
-        self.stations_obj.station_locations = station_locations
+        stations_obj.station_locations = station_locations
 
-        return self.stations_obj
+        return stations_obj
 
     station_locations = property(_get_station_locations,
                                  _set_station_locations,
