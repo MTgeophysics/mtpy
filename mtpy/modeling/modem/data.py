@@ -1282,6 +1282,10 @@ class Data(object):
             if dline.find('#') == 0:
                 header_list.append(dline.strip())
             elif dline.find('>') == 0:
+                # modem outputs only 7 characters for the lat and lon
+                # if there is a negative they merge together, need to split 
+                # them up
+                dline = dline.replace('-', ' -')
                 metadata_list.append(dline[1:].strip())
                 if dline.lower().find('ohm') > 0:
                     self.units = 'ohm'
@@ -1308,6 +1312,7 @@ class Data(object):
                         self.center_point = np.recarray(1, dtype=[('station', '|S10'),
                                                                   ('lat', np.float),
                                                                   ('lon', np.float),
+                                                                  ('elev', np.float),
                                                                   ('rel_elev', np.float),
                                                                   ('rel_east', np.float),
                                                                   ('rel_north', np.float),
@@ -1319,6 +1324,7 @@ class Data(object):
                         try:
                             self.center_point.elev = value_list[2]
                         except IndexError:
+                            self.center_point.elev = 0.0
                             print('Did not find center elevation in data file')
 
                         ce, cn, cz = gis_tools.project_point_ll2utm(self.center_point.lat,
