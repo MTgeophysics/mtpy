@@ -11,7 +11,7 @@ import os, sys
 from mtpy.imaging import penetration_depth1d as pd1d
 
 #edipath = r'C:\Git\mtpy\examples\data\edi_files'  # avoid using \
-edipath = r'examples/data/edi_files'  # / is Unix and Win-Dos compatible
+edipath = r'C:/mtpywin/mtpy/examples/data/edi_files/pb23c.edi'  # / is Unix and Win-Dos compatible
 
 edi_path = edipath  # sys.argv[1]
 

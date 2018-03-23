@@ -1050,7 +1050,6 @@ class Header(object):
 
         """
         
-        print "longitude_format header",longitude_format
 
         if header_list is not None:
             self.read_header(header_list)

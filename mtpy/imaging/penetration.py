@@ -90,8 +90,8 @@ class Depth1D(ImagingBase):
                                 np.sqrt(zeta.resistivity[:, 0, 1] * periods)
 
             # pen_zxy, = plt.semilogx(periods, -penetration_depth, '-*',label='Zxy')
-            pen_zxy, = plt.semilogx(
-                periods, -penetration_depth, color='#000000', marker='*', label='Zxy')
+            pen_zxy, = plt.loglog(
+                periods, penetration_depth, color='#000000', marker='*', label='Zxy')
             # See
             # http://matplotlib.org/1.3.1/examples/pylab_examples/line_styles.html
 
@@ -101,8 +101,8 @@ class Depth1D(ImagingBase):
             penetration_depth = scale_param * \
                                 np.sqrt(zeta.resistivity[:, 1, 0] * periods)
 
-            pen_zyx, = plt.semilogx(
-                periods, -penetration_depth, color='g', marker='o', label='Zyx')
+            pen_zyx, = plt.loglog(
+                periods, penetration_depth, color='g', marker='o', label='Zyx')
             legendh.append(pen_zyx)
 
         if 'det' in self._rholist:
@@ -111,8 +111,8 @@ class Depth1D(ImagingBase):
             det_penetration_depth = scale_param * np.sqrt(0.2 * periods * det2 * periods)
 
             # pen_det, = plt.semilogx(periods, -det_penetration_depth, '-^', label='Determinant')
-            pen_det, = plt.semilogx(
-                periods, -det_penetration_depth, color='b', marker='^', label='Determinant')
+            pen_det, = plt.loglog(
+                periods, det_penetration_depth, color='b', marker='^', label='Determinant')
             legendh.append(pen_det)
 
         plt.legend(
@@ -128,6 +128,7 @@ class Depth1D(ImagingBase):
         plt.title(title)
         plt.xlabel("Log Period (seconds)", fontsize=16)
         plt.ylabel("Penetration Depth (meters)", fontsize=16)
+        plt.gca().invert_yaxis()
         # set window title
         self._fig.canvas.set_window_title(title)
 
