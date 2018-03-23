@@ -59,7 +59,7 @@ do.data_array['elev'] = 0.
 do.write_data_file(fill=False)
 
 # create model file
-mo = Model(station_locations=do.station_locations,
+mo = Model(stations_object=do.stations_obj,
                 cell_size_east=8000,
                 cell_size_north=8000,
                 pad_north=7, # number of padding cells in each of the north and south directions

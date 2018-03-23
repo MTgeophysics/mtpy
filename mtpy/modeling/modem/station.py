@@ -262,17 +262,14 @@ class Stations(object):
         # rotate the relative station locations
         new_coords = np.array(np.dot(rot_matrix, coords))
 
-        print self.station_locations['rel_east']
 
         self.station_locations['rel_east'] = new_coords[0, :]
         self.station_locations['rel_north'] = new_coords[1, :]
         
-        print self.station_locations['rel_east']
 
         print 'Rotated stations by {0:.1f} deg clockwise from N'.format(
             rotation_angle)
         
-        return new_coords
 
 
     def check_utm_crossing(self):
