@@ -11,13 +11,12 @@ import os, sys
 from mtpy.imaging import penetration_depth1d as pd1d
 
 #edipath = r'C:\Git\mtpy\examples\data\edi_files'  # avoid using \
-edipath = r'C:/mtpywin/mtpy/examples/data/edi_files/pb23c.edi'  # / is Unix and Win-Dos compatible
+edipath = r'E:/mtpywin/mtpy/examples/data/edi_files/pb23c.edi'  # / is Unix and Win-Dos compatible
+# or get this variable from the cmdline:  edipath = sys.argv[1]
 
-edi_path = edipath  # sys.argv[1]
-
-if os.path.isfile(edi_path):
-    pd1d.plot_edi_file(edi_path, savefile='C:/temp/pen_depth.jpg')
-            # rholist can be any of ['zxy','zyx','det'], default all of them
-elif os.path.isdir(edi_path):  # choose a suitable function below at run
+if os.path.isfile(edipath):
+    pd1d.plot_edi_file(edipath, savefile='C:/temp/pen_depth.jpg')
+    # rholist can be any of ['zxy','zyx','det'], default all of them
+elif os.path.isdir(edipath):
     # plot_edi_dir(edi_path )
-    pd1d.plot_edi_dir(edi_path, rholist=['det'])
+    pd1d.plot_edi_dir(edipath, rholist=['det'])
