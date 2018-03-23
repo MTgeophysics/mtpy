@@ -106,8 +106,8 @@ class Depth1D(ImagingBase):
             legendh.append(pen_zyx)
 
         if 'det' in self._rholist:
-            # determinant
-            det2 = np.abs(zeta.det[0])
+            # determinant array
+            det2 = np.abs(zeta.det)
             det_penetration_depth = scale_param * np.sqrt(0.2 * periods * det2 * periods)
 
             # pen_det, = plt.semilogx(periods, -det_penetration_depth, '-^', label='Determinant')
