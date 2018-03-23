@@ -1,4 +1,12 @@
 #!/usr/bin/env python
+"""
+This script demonstrates how to make a polar plot
+
+Author: unknown
+
+"""
+
+
 import matplotlib
 import matplotlib.pyplot as plt
 

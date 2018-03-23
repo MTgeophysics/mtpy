@@ -224,7 +224,7 @@ class PlotSlices(object):
         # set up kd-tree for interpolation on to arbitrary surfaces
         # intersecting the model
         self._initialize_interpolation()
-
+        
         self.plot()
 
     def _initialize_interpolation(self):
@@ -338,19 +338,19 @@ class PlotSlices(object):
 
             d = (x**2 + y**2) # compute distances from origin to establish ordering
             sortedIndices = np.argsort(d)
-            #print("stations",self.md_data.station_locations.station)
+            #print("stations",self.md_data.stations_obj.station)
             #print("sortedINdices",sortedIndices)
 
             dx = x[sortedIndices][:-1] - x[sortedIndices][1:]
             dy = y[sortedIndices][:-1] - y[sortedIndices][1:]
-            d = np.cumsum(np.sqrt(dx ** 2 + dy ** 2)) # compute cumulative distance along profile
-            d = np.insert(d, 0, 0)
+            dst = np.cumsum(np.sqrt(dx ** 2 + dy ** 2)) # compute cumulative distance along profile
+            dst = np.insert(dst, 0, 0)
 
-            xio = interp1d(d, x[sortedIndices])
-            yio = interp1d(d, y[sortedIndices])
+            xio = interp1d(dst, x[sortedIndices])
+            yio = interp1d(dst, y[sortedIndices])
 
             if(nsteps>-1):
-                d = np.linspace(d.min(), d.max(), nsteps) # create regular grid
+                d = np.linspace(dst.min(), dst.max(), nsteps) # create regular grid
             for zi in self.grid_z:
                 for xi,yi in zip(xio(d), yio(d)):
                     xyz_list.append([xi+xmin, yi+ymin, zi])
@@ -474,10 +474,10 @@ class PlotSlices(object):
             if os.path.isfile(self.data_fn) == True:
                 md_data = Data()
                 md_data.read_data_file(self.data_fn)
-                self.station_east = md_data.station_locations.rel_east / self.dscale
-                self.station_north = md_data.station_locations.rel_north / self.dscale
-                self.station_names = md_data.station_locations.station
-                self.station_elev = md_data.station_locations.elev / self.dscale
+                self.station_east = md_data.stations_obj.rel_east / self.dscale
+                self.station_north = md_data.stations_obj.rel_north / self.dscale
+                self.station_names = md_data.stations_obj.station
+                self.station_elev = md_data.stations_obj.elev / self.dscale
 
                 self.md_data = md_data
             else:
@@ -825,10 +825,20 @@ class PlotSlices(object):
                     and self.plot_stations):
 
                 if(plane == 'N-E'):
-                    for ee, nn in zip(self.station_east, self.station_north):
-                        ax1.text(ee, nn, '*',
+                    for ee, nn, slabel in zip(self.station_east, self.station_north, self.station_names):
+                        if self.station_id is not None:
+                            slabel = slabel[self.station_id[0]:self.station_id[1]]
+                        # plot marker
+#                        ax1.plot(ee, nn, 'k.')
+                        ax1.text(ee, nn, '*', 
                                  verticalalignment='center',
                                  horizontalalignment='center',
+                                 fontdict={'size': 3, 'weight': 'bold'})
+                        # plot label
+                        ax1.text(ee, nn, slabel,
+                                 rotation=45,
+                                 verticalalignment='bottom',
+                                 horizontalalignment='left',
                                  fontdict={'size': 3, 'weight': 'bold'})
                 elif(plane == 'N-Z'):
                     sids = np.fabs(self.grid_east[ii] - self.station_east) < station_buffer
@@ -910,6 +920,12 @@ class PlotSlices(object):
 
             #plt.show()
             figlist.append(fig)
+
+            if self.title == 'on':
+                fig.suptitle('%s Plane at %s: %0.4f %s'%(plane,
+                                               self.current_label_desc[plane],
+                                               self.axis_values[plane][ii],
+                                               self.map_scale))
             if save:
                 # --> save plots to a common folder
                 fn = '%s-plane-at-%s.%0.3f.%s.%s'%(plane,
@@ -918,11 +934,7 @@ class PlotSlices(object):
                                                self.map_scale,
                                                self.save_format)
     
-                if self.title == 'on':
-                    fig.suptitle('%s Plane at %s: %0.4f %s'%(plane,
-                                                   self.current_label_desc[plane],
-                                                   self.axis_values[plane][ii],
-                                                   self.map_scale))
+
                 fpath = os.path.join(self.save_path, fn)
                 print('Exporting %s..'%(fpath))
                 fig.savefig(fpath, dpi=self.fig_dpi)

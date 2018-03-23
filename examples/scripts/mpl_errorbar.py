@@ -1,3 +1,11 @@
+"""
+This script demonstrates how to make a plot with errorbars that go below zero 
+on a semilog plot
+
+Author: unknown
+
+"""
+
 import matplotlib
 import matplotlib.pyplot as plt
 
@@ -16,6 +24,6 @@ ax.set_yscale('log', nonposy='clip')
 # ax.set_xscale('log')
 # ax.set_ylim((10, 100))
 
-fig.savefig("errorbar_mpl{}.png".format(matplotlib.__version__.replace(".", "")))
+#fig.savefig("errorbar_mpl{}.png".format(matplotlib.__version__.replace(".", "")))
 
 plt.show()

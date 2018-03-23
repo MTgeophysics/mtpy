@@ -372,7 +372,7 @@ class MT(object):
             raise MT_Error('File type not supported yet')
 
     def write_mt_file(self, save_dir=None, fn_basename=None, file_type='edi',
-                      new_Z_obj=None, new_Tipper_obj=None):
+                      new_Z_obj=None, new_Tipper_obj=None, longitude_format='LON'):
         """
         Write an mt file, the supported file types are EDI and XML.
 
@@ -424,7 +424,8 @@ class MT(object):
         if file_type == 'edi':
             fn = self._write_edi_file(fn,
                                       new_Z=new_Z_obj,
-                                      new_Tipper=new_Tipper_obj)
+                                      new_Tipper=new_Tipper_obj,
+                                      longitude_format=longitude_format)
         elif file_type == 'xml':
             fn = self._write_xml_file(fn,
                                       new_Z=new_Z_obj,
@@ -604,7 +605,7 @@ class MT(object):
                 self.Notes.info_dict.pop(a_key)
 
     # --> write edi file
-    def _write_edi_file(self, new_edi_fn, new_Z=None, new_Tipper=None):
+    def _write_edi_file(self, new_edi_fn, new_Z=None, new_Tipper=None, longitude_format='LON'):
         """
         write a new edi file if things have changed.  Note if new_Z or
         new_Tipper are not None, they are not changed in MT object, you
@@ -654,7 +655,7 @@ class MT(object):
         # edi_obj.zrot = self.rotation_angle
 
         # --> write edi file
-        edi_fn = edi_obj.write_edi_file(new_edi_fn=new_edi_fn)
+        edi_fn = edi_obj.write_edi_file(new_edi_fn=new_edi_fn, longitude_format=longitude_format)
 
         return edi_fn
 
