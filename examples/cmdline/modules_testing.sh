@@ -10,7 +10,8 @@ echo "Change MTPYPATH if package installation in a different directory ! "
 echo ""
 echo "==================================================================="
 
-export MTPYPATH="${HOME}/mtpy"
+# export MTPYPATH="${HOME}/mtpy"
+export MTPYPATH="/e/Githubz/mtpy"
 
 if ! [  -d "${MTPYPATH}" ]; then
     echo "Set mtpy package directory ! "
