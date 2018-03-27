@@ -1322,10 +1322,17 @@ class Data(object):
                         self.center_point.lat = value_list[0]
                         self.center_point.lon = value_list[1]
                         try:
-                            self.center_point.elev = value_list[2]
+                            self.center_point.elev = value_list[2]                            
                         except IndexError:
                             self.center_point.elev = 0.0
                             print('Did not find center elevation in data file')
+                        
+                        # if the elevation is negative, as it should be,
+                        # then make the relative elevation negative as well
+                        if self.center_point.elev <= 0:
+                            z_sign = -1
+                        else:
+                            z_sign = 1
 
                         ce, cn, cz = gis_tools.project_point_ll2utm(self.center_point.lat,
                                                                     self.center_point.lon,
@@ -1428,7 +1435,7 @@ class Data(object):
                 data_dict[dd[1]].grid_north = dd[4]
                 data_dict[dd[1]].grid_east = dd[5]
                 data_dict[dd[1]].grid_elev = dd[6]
-                data_dict[dd[1]].elev = self.center_point.elev+dd[6]
+                data_dict[dd[1]].elev = z_sign*dd[6]
                 data_dict[dd[1]].station = dd[1]
                 tf_dict[dd[1]] = True
             # fill in the impedance tensor with appropriate values
@@ -1653,7 +1660,8 @@ class Data(object):
             # elevation needs to be relative to the point (0, 0, 0), where
             # 0 is the top of the model, the highest point, so the station 
             # elevation is relative to that.
-            self.data_array[s_index]['rel_elev'] = model_obj.nodes_z[0:z_index].sum()
+            self.data_array[s_index]['rel_elev'] = -1*model_obj.grid_z[z_index]
+            self.data_array[s_index]['elev'] = model_obj.grid_z[z_index]
             
             # need to add in the max elevation to the center point so that
             # when we read the file later we can adjust the stations
