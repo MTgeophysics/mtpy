@@ -5,7 +5,7 @@ Plots data vs model response computed by an Inversion Method
 """
 
 import click
-from mtpy.modeling.modem.plot_response_2col import PlotResponse2col
+from mtpy.modeling.modem.plot_response import PlotResponse
 
 @click.command(context_settings=dict(help_option_names=['-h', '--help']))
 @click.option('-d','--directory',type=str,default=r'examples/model_files/ModEM_2',help='directory for data files')
@@ -14,7 +14,7 @@ from mtpy.modeling.modem.plot_response_2col import PlotResponse2col
 @click.option('-c','--collection_station',type=str,default='Synth02', help='Data Collection station')
 @click.option('-p','--plot_z',type=bool,default=False, help=
                             '[True | False ] Plot True for Impedence, False for Resistivity and Phsse')
-@click.option('-f','--font_size',type=int,default=2, help='Plot Text Fond Size ')
+@click.option('-f','--font_size',type=int,default=3, help='Plot Text Fond Size ')
 def merge_plotting(directory, stem_data_file, input_data_file, collection_station,plot_z, font_size):
 
     print("============================================================================")
@@ -23,19 +23,22 @@ def merge_plotting(directory, stem_data_file, input_data_file, collection_statio
     print("")
     print("python mtpy/imaging/plot_response.py  [--help | -h ]")
     print("python mtpy/imaging/plot_response.py")
-    print("python mtpy/imaging/plot_response.py -d examples\data\ModeEM_files_Test " +
+    print("python examples/cmdline/plot_response.py -d examples/data/ModeEM_files_Test " +
           "-s Modular_MPI_NLCG_094.dat -i ModEM_Data.dat -c GB09 -p False -f 3")
-    print("python mtpy/imaging/plot_response.py -d examples\data\ModeEM_files_Test -p False ( Changing Plot types ) ")
+    print("python examples/cmdline/plot_response.py -d examples/data/ModeEM_files_Test -p False ( Changing Plot types ) ")
     print("")
     print("============================================================================")
 
-    ro = PlotResponse2col(data_fn=os.path.join(directory, input_data_file),
+    from mtpy.mtpy_globals import *
+
+
+    ro = PlotResponse(data_fn=os.path.join(directory, input_data_file),
                       resp_fn=os.path.join(directory, stem_data_file),
                       plot_type=[collection_station],
                       plot_style=2,
                       plot_z=plot_z,
                       font_size=font_size)
-    ro.plot()
+    ro.plot_2col()
 
 if __name__ == "__main__":
     from mtpy.mtpy_globals import *
