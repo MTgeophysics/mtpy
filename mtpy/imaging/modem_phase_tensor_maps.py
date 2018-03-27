@@ -213,6 +213,7 @@ class PlotPTMaps(mtplottools.MTEllipse):
                                          'ellipse_range':[0,0],
                                          'ellipse_colorby':'skew',
                                          'ellipse_cmap':'mt_bl2gr2rd'})
+
         self._read_ellipse_dict(self._ellipse_dict)
 
         self.ellipse_size = kwargs.pop(

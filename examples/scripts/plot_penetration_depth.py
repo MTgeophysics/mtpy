@@ -1,18 +1,22 @@
 # -*- coding: utf-8 -*-
 """
+Plot Penetration Depth from EDI files
+Example how to use the module mtpy.imaging import penetration_depth1d as pd1d
+
 Created on Wed Nov 08 12:04:38 2017
 
 @author: u64125
 """
+import os, sys
+from mtpy.imaging import penetration_depth1d as pd1d
 
-from mtpy.imaging import penetration_depth1d as pd
+#edipath = r'C:\Git\mtpy\examples\data\edi_files'  # avoid using \
+edipath = r'E:/mtpywin/mtpy/examples/data/edi_files/pb23c.edi'  # / is Unix and Win-Dos compatible
+# or get this variable from the cmdline:  edipath = sys.argv[1]
 
-#edipath = r'C:\Git\mtpy\examples\data\edi_files'
-edipath = r'examples\data\edi_files'
-#elst = [op.join(edipath,f) for f in os.listdir(edipath) if f.endswith('.edi')]
-elst = [pd.os.path.join(edipath,f) for f in pd.os.listdir(edipath) if f.endswith('.edi')]
-print (elst)
-
-#pplot=penetration_depth1d.Depth1D()
-pplot=pd.Depth1D()
-#p
+if os.path.isfile(edipath):
+    pd1d.plot_edi_file(edipath, savefile='C:/temp/pen_depth.jpg')
+    # rholist can be any of ['zxy','zyx','det'], default all of them
+elif os.path.isdir(edipath):
+    # plot_edi_dir(edi_path )
+    pd1d.plot_edi_dir(edipath, rholist=['det'])

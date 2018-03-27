@@ -14,7 +14,6 @@ import sys
 import matplotlib as mpl
 from mtpy.utils.mtpylog import MtPyLog
 from penetration import Depth1D
-import click
 
 # mpl.rcParams['lines.linewidth'] = 2
 # mpl.rcParams['lines.color'] = 'r'
@@ -187,7 +186,7 @@ def plot_edi_file(edifile, rholist=['zxy', 'zyx', 'det'], savefile=None):
 # python  mtpy/imaging/penetration_depth1d.py
 # tests/data/edifiles/15125A.edi
 
-if __name__ == '__main__old':
+if __name__ == '__main__':
 
     if len(sys.argv) < 2:
         print (
@@ -205,20 +204,3 @@ if __name__ == '__main__old':
             plot_edi_dir(edi_path, rholist=['det'])
         else:
             _logger.error("Usage %s %s", sys.argv[0], "path2edi")
-
-###############################################################################
-# Following is code for click making inputs to the plot depth
-###############################################################################
-
-@click.command()
-@click.option('-i','--input',type=str,default='examples/data/edi_files',help='directory or edsi data files')
-@click.option('-o','--output_file',type=str,default='temp',help='save jpg image file')
-def plot_penetration_image(input,output_file):
-    if os.path.isfile(input):
-        plot_edi_file(input,savefile=output_file)
-    elif os.path.isdir(input):
-        plot_edi_dir(input, rholist=['det'])
-    else:
-        pass
-if __name__ == '__main__':
-    plot_penetration_image()

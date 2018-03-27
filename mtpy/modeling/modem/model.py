@@ -237,15 +237,15 @@ class Model(object):
     ==================== ======================================================
     """
 
-    def __init__(self, station_object=None, data_object=None, **kwargs):
+    def __init__(self, stations_object=None, data_object=None, **kwargs):
         self._logger = MtPyLog.get_mtpy_logger(self.__class__.__name__)
 
         self.station_locations = None
         self.data_obj = None
 
-        if station_object is not None:
-            self.station_locations = station_object# station location has to be moved
-            # self.station_locations = station_object.station_locations # station location has to be moved
+        if stations_object is not None:
+            self.station_locations = stations_object# station location has to be moved
+            # self.stations_obj = station_object.station_locations # station location has to be moved
             # self.data_obj = station_object # data_obj has to be updted
             self._logger.info("Use Station object as input, all functions that "
                               "uses data_objects are no longer available.")
@@ -1950,7 +1950,7 @@ class Model(object):
         if not np.iterable(clip):
             clip = [clip, clip, clip]
 
-            # determine save path
+        # determine save path
         savepath = None
         if fn is not None:
             savepath = os.path.dirname(fn)

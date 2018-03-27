@@ -1,0 +1,25 @@
+MTpy example scripts
+
+These scripts have been developed from needs within everyday work experience.
+They provide examples on how to utilise the modules provided by MTpy.
+
+@2014, Lars Krieger, University of Adelaide
+###################################################################################
+
+#Setting up and running the BIRRP processing (with or withour remote reference)
+birrp_2in2out_simple.py  
+birrp_2in2out_simple_RR.py  
+
+#convert output of EarthDataLoggers into handable concatenated time-series files
+#maximum length: 1day
+EDLmakedayfiles.py  
+
+#the instrument response for our induction coils
+lemi_coils_instrument_response_freq_real_imag_normalised.txt  
+
+#conversion from (MTpy Time-series data) 'mtd' files into MiniSEED
+mtd2mseed.py  
+
+#quick and dirty plot for response curves
+simpleplotEDI.py
+

@@ -529,7 +529,7 @@ class Edi(object):
         self.Tipper.compute_amp_phase()
         self.Tipper.compute_mag_direction()
 
-    def write_edi_file(self, new_edi_fn=None):
+    def write_edi_file(self, new_edi_fn=None,longitude_format='LON'):
         """
         Write a new edi file from either an existing .edi file or from data
         input by the user into the attributes of Edi.
@@ -565,9 +565,9 @@ class Edi(object):
             self.read_edi_file()
 
         # write lines
-        header_lines = self.Header.write_header()
+        header_lines = self.Header.write_header(longitude_format=longitude_format)
         info_lines = self.Info.write_info()
-        define_lines = self.Define_measurement.write_define_measurement()
+        define_lines = self.Define_measurement.write_define_measurement(longitude_format=longitude_format)
         dsect_lines = self.Data_sect.write_data_sect(over_dict={'nfreq': len(self.Z.freq)})
 
         # write out frequencies
@@ -1029,7 +1029,7 @@ class Header(object):
 
             setattr(self, key, value)
 
-    def write_header(self, header_list=None):
+    def write_header(self, header_list=None, longitude_format='LON'):
         """
         Write header information to a list of lines.
 
@@ -1049,6 +1049,7 @@ class Header(object):
                                 metadata.
 
         """
+        
 
         if header_list is not None:
             self.read_header(header_list)
@@ -1075,11 +1076,15 @@ class Header(object):
                     value = '{0:.3f}'.format(value)
                 except ValueError:
                     value = '0.000'
-
+            
             if key in ['filedate']:
                 value = datetime.datetime.utcnow().strftime(
                     '%Y/%m/%d %H:%M:%S UTC')
-
+            # 
+            if key == 'lon':
+                if longitude_format == 'LONG':
+                    key = 'long'
+                    
             header_lines.append('{0}{1}={2}\n'.format(tab, key.upper(), value))
         header_lines.append('\n')
         return header_lines
@@ -1480,7 +1485,7 @@ class DefineMeasurement(object):
                     value = EMeasurement(**line)
                 setattr(self, key, value)
 
-    def write_define_measurement(self, measurement_list=None):
+    def write_define_measurement(self, measurement_list=None, longitude_format='LON'):
         """
         write the define measurement block as a list of strings
         """
@@ -1496,7 +1501,9 @@ class DefineMeasurement(object):
             elif key == 'refelev':
                 value = '{0:.3f}'.format(
                     gis_tools.assert_elevation_value(value))
-
+            if key.upper() == 'REFLON':
+                if longitude_format == 'LONG':
+                    key += 'G'
             measurement_lines.append('{0}{1}={2}\n'.format(tab,
                                                            key.upper(),
                                                            value))
