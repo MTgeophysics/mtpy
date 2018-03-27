@@ -11,6 +11,7 @@ from mtpy.modeling.modem import Model
 from mtpy.modeling.modem import Data
 from mtpy.modeling.modem import Covariance
 from mtpy.core.edi import Edi
+from mtpy.utils.calculator import get_logspace_array
 
 import numpy as np
 
@@ -20,23 +21,38 @@ workdir = r'C:\test\ModEM'
 # path where edi files are located
 edipath = r'C:\mtpywin\mtpy\examples\data\edi_files_2'
 
-# period list (modify as necessary, will not include periods outside of the range of the edi file)
-# here is an example to specify start, stop and number of periods
-# these particular numbers give a range of 1000 Hz to 1000 s with 4 periods per decade
-start_period = -3
-stop_period = 3
-n_periods = 25
-period_list = np.logspace(start_period,stop_period,n_periods)
+## period list (won't include periods outside of the range of the edi file) ###
+## comment/uncomment your desired method ######################################
+###############################################################################
+
+## example to specify start, stop and total number of periods
+#start_period = 0.001
+#stop_period = 1000
+#n_periods = 25
+#period_list = np.logspace(np.log10(start_period),
+#                          np.log10(stop_period),
+#                          n_periods)
+
+
+# example to specify a number of periods per decade
+start_period = 0.002
+stop_period = 2000
+periods_per_decade = 4
+period_list = get_logspace_array(start_period,stop_period,periods_per_decade,
+                                 include_outside_range=True)
+
 
 ## an example to use the periods from a particular edi file
 #edifile_periods = op.join(edipath,'Synth00.edi')
 #eobj = Edi(edifile_periods)
 #period_list = 1./eobj.freq
 
+###############################################################################
 
 # list of edi files, search for all files ending with '.edi'
 edi_list = [op.join(edipath,ff) for ff in os.listdir(edipath) if (ff.endswith('.edi'))]
 
+# make the save path if it doesn't exist
 if not op.exists(workdir):
     os.mkdir(workdir)
 
