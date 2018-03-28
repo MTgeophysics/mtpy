@@ -21,10 +21,10 @@ def merge_plotting(directory, stem_data_file, input_data_file, collection_statio
     print("")
     print("Following are the examples for running plot_response : ")
     print("")
-    print("python mtpy/imaging/plot_response.py  [--help | -h ]")
-    print("python mtpy/imaging/plot_response.py")
-    print("python examples/cmdline/plot_response.py -d examples/data/ModEM_files " +
-          "-s Modular_MPI_NLCG_028.dat -i ModEM_Data.dat -c GB09 -p False -f 3")
+    print("python examples/cmdline/plot_response.py  [--help | -h ]")
+    print("python examples/cmdline/plot_response.py")
+    print("python examples/cmdline/plot_response.py -d examples/model_files/ModEM_2 " +
+          "-s Modular_MPI_NLCG_004.dat -i ModEM_Data.dat -c Synth02 -p False -f 3")
     print("python examples/cmdline/plot_response.py -d examples/data/ModEM_files -p False ( Changing Plot types ) ")
     print("")
     print("============================================================================")
