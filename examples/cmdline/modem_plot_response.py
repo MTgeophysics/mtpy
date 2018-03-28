@@ -17,7 +17,7 @@ Revision History:
 
 import os
 
-from mtpy.imaging.plot_response import PlotResponse
+from legacy.plot_response import PlotResponse
 
 
 def plot_response():

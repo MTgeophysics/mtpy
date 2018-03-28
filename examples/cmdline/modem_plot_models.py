@@ -15,7 +15,7 @@ import sys
 
 from mtpy.imaging.modem_phase_tensor_maps import PlotPTMaps
 from mtpy.imaging.plot_depth_slice import PlotDepthSlice
-from mtpy.imaging.plot_response import PlotResponse
+from legacy.plot_response import PlotResponse
 #from legacy.plot_rms_map import PlotRMSMaps
 from mtpy.modeling.modem import PlotRMSMaps
 

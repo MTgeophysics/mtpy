@@ -10,16 +10,12 @@ ModEM
 
 """
 
-import os
-
 import numpy as np
 from matplotlib import pyplot as plt, gridspec as gridspec
 from matplotlib.ticker import MultipleLocator
 from matplotlib.ticker import FormatStrFormatter
-from mtpy.modeling.modem import plot_response_2col
 from mtpy.imaging import mtplottools as mtplottools
 from mtpy.modeling.modem.data import Data
-from mtpy.modeling.modem.plot_response_2col import PlotResponse2col
 import sys
 
 __all__ = ['PlotResponse']
