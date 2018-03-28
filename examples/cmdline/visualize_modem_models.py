@@ -8,15 +8,16 @@ Created on Tue Oct 04 13:13:29 2016
 @author:    Fei.zhang@ga.gov.au
 
 Test Run:
-python examples/scripts/modem_plot_models.py ./examples/data/ModEM_files/VicSynthetic07
+python examples/scripts/visualize_modem_models.py ./examples/data/ModEM_files/VicSynthetic07
 """
 import os
 import sys
 
 from mtpy.imaging.modem_phase_tensor_maps import PlotPTMaps
 from mtpy.imaging.plot_depth_slice import PlotDepthSlice
-from legacy.plot_response import PlotResponse
+#from legacy.plot_response import PlotResponse
 #from legacy.plot_rms_map import PlotRMSMaps
+from mtpy.modeling.modem.plot_response import PlotResponse
 from mtpy.modeling.modem import PlotRMSMaps
 
 # original test case:
@@ -83,7 +84,7 @@ def plot_model(data_dir, plot_type='PTMap', depth_index=20, periodin=0):
         pltObj=PlotResponse(data_fn=os.path.join(wd, datfn),plot_type=['16-L03S01','VIC001'])
         #FZ: need to refactor plot_type= list of  station names
 
-        pltObj.plot(outfn)
+        pltObj.plot()
 
     # plot depth slice
     if plot_type == 'DepthSlice':
@@ -105,9 +106,9 @@ def plot_model(data_dir, plot_type='PTMap', depth_index=20, periodin=0):
 #########################################################################
 # plot_type=[ PTMap RMSMap Response DepthSlice ]
 # How2Run:
-# python examples/cmdline/modem_plot_models.py ./examples/data/ModEM_files/VicSynthetic07 PTMap pindex
+# python examples/cmdline/visualize_modem_models.py ./examples/data/ModEM_files/VicSynthetic07 PTMap pindex
 #
-# python examples/cmdline/modem_plot_models.py ./examples/data/ModEM_files/VicSynthetic07
+# python examples/cmdline/visualize_modem_models.py ./examples/data/ModEM_files/VicSynthetic07
 # ---------------------------------------
 if __name__ == '__main__':
 
