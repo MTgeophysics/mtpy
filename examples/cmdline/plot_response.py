@@ -23,9 +23,9 @@ def merge_plotting(directory, stem_data_file, input_data_file, collection_statio
     print("")
     print("python mtpy/imaging/plot_response.py  [--help | -h ]")
     print("python mtpy/imaging/plot_response.py")
-    print("python examples/cmdline/plot_response.py -d examples/data/ModeEM_files_Test " +
+    print("python examples/cmdline/plot_response.py -d examples/data/ModEM_files_Test " +
           "-s Modular_MPI_NLCG_094.dat -i ModEM_Data.dat -c GB09 -p False -f 3")
-    print("python examples/cmdline/plot_response.py -d examples/data/ModeEM_files_Test -p False ( Changing Plot types ) ")
+    print("python examples/cmdline/plot_response.py -d examples/data/ModEM_files -p False ( Changing Plot types ) ")
     print("")
     print("============================================================================")
 
