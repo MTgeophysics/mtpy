@@ -1740,13 +1740,12 @@ class PlotResponse(object):
                             pass
                             if self.plot_z == True:
                                 ax.set_yscale('log', nonposy='clip')
-                                #                        else:
-                                #                            plt.setp(ax.yaxis.get_ticklabels(), visible=False)
+                                # else:
+                                #     plt.setp(ax.yaxis.get_ticklabels(), visible=False)
 
                         if aa == 4:
-                            if self.plot_z == False:
-                                ax.set_ylabel('Tipper',
-                                              fontdict=fontdict)
+                            if plot_tipper:
+                                ax.set_ylabel('Tipper', fontdict=fontdict)
                     # writing x axis ticks and making it visible
 
                     if aa == 4 or aa == 5:
