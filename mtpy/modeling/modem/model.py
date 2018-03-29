@@ -1004,14 +1004,14 @@ class Model(object):
         if len(x.shape) == 1:
             x, y = np.meshgrid(x, y)
             
-        if rotation_angle is not None and type(rotation_angle) in [float, int]:
-            cos_ang = np.cos(np.deg2rad(rotation_angle))
-            sin_ang = np.sin(np.deg2rad(rotation_angle))
-            rot_matrix = np.matrix(np.array([[cos_ang, sin_ang],
-                                             [-sin_ang, cos_ang]]))
-            rot_xy = np.array(np.dot(rot_matrix, np.array([x, y])))
-            x = rot_xy[0].copy()
-            y = rot_xy[1].copy()
+#        if rotation_angle is not None and type(rotation_angle) in [float, int]:
+#            cos_ang = np.cos(np.deg2rad(rotation_angle))
+#            sin_ang = np.sin(np.deg2rad(rotation_angle))
+#            rot_matrix = np.matrix(np.array([[cos_ang, sin_ang],
+#                                             [-sin_ang, cos_ang]]))
+#            rot_xy = np.array(np.dot(rot_matrix, np.array([x, y])))
+#            x = rot_xy[0].copy()
+#            y = rot_xy[1].copy()
             
         epsg_from, epsg_to = surface_epsg, self.data_obj.model_epsg
         xs, ys = mtpy.utils.gis_tools.epsg_project(x, y, epsg_from, epsg_to)
