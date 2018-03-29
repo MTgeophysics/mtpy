@@ -41,6 +41,54 @@ def roundsf(number, sf):
     return np.round(number, rounding)
 
 
+def get_logspace_array(period_min,period_max,periods_per_decade,include_outside_range=True):
+    """
+    get a list of values (e.g. periods), evenly spaced in log space and 
+    including values on multiples of 10
+    
+    :returns:
+        numpy array containing list of values
+    
+    :inputs:
+        period_min = minimum period
+        period_max = maximum period
+        periods_per_decade = number of periods per decade
+        include_outside_range = option whether to start and finish the period
+                                list just inside or just outside the bounds
+                                specified by period_min and period_max
+                                default True
+    
+    """
+    
+    
+    log_period_min = np.log10(period_min)
+    log_period_max = np.log10(period_max)
+    
+    # list of periods, around the minimum period, that will be present in specified 
+    # periods per decade
+    aligned_logperiods_min = np.linspace(np.floor(log_period_min),np.ceil(log_period_min),periods_per_decade + 1)
+    lpmin_diff = log_period_min - aligned_logperiods_min
+    # index of starting period, smallest value > 0
+    if include_outside_range:
+        spimin = np.where(lpmin_diff > 0)[0][-1]
+    else:
+        spimin = np.where(lpmin_diff < 0)[0][0]
+    start_period = aligned_logperiods_min[spimin]
+    
+    # list of periods, around the maximum period, that will be present in specified 
+    # periods per decade
+    aligned_logperiods_max = np.linspace(np.floor(log_period_max),np.ceil(log_period_max),periods_per_decade + 1)
+    lpmax_diff = log_period_max - aligned_logperiods_max
+    # index of starting period, smallest value > 0
+    if include_outside_range:
+        spimax = np.where(lpmax_diff < 0)[0][0]
+    else:
+        spimax = np.where(lpmax_diff > 0)[0][-1]
+    stop_period = aligned_logperiods_max[spimax]
+    
+    return np.logspace(start_period,stop_period,(stop_period-start_period)*periods_per_decade + 1)
+
+
 
 def make_log_increasing_array(z1_layer, target_depth, n_layers, increment_factor=0.9):
     """

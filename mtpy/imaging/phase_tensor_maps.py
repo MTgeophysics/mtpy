@@ -1447,22 +1447,24 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
 
 
 # ====================================================================
-# How2Run:
-# python mtpy/imaging/phase_tensor_maps.py  /e/Data/MT_Datasets/3D_MT_data_edited_fromDuanJM/ 10 /e/MTPY2_Outputs
-# =======================================================================
+# How to test use this module
+# User modify scripts below to provide three things, 1) edidir the path to an edi folder, 2) plot_freq 3) output_dir
+# For more advanced commandline script see: examples/cmdline
+#  =======================================================================
 if __name__ == "__main__":
     import sys
     import glob
 
     edidir = '/home/rakib/work/ausLAMP/AlisonPlotting/plotting/ediForPlottingPTFromEDI/'
-    freq = 0.0002
+    edidir = 'E:/Data/MT_Datasets/3D_MT_data_edited_fromDuanJM/'  # Windows
     savedir = '/tmp'
 
     edi_file_list = glob.glob(edidir + '/*.edi')
 
-    print edi_file_list
+    print ("Edi files: ", edi_file_list)
 
     plot_freq = 0.0002
+    plot_freq = 159.
     ptm_obj = PlotPhaseTensorMaps(fn_list=edi_file_list,
                         plot_freq=plot_freq,
                         ftol=.2,

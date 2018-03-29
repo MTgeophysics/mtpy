@@ -263,7 +263,7 @@ class Data(object):
 
         self._logger = MtPyLog.get_mtpy_logger(self.__class__.__name__)
         self._logger.setLevel(My_Log_Level)
-
+        
         self.edi_list = edi_list
 
         self.error_type_z = 'egbert_floor'
@@ -284,7 +284,7 @@ class Data(object):
         self.period_buffer = None
         self.max_num_periods = None
         self.data_period_list = None
-
+        
         self.data_fn = 'ModEM_Data.dat'
         self.save_path = os.getcwd()
         self.fn_basename = None
@@ -292,7 +292,7 @@ class Data(object):
         self.formatting = '1'
 
         self._rotation_angle = 0.0
-        self._set_rotation_angle(self._rotation_angle)
+        
 
         self.center_point = None
 
@@ -319,7 +319,7 @@ class Data(object):
                        ('tip', (np.complex, self._t_shape)),
                        ('tip_err', (np.float, self._t_shape)),
                        ('tip_inv_err', (np.float, self._t_shape))]
-
+        
         self.inv_mode_dict = {'1': ['Full_Impedance', 'Full_Vertical_Components'],
                               '2': ['Full_Impedance'],
                               '3': ['Off_Diagonal_Impedance',
@@ -346,12 +346,19 @@ class Data(object):
                                        'Real',
                                        'Imag',
                                        'Error\n'])
-
+        
         for key in kwargs.keys():
-            if hasattr(self, key):
-                setattr(self, key, kwargs[key])
-            else:
-                self._logger.warn("Argument {}={} is not supported thus not been set.".format(key, kwargs[key]))
+            # have to set rotation angle after period list has been set
+            if key != 'rotation_angle':
+                if hasattr(self, key):
+                    setattr(self, key, kwargs[key])
+                else:
+                    self._logger.warn("Argument {}={} is not supported thus not been set.".format(key, kwargs[key]))
+
+        if 'rotation_angle' in kwargs.keys():
+            setattr(self, 'rotation_angle', kwargs['rotation_angle'])
+#            self._set_rotation_angle(self.rotation_angle)
+
 
     def _set_dtype(self, z_shape, t_shape):
         """
@@ -465,7 +472,7 @@ class Data(object):
             raise DataError('Need to input period_min')
         if self.period_min is not None and self.period_max is not None and self.max_num_periods is None:
             raise DataError('Need to input number of periods to use')
-
+        
         min_index = np.where(self.data_period_list >= self.period_min)[0][0]
         max_index = np.where(self.data_period_list <= self.period_max)[0][-1]
 
@@ -507,8 +514,10 @@ class Data(object):
 
         for mt_key in sorted(self.mt_dict.keys()):
             mt_obj = self.mt_dict[mt_key]
-            mt_obj.Z.rotate(self._rotation_angle)
-            mt_obj.Tipper.rotate(self._rotation_angle)
+            # check if data already rotated
+            angle_to_rotate = self._rotation_angle - mt_obj.Z.rotation_angle
+            mt_obj.Z.rotate(angle_to_rotate)
+            mt_obj.Tipper.rotate(angle_to_rotate)
 
         self._logger.info('Data rotated to align with {0:.1f} deg clockwise from N'.format(
             self._rotation_angle))

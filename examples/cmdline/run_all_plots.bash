@@ -85,7 +85,7 @@ python examples/create_modem_input.py  /e/Data/MT_Datasets/GA_UA_edited_10s-1000
 python examples/create_modem_input.py /e/Data/MT_Datasets/concurry_EDI_files/ /e/Data/MT_Datasets/concurry_topo/AussieContinent_etopo1.asc /e/tmp/concurry_modem
 
 # FZ: Todo 2017-09 Visualize ModEM outputs and create CSV files for the data
-# modem_plot_models.py has been moved to examples/scripts/ modified ( 21/02/2018 )
+# visualize_modem_models.py has been moved to examples/scripts/ modified ( 21/02/2018 )
 #
 python examples/scripts/modem_plot_models.py ./examples/data/ModEM_files/VicSynthetic07
 python examples/scripts/modem_plot_models.py ./examples/data/ModEM_files/VicSynthetic07 RMSMap
