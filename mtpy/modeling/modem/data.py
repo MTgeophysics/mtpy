@@ -430,7 +430,7 @@ class Data(object):
         self.data_array[:]['elev'] = stations_obj.elev
         self.data_array[:]['rel_east'] = stations_obj.rel_east
         self.data_array[:]['rel_north'] = stations_obj.rel_north
-        self.data_array[:]['rel_elev'] = stations_obj.rel_north
+        self.data_array[:]['rel_elev'] = stations_obj.rel_elev
         self.data_array[:]['zone'] = stations_obj.utm_zone
 
         # get center point
@@ -784,7 +784,7 @@ class Data(object):
         station_locations = self.data_array[['station', 'lat', 'lon',
                                              'north', 'east', 'elev',
                                              'rel_north', 'rel_east', 
-                                             'rel_elev', 'zone']]
+                                             'rel_elev', 'zone']].copy()
         stations_obj = Stations(model_epsg=self.model_epsg,
                                 model_utm_zone=self.model_utm_zone)
         stations_obj.station_locations = station_locations
@@ -1622,28 +1622,38 @@ class Data(object):
     def change_data_elevation(self, model_obj, data_fn=None,
                               res_air=1e12):
         """
-        At each station in the data file rewrite the elevation, so the station is
-        on the surface, not floating in air.
-
-        Arguments:
-        ------------------
-            *data_fn* : string
-                        full path to a ModEM data file
-
-            *model_fn* : string
-                        full path to ModEM model file that has elevation
-                        incoorporated.
-
-            *new_data_fn* : string
-                            full path to new data file name.  If None, then
-                            new file name will add _elev.dat to input filename
-
-            *res_air* : float
-                        resistivity of air.  Default is 1E12 Ohm-m
-        Returns:
-        -------------
-            *new_data_fn* : string
-                            full path to new data file.
+        At each station in the data file rewrite the elevation, so the station
+        is on the surface, not floating in air.  The elevation is dictated
+        by the model.
+        
+        .. note:: The elevation in the data file will be dictated by what
+                  is in the model.  Make sure your model is in the correct
+                  coordinates.  Namely, that the top of the model is the 
+                  maximum elevation of the study area.
+            
+        :param model_obj: model object that has topography in it
+        :type model_obj: modem.Model
+        
+        :param data_fn: full path to data file
+        :type data_fn: string
+        
+        :param res_air: resistivity of air.  Default is 1E12 Ohm-m
+        :type res_air: float
+        
+        Fills in 'rel_elev' and 'elev' in data array.
+        
+        .. note:: 1 meter is subtracted from the elevation as suggested by
+                 Naser Meqbel.
+                 
+        :Example: ::
+            >>> model_object = modem.Model()
+            >>> model_object.read_model_file(r"/examples/model_files/ModEM/ModEM_Model_File.rho")
+            >>> data_object = modem.Data()
+            >>> data_object.read_data_file(r"/examples/model_files/ModEM/ModEM_Data.dat")
+            >>> data_object.change_elevation_data(model_object)
+            >>> data_object.write_data_file(fn_basename='ModEM_data_topo.dat',
+                                            fill=False, compute_error=False,
+                                            elevation=True)
         """
         if data_fn is not None:
             self.read_data_file(data_fn)
@@ -1657,10 +1667,10 @@ class Data(object):
             z_index = np.where(model_obj.res_model[n_index, e_index, :] < res_air * .9)[0][0]
             s_index = np.where(self.data_array['station'] == s_arr['station'])[0][0]
             
-            # elevation needs to be relative to the point (0, 0, 0), where
-            # 0 is the top of the model, the highest point, so the station 
-            # elevation is relative to that.
-            self.data_array[s_index]['rel_elev'] = -1*model_obj.grid_z[z_index]
+            # if the model is shifted so the top of the model is at the 
+            # highest elevation of the model area, then the relative elevation
+            # will be the same as the real elevation.
+            self.data_array[s_index]['rel_elev'] = model_obj.grid_z[z_index]-1.0
             self.data_array[s_index]['elev'] = model_obj.grid_z[z_index]
             
             # need to add in the max elevation to the center point so that

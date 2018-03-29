@@ -736,7 +736,7 @@ class Model(object):
     def add_topography_to_mesh(self, topography_file=None, topography_array=None,
                                interp_method='nearest',
                                air_resistivity=1e17, sea_resistivity=0.3, 
-                               max_elev=None):
+                               max_elev=None, rotation_angle=None):
         """
         For a given mesh grid, use the topofile data to define resistivity model.
         No new air layers will be added. Just identify the max elev height as the ref point
@@ -752,7 +752,9 @@ class Model(object):
             self.project_surface(surface_file=topography_file,
                                  surface_name='topography',
                                  method=interp_method,
-                                 max_value=max_elev)
+                                 max_value=max_elev,
+                                 rotation_angle=rotation_angle)
+            
         if topography_array is not None:
             self.surface_dict['topography'] = topography_array
 
@@ -939,7 +941,7 @@ class Model(object):
 
     def project_surface(self, surface_file=None, surface=None, surface_name=None,
                         surface_epsg=4326, method='nearest',
-                        max_value=None):  # todo GA Version
+                        max_value=None, rotation_angle=None):  # todo GA Version
         """
         project a surface to the model grid and add resulting elevation data
         to a dictionary called surface_dict. Assumes the surface is in lat/long
@@ -998,17 +1000,26 @@ class Model(object):
         if max_value is not None:
             elev[np.where(elev > max_value)] = max_value
             
-
         # if lat/lon provided as a 1D list, convert to a 2d grid of points
         if len(x.shape) == 1:
             x, y = np.meshgrid(x, y)
+            
+        if rotation_angle is not None and type(rotation_angle) in [float, int]:
+            cos_ang = np.cos(np.deg2rad(rotation_angle))
+            sin_ang = np.sin(np.deg2rad(rotation_angle))
+            rot_matrix = np.matrix(np.array([[cos_ang, sin_ang],
+                                             [-sin_ang, cos_ang]]))
+            rot_xy = np.array(np.dot(rot_matrix, np.array([x, y])))
+            x = rot_xy[0].copy()
+            y = rot_xy[1].copy()
             
         epsg_from, epsg_to = surface_epsg, self.data_obj.model_epsg
         xs, ys = mtpy.utils.gis_tools.epsg_project(x, y, epsg_from, epsg_to)
 
         # get centre position of model grid in real world coordinates
-        x0, y0 = [np.median(self.station_locations.station_locations[dd] - self.station_locations.station_locations['rel_' + dd]) for dd in
-                  ['east', 'north']]
+        x0, y0 = [np.median(self.station_locations.station_locations[dd] - \
+                            self.station_locations.station_locations['rel_' + dd])
+                  for dd in ['east', 'north']]
 
         # centre points of model grid in real world coordinates
         xg, yg = [np.mean([arr[1:], arr[:-1]], axis=0)
@@ -1022,8 +1033,8 @@ class Model(object):
         # xi, the model grid points to interpolate to
         xi = np.vstack([arr.flatten() for arr in np.meshgrid(xg, yg)]).T
         # elevation on the centre of the grid nodes
-        elev_mg = spi.griddata(
-            points, values, xi, method=method).reshape(len(yg), len(xg))
+        elev_mg = spi.griddata(points, values, xi,
+                               method=method).reshape(len(yg), len(xg))
 
         print(" Elevation data type and shape  *** ", type(elev_mg), elev_mg.shape, len(yg), len(xg))
         # <type 'numpy.ndarray'>  (65, 92), 65 92: it's 2D image with cell index as pixels
