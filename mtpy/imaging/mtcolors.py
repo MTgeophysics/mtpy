@@ -6,6 +6,7 @@ Created on Tue May 14 18:05:59 2013
 """
 
 import matplotlib.colors as colors
+from matplotlib import cm
 import numpy as np
 
 #==============================================================================
@@ -291,11 +292,22 @@ def get_color(cvar,cmap):
     elif cmap == 'mt_rd2wh2bl_r':
         plot_color = get_mt_rd2wh2bl_r(cvar)
         return plot_color
-
+    
     else:
-        print 'Color map: {0} is not supported yet.'.format(cmap)
+        try:
+            return get_matplotlib_cval(cmap,cvar)
+
+        except:
+            print 'Color map: {0} is not supported yet.'.format(cmap)
 
 
+def get_matplotlib_cval(cmap,cvar):
+    """
+    gets the color for any matplotlib colormaps
+    
+    """
+    return cm.get_cmap(cmap)(cvar)
+    
 
 def get_mt_yl2rd(cvar):
     """

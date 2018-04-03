@@ -45,7 +45,7 @@ m = pptmaps.PlotPhaseTensorMaps(fn_list = elst,
                                 lw=0.5,
                                 minorticks_on=False,
                                 ellipse_colorby=colorby,
-                                ellipse_range = [0,90],
+                                ellipse_range = [30,60],
                                 ellipse_size=0.1,
 #                                arrow_head_width=0.002,
 #                                arrow_head_length=0.002

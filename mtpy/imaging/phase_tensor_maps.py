@@ -1079,8 +1079,12 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
                                        orientation=self.cb_orientation,
                                        ticks=bounds[1:-1])
         else:
+            if cmap in mtcl.cmapdict.keys():
+                cmap_input = mtcl.cmapdict[cmap]
+            else:
+                cmap_input = mtcl.cm.get_cmap(cmap)
             self.cb = mcb.ColorbarBase(self.ax2,
-                                       cmap=mtcl.cmapdict[cmap],
+                                       cmap=cmap_input,#mtcl.cmapdict[cmap],
                                        norm=colors.Normalize(vmin=ckmin,
                                                              vmax=ckmax),
                                        orientation=self.cb_orientation)
