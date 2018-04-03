@@ -664,7 +664,7 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
             newTipper = None
             fidx = 0
             if(self.interpolate):
-                newZ, newTipper = mt.interpolate([self.plot_freq])
+                newZ, newTipper = mt.interpolate([self.plot_freq],bounds_error=False)
             else:
                 fidx = np.argmin(np.fabs(mt.Z.freq - self.plot_freq))
 

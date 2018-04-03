@@ -18,7 +18,7 @@ import os, sys
 from mtpy.imaging import penetration_depth3d as pen3d
 
 # change the variable below according to your edi files folder !!!
-edidir = r'E:/mtpywin/mtpy/examples/data/edi2'  # / is Unix and Win-Dos compatible
+edidir = r'C:/mtpywin/mtpy/examples/data/edi2'  # / is Unix and Win-Dos compatible
 # or get this variable from the cmdline:  edidir = sys.argv[1]
 
 if not os.path.isdir(edidir):
