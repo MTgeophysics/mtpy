@@ -91,7 +91,7 @@ def plot_model_mesh(modelfile, east_limits=None, north_limits=None, z_limits=Non
 
 # ----------------------------------------------------------------------------
 # view a model mesh (x y z) cell sizes
-# python scripts/modem_view_model.py /e/Data/Modeling/Isa/100hs_flat_BB/Isa_run3_NLCG_048.rho
+# python examples/cmdline/modem_view_model.py /e/Data/Modeling/Isa/100hs_flat_BB/Isa_run3_NLCG_048.rho
 if __name__ == "__main__":
 
     if len(sys.argv)>1:
