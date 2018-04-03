@@ -27,7 +27,7 @@ from matplotlib.figure import Figure
 import numpy as np
 
 from mtpy.gui.my_stream import MyStream
-import mtpy.modeling.modem_new as modem
+import mtpy.modeling.modem as modem
 
 #==============================================================================
 # Main Window
@@ -80,7 +80,7 @@ class ModEM_Model_Manipulator(QtWidgets.QMainWindow):
 
         fn_dialog = QtWidgets.QFileDialog()
         fn = str(fn_dialog.getOpenFileName(caption='Choose ModEM data file',
-                                       filter='(*.dat);; (*.data)'))
+                                       filter='(*.dat);; (*.data)')[0])
 
         self.model_widget.data_fn = fn
 
@@ -91,7 +91,7 @@ class ModEM_Model_Manipulator(QtWidgets.QMainWindow):
 
         fn_dialog = QtWidgets.QFileDialog()
         fn = str(fn_dialog.getOpenFileName(caption='Choose ModEM model file',
-                                       filter='*.rho'))
+                                       filter='*.rho')[0])
 
         self.model_widget.model_fn = fn
 
@@ -103,7 +103,7 @@ class ModEM_Model_Manipulator(QtWidgets.QMainWindow):
         fn_dialog = QtWidgets.QFileDialog()
         save_fn = str(fn_dialog.getSaveFileName(
                                     caption='Choose ModEM model file',
-                                    filter='*.rho'))
+                                    filter='*.rho')[0])
 
         sv_path = os.path.dirname(save_fn)
         sv_basename = os.path.basename(save_fn)
@@ -214,12 +214,12 @@ class ModelWidget(QtWidgets.QWidget):
         self.north_slider.setMaximum(0)
         self.north_slider.setTickInterval(1)
 
-
-        self.figure_3d = Figure()
-        self.canvas_3d = FigureCanvas(self.figure_3d)
-        self.canvas_3d.setSizePolicy(QtWidgets.QSizePolicy.Expanding,
-                                       QtWidgets.QSizePolicy.Expanding)
-
+        self.location_figure = Figure()
+        self.location_canvas = FigureCanvas(self.location_figure)
+        self.location_canvas.setSizePolicy(QtWidgets.QSizePolicy.Expanding,
+                                           QtWidgets.QSizePolicy.Expanding)
+        self.location_toolbar = NavigationToolbar(self.location_canvas, self)
+        
         self.cb_figure = Figure()
         self.cb_canvas = FigureCanvas(self.cb_figure)
         self.cb_canvas.setMaximumWidth(int(self.screen_size.width()*.05))
@@ -287,13 +287,16 @@ class ModelWidget(QtWidgets.QWidget):
         north_layout.addWidget(self.north_toolbar)
         north_layout.addWidget(self.north_canvas)
         north_layout.addLayout(north_bottom_layout)
-
+        
+        location_layout = QtWidgets.QVBoxLayout()
+        location_layout.addWidget(self.location_toolbar)
+        location_layout.addWidget(self.location_canvas)
 
         grid_layout = QtWidgets.QGridLayout()
         grid_layout.addLayout(map_layout, 1, 1)
         grid_layout.addLayout(east_layout, 1, 2)
         grid_layout.addLayout(north_layout, 2, 1)
-        grid_layout.addWidget(self.canvas_3d, 2, 2)
+        grid_layout.addLayout(location_layout, 2, 2)
 
         cb_edit = QtWidgets.QVBoxLayout()
         cb_edit.addWidget(self.cb_label)
@@ -321,8 +324,8 @@ class ModelWidget(QtWidgets.QWidget):
 
         self.data_obj = modem.Data()
         self.data_obj.read_data_file(self._data_fn)
-        self.redraw_plots()
-
+        if self.map_ax:
+            self.redraw_plots()
 
     @property
     def model_fn(self):
@@ -341,35 +344,28 @@ class ModelWidget(QtWidgets.QWidget):
         # set slider bar intervals
         # need the minus 1 cause we are using the value of the slider as
         # the index.
-        self.map_slider.setMaximum(self.model_obj.grid_z.size-1)
-        self.east_slider.setMaximum(self.model_obj.grid_north.size-1)
-        self.north_slider.setMaximum(self.model_obj.grid_east.size-1)
+        self.map_slider.setMaximum(self.model_obj.plot_z.size-1)
+        self.east_slider.setMaximum(self.model_obj.plot_north.size-1)
+        self.north_slider.setMaximum(self.model_obj.plot_east.size-1)
         
         self.east_label.setText('{0:.2f}'.format(self.model_obj.grid_east[0]))
         self.north_label.setText('{0:.2f}'.format(self.model_obj.grid_north[0]))
 
         ## plot the model
-        plot_east = np.append(self.model_obj.grid_east,
-                              self.model_obj.grid_east[-1]*1.2)/self.scale
-        plot_north = np.append(self.model_obj.grid_north,
-                               self.model_obj.grid_north[-1]*1.2)/self.scale
-        plot_z = np.append(self.model_obj.grid_z,
-                               self.model_obj.grid_z[-1]*1.2)/self.scale
-
-        self.plot_east_map, self.plot_north_map = np.meshgrid(plot_east,
-                                                              plot_north,
+        self.plot_east_map, self.plot_north_map = np.meshgrid(self.model_obj.grid_east,
+                                                              self.model_obj.grid_north,
                                                               indexing='ij')
-        self.plot_east_z, self.plot_z_east = np.meshgrid(plot_east,
-                                                         plot_z,
+        self.plot_east_z, self.plot_z_east = np.meshgrid(self.model_obj.grid_east,
+                                                         self.model_obj.grid_z,
                                                          indexing='ij')
-        self.plot_north_z, self.plot_z_north = np.meshgrid(plot_north,
-                                                           plot_z,
+        self.plot_north_z, self.plot_z_north = np.meshgrid(self.model_obj.grid_north,
+                                                           self.model_obj.grid_z,
                                                            indexing='ij')
 
 
         self.map_ax = self.map_figure.add_subplot(1, 1, 1, aspect='equal')
-        self.map_ax.pcolormesh(self.plot_east_map,
-                               self.plot_north_map,
+        self.map_ax.pcolormesh(self.plot_east_map/self.scale,
+                               self.plot_north_map/self.scale,
                                np.log10(self.model_obj.res_model[:, :, self.map_index].T),
                                cmap=self.cmap,
                                vmin=self.res_limits[0],
@@ -381,8 +377,8 @@ class ModelWidget(QtWidgets.QWidget):
 
         self.north_ax = self.north_figure.add_subplot(1, 1, 1, sharex=self.map_ax,
                                                       aspect='equal')
-        self.north_ax.pcolormesh(self.plot_east_z,
-                               self.plot_z_east,
+        self.north_ax.pcolormesh(self.plot_east_z/self.scale,
+                               self.plot_z_east/self.scale,
                                np.log10(self.model_obj.res_model[self.north_index, :, :]),
                                cmap=self.cmap,
                                vmin=self.res_limits[0],
@@ -398,8 +394,8 @@ class ModelWidget(QtWidgets.QWidget):
                                                     aspect='equal',
                                                     sharex=self.map_ax,
                                                     sharey=self.north_ax)
-        self.east_ax.pcolormesh(self.plot_north_z,
-                               self.plot_z_north,
+        self.east_ax.pcolormesh(self.plot_north_z/self.scale,
+                               self.plot_z_north/self.scale,
                                np.log10(self.model_obj.res_model[:, self.east_index, :]),
                                cmap=self.cmap,
                                vmin=self.res_limits[0],
@@ -409,16 +405,53 @@ class ModelWidget(QtWidgets.QWidget):
         self.east_ax.set_ylabel('Depth {0}'.format(self.units))
         self.east_ax.set_aspect('equal', 'box-forced')
         
+        # plot the grid
+        self.location_ax = self.location_figure.add_subplot(1, 1, 1, 
+                                                            sharex=self.map_ax,
+                                                            aspect='equal')
+        self.east_line_xlist = []
+        self.east_line_ylist = []
+        for xx in self.model_obj.grid_east:
+            self.east_line_xlist.extend([xx / self.scale, xx / self.scale])
+            self.east_line_xlist.append(None)
+            self.east_line_ylist.extend([self.model_obj.grid_north.min() / self.scale,
+                                         self.model_obj.grid_north.max() / self.scale])
+            self.east_line_ylist.append(None)
+        self.location_ax.plot(self.east_line_xlist,
+                               self.east_line_ylist,
+                               lw=.25,
+                               color='k')
+
+        self.north_line_xlist = []
+        self.north_line_ylist = []
+        for yy in self.model_obj.grid_north:
+            self.north_line_xlist.extend([self.model_obj.grid_east.min() / self.scale,
+                                          self.model_obj.grid_east.max() / self.scale])
+            self.north_line_xlist.append(None)
+            self.north_line_ylist.extend([yy / self.scale, yy / self.scale])
+            self.north_line_ylist.append(None)
+        self.location_ax.plot(self.north_line_xlist,
+                              self.north_line_ylist,
+                              lw=.25,
+                              color='k')
+        
         if self.data_fn is not None:
-            self.map_ax.scatter(self.data_obj.station_locations['rel_east']/self.scale,
-                                self.data_obj.station_locations['rel_north']/self.scale,
+            self.map_ax.scatter(self.data_obj.station_locations.rel_east/self.scale,
+                                self.data_obj.station_locations.rel_north/self.scale,
                                 marker='v',
                                 c='k',
                                 s=10)
-        
+            
+            self.location_ax.scatter(self.data_obj.station_locations.rel_east/self.scale,
+                                    self.data_obj.station_locations.rel_north/self.scale,
+                                    marker='v',
+                                    c='k',
+                                    s=10)
+
         self.north_canvas.draw()
         self.map_canvas.draw()
         self.east_canvas.draw()
+        self.location_canvas.draw()
 
         #make a rectangular selector
         self.map_selector = widgets.RectangleSelector(self.map_ax,
@@ -471,15 +504,15 @@ class ModelWidget(QtWidgets.QWidget):
         self.map_depth_label.setText('Depth {0:>10.2f} {1}'.format(depth,
                                                                 self.units))
 
-        self.map_ax.pcolormesh(self.plot_east_map,
-                               self.plot_north_map,
+        self.map_ax.pcolormesh(self.plot_east_map/self.scale,
+                               self.plot_north_map/self.scale,
                                np.log10(self.model_obj.res_model[:, :, self.map_index].T),
                                cmap=self.cmap,
                                vmin=self.res_limits[0],
                                vmax=self.res_limits[1])
         if self.data_fn is not None:
-            self.map_ax.scatter(self.data_obj.station_locations['rel_east']/self.scale,
-                                self.data_obj.station_locations['rel_north']/self.scale,
+            self.map_ax.scatter(self.data_obj.station_locations.rel_east/self.scale,
+                                self.data_obj.station_locations.rel_north/self.scale,
                                 marker='v',
                                 c='k',
                                 s=10)
@@ -492,13 +525,20 @@ class ModelWidget(QtWidgets.QWidget):
         self.east_label.setText('Easting {0:>10.2f} {1}'.format(easting,
                                                                 self.units))
 
-        self.east_ax.pcolormesh(self.plot_north_z,
-                               self.plot_z_north,
+        self.east_ax.pcolormesh(self.plot_north_z/self.scale,
+                               self.plot_z_north/self.scale,
                                np.log10(self.model_obj.res_model[:, self.east_index, :]),
                                cmap=self.cmap,
                                vmin=self.res_limits[0],
                                vmax=self.res_limits[1])
         self.east_canvas.draw()
+        
+        self.location_ax.plot([self.model_obj.grid_east[self.east_index]/self.scale,
+                               self.model_obj.grid_east[self.east_index]/self.scale],
+                              [self.model_obj.grid_north.min()/self.scale, 
+                               self.model_obj.grid_north.max()/self.scale],
+                               lw=3, color='green')
+        self.location_canvas.draw()
 
     def set_north_index(self):
         self.north_index = int(self.north_slider.value())
@@ -506,8 +546,8 @@ class ModelWidget(QtWidgets.QWidget):
         self.north_label.setText('Northing {0:>10.2f} {1}'.format(northing,
                                                                 self.units))
 
-        self.north_ax.pcolormesh(self.plot_east_z,
-                               self.plot_z_east,
+        self.north_ax.pcolormesh(self.plot_east_z/self.scale,
+                               self.plot_z_east/self.scale,
                                np.log10(self.model_obj.res_model[self.north_index, :, :]),
                                cmap=self.cmap,
                                vmin=self.res_limits[0],
@@ -590,38 +630,47 @@ class ModelWidget(QtWidgets.QWidget):
         ychange = np.append(ychange, ychange[-1]+1)
 
         return ychange
+    
+    def set_avg_pad(self):
+        pass
+    
+    def set_npad(self):
+        pass
+    
+    def fill_outside_area(self):
+        pass
 
     def redraw_plots(self):
         """
         redraw all the plots after things have changed
         """
-        self.map_ax.pcolormesh(self.plot_east_map,
-                       self.plot_north_map,
+        self.map_ax.pcolormesh(self.plot_east_map/self.scale,
+                       self.plot_north_map/self.scale,
                        np.log10(self.model_obj.res_model[:, :, self.map_index].T),
                        cmap=self.cmap,
                        vmin=self.res_limits[0],
                        vmax=self.res_limits[1])
                        
         if self.data_fn is not None:
-            self.map_ax.scatter(self.data_obj.station_locations['rel_east']/self.scale,
-                                self.data_obj.station_locations['rel_north']/self.scale,
+            self.map_ax.scatter(self.data_obj.station_locations.rel_east/self.scale,
+                                self.data_obj.station_locations.rel_north/self.scale,
                                 marker='v',
                                 c='k',
                                 s=10)
 
-        self.east_ax.pcolormesh(self.plot_north_z,
-                        self.plot_z_north,
-                        np.log10(self.model_obj.res_model[:, self.east_index, :]),
-                        cmap=self.cmap,
-                        vmin=self.res_limits[0],
-                        vmax=self.res_limits[1])
+        self.east_ax.pcolormesh(self.plot_north_z/self.scale,
+                                self.plot_z_north/self.scale,
+                                np.log10(self.model_obj.res_model[:, self.east_index, :]),
+                                cmap=self.cmap,
+                                vmin=self.res_limits[0],
+                                vmax=self.res_limits[1])
 
-        self.north_ax.pcolormesh(self.plot_east_z,
-                         self.plot_z_east,
-                         np.log10(self.model_obj.res_model[self.north_index, :, :]),
-                         cmap=self.cmap,
-                         vmin=self.res_limits[0],
-                         vmax=self.res_limits[1])
+        self.north_ax.pcolormesh(self.plot_east_z/self.scale,
+                                 self.plot_z_east/self.scale,
+                                 np.log10(self.model_obj.res_model[self.north_index, :, :]),
+                                 cmap=self.cmap,
+                                 vmin=self.res_limits[0],
+                                 vmax=self.res_limits[1])
 
         self.north_canvas.draw()
         self.east_canvas.draw()
