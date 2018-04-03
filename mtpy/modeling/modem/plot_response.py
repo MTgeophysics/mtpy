@@ -179,6 +179,8 @@ class PlotResponse(object):
 
         self.fig_list = []
 
+    
+
         # if self.plot_yn == 'y':
         #     self.plot()
 
@@ -186,6 +188,9 @@ class PlotResponse(object):
         """
         plot
         """
+
+        if self.plot_style == 3:
+            self.plot_2col()
 
         self.data_object = Data()
         self.data_object.read_data_file(self.data_fn)
