@@ -396,7 +396,7 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
             self.arrow_size = kwargs.pop('arrow_size', .05)
             self.arrow_head_length = kwargs.pop('arrow_head_length', .005)
             self.arrow_head_width = kwargs.pop('arrow_head_width', .005)
-            self.arrow_lw = kwargs.pop('arrow_lw', .75)
+            self.arrow_lw = kwargs.pop('arrow_lw', .0005)
             self.xpad = kwargs.pop('xpad', .05)
             self.ypad = kwargs.pop('xpad', .05)
 
@@ -405,7 +405,7 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
             self.arrow_size = kwargs.pop('arrow_size', 500)
             self.arrow_head_length = kwargs.pop('arrow_head_length', 50)
             self.arrow_head_width = kwargs.pop('arrow_head_width', 50)
-            self.arrow_lw = kwargs.pop('arrow_lw', .75)
+            self.arrow_lw = kwargs.pop('arrow_lw', 5)
             self.xpad = kwargs.pop('xpad', 500)
             self.ypad = kwargs.pop('xpad', 500)
 
@@ -414,7 +414,7 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
             self.arrow_size = kwargs.pop('arrow_size', .5)
             self.arrow_head_length = kwargs.pop('arrow_head_length', .05)
             self.arrow_head_width = kwargs.pop('arrow_head_width', .05)
-            self.arrow_lw = kwargs.pop('arrow_lw', .75)
+            self.arrow_lw = kwargs.pop('arrow_lw', .005)
             self.xpad = kwargs.pop('xpad', .5)
             self.ypad = kwargs.pop('xpad', .5)
 
@@ -835,12 +835,11 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
                                   np.sin((mt.Tipper.angle_real[jj]) * np.pi / 180 + adir)
                             tyr = mt.Tipper.mag_real[jj] * ascale * \
                                   np.cos((mt.Tipper.angle_real[jj]) * np.pi / 180 + adir)
-
                             self.ax.arrow(plotx,
                                           ploty,
                                           txr,
                                           tyr,
-                                          lw=self.arrow_lw,
+                                          width=self.arrow_lw,
                                           facecolor=self.arrow_color_real,
                                           edgecolor=self.arrow_color_real,
                                           length_includes_head=False,
@@ -861,7 +860,7 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
                                           ploty,
                                           txi,
                                           tyi,
-                                          lw=self.arrow_lw,
+                                          width=self.arrow_lw,
                                           facecolor=self.arrow_color_imag,
                                           edgecolor=self.arrow_color_imag,
                                           length_includes_head=False,
@@ -998,7 +997,7 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
                           pay,
                           ptx,
                           pty,
-                          lw=self.arrow_lw,
+                          width=self.arrow_lw,
                           facecolor=self.arrow_color_real,
                           edgecolor=self.arrow_color_real,
                           length_includes_head=False,

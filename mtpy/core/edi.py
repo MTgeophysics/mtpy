@@ -244,6 +244,8 @@ class Edi(object):
             line = line.strip()
             if '>' in line and '!' not in line:
                 line_list = line[1:].strip().split()
+                if len(line_list) == 0:
+                    continue
                 key = line_list[0].lower()
                 if key[0] == 'z' or key[0] == 't' or key == 'freq':
                     data_find = True

@@ -2616,11 +2616,11 @@ class Model(object):
             # log increasing airlayers, in reversed order
             new_air_nodes = mtmesh.make_log_increasing_array(self.z1_layer,
                                                              topo_core.max() - topo_core_min,
-                                                             self.n_air_layers + 1,
+                                                             self.n_air_layers,
                                                              increment_factor=0.999)[::-1]
             # sum to get grid cell locations
             new_airlayers = np.array([new_air_nodes[:ii].sum() for ii in range(len(new_air_nodes) + 1)])
-            # round to nearest whole number and convert subtract the max elevation (so that sea level is at zero)
+            # round to nearest whole number and convert subtract the max elevation (so that sea level is at topo_core_min)
             new_airlayers = np.around(new_airlayers - topo_core.max())
 
             self._logger.debug("new_airlayers {}".format(new_airlayers))
@@ -2641,7 +2641,7 @@ class Model(object):
         new_res_model = np.ones((self.nodes_north.size,
                                  self.nodes_east.size,
                                  self.nodes_z.size)) * self.res_initial_value
-        new_res_model[:, :, self.n_air_layers + 1:] = self.res_model
+        new_res_model[:, :, self.n_air_layers:] = self.res_model
         self.res_model = new_res_model
 
         
