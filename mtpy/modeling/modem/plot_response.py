@@ -11,6 +11,7 @@ ModEM
 """
 
 import numpy as np
+import os
 from matplotlib import pyplot as plt, gridspec as gridspec
 from matplotlib.ticker import MultipleLocator
 from matplotlib.ticker import FormatStrFormatter

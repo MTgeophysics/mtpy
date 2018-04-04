@@ -2514,6 +2514,9 @@ class Data(Profile):
                 if ((phase_te < 0) or (phase_te > 90)):
                     phase_te = 0
                     self.data[s_index]['te_res'][0, freq_num] = 0
+                
+                # assign phase to array
+                self.data[s_index]['te_phase'][0, freq_num] = phase_te
 
                 # compute error
                 # if phi[f_index, 0, 1] != 0.0:
@@ -2536,6 +2539,9 @@ class Data(Profile):
                 if ((phase_tm < 0) or (phase_tm > 90)):
                     phase_tm = 0
                     self.data[s_index]['tm_res'][0, freq_num] = 0
+
+                # assign phase to array
+                self.data[s_index]['tm_phase'][0, freq_num] = phase_tm
 
                 # compute error
                 # if phi[f_index, 1, 0] != 0.0:
@@ -2596,7 +2602,6 @@ class Data(Profile):
                             line = self._data_string.format(ss, ff + 1, mmode,
                                                             dstr, derrstr)
                             self.data_list.append(line)
-
                     # te_res
                     if mmode == 9:
                         if sdict['te_res'][0, ff] != 0.0:
@@ -2618,7 +2623,6 @@ class Data(Profile):
                             line = self._data_string.format(ss, ff + 1, mmode,
                                                             dstr, derrstr)
                             self.data_list.append(line)
-
                             # log(tm_res)
                     if mmode == 5:
                         if sdict['tm_res'][0, ff] != 0.0:
@@ -2674,6 +2678,7 @@ class Data(Profile):
                             line = self._data_string.format(ss, ff + 1, mmode,
                                                             dstr, derrstr)
                             self.data_list.append(line)
+                    
 
     def mask_from_datafile(self, mask_datafn):
         """
