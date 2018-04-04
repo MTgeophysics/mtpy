@@ -950,6 +950,9 @@ class PlotStrike(object):
             'Figure saved to /home/MT/PTMaps/PTmap_phimin_10Hz.jpg'
 
         """
+        # get rid of . in file format as it will be added later
+        if file_format is not None:
+            file_format = file_format.replace('.','')
 
         if fig_dpi is None:
             fig_dpi = self.fig_dpi
@@ -965,7 +968,7 @@ class PlotStrike(object):
             if not os.path.exists(save_fn):
                 os.mkdir(save_fn)
 
-            save_fn = os.path.join(save_fn, 'StrikeAnalysis_' + file_format)
+            save_fn = os.path.join(save_fn, 'StrikeAnalysis.' + file_format)
             self.fig.savefig(save_fn, dpi=fig_dpi, format=file_format,
                              orientation=orientation)
 
