@@ -466,8 +466,9 @@ def get_mt_rd2wh2bl_r(cvar):
 def get_plot_color(colorx, comp, cmap, ckmin=None, ckmax=None, bounds=None):
     """
     gets the color for the given compnent, color array and cmap
-    """
 
+    Note: we now use the linearSegmentedColorMap objects, instead of the get_color function
+    """
 
     #get face color info
     if comp == 'phimin' or comp == 'phimax' or comp == 'phidet' or \
@@ -475,6 +476,7 @@ def get_plot_color(colorx, comp, cmap, ckmin=None, ckmax=None, bounds=None):
         if ckmin is None or ckmax is None:
             raise IOError('Need to input min and max values for plotting')
 
+        '''
         cvar = (colorx-ckmin)/(ckmax-ckmin)
         if cmap == 'mt_bl2wh2rd' or cmap == 'mt_bl2yl2rd' or \
            cmap == 'mt_bl2gr2rd' or cmap == 'mt_rd2gr2bl' or \
@@ -482,17 +484,27 @@ def get_plot_color(colorx, comp, cmap, ckmin=None, ckmax=None, bounds=None):
             cvar = 2*cvar-1
 
         return get_color(cvar, cmap)
-
+        '''
+        norm = colors.Normalize(ckmin, ckmax)
+        if(cmap in cmapdict.keys()):
+            return cmapdict[cmap](norm(colorx))
+        else:
+            return cm.get_cmap(cmap)(norm(colorx))
     elif comp == 'skew' or comp == 'normalized_skew':
+        '''
         cvar = 2*colorx/(ckmax-ckmin)
-
         return get_color(cvar, cmap)
+        '''
 
-
+        if (cmap in cmapdict.keys()):
+            return cmapdict[cmap](colorx)
+        else:
+            return cm.get_cmap(cmap)(colorx)
     elif comp == 'skew_seg' or comp == 'normalized_skew_seg':
         if bounds is None:
             raise IOError('Need to input bounds for segmented colormap')
 
+        '''
         for bb in range(bounds.shape[0]):
             if colorx >= bounds[bb] and colorx < bounds[bb+1]:
                 cvar = float(bounds[bb])/bounds.max()
@@ -507,7 +519,14 @@ def get_plot_color(colorx, comp, cmap, ckmin=None, ckmax=None, bounds=None):
             elif colorx > bounds[-1]:
                 cvar = 1.0
                 return get_color(cvar, cmap)
+        '''
 
+        norm = colors.Normalize(bounds[0], bounds[-1])
+
+        if (cmap in cmapdict.keys()):
+            return cmapdict[cmap](norm(colorx))
+        else:
+            return cm.get_cmap(cmap)(norm(colorx))
     else:
         raise NameError('color key '+comp+' not supported')
 
