@@ -10,16 +10,13 @@ ModEM
 
 """
 
-import os
-
 import numpy as np
+import os
 from matplotlib import pyplot as plt, gridspec as gridspec
 from matplotlib.ticker import MultipleLocator
 from matplotlib.ticker import FormatStrFormatter
-from mtpy.modeling.modem import plot_response_2col
 from mtpy.imaging import mtplottools as mtplottools
 from mtpy.modeling.modem.data import Data
-from mtpy.modeling.modem.plot_response_2col import PlotResponse2col
 import sys
 
 __all__ = ['PlotResponse']
@@ -183,6 +180,8 @@ class PlotResponse(object):
 
         self.fig_list = []
 
+    
+
         # if self.plot_yn == 'y':
         #     self.plot()
 
@@ -190,6 +189,9 @@ class PlotResponse(object):
         """
         plot
         """
+
+        if self.plot_style == 3:
+            self.plot_2col()
 
         self.data_object = Data()
         self.data_object.read_data_file(self.data_fn)

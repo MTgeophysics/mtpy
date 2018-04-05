@@ -19,6 +19,7 @@ import mtpy.imaging.mtcolors as mtcl
 import mtpy.imaging.mtplottools as mtpl
 # import mtpy.utils.conversions as utm2ll
 from mtpy.utils.mtpylog import MtPyLog
+import mtpy.analysis.pt as MTpt
 
 
 # get a logger object for this module, using the utility class MtPyLog to
@@ -58,7 +59,12 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
 
         **ftol** : float
                    tolerance in freq range to look for in each file.
-                   *default* is 0.1 (10 percent)
+                   *default* is 0.1 (10 percent). ftol has no effect when
+                   interpolate is True
+
+        **interpolate** : bool
+                   flag to indicate whether to interpolate values on to plot_freq.
+                   *default* in True
 
         **ellipse_dict** : dictionary
                           dictionary of parameters for the phase tensor
@@ -385,7 +391,7 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
         # set the freq to plot
         self.plot_freq = kwargs.pop('plot_freq', 1.0)
         self.ftol = kwargs.pop('ftol', 0.1)
-
+        self.interpolate = kwargs.pop('interpolate', True)
         # read in map scale
         self.mapscale = kwargs.pop('mapscale', 'deg')
 
@@ -396,7 +402,7 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
             self.arrow_size = kwargs.pop('arrow_size', .05)
             self.arrow_head_length = kwargs.pop('arrow_head_length', .005)
             self.arrow_head_width = kwargs.pop('arrow_head_width', .005)
-            self.arrow_lw = kwargs.pop('arrow_lw', .75)
+            self.arrow_lw = kwargs.pop('arrow_lw', .0005)
             self.xpad = kwargs.pop('xpad', .05)
             self.ypad = kwargs.pop('xpad', .05)
 
@@ -405,7 +411,7 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
             self.arrow_size = kwargs.pop('arrow_size', 500)
             self.arrow_head_length = kwargs.pop('arrow_head_length', 50)
             self.arrow_head_width = kwargs.pop('arrow_head_width', 50)
-            self.arrow_lw = kwargs.pop('arrow_lw', .75)
+            self.arrow_lw = kwargs.pop('arrow_lw', 5)
             self.xpad = kwargs.pop('xpad', 500)
             self.ypad = kwargs.pop('xpad', 500)
 
@@ -414,7 +420,7 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
             self.arrow_size = kwargs.pop('arrow_size', .5)
             self.arrow_head_length = kwargs.pop('arrow_head_length', .05)
             self.arrow_head_width = kwargs.pop('arrow_head_width', .05)
-            self.arrow_lw = kwargs.pop('arrow_lw', .75)
+            self.arrow_lw = kwargs.pop('arrow_lw', .005)
             self.xpad = kwargs.pop('xpad', .5)
             self.ypad = kwargs.pop('xpad', .5)
 
@@ -653,18 +659,26 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
         self.plot_yarr = np.zeros(len(self.mt_list))
 
         for ii, mt in enumerate(self.mt_list):
-            # try to find the freq in the freq list of each file
-            freq_max = self.plot_freq * (1 + self.ftol)
-            freq_min = self.plot_freq * (1 - self.ftol)
-            freqfind = np.where((mt.Z.freq >= freq_min) &
-                                (mt.Z.freq <= freq_max))
 
-            try:
-                self.jj = freqfind[0][0]
-                jj = self.jj
+            newZ = None
+            newTipper = None
+            fidx = 0
+            if(self.interpolate):
+                newZ, newTipper = mt.interpolate([self.plot_freq],bounds_error=False)
+            else:
+                fidx = np.argmin(np.fabs(mt.Z.freq - self.plot_freq))
+
+            if( (not self.interpolate and np.fabs(mt.Z.freq[fidx]-self.plot_freq)<self.ftol) or
+                (self.interpolate) ):
+
+                self.jj = fidx
+                jj = fidx
 
                 # get phase tensor
-                pt = mt.pt
+                if(not self.interpolate):
+                    pt = mt.pt
+                else:
+                    pt = MTpt.PhaseTensor(z_object=newZ)
 
                 # if map scale is lat lon set parameters
                 if self.mapscale == 'deg':
@@ -829,18 +843,25 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
                     adir = self.arrow_direction * np.pi
 
                     # plot real tipper
+                    ti = None
+                    if(not self.interpolate):
+                        ti = mt.Tipper
+                    else:
+                        ti = newTipper
+                    # end if
+
                     if self.plot_tipper == 'yri' or self.plot_tipper == 'yr':
-                        if mt.Tipper.mag_real[jj] <= self.arrow_threshold:
-                            txr = mt.Tipper.mag_real[jj] * ascale * \
-                                  np.sin((mt.Tipper.angle_real[jj]) * np.pi / 180 + adir)
-                            tyr = mt.Tipper.mag_real[jj] * ascale * \
-                                  np.cos((mt.Tipper.angle_real[jj]) * np.pi / 180 + adir)
+                        if ti.mag_real[jj] <= self.arrow_threshold:
+                            txr = ti.mag_real[jj] * ascale * \
+                                  np.sin((ti.angle_real[jj]) * np.pi / 180 + adir)
+                            tyr = ti.mag_real[jj] * ascale * \
+                                  np.cos((ti.angle_real[jj]) * np.pi / 180 + adir)
 
                             self.ax.arrow(plotx,
                                           ploty,
                                           txr,
                                           tyr,
-                                          lw=self.arrow_lw,
+                                          width=self.arrow_lw,
                                           facecolor=self.arrow_color_real,
                                           edgecolor=self.arrow_color_real,
                                           length_includes_head=False,
@@ -851,17 +872,17 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
 
                     # plot imaginary tipper
                     if self.plot_tipper == 'yri' or self.plot_tipper == 'yi':
-                        if mt.Tipper.mag_imag[jj] <= self.arrow_threshold:
-                            txi = mt.Tipper.mag_imag[jj] * ascale * \
-                                  np.sin((mt.Tipper.angle_imag[jj]) * np.pi / 180 + adir)
-                            tyi = mt.Tipper.mag_imag[jj] * ascale * \
-                                  np.cos((mt.Tipper.angle_imag[jj]) * np.pi / 180 + adir)
+                        if ti.mag_imag[jj] <= self.arrow_threshold:
+                            txi = ti.mag_imag[jj] * ascale * \
+                                  np.sin((ti.angle_imag[jj]) * np.pi / 180 + adir)
+                            tyi = ti.mag_imag[jj] * ascale * \
+                                  np.cos((ti.angle_imag[jj]) * np.pi / 180 + adir)
 
                             self.ax.arrow(plotx,
                                           ploty,
                                           txi,
                                           tyi,
-                                          lw=self.arrow_lw,
+                                          width=self.arrow_lw,
                                           facecolor=self.arrow_color_imag,
                                           edgecolor=self.arrow_color_imag,
                                           length_includes_head=False,
@@ -880,7 +901,7 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
                     pass
 
             # ==> print a message if couldn't find the freq
-            except IndexError:
+            else:
                 self._logger.warn('Did not find {0:.5g} Hz for station {1}'.format(self.plot_freq, mt.station))
 
         # --> set axes properties depending on map scale------------------------
@@ -998,7 +1019,7 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
                           pay,
                           ptx,
                           pty,
-                          lw=self.arrow_lw,
+                          width=self.arrow_lw,
                           facecolor=self.arrow_color_real,
                           edgecolor=self.arrow_color_real,
                           length_includes_head=False,
@@ -1058,8 +1079,12 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
                                        orientation=self.cb_orientation,
                                        ticks=bounds[1:-1])
         else:
+            if cmap in mtcl.cmapdict.keys():
+                cmap_input = mtcl.cmapdict[cmap]
+            else:
+                cmap_input = mtcl.cm.get_cmap(cmap)
             self.cb = mcb.ColorbarBase(self.ax2,
-                                       cmap=mtcl.cmapdict[cmap],
+                                       cmap=cmap_input,#mtcl.cmapdict[cmap],
                                        norm=colors.Normalize(vmin=ckmin,
                                                              vmax=ckmax),
                                        orientation=self.cb_orientation)
@@ -1447,25 +1472,28 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
 
 
 # ====================================================================
-# How2Run:
-# python mtpy/imaging/phase_tensor_maps.py  /e/Data/MT_Datasets/3D_MT_data_edited_fromDuanJM/ 10 /e/MTPY2_Outputs
-# =======================================================================
+# How to test use this module
+# User modify scripts below to provide three things, 1) edidir the path to an edi folder, 2) plot_freq 3) output_dir
+# For more advanced commandline script see: examples/cmdline
+#  =======================================================================
 if __name__ == "__main__":
     import sys
     import glob
 
     edidir = '/home/rakib/work/ausLAMP/AlisonPlotting/plotting/ediForPlottingPTFromEDI/'
-    freq = 0.0002
+    #edidir = 'E:/Data/MT_Datasets/3D_MT_data_edited_fromDuanJM/'  # Windows
     savedir = '/tmp'
 
     edi_file_list = glob.glob(edidir + '/*.edi')
 
-    print edi_file_list
+    print ("Edi files: ", edi_file_list)
 
     plot_freq = 0.0002
+    #plot_freq = 159.
     ptm_obj = PlotPhaseTensorMaps(fn_list=edi_file_list,
                         plot_freq=plot_freq,
                         ftol=.2,
+                        interpolate=True,
                         xpad=0.02,
                         plot_tipper='yr',
                         edgecolor='k',

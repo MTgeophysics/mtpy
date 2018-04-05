@@ -29,7 +29,7 @@ station = 'Synth02'
 ro = PlotResponse(data_fn=op.join(wd,datafn),
                   resp_fn=op.join(wd,respfn),
                   plot_type=[station],
-                  plot_style=2,
+                  plot_style=3,
                   plot_z=False,
 #                  fig_size=[3,2],
 #                  font_size=4

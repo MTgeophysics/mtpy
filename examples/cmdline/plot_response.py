@@ -1,11 +1,25 @@
 """
 # ==============================================================================
 Plots data vs model response computed by an Inversion Method
+
+Examples
+
+python examples/cmdline/plot_response.py
+python examples/cmdline/plot_response.py -d /e/Githubz/example_plot_response -s Modular_MPI_NLCG_094.dat -i  ModEM_Data.dat -c GB08 -p False
+python examples/cmdline/plot_response.py -d /e/Githubz/example_plot_response -s Modular_MPI_NLCG_094.dat -i  ModEM_Data.dat -c GB08 -p True
+python examples/cmdline/plot_response.py -d /e/Githubz/example_plot_response -s Modular_MPI_NLCG_094.dat -i  ModEM_Data.dat -c GB09 -p True
+python examples/cmdline/plot_response.py -d /e/Githubz/example_plot_response -s Modular_MPI_NLCG_094.dat -i  ModEM_Data.dat -c GB09 -p False
+
+See also
+python mtpy/modeling/modem/plot_response.py 2col
+python mtpy/modeling/modem/plot_response.py
+
 # ==============================================================================
 """
 
 import click
 from mtpy.modeling.modem.plot_response import PlotResponse
+from mtpy.mtpy_globals import *
 
 @click.command(context_settings=dict(help_option_names=['-h', '--help']))
 @click.option('-d','--directory',type=str,default=r'examples/model_files/ModEM_2',help='directory for data files')
@@ -25,11 +39,9 @@ def merge_plotting(directory, stem_data_file, input_data_file, collection_statio
     print("python examples/cmdline/plot_response.py")
     print("python examples/cmdline/plot_response.py -d examples/model_files/ModEM_2 " +
           "-s Modular_MPI_NLCG_004.dat -i ModEM_Data.dat -c Synth02 -p False -f 3")
-    print("python examples/cmdline/plot_response.py -d examples/data/ModEM_files -p False ( Changing Plot types ) ")
+    print("python examples/cmdline/plot_response.py -d examples/data/ModEM_files -p True ")
     print("")
     print("============================================================================")
-
-    from mtpy.mtpy_globals import *
 
 
     ro = PlotResponse(data_fn=os.path.join(directory, input_data_file),
@@ -41,5 +53,5 @@ def merge_plotting(directory, stem_data_file, input_data_file, collection_statio
     ro.plot_2col()
 
 if __name__ == "__main__":
-    from mtpy.mtpy_globals import *
+
     merge_plotting()

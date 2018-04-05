@@ -1855,6 +1855,8 @@ class MT(object):
 
             new_Tipper.tipper_err[new_nz_index, 0, jj] = t_func_err(new_f)
 
+        new_Tipper.compute_mag_direction()
+
         return new_Z, new_Tipper
 
     def plot_mt_response(self, **kwargs):
