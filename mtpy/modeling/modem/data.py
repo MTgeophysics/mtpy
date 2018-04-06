@@ -309,6 +309,7 @@ class Data(object):
                        ('elev', np.float),
                        ('rel_east', np.float),
                        ('rel_north', np.float),
+                       ('rel_elev', np.float),
                        ('east', np.float),
                        ('north', np.float),
                        ('zone', '|S4'),
@@ -373,6 +374,7 @@ class Data(object):
                        ('elev', np.float),
                        ('rel_east', np.float),
                        ('rel_north', np.float),
+                       ('rel_elev', np.float),
                        ('east', np.float),
                        ('north', np.float),
                        ('zone', '|S4'),
@@ -435,6 +437,7 @@ class Data(object):
         self.data_array[:]['elev'] = stations_obj.elev
         self.data_array[:]['rel_east'] = stations_obj.rel_east
         self.data_array[:]['rel_north'] = stations_obj.rel_north
+        self.data_array[:]['rel_elev'] = stations_obj.rel_elev
         self.data_array[:]['zone'] = stations_obj.utm_zone
 
         # get center point
@@ -636,6 +639,7 @@ class Data(object):
                     self.data_array[ii]['elev'] = d_arr_copy[d_index]['elev']
                     self.data_array[ii]['rel_east'] = d_arr_copy[d_index]['rel_east']
                     self.data_array[ii]['rel_north'] = d_arr_copy[d_index]['rel_north']
+                    self.data_array[ii]['rel_elev'] = d_arr_copy[d_index]['rel_elev']
                     self.data_array[:]['zone'] = d_arr_copy[d_index]['zone']
                 except IndexError:
                     self._logger.warn('Could not find {0} in data_array'.format(s_key))
@@ -649,6 +653,7 @@ class Data(object):
                 try:
                     self.data_array[ii]['rel_east'] = mt_obj.grid_east
                     self.data_array[ii]['rel_north'] = mt_obj.grid_north
+                    self.data_array[ii]['rel_elev'] = mt_obj.grid_elev
                     rel_distance = False  # YG: should rel_distance = True here?
                 except AttributeError:
                     pass
@@ -730,7 +735,8 @@ class Data(object):
 
         mt_per = 1.0 / mt_obj.Z.freq
 
-        new_per = [p for p in mt_per if any([np.isclose(p, p2, 1.e-8) for p2 in per_array])]
+        new_per = [p for p in mt_per if any([np.isclose(p, p2, 1.e-8) 
+                   for p2 in per_array])]
         # for p in mt_per:
         #     for p2 in per_array:
         #         # if abs(p - p2) < 0.00000001:  # Be aware of floating error if use ==
@@ -756,6 +762,7 @@ class Data(object):
                 self.data_array[d_index]['elev'] = s_arr['elev']
                 self.data_array[d_index]['rel_east'] = s_arr['rel_east']
                 self.data_array[d_index]['rel_north'] = s_arr['rel_north']
+                self.data_array[d_index]['rel_elev'] = s_arr['rel_elev']
 
         else:
             for s_arr in station_locations.station_locations:
@@ -774,6 +781,7 @@ class Data(object):
                     self.data_array[d_index]['elev'] = s_arr['elev']
                     self.data_array[d_index]['rel_east'] = s_arr['rel_east']
                     self.data_array[d_index]['rel_north'] = s_arr['rel_north']
+                    self.data_array[d_index]['rel_elev'] = s_arr['rel_elev']
 
     def _get_station_locations(self):
         """
@@ -784,7 +792,8 @@ class Data(object):
 
         station_locations = self.data_array[['station', 'lat', 'lon',
                                              'north', 'east', 'elev',
-                                             'rel_north', 'rel_east', 'zone']]
+                                             'rel_north', 'rel_east', 
+                                             'rel_elev', 'zone']].copy()
         stations_obj = Stations(model_epsg=self.model_epsg,
                                 model_utm_zone=self.model_utm_zone)
         stations_obj.station_locations = station_locations
@@ -919,7 +928,7 @@ class Data(object):
             self.get_relative_station_locations()
 
         if not elevation:
-            self.data_array['elev'][:] = 0.0
+            self.data_array['rel_elev'][:] = 0.0
 
         d_lines = []
         for inv_mode in self.inv_mode_dict[self.inv_mode]:
@@ -949,8 +958,10 @@ class Data(object):
                 raise NotImplementedError("inv_mode {} is not supported yet".format(inv_mode))
 
             d_lines.append('> 0\n')  # orientation, need to add at some point
-            d_lines.append('> {0:>10.6f} {1:>10.6f}\n'.format(
-                self.center_point.lat[0], self.center_point.lon[0]))
+            d_lines.append('> {0:>10.6f} {1:>10.6f} {2:>10.2f}\n'.format(
+                            self.center_point.lat[0],
+                            self.center_point.lon[0],
+                            self.center_point.elev[0]))
             d_lines.append('> {0} {1}\n'.format(n_per, n_sta))
 
             if compute_error:
@@ -978,7 +989,7 @@ class Data(object):
                                 lon = '{0:> 9.3f}'.format(self.data_array[ss]['lon'])
                                 eas = '{0:> 12.3f}'.format(self.data_array[ss]['rel_east'])
                                 nor = '{0:> 12.3f}'.format(self.data_array[ss]['rel_north'])
-                                ele = '{0:> 12.3f}'.format(self.data_array[ss]['elev'])
+                                ele = '{0:> 12.3f}'.format(self.data_array[ss]['rel_elev'])
                                 com = '{0:>4}'.format(comp.upper())
                                 if self.units.lower() == 'ohm':
                                     rea = '{0:> 14.6e}'.format(zz.real / 796.)
@@ -996,7 +1007,7 @@ class Data(object):
                                 lon = '{0:> 14.6f}'.format(self.data_array[ss]['lon'])
                                 eas = '{0:> 12.3f}'.format(self.data_array[ss]['rel_east'])
                                 nor = '{0:> 15.3f}'.format(self.data_array[ss]['rel_north'])
-                                ele = '{0:> 10.3f}'.format(self.data_array[ss]['elev'])
+                                ele = '{0:> 10.3f}'.format(self.data_array[ss]['rel_elev'])
                                 com = '{0:>12}'.format(comp.upper())
                                 if self.units.lower() == 'ohm':
                                     rea = '{0:> 17.6e}'.format(zz.real / 796.)
@@ -1280,6 +1291,10 @@ class Data(object):
             if dline.find('#') == 0:
                 header_list.append(dline.strip())
             elif dline.find('>') == 0:
+                # modem outputs only 7 characters for the lat and lon
+                # if there is a negative they merge together, need to split 
+                # them up
+                dline = dline.replace('-', ' -')
                 metadata_list.append(dline[1:].strip())
                 if dline.lower().find('ohm') > 0:
                     self.units = 'ohm'
@@ -1298,7 +1313,7 @@ class Data(object):
                         self.wave_sign_impedance = dline[dline.find('(') + 1]
                     elif read_tipper is True:
                         self.wave_sign_tipper = dline[dline.find('(') + 1]
-                elif len(dline[1:].strip().split()) == 2:
+                elif len(dline[1:].strip().split()) >= 2:
                     if dline.find('.') > 0:
                         value_list = [float(value) for value in
                                       dline[1:].strip().split()]
@@ -1307,6 +1322,7 @@ class Data(object):
                                                                   ('lat', np.float),
                                                                   ('lon', np.float),
                                                                   ('elev', np.float),
+                                                                  ('rel_elev', np.float),
                                                                   ('rel_east', np.float),
                                                                   ('rel_north', np.float),
                                                                   ('east', np.float),
@@ -1314,6 +1330,18 @@ class Data(object):
                                                                   ('zone', 'S4')])
                         self.center_point.lat = value_list[0]
                         self.center_point.lon = value_list[1]
+                        try:
+                            self.center_point.elev = value_list[2]                            
+                        except IndexError:
+                            self.center_point.elev = 0.0
+                            print('Did not find center elevation in data file')
+                        
+                        # if the elevation is negative, as it should be,
+                        # then make the relative elevation negative as well
+                        if self.center_point.elev <= 0:
+                            z_sign = -1
+                        else:
+                            z_sign = 1
 
                         ce, cn, cz = gis_tools.project_point_ll2utm(self.center_point.lat,
                                                                     self.center_point.lon,
@@ -1416,6 +1444,7 @@ class Data(object):
                 data_dict[dd[1]].grid_north = dd[4]
                 data_dict[dd[1]].grid_east = dd[5]
                 data_dict[dd[1]].grid_elev = dd[6]
+                data_dict[dd[1]].elev = z_sign*dd[6]
                 data_dict[dd[1]].station = dd[1]
                 tf_dict[dd[1]] = True
             # fill in the impedance tensor with appropriate values
@@ -1466,10 +1495,11 @@ class Data(object):
             self.data_array[ii]['station'] = mt_obj.station
             self.data_array[ii]['lat'] = mt_obj.lat
             self.data_array[ii]['lon'] = mt_obj.lon
-            east,north,zone = gis_tools.project_point_ll2utm(mt_obj.lat,mt_obj.lon,epsg=self.model_epsg)
-            self.data_array[ii]['east'] = east
-            self.data_array[ii]['north'] = north
-            self.data_array[ii]['elev'] = mt_obj.grid_elev
+            #east,north,zone = gis_tools.project_point_ll2utm(mt_obj.lat,mt_obj.lon,epsg=self.model_epsg)
+            self.data_array[ii]['east'] = mt_obj.east
+            self.data_array[ii]['north'] = mt_obj.north
+            self.data_array[ii]['elev'] = mt_obj.elev
+            self.data_array[ii]['rel_elev'] = mt_obj.grid_elev
             self.data_array[ii]['rel_east'] = mt_obj.grid_east
             self.data_array[ii]['rel_north'] = mt_obj.grid_north
 
@@ -1598,48 +1628,64 @@ class Data(object):
             self.data_array[s_index]['rel_east'] = mid_east
             self.data_array[s_index]['rel_north'] = mid_north
 
-    def change_data_elevation(self, model_fn, data_fn=None,
+    def change_data_elevation(self, model_obj, data_fn=None,
                               res_air=1e12):
         """
-        At each station in the data file rewrite the elevation, so the station is
-        on the surface, not floating in air.
-
-        Arguments:
-        ------------------
-            *data_fn* : string
-                        full path to a ModEM data file
-
-            *model_fn* : string
-                        full path to ModEM model file that has elevation
-                        incoorporated.
-
-            *new_data_fn* : string
-                            full path to new data file name.  If None, then
-                            new file name will add _elev.dat to input filename
-
-            *res_air* : float
-                        resistivity of air.  Default is 1E12 Ohm-m
-        Returns:
-        -------------
-            *new_data_fn* : string
-                            full path to new data file.
+        At each station in the data file rewrite the elevation, so the station
+        is on the surface, not floating in air.  The elevation is dictated
+        by the model.
+        
+        .. note:: The elevation in the data file will be dictated by what
+                  is in the model.  Make sure your model is in the correct
+                  coordinates.  Namely, that the top of the model is the 
+                  maximum elevation of the study area.
+            
+        :param model_obj: model object that has topography in it
+        :type model_obj: modem.Model
+        
+        :param data_fn: full path to data file
+        :type data_fn: string
+        
+        :param res_air: resistivity of air.  Default is 1E12 Ohm-m
+        :type res_air: float
+        
+        Fills in 'rel_elev' and 'elev' in data array.
+        
+        .. note:: 1 meter is subtracted from the elevation as suggested by
+                 Naser Meqbel.
+                 
+        :Example: ::
+            >>> model_object = modem.Model()
+            >>> model_object.read_model_file(r"/examples/model_files/ModEM/ModEM_Model_File.rho")
+            >>> data_object = modem.Data()
+            >>> data_object.read_data_file(r"/examples/model_files/ModEM/ModEM_Data.dat")
+            >>> data_object.change_elevation_data(model_object)
+            >>> data_object.write_data_file(fn_basename='ModEM_data_topo.dat',
+                                            fill=False, compute_error=False,
+                                            elevation=True)
         """
         if data_fn is not None:
             self.read_data_file(data_fn)
-
-        m_obj = Model()
-        m_obj.read_model_file(model_fn)
 
         s_locations = self.station_locations.station_locations.copy()
 
         # need to subtract one because we are finding the cell next to it
         for s_arr in s_locations:
-            e_index = np.where(m_obj.grid_east >= s_arr['rel_east'])[0][0] - 1
-            n_index = np.where(m_obj.grid_north >= s_arr['rel_north'])[0][0] - 1
-            z_index = np.where(m_obj.res_model[n_index, e_index, :] < res_air * .9)[0][0]
+            e_index = np.where(model_obj.grid_east >= s_arr['rel_east'])[0][0] - 1
+            n_index = np.where(model_obj.grid_north >= s_arr['rel_north'])[0][0] - 1
+            z_index = np.where(model_obj.res_model[n_index, e_index, :] < res_air * .9)[0][0]
             s_index = np.where(self.data_array['station'] == s_arr['station'])[0][0]
-            self.data_array[s_index]['elev'] = m_obj.grid_z[z_index]
-
+            
+            # if the model is shifted so the top of the model is at the 
+            # highest elevation of the model area, then the relative elevation
+            # will be the same as the real elevation.
+            self.data_array[s_index]['rel_elev'] = model_obj.grid_z[z_index]-1.0
+            self.data_array[s_index]['elev'] = model_obj.grid_z[z_index]
+            
+            # need to add in the max elevation to the center point so that
+            # when we read the file later we can adjust the stations
+            self.center_point.elev = model_obj.grid_z[0]
+            
     def project_stations_on_topography(self, model_object, air_resistivity=1e12):
         """
         This method is used in add_topography().

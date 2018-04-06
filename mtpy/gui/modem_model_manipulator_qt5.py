@@ -26,8 +26,7 @@ from matplotlib.figure import Figure
 
 import numpy as np
 
-from mtpy.gui.my_stream import MyStream
-import mtpy.modeling.modem_new as modem
+import mtpy.modeling.modem as modem
 
 #==============================================================================
 # Main Window
@@ -64,12 +63,6 @@ class ModEM_Model_Manipulator(QtWidgets.QMainWindow):
         self.menu_model_save_action = self.menu_model_file.addAction("Save")
         self.menu_model_save_action.triggered.connect(self.save_model_fn)
 
-        #------------Output stream box-------------------------------------
-#        self.my_stream = MyStream()
-#        self.my_stream.message.connect(self.mesh_widget.normal_output)
-#
-#        sys.stdout = self.my_stream
-
         QtCore.QMetaObject.connectSlotsByName(self)
 
     def get_data_fn(self):
@@ -80,7 +73,7 @@ class ModEM_Model_Manipulator(QtWidgets.QMainWindow):
 
         fn_dialog = QtWidgets.QFileDialog()
         fn = str(fn_dialog.getOpenFileName(caption='Choose ModEM data file',
-                                       filter='(*.dat);; (*.data)'))
+                                       filter='(*.dat);; (*.data)')[0])
 
         self.model_widget.data_fn = fn
 
@@ -91,7 +84,7 @@ class ModEM_Model_Manipulator(QtWidgets.QMainWindow):
 
         fn_dialog = QtWidgets.QFileDialog()
         fn = str(fn_dialog.getOpenFileName(caption='Choose ModEM model file',
-                                       filter='*.rho'))
+                                       filter='*.rho')[0])
 
         self.model_widget.model_fn = fn
 
@@ -103,7 +96,7 @@ class ModEM_Model_Manipulator(QtWidgets.QMainWindow):
         fn_dialog = QtWidgets.QFileDialog()
         save_fn = str(fn_dialog.getSaveFileName(
                                     caption='Choose ModEM model file',
-                                    filter='*.rho'))
+                                    filter='*.rho')[0])
 
         sv_path = os.path.dirname(save_fn)
         sv_basename = os.path.basename(save_fn)
@@ -148,6 +141,9 @@ class ModelWidget(QtWidgets.QWidget):
 
         self.cmap = 'jet_r'
         self.res_limits = (0, 4)
+        self.map_copy_num = 1
+        self.east_copy_num = 1
+        self.north_copy_num = 1
 
         self.make_cb()
         
@@ -157,16 +153,6 @@ class ModelWidget(QtWidgets.QWidget):
         
         self.screen_size = QtWidgets.QDesktopWidget().screenGeometry()
         
-        self.fill_outside_avg_pad_label = QtWidgets.QLabel('Avg Cells Max')
-        self.fill_outside_avg_pad_edit = QtWidgets.QLineEdit('{0:.0f}'.format(self.avg_pad))
-        self.fill_outside_avg_pad_edit.editingFinished.connect(self.set_avg_pad)
-        
-        self.fill_outside_npad_label = QtWidgets.QLabel('Num Cells to Pad')
-        self.fill_outside_npad_edit = QtWidgets.QLineEdit('{0:.0f}'.format(self.npad))
-        self.fill_outside_npad_edit.editingFinished.connect(self.set_npad)
-        
-        self.fill_outside_button = QtWidgets.QPushButton('Filter Outside Area')
-        self.fill_outside_button.pressed.connect(self.fill_outside_area)
 
         self.map_figure = Figure()
         self.map_canvas = FigureCanvas(self.map_figure)
@@ -174,6 +160,18 @@ class ModelWidget(QtWidgets.QWidget):
         self.map_canvas.setSizePolicy(QtWidgets.QSizePolicy.Expanding,
                                       QtWidgets.QSizePolicy.Expanding)
         self.map_toolbar = NavigationToolbar(self.map_canvas, self)
+        
+        self.map_copy_down_button = QtWidgets.QPushButton('Copy Down (N layers)')
+        self.map_copy_down_button.pressed.connect(self.map_copy_down)
+        
+        self.map_copy_up_button = QtWidgets.QPushButton('Copy Up (N layers)')
+        self.map_copy_up_button.pressed.connect(self.map_copy_up)
+        
+        self.map_copy_number_edit = QtWidgets.QLineEdit()
+        self.map_copy_number_edit.setText('{0:0.0f}'.format(self.map_copy_num))
+        self.map_copy_number_edit.editingFinished.connect(self.set_map_copy_num)
+        
+        self.map_copy_number_label = QtWidgets.QLabel('N')
 
         self.map_depth_label = QtWidgets.QLabel('Depth {0:>10.2f} {1}'.format(0,
                                                                     self.units))
@@ -214,12 +212,13 @@ class ModelWidget(QtWidgets.QWidget):
         self.north_slider.setMaximum(0)
         self.north_slider.setTickInterval(1)
 
-
-        self.figure_3d = Figure()
-        self.canvas_3d = FigureCanvas(self.figure_3d)
-        self.canvas_3d.setSizePolicy(QtWidgets.QSizePolicy.Expanding,
-                                       QtWidgets.QSizePolicy.Expanding)
-
+        self.location_figure = Figure()
+        self.location_canvas = FigureCanvas(self.location_figure)
+        self.location_canvas.setSizePolicy(QtWidgets.QSizePolicy.Expanding,
+                                           QtWidgets.QSizePolicy.Expanding)
+        self.location_toolbar = NavigationToolbar(self.location_canvas, self)
+        self.location_canvas.mpl_connect('pick_event', self.location_pick)
+        
         self.cb_figure = Figure()
         self.cb_canvas = FigureCanvas(self.cb_figure)
         self.cb_canvas.setMaximumWidth(int(self.screen_size.width()*.05))
@@ -257,18 +256,24 @@ class ModelWidget(QtWidgets.QWidget):
         ##------------------------------------------------
         ## Layout
         
-        button_layout = QtWidgets.QHBoxLayout()
-        button_layout.addWidget(self.fill_outside_npad_label)
-        button_layout.addWidget(self.fill_outside_npad_edit)
-        button_layout.addWidget(self.fill_outside_avg_pad_label)
-        button_layout.addWidget(self.fill_outside_avg_pad_edit)
-        button_layout.addWidget(self.fill_outside_button)
+#        button_layout = QtWidgets.QHBoxLayout()
+#        button_layout.addWidget(self.fill_outside_npad_label)
+#        button_layout.addWidget(self.fill_outside_npad_edit)
+#        button_layout.addWidget(self.fill_outside_avg_pad_label)
+#        button_layout.addWidget(self.fill_outside_avg_pad_edit)
+#        button_layout.addWidget(self.fill_outside_button)
 
         map_bottom_layout = QtWidgets.QHBoxLayout()
         map_bottom_layout.addWidget(self.map_depth_label)
         map_bottom_layout.addWidget(self.map_slider)
+        map_top_layout = QtWidgets.QHBoxLayout()
+        map_top_layout.addWidget(self.map_toolbar)
+        map_top_layout.addWidget(self.map_copy_down_button)
+        map_top_layout.addWidget(self.map_copy_up_button)
+        map_top_layout.addWidget(self.map_copy_number_label)
+        map_top_layout.addWidget(self.map_copy_number_edit)
         map_layout = QtWidgets.QVBoxLayout()
-        map_layout.addWidget(self.map_toolbar)
+        map_layout.addLayout(map_top_layout)
         map_layout.addWidget(self.map_canvas)
         map_layout.addLayout(map_bottom_layout)
 
@@ -287,13 +292,16 @@ class ModelWidget(QtWidgets.QWidget):
         north_layout.addWidget(self.north_toolbar)
         north_layout.addWidget(self.north_canvas)
         north_layout.addLayout(north_bottom_layout)
-
+        
+        location_layout = QtWidgets.QVBoxLayout()
+        location_layout.addWidget(self.location_toolbar)
+        location_layout.addWidget(self.location_canvas)
 
         grid_layout = QtWidgets.QGridLayout()
         grid_layout.addLayout(map_layout, 1, 1)
         grid_layout.addLayout(east_layout, 1, 2)
         grid_layout.addLayout(north_layout, 2, 1)
-        grid_layout.addWidget(self.canvas_3d, 2, 2)
+        grid_layout.addLayout(location_layout, 2, 2)
 
         cb_edit = QtWidgets.QVBoxLayout()
         cb_edit.addWidget(self.cb_label)
@@ -321,8 +329,8 @@ class ModelWidget(QtWidgets.QWidget):
 
         self.data_obj = modem.Data()
         self.data_obj.read_data_file(self._data_fn)
-        self.redraw_plots()
-
+        if self.map_ax:
+            self.redraw_plots()
 
     @property
     def model_fn(self):
@@ -341,35 +349,28 @@ class ModelWidget(QtWidgets.QWidget):
         # set slider bar intervals
         # need the minus 1 cause we are using the value of the slider as
         # the index.
-        self.map_slider.setMaximum(self.model_obj.grid_z.size-1)
-        self.east_slider.setMaximum(self.model_obj.grid_north.size-1)
-        self.north_slider.setMaximum(self.model_obj.grid_east.size-1)
+        self.map_slider.setMaximum(self.model_obj.plot_z.size-1)
+        self.east_slider.setMaximum(self.model_obj.plot_east.size-1)
+        self.north_slider.setMaximum(self.model_obj.plot_north.size-1)
         
         self.east_label.setText('{0:.2f}'.format(self.model_obj.grid_east[0]))
         self.north_label.setText('{0:.2f}'.format(self.model_obj.grid_north[0]))
 
         ## plot the model
-        plot_east = np.append(self.model_obj.grid_east,
-                              self.model_obj.grid_east[-1]*1.2)/self.scale
-        plot_north = np.append(self.model_obj.grid_north,
-                               self.model_obj.grid_north[-1]*1.2)/self.scale
-        plot_z = np.append(self.model_obj.grid_z,
-                               self.model_obj.grid_z[-1]*1.2)/self.scale
-
-        self.plot_east_map, self.plot_north_map = np.meshgrid(plot_east,
-                                                              plot_north,
+        self.plot_east_map, self.plot_north_map = np.meshgrid(self.model_obj.grid_east,
+                                                              self.model_obj.grid_north,
                                                               indexing='ij')
-        self.plot_east_z, self.plot_z_east = np.meshgrid(plot_east,
-                                                         plot_z,
+        self.plot_east_z, self.plot_z_east = np.meshgrid(self.model_obj.grid_east,
+                                                         self.model_obj.grid_z,
                                                          indexing='ij')
-        self.plot_north_z, self.plot_z_north = np.meshgrid(plot_north,
-                                                           plot_z,
+        self.plot_north_z, self.plot_z_north = np.meshgrid(self.model_obj.grid_north,
+                                                           self.model_obj.grid_z,
                                                            indexing='ij')
 
 
         self.map_ax = self.map_figure.add_subplot(1, 1, 1, aspect='equal')
-        self.map_ax.pcolormesh(self.plot_east_map,
-                               self.plot_north_map,
+        self.map_ax.pcolormesh(self.plot_east_map/self.scale,
+                               self.plot_north_map/self.scale,
                                np.log10(self.model_obj.res_model[:, :, self.map_index].T),
                                cmap=self.cmap,
                                vmin=self.res_limits[0],
@@ -381,8 +382,8 @@ class ModelWidget(QtWidgets.QWidget):
 
         self.north_ax = self.north_figure.add_subplot(1, 1, 1, sharex=self.map_ax,
                                                       aspect='equal')
-        self.north_ax.pcolormesh(self.plot_east_z,
-                               self.plot_z_east,
+        self.north_ax.pcolormesh(self.plot_east_z/self.scale,
+                               self.plot_z_east/self.scale,
                                np.log10(self.model_obj.res_model[self.north_index, :, :]),
                                cmap=self.cmap,
                                vmin=self.res_limits[0],
@@ -398,8 +399,8 @@ class ModelWidget(QtWidgets.QWidget):
                                                     aspect='equal',
                                                     sharex=self.map_ax,
                                                     sharey=self.north_ax)
-        self.east_ax.pcolormesh(self.plot_north_z,
-                               self.plot_z_north,
+        self.east_ax.pcolormesh(self.plot_north_z/self.scale,
+                               self.plot_z_north/self.scale,
                                np.log10(self.model_obj.res_model[:, self.east_index, :]),
                                cmap=self.cmap,
                                vmin=self.res_limits[0],
@@ -409,16 +410,68 @@ class ModelWidget(QtWidgets.QWidget):
         self.east_ax.set_ylabel('Depth {0}'.format(self.units))
         self.east_ax.set_aspect('equal', 'box-forced')
         
+        # plot the grid
+        self.location_ax = self.location_figure.add_subplot(1, 1, 1, 
+                                                            sharex=self.map_ax,
+                                                            aspect='equal')
+        self.east_line_xlist = []
+        self.east_line_ylist = []
+        for xx in self.model_obj.grid_east:
+            self.east_line_xlist.extend([xx / self.scale, xx / self.scale])
+            self.east_line_xlist.append(None)
+            self.east_line_ylist.extend([self.model_obj.grid_north.min() / self.scale,
+                                         self.model_obj.grid_north.max() / self.scale])
+            self.east_line_ylist.append(None)
+        self.location_ax.plot(self.east_line_xlist,
+                               self.east_line_ylist,
+                               lw=.25,
+                               color='k',
+                               picker=3)
+
+        self.north_line_xlist = []
+        self.north_line_ylist = []
+        for yy in self.model_obj.grid_north:
+            self.north_line_xlist.extend([self.model_obj.grid_east.min() / self.scale,
+                                          self.model_obj.grid_east.max() / self.scale])
+            self.north_line_xlist.append(None)
+            self.north_line_ylist.extend([yy / self.scale, yy / self.scale])
+            self.north_line_ylist.append(None)
+        self.location_ax.plot(self.north_line_xlist,
+                              self.north_line_ylist,
+                              lw=.25,
+                              color='k',
+                              picker=3)
+        
+        self.east_line = self.location_ax.plot([self.model_obj.grid_east[self.east_index]/self.scale,
+                                                self.model_obj.grid_east[self.east_index]/self.scale],
+                                                [self.model_obj.grid_north.min()/self.scale,
+                                                 self.model_obj.grid_north.max()/self.scale],
+                                                 'g',
+                                                 lw=2)[0]
+        self.north_line = self.location_ax.plot([self.model_obj.grid_east.min()/self.scale,
+                                                self.model_obj.grid_east.max()/self.scale],
+                                                [self.model_obj.grid_north[self.north_index]/self.scale,
+                                                 self.model_obj.grid_north[self.north_index]/self.scale],
+                                                 'b',
+                                                 lw=2)[0]
+        
         if self.data_fn is not None:
-            self.map_ax.scatter(self.data_obj.station_locations['rel_east']/self.scale,
-                                self.data_obj.station_locations['rel_north']/self.scale,
+            self.map_ax.scatter(self.data_obj.station_locations.rel_east/self.scale,
+                                self.data_obj.station_locations.rel_north/self.scale,
                                 marker='v',
                                 c='k',
                                 s=10)
-        
+            
+            self.location_ax.scatter(self.data_obj.station_locations.rel_east/self.scale,
+                                    self.data_obj.station_locations.rel_north/self.scale,
+                                    marker='v',
+                                    c='k',
+                                    s=10)
+
         self.north_canvas.draw()
         self.map_canvas.draw()
         self.east_canvas.draw()
+        self.location_canvas.draw()
 
         #make a rectangular selector
         self.map_selector = widgets.RectangleSelector(self.map_ax,
@@ -433,6 +486,9 @@ class ModelWidget(QtWidgets.QWidget):
                                                         self.north_on_pick,
                                                         drawtype='box',
                                                         useblit=True)
+        
+        # select lines in map view
+        
 
 
     def make_cb(self):
@@ -470,16 +526,22 @@ class ModelWidget(QtWidgets.QWidget):
         depth = self.model_obj.grid_z[self.map_index]/self.scale
         self.map_depth_label.setText('Depth {0:>10.2f} {1}'.format(depth,
                                                                 self.units))
-
-        self.map_ax.pcolormesh(self.plot_east_map,
-                               self.plot_north_map,
+        
+        self.redraw_map()
+        
+    def redraw_map(self):
+        """
+        redraw map view
+        """
+        self.map_ax.pcolormesh(self.plot_east_map/self.scale,
+                               self.plot_north_map/self.scale,
                                np.log10(self.model_obj.res_model[:, :, self.map_index].T),
                                cmap=self.cmap,
                                vmin=self.res_limits[0],
                                vmax=self.res_limits[1])
         if self.data_fn is not None:
-            self.map_ax.scatter(self.data_obj.station_locations['rel_east']/self.scale,
-                                self.data_obj.station_locations['rel_north']/self.scale,
+            self.map_ax.scatter(self.data_obj.station_locations.rel_east/self.scale,
+                                self.data_obj.station_locations.rel_north/self.scale,
                                 marker='v',
                                 c='k',
                                 s=10)
@@ -491,27 +553,52 @@ class ModelWidget(QtWidgets.QWidget):
 
         self.east_label.setText('Easting {0:>10.2f} {1}'.format(easting,
                                                                 self.units))
-
-        self.east_ax.pcolormesh(self.plot_north_z,
-                               self.plot_z_north,
+        self.redraw_east()
+        self.redraw_location()
+        
+    def redraw_east(self):
+        """
+        redraw east view
+        """
+        self.east_ax.pcolormesh(self.plot_north_z/self.scale,
+                               self.plot_z_north/self.scale,
                                np.log10(self.model_obj.res_model[:, self.east_index, :]),
                                cmap=self.cmap,
                                vmin=self.res_limits[0],
                                vmax=self.res_limits[1])
         self.east_canvas.draw()
+        
+    def redraw_location(self):
+        """
+        redraw the location map with the indication lines on it
+        """
+        self.east_line.set_xdata([self.model_obj.grid_east[self.east_index]/self.scale,
+                                  self.model_obj.grid_east[self.east_index]/self.scale])
+        
+        self.north_line.set_ydata([self.model_obj.grid_north[self.north_index]/self.scale,
+                                  self.model_obj.grid_north[self.north_index]/self.scale])
+
+        self.location_canvas.draw()
 
     def set_north_index(self):
         self.north_index = int(self.north_slider.value())
         northing = self.model_obj.grid_north[self.north_index]/self.scale
         self.north_label.setText('Northing {0:>10.2f} {1}'.format(northing,
                                                                 self.units))
+        
+        self.redraw_north()
+        self.redraw_location()
 
-        self.north_ax.pcolormesh(self.plot_east_z,
-                               self.plot_z_east,
-                               np.log10(self.model_obj.res_model[self.north_index, :, :]),
-                               cmap=self.cmap,
-                               vmin=self.res_limits[0],
-                               vmax=self.res_limits[1])
+    def redraw_north(self):
+        """
+        redraw north view
+        """
+        self.north_ax.pcolormesh(self.plot_east_z/self.scale,
+                                 self.plot_z_east/self.scale,
+                                 np.log10(self.model_obj.res_model[self.north_index, :, :]),
+                                 cmap=self.cmap,
+                                 vmin=self.res_limits[0],
+                                 vmax=self.res_limits[1])
         self.north_canvas.draw()
 
     def map_on_pick(self, eclick, erelease):
@@ -590,42 +677,85 @@ class ModelWidget(QtWidgets.QWidget):
         ychange = np.append(ychange, ychange[-1]+1)
 
         return ychange
-
+    
     def redraw_plots(self):
         """
-        redraw all the plots after things have changed
+        redraw all plots
         """
-        self.map_ax.pcolormesh(self.plot_east_map,
-                       self.plot_north_map,
-                       np.log10(self.model_obj.res_model[:, :, self.map_index].T),
-                       cmap=self.cmap,
-                       vmin=self.res_limits[0],
-                       vmax=self.res_limits[1])
-                       
-        if self.data_fn is not None:
-            self.map_ax.scatter(self.data_obj.station_locations['rel_east']/self.scale,
-                                self.data_obj.station_locations['rel_north']/self.scale,
-                                marker='v',
-                                c='k',
-                                s=10)
+        self.redraw_map()
+        self.redraw_east()
+        self.redraw_north()
+        self.redraw_location()
+    
+    def location_pick(self, event):
+        """
+        change the index of the location line either e-w or n-s.
+        """
+        if event.mouseevent.button == 1:
+            data_point = event.mouseevent
+            
+            # figure out if data point is close to x or y
+            try:
+                x_index = np.where(self.model_obj.grid_east/self.scale >= data_point.xdata)[0][0]
+            except IndexError:
+                return
+            try:
+                y_index = np.where(self.model_obj.grid_north/self.scale >= data_point.ydata)[0][0]
+            except IndexError:
+                return
+            dx = np.abs(data_point.xdata-self.model_obj.grid_east[x_index]/self.scale)
+            dy = np.abs(data_point.ydata-self.model_obj.grid_north[y_index]/self.scale)
+            
+            print(dx, dy)
+            
+            if dx < dy:
+                self.east_index = x_index
+                self.east_line.set_xdata([self.model_obj.grid_east[self.east_index]/self.scale,
+                                          self.model_obj.grid_east[self.east_index]/self.scale])
+                self.east_slider.setValue(self.east_index)
+                self.east_slider.triggerAction(QtWidgets.QAbstractSlider.SliderMove)
+                #self.redraw_east()
+                #self.redraw_location()
 
-        self.east_ax.pcolormesh(self.plot_north_z,
-                        self.plot_z_north,
-                        np.log10(self.model_obj.res_model[:, self.east_index, :]),
-                        cmap=self.cmap,
-                        vmin=self.res_limits[0],
-                        vmax=self.res_limits[1])
-
-        self.north_ax.pcolormesh(self.plot_east_z,
-                         self.plot_z_east,
-                         np.log10(self.model_obj.res_model[self.north_index, :, :]),
-                         cmap=self.cmap,
-                         vmin=self.res_limits[0],
-                         vmax=self.res_limits[1])
-
-        self.north_canvas.draw()
-        self.east_canvas.draw()
-        self.map_canvas.draw()
+            elif dx > dy:
+                self.north_index = y_index
+                self.north_line.set_ydata([self.model_obj.grid_north[self.north_index]/self.scale,
+                                          self.model_obj.grid_north[self.north_index]/self.scale])
+                self.north_slider.setValue(self.north_index)
+                self.north_slider.triggerAction(QtWidgets.QAbstractSlider.SliderMove)
+                #self.redraw_north()
+                #self.redraw_location()
+    
+    def set_avg_pad(self):
+        pass
+    
+    def set_npad(self):
+        pass
+    
+    def fill_outside_area(self):
+        pass
+    
+    def map_copy_down(self):
+        """
+        copy the current map down the number of layers given
+        """
+        o_shape = (self.model_obj.res_model.shape[0],
+                   self.model_obj.res_model.shape[1],
+                   1)
+        copy_index = self.map_index+self.map_copy_num+1
+        self.model_obj.res_model[:, :, self.map_index:copy_index] = \
+            self.model_obj.res_model[:, :, self.map_index].reshape(o_shape)
+            
+        self.redraw_map()
+        
+    def map_copy_up(self):
+        pass
+    def set_map_copy_num(self):
+        """
+        set number of layers to copy
+        """
+        self.map_copy_num = int(round(float(str(self.map_copy_number_edit.text()))))
+        self.map_copy_number_edit.setText('{0:.0f}'.format(self.map_copy_num))
 
 #==============================================================================
 #  DEFINE MAIN

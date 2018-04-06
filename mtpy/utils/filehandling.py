@@ -88,8 +88,6 @@ def read_surface_ascii(ascii_fn):
     elevation = np.loadtxt(ascii_fn, skiprows=skiprows)[::-1]  # ::-1 reverse an axis to put the southern line first
 
     # create lat and lon arrays from the dem file
-    lon = np.arange(x0, x0 + cs * (nx), cs)
-    lat = np.arange(y0, y0 + cs * (ny), cs)
     lon = np.linspace(x0, x0 + cs * (nx - 1), nx)
     lat = np.linspace(y0, y0 + cs * (ny - 1), ny)
 

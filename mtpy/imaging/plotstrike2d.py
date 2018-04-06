@@ -261,7 +261,7 @@ class PlotStrike2D(object):
             pass
 
         for ii, mt in enumerate(self.mt_list):
-            mt.rot_z = self._rot_z[ii]
+            mt.rotation_angle = self._rot_z[ii]
 
     def _get_rot_z(self):
         return self._rot_z

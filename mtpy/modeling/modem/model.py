@@ -28,7 +28,7 @@ from .exception import ModelError
 import mtpy.utils.gocad as mtgocad
 
 try:
-    from pyevtk.hl import gridToVTK
+    from evtk.hl import gridToVTK
 except ImportError:
     print('If you want to write a vtk file for 3d viewing, you need to '
           'install pyevtk')
@@ -378,6 +378,25 @@ class Model(object):
         self._nodes_z = nodes
         self.grid_z = np.array([nodes[0:ii].sum() for ii in range(nodes.size)] + [nodes.sum()])
 
+    # need some arrays for plotting that are the same length as the
+    # resistivity model
+    @property
+    def plot_east(self):
+        plot_east = np.array([self.nodes_east[0:ii].sum() 
+                             for ii in range(self.nodes_east.size)])
+        return plot_east-plot_east[-1]/2.
+    
+    @property
+    def plot_north(self):
+        plot_north = np.array([self.nodes_north[0:ii].sum() 
+                          for ii in range(self.nodes_north.size)])
+        return plot_north-plot_north[-1]/2.
+    
+    @property
+    def plot_z(self):
+        return np.array([self.nodes_z[0:ii].sum() 
+                         for ii in range(self.nodes_z.size)])
+    
     def make_mesh(self):
         """
         create finite element mesh according to user-input parameters.
@@ -532,6 +551,12 @@ class Model(object):
 
         # this is the value to the lower left corner from the center.
         self.grid_center = np.array([center_north, center_east, center_z])
+        
+        # make the resistivity array
+        self.res_model = np.zeros((self.nodes_north.size,
+                                  self.nodes_east.size,
+                                  self.nodes_z.size))
+        self.res_model[:, :, :] = self.res_initial_value
 
         # --> print out useful information
         self.print_mesh_params()
@@ -710,7 +735,8 @@ class Model(object):
 
     def add_topography_to_mesh(self, topography_file=None, topography_array=None,
                                interp_method='nearest',
-                               air_resistivity=1e17, sea_resistivity=0.3):
+                               air_resistivity=1e17, sea_resistivity=0.3, 
+                               max_elev=None, rotation_angle=None):
         """
         For a given mesh grid, use the topofile data to define resistivity model.
         No new air layers will be added. Just identify the max elev height as the ref point
@@ -725,7 +751,10 @@ class Model(object):
         if topography_file is not None:
             self.project_surface(surface_file=topography_file,
                                  surface_name='topography',
-                                 method=interp_method)
+                                 method=interp_method,
+                                 max_value=max_elev,
+                                 rotation_angle=rotation_angle)
+            
         if topography_array is not None:
             self.surface_dict['topography'] = topography_array
 
@@ -739,7 +768,7 @@ class Model(object):
 
         self._logger.info("begin to self.assign_resistivity_from_surfacedata(...)")
         # self.assign_resistivity_from_surfacedata('topography', air_resistivity, where='above')
-        self.assign_resistivity_from_surfacedata('topography', air_resistivity,'above')
+        self.old_assign_resistivity_from_surfacedata('topography', air_resistivity,'above')
 
         self._logger.info("begin to assign sea water resistivity")
         # first make a mask for all-land =1, which will be modified later according to air, water
@@ -911,7 +940,8 @@ class Model(object):
         return
 
     def project_surface(self, surface_file=None, surface=None, surface_name=None,
-                        surface_epsg=4326, method='nearest'):  # todo GA Version
+                        surface_epsg=4326, method='nearest',
+                        max_value=None, rotation_angle=None):  # todo GA Version
         """
         project a surface to the model grid and add resulting elevation data
         to a dictionary called surface_dict. Assumes the surface is in lat/long
@@ -965,16 +995,31 @@ class Model(object):
             surface = mtfh.read_surface_ascii(surface_file)
 
         x, y, elev = surface
-
+        # If clipping of the surface for max value is desired
+        # need this if there are peaks, ModEM cannot handle them
+        if max_value is not None:
+            elev[np.where(elev > max_value)] = max_value
+            
         # if lat/lon provided as a 1D list, convert to a 2d grid of points
         if len(x.shape) == 1:
             x, y = np.meshgrid(x, y)
+            
+#        if rotation_angle is not None and type(rotation_angle) in [float, int]:
+#            cos_ang = np.cos(np.deg2rad(rotation_angle))
+#            sin_ang = np.sin(np.deg2rad(rotation_angle))
+#            rot_matrix = np.matrix(np.array([[cos_ang, sin_ang],
+#                                             [-sin_ang, cos_ang]]))
+#            rot_xy = np.array(np.dot(rot_matrix, np.array([x, y])))
+#            x = rot_xy[0].copy()
+#            y = rot_xy[1].copy()
+            
         epsg_from, epsg_to = surface_epsg, self.data_obj.model_epsg
         xs, ys = mtpy.utils.gis_tools.epsg_project(x, y, epsg_from, epsg_to)
 
         # get centre position of model grid in real world coordinates
-        x0, y0 = [np.median(self.station_locations.station_locations[dd] - self.station_locations.station_locations['rel_' + dd]) for dd in
-                  ['east', 'north']]
+        x0, y0 = [np.median(self.station_locations.station_locations[dd] - \
+                            self.station_locations.station_locations['rel_' + dd])
+                  for dd in ['east', 'north']]
 
         # centre points of model grid in real world coordinates
         xg, yg = [np.mean([arr[1:], arr[:-1]], axis=0)
@@ -988,8 +1033,8 @@ class Model(object):
         # xi, the model grid points to interpolate to
         xi = np.vstack([arr.flatten() for arr in np.meshgrid(xg, yg)]).T
         # elevation on the centre of the grid nodes
-        elev_mg = spi.griddata(
-            points, values, xi, method=method).reshape(len(yg), len(xg))
+        elev_mg = spi.griddata(points, values, xi,
+                               method=method).reshape(len(yg), len(xg))
 
         print(" Elevation data type and shape  *** ", type(elev_mg), elev_mg.shape, len(yg), len(xg))
         # <type 'numpy.ndarray'>  (65, 92), 65 92: it's 2D image with cell index as pixels
@@ -1112,10 +1157,10 @@ class Model(object):
             sx, sy = self.station_locations.rel_east[ss], \
                      self.station_locations.rel_north[ss]
             # indices of stations on model grid
-            sxi = np.where((sx <= self.grid_east[1:]) & (
-                sx > self.grid_east[:-1]))[0][0]
-            syi = np.where((sy <= self.grid_north[1:]) & (
-                sy > self.grid_north[:-1]))[0][0]
+            sxi = np.where((sx <= self.grid_east[1:]) &\
+                           (sx > self.grid_east[:-1]))[0][0]
+            syi = np.where((sy <= self.grid_north[1:]) &\
+                           (sy > self.grid_north[:-1]))[0][0]
 
             # first check if the site is in the sea
             if np.any(self.covariance_mask[::-1][syi, sxi] == 9):
@@ -1137,17 +1182,17 @@ class Model(object):
             station_index_x.append(sxi)
             station_index_y.append(syi)
 
-            #            # use topo elevation directly in modem.dat file
-            #            !!! can't use topo elevation directly from topography file as the
-            #                elevation needs to sit on the model mesh!
-            #            topoval = self.surface_dict['topography'][syi, sxi]
+            ## use topo elevation directly in modem.dat file
+            #!!! can't use topo elevation directly from topography file as the
+            #elevation needs to sit on the model mesh!
+            #topoval = self.surface_dict['topography'][syi, sxi]
             self._logger.debug("sname,ss, sxi, syi, szi, topoval: %s,%s,%s,%s,%s,%s"
                                % (sname, ss, sxi, syi, szi, topoval))
 
             # update elevation in station locations and data array, +1 m as
             # data elevation needs to be below the topography (as advised by Naser)
             self.station_locations.elev[ss] = topoval + 1.
-            self.data_obj.data_array['elev'][ss] = topoval + 1.
+            self.data_obj.data_array['rel_elev'][ss] = topoval + 1.
 
         # This will shift stations' location to be relative to the defined mesh-grid centre
         self.data_obj.station_locations = self.station_locations
@@ -1482,14 +1527,16 @@ class Model(object):
 
         # fig = plt.figure(3, dpi=200)
         fig = plt.figure(dpi=200)
-        plt.clf()
-        ax = plt.gca()
+        fig.clf()
+        ax = fig.add_subplot(1, 1, 1, aspect='equal') 
 
+        x, y = np.meshgrid(self.grid_east, self.grid_north)
         # topography data image
         # plt.imshow(elev_mg) # this upside down
         # plt.imshow(elev_mg[::-1])  # this will be correct - water shadow flip of the image
-        imgplot = plt.imshow(self.surface_dict['topography'],
-                             origin='lower')  # the orgin is in the lower left corner SW.
+#        imgplot = plt.imshow(self.surface_dict['topography'],
+#                             origin='lower')  # the orgin is in the lower left corner SW.
+        imgplot = ax.pcolormesh(x, y, self.surface_dict['topography'])
         divider = make_axes_locatable(ax)
         # pad = separation from figure to colorbar
         cax = divider.append_axes("right", size="3%", pad=0.2)
@@ -1516,11 +1563,14 @@ class Model(object):
         self._logger.debug("station grid index x: %s" % sgindex_x)
         self._logger.debug("station grid index y: %s" % sgindex_y)
 
-        ax.scatter(sgindex_x, sgindex_y, marker='v', c='b', s=2)
+#        ax.scatter(sgindex_x, sgindex_y, marker='v', c='b', s=2)
+        ax.scatter(self.station_locations.rel_east,
+                   self.station_locations.rel_north,
+                   marker='v', c='k', s=2)
 
-        ax.set_xlabel('Easting Cell Index', fontdict={'size': 9, 'weight': 'bold'})
-        ax.set_ylabel('Northing Cell Index', fontdict={'size': 9, 'weight': 'bold'})
-        ax.set_title("Elevation and Stations in N-E Map (Cells)")
+        ax.set_xlabel('Easting (m)', fontdict={'size': 9, 'weight': 'bold'})
+        ax.set_ylabel('Northing (m)', fontdict={'size': 9, 'weight': 'bold'})
+        ax.set_title("Elevation and Stations Map")
 
         plt.show()
 

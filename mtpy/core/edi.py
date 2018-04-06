@@ -577,9 +577,8 @@ class Edi(object):
         freq_lines += self._write_data_block(self.Z.freq, 'freq')
 
         # write out rotation angles
-        zrot_lines = [
-            self._data_header_str.format(
-                'impedance rotation angles'.upper())]
+        zrot_lines = [self._data_header_str.format(
+                      'impedance rotation angles'.upper())]
         zrot_lines += self._write_data_block(self.Z.rotation_angle, 'zrot')
 
         # write out data only impedance and tipper
