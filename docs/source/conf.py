@@ -137,8 +137,8 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'mtpy.tex', u'mtpy Documentation',
-     u'mtgeophysics', 'manual'),
+    (master_doc, 'mtpy.tex', u'MTPy Documentation',
+        author, 'manual'),
 ]
 
 
