@@ -21,7 +21,7 @@ sys.path.insert(0, os.path.abspath('../..'))
 
 project = u'mtpy'
 copyright = u'2018, mtgeophysics'
-author = u'mtgeophysics'
+author = u'Alison Kirkby, Fei Zhang, Jared Peacock, Rakib Hassan, Jingming Duan'
 
 # The short X.Y version
 version = u''
