@@ -7,7 +7,7 @@ pillow
 # pip cannot install pyqt
 #pyqt
 qtpy
-GDAL
+#GDAL
 obspy
 netcdf4
 # basemap
