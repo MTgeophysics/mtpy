@@ -37,7 +37,6 @@ Edited by JP, 2016
 
 """
 
-# =================================================================
 import copy
 
 import numpy as np
@@ -55,8 +54,8 @@ def find_distortion(z_object, g='det', num_freq=None, lo_dims=None):
     automatically determine the dimensionality over all frequencies, then find
     the appropriate distortion tensor D
     
-    Arguments
-    -------------
+    Parameters
+    ----------
     
         **z_object** : mtpy.core.z object
                        
@@ -74,16 +73,18 @@ def find_distortion(z_object, g='det', num_freq=None, lo_dims=None):
                       *default* is None, meaning calculated from data
                       
     Returns
-    ---------
+    -------
     
         **distortion** : np.ndarray(2, 2)
                          distortion array all real values
         
         **distortion_err** : np.ndarray(2, 2)
                              distortion error array
-                             
-    Example:
-    ---------
+
+
+    Examples
+    --------
+
         :Estimate Distortion: ::
         
             >>> import mtpy.analysis.distortion as distortion
@@ -325,7 +326,7 @@ def remove_distortion(z_array=None, z_object=None, num_freq=None, g='det'):
     remove distortion from an impedance tensor using the method outlined by 
     Bibby et al., [2005].
     
-    Arguments
+    Parameters
     -----------
     
         **z_array** : np.ndarray((nf, 2, 2))
@@ -344,7 +345,7 @@ def remove_distortion(z_array=None, z_object=None, num_freq=None, g='det'):
                 *default* is 'det'
 
     Returns
-    ------------
+    --------
 
         **distortion** : np.ndarray (2, 2)
                          distortion array
