@@ -101,7 +101,8 @@ class ModEM_Model_Manipulator(QtWidgets.QMainWindow):
         sv_path = os.path.dirname(save_fn)
         sv_basename = os.path.basename(save_fn)
         self.model_widget.model_obj.write_model_file(save_path=sv_path,
-                                                    model_fn_basename=sv_basename)
+                                                     model_fn_basename=sv_basename,
+                                                     res_model=self.model_widget.new_res_model)
 
 #==============================================================================
 # Model Widget
@@ -131,6 +132,19 @@ class ModelWidget(QtWidgets.QWidget):
         self.plot_z_east = None
         self.plot_north_z = None
         self.plot_z_north = None
+        self.north_line = None
+        self.east_line = None
+        self.north_line_xlist = None
+        self.north_line_ylist = None
+        self.east_line_xlist = None
+        self.east_line_ylist = None
+        
+        self.map_ax = None
+        self.north_ax = None
+        self.east_ax = None
+        self.cb_ax = None
+        self.location_ax = None
+        self.new_res_model = None
 
         self.units = 'km'
         self.scale = 1000.
@@ -153,7 +167,7 @@ class ModelWidget(QtWidgets.QWidget):
         
         self.screen_size = QtWidgets.QDesktopWidget().screenGeometry()
         
-
+        ## --> map view of the model
         self.map_figure = Figure()
         self.map_canvas = FigureCanvas(self.map_figure)
         self.map_canvas.mpl_connect('pick_event', self.map_on_pick)
@@ -169,8 +183,8 @@ class ModelWidget(QtWidgets.QWidget):
         
         self.map_copy_number_edit = QtWidgets.QLineEdit()
         self.map_copy_number_edit.setText('{0:0.0f}'.format(self.map_copy_num))
+        self.map_copy_number_edit.setMaximumWidth(35)
         self.map_copy_number_edit.editingFinished.connect(self.set_map_copy_num)
-        
         self.map_copy_number_label = QtWidgets.QLabel('N')
 
         self.map_depth_label = QtWidgets.QLabel('Depth {0:>10.2f} {1}'.format(0,
@@ -182,12 +196,25 @@ class ModelWidget(QtWidgets.QWidget):
         self.map_slider.setMaximum(0)
         self.map_slider.setTickInterval(1)
 
+        ## --> a N-S cross section that moves east to west
         self.east_figure= Figure()
         self.east_canvas = FigureCanvas(self.east_figure)
         self.east_canvas.setSizePolicy(QtWidgets.QSizePolicy.Expanding,
                                        QtWidgets.QSizePolicy.Expanding)
         self.east_toolbar = NavigationToolbar(self.east_canvas, self)
 
+        self.east_copy_west_button = QtWidgets.QPushButton('Copy West (N layers)')
+        self.east_copy_west_button.pressed.connect(self.east_copy_west)
+        
+        self.east_copy_east_button = QtWidgets.QPushButton('Copy East (N layers)')
+        self.east_copy_east_button.pressed.connect(self.east_copy_east)
+        
+        self.east_copy_number_edit = QtWidgets.QLineEdit()
+        self.east_copy_number_edit.setText('{0:0.0f}'.format(self.east_copy_num))
+        self.east_copy_number_edit.setMaximumWidth(35)
+        self.east_copy_number_edit.editingFinished.connect(self.set_east_copy_num)
+        self.east_copy_number_label = QtWidgets.QLabel('N')
+        
         self.east_label = QtWidgets.QLabel('Easting {0:>10.2f} {1}'.format(0,
                                                                    self.units))
         self.east_slider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
@@ -197,11 +224,24 @@ class ModelWidget(QtWidgets.QWidget):
         self.east_slider.setMaximum(0)
         self.east_slider.setTickInterval(1)
 
+        ## --> a E-W cross section that moves N-S
         self.north_figure = Figure()
         self.north_canvas = FigureCanvas(self.north_figure)
         self.north_canvas.setSizePolicy(QtWidgets.QSizePolicy.Expanding,
-                                      QtWidgets.QSizePolicy.Expanding)
+                                        QtWidgets.QSizePolicy.Expanding)
         self.north_toolbar = NavigationToolbar(self.north_canvas, self)
+        
+        self.north_copy_south_button = QtWidgets.QPushButton('Copy South (N layers)')
+        self.north_copy_south_button.pressed.connect(self.north_copy_south)
+        
+        self.north_copy_north_button = QtWidgets.QPushButton('Copy North (N layers)')
+        self.north_copy_north_button.pressed.connect(self.north_copy_north)
+        
+        self.north_copy_number_edit = QtWidgets.QLineEdit()
+        self.north_copy_number_edit.setText('{0:0.0f}'.format(self.north_copy_num))
+        self.north_copy_number_edit.setMaximumWidth(35)
+        self.north_copy_number_edit.editingFinished.connect(self.set_north_copy_num)
+        self.north_copy_number_label = QtWidgets.QLabel('N')
 
         self.north_label = QtWidgets.QLabel('Northing {0:>10.2f} m'.format(0,
                                                                     self.units))
@@ -240,7 +280,6 @@ class ModelWidget(QtWidgets.QWidget):
                                          color='k',
                                          picker=5)
         self.cb_canvas.mpl_connect('button_press_event', self.on_res_pick)
-#        self.cb_canvas.mpl_connect('pick_event', self.on_res_pick)
         self.cb_ax.set_xticks([0, 1])
         self.cb_ax.set_xticklabels(['', ''])
         self.cb_ax.axis('tight')
@@ -280,16 +319,28 @@ class ModelWidget(QtWidgets.QWidget):
         east_bottom_layout = QtWidgets.QHBoxLayout()
         east_bottom_layout.addWidget(self.east_label)
         east_bottom_layout.addWidget(self.east_slider)
+        east_top_layout = QtWidgets.QHBoxLayout()
+        east_top_layout.addWidget(self.east_toolbar)
+        east_top_layout.addWidget(self.east_copy_west_button)
+        east_top_layout.addWidget(self.east_copy_east_button)
+        east_top_layout.addWidget(self.east_copy_number_label)
+        east_top_layout.addWidget(self.east_copy_number_edit)
         east_layout = QtWidgets.QVBoxLayout()
-        east_layout.addWidget(self.east_toolbar)
+        east_layout.addLayout(east_top_layout)
         east_layout.addWidget(self.east_canvas)
         east_layout.addLayout(east_bottom_layout)
 
         north_bottom_layout = QtWidgets.QHBoxLayout()
         north_bottom_layout.addWidget(self.north_label)
         north_bottom_layout.addWidget(self.north_slider)
+        north_top_layout = QtWidgets.QHBoxLayout()
+        north_top_layout.addWidget(self.north_toolbar)
+        north_top_layout.addWidget(self.north_copy_south_button)
+        north_top_layout.addWidget(self.north_copy_north_button)
+        north_top_layout.addWidget(self.north_copy_number_label)
+        north_top_layout.addWidget(self.north_copy_number_edit)
         north_layout = QtWidgets.QVBoxLayout()
-        north_layout.addWidget(self.north_toolbar)
+        north_layout.addLayout(north_top_layout)
         north_layout.addWidget(self.north_canvas)
         north_layout.addLayout(north_bottom_layout)
         
@@ -329,7 +380,7 @@ class ModelWidget(QtWidgets.QWidget):
 
         self.data_obj = modem.Data()
         self.data_obj.read_data_file(self._data_fn)
-        if self.map_ax:
+        if self.map_ax is not None:
             self.redraw_plots()
 
     @property
@@ -345,6 +396,8 @@ class ModelWidget(QtWidgets.QWidget):
         self._model_fn = model_fn
         self.model_obj = modem.Model()
         self.model_obj.read_model_file(self._model_fn)
+        ## make a copy of the resistivity model to manipulate
+        self.new_res_model = self.model_obj.res_model.copy()
 
         # set slider bar intervals
         # need the minus 1 cause we are using the value of the slider as
@@ -356,92 +409,62 @@ class ModelWidget(QtWidgets.QWidget):
         self.east_label.setText('{0:.2f}'.format(self.model_obj.grid_east[0]))
         self.north_label.setText('{0:.2f}'.format(self.model_obj.grid_north[0]))
 
-        ## plot the model
-        self.plot_east_map, self.plot_north_map = np.meshgrid(self.model_obj.grid_east,
-                                                              self.model_obj.grid_north,
-                                                              indexing='ij')
-        self.plot_east_z, self.plot_z_east = np.meshgrid(self.model_obj.grid_east,
-                                                         self.model_obj.grid_z,
-                                                         indexing='ij')
-        self.plot_north_z, self.plot_z_north = np.meshgrid(self.model_obj.grid_north,
-                                                           self.model_obj.grid_z,
-                                                           indexing='ij')
-
-
+        ##--------------plot the model-----------------------------------------
+        ## get the grid coordinates first
+        self.initialize_vectors()
+        
+        ## --> make map axes 
         self.map_ax = self.map_figure.add_subplot(1, 1, 1, aspect='equal')
-        self.map_ax.pcolormesh(self.plot_east_map/self.scale,
-                               self.plot_north_map/self.scale,
-                               np.log10(self.model_obj.res_model[:, :, self.map_index].T),
-                               cmap=self.cmap,
-                               vmin=self.res_limits[0],
-                               vmax=self.res_limits[1])
         self.map_ax.set_xlabel('Easting {0}'.format(self.units))
         self.map_ax.set_ylabel('Northing {0}'.format(self.units))
         self.map_ax.set_aspect('equal', 'box-forced')
+        self.redraw_map()
         
-
-        self.north_ax = self.north_figure.add_subplot(1, 1, 1, sharex=self.map_ax,
+        ## --> make EW cross section axes
+        self.north_ax = self.north_figure.add_subplot(1, 1, 1, 
+                                                      sharex=self.map_ax,
                                                       aspect='equal')
-        self.north_ax.pcolormesh(self.plot_east_z/self.scale,
-                               self.plot_z_east/self.scale,
-                               np.log10(self.model_obj.res_model[self.north_index, :, :]),
-                               cmap=self.cmap,
-                               vmin=self.res_limits[0],
-                               vmax=self.res_limits[1])
+
         self.north_ax.set_xlabel('Easting {0}'.format(self.units))
         self.north_ax.set_ylabel('Depth {0}'.format(self.units))
         self.north_ax.set_aspect('equal', 'box-forced')
+        self.redraw_north()
+        # need to reverse the depth limits to plot properly
         z_lim = self.north_ax.get_ylim()
-        self.north_ax.set_ylim(z_lim[1], z_lim[0])
-        
+        self.north_ax.set_ylim([z_lim[-1], z_lim[0]])
+        self.north_canvas.draw()
 
+        ## --> make NS cross section axes 
         self.east_ax = self.east_figure.add_subplot(1, 1, 1,
                                                     aspect='equal',
                                                     sharex=self.map_ax,
                                                     sharey=self.north_ax)
-        self.east_ax.pcolormesh(self.plot_north_z/self.scale,
-                               self.plot_z_north/self.scale,
-                               np.log10(self.model_obj.res_model[:, self.east_index, :]),
-                               cmap=self.cmap,
-                               vmin=self.res_limits[0],
-                               vmax=self.res_limits[1])
 
         self.east_ax.set_xlabel('Northing {0}'.format(self.units))
         self.east_ax.set_ylabel('Depth {0}'.format(self.units))
         self.east_ax.set_aspect('equal', 'box-forced')
+        self.redraw_east()
         
-        # plot the grid
+        ## plot the location grid
         self.location_ax = self.location_figure.add_subplot(1, 1, 1, 
                                                             sharex=self.map_ax,
+                                                            sharey=self.map_ax,
                                                             aspect='equal')
-        self.east_line_xlist = []
-        self.east_line_ylist = []
-        for xx in self.model_obj.grid_east:
-            self.east_line_xlist.extend([xx / self.scale, xx / self.scale])
-            self.east_line_xlist.append(None)
-            self.east_line_ylist.extend([self.model_obj.grid_north.min() / self.scale,
-                                         self.model_obj.grid_north.max() / self.scale])
-            self.east_line_ylist.append(None)
-        self.location_ax.plot(self.east_line_xlist,
-                               self.east_line_ylist,
-                               lw=.25,
-                               color='k',
-                               picker=3)
-
-        self.north_line_xlist = []
-        self.north_line_ylist = []
-        for yy in self.model_obj.grid_north:
-            self.north_line_xlist.extend([self.model_obj.grid_east.min() / self.scale,
-                                          self.model_obj.grid_east.max() / self.scale])
-            self.north_line_xlist.append(None)
-            self.north_line_ylist.extend([yy / self.scale, yy / self.scale])
-            self.north_line_ylist.append(None)
-        self.location_ax.plot(self.north_line_xlist,
-                              self.north_line_ylist,
+        self.location_ax.set_xlabel('Easting {0}'.format(self.units))
+        self.location_ax.set_ylabel('Northing {0}'.format(self.units))
+        self.location_ax.set_aspect('equal', 'box-forced')
+        self.location_ax.plot(self.map_east_line_xlist,
+                              self.map_east_line_ylist,
+                              lw=.25,
+                              color='k',
+                              picker=3)
+        self.location_ax.plot(self.map_north_line_xlist,
+                              self.map_north_line_ylist,
                               lw=.25,
                               color='k',
                               picker=3)
         
+        # make lines that can move around
         self.east_line = self.location_ax.plot([self.model_obj.grid_east[self.east_index]/self.scale,
                                                 self.model_obj.grid_east[self.east_index]/self.scale],
                                                 [self.model_obj.grid_north.min()/self.scale,
@@ -454,25 +477,8 @@ class ModelWidget(QtWidgets.QWidget):
                                                  self.model_obj.grid_north[self.north_index]/self.scale],
                                                  'b',
                                                  lw=2)[0]
-        
-        if self.data_fn is not None:
-            self.map_ax.scatter(self.data_obj.station_locations.rel_east/self.scale,
-                                self.data_obj.station_locations.rel_north/self.scale,
-                                marker='v',
-                                c='k',
-                                s=10)
-            
-            self.location_ax.scatter(self.data_obj.station_locations.rel_east/self.scale,
-                                    self.data_obj.station_locations.rel_north/self.scale,
-                                    marker='v',
-                                    c='k',
-                                    s=10)
-
-        self.north_canvas.draw()
-        self.map_canvas.draw()
-        self.east_canvas.draw()
         self.location_canvas.draw()
-
+        
         #make a rectangular selector
         self.map_selector = widgets.RectangleSelector(self.map_ax,
                                                       self.map_on_pick,
@@ -487,9 +493,81 @@ class ModelWidget(QtWidgets.QWidget):
                                                         drawtype='box',
                                                         useblit=True)
         
-        # select lines in map view
         
+    def initialize_vectors(self):
+        """
+        get all the plotting vectors
+        """
+        
+        ### --> get mesh grids for plotting pcolormeshes
+        self.plot_east_map, self.plot_north_map = np.meshgrid(self.model_obj.grid_east/self.scale,
+                                                              self.model_obj.grid_north/self.scale,
+                                                              indexing='ij')
+        self.plot_east_z, self.plot_z_east = np.meshgrid(self.model_obj.grid_east/self.scale,
+                                                         self.model_obj.grid_z/self.scale,
+                                                         indexing='ij')
+        self.plot_north_z, self.plot_z_north = np.meshgrid(self.model_obj.grid_north/self.scale,
+                                                           self.model_obj.grid_z/self.scale,
+                                                           indexing='ij')
+        
+        # get line lists for plotting grid lines
+        ## --> map view
+        self.map_east_line_xlist = []
+        self.map_east_line_ylist = []
+        for xx in self.model_obj.grid_east:
+            self.map_east_line_xlist.extend([xx / self.scale, xx / self.scale])
+            self.map_east_line_xlist.append(None)
+            self.map_east_line_ylist.extend([self.model_obj.grid_north.min() / self.scale,
+                                             self.model_obj.grid_north.max() / self.scale])
+            self.map_east_line_ylist.append(None)
 
+        self.map_north_line_xlist = []
+        self.map_north_line_ylist = []
+        for yy in self.model_obj.grid_north:
+            self.map_north_line_xlist.extend([self.model_obj.grid_east.min() / self.scale,
+                                              self.model_obj.grid_east.max() / self.scale])
+            self.map_north_line_xlist.append(None)
+            self.map_north_line_ylist.extend([yy / self.scale, yy / self.scale])
+            self.map_north_line_ylist.append(None)
+        
+        ##--> NS cross section that move E-W
+        self.east_north_line_xlist = []
+        self.east_north_line_ylist = []
+        for xx in self.model_obj.grid_north:
+            self.east_north_line_xlist.extend([xx/self.scale, xx/self.scale])
+            self.east_north_line_xlist.append(None)
+            self.east_north_line_ylist.extend([self.model_obj.grid_z.min()/self.scale,
+                                               self.model_obj.grid_z.max()/self.scale])
+            self.east_north_line_ylist.append(None)
+            
+        self.east_z_line_xlist = []
+        self.east_z_line_ylist = []
+        for yy in self.model_obj.grid_z:
+            self.east_z_line_xlist.extend([self.model_obj.grid_north.min() / self.scale,
+                                           self.model_obj.grid_north.max() / self.scale])
+            self.east_z_line_xlist.append(None)
+            self.east_z_line_ylist.extend([yy / self.scale, yy / self.scale])
+            self.east_z_line_ylist.append(None)
+            
+        ##--> EW cross section that move N-S
+        self.north_east_line_xlist = []
+        self.north_east_line_ylist = []
+        for xx in self.model_obj.grid_east:
+            self.north_east_line_xlist.extend([xx/self.scale, xx/self.scale])
+            self.north_east_line_xlist.append(None)
+            self.north_east_line_ylist.extend([self.model_obj.grid_z.min()/self.scale,
+                                               self.model_obj.grid_z.max()/self.scale])
+            self.north_east_line_ylist.append(None)
+            
+        self.north_z_line_xlist = []
+        self.north_z_line_ylist = []
+        for yy in self.model_obj.grid_z:
+            self.north_z_line_xlist.extend([self.model_obj.grid_east.min() / self.scale,
+                                           self.model_obj.grid_east.max() / self.scale])
+            self.north_z_line_xlist.append(None)
+            self.north_z_line_ylist.extend([yy / self.scale, yy / self.scale])
+            self.north_z_line_ylist.append(None)
+             
 
     def make_cb(self):
         res = np.arange(self.res_limits[0],
@@ -533,12 +611,21 @@ class ModelWidget(QtWidgets.QWidget):
         """
         redraw map view
         """
-        self.map_ax.pcolormesh(self.plot_east_map/self.scale,
-                               self.plot_north_map/self.scale,
-                               np.log10(self.model_obj.res_model[:, :, self.map_index].T),
+        self.map_ax.pcolormesh(self.plot_east_map,
+                               self.plot_north_map,
+                               np.log10(self.new_res_model[:, :, self.map_index].T),
                                cmap=self.cmap,
                                vmin=self.res_limits[0],
                                vmax=self.res_limits[1])
+        self.map_ax.plot(self.map_east_line_xlist,
+                         self.map_east_line_ylist,
+                         lw=.25,
+                         color='k')
+        self.map_ax.plot(self.map_north_line_xlist,
+                         self.map_north_line_ylist,
+                         lw=.25,
+                         color='k')
+        
         if self.data_fn is not None:
             self.map_ax.scatter(self.data_obj.station_locations.rel_east/self.scale,
                                 self.data_obj.station_locations.rel_north/self.scale,
@@ -549,7 +636,7 @@ class ModelWidget(QtWidgets.QWidget):
 
     def set_east_index(self):
         self.east_index = int(self.east_slider.value())
-        easting = self.model_obj.grid_north[self.east_index]/self.scale
+        easting = self.model_obj.grid_east[self.east_index]/self.scale
 
         self.east_label.setText('Easting {0:>10.2f} {1}'.format(easting,
                                                                 self.units))
@@ -560,12 +647,20 @@ class ModelWidget(QtWidgets.QWidget):
         """
         redraw east view
         """
-        self.east_ax.pcolormesh(self.plot_north_z/self.scale,
-                               self.plot_z_north/self.scale,
-                               np.log10(self.model_obj.res_model[:, self.east_index, :]),
+        self.east_ax.pcolormesh(self.plot_north_z,
+                               self.plot_z_north,
+                               np.log10(self.new_res_model[:, self.east_index, :]),
                                cmap=self.cmap,
                                vmin=self.res_limits[0],
                                vmax=self.res_limits[1])
+        self.east_ax.plot(self.east_north_line_xlist,
+                          self.east_north_line_ylist,
+                          lw=.25,
+                          color='k')
+        self.east_ax.plot(self.east_z_line_xlist,
+                          self.east_z_line_ylist,
+                          lw=.25,
+                          color='k')
         self.east_canvas.draw()
         
     def redraw_location(self):
@@ -593,12 +688,20 @@ class ModelWidget(QtWidgets.QWidget):
         """
         redraw north view
         """
-        self.north_ax.pcolormesh(self.plot_east_z/self.scale,
-                                 self.plot_z_east/self.scale,
-                                 np.log10(self.model_obj.res_model[self.north_index, :, :]),
+        self.north_ax.pcolormesh(self.plot_east_z,
+                                 self.plot_z_east,
+                                 np.log10(self.new_res_model[self.north_index, :, :]),
                                  cmap=self.cmap,
                                  vmin=self.res_limits[0],
                                  vmax=self.res_limits[1])
+        self.north_ax.plot(self.north_east_line_xlist,
+                           self.north_east_line_ylist,
+                           lw=.25,
+                           color='k')
+        self.north_ax.plot(self.north_z_line_xlist,
+                           self.north_z_line_ylist,
+                           lw=.25,
+                           color='k')
         self.north_canvas.draw()
 
     def map_on_pick(self, eclick, erelease):
@@ -614,7 +717,7 @@ class ModelWidget(QtWidgets.QWidget):
         #reset values of resistivity
         for xx in x_change:
             for yy in y_change:
-                self.model_obj.res_model[yy, xx, self.map_index] = self.res_value
+                self.new_res_model[yy, xx, self.map_index] = self.res_value
         self.redraw_plots()
 
     def east_on_pick(self, eclick, erelease):
@@ -630,7 +733,7 @@ class ModelWidget(QtWidgets.QWidget):
         #reset values of resistivity
         for xx in x_change:
             for yy in y_change:
-                self.model_obj.res_model[xx, self.east_index, yy] = self.res_value
+                self.new_res_model[xx, self.east_index, yy] = self.res_value
 
         self.redraw_plots()                    
 
@@ -647,7 +750,7 @@ class ModelWidget(QtWidgets.QWidget):
         #reset values of resistivity
         for xx in x_change:
             for yy in y_change:
-                    self.model_obj.res_model[self.north_index, xx, yy] = self.res_value
+                    self.new_res_model[self.north_index, xx, yy] = self.res_value
 
         self.redraw_plots()
 
@@ -706,16 +809,12 @@ class ModelWidget(QtWidgets.QWidget):
             dx = np.abs(data_point.xdata-self.model_obj.grid_east[x_index]/self.scale)
             dy = np.abs(data_point.ydata-self.model_obj.grid_north[y_index]/self.scale)
             
-            print(dx, dy)
-            
             if dx < dy:
                 self.east_index = x_index
                 self.east_line.set_xdata([self.model_obj.grid_east[self.east_index]/self.scale,
                                           self.model_obj.grid_east[self.east_index]/self.scale])
                 self.east_slider.setValue(self.east_index)
                 self.east_slider.triggerAction(QtWidgets.QAbstractSlider.SliderMove)
-                #self.redraw_east()
-                #self.redraw_location()
 
             elif dx > dy:
                 self.north_index = y_index
@@ -723,8 +822,6 @@ class ModelWidget(QtWidgets.QWidget):
                                           self.model_obj.grid_north[self.north_index]/self.scale])
                 self.north_slider.setValue(self.north_index)
                 self.north_slider.triggerAction(QtWidgets.QAbstractSlider.SliderMove)
-                #self.redraw_north()
-                #self.redraw_location()
     
     def set_avg_pad(self):
         pass
@@ -739,23 +836,124 @@ class ModelWidget(QtWidgets.QWidget):
         """
         copy the current map down the number of layers given
         """
-        o_shape = (self.model_obj.res_model.shape[0],
-                   self.model_obj.res_model.shape[1],
+        o_shape = (self.new_res_model.shape[0],
+                   self.new_res_model.shape[1],
                    1)
-        copy_index = self.map_index+self.map_copy_num+1
-        self.model_obj.res_model[:, :, self.map_index:copy_index] = \
-            self.model_obj.res_model[:, :, self.map_index].reshape(o_shape)
+        # need to add 1 to the index to make sure that copy number is observed
+        copy_index = self.map_index+(self.map_copy_num+1)
+        if copy_index > self.new_res_model.shape[2]:
+            copy_index = self.new_res_model.shape[2]
+        self.new_res_model[:, :, self.map_index:copy_index] = \
+            self.new_res_model[:, :, self.map_index].reshape(o_shape)
             
         self.redraw_map()
         
     def map_copy_up(self):
-        pass
+        """
+        copy the current map up the number of layers given
+        """
+        o_shape = (self.new_res_model.shape[0],
+                   self.new_res_model.shape[1],
+                   1)
+        
+        copy_index = self.map_index-(self.map_copy_num+1)
+        if copy_index < 0:
+            copy_index = 0
+        self.new_res_model[:, :, copy_index:self.map_index] = \
+            self.new_res_model[:, :, self.map_index].reshape(o_shape)
+            
+        self.redraw_map()
+        
     def set_map_copy_num(self):
         """
         set number of layers to copy
         """
         self.map_copy_num = int(round(float(str(self.map_copy_number_edit.text()))))
         self.map_copy_number_edit.setText('{0:.0f}'.format(self.map_copy_num))
+        
+    def east_copy_east(self):
+        """
+        copy the current cross section east by east_copy_num
+        """
+        o_shape = (self.new_res_model.shape[0],
+                   1,
+                   self.new_res_model.shape[2])
+        
+        copy_index = self.east_index+(self.east_copy_num+1)
+        if copy_index > self.new_res_model.shape[1]:
+            copy_index = self.new_res_model.shape[1]
+            
+        self.new_res_model[:, self.east_index:copy_index, :] = \
+            self.new_res_model[:, self.east_index, :].reshape(o_shape)
+            
+        self.redraw_east()
+    
+    def east_copy_west(self):
+        """
+        copy the current cross section west by east_copy_num
+        """
+        o_shape = (self.new_res_model.shape[0],
+                   1,
+                   self.new_res_model.shape[2])
+        
+        copy_index = self.east_index-(self.east_copy_num+1)
+        if copy_index < 0:
+            copy_index = 0
+            
+        self.new_res_model[:, copy_index:self.east_index, :] = \
+            self.new_res_model[:, self.east_index, :].reshape(o_shape)
+            
+        self.redraw_east()
+    
+    def set_east_copy_num(self):
+        """
+        set the number of layers to copy in the east direction
+        """
+        self.east_copy_num = int(round(float(str(self.east_copy_number_edit.text()))))
+        self.east_copy_number_edit.setText('{0:.0f}'.format(self.east_copy_num))
+        
+    def north_copy_south(self):
+        """
+        copy the current cross section south by north_copy_num
+        """
+        o_shape = (1,
+                   self.new_res_model.shape[1],
+                   self.new_res_model.shape[2])
+        
+        copy_index = self.north_index-(self.north_copy_num+1)
+        if copy_index > self.new_res_model.shape[0]:
+            copy_index = self.new_res_model.shape[0]
+            
+        self.new_res_model[copy_index:self.north_index, :, :] = \
+            self.new_res_model[self.north_index, :, :].reshape(o_shape)
+            
+        self.redraw_north()
+    
+    def north_copy_north(self):
+        """
+        copy the current cross section north by north_copy_num
+        """
+        o_shape = (1,
+                   self.new_res_model.shape[1],
+                   self.new_res_model.shape[2])
+        
+        copy_index = self.north_index+(self.north_copy_num+1)
+        if copy_index > self.new_res_model.shape[0]:
+            copy_index = self.new_res_model.shape[0]
+            
+        self.new_res_model[self.north_index:copy_index:, :, :] = \
+            self.new_res_model[self.north_index, :, :].reshape(o_shape)
+            
+        self.redraw_north()
+    
+    def set_north_copy_num(self):
+        """
+        set the number of layers to copy in the north direction
+        """
+        self.north_copy_num = int(round(float(str(self.north_copy_number_edit.text()))))
+        self.north_copy_number_edit.setText('{0:.0f}'.format(self.north_copy_num))
+        
+    
 
 #==============================================================================
 #  DEFINE MAIN
