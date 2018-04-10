@@ -707,7 +707,7 @@ class Data(object):
                     mt_obj.write_mt_file(
                         save_dir=new_edi_dir,
                         fn_basename=mt_obj.station,
-                        file_type='.edi',
+                        file_type='edi',
                         new_Z_obj=interp_z,
                         new_Tipper_obj=interp_t)
             else:
