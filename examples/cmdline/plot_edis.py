@@ -119,8 +119,8 @@ if __name__ == '__main__old':
 ###############################################################################
 # Command wrapper for the edsi files plotting
 # How to Run:
-#           python  examples/scripts/plot_edis.py examples/data/edifiles
-#           python  examples/scripts/plot_edis.py --help
+#           python  examples/cmdline/plot_edis.py  -d examples/data/edi_files
+#           python  examples/cmdline/plot_edis.py --help
 ###############################################################################
 
 if __name__ == '__main__':

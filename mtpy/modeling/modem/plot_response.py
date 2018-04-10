@@ -11,6 +11,7 @@ ModEM
 """
 
 import numpy as np
+import os
 from matplotlib import pyplot as plt, gridspec as gridspec
 from matplotlib.ticker import MultipleLocator
 from matplotlib.ticker import FormatStrFormatter
@@ -322,6 +323,15 @@ class PlotResponse(object):
             # set the grid of subplots
             if np.all(t_obj.tipper == 0.0) == True:
                 self.plot_tipper = False
+                gs = gridspec.GridSpec(2, 4,
+                                   wspace=self.subplot_wspace,
+                                   left=self.subplot_left,
+                                   top=self.subplot_top,
+                                   bottom=self.subplot_bottom,
+                                   right=self.subplot_right,
+                                   hspace=self.subplot_hspace,
+                                   height_ratios=h_ratio)
+
             else:
                 self.plot_tipper = True
                 self.tipper_limits = (np.round(min([t_obj.tipper[ntx, 0, 0].real.min(),
@@ -335,7 +345,7 @@ class PlotResponse(object):
                                                     t_obj.tipper[nty, 0, 1].imag.max()]),
                                                1))
 
-            gs = gridspec.GridSpec(3, 4,
+                gs = gridspec.GridSpec(3, 4,
                                    wspace=self.subplot_wspace,
                                    left=self.subplot_left,
                                    top=self.subplot_top,
@@ -354,14 +364,20 @@ class PlotResponse(object):
             axpyx = fig.add_subplot(gs[1, 2], sharex=axrxx)
             axpyy = fig.add_subplot(gs[1, 3], sharex=axrxx)
 
-            axtxr = fig.add_subplot(gs[2, 0], sharex=axrxx)
-            axtxi = fig.add_subplot(gs[2, 1], sharex=axrxx, sharey=axtxr)
-            axtyr = fig.add_subplot(gs[2, 2], sharex=axrxx)
-            axtyi = fig.add_subplot(gs[2, 3], sharex=axrxx, sharey=axtyr)
+            if self.plot_tipper == True:
+                axtxr = fig.add_subplot(gs[2, 0], sharex=axrxx)
+                axtxi = fig.add_subplot(gs[2, 1], sharex=axrxx, sharey=axtxr)
+                axtyr = fig.add_subplot(gs[2, 2], sharex=axrxx)
+                axtyi = fig.add_subplot(gs[2, 3], sharex=axrxx, sharey=axtyr)
 
-            self.ax_list = [axrxx, axrxy, axryx, axryy,
-                            axpxx, axpxy, axpyx, axpyy,
-                            axtxr, axtxi, axtyr, axtyi]
+                self.ax_list = [axrxx, axrxy, axryx, axryy,
+                                axpxx, axpxy, axpyx, axpyy,
+                                axtxr, axtxi, axtyr, axtyi]
+            else:
+
+                self.ax_list = [axrxx, axrxy, axryx, axryy,
+                                axpxx, axpxy, axpyx, axpyy]
+
 
             # ---------plot the apparent resistivity-----------------------------------
             # plot each component in its own subplot
@@ -432,6 +448,8 @@ class PlotResponse(object):
                                                  t_obj.tipper_err[nty, 0, 1],
                                                  **kw_yy)
 
+
+            print ("self.plot_tipper = {}".format(self.plot_tipper))
             # ----------------------------------------------
             # get error bar list for editing later
             if not self.plot_tipper:
@@ -504,6 +522,12 @@ class PlotResponse(object):
                 # set axis properties
             for aa, ax in enumerate(self.ax_list):
                 ax.tick_params(axis='y', pad=self.ylabel_pad)
+                if self.plot_tipper==False:
+                    if aa < 4:
+                        if self.plot_z == True:
+                            ax.set_yscale('log', nonposy='clip')
+                    else:
+                        ax.set_xlabel('Period (s)', fontdict=fontdict)
 
                 if aa < 8:
                     #                    ylabels[-1] = ''
@@ -565,8 +589,6 @@ class PlotResponse(object):
                     ax.set_yticklabels(ylabels)
                     plt.setp(ax.get_xticklabels(), visible=False)
 
-
-                    ##----------------------------------------------
             # plot model response
             if self.resp_object is not None:
                 for resp_obj in self.resp_object:
@@ -1612,7 +1634,7 @@ class PlotResponse(object):
 
                 # set axis properties
                 for aa, ax in enumerate(self.ax_list):
-                    ax.tick_params(axis='y', pad=self.ylabel_pad)
+                    ax.set_xscale('log', nonposx='clip')
                     #                    ylabels = ax.get_yticks().tolist()
                     #                    ylabels[-1] = ''
                     #                    ylabels[0] = ''
