@@ -62,6 +62,10 @@ class ModEM_Model_Manipulator(QtWidgets.QMainWindow):
 
         self.menu_model_save_action = self.menu_model_file.addAction("Save")
         self.menu_model_save_action.triggered.connect(self.save_model_fn)
+        
+        self.menu_properties = self.menuBar().addMenu("Properties")
+        self.menu_properties_cb_action = self.menu_properties.addAction("Resistivity Limits")
+        self.menu_properties_cb_action.triggered.connect(self.set_res_limits)
 
         QtCore.QMetaObject.connectSlotsByName(self)
 
@@ -103,7 +107,62 @@ class ModEM_Model_Manipulator(QtWidgets.QMainWindow):
         self.model_widget.model_obj.write_model_file(save_path=sv_path,
                                                      model_fn_basename=sv_basename,
                                                      res_model=self.model_widget.new_res_model)
+        
+    def set_res_limits(self):
+        """
+        set the resistivity limits
+        """
+        
+        self.popup = ResLimits(self.model_widget.res_limits[0],
+                               self.model_widget.res_limits[1])
+        #self.popup.show()
+        self.popup.res_changed.connect(self.set_res)
+        
+    def set_res(self):
+        self.model_widget.res_limits = (self.popup.res_min,
+                                        self.popup.res_max)
 
+class ResLimits(QtWidgets.QWidget):
+    res_changed = QtCore.pyqtSignal()
+    def __init__(self, res_limit_min, res_limit_max):
+        super(ResLimits, self).__init__()
+        self.res_min = res_limit_min
+        self.res_max = res_limit_max
+        
+        self.setup_ui()
+        
+    def setup_ui(self):
+        
+        self.label = QtWidgets.QLabel("Resistivty (Log10)")
+        self.res_min_label = QtWidgets.QLabel('min')
+        self.res_min_edit = QtWidgets.QLineEdit()
+        self.res_min_edit.setText('{0:0.5g}'.format(self.res_min))
+        self.res_min_edit.editingFinished.connect(self.set_res_min)
+        
+        self.res_max_label = QtWidgets.QLabel('max')
+        self.res_max_edit = QtWidgets.QLineEdit()
+        self.res_max_edit.setText('{0:0.5g}'.format(self.res_max))
+        self.res_max_edit.editingFinished.connect(self.set_res_max)
+        
+        grid_layout = QtWidgets.QGridLayout()
+        grid_layout.addWidget(self.label, 1, 2, 2, 2)
+        grid_layout.addWidget(self.res_min_label, 2, 1)
+        grid_layout.addWidget(self.res_min_edit, 2, 2)
+        grid_layout.addWidget(self.res_max_label, 3, 1)
+        grid_layout.addWidget(self.res_max_edit, 3, 2)
+        
+        self.setLayout(grid_layout)
+        self.show()
+        
+    def set_res_min(self):
+        self.res_min = float(str(self.res_min_edit.text()))
+        self.res_min_edit.setText('{0:.5g}'.format(self.res_min))
+        self.res_changed.emit()
+        
+    def set_res_max(self):
+        self.res_max = float(str(self.res_max_edit.text()))
+        self.res_max_edit.setText('{0:.5g}'.format(self.res_max))
+        self.res_changed.emit()
 #==============================================================================
 # Model Widget
 #==============================================================================
@@ -154,7 +213,7 @@ class ModelWidget(QtWidgets.QWidget):
         self.avg_pad = 12
 
         self.cmap = 'jet_r'
-        self.res_limits = (0, 4)
+        self._res_limits = (0, 4)
         self.map_copy_num = 1
         self.east_copy_num = 1
         self.north_copy_num = 1
@@ -269,9 +328,13 @@ class ModelWidget(QtWidgets.QWidget):
                               vmax=self.res_limits[1],
                               cmap=self.cmap,
                               picker=5)
-        self.cb_ax.set_yticks(np.arange(self.res_limits[0], self.res_limits[1]))
-        self.cb_ax.set_yticklabels(['10$^{0}$'.format(ii) for ii in
-                                    np.arange(self.res_limits[0], self.res_limits[1])])
+        self.cb_ax.set_yticks(np.arange(self._res_limits[0],
+                                        self._res_limits[1],
+                                        (self.res_limits[1]-self._res_limits[0])/10.))
+        self.cb_ax.set_yticklabels(['{0:.4g}'.format(np.round(ii, 0)) for ii in
+                                    np.logspace(self._res_limits[0],
+                                                self._res_limits[1],
+                                                num=11)])
 
         self.res_line, = self.cb_ax.plot([0, 1], 
                                          [np.log10(self.res_value),
@@ -286,7 +349,7 @@ class ModelWidget(QtWidgets.QWidget):
         self.cb_canvas.draw()
 
         self.cb_line_edit = QtWidgets.QLineEdit()
-        self.cb_line_edit.setMaximumWidth(80)
+        self.cb_line_edit.setMaximumWidth(140)
         self.cb_line_edit.setText('{0:.2f}'.format(self.res_value))
         self.cb_line_edit.editingFinished.connect(self.set_res_value)
 
@@ -366,6 +429,16 @@ class ModelWidget(QtWidgets.QWidget):
         final_layout.addLayout(grid_layout)
 
         self.setLayout(final_layout)
+        
+    @property
+    def res_limits(self):
+        return self._res_limits
+    
+    @res_limits.setter
+    def res_limits(self, res_limits):
+        self._res_limits = res_limits
+        
+        self.redraw_cb()
 
     @property
     def data_fn(self):
@@ -418,13 +491,29 @@ class ModelWidget(QtWidgets.QWidget):
         self.map_ax.set_xlabel('Easting {0}'.format(self.units))
         self.map_ax.set_ylabel('Northing {0}'.format(self.units))
         self.map_ax.set_aspect('equal', 'box-forced')
+        self.map_ax.plot(self.map_east_line_xlist,
+                         self.map_east_line_ylist,
+                         lw=.25,
+                         color='k')
+        self.map_ax.plot(self.map_north_line_xlist,
+                         self.map_north_line_ylist,
+                         lw=.25,
+                         color='k')
+
         self.redraw_map()
         
         ## --> make EW cross section axes
         self.north_ax = self.north_figure.add_subplot(1, 1, 1, 
                                                       sharex=self.map_ax,
                                                       aspect='equal')
-
+        self.north_ax.plot(self.north_east_line_xlist,
+                           self.north_east_line_ylist,
+                           lw=.25,
+                           color='k')
+        self.north_ax.plot(self.north_z_line_xlist,
+                           self.north_z_line_ylist,
+                           lw=.25,
+                           color='k')
         self.north_ax.set_xlabel('Easting {0}'.format(self.units))
         self.north_ax.set_ylabel('Depth {0}'.format(self.units))
         self.north_ax.set_aspect('equal', 'box-forced')
@@ -439,7 +528,15 @@ class ModelWidget(QtWidgets.QWidget):
                                                     aspect='equal',
                                                     sharex=self.map_ax,
                                                     sharey=self.north_ax)
-
+        ## --> plot the mesh lines, this way only do it once
+        self.east_ax.plot(self.east_north_line_xlist,
+                          self.east_north_line_ylist,
+                          lw=.25,
+                          color='k')
+        self.east_ax.plot(self.east_z_line_xlist,
+                          self.east_z_line_ylist,
+                          lw=.25,
+                          color='k')
         self.east_ax.set_xlabel('Northing {0}'.format(self.units))
         self.east_ax.set_ylabel('Depth {0}'.format(self.units))
         self.east_ax.set_aspect('equal', 'box-forced')
@@ -463,7 +560,7 @@ class ModelWidget(QtWidgets.QWidget):
                               lw=.25,
                               color='k',
                               picker=3)
-        
+
         # make lines that can move around
         self.east_line = self.location_ax.plot([self.model_obj.grid_east[self.east_index]/self.scale,
                                                 self.model_obj.grid_east[self.east_index]/self.scale],
@@ -477,6 +574,12 @@ class ModelWidget(QtWidgets.QWidget):
                                                  self.model_obj.grid_north[self.north_index]/self.scale],
                                                  'b',
                                                  lw=2)[0]
+        if self.data_fn is not None:
+            self.location_ax.scatter(self.data_obj.station_locations.rel_east/self.scale,
+                                     self.data_obj.station_locations.rel_north/self.scale,
+                                     marker='v',
+                                     c='k',
+                                     s=10)
         self.location_canvas.draw()
         
         #make a rectangular selector
@@ -580,7 +683,8 @@ class ModelWidget(QtWidgets.QWidget):
     def on_res_pick(self, event):
         try:
             y_data = 10**event.ydata
-            y_data = np.log10(np.round(y_data, -int(np.floor(np.log10(y_data)))))
+            y_data = np.log10(np.round(y_data,
+                                       -int(np.floor(np.log10(y_data)))))
             
             self.res_line.set_xdata([0, 1])
             self.res_line.set_ydata([y_data, y_data])
@@ -617,15 +721,6 @@ class ModelWidget(QtWidgets.QWidget):
                                cmap=self.cmap,
                                vmin=self.res_limits[0],
                                vmax=self.res_limits[1])
-        self.map_ax.plot(self.map_east_line_xlist,
-                         self.map_east_line_ylist,
-                         lw=.25,
-                         color='k')
-        self.map_ax.plot(self.map_north_line_xlist,
-                         self.map_north_line_ylist,
-                         lw=.25,
-                         color='k')
-        
         if self.data_fn is not None:
             self.map_ax.scatter(self.data_obj.station_locations.rel_east/self.scale,
                                 self.data_obj.station_locations.rel_north/self.scale,
@@ -653,14 +748,7 @@ class ModelWidget(QtWidgets.QWidget):
                                cmap=self.cmap,
                                vmin=self.res_limits[0],
                                vmax=self.res_limits[1])
-        self.east_ax.plot(self.east_north_line_xlist,
-                          self.east_north_line_ylist,
-                          lw=.25,
-                          color='k')
-        self.east_ax.plot(self.east_z_line_xlist,
-                          self.east_z_line_ylist,
-                          lw=.25,
-                          color='k')
+
         self.east_canvas.draw()
         
     def redraw_location(self):
@@ -672,7 +760,12 @@ class ModelWidget(QtWidgets.QWidget):
         
         self.north_line.set_ydata([self.model_obj.grid_north[self.north_index]/self.scale,
                                   self.model_obj.grid_north[self.north_index]/self.scale])
-
+        if self.data_fn is not None:
+            self.location_ax.scatter(self.data_obj.station_locations.rel_east/self.scale,
+                                     self.data_obj.station_locations.rel_north/self.scale,
+                                     marker='v',
+                                     c='k',
+                                     s=10)
         self.location_canvas.draw()
 
     def set_north_index(self):
@@ -694,15 +787,35 @@ class ModelWidget(QtWidgets.QWidget):
                                  cmap=self.cmap,
                                  vmin=self.res_limits[0],
                                  vmax=self.res_limits[1])
-        self.north_ax.plot(self.north_east_line_xlist,
-                           self.north_east_line_ylist,
-                           lw=.25,
-                           color='k')
-        self.north_ax.plot(self.north_z_line_xlist,
-                           self.north_z_line_ylist,
-                           lw=.25,
-                           color='k')
+
         self.north_canvas.draw()
+        
+    def redraw_cb(self):
+        """
+        redraw the colorbar
+        """
+        self.cb_ax.cla()
+        self.make_cb()
+        self.cb_ax.pcolormesh(self.cb_x, self.cb_y, self.cb_bar,
+                              vmin=self.res_limits[0],
+                              vmax=self.res_limits[1],
+                              cmap=self.cmap,
+                              picker=5)
+        self.cb_ax.set_yticks(np.arange(self._res_limits[0],
+                                        self._res_limits[1],
+                                        (self.res_limits[1]-self._res_limits[0])/10))
+        self.cb_ax.set_yticklabels(['{0:.4g}'.format(np.round(ii, 0)) for ii in
+                                    np.logspace(self._res_limits[0],
+                                                self._res_limits[1],
+                                                num=11)])
+        self.res_line, = self.cb_ax.plot([0, 1], 
+                                         [np.log10(self.res_value),
+                                          np.log10(self.res_value)],
+                                          lw=3, 
+                                          color='k',
+                                          picker=5)
+        self.cb_canvas.draw()
+        self.redraw_plots()
 
     def map_on_pick(self, eclick, erelease):
         """
