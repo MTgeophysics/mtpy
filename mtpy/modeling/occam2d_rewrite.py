@@ -249,7 +249,7 @@ class Mesh():
         # right hand station to reduce the effect of a large neighboring cell.
         self.x_grid = np.array([self.rel_station_locations[0] - self.cell_width *
                                 self.x_pad_multiplier])
-
+        print self.rel_station_locations
         for ii, offset in enumerate(self.rel_station_locations[:-1]):
             dx = self.rel_station_locations[ii + 1] - offset
             num_cells = int(np.floor(dx / self.cell_width))
@@ -975,6 +975,7 @@ class Profile():
                 for station in self.station_list:
                     for edi in os.listdir(self.edi_path):
                         if edi.find(station) == 0 and edi[-3:] == 'edi':
+                            print station,edi
                             self.edi_list.append(mt.MT(os.path.join(self.edi_path,
                                                                     edi)))
                             break
@@ -982,6 +983,7 @@ class Profile():
                 self.edi_list = [mt.MT(os.path.join(self.edi_path, edi)) for
                                  edi in os.listdir(self.edi_path)
                                  if edi[-3:] == 'edi']
+                self.station_list = [mtObj.station for mtObj in self.edi_list]
         elif self.edi_list is not None and not self.edi_list:
             # use existing edi list
             if self.station_list is not None:
@@ -993,7 +995,7 @@ class Profile():
                 self.edi_list = filtered_edi_list
 
         self.num_edi = len(self.edi_list)
-
+        print [mto.fn for mto in self.edi_list]
         for edi in self.edi_list:
             if type(edi.Tipper.rotation_angle) is list:
                 edi.Tipper.rotation_angle = np.array(edi.Tipper.rotation_angle)
