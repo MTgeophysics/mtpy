@@ -255,6 +255,7 @@ class Mesh():
             num_cells = int(np.floor(dx / self.cell_width))
             # if the spacing between stations is smaller than mesh set cell
             # size to mid point between stations
+            print "cell_width",dx
             if num_cells == 0:
                 cell_width = dx / 2.
                 num_cells = 1
@@ -262,6 +263,8 @@ class Mesh():
             # stations
             else:
                 cell_width = dx / num_cells
+                print "cell_width = dx / num_cells",
+            print cell_width
             if self.x_grid[-1] != offset:
                 self.x_grid = np.append(self.x_grid, offset)
             for dd in range(num_cells):
@@ -274,7 +277,7 @@ class Mesh():
                         pass
                 except IndexError:
                     pass
-
+                
         self.x_grid = np.append(self.x_grid, self.rel_station_locations[-1])
         # add a cell on the right hand side of the station area to reduce
         # effect of a large cell next to it
