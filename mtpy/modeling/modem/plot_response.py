@@ -172,7 +172,12 @@ class PlotResponse(object):
         self.font_size = kwargs.pop('font_size', 6)
 
         self.plot_type = kwargs.pop('plot_type', '1')
+
         self.plot_style = kwargs.pop('plot_style', 1)
+        if self.plot_style not in [1, 2]:
+            print("self.plot_style = %s. It MUST be either 1 (default) or 2 (2 column figures)" % str(self.plot_style))
+            self.plot_style = 1
+
         self.plot_component = kwargs.pop('plot_component', 4)
         self.plot_yn = kwargs.pop('plot_yn', 'y')
         self.plot_z = kwargs.pop('plot_z', True)
@@ -180,18 +185,22 @@ class PlotResponse(object):
 
         self.fig_list = []
 
-    
 
         # if self.plot_yn == 'y':
         #     self.plot()
 
     def plot(self):
-        """
-        plot
-        """
+        if self.plot_style == 1: # and has tipper data
+            self._plot()
+        if self.plot_style == 2:
+            self._plot_2col()
 
-        if self.plot_style == 3:
-            self.plot_2col()
+
+
+    def _plot(self):
+        """
+        plot as an internal function of this class
+        """
 
         self.data_object = Data()
         self.data_object.read_data_file(self.data_fn)
@@ -330,7 +339,7 @@ class PlotResponse(object):
                                    bottom=self.subplot_bottom,
                                    right=self.subplot_right,
                                    hspace=self.subplot_hspace,
-                                   height_ratios=h_ratio)
+                                   height_ratios=h_ratio[:2])
 
             else:
                 self.plot_tipper = True
@@ -752,10 +761,11 @@ class PlotResponse(object):
 
             plt.show()
 
-    def plot_2col(self,save2file=None):
+    def _plot_2col(self,save2file=None):
 
         """
-        plot show figure and optionally save to a file named save2file
+        Internal method to plot responses in 2 columns of subplots.
+        Show the figure and optionally save to a file named save2file
         """
 
         self.data_object = Data()

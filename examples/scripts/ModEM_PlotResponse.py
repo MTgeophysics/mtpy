@@ -17,6 +17,7 @@ from mtpy.modeling.modem import PlotResponse
 
 #### Inputs ####
 wd = r'C:\mtpywin\mtpy\examples\model_files\ModEM_2'
+#wd = r'E:\Githubz\mtpy\examples\model_files\ModEM_2'
 savepath = r'U:\Software\mtpy\example_plots'
 
 filestem = 'Modular_MPI_NLCG_004'
@@ -31,10 +32,9 @@ ro = PlotResponse(data_fn=op.join(wd,datafn),
                   plot_type=[station],
                   plot_style=3,
                   plot_z=False,
-#                  fig_size=[3,2],
-#                  font_size=4
+#                 fig_size=[3,2],
+#                 font_size=4
                   )
-
 
 
 ro.plot()
