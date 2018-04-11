@@ -66,6 +66,12 @@ class ModEM_Model_Manipulator(QtWidgets.QMainWindow):
         self.menu_properties = self.menuBar().addMenu("Properties")
         self.menu_properties_cb_action = self.menu_properties.addAction("Resistivity Limits")
         self.menu_properties_cb_action.triggered.connect(self.set_res_limits)
+        
+        self.menu_tools = self.menuBar().addMenu("Tools")
+        self.menu_tools_pad_action = self.menu_tools.addAction("Pad Fill")
+        self.menu_tools_pad_action.triggered.connect(self.pad_fill)
+        self.menu_tools_smooth_action = self.menu_tools.addAction("Smooth")
+        self.menu_tools_smooth_action.triggered.connect(self.smooth)
 
         QtCore.QMetaObject.connectSlotsByName(self)
 
@@ -113,15 +119,24 @@ class ModEM_Model_Manipulator(QtWidgets.QMainWindow):
         set the resistivity limits
         """
         
-        self.popup = ResLimits(self.model_widget.res_limits[0],
+        self.res_popup = ResLimits(self.model_widget.res_limits[0],
                                self.model_widget.res_limits[1])
         #self.popup.show()
-        self.popup.res_changed.connect(self.set_res)
+        self.res_popup.res_changed.connect(self.set_res)
         
     def set_res(self):
-        self.model_widget.res_limits = (self.popup.res_min,
-                                        self.popup.res_max)
+        self.model_widget.res_limits = (self.res_popup.res_min,
+                                        self.res_popup.res_max)
+        
+    def pad_fill(self):
+        pass
+    
+    def smooth(self):
+        pass
 
+# =============================================================================
+# Resistivity limits widget
+# =============================================================================
 class ResLimits(QtWidgets.QWidget):
     res_changed = QtCore.pyqtSignal()
     def __init__(self, res_limit_min, res_limit_max):
@@ -163,6 +178,37 @@ class ResLimits(QtWidgets.QWidget):
         self.res_max = float(str(self.res_max_edit.text()))
         self.res_max_edit.setText('{0:.5g}'.format(self.res_max))
         self.res_changed.emit()
+        
+# =============================================================================
+# Fill the padding cells widget
+# =============================================================================
+class PadFill(QtWidgets.QWidget):
+    """
+    widget to get pad filling parameters
+    """
+    pad_num_changed = QtCore.pyqtSignal()
+    def __init__(self):
+        super(PadFill, self).__init__()
+        
+        self.pad_num = 1
+        
+        self.setup_ui()
+        
+    def setup_ui(self):
+        self.pad_edit = QtWidgets.QLineEdit()
+        self.pad_edit.setText('{0:.0f}'.format(self.pad_num))
+        self.pad_edit.editingFinished.connect(self.set_pad_num)
+        
+        self.pad_label = QtWidgets.QLabel('Number of Cells')
+        
+        layout = QtWidgets.QHBoxLayout()
+        layout.addWidget(self.pad_label)
+        layout.addWidget(self.pad_edit)
+        
+    def set_pad_num(self):
+        self.pad_num = int(str(self.pad_edit.text()))
+        self.pad_edit.setText('{0:.0f}'.format(self.pad_num))
+        self.pad_num_changed.emit()
 #==============================================================================
 # Model Widget
 #==============================================================================
