@@ -7,7 +7,7 @@ Created on Tue Oct 04 13:13:29 2016
 
 import os.path as op
 
-from mtpy.imaging.modem_phase_tensor_maps import PlotPTMaps
+from mtpy.modeling.phase_tensor_maps import PlotPTMaps
 
 workdir = r'C:\mtpywin\mtpy\examples\data\ModEM_files\VicSynthetic05'
 
