@@ -2478,20 +2478,20 @@ class Model(object):
         if not hasattr(self, 'surface_dict'):
             self.surface_dict = {}
 
-        # read the surface data in from ascii if surface not provided
-        if surface is None:
-            surface = mtfh.read_surface_ascii(surfacefile)
-
-        x, y, elev = surface
-
-        # if lat/lon provided as a 1D list, convert to a 2d grid of points
-        if len(x.shape) == 1:
-            x, y = np.meshgrid(x, y)
-
-        xs, ys, utm_zone = gis_tools.project_points_ll2utm(y, x,
-                                                           epsg=self.station_locations.model_epsg,
-                                                           utm_zone=self.station_locations.model_utm_zone
-                                                           )
+#        # read the surface data in from ascii if surface not provided
+#        if surface is None:
+#            surface = mtfh.read_surface_ascii(surfacefile)
+#
+#        x, y, elev = surface
+#
+#        # if lat/lon provided as a 1D list, convert to a 2d grid of points
+#        if len(x.shape) == 1:
+#            x, y = np.meshgrid(x, y)
+#
+#        xs, ys, utm_zone = gis_tools.project_points_ll2utm(y, x,
+#                                                           epsg=self.station_locations.model_epsg,
+#                                                           utm_zone=self.station_locations.model_utm_zone
+#                                                           )
 
         # get centre position of model grid in real world coordinates
         x0, y0 = self.station_locations.center_point.east[0], self.station_locations.center_point.north[0]
@@ -2499,17 +2499,23 @@ class Model(object):
         # centre points of model grid in real world coordinates
         xg, yg = [np.mean([arr[1:], arr[:-1]], axis=0)
                   for arr in [self.grid_east + x0, self.grid_north + y0]]
+        
+        elev_mg = mtmesh.interpolate_elevation_to_grid(xg,yg,
+                                               surfacefile=surfacefile,
+                                               surfacename=surfacename,
+                                               model_epsg=self.station_locations.model_epsg,
+                                               utm_zone=self.station_locations.model_utm_zone)
 
-        # elevation in model grid
-        # first, get lat,lon points of surface grid
-        points = np.vstack([arr.flatten() for arr in [xs, ys]]).T
-        # corresponding surface elevation points
-        values = elev.flatten()
-        # xi, the model grid points to interpolate to
-        xi = np.vstack([arr.flatten() for arr in np.meshgrid(xg, yg)]).T
-        # elevation on the centre of the grid nodes
-        elev_mg = spi.griddata(
-            points, values, xi, method=method).reshape(len(yg), len(xg))
+#        # elevation in model grid
+#        # first, get lat,lon points of surface grid
+#        points = np.vstack([arr.flatten() for arr in [xs, ys]]).T
+#        # corresponding surface elevation points
+#        values = elev.flatten()
+#        # xi, the model grid points to interpolate to
+#        xi = np.vstack([arr.flatten() for arr in np.meshgrid(xg, yg)]).T
+#        # elevation on the centre of the grid nodes
+#        elev_mg = spi.griddata(
+#            points, values, xi, method=method).reshape(len(yg), len(xg))
 
         print(" Elevation data type and shape  *** ", type(elev_mg), elev_mg.shape, len(yg), len(xg))
         # <type 'numpy.ndarray'>  (65, 92), 65 92: it's 2D image with cell index as pixels
