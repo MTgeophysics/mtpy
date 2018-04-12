@@ -18,7 +18,7 @@ from mtpy.modeling.modem import PlotResponse
 
 #### Inputs ####
 wd = r'U:\RegionalSurvey\MT046_GeorginaArunta\Modelling\ModEM\GBinv52tip2'
-wd = r'E:\Githubz\mtpy\zprivate\modem_plot_response_issues\GBinv52tip2'
+#wd = r'E:\Githubz\mtpy\zprivate\modem_plot_response_issues\GBinv52tip2'
 savepath = wd# r'U:\Software\mtpy\example_plots'
 
 filestem = 'Modular_MPI_NLCG_108'
@@ -33,7 +33,7 @@ station = 'GB09'  # has tipper data
 ro = PlotResponse(data_fn=op.join(wd,datafn),
                   resp_fn=op.join(wd,respfn),
                   plot_type=[station],
-                  plot_style=1,  # 1 for 4-colums; 2 for 2-columns
+                  plot_style=2,  # 1 for 4-colums; 2 for 2-columns
                   plot_z=False,
                  # fig_size=[3,2],
                  # font_size=4

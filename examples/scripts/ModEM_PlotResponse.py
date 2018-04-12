@@ -30,7 +30,7 @@ station = 'Synth02'
 ro = PlotResponse(data_fn=op.join(wd,datafn),
                   resp_fn=op.join(wd,respfn),
                   plot_type=[station],
-                  plot_style=3,
+                  plot_style=1,  # 1 for 4-colums; 2 for 2-columns
                   plot_z=False,
 #                 fig_size=[3,2],
 #                 font_size=4
@@ -39,4 +39,5 @@ ro = PlotResponse(data_fn=op.join(wd,datafn),
 
 ro.plot()
 
-#ro.save_figure(r'U:\Software\mtpy\example_plots')
+ro.save_figure(r'U:\Software\mtpy\example_plots'
+               ,fig_dpi=400) # change fig_dpi to your desired resolution
