@@ -1,4 +1,0 @@
-# Usage:   pep8 --config=pep8rc mtpy/core/z.py
-[pep8]
-ignore = E226,E302,E41
-max-line-length = 100

@@ -1,0 +1,658 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Imaging &#8212; mtpy 1.01.01 documentation</title>
+    <link rel="stylesheet" href="_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="master_doc.html">mtpy 1.01.01 documentation</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="imaging">
+<h1>Imaging<a class="headerlink" href="#imaging" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-mtpy.imaging.mtplot">
+<span id="module-mtplot"></span><h2><strong>Module MTPlot</strong><a class="headerlink" href="#module-mtpy.imaging.mtplot" title="Permalink to this headline">¶</a></h2>
+<p><strong>Provides</strong></p>
+<blockquote>
+<div><ol class="arabic simple">
+<li>Different plotting options to represent the MT response.</li>
+<li>Ability to create text files of the plots for further analysis</li>
+<li>Class object that contains all the important information for an MT
+station.</li>
+</ol>
+</div></blockquote>
+<table border="1" class="docutils">
+<colgroup>
+<col width="37%" />
+<col width="63%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Functions</th>
+<th class="head">Description</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>plot_mt_response</td>
+<td>plots resistivity and phase for a single station
+Options include tipper, strike and skew.</td>
+</tr>
+<tr class="row-odd"><td>plot_multiple_mt_responses</td>
+<td>plots multiple stations at once with options
+of plotting in single figure, all in one
+figure as subplots or all in one plot for
+direct comparison.</td>
+</tr>
+<tr class="row-even"><td>plot_pt</td>
+<td>plots the phase tensor ellipses and parameters
+in one plot including strike angle, minimum
+and maximum phase, skew angle and ellipticity</td>
+</tr>
+<tr class="row-odd"><td>plot_pt_pseudosection</td>
+<td>plots a pseudo section of phase
+tensor ellipses assuming the
+stations are along a profile line.
+Options to plot induction arrows.</td>
+</tr>
+<tr class="row-even"><td>plot_mt_map</td>
+<td>plots phase tensor ellipses in map view for
+a single frequency.  Options to plot
+induction arrows.</td>
+</tr>
+<tr class="row-odd"><td>plot_strike</td>
+<td>plots strike angle estimated from the
+invariants of the impedance tensor defined
+by Weaver et al. [2000,2003], strike angle
+from the phase tensor and option to plot
+strike estimated from the induction arrows.</td>
+</tr>
+<tr class="row-even"><td>plot_residual_pt_maps</td>
+<td>plots the residual phase tensor between two
+surveys in map view.</td>
+</tr>
+<tr class="row-odd"><td>plot_residual_pt_ps</td>
+<td>plots the residual phase tensor between two
+surveys as a pseudo section.</td>
+</tr>
+</tbody>
+</table>
+<p>All plot function return plot classes where the important properties are made
+attributes which can be manipulated by the user.  All classes have been
+written with the basic input being edi files.  This was assumed to be the
+standard MT response file, but turns out to be not as widely used as thought.
+So the inputs can be other arrays and class objects (see MTplot doc string for
+details).  If you have a data file format you can create a class using the
+objects in mtpy.core to create an input, otherwise contact us and we can try
+to build something.</p>
+<p>A typical use might be loading in all the .edi files in and plotting them in
+different modes, like apparent resistivity and phase, phase tensor pseudo
+section and strike angle.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Example:</th><td class="field-body"><div class="first highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">mtpy.imaging.mtplot</span> <span class="k">as</span> <span class="nn">mtplot</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">os</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">edipath</span> <span class="o">=</span> <span class="sa">r</span><span class="s2">&quot;/home/MT/EDIfiles&quot;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1">#--&gt; create a list of full paths to the edi files</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">edilst</span> <span class="o">=</span> <span class="p">[</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">edipath</span><span class="p">,</span><span class="n">edi</span><span class="p">)</span> <span class="k">for</span> <span class="n">edi</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">edipath</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="o">...</span>        <span class="k">if</span> <span class="n">edi</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s1">&#39;.edi&#39;</span><span class="p">)</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1">#--&gt; plot apparent resisitivity, phase and induction arrows</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">rpm</span> <span class="o">=</span> <span class="n">mtplot</span><span class="o">.</span><span class="n">plot_multiple_mt_responses</span><span class="p">(</span><span class="n">fn_lst</span><span class="o">=</span><span class="n">edilst</span><span class="p">,</span> <span class="n">plot_style</span><span class="o">=</span><span class="s1">&#39;1&#39;</span><span class="p">,</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="o">...</span>                                     <span class="n">plot_tipper</span><span class="o">=</span><span class="s1">&#39;yr&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1">#--&gt; close all the plots after done looking at them</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="s1">&#39;all&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1">#--&gt; plot phase tensor pseudo section with induction arrows</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pts</span> <span class="o">=</span> <span class="n">mtplot</span><span class="o">.</span><span class="n">plot_pt_pseudosection</span><span class="p">(</span><span class="n">fn_lst</span><span class="o">=</span><span class="n">edilst</span><span class="p">,</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="o">...</span>                                <span class="n">plot_tipper</span><span class="o">=</span><span class="s1">&#39;yr&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1">#--&gt; write out the phase tensor parameter values to files</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pts</span><span class="o">.</span><span class="n">export_pt_params_to_file</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1">#--&gt; change coloring scheme to color by skew and a segmented colormap</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pts</span><span class="o">.</span><span class="n">ellipse_colorby</span> <span class="o">=</span> <span class="s1">&#39;skew_seg&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pts</span><span class="o">.</span><span class="n">ellipse_cmap</span> <span class="o">=</span> <span class="s1">&#39;mt_seg_bl2wh2rd&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pts</span><span class="o">.</span><span class="n">ellipse_range</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="mi">9</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pts</span><span class="o">.</span><span class="n">redraw_plot</span><span class="p">()</span>
+</pre></div>
+</div>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Authors:</th><td class="field-body"><p class="first">Lars Krieger,
+Jared Peacock, and
+Kent Invariarty</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Version:</th><td class="field-body"><p class="first last">0.0.1 of 2013</p>
+</td>
+</tr>
+</tbody>
+</table>
+<span class="target" id="module-mtpy.imaging.plotresponse"></span><p>Plots the resistivity and phase for different modes and components</p>
+<p>Created on Thu May 30 16:54:08 2013</p>
+<p>&#64;author: jpeacock-pr</p>
+<dl class="class">
+<dt id="mtpy.imaging.plotresponse.PlotResponse">
+<em class="property">class </em><code class="descclassname">mtpy.imaging.plotresponse.</code><code class="descname">PlotResponse</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mtpy/imaging/plotresponse.html#PlotResponse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mtpy.imaging.plotresponse.PlotResponse" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plots Resistivity and phase for the different modes of the MT response.  At
+the moment is supports the input of an .edi file. Other formats that will
+be supported are the impedance tensor and errors with an array of periods
+and .j format.</p>
+<p>The normal use is to input an .edi file, however it would seem that not
+everyone uses this format, so you can input the data and put it into 
+arrays or objects like class mtpy.core.z.Z.  Or if the data is in 
+resistivity and phase format they can be input as arrays or a class
+mtpy.imaging.mtplot.ResPhase.  Or you can put it into a class
+mtpy.imaging.mtplot.MTplot.</p>
+<p>The plot places the apparent resistivity in log scale in the top panel(s), 
+depending on the plot_num.  The phase is below this, note that 180 degrees
+has been added to the yx phase so the xy and yx phases plot in the same
+quadrant.  Both the resistivity and phase share the same x-axis which is in
+log period, short periods on the left to long periods on the right.  So
+if you zoom in on the plot both plots will zoom in to the same 
+x-coordinates.  If there is tipper information, you can plot the tipper
+as a third panel at the bottom, and also shares the x-axis.  The arrows are
+in the convention of pointing towards a conductor.  The xx and yy 
+components can be plotted as well, this adds two panels on the right.  
+Here the phase is left unwrapped.  Other parameters can be added as 
+subplots such as strike, skew and phase tensor ellipses.</p>
+<p>To manipulate the plot you can change any of the attributes listed below
+and call redraw_plot().  If you know more aout matplotlib and want to 
+change axes parameters, that can be done by changing the parameters in the
+axes attributes and then call update_plot(), note the plot must be open.</p>
+<p class="rubric">Attributes</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#mtpy.imaging.plotresponse.PlotResponse.plot_pt" title="mtpy.imaging.plotresponse.PlotResponse.plot_pt"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_pt</span></code></a></td>
+<td>string to plot phase tensor ellipses</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#mtpy.imaging.plotresponse.PlotResponse.plot_skew" title="mtpy.imaging.plotresponse.PlotResponse.plot_skew"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_skew</span></code></a></td>
+<td>string to plot skew</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#mtpy.imaging.plotresponse.PlotResponse.plot_strike" title="mtpy.imaging.plotresponse.PlotResponse.plot_strike"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_strike</span></code></a></td>
+<td>string to plot strike</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#mtpy.imaging.plotresponse.PlotResponse.plot_tipper" title="mtpy.imaging.plotresponse.PlotResponse.plot_tipper"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_tipper</span></code></a></td>
+<td>string to plot tipper</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#mtpy.imaging.plotresponse.PlotResponse.plot" title="mtpy.imaging.plotresponse.PlotResponse.plot"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot</span></code></a>()</td>
+<td>plotResPhase(filename,fig_num) will plot the apparent resistivity and  phase for a single station.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#mtpy.imaging.plotresponse.PlotResponse.redraw_plot" title="mtpy.imaging.plotresponse.PlotResponse.redraw_plot"><code class="xref py py-obj docutils literal notranslate"><span class="pre">redraw_plot</span></code></a>()</td>
+<td>use this function if you updated some attributes and want to re-plot.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#mtpy.imaging.plotresponse.PlotResponse.save_plot" title="mtpy.imaging.plotresponse.PlotResponse.save_plot"><code class="xref py py-obj docutils literal notranslate"><span class="pre">save_plot</span></code></a>(save_fn[,&nbsp;file_format,&nbsp;…])</td>
+<td>save_plot will save the figure to save_fn.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#mtpy.imaging.plotresponse.PlotResponse.update_plot" title="mtpy.imaging.plotresponse.PlotResponse.update_plot"><code class="xref py py-obj docutils literal notranslate"><span class="pre">update_plot</span></code></a>()</td>
+<td>update any parameters that where changed using the built-in draw from canvas.</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="mtpy.imaging.plotresponse.PlotResponse.plot">
+<code class="descname">plot</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/mtpy/imaging/plotresponse.html#PlotResponse.plot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mtpy.imaging.plotresponse.PlotResponse.plot" title="Permalink to this definition">¶</a></dt>
+<dd><p>plotResPhase(filename,fig_num) will plot the apparent resistivity and 
+phase for a single station.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="mtpy.imaging.plotresponse.PlotResponse.plot_pt">
+<code class="descname">plot_pt</code><a class="headerlink" href="#mtpy.imaging.plotresponse.PlotResponse.plot_pt" title="Permalink to this definition">¶</a></dt>
+<dd><p>string to plot phase tensor ellipses</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="mtpy.imaging.plotresponse.PlotResponse.plot_skew">
+<code class="descname">plot_skew</code><a class="headerlink" href="#mtpy.imaging.plotresponse.PlotResponse.plot_skew" title="Permalink to this definition">¶</a></dt>
+<dd><p>string to plot skew</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="mtpy.imaging.plotresponse.PlotResponse.plot_strike">
+<code class="descname">plot_strike</code><a class="headerlink" href="#mtpy.imaging.plotresponse.PlotResponse.plot_strike" title="Permalink to this definition">¶</a></dt>
+<dd><p>string to plot strike</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="mtpy.imaging.plotresponse.PlotResponse.plot_tipper">
+<code class="descname">plot_tipper</code><a class="headerlink" href="#mtpy.imaging.plotresponse.PlotResponse.plot_tipper" title="Permalink to this definition">¶</a></dt>
+<dd><p>string to plot tipper</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="mtpy.imaging.plotresponse.PlotResponse.redraw_plot">
+<code class="descname">redraw_plot</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/mtpy/imaging/plotresponse.html#PlotResponse.redraw_plot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mtpy.imaging.plotresponse.PlotResponse.redraw_plot" title="Permalink to this definition">¶</a></dt>
+<dd><p>use this function if you updated some attributes and want to re-plot.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Example:</th><td class="field-body"><div class="first last highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># change the color and marker of the xy components</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">mtpy.imaging.mtplottools</span> <span class="k">as</span> <span class="nn">mtplot</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">p1</span> <span class="o">=</span> <span class="n">mtplot</span><span class="o">.</span><span class="n">PlotResPhase</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;/home/MT/mt01.edi&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">p1</span><span class="o">.</span><span class="n">xy_color</span> <span class="o">=</span> <span class="p">(</span><span class="o">.</span><span class="mi">5</span><span class="p">,</span><span class="o">.</span><span class="mi">5</span><span class="p">,</span><span class="o">.</span><span class="mi">9</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">p1</span><span class="o">.</span><span class="n">xy_marker</span> <span class="o">=</span> <span class="s1">&#39;*&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">p1</span><span class="o">.</span><span class="n">redraw_plot</span><span class="p">()</span>
+</pre></div>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="mtpy.imaging.plotresponse.PlotResponse.save_plot">
+<code class="descname">save_plot</code><span class="sig-paren">(</span><em>save_fn</em>, <em>file_format='pdf'</em>, <em>orientation='portrait'</em>, <em>fig_dpi=None</em>, <em>close_plot='y'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mtpy/imaging/plotresponse.html#PlotResponse.save_plot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mtpy.imaging.plotresponse.PlotResponse.save_plot" title="Permalink to this definition">¶</a></dt>
+<dd><p>save_plot will save the figure to save_fn.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="mtpy.imaging.plotresponse.PlotResponse.update_plot">
+<code class="descname">update_plot</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/mtpy/imaging/plotresponse.html#PlotResponse.update_plot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mtpy.imaging.plotresponse.PlotResponse.update_plot" title="Permalink to this definition">¶</a></dt>
+<dd><p>update any parameters that where changed using the built-in draw from
+canvas.</p>
+<p>Use this if you change an of the .fig or axes properties</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Example:</th><td class="field-body"><div class="first last highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># to change the grid lines to only be on the major ticks</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">mtpy.imaging.mtplottools</span> <span class="k">as</span> <span class="nn">mtplot</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">p1</span> <span class="o">=</span> <span class="n">mtplot</span><span class="o">.</span><span class="n">PlotResPhase</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;/home/MT/mt01.edi&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="p">[</span><span class="n">ax</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">which</span><span class="o">=</span><span class="s1">&#39;major&#39;</span><span class="p">)</span> <span class="k">for</span> <span class="n">ax</span> <span class="ow">in</span> <span class="p">[</span><span class="n">p1</span><span class="o">.</span><span class="n">axr</span><span class="p">,</span><span class="n">p1</span><span class="o">.</span><span class="n">axp</span><span class="p">]]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">p1</span><span class="o">.</span><span class="n">update_plot</span><span class="p">()</span>
+</pre></div>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<span class="target" id="module-mtpy.imaging.plotnresponses"></span><p>plots multiple MT responses simultaneously</p>
+<p>Created on Thu May 30 17:02:39 2013
+&#64;author: jpeacock-pr</p>
+<p>YG: the code there is massey, todo may need to rewrite it sometime</p>
+<dl class="class">
+<dt id="mtpy.imaging.plotnresponses.PlotMultipleResponses">
+<em class="property">class </em><code class="descclassname">mtpy.imaging.plotnresponses.</code><code class="descname">PlotMultipleResponses</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mtpy/imaging/plotnresponses.html#PlotMultipleResponses"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mtpy.imaging.plotnresponses.PlotMultipleResponses" title="Permalink to this definition">¶</a></dt>
+<dd><p>plots multiple MT responses simultaneously either in single plots or in
+one plot of sub-figures or in a single plot with subfigures for each
+component.</p>
+<dl class="docutils">
+<dt>expecting only one type of input –&gt; can be:</dt>
+<dd><p class="first"><strong>fn_list</strong> : list of filenames to plot</p>
+<blockquote class="last">
+<div><p><strong>z_object_list</strong> : list of mtpy.core.z.Z objects</p>
+<p><strong>res_object_list</strong> : list of mtpy.imaging.mtplot.ResPhase objects</p>
+<p><strong>tipper_object_list</strong> : list of mtpy.imaging.mtplot.Tipper objects</p>
+<p><strong>mt_object_list</strong> : list of mtpy.imaging.mtplot.MTplot objects</p>
+</div></blockquote>
+</dd>
+</dl>
+<p class="rubric">Attributes</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#mtpy.imaging.plotnresponses.PlotMultipleResponses.plot_pt" title="mtpy.imaging.plotnresponses.PlotMultipleResponses.plot_pt"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_pt</span></code></a></td>
+<td>string to plot phase tensor ellipses</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#mtpy.imaging.plotnresponses.PlotMultipleResponses.plot_skew" title="mtpy.imaging.plotnresponses.PlotMultipleResponses.plot_skew"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_skew</span></code></a></td>
+<td>string to plot skew</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#mtpy.imaging.plotnresponses.PlotMultipleResponses.plot_strike" title="mtpy.imaging.plotnresponses.PlotMultipleResponses.plot_strike"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_strike</span></code></a></td>
+<td>string to plot strike</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#mtpy.imaging.plotnresponses.PlotMultipleResponses.plot_tipper" title="mtpy.imaging.plotnresponses.PlotMultipleResponses.plot_tipper"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_tipper</span></code></a></td>
+<td>string to plot tipper</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#mtpy.imaging.plotnresponses.PlotMultipleResponses.rot_z" title="mtpy.imaging.plotnresponses.PlotMultipleResponses.rot_z"><code class="xref py py-obj docutils literal notranslate"><span class="pre">rot_z</span></code></a></td>
+<td>rotation angle(s)</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#mtpy.imaging.plotnresponses.PlotMultipleResponses.plot" title="mtpy.imaging.plotnresponses.PlotMultipleResponses.plot"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot</span></code></a>([show])</td>
+<td>plot the apparent resistivity and phase</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#mtpy.imaging.plotnresponses.PlotMultipleResponses.redraw_plot" title="mtpy.imaging.plotnresponses.PlotMultipleResponses.redraw_plot"><code class="xref py py-obj docutils literal notranslate"><span class="pre">redraw_plot</span></code></a>()</td>
+<td>use this function if you updated some attributes and want to re-plot.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#mtpy.imaging.plotnresponses.PlotMultipleResponses.update_plot" title="mtpy.imaging.plotnresponses.PlotMultipleResponses.update_plot"><code class="xref py py-obj docutils literal notranslate"><span class="pre">update_plot</span></code></a>()</td>
+<td>update any parameters that where changed using the built-in draw from canvas.</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="mtpy.imaging.plotnresponses.PlotMultipleResponses.plot">
+<code class="descname">plot</code><span class="sig-paren">(</span><em>show=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mtpy/imaging/plotnresponses.html#PlotMultipleResponses.plot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mtpy.imaging.plotnresponses.PlotMultipleResponses.plot" title="Permalink to this definition">¶</a></dt>
+<dd><p>plot the apparent resistivity and phase</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="mtpy.imaging.plotnresponses.PlotMultipleResponses.plot_pt">
+<code class="descname">plot_pt</code><a class="headerlink" href="#mtpy.imaging.plotnresponses.PlotMultipleResponses.plot_pt" title="Permalink to this definition">¶</a></dt>
+<dd><p>string to plot phase tensor ellipses</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="mtpy.imaging.plotnresponses.PlotMultipleResponses.plot_skew">
+<code class="descname">plot_skew</code><a class="headerlink" href="#mtpy.imaging.plotnresponses.PlotMultipleResponses.plot_skew" title="Permalink to this definition">¶</a></dt>
+<dd><p>string to plot skew</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="mtpy.imaging.plotnresponses.PlotMultipleResponses.plot_strike">
+<code class="descname">plot_strike</code><a class="headerlink" href="#mtpy.imaging.plotnresponses.PlotMultipleResponses.plot_strike" title="Permalink to this definition">¶</a></dt>
+<dd><p>string to plot strike</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="mtpy.imaging.plotnresponses.PlotMultipleResponses.plot_tipper">
+<code class="descname">plot_tipper</code><a class="headerlink" href="#mtpy.imaging.plotnresponses.PlotMultipleResponses.plot_tipper" title="Permalink to this definition">¶</a></dt>
+<dd><p>string to plot tipper</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="mtpy.imaging.plotnresponses.PlotMultipleResponses.redraw_plot">
+<code class="descname">redraw_plot</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/mtpy/imaging/plotnresponses.html#PlotMultipleResponses.redraw_plot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mtpy.imaging.plotnresponses.PlotMultipleResponses.redraw_plot" title="Permalink to this definition">¶</a></dt>
+<dd><p>use this function if you updated some attributes and want to re-plot.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Example:</th><td class="field-body"><div class="first last highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># change the color and marker of the xy components</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">mtpy.imaging.mtplottools</span> <span class="k">as</span> <span class="nn">mtplot</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">p1</span> <span class="o">=</span> <span class="n">mtplot</span><span class="o">.</span><span class="n">PlotResPhase</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;/home/MT/mt01.edi&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">p1</span><span class="o">.</span><span class="n">xy_color</span> <span class="o">=</span> <span class="p">(</span><span class="o">.</span><span class="mi">5</span><span class="p">,</span><span class="o">.</span><span class="mi">5</span><span class="p">,</span><span class="o">.</span><span class="mi">9</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">p1</span><span class="o">.</span><span class="n">xy_marker</span> <span class="o">=</span> <span class="s1">&#39;*&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">p1</span><span class="o">.</span><span class="n">redraw_plot</span><span class="p">()</span>
+</pre></div>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="mtpy.imaging.plotnresponses.PlotMultipleResponses.rot_z">
+<code class="descname">rot_z</code><a class="headerlink" href="#mtpy.imaging.plotnresponses.PlotMultipleResponses.rot_z" title="Permalink to this definition">¶</a></dt>
+<dd><p>rotation angle(s)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="mtpy.imaging.plotnresponses.PlotMultipleResponses.update_plot">
+<code class="descname">update_plot</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/mtpy/imaging/plotnresponses.html#PlotMultipleResponses.update_plot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mtpy.imaging.plotnresponses.PlotMultipleResponses.update_plot" title="Permalink to this definition">¶</a></dt>
+<dd><p>update any parameters that where changed using the built-in draw from
+canvas.</p>
+<p>Use this if you change an of the .fig or axes properties</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Example:</th><td class="field-body"><div class="first last highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># to change the grid lines to only be on the major ticks</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">mtpy.imaging.mtplottools</span> <span class="k">as</span> <span class="nn">mtplot</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">p1</span> <span class="o">=</span> <span class="n">mtplot</span><span class="o">.</span><span class="n">PlotResPhase</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;/home/MT/mt01.edi&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="p">[</span><span class="n">ax</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">which</span><span class="o">=</span><span class="s1">&#39;major&#39;</span><span class="p">)</span> <span class="k">for</span> <span class="n">ax</span> <span class="ow">in</span> <span class="p">[</span><span class="n">p1</span><span class="o">.</span><span class="n">axr</span><span class="p">,</span><span class="n">p1</span><span class="o">.</span><span class="n">axp</span><span class="p">]]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">p1</span><span class="o">.</span><span class="n">update_plot</span><span class="p">()</span>
+</pre></div>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<span class="target" id="module-mtpy.imaging.plotstrike"></span><p>Created on Thu May 30 18:28:24 2013</p>
+<p>&#64;author: jpeacock-pr</p>
+<dl class="class">
+<dt id="mtpy.imaging.plotstrike.PlotStrike">
+<em class="property">class </em><code class="descclassname">mtpy.imaging.plotstrike.</code><code class="descname">PlotStrike</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mtpy/imaging/plotstrike.html#PlotStrike"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mtpy.imaging.plotstrike.PlotStrike" title="Permalink to this definition">¶</a></dt>
+<dd><p>PlotStrike will plot the strike estimated from the invariants, phase tensor
+and the tipper in either a rose diagram of xy plot</p>
+<p>plots the strike angle as determined by phase tensor azimuth (Caldwell et
+al. [2004]) and invariants of the impedance tensor (Weaver et al. [2003]).</p>
+<p>The data is split into decades where the histogram for each is plotted in
+the form of a rose diagram with a range of 0 to 180 degrees.
+Where 0 is North and 90 is East.   The median angle of the period band is
+set in polar diagram.  The top row is the strike estimated from
+the invariants of the impedance tensor.  The bottom row is the azimuth
+estimated from the phase tensor.  If tipper is ‘y’ then the 3rd row is the
+strike determined from the tipper, which is orthogonal to the induction
+arrow direction.</p>
+<p class="rubric">Attributes</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="5%" />
+<col width="95%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>-axhinv            matplotlib.axes instance for invariant strike</strong></td>
+<td><table class="first last docutils option-list" frame="void" rules="none">
+<col class="option" />
+<col class="description" />
+<tbody valign="top">
+<tr><td class="option-group">
+<kbd><span class="option">-a<var>xhpt</var></span></kbd></td>
+<td>matplotlib.axes instance for phase tensor strike -axhtip            matplotlib.axes instance for tipper strike  -barinv            matplotlib.axes.bar instance for invariant strike -barpt             matplotlib.axes.bar instance for pt strike -bartr             matplotlib.axes.bar instance for tipper strike  -bin_width         width of histogram bins in degrees  -fig               matplotlib.figure instance of plot -fig_dpi           dots-per-inch resolution of figure -fig_num           number of figure being plotted -fig_size          size of figure in inches -fold              boolean to fold angles to range from [0,180] or [0,360]  -font_size         font size of axes tick labels  -mt_list            list of mtplot.MTplot instances containing all the important information for each station -period_tolerance  tolerance to look for periods being plotted  -plot_range        range of periods to plot -plot_tipper       string to tell program to plot induction arrows -plot_type         string to tell program how to plot strike angles -plot_yn           plot strike on instance creation -pt_error_floor    error floor to plot phase tensor strike, anything above this error will not be plotted -text_pad          padding between text and rose diagram -text_size         font size of text labeling the mode of the histogram -title_dict        title dictionary</td></tr>
+</tbody>
+</table>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Methods</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="15%" />
+<col width="85%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>-plot                 plots the pseudo section</strong></td>
+<td><table class="first last docutils option-list" frame="void" rules="none">
+<col class="option" />
+<col class="description" />
+<tbody valign="top">
+<tr><td class="option-group">
+<kbd><span class="option">-r<var>edraw_plot</var></span></kbd></td>
+<td>on call redraws the plot from scratch -save_figure          saves figure to a file of given format -update_plot          updates the plot while still active -export_pt_params_to_file       writes parameters of the phase tensor and tipper to text files.</td></tr>
+</tbody>
+</table>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="mtpy.imaging.plotstrike.PlotStrike.redraw_plot">
+<code class="descname">redraw_plot</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/mtpy/imaging/plotstrike.html#PlotStrike.redraw_plot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mtpy.imaging.plotstrike.PlotStrike.redraw_plot" title="Permalink to this definition">¶</a></dt>
+<dd><p>use this function if you updated some attributes and want to re-plot.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Example:</th><td class="field-body"><div class="first last highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># change the color and marker of the xy components</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">mtpy.imaging.mtplottools</span> <span class="k">as</span> <span class="nn">mtplot</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">p1</span> <span class="o">=</span> <span class="n">mtplot</span><span class="o">.</span><span class="n">PlotResPhase</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;/home/MT/mt01.edi&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">p1</span><span class="o">.</span><span class="n">xy_color</span> <span class="o">=</span> <span class="p">(</span><span class="o">.</span><span class="mi">5</span><span class="p">,</span><span class="o">.</span><span class="mi">5</span><span class="p">,</span><span class="o">.</span><span class="mi">9</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">p1</span><span class="o">.</span><span class="n">xy_marker</span> <span class="o">=</span> <span class="s1">&#39;*&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">p1</span><span class="o">.</span><span class="n">redraw_plot</span><span class="p">()</span>
+</pre></div>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="mtpy.imaging.plotstrike.PlotStrike.rot_z">
+<code class="descname">rot_z</code><a class="headerlink" href="#mtpy.imaging.plotstrike.PlotStrike.rot_z" title="Permalink to this definition">¶</a></dt>
+<dd><p>rotation angle(s)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="mtpy.imaging.plotstrike.PlotStrike.save_plot">
+<code class="descname">save_plot</code><span class="sig-paren">(</span><em>save_fn</em>, <em>file_format='pdf'</em>, <em>orientation='portrait'</em>, <em>fig_dpi=None</em>, <em>close_plot='y'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mtpy/imaging/plotstrike.html#PlotStrike.save_plot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mtpy.imaging.plotstrike.PlotStrike.save_plot" title="Permalink to this definition">¶</a></dt>
+<dd><p>save_plot will save the figure to save_fn.</p>
+<p class="rubric">Examples</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Example:</th><td class="field-body"><div class="first highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># to save plot as jpg</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">mtpy.imaging.mtplottools</span> <span class="k">as</span> <span class="nn">mtplot</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">p1</span> <span class="o">=</span> <span class="n">mtplot</span><span class="o">.</span><span class="n">PlotPhaseTensorMaps</span><span class="p">(</span><span class="n">edilist</span><span class="p">,</span><span class="n">freqspot</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">p1</span><span class="o">.</span><span class="n">save_plot</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;/home/MT&#39;</span><span class="p">,</span> <span class="n">file_format</span><span class="o">=</span><span class="s1">&#39;jpg&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p class="last">‘Figure saved to /home/MT/PTMaps/PTmap_phimin_10Hz.jpg’</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="mtpy.imaging.plotstrike.PlotStrike.update_plot">
+<code class="descname">update_plot</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/mtpy/imaging/plotstrike.html#PlotStrike.update_plot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mtpy.imaging.plotstrike.PlotStrike.update_plot" title="Permalink to this definition">¶</a></dt>
+<dd><p>update any parameters that where changed using the built-in draw from
+canvas.</p>
+<p>Use this if you change an of the .fig or axes properties</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Example:</th><td class="field-body"><div class="first last highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># to change the grid lines to only be on the major ticks</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">mtpy.imaging.mtplottools</span> <span class="k">as</span> <span class="nn">mtplot</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">p1</span> <span class="o">=</span> <span class="n">mtplot</span><span class="o">.</span><span class="n">PlotResPhase</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;/home/MT/mt01.edi&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="p">[</span><span class="n">ax</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">which</span><span class="o">=</span><span class="s1">&#39;major&#39;</span><span class="p">)</span> <span class="k">for</span> <span class="n">ax</span> <span class="ow">in</span> <span class="p">[</span><span class="n">p1</span><span class="o">.</span><span class="n">axr</span><span class="p">,</span><span class="n">p1</span><span class="o">.</span><span class="n">axp</span><span class="p">]]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">p1</span><span class="o">.</span><span class="n">update_plot</span><span class="p">()</span>
+</pre></div>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="mtpy.imaging.plotstrike.PlotStrike.writeTextFiles">
+<code class="descname">writeTextFiles</code><span class="sig-paren">(</span><em>save_path=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mtpy/imaging/plotstrike.html#PlotStrike.writeTextFiles"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mtpy.imaging.plotstrike.PlotStrike.writeTextFiles" title="Permalink to this definition">¶</a></dt>
+<dd><p>Saves the strike information as a text file.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="master_doc.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Imaging</a><ul>
+<li><a class="reference internal" href="#module-mtpy.imaging.mtplot"><strong>Module MTPlot</strong></a><ul>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/imaging.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="master_doc.html">mtpy 1.01.01 documentation</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2018, Geoscience Australia.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.7.2.
+    </div>
+  </body>
+</html>

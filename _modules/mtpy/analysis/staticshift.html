@@ -1,0 +1,305 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>mtpy.analysis.staticshift &#8212; mtpy 1.01.01 documentation</title>
+    <link rel="stylesheet" href="../../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../master_doc.html">mtpy 1.01.01 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for mtpy.analysis.staticshift</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">=============</span>
+<span class="sd">Static Shift</span>
+<span class="sd">=============</span>
+
+<span class="sd">module for estimating static shift</span>
+
+<span class="sd">Created on Mon Aug 19 10:06:21 2013</span>
+
+<span class="sd">@author: jpeacock</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="c1"># ==============================================================================</span>
+<span class="kn">import</span> <span class="nn">os</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">import</span> <span class="nn">mtpy.core.mt</span> <span class="k">as</span> <span class="nn">mt</span>
+<span class="kn">import</span> <span class="nn">mtpy.imaging.mtplot</span> <span class="k">as</span> <span class="nn">mtplot</span>
+
+
+<span class="c1"># ==============================================================================</span>
+
+<div class="viewcode-block" id="estimate_static_spatial_median"><a class="viewcode-back" href="../../../analysis.html#mtpy.analysis.staticshift.estimate_static_spatial_median">[docs]</a><span class="k">def</span> <span class="nf">estimate_static_spatial_median</span><span class="p">(</span><span class="n">edi_fn</span><span class="p">,</span> <span class="n">radius</span><span class="o">=</span><span class="mf">1000.</span><span class="p">,</span> <span class="n">num_freq</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>
+                                   <span class="n">freq_skip</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">shift_tol</span><span class="o">=.</span><span class="mi">15</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Remove static shift from a station using a spatial median filter.  This</span>
+<span class="sd">    will look at all the edi files in the same directory as edi_fn and find</span>
+<span class="sd">    those station within the given radius (meters).  Then it will find</span>
+<span class="sd">    the medain static shift for the x and y modes and remove it, given that</span>
+<span class="sd">    it is larger than the shift tolerance away from 1.  A new edi file will</span>
+<span class="sd">    be written in a new folder called SS.</span>
+
+<span class="sd">    Arguments</span>
+<span class="sd">    -----------------</span>
+<span class="sd">        **edi_fn** : string</span>
+<span class="sd">                     full path to edi file to have static shift removed</span>
+
+<span class="sd">        **radius** : float</span>
+<span class="sd">                     radius to look for nearby stations, in meters.</span>
+<span class="sd">                     *default* is 1000 m</span>
+
+<span class="sd">        **num_freq** : int</span>
+<span class="sd">                       number of frequencies calculate the median static</span>
+<span class="sd">                       shift.  This is assuming the first frequency is the</span>
+<span class="sd">                       highest frequency.  Cause usually highest frequencies</span>
+<span class="sd">                       are sampling a 1D earth.  *default* is 20</span>
+
+<span class="sd">        **freq_skip** : int</span>
+<span class="sd">                        number of frequencies to skip from the highest</span>
+<span class="sd">                        frequency.  Sometimes the highest frequencies are</span>
+<span class="sd">                        not reliable due to noise or low signal in the AMT</span>
+<span class="sd">                        deadband.  This allows you to skip those frequencies.</span>
+<span class="sd">                        *default* is 4</span>
+
+<span class="sd">        **shift_tol** : float</span>
+<span class="sd">                        Tolerance on the median static shift correction.  If</span>
+<span class="sd">                        the data is noisy the correction factor can be biased</span>
+<span class="sd">                        away from 1.  Therefore the shift_tol is used to stop</span>
+<span class="sd">                        that bias.  If 1-tol &lt; correction &lt; 1+tol then the</span>
+<span class="sd">                        correction factor is set to 1.  *default* is 0.15</span>
+
+
+<span class="sd">    Returns</span>
+<span class="sd">    ----------------</span>
+
+<span class="sd">        **shift_corrections** : (float, float)</span>
+<span class="sd">                                static shift corrections for x and y modes</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># convert meters to decimal degrees so we don&#39;t have to deal with zone</span>
+    <span class="c1"># changes</span>
+    <span class="n">meter_to_deg_factor</span> <span class="o">=</span> <span class="mf">8.994423457456377e-06</span>
+    <span class="n">dm_deg</span> <span class="o">=</span> <span class="n">radius</span> <span class="o">*</span> <span class="n">meter_to_deg_factor</span>
+
+    <span class="c1"># make a list of edi files in the directory</span>
+    <span class="n">edi_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">edi_fn</span><span class="p">)</span>
+    <span class="n">edi_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">edi_path</span><span class="p">,</span> <span class="n">edi</span><span class="p">))</span>
+                <span class="k">for</span> <span class="n">edi</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">edi_path</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">edi</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;.edi&#39;</span><span class="p">)]</span>
+
+    <span class="n">edi_list</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">edi_fn</span><span class="p">))</span>
+
+    <span class="c1"># read the edi file</span>
+    <span class="n">mt_obj</span> <span class="o">=</span> <span class="n">mt</span><span class="o">.</span><span class="n">MT</span><span class="p">(</span><span class="n">edi_fn</span><span class="p">)</span>
+    <span class="n">mt_obj</span><span class="o">.</span><span class="n">Z</span><span class="o">.</span><span class="n">_compute_res_phase</span><span class="p">()</span>
+    <span class="n">interp_freq</span> <span class="o">=</span> <span class="n">mt_obj</span><span class="o">.</span><span class="n">Z</span><span class="o">.</span><span class="n">freq</span><span class="p">[</span><span class="n">freq_skip</span><span class="p">:</span><span class="n">num_freq</span> <span class="o">+</span> <span class="n">freq_skip</span><span class="p">]</span>
+
+    <span class="c1"># Find stations near by and store them in a list</span>
+    <span class="n">mt_obj_list</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">kk</span><span class="p">,</span> <span class="n">kk_edi</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">edi_list</span><span class="p">):</span>
+        <span class="n">mt_obj_2</span> <span class="o">=</span> <span class="n">mt</span><span class="o">.</span><span class="n">MT</span><span class="p">(</span><span class="n">kk_edi</span><span class="p">)</span>
+        <span class="n">delta_d</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">((</span><span class="n">mt_obj</span><span class="o">.</span><span class="n">lat</span> <span class="o">-</span> <span class="n">mt_obj_2</span><span class="o">.</span><span class="n">lat</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span>
+                          <span class="p">(</span><span class="n">mt_obj</span><span class="o">.</span><span class="n">lon</span> <span class="o">-</span> <span class="n">mt_obj_2</span><span class="o">.</span><span class="n">lon</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">delta_d</span> <span class="o">&lt;=</span> <span class="n">dm_deg</span><span class="p">:</span>
+            <span class="n">mt_obj_2</span><span class="o">.</span><span class="n">delta_d</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">delta_d</span><span class="p">)</span> <span class="o">/</span> <span class="n">meter_to_deg_factor</span>
+            <span class="n">mt_obj_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">mt_obj_2</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">mt_obj_list</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="nb">print</span> <span class="s1">&#39;No stations found within given radius </span><span class="si">{0:.2f}</span><span class="s1"> m&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">radius</span><span class="p">)</span>
+        <span class="k">return</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span>
+
+    <span class="c1"># extract the resistivity values from the near by stations</span>
+    <span class="n">res_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">mt_obj_list</span><span class="p">),</span> <span class="n">num_freq</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+    <span class="nb">print</span> <span class="s1">&#39;These stations are within the given </span><span class="si">{0}</span><span class="s1"> m radius:&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">radius</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">kk</span><span class="p">,</span> <span class="n">mt_obj_kk</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">mt_obj_list</span><span class="p">):</span>
+        <span class="nb">print</span> <span class="s1">&#39;</span><span class="se">\t</span><span class="si">{0}</span><span class="s1"> --&gt; </span><span class="si">{1:.1f}</span><span class="s1"> m&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">mt_obj_kk</span><span class="o">.</span><span class="n">station</span><span class="p">,</span> <span class="n">mt_obj_kk</span><span class="o">.</span><span class="n">delta_d</span><span class="p">)</span>
+        <span class="n">interp_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">((</span><span class="n">interp_freq</span> <span class="o">&gt;=</span> <span class="n">mt_obj_kk</span><span class="o">.</span><span class="n">Z</span><span class="o">.</span><span class="n">freq</span><span class="o">.</span><span class="n">min</span><span class="p">())</span> <span class="o">&amp;</span>
+                              <span class="p">(</span><span class="n">interp_freq</span> <span class="o">&lt;=</span> <span class="n">mt_obj_kk</span><span class="o">.</span><span class="n">Z</span><span class="o">.</span><span class="n">freq</span><span class="o">.</span><span class="n">max</span><span class="p">()))</span>
+
+        <span class="n">interp_freq_kk</span> <span class="o">=</span> <span class="n">interp_freq</span><span class="p">[</span><span class="n">interp_idx</span><span class="p">]</span>
+        <span class="n">Z_interp</span><span class="p">,</span> <span class="n">Tip_interp</span> <span class="o">=</span> <span class="n">mt_obj_kk</span><span class="o">.</span><span class="n">interpolate_impedance_tensor</span><span class="p">(</span><span class="n">interp_freq_kk</span><span class="p">)</span>
+        <span class="n">Z_interp</span><span class="o">.</span><span class="n">_compute_res_phase</span><span class="p">()</span>
+        <span class="n">res_array</span><span class="p">[</span>
+            <span class="n">kk</span><span class="p">,</span>
+            <span class="n">interp_idx</span><span class="p">,</span>
+            <span class="p">:,</span>
+            <span class="p">:]</span> <span class="o">=</span> <span class="n">Z_interp</span><span class="o">.</span><span class="n">resistivity</span><span class="p">[</span>
+            <span class="mi">0</span><span class="p">:</span><span class="nb">len</span><span class="p">(</span><span class="n">interp_freq_kk</span><span class="p">),</span>
+            <span class="p">:,</span>
+            <span class="p">:]</span>
+
+    <span class="c1"># compute the static shift of x-components</span>
+    <span class="n">static_shift_x</span> <span class="o">=</span> <span class="n">mt_obj</span><span class="o">.</span><span class="n">Z</span><span class="o">.</span><span class="n">resistivity</span><span class="p">[</span><span class="n">freq_skip</span><span class="p">:</span><span class="n">num_freq</span> <span class="o">+</span> <span class="n">freq_skip</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">/</span> \
+        <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">res_array</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">static_shift_x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">static_shift_x</span><span class="p">)</span>
+
+    <span class="c1"># check to see if the estimated static shift is within given tolerance</span>
+    <span class="k">if</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">shift_tol</span> <span class="o">&lt;</span> <span class="n">static_shift_x</span> <span class="ow">and</span> <span class="n">static_shift_x</span> <span class="o">&lt;</span> <span class="mi">1</span> <span class="o">+</span> <span class="n">shift_tol</span><span class="p">:</span>
+        <span class="n">static_shift_x</span> <span class="o">=</span> <span class="mf">1.0</span>
+
+    <span class="c1"># compute the static shift of y-components</span>
+    <span class="n">static_shift_y</span> <span class="o">=</span> <span class="n">mt_obj</span><span class="o">.</span><span class="n">Z</span><span class="o">.</span><span class="n">resistivity</span><span class="p">[</span><span class="n">freq_skip</span><span class="p">:</span><span class="n">num_freq</span> <span class="o">+</span> <span class="n">freq_skip</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">/</span> \
+        <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">res_array</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">static_shift_y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">static_shift_y</span><span class="p">)</span>
+
+    <span class="c1"># check to see if the estimated static shift is within given tolerance</span>
+    <span class="k">if</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">shift_tol</span> <span class="o">&lt;</span> <span class="n">static_shift_y</span> <span class="ow">and</span> <span class="n">static_shift_y</span> <span class="o">&lt;</span> <span class="mi">1</span> <span class="o">+</span> <span class="n">shift_tol</span><span class="p">:</span>
+        <span class="n">static_shift_y</span> <span class="o">=</span> <span class="mf">1.0</span>
+
+    <span class="k">return</span> <span class="n">static_shift_x</span><span class="p">,</span> <span class="n">static_shift_y</span></div>
+
+
+<div class="viewcode-block" id="remove_static_shift_spatial_filter"><a class="viewcode-back" href="../../../analysis.html#mtpy.analysis.staticshift.remove_static_shift_spatial_filter">[docs]</a><span class="k">def</span> <span class="nf">remove_static_shift_spatial_filter</span><span class="p">(</span><span class="n">edi_fn</span><span class="p">,</span> <span class="n">radius</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">num_freq</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>
+                                       <span class="n">freq_skip</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">shift_tol</span><span class="o">=.</span><span class="mi">15</span><span class="p">,</span> <span class="n">plot</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Remove static shift from a station using a spatial median filter.  This</span>
+<span class="sd">    will look at all the edi files in the same directory as edi_fn and find</span>
+<span class="sd">    those station within the given radius (meters).  Then it will find</span>
+<span class="sd">    the medain static shift for the x and y modes and remove it, given that</span>
+<span class="sd">    it is larger than the shift tolerance away from 1.  A new edi file will</span>
+<span class="sd">    be written in a new folder called SS.</span>
+
+<span class="sd">    Arguments</span>
+<span class="sd">    -----------------</span>
+<span class="sd">        **edi_fn** : string</span>
+<span class="sd">                     full path to edi file to have static shift removed</span>
+
+<span class="sd">        **radius** : float</span>
+<span class="sd">                     radius to look for nearby stations, in meters.</span>
+<span class="sd">                     *default* is 1000 m</span>
+
+<span class="sd">        **num_freq** : int</span>
+<span class="sd">                       number of frequencies calculate the median static</span>
+<span class="sd">                       shift.  This is assuming the first frequency is the</span>
+<span class="sd">                       highest frequency.  Cause usually highest frequencies</span>
+<span class="sd">                       are sampling a 1D earth.  *default* is 20</span>
+
+<span class="sd">        **freq_skip** : int</span>
+<span class="sd">                        number of frequencies to skip from the highest</span>
+<span class="sd">                        frequency.  Sometimes the highest frequencies are</span>
+<span class="sd">                        not reliable due to noise or low signal in the AMT</span>
+<span class="sd">                        deadband.  This allows you to skip those frequencies.</span>
+<span class="sd">                        *default* is 4</span>
+
+<span class="sd">        **shift_tol** : float</span>
+<span class="sd">                        Tolerance on the median static shift correction.  If</span>
+<span class="sd">                        the data is noisy the correction factor can be biased</span>
+<span class="sd">                        away from 1.  Therefore the shift_tol is used to stop</span>
+<span class="sd">                        that bias.  If 1-tol &lt; correction &lt; 1+tol then the</span>
+<span class="sd">                        correction factor is set to 1.  *default* is 0.15</span>
+
+<span class="sd">        **plot** : [ True | False ]</span>
+<span class="sd">                   Boolean to plot the corrected response against the</span>
+<span class="sd">                   non-corrected response.  *default* is False</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    ----------------</span>
+<span class="sd">        **new_edi_fn_ss** : string</span>
+<span class="sd">                            new path to the edi file with static shift removed</span>
+
+<span class="sd">        **shift_corrections** : (float, float)</span>
+<span class="sd">                                static shift corrections for x and y modes</span>
+
+<span class="sd">        **plot_obj** : mtplot.plot_multiple_mt_responses object</span>
+<span class="sd">                       If plot is True a plot_obj is returned</span>
+<span class="sd">                       If plot is False None is returned</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">ss_x</span><span class="p">,</span> <span class="n">ss_y</span> <span class="o">=</span> <span class="n">estimate_static_spatial_median</span><span class="p">(</span><span class="n">edi_fn</span><span class="p">,</span>
+                                                <span class="n">radius</span><span class="o">=</span><span class="n">radius</span><span class="p">,</span>
+                                                <span class="n">num_freq</span><span class="o">=</span><span class="n">num_freq</span><span class="p">,</span>
+                                                <span class="n">freq_skip</span><span class="o">=</span><span class="n">freq_skip</span><span class="p">,</span>
+                                                <span class="n">shift_tol</span><span class="o">=.</span><span class="mi">15</span><span class="p">)</span>
+    <span class="n">mt_obj</span> <span class="o">=</span> <span class="n">mt</span><span class="o">.</span><span class="n">MT</span><span class="p">(</span><span class="n">edi_fn</span><span class="p">)</span>
+
+    <span class="n">s</span><span class="p">,</span> <span class="n">z_ss</span> <span class="o">=</span> <span class="n">mt_obj</span><span class="o">.</span><span class="n">Z</span><span class="o">.</span><span class="n">no_ss</span><span class="p">(</span><span class="n">reduce_res_factor_x</span><span class="o">=</span><span class="n">ss_x</span><span class="p">,</span>
+                             <span class="n">reduce_res_factor_y</span><span class="o">=</span><span class="n">ss_y</span><span class="p">)</span>
+    <span class="n">edi_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">edi_fn</span><span class="p">)</span>
+
+    <span class="n">mt_obj</span><span class="o">.</span><span class="n">Z</span><span class="o">.</span><span class="n">z</span> <span class="o">=</span> <span class="n">z_ss</span>
+    <span class="n">new_edi_fn</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+        <span class="n">edi_path</span><span class="p">,</span> <span class="s1">&#39;SS&#39;</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">_ss.edi&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="n">mt_obj</span><span class="o">.</span><span class="n">station</span><span class="p">))</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">new_edi_fn</span><span class="p">)):</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">new_edi_fn</span><span class="p">))</span>
+    <span class="n">mt_obj</span><span class="o">.</span><span class="n">write_edi_file</span><span class="p">(</span><span class="n">new_fn</span><span class="o">=</span><span class="n">new_edi_fn</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">plot</span> <span class="o">==</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="n">rpm</span> <span class="o">=</span> <span class="n">mtplot</span><span class="o">.</span><span class="n">plot_multiple_mt_responses</span><span class="p">(</span><span class="n">fn_list</span><span class="o">=</span><span class="p">[</span><span class="n">edi_fn</span><span class="p">,</span> <span class="n">new_edi_fn</span><span class="p">],</span>
+                                                <span class="n">plot_style</span><span class="o">=</span><span class="s1">&#39;compare&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">new_edi_fn</span><span class="p">,</span> <span class="n">s</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">rpm</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">new_edi_fn</span><span class="p">,</span> <span class="n">s</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="kc">None</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../master_doc.html">mtpy 1.01.01 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2018, Geoscience Australia.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.7.2.
+    </div>
+  </body>
+</html>

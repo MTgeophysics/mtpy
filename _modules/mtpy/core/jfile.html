@@ -1,0 +1,402 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>mtpy.core.jfile &#8212; mtpy 1.01.01 documentation</title>
+    <link rel="stylesheet" href="../../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../master_doc.html">mtpy 1.01.01 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for mtpy.core.jfile</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">.. module:: JFile</span>
+<span class="sd">   :synopsis: Deal with J-Files of the format propsed by Alan Jones </span>
+
+<span class="sd">.. moduleauthor:: Jared Peacock &lt;jpeacock@usgs.gov&gt;</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="c1">#==============================================================================</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">os</span>
+
+<span class="kn">import</span> <span class="nn">mtpy.core.z</span> <span class="k">as</span> <span class="nn">mtz</span>
+<span class="c1">#==============================================================================</span>
+<span class="c1"># Class to read j_file</span>
+<span class="c1">#==============================================================================</span>
+<div class="viewcode-block" id="JFile"><a class="viewcode-back" href="../../../core.html#mtpy.core.jfile.JFile">[docs]</a><span class="k">class</span> <span class="nc">JFile</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    be able to read and write a j-file</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">j_fn</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">j_fn</span> <span class="o">=</span> <span class="n">j_fn</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">header_dict</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">metadata_dict</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Z</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Tipper</span> <span class="o">=</span> <span class="kc">None</span>
+        
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">j_fn</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">read_j_file</span><span class="p">()</span>
+        
+    <span class="k">def</span> <span class="nf">_validate_j_file</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        change the lat, lon, elev lines to something machine readable,</span>
+<span class="sd">        if they are not.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">j_fn</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">NameError</span><span class="p">(</span><span class="s1">&#39;Could not find </span><span class="si">{0}</span><span class="s1">, check path&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">j_fn</span><span class="p">))</span>
+        
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">j_fn</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fid</span><span class="p">:</span>
+            <span class="n">j_lines</span> <span class="o">=</span> <span class="n">fid</span><span class="o">.</span><span class="n">readlines</span><span class="p">()</span>
+        
+        <span class="k">for</span> <span class="n">variable</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;lat&#39;</span><span class="p">,</span> <span class="s1">&#39;lon&#39;</span><span class="p">,</span> <span class="s1">&#39;elev&#39;</span><span class="p">]:</span>
+            <span class="k">for</span> <span class="n">ii</span><span class="p">,</span> <span class="n">line</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">j_lines</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">variable</span> <span class="ow">in</span> <span class="n">line</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
+                    <span class="n">name</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;=&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="k">try</span><span class="p">:</span> 
+                        <span class="n">value</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;=&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
+                    <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                        <span class="n">value</span> <span class="o">=</span> <span class="mf">0.0</span>
+                        <span class="nb">print</span> <span class="s1">&#39;changed </span><span class="si">{0}</span><span class="s1"> to 0.0&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+                    <span class="n">j_lines</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1"> = </span><span class="si">{1}</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+                    <span class="k">break</span>
+        
+        <span class="k">return</span> <span class="n">j_lines</span>
+    
+    <span class="k">def</span> <span class="nf">_read_header_line</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">line</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        read a header line</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">line</span> <span class="o">=</span> <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">line</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>
+        
+        <span class="n">new_line</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+        
+        <span class="c1"># need to restructure the string so its readable, at least the way</span>
+        <span class="c1"># that birrp outputs the file</span>
+        <span class="n">e_find</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">line</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="n">line</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;=&#39;</span><span class="p">:</span>
+                <span class="n">e_find</span> <span class="o">=</span> <span class="n">ii</span>
+                <span class="n">new_line</span> <span class="o">+=</span> <span class="n">line</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span>
+            <span class="k">elif</span> <span class="n">line</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39; &#39;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">e_find</span><span class="o">-</span><span class="n">ii</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="k">pass</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">new_line</span> <span class="o">+=</span> <span class="s1">&#39;,&#39;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">new_line</span> <span class="o">+=</span> <span class="n">line</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span> 
+        
+        <span class="c1"># now that we have a useful line, split it into its parts</span>
+        <span class="n">line_list</span> <span class="o">=</span> <span class="n">new_line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)</span>
+        
+        <span class="c1"># try to split up the parts into a key=value setup</span>
+        <span class="c1"># and try to make the values floats if they can be</span>
+        <span class="n">l_dict</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="s1">&#39;null&#39;</span>
+        <span class="k">for</span> <span class="n">ll</span> <span class="ow">in</span> <span class="n">line_list</span><span class="p">:</span>
+            <span class="n">ll_list</span> <span class="o">=</span> <span class="n">ll</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;=&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">ll_list</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">continue</span>
+            
+            <span class="c1"># some times there is just a list of numbers, need a way to read</span>
+            <span class="c1"># that.</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">ll_list</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">l_dict</span><span class="p">[</span><span class="n">key</span><span class="p">])</span> <span class="ow">is</span> <span class="ow">not</span> <span class="nb">list</span><span class="p">:</span>
+                    <span class="n">l_dict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">([</span><span class="n">l_dict</span><span class="p">[</span><span class="n">key</span><span class="p">]])</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">l_dict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">ll</span><span class="p">))</span>
+                <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                    <span class="n">l_dict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ll</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">key</span> <span class="o">=</span> <span class="n">ll_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">value</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">ll_list</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+                <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                    <span class="n">value</span> <span class="o">=</span> <span class="n">ll_list</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+                    
+                <span class="n">l_dict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+            
+        <span class="k">return</span> <span class="n">l_dict</span>
+    
+    
+<div class="viewcode-block" id="JFile.read_header"><a class="viewcode-back" href="../../../core.html#mtpy.core.jfile.JFile.read_header">[docs]</a>    <span class="k">def</span> <span class="nf">read_header</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">j_lines</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Parsing the header lines of a j-file to extract processing information.</span>
+<span class="sd">    </span>
+<span class="sd">        Input:</span>
+<span class="sd">        - j-file as list of lines (output of readlines())</span>
+<span class="sd">    </span>
+<span class="sd">        Output:</span>
+<span class="sd">        - Dictionary with all parameters found</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">j_lines</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">j_lines</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validate_j_file</span><span class="p">()</span>            
+        <span class="n">header_lines</span> <span class="o">=</span> <span class="p">[</span><span class="n">j_line</span> <span class="k">for</span> <span class="n">j_line</span> <span class="ow">in</span> <span class="n">j_lines</span> <span class="k">if</span> <span class="s1">&#39;#&#39;</span> <span class="ow">in</span> <span class="n">j_line</span><span class="p">]</span>
+        <span class="n">header_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;title&#39;</span><span class="p">:</span><span class="n">header_lines</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">:]</span><span class="o">.</span><span class="n">strip</span><span class="p">()}</span>
+        
+        <span class="n">fn_count</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">theta_count</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="c1"># put the information into a dictionary </span>
+        <span class="k">for</span> <span class="n">h_line</span> <span class="ow">in</span> <span class="n">header_lines</span><span class="p">[</span><span class="mi">1</span><span class="p">:]:</span>
+            <span class="n">h_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_read_header_line</span><span class="p">(</span><span class="n">h_line</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">h_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s1">&#39;filnam&#39;</span><span class="p">:</span>
+                    <span class="n">h_key</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">_</span><span class="si">{1:02}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">fn_count</span><span class="p">)</span>
+                    <span class="n">fn_count</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s1">&#39;nskip&#39;</span> <span class="ow">or</span> <span class="n">key</span> <span class="o">==</span> <span class="s1">&#39;nread&#39;</span><span class="p">:</span>
+                    <span class="n">h_key</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">_</span><span class="si">{1:02}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">fn_count</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+                    
+                <span class="c1"># if its the line of angles, put them all in a list with a unique key</span>
+                <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s1">&#39;theta1&#39;</span><span class="p">:</span>
+                    <span class="n">h_key</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">_</span><span class="si">{1:02}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">theta_count</span><span class="p">)</span>
+                    <span class="n">theta_count</span> <span class="o">+=</span> <span class="mi">1</span>
+
+                <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s1">&#39;theta2&#39;</span> <span class="ow">or</span> <span class="n">key</span> <span class="o">==</span> <span class="s1">&#39;phi&#39;</span><span class="p">:</span>
+                    <span class="n">h_key</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">_</span><span class="si">{1:02}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">theta_count</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">h_key</span> <span class="o">=</span> <span class="n">key</span>
+
+                <span class="n">header_dict</span><span class="p">[</span><span class="n">h_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">h_dict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+            
+        <span class="bp">self</span><span class="o">.</span><span class="n">header_dict</span> <span class="o">=</span> <span class="n">header_dict</span></div>
+        
+<div class="viewcode-block" id="JFile.read_metadata"><a class="viewcode-back" href="../../../core.html#mtpy.core.jfile.JFile.read_metadata">[docs]</a>    <span class="k">def</span> <span class="nf">read_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">j_lines</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">j_fn</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        read in the metadata of the station, or information of station </span>
+<span class="sd">        logistics like: lat, lon, elevation</span>
+<span class="sd">        </span>
+<span class="sd">        Not really needed for a birrp output since all values are nan&#39;s</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">j_lines</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">j_lines</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validate_j_file</span><span class="p">()</span>
+            
+        <span class="n">metadata_lines</span> <span class="o">=</span> <span class="p">[</span><span class="n">j_line</span> <span class="k">for</span> <span class="n">j_line</span> <span class="ow">in</span> <span class="n">j_lines</span> <span class="k">if</span> <span class="s1">&#39;&gt;&#39;</span> <span class="ow">in</span> <span class="n">j_line</span><span class="p">]</span>
+    
+        <span class="n">metadata_dict</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">m_line</span> <span class="ow">in</span> <span class="n">metadata_lines</span><span class="p">:</span>
+            <span class="n">m_list</span> <span class="o">=</span> <span class="n">m_line</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;=&#39;</span><span class="p">)</span>
+            <span class="n">m_key</span> <span class="o">=</span> <span class="n">m_list</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">:]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">m_value</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">m_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
+            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                <span class="n">m_value</span> <span class="o">=</span> <span class="mf">0.0</span>
+                
+            <span class="n">metadata_dict</span><span class="p">[</span><span class="n">m_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">m_value</span>
+            
+        <span class="bp">self</span><span class="o">.</span><span class="n">metadata_dict</span> <span class="o">=</span> <span class="n">metadata_dict</span></div>
+        
+<div class="viewcode-block" id="JFile.read_j_file"><a class="viewcode-back" href="../../../core.html#mtpy.core.jfile.JFile.read_j_file">[docs]</a>    <span class="k">def</span> <span class="nf">read_j_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">j_fn</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        read_j_file will read in a *.j file output by BIRRP (better than reading lots of *.&lt;k&gt;r&lt;l&gt;.rf files)</span>
+<span class="sd">    </span>
+<span class="sd">        Input:</span>
+<span class="sd">        j-filename</span>
+<span class="sd">    </span>
+<span class="sd">        Output: 4-tuple</span>
+<span class="sd">        - periods : N-array</span>
+<span class="sd">        - Z_array : 2-tuple - values and errors</span>
+<span class="sd">        - tipper_array : 2-tuple - values and errors</span>
+<span class="sd">        - processing_dict : parsed processing parameters from j-file header</span>
+<span class="sd">    </span>
+<span class="sd">        &quot;&quot;&quot;</span>   
+        <span class="c1"># read data</span>
+        <span class="n">z_index_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;zxx&#39;</span><span class="p">:(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+                        <span class="s1">&#39;zxy&#39;</span><span class="p">:(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+                        <span class="s1">&#39;zyx&#39;</span><span class="p">:(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+                        <span class="s1">&#39;zyy&#39;</span><span class="p">:(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)}</span>
+        <span class="n">t_index_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;tzx&#39;</span><span class="p">:(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+                        <span class="s1">&#39;tzy&#39;</span><span class="p">:(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)}</span>
+                        
+        <span class="k">if</span> <span class="n">j_fn</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">j_fn</span> <span class="o">=</span> <span class="n">j_fn</span>
+            
+        <span class="nb">print</span> <span class="s1">&#39;--&gt; Reading </span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">j_fn</span><span class="p">)</span>
+               
+        <span class="n">j_line_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validate_j_file</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">read_header</span><span class="p">(</span><span class="n">j_lines</span><span class="o">=</span><span class="n">j_line_list</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">read_metadata</span><span class="p">(</span><span class="n">j_lines</span><span class="o">=</span><span class="n">j_line_list</span><span class="p">)</span>       
+        
+        <span class="n">data_lines</span> <span class="o">=</span> <span class="p">[</span><span class="n">j_line</span> <span class="k">for</span> <span class="n">j_line</span> <span class="ow">in</span> <span class="n">j_line_list</span> 
+                      <span class="k">if</span> <span class="ow">not</span> <span class="s1">&#39;&gt;&#39;</span> <span class="ow">in</span> <span class="n">j_line</span> <span class="ow">and</span> <span class="ow">not</span> <span class="s1">&#39;#&#39;</span> <span class="ow">in</span> <span class="n">j_line</span><span class="p">][</span><span class="mi">1</span><span class="p">:]</span>
+                          
+        <span class="c1"># sometimes birrp outputs some missing periods, so the best way to deal with </span>
+        <span class="c1"># this that I could come up with was to get things into dictionaries with </span>
+        <span class="c1"># key words that are the period values, then fill in Z and T from there</span>
+        <span class="c1"># leaving any missing values as 0</span>
+        
+        <span class="c1"># make empty dictionary that have keys as the component </span>
+        <span class="n">z_dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">([(</span><span class="n">z_key</span><span class="p">,</span> <span class="p">{})</span> <span class="k">for</span> <span class="n">z_key</span> <span class="ow">in</span> <span class="n">z_index_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">()])</span>
+        <span class="n">t_dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">([(</span><span class="n">t_key</span><span class="p">,</span> <span class="p">{})</span> <span class="k">for</span> <span class="n">t_key</span> <span class="ow">in</span> <span class="n">t_index_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">()])</span>
+        <span class="k">for</span> <span class="n">d_line</span> <span class="ow">in</span> <span class="n">data_lines</span><span class="p">:</span>
+            <span class="c1"># check to see if we are at the beginning of a component block, if so </span>
+            <span class="c1"># set the dictionary key to that value</span>
+            <span class="k">if</span> <span class="s1">&#39;z&#39;</span> <span class="ow">in</span> <span class="n">d_line</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
+                <span class="n">d_key</span> <span class="o">=</span> <span class="n">d_line</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+            <span class="c1"># if we are at the number of periods line, skip it</span>
+            <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">d_line</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">())</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="s1">&#39;r&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">d_line</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
+                <span class="k">continue</span>
+            <span class="k">elif</span> <span class="s1">&#39;r&#39;</span> <span class="ow">in</span> <span class="n">d_line</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
+                <span class="k">break</span>
+            <span class="c1"># get the numbers into the correct dictionary with a key as period and</span>
+            <span class="c1"># for now we will leave the numbers as a list, which we will parse later</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># split the line up into each number</span>
+                <span class="n">d_list</span> <span class="o">=</span> <span class="n">d_line</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+                
+                <span class="c1"># make a copy of the list to be sure we don&#39;t rewrite any values,</span>
+                <span class="c1"># not sure if this is necessary at the moment</span>
+                <span class="n">d_value_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">d_list</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">d_index</span><span class="p">,</span> <span class="n">d_value</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">d_list</span><span class="p">):</span>
+                    <span class="c1"># check to see if the column number can be converted into a float</span>
+                    <span class="c1"># if it can&#39;t, then it will be set to 0, which is assumed to be</span>
+                    <span class="c1"># a masked number when writing to an .edi file</span>
+                                       
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="n">d_value</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">d_value</span><span class="p">)</span>
+                        <span class="c1"># need to check for masked points represented by</span>
+                        <span class="c1"># birrp as -999, apparently</span>
+                        <span class="k">if</span> <span class="n">d_value</span> <span class="o">==</span> <span class="o">-</span><span class="mi">999</span> <span class="ow">or</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">d_value</span><span class="p">):</span>
+                            <span class="n">d_value_list</span><span class="p">[</span><span class="n">d_index</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">d_value_list</span><span class="p">[</span><span class="n">d_index</span><span class="p">]</span> <span class="o">=</span> <span class="n">d_value</span>
+                    <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                        <span class="n">d_value_list</span><span class="p">[</span><span class="n">d_index</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+                
+                <span class="c1"># put the numbers in the correct dictionary as:</span>
+                <span class="c1"># key = period, value = [real, imaginary, error]</span>
+                <span class="k">if</span> <span class="n">d_key</span> <span class="ow">in</span> <span class="n">z_index_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                    <span class="n">z_dict</span><span class="p">[</span><span class="n">d_key</span><span class="p">][</span><span class="n">d_value_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="n">d_value_list</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="mi">4</span><span class="p">]</span>
+                <span class="k">elif</span> <span class="n">d_key</span> <span class="ow">in</span> <span class="n">t_index_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                    <span class="n">t_dict</span><span class="p">[</span><span class="n">d_key</span><span class="p">][</span><span class="n">d_value_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="n">d_value_list</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="mi">4</span><span class="p">]</span>
+        
+        <span class="c1"># --&gt; now we need to get the set of periods for all components  </span>
+        <span class="c1"># check to see if there is any tipper data output          </span>
+
+        <span class="n">all_periods</span> <span class="o">=</span> <span class="p">[]</span>            
+        <span class="k">for</span> <span class="n">z_key</span> <span class="ow">in</span> <span class="n">z_index_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">f_key</span> <span class="ow">in</span> <span class="n">z_dict</span><span class="p">[</span><span class="n">z_key</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="n">all_periods</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">f_key</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">t_dict</span><span class="p">[</span><span class="s1">&#39;tzx&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="nb">print</span> <span class="s1">&#39;Could not find any Tipper data in </span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">j_fn</span><span class="p">)</span>
+            <span class="n">find_tipper</span> <span class="o">=</span> <span class="kc">False</span>
+  
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">t_key</span> <span class="ow">in</span> <span class="n">t_index_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="k">for</span> <span class="n">f_key</span> <span class="ow">in</span> <span class="n">t_dict</span><span class="p">[</span><span class="n">t_key</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                    <span class="n">all_periods</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">f_key</span><span class="p">)</span>
+            <span class="n">find_tipper</span> <span class="o">=</span> <span class="kc">True</span>
+        
+        <span class="n">all_periods</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">all_periods</span><span class="p">))))</span>
+        <span class="n">all_periods</span> <span class="o">=</span> <span class="n">all_periods</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">nonzero</span><span class="p">(</span><span class="n">all_periods</span><span class="p">)]</span>
+        <span class="n">num_per</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">all_periods</span><span class="p">)</span>
+        
+        <span class="c1"># fill arrays using the period key from all_periods</span>
+        <span class="n">z_arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">num_per</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">complex</span><span class="p">)</span>
+        <span class="n">z_err_arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">num_per</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float</span><span class="p">)</span>
+        
+        <span class="n">t_arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">num_per</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">complex</span><span class="p">)</span>
+        <span class="n">t_err_arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">num_per</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float</span><span class="p">)</span>
+        
+        <span class="k">for</span> <span class="n">p_index</span><span class="p">,</span> <span class="n">per</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">all_periods</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">z_key</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">z_index_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
+                <span class="n">kk</span> <span class="o">=</span> <span class="n">z_index_dict</span><span class="p">[</span><span class="n">z_key</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">ll</span> <span class="o">=</span> <span class="n">z_index_dict</span><span class="p">[</span><span class="n">z_key</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">z_value</span> <span class="o">=</span> <span class="n">z_dict</span><span class="p">[</span><span class="n">z_key</span><span class="p">][</span><span class="n">per</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="mi">1</span><span class="n">j</span><span class="o">*</span><span class="n">z_dict</span><span class="p">[</span><span class="n">z_key</span><span class="p">][</span><span class="n">per</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+                    <span class="n">z_arr</span><span class="p">[</span><span class="n">p_index</span><span class="p">,</span> <span class="n">kk</span><span class="p">,</span> <span class="n">ll</span><span class="p">]</span> <span class="o">=</span> <span class="n">z_value</span>
+                    <span class="n">z_err_arr</span><span class="p">[</span><span class="n">p_index</span><span class="p">,</span> <span class="n">kk</span><span class="p">,</span> <span class="n">ll</span><span class="p">]</span> <span class="o">=</span> <span class="n">z_dict</span><span class="p">[</span><span class="n">z_key</span><span class="p">][</span><span class="n">per</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span>
+                <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                    <span class="nb">print</span> <span class="s1">&#39;No value found for period </span><span class="si">{0:.4g}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">per</span><span class="p">)</span>
+                    <span class="nb">print</span> <span class="s1">&#39;For component </span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">z_key</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">find_tipper</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">t_key</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">t_index_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
+                    <span class="n">kk</span> <span class="o">=</span> <span class="n">t_index_dict</span><span class="p">[</span><span class="n">t_key</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="n">ll</span> <span class="o">=</span> <span class="n">t_index_dict</span><span class="p">[</span><span class="n">t_key</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="n">t_value</span> <span class="o">=</span> <span class="n">t_dict</span><span class="p">[</span><span class="n">t_key</span><span class="p">][</span><span class="n">per</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="mi">1</span><span class="n">j</span><span class="o">*</span><span class="n">t_dict</span><span class="p">[</span><span class="n">t_key</span><span class="p">][</span><span class="n">per</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+                        <span class="n">t_arr</span><span class="p">[</span><span class="n">p_index</span><span class="p">,</span> <span class="n">kk</span><span class="p">,</span> <span class="n">ll</span><span class="p">]</span> <span class="o">=</span> <span class="n">t_value</span>
+                        <span class="n">t_err_arr</span><span class="p">[</span><span class="n">p_index</span><span class="p">,</span> <span class="n">kk</span><span class="p">,</span> <span class="n">ll</span><span class="p">]</span> <span class="o">=</span> <span class="n">t_dict</span><span class="p">[</span><span class="n">t_key</span><span class="p">][</span><span class="n">per</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span>
+                    <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                        <span class="nb">print</span> <span class="s1">&#39;No value found for period </span><span class="si">{0:.4g}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">per</span><span class="p">)</span>
+                        <span class="nb">print</span> <span class="s1">&#39;For component </span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t_key</span><span class="p">)</span>
+        
+        <span class="c1"># put the results into mtpy objects</span>
+        <span class="n">freq</span> <span class="o">=</span> <span class="mf">1.</span><span class="o">/</span><span class="n">all_periods</span>    
+        <span class="bp">self</span><span class="o">.</span><span class="n">Z</span> <span class="o">=</span> <span class="n">mtz</span><span class="o">.</span><span class="n">Z</span><span class="p">(</span><span class="n">z_arr</span><span class="p">,</span> <span class="n">z_err_arr</span><span class="p">,</span> <span class="n">freq</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Tipper</span> <span class="o">=</span> <span class="n">mtz</span><span class="o">.</span><span class="n">Tipper</span><span class="p">(</span><span class="n">t_arr</span><span class="p">,</span> <span class="n">t_err_arr</span><span class="p">,</span> <span class="n">freq</span><span class="p">)</span> </div></div>
+        
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../master_doc.html">mtpy 1.01.01 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2018, Geoscience Australia.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.7.2.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,369 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>mtpy.analysis.zinvariants &#8212; mtpy 1.01.01 documentation</title>
+    <link rel="stylesheet" href="../../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../master_doc.html">mtpy 1.01.01 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for mtpy.analysis.zinvariants</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Created on Wed May 08 09:40:42 2013</span>
+
+<span class="sd">Interpreted from matlab code written by Stephan Thiel 2005</span>
+
+<span class="sd">@author: jpeacock</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+
+<div class="viewcode-block" id="Zinvariants"><a class="viewcode-back" href="../../../analysis.html#mtpy.analysis.zinvariants.Zinvariants">[docs]</a><span class="k">class</span> <span class="nc">Zinvariants</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    calculates invariants from Weaver et al. [2000, 2003].  At the moment it </span>
+<span class="sd">    does not calculate the error for each invariant, only the strike.</span>
+<span class="sd">    </span>
+<span class="sd">    Arguments</span>
+<span class="sd">    ----------</span>
+<span class="sd">        **z_object** : type mtpy.core.z</span>
+<span class="sd">                       needs to have attributes:</span>
+<span class="sd">                           *z --&gt; np.array((nf, 2, 2), dtype=&#39;complex&#39;)</span>
+<span class="sd">                           </span>
+<span class="sd">                           *z_err --&gt; np.array((nf, 2, 2), dtype=&#39;real&#39;)</span>
+<span class="sd">                           </span>
+<span class="sd">                           *freq --&gt; np.array(nf)</span>
+<span class="sd">                           </span>
+<span class="sd">        **z** : complex np.array(nf,2,2)</span>
+<span class="sd">                impedance tensor array</span>
+<span class="sd">                </span>
+<span class="sd">        **z_err** : real np.array(nf,2,2)</span>
+<span class="sd">                impedance tensor error array</span>
+<span class="sd">                </span>
+<span class="sd">        **freq** : np.array(nf)</span>
+<span class="sd">                          array of freq cooresponding to the impedance </span>
+<span class="sd">                          tensor elements.</span>
+<span class="sd">                          </span>
+<span class="sd">    Attributes</span>
+<span class="sd">    -----------</span>
+<span class="sd">        **inv1**       : real off diaganol part normalizing factor</span>
+<span class="sd">        </span>
+<span class="sd">        **inv2**       : imaginary off diaganol normalizing factor</span>
+<span class="sd">        </span>
+<span class="sd">        **inv3**       : real anisotropy factor (range from [0,1])</span>
+<span class="sd">        </span>
+<span class="sd">        **inv4**       : imaginary anisotropy factor (range from [0,1])</span>
+<span class="sd">        </span>
+<span class="sd">        **inv5**       : suggests electric field twist</span>
+<span class="sd">        </span>
+<span class="sd">        **inv6**       : suggests in phase small scale distortion</span>
+<span class="sd">        </span>
+<span class="sd">        **inv7**       : suggests 3D structure</span>
+<span class="sd">        </span>
+<span class="sd">        **strike**     : strike angle (deg) assuming positive clockwise 0=N</span>
+<span class="sd">        </span>
+<span class="sd">        **strike_err** : strike angle error (deg)</span>
+<span class="sd">        </span>
+<span class="sd">        **q**          : dependent variable suggesting dimensionality</span>
+<span class="sd">        </span>
+<span class="sd">        </span>
+<span class="sd">    Further reading</span>
+<span class="sd">    ----------------</span>
+<span class="sd">        Weaver, J. T., Agarwal, A. K., Lilley, F. E. M., 2000,</span>
+<span class="sd">           Characterization of the magnetotelluric tensor in terms of its </span>
+<span class="sd">           invariants, Geophysical Journal International, 141, 321--336.</span>
+<span class="sd">           </span>
+<span class="sd">        Weaver, J. T., Agarwal, A. K., Lilley, F. E. M., 2003,</span>
+<span class="sd">            The relationship between the magnetotelluric tensor invariants and </span>
+<span class="sd">            the phase tensor of Caldwell, Bibby and Brown, </span>
+<span class="sd">            presented at 3D Electromagnetics III, ASEG, paper 43.</span>
+<span class="sd">           </span>
+<span class="sd">        Lilley, F. E. M, 1998, Magnetotelluric tensor dcomposition: 1: Theory</span>
+<span class="sd">            for a basic procedure, Geophysics, 63, 1885--1897.</span>
+<span class="sd">           </span>
+<span class="sd">        Lilley, F. E. M, 1998, Magnetotelluric tensor dcomposition: 2: Examples</span>
+<span class="sd">            of a basic procedure, Geophysics, 63, 1898--1907.</span>
+<span class="sd">           </span>
+<span class="sd">        Szarka, L. and Menvielle, M., 1997, Analysis of rotational invariants </span>
+<span class="sd">            of the magnetotelluric impedance tensor, Geophysical Journal </span>
+<span class="sd">            International, 129, 133--142.</span>
+<span class="sd">    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">z_object</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">z_array</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">z_err_array</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">freq</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">rot_z</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+
+        <span class="c1"># --&gt; read in z_object</span>
+        <span class="k">if</span> <span class="n">z_object</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">z_object</span><span class="o">.</span><span class="n">freq</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s1">&#39;z_object needs to have attrtibute&#39;</span> <span class="o">+</span> \
+                                     <span class="s1">&#39;freq filled&#39;</span><span class="p">)</span>
+
+            <span class="c1"># --&gt; make the z_object an attribute</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">z</span> <span class="o">=</span> <span class="n">z_object</span><span class="o">.</span><span class="n">z</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">freq</span> <span class="o">=</span> <span class="n">z_object</span><span class="o">.</span><span class="n">freq</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">z_err</span> <span class="o">=</span> <span class="n">z_object</span><span class="o">.</span><span class="n">z_err</span>
+
+        <span class="k">if</span> <span class="n">freq</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">freq</span> <span class="o">=</span> <span class="n">freq</span>
+
+        <span class="c1"># --&gt; if an array is input read it in and make it a z_object</span>
+        <span class="k">if</span> <span class="n">z_array</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">z</span> <span class="o">=</span> <span class="n">z_array</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+            <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">freq</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">z</span><span class="p">),</span> \
+                <span class="s1">&#39;length of freq is not the same as z&#39;</span>
+        <span class="c1"># --&gt; if an array is input read it in and make it a z_object</span>
+        <span class="k">if</span> <span class="n">z_err_array</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">z_err</span> <span class="o">=</span> <span class="n">z_err_array</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+            <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">freq</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">z</span><span class="p">),</span> \
+                <span class="s1">&#39;length of freq is not the same as z&#39;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">freq</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s1">&#39;z_object needs to have attrtibute&#39;</span> <span class="o">+</span> \
+                                 <span class="s1">&#39;freq filled&#39;</span><span class="p">)</span>
+
+        <span class="c1"># --&gt; rotate data if desired</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rotate</span><span class="p">(</span><span class="n">rot_z</span><span class="p">)</span>
+
+        <span class="c1"># compute the invariants</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">compute_invariants</span><span class="p">()</span>
+
+<div class="viewcode-block" id="Zinvariants.compute_invariants"><a class="viewcode-back" href="../../../analysis.html#mtpy.analysis.zinvariants.Zinvariants.compute_invariants">[docs]</a>    <span class="k">def</span> <span class="nf">compute_invariants</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Computes the invariants according to Weaver et al., [2000, 2003]</span>
+<span class="sd">        </span>
+<span class="sd">        Mostly used to plot Mohr&#39;s circles</span>
+<span class="sd">        </span>
+<span class="sd">        In a 1D case: rho = mu (inv1**2+inv2**2)/w &amp; phi = arctan(inv2/inv1)</span>
+<span class="sd">        </span>
+<span class="sd">        Sets the invariants as attributes:</span>
+<span class="sd">            **inv1**       : real off diaganol part normalizing factor</span>
+<span class="sd">            </span>
+<span class="sd">            **inv2**       : imaginary off diaganol normalizing factor</span>
+<span class="sd">            </span>
+<span class="sd">            **inv3**       : real anisotropy factor (range from [0,1])</span>
+<span class="sd">            </span>
+<span class="sd">            **inv4**       : imaginary anisotropy factor (range from [0,1])</span>
+<span class="sd">            </span>
+<span class="sd">            **inv5**       : suggests electric field twist</span>
+<span class="sd">            </span>
+<span class="sd">            **inv6**       : suggests in phase small scale distortion</span>
+<span class="sd">            </span>
+<span class="sd">            **inv7**       : suggests 3D structure</span>
+<span class="sd">            </span>
+<span class="sd">            **strike**     : strike angle (deg) assuming positive clockwise 0=N</span>
+<span class="sd">            </span>
+<span class="sd">            **strike_err** : strike angle error (deg)</span>
+<span class="sd">            </span>
+<span class="sd">            **q**          : dependent variable suggesting dimensionality</span>
+<span class="sd">            </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># get the length of z to initialize some empty arrays           </span>
+        <span class="n">nz</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">z</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="c1"># set some empty arrays to put stuff into</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inv1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">nz</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inv2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">nz</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inv3</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">nz</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inv4</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">nz</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inv5</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">nz</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inv6</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">nz</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inv7</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">nz</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">q</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">nz</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">strike</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">nz</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">strike_err</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">nz</span><span class="p">)</span>
+
+        <span class="n">c_tf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">z</span><span class="o">.</span><span class="n">all</span><span class="p">()</span> <span class="o">==</span> <span class="mf">0.0</span>
+        <span class="k">if</span> <span class="n">c_tf</span> <span class="o">==</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="c1"># loop over each freq</span>
+        <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nz</span><span class="p">):</span>
+            <span class="c1"># compute the mathematical invariants</span>
+            <span class="n">x1</span> <span class="o">=</span> <span class="o">.</span><span class="mi">5</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">z</span><span class="p">[</span><span class="n">ii</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">real</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">z</span><span class="p">[</span><span class="n">ii</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">real</span><span class="p">)</span>  <span class="c1"># trace</span>
+            <span class="n">x2</span> <span class="o">=</span> <span class="o">.</span><span class="mi">5</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">z</span><span class="p">[</span><span class="n">ii</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">real</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">z</span><span class="p">[</span><span class="n">ii</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">real</span><span class="p">)</span>
+            <span class="n">x3</span> <span class="o">=</span> <span class="o">.</span><span class="mi">5</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">z</span><span class="p">[</span><span class="n">ii</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">real</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">z</span><span class="p">[</span><span class="n">ii</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">real</span><span class="p">)</span>
+            <span class="n">x4</span> <span class="o">=</span> <span class="o">.</span><span class="mi">5</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">z</span><span class="p">[</span><span class="n">ii</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">real</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">z</span><span class="p">[</span><span class="n">ii</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">real</span><span class="p">)</span>  <span class="c1"># berd</span>
+            <span class="n">e1</span> <span class="o">=</span> <span class="o">.</span><span class="mi">5</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">z</span><span class="p">[</span><span class="n">ii</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">imag</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">z</span><span class="p">[</span><span class="n">ii</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">imag</span><span class="p">)</span>  <span class="c1"># trace</span>
+            <span class="n">e2</span> <span class="o">=</span> <span class="o">.</span><span class="mi">5</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">z</span><span class="p">[</span><span class="n">ii</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">imag</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">z</span><span class="p">[</span><span class="n">ii</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">imag</span><span class="p">)</span>
+            <span class="n">e3</span> <span class="o">=</span> <span class="o">.</span><span class="mi">5</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">z</span><span class="p">[</span><span class="n">ii</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">imag</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">z</span><span class="p">[</span><span class="n">ii</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">imag</span><span class="p">)</span>
+            <span class="n">e4</span> <span class="o">=</span> <span class="o">.</span><span class="mi">5</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">z</span><span class="p">[</span><span class="n">ii</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">imag</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">z</span><span class="p">[</span><span class="n">ii</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">imag</span><span class="p">)</span>  <span class="c1"># berd</span>
+            <span class="n">ex</span> <span class="o">=</span> <span class="n">x1</span> <span class="o">*</span> <span class="n">e1</span> <span class="o">-</span> <span class="n">x2</span> <span class="o">*</span> <span class="n">e2</span> <span class="o">-</span> <span class="n">x3</span> <span class="o">*</span> <span class="n">e3</span> <span class="o">+</span> <span class="n">x4</span> <span class="o">*</span> <span class="n">e4</span>
+
+            <span class="k">if</span> <span class="n">ex</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">:</span>
+                <span class="nb">print</span> <span class="s1">&#39;Could not compute invariants for </span><span class="si">{0:5e}</span><span class="s1"> Hz&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                       <span class="bp">self</span><span class="o">.</span><span class="n">freq</span><span class="p">[</span><span class="n">ii</span><span class="p">])</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">inv1</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">inv2</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">inv3</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">inv4</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">inv5</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">inv6</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">inv7</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">q</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">strike</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">strike_err</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+            <span class="k">else</span><span class="p">:</span>
+
+                <span class="n">d12</span> <span class="o">=</span> <span class="p">(</span><span class="n">x1</span> <span class="o">*</span> <span class="n">e2</span> <span class="o">-</span> <span class="n">x2</span> <span class="o">*</span> <span class="n">e1</span><span class="p">)</span> <span class="o">/</span> <span class="n">ex</span>
+                <span class="n">d34</span> <span class="o">=</span> <span class="p">(</span><span class="n">x3</span> <span class="o">*</span> <span class="n">e4</span> <span class="o">-</span> <span class="n">x4</span> <span class="o">*</span> <span class="n">e3</span><span class="p">)</span> <span class="o">/</span> <span class="n">ex</span>
+                <span class="n">d13</span> <span class="o">=</span> <span class="p">(</span><span class="n">x1</span> <span class="o">*</span> <span class="n">e3</span> <span class="o">-</span> <span class="n">x3</span> <span class="o">*</span> <span class="n">e1</span><span class="p">)</span> <span class="o">/</span> <span class="n">ex</span>
+                <span class="n">d24</span> <span class="o">=</span> <span class="p">(</span><span class="n">x2</span> <span class="o">*</span> <span class="n">e4</span> <span class="o">-</span> <span class="n">x4</span> <span class="o">*</span> <span class="n">e2</span><span class="p">)</span> <span class="o">/</span> <span class="n">ex</span>
+                <span class="n">d41</span> <span class="o">=</span> <span class="p">(</span><span class="n">x4</span> <span class="o">*</span> <span class="n">e1</span> <span class="o">-</span> <span class="n">x1</span> <span class="o">*</span> <span class="n">e4</span><span class="p">)</span> <span class="o">/</span> <span class="n">ex</span>
+                <span class="n">d23</span> <span class="o">=</span> <span class="p">(</span><span class="n">x2</span> <span class="o">*</span> <span class="n">e3</span> <span class="o">-</span> <span class="n">x3</span> <span class="o">*</span> <span class="n">e2</span><span class="p">)</span> <span class="o">/</span> <span class="n">ex</span>
+
+                <span class="n">inv1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">x4</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> <span class="n">x1</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+                <span class="n">inv2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">e4</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> <span class="n">e1</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+                <span class="n">inv3</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">x2</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> <span class="n">x3</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="n">inv1</span>
+                <span class="n">inv4</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">e2</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> <span class="n">e3</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="n">inv2</span>
+
+                <span class="n">s41</span> <span class="o">=</span> <span class="p">(</span><span class="n">x4</span> <span class="o">*</span> <span class="n">e1</span> <span class="o">+</span> <span class="n">x1</span> <span class="o">*</span> <span class="n">e4</span><span class="p">)</span> <span class="o">/</span> <span class="n">ex</span>
+
+                <span class="n">inv5</span> <span class="o">=</span> <span class="n">s41</span> <span class="o">*</span> <span class="n">ex</span> <span class="o">/</span> <span class="p">(</span><span class="n">inv1</span> <span class="o">*</span> <span class="n">inv2</span><span class="p">)</span>
+                <span class="n">inv6</span> <span class="o">=</span> <span class="n">d41</span> <span class="o">*</span> <span class="n">ex</span> <span class="o">/</span> <span class="p">(</span><span class="n">inv1</span> <span class="o">*</span> <span class="n">inv2</span><span class="p">)</span>
+
+                <span class="n">q</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">((</span><span class="n">d12</span> <span class="o">-</span> <span class="n">d34</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> <span class="p">(</span><span class="n">d13</span> <span class="o">+</span> <span class="n">d24</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+
+                <span class="n">inv7</span> <span class="o">=</span> <span class="p">(</span><span class="n">d41</span> <span class="o">-</span> <span class="n">d23</span><span class="p">)</span> <span class="o">/</span> <span class="n">q</span>
+
+                <span class="c1"># if abs(inv7)&gt;1.0:</span>
+                <span class="c1">#     print(&quot;debug value inv7=&quot;, inv7)</span>
+
+                <span class="n">strikeang</span> <span class="o">=</span> <span class="o">.</span><span class="mi">5</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">arctan2</span><span class="p">(</span><span class="n">d12</span> <span class="o">-</span> <span class="n">d34</span><span class="p">,</span> <span class="n">d13</span> <span class="o">+</span> <span class="n">d24</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mi">180</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span>
+                <span class="n">strikeangerr</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="o">.</span><span class="mi">5</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">arcsin</span><span class="p">(</span><span class="n">inv7</span><span class="p">))</span> <span class="o">*</span> <span class="p">(</span><span class="mi">180</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span>
+
+                <span class="bp">self</span><span class="o">.</span><span class="n">inv1</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span> <span class="o">=</span> <span class="n">inv1</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">inv2</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span> <span class="o">=</span> <span class="n">inv2</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">inv3</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span> <span class="o">=</span> <span class="n">inv3</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">inv4</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span> <span class="o">=</span> <span class="n">inv4</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">inv5</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span> <span class="o">=</span> <span class="n">inv5</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">inv6</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span> <span class="o">=</span> <span class="n">inv6</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">inv7</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span> <span class="o">=</span> <span class="n">inv7</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">q</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span> <span class="o">=</span> <span class="n">q</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">strike</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span> <span class="o">=</span> <span class="n">strikeang</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">strike_err</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span> <span class="o">=</span> <span class="n">strikeangerr</span></div>
+
+<div class="viewcode-block" id="Zinvariants.rotate"><a class="viewcode-back" href="../../../analysis.html#mtpy.analysis.zinvariants.Zinvariants.rotate">[docs]</a>    <span class="k">def</span> <span class="nf">rotate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rot_z</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Rotates the impedance tensor by the angle rot_z clockwise positive</span>
+<span class="sd">        assuming 0 is North</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">rot_z</span> <span class="o">=</span> <span class="n">rot_z</span>
+        <span class="c1"># rotate the data</span>
+        <span class="c1"># self._Z.rotate(self.rot_z)</span>
+
+        <span class="c1"># --&gt; update the invariants (though they should be rotationally</span>
+        <span class="c1"># invariant except for the strike angle)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">compute_invariants</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="Zinvariants.set_z"><a class="viewcode-back" href="../../../analysis.html#mtpy.analysis.zinvariants.Zinvariants.set_z">[docs]</a>    <span class="k">def</span> <span class="nf">set_z</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">z_array</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        set the z array.</span>
+
+<span class="sd">        If the shape changes or the freq are changed need to input </span>
+<span class="sd">        those as well.        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">z</span> <span class="o">=</span> <span class="n">z_array</span>
+
+        <span class="c1"># --&gt; update the invariants</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">compute_invariants</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="Zinvariants.set_z_err"><a class="viewcode-back" href="../../../analysis.html#mtpy.analysis.zinvariants.Zinvariants.set_z_err">[docs]</a>    <span class="k">def</span> <span class="nf">set_z_err</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">z_err_array</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        set the z_err array.</span>
+
+<span class="sd">        If the shape changes or the freq are changed need to input </span>
+<span class="sd">        those as well.        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">z_err</span> <span class="o">=</span> <span class="n">z_err_array</span>
+
+        <span class="c1"># --&gt; update the invariants</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">compute_invariants</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="Zinvariants.set_freq"><a class="viewcode-back" href="../../../analysis.html#mtpy.analysis.zinvariants.Zinvariants.set_freq">[docs]</a>    <span class="k">def</span> <span class="nf">set_freq</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">freq</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        set the freq array, needs to be the same length at z</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">freq</span> <span class="o">=</span> <span class="n">freq</span></div>
+
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s2">&quot;Computes the invariants of the impedance tensor according &quot;</span> <span class="o">+</span> \
+               <span class="s2">&quot;Weaver et al., [2000, 2003].&quot;</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../master_doc.html">mtpy 1.01.01 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2018, Geoscience Australia.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.7.2.
+    </div>
+  </body>
+</html>

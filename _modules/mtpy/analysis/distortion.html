@@ -1,0 +1,475 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>mtpy.analysis.distortion &#8212; mtpy 1.01.01 documentation</title>
+    <link rel="stylesheet" href="../../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../master_doc.html">mtpy 1.01.01 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for mtpy.analysis.distortion</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/env python</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">mtpy/analysis/distortion.py</span>
+
+<span class="sd">Contains functions for the determination of (galvanic) distortion of impedance tensors.</span>
+<span class="sd">The methods used follow Bibby et al 2005.</span>
+<span class="sd">As it has been pointed out in that paper, there are various possibilities for</span>
+<span class="sd">constraining the solution, esp. in the 2D case.</span>
+
+<span class="sd">Here we just implement the &#39;most basic&#39; variety for the calculation of the </span>
+<span class="sd">distortion tensor. Other methods can be implemented, but since the optimal assumptions and</span>
+<span class="sd">constraints depend on the application, the actual place for further functions</span>
+<span class="sd">is in an independent, personalised module.</span>
+
+<span class="sd">Algorithm Details:</span>
+<span class="sd">Finding the distortion of a Z array. Using the phase tensor</span>
+<span class="sd">so, Z arrays are transformed into PTs first), following Bibby et al. 2005.</span>
+
+<span class="sd">First, try to find periods that indicate 1D. From them determine D incl.</span>
+<span class="sd">the g-factor by calculatiing a weighted mean. The g is assumed in order to</span>
+<span class="sd">cater for the missing unknown in the system, it is here set to det(X)^0.5.</span>
+<span class="sd">After that is found, the function no_distortion from the Z module can be</span>
+<span class="sd">called to obtain the unperturbated regional impedance tensor.</span>
+
+<span class="sd">Second, if there are no 1D sections: Find the strike angle, then rotate the</span>
+<span class="sd">Z to the principal axis. In order to do that, use the rotate(-strike) method</span>
+<span class="sd">of the Z module. Then take the real part of the rotated Z. As in the 1D case,</span>
+<span class="sd">we need an assumption to get rid of the (2) unknowns:</span>
+<span class="sd">set det(D) = P and det(D) = T, where P,T can be chosen. Common choice is to</span>
+<span class="sd">set  one of P,T to an arbitrary value (e.g. 1). Then check, for which values</span>
+<span class="sd">of the other parameter  S^2 = T^2+4*P*X_12*X_21/det(X) &gt; 0 holds.</span>
+
+<span class="sd">@UofA, 2013  (LK)</span>
+
+<span class="sd">Edited by JP, 2016</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">copy</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">import</span> <span class="nn">mtpy.analysis.geometry</span> <span class="k">as</span> <span class="nn">MTge</span>
+<span class="kn">import</span> <span class="nn">mtpy.core.z</span> <span class="k">as</span> <span class="nn">MTz</span>
+<span class="kn">import</span> <span class="nn">mtpy.utils.calculator</span> <span class="k">as</span> <span class="nn">MTcc</span>
+<span class="kn">import</span> <span class="nn">mtpy.utils.exceptions</span> <span class="k">as</span> <span class="nn">MTex</span>
+
+
+<div class="viewcode-block" id="find_distortion"><a class="viewcode-back" href="../../../analysis.html#mtpy.analysis.distortion.find_distortion">[docs]</a><span class="k">def</span> <span class="nf">find_distortion</span><span class="p">(</span><span class="n">z_object</span><span class="p">,</span> <span class="n">g</span><span class="o">=</span><span class="s1">&#39;det&#39;</span><span class="p">,</span> <span class="n">num_freq</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">lo_dims</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    find optimal distortion tensor from z object</span>
+
+<span class="sd">    automatically determine the dimensionality over all frequencies, then find</span>
+<span class="sd">    the appropriate distortion tensor D</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    </span>
+<span class="sd">        **z_object** : mtpy.core.z object</span>
+<span class="sd">                       </span>
+<span class="sd">        **g** : [ &#39;det&#39; | &#39;01&#39; | &#39;10 ]</span>
+<span class="sd">                type of distortion correction</span>
+<span class="sd">                *default* is &#39;det&#39;</span>
+<span class="sd">                </span>
+<span class="sd">        **num_freq** : int</span>
+<span class="sd">                       number of frequencies to look for distortion from </span>
+<span class="sd">                       the index 0</span>
+<span class="sd">                       *default* is None, meaning all frequencies are used</span>
+<span class="sd">                       </span>
+<span class="sd">        **lo_dims** : list</span>
+<span class="sd">                      list of dimensions for each frequency</span>
+<span class="sd">                      *default* is None, meaning calculated from data</span>
+<span class="sd">                      </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    </span>
+<span class="sd">        **distortion** : np.ndarray(2, 2)</span>
+<span class="sd">                         distortion array all real values</span>
+<span class="sd">        </span>
+<span class="sd">        **distortion_err** : np.ndarray(2, 2)</span>
+<span class="sd">                             distortion error array</span>
+
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+
+<span class="sd">        :Estimate Distortion: ::</span>
+<span class="sd">        </span>
+<span class="sd">            &gt;&gt;&gt; import mtpy.analysis.distortion as distortion</span>
+<span class="sd">            &gt;&gt;&gt; dis, dis_err = distortion.find_distortion(z_obj, num_freq=12)</span>
+<span class="sd">            </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">num_freq</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">num_freq</span> <span class="o">&gt;</span> <span class="n">z_object</span><span class="o">.</span><span class="n">freq</span><span class="o">.</span><span class="n">size</span><span class="p">:</span>
+            <span class="n">num_freq</span> <span class="o">=</span> <span class="n">z_object</span><span class="o">.</span><span class="n">freq</span><span class="o">.</span><span class="n">size</span>
+            <span class="nb">print</span> <span class="s1">&#39;Number of frequencies to sweep over is too high for z&#39;</span>
+            <span class="nb">print</span> <span class="s1">&#39;setting num_freq to </span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">num_freq</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">num_freq</span> <span class="o">=</span> <span class="n">z_object</span><span class="o">.</span><span class="n">freq</span><span class="o">.</span><span class="n">size</span>
+
+
+    <span class="n">z_obj</span> <span class="o">=</span> <span class="n">MTz</span><span class="o">.</span><span class="n">Z</span><span class="p">(</span><span class="n">z_object</span><span class="o">.</span><span class="n">z</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">num_freq</span><span class="p">],</span>
+                  <span class="n">z_object</span><span class="o">.</span><span class="n">z_err</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">num_freq</span><span class="p">],</span>
+                  <span class="n">z_object</span><span class="o">.</span><span class="n">freq</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">num_freq</span><span class="p">])</span>
+
+    <span class="n">g</span> <span class="o">=</span> <span class="s1">&#39;det&#39;</span>
+
+    <span class="n">dim_arr</span> <span class="o">=</span> <span class="n">MTge</span><span class="o">.</span><span class="n">dimensionality</span><span class="p">(</span><span class="n">z_object</span><span class="o">=</span><span class="n">z_obj</span><span class="p">)</span>
+    <span class="n">st_arr</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span> <span class="o">*</span> <span class="n">MTge</span><span class="o">.</span><span class="n">strike_angle</span><span class="p">(</span><span class="n">z_object</span><span class="o">=</span><span class="n">z_obj</span><span class="p">)[:,</span> <span class="mi">0</span><span class="p">]</span>
+
+    <span class="n">dis</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">z_obj</span><span class="o">.</span><span class="n">z</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float</span><span class="p">)</span>
+    <span class="n">dis_err</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">z_obj</span><span class="o">.</span><span class="n">z</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float</span><span class="p">)</span>
+
+    <span class="c1">#dictionary of values that should be no distortion in case distortion</span>
+    <span class="c1">#cannot be calculated for that component</span>
+    <span class="n">rot_mat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">matrix</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]])</span>
+    <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">dim</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">dim_arr</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">z_obj</span><span class="o">.</span><span class="n">z</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">==</span> <span class="mf">0.0</span> <span class="o">+</span> <span class="mf">0.0</span><span class="n">j</span><span class="p">)</span> <span class="o">==</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="n">dis</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">identity</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+            <span class="nb">print</span> <span class="s1">&#39;Found a zero in z at </span><span class="si">{0}</span><span class="s1">, skipping&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">idx</span><span class="p">)</span>
+            <span class="k">continue</span>
+
+        <span class="k">if</span> <span class="n">dim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+
+            <span class="k">if</span> <span class="n">g</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;01&#39;</span><span class="p">,</span> <span class="s1">&#39;10&#39;</span><span class="p">]:</span>
+                <span class="n">gr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">z_obj</span><span class="o">.</span><span class="n">z</span><span class="o">.</span><span class="n">real</span><span class="p">[</span><span class="n">idx</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">g</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="nb">int</span><span class="p">(</span><span class="n">g</span><span class="p">[</span><span class="mi">1</span><span class="p">])])</span>
+                <span class="n">gi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">z_obj</span><span class="o">.</span><span class="n">z</span><span class="o">.</span><span class="n">imag</span><span class="p">[</span><span class="n">idx</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">g</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="nb">int</span><span class="p">(</span><span class="n">g</span><span class="p">[</span><span class="mi">1</span><span class="p">])])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">gr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">det</span><span class="p">(</span><span class="n">z_obj</span><span class="o">.</span><span class="n">z</span><span class="o">.</span><span class="n">real</span><span class="p">[</span><span class="n">idx</span><span class="p">]))</span>
+                <span class="n">gi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">det</span><span class="p">(</span><span class="n">z_obj</span><span class="o">.</span><span class="n">z</span><span class="o">.</span><span class="n">imag</span><span class="p">[</span><span class="n">idx</span><span class="p">]))</span>
+
+            <span class="n">dis</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([(</span><span class="mf">1.</span> <span class="o">/</span> <span class="n">gr</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">z_obj</span><span class="o">.</span><span class="n">z</span><span class="o">.</span><span class="n">real</span><span class="p">[</span><span class="n">idx</span><span class="p">],</span>
+                                                           <span class="n">rot_mat</span><span class="p">)),</span>
+                                         <span class="p">(</span><span class="mf">1.</span> <span class="o">/</span> <span class="n">gi</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">z_obj</span><span class="o">.</span><span class="n">z</span><span class="o">.</span><span class="n">imag</span><span class="p">[</span><span class="n">idx</span><span class="p">],</span>
+                                                           <span class="n">rot_mat</span><span class="p">))]),</span>
+                               <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">z_obj</span><span class="o">.</span><span class="n">z_err</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="c1"># find errors of entries for calculating weights</span>
+
+                <span class="n">gr_err</span> <span class="o">=</span> <span class="mf">1.</span> <span class="o">/</span> <span class="n">gr</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">z_obj</span><span class="o">.</span><span class="n">z_err</span><span class="p">[</span><span class="n">idx</span><span class="p">])</span>
+                <span class="n">gr_err</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">gr_err</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">)]</span> <span class="o">=</span> <span class="mf">1.0</span>
+
+                <span class="n">gi_err</span> <span class="o">=</span> <span class="mf">1.</span> <span class="o">/</span> <span class="n">gi</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">z_obj</span><span class="o">.</span><span class="n">z_err</span><span class="p">[</span><span class="n">idx</span><span class="p">])</span>
+                <span class="n">gi_err</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">gi_err</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">)]</span> <span class="o">=</span> <span class="mf">1.0</span>
+
+                <span class="n">dis_err</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">gi_err</span><span class="p">,</span> <span class="n">gr_err</span><span class="p">]),</span>
+                                       <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="n">dim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">P</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="n">strike_ang</span> <span class="o">=</span> <span class="n">st_arr</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">strike_ang</span><span class="p">):</span>
+                <span class="n">strike_ang</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+            <span class="k">if</span> <span class="n">z_obj</span><span class="o">.</span><span class="n">z_err</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">err_arr</span> <span class="o">=</span> <span class="n">z_obj</span><span class="o">.</span><span class="n">z_err</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+                <span class="n">err_arr</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">err_arr</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">)]</span> <span class="o">=</span> <span class="mf">1.0</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">err_arr</span> <span class="o">=</span> <span class="kc">None</span>
+
+            <span class="n">tetm_arr</span><span class="p">,</span> <span class="n">tetm_err</span> <span class="o">=</span> <span class="n">MTcc</span><span class="o">.</span><span class="n">rotatematrix_incl_errors</span><span class="p">(</span><span class="n">z_obj</span><span class="o">.</span><span class="n">z</span><span class="p">[</span><span class="n">idx</span><span class="p">],</span>
+                                                               <span class="n">strike_ang</span><span class="p">,</span>
+                                                               <span class="n">inmatrix_err</span><span class="o">=</span><span class="n">err_arr</span><span class="p">)</span>
+
+            <span class="n">tetm_r</span> <span class="o">=</span> <span class="n">tetm_arr</span><span class="o">.</span><span class="n">real</span>
+            <span class="n">tetm_i</span> <span class="o">=</span> <span class="n">tetm_arr</span><span class="o">.</span><span class="n">imag</span>
+            <span class="n">t_arr_r</span> <span class="o">=</span> <span class="o">-</span><span class="mi">4</span> <span class="o">*</span> <span class="n">P</span> <span class="o">*</span> <span class="n">tetm_r</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">tetm_r</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">det</span><span class="p">(</span><span class="n">tetm_r</span><span class="p">)</span>
+            <span class="n">t_arr_i</span> <span class="o">=</span> <span class="o">-</span><span class="mi">4</span> <span class="o">*</span> <span class="n">P</span> <span class="o">*</span> <span class="n">tetm_i</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">tetm_i</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">det</span><span class="p">(</span><span class="n">tetm_i</span><span class="p">)</span>
+
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">T</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="nb">max</span><span class="p">([</span><span class="n">t_arr_r</span><span class="p">,</span> <span class="n">t_arr_i</span><span class="p">]))</span> <span class="o">+</span> <span class="o">.</span><span class="mi">001</span>
+            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                <span class="n">T</span> <span class="o">=</span> <span class="mi">2</span>
+
+            <span class="n">sr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">T</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">P</span> <span class="o">*</span> <span class="n">tetm_r</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">tetm_r</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">det</span><span class="p">(</span><span class="n">tetm_r</span><span class="p">))</span>
+            <span class="n">si</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">T</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">P</span> <span class="o">*</span> <span class="n">tetm_i</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">tetm_i</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">det</span><span class="p">(</span><span class="n">tetm_i</span><span class="p">))</span>
+
+            <span class="n">par_r</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">tetm_r</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">/</span> <span class="p">(</span><span class="n">T</span> <span class="o">-</span> <span class="n">sr</span><span class="p">)</span>
+            <span class="n">orth_r</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">tetm_r</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="p">(</span><span class="n">T</span> <span class="o">+</span> <span class="n">sr</span><span class="p">)</span>
+            <span class="n">par_i</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">tetm_i</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">/</span> <span class="p">(</span><span class="n">T</span> <span class="o">-</span> <span class="n">si</span><span class="p">)</span>
+            <span class="n">orth_i</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">tetm_i</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="p">(</span><span class="n">T</span> <span class="o">+</span> <span class="n">si</span><span class="p">)</span>
+
+            <span class="n">mat2_r</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">matrix</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mf">1.</span> <span class="o">/</span> <span class="n">orth_r</span><span class="p">],</span> <span class="p">[</span><span class="mf">1.</span> <span class="o">/</span> <span class="n">par_r</span><span class="p">,</span> <span class="mi">0</span><span class="p">]])</span>
+            <span class="n">mat2_i</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">matrix</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mf">1.</span> <span class="o">/</span> <span class="n">orth_i</span><span class="p">],</span> <span class="p">[</span><span class="mf">1.</span> <span class="o">/</span> <span class="n">par_i</span><span class="p">,</span> <span class="mi">0</span><span class="p">]])</span>
+
+            <span class="n">avg_mat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">tetm_r</span><span class="p">,</span> <span class="n">mat2_r</span><span class="p">),</span>
+                                        <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">tetm_i</span><span class="p">,</span> <span class="n">mat2_i</span><span class="p">)]),</span>
+                              <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+            <span class="n">dis</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">avg_mat</span>
+
+            <span class="k">if</span> <span class="n">err_arr</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="c1"># find errors of entries for calculating weights</span>
+                <span class="n">sigma_sr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">((</span><span class="o">-</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">P</span> <span class="o">*</span> <span class="n">tetm_r</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">tetm_r</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">*</span> \
+                                      <span class="n">tetm_r</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">err_arr</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span> <span class="o">/</span> \
+                                    <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">det</span><span class="p">(</span><span class="n">tetm_r</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">sr</span><span class="p">))</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> \
+                                   <span class="p">((</span><span class="mi">2</span> <span class="o">*</span> <span class="n">P</span> <span class="o">*</span> <span class="n">tetm_r</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">tetm_r</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">*</span>
+                                     <span class="n">tetm_r</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">err_arr</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span> <span class="o">/</span>
+                                    <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">det</span><span class="p">(</span><span class="n">tetm_r</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">sr</span><span class="p">))</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> \
+                                   <span class="p">((</span><span class="mi">2</span> <span class="o">*</span> <span class="n">P</span> <span class="o">*</span> <span class="n">tetm_r</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">tetm_r</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">*</span>
+                                     <span class="n">tetm_r</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">err_arr</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span> <span class="o">/</span> \
+                                    <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">det</span><span class="p">(</span><span class="n">tetm_r</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">sr</span><span class="p">))</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> \
+                                   <span class="p">(</span><span class="o">-</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">P</span> <span class="o">*</span> <span class="n">tetm_r</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">tetm_r</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">*</span> \
+                                      <span class="n">tetm_r</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">err_arr</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span> <span class="o">/</span> \
+                                    <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">det</span><span class="p">(</span><span class="n">tetm_r</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">sr</span><span class="p">))</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+
+                <span class="n">sigma_dr_11</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">sigma_sr</span>
+                <span class="n">sigma_dr_22</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">sigma_sr</span>
+
+                <span class="n">sigma_dr_12</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">((</span><span class="n">mat2_r</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">/</span> <span class="n">tetm_r</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">err_arr</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> \
+                                      <span class="p">(</span><span class="n">mat2_r</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">/</span> <span class="n">tetm_r</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">err_arr</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> \
+                                      <span class="p">(</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">tetm_r</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="n">tetm_r</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">sigma_sr</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+                <span class="n">sigma_dr_21</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">((</span><span class="n">mat2_r</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="n">tetm_r</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">err_arr</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> \
+                                      <span class="p">(</span><span class="n">mat2_r</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="n">tetm_r</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">err_arr</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> \
+                                      <span class="p">(</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">tetm_r</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">/</span> <span class="n">tetm_r</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">sigma_sr</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+
+                <span class="n">dis_err_r</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="n">sigma_dr_11</span><span class="p">,</span> <span class="n">sigma_dr_12</span><span class="p">],</span>
+                                      <span class="p">[</span><span class="n">sigma_dr_21</span><span class="p">,</span> <span class="n">sigma_dr_22</span><span class="p">]])</span>
+
+                <span class="n">sigma_si</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">((</span><span class="o">-</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">P</span> <span class="o">*</span> <span class="n">tetm_i</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">tetm_i</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">*</span> \
+                                      <span class="n">tetm_i</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">err_arr</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span> <span class="o">/</span> \
+                                    <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">det</span><span class="p">(</span><span class="n">tetm_i</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">sr</span><span class="p">))</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> \
+                                   <span class="p">((</span><span class="mi">2</span> <span class="o">*</span> <span class="n">P</span> <span class="o">*</span> <span class="n">tetm_i</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">tetm_i</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">*</span> \
+                                     <span class="n">tetm_i</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">err_arr</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span> <span class="o">/</span> \
+                                    <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">det</span><span class="p">(</span><span class="n">tetm_i</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">sr</span><span class="p">))</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> \
+                                   <span class="p">((</span><span class="mi">2</span> <span class="o">*</span> <span class="n">P</span> <span class="o">*</span> <span class="n">tetm_i</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">tetm_i</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">*</span> \
+                                     <span class="n">tetm_i</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">err_arr</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span> <span class="o">/</span> \
+                                    <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">det</span><span class="p">(</span><span class="n">tetm_i</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">sr</span><span class="p">))</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> \
+                                   <span class="p">(</span><span class="o">-</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">P</span> <span class="o">*</span> <span class="n">tetm_i</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">tetm_i</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">*</span> \
+                                      <span class="n">tetm_i</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">err_arr</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span> <span class="o">/</span> \
+                                    <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">det</span><span class="p">(</span><span class="n">tetm_i</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">sr</span><span class="p">))</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+
+                <span class="n">sigma_di_11</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">sigma_si</span>
+                <span class="n">sigma_di_22</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">sigma_si</span>
+                <span class="n">sigma_di_12</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">((</span><span class="n">mat2_i</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">/</span> <span class="n">tetm_i</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">err_arr</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> \
+                                      <span class="p">(</span><span class="n">mat2_i</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">/</span> <span class="n">tetm_i</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">err_arr</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> \
+                                      <span class="p">(</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">tetm_i</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="n">tetm_i</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">sigma_si</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+                <span class="n">sigma_di_21</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">((</span><span class="n">mat2_i</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="n">tetm_i</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">err_arr</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> \
+                                      <span class="p">(</span><span class="n">mat2_i</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="n">tetm_i</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">err_arr</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> \
+                                      <span class="p">(</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">tetm_i</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">/</span> <span class="n">tetm_i</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">sigma_si</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+
+                <span class="n">dis_err_i</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="n">sigma_di_11</span><span class="p">,</span> <span class="n">sigma_di_12</span><span class="p">],</span>
+                                      <span class="p">[</span><span class="n">sigma_di_21</span><span class="p">,</span> <span class="n">sigma_di_22</span><span class="p">]])</span>
+
+                <span class="n">dis_err</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">dis_err_r</span><span class="p">,</span> <span class="n">dis_err_i</span><span class="p">]))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">dis</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">identity</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+
+    <span class="n">nonzero_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nonzero</span><span class="p">(</span><span class="n">dis</span><span class="p">)[</span><span class="mi">0</span><span class="p">])))</span>
+
+    <span class="n">dis_avg</span><span class="p">,</span> <span class="n">weights_sum</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">average</span><span class="p">(</span><span class="n">dis</span><span class="p">[</span><span class="n">nonzero_idx</span><span class="p">],</span>
+                                      <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                                      <span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="mf">1.</span> <span class="o">/</span> <span class="n">dis_err</span><span class="p">[</span><span class="n">nonzero_idx</span><span class="p">])</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span>
+                                      <span class="n">returned</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="n">dis_avg_err</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">1.</span> <span class="o">/</span> <span class="n">weights_sum</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">dis_avg</span><span class="p">,</span> <span class="n">dis_avg_err</span></div>
+
+
+<div class="viewcode-block" id="find_1d_distortion"><a class="viewcode-back" href="../../../analysis.html#mtpy.analysis.distortion.find_1d_distortion">[docs]</a><span class="k">def</span> <span class="nf">find_1d_distortion</span><span class="p">(</span><span class="n">z_object</span><span class="p">,</span> <span class="n">include_non1d</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    find 1D distortion tensor from z object</span>
+
+<span class="sd">    ONly use the 1D part of the Z to determine D. </span>
+<span class="sd">    Treat all frequencies as 1D, if  &quot;include_non1d = True&quot;.</span>
+
+<span class="sd">    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">z_object</span><span class="p">,</span> <span class="n">MTz</span><span class="o">.</span><span class="n">Z</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">MTex</span><span class="o">.</span><span class="n">MTpyError_inputarguments</span><span class="p">(</span><span class="s1">&#39;first argument must be an &#39;</span>
+                                            <span class="s1">&#39;instance of the Z class&#39;</span><span class="p">)</span>
+
+    <span class="n">z_obj</span> <span class="o">=</span> <span class="n">z_object</span>
+
+    <span class="n">lo_dims</span> <span class="o">=</span> <span class="n">MTge</span><span class="o">.</span><span class="n">dimensionality</span><span class="p">(</span><span class="n">z_object</span><span class="o">=</span><span class="n">z_obj</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">include_non1d</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="n">lo_dims</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">lo_dims</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">lo_dims</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)))</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">MTex</span><span class="o">.</span><span class="n">MTpyError_inputarguments</span><span class="p">(</span><span class="s1">&#39;Z object does not have &#39;</span>
+                                            <span class="s1">&#39;frequencies with spatial 1D characteristic&#39;</span><span class="p">)</span>
+
+    <span class="nb">print</span> <span class="n">lo_dims</span>
+
+    <span class="k">return</span> <span class="n">find_distortion</span><span class="p">(</span><span class="n">z_obj</span><span class="p">,</span> <span class="n">lo_dims</span><span class="o">=</span><span class="n">lo_dims</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="find_2d_distortion"><a class="viewcode-back" href="../../../analysis.html#mtpy.analysis.distortion.find_2d_distortion">[docs]</a><span class="k">def</span> <span class="nf">find_2d_distortion</span><span class="p">(</span><span class="n">z_object</span><span class="p">,</span> <span class="n">include_non2d</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    find 2D distortion tensor from z object</span>
+
+<span class="sd">    ONly use the 2D part of the Z to determine D. </span>
+<span class="sd">    Treat all frequencies as 2D, if  &quot;include_non2d = True&quot;.</span>
+<span class="sd">    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">z_object</span><span class="p">,</span> <span class="n">MTz</span><span class="o">.</span><span class="n">Z</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">MTex</span><span class="o">.</span><span class="n">MTpyError_inputarguments</span><span class="p">(</span><span class="s1">&#39;first argument must be an &#39;</span>
+                                            <span class="s1">&#39;instance of the Z class&#39;</span><span class="p">)</span>
+
+    <span class="n">z_obj</span> <span class="o">=</span> <span class="n">z_object</span>
+
+    <span class="n">lo_dims</span> <span class="o">=</span> <span class="n">MTge</span><span class="o">.</span><span class="n">dimensionality</span><span class="p">(</span><span class="n">z_object</span><span class="o">=</span><span class="n">z_obj</span><span class="p">)</span>
+
+    <span class="c1"># avoid the (standard) 1D distortion call -&gt; remove all 1</span>
+    <span class="n">lo_dims</span> <span class="o">=</span> <span class="p">[</span><span class="mi">4</span> <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">lo_dims</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">include_non2d</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="n">lo_dims</span> <span class="o">=</span> <span class="p">[</span><span class="mi">2</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">lo_dims</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">lo_dims</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">)))</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">MTex</span><span class="o">.</span><span class="n">MTpyError_inputarguments</span><span class="p">(</span><span class="s1">&#39;Z object does not have&#39;</span>
+                                            <span class="s1">&#39; frequencies with spatial 2D characteristic&#39;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">find_distortion</span><span class="p">(</span><span class="n">z_obj</span><span class="p">,</span> <span class="n">lo_dims</span><span class="o">=</span><span class="n">lo_dims</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="remove_distortion"><a class="viewcode-back" href="../../../analysis.html#mtpy.analysis.distortion.remove_distortion">[docs]</a><span class="k">def</span> <span class="nf">remove_distortion</span><span class="p">(</span><span class="n">z_array</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">z_object</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">num_freq</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">g</span><span class="o">=</span><span class="s1">&#39;det&#39;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    remove distortion from an impedance tensor using the method outlined by </span>
+<span class="sd">    Bibby et al., [2005].</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    -----------</span>
+<span class="sd">    </span>
+<span class="sd">        **z_array** : np.ndarray((nf, 2, 2))</span>
+<span class="sd">                      numpy array of impedance tensor</span>
+<span class="sd">                      *default* is None</span>
+<span class="sd">                      </span>
+<span class="sd">        **z_object** : mtpy.core.z object</span>
+<span class="sd">                       *default* is None</span>
+
+<span class="sd">        **num_freq** : int</span>
+<span class="sd">                       number of frequecies to look for distortion</span>
+<span class="sd">                       *default* is None, meaning look over all frequencies</span>
+
+<span class="sd">        **g** : [ &#39;det&#39; | &#39;01&#39; | &#39;10 ]</span>
+<span class="sd">                type of distortion to look for</span>
+<span class="sd">                *default* is &#39;det&#39;</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    --------</span>
+
+<span class="sd">        **distortion** : np.ndarray (2, 2)</span>
+<span class="sd">                         distortion array</span>
+
+<span class="sd">        **new_z_obj** : mtpy.core.z</span>
+<span class="sd">                        z object with distortion removed and error calculated</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    -------------</span>
+
+<span class="sd">        :Remove Distortion: ::</span>
+
+<span class="sd">            &gt;&gt;&gt; import mtpy.analysis.distortion as distortion</span>
+<span class="sd">            &gt;&gt;&gt; d, new_z = distortion.remove_distortion(z_object=z_obj)                         </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">z_array</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">z_obj</span> <span class="o">=</span> <span class="n">MTz</span><span class="o">.</span><span class="n">Z</span><span class="p">(</span><span class="n">z_array</span><span class="o">=</span><span class="n">z_array</span><span class="p">)</span>
+
+    <span class="k">elif</span> <span class="n">z_object</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">z_obj</span> <span class="o">=</span> <span class="n">z_object</span>
+
+    <span class="n">zero_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">z_obj</span><span class="o">.</span><span class="n">z</span> <span class="o">==</span> <span class="mi">0</span> <span class="o">+</span> <span class="mi">0</span><span class="n">j</span><span class="p">)</span>
+
+    <span class="c1"># 0. generate a Z object</span>
+    <span class="c1"># 1. find distortion via function above,</span>
+    <span class="c1"># 2. remove distortion via method of z object</span>
+
+    <span class="n">dis</span><span class="p">,</span> <span class="n">dis_err</span> <span class="o">=</span> <span class="n">find_distortion</span><span class="p">(</span><span class="n">z_obj</span><span class="p">,</span> <span class="n">num_freq</span><span class="o">=</span><span class="n">num_freq</span><span class="p">,</span> <span class="n">g</span><span class="o">=</span><span class="n">g</span><span class="p">)</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="c1"># distortion_tensor, zd, zd_err = z_obj.no_distortion(dis, distortion_err_tensor=dis_err)</span>
+        <span class="n">distortion_tensor</span><span class="p">,</span> <span class="n">zd</span><span class="p">,</span> <span class="n">zd_err</span> <span class="o">=</span> <span class="n">z_obj</span><span class="o">.</span><span class="n">remove_distortion</span><span class="p">(</span><span class="n">dis</span><span class="p">,</span> <span class="n">distortion_err_tensor</span><span class="o">=</span><span class="n">dis_err</span><span class="p">)</span>
+
+        <span class="n">zd_err</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan_to_num</span><span class="p">(</span><span class="n">zd_err</span><span class="p">)</span>
+        <span class="n">zd_err</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">zd_err</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">)]</span> <span class="o">=</span> <span class="mf">1.0</span>
+        <span class="n">distortion_z_obj</span> <span class="o">=</span> <span class="n">z_obj</span>
+        <span class="n">distortion_z_obj</span><span class="o">.</span><span class="n">z</span> <span class="o">=</span> <span class="n">zd</span>
+        <span class="n">distortion_z_obj</span><span class="o">.</span><span class="n">z</span><span class="p">[</span><span class="n">zero_idx</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span> <span class="o">+</span> <span class="mf">0.0</span><span class="n">j</span>
+        <span class="n">distortion_z_obj</span><span class="o">.</span><span class="n">z_err</span> <span class="o">=</span> <span class="n">zd_err</span>
+
+        <span class="k">return</span> <span class="n">distortion_tensor</span><span class="p">,</span> <span class="n">distortion_z_obj</span>
+
+    <span class="k">except</span> <span class="n">MTex</span><span class="o">.</span><span class="n">MTpyError_Z</span><span class="p">:</span>
+        <span class="nb">print</span> <span class="s1">&#39;Could not compute distortion tensor&#39;</span>
+
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">identity</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="n">z_obj</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../master_doc.html">mtpy 1.01.01 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2018, Geoscience Australia.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.7.2.
+    </div>
+  </body>
+</html>
