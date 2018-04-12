@@ -20,12 +20,12 @@ savepath='/tmp'
 ptmap = PlotPTMaps(data_fn=op.join(workdir, 'ModEM_Data_noise10inv.dat'),
                    resp_fn=op.join(workdir, 'Modular_MPI_NLCG_NLCG_015.dat'), # comment out to plot data only
                    #cb_pt_pad=0.1,
-                   cb_tick_step=10,
+                   cb_tick_step=9,
                    ellipse_dict =  {'size': 40,
-                                    'ellipse_range':[-12,12],
+                                    'ellipse_range':[-9, 9],
                                     'ellipse_colorby':'skew',
                                     'ellipse_cmap':'mt_bl2gr2rd'},
-                   residual_cmap='mt_bl2gr2rd'
+                   residual_cmap='mt_wh2or'
                    )
 
 ptmap.plot(period=20, # index of period to plot

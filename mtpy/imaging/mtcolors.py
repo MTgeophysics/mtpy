@@ -496,10 +496,11 @@ def get_plot_color(colorx, comp, cmap, ckmin=None, ckmax=None, bounds=None):
         return get_color(cvar, cmap)
         '''
 
+        norm = colors.Normalize(ckmin, ckmax)
         if (cmap in cmapdict.keys()):
-            return cmapdict[cmap](colorx)
+            return cmapdict[cmap](norm(colorx))
         else:
-            return cm.get_cmap(cmap)(colorx)
+            return cm.get_cmap(cmap)(norm(colorx))
     elif comp == 'skew_seg' or comp == 'normalized_skew_seg':
         if bounds is None:
             raise IOError('Need to input bounds for segmented colormap')
