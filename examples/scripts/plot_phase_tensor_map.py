@@ -59,4 +59,4 @@ m = pptmaps.PlotPhaseTensorMaps(fn_list = elst,
 #m.redraw_plot()
 if save:
     m.save_figure(op.join(savepath,image_fn),
-                  fig_dpi=600)
+                  fig_dpi=400) # change to your preferred file resolution

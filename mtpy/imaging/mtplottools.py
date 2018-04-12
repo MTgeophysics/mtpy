@@ -226,7 +226,7 @@ class MTEllipse(object):
                         self.ellipse_colorby == 'normalized_skew' or \
                         self.ellipse_colorby == 'normalized_skew_seg':
 
-            self.ellipse_range = (-9, 9, 3)
+            self.ellipse_range = (-90, 90, 3)
 
         elif self.ellipse_colorby == 'ellipticity':
             self.ellipse_range = (0, 1, .1)

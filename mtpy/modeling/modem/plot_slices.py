@@ -152,7 +152,7 @@ class PlotSlices(object):
 
         self.fig_num = kwargs.pop('fig_num', 1)
         self.fig_size = kwargs.pop('fig_size', [6, 6])
-        self.fig_dpi = kwargs.pop('dpi', 300)
+        self.fig_dpi = kwargs.pop('fig_dpi', 300)
         self.fig_aspect = kwargs.pop('fig_aspect', 1)
         self.title = kwargs.pop('title', 'on')
         self.font_size = kwargs.pop('font_size', 4)
@@ -533,7 +533,7 @@ class PlotSlices(object):
 
 
         self.fig = plt.figure(self.fig_num, figsize=self.fig_size,
-                              dpi=self.fig_dpi)
+                              dpi=self.fig_dpi,frameon=False)
         plt.clf()
 
         # annotations
@@ -742,7 +742,8 @@ class PlotSlices(object):
             plt.show()
         else:
             self.fig.set_visible(False)
-            plt.draw()
+            plt.close()
+#            plt.draw()
     # end func
 
     def export_slices(self, plane='N-E', indexlist=[], station_buffer=200, save=True):
