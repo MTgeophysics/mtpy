@@ -211,7 +211,7 @@ class PlotPTMaps(mtplottools.MTEllipse):
         self._ellipse_dict = kwargs.pop('ellipse_dict',
                                         {'size': 2,
                                          'ellipse_range':[0,0],
-                                         'ellipse_colorby':'skew',
+                                         'ellipse_colorby':'phimin',
                                          'ellipse_cmap':'mt_bl2gr2rd'})
 
         self._read_ellipse_dict(self._ellipse_dict)

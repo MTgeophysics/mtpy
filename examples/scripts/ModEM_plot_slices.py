@@ -22,9 +22,11 @@ pObj = PlotSlices(model_fn=model_fn,
                   ns_limits=[-170,170], # option to specify limits, if not provided will auto calculate from data
                   font_size=6,
                   fig_size=(6,3)
+                  fig_dpi = 400 # change to your preferred file resolution
                   )
 figs,fpaths = pObj.export_slices(plane='N-E',
                                  indexlist=[30], # depth (or east/west) index to plot
                                  station_buffer=20e3,
-                                 save=False
+                                 save=True,
+                                 
                                  )#range(20,40))

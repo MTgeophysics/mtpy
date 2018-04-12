@@ -10,6 +10,7 @@ import numpy as np
 from mtpy.modeling.modem import PlotSlices
 wd = r'C:\mtpywin\mtpy\examples\model_files\ModEM'
 
+savepath = r'C:\tmp' # change to your desired save path
 
 model_fn = op.join(wd,'Modular_MPI_NLCG_004.rho')
 data_fn = op.join(wd,'ModEM_Data.dat')
@@ -37,3 +38,6 @@ plt.setp(ax.get_xticklabels(),fontsize=fs)
 plt.setp(ax.get_yticklabels(),fontsize=fs)
 plt.xlabel('Distance, km',fontsize=fs)
 plt.ylabel('Depth, km',fontsize=fs)
+
+plt.savefig(op.join(savepath,'DepthSlice.png'),
+            dpi=400) # change to your desired figure resolution
