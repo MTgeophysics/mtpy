@@ -9,6 +9,85 @@ functions to assist with mesh generation
 """
 
 import numpy as np
+import mtpy.utils.filehandling as mtfh
+from mtpy.utils import gis_tools
+import scipy.interpolate as spi
+
+
+def interpolate_elevation_to_grid(self, grid_east,grid_north,model_epsg=None,model_utm_zone=None,
+                                  surfacefile=None, surface=None,method='linear'):
+    """
+    project a surface to the model grid and add resulting elevation data
+    to a dictionary called surface_dict. Assumes the surface is in lat/long
+    coordinates (wgs84)
+
+    **returns**
+    nothing returned, but surface data are added to surface_dict under
+    the key given by surfacename.
+
+    **inputs**
+    choose to provide either surface_file (path to file) or surface (tuple).
+    If both are provided then surface tuple takes priority.
+
+    surface elevations are positive up, and relative to sea level.
+    surface file format is:
+
+    ncols         3601
+    nrows         3601
+    xllcorner     -119.00013888889 (longitude of lower left)
+    yllcorner     36.999861111111  (latitude of lower left)
+    cellsize      0.00027777777777778
+    NODATA_value  -9999
+    elevation data W --> E
+    N
+    |
+    V
+    S
+
+    Alternatively, provide a tuple with:
+    (lon,lat,elevation)
+    where elevation is a 2D array (shape (ny,nx)) containing elevation
+    points (order S -> N, W -> E)
+    and lon, lat are either 1D arrays containing list of longitudes and
+    latitudes (in the case of a regular grid) or 2D arrays with same shape
+    as elevation array containing longitude and latitude of each point.
+
+    other inputs:
+    surfacename = name of surface for putting into dictionary
+    surface_epsg = epsg number of input surface, default is 4326 for lat/lon(wgs84)
+    method = interpolation method. Default is 'nearest', if model grid is
+    dense compared to surface points then choose 'linear' or 'cubic'
+
+    """
+
+    # read the surface data in from ascii if surface not provided
+    if surface is None:
+        surface = mtfh.read_surface_ascii(surfacefile)
+
+    x, y, elev = surface
+
+    # if lat/lon provided as a 1D list, convert to a 2d grid of points
+    if len(x.shape) == 1:
+        x, y = np.meshgrid(x, y)
+
+    xs, ys, utm_zone = gis_tools.project_points_ll2utm(y, x,
+                                                       epsg=self.station_locations.model_epsg,
+                                                       utm_zone=self.station_locations.model_utm_zone
+                                                       )
+
+    # elevation in model grid
+    # first, get lat,lon points of surface grid
+    points = np.vstack([arr.flatten() for arr in [xs, ys]]).T
+    # corresponding surface elevation points
+    values = elev.flatten()
+    # xi, the model grid points to interpolate to
+    xi = np.vstack([arr.flatten() for arr in np.meshgrid(grid_east, grid_north)]).T
+    # elevation on the centre of the grid nodes
+    elev_mg = spi.griddata(
+        points, values, xi, method=method).reshape(len(grid_north), len(grid_east))
+
+    return elev_mg
+
 
 
 def get_nearest_index(array,value):
