@@ -678,6 +678,7 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
                 if(not self.interpolate):
                     pt = mt.pt
                 else:
+                    newZ.compute_resistivity_phase()
                     pt = MTpt.PhaseTensor(z_object=newZ)
 
                 # if map scale is lat lon set parameters

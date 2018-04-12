@@ -9,17 +9,27 @@ import os.path as op
 
 from mtpy.modeling.modem.phase_tensor_maps import PlotPTMaps
 
-workdir = r'C:\mtpywin\mtpy\examples\data\ModEM_files\VicSynthetic05'
-savepath = r'C:\tmp'
+scripts = op.dirname(__file__)
+examples = op.dirname(scripts)
+data = op.join(examples, 'data')
+
+modemFiles = op.join(data, 'ModEM_files')
+workdir = op.join(modemFiles, 'VicSynthetic05')
+savepath='/tmp'
 
 ptmap = PlotPTMaps(data_fn=op.join(workdir, 'ModEM_Data_noise10inv.dat'),
                    resp_fn=op.join(workdir, 'Modular_MPI_NLCG_NLCG_015.dat'), # comment out to plot data only
-                   ellipse_dict={'ellipse_colorby':'skew'},
-                   ellipse_size=40,# scaling factor for ellipses
+                   #cb_pt_pad=0.1,
+                   cb_tick_step=10,
+                   ellipse_dict =  {'size': 40,
+                                    'ellipse_range':[-12,12],
+                                    'ellipse_colorby':'skew',
+                                    'ellipse_cmap':'mt_bl2gr2rd'},
+                   residual_cmap='mt_bl2gr2rd'
                    )
 
 ptmap.plot(period=20, # index of period to plot
-           edgecolor='k' # colour for edge of ellipses
+           edgecolor='none', # colour for edge of ellipses
            )
 
 ptmap.save_figure(op.join(savepath,'PTMap'),

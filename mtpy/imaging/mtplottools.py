@@ -220,21 +220,22 @@ class MTEllipse(object):
                                   self.ellipse_range[1],
                                   1)
 
-        # set color range to 0-90
-        if self.ellipse_colorby == 'skew' or \
-                        self.ellipse_colorby == 'skew_seg' or \
-                        self.ellipse_colorby == 'normalized_skew' or \
-                        self.ellipse_colorby == 'normalized_skew_seg':
+        # set color ranges
+        if(self.ellipse_range[0] == self.ellipse_range[1]): # override default-dict values
+            if self.ellipse_colorby == 'skew' or \
+                            self.ellipse_colorby == 'skew_seg' or \
+                            self.ellipse_colorby == 'normalized_skew' or \
+                            self.ellipse_colorby == 'normalized_skew_seg':
 
-            self.ellipse_range = (-90, 90, 3)
-
-        elif self.ellipse_colorby == 'ellipticity':
-            self.ellipse_range = (0, 1, .1)
-
-        else:
-            self.ellipse_range = (0, 90, 5)
+                self.ellipse_range = (-9, 9, 3)
+            elif self.ellipse_colorby == 'ellipticity':
+                self.ellipse_range = (0, 1, .1)
+            else:
+                self.ellipse_range = (0, 90, 5)
+        # end if
 
         # set colormap to yellow to red
+        '''
         if self.ellipse_colorby == 'skew' or \
                         self.ellipse_colorby == 'normalized_skew':
             self.ellipse_cmap = 'mt_bl2wh2rd'
@@ -245,6 +246,7 @@ class MTEllipse(object):
 
         else:
             self.ellipse_cmap = 'mt_bl2gr2rd'
+        '''
 
 
 # ==============================================================================
