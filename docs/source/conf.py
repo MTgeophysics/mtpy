@@ -14,7 +14,10 @@
 #
 import os
 import sys
+sys.path.insert(0, os.path.abspath('.'))
+sys.path.insert(0, os.path.abspath('..'))
 sys.path.insert(0, os.path.abspath('../..'))
+print(sys.path)
 
 
 # -- Project information -----------------------------------------------------
@@ -199,6 +202,9 @@ epub_exclude_files = ['search.html']
 
 
 # Mock modules that need native libraries.
+# sphinx\registry.py", line 315, in load_extension
+#     mod = __import__(extname, None, None, ['setup'])
+# RuntimeError: sys.path must be a list of directory names
 # See: http://read-the-docs.readthedocs.org/en/latest/faq.html#i-get-import-errors-on-libraries-that-depend-on-c-modules
 NATIVE_MODULES = [
     'rasterio',
@@ -227,7 +233,7 @@ NATIVE_MODULES = [
     'sshtunnel',
     'tqdm',
     'cloudpickle',
-    'zstd',
+    'zstd'
 ]
 
 from mock import Mock as MagicMock
@@ -239,8 +245,14 @@ class Mock(MagicMock):
         return Mock()
 
 
-sys.modules.update((mod_name, Mock()) for mod_name in NATIVE_MODULES)
-sys.modules['rasterio.coords'].BoundingBox = Mock
+alist= [(mod_name, Mock()) for mod_name in NATIVE_MODULES]
+print(alist)
+
+# sys.modules.update([(mod_name, Mock()) for mod_name in NATIVE_MODULES])
+# sys.modules['rasterio.coords'].BoundingBox = Mock
+# sphinx\registry.py", line 315, in load_extension
+#     mod = __import__(extname, None, None, ['setup'])
+# RuntimeError: sys.path must be a list of directory names
 
 
 # # Clean up generated documentation files that RTD seems to be having trouble with
