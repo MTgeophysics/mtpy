@@ -233,6 +233,12 @@ class MTEllipse(object):
             else:
                 self.ellipse_range = (0, 90, 5)
         # end if
+        # only one colormap valid for skew_seg at this point in time
+        if self.ellipse_colorby == 'skew_seg' or \
+                        self.ellipse_colorby == 'normalized_skew_seg':
+            print("Updating colormap to mt_seg_bl2wh2rd as this is the only available segmented colormap at this time")
+            self.ellipse_cmap = 'mt_seg_bl2wh2rd'
+
 
         # set colormap to yellow to red
         '''
