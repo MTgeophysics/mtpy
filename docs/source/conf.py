@@ -53,8 +53,8 @@ extensions = [
 ]
 
 extensions += [
-    'matplotlib.sphinxext.only_directives',
-    'matplotlib.sphinxext.plot_directive',
+    #'matplotlib.sphinxext.only_directives',
+    #'matplotlib.sphinxext.plot_directive',
     # 'matplotlib.sphinxext.ipython_directive',
     # 'matplotlib.sphinxext.ipython_console_highlighting'
     ]
@@ -95,7 +95,7 @@ pygments_style = 'sphinx'
 # a list of builtin themes.
 #
 # html_theme = 'alabaster'
-# html_theme = 'classic'
+html_theme = 'classic'
 
 
 # Theme options are theme-specific and customize the look and feel of a theme
@@ -206,49 +206,21 @@ epub_exclude_files = ['search.html']
 #     mod = __import__(extname, None, None, ['setup'])
 # RuntimeError: sys.path must be a list of directory names
 # See: http://read-the-docs.readthedocs.org/en/latest/faq.html#i-get-import-errors-on-libraries-that-depend-on-c-modules
-NATIVE_MODULES = [
-    'rasterio',
-    'netcdf4',
-    'pypeg2',
+#NATIVE_MODULES = [
+MOCK_MODULES = [
     'osgeo',
-    'rasterio.warp',
-    'numexpr',
-    'rasterio.coords',
-    'netCDF4',
-    'netCDF4.Dataset',
-    'jsonschema',
-    'xarray',
-    'dask',
-    'dask.array',
-    'pandas',
-    'rasterio.crs',
-    'gdal', 'osgeo.gdal',
-    'osr',
-    'numpy', 'numpy.core.multiarray',
-    'matplotlib',
-    'matplotlib.pyplot',
-    'scipy', 'scipy.io',
-    'SharedArray',
-    'paramiko',
-    'sshtunnel',
-    'tqdm',
-    'cloudpickle',
-    'zstd'
+    'osgeo.ogr',
+    'osgeo.gdal',
+    'osgeo.osr',
 ]
 
-from mock import Mock as MagicMock
+import mock
+
+for mod_name in MOCK_MODULES:
+    sys.modules[mod_name] = mock.Mock()
 
 
-class Mock(MagicMock):
-    @classmethod
-    def __getattr__(cls, name):
-        return Mock()
-
-
-alist= [(mod_name, Mock()) for mod_name in NATIVE_MODULES]
-print(alist)
-
-# sys.modules.update([(mod_name, Mock()) for mod_name in NATIVE_MODULES])
+#sys.modules.update([(mod_name, Mock()) for mod_name in NATIVE_MODULES])
 # sys.modules['rasterio.coords'].BoundingBox = Mock
 # sphinx\registry.py", line 315, in load_extension
 #     mod = __import__(extname, None, None, ['setup'])
