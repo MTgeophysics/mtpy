@@ -611,7 +611,7 @@ class EdiCollection(object):
         return csvfname
 
     def export_edi_files(self, dest_dir, period_list=None,
-                                interpolate=True):
+                                interpolate=True,period_buffer=None):
         """
         export edi files.
         :param dest_dir: output directory
@@ -620,10 +620,15 @@ class EdiCollection(object):
         :param interpolate: Boolean to indicate whether to interpolate data onto given period_list; otherwise
                             a period_list is obtained from get_periods_by_stats()
         :param file_name: output file name
+        :param period_buffer: buffer so that interpolation doesn't stretch too far
+                              over periods. Provide a float or integer factor, 
+                              greater than which interpolation will not stretch.
+                              e.g. 1.5 means only interpolate to a maximum of
+                              1.5 times each side of each frequency value
         :return:
         """
 
-        period_list = None
+
         if period_list is None:
             period_list = np.array(self.get_periods_by_stats())
         # end if
@@ -636,6 +641,22 @@ class EdiCollection(object):
                 (period_list <= 1. / mt_obj.Z.freq.min()))]
 
             interp_periods = np.sort(interp_periods)
+            
+            # if specified, apply a buffer so that interpolation doesn't
+            # stretch too far over periods
+            if type(period_buffer) in [float, int]:
+                interp_periods_new = []
+                dperiods = 1. / mt_obj.Z.freq
+                for iperiod in interp_periods:
+                    # find nearest data period
+                    difference = np.abs(iperiod - dperiods)
+                    nearestdperiod = dperiods[difference == np.amin(difference)][0]
+                    if max(nearestdperiod / iperiod, iperiod / nearestdperiod) < period_buffer:
+                        interp_periods_new.append(iperiod)
+
+                interp_periods = np.array(interp_periods_new)
+                
+                
             self._logger.debug("station_name and its original period: %s %s %s",
                                mt_obj.station, len(mt_obj.Z.freq), 1.0 / mt_obj.Z.freq)
             self._logger.debug("station_name and interpolation period: %s %s %s",

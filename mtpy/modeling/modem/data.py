@@ -154,6 +154,11 @@ class Data(object):
     period_list            list of periods to invert for
     period_max             maximum value of period to invert for
     period_min             minimum value of period to invert for
+    period_buffer          buffer so that interpolation doesn't stretch too far
+                              over periods. Provide a float or integer factor, 
+                              greater than which interpolation will not stretch.
+                              e.g. 1.5 means only interpolate to a maximum of
+                              1.5 times each side of each frequency value
     rotate_angle           Angle to rotate data to assuming 0 is N and E is 90
     save_path              path to save data file to
     units                  [ [V/m]/[T] | [mV/km]/[nT] | Ohm ] units of Z
@@ -668,7 +673,7 @@ class Data(object):
                     # find nearest data period
                     difference = np.abs(iperiod - dperiods)
                     nearestdperiod = dperiods[difference == np.amin(difference)][0]
-                    if max(nearestdperiod / iperiod, iperiod / nearestdperiod) < self.period_buffer + 1.:
+                    if max(nearestdperiod / iperiod, iperiod / nearestdperiod) < self.period_buffer:
                         interp_periods_new.append(iperiod)
 
                 interp_periods = np.array(interp_periods_new)
