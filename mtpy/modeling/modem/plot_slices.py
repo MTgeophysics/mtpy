@@ -929,8 +929,9 @@ class PlotSlices(object):
                                                self.map_scale))
             if save:
                 # --> save plots to a common folder
-                fn = '%s-plane-at-%s.%0.3f.%s.%s'%(plane,
+                fn = '%s-plane-at-%s%03i.%0.3f.%s.%s'%(plane,
                                                self.current_label_desc[plane],
+                                               ii,
                                                self.axis_values[plane][ii],
                                                self.map_scale,
                                                self.save_format)

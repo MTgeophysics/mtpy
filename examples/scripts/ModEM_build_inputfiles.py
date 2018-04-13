@@ -61,6 +61,9 @@ do = Data(edi_list=edi_list,
                inv_mode = '1',
                save_path=workdir,
                period_list=period_list,
+               period_buffer = 2, # factor to stretch interpolation by. For example: if period_buffer=2
+                                 # then interpolated data points will only be included if they are
+                                 # within a factor of 2 of a true data point
                error_type_z='floor_egbert', # error type (egbert is % of sqrt(zxy*zyx))
                                             # floor means apply it as an error floor
                error_value_z=5, # error floor (or value) in percent

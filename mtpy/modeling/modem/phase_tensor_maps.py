@@ -199,8 +199,6 @@ class PlotPTMaps(mtplottools.MTEllipse):
         self.residual_cmap = kwargs.pop('residual_cmap', 'mt_wh2or')
         self.font_size = kwargs.pop('font_size', 7)
 
-        self.cb_tick_step = kwargs.pop('cb_tick_step', 45)
-        self.cb_residual_tick_step = kwargs.pop('cb_residual_tick_step', 3)
         self.cb_pt_pad = kwargs.pop('cb_pt_pad', 1.2)
         self.cb_res_pad = kwargs.pop('cb_res_pad', .5)
 
@@ -218,6 +216,13 @@ class PlotPTMaps(mtplottools.MTEllipse):
 
         self.ellipse_size = kwargs.pop(
             'ellipse_size', self._ellipse_dict['size'])
+
+        self.cb_tick_step = kwargs.pop('cb_tick_step', None)
+        # update default colorbar tick step based on ellipse_range
+        if self.cb_tick_step is None:
+            self.cb_tick_step = int((self.ellipse_range[1] - self.ellipse_range[0])/2.)
+            
+        self.cb_residual_tick_step = kwargs.pop('cb_residual_tick_step', 3)        
 
         self.subplot_right = .99
         self.subplot_left = .085
@@ -501,10 +506,7 @@ class PlotPTMaps(mtplottools.MTEllipse):
         # FZ: changed below to plot a given period index
         # for ff, per in enumerate(self.plot_period_list):
         for ff, per in enumerate(self.plot_period_list[period:period + 1]):
-            # FZ
-            print(ff, per)
-            print(self.plot_period_list)
-
+            
             data_ii = self.period_dict[per]
 
             print 'Plotting Period: {0:.5g}'.format(per)
