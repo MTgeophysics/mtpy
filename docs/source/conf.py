@@ -25,7 +25,7 @@ os.environ['GDAL_DATA'] ='/tmp'
 
 project = u'mtpy'
 copyright = u'2018, Geoscience Australia'
-author = u'Alison Kirkby\n Fei Zhang\n Jared Peacock\n Rakib Hassan\n Jingming Duan\n'
+author = u'Alison Kirkby\\ Fei Zhang\\ Jared Peacock\\ Rakib Hassan\\ Jingming Duan\\'
 
 # The short X.Y version
 version = u'1.01'
