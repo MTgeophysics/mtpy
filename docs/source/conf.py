@@ -19,15 +19,16 @@ sys.path.insert(0, os.path.abspath('..'))
 sys.path.insert(0, os.path.abspath('../..'))
 print(sys.path)
 
+os.environ['GDAL_DATA'] ='/tmp'
 
 # -- Project information -----------------------------------------------------
 
 project = u'mtpy'
 copyright = u'2018, Geoscience Australia'
-author = u'Alison Kirkby, Fei Zhang, Jared Peacock, Rakib Hassan, Jingming Duan'
+author = u'Alison Kirkby\newline  Fei Zhang\newline Jared Peacock\newline Rakib Hassan\newline Jingming Duan'
 
 # The short X.Y version
-version = u''
+version = u'1.01'
 # The full version, including alpha/beta/rc tags
 release = u'1.01.01'
 
@@ -53,15 +54,15 @@ extensions = [
 ]
 
 extensions += [
-    'matplotlib.sphinxext.only_directives',
-    'matplotlib.sphinxext.plot_directive',
+    #'matplotlib.sphinxext.only_directives',
+    #'matplotlib.sphinxext.plot_directive',
     # 'matplotlib.sphinxext.ipython_directive',
     # 'matplotlib.sphinxext.ipython_console_highlighting'
     ]
 
 
 # Add any paths that contain templates here, relative to this directory.
-templates_path = ['_templates']
+templates_path = ['templates']
 
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
@@ -95,7 +96,7 @@ pygments_style = 'sphinx'
 # a list of builtin themes.
 #
 # html_theme = 'alabaster'
-# html_theme = 'classic'
+html_theme = 'classic'
 
 
 # Theme options are theme-specific and customize the look and feel of a theme
@@ -107,7 +108,7 @@ pygments_style = 'sphinx'
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
+html_static_path = ['static']
 
 # Custom sidebar templates, must be a dictionary that maps document names
 # to template names.
@@ -206,49 +207,21 @@ epub_exclude_files = ['search.html']
 #     mod = __import__(extname, None, None, ['setup'])
 # RuntimeError: sys.path must be a list of directory names
 # See: http://read-the-docs.readthedocs.org/en/latest/faq.html#i-get-import-errors-on-libraries-that-depend-on-c-modules
-NATIVE_MODULES = [
-    'rasterio',
-    'netcdf4',
-    'pypeg2',
+#NATIVE_MODULES = [
+MOCK_MODULES = [
     'osgeo',
-    'rasterio.warp',
-    'numexpr',
-    'rasterio.coords',
-    'netCDF4',
-    'netCDF4.Dataset',
-    'jsonschema',
-    'xarray',
-    'dask',
-    'dask.array',
-    'pandas',
-    'rasterio.crs',
-    'gdal', 'osgeo.gdal',
-    'osr',
-    'numpy', 'numpy.core.multiarray',
-    'matplotlib',
-    'matplotlib.pyplot',
-    'scipy', 'scipy.io',
-    'SharedArray',
-    'paramiko',
-    'sshtunnel',
-    'tqdm',
-    'cloudpickle',
-    'zstd'
+    'osgeo.ogr',
+    'osgeo.gdal',
+    'osgeo.osr',
 ]
 
-from mock import Mock as MagicMock
+import mock
+
+for mod_name in MOCK_MODULES:
+    sys.modules[mod_name] = mock.Mock()
 
 
-class Mock(MagicMock):
-    @classmethod
-    def __getattr__(cls, name):
-        return Mock()
-
-
-alist= [(mod_name, Mock()) for mod_name in NATIVE_MODULES]
-print(alist)
-
-# sys.modules.update([(mod_name, Mock()) for mod_name in NATIVE_MODULES])
+#sys.modules.update([(mod_name, Mock()) for mod_name in NATIVE_MODULES])
 # sys.modules['rasterio.coords'].BoundingBox = Mock
 # sphinx\registry.py", line 315, in load_extension
 #     mod = __import__(extname, None, None, ['setup'])
