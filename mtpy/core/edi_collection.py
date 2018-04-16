@@ -4,7 +4,7 @@ To compute and encapsulate the properties of a set of EDI files
 
 Author: fei.zhang@ga.gov.au
 
-InitDate: 2017-04-20
+Date: 2017-04-20
 """
 
 from __future__ import print_function
@@ -52,16 +52,19 @@ def is_num_in_seq(anum, aseq, atol=0.0001):
 class EdiCollection(object):
     """
     A super class to encapsulate the properties pertinent to a set of EDI files
+
+    :param edilist: a list of edifiles with full path, for read-only
+    :param outdir:  computed result to be stored in outdir
+    :param ptol: period tolerance considered as equal, default 0.05 means 5 percent
+
+    The ptol parameter controls what freqs/periods are grouped together:
+    10 percent may result more double counting of freq/period data than 5 pct.
+    (eg: MT_Datasets/WPJ_EDI)
     """
 
     def __init__(self, edilist=None, mt_objs=None, outdir=None, ptol=0.05):
-        """ constructor
-        :param edilist: a list of edifiles with full path, for read-only
-        :param outdir:  computed result to be stored in outdir
-        :param ptol: period tolerance considered as equal, default 0.05 means 5 percent
-        this param controls what freqs/periods are grouped together:
-        10pct may result more double counting of freq/period data than 5pct.
-        eg: E:/Data/MT_Datasets/WenPingJiang_EDI 18528 rows vs 14654 rows
+        """
+        constructor
         """
 
         #self._logger = MtPyLog.get_mtpy_logger(self.__class__.__name__)  # will be EdiCollection
@@ -220,7 +223,8 @@ class EdiCollection(object):
 
     def create_mt_station_gdf(self, outshpfile=None):
         """
-        create station location geopandas dataframe, and output to shape file outshpfile
+        create station location geopandas dataframe, and output to shape file
+        :param outshpfile: output file
         :return: gdf
         """
 
@@ -248,7 +252,9 @@ class EdiCollection(object):
 
     def plot_stations(self, savefile=None, showfig=True):
         """
-        visualise the geopandas df of MT stations
+        Visualise the geopandas df of MT stations
+        :param savefile:
+        :param showfig:
         :return:
         """
 
@@ -266,8 +272,8 @@ class EdiCollection(object):
 
     def display_on_basemap(self):
         """
-
-        :return:
+        display MT stations which are in stored in geopandas dataframe in a base map.
+        :return: plot object
         """
 
         world = gpd.read_file(gpd.datasets.get_path('naturalearth_lowres'))
@@ -294,7 +300,8 @@ class EdiCollection(object):
     def display_on_image(self):
         """
         display/overlay the MT properties on a background geo-referenced map image
-        :return:
+
+        :return: plot object
         """
         import mtpy.utils.plot_geotiff_imshow as plotegoimg
 
@@ -388,7 +395,7 @@ class EdiCollection(object):
                             frequencies are output
         :param interpolate: Boolean to indicate whether to interpolate data onto given period_list
         :param file_name: output file name
-        :return:
+        :return: pt_dict
         """
         csvfname = os.path.join(dest_dir, file_name)
 
@@ -677,6 +684,8 @@ class EdiCollection(object):
         # end for
     # end func
 
+        return
+
     def get_bounding_box(self, epsgcode=None):
         """ compute bounding box
         :return: bounding box in given proj coord system
@@ -699,9 +708,11 @@ class EdiCollection(object):
         return bdict
 
     def get_station_utmzones_stats(self):
-        """A simple method to find what UTM zones these (edi files) MT stations belong to
+        """
+        A simple method to find what UTM zones these (edi files) MT stations belong to
         are they in a single UTM zone, which corresponds to a unique EPSG code?
         or do they belong to multiple UTM zones?
+
         :return: a_dict like {UTMZone:Number_of_MT_sites}
         """
 

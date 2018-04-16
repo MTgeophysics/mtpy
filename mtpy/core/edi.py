@@ -157,7 +157,7 @@ class Edi(object):
                        *default* is None
         :type edi_fn: string
 
-        :Read edi: ::
+        :Example: ::
 
             >>> import mtpy.core.Edi as mtedi
             >>> edi_obj = mtedi.Edi()
@@ -547,7 +547,7 @@ class Edi(object):
         :returns: full path to new edi file
         :rtype: string
 
-        :Write EDI file: ::
+        :Example: ::
 
             >>> import mtpy.core.edi as mtedi
             >>> edi_obj = mtedi.Edi(edi_fn=r"/home/mt/mt01/edi")

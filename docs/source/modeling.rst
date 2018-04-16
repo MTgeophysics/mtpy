@@ -5,7 +5,7 @@ Modeling
 **Module ModEM**
 ==================
 
-.. automodule:: mtpy.modeling.modem_new
+.. automodule:: mtpy.modeling.modem
 	:members:
 
 **Module Occam 1D**
