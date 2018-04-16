@@ -943,7 +943,7 @@ class PlotSlices(object):
                 fnlist.append(fpath)
     
                 #fig.clear()
-                #plt.close()
+                plt.close()
         # end for
         return figlist, fnlist
     #end func

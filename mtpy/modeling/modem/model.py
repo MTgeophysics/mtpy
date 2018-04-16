@@ -2502,9 +2502,9 @@ class Model(object):
         
         elev_mg = mtmesh.interpolate_elevation_to_grid(xg,yg,
                                                surfacefile=surfacefile,
-                                               surfacename=surfacename,
-                                               model_epsg=self.station_locations.model_epsg,
-                                               utm_zone=self.station_locations.model_utm_zone)
+                                               epsg=self.station_locations.model_epsg,
+                                               utm_zone=self.station_locations.model_utm_zone,
+                                               method=method)
 
 #        # elevation in model grid
 #        # first, get lat,lon points of surface grid

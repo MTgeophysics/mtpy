@@ -14,7 +14,7 @@ from mtpy.utils import gis_tools
 import scipy.interpolate as spi
 
 
-def interpolate_elevation_to_grid(self, grid_east,grid_north,model_epsg=None,model_utm_zone=None,
+def interpolate_elevation_to_grid(self, grid_east,grid_north,epsg=None,utm_zone=None,
                                   surfacefile=None, surface=None,method='linear'):
     """
     project a surface to the model grid and add resulting elevation data

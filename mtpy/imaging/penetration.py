@@ -529,10 +529,13 @@ def get_penetration_depth(mt_obj_list, per_index, whichrho='det'):
     return stations, periods, pen_depth, latlons
 
 
-def load_edi_files(edi_path):
-    edi_list = []
+def load_edi_files(edi_path,file_list = None):
+
+    if file_list is None:
+        file_list = [ff for ff in os.listdir(edi_path) if ff.endswith("edi")]
+        
     if edi_path is not None:
-        edi_list = [mt.MT(os.path.join(edi_path, edi)) for edi in os.listdir(edi_path) if edi.endswith("edi")]
+        edi_list = [mt.MT(os.path.join(edi_path, edi)) for edi in file_list]
     return edi_list
 
 
