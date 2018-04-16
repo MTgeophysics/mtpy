@@ -1,7 +1,7 @@
 MTpy: A Python Toolbox for Magnetotelluric (MT) Data Processing, Analysis, Modelling and Visualization
 ==================================
 
-|Build Status| |Coverage Status|
+|Build Status| |Coverage Status| |Documentation Status|
 
 
 Overview
@@ -14,7 +14,7 @@ and `GeoscienceAustralia/mtpy2 <https://github.com/GeoscienceAustralia/mtpy2/tre
 
 Home Page: https://github.com/MTgeophysics/mtpy
 
-Documentation: http://MTgeophysics.github.io/mtpy
+Documentation: http://mtpy2.readthedocs.io/en/develop/master_doc.html and http://mtgeophysics.github.io/mtpy
 
 Issue tracking: https://github.com/MTgeophysics/mtpy/issues
 
@@ -121,5 +121,6 @@ Conventions
    :target: https://coveralls.io/github/MTgeophysics/mtpy?branch=develop
 
 .. |Documentation Status| image:: https://readthedocs.org/projects/mtpy2/badge/?version=develop
-   :target: https://mtgeophysics.github.io/mtpy/
+   :target: http://mtpy2.readthedocs.io/en/develop/master_doc.html
+
 
