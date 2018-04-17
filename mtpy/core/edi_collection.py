@@ -224,6 +224,7 @@ class EdiCollection(object):
         print("Selected periods ", len(select_period_list))
 
         return select_period_list
+    
 
     def create_mt_station_gdf(self, outshpfile=None):
         """
@@ -846,6 +847,8 @@ class EdiCollection(object):
         max_dist = mt_distances.get("MAX_DIST")
 
         return min_dist, max_dist
+        
+
 
 
 ##################################################################

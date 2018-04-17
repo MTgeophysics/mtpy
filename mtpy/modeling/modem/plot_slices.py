@@ -939,11 +939,11 @@ class PlotSlices(object):
 
                 fpath = os.path.join(self.save_path, fn)
                 print('Exporting %s..'%(fpath))
-                fig.savefig(fpath, dpi=self.fig_dpi)
+                fig.savefig(fpath, dpi=self.fig_dpi, bbox_inches='tight')
                 fnlist.append(fpath)
     
                 #fig.clear()
-                plt.close()
+#                plt.close()
         # end for
         return figlist, fnlist
     #end func
