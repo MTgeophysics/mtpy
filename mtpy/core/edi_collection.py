@@ -632,7 +632,7 @@ class EdiCollection(object):
         return csvfname
 
     def export_edi_files(self, dest_dir, period_list=None,
-                                interpolate=True,period_buffer=None):
+                                interpolate=True,period_buffer=None,longitude_format='LON'):
         """
         export edi files.
         :param dest_dir: output directory
@@ -693,7 +693,8 @@ class EdiCollection(object):
                         fn_basename=mt_obj.station,
                         file_type='edi',
                         new_Z_obj=interp_z,
-                        new_Tipper_obj=interp_t)
+                        new_Tipper_obj=interp_t,
+                        longitude_format=longitude_format)
             else:
                 pass
         # end for

@@ -607,7 +607,7 @@ class Data(object):
 
         self.get_relative_station_locations()
 
-    def fill_data_array(self, new_edi_dir=None, use_original_freq=False):
+    def fill_data_array(self, new_edi_dir=None, use_original_freq=False, longitude_format='LON'):
         """
         fill the data array from mt_dict
 
@@ -714,7 +714,8 @@ class Data(object):
                         fn_basename=mt_obj.station,
                         file_type='edi',
                         new_Z_obj=interp_z,
-                        new_Tipper_obj=interp_t)
+                        new_Tipper_obj=interp_t,
+                        longitude_format=longitude_format)
             else:
                 pass
 
@@ -866,7 +867,7 @@ class Data(object):
 
     def write_data_file(self, save_path=None, fn_basename=None,
                         rotation_angle=None, compute_error=True, fill=True,
-                        elevation=False, use_original_freq=False):
+                        elevation=False, use_original_freq=False, longitude_format='LON'):
         """
         write data file for ModEM
         will save file as save_path/fn_basename
@@ -921,7 +922,9 @@ class Data(object):
             new_edi_dir = os.path.join(self.save_path, 'new_edis')  # output edi files according to selected periods
             if not os.path.exists(new_edi_dir):
                 os.mkdir(new_edi_dir)
-            self.fill_data_array(new_edi_dir=new_edi_dir, use_original_freq=use_original_freq)
+            self.fill_data_array(new_edi_dir=new_edi_dir,
+                                 use_original_freq=use_original_freq,
+                                 longitude_format=longitude_format)
             # get relative station locations in grid coordinates
             self.get_relative_station_locations()
 
