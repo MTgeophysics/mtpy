@@ -41,5 +41,5 @@ edi_collection.export_edi_files(savepath,
                                                          # periods present in at least 10% of edis
                                 period_buffer=2 # factor to stretch interpolation by. For example: if period_buffer=2
                                                  # then interpolated data points will only be included if they are
-                                                 # within a factor of 2 of a true data point. If period_buffer=1
+                                                 # within a factor of 2 of a true data point.
                                 )
