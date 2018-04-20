@@ -302,7 +302,7 @@ class PlotSlices(object):
                 print 'Station coordinates not available. Aborting..'
                 exit(-1)
         elif(option == 'XY'):
-            assert type(coords)==np.ndarray and coords.ndim==2 and coords.sshape[1]==2, \
+            assert type(coords)==np.ndarray and coords.ndim==2 and coords.shape[1]==2, \
                 'Shape of coords should be (np, 2); Aborting..'
         elif(option == 'XYZ'):
             assert type(coords)==np.ndarray and coords.ndim==2 and coords.shape[1]==3, \
