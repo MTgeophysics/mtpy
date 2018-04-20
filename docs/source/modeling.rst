@@ -1,5 +1,5 @@
 =================
-Modeling
+Package Modeling
 =================
 
 **Module ModEM**
@@ -31,4 +31,3 @@ Modeling
 
 .. automodule:: mtpy.modeling.ws3dinv
 	:members:	
-	
