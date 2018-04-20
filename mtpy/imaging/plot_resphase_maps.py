@@ -165,6 +165,11 @@ class PlotResPhaseMaps(mtpl.PlotSettings):
                 # Delaunay triangulation will fail if there are collinear points; in those instances
                 # use linear programming (much slower) to define a convex hull.
                 def in_hull_lp(points, x):
+                    """
+                    :param points:
+                    :param x:
+                    :return:
+                    """
                     n_points = len(points)
                     n_dim = len(x)
                     c = np.zeros(n_points)
@@ -243,7 +248,8 @@ class PlotResPhaseMaps(mtpl.PlotSettings):
                 if (not foundCoordinates):
                     # transform coordinates if necessary
                     if (self.mapscale == 'm' or self.mapscale=='km'):
-                        zl = zle = []
+                        zl = []
+                        zle = []
                         for k in range(len(lon)):
                             east, north, zone = gis_tools.project_point_ll2utm(lat[k],
                                                                                lon[k])
