@@ -92,6 +92,11 @@ class PlotResPhaseMaps(mtpl.PlotSettings):
 
         # read in map scale
         self.mapscale = kwargs.pop('mapscale', 'deg')
+        if self.mapscale == 'km':
+            self.dscale = 1000.
+        elif self.mapscale == 'm':
+            self.dscale = 1.
+        # end if
 
         self.plot_title = kwargs.pop('plot_title', None)
         self.fig_dpi = kwargs.pop('fig_dpi', 300)
@@ -148,10 +153,34 @@ class PlotResPhaseMaps(mtpl.PlotSettings):
             """
             Test if points in p are within the convex hull
             """
-            if not isinstance(hull, Delaunay):
-                hull = Delaunay(hull)
 
-            return hull.find_simplex(p)>=0
+            try:
+                if not isinstance(hull, Delaunay):
+                    hull = Delaunay(hull)
+
+                return hull.find_simplex(p)>=0
+            except:
+                from scipy.optimize import linprog
+
+                # Delaunay triangulation will fail if there are collinear points; in those instances
+                # use linear programming (much slower) to define a convex hull.
+                def in_hull_lp(points, x):
+                    n_points = len(points)
+                    n_dim = len(x)
+                    c = np.zeros(n_points)
+                    A = np.r_[points.T, np.ones((1, n_points))]
+                    b = np.r_[x, np.ones(1)]
+                    lp = linprog(c, A_eq=A, b_eq=b)
+                    return not lp.success
+                # end func
+
+                result = []
+                for cp in p:
+                    result.append(in_hull_lp(hull, cp))
+                # end for
+
+                return np.array(result)
+            # end try
         # end func
 
         # set position properties for the plot
@@ -193,7 +222,10 @@ class PlotResPhaseMaps(mtpl.PlotSettings):
         elat[np.argmin(elat)] -= extrapolation_buffer_degrees
         elat[np.argmax(elat)] += extrapolation_buffer_degrees
 
-        x = y = ex = ey = np.ones(lon.shape)
+        x = np.zeros(lon.shape)
+        y = np.zeros(lon.shape)
+        ex = np.zeros(lon.shape)
+        ey = np.zeros(lon.shape)
 
         # plot results
         insideIndices = []
@@ -210,19 +242,19 @@ class PlotResPhaseMaps(mtpl.PlotSettings):
                 ny = regular_grid_ny
                 if (not foundCoordinates):
                     # transform coordinates if necessary
-                    if self.mapscale == 'm':
+                    if (self.mapscale == 'm' or self.mapscale=='km'):
                         zl = zle = []
                         for k in range(len(lon)):
                             east, north, zone = gis_tools.project_point_ll2utm(lat[k],
                                                                                lon[k])
-                            x[k] = east
-                            y[k] = north
+                            x[k] = east / self.dscale
+                            y[k] = north / self.dscale
                             zl.append(zone)
 
                             east, north, zone = gis_tools.project_point_ll2utm(elat[k],
                                                                                elon[k])
-                            ex[k] = east
-                            ey[k] = north
+                            ex[k] = east / self.dscale
+                            ey[k] = north / self.dscale
                             zle.append(zone)
                         # end for
 
@@ -233,7 +265,7 @@ class PlotResPhaseMaps(mtpl.PlotSettings):
                             y = lat
                             ex = elon
                             ey = elat
-                            # end if
+                        # end if
                     else:
                         x = lon
                         y = lat
@@ -306,13 +338,14 @@ class PlotResPhaseMaps(mtpl.PlotSettings):
                     cb = plt.colorbar(cbinfo, ticks=np.linspace(vmin, vmax, 19))
                 # end if
 
-                plt.tick_params(axis='both', which='major', labelsize=self.font_size)
-                plt.tick_params(axis='both', which='minor', labelsize=self.font_size)
+                plt.tick_params(axis='both', which='major', labelsize=self.font_size-2)
+                plt.tick_params(axis='both', which='minor', labelsize=self.font_size-2)
 
                 cb.ax.tick_params(axis='both', which='major', labelsize=self.font_size-1)
                 cb.ax.tick_params(axis='both', which='minor', labelsize=self.font_size-1)
 
-                if (show_stations): plt.scatter(lon, lat, 2, marker='v', c='k', edgecolor='none')
+                # show stations
+                if (show_stations): plt.scatter(x, y, 2, marker='v', c='k', edgecolor='none')
 
                 # Label plots
                 if(plotIdx==1):
@@ -370,12 +403,15 @@ if __name__ == "__main__":
     base = os.path.dirname(mtpy)
     examples = os.path.join(base, 'examples')
     data = os.path.join(examples, 'data')
-    edidir = os.path.join(data, 'edi_files_2')
+    edidir = os.path.join(data, 'edi2')
 
     edi_file_list = glob.glob(edidir + '/*.edi')
 
     prp = PlotResPhaseMaps(fn_list=edi_file_list,
                            fig_dpi=600, mapscale='m')
 
-    f = prp.plot(0.02, 'res', 0.1, 1e4,
+    f = prp.plot(0.02, 'res', 0.005, 1e2,
+                 extrapolation_buffer_degrees=0.1,
+                 regular_grid_nx=100,
+                 regular_grid_ny=100,
                  show=False, save_path='/tmp',)
