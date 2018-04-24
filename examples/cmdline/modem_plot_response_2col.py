@@ -31,17 +31,18 @@ if __name__== "__main__":
     filestem = 'Modular_MPI_NLCG_108'
     datafn = 'ModEM_Data.dat'
 
-    plot_z = False
+    Resist_Only = False
+    # True to plot impedance,
+    # False for plotting resistivity and phase
+
     respfn = filestem+'.dat'
     station = ['GB08','GB09']
-
-
 
     ro = PlotResponse(data_fn=os.path.join(wd,datafn),
                       resp_fn=os.path.join(wd,respfn),
                       plot_type=station,
                       plot_style=1,
-                      plot_z=False,
+                      plot_z= Resist_Only,
                       save_plots=True,
                       ctem='b',ctmm='r',
     #                  mtem=

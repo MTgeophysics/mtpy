@@ -30,7 +30,7 @@ class PlotResponse(object):
 
     :Example: ::
 
-        >>> import mtpy.modeling.new_modem as modem
+        >>> import mtpy.modeling.modem as modem
         >>> dfn = r"/home/MT/ModEM/Inv1/DataFile.dat"
         >>> rfn = r"/home/MT/ModEM/Inv1/Test_resp_000.dat"
         >>> mrp = modem.PlotResponse(data_fn=dfn, resp_fn=rfn)
