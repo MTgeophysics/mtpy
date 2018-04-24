@@ -2383,6 +2383,7 @@ class PlotResponse(object):
 
         plt.show()   # --> BE SURE TO SHOW THE PLOT
 
+
     def redraw_plot(self):
         """
         redraw plot if parameters were changed
@@ -2441,11 +2442,6 @@ class PlotResponse(object):
         :Example: ::
 
             >>> # to save plot as jpg
-            >>> import mtpy.modeling.occam2d as occam2d
-            >>> dfn = r"/home/occam2d/Inv1/data.dat"
-            >>> ocd = occam2d.Occam2DData(dfn)
-            >>> ps1 = ocd.plotPseudoSection()
-            >>> ps1.save_plot(r'/home/MT/figures', file_format='jpg')
 
         """
 
@@ -2473,66 +2469,3 @@ class PlotResponse(object):
 
         self.fig_fn = save_fn
         print 'Saved figure to: ' + self.fig_fn
-
-    def update_plot(self):
-        """
-        update any parameters that where changed using the built-in draw from
-        canvas.
-
-        Use this if you change an of the .fig or axes properties
-
-        :Example: ::
-
-            >>> # to change the grid lines to only be on the major ticks
-            >>> import mtpy.modeling.occam2d as occam2d
-            >>> dfn = r"/home/occam2d/Inv1/data.dat"
-            >>> ocd = occam2d.Occam2DData(dfn)
-            >>> ps1 = ocd.plotAllResponses()
-            >>> [ax.grid(True, which='major') for ax in [ps1.axrte,ps1.axtep]]
-            >>> ps1.update_plot()
-
-        """
-
-        self.fig.canvas.draw()
-
-    def __str__(self):
-        """
-        rewrite the string builtin to give a useful message
-        """
-
-        return ("Plots data vs model response computed by WS3DINV")
-
-# ==================================================================================
-# FZ: add example usage code
-# Justdo>  python mtpy/modeling/modem/plot_response.py
-# ==================================================================================
-if __name__ == "__main__":
-
-    from mtpy.mtpy_globals import *
-
-    # directory where files are located
-    #    wd = os.path.join(SAMPLE_DIR, 'ModEM')
-    wd = os.path.join(SAMPLE_DIR, 'ModEM_2')
-
-    # file stem for inversion result
-    filestem = 'Modular_MPI_NLCG_004'
-
-    datafn = 'ModEM_Data.dat'
-
-    #    station = 'pb23'
-    station = 'Synth02'
-    plot_z = False
-
-    ro = PlotResponse(data_fn=os.path.join(wd, datafn),
-                      resp_fn=os.path.join(wd, filestem + '.dat'),
-                      plot_type=[station],
-                      plot_style=2,
-                      plot_z=plot_z,
-                      font_size=3)
-
-    if len(sys.argv) == 1:
-        ro.plot()
-    elif len(sys.argv) == 2 and sys.argv[1] == '2col':
-        ro.plot_2col()
-    else:
-        print ("Supply Correct Plot type !")
