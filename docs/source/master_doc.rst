@@ -14,6 +14,8 @@ Contents:
    core
    analysis
    modeling
+   imaging
+   utils
 
 
 
