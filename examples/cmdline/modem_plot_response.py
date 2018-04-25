@@ -57,7 +57,7 @@ def plot_response():
 
         #robj.plot()
 
-        robj.plot_2col()
+        robj.plot()
 
 # =============================================
 # Section for quick test of this script
