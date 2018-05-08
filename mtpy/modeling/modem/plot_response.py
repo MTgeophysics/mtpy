@@ -14,7 +14,7 @@ import numpy as np
 import os
 from matplotlib import pyplot as plt, gridspec as gridspec
 from matplotlib.ticker import MultipleLocator
-from matplotlib.ticker import FormatStrFormatter
+from matplotlib.ticker import FormatStrFormatter,LogFormatterSciNotation
 from mtpy.imaging import mtplottools as mtplottools
 from mtpy.modeling.modem.data import Data
 import sys
@@ -1749,7 +1749,7 @@ class PlotResponse(object):
 
                     elif len(self.ax_list) == 6 and plot_tipper == True:
 
-                        if aa <= 2: # Changes applied
+                        if aa < 2: # Changes applied
                             # plt.setp(ax.get_xticklabels(), visible=False)
                             if self.plot_z == False:
                                 if aa == 0 or aa == 1:
@@ -1761,9 +1761,12 @@ class PlotResponse(object):
 
                             if self.res_limits is not None:
                                 ax.set_ylim(self.res_limits)
-                        else:
+                        elif aa < 4:
                             ax.set_ylim(self.phase_limits)
                             ax.set_xlabel('Period (s)', fontdict=fontdict)
+                        else:
+                            if self.tipper_limits is not None:
+                                ax.set_ylim(self.tipper_limits)
                         if aa == 0:
                             if self.plot_z == False:
                                 ax.set_ylabel('App. Res . ($\mathbf{\Omega \cdot m}$)',
@@ -1779,7 +1782,9 @@ class PlotResponse(object):
                                 ax.set_ylabel('Im[Z (mV/km nT)]',
                                                   fontdict=fontdict)
 
-                        if aa <= 2: # Setting the decimal places
+                        if aa == 0:
+                            ax.yaxis.set_major_formatter(LogFormatterSciNotation())
+                        if aa == 2: # Setting the decimal places
                             ax.yaxis.set_major_formatter(
                                 FormatStrFormatter('%.0f'))
                             pass
