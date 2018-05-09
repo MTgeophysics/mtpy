@@ -164,6 +164,7 @@ class PlotResponse(object):
 
         self.legend_loc = 'upper center'
         self.legend_pos = (.5, 1.18)
+        self.legend_pos_tipper = (.5, 1.18)
         self.legend_marker_scale = 1
         self.legend_border_axes_pad = .01
         self.legend_label_spacing = 0.07
@@ -1468,7 +1469,7 @@ class PlotResponse(object):
                         line_list = [erxy[0], eryx[0]]
                         label_list = ['$Z_{xy}$', '$Z_{yx}$']
                     else:
-                        ax_list = [axrxy, axpxy, axtr, axti]
+                        self.ax_list = [axrxy, axpxy, axtr, axti]
                         line_list = [[erxy[0], eryx[0]],
                                      [ertx[0], erty[0]]]
                         label_list = [['$Z_{xy}$', '$Z_{yx}$'],
@@ -1648,7 +1649,8 @@ class PlotResponse(object):
                     else:
                         self.ax_list = [axrxy, axrxx, axpxy, axpxx, axtr, axti]
                         line_list = [[erxy[0], eryx[0]], [erxx[0], eryy[0]],
-                                     [ertx[0]], erty[0]]
+                                     [ertx[0], erty[0]]]
+                        print line_list[2]
                         label_list = [['$Z_{xy}$', '$Z_{yx}$'],
                                       ['$Z_{xx}$', '$Z_{yy}$'],
                                       ['$T_x$', '$T_y$']]
@@ -1686,6 +1688,8 @@ class PlotResponse(object):
                                               fontdict=fontdict)
                             if self.res_limits is not None:
                                 ax.set_ylim(self.res_limits)
+                                
+                                
                         else:
                             ax.set_ylim(self.phase_limits)
                             if self.plot_z == False:
@@ -1729,9 +1733,13 @@ class PlotResponse(object):
                                 ax.set_yscale('log', nonposy='clip')
                             if self.res_limits is not None:
                                 ax.set_ylim(self.res_limits)
-                        else:
+                        elif aa < 4:
                             ax.set_ylim(self.phase_limits)
+                            
+                        else:
                             ax.set_xlabel('Period (s)', fontdict=fontdict)
+                            if self.tipper_limits is not None:
+                                ax.set_ylim(self.tipper_limits)
                         if aa == 0:
                             if self.plot_z == False:
                                 ax.set_ylabel('App. Res. ($\mathbf{\Omega \cdot m}$)',
@@ -1765,6 +1773,7 @@ class PlotResponse(object):
                             ax.set_ylim(self.phase_limits)
                             ax.set_xlabel('Period (s)', fontdict=fontdict)
                         else:
+                            ax.set_xlabel('Period (s)', fontdict=fontdict)
                             if self.tipper_limits is not None:
                                 ax.set_ylim(self.tipper_limits)
                         if aa == 0:
@@ -2351,28 +2360,15 @@ class PlotResponse(object):
                         legend_ax_list.append(self.ax_list[2])
 
                     for aa, ax in enumerate(legend_ax_list):
+                        # work out if tipper or z legend and update position accordingly
+                        if aa < 1:
+                            legend_pos = self.legend_pos
+                        else:
+                            legend_pos = self.legend_pos_tipper
                         ax.legend(line_list[aa],
                                   label_list[aa],
                                   loc=self.legend_loc,
-                                  bbox_to_anchor=self.legend_pos,
-                                  markerscale=self.legend_marker_scale,
-                                  borderaxespad=self.legend_border_axes_pad,
-                                  labelspacing=self.legend_label_spacing,
-                                  handletextpad=self.legend_handle_text_pad,
-                                  borderpad=self.legend_border_pad,
-                                  prop={'size': max([self.font_size / (nr + 1), 5])})
-                else:
-                    legend_ax_list = self.ax_list[0:self.plot_component / 2]
-                    if plot_tipper == True:
-                        if self.plot_component == 2:
-                            legend_ax_list.append(self.ax_list[2])
-                        elif self.plot_component == 4:
-                            legend_ax_list.append(self.ax_list[4])
-                    for aa, ax in enumerate(legend_ax_list):
-                        ax.legend(line_list[aa],
-                                  label_list[aa],
-                                  loc=self.legend_loc,
-                                  bbox_to_anchor=self.legend_pos,
+                                  bbox_to_anchor=legend_pos,
                                   markerscale=self.legend_marker_scale,
                                   borderaxespad=self.legend_border_axes_pad,
                                   labelspacing=self.legend_label_spacing,
@@ -2380,6 +2376,38 @@ class PlotResponse(object):
                                   borderpad=self.legend_border_pad,
                                   prop={'size': max([self.font_size / (nr + 1), 5])})
 
+                        
+                else:
+                    legend_ax_list = self.ax_list[0:self.plot_component / 2]
+                    if plot_tipper == True:
+                        if self.plot_component == 2:
+                            legend_ax_list.append(self.ax_list[2])
+                        elif self.plot_component == 4:
+                            legend_ax_list.append(self.ax_list[4])
+                            
+                    # add text to distinguish real and imaginary tipper
+                    for aa, ax in enumerate(self.ax_list[4:]):
+                        ax.text(0.05,0.5,['Re','Im'][aa],transform=ax.transAxes)
+                            
+
+                    for aa, ax in enumerate(legend_ax_list):
+                        if aa < 2:
+                            legend_pos = self.legend_pos
+                        else:
+                            legend_pos = self.legend_pos_tipper
+
+                            
+                        ax.legend(line_list[aa],
+                                  label_list[aa],
+                                  loc=self.legend_loc,
+                                  bbox_to_anchor=legend_pos,
+                                  markerscale=self.legend_marker_scale,
+                                  borderaxespad=self.legend_border_axes_pad,
+                                  labelspacing=self.legend_label_spacing,
+                                  handletextpad=self.legend_handle_text_pad,
+                                  borderpad=self.legend_border_pad,
+                                  prop={'size': max([self.font_size / (nr + 1), 5])})
+                        
             if self.save_plots:
                 save_filename = os.path.join(os.path.dirname(self.data_fn),station+'.png')
                 self.save_figure(save_filename,fig_dpi=self.fig_dpi)
