@@ -302,6 +302,7 @@ class EdiCollection(object):
         myax2 = self.geopdf.plot(ax=myax, figsize=(
             10, 6), marker='o', color='blue', markersize=8)
 
+
         plt.show()
 
         return myax2

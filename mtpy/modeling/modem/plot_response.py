@@ -1650,7 +1650,6 @@ class PlotResponse(object):
                         self.ax_list = [axrxy, axrxx, axpxy, axpxx, axtr, axti]
                         line_list = [[erxy[0], eryx[0]], [erxx[0], eryy[0]],
                                      [ertx[0], erty[0]]]
-                        print line_list[2]
                         label_list = [['$Z_{xy}$', '$Z_{yx}$'],
                                       ['$Z_{xx}$', '$Z_{yy}$'],
                                       ['$T_x$', '$T_y$']]
@@ -2374,7 +2373,7 @@ class PlotResponse(object):
                                   labelspacing=self.legend_label_spacing,
                                   handletextpad=self.legend_handle_text_pad,
                                   borderpad=self.legend_border_pad,
-                                  prop={'size': max([self.font_size / (nr + 1), 5])})
+                                  prop={'size': max([self.font_size / (nr + 1), 4])})
 
                         
                 else:
@@ -2387,7 +2386,9 @@ class PlotResponse(object):
                             
                     # add text to distinguish real and imaginary tipper
                     for aa, ax in enumerate(self.ax_list[4:]):
-                        ax.text(0.05,0.5,['Re','Im'][aa],transform=ax.transAxes)
+                        ax.text(0.5,0.8,['Real','Imaginary'][aa],
+                                ha='center',va='center',
+                                transform=ax.transAxes)
                             
 
                     for aa, ax in enumerate(legend_ax_list):
@@ -2396,7 +2397,6 @@ class PlotResponse(object):
                         else:
                             legend_pos = self.legend_pos_tipper
 
-                            
                         ax.legend(line_list[aa],
                                   label_list[aa],
                                   loc=self.legend_loc,
@@ -2406,7 +2406,7 @@ class PlotResponse(object):
                                   labelspacing=self.legend_label_spacing,
                                   handletextpad=self.legend_handle_text_pad,
                                   borderpad=self.legend_border_pad,
-                                  prop={'size': max([self.font_size / (nr + 1), 5])})
+                                  prop={'size': max([self.font_size / (nr + 1), 4])})
                         
             if self.save_plots:
                 save_filename = os.path.join(os.path.dirname(self.data_fn),station+'.png')
