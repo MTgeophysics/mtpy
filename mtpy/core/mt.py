@@ -732,25 +732,29 @@ class MT(object):
                         l_value = getattr(self.Processing.Software, s_key)
                         info_list.append('{0} = {1}'.format(l_key,
                                                             l_value))
-            elif p_key.lower() == 'remotesite' and \
-                 self.Processing.RemoteSite.id is not None:
-                for s_key in sorted(
-                        self.Processing.RemoteSite.__dict__.keys()):
-                    if s_key == 'Location':
-                        for a_key in sorted(
-                                self.Processing.RemoteSite.Location.__dict__.keys()):
-                            l_key = 'processing.remote_site.location.{0}'.format(
-                                a_key)
-                            l_value = getattr(self.Processing.RemoteSite.Location,
-                                              a_key)
+            elif p_key.lower() == 'remotesite':
+                if self.Processing.RemoteSite.id is None:
+                    continue
+                else:
+                    for s_key in sorted(
+                            self.Processing.RemoteSite.__dict__.keys()):
+                        if s_key == 'Location':
+                            for a_key in sorted(
+                                    self.Processing.RemoteSite.Location.__dict__.keys()):
+                                l_key = 'processing.remote_site.location.{0}'.format(
+                                    a_key)
+                                l_value = getattr(self.Processing.RemoteSite.Location,
+                                                  a_key)
+                                info_list.append('{0} = {1}'.format(l_key,
+                                                                    l_value))
+                        else:
+                            l_key = 'processing.remote_site.{0}'.format(s_key)
+                            l_value = getattr(self.Processing.RemoteSite, s_key)
                             info_list.append('{0} = {1}'.format(l_key,
                                                                 l_value))
-                    else:
-                        l_key = 'processing.remote_site.{0}'.format(s_key)
-                        l_value = getattr(self.Processing.RemoteSite, s_key)
-                        info_list.append('{0} = {1}'.format(l_key,
-                                                            l_value))
-            else:
+            elif p_key.lower() in ['datum', 'coordinate_system',
+                                   'sign_convention', 'remote_reference',
+                                   'processed_by']:
                 l_key = 'processing.{0}'.format(p_key)
                 l_value = getattr(self.Processing, p_key)
                 info_list.append('{0} = {1}'.format(l_key, l_value))
