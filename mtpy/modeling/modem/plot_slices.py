@@ -895,6 +895,7 @@ class PlotSlices(object):
 
             # plot the colorbar
             if self.draw_colorbar:
+                
                 cbx = mcb.make_axes(ax1, fraction=.15, shrink=.75, pad=.15)
                 cb = mcb.ColorbarBase(cbx[0],
                                       cmap=self.cmap,

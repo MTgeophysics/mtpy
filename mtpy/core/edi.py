@@ -531,7 +531,8 @@ class Edi(object):
         self.Tipper.compute_amp_phase()
         self.Tipper.compute_mag_direction()
 
-    def write_edi_file(self, new_edi_fn=None,longitude_format='LON'):
+    def write_edi_file(self, new_edi_fn=None,longitude_format='LON', 
+                       latlon_format='dms'):
         """
         Write a new edi file from either an existing .edi file or from data
         input by the user into the attributes of Edi.
@@ -542,7 +543,13 @@ class Edi(object):
                            file as the input .edi with as:
                            r"/home/mt/mt01_1.edi"
         :type new_edi_fn: string
-
+        :param longitude_format:  whether to write longitude as LON or LONG. 
+                                  options are 'LON' or 'LONG', default 'LON'
+        :type longitude_format:  string
+        :param latlon_format:  format of latitude and longitude in output edi,
+                               degrees minutes seconds ('dms') or decimal 
+                               degrees ('dd')
+        :type latlon_format:  string
 
         :returns: full path to new edi file
         :rtype: string
@@ -567,9 +574,11 @@ class Edi(object):
             self.read_edi_file()
 
         # write lines
-        header_lines = self.Header.write_header(longitude_format=longitude_format)
+        header_lines = self.Header.write_header(longitude_format=longitude_format,
+                                                latlon_format=latlon_format)
         info_lines = self.Info.write_info()
-        define_lines = self.Define_measurement.write_define_measurement(longitude_format=longitude_format)
+        define_lines = self.Define_measurement.write_define_measurement(longitude_format=longitude_format,
+                                                                        latlon_format=latlon_format)
         dsect_lines = self.Data_sect.write_data_sect(over_dict={'nfreq': len(self.Z.freq)})
 
         # write out frequencies
@@ -1031,7 +1040,7 @@ class Header(object):
 
             setattr(self, key, value)
 
-    def write_header(self, header_list=None, longitude_format='LON'):
+    def write_header(self, header_list=None, longitude_format='LON', latlon_format='dms'):
         """
         Write header information to a list of lines.
 
@@ -1039,7 +1048,13 @@ class Header(object):
         :param header_list: should be read from an .edi file or input as
                             ['key_01=value_01', 'key_02=value_02']
         :type header_list: list
-
+        :param longitude_format:  whether to write longitude as LON or LONG. 
+                                  options are 'LON' or 'LONG', default 'LON'
+        :type longitude_format:  string
+        :param latlon_format:  format of latitude and longitude in output edi,
+                               degrees minutes seconds ('dms') or decimal 
+                               degrees ('dd')
+        :type latlon_format:  string
 
         :returns header_lines: list of lines containing header information
                                will be of the form::
@@ -1071,8 +1086,10 @@ class Header(object):
                 if value is None:
                     value = 'mtpy'
             elif key in ['lat', 'lon']:
-                value = gis_tools.convert_position_float2str(value)
-
+                if latlon_format.upper() == 'DD':
+                    value = '%.6f'%value
+                else:
+                    value = gis_tools.convert_position_float2str(value)
             if key in ['elev', 'declination']:
                 try:
                     value = '{0:.3f}'.format(value)
@@ -1487,7 +1504,8 @@ class DefineMeasurement(object):
                     value = EMeasurement(**line)
                 setattr(self, key, value)
 
-    def write_define_measurement(self, measurement_list=None, longitude_format='LON'):
+    def write_define_measurement(self, measurement_list=None, longitude_format='LON',
+                                 latlon_format='dd'):
         """
         write the define measurement block as a list of strings
         """
@@ -1499,7 +1517,10 @@ class DefineMeasurement(object):
         for key in self._define_meas_keys:
             value = getattr(self, key)
             if key == 'reflat' or key == 'reflon':
-                value = gis_tools.convert_position_float2str(value)
+                if latlon_format.upper() == 'DD':
+                    value = '%.6f'%value
+                else:
+                    value = gis_tools.convert_position_float2str(value)
             elif key == 'refelev':
                 value = '{0:.3f}'.format(
                     gis_tools.assert_elevation_value(value))
