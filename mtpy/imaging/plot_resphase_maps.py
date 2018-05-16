@@ -99,7 +99,7 @@ class PlotResPhaseMaps(mtpl.PlotSettings):
         # end if
 
         self.plot_title = kwargs.pop('plot_title', None)
-        self.fig_dpi = kwargs.pop('fig_dpi', 300)
+        self.fig_dpi = kwargs.pop('fig_dpi', 100)
 
         self.fig_size = kwargs.pop('fig_size', [8, 6])
 
@@ -198,7 +198,7 @@ class PlotResPhaseMaps(mtpl.PlotSettings):
         plt.rcParams['figure.subplot.hspace'] = .70
 
         # make figure instance
-        self.fig = plt.figure(1, self.fig_size, dpi=self.fig_dpi)
+        self.fig = plt.figure(1, figsize=self.fig_size, dpi=self.fig_dpi)
 
         # clear the figure if there is already one up
         plt.clf()
@@ -329,29 +329,29 @@ class PlotResPhaseMaps(mtpl.PlotSettings):
                 # end if
 
                 if (type == 'res'):
-                    cbinfo = plt.tricontourf(triangulation, img, mask=insideIndices,
+                    cbinfo = ax.tricontourf(triangulation, img, mask=insideIndices,
                                              levels=np.logspace(np.log10(vmin), np.log10(vmax), 50),
                                              cmap=cmap,
                                              norm=colors.LogNorm())
 
-                    cb = plt.colorbar(cbinfo, ticks=LogLocator(base=10, numticks=7))
+                    cb = self.fig.colorbar(cbinfo, ticks=LogLocator(base=10, numticks=7))
                 elif (type == 'phase'):
-                    cbinfo = plt.tricontourf(triangulation, img, mask=insideIndices,
+                    cbinfo = ax.tricontourf(triangulation, img, mask=insideIndices,
                                              levels=np.linspace(vmin, vmax, 50),
                                              norm=colors.Normalize(vmin=vmin, vmax=vmax),
                                              cmap=cmap)
 
-                    cb = plt.colorbar(cbinfo, ticks=np.linspace(vmin, vmax, 19))
+                    cb = self.fig.colorbar(cbinfo, ticks=np.linspace(vmin, vmax, 19))
                 # end if
 
-                plt.tick_params(axis='both', which='major', labelsize=self.font_size-2)
-                plt.tick_params(axis='both', which='minor', labelsize=self.font_size-2)
+                ax.tick_params(axis='both', which='major', labelsize=self.font_size-2)
+                ax.tick_params(axis='both', which='minor', labelsize=self.font_size-2)
 
                 cb.ax.tick_params(axis='both', which='major', labelsize=self.font_size-1)
                 cb.ax.tick_params(axis='both', which='minor', labelsize=self.font_size-1)
 
                 # show stations
-                if (show_stations): plt.scatter(x, y, 2, marker='v', c='k', edgecolor='none')
+                if (show_stations): ax.scatter(x, y, 2, marker='v', c='k', edgecolor='none')
 
                 # Label plots
                 if(plotIdx==1):
@@ -393,7 +393,7 @@ class PlotResPhaseMaps(mtpl.PlotSettings):
         if (show): plt.show()
 
         fn = os.path.join(save_path, '%s.%0.2f.%s'%(type, freq, file_ext))
-        plt.savefig(fn, dpi=self.fig_dpi)
+        self.fig.savefig(fn, dpi=self.fig_dpi)
 
         return self.fig
     # end func
@@ -414,10 +414,10 @@ if __name__ == "__main__":
     edi_file_list = glob.glob(edidir + '/*.edi')
 
     prp = PlotResPhaseMaps(fn_list=edi_file_list,
-                           fig_dpi=600, mapscale='m')
+                           fig_dpi=200, mapscale='m')
 
     f = prp.plot(0.02, 'res', 0.005, 1e2,
                  extrapolation_buffer_degrees=0.1,
                  regular_grid_nx=100,
                  regular_grid_ny=100,
-                 show=False, save_path='/tmp',)
+                 show=True, save_path='/tmp',)
