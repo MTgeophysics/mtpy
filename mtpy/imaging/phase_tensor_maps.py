@@ -1527,6 +1527,8 @@ if __name__ == "__main__":
                  raster_dict={'lons':lons.flatten(),
                               'lats':lats.flatten(),
                               'vals':vals.flatten(),
-                              'cmap':'rainbow'})
+                              'levels':50,
+                              'cmap':'rainbow',
+                              'cbar_title':'Arbitrary Units'})
 
     ptm_obj.export_params_to_file(save_path=savedir)
