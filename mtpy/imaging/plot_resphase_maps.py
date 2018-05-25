@@ -218,6 +218,7 @@ class PlotResPhaseMaps(mtpl.PlotSettings):
         lat = np.array(lat)
         res = np.array(res)
         phase = np.array(phase)
+        phase[:,1,0] += 180
 
         elon = np.array(lon)
         elat = np.array(lat)
