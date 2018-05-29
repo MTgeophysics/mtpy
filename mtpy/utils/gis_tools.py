@@ -826,8 +826,7 @@ def epsg_project(x, y, epsg_from, epsg_to):
             p1 = pyproj.Proj(EPSG_DICT[epsg_from])
             p2 = pyproj.Proj(EPSG_DICT[epsg_to])
         except KeyError:
-            print(
-                "Surface or data epsg either not in dictionary or None, please add epsg and Proj4 text to epsg_dict at beginning of modem_new module")
+            print("Surface or data epsg either not in dictionary or None")
             return
 
     return pyproj.transform(p1, p2, x, y)
@@ -940,16 +939,16 @@ if __name__ == "__main__":
     utm = project_point_ll2utm(mylat, mylon)
     print ("project_point_ll2utm(mylat, mylon) =:  ", utm)
 
-    utm2 = transform_ll_to_utm(mylon, mylat)
-    print ("The transform_ll_to_utm(mylon, mylat) results lat, long, elev =: ", utm2[1])
+    if HAS_GDAL:
+        utm2 = transform_ll_to_utm(mylon, mylat)
+        print ("The transform_ll_to_utm(mylon, mylat) results lat, long, elev =: ", utm2[1])
 
-    spref_obj=utm2[0]
-    print("The spatial ref string =:", str(spref_obj))
-    print("The spatial ref WKT format =:", spref_obj.ExportToWkt())
-    print("*********  Details of the spatial reference object ***************")
-    print ("spref.GetAttrValue('projcs')", spref_obj.GetAttrValue('projcs'))
-    print( "spref.GetUTMZone()", spref_obj.GetUTMZone())
-
-# how to get the EPSG code from a UTM zone number?
+        spref_obj=utm2[0]
+        print("The spatial ref string =:", str(spref_obj))
+        print("The spatial ref WKT format =:", spref_obj.ExportToWkt())
+        print("*********  Details of the spatial reference object ***************")
+        print ("spref.GetAttrValue('projcs')", spref_obj.GetAttrValue('projcs'))
+        print( "spref.GetUTMZone()", spref_obj.GetUTMZone())
+    # end if
 
 
