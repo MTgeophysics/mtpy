@@ -26,7 +26,7 @@ epsg = 28355 # epsg code your model was projected to. See http://spatialreferenc
              # to find the epsg code for your projection
 
 # workdir (path to save to)
-workdir = 'C:\tmp'
+workdir = r'C:\tmp'
 
 
 ## Create or define data file ##
@@ -46,7 +46,7 @@ period_list = np.logspace(1,4,19) # change to your period list
 
 # create data file
 dObj = Data(epsg=epsg)
-dObj._initialise_empty_data_array(xy,period_list,location_type='LL',stationnames=station_names)
+dObj._initialise_empty_data_array(xy,period_list,location_type='LL',station_names=station_names)
 dObj.write_data_file(fill=False,save_path=workdir)
 
 # Create model file

@@ -25,9 +25,9 @@ from mtpy.utils import gis_tools as gis_tools
 from mtpy.utils.decorator import deprecated
 from mtpy.utils.mtpylog import MtPyLog
 
-from .exception import ModEMError, DataError
-from .station import Stations
-from .model import Model
+from mtpy.modeling.modem.exception import ModEMError, DataError
+from mtpy.modeling.modem.station import Stations
+from mtpy.modeling.modem.model import Model
 
 try:
     from evtk.hl import pointsToVTK
