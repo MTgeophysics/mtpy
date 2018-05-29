@@ -287,11 +287,13 @@ class Geology:
             if (self._hasLUT):
                 symbol = self._properties[i][self._symbolkey]
                 fcolor = self._lutDict[symbol]
-            if (fcolor == []): fcolor = default_polygon_color
+            if (fcolor == []): 
+                fcolor = default_polygon_color
 
             if (isinstance(feature, Polygon)):
                 polygon = feature
                 x, y = polygon.exterior.coords.xy
+                
                 px, py = self._xy_to_local(x, y, epsg_from, epsg_to,
                                            centre_shift, scale_factor)
                 ppolygon = Polygon(zip(px, py))
@@ -320,7 +322,7 @@ class Geology:
                     px, py = self._xy_to_local(x, y, epsg_from, epsg_to,
                                                centre_shift, scale_factor)
                     ppolygon = Polygon(zip(px, py))
-
+                    
                     if (fcolor is not None): kwargs['facecolor'] = fcolor
                     if ('edgecolor' not in kwargs.keys() and not ecolor_is_fcolor):
                         kwargs['edgecolor'] = 'none'

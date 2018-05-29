@@ -1718,7 +1718,7 @@ class Model(object):
                                                    gcy,
                                                    self.station_locations.station_locations['rel_east'],
                                                    self.station_locations.station_locations['rel_north'],
-                                                   buf=5 * (self.cell_size_east * 2 + self.cell_size_north ** 2) ** 0.5)
+                                                   buf=5 * (self.cell_size_east ** 2 + self.cell_size_north ** 2) ** 0.5)
             topo_core = self.surface_dict['topography'][core_cells]
             topo_core_min = max(topo_core.min(),0)
 
@@ -1729,8 +1729,10 @@ class Model(object):
                                                              increment_factor=0.999)[::-1]
             # sum to get grid cell locations
             new_airlayers = np.array([new_air_nodes[:ii].sum() for ii in range(len(new_air_nodes) + 1)])
+            # maximum topography cell on the grid
+            topo_max_grid = topo_core_min + new_airlayers[-1]
             # round to nearest whole number and convert subtract the max elevation (so that sea level is at topo_core_min)
-            new_airlayers = np.around(new_airlayers - topo_core.max())
+            new_airlayers = np.around(new_airlayers - topo_max_grid)
 
             self._logger.debug("new_airlayers {}".format(new_airlayers))
 

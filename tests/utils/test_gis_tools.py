@@ -2,8 +2,8 @@ from unittest import TestCase
 import numpy as np
 import pytest
 
-from mtpy.utils.gis_tools import ll_to_utm, utm_to_ll, project_point_ll2utm, project_point_utm2ll, transform_ll_to_utm, \
-    transform_utm_to_ll
+from mtpy.utils.gis_tools import HAS_GDAL, ll_to_utm, utm_to_ll, project_point_ll2utm, project_point_utm2ll, transform_ll_to_utm, \
+    transform_utm_to_ll, project_points_ll2utm
 
 
 class TestGisTools(TestCase):
@@ -62,22 +62,34 @@ class TestGisTools(TestCase):
         self.assertTrue(np.isclose(self.lat, new_lat))
         self.assertTrue(np.isclose(self.lon, new_lon))
 
-    def test_transform_ll_to_utm(self):
-        utm_cs, utm_point = transform_ll_to_utm(self.lon, self.lat)
+    def test_project_points_ll2utm(self):
+        easting, northing, zone = project_points_ll2utm(np.ones(5) * self.lat,
+                                                        np.ones(5) * self.lon)
 
-        easting = utm_point[0]
-        northing = utm_point[1]
+        print(zone, easting, northing)
 
-        print(easting, northing)
+        self.assertTrue(zone == self.zone)
+        self.assertTrue(np.sum(np.isclose(easting, np.ones(5) * self.easting))==5)
+        self.assertTrue(np.sum(np.isclose(northing, np.ones(5) * self.northing))==5)
 
-        # self.assertTrue(zone, self.zone)
-        self.assertTrue(np.isclose(easting, self.easting))
-        self.assertTrue(np.isclose(northing, self.northing))
+    if HAS_GDAL:
+        def test_transform_ll_to_utm(self):
+            utm_cs, utm_point = transform_ll_to_utm(self.lon, self.lat)
 
-    def test_transform_utm_to_ll(self):
-        new_lon, new_lat, evel = transform_utm_to_ll(self.easting, self.northing, self.zone)
+            easting = utm_point[0]
+            northing = utm_point[1]
 
-        print(new_lat, new_lon)
+            print(easting, northing)
 
-        self.assertTrue(np.isclose(self.lat, new_lat))
-        self.assertTrue(np.isclose(self.lon, new_lon))
+            # self.assertTrue(zone, self.zone)
+            self.assertTrue(np.isclose(easting, self.easting))
+            self.assertTrue(np.isclose(northing, self.northing))
+
+        def test_transform_utm_to_ll(self):
+            new_lon, new_lat, evel = transform_utm_to_ll(self.easting, self.northing, self.zone)
+
+            print(new_lat, new_lon)
+
+            self.assertTrue(np.isclose(self.lat, new_lat))
+            self.assertTrue(np.isclose(self.lon, new_lon))
+    # end if
