@@ -259,6 +259,7 @@ class Z3D_Schedule_metadata(object):
         self.Sleep = None
         self.Sync = None
         self.Time = None
+        self.datetime = None
         
         for key in kwargs:
             setattr(self, key, kwargs[key])
@@ -301,6 +302,10 @@ class Z3D_Schedule_metadata(object):
         # the first good GPS stamp is on the 3rd, so need to add 2 seconds
         self.Time = '{0}{1:02}'.format(self.Time[0:6],
                                     int(self.Time[6:])+2)
+
+        self.datetime = datetime.datetime.strptime('{0},{1}'.format(self.Date,
+                                                                    self.Time),
+                                                   datetime_fmt)
 #==============================================================================
 #  Meta data class    
 #==============================================================================
@@ -387,7 +392,7 @@ class Z3D_Metadata(object):
         self.cal_ant = None
         self.cal_board = None
         self.cal_ver = None
-        self.ch_azimuth = None
+        self.ch_azimuth = 0.0
         self.ch_cmp = None
         self.ch_length = None
         self.ch_number = None
@@ -444,17 +449,28 @@ class Z3D_Metadata(object):
             if test_str.lower().find('metadata record') > 0:
                 self.count += 1
                 cal_find = False
-                test_str = test_str.strip().split('\n')[1] 
+                test_str = test_str.strip().split('\n')[1]
                 if test_str.count('|') > 1:
                     for t_str in test_str.split('|'):
+                        # get metadata name and value
                         if t_str.find('=') == -1 and \
                            t_str.lower().find('line.name') == -1:
-                            pass
+                            # get metadata for older versions of z3d files
+                            if len(t_str.split(',')) == 2:
+                                t_list = t_str.lower().split(',')
+                                t_key = t_list[0].strip().replace('.', '_')
+                                if t_key == 'ch_varasp':
+                                    t_key = 'ch_length'
+                                t_value = t_list[1].strip()
+                                setattr(self, t_key, t_value)
+                        # get metadata for just the line that has line name
+                        # because for some reason that is still comma separated
                         elif t_str.lower().find('line.name') >= 0:
                             t_list = t_str.split(',')
                             t_key = t_list[0].strip().replace('.', '_')
                             t_value = t_list[1].strip()
                             setattr(self, t_key.lower(), t_value)
+                        # get metadata for newer z3d files
                         else:
                             t_list = t_str.split('=')
                             t_key = t_list[0].strip().replace('.', '_')
@@ -505,7 +521,7 @@ class Z3D_Metadata(object):
                                                 for tt in t_str.strip().split(':')])
             else:
                 self.find_metadata = False
-                # need to go back to where the meta data was found wo
+                # need to go back to where the meta data was found so
                 # we don't skip a gps time stamp
                 self.m_tell = self.fid.tell()-self._metadata_length
                     
@@ -521,9 +537,13 @@ class Z3D_Metadata(object):
                                                              formats='f8, f8, f8, f8')
             except ValueError:
                 self.board_cal = None
-                                   
-        self.station = '{0}{1}'.format(self.line_name,
-                                       self.rx_xyz0.split(':')[0])
+        
+        try:
+            self.station = '{0}{1}'.format(self.line_name,
+                                           self.rx_xyz0.split(':')[0])
+        except AttributeError:
+            self.station = None
+            print "Need to input station name"
         
         
 #==============================================================================
@@ -674,7 +694,7 @@ class Zen3D(object):
                                      
         self._week_len = 604800
         self._gps_epoch = (1980, 1, 6, 0, 0, 0, -1, -1, 0)
-        self._leap_seconds = 16
+        self._leap_seconds = 17
         self._block_len = 2**16
         self.zen_schedule = None
         # the number in the cac files is for volts, we want mV
@@ -771,8 +791,7 @@ class Zen3D(object):
             
         self.schedule.read_schedule_metadata(fn=self.fn, fid=fid)
         # set the zen schedule time
-        self.zen_schedule = '{0},{1}'.format(self.schedule.Date, 
-                                             self.schedule.Time)
+        self.zen_schedule = self.schedule.datetime
     
     #======================================     
     def _read_metadata(self, fn=None, fid=None):
@@ -881,11 +900,11 @@ class Zen3D(object):
                 data_count += test_str.size
 
         # find the gps stamps
-        gps_stamp_find = np.where(data==self._gps_flag_0)[0]
+        gps_stamp_find = np.where(data == self._gps_flag_0)[0]
         
         # skip the first two stamps and trim data
         data = data[gps_stamp_find[3]:]
-        gps_stamp_find = np.where(data==self._gps_flag_0)[0]
+        gps_stamp_find = np.where(data == self._gps_flag_0)[0]
         
         self.gps_stamps = np.zeros(len(gps_stamp_find), dtype=self._gps_dtype)
         
@@ -916,11 +935,16 @@ class Zen3D(object):
         
         # convert data to mV
         self.convert_counts_to_mv() 
+        self.ts_obj.ts = self.ts_obj.ts.astype(np.float32)
+        
+        self.validate_time_blocks()
+        self.convert_gps_time()
+        self.zen_schedule = self.check_start_time()
         
         # fill time series object metadata
         self.ts_obj.station = self.station
         self.ts_obj.sampling_rate = float(self.df)
-        self.ts_obj.start_time_utc = self.zen_schedule
+        self.ts_obj.start_time_utc = self.zen_schedule.isoformat().replace('T', ',')
         self.ts_obj.component = self.metadata.ch_cmp
         self.ts_obj.coordinate_system = 'geomagnetic'
         self.ts_obj.dipole_length = float(self.metadata.ch_length)
@@ -939,11 +963,6 @@ class Zen3D(object):
         # time it
         et = time.time()
         print '--> Reading data took: {0:.3f} seconds'.format(et-st)
-        
-        self.validate_time_blocks()
-        self.convert_gps_time()
-        self.check_start_time()
-        
         print '    found {0} GPS time stamps'.format(self.gps_stamps.shape[0])
         print '    found {0} data points'.format(self.ts_obj.ts.data.size)
         
@@ -971,27 +990,25 @@ class Zen3D(object):
         """
         
         # make sure the time is in gps time
-        zen_start = self.get_UTC_date_time(self.header.gpsweek,
-                                           self.gps_stamps['time'][0]+\
-                                                            self._leap_seconds)
-        # set the zen schedule to the first gps stamp
-        self.zen_schedule = zen_start
-        zen_time = time.strptime(zen_start, datetime_fmt)
+        zen_start_utc = self.get_UTC_date_time(self.header.gpsweek,
+                                               self.gps_stamps['time'][0])
         
         # calculate the scheduled start time
         s_start = '{0},{1}'.format(self.schedule.Date, self.schedule.Time)
-        schedule_time = time.strptime(s_start, datetime_fmt)
+        schedule_time = datetime.datetime.strptime(s_start, datetime_fmt)
         
         # reset the data and time in the schedule meta data so there is no
         # confusion on when the time series starts
-        self.schedule.Date = zen_start.split(',')[0]
-        self.schedule.Time = zen_start.split(',')[1]
+        self.schedule.Date = zen_start_utc.strftime('%Y-%m-%d')
+        self.schedule.Time = zen_start_utc.strftime('%H:%M:%S')
         
         # estimate the time difference between the two                                               
-        time_diff = time.mktime(zen_time)-time.mktime(schedule_time)
+        time_diff = self.zen_schedule - schedule_time
         print '    Scheduled time was {0} (GPS time)'.format(s_start)
-        print '    1st good stamp was {0} (GPS time)'.format(zen_start)
-        print '    difference of {0:.2f} seconds'.format(time_diff)
+        print '    1st good stamp was {0} (UTC time)'.format(zen_start_utc.isoformat())
+        print '    difference of {0:.2f} seconds'.format(time_diff.total_seconds())
+  
+        return zen_start_utc
         
     #==================================================
     def validate_gps_time(self):
@@ -1107,7 +1124,8 @@ class Zen3D(object):
         """
         get the actual date and time of measurement as UTC. 
         
-        Note that GPS time is curently off by 16 seconds from actual UTC time.
+        .. note:: GPS time is curently ahead by 18 (after 2016) seconds from
+        UTC time.
         
         Arguments
         -------------
@@ -1119,7 +1137,7 @@ class Zen3D(object):
             
             **leap_seconds**: int
                               number of seconds gps time is off from UTC time.
-                              It is currently off by 16 seconds.
+                              It is currently off by 18 seconds (after 2016).
                               
         Returns
         ------------
@@ -1134,28 +1152,20 @@ class Zen3D(object):
             gps_week += 1
             gps_time -= self._week_len
             
-        mseconds = gps_time % 1
+        #mseconds = gps_time % 1
         
         #make epoch in seconds, mktime computes local time, need to subtract
         #time zone to get UTC
         epoch_seconds = time.mktime(self._gps_epoch)-time.timezone
         
-        #gps time is 14 seconds ahead of GTC time, but I think that the zen
-        #receiver accounts for that so we will leave leap seconds to be 0        
-        gps_seconds = epoch_seconds+(gps_week*self._week_len)+gps_time-\
+        #gps time is 18 seconds ahead of GTC time        
+        utc_seconds = epoch_seconds+(gps_week*self._week_len)+gps_time-\
                                                         self._leap_seconds
 
-        #compute date and time from seconds
-        (year, month, day, hour, minutes, seconds, dow, jday, dls) = \
-                                                    time.gmtime(gps_seconds)
-        
-        date_time = time.strftime(datetime_fmt ,(year,
-                                                 month, 
-                                                 day, 
-                                                 hour, 
-                                                 minutes, 
-                                                 int(seconds+mseconds), 
-                                                 0, 0, 0))
+        # compute date and time from seconds and return a datetime object
+        # easier to manipulate later
+        date_time = datetime.datetime.utcfromtimestamp(utc_seconds)
+
         return date_time
         
     #==================================================    
@@ -1274,7 +1284,9 @@ class Zen3D(object):
             # if there is a decimation factor need to read in the time
             # series data to get the length.
             c = self.ts_obj.read_ascii_header(self.fn_mt_ascii)
-            self.zen_schedule = self.ts_obj.start_time_utc.replace(' ', ',')
+            self.zen_schedule = datetime.datetime.strptime(self.ts_obj.start_time_utc, 
+                                                           datetime_sec)
+            #self.zen_schedule = self.ts_obj.start_time_utc.replace(' ', ',')
             return
         
         # read in time series data if haven't yet.
