@@ -1806,7 +1806,8 @@ class PlotResponse(object):
                                 ax.set_ylabel('Tipper', fontdict=fontdict)
                     # writing x axis ticks and making it visible
 
-                    if aa == 4 or aa == 5:
+                    if ((aa == 4 or aa == 5) and plot_tipper == True) or \
+                        ((aa == 2 or aa == 3) and plot_tipper == False):
                         plt.setp(ax.get_xticklabels(), visible=True)
                     else:
                         plt.setp(ax.get_xticklabels(), visible=False)

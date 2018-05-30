@@ -28,9 +28,8 @@ import mtpy.analysis.pt as MTpt
 import matplotlib.tri as tri
 from scipy.spatial import cKDTree
 from scipy.spatial import Delaunay
-from matplotlib.ticker import LogFormatter
+from matplotlib import ticker
 from matplotlib import colors
-from matplotlib.ticker import LogLocator
 
 
 class PlotResPhaseMaps(mtpl.PlotSettings):
@@ -329,20 +328,38 @@ class PlotResPhaseMaps(mtpl.PlotSettings):
                                       np.sum(w[idwIndices, :], axis=1)
                 # end if
 
-                if (type == 'res'):
-                    cbinfo = ax.tricontourf(triangulation, img, mask=insideIndices,
-                                             levels=np.logspace(np.log10(vmin), np.log10(vmax), 50),
-                                             cmap=cmap,
-                                             norm=colors.LogNorm())
+                if(isinstance(cmap, str)):
+                    cmap = plt.get_cmap(cmap)
+                # set cmap values for over and under
+                norm = colors.Normalize(vmin=vmin, vmax=vmax)
+                cmap.set_over(cmap(norm(vmax)))
+                cmap.set_under(cmap(norm(vmin)))
 
-                    cb = self.fig.colorbar(cbinfo, ticks=LogLocator(base=10, numticks=7))
+                if (type == 'res'):
+                    # Log-normalized contour plots do not support the 'extend' keyword which
+                    # can be used to clip data values above/below the given range to their
+                    # corresponding colors. We do the following to get around this issue.
+                    cbinfo = ax.tricontourf(triangulation, np.log10(img), mask=insideIndices,
+                                            levels=np.linspace(np.log10(vmin), np.log10(vmax), 50),
+                                            extend='both',
+                                            cmap=cmap)
+
+                    cb = self.fig.colorbar(cbinfo,
+                                           ticks=ticker.FixedLocator(
+                                               np.arange(int(np.round(np.log10(vmin))),
+                                                         int(np.round(np.log10(vmax)))+1)))
+
+                    labels = ['$10^{%d}$'%l for l in
+                              np.arange(int(np.round(np.log10(vmin))), int(np.round(np.log10(vmax)))+1)]
+                    cb.ax.yaxis.set_major_formatter(ticker.FixedFormatter(labels))
                 elif (type == 'phase'):
                     cbinfo = ax.tricontourf(triangulation, img, mask=insideIndices,
                                              levels=np.linspace(vmin, vmax, 50),
                                              norm=colors.Normalize(vmin=vmin, vmax=vmax),
+                                             extend='both',
                                              cmap=cmap)
 
-                    cb = self.fig.colorbar(cbinfo, ticks=np.linspace(vmin, vmax, 19))
+                    cb = self.fig.colorbar(cbinfo, ticks=np.linspace(vmin, vmax, 12))
                 # end if
 
                 ax.tick_params(axis='both', which='major', labelsize=self.font_size-2)
@@ -355,12 +372,6 @@ class PlotResPhaseMaps(mtpl.PlotSettings):
                 if (show_stations): ax.scatter(x, y, 2, marker='v', c='k', edgecolor='none')
 
                 # Label plots
-                if(plotIdx==1):
-                    if(type=='res'):
-                        ax.set_title('Apparent Resistivity Map for %0.2f Hz'%(freq))
-                    else:
-                        ax.set_title('Phase Map for %0.2f Hz' % (freq))
-
                 label = ''
                 if(i==0 and j==0):
                     if(type=='res'):
@@ -390,7 +401,14 @@ class PlotResPhaseMaps(mtpl.PlotSettings):
             # end for
         # end for
 
-        plt.tight_layout()
+        # Plot title
+        suffix = ' %0.2f Hz'%(freq) if (freq>=1) else ' %0.2f s'%(1./freq)
+        if(type=='res'):
+            self.fig.suptitle('Apparent Resistivity Maps for'+suffix, y=0.985)
+        else:
+            self.fig.suptitle('Phase Maps for'+suffix, y=0.985)
+
+        plt.tight_layout(rect=[0, 0.025, 1, 0.975])
         if (show): plt.show()
 
         fn = os.path.join(save_path, '%s.%0.2f.%s'%(type, freq, file_ext))
@@ -417,8 +435,17 @@ if __name__ == "__main__":
     prp = PlotResPhaseMaps(fn_list=edi_file_list,
                            fig_dpi=200, mapscale='m')
 
-    f = prp.plot(0.02, 'res', 0.005, 1e2,
-                 extrapolation_buffer_degrees=0.1,
-                 regular_grid_nx=100,
-                 regular_grid_ny=100,
-                 show=True, save_path='/tmp',)
+    plot_type = 'res'
+
+    if(plot_type=='res'):
+        f = prp.plot(0.02, plot_type, 0.005, 1e2,
+                     extrapolation_buffer_degrees=0.1,
+                     regular_grid_nx=100,
+                     regular_grid_ny=100,
+                     show=True, save_path='/tmp')
+    else:
+        f = prp.plot(0.02, plot_type, -180, 180,
+                     extrapolation_buffer_degrees=0.1,
+                     regular_grid_nx=100,
+                     regular_grid_ny=100,
+                     show=True, save_path='/tmp')
