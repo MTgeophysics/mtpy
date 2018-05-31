@@ -1,3 +1,4 @@
+
 """
 ==================
 ModEM
@@ -24,9 +25,9 @@ from mtpy.utils import gis_tools as gis_tools
 from mtpy.utils.decorator import deprecated
 from mtpy.utils.mtpylog import MtPyLog
 
-from .exception import ModEMError, DataError
-from .station import Stations
-from .model import Model
+from mtpy.modeling.modem.exception import ModEMError, DataError
+from mtpy.modeling.modem.station import Stations
+from mtpy.modeling.modem.model import Model
 
 try:
     from evtk.hl import pointsToVTK
@@ -154,6 +155,11 @@ class Data(object):
     period_list            list of periods to invert for
     period_max             maximum value of period to invert for
     period_min             minimum value of period to invert for
+    period_buffer          buffer so that interpolation doesn't stretch too far
+                              over periods. Provide a float or integer factor, 
+                              greater than which interpolation will not stretch.
+                              e.g. 1.5 means only interpolate to a maximum of
+                              1.5 times each side of each frequency value
     rotate_angle           Angle to rotate data to assuming 0 is N and E is 90
     save_path              path to save data file to
     units                  [ [V/m]/[T] | [mV/km]/[nT] | Ohm ] units of Z
@@ -263,7 +269,7 @@ class Data(object):
 
         self._logger = MtPyLog.get_mtpy_logger(self.__class__.__name__)
         self._logger.setLevel(My_Log_Level)
-
+        
         self.edi_list = edi_list
 
         self.error_type_z = 'egbert_floor'
@@ -284,7 +290,7 @@ class Data(object):
         self.period_buffer = None
         self.max_num_periods = None
         self.data_period_list = None
-
+        
         self.data_fn = 'ModEM_Data.dat'
         self.save_path = os.getcwd()
         self.fn_basename = None
@@ -292,7 +298,7 @@ class Data(object):
         self.formatting = '1'
 
         self._rotation_angle = 0.0
-        self._set_rotation_angle(self._rotation_angle)
+        
 
         self.center_point = None
 
@@ -319,7 +325,7 @@ class Data(object):
                        ('tip', (np.complex, self._t_shape)),
                        ('tip_err', (np.float, self._t_shape)),
                        ('tip_inv_err', (np.float, self._t_shape))]
-
+        
         self.inv_mode_dict = {'1': ['Full_Impedance', 'Full_Vertical_Components'],
                               '2': ['Full_Impedance'],
                               '3': ['Off_Diagonal_Impedance',
@@ -346,12 +352,19 @@ class Data(object):
                                        'Real',
                                        'Imag',
                                        'Error\n'])
-
+        
         for key in kwargs.keys():
-            if hasattr(self, key):
-                setattr(self, key, kwargs[key])
-            else:
-                self._logger.warn("Argument {}={} is not supported thus not been set.".format(key, kwargs[key]))
+            # have to set rotation angle after period list has been set
+            if key != 'rotation_angle':
+                if hasattr(self, key):
+                    setattr(self, key, kwargs[key])
+                else:
+                    self._logger.warn("Argument {}={} is not supported thus not been set.".format(key, kwargs[key]))
+
+        if 'rotation_angle' in kwargs.keys():
+            setattr(self, 'rotation_angle', kwargs['rotation_angle'])
+#            self._set_rotation_angle(self.rotation_angle)
+
 
     def _set_dtype(self, z_shape, t_shape):
         """
@@ -465,7 +478,7 @@ class Data(object):
             raise DataError('Need to input period_min')
         if self.period_min is not None and self.period_max is not None and self.max_num_periods is None:
             raise DataError('Need to input number of periods to use')
-
+        
         min_index = np.where(self.data_period_list >= self.period_min)[0][0]
         max_index = np.where(self.data_period_list <= self.period_max)[0][-1]
 
@@ -507,8 +520,10 @@ class Data(object):
 
         for mt_key in sorted(self.mt_dict.keys()):
             mt_obj = self.mt_dict[mt_key]
-            mt_obj.Z.rotate(self._rotation_angle)
-            mt_obj.Tipper.rotate(self._rotation_angle)
+            # check if data already rotated
+            angle_to_rotate = self._rotation_angle - mt_obj.Z.rotation_angle
+            mt_obj.Z.rotate(angle_to_rotate)
+            mt_obj.Tipper.rotate(angle_to_rotate)
 
         self._logger.info('Data rotated to align with {0:.1f} deg clockwise from N'.format(
             self._rotation_angle))
@@ -596,7 +611,7 @@ class Data(object):
 
         self.get_relative_station_locations()
 
-    def fill_data_array(self, new_edi_dir=None, use_original_freq=False):
+    def fill_data_array(self, new_edi_dir=None, use_original_freq=False, longitude_format='LON'):
         """
         fill the data array from mt_dict
 
@@ -664,7 +679,7 @@ class Data(object):
                     # find nearest data period
                     difference = np.abs(iperiod - dperiods)
                     nearestdperiod = dperiods[difference == np.amin(difference)][0]
-                    if max(nearestdperiod / iperiod, iperiod / nearestdperiod) < self.period_buffer + 1.:
+                    if max(nearestdperiod / iperiod, iperiod / nearestdperiod) < self.period_buffer:
                         interp_periods_new.append(iperiod)
 
                 interp_periods = np.array(interp_periods_new)
@@ -703,9 +718,10 @@ class Data(object):
                     mt_obj.write_mt_file(
                         save_dir=new_edi_dir,
                         fn_basename=mt_obj.station,
-                        file_type='.edi',
+                        file_type='edi',
                         new_Z_obj=interp_z,
-                        new_Tipper_obj=interp_t)
+                        new_Tipper_obj=interp_t,
+                        longitude_format=longitude_format)
             else:
                 pass
 
@@ -861,7 +877,7 @@ class Data(object):
 
     def write_data_file(self, save_path=None, fn_basename=None,
                         rotation_angle=None, compute_error=True, fill=True,
-                        elevation=False, use_original_freq=False):
+                        elevation=False, use_original_freq=False, longitude_format='LON'):
         """
         write data file for ModEM
         will save file as save_path/fn_basename
@@ -914,7 +930,11 @@ class Data(object):
         # be sure to fill in data array
         if fill:
             new_edi_dir = os.path.join(self.save_path, 'new_edis')  # output edi files according to selected periods
-            self.fill_data_array(new_edi_dir=new_edi_dir, use_original_freq=use_original_freq)
+            if not os.path.exists(new_edi_dir):
+                os.mkdir(new_edi_dir)
+            self.fill_data_array(new_edi_dir=new_edi_dir,
+                                 use_original_freq=use_original_freq,
+                                 longitude_format=longitude_format)
             # get relative station locations in grid coordinates
             self.get_relative_station_locations()
 

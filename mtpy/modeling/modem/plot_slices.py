@@ -152,7 +152,7 @@ class PlotSlices(object):
 
         self.fig_num = kwargs.pop('fig_num', 1)
         self.fig_size = kwargs.pop('fig_size', [6, 6])
-        self.fig_dpi = kwargs.pop('dpi', 300)
+        self.fig_dpi = kwargs.pop('fig_dpi', 300)
         self.fig_aspect = kwargs.pop('fig_aspect', 1)
         self.title = kwargs.pop('title', 'on')
         self.font_size = kwargs.pop('font_size', 4)
@@ -302,7 +302,7 @@ class PlotSlices(object):
                 print 'Station coordinates not available. Aborting..'
                 exit(-1)
         elif(option == 'XY'):
-            assert type(coords)==np.ndarray and coords.ndim==2 and coords.sshape[1]==2, \
+            assert type(coords)==np.ndarray and coords.ndim==2 and coords.shape[1]==2, \
                 'Shape of coords should be (np, 2); Aborting..'
         elif(option == 'XYZ'):
             assert type(coords)==np.ndarray and coords.ndim==2 and coords.shape[1]==3, \
@@ -338,7 +338,7 @@ class PlotSlices(object):
 
             d = (x**2 + y**2) # compute distances from origin to establish ordering
             sortedIndices = np.argsort(d)
-            #print("stations",self.md_data.stations_obj.station)
+            #print("stations",self.md_data.station_locations.station)
             #print("sortedINdices",sortedIndices)
 
             dx = x[sortedIndices][:-1] - x[sortedIndices][1:]
@@ -474,10 +474,10 @@ class PlotSlices(object):
             if os.path.isfile(self.data_fn) == True:
                 md_data = Data()
                 md_data.read_data_file(self.data_fn)
-                self.station_east = md_data.stations_obj.rel_east / self.dscale
-                self.station_north = md_data.stations_obj.rel_north / self.dscale
-                self.station_names = md_data.stations_obj.station
-                self.station_elev = md_data.stations_obj.elev / self.dscale
+                self.station_east = md_data.station_locations.rel_east / self.dscale
+                self.station_north = md_data.station_locations.rel_north / self.dscale
+                self.station_names = md_data.station_locations.station
+                self.station_elev = md_data.station_locations.elev / self.dscale
 
                 self.md_data = md_data
             else:
@@ -533,7 +533,7 @@ class PlotSlices(object):
 
 
         self.fig = plt.figure(self.fig_num, figsize=self.fig_size,
-                              dpi=self.fig_dpi)
+                              dpi=self.fig_dpi,frameon=False)
         plt.clf()
 
         # annotations
@@ -742,7 +742,8 @@ class PlotSlices(object):
             plt.show()
         else:
             self.fig.set_visible(False)
-            plt.draw()
+            plt.close()
+#            plt.draw()
     # end func
 
     def export_slices(self, plane='N-E', indexlist=[], station_buffer=200, save=True):
@@ -894,6 +895,7 @@ class PlotSlices(object):
 
             # plot the colorbar
             if self.draw_colorbar:
+                
                 cbx = mcb.make_axes(ax1, fraction=.15, shrink=.75, pad=.15)
                 cb = mcb.ColorbarBase(cbx[0],
                                       cmap=self.cmap,
@@ -928,8 +930,9 @@ class PlotSlices(object):
                                                self.map_scale))
             if save:
                 # --> save plots to a common folder
-                fn = '%s-plane-at-%s.%0.3f.%s.%s'%(plane,
+                fn = '%s-plane-at-%s%03i.%0.3f.%s.%s'%(plane,
                                                self.current_label_desc[plane],
+                                               ii,
                                                self.axis_values[plane][ii],
                                                self.map_scale,
                                                self.save_format)
@@ -937,11 +940,11 @@ class PlotSlices(object):
 
                 fpath = os.path.join(self.save_path, fn)
                 print('Exporting %s..'%(fpath))
-                fig.savefig(fpath, dpi=self.fig_dpi)
+                fig.savefig(fpath, dpi=self.fig_dpi, bbox_inches='tight')
                 fnlist.append(fpath)
     
                 #fig.clear()
-                #plt.close()
+#                plt.close()
         # end for
         return figlist, fnlist
     #end func

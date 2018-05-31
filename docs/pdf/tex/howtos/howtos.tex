@@ -1,0 +1,128 @@
+\documentclass[%
+onecolumn,%
+%twocolumn,%
+11pt,%
+DIV12%
+]{scrreprt}
+
+%------------------------------------------------------------------
+%\usepackage[]{natbib}
+
+\usepackage[utf8]{inputenc}
+\usepackage{graphicx}
+\usepackage{fix-cm}
+\usepackage{amsmath,amsfonts,amssymb}
+\usepackage{gensymb}
+\usepackage{url}
+\usepackage{setspace}
+\usepackage{oldgerm}
+\usepackage{bbm}
+\usepackage[ULforem]{ulem}
+
+%------------------------------------------------------------------
+
+\clubpenalty = 10000
+\widowpenalty = 10000
+\displaywidowpenalty = 10000
+
+%------------------------------------------------------------------
+
+%\usepackage{draftwatermark}
+%\SetWatermarkText{DRAFT}
+%\SetWatermarkLightness{0.9}
+%\SetWatermarkScale{1.}
+
+
+\usepackage{color}
+
+%------------------------------------------------------------------
+
+
+\renewcommand{\vec}[1]{\ensuremath{\mathbf{#1}}}
+%------------------------------------------------------------------
+
+
+    \newcommand*\patchAmsMathEnvironmentForLineno[1]{%
+      \expandafter\let\csname old#1\expandafter\endcsname\csname #1\endcsname
+      \expandafter\let\csname oldend#1\expandafter\endcsname\csname end#1\endcsname
+      \renewenvironment{#1}%
+         {\linenomath\csname old#1\endcsname}%
+         {\csname oldend#1\endcsname\endlinenomath}}%
+    \newcommand*\patchBothAmsMathEnvironmentsForLineno[1]{%
+      \patchAmsMathEnvironmentForLineno{#1}%
+      \patchAmsMathEnvironmentForLineno{#1*}}%
+    \AtBeginDocument{%
+    \patchBothAmsMathEnvironmentsForLineno{equation}%
+    \patchBothAmsMathEnvironmentsForLineno{align}%
+    \patchBothAmsMathEnvironmentsForLineno{flalign}%
+    \patchBothAmsMathEnvironmentsForLineno{alignat}%
+    \patchBothAmsMathEnvironmentsForLineno{gather}%
+    \patchBothAmsMathEnvironmentsForLineno{multline}%
+    }
+
+%-------------------------------------------------------------
+
+%\graphicspath{{../pics/}}
+
+
+\title  {MT - \textit{How to ...}  \\ -- \\Help for MT data processing, analysing and modeling }
+\author{Kent Inverarity, Jared Peacock, Lars Krieger\thanks{University of Adelaide -- School of Earth and Environmental Sciences -- Mawson Building -- Adelaide}
+  }
+
+\date{\today}
+\let\leqslant=\leq
+
+
+%------------------------------------------------------------------
+
+\usepackage[pagewise,displaymath, mathlines]{lineno}
+
+\usepackage[colorlinks=True, linkcolor=blue, bookmarks=True]{hyperref}
+
+\usepackage{breakurl}
+%------------------------------------------------------------------
+
+
+
+\begin{document}
+%\linenumbers
+
+\maketitle
+
+\chapter*{Introduction}
+
+This is a collection of guides (\textit{How to ...}) for various steps in the processing of MT data. Most steps are based on the MTpy package.
+
+\vspace{4cm}
+{\small \today, LK} 
+
+\tableofcontents
+
+\chapter{Structure}
+\label{ch:Structure}
+\input{howtoStructure}
+
+
+\chapter{In the field }
+\label{ch:field}
+\input{howtoField}
+
+\chapter{Raw-data-/time-series processing }
+\label{ch:processing}
+\input{howtoProcessing}
+
+\chapter{Modelling (1-/2-/3-D) }
+\label{ch:modeling}
+\input{howtoModeling}
+
+\chapter{Visualisation }
+\label{ch:visualisation}
+\input{howtoVisualise}
+
+\chapter{Helpful information, tools, and scripts}
+\label{ch:tools}
+\input{howtoTools}
+
+
+
+\end{document}

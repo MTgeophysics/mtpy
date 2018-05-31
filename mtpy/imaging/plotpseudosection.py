@@ -283,6 +283,7 @@ class PlotResPhasePseudoSection(object):
         self.plot_style = kwargs.pop('plot_style', 'imshow')
         self.imshow_interp = kwargs.pop('imshow_interp', 'bicubic')
         self.plot_period = kwargs.pop('plot_period', None)
+        self.shift_yx_phase = kwargs.pop('shift_yx_phase',False)
 
         #--> set plot limits
         self.res_limits = kwargs.pop('res_limits', (0, 3))
@@ -525,6 +526,8 @@ class PlotResPhasePseudoSection(object):
 
         #get apparent resistivity and phase
         self.get_rp_arrays()
+        if self.shift_yx_phase:
+            self.phaseyx = self.phaseyx + 180
 
         #make a list of tuples to see how many subplots are needed
         ynlist = [self.plot_xx+'xx', self.plot_xy+'xy', self.plot_yx+'yx',

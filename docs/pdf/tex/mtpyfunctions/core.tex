@@ -1,0 +1,319 @@
+\section{\textit{z} }
+\label{sec:core.z}
+
+Module for dealing with the MT impedance tensor $\mathbf{Z}$. The main class (Z) inherits a class that handles data files (Edi). Attributes of $\mathbf{Z}$ can be determined, visualised, and converted. 
+
+\subsection{\textit{Edi} (Class)}
+\label{ssec:core.z.Edi}
+
+A class for reading EDI files. Additionally, their contents can be changed and the files can be rewritten. 
+
+\subsubsection{\textit{readEDI} (Method)}
+\label{sssec:core.z.Edi.readEDI}
+
+Read in Edi files.
+
+\subsubsection{\textit{rewriteedi} (Method)}
+\label{sssec:core.z.Edi.rewriteedi}
+
+Write out Edi files.
+
+\subsection{\textit{Z} (Class)}
+\label{ssec:core.z.Z}
+
+Defining an impedance tensor object. This can then be analysed, transformed, visualised. For instance, REsistivity-Phase-Plots can be generated. 
+
+\subsubsection{\textit{getInvariants} (Method)}
+\label{sssec:core.z.Z.getInvariants}
+
+.
+
+\subsubsection{\textit{getPhaseTensor} (Method)}
+\label{sssec:core.z.Z.getPhaseTensor}
+
+.
+
+\subsubsection{\textit{getTipper} (Method)}
+\label{sssec:core.z.Z.getTipper}
+
+.
+
+\subsubsection{\textit{removeDistortion} (Method)}
+\label{sssec:core.z.Z.removeDistortion}
+
+.
+
+\subsubsection{\textit{removeStaticShift} (Method)}
+\label{sssec:core.z.Z.removeStaticShift}
+
+.
+
+\subsubsection{\textit{getResPhase} (Method)}
+\label{sssec:core.z.Z.getResPhase}
+
+.
+
+\subsubsection{\textit{getResTensor} (Method)}
+\label{sssec:core.z.Z.getResTensor}
+
+.
+
+\subsubsection{\textit{plotResPhase} (Method)}
+\label{sssec:core.z.Z.plotResPhase}
+
+.
+
+\subsubsection{\textit{plotPTAll} (Method)}
+\label{sssec:core.z.Z.plotPTAll}
+
+.
+
+\subsubsection{\textit{plotTipper} (Method)}
+\label{sssec:core.z.Z.plotTipper}
+
+.
+
+
+\subsection{\textit{PhaseTensor} (Class)}
+\label{ssec:core.z.PhaseTensor}
+
+    Generates a  phase tensor object from given $\mathbf{Z}$, following 
+    Caldwell et al. [2004].
+
+\subsection{\textit{ResPhase} (Class)}
+\label{ssec:core.z.ResPhase}
+ResPhase is a resistivity and phase class...
+
+\subsection{\textit{Tipper} (Class)}
+\label{ssec:core.z.Tipper}
+
+Generates a Tipper element from tipper vector and given rotation.
+
+\subsection{\textit{Zinvariants} (Class)}
+\label{ssec:core.z.Zinvariants}
+
+Class for holding just the invariants of $\mathbf{Z}$
+
+\subsection{\textit{ResistivityTensor} (Class)}
+\label{ssec:core.z.ResistivityTensor}
+
+  gets components of the resistivity tensor defined by 
+    O'reilly [1978] and Weckmann et al. [2003]
+
+\subsection{\textit{PhaseTensorResidual} (Class)}
+\label{ssec:core.z.PhaseTensorResidual}
+  
+  calculates the tensor residual as defined by 
+$ \Delta \Phi_{1,2} := \hat{\mathbf{I}} - \Phi_1^{-1} \Phi_2$
+
+\subsection{\textit{ResistivityTensorResidual} (Class)}
+\label{ssec:core.z.ResistivityTensorResidual}
+
+calculate the resistivity residual between two tensors
+    $ \Delta \Phi_{1,2} := \hat{\mathbf{I}} - \Phi_1^{-1} \Phi_2$
+    ????
+
+
+%==========================================================
+
+\section{\textit{mttools} }
+\label{sec:core.mttools}
+
+Module for helping with all general MT analysis steps
+
+
+\subsection{\textit{convertlpB} (Function)}
+\label{ssec:core.mttools.convertlpB}
+
+Convert the magnetic field from counts to units of $\mu V/nT$.
+
+\subsection{\textit{convertE} (Function)}
+\label{ssec:core.mttools.convertE}
+
+Convert the electric field from counts to units of $\mu V/m$.
+
+\subsection{\textit{rotateE} (Function)}
+\label{ssec:core.mttools.rotateE}
+
+Rotate the electric field to geographic north
+
+\subsection{\textit{rotateB} (Function)}
+\label{ssec:core.mttools.rotateB}
+
+Rotate the magnetic field such that $B_x$ is pointing to
+    magnetic north and $B_y$ to geomagnetic east.
+
+\subsection{\textit{padzeros} (Function)}
+\label{ssec:core.mttools.padzeros}
+
+return a function that is padded with zeros to the next power of 2
+
+\subsection{\textit{filter} (Function)}
+\label{ssec:core.mttools.filter}
+
+apply a sinc filter of width w to the function f by multipling in the frequency domain.
+
+\subsection{\textit{dctrend} (Function)}
+\label{ssec:core.mttools.dctrend}
+
+remove a DC trend
+
+\subsection{\textit{normalizeL2} (Function)}
+\label{ssec:core.mttools.normalizeL2}
+
+return the function f normalized by the L2 norm:$  \frac{f(x)}{\sqrt(\sum_i |x_i|^2 )}$.
+
+\subsection{\textit{decimatef} (Function)}
+\label{ssec:core.mttools.decimatef}
+
+decimate a function by the factor m. First an 8th order Cheybechev 
+    type I filter with a cuttoff frequency of $0.8/m$ is applied in both 
+    directions to minimize any phase distortion and remove any aliasing.
+
+\subsection{\textit{openMTfile} (Function)}
+\label{ssec:core.mttools.openMTfile}
+
+Open an MT raw data file, convert counts to units and return an 1D-array.
+
+\subsection{\textit{convertCounts2Units} (Function)}
+\label{ssec:core.mttools.convertCounts2Units}
+
+Conversion counts -> units ...???
+
+\subsection{\textit{combineFewFiles} (Function)}
+\label{ssec:core.mttools.combineFewFiles}
+
+Combine files in a directory path (dirpath) that have a given start and 
+    end time in the form of (HHMMSS).  It looks for files at cachelength then 
+    decimates the data.
+
+\subsection{\textit{combineFiles} (Function)}
+\label{ssec:core.mttools.combineFiles}
+
+Combine raw data files from different days into one file.
+
+\subsection{\textit{adaptiveNotchFilter} (Function)}
+\label{ssec:core.mttools.adaptiveNotchFilter}
+
+apply a notch filter to an array by finding the nearest peak around
+    the supplied notch locations.  The filter is a zero-phase Chebyshev type 1 
+    bandstop filter with minimal ripples.
+
+\subsection{\textit{removePeriodicNoise} (Function)}
+\label{ssec:core.mttools.removePeriodicNoise}
+
+take average a window of length noise period and 
+    average the signal for as many windows that can fit within the data.  This
+    averaged window is convolved with a series of delta functions at each window
+    location to create a noise time series. This is then subtracted from the 
+    data to get a 'noise free' time series.
+
+\subsection{\textit{imp2resphase} (Function)}
+\label{ssec:core.mttools.imp2resphase}
+
+convert impedances z[4,3,len(freq)] to resistivities (ohm-m) and phases (deg) as well as the 
+    errors of each.  Note the phase is calculated using arctan2 putting the 
+    phase in the correct quadrant.  The xy component is placed into the positive
+    quadrant by adding 180 deg. 
+
+    Does NOT take impedance objects though!!
+
+\subsection{\textit{sigfigs} (Function)}
+\label{ssec:core.mttools.sigfigs}
+
+return a string with the proper 
+    amount of significant digits for the input number
+
+\subsection{\textit{writeedi} (Function)}
+\label{ssec:core.mttools.writeedi}
+
+write an .edi file for one station
+
+\subsection{\textit{rewriteedi} (Function)}
+\label{ssec:core.mttools.rewriteedi}
+
+rewrite an edifile for one station, say if it needs to be rotated 
+    or distortion removed.
+
+\subsection{\textit{getnum} (Function)}
+\label{ssec:core.mttools.getnum}
+
+get number from string list and put it into an array ??????
+
+\subsection{\textit{readedi} (Function)}
+\label{ssec:core.mttools.readedi}
+
+read in an edi file written in a format given by
+    \url{http://www.dias.ie/mtnet/docs/ediformat.txt}.
+    Returns: lat,lon,frequency,Z[zreal+i*zimag],Zvar,tipper,tippervar (if 
+    applicable)
+
+\subsection{\textit{combineEdifiles} (Function)}
+\label{ssec:core.mttools.combineEdifiles}
+
+combine edifile1 with
+    edifile2 according to nread1 (integer of number of frequencies to read in from edifile1.Index is from the start, ie [0:nread1]) and nread2 (integer of number of frequencies to read in from edifile2. Index is from end of frequencies, ie [-nread2:]). It will combine frequencies, impedance and tipper.
+    
+    Note nread1 is from the start for edifile1 and nread2 is from end for 
+    edifile2.
+
+\subsection{\textit{sil} (Function)}
+\label{ssec:core.mttools.sil}
+
+split a single line written in an .ini file
+    for burpinterface and return the list of strings.
+
+\subsection{\textit{readStationInfo} (Function)}
+\label{ssec:core.mttools.readStationInfo}
+
+read in a .txt (tab 
+    delimited) or .csv(comma delimited)file that has the following information: 
+    station name, latitude, longitude, elevation, date collected, 
+    components measured (a number: 4 for $E_x, E_y, B_x,B_y$, 5 for 
+    $E_x, E_y, B_x,B_y, B_z$, 6 for $E_x, E_y, B_x,B_y, B_z, TP$, magnetic type (BB or LP), dipole 
+    lengths (m), data logger gain (very low=2.5,low=1,high=.1),interface box 
+    gain (10 or 100), $B_z$ correction for longperiod data and the $ B_x,B_y, B_z$ components as they were measured in the field. Use headers: station, lat, lon, elev, date, mcomps, magtype, ex, ey, dlgain, igain, lpbzcor, magori. 
+    Returns a list of the dictionaries with found information.
+
+\subsection{\textit{getStationInfo} (Function)}
+\label{ssec:core.mttools.getStationInfo}
+
+returns info for the nominated
+    station from the stationinfofile as a dictionary with key words in the 
+    hdrinfo.
+
+\subsection{\textit{convertfiles} (Function)}
+\label{ssec:core.mttools.convertfiles}
+
+convert data of counts from data logger to units....again????
+
+\subsection{\textit{removeStaticShift} (Function)}
+\label{ssec:core.mttools.removeStaticShift}
+
+remove static shift by calculating the median of respones of nearby stations, within a given radius.  If the 
+    ratio of the station response to the median on either side is out of 1$\pm$tolerance then 
+    the impedance tensor for that electric component will be corrected for 
+    static shift.
+
+\subsection{\textit{makeDayFoldersFromObservatoryData} (Function)}
+\label{ssec:core.mttools.makeDayFoldersFromObservatoryData}
+
+take observatory data and put it
+    into day folders for processing.
+
+\subsection{\textit{makeKML} (Function)}
+\label{ssec:core.mttools.makeKML}
+
+make a kml file for Google Earth to plot station locations 
+    relatively quickly
+
+\subsection{\textit{getPeriods} (Function)}
+\label{ssec:core.mttools.getPeriods}
+
+Plots periods for all stations in edipath and the plot is interactive, just
+    click on the period you want to select and it will appear in the console,
+    it will also be saved to lp.plst.  To sort this list type\\ \texttt{lp.plst.sort()}
+    
+    The x's mark a conformation that the station contains that period.  So 
+    when looking for the best periods to invert for look for a dense line of 
+    x's

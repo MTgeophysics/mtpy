@@ -2554,7 +2554,6 @@ class Data(Profile):
         Get all the data needed to write a data file.
         
         """
-
         self.data_list = []
         for ss, sdict in enumerate(self.data, 1):
             for ff in range(self.freq.shape[0]):

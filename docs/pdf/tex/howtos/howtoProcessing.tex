@@ -1,0 +1,127 @@
+
+\section{Processing -- step by step}
+\label{sec:processing.steps}
+
+The processing starts with the raw time series data files from the data loggers. 
+Additionally, a configuration-file is needed. This contains all sort of meta data and further information.
+The configuration file is an ascii text file of the form\\
+\begin{verbatim}
+    [station_name_1]
+    
+    keyword1 = value1
+    keyword2 = value2
+    .
+    .
+    [station_name_2]
+    .
+    .
+\end{verbatim}
+Few basic keywords are required:
+\begin{verbatim}
+    - latitude (deg)
+    - longitude (deg)
+    - elevation (in meters)
+    - sampling_interval (in seconds)
+    - station_type (MT, E, B)
+\end{verbatim}
+
+    Depending on the type of station the following entries are required.
+
+    E-field recorded:
+\begin{verbatim}
+    - E_logger_type (edl/elogger)
+    - E_logger_gain (factor/gain level)
+    - E_instrument_type (electrodes)
+    - E_instrument_amplification (applied amplification factor)
+    - E_Xaxis_azimuth (degrees)
+    - E_Xaxis_length (in meter)
+    - E_Yaxis_azimuth (degrees)
+    - E_Yaxis_length (in meter)
+\end{verbatim}
+
+    B-field recorded:
+\begin{verbatim}
+    - B_logger_type (edl)
+    - B_logger_gain (factor/gain level)
+    - B_instrument_type (coil, fluxgate)
+    - B_instrument_amplification (applied amplification factor)
+
+\end{verbatim}
+
+Further information can be provided using more keywords. The content of the configuration file will be stored as meta data in the final EDI file (if not restricted by the EDI format).
+
+
+\subsection{Concatenate time series recorded by EDLs - dayfiles}
+
+Functions for concatenation are in the \textit{mtpy.utils.filehandling} module. The reference to the module is given here as   \texttt{FH}. It is assumed that the files are ascii-formatted, and are named according to the EDL standard. This is\\ \texttt{$<$stationname$>$$<$year$>$$<$month$>$$<$day$>$$<$hour$>$$<$minute$>$$<$seconds$>$.$<$channel$>$};\\ and the channels in question are \textit{ex,ey,bx,by,bz}, case insensitive.
+
+The data in the files are assumed to be either in single-column form (instrument counts), or in two-column form: \textit{single column time stamp (e.g. epochs or datetime-string) - instrument counts}
+
+\begin{enumerate}
+\item Find the sampling rate{~}\\
+You have to know the duration of your single files (e.g. 10 mins, 1 hour,...). Chose a file, of which you know that it contains complete information for the full duration. Then obtain the sampling period with the function \\
+\texttt{FH.get\_sampling\_interval\_fromdatafile(filename, duration in seconds)}
+
+\item Put all files of interest into one folder (preferably sorted by station).
+
+\item For generating dayfiles call \\
+\texttt{FH.EDL\_make\_dayfiles(foldername, sampling , stationname = None)}\\ This generates a subfolder called \textit{dayfiles}. If the given files cannot be merged continuously, several files are created for the same day.
+
+\item Output dayfiles have a single header line, which starts with the character \textit{\#}. The content of the line is \\  \textit{stationname ; channel ; sampling interval ; time of first sample ; time of last sample}. Time stamps are given in epoch seconds.
+
+\end{enumerate}
+
+\subsection{Concatenate time series recorded by EDLs - arbitrary length}
+.
+.
+
+\subsubsection{Decimate time series}
+
+Generally speaking, MT deals with the spectral analysis of time series. Therefore it is beneficial to process these time series in their full length. Unfortunately, computer hardware limitations (memory) sometimes do not allow to just read in a complete set of time series. 
+One possibility to overcome this issue is a pre-processing step on the time series: "decimation". The data are downsampled by a given factor, so thhe number of samples is samll enough to be fully processed at once. 
+
+Although the name suggests it, the actual decimation factor does not have to be "10". The factor is to be chosen in a way that the loss of information is minimised. If for instance the sampling rate is 100Hz, but the instrument sensitivity is only sufficient in a range $<$ 20Hz, a decimation with a factor of 5 effectively causes no harm to the data.\\
+{~}\\
+\textbf{Be careful!!}\\
+It may seem that a decimation by a factor of $n$ just means to take every $n$-th element of a time series. But unfortunately, this can result in spurious phase information. In order to avoid any side effects, a more sophisticated algorithm has to be used.
+
+The functions dealing with the decimation of time series can be found in \texttt{mtpy.}  
+
+
+
+
+\subsection{Time series data calibration}
+
+The conversion of  time series from lists of raw \textit{instrument-output/-counts} into time series of data values with an actual physical meaning and approprite units is called \textit{calibration}. The functions for the calibration are contained in the module \texttt{mtpy.processing.calibration} (here \texttt{Cal} in short).
+
+The calibration depends on  the instrument as well as on the respective data logger. The given time series are multiplied by various factors, which are unique for each kind of instrument,  logger, and their software setup. Additionally, possible spurious offsets can be removed.
+
+The basic unit for the magnetic flux density is Tesla ([$\mathbf{B}$] = $T$), the unit of the electric field is Volt per meter ([$\mathbf{E}$] = $\frac{\mbox{V}}{\mbox{m}}$). For obtaining more convenient numbers, these units are often scaled e.g. to $nT$ or $\frac{\mu\mbox{V}}{\mbox{m}}$
+
+Using the EDL or "elogger" datalogger, the time series values are given in microvolts $\mu V$. The amplification factors of the instruments as well as the gain factor of the data logger are given in the configuration files.
+The basic function \texttt{Cal.calibrate()} carries out a calibration for one given data array. In order to calibrate a data file, use  \texttt{Cal.calibrate\_file()} instead.
+For calibrating several time series at once, follow these steps:
+\begin{enumerate}
+\item Put all raw time series files into one folder.
+\item Setup a proper configuration file, containing the necessary information on all included stations.  
+\item Call the wrapper script\\
+\texttt{calibratefiles.py $<$directory name$>$ $<$configuration file$>$ [optional: $<$output directory$>$] }  
+\end{enumerate}
+The result is a collection of calibrated data files located in the output directory. 
+If no explicit output directory is given, a new subdirectory "calibrated" is generated within the input directory. 
+
+The units are microvolts per meter ($\mu V/m$) for the electric field and nanoteslas ($nT$) for the magnetic field.
+
+The calibrated files have a single header line, starting with the common commenting symbol "\#".
+The header line contains the fields\\
+\texttt{stationname, channel, unit of data, sampling interval, timestamp first sample , timestamp last sample, latitude, longitude, elevation}\\
+Hence from this point on all basic information are present, which are necessary for continuing the MT processing, even if the configuration file should be lost. 
+
+In order to be able to distiguish between latitude and longitude values, the standard position format is applied: latitude values are given as  2-digit numbers $\pm dd.ddddd$, whereas longitudes are in the 3-digit form $\pm ddd.ddddd$. The positions are given to 5 decimal digits, this means an accuracy of $< 2$m.
+
+
+
+\section{E field logger data}
+\label{sec:processing.elogger}
+
+ 

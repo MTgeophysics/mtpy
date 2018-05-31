@@ -4,7 +4,7 @@ To compute and encapsulate the properties of a set of EDI files
 
 Author: fei.zhang@ga.gov.au
 
-InitDate: 2017-04-20
+CreateDate: 2017-04-20
 """
 
 from __future__ import print_function
@@ -13,7 +13,6 @@ import csv
 import glob
 import os
 import sys
-import click
 
 from logging import INFO
 
@@ -28,13 +27,16 @@ import mtpy.imaging.mtplottools as mtplottools
 from mtpy.utils.decorator import deprecated
 from mtpy.utils.matplotlib_utils import gen_hist_bins
 from mtpy.utils.mtpylog import MtPyLog
+import mtpy.analysis.pt as MTpt
 
 def is_num_in_seq(anum, aseq, atol=0.0001):
     """
     check if anum is in a sequence by a small tolerance
-    :param anum:
-    :param aseq:
+
+    :param anum: a number to be checked
+    :param aseq: a sequence or a list of values
     :param atol: absolute tolerance
+
     :return: True | False
     """
     # print(np.isclose(anum, aseq, atol=atol))
@@ -51,16 +53,19 @@ def is_num_in_seq(anum, aseq, atol=0.0001):
 class EdiCollection(object):
     """
     A super class to encapsulate the properties pertinent to a set of EDI files
+
+    :param edilist: a list of edifiles with full path, for read-only
+    :param outdir:  computed result to be stored in outdir
+    :param ptol: period tolerance considered as equal, default 0.05 means 5 percent
+
+    The ptol parameter controls what freqs/periods are grouped together:
+    10 percent may result more double counting of freq/period data than 5 pct.
+    (eg: MT_Datasets/WPJ_EDI)
     """
 
     def __init__(self, edilist=None, mt_objs=None, outdir=None, ptol=0.05):
-        """ constructor
-        :param edilist: a list of edifiles with full path, for read-only
-        :param outdir:  computed result to be stored in outdir
-        :param ptol: period tolerance considered as equal, default 0.05 means 5 percent
-        this param controls what freqs/periods are grouped together:
-        10pct may result more double counting of freq/period data than 5pct.
-        eg: E:/Data/MT_Datasets/WenPingJiang_EDI 18528 rows vs 14654 rows
+        """
+        constructor
         """
 
         #self._logger = MtPyLog.get_mtpy_logger(self.__class__.__name__)  # will be EdiCollection
@@ -173,9 +178,12 @@ class EdiCollection(object):
 
     def select_periods(self, show=True, period_list=None, percentage=10.0):
         """
-        FZ: Use edi_collection to analyse the whole set of EDI files
-        :param edifiles:
-        :return:
+        Use edi_collection to analyse the whole set of EDI files
+
+        :param show: True or false
+        :param period_list:
+        :param percentage:
+        :return: select_period_list
         """
 
         uniq_period_list = self.all_unique_periods  # filtered list of periods ?
@@ -216,10 +224,14 @@ class EdiCollection(object):
         print("Selected periods ", len(select_period_list))
 
         return select_period_list
+    
 
     def create_mt_station_gdf(self, outshpfile=None):
         """
-        create station location geopandas dataframe, and output to shape file outshpfile
+        create station location geopandas dataframe, and output to shape file
+
+        :param outshpfile: output file
+
         :return: gdf
         """
 
@@ -247,7 +259,10 @@ class EdiCollection(object):
 
     def plot_stations(self, savefile=None, showfig=True):
         """
-        visualise the geopandas df of MT stations
+        Visualise the geopandas df of MT stations
+
+        :param savefile:
+        :param showfig:
         :return:
         """
 
@@ -265,8 +280,9 @@ class EdiCollection(object):
 
     def display_on_basemap(self):
         """
+        display MT stations which are in stored in geopandas dataframe in a base map.
 
-        :return:
+        :return: plot object
         """
 
         world = gpd.read_file(gpd.datasets.get_path('naturalearth_lowres'))
@@ -286,6 +302,7 @@ class EdiCollection(object):
         myax2 = self.geopdf.plot(ax=myax, figsize=(
             10, 6), marker='o', color='blue', markersize=8)
 
+
         plt.show()
 
         return myax2
@@ -293,7 +310,8 @@ class EdiCollection(object):
     def display_on_image(self):
         """
         display/overlay the MT properties on a background geo-referenced map image
-        :return:
+
+        :return: plot object
         """
         import mtpy.utils.plot_geotiff_imshow as plotegoimg
 
@@ -313,10 +331,12 @@ class EdiCollection(object):
 
         return myax2
 
-    def get_phase_tensor_tippers(self, period):
+    def get_phase_tensor_tippers(self, period, interpolate=True):
         """
         For a given MT period (s) value, compute the phase tensor and tippers etc.
+
         :param period: MT_period (s)
+        :param interpolate: Boolean to indicate whether to interpolate on to the given period
         :return: dictionary pt_dict_list
 
         pt_dict keys ['station', 'freq', 'lon', 'lat', 'phi_min', 'phi_max', 'azimuth', 'skew', 'n_skew', 'elliptic',
@@ -331,9 +351,23 @@ class EdiCollection(object):
 
         for mt_obj in self.mt_obj_list:
             pt_dict = {}
-            p_index = [ff for ff, f2 in enumerate(1.0/mt_obj.Z.freq)
-                       if (f2 > plot_per * (1 - self.ptol)) and
-                       (f2 < plot_per * (1 + self.ptol))]
+            pt = None
+            ti = None
+
+            if(interpolate == False):
+                p_index = [ff for ff, f2 in enumerate(1.0/mt_obj.Z.freq)
+                           if (f2 > plot_per * (1 - self.ptol)) and
+                           (f2 < plot_per * (1 + self.ptol))]
+
+                pt = mt_obj.pt
+                ti = mt_obj.Tipper
+            else:
+                p_index = [0]
+                newZ, newTipper = mt_obj.interpolate([1./plot_per], bounds_error=False)
+
+                pt = MTpt.PhaseTensor(z_object=newZ)
+                ti = newTipper
+            # end if
 
             if len(p_index) >= 1:
                 p_index = p_index[0]
@@ -342,33 +376,39 @@ class EdiCollection(object):
                 pt_dict['lon'] = mt_obj.lon
                 pt_dict['lat'] = mt_obj.lat
 
-                pt_dict['phi_min'] = mt_obj.pt.phimin[p_index]
-                pt_dict['phi_max'] = mt_obj.pt.phimax[p_index]
-                pt_dict['azimuth']= mt_obj.pt.azimuth[p_index]
-                pt_dict['skew'] = mt_obj.pt.beta[p_index]
-                pt_dict['n_skew'] = 2 * mt_obj.pt.beta[p_index]
-                pt_dict['elliptic'] = mt_obj.pt.ellipticity[p_index]
+                pt_dict['phi_min'] = pt.phimin[p_index]
+                pt_dict['phi_max'] = pt.phimax[p_index]
+                pt_dict['azimuth']= pt.azimuth[p_index]
+                pt_dict['skew'] = pt.beta[p_index]
+                pt_dict['n_skew'] = 2 * pt.beta[p_index]
+                pt_dict['elliptic'] = pt.ellipticity[p_index]
 
-                pt_dict['tip_mag_re']= mt_obj.Tipper.mag_real[p_index]
-                pt_dict['tip_mag_im']= mt_obj.Tipper.mag_imag[p_index]
-                pt_dict['tip_ang_re']= mt_obj.Tipper.angle_real[p_index]
-                pt_dict['tip_ang_im']= mt_obj.Tipper.angle_imag[p_index]
+                pt_dict['tip_mag_re']= ti.mag_real[p_index]
+                pt_dict['tip_mag_im']= ti.mag_imag[p_index]
+                pt_dict['tip_ang_re']= ti.angle_real[p_index]
+                pt_dict['tip_ang_im']= ti.angle_imag[p_index]
 
                 pt_dict_list.append(pt_dict)
             else:
                 self._logger.warn(" the period %s is NOT found for this station %s. Skipping!!!" % (plot_per, mt_obj.station))
 
-
         return pt_dict_list
 
 
-    def create_phase_tensor_csv(self, dest_dir, file_name="phase_tensor.csv"):
+    def create_phase_tensor_csv(self, dest_dir, period_list=None,
+                                interpolate=True,
+                                file_name="phase_tensor.csv"):
         """
         create phase tensor ellipse and tipper properties.
-        reimplemented based on mtpy.utils.shapefiles_creator.ShapeFilesCreator.create_csv_files
+        Implementation based on mtpy.utils.shapefiles_creator.ShapeFilesCreator.create_csv_files
+
         :param dest_dir: output directory
+        :param period_list: list of periods; default=None, in which data for all available
+                            frequencies are output
+        :param interpolate: Boolean to indicate whether to interpolate data onto given period_list
         :param file_name: output file name
-        :return:
+
+        :return: pt_dict
         """
         csvfname = os.path.join(dest_dir, file_name)
 
@@ -377,18 +417,43 @@ class EdiCollection(object):
         csv_header = ['station', 'freq', 'lon', 'lat', 'phi_min', 'phi_max', 'azimuth', 'skew',
                       'n_skew', 'elliptic', 'tip_mag_re', 'tip_mag_im', 'tip_ang_re', 'tip_ang_im']
 
+        freq_list = None
+        if(period_list is None):
+            freq_list = self.all_frequencies
+        else:
+            freq_list = 1./np.array(period_list)
+        # end if
+
         with open(csvfname, "wb") as csvf:
             writer = csv.writer(csvf)
             writer.writerow(csv_header)
 
-            for freq in self.all_frequencies:
+            for freq in freq_list:
                 ptlist = []
                 for mt_obj in self.mt_obj_list:
-                    freq_min = freq * (1 - self.ptol)
-                    freq_max = freq * (1 + self.ptol)
+                    f_index_list = None
+                    pt = None
+                    ti = None
 
-                    f_index_list = [ff for ff, f2 in enumerate(mt_obj.Z.freq)
-                                    if (f2 > freq_min) and (f2 < freq_max)]
+                    if(interpolate):
+                        f_index_list = [0]
+
+                        newZ = None
+                        newTipper = None
+                        newZ, newTipper = mt_obj.interpolate([freq], bounds_error=False)
+
+                        pt = MTpt.PhaseTensor(z_object=newZ)
+                        ti = newTipper
+                    else:
+                        freq_min = freq * (1 - self.ptol)
+                        freq_max = freq * (1 + self.ptol)
+
+                        f_index_list = [ff for ff, f2 in enumerate(mt_obj.Z.freq)
+                                        if (f2 > freq_min) and (f2 < freq_max)]
+                        pt = mt_obj.pt
+                        ti = mt_obj.Tipper
+                    #end if
+
                     if len(f_index_list) > 1:
                         self._logger.warn("more than one freq found %s", f_index_list)
                     if len(f_index_list) >= 1:
@@ -398,16 +463,16 @@ class EdiCollection(object):
                         station, lon, lat = (mt_obj.station, mt_obj.lon, mt_obj.lat)
 
                         pt_stat = [station, freq, lon, lat,
-                                   mt_obj.pt.phimin[p_index],
-                                   mt_obj.pt.phimax[p_index],
-                                   mt_obj.pt.azimuth[p_index],
-                                   mt_obj.pt.beta[p_index],
-                                   2 * mt_obj.pt.beta[p_index],
-                                   mt_obj.pt.ellipticity[p_index],  # FZ: get ellipticity begin here
-                                   mt_obj.Tipper.mag_real[p_index],
-                                   mt_obj.Tipper.mag_imag[p_index],
-                                   mt_obj.Tipper.angle_real[p_index],
-                                   mt_obj.Tipper.angle_imag[p_index]]
+                                   pt.phimin[p_index],
+                                   pt.phimax[p_index],
+                                   pt.azimuth[p_index],
+                                   pt.beta[p_index],
+                                   2 * pt.beta[p_index],
+                                   pt.ellipticity[p_index],  # FZ: get ellipticity begin here
+                                   ti.mag_real[p_index],
+                                   ti.mag_imag[p_index],
+                                   ti.angle_real[p_index],
+                                   ti.angle_imag[p_index]]
 
                         ptlist.append(pt_stat)
                     else:
@@ -432,6 +497,7 @@ class EdiCollection(object):
         """
         Using PlotPhaseTensorMaps class to generate csv file of phase tensor attributes, etc.
         Only for comparison. This method is more expensive because it will create plot object first.
+
         :return:
         """
         from mtpy.imaging.phase_tensor_maps import PlotPhaseTensorMaps
@@ -440,10 +506,17 @@ class EdiCollection(object):
             ptm.export_params_to_file(save_path=dest_dir)
         return
 
-    def create_measurement_csv(self, dest_dir=None):
+    def create_measurement_csv(self, dest_dir, period_list=None,
+                                interpolate=True):
         """
         create csv file from the data of EDI files: IMPEDANCE, APPARENT RESISTIVITIES AND PHASES
         see also utils/shapefiles_creator.py
+
+        :param dest_dir: output directory
+        :param period_list: list of periods; default=None, in which data for all available
+                            frequencies are output
+        :param interpolate: Boolean to indicate whether to interpolate data onto given period_list
+
         :return: csvfname
         """
         if dest_dir is None:
@@ -465,16 +538,44 @@ class EdiCollection(object):
             'RHOxx', 'RHOxy', 'RHOyx', 'RHOyy', 'PHSxx', 'PHSxy', 'PHSyx', 'PHSyy'
         ]
 
+        freq_list = None
+        if(period_list is None):
+            freq_list = self.all_frequencies
+        else:
+            freq_list = 1./np.array(period_list)
+        # end if
+
         with open(csvfname, "wb") as csvf:
             writer = csv.writer(csvf)
             writer.writerow(csv_header)
 
-        for freq in self.all_frequencies:
+        for freq in freq_list:
             mtlist = []
             for mt_obj in self.mt_obj_list:
-                freq_max = freq * (1 + self.ptol)
-                freq_min = freq * (1 - self.ptol)
-                f_index_list = np.where((mt_obj.Z.freq < freq_max) & (mt_obj.Z.freq > freq_min))
+                f_index_list = None
+                pt = None
+                ti = None
+                zobj = None
+                if (interpolate):
+                    f_index_list = [0]
+
+                    newZ = None
+                    newTipper = None
+                    newZ, newTipper = mt_obj.interpolate([freq], bounds_error=False)
+
+                    pt = MTpt.PhaseTensor(z_object=newZ)
+                    ti = newTipper
+                    zobj = newZ
+                else:
+                    freq_max = freq * (1 + self.ptol)
+                    freq_min = freq * (1 - self.ptol)
+                    f_index_list = np.where((mt_obj.Z.freq < freq_max) & (mt_obj.Z.freq > freq_min))
+
+                    pt = mt_obj.pt
+                    ti = mt_obj.Tipper
+                    zobj = t_obj.Z
+                # end if
+
                 if len(f_index_list) > 1:
                     self._logger.warn("more than one freq found %s", f_index_list)
 
@@ -487,22 +588,22 @@ class EdiCollection(object):
                     station, lat, lon = (
                         mt_obj.station, mt_obj.lat, mt_obj.lon)
 
-                    resist_phase = mtplottools.ResPhase(z_object=mt_obj.Z)
+                    resist_phase = mtplottools.ResPhase(z_object=zobj)
                     # resist_phase.compute_res_phase()
 
                     mt_stat = [freq, station, lat, lon,
-                               mt_obj.Z.z[p_index, 0, 0].real,
-                               mt_obj.Z.z[p_index, 0, 0].imag,
-                               mt_obj.Z.z[p_index, 0, 1].real,
-                               mt_obj.Z.z[p_index, 0, 1].imag,
-                               mt_obj.Z.z[p_index, 1, 0].real,
-                               mt_obj.Z.z[p_index, 1, 0].imag,
-                               mt_obj.Z.z[p_index, 1, 1].real,
-                               mt_obj.Z.z[p_index, 1, 1].imag,
-                               mt_obj.Tipper.tipper[p_index, 0, 0].real,
-                               mt_obj.Tipper.tipper[p_index, 0, 0].imag,
-                               mt_obj.Tipper.tipper[p_index, 0, 1].real,
-                               mt_obj.Tipper.tipper[p_index, 0, 1].imag,
+                               zobj.z[p_index, 0, 0].real,
+                               zobj.z[p_index, 0, 0].imag,
+                               zobj.z[p_index, 0, 1].real,
+                               zobj.z[p_index, 0, 1].imag,
+                               zobj.z[p_index, 1, 0].real,
+                               zobj.z[p_index, 1, 0].imag,
+                               zobj.z[p_index, 1, 1].real,
+                               zobj.z[p_index, 1, 1].imag,
+                               ti.tipper[p_index, 0, 0].real,
+                               ti.tipper[p_index, 0, 0].imag,
+                               ti.tipper[p_index, 0, 1].real,
+                               ti.tipper[p_index, 0, 1].imag,
                                resist_phase.resxx[p_index], resist_phase.resxy[p_index],
                                resist_phase.resyx[p_index], resist_phase.resyy[p_index],
                                resist_phase.phasexx[p_index], resist_phase.phasexy[p_index],
@@ -531,8 +632,80 @@ class EdiCollection(object):
 
         return csvfname
 
+    def export_edi_files(self, dest_dir, period_list=None,
+                                interpolate=True,period_buffer=None,longitude_format='LON'):
+        """
+        export edi files.
+        :param dest_dir: output directory
+        :param period_list: list of periods; default=None, in which data for all available
+                            frequencies are output
+        :param interpolate: Boolean to indicate whether to interpolate data onto given period_list; otherwise
+                            a period_list is obtained from get_periods_by_stats()
+        :param file_name: output file name
+        :param period_buffer: buffer so that interpolation doesn't stretch too far
+                              over periods. Provide a float or integer factor, 
+                              greater than which interpolation will not stretch.
+                              e.g. 1.5 means only interpolate to a maximum of
+                              1.5 times each side of each frequency value
+
+        :return:
+        """
+
+
+        if period_list is None:
+            period_list = np.array(self.get_periods_by_stats())
+        # end if
+
+        for mt_obj in self.mt_obj_list:
+            # interpolate each station onto the period list
+            # check bounds of period list
+            interp_periods = period_list[np.where(
+                (period_list >= 1. / mt_obj.Z.freq.max()) &
+                (period_list <= 1. / mt_obj.Z.freq.min()))]
+
+            interp_periods = np.sort(interp_periods)
+            
+            # if specified, apply a buffer so that interpolation doesn't
+            # stretch too far over periods
+            if type(period_buffer) in [float, int]:
+                interp_periods_new = []
+                dperiods = 1. / mt_obj.Z.freq
+                for iperiod in interp_periods:
+                    # find nearest data period
+                    difference = np.abs(iperiod - dperiods)
+                    nearestdperiod = dperiods[difference == np.amin(difference)][0]
+                    if max(nearestdperiod / iperiod, iperiod / nearestdperiod) < period_buffer:
+                        interp_periods_new.append(iperiod)
+
+                interp_periods = np.array(interp_periods_new)
+                
+                
+            self._logger.debug("station_name and its original period: %s %s %s",
+                               mt_obj.station, len(mt_obj.Z.freq), 1.0 / mt_obj.Z.freq)
+            self._logger.debug("station_name and interpolation period: %s %s %s",
+                               mt_obj.station, len(interp_periods), interp_periods)
+
+            if len(interp_periods) > 0:  # not empty
+                interp_z, interp_t = mt_obj.interpolate(1. / interp_periods)
+
+                if dest_dir is not None and os.path.isdir(dest_dir):
+                    mt_obj.write_mt_file(
+                        save_dir=dest_dir,
+                        fn_basename=mt_obj.station,
+                        file_type='edi',
+                        new_Z_obj=interp_z,
+                        new_Tipper_obj=interp_t,
+                        longitude_format=longitude_format)
+            else:
+                pass
+        # end for
+    # end func
+
+        return
+
     def get_bounding_box(self, epsgcode=None):
         """ compute bounding box
+
         :return: bounding box in given proj coord system
         """
 
@@ -553,9 +726,11 @@ class EdiCollection(object):
         return bdict
 
     def get_station_utmzones_stats(self):
-        """A simple method to find what UTM zones these (edi files) MT stations belong to
+        """
+        A simple method to find what UTM zones these (edi files) MT stations belong to
         are they in a single UTM zone, which corresponds to a unique EPSG code?
         or do they belong to multiple UTM zones?
+
         :return: a_dict like {UTMZone:Number_of_MT_sites}
         """
 
@@ -575,9 +750,10 @@ class EdiCollection(object):
         return utm_zones
 
     def get_stations_distances_stats(self):
-        """ TODO:
+        """
         get the min max statistics of the distances between stations.
         useful for determining the ellipses tipper sizes etc
+
         :return: dict={}
         """
         import math
@@ -628,6 +804,7 @@ class EdiCollection(object):
     def show_obj(self, dest_dir=None):
         """
         test call object's methods and show it's properties
+
         :return:
         """
         print(len(self.all_unique_periods), 'unique periods (s)', self.all_unique_periods)
@@ -661,8 +838,23 @@ class EdiCollection(object):
 
         return
 
+    def get_min_max_distance(self):
+        """
+        get the min and max distance between all possible pairs of stations.
+
+        :return: min_dist, max_dist
+        """
+        mt_distances = self.get_stations_distances_stats()
+        min_dist = mt_distances.get("MIN_DIST")
+        max_dist = mt_distances.get("MAX_DIST")
+
+        return min_dist, max_dist
+        
+
+
+
 ##################################################################
-if __name__ == "__main__old":
+if __name__ == "__main__":
 
     # python mtpy/core/edi_collection.py data/edifiles temp
     # python mtpy/core/edi_collection.py examples/data/edi2/ /e/tmp3/edi2_csv
@@ -698,61 +890,3 @@ if __name__ == "__main__old":
 
         # obj.create_mt_station_gdf(os.path.join(outdir, 'edi_collection_test.shp'))
 
-
-def get_min_max_distance(obj):
-    mt_distances = obj.get_stations_distances_stats()
-    min_dist = mt_distances.get("MIN_DIST")
-    max_dist = mt_distances.get("MAX_DIST")
-    return min_dist, max_dist
-
-
-##################################################################
-#
-# python mtpy\core\edi_collection.py --input=examples/data/edi_files
-# or
-# python mtpy\core\edi_collection.py --input=
-# "examples/data/edi_files/pb23c.edi examples/data/edi_files/pb23c.edi"
-#
-##################################################################
-
-@click.command(context_settings=dict(help_option_names=['-h','--help']))
-@click.option('-i', '--input',type=str,
-              default='examples/data/edi_files',
-              help='input directory to edsi files or string of edsi files seperated by space'\
-                   + '\n\n' + 'python mtpy/core/edi_collection.py --input=examples/data/edi_files'
-                   + '\n' + '-or-' + '\n' + 'python mtpy/core/edi_collection.py --input=' + "\n" +
-                   '"examples/data/edi_files/pb23c.edi examples/data/edi_files/pb25c.edi"' +
-                   '\n')
-def process_edsi_files( input ):
-    print ("Directory for edsi files or single file  ---------> {}".format(input))
-    edis =[]
-    if not ( " " in input ):
-        if not os.path.isdir(input):
-            print ("Invalid Ditectory Input")
-            sys.exit()
-        if os.path.isdir(input):
-            edis = glob.glob(input + '/*.edi')
-
-            print(edis)
-
-            if len(edis) == 0 :
-                print ("Directory edsi files {} empty".format(input))
-                sys.exit()
-            obj = EdiCollection(edilist=edis)
-    else:
-        edis = input.split(' ')
-        for fl in edis:
-            if not os.path.isfile(fl):
-                print ("Invalid Input File {}".format(fl))
-                sys.exit()
-        obj = EdiCollection(edilist=edis)
-    # Compute distances
-    min_dist, max_dist = get_min_max_distance(obj)
-    #     mt_distances = obj.get_stations_distances_stats()
-    #     min_dist = mt_distances.get("MIN_DIST")
-    #     max_dist = mt_distances.get("MAX_DIST")
-    print("Min Distance = {}".format(min_dist))
-    print("Max Distance = {}".format(max_dist))
-
-if __name__ == "__main__":
-    process_edsi_files()

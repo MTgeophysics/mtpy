@@ -2462,6 +2462,9 @@ def parse_arguments(arguments):
     parser.add_argument('-rf', '--rms_factor',
                         help='factor to multiply the minimum possible rms by to get the target rms for the second run',
                         type=float, default=1.05)
+    parser.add_argument('-rmsmin','--rms_min',
+                        help='minimum target rms to assign, e.g. set a value of 1.0 to prevent overfitting data',
+                        type=float, default=1.0)
     parser.add_argument('-nl', '--n_layers',
                         help='number of layers in the inversion',
                         type=int, default=80)
@@ -2578,7 +2581,8 @@ def generate_inputfiles(**input_parameters):
         rundirs[svpath] = []
 
         # create the model file
-        ocm = Model(n_layers=input_parameters['n_layers'], save_path=wd)
+        ocm = Model(n_layers=input_parameters['n_layers'], save_path=wd,
+                    target_depth=input_parameters['target_depth'])
         ocm.write_model_file()
 
         for mode in input_parameters['modes']:
@@ -2601,7 +2605,7 @@ def generate_inputfiles(**input_parameters):
             ocs.write_startup_file(save_path=wd,
                                    startup_fn=op.join(wd, startup_fn),
                                    max_iter=input_parameters['iteration_max'],
-                                   target_rms=0.)
+                                   target_rms=input_parameters['rms_min']/input_parameters['rms_factor'])
             rundirs[svpath].append(startup_fn)
 
     return wkdir_master, rundirs
@@ -2658,10 +2662,13 @@ def build_run():
             startup = Startup()
             startup.read_startup_file(op.join(wd, iterfile))
             # create a new startup file the same as the previous one but target rms is factor*minimum_rms
+            target_rms = float(startup.misfit_value) * input_parameters['rms_factor']
+            if target_rms < input_parameters['rms_min']:
+                target_rms = input_parameters['rms_min']
             startupnew = Startup(data_fn=op.join(wd, startup.data_file),
                                  model_fn=op.join(wd, startup.model_file),
                                  max_iter=input_parameters['iteration_max'],
-                                 target_rms=float(startup.misfit_value) * input_parameters['rms_factor'])
+                                 target_rms=target_rms)
             startupnew.write_startup_file(startup_fn=op.join(wd, startupfile), save_path=wd)
             # run occam again
             subprocess.call([input_parameters['program_location'],

@@ -17,20 +17,24 @@ Revision History:
 
 import os
 
-from mtpy.imaging.plot_response import PlotResponse
+# from legacy.plot_response import PlotResponse
+from mtpy.modeling.modem.plot_response import PlotResponse
 
 
 def plot_response():
     #### Default Inputs ####
     modem_data_dir = r'E:\Githubz\ModEM_plotResponse_Issue\ModEM_files'
     filestem = 'Modular_MPI_NLCG_100'
+    modem_data_dir = r'E:\Githubz\example_plot_response'
+    filestem = 'Modular_MPI_NLCG_094.dat'
     datafn = 'ModEM_Data.dat'
     station_list = ['GB%02i' % n for n in xrange(1, 40)]  # ['GB01', 'GB02',....,'GB39']
     plot_z = False
 
     respfn = filestem + '.dat'
 
-    for station in station_list[0:5]:
+    #for station in station_list[8:10]:
+    for station in ['GB08','GB09']:
 
         # plot responses at a station
 
@@ -42,24 +46,22 @@ def plot_response():
             outfile = r'./temp/plot_responses_with_yrange.jpg'
 
         robj = PlotResponse(data_fn=os.path.join(modem_data_dir, datafn),
-                            # resp_fn=os.path.join(modem_data_dir, respfn),  #filestem+'.dat'),
+                            resp_fn=os.path.join(modem_data_dir, filestem),
                             plot_type=[station],
+                            plot_style=2,
                             plot_z=plot_z,
                             #  ctmm='r',ctem='b',
                             res_limits=resp_range
                             )
 
-        # save to different image formats to compare their quality. JPG appears best
-        robj.plot(save2file=outfile)
-        # robj.plot(save2file = outfile)
-        # robj.plot(save2file = outfile)
-        # robj.plot(save2file = outfile)
-        # robj.plot(save2file = outfile) # will create a big html file
 
+        #robj.plot()
 
+        robj.plot()
 
 # =============================================
 # Section for quick test of this script
+# python examples/cmdline/modem_plot_response.py
 # ---------------------------------------------
 if __name__ == "__main__":
     # call functions

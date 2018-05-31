@@ -1,0 +1,40 @@
+GOCAD SGrid 1 
+HEADER {
+name:ModEM_output_sg
+ascii:on
+double_precision_binary:off
+painted:on
+*painted*variable:Resistivity
+sections:3 1 0 0 2 0 0 3 1 22
+}
+GOCAD_ORIGINAL_COORDINATE_SYSTEM
+NAME Default
+AXIS_NAME "X" "Y" "Z"
+AXIS_UNIT "m" "m" "m"
+ZPOSITIVE Elevation
+END_ORIGINAL_COORDINATE_SYSTEM
+AXIS_N 64 78 90 
+PROP_ALIGNMENT CELLS
+ASCII_DATA_FILE sgrid_from_gocadModEM_output_sg__ascii@@
+
+
+PROPERTY 1 "Resistivity"
+PROPERTY_CLASS 1 "resistivity"
+PROPERTY_KIND 1 "Resistivity"
+PROPERTY_CLASS_HEADER 1 "resistivity" {
+low_clip:1
+high_clip:10000
+pclip:99
+colormap:flag
+last_selected_folder:Property
+scale_function:log10
+*colormap*reverse:true
+name:Resistivity
+}
+PROPERTY_SUBCLASS 1 QUANTITY Float
+PROP_ORIGINAL_UNIT 1 ohm*m
+PROP_UNIT 1 ohm*m
+PROP_NO_DATA_VALUE 1 -99999
+PROP_SAMPLE_STATS 1 431739 95.7998 225.248 0.068815 130.607
+PROP_ESIZE 1 4
+END

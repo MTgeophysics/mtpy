@@ -1,0 +1,206 @@
+\section{ModEM}
+\label{sec:modeling.modem}
+
+\subsection{ModEM: input files}
+\label{sec:modeling.modem.input_files}
+
+The code was built for the inputs to be .EDI files, so this is where we will start.  You should have a directory where all your .EDI files exist, at least all the ones that you want to model.  
+
+There a few ways to begin.  You can either make the data file first, then the mesh or the other way around.  Both methods will be covered below.
+
+We assume as ModEM does and that:
+
+\begin{itemize}
+	\item{\bf{x} == North}
+	\item{\bf{y} == East}
+	\item{\bf{z} == positive down}
+	\item{All spatial dimensions are in meters.}
+\end{itemize}
+
+\begin{itemize}
+\item{{\bf Note:} If your data set spans more than one UTM zone, then station locations may look a little funny or slightly off.  This is because I have added a general fudge factor to account for grid changes as this is the simplest method I came up with.  So you can change these fudge factors which are \verb|_utm_grid_size_north| and \verb|_utm_grid_size_east| (both part of \verb|modem.Data| and \verb|modem.Model| classes).  I suggest plotting the stations in latitude and longitude for a reference and then change the parameters so the station locations match.  If someone wants to come up with a better idea, then that is why this is open source. }
+\end{itemize}
+
+
+
+\subsubsection{Creating a Mesh and Data file}
+\label{sec:modeling.modem.mesh}
+
+\begin{verbatim}
+  
+    :Example --> create mesh first then data file: 
+    
+        >>> import mtpy.modeling.modem as modem
+        >>> import os
+        >>> #1) make a list of all .edi files that will be inverted for 
+        >>> edi_path = r"/home/EDI_Files"
+        >>> edi_list = [os.path.join(edi_path, edi) 
+                        for edi in os.listdir(edi_path) 
+                        if edi.find('.edi') > 0]
+        >>> #2) make a grid from the stations themselves with 200m cell spacing
+        >>> mmesh = modem.Model(edi_list=edi_list, cell_size_east=200, 
+                                cell_size_north=200)
+        >>> mmesh.make_mesh()
+        >>> # check to see if the mesh is what you think it should be
+        >>> msmesh.plot_mesh()
+        >>> # all is good write the mesh file
+        >>> msmesh.write_model_file(save_path=r"/home/modem/Inv1")
+        >>> # create data file
+        >>> md = modem.Data(edi_list)
+        >>> # load in the station locations from the model mesh
+        >>> # use copy so you don't over write anything if you change something
+        >>> md.station_locations = mmesh.station_locations.copy()
+        >>> md.write_data_file(save_path=r"/home/modem/Inv1")
+        
+\end{verbatim} 
+    
+\begin{verbatim}
+
+    :Example --> create data file first then model file: 
+    
+        >>> import mtpy.modeling.modem as modem
+        >>> import os
+        >>> #1) make a list of all .edi files that will be inverted for 
+        >>> edi_path = r"/home/EDI_Files"
+        >>> edi_list = [os.path.join(edi_path, edi) 
+                        for edi in os.listdir(edi_path) 
+        >>> ...         if edi.find('.edi') > 0]
+        >>> #2) create data file
+        >>> md = modem.Data(edi_list)
+        >>> md.write_data_file(save_path=r"/home/modem/Inv1")
+        >>> #3) make a grid from the stations themselves with 200m cell spacing
+        >>> mmesh = modem.Model(edi_list=edi_list, cell_size_east=200, 
+                                cell_size_north=200, 
+                                station_locations=md.station_locations.copy())
+        >>> mmesh.make_mesh()
+        >>> # check to see if the mesh is what you think it should be
+        >>> msmesh.plot_mesh()
+        >>> # all is good write the mesh file
+        >>> msmesh.write_model_file(save_path=r"/home/modem/Inv1")
+\end{verbatim}
+
+\subsubsection{Rotate Mesh}
+\label{sec:modeling.modem.mesh_rotate}
+
+If you want to rotate the mesh, this can be a bit of a mind game because ModEM assumes the grid is oriented North and East.  Therefore, you need to rotate the station locations to the angle at which you want to rotate.  Now you also need to rotate you data to this new angle as well so that the off-diagonal components are parallel with the grid.  The mesh will look a little funny and can be irritating as it usually makes the grid larger.   So you may choose a different option than the one I've outlined here. 
+        
+\begin{verbatim}
+
+    :Example --> Rotate Mesh: 
+    
+        >>> mmesh.mesh_rotation_angle = 60
+        >>> mmesh.make_mesh()
+        >>> mmesh.write_model_file(save_path=r"/home/modem/Inv1")
+        >>> # rotate data
+        >>> md.station_locations = mmesh.station_locations.copy()
+        >>> md.rotation_angle = 60
+        >>> md.write_data_file(save_path=r"/home/modem/Inv1")
+        
+\end{verbatim}
+
+If you already have a data file and would like to create a mesh then you can do the following:
+
+\begin{verbatim}
+
+	:Example --> Rotate Mesh:
+	 
+        >>> md = modem.Data()
+        >>> md.read_data_file(r"/home/modem/Inv1/ModEM_Data.dat"
+        >>> # make a grid from the stations themselves with 200m cell spacing
+        >>> mmesh = modem.Model(edi_list=edi_list, cell_size_east=200, 
+                                cell_size_north=200, 
+                                station_locations=md.station_locations.copy())
+        >>> mmesh.make_mesh()
+        >>> # check to see if the mesh is what you think it should be
+        >>> msmesh.plot_mesh()
+        >>> # all is good write the mesh file
+        >>> msmesh.write_model_file(save_path=r"/home/modem/Inv1")
+\end{verbatim}
+
+\subsubsection{Control Files}
+\label{sec:modeling.modem.control}
+
+There are two control files that you need to make in order for ModEM to run.  That is a control file for how the forward modeling code runs and a control file for how the inversion runs.
+
+To write the control file for the inversion:
+
+\begin{verbatim}
+	:Example --> make control.inv : 
+	
+		>>> cntrl_inv = modem.Control_Inv()
+		>>> # change some parameters
+		>>> cntrl_inv.rms_target = 1.5
+		>>> cntrl_inv.max_iterations = 200
+		>>> cntrl_inv.lambda_initial = 100
+		>>> # write file
+		>>> cntrl_inv.write_control_file(save_path=r"/home/modem/Inv1")
+\end{verbatim}
+
+If you already have a control file but want to change some parameters:
+
+\begin{verbatim}
+	:Example --> make control.inv :
+	
+		>>> cntrl_inv = modem.Control_Inv()
+		>>> cntrl_inv.read_control_file(r"/home/modem/Inv1/control.inv")
+		>>> # change some parameters
+		>>> cntrl_inv.rms_target = 1.5
+		>>> cntrl_inv.max_iterations = 200
+		>>> cntrl_inv.lambda_initial = 100
+		>>> # write file
+		>>> cntrl_inv.write_control_file()
+\end{verbatim}
+
+To write the control file for the forward model:
+
+\begin{verbatim}
+	:Example --> make control.fwd :
+	
+		>>> cntrl_fwd = modem.Control_Fwd()
+		>>> # change some parameters
+		>>> cntrl_fwd.max_num_div_calls = 10
+		>>> cntrl_fwd.max_num_div_iters = 75
+		>>> # write file
+		>>> cntrl_fwd.write_control_file(save_path=r"/home/modem/Inv1")
+\end{verbatim}
+
+\subsubsection{Covariance File}
+
+The covariance is an important input in ModEM and can change the model drastically depending on the parameters.  A covariance file can be written by:
+
+\begin{verbatim}
+
+	:Example --> make covariance.cov: 
+	
+		>>> cov = modem.Covarianc()
+		>>> # if you know the grid dimensions (Nx, Ny, Nz)
+		>>> cov.grid_dimensions = (30, 20, 25)
+		>>> # if you made the mesh with modem.Model
+		>>> cov.grid_dimensions = (mmesh.grid_north.shape[0], 
+								   mmesh.grid_east.shape[0],
+								   mmesh.grid_z.shape[0])
+		>>> # change the covariance in value [0,1]
+		>>> cov.smoothing_east = 0.4
+		>>> cov.smoothing_north = 0.3
+		>>> # if you have an array of masked values
+		>>> # must have same shape as grid dimensions
+		>>> cov.mask_arr = mask_array.copy()
+		>>> # write file
+		>>> cov.write_covariance_file(save_path=r"/home/modem/Inv1")
+	
+\end{verbatim}
+
+\subsection{ModEM: Ouput Files}
+\label{sec:modeling.modem.output}
+
+After ModEM has run you want to look at the outputs.  There are a few ways to do this.  
+
+\subsubsection{Plot ModEM Response}
+\label{sec:modeling.modem.plot_response}
+
+To plot the response from ModEM a GUI has been created and on installation this file is converted into an executable.  It is called \verb|modem_plot_response.exe| which is developed from \verb|mtpy/gui/modem_plot_response.py|.
+
+To run the GUI simply go into a console and type \verb|modem_plot_response.exe| (for Windos OS) and \verb|./modem_plot_response| (Linux OS).
+
+A window will pop up looking like
+

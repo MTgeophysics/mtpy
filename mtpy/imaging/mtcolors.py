@@ -6,6 +6,7 @@ Created on Tue May 14 18:05:59 2013
 """
 
 import matplotlib.colors as colors
+from matplotlib import cm
 import numpy as np
 
 #==============================================================================
@@ -291,11 +292,22 @@ def get_color(cvar,cmap):
     elif cmap == 'mt_rd2wh2bl_r':
         plot_color = get_mt_rd2wh2bl_r(cvar)
         return plot_color
-
+    
     else:
-        print 'Color map: {0} is not supported yet.'.format(cmap)
+        try:
+            return get_matplotlib_cval(cmap,cvar)
+
+        except:
+            print 'Color map: {0} is not supported yet.'.format(cmap)
 
 
+def get_matplotlib_cval(cmap,cvar):
+    """
+    gets the color for any matplotlib colormaps
+    
+    """
+    return cm.get_cmap(cmap)(cvar)
+    
 
 def get_mt_yl2rd(cvar):
     """
@@ -454,8 +466,9 @@ def get_mt_rd2wh2bl_r(cvar):
 def get_plot_color(colorx, comp, cmap, ckmin=None, ckmax=None, bounds=None):
     """
     gets the color for the given compnent, color array and cmap
-    """
 
+    Note: we now use the linearSegmentedColorMap objects, instead of the get_color function
+    """
 
     #get face color info
     if comp == 'phimin' or comp == 'phimax' or comp == 'phidet' or \
@@ -463,6 +476,7 @@ def get_plot_color(colorx, comp, cmap, ckmin=None, ckmax=None, bounds=None):
         if ckmin is None or ckmax is None:
             raise IOError('Need to input min and max values for plotting')
 
+        '''
         cvar = (colorx-ckmin)/(ckmax-ckmin)
         if cmap == 'mt_bl2wh2rd' or cmap == 'mt_bl2yl2rd' or \
            cmap == 'mt_bl2gr2rd' or cmap == 'mt_rd2gr2bl' or \
@@ -470,17 +484,28 @@ def get_plot_color(colorx, comp, cmap, ckmin=None, ckmax=None, bounds=None):
             cvar = 2*cvar-1
 
         return get_color(cvar, cmap)
-
+        '''
+        norm = colors.Normalize(ckmin, ckmax)
+        if(cmap in cmapdict.keys()):
+            return cmapdict[cmap](norm(colorx))
+        else:
+            return cm.get_cmap(cmap)(norm(colorx))
     elif comp == 'skew' or comp == 'normalized_skew':
+        '''
         cvar = 2*colorx/(ckmax-ckmin)
-
         return get_color(cvar, cmap)
+        '''
 
-
+        norm = colors.Normalize(ckmin, ckmax)
+        if (cmap in cmapdict.keys()):
+            return cmapdict[cmap](norm(colorx))
+        else:
+            return cm.get_cmap(cmap)(norm(colorx))
     elif comp == 'skew_seg' or comp == 'normalized_skew_seg':
         if bounds is None:
             raise IOError('Need to input bounds for segmented colormap')
 
+        '''
         for bb in range(bounds.shape[0]):
             if colorx >= bounds[bb] and colorx < bounds[bb+1]:
                 cvar = float(bounds[bb])/bounds.max()
@@ -495,7 +520,14 @@ def get_plot_color(colorx, comp, cmap, ckmin=None, ckmax=None, bounds=None):
             elif colorx > bounds[-1]:
                 cvar = 1.0
                 return get_color(cvar, cmap)
+        '''
 
+        norm = colors.Normalize(bounds[0], bounds[-1])
+
+        if (cmap in cmapdict.keys()):
+            return cmapdict[cmap](norm(colorx))
+        else:
+            return cm.get_cmap(cmap)(norm(colorx))
     else:
         raise NameError('color key '+comp+' not supported')
 

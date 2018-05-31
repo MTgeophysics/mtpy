@@ -17,6 +17,7 @@ from mtpy.modeling.modem import PlotResponse
 
 #### Inputs ####
 wd = r'C:\mtpywin\mtpy\examples\model_files\ModEM_2'
+#wd = r'E:\Githubz\mtpy\examples\model_files\ModEM_2'
 savepath = r'U:\Software\mtpy\example_plots'
 
 filestem = 'Modular_MPI_NLCG_004'
@@ -29,14 +30,14 @@ station = 'Synth02'
 ro = PlotResponse(data_fn=op.join(wd,datafn),
                   resp_fn=op.join(wd,respfn),
                   plot_type=[station],
-                  plot_style=2,
+                  plot_style=1,  # 1 for 4-colums; 2 for 2-columns
                   plot_z=False,
-#                  fig_size=[3,2],
-#                  font_size=4
+#                 fig_size=[3,2],
+#                 font_size=4
                   )
-
 
 
 ro.plot()
 
-#ro.save_figure(r'U:\Software\mtpy\example_plots')
+ro.save_figure(r'U:\Software\mtpy\example_plots'
+               ,fig_dpi=400) # change fig_dpi to your desired resolution
