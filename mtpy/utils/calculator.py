@@ -41,7 +41,7 @@ def roundsf(number, sf):
     return np.round(number, rounding)
 
 
-def get_logspace_array(period_min,period_max,periods_per_decade,include_outside_range=True):
+def get_period_list(period_min,period_max,periods_per_decade,include_outside_range=True):
     """
     get a list of values (e.g. periods), evenly spaced in log space and 
     including values on multiples of 10
