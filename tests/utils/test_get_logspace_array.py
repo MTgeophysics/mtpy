@@ -21,5 +21,17 @@ def test_get_logspace_array():
     assert all(np.abs(array1test-array1)/array1 < 1e-8)
     assert all(np.abs(array2test-array2)/array2 < 1e-8)
     
+def test_get_logspace_array2():
+    # test with ends of input range on an exact decade
+    array1 = np.array([  0.1       ,   0.21544347,   0.46415888,   1.        ,
+                       2.15443469,   4.64158883,  10.        ,  21.5443469 ,
+                       46.41588834, 100.        ])
+    
+    array1test = get_logspace_array(0.1,100,3,include_outside_range=True)
+    array2test = get_logspace_array(0.1,100,3,include_outside_range=False)
+    
+    assert all(np.abs(array1test-array1)/array1 < 1e-8)
+    assert all(np.abs(array2test-array1)/array1 < 1e-8)
+    
 if __name__ == "__main__":
     test_get_logspace_array()
