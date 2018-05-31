@@ -1728,9 +1728,10 @@ class Data(object):
             # point to same location
             # ====================== ====================================================
             # self.station_locations.station_locations['elev'][ss] = topoval + 0.1
-            self.data_array['elev'][ss] = topoval + 0.1
+            self.data_array['rel_elev'][ss] = topoval + 0.1
         # logger.debug("Re-write data file after adding topo")
-        self.write_data_file(fill=False, elevation=True)  # (Xi, Yi, Zi) of each station-i may be shifted
+        self.write_data_file(fn_basename=os.path.basename(self.data_fn)[:-4]+'topo.dat',
+                             fill=False, elevation=True)  # (Xi, Yi, Zi) of each station-i may be shifted
 
         # debug self.Data.write_data_file(save_path='/e/tmp', fill=False)
 

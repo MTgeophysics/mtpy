@@ -684,323 +684,323 @@ class Model(object):
         z_grid = np.array([z_nodes[:ii].sum() for ii in range(z_nodes.shape[0] + 1)])
 
         return z_nodes, z_grid
-<<<<<<< HEAD
-
-    def add_topography_to_mesh(self, topography_file=None, topography_array=None,
-                               interp_method='nearest',
-                               air_resistivity=1e17, sea_resistivity=0.3, 
-                               max_elev=None):
-        """
-        For a given mesh grid, use the topofile data to define resistivity model.
-        No new air layers will be added. Just identify the max elev height as the ref point
-
-        read in topograph file, make a surface model.
-        Call project_stations_on_topography in the end, which will re-write the .dat file.
-        """
-
-        sea_level = 0.0  # self.sea_level
-
-        # first, get surface data
-        if topography_file is not None:
-            self.project_surface(surface_file=topography_file,
-                                 surface_name='topography',
-                                 method=interp_method,
-                                 max_value=max_elev)
-        if topography_array is not None:
-            self.surface_dict['topography'] = topography_array
-
-        # update the z-centre as the max topo_elev (top air layer)
-        self.grid_center[2] = -np.amax(self.surface_dict['topography'])
-
-        # shift the grid_z lines to the new reference
-        self.grid_z = self.grid_z + self.grid_center[2]
-
-        self._logger.debug("New vertical grid lines = %s" % self.grid_z)
-
-        self._logger.info("begin to self.assign_resistivity_from_surfacedata(...)")
-        # self.assign_resistivity_from_surfacedata('topography', air_resistivity, where='above')
-        self.old_assign_resistivity_from_surfacedata('topography', air_resistivity,'above')
-
-        self._logger.info("begin to assign sea water resistivity")
-        # first make a mask for all-land =1, which will be modified later according to air, water
-        self.covariance_mask = np.ones_like(self.res_model)  # of grid size (xc, yc, zc)
-
-        # assign model areas below sea level but above topography, as seawater
-        # get the grid node centre points
-        gcz = np.mean([self.grid_z[:-1], self.grid_z[1:]], axis=0)
-
-        # convert topography to local grid coordinates
-        topo = sea_level - self.surface_dict['topography']
-        # assign values
-        for j in range(len(self.res_model)):
-            for i in range(len(self.res_model[j])):
-                # assign all sites above the topography to air
-                ii1 = np.where(gcz <= topo[j, i])
-                if len(ii1) > 0:
-                    self.covariance_mask[j, i, ii1[0]] = 0.
-                # assign sea water to covariance and model res arrays
-                ii = np.where(
-                    np.all([gcz > sea_level, gcz <= topo[j, i]], axis=0))
-                if len(ii) > 0:
-                    self.covariance_mask[j, i, ii[0]] = 9.
-                    self.res_model[j, i, ii[0]] = sea_resistivity
-
-        self.covariance_mask = self.covariance_mask[::-1]
-
-        self.station_grid_index = self.project_stations_on_topography()
-
-        self._logger.debug("NEW res_model and cov_mask shapes: %s, %s" %
-                           (self.res_model.shape,
-                            self.covariance_mask.shape))
-
-        return
-
-    def add_topography(self, topography_file=None, topography_array=None, interp_method='nearest',
-                       air_resistivity=1e17, sea_resistivity=0.3):
-        """
-        if air_layers is non-zero, will add topo: read in topograph file, make a surface model.
-        Call project_stations_on_topography in the end, which will re-write the .dat file.
-
-        If n_airlayers is zero, then cannot add topo data, only bathymetry is needed.
-        """
-        # first, get surface data
-        if topography_file is not None:
-            self.project_surface(surface_file=topography_file,
-                                 surface_name='topography',
-                                 method=interp_method)
-        if topography_array is not None:
-            self.surface_dict['topography'] = topography_array
-
-        if self.n_air_layers is None or self.n_air_layers == 0:
-            print("No air layers specified, so will not add air/topography !!!")
-            print("Only bathymetry will be added below according to the topofile: sea-water low resistivity!!!")
-
-        elif self.n_air_layers > 0:  # FZ: new logic, add equal blocksize air layers on top of the simple flat-earth grid
-            # build air layers based on the inner core area
-            padE = int(sum(self.pad_east))
-            padN = int(sum(self.pad_north))
-            topo_core = self.surface_dict['topography'][padN:-padN, padE:-padE]
-
-            #            # compute the air cell size to be added = (topomax-topomin)/n_airlayers, rounded up to nearest whole number
-            #            # use only the inner core area
-            #            cs = (topo_core.max() - topo_core.min()) / float(self.n_airlayers)
-            #            cs = np.ceil(cs)
-            #            # define the bottom elevation of the bottom air layer, rounded to nearest whole number
-            #            bottom_airlayer = int(round(topo_core.min()))
-            #            # new air layers
-            #            new_airlayers = -np.linspace(self.n_airlayers, 1, self.n_airlayers)*cs - bottom_airlayer
-
-
-            # log increasing airlayers, in reversed order
-            new_air_nodes = mtcc.make_log_increasing_array(self.z1_layer,
-                                                           topo_core.max() - topo_core.min(),
-                                                           self.n_air_layers,
-                                                           increment_factor=0.999)[::-1]
-            # sum to get grid cell locations
-            new_airlayers = np.array([new_air_nodes[:ii].sum() for ii in range(len(new_air_nodes) + 1)])
-            # round to nearest whole number and reverse the order
-            new_airlayers = np.around(new_airlayers - topo_core.max())
-
-            print("new_airlayers", new_airlayers)
-
-            print("self.grid_z[0:2]", self.grid_z[0:2])
-
-            # add new air layers, cut_off some tailing layers to preserve array size.
-            self.grid_z = np.concatenate(
-                [new_airlayers,
-                 self.grid_z[self.n_air_layers + 1:] - self.grid_z[self.n_air_layers] + new_airlayers[-1]],
-                axis=0)
-            print(" NEW self.grid_z shape and values = ", self.grid_z.shape, self.grid_z)
-
-            # adjust the nodes, which is simply the diff of adjacent grid lines
-            self.nodes_z = self.grid_z[1:] - self.grid_z[:-1]
-
-            # adjust sea level
-            # wrong? self.sea_level = self.grid_z[self.n_airlayers]
-            # self.sea_level = self.grid_z[self.n_airlayers]
-            self.sea_level = 0  # keep as zero
-            self._logger.debug("FZ:***2 sea_level = %s" % self.sea_level)
-
-            # print (stop_here_for_debug)
-
-        #        elif self.n_airlayers < 0: # if number of air layers < 0, auto calculate number of air layers required in air
-        #
-        #            # compute the air cell size to be added = topomax/n_airlayers, rounded to nearest 1 s.f.
-        #            cs = np.amax(self.surface_dict['topography']) / float(self.n_airlayers)
-        #            #  cs = np.ceil(0.1*cs/10.**int(np.log10(cs)))*10.**(int(np.log10(cs))+1)
-        #            cs = np.ceil(cs)
-        #
-        #            # add air layers
-        #            new_airlayers = np.linspace(
-        #                0, self.n_airlayers, self.n_airlayers + 1) * cs
-        #            add_z = new_airlayers[-1] - self.grid_z[self.n_airlayers]
-        #            self.grid_z[self.n_airlayers + 1:] += add_z
-        #            self.grid_z[:self.n_airlayers + 1] = new_airlayers
-        #
-        #            # adjust the nodes, which is simply the diff of adjacent grid lines
-        #            self.nodes_z = self.grid_z[1:] - self.grid_z[:-1]
-        #
-        #            # adjust sea level
-        #            # wrong? self.sea_level = self.grid_z[self.n_airlayers]
-        #            self.sea_level = self.grid_z[self.n_airlayers]
-        #            logger.debug("FZ:***2 sea_level = %s", self.sea_level)
-        #
-        #            # assign topography
-        #            # self.assign_resistivity_from_surfacedata('topography', air_resistivity, where='above')
-        #        else:
-        #            pass
-
-        # update the z-centre as the top air layer
-        self.grid_center[2] = self.grid_z[0]
-
-        self._logger.info("begin to self.assign_resistivity_from_surfacedata(...)")
-        self.assign_resistivity_from_surfacedata('topography', air_resistivity, where='above')
-
-        self._logger.info("begin to assign sea water resistivity")
-        # first make a mask for all-land =1, which will be modified later according to air, water
-        self.covariance_mask = np.ones_like(self.res_model)  # of grid size (xc, yc, zc)
-
-        # assign model areas below sea level but above topography, as seawater
-        # get grid node centres
-        gcz = np.mean([self.grid_z[:-1], self.grid_z[1:]], axis=0)
-
-        # convert topography to local grid coordinates
-        topo = self.sea_level - self.surface_dict['topography']
-        # assign values
-        for j in range(len(self.res_model)):
-            for i in range(len(self.res_model[j])):
-                # assign all sites above the topography to air
-                ii1 = np.where(gcz <= topo[j, i])
-                if len(ii1) > 0:
-                    self.covariance_mask[j, i, ii1[0]] = 0.
-                # assign sea water to covariance and model res arrays
-                ii = np.where(
-                    np.all([gcz > self.sea_level, gcz <= topo[j, i]], axis=0))
-                if len(ii) > 0:
-                    self.covariance_mask[j, i, ii[0]] = 9.
-                    self.res_model[j, i, ii[0]] = sea_resistivity
-
-        self.covariance_mask = self.covariance_mask[::-1]
-
-        self.station_grid_index = self.project_stations_on_topography()
-
-        self._logger.debug("NEW res_model and cov_mask shapes: %s, %s" %
-                           (self.res_model.shape,
-                            self.covariance_mask.shape))
-
-        return
-
-    def project_surface(self, surface_file=None, surface=None, surface_name=None,
-                        surface_epsg=4326, method='nearest',
-                        max_value=None):  # todo GA Version
-        """
-        project a surface to the model grid and add resulting elevation data
-        to a dictionary called surface_dict. Assumes the surface is in lat/long
-        coordinates (wgs84), if not, need to supply the epsg of the surface xy
-        points
-
-        **returns**
-        nothing returned, but surface data are added to surface_dict under
-        the key given by surfacename.
-
-        **inputs**
-        choose to provide either surface_file (path to file) or surface (tuple).
-        If both are provided then surface tuple takes priority.
-
-        surface elevations are positive up, and relative to sea level.
-        surface file format is:
-
-        ncols         3601
-        nrows         3601
-        xllcorner     -119.00013888889 (longitude of lower left)
-        yllcorner     36.999861111111  (latitude of lower left)
-        cellsize      0.00027777777777778
-        NODATA_value  -9999
-        elevation data W --> E
-        N
-        |
-        V
-        S
-
-        Alternatively, provide a tuple with:
-        (lon,lat,elevation)
-        where elevation is a 2D array (shape (ny,nx)) containing elevation
-        points (order S -> N, W -> E)
-        and lon, lat are either 1D arrays containing list of longitudes and
-        latitudes (in the case of a regular grid) or 2D arrays with same shape
-        as elevation array containing longitude and latitude of each point.
-
-        other inputs:
-        surfacename = name of surface for putting into dictionary
-        surface_epsg = epsg number of input surface, default is 4326 for lat/lon(wgs84)
-        method = interpolation method. Default is 'nearest', if model grid is
-        dense compared to surface points then choose 'linear' or 'cubic'
-
-        """
-        # initialise a dictionary to contain the surfaces
-        if not hasattr(self, 'surface_dict'):
-            self.surface_dict = {}
-
-        # read the surface data in from ascii if surface not provided
-        if surface is None:
-            surface = mtfh.read_surface_ascii(surface_file)
-
-        x, y, elev = surface
-        # If clipping of the surface for max value is desired
-        # need this if there are peaks, ModEM cannot handle them
-        if max_value is not None:
-            elev[np.where(elev > max_value)] = max_value
-            
-
-        # if lat/lon provided as a 1D list, convert to a 2d grid of points
-        if len(x.shape) == 1:
-            x, y = np.meshgrid(x, y)
-            
-        epsg_from, epsg_to = surface_epsg, self.data_obj.model_epsg
-        xs, ys = mtpy.utils.gis_tools.epsg_project(x, y, epsg_from, epsg_to)
-
-        # get centre position of model grid in real world coordinates
-        x0, y0 = [np.median(self.station_locations.station_locations[dd] - self.station_locations.station_locations['rel_' + dd]) for dd in
-                  ['east', 'north']]
-
-        # centre points of model grid in real world coordinates
-        xg, yg = [np.mean([arr[1:], arr[:-1]], axis=0)
-                  for arr in [self.grid_east + x0, self.grid_north + y0]]
-
-        # elevation in model grid
-        # first, get lat,lon points of surface grid
-        points = np.vstack([arr.flatten() for arr in [xs, ys]]).T
-        # corresponding surface elevation points
-        values = elev.flatten()
-        # xi, the model grid points to interpolate to
-        xi = np.vstack([arr.flatten() for arr in np.meshgrid(xg, yg)]).T
-        # elevation on the centre of the grid nodes
-        elev_mg = spi.griddata(
-            points, values, xi, method=method).reshape(len(yg), len(xg))
-
-        print(" Elevation data type and shape  *** ", type(elev_mg), elev_mg.shape, len(yg), len(xg))
-        # <type 'numpy.ndarray'>  (65, 92), 65 92: it's 2D image with cell index as pixels
-        # np.savetxt('E:/tmp/elev_mg.txt', elev_mg, fmt='%10.5f')
-
-        # get a name for surface
-        if surface_name is None:
-            if surface_file is not None:
-                surface_name = os.path.basename(surface_file)
-            else:
-                ii = 1
-                surface_name = 'surface%01i' % ii
-                while surface_name in self.surface_dict.keys():
-                    ii += 1
-                    surface_name = 'surface%01i' % ii
-
-        # add surface to a dictionary of surface elevation data
-        self.surface_dict[surface_name] = elev_mg
-
-        return
-
-=======
-    
->>>>>>> 74c2c2f7e03f926cc6dd244218aef840cd4eb4a7
+#<<<<<<< HEAD
+#
+#    def add_topography_to_mesh(self, topography_file=None, topography_array=None,
+#                               interp_method='nearest',
+#                               air_resistivity=1e17, sea_resistivity=0.3, 
+#                               max_elev=None):
+#        """
+#        For a given mesh grid, use the topofile data to define resistivity model.
+#        No new air layers will be added. Just identify the max elev height as the ref point
+#
+#        read in topograph file, make a surface model.
+#        Call project_stations_on_topography in the end, which will re-write the .dat file.
+#        """
+#
+#        sea_level = 0.0  # self.sea_level
+#
+#        # first, get surface data
+#        if topography_file is not None:
+#            self.project_surface(surface_file=topography_file,
+#                                 surface_name='topography',
+#                                 method=interp_method,
+#                                 max_value=max_elev)
+#        if topography_array is not None:
+#            self.surface_dict['topography'] = topography_array
+#
+#        # update the z-centre as the max topo_elev (top air layer)
+#        self.grid_center[2] = -np.amax(self.surface_dict['topography'])
+#
+#        # shift the grid_z lines to the new reference
+#        self.grid_z = self.grid_z + self.grid_center[2]
+#
+#        self._logger.debug("New vertical grid lines = %s" % self.grid_z)
+#
+#        self._logger.info("begin to self.assign_resistivity_from_surfacedata(...)")
+#        # self.assign_resistivity_from_surfacedata('topography', air_resistivity, where='above')
+#        self.old_assign_resistivity_from_surfacedata('topography', air_resistivity,'above')
+#
+#        self._logger.info("begin to assign sea water resistivity")
+#        # first make a mask for all-land =1, which will be modified later according to air, water
+#        self.covariance_mask = np.ones_like(self.res_model)  # of grid size (xc, yc, zc)
+#
+#        # assign model areas below sea level but above topography, as seawater
+#        # get the grid node centre points
+#        gcz = np.mean([self.grid_z[:-1], self.grid_z[1:]], axis=0)
+#
+#        # convert topography to local grid coordinates
+#        topo = sea_level - self.surface_dict['topography']
+#        # assign values
+#        for j in range(len(self.res_model)):
+#            for i in range(len(self.res_model[j])):
+#                # assign all sites above the topography to air
+#                ii1 = np.where(gcz <= topo[j, i])
+#                if len(ii1) > 0:
+#                    self.covariance_mask[j, i, ii1[0]] = 0.
+#                # assign sea water to covariance and model res arrays
+#                ii = np.where(
+#                    np.all([gcz > sea_level, gcz <= topo[j, i]], axis=0))
+#                if len(ii) > 0:
+#                    self.covariance_mask[j, i, ii[0]] = 9.
+#                    self.res_model[j, i, ii[0]] = sea_resistivity
+#
+#        self.covariance_mask = self.covariance_mask[::-1]
+#
+#        self.station_grid_index = self.project_stations_on_topography()
+#
+#        self._logger.debug("NEW res_model and cov_mask shapes: %s, %s" %
+#                           (self.res_model.shape,
+#                            self.covariance_mask.shape))
+#
+#        return
+#
+#    def add_topography(self, topography_file=None, topography_array=None, interp_method='nearest',
+#                       air_resistivity=1e17, sea_resistivity=0.3):
+#        """
+#        if air_layers is non-zero, will add topo: read in topograph file, make a surface model.
+#        Call project_stations_on_topography in the end, which will re-write the .dat file.
+#
+#        If n_airlayers is zero, then cannot add topo data, only bathymetry is needed.
+#        """
+#        # first, get surface data
+#        if topography_file is not None:
+#            self.project_surface(surface_file=topography_file,
+#                                 surface_name='topography',
+#                                 method=interp_method)
+#        if topography_array is not None:
+#            self.surface_dict['topography'] = topography_array
+#
+#        if self.n_air_layers is None or self.n_air_layers == 0:
+#            print("No air layers specified, so will not add air/topography !!!")
+#            print("Only bathymetry will be added below according to the topofile: sea-water low resistivity!!!")
+#
+#        elif self.n_air_layers > 0:  # FZ: new logic, add equal blocksize air layers on top of the simple flat-earth grid
+#            # build air layers based on the inner core area
+#            padE = int(sum(self.pad_east))
+#            padN = int(sum(self.pad_north))
+#            topo_core = self.surface_dict['topography'][padN:-padN, padE:-padE]
+#
+#            #            # compute the air cell size to be added = (topomax-topomin)/n_airlayers, rounded up to nearest whole number
+#            #            # use only the inner core area
+#            #            cs = (topo_core.max() - topo_core.min()) / float(self.n_airlayers)
+#            #            cs = np.ceil(cs)
+#            #            # define the bottom elevation of the bottom air layer, rounded to nearest whole number
+#            #            bottom_airlayer = int(round(topo_core.min()))
+#            #            # new air layers
+#            #            new_airlayers = -np.linspace(self.n_airlayers, 1, self.n_airlayers)*cs - bottom_airlayer
+#
+#
+#            # log increasing airlayers, in reversed order
+#            new_air_nodes = mtcc.make_log_increasing_array(self.z1_layer,
+#                                                           topo_core.max() - topo_core.min(),
+#                                                           self.n_air_layers,
+#                                                           increment_factor=0.999)[::-1]
+#            # sum to get grid cell locations
+#            new_airlayers = np.array([new_air_nodes[:ii].sum() for ii in range(len(new_air_nodes) + 1)])
+#            # round to nearest whole number and reverse the order
+#            new_airlayers = np.around(new_airlayers - topo_core.max())
+#
+#            print("new_airlayers", new_airlayers)
+#
+#            print("self.grid_z[0:2]", self.grid_z[0:2])
+#
+#            # add new air layers, cut_off some tailing layers to preserve array size.
+#            self.grid_z = np.concatenate(
+#                [new_airlayers,
+#                 self.grid_z[self.n_air_layers + 1:] - self.grid_z[self.n_air_layers] + new_airlayers[-1]],
+#                axis=0)
+#            print(" NEW self.grid_z shape and values = ", self.grid_z.shape, self.grid_z)
+#
+#            # adjust the nodes, which is simply the diff of adjacent grid lines
+#            self.nodes_z = self.grid_z[1:] - self.grid_z[:-1]
+#
+#            # adjust sea level
+#            # wrong? self.sea_level = self.grid_z[self.n_airlayers]
+#            # self.sea_level = self.grid_z[self.n_airlayers]
+#            self.sea_level = 0  # keep as zero
+#            self._logger.debug("FZ:***2 sea_level = %s" % self.sea_level)
+#
+#            # print (stop_here_for_debug)
+#
+#        #        elif self.n_airlayers < 0: # if number of air layers < 0, auto calculate number of air layers required in air
+#        #
+#        #            # compute the air cell size to be added = topomax/n_airlayers, rounded to nearest 1 s.f.
+#        #            cs = np.amax(self.surface_dict['topography']) / float(self.n_airlayers)
+#        #            #  cs = np.ceil(0.1*cs/10.**int(np.log10(cs)))*10.**(int(np.log10(cs))+1)
+#        #            cs = np.ceil(cs)
+#        #
+#        #            # add air layers
+#        #            new_airlayers = np.linspace(
+#        #                0, self.n_airlayers, self.n_airlayers + 1) * cs
+#        #            add_z = new_airlayers[-1] - self.grid_z[self.n_airlayers]
+#        #            self.grid_z[self.n_airlayers + 1:] += add_z
+#        #            self.grid_z[:self.n_airlayers + 1] = new_airlayers
+#        #
+#        #            # adjust the nodes, which is simply the diff of adjacent grid lines
+#        #            self.nodes_z = self.grid_z[1:] - self.grid_z[:-1]
+#        #
+#        #            # adjust sea level
+#        #            # wrong? self.sea_level = self.grid_z[self.n_airlayers]
+#        #            self.sea_level = self.grid_z[self.n_airlayers]
+#        #            logger.debug("FZ:***2 sea_level = %s", self.sea_level)
+#        #
+#        #            # assign topography
+#        #            # self.assign_resistivity_from_surfacedata('topography', air_resistivity, where='above')
+#        #        else:
+#        #            pass
+#
+#        # update the z-centre as the top air layer
+#        self.grid_center[2] = self.grid_z[0]
+#
+#        self._logger.info("begin to self.assign_resistivity_from_surfacedata(...)")
+#        self.assign_resistivity_from_surfacedata('topography', air_resistivity, where='above')
+#
+#        self._logger.info("begin to assign sea water resistivity")
+#        # first make a mask for all-land =1, which will be modified later according to air, water
+#        self.covariance_mask = np.ones_like(self.res_model)  # of grid size (xc, yc, zc)
+#
+#        # assign model areas below sea level but above topography, as seawater
+#        # get grid node centres
+#        gcz = np.mean([self.grid_z[:-1], self.grid_z[1:]], axis=0)
+#
+#        # convert topography to local grid coordinates
+#        topo = self.sea_level - self.surface_dict['topography']
+#        # assign values
+#        for j in range(len(self.res_model)):
+#            for i in range(len(self.res_model[j])):
+#                # assign all sites above the topography to air
+#                ii1 = np.where(gcz <= topo[j, i])
+#                if len(ii1) > 0:
+#                    self.covariance_mask[j, i, ii1[0]] = 0.
+#                # assign sea water to covariance and model res arrays
+#                ii = np.where(
+#                    np.all([gcz > self.sea_level, gcz <= topo[j, i]], axis=0))
+#                if len(ii) > 0:
+#                    self.covariance_mask[j, i, ii[0]] = 9.
+#                    self.res_model[j, i, ii[0]] = sea_resistivity
+#
+#        self.covariance_mask = self.covariance_mask[::-1]
+#
+#        self.station_grid_index = self.project_stations_on_topography()
+#
+#        self._logger.debug("NEW res_model and cov_mask shapes: %s, %s" %
+#                           (self.res_model.shape,
+#                            self.covariance_mask.shape))
+#
+#        return
+#
+#    def project_surface(self, surface_file=None, surface=None, surface_name=None,
+#                        surface_epsg=4326, method='nearest',
+#                        max_value=None):  # todo GA Version
+#        """
+#        project a surface to the model grid and add resulting elevation data
+#        to a dictionary called surface_dict. Assumes the surface is in lat/long
+#        coordinates (wgs84), if not, need to supply the epsg of the surface xy
+#        points
+#
+#        **returns**
+#        nothing returned, but surface data are added to surface_dict under
+#        the key given by surfacename.
+#
+#        **inputs**
+#        choose to provide either surface_file (path to file) or surface (tuple).
+#        If both are provided then surface tuple takes priority.
+#
+#        surface elevations are positive up, and relative to sea level.
+#        surface file format is:
+#
+#        ncols         3601
+#        nrows         3601
+#        xllcorner     -119.00013888889 (longitude of lower left)
+#        yllcorner     36.999861111111  (latitude of lower left)
+#        cellsize      0.00027777777777778
+#        NODATA_value  -9999
+#        elevation data W --> E
+#        N
+#        |
+#        V
+#        S
+#
+#        Alternatively, provide a tuple with:
+#        (lon,lat,elevation)
+#        where elevation is a 2D array (shape (ny,nx)) containing elevation
+#        points (order S -> N, W -> E)
+#        and lon, lat are either 1D arrays containing list of longitudes and
+#        latitudes (in the case of a regular grid) or 2D arrays with same shape
+#        as elevation array containing longitude and latitude of each point.
+#
+#        other inputs:
+#        surfacename = name of surface for putting into dictionary
+#        surface_epsg = epsg number of input surface, default is 4326 for lat/lon(wgs84)
+#        method = interpolation method. Default is 'nearest', if model grid is
+#        dense compared to surface points then choose 'linear' or 'cubic'
+#
+#        """
+#        # initialise a dictionary to contain the surfaces
+#        if not hasattr(self, 'surface_dict'):
+#            self.surface_dict = {}
+#
+#        # read the surface data in from ascii if surface not provided
+#        if surface is None:
+#            surface = mtfh.read_surface_ascii(surface_file)
+#
+#        x, y, elev = surface
+#        # If clipping of the surface for max value is desired
+#        # need this if there are peaks, ModEM cannot handle them
+#        if max_value is not None:
+#            elev[np.where(elev > max_value)] = max_value
+#            
+#
+#        # if lat/lon provided as a 1D list, convert to a 2d grid of points
+#        if len(x.shape) == 1:
+#            x, y = np.meshgrid(x, y)
+#            
+#        epsg_from, epsg_to = surface_epsg, self.data_obj.model_epsg
+#        xs, ys = mtpy.utils.gis_tools.epsg_project(x, y, epsg_from, epsg_to)
+#
+#        # get centre position of model grid in real world coordinates
+#        x0, y0 = [np.median(self.station_locations.station_locations[dd] - self.station_locations.station_locations['rel_' + dd]) for dd in
+#                  ['east', 'north']]
+#
+#        # centre points of model grid in real world coordinates
+#        xg, yg = [np.mean([arr[1:], arr[:-1]], axis=0)
+#                  for arr in [self.grid_east + x0, self.grid_north + y0]]
+#
+#        # elevation in model grid
+#        # first, get lat,lon points of surface grid
+#        points = np.vstack([arr.flatten() for arr in [xs, ys]]).T
+#        # corresponding surface elevation points
+#        values = elev.flatten()
+#        # xi, the model grid points to interpolate to
+#        xi = np.vstack([arr.flatten() for arr in np.meshgrid(xg, yg)]).T
+#        # elevation on the centre of the grid nodes
+#        elev_mg = spi.griddata(
+#            points, values, xi, method=method).reshape(len(yg), len(xg))
+#
+#        print(" Elevation data type and shape  *** ", type(elev_mg), elev_mg.shape, len(yg), len(xg))
+#        # <type 'numpy.ndarray'>  (65, 92), 65 92: it's 2D image with cell index as pixels
+#        # np.savetxt('E:/tmp/elev_mg.txt', elev_mg, fmt='%10.5f')
+#
+#        # get a name for surface
+#        if surface_name is None:
+#            if surface_file is not None:
+#                surface_name = os.path.basename(surface_file)
+#            else:
+#                ii = 1
+#                surface_name = 'surface%01i' % ii
+#                while surface_name in self.surface_dict.keys():
+#                    ii += 1
+#                    surface_name = 'surface%01i' % ii
+#
+#        # add surface to a dictionary of surface elevation data
+#        self.surface_dict[surface_name] = elev_mg
+#
+#        return
+#
+#=======
+#    
+#>>>>>>> 74c2c2f7e03f926cc6dd244218aef840cd4eb4a7
 
     def assign_resistivity_from_surfacedata(self, top_surface, bottom_surface, resistivity_value):
         """
@@ -1031,110 +1031,110 @@ class Model(object):
 
 
 
-<<<<<<< HEAD
-        gcz = np.mean([self.grid_z[:-1], self.grid_z[1:]], axis=0)
-
-        self._logger.debug("gcz is the cells centre coordinates: %s, %s" %
-                           (len(gcz), gcz))
-        # convert to positive down, relative to the top of the grid
-        surfacedata = self.sea_level - self.surface_dict[surface_name]
-        # surfacedata = self.surface_dict[surfacename] - self.sea_level
-
-        # define topography, so that we don't overwrite cells above topography
-        # first check if topography exists
-        if 'topography' in self.surface_dict.keys():
-            # second, check topography isn't the surface we're trying to assign
-            # resistivity for
-            if surface_name == 'topography':
-                # if it is, we need to define the upper limit as the top of the model
-                top = np.zeros_like(surfacedata) + np.amin(self.grid_z)
-            else:
-                # if not, upper limit of resistivity assignment is the topography
-                top = self.sea_level - self.surface_dict['topography']
-        # if no topography, assign zeros
-        else:
-            top = self.sea_level + np.zeros_like(surfacedata)
-
-        # assign resistivity value
-        for j in range(len(self.res_model)):
-            for i in range(len(self.res_model[j])):
-                if where == 'above':
-                    # needs to be above the surface but below the top (as defined before)
-                    ii = np.where((gcz <= surfacedata[j, i]) & (gcz > top[j, i]))[0]
-
-                else:  # for below the surface
-                    ii = np.where(gcz > surfacedata[j, i])[0]
-                self.res_model[j, i, ii] = resistivity_value
-
-    def project_stations_on_topography(self, air_resistivity=1e12):
-        """
-        This method is used in add_topography().
-        It will Re-write the data file to change the elevation column.
-        And update covariance mask according topo elevation model.
-        :param air_resistivity:
-        :return:
-        """
-
-        sx = self.station_locations.rel_east
-        sy = self.station_locations.rel_north
-
-        # find index of each station on grid
-        station_index_x = []
-        station_index_y = []
-        for sname in self.station_locations.station:
-            ss = np.where(self.station_locations.station == sname)[0][0]
-            # relative locations of stations
-            sx, sy = self.station_locations.rel_east[ss], \
-                     self.station_locations.rel_north[ss]
-            # indices of stations on model grid
-            sxi = np.where((sx <= self.grid_east[1:]) &\
-                           (sx > self.grid_east[:-1]))[0][0]
-            syi = np.where((sy <= self.grid_north[1:]) &\
-                           (sy > self.grid_north[:-1]))[0][0]
-
-            # first check if the site is in the sea
-            if np.any(self.covariance_mask[::-1][syi, sxi] == 9):
-                szi = np.amax(
-                    np.where(self.covariance_mask[::-1][syi, sxi] == 9)[0])
-            # second, check if there are any air cells
-            elif np.any(self.res_model[syi, sxi] > 0.95 * air_resistivity):
-                szi = np.amin(
-                    np.where((self.res_model[syi, sxi] < 0.95 * air_resistivity))[0])
-            # otherwise place station at the top of the model
-            else:
-                szi = 0
-
-            # print("FZ:*** szi=", szi)
-            # FZ: debug here to assign topography value for .dat file.
-
-            topoval = self.grid_z[szi]
-
-            station_index_x.append(sxi)
-            station_index_y.append(syi)
-
-            ## use topo elevation directly in modem.dat file
-            #!!! can't use topo elevation directly from topography file as the
-            #elevation needs to sit on the model mesh!
-            #topoval = self.surface_dict['topography'][syi, sxi]
-            self._logger.debug("sname,ss, sxi, syi, szi, topoval: %s,%s,%s,%s,%s,%s"
-                               % (sname, ss, sxi, syi, szi, topoval))
-
-            # update elevation in station locations and data array, +1 m as
-            # data elevation needs to be below the topography (as advised by Naser)
-            self.station_locations.elev[ss] = topoval + 1.
-            self.data_obj.data_array['rel_elev'][ss] = topoval + 1.
-
-        # This will shift stations' location to be relative to the defined mesh-grid centre
-        self.data_obj.station_locations = self.station_locations
-
-        self._logger.debug("Re-write data file after adding topo")
-        self.data_obj.write_data_file(fill=False)  # (Xi, Yi, Zi) of each station-i may be shifted
-
-        # debug self.Data.write_data_file(save_path='/e/tmp', fill=False)
-
-        return station_index_x, station_index_y
-=======
->>>>>>> 74c2c2f7e03f926cc6dd244218aef840cd4eb4a7
+#<<<<<<< HEAD
+#        gcz = np.mean([self.grid_z[:-1], self.grid_z[1:]], axis=0)
+#
+#        self._logger.debug("gcz is the cells centre coordinates: %s, %s" %
+#                           (len(gcz), gcz))
+#        # convert to positive down, relative to the top of the grid
+#        surfacedata = self.sea_level - self.surface_dict[surface_name]
+#        # surfacedata = self.surface_dict[surfacename] - self.sea_level
+#
+#        # define topography, so that we don't overwrite cells above topography
+#        # first check if topography exists
+#        if 'topography' in self.surface_dict.keys():
+#            # second, check topography isn't the surface we're trying to assign
+#            # resistivity for
+#            if surface_name == 'topography':
+#                # if it is, we need to define the upper limit as the top of the model
+#                top = np.zeros_like(surfacedata) + np.amin(self.grid_z)
+#            else:
+#                # if not, upper limit of resistivity assignment is the topography
+#                top = self.sea_level - self.surface_dict['topography']
+#        # if no topography, assign zeros
+#        else:
+#            top = self.sea_level + np.zeros_like(surfacedata)
+#
+#        # assign resistivity value
+#        for j in range(len(self.res_model)):
+#            for i in range(len(self.res_model[j])):
+#                if where == 'above':
+#                    # needs to be above the surface but below the top (as defined before)
+#                    ii = np.where((gcz <= surfacedata[j, i]) & (gcz > top[j, i]))[0]
+#
+#                else:  # for below the surface
+#                    ii = np.where(gcz > surfacedata[j, i])[0]
+#                self.res_model[j, i, ii] = resistivity_value
+#
+#    def project_stations_on_topography(self, air_resistivity=1e12):
+#        """
+#        This method is used in add_topography().
+#        It will Re-write the data file to change the elevation column.
+#        And update covariance mask according topo elevation model.
+#        :param air_resistivity:
+#        :return:
+#        """
+#
+#        sx = self.station_locations.rel_east
+#        sy = self.station_locations.rel_north
+#
+#        # find index of each station on grid
+#        station_index_x = []
+#        station_index_y = []
+#        for sname in self.station_locations.station:
+#            ss = np.where(self.station_locations.station == sname)[0][0]
+#            # relative locations of stations
+#            sx, sy = self.station_locations.rel_east[ss], \
+#                     self.station_locations.rel_north[ss]
+#            # indices of stations on model grid
+#            sxi = np.where((sx <= self.grid_east[1:]) &\
+#                           (sx > self.grid_east[:-1]))[0][0]
+#            syi = np.where((sy <= self.grid_north[1:]) &\
+#                           (sy > self.grid_north[:-1]))[0][0]
+#
+#            # first check if the site is in the sea
+#            if np.any(self.covariance_mask[::-1][syi, sxi] == 9):
+#                szi = np.amax(
+#                    np.where(self.covariance_mask[::-1][syi, sxi] == 9)[0])
+#            # second, check if there are any air cells
+#            elif np.any(self.res_model[syi, sxi] > 0.95 * air_resistivity):
+#                szi = np.amin(
+#                    np.where((self.res_model[syi, sxi] < 0.95 * air_resistivity))[0])
+#            # otherwise place station at the top of the model
+#            else:
+#                szi = 0
+#
+#            # print("FZ:*** szi=", szi)
+#            # FZ: debug here to assign topography value for .dat file.
+#
+#            topoval = self.grid_z[szi]
+#
+#            station_index_x.append(sxi)
+#            station_index_y.append(syi)
+#
+#            ## use topo elevation directly in modem.dat file
+#            #!!! can't use topo elevation directly from topography file as the
+#            #elevation needs to sit on the model mesh!
+#            #topoval = self.surface_dict['topography'][syi, sxi]
+#            self._logger.debug("sname,ss, sxi, syi, szi, topoval: %s,%s,%s,%s,%s,%s"
+#                               % (sname, ss, sxi, syi, szi, topoval))
+#
+#            # update elevation in station locations and data array, +1 m as
+#            # data elevation needs to be below the topography (as advised by Naser)
+#            self.station_locations.elev[ss] = topoval + 1.
+#            self.data_obj.data_array['rel_elev'][ss] = topoval + 1.
+#
+#        # This will shift stations' location to be relative to the defined mesh-grid centre
+#        self.data_obj.station_locations = self.station_locations
+#
+#        self._logger.debug("Re-write data file after adding topo")
+#        self.data_obj.write_data_file(fill=False)  # (Xi, Yi, Zi) of each station-i may be shifted
+#
+#        # debug self.Data.write_data_file(save_path='/e/tmp', fill=False)
+#
+#        return station_index_x, station_index_y
+#=======
+#>>>>>>> 74c2c2f7e03f926cc6dd244218aef840cd4eb4a7
 
     def plot_mesh(self, east_limits=None, north_limits=None, z_limits=None,
                   **kwargs):
@@ -1489,11 +1489,11 @@ class Model(object):
 
         # plot station locations in grid
 
-        sgindex_x = self.station_grid_index[0]
-        sgindex_y = self.station_grid_index[1]
-
-        self._logger.debug("station grid index x: %s" % sgindex_x)
-        self._logger.debug("station grid index y: %s" % sgindex_y)
+#        sgindex_x = self.station_grid_index[0]
+#        sgindex_y = self.station_grid_index[1]
+#
+#        self._logger.debug("station grid index x: %s" % sgindex_x)
+#        self._logger.debug("station grid index y: %s" % sgindex_y)
 
 #        ax.scatter(sgindex_x, sgindex_y, marker='v', c='b', s=2)
         ax.scatter(self.station_locations.rel_east,

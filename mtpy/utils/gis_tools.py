@@ -813,7 +813,6 @@ def utm_to_ll(reference_ellipsoid, northing, easting, zone):
     lon = long_origin + lon * _rad2deg
     return lat, lon
 
-<<<<<<< HEAD
 # http://spatialreference.org/ref/epsg/28350/proj4/
 epsg_dict = {28350: ['+proj=utm +zone=50 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs', 50],
              28351: ['+proj=utm +zone=51 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs', 51],
@@ -839,9 +838,6 @@ epsg_dict = {28350: ['+proj=utm +zone=50 +south +ellps=GRS80 +towgs84=0,0,0,0,0,
              32619: ['+proj=utm +zone=19 +ellps=WGS84 +datum=WGS84 +units=m +no_defs', 19]
              }
 
-
-=======
->>>>>>> 74c2c2f7e03f926cc6dd244218aef840cd4eb4a7
 def epsg_project(x, y, epsg_from, epsg_to):
     """
     project some xy points using the pyproj modules
