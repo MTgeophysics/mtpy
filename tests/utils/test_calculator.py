@@ -2,21 +2,20 @@ from unittest import TestCase
 import numpy as np
 import pytest
 
-from mtpy.utils.calculator import get_period_list
+from mtpy.utils.calculator import get_period_list, make_log_increasing_array
 
 
 class TestCalculator(TestCase):
     def setUp(self):
-        self.nref = 23  # 23, "WGS-84"
-        self.lat = -34.299442
-        self.lon = 149.201031
+        
+        self.z1_layer = 80
+        self.target_depth = 400e3
+        self.n_layers = 120
+        self.increment_factor = 0.999
 
-        self.zone = '55H'
-        self.easting = 702562.773
-        self.northing = 6202448.526
-        self.atol = 0.3  # tolerance of error
-        self.from_epsg = 4326
-        self.to_epsg = 28355
+        
+        return
+        
 
 
     def test_get_period_list(self):
@@ -35,8 +34,8 @@ class TestCalculator(TestCase):
         array1test = get_period_list(0.02,400,4,include_outside_range=True)
         array2test = get_period_list(0.02,400,4,include_outside_range=False)
         
-        assert all(np.abs(array1test-array1)/array1 < 1e-8)
-        assert all(np.abs(array2test-array2)/array2 < 1e-8)
+        self.assertTrue(all(np.abs(array1test-array1)/array1 < 1e-8))
+        self.assertTrue(all(np.abs(array2test-array2)/array2 < 1e-8))
         
         
         # test with ends of input range on an exact decade
@@ -47,7 +46,18 @@ class TestCalculator(TestCase):
         array1test = get_period_list(0.1,100,3,include_outside_range=True)
         array2test = get_period_list(0.1,100,3,include_outside_range=False)
         
-        assert all(np.abs(array1test-array1)/array1 < 1e-8)
-        assert all(np.abs(array2test-array1)/array1 < 1e-8)
+        self.assertTrue(all(np.abs(array1test-array1)/array1 < 1e-8))
+        self.assertTrue(all(np.abs(array2test-array1)/array1 < 1e-8))
+        
+    
+    def test_make_log_increasing_array(self):
+        
+        array1 = make_log_increasing_array(self.z1_layer,
+                                           self.target_depth,
+                                           self.n_layers,
+                                           increment_factor = self.increment_factor)
+        
+        self.assertTrue(np.abs(array1.sum()/self.target_depth - 1.)\
+                        < 1. - self.increment_factor)
         
     

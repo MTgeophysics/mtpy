@@ -97,7 +97,7 @@ def get_period_list(period_min,period_max,periods_per_decade,include_outside_ran
 
 
 
-def make_log_increasing_array(z1_layer, target_depth, n_layers, increment_factor=0.9):
+def make_log_increasing_array(z1_layer, target_depth, n_layers, increment_factor=0.999):
     """
     create depth array with log increasing cells, down to target depth,
     inputs are z1_layer thickness, target depth, number of layers (n_layers)
@@ -280,7 +280,7 @@ def propagate_error_rect2polar(x,x_error,y, y_error):
     return rho_err, phi_err
 
 
-
+    
 
 def z_error2r_phi_error(x,x_error,y, y_error):
     """
@@ -345,7 +345,6 @@ def z_error2r_phi_error(x,x_error,y, y_error):
 
 
     return rho_err, phi_err
-
 
 
 
