@@ -41,7 +41,7 @@ def roundsf(number, sf):
     return np.round(number, rounding)
 
 
-def get_logspace_array(period_min,period_max,periods_per_decade,include_outside_range=True):
+def get_period_list(period_min,period_max,periods_per_decade,include_outside_range=True):
     """
     get a list of values (e.g. periods), evenly spaced in log space and 
     including values on multiples of 10
@@ -64,33 +64,40 @@ def get_logspace_array(period_min,period_max,periods_per_decade,include_outside_
     log_period_min = np.log10(period_min)
     log_period_max = np.log10(period_max)
     
-    # list of periods, around the minimum period, that will be present in specified 
-    # periods per decade
-    aligned_logperiods_min = np.linspace(np.floor(log_period_min),np.ceil(log_period_min),periods_per_decade + 1)
-    lpmin_diff = log_period_min - aligned_logperiods_min
-    # index of starting period, smallest value > 0
-    if include_outside_range:
-        spimin = np.where(lpmin_diff > 0)[0][-1]
+    # check if log_period_min is a whole number
+    if log_period_min % 1 > 0:
+        # list of periods, around the minimum period, that will be present in specified 
+        # periods per decade
+        aligned_logperiods_min = np.linspace(np.floor(log_period_min),np.ceil(log_period_min),periods_per_decade + 1)
+        lpmin_diff = log_period_min - aligned_logperiods_min
+        # index of starting period, smallest value > 0
+        if include_outside_range:
+            spimin = np.where(lpmin_diff > 0)[0][-1]
+        else:
+            spimin = np.where(lpmin_diff < 0)[0][0]
+        start_period = aligned_logperiods_min[spimin]
     else:
-        spimin = np.where(lpmin_diff < 0)[0][0]
-    start_period = aligned_logperiods_min[spimin]
+        start_period = log_period_min
     
-    # list of periods, around the maximum period, that will be present in specified 
-    # periods per decade
-    aligned_logperiods_max = np.linspace(np.floor(log_period_max),np.ceil(log_period_max),periods_per_decade + 1)
-    lpmax_diff = log_period_max - aligned_logperiods_max
-    # index of starting period, smallest value > 0
-    if include_outside_range:
-        spimax = np.where(lpmax_diff < 0)[0][0]
+    if log_period_max % 1 > 0:
+        # list of periods, around the maximum period, that will be present in specified 
+        # periods per decade
+        aligned_logperiods_max = np.linspace(np.floor(log_period_max),np.ceil(log_period_max),periods_per_decade + 1)
+        lpmax_diff = log_period_max - aligned_logperiods_max
+        # index of starting period, smallest value > 0
+        if include_outside_range:
+            spimax = np.where(lpmax_diff < 0)[0][0]
+        else:
+            spimax = np.where(lpmax_diff > 0)[0][-1]
+        stop_period = aligned_logperiods_max[spimax]
     else:
-        spimax = np.where(lpmax_diff > 0)[0][-1]
-    stop_period = aligned_logperiods_max[spimax]
-    
+        stop_period = log_period_max        
+        
     return np.logspace(start_period,stop_period,(stop_period-start_period)*periods_per_decade + 1)
 
 
 
-def make_log_increasing_array(z1_layer, target_depth, n_layers, increment_factor=0.9):
+def make_log_increasing_array(z1_layer, target_depth, n_layers, increment_factor=0.999):
     """
     create depth array with log increasing cells, down to target depth,
     inputs are z1_layer thickness, target depth, number of layers (n_layers)
@@ -273,7 +280,7 @@ def propagate_error_rect2polar(x,x_error,y, y_error):
     return rho_err, phi_err
 
 
-
+    
 
 def z_error2r_phi_error(x,x_error,y, y_error):
     """
@@ -338,7 +345,6 @@ def z_error2r_phi_error(x,x_error,y, y_error):
 
 
     return rho_err, phi_err
-
 
 
 
