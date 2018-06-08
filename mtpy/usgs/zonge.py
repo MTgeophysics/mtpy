@@ -296,36 +296,6 @@ class ZongeMTFT():
         """
         self.value_lst = [self.__dict__[key.replace('.', '_')] 
                           for key in self.meta_keys]
-#        self.value_lst = [self.MTFT_Version, 
-#                          self.MTFT_MHAFreq, 
-#                          self.MTFT_WindowTaper,   
-#                          self.MTFT_WindowLength,
-#                          self.MTFT_WindowOverlap,    
-#                          self.MTFT_NDecFlt, 
-#                          self.MTFT_PWFilter, 
-#                          self.MTFT_NPWCoef,   
-#                          self.MTFT_DeTrend, 
-#                          self.MTFT_Despike,   
-#                          self.MTFT_SpikePnt, 
-#                          self.MTFT_SpikeDev,
-#                          self.MTFT_NotchFlt,  
-#                          self.MTFT_NotchFrq, 
-#                          self.MTFT_NotchWidth, 
-#                          self.MTFT_StackFlt,  
-#                          self.MTFT_StackTaper,
-#                          self.MTFT_StackFrq,
-#                          self.MTFT_SysCal,
-#                          self.MTFT_BandFrq,
-#                          self.MTFT_BandFrqMin,  
-#                          self.MTFT_BandFrqMax, 
-#                          self.MTFT_TSPlot_PntRange,  
-#                          self.MTFT_TSPlot_ChnRange,
-#                          self.Setup_Number,  
-#                          self.TS_Number, 
-#                          self.TS_FrqBand, 
-#                          self.TS_T0Offset, 
-#                          self.TS_T0Error,  
-#                          self.setup_lst]
                           
         self.meta_dict = dict([(mkey, mvalue) for mkey, mvalue in
                                zip(self.meta_keys, self.value_lst)])
@@ -337,37 +307,6 @@ class ZongeMTFT():
         """
         for key in self.meta_dict.keys():
             setattr(self, key.replace('.', '_'), self.meta_dict[key])
-#        self.MTFT_Version = self.meta_dict['MTFT.Version']
-#        self.MTFT_MHAFreq = self.meta_dict['MTFT.MHAFreq'] 
-#        self.MTFT_WindowTaper = self.meta_dict['MTFT.WindowTaper']   
-#        self.MTFT_WindowLength = self.meta_dict['MTFT.WindowLength']
-#        self.MTFT_WindowOverlap = self.meta_dict['MTFT.WindowOverlap']    
-#        self.MTFT_NDecFlt = self.meta_dict['MTFT.NDecFlt'] 
-#        self.MTFT_PWFilter = self.meta_dict['MTFT.PWFilter'] 
-#        self.MTFT_NPWCoef = self.meta_dict['MTFT.NPWCoef']   
-#        self.MTFT_DeTrend = self.meta_dict['MTFT.DeTrend'] 
-#        self.MTFT_T0OffsetMax = self.meta_dict['MTFT.T0OffsetMax']
-#        self.MTFT_Despike = self.meta_dict['MTFT.Despike']   
-#        self.MTFT_SpikePnt = self.meta_dict['MTFT.SpikePnt'] 
-#        self.MTFT_SpikeDev = self.meta_dict['MTFT.SpikeDev']
-#        self.MTFT_NotchFlt = self.meta_dict['MTFT.NotchFlt']  
-#        self.MTFT_NotchFrq = self.meta_dict['MTFT.NotchFrq'] 
-#        self.MTFT_NotchWidth = self.meta_dict['MTFT.NotchWidth'] 
-#        self.MTFT_StackFlt = self.meta_dict['MTFT.StackFlt']  
-#        self.MTFT_StackTaper = self.meta_dict['MTFT.StackTaper']
-#        self.MTFT_StackFrq = self.meta_dict['MTFT.StackFrq']
-#        self.MTFT_SysCal = self.meta_dict['MTFT.SysCal']
-#        self.MTFT_BandFrq = self.meta_dict['MTFT.BandFrq']
-#        self.MTFT_BandFrqMin = self.meta_dict['MTFT.BandFrqMin']  
-#        self.MTFT_BandFrqMax = self.meta_dict['MTFT.BandFrqMax'] 
-#        self.MTFT_TSPlot_PntRange = self.meta_dict['MTFT.TSPlot.PntRange']  
-#        self.MTFT_TSPlot_ChnRange = self.meta_dict['MTFT.TSPlot.ChnRange']
-#        self.Setup_Number = self.meta_dict['Setup.Number']  
-#        self.TS_Number = self.meta_dict['TS.Number'] 
-#        self.TS_FrqBand = self.meta_dict['TS.FrqBand'] 
-#        self.TS_T0Offset = self.meta_dict['TS.T0Offset'] 
-#        self.TS_T0Error = self.meta_dict['TS.T0Error']  
-#        self.setup_lst = self.meta_dict['setup_lst']
     
     def sort_ts_lst(self):
         """
@@ -1299,15 +1238,21 @@ class ZongeMTFT():
         for cline in clines:
             if cline[0] == '$':
                 clst = cline[1:].strip().split('=')
-                if clst[0].find('MTFT') == 0 or \
-                   clst[0].find('Setup.Number') == 0 or\
-                   clst[0].find('TS') ==0:
-                    self.meta_dict[clst[0]] = clst[1]
+                key = clst[0]
+                value = clst[1].split(',')
+                
+                if key.find('MTFT') == 0 or \
+                   key.find('Setup.Number') == 0 or\
+                   key.find('TS') == 0:
+                    self.meta_dict[key] = value
                 elif clst[0].find('Setup.ID') == 0:
-                    setup_lst.append({clst[0]:clst[1]})
+                    setup_lst.append({key:value})
                     ss = int(clst[1])-1
+                    setup_lst[ss][key] = value
                 else:
-                    setup_lst[ss][clst[0]] = clst[1]
+                    setup_lst[ss][key] = value
+                    if key.find('Chn') == 0:
+                        self.meta_dict[key] = value
                 
             elif cline.find('.cac') > 0:
                 info_dict = {}
