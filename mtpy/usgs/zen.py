@@ -463,6 +463,8 @@ class Z3D_Metadata(object):
                                     t_key = 'ch_length'
                                 t_value = t_list[1].strip()
                                 setattr(self, t_key, t_value)
+                            if t_str.count(' ') > 1:
+                                self.notes = t_str
                         # get metadata for just the line that has line name
                         # because for some reason that is still comma separated
                         elif t_str.lower().find('line.name') >= 0:
@@ -694,7 +696,7 @@ class Zen3D(object):
                                      
         self._week_len = 604800
         self._gps_epoch = (1980, 1, 6, 0, 0, 0, -1, -1, 0)
-        self._leap_seconds = 17
+        self._leap_seconds = 18
         self._block_len = 2**16
         self.zen_schedule = None
         # the number in the cac files is for volts, we want mV
@@ -947,8 +949,14 @@ class Zen3D(object):
         self.ts_obj.start_time_utc = self.zen_schedule.isoformat().replace('T', ',')
         self.ts_obj.component = self.metadata.ch_cmp
         self.ts_obj.coordinate_system = 'geomagnetic'
-        self.ts_obj.dipole_length = float(self.metadata.ch_length)
-        self.ts_obj.azimuth = float(self.metadata.ch_azimuth)
+        try:
+            self.ts_obj.dipole_length = float(self.metadata.ch_length)
+        except TypeError:
+            self.ts_obj.dipole_length = -666
+        try:
+            self.ts_obj.azimuth = float(self.metadata.ch_azimuth)
+        except TypeError:
+            self.ts_obj.azimuth = -666
         self.ts_obj.units = 'mV'
         self.ts_obj.lat = self.header.lat
         self.ts_obj.lon = self.header.long
