@@ -573,7 +573,7 @@ class EdiCollection(object):
 
                     pt = mt_obj.pt
                     ti = mt_obj.Tipper
-                    zobj = t_obj.Z
+                    zobj = mt_obj.Z
                 # end if
 
                 if len(f_index_list) > 1:

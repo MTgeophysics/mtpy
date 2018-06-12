@@ -855,6 +855,11 @@ class Data(object):
                     err = err_value * np.abs(np.linalg.eigvals(d)).mean()
                     if err == 0:
                         err = err_value * d.flatten()[nz].mean()
+                
+                elif 'separate' in self.error_type_z:
+                    # apply separate error floors to each component
+                    d = d.reshape((2, 2))
+                    err = err_value * d
 
                 else:
                     raise DataError('error type (z) {0} not understood'.format(self.error_type_z))
@@ -865,6 +870,8 @@ class Data(object):
         if 'floor' in self.error_type_z:
             f_index = np.where(self.data_array['z_inv_err'] < self.data_array['z_err'])
             self.data_array['z_inv_err'][f_index] = self.data_array['z_err'][f_index]
+
+
 
     def write_data_file(self, save_path=None, fn_basename=None,
                         rotation_angle=None, compute_error=True, fill=True,

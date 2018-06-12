@@ -1691,7 +1691,8 @@ class Model(object):
         return
 
     def add_topography_to_model2(self, topographyfile=None, topographyarray=None,
-                                 interp_method='nearest', air_resistivity=1e12):
+                                 interp_method='nearest', air_resistivity=1e12,
+                                 topography_buffer=None):
         """
         if air_layers is non-zero, will add topo: read in topograph file, make a surface model.
         Call project_stations_on_topography in the end, which will re-write the .dat file.
@@ -1714,11 +1715,13 @@ class Model(object):
             # get grid centre
             gcx, gcy = [np.mean([arr[:-1], arr[1:]], axis=0) for arr in self.grid_east, self.grid_north]
             # get core cells
+            if topography_buffer is None:
+                topography_buffer = 5 * (self.cell_size_east ** 2 + self.cell_size_north ** 2) ** 0.5
             core_cells = mtmesh.get_station_buffer(gcx,
                                                    gcy,
                                                    self.station_locations.station_locations['rel_east'],
                                                    self.station_locations.station_locations['rel_north'],
-                                                   buf=5 * (self.cell_size_east ** 2 + self.cell_size_north ** 2) ** 0.5)
+                                                   buf=topography_buffer)
             topo_core = self.surface_dict['topography'][core_cells]
             topo_core_min = max(topo_core.min(),0)
 
