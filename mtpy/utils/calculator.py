@@ -280,9 +280,54 @@ def propagate_error_rect2polar(x,x_error,y, y_error):
     return rho_err, phi_err
 
 
+
+def z_error2r_phi_error(z_real, z_imag, error):
+    """
+    Error estimation from rectangular to polar coordinates.
+    
+    By standard error propagation, relative error in resistivity is 
+    2*relative error in z amplitude. 
+    
+    Uncertainty in phase (in degrees) is computed by defining a circle around 
+    the z vector in the complex plane. The uncertainty is the absolute angle
+    between the vector to (x,y) and the vector between the origin and the
+    tangent to the circle.
+    
+    :returns:
+        tuple containing relative error in resistivity, absolute error in phase
+    
+    :inputs:
+        z_real = real component of z (real number or array)
+        z_imag = imaginary component of z (real number or array)
+        error = absolute error in z (real number or array)
+    
+    """
+        
+    z_amp = np.abs(z_real + 1j*z_imag)
+
+    z_rel_err = error/z_amp
+    
+    res_rel_err = 2.*z_rel_err
+    
+    #if the relative error of the amplitude is >=100% that means that the relative 
+    #error of the resistivity is 200% - that is then equivalent to an uncertainty 
+    #in the phase angle of 90 degrees:
+    if np.iterable(z_real):
+        phi_err = np.degrees(np.arctan(z_rel_err))   
+        phi_err[res_rel_err > 1.] = 90.
+        
+    else:
+        if res_rel_err > 1.:
+            phi_err = 90
+        else:
+            phi_err = np.degrees(np.arctan(z_rel_err))    
+    
+    
+    return res_rel_err, phi_err
+    
     
 
-def z_error2r_phi_error(x,x_error,y, y_error):
+def old_z_error2r_phi_error(x,x_error,y, y_error):
     """
         Error estimation from rect to polar, but with small variation needed for 
         MT: the so called 'relative phase error' is NOT the relative phase error,

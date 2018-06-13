@@ -303,7 +303,9 @@ class Data(object):
                                                       zereal, zeimag,
                                                       range(len(z_obj.det))):
                         # now we can convert errors to polar coordinates
-                        de1, de2 = mtcc.z_error2r_phi_error(zdr, zer, zdi, zei)
+                        de1, de2 = mtcc.z_error2r_phi_error(zdr, zdi, (zei+zer)/2.)
+                        de1 *= data_1
+
                         data_1_err[ii] = de1
                         data_2_err[ii] = de2
 
@@ -628,9 +630,13 @@ class Data(object):
             self.data['phase' + pol][0] = np.rad2deg(
                 np.arctan(self.data['res' + pol][0].imag / self.data['res' + pol][0].real))
             for jjj in range(len(freq)):
+                res_rel_err, phase_err = \
+                    mtcc.z_error2r_phi_error(self.data['z' + pol][0, jjj].real,
+                                             self.data['z' + pol][0, jjj].imag, 
+                                             self.data['z' + pol][1, jjj])
+                    
                 self.data['res' + pol][1, jjj], self.data['phase' + pol][1, jjj] = \
-                    mtcc.z_error2r_phi_error(self.data['z' + pol][0, jjj].real, self.data['z' + pol][1, jjj],
-                                             self.data['z' + pol][0, jjj].imag, self.data['z' + pol][1, jjj])
+                    res_rel_err*self.data['res' + pol][0, jjj], phase_err
 
             self.data['resyx'][0] = 0.2 * np.abs(self.data['zxy'][0]) ** 2. / freq
 
@@ -773,7 +779,6 @@ class Data(object):
                 for jjj in range(len(self.freq)):
                     self.data['phase' + pol][1 + ii, jjj] = \
                         mtcc.z_error2r_phi_error(self.data['z' + pol][0 + ii, jjj].real,
-                                                 self.data['z' + pol][1 + ii, jjj].real,
                                                  self.data['z' + pol][0 + ii, jjj].imag,
                                                  self.data['z' + pol][1 + ii, jjj].real)[1]
             if pol == 'xy':
