@@ -304,8 +304,7 @@ class Data(object):
                                                       range(len(z_obj.det))):
                         # now we can convert errors to polar coordinates
                         de1, de2 = mtcc.z_error2r_phi_error(zdr, zdi, (zei+zer)/2.)
-                        de1 *= data_1
-
+                        de1 *= data_1[ii]
                         data_1_err[ii] = de1
                         data_2_err[ii] = de2
 
