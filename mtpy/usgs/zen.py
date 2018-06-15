@@ -123,6 +123,7 @@ class Z3D_Header(object):
         self.tx_duty = None
         self.tx_freq = None
         self.version = None 
+        self.old_version = False
         
         for key in kwargs:
             setattr(self, key, kwargs[key])
@@ -159,7 +160,26 @@ class Z3D_Header(object):
                 h_key = h_key.replace(' ', '_').replace('/', '').replace('.', '_')
                 h_value = self.convert_value(h_key, h_list[1].strip())
                 setattr(self, h_key, h_value)
+            elif len(h_str) == 0:
+                continue
+            # need to adjust for older versions of z3d files
+            elif h_str.count(',') > 1:
+                self.old_version = True
+                if h_str.find('Schedule') >= 0:
+                    h_str = h_str.replace(',', 'T', 1)
+                for hh in h_str.split(','):
+                    if hh.find(';') > 0:
+                        m_key, m_value = hh.split(';')[1].split(':')
 
+                    elif len(hh.split(':', 1)) == 2:
+                        m_key, m_value = hh.split(':', 1)
+                    else:
+                        print hh
+
+                    m_key = m_key.strip().lower().replace(' ', '_').replace('/', '').replace('.', '_')
+                    m_value = self.convert_value(m_key, m_value.strip())
+                    setattr(self, m_key, m_value)
+                
     def convert_value(self, key_string, value_string):
         """
         convert the value to the appropriate units given the key
@@ -170,7 +190,7 @@ class Z3D_Header(object):
         except ValueError:
             return_value = value_string
         
-        if key_string.lower() == 'lat' or key_string.lower() == 'long':
+        if key_string.lower() in ['lat', 'lon', 'long']:
             return_value = np.rad2deg(float(value_string))
             
         return return_value
@@ -178,7 +198,7 @@ class Z3D_Header(object):
 #==============================================================================
 # meta data 
 #==============================================================================
-class Z3D_Schedule_metadata(object):
+class Z3D_Schedule(object):
     """
     class object for metadata of Z3d file.  This will read in the schedule
     information of a Z3D file and make each metadata entry an attirbute.
@@ -224,7 +244,7 @@ class Z3D_Schedule_metadata(object):
     ======================== ==================================================
     Methods                  Description
     ======================== ==================================================
-    read_schedule_metadata   read in the schedule information from the given
+    read_schedule   read in the schedule information from the given
                              file
     ======================== ==================================================
     
@@ -232,8 +252,8 @@ class Z3D_Schedule_metadata(object):
     --------------
         >>> import mtpy.usgs.zen as zen
         >>> z3d_fn = r"/home/mt/mt01/mt01_20150522_080000_256_EX.Z3D"
-        >>> header_obj = zen.Z3d_Schedule_metadata()
-        >>> header_obj.read_schedule_metadata()
+        >>> header_obj = zen.Z3D_Schedule()
+        >>> header_obj.read_schedule()
     """
     def __init__(self, fn=None, fid=None, **kwargs):
         self.fn = fn
@@ -265,7 +285,7 @@ class Z3D_Schedule_metadata(object):
             setattr(self, key, kwargs[key])
 
             
-    def read_schedule_metadata(self, fn=None, fid=None):
+    def read_schedule(self, fn=None, fid=None):
         """
         read meta data string
         """
@@ -544,10 +564,12 @@ class Z3D_Metadata(object):
             self.station = '{0}{1}'.format(self.line_name,
                                            self.rx_xyz0.split(':')[0])
         except AttributeError:
-            self.station = None
-            print "Need to input station name"
-        
-        
+            try:
+                self.station = self.rx_stn
+            except AttributeError:
+                self.station = None
+                print "Need to input station name"
+   
 #==============================================================================
 # 
 #==============================================================================
@@ -589,7 +611,7 @@ class Zen3D(object):
     gps_stamps               np.ndarray of gps stamps         None
     header                   Z3D_Header object                Z3D_Header                
     metadata                 Z3D_Metadata                     Z3D_Metadata 
-    schedule                 Z3D_Schedule_metadata            Z3D_Schedule
+    schedule                 Z3D_Schedule            Z3D_Schedule
     time_series              np.ndarra(len_data)              None
     units                    units in which the data is in    counts           
     zen_schedule             time when zen was set to         None
@@ -665,7 +687,7 @@ class Zen3D(object):
         self.fn = fn
 
         self.header = Z3D_Header(fn)
-        self.schedule = Z3D_Schedule_metadata(fn)
+        self.schedule = Z3D_Schedule(fn)
         self.metadata = Z3D_Metadata(fn)
         
         self._gps_stamp_length = kwargs.pop('stamp_len', 64)
@@ -714,6 +736,31 @@ class Zen3D(object):
     @station.setter
     def station(self, station):
         self.metadata.station = station
+        
+    def _get_gps_stamp_type(self, old_version=False):
+        """
+        get the correct stamp type.  
+        
+        Older versions the stamp length was 36 bits
+        
+        New versions have a 64 bit stamp
+        """
+        
+        if old_version is True:
+            self._gps_dtype = np.dtype([('gps', np.int32),
+                                        ('time', np.int32),
+                                        ('lat', np.float64),
+                                        ('lon', np.float64),
+                                        ('block_len', np.int32),
+                                        ('gps_accuracy', np.int32),
+                                        ('temperature', np.float32)])
+            self._gps_stamp_length = 36
+            self._gps_bytes = self._gps_stamp_length/4
+            self._gps_flag_0 = -1
+            self._block_len = int(self._gps_stamp_length+self.df*4)
+            
+        else:
+            return
         
     #====================================== 
     def _read_header(self, fn=None, fid=None):
@@ -790,10 +837,22 @@ class Zen3D(object):
         
         if fn is not None:
             self.fn = fn
-            
-        self.schedule.read_schedule_metadata(fn=self.fn, fid=fid)
-        # set the zen schedule time
-        self.zen_schedule = self.schedule.datetime
+        if self.header.old_version is True:
+            dt_str = self.header.schedule.replace('T', ',')
+            self.schedule.Date = dt_str.split(',')[0]
+            self.schedule.Time = dt_str.split(',')[1]
+            # the first good GPS stamp is on the 3rd, so need to add 2 seconds
+            self.schedule.Time = '{0}{1:02}'.format(self.schedule.Time[0:6],
+                                                    int(self.schedule.Time[6:])+2)
+
+            self.zen_schedule = datetime.datetime.strptime('{0},{1}'.format(self.schedule.Date,
+                                                                            self.schedule.Time),
+                                                           datetime_fmt)
+
+        else:
+            self.schedule.read_schedule(fn=self.fn, fid=fid)
+            # set the zen schedule time
+            self.zen_schedule = self.schedule.datetime
     
     #======================================     
     def _read_metadata(self, fn=None, fid=None):
@@ -832,7 +891,7 @@ class Zen3D(object):
             self.fn = fn
             
         self.metadata.read_metadata(fn=self.fn, fid=fid)
-    
+        
     #=====================================    
     def read_all_info(self):
         """
@@ -886,6 +945,9 @@ class Zen3D(object):
             self._read_schedule(fid=file_id)
             self._read_metadata(fid=file_id)
             
+            if self.header.old_version is True:
+                self._get_gps_stamp_type(True)
+            
             # move the read value to where the end of the metadata is
             file_id.seek(self.metadata.m_tell)
             
@@ -900,7 +962,8 @@ class Zen3D(object):
                                          dtype=np.int32)
                 data[data_count:data_count+len(test_str)] = test_str
                 data_count += test_str.size
-
+        
+        #return data
         # find the gps stamps
         gps_stamp_find = np.where(data == self._gps_flag_0)[0]
         
@@ -919,7 +982,7 @@ class Zen3D(object):
                                                         len(gps_stamp_find))
                 break
             
-            if data[gps_find+1] == self._gps_flag_1:
+            if self.header.old_version is True or data[gps_find+1] == self._gps_flag_1:
                 gps_str = struct.pack('<'+'i'*self._gps_bytes,
                                       *data[gps_find:gps_find+self._gps_bytes])
                 self.gps_stamps[ii] = np.fromstring(gps_str, 
@@ -930,6 +993,18 @@ class Zen3D(object):
                 elif ii == 0:
                     self.gps_stamps[ii]['block_len'] = 0
                 data[gps_find:gps_find+self._gps_bytes] = 0
+#                
+#            elif self.header.old_version is False and data[gps_find+1] == self._gps_flag_1:
+#                gps_str = struct.pack('<'+'i'*self._gps_bytes,
+#                                      *data[gps_find:gps_find+self._gps_bytes])
+#                self.gps_stamps[ii] = np.fromstring(gps_str, 
+#                                                   dtype=self._gps_dtype)
+#                if ii > 0:
+#                    self.gps_stamps[ii]['block_len'] = gps_find-\
+#                                           gps_stamp_find[ii-1]-self._gps_bytes 
+#                elif ii == 0:
+#                    self.gps_stamps[ii]['block_len'] = 0
+#                data[gps_find:gps_find+self._gps_bytes] = 0
 
         # trim the data after taking out the gps stamps
         self.ts_obj = mtts.MT_TS()
@@ -1062,7 +1137,10 @@ class Zen3D(object):
         """
         # need to convert gps_time to type float from int
         dt = self._gps_dtype.descr
-        dt[2] = ('time', np.float32)
+        if self.header.old_version is True:
+            dt[1] = ('time', np.float32)
+        else:
+            dt[2] = ('time', np.float32)
         self.gps_stamps = self.gps_stamps.astype(np.dtype(dt))
         
         # convert to seconds
