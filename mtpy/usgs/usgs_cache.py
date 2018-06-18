@@ -27,7 +27,25 @@ import pandas as pd
 import mtpy.usgs.zen as zen
 import mtpy.usgs.zonge as zonge
 import mtpy.utils.gis_tools as gis_tools
-from mtpy.utils.configfile import write_dict_to_configfile
+import mtpy.utils.configfile as mtcfg
+# =============================================================================
+# 
+# =============================================================================
+def get_nm_elev(lat, lon):
+    """
+    Get national map elevation from lat and lon
+    """
+    nm_url = r"https://nationalmap.gov/epqs/pqs.php?x={0:.5f}&y={1:.5f}&units=Meters&output=xml"
+
+    # call the url and get the response
+    response = url.urlopen(nm_url.format(lon, lat))
+    
+    # read the xml response and convert to a float
+    info = ET.ElementTree(ET.fromstring(response.read()))
+    info = info.getroot()
+    for elev in info.iter('Elevation'):
+        nm_elev = float(elev.text) 
+    return nm_elev
 
 # =============================================================================
 # Collect Z3d files
@@ -713,7 +731,7 @@ class USGSasc(Metadata):
         except AttributeError:
             print('No EY')
         
-    def write_asc_file(self, save_fn=None, chunk_size=1024, str_fmt='%11.7e', 
+    def write_asc_file(self, save_fn=None, chunk_size=1024, str_fmt='%15.7e', 
                        full=True, compress=False):
         """
         Write an ascii file in the USGS ascii format.
@@ -945,5 +963,229 @@ class USGSasc(Metadata):
         # pass those on
         meta_dict[key]['notes'] = self.meta_notes
             
-        write_dict_to_configfile(meta_dict, save_fn)
+        mtcfg.write_dict_to_configfile(meta_dict, save_fn)
+        
+# =============================================================================
+# Functions to help analyze config files
+# =============================================================================
+class USGScfg(object):
+    """
+    container to deal with configuration files needed for USGS archiving
+    """
+    
+    def __init__(self, **kwargs):
+        self.db = None
+        self.std_tol = .005
+        self.note_names = ['_start', '_nsamples']
+        
+    def combine_run_cfg(self, cfg_dir, write=True):
+        """
+        Combine all the cfg files for each run into a master spreadsheet
+        
+        :param cfg_dir: directory to cfg files for a station
+                        /home/mtdata/station
+        :type cfg_dir: string
+        
+        :param write: write a csv file summarizing the runs
+        :type write: boolean [ True | False ]
+        
+        .. note:: the station name is assumed to be the same as the folder name
+        
+        """
+        station = os.path.basename(cfg_dir)
+            
+        cfg_fn_list = sorted([os.path.join(cfg_dir, fn) for fn in os.listdir(cfg_dir)
+                              if 'mt' not in fn and 'runs' not in fn 
+                              and fn.endswith('.cfg')])
+        
+        count = 0
+        for cfg_fn in cfg_fn_list:
+            cfg_dict = mtcfg.read_configfile(cfg_fn)
+            if count == 0:
+                cfg_db = self.check_db(pd.DataFrame([cfg_dict[cfg_dict.keys()[0]]]))
+                count += 1
+            else:
+                cfg_db = cfg_db.append(self.check_db(pd.DataFrame([cfg_dict[cfg_dict.keys()[0]]])))
+                count += 1
+                
+        cfg_db = cfg_db.replace('None', '0')
+        
+        if write:
+            csv_fn = os.path.join(cfg_dir, '{0}_runs.csv'.format(station))
+            cfg_db.to_csv(csv_fn, index=False)
+            return cfg_db, csv_fn
+        else:
+            return cfg_db, None
+        
+    def make_station_db(self, cfg_db, station):
+        """
+        Following Danny's instructions make a file with the following 
+        information
+        # make a single file that summarizes
+            * (1) site name
+            * (2) siteID
+            * (3) lat
+            * (4) lon
+            * (5) national map elevation
+            * (6) Hx azimuth
+            * (7) Ex azimuth
+            * (8) start date [yyyymmdd]
+            * (9) Ex dipole length [m]
+            * (10) Ey dipole length [m]
+            * (11) wideband channels
+            * (12) long period channel
+            
+        save file as 
+        """
+
+        station_dict = pd.compat.OrderedDict()
+        station_dict['site_name'] = station
+        station_dict['siteID'] = station
+        station_dict['lat'] = cfg_db.lat.astype(np.float).mean()
+        station_dict['lon'] = cfg_db.lon.astype(np.float).mean()
+        station_dict['nm_elev'] = get_nm_elev(station_dict['lat'],
+                                              station_dict['lon'])
+        station_dict['hx_azm'] = cfg_db.hx_azm.astype(np.float).median()
+        station_dict['ex_azm'] = cfg_db.ex_azm.astype(np.float).median()
+        station_dict['start_date'] = cfg_db.start_date.min().split('T')[0].replace('-', '')
+        station_dict['ex_len'] = cfg_db.ex_len.astype(np.float).median()
+        station_dict['ey_len'] = cfg_db.ey_len.astype(np.float).median()
+        station_dict['wb'] = cfg_db.n_chan.astype(np.int).median()
+        station_dict['lp'] = 0
+        
+        s_db = pd.DataFrame([station_dict])
+        return s_db
+    
+    def make_location_db(self, cfg_db, station):
+        """
+        make a file for Danny including:
+                * (1) site name
+                * (2) lat
+                * (3) lon
+                * (4) national map elevation
+                * (5) start date
+                * (6) end date
+                * (7) instrument type [W = wideband, L = long period]
+                * (8) quality factor from 1-5 [5 is best]
+        """
+
+        loc_dict = pd.compat.OrderedDict()
+        loc_dict['site_name'] = station
+        loc_dict['lat'] = cfg_db.lat.astype(np.float).mean()
+        loc_dict['lon'] = cfg_db.lon.astype(np.float).mean()
+        loc_dict['nm_elev'] = get_nm_elev(loc_dict['lat'],
+                                          loc_dict['lon'])
+        loc_dict['start_date'] = cfg_db.start_date.min().split('T')[0].replace('-', '')
+        loc_dict['stop_date'] = cfg_db.stop_date.max().split('T')[0].replace('-', '')
+        loc_dict['instrument'] = 'W'
+        loc_dict['quality'] = 5
+        
+        l_db = pd.DataFrame([loc_dict])
+        return l_db
+    
+    def combine_all_station_info(self, survey_dir, skip_stations=None):
+        """
+        A convinience function to:
+            * combine all cfg files for each run into a single spreadsheet
+            * combine all runs to make a station and location file
+            * combine all stations into a spreadsheet for Danny
+            
+        :param survey_dir: directory where all the station folders are
+        :type survey_dir: string
+        
+        :param skip_stations: list of stations to skip
+        :type skip_stations: list
+        
+        """
+        if type(skip_stations) is not list:
+            skip_stations = [skip_stations]
+            
+        s_fn = os.path.join(survey_dir, 'usgs_station_info.csv') 
+        l_fn = os.path.join(survey_dir, 'usgs_location_info.csv')
+        
+        s_count = 0
+        for station in os.listdir(survey_dir):
+            cfg_dir = os.path.join(survey_dir, station)
+            if not os.path.isdir(cfg_dir):
+                continue
+            if station in skip_stations:
+                continue
+
+            # get the database and write a csv file            
+            cfg_db, csv_fn = self.combine_run_cfg(cfg_dir)
+            
+            # get station and location information
+            if s_count == 0:
+                s_db = self.make_station_db(cfg_db, station)
+                l_db = self.make_location_db(cfg_db, station)
+                s_count += 1
+            else:
+                s_db = s_db.append(self.make_station_db(cfg_db, station))
+                l_db = l_db.append(self.make_location_db(cfg_db, station))
+                s_count += 1 
+        
+        s_db.to_csv(s_fn, index=False)
+        l_db.to_csv(l_fn, index=False)
+        
+        return csv_fn, s_fn, l_fn
+
+    def check_data(self, database, name):
+        """
+        check the columns with base name to make sure all values are equal
+        """
+        if database.notes[0] in [None, 'none', 'None']:
+            database.notes[0] = ''
+        elif database.notes[0] == '':
+            pass
+        elif database.notes[0][-1] != ';':
+            database.notes[0] += ';'
+        # check start times
+        column_bool = database.columns.str.contains(name)
+        name_labels = database.columns[column_bool].tolist()
+        #value_arr = np.array(database[database.columns[column_bool]],
+        #                     dtype=np.int).flatten()
+        value_arr = np.array(database[database.columns[column_bool]]).flatten()
+        value_arr[value_arr == 'None'] = '0'
+        value_arr = value_arr.astype(np.int)
+        test = np.array([value_arr[0] == value_arr[ii] for ii in range(value_arr.size)])
+        if not (test == True).sum() == test.size:
+            if test[0] == True and (test[1:] == False).sum() == test[1:].size:
+                database.notes[0] += ' {0} is off;'.format(name_labels[0])
+            else:
+                for comp, test in zip(name_labels, test):
+                    if test == False:
+                        database.notes[0] += ' {0} is off;'.format(comp)
+        return database
+    
+    def check_std(self, database):
+        """
+        check standard deviation for bad data
+        """
+        if database.notes[0] in [None, 'none', 'None']:
+            database.notes[0] = ''
+        elif database.notes[0] == '':
+            pass
+        elif database.notes[0][-1] != ';':
+            database.notes[0] += ';'
+            
+        column_bool = database.columns.str.contains('_std')
+        name_labels = database.columns[column_bool].tolist()
+        value_arr = np.array(database[database.columns[column_bool]]).flatten()
+        value_arr[value_arr == 'None'] = 'nan'
+        value_arr = value_arr.astype(np.float)
+        for name, value in zip(name_labels, value_arr):
+            if value > self.std_tol:
+                database.notes[0] += ' {0} is large;'.format(name)
+        
+        return database
+    
+    def check_db(self, database):
+        """
+        convinience function to check all values in database
+        """
+        for key in self.note_names:
+            database = self.check_data(database, key)
+        database = self.check_std(database)
+        
+        return database
         
