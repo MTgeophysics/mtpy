@@ -1547,8 +1547,9 @@ class Data(object):
         pointsToVTK(vtk_fn,
                     self.station_locations.rel_north / 1000.,
                     self.station_locations.rel_east / 1000.,
-                    self.station_locations.rel_elev / 1000.,
-                    data={'elevation': self.station_locations.elev})
+                    self.station_locations.rel_elev / 1000.)
+                    
+                    #data={'elevation': self.station_locations.rel_elev})
 
         self._logger.info('Wrote station file to {0}'.format(vtk_fn))
 
