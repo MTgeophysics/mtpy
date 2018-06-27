@@ -2385,11 +2385,11 @@ class PlotResponse(object):
                         elif self.plot_component == 4:
                             legend_ax_list.append(self.ax_list[4])
                             
-                    # add text to distinguish real and imaginary tipper
-                    for aa, ax in enumerate(self.ax_list[4:]):
-                        ax.text(0.5,0.8,['Real','Imaginary'][aa],
-                                ha='center',va='center',
-                                transform=ax.transAxes)
+#                    # add text to distinguish real and imaginary tipper
+#                    for aa, ax in enumerate(self.ax_list[4:]):
+#                        ax.text(0.5,0.8,['Real','Imaginary'][aa],
+#                                ha='center',va='center',
+#                                transform=ax.transAxes)
                             
 
                     for aa, ax in enumerate(legend_ax_list):

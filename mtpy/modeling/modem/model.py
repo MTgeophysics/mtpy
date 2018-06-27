@@ -1513,7 +1513,8 @@ class Model(object):
         sgObj.write_sgrid_file()
 
 
-    def read_gocad_sgrid_file(self, sgrid_header_file, air_resistivity=1e39, sea_resistivity=0.3):
+    def read_gocad_sgrid_file(self, sgrid_header_file, air_resistivity=1e39, sea_resistivity=0.3,
+                              sgrid_positive_up = True):
         """
         read a gocad sgrid file and put this info into a ModEM file.
         Note: can only deal with grids oriented N-S or E-W at this stage,
@@ -1541,7 +1542,10 @@ class Model(object):
         # get nodes and grid locations
         grideast, gridnorth, gridz = [
             np.unique(sgObj.grid_xyz[i]) for i in range(3)]
-        gridz = np.abs(gridz)
+        # check if sgrid is positive up and convert to positive down if it is
+        # (ModEM grid is positive down)
+        if sgrid_positive_up:
+            gridz = -gridz
         gridz.sort()
         if np.all(np.array([len(gridnorth), len(grideast), len(gridz)]) - 1 == np.array(self.res_model.shape)):
             self.grid_east, self.grid_north, self.grid_z = grideast, gridnorth, gridz
