@@ -1489,7 +1489,8 @@ class Model(object):
             if len(savepath) == 0:
                 savepath = None
         if savepath is None:
-            savepath = os.path.dirname(self.model_fn)
+            savepath = self.save_path
+        
 
         if fn is None:
             fn = os.path.join(os.path.dirname(self.model_fn),
