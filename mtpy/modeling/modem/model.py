@@ -1526,17 +1526,9 @@ class Model(object):
         sgObj.read_sgrid_file(sgrid_header_file)
         self.sgObj = sgObj
 
-        # check if we have a data object and if we do, is there a centre position
-        # if not then assume it is the centre of the grid
-        calculate_centre = True
-        if self.data_obj is not None:
-            if hasattr(self.data_obj, 'center_position_EN'):
-                if self.data_obj.center_position_EN is not None:
-                    centre = np.zeros(3)
-                    centre[:2] = self.data_obj.center_position_EN
-                    calculate_centre = False
 
-                    # get resistivity model values
+
+        # get resistivity model values
         self.res_model = sgObj.resistivity
 
         # get nodes and grid locations
@@ -1546,18 +1538,45 @@ class Model(object):
         # (ModEM grid is positive down)
         if sgrid_positive_up:
             gridz = -gridz
+            
         gridz.sort()
+        
         if np.all(np.array([len(gridnorth), len(grideast), len(gridz)]) - 1 == np.array(self.res_model.shape)):
             self.grid_east, self.grid_north, self.grid_z = grideast, gridnorth, gridz
         else:
             print("Cannot read sgrid, can't deal with non-orthogonal grids or grids not aligned N-S or E-W")
             return
+        
+        # check if we have a data object and if we do, is there a centre position
+        # if not then assume it is the centre of the grid
+        calculate_centre = True
+        if self.data_obj is not None:
+            if hasattr(self.data_obj, 'center_point'):
+                if self.data_obj.center_point is not None:
+                    centre = np.zeros(3)
+                    centre[0] = self.data_obj.center_point['east'] 
+                    centre[1] = self.data_obj.center_point['north']
+                    calculate_centre = False
+        # get relative grid locations
+        if calculate_centre:
+            print("Calculating center position")
+            centre = np.zeros(3)
+            centre[0] = (self.grid_east.max() + self.grid_east.min()) / 2.
+            centre[1] = (self.grid_north.max() + self.grid_north.min()) / 2.
+        centre[2] = self.grid_z[0]
 
+        self.grid_east -= centre[0]
+        self.grid_north -= centre[1]
+        
+        self.grid_center = np.array([self.grid_north[0],self.grid_east[0],self.grid_z[0]])       
+        
         # get nodes
-        self.nodes_east = self.grid_east[1:] - self.grid_east[:-1]
-        self.nodes_north = self.grid_north[1:] - self.grid_north[:-1]
-        self.nodes_z = self.grid_z[1:] - self.grid_z[:-1]
+        # don't need to get nodes - as they are a property that auto-updates
+#        self.nodes_east = self.grid_east[1:] - self.grid_east[:-1]
+#        self.nodes_north = self.grid_north[1:] - self.grid_north[:-1]
+#        self.nodes_z = self.grid_z[1:] - self.grid_z[:-1]
 
+        
         self.z1_layer = self.nodes_z[0]
         #        self.z_target_depth = None
         self.z_bottom = self.nodes_z[-1]
@@ -1571,19 +1590,8 @@ class Model(object):
 
         # sea level in grid_z coordinates, calculate and adjust centre
         self.sea_level = self.grid_z[self.n_airlayers]
-
+        
         print("FZ:***3 sea_level = ", self.sea_level)
-
-        # get relative grid locations
-        if calculate_centre:
-            print("Calculating center position")
-            centre = np.zeros(3)
-            centre[0] = (self.grid_east.max() + self.grid_east.min()) / 2.
-            centre[1] = (self.grid_north.max() + self.grid_north.min()) / 2.
-        centre[2] = self.grid_z[self.n_airlayers]
-        self.grid_east -= centre[0]
-        self.grid_north -= centre[1]
-        self.grid_z += centre[2]
 
 
     def interpolate_elevation2(self, surfacefile=None, surface=None, surfacename=None,
