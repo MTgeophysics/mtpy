@@ -1,6 +1,5 @@
 from unittest import TestCase
 import numpy as np
-import pytest
 import os
 
 from mtpy.modeling.modem import Model, Data
