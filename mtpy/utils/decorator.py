@@ -115,6 +115,15 @@ class gdal_data_check(object):
         else:
             if os.path.exists(os.environ['GDAL_DATA']):
                 self._logger.info("GDAL_DATA is set to: {}".format(os.environ['GDAL_DATA']))
+
+                try:
+                    from osgeo import osr
+                    from osgeo.ogr import OGRERR_NONE
+                except:
+                    self._logger.info("Failed to load module osr; looks like GDAL_DATA path is incorrect")
+                    return False
+                # end try
+
                 return True
             else:
                 self._logger.error("GDAL_DATA is set to: {}, but the path does not exist.".format(os.environ['GDAL_DATA']))
