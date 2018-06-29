@@ -639,7 +639,9 @@ class Model(object):
         log_z = mtcc.make_log_increasing_array(self.z1_layer, self.z_target_depth,
                                                self.n_layers - self.pad_z - nair)
 
+        # round any values less than 100 to the same d.p. as z1_layer
         z_nodes = np.around(log_z[log_z < 100], decimals=-int(np.floor(np.log10(self.z1_layer))))
+        # round any values greater than or equal to 100 to the nearest 100
         z_nodes = np.append(z_nodes, np.around(log_z[log_z >= 100], decimals=-2))
 
         # index of top of padding

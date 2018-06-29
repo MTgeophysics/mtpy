@@ -87,3 +87,39 @@ class TestModEM_Model(TestCase):
         is_identical, msg = diff_files(output_data_file, expected_data_file)
         print msg
         self.assertTrue(is_identical, "The output file is not the same with the baseline file.")
+
+    def test_make_z_mesh_new(self):
+        
+        z1_layer = 10
+        z_target_depth = 5000
+        n_layers = 30
+        n_airlayers = 10
+        pad_z = 4
+        pad_stretch_v = 1.4
+        
+        mObj = Model(z1_layer=z1_layer,
+                     z_target_depth=z_target_depth,
+                     n_layers = n_layers,
+                     n_air_layers=n_airlayers,
+                     pad_z=pad_z,
+                     pad_stretch_v = pad_stretch_v)
+        z_nodes, z_grid = mObj.make_z_mesh_new()
+        
+        # check air layer part
+        self.assertTrue(np.all(z_nodes[:n_airlayers] == np.ones(n_airlayers)*z1_layer))
+        self.assertTrue(np.all(z_grid[:n_airlayers+1] == np.linspace(0,n_airlayers*z1_layer,n_airlayers+1)))
+        
+        # check core model part
+        testnodes10_5000_16 = np.array([  10.,   10.,   20.,   30.,   40.,   50.,   70.,  100.,  100.,
+                                          200.,  300.,  400.,  500.,  700., 1000., 1400.])
+        testgrid10_5000_16 = np.array([testnodes10_5000_16[:i].sum() for i in range(len(testnodes10_5000_16)+1)]) + n_airlayers * z1_layer
+        
+        self.assertTrue(np.all(z_nodes[n_airlayers:-pad_z]==testnodes10_5000_16))
+        self.assertTrue(np.all(z_grid[n_airlayers:-pad_z]==testgrid10_5000_16))
+        
+        # check padding part
+        testnodespad = np.around(testnodes10_5000_16[-1]*(pad_stretch_v**np.arange(1,pad_z+1)),-2)
+        testgridpad = np.array([testnodespad[:i].sum() for i in range(1,pad_z+1)]) + testgrid10_5000_16[-1]
+        
+        self.assertTrue(np.all(z_nodes[-pad_z:]==testnodespad))
+        self.assertTrue(np.all(z_grid[-pad_z:]==testgridpad))
