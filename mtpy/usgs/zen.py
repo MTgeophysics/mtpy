@@ -34,7 +34,7 @@ except ImportError:
     
 #==============================================================================
 datetime_fmt = '%Y-%m-%d,%H:%M:%S'
-datetime_sec = '%Y-%m-%d %H:%M:%S'
+datetime_sec = '%Y-%m-%d %H:%M:%S.%f'
 #==============================================================================
 # 
 #==============================================================================
@@ -412,7 +412,7 @@ class Z3D_Metadata(object):
         self.cal_ant = None
         self.cal_board = None
         self.cal_ver = None
-        self.ch_azimuth = 0.0
+        self.ch_azimuth = None
         self.ch_cmp = None
         self.ch_length = None
         self.ch_number = None
@@ -745,18 +745,28 @@ class Zen3D(object):
         if self.metadata.ch_length is not None:
             return self.metadata.ch_length
         elif hasattr(self.metadata, 'ch_offset_xyz1'):
-            x1, y1, z1 = [float(offset) for offset in 
-                          self.metadata.ch_offset_xyz1.split(':')]
-            x2, y2, z2 = [float(offset) for offset in 
-                          self.metadata.ch_offset_xyz2.split(':')]
-            length = np.sqrt((x2-x1)**2+(y2-y1)**2+(z2-z1)**2)
-            return np.round(length, 2)
-        
+            # only ex and ey have xyz2
+            if hasattr(self.metadata, 'ch_offset_xyz2'):
+                x1, y1, z1 = [float(offset) for offset in 
+                              self.metadata.ch_offset_xyz1.split(':')]
+                x2, y2, z2 = [float(offset) for offset in 
+                              self.metadata.ch_offset_xyz2.split(':')]
+                length = np.sqrt((x2-x1)**2+(y2-y1)**2+(z2-z1)**2)
+                return np.round(length, 2)
+            else:
+                return 0
         elif self.metadata.ch_xyz1 is not None:
             x1, y1= [float(d) for d in self.metadata.ch_xyz1.split(':')]
             x2, y2= [float(d) for d in self.metadata.ch_xyz2.split(':')]
             length = np.sqrt((x2-x1)**2+(y2-y1)**2)*100.
             return np.round(length, 2)
+        
+    @property 
+    def azimuth(self):
+        if self.metadata.ch_azimuth is not None:
+            return float(self.metadata.ch_azimuth)
+        elif self.metadata.rx_xazimuth is not None:
+            return float(self.metadata.rx_xazimuth)
         
     @property
     def component(self):
@@ -781,6 +791,10 @@ class Zen3D(object):
     def df(self):
         return self.header.ad_rate
     
+    @df.setter
+    def df(self, sampling_rate):
+        self.header.ad_rate = float(sampling_rate)
+    
     @property
     def zen_schedule(self):
         if self.header.old_version is True:
@@ -791,13 +805,20 @@ class Zen3D(object):
             self.schedule.Time = '{0}{1:02}'.format(self.schedule.Time[0:6],
                                                     int(self.schedule.Time[6:])+2)
 
-            return datetime.datetime.strptime('{0},{1}'.format(self.schedule.Date,
-                                                               self.schedule.Time),
-                                                           datetime_fmt)
+            self.shcedule.datetime = datetime.datetime.strptime('{0},{1}'.format(self.schedule.Date,
+                                                                self.schedule.Time),
+                                                                datetime_fmt)
 
-        else:
-            # set the zen schedule time
-            return self.schedule.datetime
+        return self.schedule.datetime
+        
+    @zen_schedule.setter
+    def zen_schedule(self, schedule_dt):
+        """
+        on setting set schedule datetime
+        """
+        if type(schedule_dt) is not datetime.datetime:
+            raise TypeError('New schedule datetime must be type datetime.datetime')
+        self.schedule.datetime = schedule_dt  
         
     @property
     def coil_num(self):
@@ -1076,21 +1097,22 @@ class Zen3D(object):
         self.ts_obj.station = self.station
         self.ts_obj.sampling_rate = float(self.df)
         self.ts_obj.start_time_utc = self.zen_schedule.isoformat().replace('T', ',')
-        self.ts_obj.component = self.metadata.ch_cmp
+        self.ts_obj.component = self.component
         self.ts_obj.coordinate_system = 'geomagnetic'
         try:
-            self.ts_obj.dipole_length = float(self.metadata.ch_length)
+            self.ts_obj.dipole_length = float(self.dipole_len)
         except TypeError:
             self.ts_obj.dipole_length = -666
         try:
-            self.ts_obj.azimuth = float(self.metadata.ch_azimuth)
+            self.ts_obj.azimuth = float(self.azimuth)
         except TypeError:
             self.ts_obj.azimuth = -666
         self.ts_obj.units = 'mV'
-        self.ts_obj.lat = self.header.lat
-        self.ts_obj.lon = self.header.long
+        self.ts_obj.lat = self.lat
+        self.ts_obj.lon = self.lon
         self.ts_obj.datum = 'WGS84'
         self.ts_obj.data_logger = 'Zonge Zen'
+        self.ts_obj.elev = self.elev
         self.ts_obj.instrument_id = self.header.box_number
         self.ts_obj.calibration_fn = None
         self.ts_obj.declination = 0.0
@@ -1387,7 +1409,7 @@ class Zen3D(object):
             >>> asc_fn = z3d_obj.write_ascii_mt_file(save_station='mt', notch_dict={})
         
         """
-        if self.metadata.rx_xyz0 is None:
+        if self.station is None:
             self.read_all_info()
             
         if dec > 1:
@@ -1447,10 +1469,10 @@ class Zen3D(object):
         # self.convert_counts() #--> data is already converted to mV
         # calibrate electric channels should be in mV/km
         # I have no idea why this works but it does
-        if self.metadata.ch_cmp.lower() in ['ex', 'ey']:
-            e_scale = float(self.metadata.ch_length)
+        if self.component in ['ex', 'ey']:
+            e_scale = float(self.dipole_len)
             self.ts_obj.ts.data /= ((e_scale/100)*2*np.pi)
-            print 'Using scales {0} = {1} m'.format(self.metadata.ch_cmp.upper(),
+            print 'Using scales {0} = {1} m'.format(self.component.upper(),
                                                     e_scale)
             self.ts_obj.units = 'mV/km'
 

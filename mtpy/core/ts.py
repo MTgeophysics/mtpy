@@ -524,7 +524,7 @@ class MT_TS(object):
             
         hdf5_store.close()  
         
-    def write_ascii_file(self, fn_ascii, chunk_size=4096):
+    def write_ascii_file(self, fn_ascii, chunk_size=4096, fmt='%.8E'):
         """
         Write an ascii format file with metadata
         
@@ -563,17 +563,18 @@ class MT_TS(object):
                 # changing the dtype of the array is faster than making
                 # a list of strings with 22 places to incorporate exponential
                 # form
-                ts_lines = np.array(self.ts.data[cc*chunk_size:(cc+1)*chunk_size],
-                                    dtype='S22')
-
+#                ts_lines = np.array(self.ts.data[cc*chunk_size:(cc+1)*chunk_size],
+#                                    dtype='S22')
+                ts_lines = np.array(self.ts.data[cc*chunk_size:(cc+1)*chunk_size])
+                ts_lines = np.char.mod(fmt, ts_lines)
                 fid.write('\n'.join(list(ts_lines)))
                 # be sure to write a new line after each chunk otherwise
                 # they run together
                 fid.write('\n')
              
             # be sure to write the last little bit
-            fid.write('\n'.join(list(np.array(self.ts.data[(cc+1)*chunk_size:],
-                                              dtype='S22'))))
+            fid.write('\n'.join(list(np.char.mod(fmt,
+                                                 np.array(self.ts.data[(cc+1)*chunk_size:])))))
 
                 
         # get an estimation of how long it took to write the file    

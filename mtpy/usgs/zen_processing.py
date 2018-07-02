@@ -776,12 +776,12 @@ class Z3D_to_edi(object):
         if zd.component in ['hx', 'hy', 'hz']: 
             
             comp = zd.component
-            chn_num = zd.metadata.ch_number
+            chn_num = zd.coil_num
             try:
                 cal_fn = self.calibration_dict[chn_num]
             except KeyError:
                 print 'Did not find calibration for {0}, number {1}'.format(comp, 
-                                                                        chn_num) 
+                                                                            chn_num) 
                 cal_fn = self.calibration_dict['2284']
                 
             if remote == False:
