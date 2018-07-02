@@ -842,7 +842,7 @@ class Z3D_to_edi(object):
                     self.survey_config.rr_box_01 = int(zd.header.box_number)
             else:
                 self.survey_config.rr_lat = zd.lat
-                self.survey_config.rr_lon = zd.long
+                self.survey_config.rr_lon = zd.lon
                 self.survey_config.rr_date = zd.schedule.Date
                 self.survey_config.rr_box = int(zd.header.box_number)
                 self.survey_config.rr_station = zd.station
