@@ -339,7 +339,7 @@ class Survey_Config(object):
         self.e_xaxis_length = 100
         self.e_yaxis_azimuth = 90
         self.e_yaxis_length = 100
-        self.elevation = 2113.2
+        self.elevation = 0.0
         self.hx = 2324
         self.hy = 2314
         self.hz = 2334
@@ -518,7 +518,7 @@ class Z3D_to_edi(object):
                 z3d_obj = zen.Zen3D(z3d_fn)
                 z3d_obj.read_all_info()
                 if remote is True:
-                    if not z3d_obj.metadata.ch_cmp.lower() in ['hx', 'hy']:
+                    if not z3d_obj.component in ['hx', 'hy']:
                         continue
                 if z3d_obj.df in self.df_list:
                     fn_count += 1
@@ -764,29 +764,25 @@ class Z3D_to_edi(object):
         #write mtpy mt file
         zd.write_ascii_mt_file(notch_dict=notch_dict, dec=dec)
         
-        #create lines to write to a log file                       
-        station_num = zd.metadata.rx_xyz0.split(':')[0]
-        station_label = zd.metadata.line_name
-        station = '{0}{1}'.format(station_label, station_num) 
-        
-        return_fn_arr['station'] = station
+        #create lines to write to a log file                        
+        return_fn_arr['station'] = zd.station
         return_fn_arr['npts'] = zd.ts_obj.n_samples
         return_fn_arr['df'] = zd.df
         return_fn_arr['start_dt'] = zd.zen_schedule
-        return_fn_arr['comp'] = zd.metadata.ch_cmp.lower()
+        return_fn_arr['comp'] = zd.component
         return_fn_arr['fn'] = zd.fn_mt_ascii
 
         # add metadata to survey configuration file
-        if zd.metadata.ch_cmp.lower() in ['hx', 'hy', 'hz']: 
+        if zd.component in ['hx', 'hy', 'hz']: 
             
-            comp = zd.metadata.ch_cmp.lower()
+            comp = zd.component
             chn_num = zd.metadata.ch_number
             try:
                 cal_fn = self.calibration_dict[chn_num]
             except KeyError:
                 print 'Did not find calibration for {0}, number {1}'.format(comp, 
                                                                         chn_num) 
-                cal_fn = None
+                cal_fn = self.calibration_dict['2284']
                 
             if remote == False:
                 setattr(self.survey_config, comp, chn_num)
@@ -813,43 +809,43 @@ class Z3D_to_edi(object):
                             'rr_{0}_{1:02}_cal_fn'.format(comp, count),
                             cal_fn)
                     
-        elif zd.metadata.ch_cmp.lower() == 'ex':
-            self.survey_config.e_xaxis_length = zd.metadata.ch_length
-        elif zd.metadata.ch_cmp.lower() == 'ey':
-            self.survey_config.e_yaxis_length = zd.metadata.ch_length
+        elif zd.component == 'ex':
+            self.survey_config.e_xaxis_length = zd.dipole_len
+        elif zd.component == 'ey':
+            self.survey_config.e_yaxis_length = zd.dipole_len
 
         
         if remote == False:
             if self.survey_config.lat is None or self.survey_config.lat == 0.0:
-                self.survey_config.lat = zd.header.lat
-                self.survey_config.lon = zd.header.long
+                self.survey_config.lat = zd.lat
+                self.survey_config.lon = zd.lon
                 self.survey_config.date = zd.schedule.Date
                 self.survey_config.box = int(zd.header.box_number)
-                self.survey_config.station = station
+                self.survey_config.station = zd.station
                 self.survey_config.location = zd.metadata.job_name
                 self.survey_config.network = zd.metadata.job_by
         else:
             if self.survey_config.rr_lat is not None:
-                if self.survey_config.rr_lat != zd.header.lat:
-                    self.survey_config.rr_lat_01 = zd.header.lat
+                if self.survey_config.rr_lat != zd.lat:
+                    self.survey_config.rr_lat_01 = zd.lat
                
-                if self.survey_config.rr_lon != zd.header.long:
-                    self.survey_config.rr_lon_01 = zd.header.long
+                if self.survey_config.rr_lon != zd.lon:
+                    self.survey_config.rr_lon_01 = zd.lon
                 
                 if self.survey_config.rr_date != zd.schedule.Date:
                     self.survey_config.rr_date_01 = zd.schedule.Date
     
-                if self.survey_config.rr_station != station:
-                    self.survey_config.rr_station_01 = station
+                if self.survey_config.rr_station != zd.station:
+                    self.survey_config.rr_station_01 = zd.station
                 
                 if self.survey_config.rr_box != int(zd.header.box_number):
                     self.survey_config.rr_box_01 = int(zd.header.box_number)
             else:
-                self.survey_config.rr_lat = zd.header.lat
-                self.survey_config.rr_lon = zd.header.long
+                self.survey_config.rr_lat = zd.lat
+                self.survey_config.rr_lon = zd.long
                 self.survey_config.rr_date = zd.schedule.Date
                 self.survey_config.rr_box = int(zd.header.box_number)
-                self.survey_config.rr_station = station
+                self.survey_config.rr_station = zd.station
 
         return return_fn_arr
         

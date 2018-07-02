@@ -569,6 +569,8 @@ class Z3D_Metadata(object):
             except AttributeError:
                 self.station = None
                 print "Need to input station name"
+                
+        
    
 #==============================================================================
 # 
@@ -720,12 +722,10 @@ class Zen3D(object):
         self._gps_epoch = (1980, 1, 6, 0, 0, 0, -1, -1, 0)
         self._leap_seconds = 18
         self._block_len = 2**16
-        self.zen_schedule = None
         # the number in the cac files is for volts, we want mV
         self._counts_to_mv_conversion = 9.5367431640625e-10
 
         self.units = 'counts'
-        self.df = None
         
         self.ts_obj = mtts.MT_TS()
         
@@ -736,6 +736,75 @@ class Zen3D(object):
     @station.setter
     def station(self, station):
         self.metadata.station = station
+        
+    @property
+    def dipole_len(self):
+        """
+        dipole length
+        """
+        if self.metadata.ch_length is not None:
+            return self.metadata.ch_length
+        elif hasattr(self.metadata, 'ch_offset_xyz1'):
+            x1, y1, z1 = [float(offset) for offset in 
+                          self.metadata.ch_offset_xyz1.split(':')]
+            x2, y2, z2 = [float(offset) for offset in 
+                          self.metadata.ch_offset_xyz2.split(':')]
+            length = np.sqrt((x2-x1)**2+(y2-y1)**2+(z2-z1)**2)
+            return np.round(length, 2)
+        
+        elif self.metadata.ch_xyz1 is not None:
+            x1, y1= [float(d) for d in self.metadata.ch_xyz1.split(':')]
+            x2, y2= [float(d) for d in self.metadata.ch_xyz2.split(':')]
+            length = np.sqrt((x2-x1)**2+(y2-y1)**2)*100.
+            return np.round(length, 2)
+        
+    @property
+    def component(self):
+        """
+        channel
+        """
+        return self.metadata.ch_cmp.lower()
+    
+    @property
+    def lat(self):
+        return self.header.lat
+    
+    @property
+    def lon(self):
+        return self.header.long
+    
+    @property
+    def elev(self):
+        return self.header.alt
+    
+    @property
+    def df(self):
+        return self.header.ad_rate
+    
+    @property
+    def zen_schedule(self):
+        if self.header.old_version is True:
+            dt_str = self.header.schedule.replace('T', ',')
+            self.schedule.Date = dt_str.split(',')[0]
+            self.schedule.Time = dt_str.split(',')[1]
+            # the first good GPS stamp is on the 3rd, so need to add 2 seconds
+            self.schedule.Time = '{0}{1:02}'.format(self.schedule.Time[0:6],
+                                                    int(self.schedule.Time[6:])+2)
+
+            return datetime.datetime.strptime('{0},{1}'.format(self.schedule.Date,
+                                                               self.schedule.Time),
+                                                           datetime_fmt)
+
+        else:
+            # set the zen schedule time
+            return self.schedule.datetime
+        
+    @property
+    def coil_num(self):
+        if self.metadata.cal_ant is not None:
+            return self.metadata.cal_ant
+        elif self.metadata.ch_number is not None:
+            return self.metadata.ch_number
         
     def _get_gps_stamp_type(self, old_version=False):
         """
@@ -800,7 +869,6 @@ class Zen3D(object):
             self.fn = fn
             
         self.header.read_header(fn=self.fn, fid=fid)
-        self.df = self.header.ad_rate
         
     #====================================== 
     def _read_schedule(self, fn=None, fid=None):
@@ -837,23 +905,9 @@ class Zen3D(object):
         
         if fn is not None:
             self.fn = fn
-        if self.header.old_version is True:
-            dt_str = self.header.schedule.replace('T', ',')
-            self.schedule.Date = dt_str.split(',')[0]
-            self.schedule.Time = dt_str.split(',')[1]
-            # the first good GPS stamp is on the 3rd, so need to add 2 seconds
-            self.schedule.Time = '{0}{1:02}'.format(self.schedule.Time[0:6],
-                                                    int(self.schedule.Time[6:])+2)
+            
+        self.schedule.read_schedule(fn=self.fn, fid=fid)
 
-            self.zen_schedule = datetime.datetime.strptime('{0},{1}'.format(self.schedule.Date,
-                                                                            self.schedule.Time),
-                                                           datetime_fmt)
-
-        else:
-            self.schedule.read_schedule(fn=self.fn, fid=fid)
-            # set the zen schedule time
-            self.zen_schedule = self.schedule.datetime
-    
     #======================================     
     def _read_metadata(self, fn=None, fid=None):
         """
