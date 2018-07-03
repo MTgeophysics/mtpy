@@ -1127,7 +1127,6 @@ class Z3D_to_edi(object):
                         n_skip = int(abs(t_diff)*df)
                         
                         if t_diff > 0 and dt_arr is not None:
-                            print('n_skip = {0}'.format(n_skip))
                             dt_arr['nskip'] = n_skip
                         elif t_diff < 0:
                             #need to test if nskip is already there
