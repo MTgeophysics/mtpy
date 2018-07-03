@@ -75,6 +75,7 @@ def interpolate_elevation_to_grid(grid_east,grid_north,epsg=None,utm_zone=None,
         x, y = np.meshgrid(x, y)
 
     if(fast):
+        buffer = 1 # use a buffer of 1 degree around mesh-bounds
         mlatmin, mlonmin = gis_tools.project_point_utm2ll(grid_east.min(), grid_north.min(),
                                                           epsg=epsg,
                                                           utm_zone=utm_zone)
@@ -83,7 +84,10 @@ def interpolate_elevation_to_grid(grid_east,grid_north,epsg=None,utm_zone=None,
                                                           epsg=epsg,
                                                           utm_zone=utm_zone)
 
-        subsetIndices = (x >= mlonmin) & (x <= mlonmax) & (y >= mlatmin) & (y <= mlatmax)
+        subsetIndices = (x >= mlonmin-buffer) & \
+                        (x <= mlonmax+buffer) & \
+                        (y >= mlatmin-buffer) & \
+                        (y <= mlatmax+buffer)
         x = x[subsetIndices]
         y = y[subsetIndices]
         elev = elev[subsetIndices]
