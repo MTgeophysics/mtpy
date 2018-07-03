@@ -15,11 +15,15 @@ import scipy.interpolate as spi
 
 
 def interpolate_elevation_to_grid(grid_east,grid_north,epsg=None,utm_zone=None,
-                                  surfacefile=None, surface=None,method='linear'):
+                                  surfacefile=None, surface=None, method='linear',
+                                  fast=True):
     """
     project a surface to the model grid and add resulting elevation data
     to a dictionary called surface_dict. Assumes the surface is in lat/long
     coordinates (wgs84)
+    The 'fast' method extracts a subset of the elevation data that falls within the
+    mesh-bounds and interpolates them onto mesh nodes. This approach significantly
+    speeds up (~ x5) the interpolation procedure.
 
     **returns**
     nothing returned, but surface data are added to surface_dict under
@@ -70,10 +74,24 @@ def interpolate_elevation_to_grid(grid_east,grid_north,epsg=None,utm_zone=None,
     if len(x.shape) == 1:
         x, y = np.meshgrid(x, y)
 
+    if(fast):
+        mlatmin, mlonmin = gis_tools.project_point_utm2ll(grid_east.min(), grid_north.min(),
+                                                          epsg=epsg,
+                                                          utm_zone=utm_zone)
+
+        mlatmax, mlonmax = gis_tools.project_point_utm2ll(grid_east.max(), grid_north.max(),
+                                                          epsg=epsg,
+                                                          utm_zone=utm_zone)
+
+        subsetIndices = (x >= mlonmin) & (x <= mlonmax) & (y >= mlatmin) & (y <= mlatmax)
+        x = x[subsetIndices]
+        y = y[subsetIndices]
+        elev = elev[subsetIndices]
+    # end if
+
     xs, ys, utm_zone = gis_tools.project_points_ll2utm(y, x,
                                                        epsg=epsg,
-                                                       utm_zone=utm_zone
-                                                       )
+                                                       utm_zone=utm_zone)
 
     # elevation in model grid
     # first, get lat,lon points of surface grid
