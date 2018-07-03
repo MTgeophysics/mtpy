@@ -73,7 +73,7 @@ class BIRRP_processing(birrp.BIRRP_Parameters):
         self.calibration_list = ['2254', '2264', '2274', '2284', '2294',
                                 '2304', '2314', '2324', '2334', '2344',
                                 '2844', '2854']
-        self._max_nread = 16000000
+        self._max_nread = 20000000
         
         for key in kwargs.keys():
             setattr(self, key, kwargs[key])
@@ -216,7 +216,8 @@ class BIRRP_processing(birrp.BIRRP_Parameters):
                       -self.deltat))
 
         # need to check for the number of points to be read in, there is 
-        # a memory max, for this computer the max is self._max_nread        
+        # a memory max, for this computer the max is self._max_nread   
+        print sum(self.nread, self._max_nread)
         if sum(self.nread) > self._max_nread:
             self.nread[-1] = self._max_nread-sum(self.nread[0:-1])
             print 'processing {0} points'.format(sum(self.nread))
@@ -465,6 +466,7 @@ class Z3D_to_edi(object):
         self.num_comp = 5
         self.df_list = [4096, 256, 16]
         self.max_blocks = 3
+        self._max_nread = 20000000
         
         # data types for different aspects of getting information
         self._ts_fn_dtype = np.dtype([('station','S6'), 
@@ -819,6 +821,7 @@ class Z3D_to_edi(object):
             if self.survey_config.lat is None or self.survey_config.lat == 0.0:
                 self.survey_config.lat = zd.lat
                 self.survey_config.lon = zd.lon
+                self.survey_config.elevation = zd.elev
                 self.survey_config.date = zd.schedule.Date
                 self.survey_config.box = int(zd.header.box_number)
                 self.survey_config.station = zd.station
@@ -832,6 +835,9 @@ class Z3D_to_edi(object):
                 if self.survey_config.rr_lon != zd.lon:
                     self.survey_config.rr_lon_01 = zd.lon
                 
+                if self.survey_config.rr_elevation != zd.elev:
+                    self.survey_config.rr_elevation_01 = zd.elev
+                    
                 if self.survey_config.rr_date != zd.schedule.Date:
                     self.survey_config.rr_date_01 = zd.schedule.Date
     
@@ -843,6 +849,7 @@ class Z3D_to_edi(object):
             else:
                 self.survey_config.rr_lat = zd.lat
                 self.survey_config.rr_lon = zd.lon
+                self.survey_config.rr_elevation = zd.elev
                 self.survey_config.rr_date = zd.schedule.Date
                 self.survey_config.rr_box = int(zd.header.box_number)
                 self.survey_config.rr_station = zd.station
@@ -1110,27 +1117,36 @@ class Z3D_to_edi(object):
                                 dt_arr = self._fill_birrp_fn_arr(rr_arr,
                                                                  remote=True)
                                 rr_station_find.append(f_find)
+                        if dt_arr is None:
+                            continue
                         #--------------------------------------------------
                         # add in nskip values
                         # when t_diff is positive then skip values in 
                         # the remote reference file
-                        n_skip = abs(rr_arr['npts']-s_fn_arr['npts'].min())
+                        #n_skip = abs(rr_arr['npts']-s_fn_arr['npts'].min())
+                        n_skip = int(abs(t_diff)*df)
+                        
                         if t_diff > 0 and dt_arr is not None:
+                            print('n_skip = {0}'.format(n_skip))
                             dt_arr['nskip'] = n_skip
                         elif t_diff < 0:
                             #need to test if nskip is already there
-                            if s_fn_birrp_arr['nskip'][0] != 1:
+                            if s_fn_birrp_arr['nskip'][0] != 22:
                                 if n_skip > s_fn_birrp_arr['nskip'][0]:
                                     s_fn_birrp_arr['nskip'][:] = n_skip
+                                    s_fn_birrp_arr['nread'][:] -= n_skip
                                 else:
                                     pass
 
                             else:
                                 s_fn_birrp_arr['nskip'][:] = n_skip
+                                s_fn_birrp_arr['nread'][:] -= n_skip
                           
                         # if there was a remote referenc channel found 
                         # append it to the array
                         if dt_arr is not None:
+                            if dt_arr['nskip'] < 22:
+                                dt_arr['nskip'] = 22
                             rr_birrp_fn_arr = np.append(rr_birrp_fn_arr,
                                                         dt_arr)
                                                         
@@ -1161,6 +1177,8 @@ class Z3D_to_edi(object):
                         rr_min_read = rr_birrp_fn_arr['nread'].min()
                         for rr_b_arr in rr_birrp_fn_arr:
                             rr_n_skip = abs(rr_b_arr['nread']-rr_min_read)
+                            if rr_n_skip < 22:
+                                continue
                             if rr_b_arr['nread'] != rr_min_read:
                                 rr_b_arr['nskip'] = rr_n_skip
                                 print rr_b_arr['fn'], rr_n_skip
@@ -1171,8 +1189,13 @@ class Z3D_to_edi(object):
                 # fill in the dictionary accordingly
                 s_dict[df].append(s_fn_birrp_arr[np.nonzero(s_fn_birrp_arr['nread'])])
         
-        # need to check for maximum number of points
+            # need to check for maximum number of points
+            nread_list = [int(sa['nread'].mean()) for sa in s_dict[df]]
+            if sum(nread_list) > self._max_nread:
+                n_last = self._max_nread-sum(nread_list[0:-1])
+                s_dict[df][-1]['nread'][:] = n_last
                 
+                print "reading {0} points from last block".format(n_last)
         
         # return the station dictionary        
         return s_dict
