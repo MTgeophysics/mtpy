@@ -103,10 +103,10 @@ def interpolate_elevation_to_grid(grid_east,grid_north,epsg=None,utm_zone=None,
     # corresponding surface elevation points
     values = elev.flatten()
     # xi, the model grid points to interpolate to
-    xi = np.vstack([arr.flatten() for arr in np.meshgrid(grid_east, grid_north)]).T
+    xi = np.vstack([arr.flatten() for arr in [grid_east, grid_north]]).T
     # elevation on the centre of the grid nodes
     elev_mg = spi.griddata(
-        points, values, xi, method=method).reshape(len(grid_north), len(grid_east))
+        points, values, xi, method=method).reshape(grid_north.shape)
 
     return elev_mg
 
