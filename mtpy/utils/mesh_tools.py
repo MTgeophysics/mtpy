@@ -14,6 +14,51 @@ from mtpy.utils import gis_tools
 import scipy.interpolate as spi
 
 
+
+def rotate_mesh(grid_east,grid_north,origin,
+                rotation_angle,return_centre = False):
+    """
+    rotate a mesh defined by grid_east and grid_north.
+    
+    :param grid_east: 1d array defining the edges of the mesh in the east-west direction
+    :param grid_north: 1d array defining the edges of the mesh in the north-south direction
+    :param origin: real-world position of the (0,0) point in grid_east, grid_north
+    :param rotation_angle: angle in degrees to rotate the grid by
+    :param return_centre: True/False option to return points on centre of grid instead of grid edges
+    
+    :return: grid_east, grid_north - 2d arrays describing the east and north coordinates
+
+    """
+    x0,y0 = origin
+    
+    # centre of grid in relative coordinates
+    gce, gcn = [np.mean([arr[1:], arr[:-1]], axis=0)
+              for arr in [grid_east,grid_north]]
+    
+    # coordinates (2d array)
+    coords = np.array([arr.flatten() for arr in np.meshgrid(gce,gcn)])
+
+    
+    if rotation_angle != 0:
+        # create the rotation matrix
+        cos_ang = np.cos(np.deg2rad(rotation_angle))
+        sin_ang = np.sin(np.deg2rad(rotation_angle))
+        rot_matrix = np.matrix(np.array([[cos_ang, sin_ang],
+                                         [-sin_ang, cos_ang]]))
+
+        # rotate the relative grid coordinates
+        new_coords = np.array(np.dot(rot_matrix, coords))
+    else:
+        new_coords = coords
+    
+
+    # location of grid centres in real-world coordinates to interpolate elevation onto
+    xg = (new_coords[0] + x0).reshape(len(gcn),len(gce))
+    yg = (new_coords[1] + y0).reshape(len(gcn),len(gce))
+    
+    return xg,yg
+
+
 def interpolate_elevation_to_grid(grid_east,grid_north,epsg=None,utm_zone=None,
                                   surfacefile=None, surface=None, method='linear',
                                   fast=True):

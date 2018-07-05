@@ -1665,34 +1665,13 @@ class Model(object):
         # get centre position of model grid in real world coordinates
         x0, y0 = self.station_locations.center_point.east[0], self.station_locations.center_point.north[0]
 
-        # centre of grid in relative coordinates
-        gce, gcn = [np.mean([arr[1:], arr[:-1]], axis=0)
-                  for arr in [self.grid_east,self.grid_north]]
-        # coordinates (2d array)
-        coords = np.array([arr.flatten() for arr in np.meshgrid(gce,gcn)])
 
-        # determine whether rotation is necessary
-        rotate_mesh = False
-        if self.mesh_rotation_angle is not None:
-            if self.mesh_rotation_angle != 0:
-                rotate_mesh = True
+        if self.mesh_rotation_angle is None:
+            self.mesh_rotation_angle = 0
         
-        if rotate_mesh:
-            # create the rotation matrix
-            cos_ang = np.cos(np.deg2rad(self.mesh_rotation_angle))
-            sin_ang = np.sin(np.deg2rad(self.mesh_rotation_angle))
-            rot_matrix = np.matrix(np.array([[cos_ang, sin_ang],
-                                             [-sin_ang, cos_ang]]))
-    
-            # rotate the relative grid coordinates
-            new_coords = np.array(np.dot(rot_matrix, coords))
-        
-        else:
-            new_coords = coords
-
-        # location of grid centres in real-world coordinates to interpolate elevation onto
-        xg = (new_coords[0] + x0).reshape(len(gcn),len(gce))
-        yg = (new_coords[1] + y0).reshape(len(gcn),len(gce))
+        xg,yg = mtmesh.rotate_mesh(self.grid_east,self.grid_north,
+                                   [x0,y0],
+                                   self.mesh_rotation_angle)
         
         elev_mg = mtmesh.interpolate_elevation_to_grid(xg,yg,
                                                        surfacefile=surfacefile,
@@ -1700,16 +1679,6 @@ class Model(object):
                                                        utm_zone=self.station_locations.model_utm_zone,
                                                        method=method)
 
-#        # elevation in model grid
-#        # first, get lat,lon points of surface grid
-#        points = np.vstack([arr.flatten() for arr in [xs, ys]]).T
-#        # corresponding surface elevation points
-#        values = elev.flatten()
-#        # xi, the model grid points to interpolate to
-#        xi = np.vstack([arr.flatten() for arr in np.meshgrid(xg, yg)]).T
-#        # elevation on the centre of the grid nodes
-#        elev_mg = spi.griddata(
-#            points, values, xi, method=method).reshape(len(yg), len(xg))
 
         print(" Elevation data type and shape  *** ", type(elev_mg), elev_mg.shape, len(yg), len(xg))
         # <type 'numpy.ndarray'>  (65, 92), 65 92: it's 2D image with cell index as pixels
@@ -1730,6 +1699,10 @@ class Model(object):
         self.surface_dict[surfacename] = elev_mg
 
         return
+
+    
+    
+
 
     def add_topography_to_model2(self, topographyfile=None, topographyarray=None,
                                  interp_method='nearest', air_resistivity=1e12,
