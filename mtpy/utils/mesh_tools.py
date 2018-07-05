@@ -32,11 +32,15 @@ def rotate_mesh(grid_east,grid_north,origin,
     x0,y0 = origin
     
     # centre of grid in relative coordinates
-    gce, gcn = [np.mean([arr[1:], arr[:-1]], axis=0)
-              for arr in [grid_east,grid_north]]
-    
+    if return_centre:
+        gce, gcn = [np.mean([arr[1:], arr[:-1]], axis=0)
+                  for arr in [grid_east,grid_north]]
+    else:
+        gce, gcn = grid_east, grid_north
+        
     # coordinates (2d array)
     coords = np.array([arr.flatten() for arr in np.meshgrid(gce,gcn)])
+
 
     
     if rotation_angle != 0:

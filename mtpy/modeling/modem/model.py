@@ -1501,12 +1501,32 @@ class Model(object):
 
         # number of cells in the ModEM model
         nyin, nxin, nzin = np.array(self.res_model.shape) + 1
+        
+        
+        gx,gy = mtmesh.rotate_mesh(self.grid_east[clip[0]:nxin - clip[0]],
+                                   self.grid_north[clip[1]:nyin - clip[1]],
+                                   origin[:2],self.mesh_rotation_angle)
+        
+        gx += origin[0]
+        gy += origin[1]
+        gz = -1.*self.grid_z[:nzin - clip[2]] - origin[2]
+        
+        gxm, gzm = np.meshgrid(gx, gz)
+        gym, gzm = np.meshgrid(gy, gz)
+        
+        print(gxm.shape,gzm.shape,gym.shape)
+        
+        gxm = gxm.reshape(len(gz),len(gy),len(gx[0])).transpose(1,2,0)
+        gym = gym.reshape(len(gz),len(gy),len(gx[0])).transpose(1,2,0)
+        gzm = gzm.reshape(len(gz),len(gy),len(gx[0])).transpose(1,2,0)
+        
+        gridedges = (gxm,gym,gzm)
 
-        # get x, y and z positions
-        gridedges = [self.grid_east[clip[0]:nxin - clip[0]] + origin[0],
-                     self.grid_north[clip[1]:nyin - clip[1]] + origin[1],
-                     -1. * self.grid_z[:nzin - clip[2]] - origin[2]]
-        gridedges = np.meshgrid(*gridedges)
+#        # get x, y and z positions
+#        gridedges = [self.grid_east[clip[0]:nxin - clip[0]] + origin[0],
+#                     self.grid_north[clip[1]:nyin - clip[1]] + origin[1],
+#                     -1. * self.grid_z[:nzin - clip[2]] - origin[2]]
+#        gridedges = np.meshgrid(*gridedges)
 
         # resistivity values, clipped to one smaller than grid edges
         resvals = self.res_model[clip[1]:nyin - clip[1] - 1,
@@ -1671,7 +1691,8 @@ class Model(object):
         
         xg,yg = mtmesh.rotate_mesh(self.grid_east,self.grid_north,
                                    [x0,y0],
-                                   self.mesh_rotation_angle)
+                                   self.mesh_rotation_angle,
+                                   return_centre = True)
         
         elev_mg = mtmesh.interpolate_elevation_to_grid(xg,yg,
                                                        surfacefile=surfacefile,
