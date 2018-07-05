@@ -194,7 +194,7 @@ class TestModemInputFilesBuilder(TestCase):
         mo.write_model_file(save_path=self._output_dir)
 
         # add topography to res model
-        mo.add_topography_to_model2(r'C:\mtpywin\mtpy\examples\data\AussieContinent_etopo1.asc')
+        mo.add_topography_to_model2(AUS_TOPO_FILE)
         mo.write_model_file(save_path=self._output_dir)
 
         
