@@ -1507,14 +1507,11 @@ class Model(object):
                                    self.grid_north[clip[1]:nyin - clip[1]],
                                    origin[:2],self.mesh_rotation_angle)
         
-        gx += origin[0]
-        gy += origin[1]
         gz = -1.*self.grid_z[:nzin - clip[2]] - origin[2]
         
         gxm, gzm = np.meshgrid(gx, gz)
         gym, gzm = np.meshgrid(gy, gz)
         
-        print(gxm.shape,gzm.shape,gym.shape)
         
         gxm = gxm.reshape(len(gz),len(gy),len(gx[0])).transpose(1,2,0)
         gym = gym.reshape(len(gz),len(gy),len(gx[0])).transpose(1,2,0)
