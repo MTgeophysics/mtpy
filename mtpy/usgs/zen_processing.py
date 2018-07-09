@@ -1128,6 +1128,11 @@ class Z3D_to_edi(object):
                         
                         if t_diff > 0 and dt_arr is not None:
                             dt_arr['nskip'] = n_skip
+                            dt_arr['nread'] -= n_skip
+                            
+                            min_nread = min([s_fn_birrp_arr['nread'].min(), 
+                                             dt_arr['nread']])
+                            s_fn_birrp_arr['nread'][:] = min_nread
                         elif t_diff < 0:
                             #need to test if nskip is already there
                             if s_fn_birrp_arr['nskip'][0] != 22:
