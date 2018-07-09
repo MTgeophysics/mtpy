@@ -360,6 +360,22 @@ class Data(object):
                 else:
                     self._logger.warn("Argument {}={} is not supported thus not been set.".format(key, kwargs[key]))
 
+        # update period buffer to a default value if it is invalid
+        if self.period_buffer is not None:
+            try:
+                self.period_buffer = float(self.period_buffer)
+                if self.period_buffer < 0.:
+                    self._logger.warn("Period buffer must be > 0, setting to None")
+                    self.period_buffer = None
+                # if provided value between 0 and 1, assume it was meant to be set to 1 + provided value
+                elif self.period_buffer < 1.:
+                    self._logger.warn("Period buffer must be > 1, adding 1 to provided value")
+                    self.period_buffer += 1.
+            except:
+                self._logger.warn("Period buffer must be convertable to an integer or float, setting to None")
+                
+                
+
         if 'rotation_angle' in kwargs.keys():
             setattr(self, 'rotation_angle', kwargs['rotation_angle'])
 #            self._set_rotation_angle(self.rotation_angle)
