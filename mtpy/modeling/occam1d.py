@@ -303,7 +303,8 @@ class Data(object):
                                                       zereal, zeimag,
                                                       range(len(z_obj.det))):
                         # now we can convert errors to polar coordinates
-                        de1, de2 = mtcc.z_error2r_phi_error(zdr, zer, zdi, zei)
+                        de1, de2 = mtcc.z_error2r_phi_error(zdr, zdi, (zei+zer)/2.)
+                        de1 *= data_1[ii]
                         data_1_err[ii] = de1
                         data_2_err[ii] = de2
 
@@ -628,9 +629,13 @@ class Data(object):
             self.data['phase' + pol][0] = np.rad2deg(
                 np.arctan(self.data['res' + pol][0].imag / self.data['res' + pol][0].real))
             for jjj in range(len(freq)):
+                res_rel_err, phase_err = \
+                    mtcc.z_error2r_phi_error(self.data['z' + pol][0, jjj].real,
+                                             self.data['z' + pol][0, jjj].imag, 
+                                             self.data['z' + pol][1, jjj])
+                    
                 self.data['res' + pol][1, jjj], self.data['phase' + pol][1, jjj] = \
-                    mtcc.z_error2r_phi_error(self.data['z' + pol][0, jjj].real, self.data['z' + pol][1, jjj],
-                                             self.data['z' + pol][0, jjj].imag, self.data['z' + pol][1, jjj])
+                    res_rel_err*self.data['res' + pol][0, jjj], phase_err
 
             self.data['resyx'][0] = 0.2 * np.abs(self.data['zxy'][0]) ** 2. / freq
 
@@ -773,7 +778,6 @@ class Data(object):
                 for jjj in range(len(self.freq)):
                     self.data['phase' + pol][1 + ii, jjj] = \
                         mtcc.z_error2r_phi_error(self.data['z' + pol][0 + ii, jjj].real,
-                                                 self.data['z' + pol][1 + ii, jjj].real,
                                                  self.data['z' + pol][0 + ii, jjj].imag,
                                                  self.data['z' + pol][1 + ii, jjj].real)[1]
             if pol == 'xy':
@@ -2462,6 +2466,9 @@ def parse_arguments(arguments):
     parser.add_argument('-rf', '--rms_factor',
                         help='factor to multiply the minimum possible rms by to get the target rms for the second run',
                         type=float, default=1.05)
+    parser.add_argument('-rmsmin','--rms_min',
+                        help='minimum target rms to assign, e.g. set a value of 1.0 to prevent overfitting data',
+                        type=float, default=1.0)
     parser.add_argument('-nl', '--n_layers',
                         help='number of layers in the inversion',
                         type=int, default=80)
@@ -2578,7 +2585,8 @@ def generate_inputfiles(**input_parameters):
         rundirs[svpath] = []
 
         # create the model file
-        ocm = Model(n_layers=input_parameters['n_layers'], save_path=wd)
+        ocm = Model(n_layers=input_parameters['n_layers'], save_path=wd,
+                    target_depth=input_parameters['target_depth'])
         ocm.write_model_file()
 
         for mode in input_parameters['modes']:
@@ -2601,7 +2609,7 @@ def generate_inputfiles(**input_parameters):
             ocs.write_startup_file(save_path=wd,
                                    startup_fn=op.join(wd, startup_fn),
                                    max_iter=input_parameters['iteration_max'],
-                                   target_rms=0.)
+                                   target_rms=input_parameters['rms_min']/input_parameters['rms_factor'])
             rundirs[svpath].append(startup_fn)
 
     return wkdir_master, rundirs
@@ -2658,10 +2666,13 @@ def build_run():
             startup = Startup()
             startup.read_startup_file(op.join(wd, iterfile))
             # create a new startup file the same as the previous one but target rms is factor*minimum_rms
+            target_rms = float(startup.misfit_value) * input_parameters['rms_factor']
+            if target_rms < input_parameters['rms_min']:
+                target_rms = input_parameters['rms_min']
             startupnew = Startup(data_fn=op.join(wd, startup.data_file),
                                  model_fn=op.join(wd, startup.model_file),
                                  max_iter=input_parameters['iteration_max'],
-                                 target_rms=float(startup.misfit_value) * input_parameters['rms_factor'])
+                                 target_rms=target_rms)
             startupnew.write_startup_file(startup_fn=op.join(wd, startupfile), save_path=wd)
             # run occam again
             subprocess.call([input_parameters['program_location'],

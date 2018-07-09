@@ -70,7 +70,7 @@ def _test_gen(edi_path):
         datob.write_data_file(save_path=self._output_dir)
 
         # create mesh grid model object
-        model = Model(station_object=datob.station_locations,
+        model = Model(stations_object=datob.station_locations,
                       Data=datob,
                       epsg=epsg_code,
                       cell_size_east=10000, cell_size_north=10000,  # GA_VIC
@@ -79,7 +79,7 @@ def _test_gen(edi_path):
                       pad_z=8,  # number of vertical padding cells
                       pad_stretch_v=1.5,  # factor to increase by in padding cells (vertical)
                       pad_stretch_h=1.5,  # factor to increase by in padding cells (horizontal)
-                      n_airlayers=0,  # number of air layers 0, 10, 20, depend on topo elev height
+                      n_air_layers=0,  # number of air layers 0, 10, 20, depend on topo elev height
                       res_model=100,  # halfspace resistivity value for initial reference model
                       n_layers=50,  # total number of z layers, including air and pad_z
                       z1_layer=50,  # first layer thickness metres, depend

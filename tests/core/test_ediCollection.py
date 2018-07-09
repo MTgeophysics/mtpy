@@ -4,7 +4,7 @@ import glob
 import os
 import unittest
 from unittest import TestCase
-
+import filecmp
 import matplotlib
 import sys
 
@@ -27,12 +27,12 @@ from mtpy.core.edi_collection import is_num_in_seq, EdiCollection
 from mtpy.core.mt import MT
 
 edi_paths = [
-    "data/edifiles",
-    "examples/data/edi2",
-    "examples/data/edi_files",
-    "../MT_Datasets/3D_MT_data_edited_fromDuanJM",
-    "../MT_Datasets/GA_UA_edited_10s-10000s",
-    "data/edifiles2"
+    #"../../data/edifiles",
+    #"../../examples/data/edi2",
+    "../../examples/data/edi_files",
+    #"../MT_Datasets/3D_MT_data_edited_fromDuanJM",
+    #"../MT_Datasets/GA_UA_edited_10s-10000s",
+    #"../../data/edifiles2"
 ]
 
 
@@ -94,6 +94,17 @@ class _BaseTest(object):
 
             periods.append(new_periods)
 
+    def test_get_tensor_tippers(self):
+        mto = self.edi_collection.mt_obj_list[0]
+        p = 1./mto.Z.freq[0]
+        pt_dict_list_with_interp = self.edi_collection.get_phase_tensor_tippers(p)
+        pt_dict_list_no_interp = self.edi_collection.get_phase_tensor_tippers(p, interpolate=False)
+
+        # Asserting parity of results from interpolation and that from without
+        assert np.allclose(pt_dict_list_with_interp[0]['phi_min'], mto.pt.phimin[0])
+        assert np.allclose(pt_dict_list_no_interp[0]['phi_min'], mto.pt.phimin[0])
+    # end func
+
     def test_plot_stations(self):
         self.edi_collection.plot_stations()
         plt_wait(1)
@@ -103,7 +114,7 @@ class _BaseTest(object):
         plt_wait(1)
 
     def test_display_on_image(self):
-        self.edi_collection.display_on_image()
+        #self.edi_collection.display_on_image()
         plt_wait(1)
 
     def test_create_mt_station_gdf(self):
@@ -122,8 +133,30 @@ class _BaseTest(object):
         path2 = make_temp_dir(self.__class__.__name__ + "_phase_tensor_csv_with_image", base_dir=self._temp_dir)
         self.edi_collection.create_phase_tensor_csv_with_image(path2)
 
+    def test_export_edi_files(self):
+        path3 = make_temp_dir(self.__class__.__name__ + "_export_edi_files_no_interp", base_dir=self._temp_dir)
+        path4 = make_temp_dir(self.__class__.__name__ + "_export_edi_files_interp", base_dir=self._temp_dir)
 
-class _TsetFromFile(_BaseTest):
+        # Note that this test relies on the fact that the input edi files all have the same periods.
+        # EDI files generated based on the periods as in the input edi files should be identical
+        # to those produced with interpolation turned on or off.
+
+        # no interp
+        self.edi_collection.export_edi_files(path3)
+
+        # interp
+        mto = self.edi_collection.mt_obj_list[0]
+        plist = 1./mto.Z.freq
+        self.edi_collection.export_edi_files(path4, period_list=plist)
+
+        for fn in glob.glob('%s/*.edi'%(path3)):
+            f1 = os.path.join(path3, fn)
+            f2 = os.path.join(path4, fn)
+
+            assert filecmp.cmp(f1, f2)
+        # end for
+
+class _TestFromFile(_BaseTest):
     def setUp(self):
         _BaseTest.setUp(self)
         self.edi_collection = EdiCollection(self.edi_files)
@@ -139,7 +172,7 @@ class _TestFromMTObj(_BaseTest):
 for edi_path in edi_paths:
     if os.path.isdir(edi_path):
         cls_name = "TestEdiCollectionFromFile_%s" % (os.path.basename(edi_path))
-        globals()[cls_name] = type(cls_name, (_TsetFromFile, unittest.TestCase), {
+        globals()[cls_name] = type(cls_name, (_TestFromFile, unittest.TestCase), {
             "edi_path": edi_path
         })
         cls_name = "TestEdiCollectionFromMTObj_%s" % (os.path.basename(edi_path))

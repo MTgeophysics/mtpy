@@ -249,12 +249,13 @@ class Mesh():
         # right hand station to reduce the effect of a large neighboring cell.
         self.x_grid = np.array([self.rel_station_locations[0] - self.cell_width *
                                 self.x_pad_multiplier])
-
+        
         for ii, offset in enumerate(self.rel_station_locations[:-1]):
             dx = self.rel_station_locations[ii + 1] - offset
             num_cells = int(np.floor(dx / self.cell_width))
             # if the spacing between stations is smaller than mesh set cell
             # size to mid point between stations
+
             if num_cells == 0:
                 cell_width = dx / 2.
                 num_cells = 1
@@ -262,6 +263,7 @@ class Mesh():
             # stations
             else:
                 cell_width = dx / num_cells
+
             if self.x_grid[-1] != offset:
                 self.x_grid = np.append(self.x_grid, offset)
             for dd in range(num_cells):
@@ -274,7 +276,7 @@ class Mesh():
                         pass
                 except IndexError:
                     pass
-
+                
         self.x_grid = np.append(self.x_grid, self.rel_station_locations[-1])
         # add a cell on the right hand side of the station area to reduce
         # effect of a large cell next to it
@@ -970,15 +972,39 @@ class Profile():
             self.edi_list = []
             if self.station_list is not None:
                 for station in self.station_list:
+                    tmp_edi_list = []
                     for edi in os.listdir(self.edi_path):
+                        # make a temporary list to find all station/edi matches
                         if edi.find(station) == 0 and edi[-3:] == 'edi':
-                            self.edi_list.append(mt.MT(os.path.join(self.edi_path,
-                                                                    edi)))
-                            break
+                            tmp_edi_list.append(edi)
+                            
+                    if len(tmp_edi_list) == 0:
+                        print "Didn't find edi file {} in directory {}".format(edi,self.edi_path)
+                    # if only one matching edi use that one
+                    elif len(tmp_edi_list) == 1:
+                        edi_to_use = tmp_edi_list[0]
+                    # if more than one matching edi then find exact match
+                    else:
+                        found_edi = False
+                        for edifile in tmp_edi_list:
+                            if edifile[:-4] == station:
+                                found_edi = True
+                                edi_to_use = edifile
+                                break
+                            
+                        # if no exact matches, raise an error
+                        if not found_edi:
+                            raise OccamInputError('Invalid station name in station list')
+                        
+                    # append the correct edi
+                    self.edi_list.append(mt.MT(os.path.join(self.edi_path,
+                                                            edi_to_use)))
+
             else:
                 self.edi_list = [mt.MT(os.path.join(self.edi_path, edi)) for
                                  edi in os.listdir(self.edi_path)
                                  if edi[-3:] == 'edi']
+                self.station_list = [mtObj.station for mtObj in self.edi_list]
         elif self.edi_list is not None and not self.edi_list:
             # use existing edi list
             if self.station_list is not None:

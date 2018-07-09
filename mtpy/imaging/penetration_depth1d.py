@@ -138,7 +138,7 @@ _logger = MtPyLog.get_mtpy_logger(__name__)
 # all ploting function are moved to class Depth1D in penetration
 
 
-def plot_edi_dir(edi_path, rholist=['zxy', 'zyx', 'det']):
+def plot_edi_dir(edi_path, rholist=['zxy', 'zyx', 'det'],fig_dpi=400,savefile=None):
     """ plot edi files from the input directory edi_path
     """
     import glob
@@ -150,12 +150,12 @@ def plot_edi_dir(edi_path, rholist=['zxy', 'zyx', 'det']):
         # for efile in edi_files[:2]:
         # logger.debug("plotting %s", efile)
         # eo = mtedi.Edi(filename=efile)
-        plot_edi_file(efile, rholist=rholist)
+        plot_edi_file(efile, rholist=rholist,fig_dpi=fig_dpi,savefile=savefile)
 
     return
 
 
-def plot_edi_file(edifile, rholist=['zxy', 'zyx', 'det'], savefile=None):
+def plot_edi_file(edifile, rholist=['zxy', 'zyx', 'det'], savefile=None, fig_dpi=400):
     """
     Plot the input edi_file
     Args:
@@ -170,7 +170,7 @@ def plot_edi_file(edifile, rholist=['zxy', 'zyx', 'det'], savefile=None):
     image = Depth1D(mt_obj, rholist)
     image.plot()
     if savefile:
-        image.export_image(savefile)
+        image.export_image(savefile,dpi=fig_dpi)
     image.show()
 
 

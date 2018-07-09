@@ -20,15 +20,22 @@ from mtpy.imaging import penetration_depth3d as pen3d
 # change the variable below according to your edi files folder !!!
 edidir = r'C:/mtpywin/mtpy/examples/data/edi2'  # / is Unix and Win-Dos compatible
 # or get this variable from the cmdline:  edidir = sys.argv[1]
+savepath = r'C:\tmp'
+
 
 if not os.path.isdir(edidir):
     print ("please provide the path to edi folder")
     sys.exit(1)
 
-# provide the index of period, eg 10
-pen3d.plot_latlon_depth_profile(edidir, 10, 'det', showfig=True, savefig=False)
+# provide the index of period - must be an integer (e.g. 10)
+pen3d.plot_latlon_depth_profile(edidir, 10, 'det', showfig=True, savefig=True,
+                                savepath=savepath,
+                                fig_dpi=400) # change to your preferred file resolution
 
 # OR provide a period value, which must be identified by user according to the EDI files.
-pen3d.plot_latlon_depth_profile(edidir, 0.009846, savefig=False)
+# must be a float e.g. 10.0 or 1.5
+pen3d.plot_latlon_depth_profile(edidir, 0.009846, savefig=True,
+                                savepath=savepath,
+                                fig_dpi=400) # change to your preferred file resolution
 
 

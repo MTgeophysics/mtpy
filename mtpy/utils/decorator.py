@@ -57,7 +57,7 @@ class gdal_data_check(object):
     _gdal_data_found = False
     _logger = MtPyLog.get_mtpy_logger(__name__)
 
-    def __init__(self, func):
+    def __init__(self, func, raise_error=False):
         """
         this decorator should only be used for the function that requres gdal and gdal-data
         to function correctly.
@@ -75,9 +75,14 @@ class gdal_data_check(object):
             self._gdal_data_found = self._check_gdal_data()
             self._has_checked = True
         if not self._gdal_data_found:
-            raise ImportError("GDAL_DATA environment variable not set. Please see "
-                              "https://trac.osgeo.org/gdal/wiki/FAQInstallationAndBuilding#HowtosetGDAL_DATAvariable for "
-                              "more information.")
+            if(raise_error):
+                raise ImportError("GDAL_DATA environment variable not set. Please see "
+                                  "https://trac.osgeo.org/gdal/wiki/FAQInstallationAndBuilding#HowtosetGDAL_DATAvariable for "
+                                  "more information.")
+            else:
+                print "GDAL_DATA environment variable not set. Please see " \
+                      "https://trac.osgeo.org/gdal/wiki/FAQInstallationAndBuilding#HowtosetGDAL_DATAvariable for " \
+                      "more information."
 
     def __call__(self, *args, **kwargs):  # pragma: no cover
         return self._func(*args, **kwargs)
@@ -110,6 +115,15 @@ class gdal_data_check(object):
         else:
             if os.path.exists(os.environ['GDAL_DATA']):
                 self._logger.info("GDAL_DATA is set to: {}".format(os.environ['GDAL_DATA']))
+
+                try:
+                    from osgeo import osr
+                    from osgeo.ogr import OGRERR_NONE
+                except:
+                    self._logger.info("Failed to load module osr; looks like GDAL_DATA path is incorrect")
+                    return False
+                # end try
+
                 return True
             else:
                 self._logger.error("GDAL_DATA is set to: {}, but the path does not exist.".format(os.environ['GDAL_DATA']))

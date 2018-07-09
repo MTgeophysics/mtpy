@@ -372,7 +372,9 @@ class MT(object):
             raise MT_Error('File type not supported yet')
 
     def write_mt_file(self, save_dir=None, fn_basename=None, file_type='edi',
-                      new_Z_obj=None, new_Tipper_obj=None, longitude_format='LON'):
+                      new_Z_obj=None, new_Tipper_obj=None, longitude_format='LON',
+                      latlon_format='dms'
+                      ):
         """
         Write an mt file, the supported file types are EDI and XML.
 
@@ -393,7 +395,14 @@ class MT(object):
         :param new_Tipper_obj: new Tipper object
         :type new_Tipper_obj: mtpy.core.z.Tipper
 
-
+        :param longitude_format:  whether to write longitude as LON or LONG. 
+                                  options are 'LON' or 'LONG', default 'LON'
+        :type longitude_format:  string
+        :param latlon_format:  format of latitude and longitude in output edi,
+                               degrees minutes seconds ('dms') or decimal 
+                               degrees ('dd')
+        :type latlon_format:  string
+        
         :returns: full path to file
         :rtype: string
 
@@ -425,7 +434,8 @@ class MT(object):
             fn = self._write_edi_file(fn,
                                       new_Z=new_Z_obj,
                                       new_Tipper=new_Tipper_obj,
-                                      longitude_format=longitude_format)
+                                      longitude_format=longitude_format,
+                                      latlon_format=latlon_format)
         elif file_type == 'xml':
             fn = self._write_xml_file(fn,
                                       new_Z=new_Z_obj,
@@ -605,7 +615,8 @@ class MT(object):
                 self.Notes.info_dict.pop(a_key)
 
     # --> write edi file
-    def _write_edi_file(self, new_edi_fn, new_Z=None, new_Tipper=None, longitude_format='LON'):
+    def _write_edi_file(self, new_edi_fn, new_Z=None, new_Tipper=None, 
+                        longitude_format='LON', latlon_format='dms'):
         """
         write a new edi file if things have changed.  Note if new_Z or
         new_Tipper are not None, they are not changed in MT object, you
@@ -655,7 +666,9 @@ class MT(object):
         # edi_obj.zrot = self.rotation_angle
 
         # --> write edi file
-        edi_fn = edi_obj.write_edi_file(new_edi_fn=new_edi_fn, longitude_format=longitude_format)
+        edi_fn = edi_obj.write_edi_file(new_edi_fn=new_edi_fn, 
+                                        longitude_format=longitude_format,
+                                        latlon_format=latlon_format)
 
         return edi_fn
 

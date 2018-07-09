@@ -16,10 +16,13 @@ Revision History:
 
 import os, sys
 from mtpy.imaging import penetration_depth2d as pen2d
+import matplotlib.pyplot as plt
 
 # change the variable below according to your edi files folder !!!
 edidir = r'C:/mtpywin/mtpy/data/edifiles'  # / is Unix and Win-Dos compatible
 # or get this variable from the cmdline:  edidir = sys.argv[1]
+
+savepath = r'C:\tmp'
 
 if not os.path.isdir(edidir):
     print ("please provide the path to edi folder")
@@ -35,5 +38,6 @@ pen2d.plot2Dprofile(edidir, period_index_list, 'zxy')
 pen2d.plot2Dprofile(edidir, period_index_list, 'zyx')
 
 
-
+plt.savefig(os.path.join(savepath,'penetration_depth_profile.png'), # change to your preffered filename
+            dpi=400) # change to your preferred file resolution
 
