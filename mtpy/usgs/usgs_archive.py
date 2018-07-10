@@ -838,6 +838,8 @@ class USGSasc(Metadata):
         write_time = et-st
         print('Writing took: {0} seconds'.format(write_time.total_seconds()))
         
+        return save_fn
+        
     def write_station_info_metadata(self, save_dir=None):
         """
         write out station info that can later be put into a data base
@@ -982,6 +984,8 @@ class USGSasc(Metadata):
         meta_dict[key]['notes'] = self.meta_notes
             
         mtcfg.write_dict_to_configfile(meta_dict, save_fn)
+        
+        return save_fn
         
 # =============================================================================
 # Functions to help analyze config files
@@ -1733,3 +1737,5 @@ class XMLMetadata(object):
                                                            encoding='UTF-8')
         with open(self.xml_fn, 'w') as fid:
             fid.write(xml_str)
+            
+        return self.xml_fn
