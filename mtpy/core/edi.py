@@ -282,10 +282,10 @@ class Edi(object):
         z_arr[:, 1, 1] = np.array(data_dict['zyyr']) + \
                          np.array(data_dict['zyyi']) * 1j
 
-        z_err_arr[:, 0, 0] = np.array(data_dict['zxx.var'])**0.5
-        z_err_arr[:, 0, 1] = np.array(data_dict['zxy.var'])**0.5
-        z_err_arr[:, 1, 0] = np.array(data_dict['zyx.var'])**0.5
-        z_err_arr[:, 1, 1] = np.array(data_dict['zyy.var'])**0.5
+        z_err_arr[:, 0, 0] = np.array(data_dict['zxx.var'])
+        z_err_arr[:, 0, 1] = np.array(data_dict['zxy.var'])
+        z_err_arr[:, 1, 0] = np.array(data_dict['zyx.var'])
+        z_err_arr[:, 1, 1] = np.array(data_dict['zyy.var'])
 
         # check for order of frequency, we want high togit  low
         if freq_arr[0] < freq_arr[1]:
