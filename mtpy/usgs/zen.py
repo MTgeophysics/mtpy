@@ -320,8 +320,11 @@ class Z3D_Schedule(object):
                 setattr(self, m_key, m_value)
                 
         # the first good GPS stamp is on the 3rd, so need to add 2 seconds
-        self.Time = '{0}{1:02}'.format(self.Time[0:6],
-                                    int(self.Time[6:])+2)
+        try:
+            self.Time = '{0}{1:02}'.format(self.Time[0:6],
+                                        int(self.Time[6:])+2)
+        except TypeError:
+            return
 
         self.datetime = datetime.datetime.strptime('{0},{1}'.format(self.Date,
                                                                     self.Time),
@@ -805,7 +808,7 @@ class Zen3D(object):
             self.schedule.Time = '{0}{1:02}'.format(self.schedule.Time[0:6],
                                                     int(self.schedule.Time[6:])+2)
 
-            self.shcedule.datetime = datetime.datetime.strptime('{0},{1}'.format(self.schedule.Date,
+            self.schedule.datetime = datetime.datetime.strptime('{0},{1}'.format(self.schedule.Date,
                                                                 self.schedule.Time),
                                                                 datetime_fmt)
 
@@ -928,6 +931,10 @@ class Zen3D(object):
             self.fn = fn
             
         self.schedule.read_schedule(fn=self.fn, fid=fid)
+        if self.header.old_version:
+            dt_str = self.header.schedule.replace('T', ',')
+            self.schedule.Date = dt_str.split(',')[0]
+            self.schedule.Time = dt_str.split(',')[1]
 
     #======================================     
     def _read_metadata(self, fn=None, fid=None):

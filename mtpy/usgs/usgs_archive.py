@@ -657,9 +657,9 @@ class USGSasc(Metadata):
             index = chn_order[chn.lower()]
             if len(zm.Chn_ID[index]) == 4 and 'h' in chn.lower():
                 self.channel_dict[chn]['ChnNum'] = zm.Chn_ID[index]
-            if int(self.channel_dict[chn]['Azimuth']) != int(zm.Chn_Azimuth[index]):
+            if int(np.nan_to_num(self.channel_dict[chn]['Azimuth'])) != int(zm.Chn_Azimuth[index]):
                 self.channel_dict[chn]['Azimuth'] = float(zm.Chn_Azimuth[index])
-            if float(self.channel_dict[chn]['Dipole_Length']) != float(zm.Chn_Length[index]):
+            if float(np.nan_to_num(self.channel_dict[chn]['Dipole_Length'])) != float(zm.Chn_Length[index]):
                 if 'e' in chn.lower(): 
                     self.channel_dict[chn]['Dipole_Length'] = float(zm.Chn_Length[index])
         
@@ -735,6 +735,29 @@ class USGSasc(Metadata):
             self.ts.ey /= (self.channel_dict['Ey']['Dipole_Length']/1000.)
         except AttributeError:
             print('No EY')
+            
+    def _make_file_name(self, save_path=None, compression=True):
+        """
+        get the file name to save to
+        """
+        # make the file name to save to
+        if save_path is not None:
+            save_fn = os.path.join(save_path, 
+                                   '{0}_{1}T{2}_{3:.0f}.asc'.format(self.SiteID,
+                                    self._start_time.strftime('%Y-%m-%d'),
+                                    self._start_time.strftime('%H%M%S'),
+                                    self.AcqSmpFreq))
+        else:
+            save_fn = os.path.join(self.station_dir, 
+                                   '{0}_{1}T{2}_{3:.0f}.asc'.format(self.SiteID,
+                                    self._start_time.strftime('%Y-%m-%d'),
+                                    self._start_time.strftime('%H%M%S'),
+                                    self.AcqSmpFreq))
+            
+        if compression:
+            save_fn = save_fn[:-4]+'.gz'
+            
+        return save_fn
         
     def write_asc_file(self, save_fn=None, chunk_size=1024, str_fmt='%15.7e', 
                        full=True, compress=False, save_dir=None):
@@ -757,33 +780,23 @@ class USGSasc(Metadata):
         :param compress: compress file using gzip
         :type compress: boolean [ True | False ]
         """
-        # make the file name to save to
-        if save_fn is None:
-            save_fn = os.path.join(self.station_dir, 
-                                   '{0}_{1}T{2}_{3:.0f}.asc'.format(self.SiteID,
-                                    self._start_time.strftime('%Y-%m-%d'),
-                                    self._start_time.strftime('%H%M%S'),
-                                    self.AcqSmpFreq))
-        if save_dir is not None:
-            save_fn = os.path.join(save_dir, 
-                                   '{0}_{1}T{2}_{3:.0f}.asc'.format(self.SiteID,
-                                    self._start_time.strftime('%Y-%m-%d'),
-                                    self._start_time.strftime('%H%M%S'),
-                                    self.AcqSmpFreq))
-            
+        # get the filename to save to
+        save_fn = self._make_file_name(save_path=save_dir, 
+                                       compression=compress)
         # get the number of characters in the desired string
         s_num = int(str_fmt[1:str_fmt.find('.')])
         
         # convert electric fields into mV/km
         self.convert_electrics()
         
+        print '==> {0}'.format(save_fn)
         print('START --> {0}'.format(time.ctime()))
         st = datetime.datetime.now()
         
         # write meta data first
         meta_lines = self.write_metadata()
         if compress is True:
-            with gzip.open(save_fn+'.gz', 'wb') as fid:
+            with gzip.open(save_fn, 'wb') as fid:
                 h_line = [''.join(['{0:>{1}}'.format(c.capitalize(), s_num) 
                           for c in self.ts.columns])]
                 fid.write('\n'.join(meta_lines+h_line) + '\n')
@@ -833,12 +846,14 @@ class USGSasc(Metadata):
                     out = np.char.mod(str_fmt, out)
                     lines = '\n'.join([''.join(out[ii, :]) for ii in range(out.shape[0])])
                     fid.write(lines+'\n')
-        print('END --> {0}'.format(time.ctime()))
+        print('END -->   {0}'.format(time.ctime()))
         et = datetime.datetime.now()
         write_time = et-st
         print('Writing took: {0} seconds'.format(write_time.total_seconds()))
-        
-        return save_fn
+
+        # for some reason its returning None, so had to make a new function
+        # to get the file name.
+        #return self._make_file_name(save_path=save_dir, compression=compress)
         
     def write_station_info_metadata(self, save_dir=None):
         """
