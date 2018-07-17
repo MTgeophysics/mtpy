@@ -881,10 +881,16 @@ class Data(object):
                     if err == 0:
                         err = err_value * d.flatten()[nz].mean()
                 
+                elif 'off_diagonals' in self.error_type_z:
+                    # apply same error to xy and xx, and to yx and yy
+                    # value is a % of xy and yx respectively
+                    err = np.array([[d_xy, d_xy],[d_yx, d_yx]])*err_value
+                
                 elif 'separate' in self.error_type_z:
                     # apply separate error floors to each component
                     d = d.reshape((2, 2))
                     err = err_value * d
+                    
 
                 else:
                     raise DataError('error type (z) {0} not understood'.format(self.error_type_z))

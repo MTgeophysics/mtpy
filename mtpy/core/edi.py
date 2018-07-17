@@ -287,7 +287,7 @@ class Edi(object):
         z_err_arr[:, 1, 0] = np.array(data_dict['zyx.var'])
         z_err_arr[:, 1, 1] = np.array(data_dict['zyy.var'])
 
-        # check for order of frequency, we want high to low
+        # check for order of frequency, we want high togit  low
         if freq_arr[0] < freq_arr[1]:
             self._logger.info(
                 'Ordered arrays to be arranged from high to low frequency')
