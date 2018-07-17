@@ -648,7 +648,7 @@ class USGSasc(Metadata):
             zm.read_cfg(mtft24_cfg_fn)
         except TypeError:
             print('*** No MTFT24 file for {0} ***'.format(self.SiteID))
-            return
+            return False
         
         # need to update channel dict
         # figure out channel order first
@@ -662,6 +662,7 @@ class USGSasc(Metadata):
             if float(np.nan_to_num(self.channel_dict[chn]['Dipole_Length'])) != float(zm.Chn_Length[index]):
                 if 'e' in chn.lower(): 
                     self.channel_dict[chn]['Dipole_Length'] = float(zm.Chn_Length[index])
+        return True
         
         
     def fill_metadata(self, meta_arr):
@@ -855,7 +856,7 @@ class USGSasc(Metadata):
         # to get the file name.
         #return self._make_file_name(save_path=save_dir, compression=compress)
         
-    def write_station_info_metadata(self, save_dir=None):
+    def write_station_info_metadata(self, save_dir=None, mtft_bool=False):
         """
         write out station info that can later be put into a data base
         
@@ -899,6 +900,7 @@ class USGSasc(Metadata):
         meta_dict[key]['lat'] = self._latitude
         meta_dict[key]['lon'] = self._longitude
         meta_dict[key]['elev'] = self.SiteElevation
+        meta_dict[key]['mtft_file'] = mtft_bool
         try:
             meta_dict[key]['hx_azm'] = self.channel_dict['Hx']['Azimuth']
             meta_dict[key]['hx_id'] = self.channel_dict['Hx']['ChnNum']
@@ -1059,8 +1061,8 @@ class USGScfg(object):
         summarize the runs for clarity
         """
         station_dict = pd.compat.OrderedDict()
-        station_dict['site_name'] = run_db.site[0]
-        station_dict['siteID'] = run_db.site[0]
+        station_dict['site_name'] = run_db.site.iloc[0]
+        station_dict['siteID'] = run_db.site.iloc[0]
         station_dict['lat'] = run_db.lat.astype(np.float).mean()
         station_dict['lon'] = run_db.lon.astype(np.float).mean()
         station_dict['nm_elev'] = get_nm_elev(station_dict['lat'],
@@ -1085,7 +1087,9 @@ class USGScfg(object):
         
         station_dict['zen_num'] = run_db.zen_num.astype(np.int).median()
         
-        station_dict['collected_by'] = run_db.collected_by[0]
+        station_dict['collected_by'] = run_db.collected_by.iloc[0]
+        station_dict['notes'] = ''.join([run_db.notes.iloc[ii] for ii in range(len(run_db))])
+        station_dict['mtft_file'] = run_db.mtft_file.iloc[0]
         
         station_dict['start_date'] = run_db.start_date.min()
         station_dict['stop_date'] = run_db.stop_date.max()
@@ -1197,7 +1201,7 @@ class USGScfg(object):
 #                l_db = self.make_location_db(cfg_db, station)
                 s_count += 1
             else:
-                survey_db = survey_db.append(s_db, ignore_index=False)
+                survey_db = survey_db.append(s_db, ignore_index=True)
 #                s_db = s_db.append(self.make_station_db(cfg_db, station))
 #                l_db = l_db.append(self.make_location_db(cfg_db, station))
                 s_count += 1 
@@ -1207,11 +1211,11 @@ class USGScfg(object):
 #        
 #        return csv_fn, s_fn, l_fn
         if write:
-            csv_fn = os.path.join(survey_dir, 'survey.csv')
+            csv_fn = os.path.join(survey_dir, 'survey_summary.csv')
             survey_db.to_csv(csv_fn, index=False)
-            return cfg_db, csv_fn
+            return survey_db, csv_fn
         else:
-            return cfg_db, None
+            return survey_db, None
 
     def check_data(self, database, name):
         """
