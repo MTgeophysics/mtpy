@@ -1054,6 +1054,44 @@ class USGScfg(object):
         else:
             return cfg_db, None
         
+    def summarize_runs(self, run_db):
+        """
+        summarize the runs for clarity
+        """
+        station_dict = pd.compat.OrderedDict()
+        station_dict['site_name'] = run_db.site[0]
+        station_dict['siteID'] = run_db.site[0]
+        station_dict['lat'] = run_db.lat.astype(np.float).mean()
+        station_dict['lon'] = run_db.lon.astype(np.float).mean()
+        station_dict['nm_elev'] = get_nm_elev(station_dict['lat'],
+                                              station_dict['lon'])
+        station_dict['hx_azm'] = run_db.hx_azm.astype(np.float).median()
+        station_dict['hy_azm'] = run_db.hy_azm.astype(np.float).median()
+        station_dict['hz_azm'] = run_db.hz_azm.astype(np.float).median()
+        
+        station_dict['hx_id'] = run_db.hx_id.astype(np.float).median()
+        station_dict['hy_id'] = run_db.hy_id.astype(np.float).median()
+        station_dict['hz_id'] = run_db.hz_id.astype(np.float).median()
+        
+        station_dict['ex_len'] = run_db.ex_len.astype(np.float).median()
+        station_dict['ey_len'] = run_db.ey_len.astype(np.float).median()
+        
+        station_dict['ex_azm'] = run_db.ex_azm.astype(np.float).median()
+        station_dict['ey_azm'] = run_db.ey_azm.astype(np.float).median()
+        
+        station_dict['n_chan'] = run_db.n_chan.max()
+        
+        station_dict['sampling_rate'] = run_db.sampling_rate.astype(np.float).median()
+        
+        station_dict['zen_num'] = run_db.zen_num.astype(np.int).median()
+        
+        station_dict['collected_by'] = run_db.collected_by[0]
+        
+        station_dict['start_date'] = run_db.start_date.min()
+        station_dict['stop_date'] = run_db.stop_date.max()
+        
+        return pd.DataFrame([station_dict])
+        
     def make_station_db(self, cfg_db, station):
         """
         Following Danny's instructions make a file with the following 
@@ -1120,7 +1158,7 @@ class USGScfg(object):
         l_db = pd.DataFrame([loc_dict])
         return l_db
     
-    def combine_all_station_info(self, survey_dir, skip_stations=None):
+    def combine_all_station_info(self, survey_dir, skip_stations=None, write=True):
         """
         A convinience function to:
             * combine all cfg files for each run into a single spreadsheet
@@ -1137,8 +1175,8 @@ class USGScfg(object):
         if type(skip_stations) is not list:
             skip_stations = [skip_stations]
             
-        s_fn = os.path.join(survey_dir, 'usgs_station_info.csv') 
-        l_fn = os.path.join(survey_dir, 'usgs_location_info.csv')
+        #s_fn = os.path.join(survey_dir, 'usgs_station_info.csv') 
+        #l_fn = os.path.join(survey_dir, 'usgs_location_info.csv')
         
         s_count = 0
         for station in os.listdir(survey_dir):
@@ -1151,20 +1189,29 @@ class USGScfg(object):
             # get the database and write a csv file            
             cfg_db, csv_fn = self.combine_run_cfg(cfg_dir)
             
+            s_db = self.summarize_runs(cfg_db)
             # get station and location information
             if s_count == 0:
-                s_db = self.make_station_db(cfg_db, station)
-                l_db = self.make_location_db(cfg_db, station)
+                survey_db = s_db
+#                s_db = self.make_station_db(cfg_db, station)
+#                l_db = self.make_location_db(cfg_db, station)
                 s_count += 1
             else:
-                s_db = s_db.append(self.make_station_db(cfg_db, station))
-                l_db = l_db.append(self.make_location_db(cfg_db, station))
+                survey_db = survey_db.append(s_db, ignore_index=False)
+#                s_db = s_db.append(self.make_station_db(cfg_db, station))
+#                l_db = l_db.append(self.make_location_db(cfg_db, station))
                 s_count += 1 
         
-        s_db.to_csv(s_fn, index=False)
-        l_db.to_csv(l_fn, index=False)
-        
-        return csv_fn, s_fn, l_fn
+#        s_db.to_csv(s_fn, index=False)
+#        l_db.to_csv(l_fn, index=False)
+#        
+#        return csv_fn, s_fn, l_fn
+        if write:
+            csv_fn = os.path.join(survey_dir, 'survey.csv')
+            survey_db.to_csv(csv_fn, index=False)
+            return cfg_db, csv_fn
+        else:
+            return cfg_db, None
 
     def check_data(self, database, name):
         """
