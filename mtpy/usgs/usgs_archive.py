@@ -29,6 +29,12 @@ import mtpy.usgs.zen as zen
 import mtpy.usgs.zonge as zonge
 import mtpy.utils.gis_tools as gis_tools
 import mtpy.utils.configfile as mtcfg
+
+# for writing shape file
+import geopandas as gpd
+from shapely.geometry import Point
+
+
 # =============================================================================
 # 
 # =============================================================================
@@ -1044,7 +1050,8 @@ class USGScfg(object):
                 cfg_db = self.check_db(pd.DataFrame([cfg_dict[cfg_dict.keys()[0]]]))
                 count += 1
             else:
-                cfg_db = cfg_db.append(self.check_db(pd.DataFrame([cfg_dict[cfg_dict.keys()[0]]])))
+                cfg_db = cfg_db.append(self.check_db(pd.DataFrame([cfg_dict[cfg_dict.keys()[0]]])),
+                                       ignore_index=True)
                 count += 1
                 
         cfg_db = cfg_db.replace('None', '0')
@@ -1093,6 +1100,9 @@ class USGScfg(object):
         
         station_dict['start_date'] = run_db.start_date.min()
         station_dict['stop_date'] = run_db.stop_date.max()
+        
+        station_dict['type'] = 'wb'
+        station_dict['quality'] = 5
         
         return pd.DataFrame([station_dict])
         
@@ -1192,7 +1202,7 @@ class USGScfg(object):
 
             # get the database and write a csv file            
             cfg_db, csv_fn = self.combine_run_cfg(cfg_dir)
-            
+
             s_db = self.summarize_runs(cfg_db)
             # get station and location information
             if s_count == 0:
@@ -1276,6 +1286,56 @@ class USGScfg(object):
         database = self.check_std(database)
         
         return database
+    
+    def write_shp_file(self, survey_csv_fn, save_path=None):
+        """
+        write a shape file
+        """
+        if save_path is not None:
+            save_fn = save_path
+        else:
+            save_fn = os.path.join(os.path.dirname(survey_csv_fn),
+                                   'survey_sites.shp')
+    
+        survey_db = pd.read_csv(survey_csv_fn)
+        geometry = [Point(x, y) for x, y in zip(survey_db.lon, survey_db.lat)]
+        crs = {'init':'epsg:4326'}
+        survey_db = survey_db.drop(['lat', 'lon'], axis=1)
+        survey_db = survey_db.rename(columns={'collected_by':'operator', 
+                                              'nm_elev':'elev',
+                                              'zen_num':'instr_id'})
+        
+        # list of columns to take from the database
+        col_list = ['siteID', 
+                    'elev', 
+                    'hx_azm',
+                    'hy_azm',
+                    'hz_azm', 
+                    'hx_id', 
+                    'hy_id', 
+                    'hz_id', 
+                    'ex_len',
+                    'ey_len',
+                    'ex_azm',
+                    'ey_azm', 
+                    'n_chan', 
+                    'instr_id',
+                    'operator',
+                    'type',
+                    'quality',
+                    'start_date',
+                    'stop_date']
+        
+        survey_db = survey_db[col_list]
+        
+        geo_db = gpd.GeoDataFrame(survey_db, 
+                                  crs=crs,
+                                  geometry=geometry)
+        
+        geo_db.to_file(save_fn)
+        
+        print('*** Wrote survey shapefile to {0}'.format(save_fn))
+        return save_fn
 
 # =============================================================================
 # XML data
