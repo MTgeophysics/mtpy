@@ -1624,7 +1624,7 @@ class XMLMetadata(object):
         dates = ET.SubElement(time_info, 'rngdates')
         ET.SubElement(dates, 'begdate').text = self.survey.begin_date
         ET.SubElement(dates, 'enddate').text = self.survey.end_date
-        ET.SubElement(time_info, 'current').text = 'Ground condition'
+        ET.SubElement(time_info, 'current').text = 'ground condition'
         
         # status
         status = ET.SubElement(idinfo, 'status')
@@ -1726,7 +1726,7 @@ class XMLMetadata(object):
         """
         spref = ET.SubElement(self.metadata, 'spref')
         
-        horizontal_sys = ET.SubElement(spref, 'horizontal_sys')
+        horizontal_sys = ET.SubElement(spref, 'horizsys')
         h_geographic = ET.SubElement(horizontal_sys, 'geograph')
         ET.SubElement(h_geographic, 'latres').text = '0.0197305745'
         ET.SubElement(h_geographic, 'longres').text = '0.0273088247'
@@ -1772,8 +1772,8 @@ class XMLMetadata(object):
             ET.SubElement(lat_attr, 'attrdefs').text = self.usgs_str
             lat_dom = ET.SubElement(lat_attr, 'attrdomv')
             lat_rdom = ET.SubElement(lat_dom, 'rdom')
-            ET.SubElement(lat_rdom, 'dommin').text = '{0:.1f}'.format(self.survey.south)
-            ET.SubElement(lat_rdom, 'dommax').text = '{0:.1f}'.format(self.survey.north)
+            ET.SubElement(lat_rdom, 'rdommin').text = '{0:.1f}'.format(self.survey.south)
+            ET.SubElement(lat_rdom, 'rdommax').text = '{0:.1f}'.format(self.survey.north)
             ET.SubElement(lat_rdom, 'attrunit').text = 'Decimal degrees'
             
             lon_attr = ET.SubElement(detailed, 'attr')
@@ -1782,8 +1782,8 @@ class XMLMetadata(object):
             ET.SubElement(lon_attr, 'attrdefs').text = self.usgs_str
             lon_dom = ET.SubElement(lon_attr, 'attrdomv')
             lon_rdom = ET.SubElement(lon_dom, 'rdom')
-            ET.SubElement(lon_rdom, 'dommin').text = '{0:.1f}'.format(self.survey.west)
-            ET.SubElement(lon_rdom, 'dommax').text = '{0:.1f}'.format(self.survey.east)
+            ET.SubElement(lon_rdom, 'rdommin').text = '{0:.1f}'.format(self.survey.west)
+            ET.SubElement(lon_rdom, 'rdommax').text = '{0:.1f}'.format(self.survey.east)
             ET.SubElement(lon_rdom, 'attrunit').text = 'Decimal degrees'
             
             elev_attr = ET.SubElement(detailed, 'attr')
@@ -1792,8 +1792,8 @@ class XMLMetadata(object):
             ET.SubElement(elev_attr, 'attrdefs').text = self.usgs_str
             elev_dom = ET.SubElement(elev_attr, 'attrdomv')
             elev_rdom = ET.SubElement(elev_dom, 'rdom')
-            ET.SubElement(elev_rdom, 'dommin').text = '{0:.0f}'.format(self.survey.elev_min)
-            ET.SubElement(elev_rdom, 'dommax').text = '{0:.0f}'.format(self.survey.elev_max)
+            ET.SubElement(elev_rdom, 'rdommin').text = '{0:.0f}'.format(self.survey.elev_min)
+            ET.SubElement(elev_rdom, 'rdommax').text = '{0:.0f}'.format(self.survey.elev_max)
             ET.SubElement(elev_rdom, 'attrunit').text = 'Meters'
             
     def _set_distribution_info(self):
