@@ -1539,7 +1539,33 @@ class XMLMetadata(object):
         
         for key in kwargs.keys():
             setattr(self, key, kwargs[key])
-                 
+            
+    def _get_date(self, date_time_str):
+        """
+        get the date from date_time_string
+        """
+        
+        try:
+            date, time = date_time_str.split('T', 1)
+        except ValueError:
+            date = date_time_str
+        date = date.replace('-', '').replace("'", '')
+        return date
+    
+    def _get_time(self, date_time_str):
+        """
+        get time string 
+        """
+        try:
+            date, time = date_time_str.split('T', 1)
+        except ValueError:
+            time = '00:00:00 UTC'
+        time, zone = time.split()
+        time = time.replace(':', '')
+        time += '00Z'
+
+        return time         
+        
     def read_config_file(self, config_fn):
         """
         Read in configuration file
@@ -1567,15 +1593,6 @@ class XMLMetadata(object):
             else:
                 setattr(self, key, value)
                 
-    def _assert_date_fmt(self, date):
-        """
-        Make sure that the date is in YYYYMMDD
-        """
-        date = date.replace('-', '')
-        date = date.split(':', 1)[0]
-        
-        return date
-                
     def _set_id_info(self):
         """
         set the ID information
@@ -1600,7 +1617,7 @@ class XMLMetadata(object):
             jciteinfo = ET.SubElement(journal, 'citeinfo')
             for author in self.journal_citation.author:
                 ET.SubElement(jciteinfo, 'origin').text = author
-            ET.SubElement(jciteinfo, 'pubdate').text = self.journal_citation.date
+            ET.SubElement(jciteinfo, 'pubdate').text = self._get_date(self.journal_citation.date)
             ET.SubElement(jciteinfo, 'title').text = self.journal_citation.title
             ET.SubElement(jciteinfo, 'geoform').text = 'Publication'
             serinfo = ET.SubElement(jciteinfo, 'serinfo')
@@ -1622,9 +1639,13 @@ class XMLMetadata(object):
         time_period = ET.SubElement(idinfo, 'timeperd')
         time_info = ET.SubElement(time_period, 'timeinfo')
         dates = ET.SubElement(time_info, 'rngdates')
-        ET.SubElement(dates, 'begdate').text = self.survey.begin_date
-        ET.SubElement(dates, 'enddate').text = self.survey.end_date
-        ET.SubElement(time_info, 'current').text = 'ground condition'
+        # start and stop date and time
+        ET.SubElement(dates, 'begdate').text = self._get_date(self.survey.begin_date)
+        ET.SubElement(dates, 'begtime').text = self._get_time(self.survey.begin_date)
+        ET.SubElement(dates, 'enddate').text = self._get_date(self.survey.end_date)
+        ET.SubElement(dates, 'endtime').text = self._get_time(self.survey.end_date)
+        ET.SubElement(time_period, 'current').text = 'ground condition'
+
         
         # status
         status = ET.SubElement(idinfo, 'status')
@@ -1651,7 +1672,7 @@ class XMLMetadata(object):
         
         # categories
         t2 = ET.SubElement(keywords, 'theme')
-        ET.SubElement(t2, 'themkt').text = 'ISO 19115 Topic Categories'
+        ET.SubElement(t2, 'themekt').text = 'ISO 19115 Topic Categories'
         ET.SubElement(t2, 'themekey').text = 'GeoscientificInformation'
         
         # USGS thesaurus
@@ -1717,8 +1738,8 @@ class XMLMetadata(object):
             processing_step_01 = ET.SubElement(lineage, 'procstep')
             ET.SubElement(processing_step_01, 'procdesc').text = getattr(self.processing,
                                                                          'step_{0:02}'.format(step))
-            ET.SubElement(processing_step_01, 'procdate').text = getattr(self.processing,
-                                                                         'date_{0:02}'.format(step)) 
+            ET.SubElement(processing_step_01, 'procdate').text = self._get_date(getattr(self.processing,
+                                                                             'date_{0:02}'.format(step)))
         
     def _set_spational_info(self):
         """
@@ -1744,20 +1765,12 @@ class XMLMetadata(object):
         """
         eainfo = ET.SubElement(self.metadata, 'eainfo')
         
-        overview = ET.SubElement(eainfo, 'overview')
-        ET.SubElement(overview, 'eaover').text = self.guide.fn
-        ET.SubElement(overview, 'eadetcit').text = self.guide.description
-        
-        overview_02 = ET.SubElement(eainfo, 'overview')
-        ET.SubElement(overview_02, 'eaover').text = self.dictionary.fn
-        ET.SubElement(overview_02, 'eadetcit').text = self.dictionary.description
-        
         if station is False:
             detailed = ET.SubElement(eainfo, 'detailed')
             entry_type = ET.SubElement(detailed, 'enttyp')
             ET.SubElement(entry_type, 'enttypl').text = self.shapefile.fn
             ET.SubElement(entry_type, 'enttypd').text = self.shapefile.description
-            ET.SubElement(entry_type, 'enttrypds').text = self.usgs_str
+            ET.SubElement(entry_type, 'enttypds').text = self.usgs_str
             
             entry_attr = ET.SubElement(detailed, 'attr')
             ET.SubElement(entry_attr, 'attrlabl').text = 'Station'
@@ -1795,6 +1808,16 @@ class XMLMetadata(object):
             ET.SubElement(elev_rdom, 'rdommin').text = '{0:.0f}'.format(self.survey.elev_min)
             ET.SubElement(elev_rdom, 'rdommax').text = '{0:.0f}'.format(self.survey.elev_max)
             ET.SubElement(elev_rdom, 'attrunit').text = 'Meters'
+        
+        overview = ET.SubElement(eainfo, 'overview')
+        ET.SubElement(overview, 'eaover').text = self.guide.fn
+        ET.SubElement(overview, 'eadetcit').text = self.guide.description
+        
+        overview_02 = ET.SubElement(eainfo, 'overview')
+        ET.SubElement(overview_02, 'eaover').text = self.dictionary.fn
+        ET.SubElement(overview_02, 'eadetcit').text = self.dictionary.description
+        
+        
             
     def _set_distribution_info(self):
         """
@@ -1815,7 +1838,7 @@ class XMLMetadata(object):
                                                               key)
         ET.SubElement(center_info, 'cntvoice').text = self.science_base.phone
         ET.SubElement(center_info, 'cntemail').text = self.science_base.email
-        ET.SubElement(distinfo, 'disliab').text = self.science_base.liability
+        ET.SubElement(distinfo, 'distliab').text = self.science_base.liability
         
     def _set_meta_info(self):
         """
@@ -1829,7 +1852,7 @@ class XMLMetadata(object):
         ### contact information
         meta_contact = ET.SubElement(meta_center, 'cntinfo')
         meta_perp = ET.SubElement(meta_contact, 'cntperp')
-        ET.SubElement(meta_contact, 'cntos').text = self.submitter.position
+        ET.SubElement(meta_contact, 'cntpos').text = self.submitter.position
         ET.SubElement(meta_perp, 'cntper').text = self.submitter.name
         ET.SubElement(meta_perp, 'cntorg').text = self.submitter.org
         meta_address = ET.SubElement(meta_contact, 'cntaddr')
@@ -1840,9 +1863,9 @@ class XMLMetadata(object):
         ET.SubElement(meta_contact, 'cntvoice').text = self.submitter.phone
         ET.SubElement(meta_contact, 'cntemail').text = self.submitter.email
         
-        ET.SubElement(meta_info, 'metastdn').text = 'Content Standard for Digital '+\
+        ET.SubElement(meta_info, 'metstdn').text = 'Content Standard for Digital '+\
                                                         'Geospatial Metadata'
-        ET.SubElement(meta_info, 'metastdv').text = 'FGDC-STD-001-1998'
+        ET.SubElement(meta_info, 'metstdv').text = 'FGDC-STD-001-1998'
 #
     def write_xml_file(self, xml_fn, write_station=False):
         """
