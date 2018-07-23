@@ -762,7 +762,7 @@ class USGSasc(Metadata):
                                     self.AcqSmpFreq))
             
         if compression:
-            save_fn = save_fn[:-4]+'.gz'
+            save_fn = save_fn + '.gz'
             
         return save_fn
         
@@ -1159,15 +1159,15 @@ class USGScfg(object):
         """
 
         loc_dict = pd.compat.OrderedDict()
-        loc_dict['site_name'] = station
-        loc_dict['lat'] = cfg_db.lat.astype(np.float).mean()
-        loc_dict['lon'] = cfg_db.lon.astype(np.float).mean()
-        loc_dict['nm_elev'] = get_nm_elev(loc_dict['lat'],
-                                          loc_dict['lon'])
-        loc_dict['start_date'] = cfg_db.start_date.min().split('T')[0].replace('-', '')
-        loc_dict['stop_date'] = cfg_db.stop_date.max().split('T')[0].replace('-', '')
-        loc_dict['instrument'] = 'W'
-        loc_dict['quality'] = 5
+        loc_dict['Stn_name'] = station
+        loc_dict['Lat_WGS84'] = np.round(cfg_db.lat.astype(np.float).mean(), 5)
+        loc_dict['Lon_WGS84'] = np.round(cfg_db.lon.astype(np.float).mean(), 5)
+        loc_dict['Z_NAVD88'] = np.round(get_nm_elev(loc_dict['Lat_WGS84'],
+                                          loc_dict['Lon_WGS84']), 2)
+        loc_dict['Start_date'] = cfg_db.start_date.min().split('T')[0].replace('-', '')
+        loc_dict['End_date'] = cfg_db.stop_date.max().split('T')[0].replace('-', '')
+        loc_dict['Data_type'] = 'W'
+        loc_dict['Qual_fac'] = 5
         
         l_db = pd.DataFrame([loc_dict])
         return l_db
@@ -1190,7 +1190,7 @@ class USGScfg(object):
             skip_stations = [skip_stations]
             
         #s_fn = os.path.join(survey_dir, 'usgs_station_info.csv') 
-        #l_fn = os.path.join(survey_dir, 'usgs_location_info.csv')
+        l_fn = os.path.join(survey_dir, 'usgs_location_info.csv')
         
         s_count = 0
         for station in os.listdir(survey_dir):
@@ -1208,24 +1208,24 @@ class USGScfg(object):
             if s_count == 0:
                 survey_db = s_db
 #                s_db = self.make_station_db(cfg_db, station)
-#                l_db = self.make_location_db(cfg_db, station)
+                l_db = self.make_location_db(cfg_db, station)
                 s_count += 1
             else:
                 survey_db = survey_db.append(s_db, ignore_index=True)
 #                s_db = s_db.append(self.make_station_db(cfg_db, station))
-#                l_db = l_db.append(self.make_location_db(cfg_db, station))
+                l_db = l_db.append(self.make_location_db(cfg_db, station))
                 s_count += 1 
         
 #        s_db.to_csv(s_fn, index=False)
-#        l_db.to_csv(l_fn, index=False)
+        l_db.to_csv(l_fn, index=False)
 #        
 #        return csv_fn, s_fn, l_fn
         if write:
             csv_fn = os.path.join(survey_dir, 'survey_summary.csv')
             survey_db.to_csv(csv_fn, index=False)
-            return survey_db, csv_fn
+            return survey_db, csv_fn, l_fn
         else:
-            return survey_db, None
+            return survey_db, None, l_fn
 
     def check_data(self, database, name):
         """
@@ -1656,7 +1656,7 @@ class XMLMetadata(object):
         extent = ET.SubElement(idinfo, 'spdom')
         bounding = ET.SubElement(extent, 'bounding')
         for name in ['westbc', 'eastbc', 'northbc', 'southbc']:
-            ET.SubElement(bounding, name).text = '{0:.1f}'.format(getattr(self.survey, 
+            ET.SubElement(bounding, name).text = '{0:.5f}'.format(getattr(self.survey, 
                                                                          name[:-2]))
             
         ### keywords
@@ -1735,13 +1735,13 @@ class XMLMetadata(object):
         lineage = ET.SubElement(data_quality, 'lineage')
         step_num = len(self.processing.__dict__.keys())/2
         for step in range(1, step_num+1, 1):
-            processing_step_01 = ET.SubElement(lineage, 'procstep')
-            ET.SubElement(processing_step_01, 'procdesc').text = getattr(self.processing,
+            processing_step = ET.SubElement(lineage, 'procstep')
+            ET.SubElement(processing_step, 'procdesc').text = getattr(self.processing,
                                                                          'step_{0:02}'.format(step))
             if step == 1:
-                ET.SubElement(processing_step_01, 'procdate').text = self._getdate(self.survey.start_date)
+                ET.SubElement(processing_step, 'procdate').text = self._get_date(self.survey.begin_date)
             else:
-                ET.SubElement(processing_step_01, 'procdate').text = self._get_date(getattr(self.processing,
+                ET.SubElement(processing_step, 'procdate').text = self._get_date(getattr(self.processing,
                                                                              'date_{0:02}'.format(step)))
         
     def _set_spational_info(self):
