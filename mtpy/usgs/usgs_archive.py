@@ -365,11 +365,12 @@ class Metadata(object):
         self._sampling_rate = None
         self._n_samples = None
         self.channel_dict = None
-        self.MissingDataFlag = '{0:.0e}'.format(1e9)
+        self.MissingDataFlag = np.NaN
         self._chn_num = None
         self.CoordinateSystem = None
         self._time_fmt = '%Y-%m-%dT%H:%M:%S %Z'
         self._metadata_len = 30
+        self.declination = 0.0
         
         self._key_list = ['SurveyID',
                           'SiteID',
@@ -551,7 +552,7 @@ class Metadata(object):
                         else:
                             print('Not sure what line this is')
                             
-    def write_metadata(self):
+    def write_metadata(self, chn_list=['Ex', 'Ey', 'Hx', 'Hy', 'Hz']):
         """
         Write out metadata in the format of USGS ascii.
         
@@ -565,12 +566,15 @@ class Metadata(object):
             if key in ['ChnSettings']:
                 lines.append('{0}:'.format(key))
                 lines.append(' '.join(self._chn_settings))
-                for chn_key in sorted(self.channel_dict.keys()):
+                for chn_key in chn_list:
                     chn_line = []
-                    for comp_key in self._chn_settings:
-                        chn_line.append('{0:{1}}'.format(self.channel_dict[chn_key][comp_key],
-                                        self._chn_fmt[comp_key]))
-                    lines.append(''.join(chn_line))
+                    try:
+                        for comp_key in self._chn_settings:
+                            chn_line.append('{0:{1}}'.format(self.channel_dict[chn_key][comp_key],
+                                            self._chn_fmt[comp_key]))
+                        lines.append(''.join(chn_line))
+                    except KeyError:
+                        pass
             elif key in ['DataSet']:
                 lines.append('{0}:'.format(key))
                 return lines
@@ -661,10 +665,29 @@ class USGSasc(Metadata):
         chn_order = dict([(cc.lower(), ii) for ii, cc in enumerate(zm.Chn_Cmp)])
         for chn in self.channel_dict.keys():
             index = chn_order[chn.lower()]
-            if len(zm.Chn_ID[index]) == 4 and 'h' in chn.lower():
-                self.channel_dict[chn]['ChnNum'] = zm.Chn_ID[index]
-            if int(np.nan_to_num(self.channel_dict[chn]['Azimuth'])) != int(zm.Chn_Azimuth[index]):
-                self.channel_dict[chn]['Azimuth'] = float(zm.Chn_Azimuth[index])
+            # get coil number
+            if 'h' in chn.lower():
+                stem = self.channel_dict[chn]['InstrumentID'].split('-')[0]
+                try:
+                    inst = self.channel_dict[chn]['InstrumentID'].split('-')[1]
+                    if inst != zm.Chn_ID[index]:
+                        self.channel_dict[chn]['InstrumentID'] = '{0}-{1}'.format(stem, 
+                                                                                 zm.Chn_ID[index])
+                except IndexError:
+                    self.channel_dict[chn]['InstrumentID'] = '{0}-{1}'.format(stem, 
+                                                                             zm.Chn_ID[index])
+            
+            # get azimuth direction
+            if 'geographic' in self.CoordinateSystem.lower() and chn.lower() != 'hz':
+                azm = float(zm.Chn_Azimuth[index])+self.declination
+            else:
+                azm = float(zm.Chn_Azimuth[index])
+            if np.isnan(self.channel_dict[chn]['Azimuth']):
+                self.channel_dict[chn]['Azimuth'] = azm
+            elif int(np.nan_to_num(self.channel_dict[chn]['Azimuth'])) != int(azm):
+                self.channel_dict[chn]['Azimuth'] = azm
+                
+            # get dipole length
             if float(np.nan_to_num(self.channel_dict[chn]['Dipole_Length'])) != float(zm.Chn_Length[index]):
                 if 'e' in chn.lower(): 
                     self.channel_dict[chn]['Dipole_Length'] = float(zm.Chn_Length[index])
@@ -696,10 +719,17 @@ class USGSasc(Metadata):
         self.SiteLongitude = np.median(meta_arr['lon'])
         self.SiteID = os.path.basename(meta_arr['fn'][0]).split('_')[0]
         self.station_dir = os.path.dirname(meta_arr['fn'][0])
+        # if geographic coordinates add in declination
+        print np.where(meta_arr['comp']!='hz')
+        if 'geographic' in self.CoordinateSystem.lower():
+            meta_arr['ch_azm'][np.where(meta_arr['comp'] != 'hz')] += self.declination
+
+        # fill channel dictionary with appropriate values
         self.channel_dict = dict([(comp.capitalize(),
-                                   {'ChnNum':meta_arr['ch_num'][ii],
+                                   {'ChnNum':'{0}{1}'.format(self.SiteID, ii+1),
                                     'ChnID':meta_arr['comp'][ii].capitalize(),
-                                    'InstrumentID':meta_arr['ch_box'][ii],
+                                    'InstrumentID':'{0}-{1}'.format(meta_arr['ch_box'][ii],
+                                                                    meta_arr['ch_num'][ii]),
                                     'Azimuth':meta_arr['ch_azm'][ii],
                                     'Dipole_Length':meta_arr['ch_length'][ii],
                                     'n_samples':meta_arr['n_samples'][ii],
@@ -801,7 +831,8 @@ class USGSasc(Metadata):
         st = datetime.datetime.now()
         
         # write meta data first
-        meta_lines = self.write_metadata()
+        # sort channel information same as columns
+        meta_lines = self.write_metadata(chn_list=[c.capitalize() for c in self.ts.columns])
         if compress is True:
             with gzip.open(save_fn, 'wb') as fid:
                 h_line = [''.join(['{0:>{1}}'.format(c.capitalize(), s_num) 
@@ -909,12 +940,12 @@ class USGSasc(Metadata):
         meta_dict[key]['mtft_file'] = mtft_bool
         try:
             meta_dict[key]['hx_azm'] = self.channel_dict['Hx']['Azimuth']
-            meta_dict[key]['hx_id'] = self.channel_dict['Hx']['ChnNum']
+            meta_dict[key]['hx_id'] = self.channel_dict['Hx']['InstrumentID'].split('-')[1]
             meta_dict[key]['hx_nsamples'] = self.channel_dict['Hx']['n_samples']
             meta_dict[key]['hx_ndiff'] = self.channel_dict['Hx']['n_diff']
             meta_dict[key]['hx_std'] = self.channel_dict['Hx']['std']
             meta_dict[key]['hx_start'] = self.channel_dict['Hx']['start']
-            meta_dict[key]['zen_num'] = self.channel_dict['Hx']['InstrumentID']
+            meta_dict[key]['zen_num'] = self.channel_dict['Hx']['InstrumentID'].split('-')[0]
         except KeyError:
             meta_dict[key]['hx_azm'] = None
             meta_dict[key]['hx_id'] = None
@@ -925,12 +956,12 @@ class USGSasc(Metadata):
             
         try:
             meta_dict[key]['hy_azm'] = self.channel_dict['Hy']['Azimuth']
-            meta_dict[key]['hy_id'] = self.channel_dict['Hy']['ChnNum']
+            meta_dict[key]['hy_id'] = self.channel_dict['Hy']['InstrumentID'].split('-')[1]
             meta_dict[key]['hy_nsamples'] = self.channel_dict['Hy']['n_samples']
             meta_dict[key]['hy_ndiff'] = self.channel_dict['Hy']['n_diff']
             meta_dict[key]['hy_std'] = self.channel_dict['Hy']['std']
             meta_dict[key]['hy_start'] = self.channel_dict['Hy']['start']
-            meta_dict[key]['zen_num'] = self.channel_dict['Hy']['InstrumentID']
+            meta_dict[key]['zen_num'] = self.channel_dict['Hy']['InstrumentID'].split('-')[0]
         except KeyError:
             meta_dict[key]['hy_azm'] = None
             meta_dict[key]['hy_id'] = None
@@ -940,12 +971,12 @@ class USGSasc(Metadata):
             meta_dict[key]['hy_start'] = None
         try:
             meta_dict[key]['hz_azm'] = self.channel_dict['Hz']['Azimuth']
-            meta_dict[key]['hz_id'] = self.channel_dict['Hz']['ChnNum']
+            meta_dict[key]['hz_id'] = self.channel_dict['Hz']['InstrumentID'].split('-')[1]
             meta_dict[key]['hz_nsamples'] = self.channel_dict['Hz']['n_samples']
             meta_dict[key]['hz_ndiff'] = self.channel_dict['Hz']['n_diff']
             meta_dict[key]['hz_std'] = self.channel_dict['Hz']['std']
             meta_dict[key]['hz_start'] = self.channel_dict['Hz']['start']
-            meta_dict[key]['zen_num'] = self.channel_dict['Hz']['InstrumentID']
+            meta_dict[key]['zen_num'] = self.channel_dict['Hz']['InstrumentID'].split('-')[0]
         except KeyError:
             meta_dict[key]['hz_azm'] = None
             meta_dict[key]['hz_id'] = None
@@ -956,13 +987,13 @@ class USGSasc(Metadata):
         
         try:
             meta_dict[key]['ex_azm'] = self.channel_dict['Ex']['Azimuth']
-            meta_dict[key]['ex_id'] = self.channel_dict['Ex']['ChnNum']
+            meta_dict[key]['ex_id'] = self.channel_dict['Ex']['InstrumentID'].split('-')[1]
             meta_dict[key]['ex_len'] = self.channel_dict['Ex']['Dipole_Length']
             meta_dict[key]['ex_nsamples'] = self.channel_dict['Ex']['n_samples']
             meta_dict[key]['ex_ndiff'] = self.channel_dict['Ex']['n_diff']
             meta_dict[key]['ex_std'] = self.channel_dict['Ex']['std']
             meta_dict[key]['ex_start'] = self.channel_dict['Ex']['start']
-            meta_dict[key]['zen_num'] = self.channel_dict['Ex']['InstrumentID']
+            meta_dict[key]['zen_num'] = self.channel_dict['Ex']['InstrumentID'].split('-')[0]
         except KeyError:
             meta_dict[key]['ex_azm'] = None
             meta_dict[key]['ex_id'] = None
@@ -974,13 +1005,13 @@ class USGSasc(Metadata):
         
         try:
             meta_dict[key]['ey_azm'] = self.channel_dict['Ey']['Azimuth']
-            meta_dict[key]['ey_id'] = self.channel_dict['Ey']['ChnNum']
+            meta_dict[key]['ey_id'] = self.channel_dict['Ey']['InstrumentID'].split('-')[1]
             meta_dict[key]['ey_len'] = self.channel_dict['Ey']['Dipole_Length']
             meta_dict[key]['ey_nsamples'] = self.channel_dict['Ey']['n_samples']
             meta_dict[key]['ey_ndiff'] = self.channel_dict['Ey']['n_diff']
             meta_dict[key]['ey_std'] = self.channel_dict['Ey']['std']
             meta_dict[key]['ey_start'] = self.channel_dict['Ey']['start']
-            meta_dict[key]['zen_num'] = self.channel_dict['Ey']['InstrumentID']
+            meta_dict[key]['zen_num'] = self.channel_dict['Ey']['InstrumentID'].split('-')[0]
         except KeyError:
             meta_dict[key]['ey_azm'] = None
             meta_dict[key]['ey_id'] = None
@@ -1092,7 +1123,7 @@ class USGScfg(object):
         
         station_dict['sampling_rate'] = run_db.sampling_rate.astype(np.float).median()
         
-        station_dict['zen_num'] = run_db.zen_num.astype(np.int).median()
+        station_dict['zen_num'] = run_db.zen_num.iloc[0]
         
         station_dict['collected_by'] = run_db.collected_by.iloc[0]
         station_dict['notes'] = ''.join([run_db.notes.iloc[ii] for ii in range(len(run_db))])
