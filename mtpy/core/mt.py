@@ -686,9 +686,13 @@ class MT(object):
         header.elev = self.elev
         header.fileby = self.Site.acquired_by
         header.lat = self.lat
-        header.loc = self.Site.project
+        if type(self.Site.project) is list:
+            header.loc = ','.join(self.Site.project)
+            header.project = ','.join(self.Site.project)
+        else:
+            header.loc = self.Site.project
+            header.project = self.Site.project
         header.lon = self.lon
-        header.project = self.Site.project
         if type(self.Site.survey) is list:
             header.survey = ','.join(self.Site.survey)
         else:
