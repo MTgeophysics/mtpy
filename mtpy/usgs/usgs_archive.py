@@ -1416,6 +1416,7 @@ class USGScfg(object):
         """
         
         db = self.read_survey_csv(survey_csv)
+        index = db.index[db.siteID == station].tolist()
         
         station_db = db.where(db.siteID == station).iloc[0] 
         
