@@ -82,13 +82,29 @@ def get_nm_elev(lat, lon):
 # =============================================================================
 class Z3DCollection(object):
     """
-    Will collect z3d files into useful arrays and lists
+    Collects .z3d files into useful arrays and lists
     
-    ================= =========================================================
-    Attribute
-    ================= =========================================================
+    ================= ============================= ===========================
+    Attribute         Description                   Default
+    ================= ============================= ===========================
+    chn_order         list of the order of channels [hx, ex, hy, ey, hz]
+    meta_notes        extraction of notes from      None
+                      the .z3d files 
+    leap_seconds      number of leap seconds for    16 [2016]
+                      a given year
+    ================= ============================= ===========================
     
-    ================= =========================================================
+    ===================== =====================================================
+    Methods               Description
+    ===================== =====================================================
+    get_time_blocks       Get a list of files for each schedule action
+    check_sampling_rate   Check the sampling rate a given time block
+    check_time_series     Get information for a given time block
+    merge_ts              Merge a given schedule block making sure that they
+                          line up in time.  
+    get_chn_order         Get the appropriate channels, in case some are 
+                          missing 
+    ===================== =====================================================
     
     :Example: ::
         
@@ -100,8 +116,7 @@ class Z3DCollection(object):
     """   
     
     def __init__(self):
-        
-        self.verbose = True
+
         self.chn_order = ['hx','ex','hy','ey','hz']
         self.meta_notes = None
         self.leap_seconds = 16
@@ -118,6 +133,12 @@ class Z3DCollection(object):
         :type z3d_dir: string
         
         :returns: nested list of files for each time block, sorted by time
+        
+        :Example: ::
+            
+            >>> import mtpy.usgs.usgs_archive as archive
+            >>> zc = archive.Z3DCollection()
+            >>> fn_list = zc.get_time_blocks(r"/home/mt_data/station_01")
          
         """
         
@@ -364,22 +385,39 @@ class UTC(datetime.tzinfo):
 # =============================================================================
 class Metadata(object):
     """
-    Container for all the important metadata in a USGS ascii file, including:
-        * 'SurveyID'
-        * 'SiteID'
-        * 'RunID'
-        * 'SiteLatitude'
-        * 'SiteLongitude'
-        * 'SiteElevation'
-        * 'AcqStartTime'
-        * 'AcqStopTime'
-        * 'AcqSmpFreq'
-        * 'AcqNumSmp'
-        * 'Nchan'
-        * 'CoordinateSystem'
-        * 'ChnSettings'
-        * 'MissingDataFlag'
+    Container for all the important metadata in a USGS ascii file.
     
+    ========================= =================================================
+    Attributes                Description
+    ========================= =================================================
+    SurveyID                  Survey name
+    SiteID                    Site name
+    RunID                     Run number
+    SiteLatitude              Site latitude in decimal degrees WGS84
+    SiteLongitude             Site longitude in decimal degrees WGS84
+    SiteElevation             Site elevation according to national map meters
+    AcqStartTime              Start time of station YYYY-MM-DDThh:mm:ss UTC
+    AcqStopTime               Stop time of station YYYY-MM-DDThh:mm:ss UTC
+    AcqSmpFreq                Sampling rate samples/second
+    AcqNumSmp                 Number of samples 
+    Nchan                     Number of channels
+    CoordinateSystem          [ Geographic North | Geomagnetic North ]
+    ChnSettings               Channel settings, see below
+    MissingDataFlag           Missing data value
+    ========================= =================================================
+    
+    *ChnSettings*
+    ========================= =================================================
+    Keys                      Description
+    ========================= =================================================
+    ChnNum                    SiteID+channel number
+    ChnID                     Component [ ex | ey | hx | hy | hz ]
+    InstrumentID              Data logger + sensor number
+    Azimuth                   Setup angle of componet in degrees relative to 
+                              CoordinateSystem
+    Dipole_Length             Dipole length in meters 
+    ========================= =================================================                
+
     
     """
     def __init__(self, fn=None, **kwargs):
@@ -622,7 +660,30 @@ class Metadata(object):
 # =============================================================================
 class USGSasc(Metadata):
     """
-    Read and write USGS ascii formatted time series
+    Read and write USGS ascii formatted time series. 
+    
+    =================== =======================================================
+    Attributes          Description
+    =================== =======================================================
+    ts                  Pandas dataframe holding the time series data
+    fn                  Full path to .asc file
+    station_dir         Full path to station directory
+    meta_notes          Notes of how the station was collected
+    =================== =======================================================
+    
+    ============================== ============================================
+    Methods                        Description
+    ============================== ============================================
+    get_z3d_db                     Get Pandas dataframe for schedule block
+    locate_mtft24_cfg_fn           Look for a mtft24.cfg file in station_dir
+    get_metadata_from_mtft24       Get metadata from mtft24.cfg file
+    get_metadata_from_survey_csv   Get metadata from survey csv file
+    fill_metadata                  Fill Metadata container from a meta_array
+    read_asc_file                  Read in USGS ascii file
+    convert_electrics              Convert electric channels to mV/km
+    write_asc_file                 Write an USGS ascii file
+    write_station_info_metadata    Write metadata to a .cfg file
+    ============================== ============================================
     
     :Example: ::
         
@@ -726,6 +787,10 @@ class USGSasc(Metadata):
     def get_metadata_from_survey_csv(self, survey_fn):
         """
         get station information from a survey .csv file
+        
+        :param survey_fn: full path to survey summary .csv file
+        :type survey_fn: string
+        
         """
         
         s_cfg = USGScfg()
@@ -838,6 +903,16 @@ class USGSasc(Metadata):
     def _make_file_name(self, save_path=None, compression=True):
         """
         get the file name to save to
+        
+        :param save_path: full path to directory to save file to
+        :type save_path: string
+        
+        :param compression: compress file
+        :type compression: [ True | False ]
+        
+        :return: save_fn
+        :rtype: string
+        
         """
         # make the file name to save to
         if save_path is not None:
@@ -950,10 +1025,6 @@ class USGSasc(Metadata):
         et = datetime.datetime.now()
         write_time = et-st
         print('Writing took: {0} seconds'.format(write_time.total_seconds()))
-
-        # for some reason its returning None, so had to make a new function
-        # to get the file name.
-        #return self._make_file_name(save_path=save_dir, compression=compress)
         
     def write_station_info_metadata(self, save_dir=None, mtft_bool=False):
         """
@@ -1109,6 +1180,32 @@ class USGSasc(Metadata):
 class USGScfg(object):
     """
     container to deal with configuration files needed for USGS archiving
+    
+    =========================== ===============================================
+    Attributes                  Description
+    =========================== ===============================================
+    db                          Pandas dataframe
+    std_tol                     Tolerance for std 
+    note_names                  look for names to put in notes 
+    =========================== ===============================================
+    
+    =========================== ===============================================
+    Methods                     Description
+    =========================== ===============================================
+    combine_run_cfg             Get information from all .cfg files in  
+                                a station directory and put in a Pandas 
+                                dataframe
+    summarize_runs              Summarize a run database
+    make_station_db             Make a station database
+    make_location_db            Make a location database
+    combine_all_station_info    Get all information from each station and put
+                                in a Pandas dataframe
+    check_data                  Check to make sure all data are in right format
+    check_std                   Check for erroneous standard deviation in TS
+    write_shp_file              Make a shapefile with important information
+    read_survey_csv             Read survey summary csv file
+    get_station_info_from_csv   Get station information from survey summar csv
+    =========================== ===============================================
     """
     
     def __init__(self, **kwargs):
@@ -1158,7 +1255,13 @@ class USGScfg(object):
         
     def summarize_runs(self, run_db):
         """
-        summarize the runs for clarity
+        summarize the runs into a single row database
+        
+        :param run_db: run dataframe
+        :type run_db: Pandas Dataframe
+        
+        :return: station_db
+        :rtype: Pandas Dataframe
         """
         station_dict = pd.compat.OrderedDict()
         station_dict['site_name'] = run_db.site.iloc[0]
@@ -1217,7 +1320,14 @@ class USGScfg(object):
             * (11) wideband channels
             * (12) long period channel
             
-        save file as 
+        :param cfg_db: summarized dataframe for one station
+        :type cfg_db: pandas datafram
+        
+        :param station: station name
+        :type station: string
+        
+        :return: station database
+        :rtype: pandas daraframe
         """
 
         station_dict = pd.compat.OrderedDict()
@@ -1249,6 +1359,15 @@ class USGScfg(object):
                 * (6) end date
                 * (7) instrument type [W = wideband, L = long period]
                 * (8) quality factor from 1-5 [5 is best]
+                
+        :param cfg_db: summarized dataframe for one station
+        :type cfg_db: pandas datafram
+        
+        :param station: station name
+        :type station: string
+        
+        :return: station database
+        :rtype: pandas daraframe
         """
 
         loc_dict = pd.compat.OrderedDict()
@@ -1382,7 +1501,16 @@ class USGScfg(object):
     
     def write_shp_file(self, survey_csv_fn, save_path=None):
         """
-        write a shape file
+        write a shape file with important information
+        
+        :param survey_csv_fn: full path to survey_summary.csv
+        :type survey_csf_fn: string
+        
+        :param save_path: directory to save shape file to
+        :type save_path: string
+        
+        :return: full path to shape files
+        :rtype: string
         """
         if save_path is not None:
             save_fn = save_path
@@ -1434,6 +1562,12 @@ class USGScfg(object):
         """
         Read in a survey .csv file that will overwrite existing metadata
         parameters.
+        
+        :param survey_csv: full path to survey_summary.csv file
+        :type survey_csv: string
+        
+        :return: survey summary database
+        :rtype: pandas dataframe
         """
         
         return pd.read_csv(survey_csv)
@@ -1442,7 +1576,16 @@ class USGScfg(object):
         """
         get station information from a survey .csv file
         
-        .. note:: station must be verbatim.
+        :param survey_csv: full path to survey_summary.csv file
+        :type survey_csv: string
+        
+        :param station: station name
+        :type station: string
+        
+        :return: station database
+        :rtype: pandas dataframe
+        
+        .. note:: station must be verbatim for whats in summary.
         """
         
         db = self.read_survey_csv(survey_csv)
