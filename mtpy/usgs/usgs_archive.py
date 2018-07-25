@@ -643,7 +643,7 @@ class USGSasc(Metadata):
             
         return None
             
-    def read_mtft24_cfg(self, mtft24_cfg_fn=None):
+    def get_metadata_from_mtft24_cfg(self, mtft24_cfg_fn=None):
         """
         Read in a MTFT24 configuration file and fill in meta data
         
@@ -693,6 +693,38 @@ class USGSasc(Metadata):
                     self.channel_dict[chn]['Dipole_Length'] = float(zm.Chn_Length[index])
         return True
         
+    def get_metadata_from_survey_csv(self, survey_fn):
+        """
+        get station information from a survey .csv file
+        """
+        
+        s_cfg = USGScfg()
+        try:
+            station_db = s_cfg.get_station_info_from_csv(survey_fn, self.SiteID)
+        except ValueError:
+            print('Could not find information for {0}'.format(self.SiteID))
+            return False
+        
+        # fill metadata
+        for chn in self.channel_dict.keys():
+            if 'h' in chn.lower():
+                stem = self.channel_dict[chn]['InstrumentID'].split('-', 1)[0]
+                h_attr = '{0}_{1}'.format(chn.lower(), 'id')
+                h_id = getattr(station_db, h_attr)
+                self.channel_dict[chn]['InstrumentID'] = '{0}-{1}'.format(stem, 
+                                                                          h_id)
+            elif 'e' in chn.lower():
+                e_attr = '{0}_{1}'.format(chn.lower(), 'len')
+                e_len = getattr(station_db, e_attr)
+                self.channel_dict[chn]['Dipole_Length'] = e_len
+        
+            azm_attr = '{0}_{1}'.format(chn.lower(), 'azm')
+            azm_value = getattr(station_db, azm_attr)
+            if 'geographic' in self.CoordinateSystem:
+                azm_value += self.declination
+            self.channel_dict[chn]['Azimuth'] = azm_value
+            
+        return True
         
     def fill_metadata(self, meta_arr):
         """
@@ -1367,6 +1399,32 @@ class USGScfg(object):
         
         print('*** Wrote survey shapefile to {0}'.format(save_fn))
         return save_fn
+    
+    def read_survey_csv(self, survey_csv):
+        """
+        Read in a survey .csv file that will overwrite existing metadata
+        parameters.
+        """
+        
+        return pd.read_csv(survey_csv)
+    
+    def get_station_info_from_csv(self, survey_csv, station):
+        """
+        get station information from a survey .csv file
+        
+        .. note:: station must be verbatim.
+        """
+        
+        db = self.read_survey_csv(survey_csv)
+        
+        station_db = db.where(db.siteID == station).iloc[0] 
+        
+        try:
+            if np.isnan(station_db.siteID):
+                raise ValueError('Could not find {0}, check name'.format(station))
+        
+        except TypeError:
+            return station_db
 
 # =============================================================================
 # XML data
