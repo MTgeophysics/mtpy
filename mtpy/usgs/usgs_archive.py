@@ -1,9 +1,12 @@
 # -*- coding: utf-8 -*-
 """
-USGS Ascii
+USGS Archive
 ==============
-
+    
+    * Collect z3d files into logical scheduled blocks
     * Merge Z3D files into USGS ascii format
+    * Collect metadata information
+    * make .csv, .xml, .shp files.
 
 Created on Tue Aug 29 16:38:28 2017
 
@@ -40,7 +43,27 @@ from shapely.geometry import Point
 # =============================================================================
 def get_nm_elev(lat, lon):
     """
-    Get national map elevation from lat and lon
+    Get national map elevation for a given lat and lon.
+    
+    Queries the national map website for the elevation value.
+    
+    :param lat: latitude in decimal degrees
+    :type lat: float
+    
+    :param lon: longitude in decimal degrees
+    :type lon: float
+    
+    :return: elevation (meters)
+    :rtype: float
+    
+    :Example: ::
+        
+        >>> import mtpy.usgs.usgs_archive as archive
+        >>> archive.get_nm_elev(35.467, -115.3355)
+        >>> 809.12
+        
+    .. note:: Needs an internet connection to work.
+        
     """
     nm_url = r"https://nationalmap.gov/epqs/pqs.php?x={0:.5f}&y={1:.5f}&units=Meters&output=xml"
 
@@ -61,12 +84,19 @@ class Z3DCollection(object):
     """
     Will collect z3d files into useful arrays and lists
     
+    ================= =========================================================
+    Attribute
+    ================= =========================================================
+    
+    ================= =========================================================
+    
     :Example: ::
         
-        >>> import usgs_archive
+        >>> import mtpy.usgs.usgs_archive as archive
         >>> z3d_path = r"/Data/Station_00"
-        >>> zc = usgs_archive.Z3DCollection()
+        >>> zc = archive.Z3DCollection()
         >>> fn_list = zc.get_time_blocks(z3d_path)
+        
     """   
     
     def __init__(self):
@@ -1416,16 +1446,12 @@ class USGScfg(object):
         """
         
         db = self.read_survey_csv(survey_csv)
-        index = db.index[db.siteID == station].tolist()
-        
-        station_db = db.where(db.siteID == station).iloc[0] 
-        
         try:
-            if np.isnan(station_db.siteID):
-                raise ValueError('Could not find {0}, check name'.format(station))
+            station_index = db.index[db.siteID == station].tolist()[0]
+        except IndexError:
+            raise ValueError('Could not find {0}, check name'.format(station))
         
-        except TypeError:
-            return station_db
+        return db.iloc[station_index]
 
 # =============================================================================
 # XML data
