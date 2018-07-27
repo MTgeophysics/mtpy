@@ -120,6 +120,7 @@ class Z3DCollection(object):
         self.chn_order = ['hx','ex','hy','ey','hz']
         self.meta_notes = None
         self.leap_seconds = 16
+        self.verbose = True
         
     def get_time_blocks(self, z3d_dir):
         """
@@ -234,7 +235,7 @@ class Z3DCollection(object):
                                 ('elev', np.float32), 
                                 ('ch_azm', np.float32),
                                 ('ch_length', np.float32),
-                                ('ch_num', np.float32),
+                                ('ch_num', np.int32),
                                 ('ch_box', 'S6'),
                                 ('n_samples', np.int32),
                                 ('t_diff', np.int32),
@@ -264,7 +265,7 @@ class Z3DCollection(object):
             if 'e' in t_arr[ii]['comp']:
                 t_arr[ii]['ch_length'] = z3d_obj.metadata.ch_length
             if 'h' in t_arr[ii]['comp']:
-                t_arr[ii]['ch_num'] = z3d_obj.metadata.ch_number
+                t_arr[ii]['ch_num'] = int(float(z3d_obj.metadata.ch_number))
             t_arr[ii]['ch_box'] = int(z3d_obj.header.box_number)
             t_arr[ii]['n_samples'] = z3d_obj.ts_obj.ts.shape[0]
             t_arr[ii]['t_diff'] = int((dt_index[-1]-dt_index[0])*z3d_obj.df)-\
@@ -855,8 +856,7 @@ class USGSasc(Metadata):
         self.channel_dict = dict([(comp.capitalize(),
                                    {'ChnNum':'{0}{1}'.format(self.SiteID, ii+1),
                                     'ChnID':meta_arr['comp'][ii].capitalize(),
-                                    'InstrumentID':'{0}-{1}'.format(meta_arr['ch_box'][ii],
-                                                                    meta_arr['ch_num'][ii]),
+                                    'InstrumentID':meta_arr['ch_box'][ii],
                                     'Azimuth':meta_arr['ch_azm'][ii],
                                     'Dipole_Length':meta_arr['ch_length'][ii],
                                     'n_samples':meta_arr['n_samples'][ii],
@@ -864,6 +864,9 @@ class USGSasc(Metadata):
                                     'std':meta_arr['std'][ii],
                                     'start':meta_arr['start'][ii]})
                                    for ii, comp in enumerate(meta_arr['comp'])])
+        for ii, comp in enumerate(meta_arr['comp']):
+            if 'h' in comp.lower():
+                self.channel_dict[comp.capitalize()]['InstrumentID'] += '-{0}'.format(meta_arr['ch_num'])
 
     def read_asc_file(self, fn=None):
         """
@@ -1120,13 +1123,13 @@ class USGSasc(Metadata):
         
         try:
             meta_dict[key]['ex_azm'] = self.channel_dict['Ex']['Azimuth']
-            meta_dict[key]['ex_id'] = self.channel_dict['Ex']['InstrumentID'].split('-')[1]
+            meta_dict[key]['ex_id'] = self.channel_dict['Ex']['InstrumentID']
             meta_dict[key]['ex_len'] = self.channel_dict['Ex']['Dipole_Length']
             meta_dict[key]['ex_nsamples'] = self.channel_dict['Ex']['n_samples']
             meta_dict[key]['ex_ndiff'] = self.channel_dict['Ex']['n_diff']
             meta_dict[key]['ex_std'] = self.channel_dict['Ex']['std']
             meta_dict[key]['ex_start'] = self.channel_dict['Ex']['start']
-            meta_dict[key]['zen_num'] = self.channel_dict['Ex']['InstrumentID'].split('-')[0]
+            meta_dict[key]['zen_num'] = self.channel_dict['Ex']['InstrumentID']
         except KeyError:
             meta_dict[key]['ex_azm'] = None
             meta_dict[key]['ex_id'] = None
@@ -1138,13 +1141,13 @@ class USGSasc(Metadata):
         
         try:
             meta_dict[key]['ey_azm'] = self.channel_dict['Ey']['Azimuth']
-            meta_dict[key]['ey_id'] = self.channel_dict['Ey']['InstrumentID'].split('-')[1]
+            meta_dict[key]['ey_id'] = self.channel_dict['Ey']['InstrumentID']
             meta_dict[key]['ey_len'] = self.channel_dict['Ey']['Dipole_Length']
             meta_dict[key]['ey_nsamples'] = self.channel_dict['Ey']['n_samples']
             meta_dict[key]['ey_ndiff'] = self.channel_dict['Ey']['n_diff']
             meta_dict[key]['ey_std'] = self.channel_dict['Ey']['std']
             meta_dict[key]['ey_start'] = self.channel_dict['Ey']['start']
-            meta_dict[key]['zen_num'] = self.channel_dict['Ey']['InstrumentID'].split('-')[0]
+            meta_dict[key]['zen_num'] = self.channel_dict['Ey']['InstrumentID']
         except KeyError:
             meta_dict[key]['ey_azm'] = None
             meta_dict[key]['ey_id'] = None
@@ -1161,7 +1164,8 @@ class USGSasc(Metadata):
         meta_dict[key]['n_chan'] = self.Nchan
         
         
-        if meta_dict[key]['zen_num'] in [24, 25, 26, 46, '24', '25', '26', '46']:
+        if meta_dict[key]['zen_num'] in [24, 25, 26, 46, '24', '25', '26', '46',
+                                        'ZEN24', 'ZEN25', 'ZEN26', 'ZEN46']:
             meta_dict[key]['collected_by'] = 'USGS'
         else:
             meta_dict[key]['collected_by'] = 'OSU'
