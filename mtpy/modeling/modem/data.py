@@ -627,7 +627,8 @@ class Data(object):
 
         self.get_relative_station_locations()
 
-    def fill_data_array(self, new_edi_dir=None, use_original_freq=False, longitude_format='LON'):
+    def fill_data_array(self, new_edi_dir=None, use_original_freq=False, 
+                        longitude_format='LON'):
         """
         fill the data array from mt_dict
 
@@ -1776,10 +1777,17 @@ class Data(object):
             # ====================== ====================================================
             # self.station_locations.station_locations['elev'][ss] = topoval + 0.1
             self.data_array['elev'][ss] = topoval + 0.1
+            self.data_array['rel_elev'][ss] = topoval + 0.1
+            self.center_point['rel_elev'] = model_object.grid_z.min()
+            self.center_point['elev'] = model_object.grid_z.min()
+            self.center_point['rel_east'] = 0
+            self.center_point['rel_north'] = 0
         # logger.debug("Re-write data file after adding topo")
-        self.write_data_file(fill=False, elevation=True)  # (Xi, Yi, Zi) of each station-i may be shifted
-
-        # debug self.Data.write_data_file(save_path='/e/tmp', fill=False)
+        new_fn = os.path.basename(self.data_fn)[0:-4] + '_topo.dat'
+        self.write_data_file(fn_basename=new_fn, 
+                             fill=False,
+                             elevation=True,
+                             compute_error=False)
 
         return station_index_x, station_index_y
 

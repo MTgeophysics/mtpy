@@ -204,6 +204,15 @@ def make_log_increasing_array(z1_layer, target_depth, n_layers, increment_factor
     return log_z
 
 
+def make_equal_spaced_array(cell_size, depth_min, depth_max):
+    """
+    create an array of equally spaced cells for topography
+    """        
+    n_cells = int((depth_max - depth_min)/cell_size)
+    cells = np.repeat(cell_size, n_cells)
+
+    return cells
+
 def get_padding_cells(cell_width, max_distance, num_cells, stretch):
     """
     get padding cells, which are exponentially increasing to a given 

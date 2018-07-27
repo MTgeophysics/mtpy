@@ -384,13 +384,13 @@ class Model(object):
     def plot_east(self):
         plot_east = np.array([self.nodes_east[0:ii].sum() 
                              for ii in range(self.nodes_east.size)])
-        return plot_east-plot_east[-1]/2.
+        return plot_east-plot_east.mean()
     
     @property
     def plot_north(self):
         plot_north = np.array([self.nodes_north[0:ii].sum() 
                           for ii in range(self.nodes_north.size)])
-        return plot_north-plot_north[-1]/2.
+        return plot_north-plot_north.mean()
     
     @property
     def plot_z(self):
@@ -772,21 +772,21 @@ class Model(object):
         ax1 = fig.add_subplot(1, 2, 1, aspect='equal')
 
         # plot station locations
-        plot_east = self.station_locations.rel_east
-        plot_north = self.station_locations.rel_north
+        station_east = self.station_locations.rel_east
+        station_north = self.station_locations.rel_north
 
         # plot stations
-        ax1.scatter(plot_east,
-                    plot_north,
+        ax1.scatter(station_east,
+                    station_north,
                     marker=station_marker,
                     c=marker_color,
                     s=marker_size)
 
         east_line_xlist = []
         east_line_ylist = []
-        north_min = self.grid_north.min()
-        north_max = self.grid_north.max()
-        for xx in self.grid_east:
+        north_min = self.plot_north.min()
+        north_max = self.plot_north.max()
+        for xx in self.plot_east:
             east_line_xlist.extend([xx * cos_ang + north_min * sin_ang,
                                     xx * cos_ang + north_max * sin_ang])
             east_line_xlist.append(None)
@@ -800,8 +800,8 @@ class Model(object):
 
         north_line_xlist = []
         north_line_ylist = []
-        east_max = self.grid_east.max()
-        east_min = self.grid_east.min()
+        east_max = self.plot_east.max()
+        east_min = self.plot_east.min()
         for yy in self.grid_north:
             north_line_xlist.extend([east_min * cos_ang + yy * sin_ang,
                                      east_max * cos_ang + yy * sin_ang])
@@ -815,14 +815,14 @@ class Model(object):
                  color=line_color)
 
         if east_limits is None:
-            ax1.set_xlim(plot_east.min() - 10 * self.cell_size_east,
-                         plot_east.max() + 10 * self.cell_size_east)
+            ax1.set_xlim(station_east.min() - 10 * self.cell_size_east,
+                         station_east.max() + 10 * self.cell_size_east)
         else:
             ax1.set_xlim(east_limits)
 
         if north_limits is None:
-            ax1.set_ylim(plot_north.min() - 10 * self.cell_size_north,
-                         plot_north.max() + 10 * self.cell_size_east)
+            ax1.set_ylim(station_north.min() - 10 * self.cell_size_north,
+                         station_north.max() + 10 * self.cell_size_east)
         else:
             ax1.set_ylim(north_limits)
 
@@ -836,11 +836,11 @@ class Model(object):
         # plot the grid
         east_line_xlist = []
         east_line_ylist = []
-        for xx in self.grid_east:
+        for xx in self.plot_east:
             east_line_xlist.extend([xx, xx])
             east_line_xlist.append(None)
             east_line_ylist.extend([0,
-                                    self.grid_z.max()])
+                                    self.plot_z.max()])
             east_line_ylist.append(None)
         ax2.plot(east_line_xlist,
                  east_line_ylist,
@@ -849,9 +849,9 @@ class Model(object):
 
         z_line_xlist = []
         z_line_ylist = []
-        for zz in self.grid_z:
-            z_line_xlist.extend([self.grid_east.min(),
-                                 self.grid_east.max()])
+        for zz in self.plot_z:
+            z_line_xlist.extend([self.plot_east.min(),
+                                 self.plot_east.max()])
             z_line_xlist.append(None)
             z_line_ylist.extend([zz, zz])
             z_line_ylist.append(None)
@@ -861,7 +861,7 @@ class Model(object):
                  color=line_color)
 
         # --> plot stations
-        ax2.scatter(plot_east,
+        ax2.scatter(station_east,
                     [0] * self.station_locations.station.size,
                     marker=station_marker,
                     c=marker_color,
@@ -873,8 +873,8 @@ class Model(object):
             ax2.set_ylim(z_limits)
 
         if east_limits is None:
-            ax1.set_xlim(plot_east.min() - 10 * self.cell_size_east,
-                         plot_east.max() + 10 * self.cell_size_east)
+            ax1.set_xlim(station_east.min() - 10 * self.cell_size_east,
+                         station_east.max() + 10 * self.cell_size_east)
         else:
             ax1.set_xlim(east_limits)
 
@@ -1014,66 +1014,27 @@ class Model(object):
 
         plt.show()
 
-    def plot_topograph(self):
+    def plot_topography(self):
         """
-        display topography elevation data together with station locations on a cell-index N-E map
+        display topography elevation data together with station locations 
+        on a cell-index N-E map
         :return:
         """
-        # fig_size = kwargs.pop('fig_size', [6, 6])
-        # fig_dpi = kwargs.pop('fig_dpi', 300)
-        # fig_num = kwargs.pop('fig_num', 1)
-        #
-        # station_marker = kwargs.pop('station_marker', 'v')
-        # marker_color = kwargs.pop('station_color', 'b')
-        # marker_size = kwargs.pop('marker_size', 2)
-        #
-        # line_color = kwargs.pop('line_color', 'k')
-        # line_width = kwargs.pop('line_width', .5)
-        #
-        # plt.rcParams['figure.subplot.hspace'] = .3
-        # plt.rcParams['figure.subplot.wspace'] = .3
-        # plt.rcParams['figure.subplot.left'] = .12
-        # plt.rcParams['font.size'] = 7
 
-        # fig = plt.figure(3, dpi=200)
         fig = plt.figure(dpi=200)
         fig.clf()
         ax = fig.add_subplot(1, 1, 1, aspect='equal') 
 
         x, y = np.meshgrid(self.grid_east, self.grid_north)
-        # topography data image
-        # plt.imshow(elev_mg) # this upside down
-        # plt.imshow(elev_mg[::-1])  # this will be correct - water shadow flip of the image
-#        imgplot = plt.imshow(self.surface_dict['topography'],
-#                             origin='lower')  # the orgin is in the lower left corner SW.
+
         imgplot = ax.pcolormesh(x, y, self.surface_dict['topography'])
         divider = make_axes_locatable(ax)
         # pad = separation from figure to colorbar
         cax = divider.append_axes("right", size="3%", pad=0.2)
-        mycb = plt.colorbar(imgplot, cax=cax, use_gridspec=True)  # cmap=my_cmap_r, does not work!!
+        mycb = plt.colorbar(imgplot, cax=cax, use_gridspec=True)
         mycb.outline.set_linewidth(2)
         mycb.set_label(label='Elevation (metre)', size=12)
-        # make a rotation matrix to rotate data
-        # cos_ang = np.cos(np.deg2rad(self.mesh_rotation_angle))
-        # sin_ang = np.sin(np.deg2rad(self.mesh_rotation_angle))
 
-        # turns out ModEM has not accomodated rotation of the grid, so for
-        # now we will not rotate anything.
-        # cos_ang = 1
-        # sin_ang = 0
-
-        # --->plot map view
-        # ax1 = fig.add_subplot(1, 2, 1, aspect='equal')
-
-        # plot station locations in grid
-
-        sgindex_x = self.station_grid_index[0]
-        sgindex_y = self.station_grid_index[1]
-
-        self._logger.debug("station grid index x: %s" % sgindex_x)
-        self._logger.debug("station grid index y: %s" % sgindex_y)
-
-#        ax.scatter(sgindex_x, sgindex_y, marker='v', c='b', s=2)
         ax.scatter(self.station_locations.rel_east,
                    self.station_locations.rel_north,
                    marker='v', c='k', s=2)
@@ -1750,7 +1711,7 @@ class Model(object):
 
     def add_topography_to_model2(self, topographyfile=None, topographyarray=None,
                                  interp_method='nearest', air_resistivity=1e12,
-                                 topography_buffer=None):
+                                 topography_buffer=None, add_topo_type='log'):
         """
         if air_layers is non-zero, will add topo: read in topograph file, make a surface model.
         Call project_stations_on_topography in the end, which will re-write the .dat file.
@@ -1781,27 +1742,50 @@ class Model(object):
                                                    self.station_locations.station_locations['rel_north'],
                                                    buf=topography_buffer)
             topo_core = self.surface_dict['topography'][core_cells]
+            
+            # assume 0 is sea leve, so get anything above sea level as 
+            # topography
             topo_core_min = max(topo_core.min(),0)
-
-            # log increasing airlayers, in reversed order
-            new_air_nodes = mtmesh.make_log_increasing_array(self.z1_layer,
-                                                             topo_core.max() - topo_core_min,
-                                                             self.n_air_layers,
-                                                             increment_factor=0.999)[::-1]
+            print('*** MAX ELEVATION = {0}'.format(topo_core.max()))
+            print('*** MIN ELEVATION = {0}'.format(max(topo_core.min(),0)))
+            ### Add logarithmically expanding cells to the nodes
+            if add_topo_type == 'log':
+                # log increasing airlayers, in reversed order
+                new_air_nodes = mtmesh.make_log_increasing_array(self.z1_layer,
+                                                                 topo_core.max() - topo_core_min,
+                                                                 self.n_air_layers,
+                                                                 increment_factor=0.999)[::-1]
+                # try concatenating the nodes and sorting them to make sure
+                # that the top cells are the smallest.  Otherwise the inversion
+                # can do some funky things.
+                self.nodes_z = np.sort(np.concatenate([new_air_nodes, 
+                                                      self.nodes_z]))
+            ### add cells with the same size as z1 to topography
+            elif add_topo_type == 'linear':
+                new_air_nodes = mtmesh.make_equal_spaced_array(self.z1_layer, 
+                                                               topo_core_min, 
+                                                               topo_core.max())
+                self.nodes_z = np.concatenate([new_air_nodes, self.nodes_z])
+                self.n_air_layers = new_air_nodes.size
+                
             # sum to get grid cell locations
-            new_airlayers = np.array([new_air_nodes[:ii].sum() for ii in range(len(new_air_nodes) + 1)])
+            # new_airlayers = np.array([new_air_nodes[:ii].sum() 
+            #                          for ii in range(len(new_air_nodes) + 1)])
             # maximum topography cell on the grid
-            topo_max_grid = topo_core_min + new_airlayers[-1]
-            # round to nearest whole number and convert subtract the max elevation (so that sea level is at topo_core_min)
-            new_airlayers = np.around(new_airlayers - topo_max_grid)
+            topo_max_grid = topo_core_min + new_air_nodes.sum()
+            # round to nearest whole number and convert subtract the max
+            # elevation (so that sea level is at topo_core_min)
+            #new_airlayers = np.around(new_airlayers - topo_max_grid)
+            print('*** MAX ELEVATION = {0} ***'.format(topo_max_grid))
+            self.grid_z = np.around(self.grid_z-topo_max_grid)
 
-            self._logger.debug("new_airlayers {}".format(new_airlayers))
+            self._logger.debug("new_airlayers {}".format(self.grid_z[0:self.n_air_layers]))
 
             self._logger.debug("self.grid_z[0:2] {}".format(self.grid_z[0:2]))
 
             # add new air layers, cut_off some tailing layers to preserve array size.
             #            self.grid_z = np.concatenate([new_airlayers, self.grid_z[self.n_airlayers+1:] - self.grid_z[self.n_airlayers] + new_airlayers[-1]], axis=0)
-            self.grid_z = np.concatenate([new_airlayers[:-1], self.grid_z + new_airlayers[-1]], axis=0)
+            #self.grid_z = np.concatenate([new_airlayers[:-1], self.grid_z + new_airlayers[-1]], axis=0)
 
         # print(" NEW self.grid_z shape and values = ", self.grid_z.shape, self.grid_z)
         #            print self.grid_z
