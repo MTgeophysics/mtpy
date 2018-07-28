@@ -972,6 +972,8 @@ class Zen3D(object):
         if fn is not None:
             self.fn = fn
             
+        if self.header.old_version:
+            self.metadata._schedule_metadata_len = 0
         self.metadata.read_metadata(fn=self.fn, fid=fid)
         
     #=====================================    
