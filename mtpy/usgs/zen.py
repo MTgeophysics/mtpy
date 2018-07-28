@@ -192,6 +192,12 @@ class Z3D_Header(object):
         
         if key_string.lower() in ['lat', 'lon', 'long']:
             return_value = np.rad2deg(float(value_string))
+            if key_string.lower() in ['lat']:
+                if abs(return_value) > 90:
+                    return_value = 0.0
+            elif key_string.lower() in ['lon']:
+                if abs(return_value) > 180:
+                    return_value = 0.0
             
         return return_value
             
@@ -893,6 +899,9 @@ class Zen3D(object):
             self.fn = fn
             
         self.header.read_header(fn=self.fn, fid=fid)
+        if self.header.old_version:
+            if self.header.box_number is None:
+                self.header.box_number = '6666'
         
     #====================================== 
     def _read_schedule(self, fn=None, fid=None):
@@ -1037,12 +1046,15 @@ class Zen3D(object):
             
             # initalize a data array filled with zeros, everything goes into
             # this array then we parse later
-            data = np.zeros((file_size-512*(2+self.metadata.count))/4, 
+            data = np.zeros((file_size-512*(1+self.metadata.count))/4, 
                              dtype=np.int32)
             # go over a while loop until the data cound exceed the file size
             data_count = 0
             while data_count+self.metadata.m_tell/4 < data.size:
-                test_str = np.fromstring(file_id.read(self._block_len), 
+                
+                read_len = min([self._block_len, 32*((file_size-file_id.tell())//32)])
+                print(data_count, file_size-file_id.tell(), read_len)
+                test_str = np.fromstring(file_id.read(read_len), 
                                          dtype=np.int32)
                 data[data_count:data_count+len(test_str)] = test_str
                 data_count += test_str.size
@@ -1052,7 +1064,11 @@ class Zen3D(object):
         gps_stamp_find = np.where(data == self._gps_flag_0)[0]
         
         # skip the first two stamps and trim data
-        data = data[gps_stamp_find[3]:]
+        try:
+            data = data[gps_stamp_find[3]:]
+        except IndexError:
+            raise ZenGPSError("Data is clipped, cannot open file") 
+        
         gps_stamp_find = np.where(data == self._gps_flag_0)[0]
         
         self.gps_stamps = np.zeros(len(gps_stamp_find), dtype=self._gps_dtype)
@@ -1078,17 +1094,6 @@ class Zen3D(object):
                     self.gps_stamps[ii]['block_len'] = 0
                 data[gps_find:gps_find+self._gps_bytes] = 0
 #                
-#            elif self.header.old_version is False and data[gps_find+1] == self._gps_flag_1:
-#                gps_str = struct.pack('<'+'i'*self._gps_bytes,
-#                                      *data[gps_find:gps_find+self._gps_bytes])
-#                self.gps_stamps[ii] = np.fromstring(gps_str, 
-#                                                   dtype=self._gps_dtype)
-#                if ii > 0:
-#                    self.gps_stamps[ii]['block_len'] = gps_find-\
-#                                           gps_stamp_find[ii-1]-self._gps_bytes 
-#                elif ii == 0:
-#                    self.gps_stamps[ii]['block_len'] = 0
-#                data[gps_find:gps_find+self._gps_bytes] = 0
 
         # trim the data after taking out the gps stamps
         self.ts_obj = mtts.MT_TS()

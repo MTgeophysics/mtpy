@@ -247,7 +247,11 @@ class Z3DCollection(object):
         for ii, fn in enumerate(fn_list):
             z3d_obj = zen.Zen3D(fn)
             z3d_obj._leap_seconds = self.leap_seconds
-            z3d_obj.read_z3d()
+            try:
+                z3d_obj.read_z3d()
+            except zen.ZenGPSError:
+                print('xxxxxx BAD FILE: Skipping {0} xxxx'.format(fn))
+                continue
             
             # convert the time index into an integer
             dt_index = z3d_obj.ts_obj.ts.data.index.astype(np.int64)/10.**9
