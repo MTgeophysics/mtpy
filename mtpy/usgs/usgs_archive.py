@@ -146,7 +146,7 @@ class Z3DCollection(object):
         fn_list = os.listdir(z3d_dir)
         merge_list = np.array([[fn]+\
                               os.path.basename(fn)[:-4].split('_')
-                              for fn in fn_list if fn.endswith('.Z3D')])
+                              for fn in fn_list if fn.lower().endswith('.z3d')])
                                   
         merge_list = np.array([merge_list[:,0], 
                                merge_list[:,1],  
