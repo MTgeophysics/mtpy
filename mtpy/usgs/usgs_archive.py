@@ -314,6 +314,7 @@ class Z3DCollection(object):
         if decimate > 1:
             ts_len /= decimate
         
+        print(ts_len, meta_arr.size)
         ts_db = pd.DataFrame(np.zeros((ts_len, meta_arr.size)),
                              columns=list(meta_arr['comp']),
                              dtype=np.float32)
@@ -1251,8 +1252,10 @@ class USGScfg(object):
                 cfg_db = cfg_db.append(self.check_db(pd.DataFrame([cfg_dict[cfg_dict.keys()[0]]])),
                                        ignore_index=True)
                 count += 1
-                
-        cfg_db = cfg_db.replace('None', '0')
+        try:
+            cfg_db = cfg_db.replace('None', '0')
+        except UnboundLocalError:
+            return None, None
         
         if write:
             csv_fn = os.path.join(cfg_dir, '{0}_runs.csv'.format(station))
@@ -1271,6 +1274,7 @@ class USGScfg(object):
         :return: station_db
         :rtype: Pandas Dataframe
         """
+        print(run_db.site.iloc[0])
         station_dict = pd.compat.OrderedDict()
         station_dict['site_name'] = run_db.site.iloc[0]
         station_dict['siteID'] = run_db.site.iloc[0]
@@ -1278,13 +1282,19 @@ class USGScfg(object):
         station_dict['lon'] = run_db.lon.astype(np.float).mean()
         station_dict['nm_elev'] = get_nm_elev(station_dict['lat'],
                                               station_dict['lon'])
+        
         station_dict['hx_azm'] = run_db.hx_azm.astype(np.float).median()
         station_dict['hy_azm'] = run_db.hy_azm.astype(np.float).median()
         station_dict['hz_azm'] = run_db.hz_azm.astype(np.float).median()
         
-        station_dict['hx_id'] = run_db.hx_id.astype(np.float).median()
-        station_dict['hy_id'] = run_db.hy_id.astype(np.float).median()
-        station_dict['hz_id'] = run_db.hz_id.astype(np.float).median()
+        try:
+            station_dict['hx_id'] = run_db.hx_id.astype(np.float).median()
+            station_dict['hy_id'] = run_db.hy_id.astype(np.float).median()
+            station_dict['hz_id'] = run_db.hz_id.astype(np.float).median()
+        except ValueError:
+            station_dict['hx_id'] = 2254
+            station_dict['hy_id'] = 2264
+            station_dict['hz_id'] = 2274
         
         station_dict['ex_len'] = run_db.ex_len.astype(np.float).median()
         station_dict['ey_len'] = run_db.ey_len.astype(np.float).median()
@@ -1422,7 +1432,10 @@ class USGScfg(object):
 
             # get the database and write a csv file            
             cfg_db, csv_fn = self.combine_run_cfg(cfg_dir)
-
+            if cfg_db is None:
+                print('*** No Information for {0} ***'.format(station))
+                continue
+            
             s_db = self.summarize_runs(cfg_db)
             # get station and location information
             if s_count == 0:

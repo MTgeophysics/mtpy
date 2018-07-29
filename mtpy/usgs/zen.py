@@ -192,10 +192,10 @@ class Z3D_Header(object):
         
         if key_string.lower() in ['lat', 'lon', 'long']:
             return_value = np.rad2deg(float(value_string))
-            if key_string.lower() in ['lat']:
+            if 'lat' in key_string.lower():
                 if abs(return_value) > 90:
                     return_value = 0.0
-            elif key_string.lower() in ['lon']:
+            elif 'lon' in key_string.lower():
                 if abs(return_value) > 180:
                     return_value = 0.0
             
@@ -1051,9 +1051,9 @@ class Zen3D(object):
             # go over a while loop until the data cound exceed the file size
             data_count = 0
             while data_count+self.metadata.m_tell/4 < data.size:
-                
-                read_len = min([self._block_len, 32*((file_size-file_id.tell())//32)])
-                print(data_count, file_size-file_id.tell(), read_len)
+                # need to make sure the last block read is a multiple of 32 bit
+                read_len = min([self._block_len, 
+                                32*((file_size-file_id.tell())//32)])
                 test_str = np.fromstring(file_id.read(read_len), 
                                          dtype=np.int32)
                 data[data_count:data_count+len(test_str)] = test_str
