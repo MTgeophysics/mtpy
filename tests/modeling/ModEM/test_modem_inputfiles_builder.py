@@ -41,7 +41,7 @@ class TestModemInputFilesBuilder(TestCase):
     def setUp(self):
 
         # directory to save created input files
-        self._output_dir = r'C:/tmp'#make_temp_dir(self._testMethodName, base_dir=self._temp_dir)
+        self._output_dir = make_temp_dir(self._testMethodName, base_dir=self._temp_dir)
 
         self._expected_output_dir = os.path.join(SAMPLE_DIR, 'ModEM')
         if not os.path.isdir(self._expected_output_dir):
