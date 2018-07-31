@@ -1140,13 +1140,14 @@ class PlotMTResponse(PlotSettings):
                 gs.update(hspace=0.2, wspace=.15, left=.07)
                 plt.setp(self.axp2.xaxis.get_ticklabels(), visible=True)
                 plt.setp(self.axr2.xaxis.get_ticklabels(), visible=True)
-                self.axr2.tick_params(axis='x',pad=2,direction='in',which='both')
-                self.axp2.tick_params(axis='x',pad=2,direction='in',which='both')
+                self.axr2.tick_params(axis='x',pad=2,direction='in',which='both',labelsize=self.font_size-1)
+                self.axp2.tick_params(axis='x',pad=2,direction='in',which='both',labelsize=self.font_size-1)
+                self.axp2.set_xlabel('Period (s)',fontsize=self.font_size-1,labelpad=0)#
             plt.setp(self.axr.xaxis.get_ticklabels(), visible=True)
             plt.setp(self.axp.xaxis.get_ticklabels(), visible=True)
-            self.axr.tick_params(axis='x',pad=2,direction='in',which='both')
-            self.axp.tick_params(axis='x',pad=2,direction='in',which='both')
-            
+            self.axr.tick_params(axis='x',pad=2,direction='in',which='both',labelsize=self.font_size-1)
+            self.axp.tick_params(axis='x',pad=2,direction='in',which='both',labelsize=self.font_size-1)
+#            self.axp.set_xlabel('Period (s)',fontsize=self.font_size-2,labelpad=0)
 
         # make plot_title and show
         if self.plot_title is None:
