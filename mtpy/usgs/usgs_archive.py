@@ -809,12 +809,14 @@ class USGSasc(Metadata):
         # fill metadata
         for chn in self.channel_dict.keys():
             if 'h' in chn.lower():
-                stem = self.channel_dict[chn]['InstrumentID'].split('-', 1)[0]
+                #stem = self.channel_dict[chn]['InstrumentID'].split('-', 1)[0]
+                stem = station_db.zen_num
                 h_attr = '{0}_{1}'.format(chn.lower(), 'id')
                 h_id = getattr(station_db, h_attr)
                 self.channel_dict[chn]['InstrumentID'] = '{0}-{1}'.format(stem, 
                                                                           h_id)
             elif 'e' in chn.lower():
+                self.channel_dict[chn]['InstrumentID'] = station_db.zen_num
                 e_attr = '{0}_{1}'.format(chn.lower(), 'len')
                 e_len = getattr(station_db, e_attr)
                 self.channel_dict[chn]['Dipole_Length'] = e_len
@@ -824,6 +826,7 @@ class USGSasc(Metadata):
             if 'geographic' in self.CoordinateSystem:
                 azm_value += self.declination
             self.channel_dict[chn]['Azimuth'] = azm_value
+            
             
         # get location
         self.SiteLatitude = float(station_db.lat)
