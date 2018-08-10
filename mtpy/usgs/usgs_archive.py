@@ -809,12 +809,14 @@ class USGSasc(Metadata):
         # fill metadata
         for chn in self.channel_dict.keys():
             if 'h' in chn.lower():
-                stem = self.channel_dict[chn]['InstrumentID'].split('-', 1)[0]
+                #stem = self.channel_dict[chn]['InstrumentID'].split('-', 1)[0]
+                stem = station_db.zen_num
                 h_attr = '{0}_{1}'.format(chn.lower(), 'id')
                 h_id = getattr(station_db, h_attr)
                 self.channel_dict[chn]['InstrumentID'] = '{0}-{1}'.format(stem, 
                                                                           h_id)
             elif 'e' in chn.lower():
+                self.channel_dict[chn]['InstrumentID'] = station_db.zen_num
                 e_attr = '{0}_{1}'.format(chn.lower(), 'len')
                 e_len = getattr(station_db, e_attr)
                 self.channel_dict[chn]['Dipole_Length'] = e_len
@@ -824,6 +826,11 @@ class USGSasc(Metadata):
             if 'geographic' in self.CoordinateSystem:
                 azm_value += self.declination
             self.channel_dict[chn]['Azimuth'] = azm_value
+            
+            
+        # get location
+        self.SiteLatitude = float(station_db.lat)
+        self.SiteLongitude = float(station_db.lon)
             
         return True
         
@@ -1257,6 +1264,9 @@ class USGScfg(object):
         except UnboundLocalError:
             return None, None
         
+        cfg_db.lat = cfg_db.lat.astype(np.float)
+        cfg_db.lon = cfg_db.lon.astype(np.float)
+        
         if write:
             csv_fn = os.path.join(cfg_dir, '{0}_runs.csv'.format(station))
             cfg_db.to_csv(csv_fn, index=False)
@@ -1451,6 +1461,9 @@ class USGScfg(object):
         
 #        s_db.to_csv(s_fn, index=False)
         l_db.to_csv(l_fn, index=False)
+        
+        survey_db.lat = survey_db.lat.astype(np.float)
+        survey_db.lon = survey_db.lon.astype(np.float)
 #        
 #        return csv_fn, s_fn, l_fn
         if write:
@@ -1591,7 +1604,9 @@ class USGScfg(object):
         :rtype: pandas dataframe
         """
         
-        return pd.read_csv(survey_csv)
+        return pd.read_csv(survey_csv, 
+                           dtype={'lat':np.float,
+                                  'lon':np.float})
     
     def get_station_info_from_csv(self, survey_csv, station):
         """
