@@ -825,6 +825,10 @@ class USGSasc(Metadata):
                 azm_value += self.declination
             self.channel_dict[chn]['Azimuth'] = azm_value
             
+        # get location
+        self.SiteLatitude = float(station_db.lat)
+        self.SiteLongitude = float(station_db.lon)
+            
         return True
         
     def fill_metadata(self, meta_arr):
@@ -1257,6 +1261,9 @@ class USGScfg(object):
         except UnboundLocalError:
             return None, None
         
+        cfg_db.lat = cfg_db.lat.astype(np.float)
+        cfg_db.lon = cfg_db.lon.astype(np.float)
+        
         if write:
             csv_fn = os.path.join(cfg_dir, '{0}_runs.csv'.format(station))
             cfg_db.to_csv(csv_fn, index=False)
@@ -1451,6 +1458,9 @@ class USGScfg(object):
         
 #        s_db.to_csv(s_fn, index=False)
         l_db.to_csv(l_fn, index=False)
+        
+        survey_db.lat = survey_db.lat.astype(np.float)
+        survey_db.lon = survey_db.lon.astype(np.float)
 #        
 #        return csv_fn, s_fn, l_fn
         if write:
@@ -1591,7 +1601,9 @@ class USGScfg(object):
         :rtype: pandas dataframe
         """
         
-        return pd.read_csv(survey_csv)
+        return pd.read_csv(survey_csv, 
+                           dtype={'lat':np.float,
+                                  'lon':np.float})
     
     def get_station_info_from_csv(self, survey_csv, station):
         """
