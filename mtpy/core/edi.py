@@ -225,7 +225,15 @@ class Edi(object):
         if self.Data_sect.data_type == 'spectra':
             self._logger.info('Converting Spectra to Impedance and Tipper')
             self._logger.info('Check to make sure input channel list is correct if the data looks incorrect')
-            self._read_spectra(lines)
+            if self.Data_sect.nchan == 5:
+                c_list = ['hx', 'hy', 'hz', 'ex', 'ey']
+            elif self.Data_sect.nchan == 4:
+                c_list = ['hx', 'hy', 'ex', 'ey']
+            elif self.Data_sect.nchan == 6:
+                c_list = ['hx', 'hy', 'ex', 'ey', 'hxr', 'rhy']
+            elif self.Data_sect.nchan == 7:
+                c_list = ['hx', 'hy', 'hz', 'ex', 'ey', 'hxr', 'rhy']
+            self._read_spectra(lines, comp_list=c_list)
 
         elif self.Data_sect.data_type == 'z':
             self._read_mt(lines)
@@ -479,7 +487,7 @@ class Edi(object):
                 z_err_arr[kk, 1, 1] = np.sqrt(scaling * s_arr[cc.hx, cc.hx].real)
 
             # if HZ information is present:
-            if len(comp_list) > 5:
+            if 'hz' in comp_list:
                 t_arr[kk, 0, 0] = s_arr[cc.hz, cc.rhx] * \
                                   s_arr[cc.hy, cc.rhy] - s_arr[cc.hz, cc.rhy] * \
                                                          s_arr[cc.hy, cc.rhx]
@@ -775,6 +783,10 @@ class index_locator(object):
         self.rhz = None
         for ii, comp in enumerate(component_list):
             setattr(self, comp, ii)
+        if self.rhx is None:
+            self.rhx = self.hx
+        if self.rhy is None:
+            self.rhy = self.hy
 
 
 # ==============================================================================
