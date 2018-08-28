@@ -9,14 +9,15 @@ Overview
 
 A Python Toolbox for Magnetotelluric (MT) Data Processing, Analysis, Modelling and Visualization
 
-This repository has superseded the `geophysics/mtpy <https://github.com/geophysics/mtpy/tree/beta>`_
-and `GeoscienceAustralia/mtpy2 <https://github.com/GeoscienceAustralia/mtpy2/tree/develop>`_
+Documentation: http://mtpy2.readthedocs.io/en/develop/master_doc.html (Static http://mtgeophysics.github.io/mtpy)
 
 Home Page: https://github.com/MTgeophysics/mtpy
 
-Documentation: http://mtpy2.readthedocs.io/en/develop/master_doc.html and http://mtgeophysics.github.io/mtpy
-
 Issue tracking: https://github.com/MTgeophysics/mtpy/issues
+
+
+Note that this repository has superseded the `geophysics/mtpy <https://github.com/geophysics/mtpy/tree/beta>`_
+and `GeoscienceAustralia/mtpy2 <https://github.com/GeoscienceAustralia/mtpy2/tree/develop>`_
 
 
 Contacts
@@ -31,11 +32,11 @@ Contacts
 | **Jared Peacock**
 | peacock.jared@gmail.com
 
-| **Yingzhi Gou**
-| Yingzhi.Gou@ga.gov.au
-
 | **Rakib Hassan**
 | Rakib.Hassan@ga.gov.au
+
+| **Yingzhi Gou**
+| Yingzhi.Gou@ga.gov.au
 
 | **Jinming Duan**
 | Jingming.Duan@ga.gov.au
