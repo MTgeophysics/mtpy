@@ -19,6 +19,7 @@ import time
 import datetime
 from collections import Counter
 
+import zipfile
 import gzip
 import urllib2 as url
 import xml.etree.ElementTree as ET
@@ -915,7 +916,8 @@ class USGSasc(Metadata):
         except AttributeError:
             print('No EY')
             
-    def _make_file_name(self, save_path=None, compression=True):
+    def _make_file_name(self, save_path=None, compression=True, 
+                        compress_type='zip'):
         """
         get the file name to save to
         
@@ -944,12 +946,16 @@ class USGSasc(Metadata):
                                     self.AcqSmpFreq))
             
         if compression:
-            save_fn = save_fn + '.gz'
+            if compress_type == 'zip':
+                save_fn = save_fn + '.zip'
+            elif compress_type == 'gzip':
+                save_fn = save_fn + '.gz'
             
         return save_fn
         
     def write_asc_file(self, save_fn=None, chunk_size=1024, str_fmt='%15.7e', 
-                       full=True, compress=False, save_dir=None):
+                       full=True, compress=False, save_dir=None, 
+                       compress_type='zip'):
         """
         Write an ascii file in the USGS ascii format.
         
@@ -966,26 +972,30 @@ class USGSasc(Metadata):
         :param full: write out the complete file, mostly for testing.
         :type full: boolean [ True | False ]
         
-        :param compress: compress file using gzip
+        :param compress: compress file 
         :type compress: boolean [ True | False ]
+        
+        :param compress_type: compress file using zip or gzip
+        :type compress_type: boolean [ zip | gzip ]
         """
         # get the filename to save to
         save_fn = self._make_file_name(save_path=save_dir, 
-                                       compression=compress)
+                                       compression=compress,
+                                       compress_type=compress_type)
         # get the number of characters in the desired string
         s_num = int(str_fmt[1:str_fmt.find('.')])
         
         # convert electric fields into mV/km
         self.convert_electrics()
         
-        print '==> {0}'.format(save_fn)
+        print('==> {0}'.format(save_fn))
         print('START --> {0}'.format(time.ctime()))
         st = datetime.datetime.now()
         
         # write meta data first
         # sort channel information same as columns
         meta_lines = self.write_metadata(chn_list=[c.capitalize() for c in self.ts.columns])
-        if compress is True:
+        if compress == True and compress_type == 'gzip':
             with gzip.open(save_fn, 'wb') as fid:
                 h_line = [''.join(['{0:>{1}}'.format(c.capitalize(), s_num) 
                           for c in self.ts.columns])]
@@ -1012,6 +1022,11 @@ class USGSasc(Metadata):
                     fid.write(lines+'\n')
 
         else:
+            if compress == True and compress_type == 'zip':
+                print('ZIPPING')
+                save_fn = save_fn[0:-4]
+                zip_file = True
+                print(zip_file)
             with open(save_fn, 'w') as fid:
                 h_line = [''.join(['{0:>{1}}'.format(c.capitalize(), s_num) 
                           for c in self.ts.columns])]
@@ -1036,6 +1051,10 @@ class USGSasc(Metadata):
                     out = np.char.mod(str_fmt, out)
                     lines = '\n'.join([''.join(out[ii, :]) for ii in range(out.shape[0])])
                     fid.write(lines+'\n')
+                    
+        # for some fucking reason, all interal variables don't exist anymore
+        # and if you try to do the zipping nothing happens, so have to do
+        # it externally.  WTF
         print('END -->   {0}'.format(time.ctime()))
         et = datetime.datetime.now()
         write_time = et-st
@@ -1669,6 +1688,7 @@ class Citation(object):
         self.issue = None
         self.volume = None
         self.doi_url = None
+        self._orcid = []
         
     @property
     def author(self):
@@ -1679,6 +1699,16 @@ class Citation(object):
         if type(author) is not list:
             author = [author]
         self._author = author
+        
+    @property
+    def orcid(self):
+        return self._orcid
+    
+    @orcid.setter
+    def orcid(self, orcid):
+        if type(orcid) is not list:
+            orcid = [orcid]
+        self._orcid = orcid
         
 class Survey(object):
     """
@@ -1810,6 +1840,7 @@ class XMLMetadata(object):
         self.keywords_general = None
         self.keywords_thesaurus = None
         self.locations = None
+        self.temporal = None
         
         self.use_constraint = None
         self.science_base = Person() 
@@ -1892,6 +1923,7 @@ class XMLMetadata(object):
         """
         set the ID information
         """
+        add_info_str = 'Additional information about Originator: '
         idinfo = ET.SubElement(self.metadata, 'idinfo')
         
         citation = ET.SubElement(idinfo, 'citation')
@@ -1922,6 +1954,13 @@ class XMLMetadata(object):
             jpubinfo = ET.SubElement(jciteinfo, 'pubinfo')
             ET.SubElement(jpubinfo, 'pubplace').text = 'Denver, CO'
             ET.SubElement(jpubinfo, 'publish').text = self.usgs_str
+            # set orcid id #s if given
+            if len(self.journal_citation.orcid) > 0:
+                orcid_str = ', '.join(['{0}, https://orcid.org/{1}'.format(author, orcnum) 
+                                      for author, orcnum in zip(self.journal_citation.author,
+                                                                self.journal_citation.orcid)
+                                      if orcnum not in [None, 'none', 'None']])
+                ET.SubElement(jciteinfo, 'othercit').text = add_info_str+orcid_str
             ET.SubElement(jciteinfo, 'onlink').text = self.journal_citation.doi_url
             
         # description
@@ -1981,6 +2020,12 @@ class XMLMetadata(object):
         ET.SubElement(place, 'placekt').text = 'Geographic Names Information System (GNIS)'
         for loc in self.locations:
             ET.SubElement(place, 'placekey').text = loc
+            
+        # time periods
+        temporal = ET.SubElement(keywords, 'temporal')
+        ET.SubElement(temporal, 'tempkt').text = 'None'
+        for temp in self.temporal:
+            ET.SubElement(temporal, 'tempkey').text = temp
             
         ## constraints
         ET.SubElement(idinfo, 'accconst').text = 'None'
@@ -2070,42 +2115,42 @@ class XMLMetadata(object):
             ET.SubElement(entry_type, 'enttypd').text = self.shapefile.description
             ET.SubElement(entry_type, 'enttypds').text = self.usgs_str
             
-            entry_attr = ET.SubElement(detailed, 'attr')
-            ET.SubElement(entry_attr, 'attrlabl').text = 'Station'
-            ET.SubElement(entry_attr, 'attrdef').text = 'Individual station name within MT survey.'
-            ET.SubElement(entry_attr, 'attrdefs').text = self.usgs_str
-            entry_attr_dom = ET.SubElement(entry_attr, 'attrdomv')
-            ET.SubElement(entry_attr_dom, 'udom').text = self.udom 
-            
-            lat_attr = ET.SubElement(detailed, 'attr')
-            ET.SubElement(lat_attr, 'attrlabl').text = 'Lat_WGS84'
-            ET.SubElement(lat_attr, 'attrdef').text = self.lat_def
-            ET.SubElement(lat_attr, 'attrdefs').text = self.usgs_str
-            lat_dom = ET.SubElement(lat_attr, 'attrdomv')
-            lat_rdom = ET.SubElement(lat_dom, 'rdom')
-            ET.SubElement(lat_rdom, 'rdommin').text = '{0:.5f}'.format(self.survey.south)
-            ET.SubElement(lat_rdom, 'rdommax').text = '{0:.5f}'.format(self.survey.north)
-            ET.SubElement(lat_rdom, 'attrunit').text = 'Decimal degrees'
-            
-            lon_attr = ET.SubElement(detailed, 'attr')
-            ET.SubElement(lon_attr, 'attrlabl').text = 'Lon_WGS84'
-            ET.SubElement(lon_attr, 'attrdef').text = self.lon_def
-            ET.SubElement(lon_attr, 'attrdefs').text = self.usgs_str
-            lon_dom = ET.SubElement(lon_attr, 'attrdomv')
-            lon_rdom = ET.SubElement(lon_dom, 'rdom')
-            ET.SubElement(lon_rdom, 'rdommin').text = '{0:.5f}'.format(self.survey.west)
-            ET.SubElement(lon_rdom, 'rdommax').text = '{0:.5f}'.format(self.survey.east)
-            ET.SubElement(lon_rdom, 'attrunit').text = 'Decimal degrees'
-            
-            elev_attr = ET.SubElement(detailed, 'attr')
-            ET.SubElement(elev_attr, 'attrlabl').text = 'Elev_NAVD88'
-            ET.SubElement(elev_attr, 'attrdef').text = self.elev_def
-            ET.SubElement(elev_attr, 'attrdefs').text = self.usgs_str
-            elev_dom = ET.SubElement(elev_attr, 'attrdomv')
-            elev_rdom = ET.SubElement(elev_dom, 'rdom')
-            ET.SubElement(elev_rdom, 'rdommin').text = '{0:.1f}'.format(self.survey.elev_min)
-            ET.SubElement(elev_rdom, 'rdommax').text = '{0:.1f}'.format(self.survey.elev_max)
-            ET.SubElement(elev_rdom, 'attrunit').text = 'Meters'
+        entry_attr = ET.SubElement(detailed, 'attr')
+        ET.SubElement(entry_attr, 'attrlabl').text = 'Station'
+        ET.SubElement(entry_attr, 'attrdef').text = 'Individual station name within MT survey.'
+        ET.SubElement(entry_attr, 'attrdefs').text = self.usgs_str
+        entry_attr_dom = ET.SubElement(entry_attr, 'attrdomv')
+        ET.SubElement(entry_attr_dom, 'udom').text = self.udom 
+        
+        lat_attr = ET.SubElement(detailed, 'attr')
+        ET.SubElement(lat_attr, 'attrlabl').text = 'Lat_WGS84'
+        ET.SubElement(lat_attr, 'attrdef').text = self.lat_def
+        ET.SubElement(lat_attr, 'attrdefs').text = self.usgs_str
+        lat_dom = ET.SubElement(lat_attr, 'attrdomv')
+        lat_rdom = ET.SubElement(lat_dom, 'rdom')
+        ET.SubElement(lat_rdom, 'rdommin').text = '{0:.5f}'.format(self.survey.south)
+        ET.SubElement(lat_rdom, 'rdommax').text = '{0:.5f}'.format(self.survey.north)
+        ET.SubElement(lat_rdom, 'attrunit').text = 'Decimal degrees'
+        
+        lon_attr = ET.SubElement(detailed, 'attr')
+        ET.SubElement(lon_attr, 'attrlabl').text = 'Lon_WGS84'
+        ET.SubElement(lon_attr, 'attrdef').text = self.lon_def
+        ET.SubElement(lon_attr, 'attrdefs').text = self.usgs_str
+        lon_dom = ET.SubElement(lon_attr, 'attrdomv')
+        lon_rdom = ET.SubElement(lon_dom, 'rdom')
+        ET.SubElement(lon_rdom, 'rdommin').text = '{0:.5f}'.format(self.survey.west)
+        ET.SubElement(lon_rdom, 'rdommax').text = '{0:.5f}'.format(self.survey.east)
+        ET.SubElement(lon_rdom, 'attrunit').text = 'Decimal degrees'
+        
+        elev_attr = ET.SubElement(detailed, 'attr')
+        ET.SubElement(elev_attr, 'attrlabl').text = 'Elev_NAVD88'
+        ET.SubElement(elev_attr, 'attrdef').text = self.elev_def
+        ET.SubElement(elev_attr, 'attrdefs').text = self.usgs_str
+        elev_dom = ET.SubElement(elev_attr, 'attrdomv')
+        elev_rdom = ET.SubElement(elev_dom, 'rdom')
+        ET.SubElement(elev_rdom, 'rdommin').text = '{0:.1f}'.format(self.survey.elev_min)
+        ET.SubElement(elev_rdom, 'rdommax').text = '{0:.1f}'.format(self.survey.elev_max)
+        ET.SubElement(elev_rdom, 'attrunit').text = 'Meters'
         
         overview = ET.SubElement(eainfo, 'overview')
         ET.SubElement(overview, 'eaover').text = self.guide.fn
