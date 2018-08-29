@@ -827,6 +827,9 @@ class USGSasc(Metadata):
             if 'geographic' in self.CoordinateSystem:
                 azm_value += self.declination
             self.channel_dict[chn]['Azimuth'] = azm_value
+            self.channel_dict[chn]['ChnNum'] = '{0}{1}'.format(self.channel_dict[chn]['ChnNum'][:-1],
+                                                               getattr(station_db, 
+                                                                       '{0}_num'.format(chn.lower())))
             
             
         # get location
@@ -860,8 +863,8 @@ class USGSasc(Metadata):
         self.SiteLongitude = np.median(meta_arr['lon'])
         self.SiteID = os.path.basename(meta_arr['fn'][0]).split('_')[0]
         self.station_dir = os.path.dirname(meta_arr['fn'][0])
+        
         # if geographic coordinates add in declination
-        print np.where(meta_arr['comp']!='hz')
         if 'geographic' in self.CoordinateSystem.lower():
             meta_arr['ch_azm'][np.where(meta_arr['comp'] != 'hz')] += self.declination
 
@@ -1113,6 +1116,7 @@ class USGSasc(Metadata):
             meta_dict[key]['hx_std'] = self.channel_dict['Hx']['std']
             meta_dict[key]['hx_start'] = self.channel_dict['Hx']['start']
             meta_dict[key]['zen_num'] = self.channel_dict['Hx']['InstrumentID'].split('-')[0]
+            meta_dict[key]['hx_num'] = self.channel_dict['Hx']['ChnID'][-1:]
         except KeyError:
             meta_dict[key]['hx_azm'] = None
             meta_dict[key]['hx_id'] = None
@@ -1120,6 +1124,7 @@ class USGSasc(Metadata):
             meta_dict[key]['hx_ndiff'] = None
             meta_dict[key]['hx_std'] = None
             meta_dict[key]['hx_start'] = None
+            meta_dict[key]['hx_num'] = None
             
         try:
             meta_dict[key]['hy_azm'] = self.channel_dict['Hy']['Azimuth']
@@ -1129,6 +1134,7 @@ class USGSasc(Metadata):
             meta_dict[key]['hy_std'] = self.channel_dict['Hy']['std']
             meta_dict[key]['hy_start'] = self.channel_dict['Hy']['start']
             meta_dict[key]['zen_num'] = self.channel_dict['Hy']['InstrumentID'].split('-')[0]
+            meta_dict[key]['hy_num'] = self.channel_dict['Hy']['ChnID'][-1:]
         except KeyError:
             meta_dict[key]['hy_azm'] = None
             meta_dict[key]['hy_id'] = None
@@ -1136,6 +1142,7 @@ class USGSasc(Metadata):
             meta_dict[key]['hy_ndiff'] = None
             meta_dict[key]['hy_std'] = None
             meta_dict[key]['hy_start'] = None
+            meta_dict[key]['hy_num'] = None
         try:
             meta_dict[key]['hz_azm'] = self.channel_dict['Hz']['Azimuth']
             meta_dict[key]['hz_id'] = self.channel_dict['Hz']['InstrumentID'].split('-')[1]
@@ -1144,6 +1151,7 @@ class USGSasc(Metadata):
             meta_dict[key]['hz_std'] = self.channel_dict['Hz']['std']
             meta_dict[key]['hz_start'] = self.channel_dict['Hz']['start']
             meta_dict[key]['zen_num'] = self.channel_dict['Hz']['InstrumentID'].split('-')[0]
+            meta_dict[key]['hz_num'] = self.channel_dict['Hz']['ChnID'][-1:]
         except KeyError:
             meta_dict[key]['hz_azm'] = None
             meta_dict[key]['hz_id'] = None
@@ -1151,6 +1159,7 @@ class USGSasc(Metadata):
             meta_dict[key]['hz_ndiff'] = None
             meta_dict[key]['hz_std'] = None
             meta_dict[key]['hz_start'] = None
+            meta_dict[key]['hz_num'] = None
         
         try:
             meta_dict[key]['ex_azm'] = self.channel_dict['Ex']['Azimuth']
@@ -1161,6 +1170,7 @@ class USGSasc(Metadata):
             meta_dict[key]['ex_std'] = self.channel_dict['Ex']['std']
             meta_dict[key]['ex_start'] = self.channel_dict['Ex']['start']
             meta_dict[key]['zen_num'] = self.channel_dict['Ex']['InstrumentID']
+            meta_dict[key]['ex_num'] = self.channel_dict['Ex']['ChnID'][-1:]
         except KeyError:
             meta_dict[key]['ex_azm'] = None
             meta_dict[key]['ex_id'] = None
@@ -1169,7 +1179,7 @@ class USGSasc(Metadata):
             meta_dict[key]['ex_ndiff'] = None
             meta_dict[key]['ex_std'] = None
             meta_dict[key]['ex_start'] = None
-        
+            meta_dict[key]['ex_num'] = None
         try:
             meta_dict[key]['ey_azm'] = self.channel_dict['Ey']['Azimuth']
             meta_dict[key]['ey_id'] = self.channel_dict['Ey']['InstrumentID']
@@ -1179,6 +1189,7 @@ class USGSasc(Metadata):
             meta_dict[key]['ey_std'] = self.channel_dict['Ey']['std']
             meta_dict[key]['ey_start'] = self.channel_dict['Ey']['start']
             meta_dict[key]['zen_num'] = self.channel_dict['Ey']['InstrumentID']
+            meta_dict[key]['ey_num'] = self.channel_dict['Ey']['ChnID'][-1:]
         except KeyError:
             meta_dict[key]['ey_azm'] = None
             meta_dict[key]['ey_id'] = None
@@ -1187,6 +1198,7 @@ class USGSasc(Metadata):
             meta_dict[key]['ey_ndiff'] = None
             meta_dict[key]['ey_std'] = None
             meta_dict[key]['ey_start'] = None
+            meta_dict[key]['ey_num'] = None
         
         meta_dict[key]['start_date'] = self.AcqStartTime
         meta_dict[key]['stop_date'] = self.AcqStopTime
@@ -1330,6 +1342,12 @@ class USGScfg(object):
         
         station_dict['ex_azm'] = run_db.ex_azm.astype(np.float).median()
         station_dict['ey_azm'] = run_db.ey_azm.astype(np.float).median()
+        
+        station_dict['ex_num'] = run_db.ex_num.median()
+        station_dict['ey_num'] = run_db.ey_num.median()
+        station_dict['hx_num'] = run_db.hx_num.median()
+        station_dict['hy_num'] = run_db.hy_num.median()
+        station_dict['hz_num'] = run_db.hz_num.median()
         
         station_dict['n_chan'] = run_db.n_chan.max()
         
