@@ -1625,7 +1625,10 @@ class USGScfg(object):
         
         return pd.read_csv(survey_csv, 
                            dtype={'lat':np.float,
-                                  'lon':np.float})
+                                  'lon':np.float,
+                                  'hx_id':np.int,
+                                  'hy_id':np.int,
+                                  'hz_id':np.int})
     
     def get_station_info_from_csv(self, survey_csv, station):
         """
@@ -2109,48 +2112,48 @@ class XMLMetadata(object):
         eainfo = ET.SubElement(self.metadata, 'eainfo')
         
         if station is False:
-            detailed = ET.SubElement(eainfo, 'detailed')
+            detailed = ET.SubElement(eainfo, 'detailed')    
             entry_type = ET.SubElement(detailed, 'enttyp')
             ET.SubElement(entry_type, 'enttypl').text = self.shapefile.fn
             ET.SubElement(entry_type, 'enttypd').text = self.shapefile.description
             ET.SubElement(entry_type, 'enttypds').text = self.usgs_str
             
-        entry_attr = ET.SubElement(detailed, 'attr')
-        ET.SubElement(entry_attr, 'attrlabl').text = 'Station'
-        ET.SubElement(entry_attr, 'attrdef').text = 'Individual station name within MT survey.'
-        ET.SubElement(entry_attr, 'attrdefs').text = self.usgs_str
-        entry_attr_dom = ET.SubElement(entry_attr, 'attrdomv')
-        ET.SubElement(entry_attr_dom, 'udom').text = self.udom 
-        
-        lat_attr = ET.SubElement(detailed, 'attr')
-        ET.SubElement(lat_attr, 'attrlabl').text = 'Lat_WGS84'
-        ET.SubElement(lat_attr, 'attrdef').text = self.lat_def
-        ET.SubElement(lat_attr, 'attrdefs').text = self.usgs_str
-        lat_dom = ET.SubElement(lat_attr, 'attrdomv')
-        lat_rdom = ET.SubElement(lat_dom, 'rdom')
-        ET.SubElement(lat_rdom, 'rdommin').text = '{0:.5f}'.format(self.survey.south)
-        ET.SubElement(lat_rdom, 'rdommax').text = '{0:.5f}'.format(self.survey.north)
-        ET.SubElement(lat_rdom, 'attrunit').text = 'Decimal degrees'
-        
-        lon_attr = ET.SubElement(detailed, 'attr')
-        ET.SubElement(lon_attr, 'attrlabl').text = 'Lon_WGS84'
-        ET.SubElement(lon_attr, 'attrdef').text = self.lon_def
-        ET.SubElement(lon_attr, 'attrdefs').text = self.usgs_str
-        lon_dom = ET.SubElement(lon_attr, 'attrdomv')
-        lon_rdom = ET.SubElement(lon_dom, 'rdom')
-        ET.SubElement(lon_rdom, 'rdommin').text = '{0:.5f}'.format(self.survey.west)
-        ET.SubElement(lon_rdom, 'rdommax').text = '{0:.5f}'.format(self.survey.east)
-        ET.SubElement(lon_rdom, 'attrunit').text = 'Decimal degrees'
-        
-        elev_attr = ET.SubElement(detailed, 'attr')
-        ET.SubElement(elev_attr, 'attrlabl').text = 'Elev_NAVD88'
-        ET.SubElement(elev_attr, 'attrdef').text = self.elev_def
-        ET.SubElement(elev_attr, 'attrdefs').text = self.usgs_str
-        elev_dom = ET.SubElement(elev_attr, 'attrdomv')
-        elev_rdom = ET.SubElement(elev_dom, 'rdom')
-        ET.SubElement(elev_rdom, 'rdommin').text = '{0:.1f}'.format(self.survey.elev_min)
-        ET.SubElement(elev_rdom, 'rdommax').text = '{0:.1f}'.format(self.survey.elev_max)
-        ET.SubElement(elev_rdom, 'attrunit').text = 'Meters'
+            entry_attr = ET.SubElement(detailed, 'attr')
+            ET.SubElement(entry_attr, 'attrlabl').text = 'Station'
+            ET.SubElement(entry_attr, 'attrdef').text = 'Individual station name within MT survey.'
+            ET.SubElement(entry_attr, 'attrdefs').text = self.usgs_str
+            entry_attr_dom = ET.SubElement(entry_attr, 'attrdomv')
+            ET.SubElement(entry_attr_dom, 'udom').text = self.udom 
+            
+            lat_attr = ET.SubElement(detailed, 'attr')
+            ET.SubElement(lat_attr, 'attrlabl').text = 'Lat_WGS84'
+            ET.SubElement(lat_attr, 'attrdef').text = self.lat_def
+            ET.SubElement(lat_attr, 'attrdefs').text = self.usgs_str
+            lat_dom = ET.SubElement(lat_attr, 'attrdomv')
+            lat_rdom = ET.SubElement(lat_dom, 'rdom')
+            ET.SubElement(lat_rdom, 'rdommin').text = '{0:.5f}'.format(self.survey.south)
+            ET.SubElement(lat_rdom, 'rdommax').text = '{0:.5f}'.format(self.survey.north)
+            ET.SubElement(lat_rdom, 'attrunit').text = 'Decimal degrees'
+            
+            lon_attr = ET.SubElement(detailed, 'attr')
+            ET.SubElement(lon_attr, 'attrlabl').text = 'Lon_WGS84'
+            ET.SubElement(lon_attr, 'attrdef').text = self.lon_def
+            ET.SubElement(lon_attr, 'attrdefs').text = self.usgs_str
+            lon_dom = ET.SubElement(lon_attr, 'attrdomv')
+            lon_rdom = ET.SubElement(lon_dom, 'rdom')
+            ET.SubElement(lon_rdom, 'rdommin').text = '{0:.5f}'.format(self.survey.west)
+            ET.SubElement(lon_rdom, 'rdommax').text = '{0:.5f}'.format(self.survey.east)
+            ET.SubElement(lon_rdom, 'attrunit').text = 'Decimal degrees'
+            
+            elev_attr = ET.SubElement(detailed, 'attr')
+            ET.SubElement(elev_attr, 'attrlabl').text = 'Elev_NAVD88'
+            ET.SubElement(elev_attr, 'attrdef').text = self.elev_def
+            ET.SubElement(elev_attr, 'attrdefs').text = self.usgs_str
+            elev_dom = ET.SubElement(elev_attr, 'attrdomv')
+            elev_rdom = ET.SubElement(elev_dom, 'rdom')
+            ET.SubElement(elev_rdom, 'rdommin').text = '{0:.1f}'.format(self.survey.elev_min)
+            ET.SubElement(elev_rdom, 'rdommax').text = '{0:.1f}'.format(self.survey.elev_max)
+            ET.SubElement(elev_rdom, 'attrunit').text = 'Meters'
         
         overview = ET.SubElement(eainfo, 'overview')
         ET.SubElement(overview, 'eaover').text = self.guide.fn
