@@ -1622,13 +1622,14 @@ class USGScfg(object):
         :return: survey summary database
         :rtype: pandas dataframe
         """
-        
-        return pd.read_csv(survey_csv, 
-                           dtype={'lat':np.float,
-                                  'lon':np.float,
-                                  'hx_id':np.int,
-                                  'hy_id':np.int,
-                                  'hz_id':np.int})
+        db = pd.read_csv(survey_csv, 
+                         dtype={'lat':np.float,
+                                'lon':np.float})
+        for key in ['hx_id', 'hy_id', 'hz_id']:
+            db[key] = db[key].fillna(0)
+            db[key] = db[key].astype(np.int)
+            
+        return db
     
     def get_station_info_from_csv(self, survey_csv, station):
         """
