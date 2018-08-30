@@ -468,9 +468,9 @@ class Metadata(object):
                               'InstrumentID',
                               'Azimuth',
                               'Dipole_Length']
-        self._chn_fmt = {'ChnNum':'<7',
+        self._chn_fmt = {'ChnNum':'<8',
                          'ChnID':'<6',
-                         'InstrumentID':'<13',
+                         'InstrumentID':'<12',
                          'Azimuth':'>7.1f',
                          'Dipole_Length':'>14.1f'}
 
@@ -1116,7 +1116,7 @@ class USGSasc(Metadata):
             meta_dict[key]['hx_std'] = self.channel_dict['Hx']['std']
             meta_dict[key]['hx_start'] = self.channel_dict['Hx']['start']
             meta_dict[key]['zen_num'] = self.channel_dict['Hx']['InstrumentID'].split('-')[0]
-            meta_dict[key]['hx_num'] = self.channel_dict['Hx']['ChnID'][-1:]
+            meta_dict[key]['hx_num'] = self.channel_dict['Hx']['ChnNum'][-1]
         except KeyError:
             meta_dict[key]['hx_azm'] = None
             meta_dict[key]['hx_id'] = None
@@ -1134,7 +1134,7 @@ class USGSasc(Metadata):
             meta_dict[key]['hy_std'] = self.channel_dict['Hy']['std']
             meta_dict[key]['hy_start'] = self.channel_dict['Hy']['start']
             meta_dict[key]['zen_num'] = self.channel_dict['Hy']['InstrumentID'].split('-')[0]
-            meta_dict[key]['hy_num'] = self.channel_dict['Hy']['ChnID'][-1:]
+            meta_dict[key]['hy_num'] = self.channel_dict['Hy']['ChnNum'][-1:]
         except KeyError:
             meta_dict[key]['hy_azm'] = None
             meta_dict[key]['hy_id'] = None
@@ -1151,7 +1151,7 @@ class USGSasc(Metadata):
             meta_dict[key]['hz_std'] = self.channel_dict['Hz']['std']
             meta_dict[key]['hz_start'] = self.channel_dict['Hz']['start']
             meta_dict[key]['zen_num'] = self.channel_dict['Hz']['InstrumentID'].split('-')[0]
-            meta_dict[key]['hz_num'] = self.channel_dict['Hz']['ChnID'][-1:]
+            meta_dict[key]['hz_num'] = self.channel_dict['Hz']['ChnNum'][-1:]
         except KeyError:
             meta_dict[key]['hz_azm'] = None
             meta_dict[key]['hz_id'] = None
@@ -1170,7 +1170,7 @@ class USGSasc(Metadata):
             meta_dict[key]['ex_std'] = self.channel_dict['Ex']['std']
             meta_dict[key]['ex_start'] = self.channel_dict['Ex']['start']
             meta_dict[key]['zen_num'] = self.channel_dict['Ex']['InstrumentID']
-            meta_dict[key]['ex_num'] = self.channel_dict['Ex']['ChnID'][-1:]
+            meta_dict[key]['ex_num'] = self.channel_dict['Ex']['ChnNum'][-1:]
         except KeyError:
             meta_dict[key]['ex_azm'] = None
             meta_dict[key]['ex_id'] = None
@@ -1189,7 +1189,7 @@ class USGSasc(Metadata):
             meta_dict[key]['ey_std'] = self.channel_dict['Ey']['std']
             meta_dict[key]['ey_start'] = self.channel_dict['Ey']['start']
             meta_dict[key]['zen_num'] = self.channel_dict['Ey']['InstrumentID']
-            meta_dict[key]['ey_num'] = self.channel_dict['Ey']['ChnID'][-1:]
+            meta_dict[key]['ey_num'] = self.channel_dict['Ey']['ChnNum'][-1:]
         except KeyError:
             meta_dict[key]['ey_azm'] = None
             meta_dict[key]['ey_id'] = None
