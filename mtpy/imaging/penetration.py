@@ -139,7 +139,7 @@ class Depth2D(ImagingBase):
     generate a profile using occam2d module,
     then plot the Penetration Depth profile at the given periods vs the stations locations.
     """
-    def plot(self, **kwargs):
+    def plot(self, tick_params={}, **kwargs):
         if self._rho is None:
             raise ZComponentError
         elif self._period_indexes is None or not self._period_indexes:
@@ -150,49 +150,61 @@ class Depth2D(ImagingBase):
         pr = occam2d.Profile(edi_list=self._data)
         pr.generate_profile()
         # pr.plot_profile(station_id=[0, 4])
+        
+        if 'fontsize' in kwargs.keys():
+            fontsize = kwargs['fontsize']
+        else:
+            fontsize = 16
 
         self._fig = plt.figure(figsize=(8, 6), dpi=80)
         self._fig.set_tight_layout(True)
         for period_index in self._period_indexes:
             self._logger.debug("doing period index %s", period_index)
             (stations, periods, pen, _) = get_penetration_depth(pr.edi_list, int(period_index), whichrho=self._rho)
-            line_label = "Period=%s" % periods[0]
+            line_label = "Period=%.2e s" % periods[0]
 
             plt.plot(
                 pr.station_locations,
                 pen,
                 "--",
-                marker="o",
-                markersize=12,
-                linewidth=2,
-                label=line_label)
+#                marker="o",
+#                markersize=12,
+#                linewidth=2,
+                label=line_label,
+                **kwargs)
             plt.legend()
 
         plt.ylabel(
             'Penetration Depth (Metres) Computed by %s' %
-            self._rho, fontsize=16)
-        plt.yticks(fontsize=16)
+            self._rho, 
+            fontsize=fontsize
+            )
+        plt.yticks(fontsize=fontsize)
 
-        plt.xlabel('MT Penetration Depth Profile Over Stations.', fontsize=16)
+        plt.xlabel('MT Penetration Depth Profile Over Stations.', fontsize=fontsize)
         self._logger.debug("stations= %s", stations)
         self._logger.debug("station locations: %s", pr.station_locations)
         if pr.station_list is not None:
             plt.xticks(
                 pr.station_locations,
                 pr.station_list,
-                rotation='horizontal',
-                fontsize=16)
+                fontsize=fontsize,
+                **tick_params
+#                rotation='horizontal',
+                )
         else:  # Are the stations in the same order as the profile generated pr.station_list????
             plt.xticks(
                 pr.station_locations,
                 stations,
-                rotation='horizontal',
-                fontsize=16)
+                fontsize=fontsize,
+                **tick_params
+#                rotation='horizontal',
+                )
 
         # plt.tight_layout()
         plt.gca().xaxis.tick_top()
         self._fig.canvas.set_window_title("MT Penetration Depth Profile by %s" % self._rho)
-        plt.legend(loc="best")
+        plt.legend(loc="lower left")
 
     def set_data(self, data):
         # this plot require multiple edi files
