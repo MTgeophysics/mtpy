@@ -69,7 +69,11 @@ def get_nm_elev(lat, lon):
     nm_url = r"https://nationalmap.gov/epqs/pqs.php?x={0:.5f}&y={1:.5f}&units=Meters&output=xml"
 
     # call the url and get the response
-    response = url.urlopen(nm_url.format(lon, lat))
+    try:
+        response = url.urlopen(nm_url.format(lon, lat))
+    except url.HTTPError:
+        print('GET_ELEVATION_ERROR: Could not connect to internet')
+        return -666
     
     # read the xml response and convert to a float
     info = ET.ElementTree(ET.fromstring(response.read()))
