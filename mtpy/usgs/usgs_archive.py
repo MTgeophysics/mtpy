@@ -2130,6 +2130,7 @@ class XMLMetadata(object):
         """
         eainfo = ET.SubElement(self.metadata, 'eainfo')
         
+        # write the shape file parameters only if its the overall xml
         if station is False:
             detailed = ET.SubElement(eainfo, 'detailed')    
             entry_type = ET.SubElement(detailed, 'enttyp')
@@ -2137,12 +2138,12 @@ class XMLMetadata(object):
             ET.SubElement(entry_type, 'enttypd').text = self.shapefile.description
             ET.SubElement(entry_type, 'enttypds').text = self.usgs_str
             
-            entry_attr = ET.SubElement(detailed, 'attr')
-            ET.SubElement(entry_attr, 'attrlabl').text = 'Station'
-            ET.SubElement(entry_attr, 'attrdef').text = 'Individual station name within MT survey.'
-            ET.SubElement(entry_attr, 'attrdefs').text = self.usgs_str
-            entry_attr_dom = ET.SubElement(entry_attr, 'attrdomv')
-            ET.SubElement(entry_attr_dom, 'udom').text = self.udom 
+            station_attr = ET.SubElement(detailed, 'attr')
+            ET.SubElement(station_attr, 'attrlabl').text = 'Stn_name'
+            ET.SubElement(station_attr, 'attrdef').text = 'Individual station name within MT survey.'
+            ET.SubElement(station_attr, 'attrdefs').text = self.usgs_str
+            station_attr_dom = ET.SubElement(station_attr, 'attrdomv')
+            ET.SubElement(station_attr_dom, 'udom').text = self.udom 
             
             lat_attr = ET.SubElement(detailed, 'attr')
             ET.SubElement(lat_attr, 'attrlabl').text = 'Lat_WGS84'
@@ -2173,6 +2174,39 @@ class XMLMetadata(object):
             ET.SubElement(elev_rdom, 'rdommin').text = '{0:.1f}'.format(self.survey.elev_min)
             ET.SubElement(elev_rdom, 'rdommax').text = '{0:.1f}'.format(self.survey.elev_max)
             ET.SubElement(elev_rdom, 'attrunit').text = 'Meters'
+            
+            sd_attr = ET.SubElement(detailed, 'attr')
+            ET.SubElement(sd_attr, 'attrlabl').text = 'Start_date'
+            ET.SubElement(sd_attr, 'attrdef').text = 'Starting date for station data acquisition'
+            ET.SubElement(sd_attr, 'attrdefs').text = self.usgs_str
+            sd_attr_dom = ET.SubElement(sd_attr, 'attrdomv')
+            ET.SubElement(sd_attr_dom, 'udom').text = 'Dated in YYYYMMDD format'
+            
+            ed_attr = ET.SubElement(detailed, 'attr')
+            ET.SubElement(ed_attr, 'attrlabl').text = 'End_date'
+            ET.SubElement(ed_attr, 'attrdef').text = 'Ending date for station data acquisition'
+            ET.SubElement(ed_attr, 'attrdefs').text = self.usgs_str
+            ed_attr_dom = ET.SubElement(ed_attr, 'attrdomv')
+            ET.SubElement(ed_attr_dom, 'udom').text = 'Dated in YYYYMMDD format'
+            
+            dt_attr = ET.SubElement(detailed, 'attr')
+            ET.SubElement(dt_attr, 'attrlabl').text = 'Data_type'
+            ET.SubElement(dt_attr, 'attrdef').text = 'Type of data acquired'
+            ET.SubElement(dt_attr, 'attrdefs').text = self.usgs_str
+            dt_attr_dom = ET.SubElement(dt_attr, 'attrdomv')
+            ET.SubElement(dt_attr_dom, 'udom').text = 'W = wideband, L = long-period'
+            
+            dq_attr = ET.SubElement(detailed, 'attr')
+            ET.SubElement(dq_attr, 'attrlabl').text = 'Qual_fac'
+            ET.SubElement(dq_attr, 'attrdef').text = 'Data quality factor'
+            ET.SubElement(dq_attr, 'attrdefs').text = self.usgs_str
+            dq_attr_dom = ET.SubElement(dq_attr, 'attrdomv')
+            dq_str = ': '.join(['5 = great TF from 10 to 10000 secs (or) longer',
+                                '4 = good TF from 10 to 10000 sec',
+                                '3 = could be noticeably inproved by additional runs',
+                                '2 = serious issues with one or both modes',
+                                '1 = poor TF that can barely be used for inversion'])
+            ET.SubElement(dq_attr_dom, 'udom').text = dq_str
         
         overview = ET.SubElement(eainfo, 'overview')
         ET.SubElement(overview, 'eaover').text = self.guide.fn
@@ -2181,8 +2215,6 @@ class XMLMetadata(object):
         overview_02 = ET.SubElement(eainfo, 'overview')
         ET.SubElement(overview_02, 'eaover').text = self.dictionary.fn
         ET.SubElement(overview_02, 'eadetcit').text = self.dictionary.description
-        
-        
             
     def _set_distribution_info(self):
         """
