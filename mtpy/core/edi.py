@@ -290,10 +290,10 @@ class Edi(object):
         z_arr[:, 1, 1] = np.array(data_dict['zyyr']) + \
                          np.array(data_dict['zyyi']) * 1j
 
-        z_err_arr[:, 0, 0] = np.array(data_dict['zxx.var'])
-        z_err_arr[:, 0, 1] = np.array(data_dict['zxy.var'])
-        z_err_arr[:, 1, 0] = np.array(data_dict['zyx.var'])
-        z_err_arr[:, 1, 1] = np.array(data_dict['zyy.var'])
+        z_err_arr[:, 0, 0] = np.array(data_dict['zxx.var'])**0.5
+        z_err_arr[:, 0, 1] = np.array(data_dict['zxy.var'])**0.5
+        z_err_arr[:, 1, 0] = np.array(data_dict['zyx.var'])**0.5
+        z_err_arr[:, 1, 1] = np.array(data_dict['zyy.var'])**0.5
 
         # check for order of frequency, we want high togit  low
         if freq_arr[0] < freq_arr[1]:
@@ -336,8 +336,8 @@ class Edi(object):
             tipper_arr[:, 0, 1] = np.array(data_dict['tyr.exp']) + \
                                   np.array(data_dict['tyi.exp']) * 1j
 
-            tipper_err_arr[:, 0, 0] = np.array(data_dict['txvar.exp'])
-            tipper_err_arr[:, 0, 1] = np.array(data_dict['tyvar.exp'])
+            tipper_err_arr[:, 0, 0] = np.array(data_dict['txvar.exp'])**0.5
+            tipper_err_arr[:, 0, 1] = np.array(data_dict['tyvar.exp'])**0.5
 
             if flip:
                 tipper_arr = tipper_arr[::-1]
@@ -606,7 +606,7 @@ class Edi(object):
                                                       self._z_labels[2 * ii + jj][0])
                 z_lines_imag = self._write_data_block(self.Z.z[:, ii, jj].imag,
                                                       self._z_labels[2 * ii + jj][1])
-                z_lines_var = self._write_data_block(self.Z.z_err[:, ii, jj],
+                z_lines_var = self._write_data_block(self.Z.z_err[:, ii, jj]**2.,
                                                      self._z_labels[2 * ii + jj][2])
 
                 z_data_lines += z_lines_real
@@ -637,7 +637,7 @@ class Edi(object):
                                                           self._t_labels[jj][0])
                     t_lines_imag = self._write_data_block(self.Tipper.tipper[:, 0, jj].imag,
                                                           self._t_labels[jj][1])
-                    t_lines_var = self._write_data_block(self.Tipper.tipper_err[:, 0, jj],
+                    t_lines_var = self._write_data_block(self.Tipper.tipper_err[:, 0, jj]**2.,
                                                          self._t_labels[jj][2])
 
                     t_data_lines += t_lines_real

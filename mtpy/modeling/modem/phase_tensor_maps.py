@@ -382,7 +382,8 @@ class PlotPTMaps(mtplottools.MTEllipse):
             self.pt_resid_arr = res_pt_arr
 
     def plot_on_axes(self, ax, m, periodIdx, ptarray='data', ellipse_size_factor=10000,
-              cvals=None, map_scale='m', centre_shift=[0, 0], **kwargs):
+                     cvals=None, map_scale='m', centre_shift=[0, 0], plot_tipper='n',
+                     tipper_size_factor=1e5, **kwargs):
 
         '''
         Plots phase tensors for a given period index.
@@ -397,6 +398,9 @@ class PlotPTMaps(mtplottools.MTEllipse):
                       the same length as the number of tuples for each period
         :param map_scale: map length scale
         :param kwargs: list of relevant matplotlib arguments (e.g. zorder, alpha, etc.)
+        :param plot_tipper: string ('n', 'yr', 'yi', or 'yri') to plot
+                            no tipper, real only, imaginary only, or both
+        :param tipper_size_factor: scaling factor for tipper vectors
         '''
 
         assert (periodIdx >= 0 and periodIdx < len(self.plot_period_list)), \
@@ -437,6 +441,14 @@ class PlotPTMaps(mtplottools.MTEllipse):
                 ax.add_artist(e)
             # end if
         # end for
+        if 'y' in plot_tipper:
+            # if neither r or i provided, assume that we want to plot both
+            if plot_tipper == 'y':
+                plot_tipper = 'yri'
+            self._plot_induction_vectors(ax, m, periodIdx, 
+                                         ptarray=ptarray, size_factor=tipper_size_factor,
+                                         map_scale=map_scale, centre_shift=centre_shift,
+                                         plot_tipper=plot_tipper, **kwargs)
     # end func
 
     def plot(self, period=0, save2file=None, **kwargs):
@@ -809,6 +821,34 @@ class PlotPTMaps(mtplottools.MTEllipse):
         for fig in self.fig_list:
             plt.close(fig)
         self.plot()
+
+    
+    def _plot_induction_vectors(self, ax, m, periodIdx, ptarray='data', size_factor=10000,
+                                 map_scale='m', centre_shift=[0, 0], plot_tipper='yri', **kwargs):
+                                                  
+        if ptarray == 'data':
+            data_array = self.data_obj.data_array
+        elif ptarray == 'resp':
+            data_array = self.resp_obj.data_array
+        rx = data_array['tip'].real[:,periodIdx,0,0]
+        ry = data_array['tip'].real[:,periodIdx,0,1]
+        ix = data_array['tip'].imag[:,periodIdx,0,0]
+        iy = data_array['tip'].imag[:,periodIdx,0,1]
+        
+        lon,lat = self.data_obj.station_locations.lon, self.data_obj.station_locations.lat
+        x,y = m(lon,lat)
+
+        kwargs_tip = {'length_includes_head':True, 
+                      'head_width':size_factor*0.07, 
+                      'head_length': size_factor*0.1}
+        kwargs_tip.update(kwargs)
+        
+        for sidx in range(len(self.data_obj.data_array)):
+            if 'r' in plot_tipper:
+                ax.arrow(x[sidx],y[sidx],size_factor*rx[sidx],size_factor*ry[sidx],color='k',**kwargs_tip)
+            if 'i' in plot_tipper:
+                ax.arrow(x[sidx],y[sidx],size_factor*ix[sidx],size_factor*iy[sidx],color='b',**kwargs_tip)
+
 
     def _get_pt_data_list(self, attribute, xykeys=['east', 'north']):
 

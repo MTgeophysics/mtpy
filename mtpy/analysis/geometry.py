@@ -290,9 +290,9 @@ def eccentricity(z_array=None, z_object=None, pt_array=None, pt_object=None):
 
         ecc_err = None
         if (pt_obj._pi1()[1] is not None) and (pt_obj._pi2()[1] is not None):
-            ecc_err = np.sqrt((pt_obj._pi1()[1][idx_f] / pt_obj._pi1()[0][idx_f]) ** 2 + (
-                pt_obj._pi2()[1][idx_f] / pt_obj._pi2()[0][idx_f]) ** 2)
+            ecc_err = np.sqrt((pt_obj._pi1()[1][idx_f] / pt_obj._pi1()[0][idx_f]) ** 2 +\
+                              (pt_obj._pi2()[1][idx_f] / pt_obj._pi2()[0][idx_f]) ** 2)
 
         lo_eccerr.append(ecc_err)
 
-    return np.array(lo_ecc), np.array(lo_eccerr)
+    return np.array(lo_ecc), np.array(lo_eccerr)*np.array(lo_ecc)

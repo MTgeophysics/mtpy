@@ -186,6 +186,13 @@ class PlotResPhaseMaps(mtpl.PlotSettings):
                 return np.array(result)
             # end try
         # end func
+        
+        # change vmin, vmax to 2x2 array
+        if not np.iterable(vmin):
+            vmin = np.ones((2,2))*vmin
+        if not np.iterable(vmax):
+            vmax = np.ones((2,2))*vmax       
+        
 
         # set position properties for the plot
         plt.rcParams['font.size'] = self.font_size
@@ -331,35 +338,35 @@ class PlotResPhaseMaps(mtpl.PlotSettings):
                 if(isinstance(cmap, str)):
                     cmap = plt.get_cmap(cmap)
                 # set cmap values for over and under
-                norm = colors.Normalize(vmin=vmin, vmax=vmax)
-                cmap.set_over(cmap(norm(vmax)))
-                cmap.set_under(cmap(norm(vmin)))
+                norm = colors.Normalize(vmin=vmin[i,j], vmax=vmax[i,j])
+                cmap.set_over(cmap(norm(vmax[i,j])))
+                cmap.set_under(cmap(norm(vmin[i,j])))
 
                 if (type == 'res'):
                     # Log-normalized contour plots do not support the 'extend' keyword which
                     # can be used to clip data values above/below the given range to their
                     # corresponding colors. We do the following to get around this issue.
                     cbinfo = ax.tricontourf(triangulation, np.log10(img), mask=insideIndices,
-                                            levels=np.linspace(np.log10(vmin), np.log10(vmax), 50),
+                                            levels=np.linspace(np.log10(vmin[i,j]), np.log10(vmax[i,j]), 50),
                                             extend='both',
                                             cmap=cmap)
 
                     cb = self.fig.colorbar(cbinfo,
                                            ticks=ticker.FixedLocator(
-                                               np.arange(int(np.round(np.log10(vmin))),
-                                                         int(np.round(np.log10(vmax)))+1)))
+                                               np.arange(int(np.round(np.log10(vmin[i,j]))),
+                                                         int(np.round(np.log10(vmax[i,j])))+1)))
 
                     labels = ['$10^{%d}$'%l for l in
-                              np.arange(int(np.round(np.log10(vmin))), int(np.round(np.log10(vmax)))+1)]
+                              np.arange(int(np.round(np.log10(vmin[i,j]))), int(np.round(np.log10(vmax[i,j])))+1)]
                     cb.ax.yaxis.set_major_formatter(ticker.FixedFormatter(labels))
                 elif (type == 'phase'):
                     cbinfo = ax.tricontourf(triangulation, img, mask=insideIndices,
-                                             levels=np.linspace(vmin, vmax, 50),
-                                             norm=colors.Normalize(vmin=vmin, vmax=vmax),
+                                             levels=np.linspace(vmin[i,j], vmax[i,j], 50),
+                                             norm=colors.Normalize(vmin=vmin[i,j], vmax=vmax[i,j]),
                                              extend='both',
                                              cmap=cmap)
 
-                    cb = self.fig.colorbar(cbinfo, ticks=np.linspace(vmin, vmax, 12))
+                    cb = self.fig.colorbar(cbinfo, ticks=np.linspace(vmin[i,j], vmax[i,j], 12))
                 # end if
 
                 ax.tick_params(axis='both', which='major', labelsize=self.font_size-2)
