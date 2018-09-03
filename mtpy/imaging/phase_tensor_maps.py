@@ -551,7 +551,8 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
     def plot(self, fig=None, save_path=None, show=True,
              raster_dict={'lons':[], 'lats':[],
                           'vals':[], 'levels':50, 'cmap':'rainbow',
-                          'cbar_title':'Arbitrary units'}):
+                          'cbar_title':'Arbitrary units',
+                          'cbar_position':None}):
         """
         Plots the phase tensor map.
         :param fig: optional figure object
@@ -588,7 +589,7 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
         lpax2 = None
         # make figure instance
         if(fig is None):
-            self.fig = plt.figure(self.fig_num, self.fig_size, dpi=self.fig_dpi)
+            self.fig = plt.figure(self.fig_num, figsize = self.fig_size, dpi=self.fig_dpi)
             # self.fig = plt.figure(self.fig_num, dpi=self.fig_dpi)
 
             # clear the figure if there is already one up
@@ -612,7 +613,13 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
         if(len(raster_dict['lons']) and self.mapscale == 'deg'):
             lons = np.array(raster_dict['lons'])
             lats = np.array(raster_dict['lats'])
-            vals = np.array(raster_dict['vals'])
+            
+            # retain masking if a masked array is passed in
+            if type(raster_dict['vals']) == np.ma.core.MaskedArray:
+                vals = np.ma.masked_array(raster_dict['vals'])
+            else:
+                vals = np.array(raster_dict['vals'])
+            
 
             assert len(lons) == len(lats) == len(vals), 'Lons, Lats and Vals must all have the same length'
 
@@ -621,19 +628,30 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
             levels = raster_dict.pop('levels', 50)
             cmap = raster_dict.pop('cmap', 'rainbow')
             cbar_title = raster_dict.pop('cbar_title', 'Arbitrary Units')
-
             triangulation = tri.Triangulation(lons, lats)
             cbinfo = lpax.tricontourf(triangulation, vals,
                                       levels=np.linspace(vals.min(), vals.max(), levels),
                                       cmap=cmap)
-            cbax, kw = mcb.make_axes(lpax,
-                                     orientation=self.cb_orientation,
-                                     shrink=.35)
+            if raster_dict['cbar_position'] is not None:
+                cbax = self.fig.add_axes(raster_dict['cbar_position'])
+            else:  
+                cbax, kw = mcb.make_axes(lpax,
+                                         orientation=self.cb_orientation,
+                                         shrink=.35)
             cbar = lpfig.colorbar(cbinfo, cbax)
-
-            if(self.cb_orientation=='horizontal'): cbar.ax.set_xlabel(cbar_title)
-            else: cbar.ax.set_ylabel(cbar_title, fontsize=self.font_size,
+            
+            if(self.cb_orientation=='horizontal'): 
+                cbar.ax.set_xlabel(cbar_title)
+                cbar.ax.xaxis.set_label_position('top')
+                cbar.ax.xaxis.set_label_coords(.5, 1.3)
+            else: 
+                cbar.ax.set_ylabel(cbar_title, fontsize=self.font_size,
                                      fontweight='bold')
+                cbar.ax.yaxis.set_label_position('right')
+                cbar.ax.yaxis.set_label_coords(1.25, .5)
+                cbar.ax.yaxis.tick_left()
+                cbar.ax.tick_params(axis='y', direction='in')
+
         # end if
 
 
@@ -1205,8 +1223,8 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
             fname = 'PTmap_DPI%s_%s_%sHz.%s' % (
                 str(self.fig_dpi), self.ellipse_colorby, sf, file_format)
             path2savefile = os.path.join(save_fn, fname)
-            self.fig.savefig(path2savefile, dpi=fig_dpi, format=file_format, orientation=orientation,
-                             bbox_inches='tight')
+#            self.fig.savefig(path2savefile, dpi=fig_dpi, format=file_format, orientation=orientation,
+#                             bbox_inches='tight')
         else:  # FZ: assume save-fn is a path2file= "path2/afile.fmt"
             file_format = save_fn.split('.')[-1]
             if file_format is None or file_format not in ['png', 'jpg']:

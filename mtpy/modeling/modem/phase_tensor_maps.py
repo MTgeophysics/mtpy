@@ -433,11 +433,13 @@ class PlotPTMaps(mtplottools.MTEllipse):
                         y /= 1e3
                 else:
                     x, y = m(lon, lat)
-                
+
+                # matplotlib angles are defined as degrees anticlockwise from positive x direction.
+                # therefore we need to adjust az accordingly             
                 e = Ellipse([x, y],
                             phimax * ellipse_size_factor,
                             phimin * ellipse_size_factor,
-                            az, **kwargs)
+                            90. - az, **kwargs)
                 ax.add_artist(e)
             # end if
         # end for
@@ -580,6 +582,7 @@ class PlotPTMaps(mtplottools.MTEllipse):
                                   vmax=self.res_limits[1])
 
             # --> plot data phase tensors
+            print(kwargs)
             for pt in self.pt_data_arr[data_ii]:
                 eheight = pt['phimin'] / \
                     self.pt_data_arr[data_ii]['phimax'].max() * \
@@ -698,8 +701,12 @@ class PlotPTMaps(mtplottools.MTEllipse):
             cb_location = (3.35 * bb[2] / 5 + bb[0],
                            y1 * self.cb_pt_pad, .295 * bb[2], .02)
             cbaxd = fig.add_axes(cb_location)
+            if self.ellipse_cmap in mtcl.cmapdict.keys():
+                ecmap = mtcl.cmapdict[self.ellipse_cmap]
+            else:
+                ecmap = self.ellipse_cmap
             cbd = mcb.ColorbarBase(cbaxd,
-                                   cmap=mtcl.cmapdict[self.ellipse_cmap],
+                                   cmap=ecmap,
                                    norm=Normalize(vmin=ckmin,
                                                   vmax=ckmax),
                                    orientation='horizontal')

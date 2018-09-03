@@ -712,7 +712,7 @@ class PhaseTensor(object):
 
         if self.pt is None:
             return None
-
+        
         return np.degrees(np.arctan(self._pi2()[0] - self._pi1()[0]))
 
     @property
