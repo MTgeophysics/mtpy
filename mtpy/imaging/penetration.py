@@ -251,7 +251,7 @@ class Depth3D(ImagingBase):
         self.set_rho(rho)
         self.set_period(period)
 
-    def plot(self, **kwargs):
+    def plot(self, fontsize=14, **kwargs):
         if self._rho is None:
             raise ZComponentError
         elif self._period is None:
@@ -406,7 +406,6 @@ class Depth3D(ImagingBase):
             ax = plt.gca()
             plt.gcf().set_size_inches(6, 6)
 
-            ftsize = 14
             numticks = 5  # number of ticks to draw 5,10?
             stepx = int(zdep.shape[1] / numticks)
             stepy = int(zdep.shape[0] / numticks)
@@ -423,16 +422,16 @@ class Depth3D(ImagingBase):
             # make sure the latitude y-axis is correctly labeled.
             yticks_label.reverse()
 
-            plt.xticks(xticks, xticks_label, rotation='0', fontsize=ftsize)
-            plt.yticks(yticks, yticks_label, rotation='horizontal', fontsize=ftsize)
-            ax.set_ylabel('Latitude', fontsize=ftsize)
-            ax.set_xlabel('Longitude', fontsize=ftsize)
+            plt.xticks(xticks, xticks_label, rotation='0', fontsize=fontsize)
+            plt.yticks(yticks, yticks_label, rotation='horizontal', fontsize=fontsize)
+            ax.set_ylabel('Latitude', fontsize=fontsize)
+            ax.set_xlabel('Longitude', fontsize=fontsize)
             ax.tick_params(
                 axis='both',
                 which='major',
                 width=2,
                 length=5,
-                labelsize=ftsize)
+                labelsize=fontsize)
             # plt.title('Penetration Depth at the Period=%.6f (Cubic Interpolation)\n'
             # % period_fmt)  # Cubic
             title = "Penetration Depth at the Period=%s seconds \n" % self._period_fmt  # todo is \n necessory?
@@ -441,7 +440,7 @@ class Depth3D(ImagingBase):
 
             # method-1. this is the simplest colorbar, but cannot take cmap_r
             # plt.colorbar(cmap=my_cmap_r).set_label(label='Penetration Depth
-            # (Meters)', size=ftsize)  # ,weight='bold')
+            # (Meters)', size=fontsize)  # ,weight='bold')
 
             # method-2 A more controlled colorbar:
             # create an axes on the right side of ax. The width of cax will be 5%
@@ -451,7 +450,7 @@ class Depth3D(ImagingBase):
             cax = divider.append_axes("right", size="3%", pad=0.2)
             mycb = plt.colorbar(imgplot, cax=cax, use_gridspec=True)  # cmap=my_cmap_r, does not work!!
             mycb.outline.set_linewidth(2)
-            mycb.set_label(label='Penetration Depth ({})'.format(z_unit), size=ftsize)
+            mycb.set_label(label='Penetration Depth ({})'.format(z_unit), size=fontsize)
             mycb.set_cmap(my_cmap)
 
     def set_data(self, data):

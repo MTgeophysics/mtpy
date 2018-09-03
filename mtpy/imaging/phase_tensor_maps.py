@@ -498,8 +498,9 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
             self.station_pad = station_dict.pop('pad', .0005)
 
             # set font properties of the station label
-            self.station_font_size = station_dict.pop('font_dict', {'size': self.font_size,
+            self.station_font_dict = station_dict.pop('font_dict', {'size': self.font_size,
                                                                     'weight': 'bold'})
+            
 
         self.plot_yn = kwargs.pop('plot_yn', 'y')
         self.save_fn = kwargs.pop('save_fn', "/c/tmp")

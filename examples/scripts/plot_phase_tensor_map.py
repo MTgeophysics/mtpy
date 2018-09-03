@@ -52,7 +52,7 @@ m = pptmaps.PlotPhaseTensorMaps(fn_list = elst,
 #                                arrow_head_width=0.002,
 #                                arrow_head_length=0.002
 #                                ellipse_cmap='mt_seg_bl2wh2rd'
-#                                station_dict={'id':(0,4)}
+                                station_dict={'id':(5,7)}
                                 )
 
 

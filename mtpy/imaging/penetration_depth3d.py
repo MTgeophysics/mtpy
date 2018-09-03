@@ -42,7 +42,8 @@ _logger = MtPyLog.get_mtpy_logger(__name__)
 
 # This is the major function to be maintained!!!
 # use the Zcompotent=[det, zxy, zyx]
-def plot_latlon_depth_profile(edi_dir, period, zcomponent='det', showfig=True, savefig=True, savepath = None, fig_dpi=400):
+def plot_latlon_depth_profile(edi_dir, period, zcomponent='det', showfig=True, savefig=True, savepath = None, fig_dpi=400,
+                              fontsize=14):
     """
     MT penetration depth profile in lat-lon coordinates with pixelsize = 0.002
     :param savefig:
@@ -66,8 +67,8 @@ def plot_latlon_depth_profile(edi_dir, period, zcomponent='det', showfig=True, s
 
     image = Depth3D(edis, period, zcomponent)
     if isinstance(period, int):  # period is considered as an index
-        image.plot(period_by_index=True)
-    elif isinstance(period, float):  # period is considered as the actual value of period in second
+        image.plot(period_by_index=True, fontsize=fontsize)
+    elif isinstance(period, float, fontsize=fontsize):  # period is considered as the actual value of period in second
         image.plot()
     else:
         raise Exception("Wrong type of the parameter period, %s" % period)
