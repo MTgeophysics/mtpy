@@ -1,10 +1,10 @@
 Format:              OCCAMITER_FLEX
 Description:         1D_Occam_Inv
 Model File:          Model1D
-Data File:           Occam1d_DataFile_DET.dat
-Date/Time:           Wed Nov 08 17:09:25 2017
+Data File:           Occam1d_DataFile_TE.dat
+Date/Time:           Tue Sep  4 12:00:10 2018
 Max Iter:            200
-Target Misfit:       0.0
+Target Misfit:       1.0
 Roughness Type:      1
 !Model Bounds:       min,max
 !Model Value Steps:  stepsize

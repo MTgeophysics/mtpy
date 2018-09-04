@@ -827,7 +827,6 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
                 if phimax == 0 or phimax > 100 or phimin == 0 or phimin > 100:
                     eheight = .0000001 * es
                     ewidth = .0000001 * es
-                    print mt.station
                 else:
                     scaling = es / phimax
                     eheight = phimin * scaling
