@@ -252,7 +252,7 @@ class Mesh():
         
         for ii, offset in enumerate(self.rel_station_locations[:-1]):
             dx = self.rel_station_locations[ii + 1] - offset
-            num_cells = int(np.floor(dx / self.cell_width))
+            num_cells = int(np.ceil(dx / self.cell_width))
             # if the spacing between stations is smaller than mesh set cell
             # size to mid point between stations
 
@@ -787,7 +787,7 @@ class Mesh():
         for mline in mlines[line_count:]:
             mline = mline.strip().split()
             for m_value in mline:
-                print m_value, h_index
+                #print m_value, h_index
                 self.x_nodes[h_index] = float(m_value)
                 h_index += 1
                 if h_index == nh - 1:
@@ -3241,7 +3241,6 @@ class Model(Startup):
         build the model from the mesh, regularization grid and model file
 
         """
-
         # first read in the iteration file
         self.read_iter_file()
 
@@ -3308,6 +3307,7 @@ class Model(Startup):
 
         # flip the resmodel upside down so that the top is the stations
         self.res_model = np.flipud(self.res_model)
+
 
 
 # ==============================================================================
@@ -6739,7 +6739,7 @@ class OccamPointPicker(object):
             ll = self.fdict[self.fig_num][self.ax_num]['{0:.5g}'.format(xd[0])]
 
             # set the data point to zero
-            print self.data[self.fig_num][self.ax_num][ll]
+            # print self.data[self.fig_num][self.ax_num][ll]
             self.data[self.fig_num][self.ax_num][ll] = 0
 
             # reset the point to be a gray x
