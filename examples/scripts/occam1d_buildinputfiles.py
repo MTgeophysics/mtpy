@@ -23,6 +23,7 @@ edi_file = r'C:/mtpywin/mtpy/examples/data/edi_files_2/Synth00.edi'
 
 # create data file
 ocd = mtoc1d.Data()   #create an object and assign values to arguments
+
 ocd.write_data_file(edi_file=edi_file,
                     mode='te',  # det mode
                     save_path=savepath,

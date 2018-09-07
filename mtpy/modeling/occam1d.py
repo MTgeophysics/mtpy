@@ -399,7 +399,8 @@ class Data(object):
         if not os.path.exists(self.save_path):
             os.mkdir(self.save_path)
 
-        self.data_fn = os.path.join(self.save_path,
+        if self.data_fn is None:
+            self.data_fn = os.path.join(self.save_path,
                                     '{0}_{1}.dat'.format(self._data_fn, mode.upper()))
 
         # --> write file as a list of lines

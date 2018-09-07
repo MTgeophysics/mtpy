@@ -127,6 +127,7 @@ class TestOccam2D(TestCase):
 
         :return:
         """
+        
         outdir = self._main_func(edipath=EDI_DATA_DIR)
 
         for afile in ('Occam2DMesh', 'Occam2DModel', 'Occam2DStartup'):
