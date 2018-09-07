@@ -55,8 +55,7 @@ class TestOccam1D(TestCase):
             self._expected_output_dir = None
 
         # directory to save created input files
-        self._output_dir = r'C:/tmp'
-#        self._output_dir = make_temp_dir(self._testMethodName, base_dir=self._temp_dir)
+        self._output_dir = make_temp_dir(self._testMethodName, base_dir=self._temp_dir)
 
     def _main_func(self, path2edifile):
         """

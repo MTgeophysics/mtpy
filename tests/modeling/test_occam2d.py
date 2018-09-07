@@ -160,8 +160,8 @@ class TestOccam2D(TestCase):
         offset = 0
 
         # go to model results directory and find the latest iteration file
-        iterfile = max([f for f in os.listdir(idir) if f[-5:] == '.iter'])
-        respfile = max([f for f in os.listdir(idir) if f[-5:] == '.resp'])
+        iterfile = 'ITER12.iter'
+        respfile = 'RESP12.resp'
 
         datafn = 'OccamDataFile.dat'
         # get the iteration number
