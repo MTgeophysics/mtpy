@@ -410,8 +410,12 @@ class Data(object):
         """
         reset the header sring for file
         """
-
-        h_str = ','.join(['# Created using MTpy calculated {0} error of {1:.0f}%',
+        
+        if 'separate' in error_type:
+            h_str = ','.join(['# Created using MTpy calculated {}error floors of {1:.0f}%,{1:.0f}%,{1:.0f}%,{1:.0f}%',
+                          ' data rotated {2:.1f}_deg clockwise from N\n'])
+        else:
+            h_str = ','.join(['# Created using MTpy calculated {0} error of {1:.0f}%',
                           ' data rotated {2:.1f}_deg clockwise from N\n'])
 
         return h_str.format(error_type, error_value, rotation_angle)
@@ -711,7 +715,7 @@ class Data(object):
                 # in this case the below interpolate_impedance_tensor function will degenerate into a same-freq set.
 
             if len(interp_periods) > 0:  # not empty
-                interp_z, interp_t = mt_obj.interpolate(1. / interp_periods)  # ,bounds_error=False)
+                interp_z, interp_t = mt_obj.interpolate(1. / interp_periods, period_buffer=self.period_buffer)  # ,bounds_error=False)
                 #                interp_z, interp_t = mt_obj.interpolate(1./interp_periods)
                 for kk, ff in enumerate(interp_periods):
                     jj = np.where(self.period_list == ff)[0][0]
@@ -850,13 +854,17 @@ class Data(object):
                     continue
 
                 if 'egbert' in self.error_type_z:
-                    if d_xy == 0.0:
-                        d_xy = 1.0
-                    if d_yx == 0.0:
-                        d_yx = 1.0
-                    err = err_value * np.sqrt(d_xy * d_yx)
-                    if err == 1.0:
-                        err = max([d_xx, d_xy, d_yx, d_yy]) * 10
+                    # if both components masked, then take error floor from
+                    # max of z_xx or z_yy
+                    if (d_xy==0.0 and d_yx==0.0):
+                        err = err_value * np.max([d_xx,d_yy])
+                    # else use the off diagonals depending on data availability
+                    else:
+                        if d_xy == 0.0:
+                            d_xy = d_yx
+                        if d_yx == 0.0:
+                            d_yx = d_xy
+                        err = err_value * np.sqrt(d_xy * d_yx)
 
                 elif 'median' in self.error_type_z:
                     err = err_value * np.median(d[nz])
@@ -881,8 +889,6 @@ class Data(object):
                     # apply separate error floors to each component
                     d = d.reshape((2, 2))
                     err = err_value * d
-                    
-
                 else:
                     raise DataError('error type (z) {0} not understood'.format(self.error_type_z))
 
