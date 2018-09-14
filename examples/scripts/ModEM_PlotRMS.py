@@ -27,7 +27,7 @@ savepath = r'C:\tmp'
 filestem = op.join(wd,'Modular_MPI_NLCG_004')
 resid_fn=op.join(wd,filestem + '.res')
 
-probj = PlotRMSMaps(resid_fn,period_index=0)
+probj = PlotRMSMaps(resid_fn,period_index='all')
 probj.save_figure(save_path=savepath,
                   save_fig_dpi = 400 # change to your preferred figure resolution
                   )

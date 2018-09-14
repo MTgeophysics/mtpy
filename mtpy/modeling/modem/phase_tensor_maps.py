@@ -62,9 +62,9 @@ class PlotPTMaps(mtplottools.MTEllipse):
     Attributes                 Description
     ========================== ================================================
     cb_pt_pad                  percentage from top of axes to place pt
-                               color bar. *default* is .90
+                               color bar. *default* is 1.2
     cb_res_pad                 percentage from bottom of axes to place
-                               resistivity color bar. *default* is 1.2
+                               resistivity color bar. *default* is 0.5
     cb_residual_tick_step      tick step for residual pt. *default* is 3
     cb_tick_step               tick step for phase tensor color bar,
                                *default* is 45
