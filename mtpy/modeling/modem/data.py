@@ -442,12 +442,11 @@ class Data(object):
         """
         get station locations from edi files
         """
-
         stations_obj = Stations(model_epsg=self.model_epsg,
                                 model_utm_zone=self.model_utm_zone)
         mt_list = [self.mt_dict[s_key] for s_key in sorted(self.mt_dict.keys())]
-
         stations_obj.get_station_locations(mt_list)
+
         # rotate locations if needed
         if self._rotation_angle != 0:
             stations_obj.rotate_stations(self._rotation_angle)
@@ -462,7 +461,7 @@ class Data(object):
         self.data_array[:]['rel_east'] = stations_obj.rel_east
         self.data_array[:]['rel_north'] = stations_obj.rel_north
         self.data_array[:]['zone'] = stations_obj.utm_zone
-
+        
         # get center point
         self.center_point = stations_obj.center_point
 
@@ -508,7 +507,7 @@ class Data(object):
         for per in self.period_list:
             print('     {0:<12.6f}'.format(per))
         print('-' * 50)
-
+        
         if self.period_list is None:  # YG: is this possible?
             raise ModEMError('Need to input period_min, period_max, '
                              'max_num_periods or a period_list')
@@ -713,7 +712,7 @@ class Data(object):
                 self._logger.debug("station_name and selected/filtered periods: %s, %s, %s", mt_obj.station,
                                    len(interp_periods), interp_periods)
                 # in this case the below interpolate_impedance_tensor function will degenerate into a same-freq set.
-
+                
             if len(interp_periods) > 0:  # not empty
                 interp_z, interp_t = mt_obj.interpolate(1. / interp_periods, period_buffer=self.period_buffer)  # ,bounds_error=False)
                 #                interp_z, interp_t = mt_obj.interpolate(1./interp_periods)

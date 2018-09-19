@@ -108,7 +108,7 @@ def dimensionality(z_array=None, z_object=None, pt_array=None,
         #1. determine skew value...
         skew = pt_obj.beta[idx_f]
             #compare with threshold for 3D
-        if skew > skew_threshold:
+        if np.abs(skew) > skew_threshold:
             lo_dimensionality.append(3)
         else:
             # 2.check for eccentricity:

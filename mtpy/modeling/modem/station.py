@@ -120,7 +120,7 @@ class Stations(object):
             * fills station_locations array
 
         """
-        print input_list
+        # print input_list
         mt_obj_list = self._get_mt_objs_from_list(input_list)
 
         # if station locations are not input read from the edi files
