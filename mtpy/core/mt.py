@@ -1896,7 +1896,7 @@ class MT(object):
 
             >>> mt_obj = mt.MT(edi_file)
             >>> pr = mt.plot_mt_response()
-            >>> # if you need more infor on plot_mt_response
+            >>> # if you need more info on plot_mt_response
             >>> help(pr)
 
         """
