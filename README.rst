@@ -9,7 +9,8 @@ Overview
 
 A Python Toolbox for Magnetotelluric (MT) Data Processing, Analysis, Modelling and Visualization
 
-Documentation: http://mtpy2.readthedocs.io/en/develop/master_doc.html (Static http://mtgeophysics.github.io/mtpy)
+Documentation: http://mtpy2.readthedocs.io/en/develop/master_doc.html
+.. (Static http://mtgeophysics.github.io/mtpy)
 
 Home Page: https://github.com/MTgeophysics/mtpy
 
@@ -122,6 +123,6 @@ Conventions
    :target: https://coveralls.io/github/MTgeophysics/mtpy?branch=develop
 
 .. |Documentation Status| image:: https://readthedocs.org/projects/mtpy2/badge/?version=develop
-   :target: http://mtpy2.readthedocs.io/en/develop/master_doc.html
+   :target: http://mtpy2.readthedocs.io/en/develop/
 
 
