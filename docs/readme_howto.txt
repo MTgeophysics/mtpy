@@ -20,7 +20,12 @@ Then the system will automatically build html docs and publish it in https://mtp
 
 
 For all these to happen automatically behind the scene,
-a developer (FeiZhang) has to set up things in both Github and readthedocs service at: https://readthedocs.org/
+a developer (FeiZhang) has to set up hooksin both Github and
+readthedocs service at: https://readthedocs.org/
+
 
 See also
 http://www.sphinx-doc.org/en/master/contents.html
+Web Link: https://readthedocs.org/projects/mtpy2/builds/7813943/
+click view raw
+https://readthedocs.org/api/v2/build/7813943.txt
