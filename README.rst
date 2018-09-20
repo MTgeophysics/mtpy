@@ -9,8 +9,7 @@ Overview
 
 A Python Toolbox for Magnetotelluric (MT) Data Processing, Analysis, Modelling and Visualization
 
-Documentation: http://mtpy2.readthedocs.io/en/develop/master_doc.html
-.. (Static http://mtgeophysics.github.io/mtpy)
+Documentation: http://mtpy2.readthedocs.io/en/develop/
 
 Home Page: https://github.com/MTgeophysics/mtpy
 
