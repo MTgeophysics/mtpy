@@ -22,8 +22,6 @@ from mtpy.utils import exceptions as mtex
 from scipy.spatial import cKDTree
 from scipy.interpolate import interp1d, UnivariateSpline
 from matplotlib import colors
-from sklearn.neighbors import NearestNeighbors
-import networkx as nx
 
 __all__ = ['PlotSlices']
 
@@ -310,6 +308,15 @@ class PlotSlices(object):
             following link:
             https://stackoverflow.com/questions/37742358/sorting-points-to-form-a-continuous-line
             """
+            try:
+                import networkx as nx
+                from sklearn.neighbors import NearestNeighbors
+            except:
+                print "Failed to import either 'networkx' or 'scikit' python packages; " \
+                      "station/nodal ordering may be incorrect..s"
+                return np.arange(len(x))
+            # end try
+
             points = np.c_[x, y]
             clf = NearestNeighbors(2).fit(points)
             G = clf.kneighbors_graph()
