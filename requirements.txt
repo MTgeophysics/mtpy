@@ -10,6 +10,6 @@ qtpy
 #GDAL
 obspy
 netcdf4
-networkx
+#networkx
 numpydoc>=0.7.0
 # basemap
