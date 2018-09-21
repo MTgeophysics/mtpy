@@ -1724,12 +1724,21 @@ class Model(object):
 
     def add_topography_to_model2(self, topographyfile=None, topographyarray=None,
                                  interp_method='nearest', air_resistivity=1e12,
-                                 topography_buffer=None):
+                                 topography_buffer=None, airlayer_type = 'log'):
         """
         if air_layers is non-zero, will add topo: read in topograph file, make a surface model.
         Call project_stations_on_topography in the end, which will re-write the .dat file.
 
         If n_airlayers is zero, then cannot add topo data, only bathymetry is needed.
+        
+        :param topographyfile: file containing topography (arcgis ascii grid)
+        :param topographyarray: alternative to topographyfile - array of elevation values on model grid
+        :param interp_method: interpolation method for topography, 'nearest', 'linear', or 'cubic'
+        :param air_resistivity: resistivity value to assign to air
+        :param topography_buffer: buffer around stations to calculate minimum and maximum topography value to use for meshing
+        :param airlayer_type: how to set air layer thickness - options are 'constant' for constant air layer thickness,
+                              or 'log', for logarithmically increasing air layer thickness upward
+        
         """
         # first, get surface data
         if topographyfile is not None:
@@ -1756,12 +1765,16 @@ class Model(object):
                                                    buf=topography_buffer)
             topo_core = self.surface_dict['topography'][core_cells]
             topo_core_min = max(topo_core.min(),0)
-
-            # log increasing airlayers, in reversed order
-            new_air_nodes = mtmesh.make_log_increasing_array(self.z1_layer,
-                                                             topo_core.max() - topo_core_min,
-                                                             self.n_air_layers,
-                                                             increment_factor=0.999)[::-1]
+            
+            if airlayer_type == 'log':
+                # log increasing airlayers, in reversed order
+                new_air_nodes = mtmesh.make_log_increasing_array(self.z1_layer,
+                                                                 topo_core.max() - topo_core_min,
+                                                                 self.n_air_layers,
+                                                                 increment_factor=0.999)[::-1]
+            elif airlayer_type == 'constant':
+                air_cell_thickness = np.ceil((topo_core.max() - topo_core_min)/self.n_air_layers)
+                new_air_nodes = np.array([air_cell_thickness]*self.n_air_layers)
             # sum to get grid cell locations
             new_airlayers = np.array([new_air_nodes[:ii].sum() for ii in range(len(new_air_nodes) + 1)])
             # maximum topography cell on the grid
