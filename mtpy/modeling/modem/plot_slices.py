@@ -296,6 +296,51 @@ class PlotSlices(object):
                  2: when option is 'XYZ'
                     gv : list of interpolated values of shape (np)
         """
+
+        def get_order(x, y):
+            """
+            :param x: array of x coordinates
+            :param y: array of y coordinates
+            :return: optimal order of points that form a connected path
+
+            This is a tricky problem to solve and is based on a minimum spanning
+            tree. The implementation below has been adopted verbatim from the
+            following link:
+            https://stackoverflow.com/questions/37742358/sorting-points-to-form-a-continuous-line
+            """
+            try:
+                import networkx as nx
+                from sklearn.neighbors import NearestNeighbors
+            except:
+                print "Failed to import either 'networkx' or 'scikit' python packages; " \
+                      "station/nodal ordering may be incorrect..s"
+                return np.arange(len(x))
+            # end try
+
+            points = np.c_[x, y]
+            clf = NearestNeighbors(2).fit(points)
+            G = clf.kneighbors_graph()
+
+            T = nx.from_scipy_sparse_matrix(G)
+            paths = [list(nx.dfs_preorder_nodes(T, i)) for i in range(len(points))]
+            mindist = np.inf
+            minidx = 0
+
+            for i in range(len(points)):
+                p = paths[i]  # order of nodes
+                ordered = points[p]  # ordered nodes
+                # find cost of that order by the sum of euclidean distances between points (i) and (i+1)
+                cost = (((ordered[:-1] - ordered[1:]) ** 2).sum(1)).sum()
+                if cost < mindist:
+                    mindist = cost
+                    minidx = i
+                # end if
+            # end for
+
+            opt_order = paths[minidx]
+            return opt_order
+        # end func
+
         assert option in ['STA', 'XY', 'XYZ'], 'Invalid option; Aborting..'
         if(option == 'STA'):
             if(self.md_data is None):
@@ -330,24 +375,18 @@ class PlotSlices(object):
                 y = np.array(coords[:,1])
             # end if
 
-            xmin = x.min()
-            ymin = y.min()
+            order = get_order(x, y)
+            xx = x[order]
+            yy = y[order]
 
-            x -= xmin
-            y -= ymin
-
-            d = (x**2 + y**2) # compute distances from origin to establish ordering
-            sortedIndices = np.argsort(d)
-            #print("stations",self.md_data.station_locations.station)
-            #print("sortedINdices",sortedIndices)
-
-            dx = x[sortedIndices][:-1] - x[sortedIndices][1:]
-            dy = y[sortedIndices][:-1] - y[sortedIndices][1:]
-            dst = np.cumsum(np.sqrt(dx ** 2 + dy ** 2)) # compute cumulative distance along profile
+            dx = xx[:-1] - xx[1:]
+            dy = yy[:-1] - yy[1:]
+            dst = np.cumsum(np.sqrt(dx ** 2 + dy ** 2))
             dst = np.insert(dst, 0, 0)
 
-            xio = interp1d(dst, x[sortedIndices])
-            yio = interp1d(dst, y[sortedIndices])
+            xio = interp1d(dst, xx)
+            yio = interp1d(dst, yy)
+            # ====
 
             if(nsteps>-1):
                 d = np.linspace(dst.min(), dst.max(), nsteps) # create regular grid

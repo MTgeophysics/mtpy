@@ -201,21 +201,25 @@ def strike_angle(z_array=None, z_object=None, pt_array=None,
     for idx, dim in enumerate(lo_dims):
         if dim == 1:
             lo_strikes.append((np.nan, np.nan))
-            continue
+#            continue
+        
+        elif dim == 3:
+            lo_strikes.append((np.nan, np.nan))
 
-        a = pt_obj.alpha[idx]
-        b = pt_obj.beta[idx]
-
-        strike1 = (a - b) % 90
-        if 0 < strike1 < 45:
-            strike2 = strike1 + 90
         else:
-            strike2 = strike1 - 90
-
-        s1 = min(strike1, strike2)
-        s2 = max(strike1, strike2)
-
-        lo_strikes.append((s1, s2))
+            a = pt_obj.alpha[idx]
+            b = pt_obj.beta[idx]
+    
+            strike1 = (a - b) % 90
+            if 0 < strike1 < 45:
+                strike2 = strike1 + 90
+            else:
+                strike2 = strike1 - 90
+    
+            s1 = min(strike1, strike2)
+            s2 = max(strike1, strike2)
+    
+            lo_strikes.append((s1, s2))
 
     return np.array(lo_strikes)
 
