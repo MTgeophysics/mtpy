@@ -225,7 +225,15 @@ class Edi(object):
         if self.Data_sect.data_type == 'spectra':
             self._logger.info('Converting Spectra to Impedance and Tipper')
             self._logger.info('Check to make sure input channel list is correct if the data looks incorrect')
-            self._read_spectra(lines)
+            if self.Data_sect.nchan == 5:
+                c_list = ['hx', 'hy', 'hz', 'ex', 'ey']
+            elif self.Data_sect.nchan == 4:
+                c_list = ['hx', 'hy', 'ex', 'ey']
+            elif self.Data_sect.nchan == 6:
+                c_list = ['hx', 'hy', 'ex', 'ey', 'hxr', 'rhy']
+            elif self.Data_sect.nchan == 7:
+                c_list = ['hx', 'hy', 'hz', 'ex', 'ey', 'hxr', 'rhy']
+            self._read_spectra(lines, comp_list=c_list)
 
         elif self.Data_sect.data_type == 'z':
             self._read_mt(lines)
@@ -776,7 +784,10 @@ class index_locator(object):
         self.rhz = None
         for ii, comp in enumerate(component_list):
             setattr(self, comp, ii)
-
+        if self.rhx is None:
+            self.rhx = self.hx
+        if self.rhy is None:
+            self.rhy = self.hy
 
 # ==============================================================================
 #  Header object
