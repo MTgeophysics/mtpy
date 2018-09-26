@@ -125,6 +125,7 @@ class Stations(object):
             * fills station_locations array
 
         """
+
         mt_obj_list = self._get_mt_objs_from_list(input_list)
 
         # if station locations are not input read from the edi files
@@ -187,8 +188,8 @@ class Stations(object):
         #        self.station_locations['rel_north'] -= north_center+shift_north
 
         # translate the stations so they are relative to 0,0
-        east_center = (self.east.max() + self.east.min()) / 2.
-        north_center = (self.north.max() + self.north.min()) / 2.
+        east_center = self.east.mean()
+        north_center = self.north.mean()
 
         self.station_locations['rel_east'] = self.east - east_center
         self.station_locations['rel_north'] = self.north - north_center
@@ -220,16 +221,14 @@ class Stations(object):
         #        # calculate center point in lat, lon, easting, northing
         #        center_location['east'] = center_point[0]
         #        center_location['north'] = center_point[1]
-
-        center_point = np.array([self.east.max() + self.east.min(),
-                                 self.north.max() + self.north.min()]) / 2.
-        center_location['east'] = center_point[0]
-        center_location['north'] = center_point[1]
+        
+        center_location['east'] = self.east.mean()
+        center_location['north'] = self.north.mean()
 
         center_location['zone'] = self.utm_zone[0]
 
-        center_ll = gis_tools.project_point_utm2ll(float(center_point[0]),
-                                                   float(center_point[1]),
+        center_ll = gis_tools.project_point_utm2ll(float(center_location.east),
+                                                   float(center_location.north),
                                                    self.utm_zone[0],
                                                    epsg=self.model_epsg)
 

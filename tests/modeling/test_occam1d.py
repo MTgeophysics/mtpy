@@ -122,7 +122,7 @@ class TestOccam1D(TestCase):
         outdir = self._main_func(os.path.join(EDI_DATA_DIR, 'pb25c.edi'))
 
         # for afile in ("Model1D", "Occam1d_DataFile_DET.dat", "OccamStartup1D"):
-        for afile in ["Occam1d_DataFile_DET.dat", ]:  # only one file is different, the other 2 files same?
+        for afile in ["Occam1d_DataFile_DET.dat"]:  # only one file is different, the other 2 files same?
 
             output_data_file = os.path.join(outdir, afile)
             self.assertTrue(os.path.isfile(output_data_file), "output data file not found")

@@ -1734,7 +1734,7 @@ class MT(object):
 
         return new_z_obj
 
-    def interpolate(self, new_freq_array, interp_type='slinear', bounds_error=True):
+    def interpolate(self, new_freq_array, interp_type='slinear', bounds_error=True, period_buffer=None):
         """
         Interpolate the impedance tensor onto different frequencies
 
@@ -1826,9 +1826,25 @@ class MT(object):
 
                 # get frequencies to interpolate on to, making sure the
                 # bounds are with in non-zero components
-                new_nz_index = np.where((new_freq_array >= f.min()) &
-                                        (new_freq_array <= f.max()))
+                new_nz_index = np.where((new_freq_array >= f.min()) & 
+                                        (new_freq_array <= f.max()))[0]
                 new_f = new_freq_array[new_nz_index]
+                
+                
+                # apply period buffer
+                if type(period_buffer) in [float, int]:
+                    new_f_update = []
+                    new_nz_index_update = []
+                    for ifidx,ifreq in enumerate(new_f):
+                        # find nearest data period
+                        difference = np.abs(np.log10(ifreq) - np.log10(f))
+                        fidx = np.where(difference == np.amin(difference))[0][0]
+                        
+                        if max(f[fidx] / ifreq, ifreq / f[fidx]) < period_buffer:
+                            new_f_update.append(ifreq)
+                            new_nz_index_update.append(new_nz_index[ifidx])
+                    new_f = np.array(new_f_update)
+                    new_nz_index = np.array(new_nz_index_update)
 
                 # create a function that does 1d interpolation
                 z_func_real = spi.interp1d(f, z_real, kind=interp_type)
@@ -1889,7 +1905,7 @@ class MT(object):
 
             >>> mt_obj = mt.MT(edi_file)
             >>> pr = mt.plot_mt_response()
-            >>> # if you need more infor on plot_mt_response
+            >>> # if you need more info on plot_mt_response
             >>> help(pr)
 
         """

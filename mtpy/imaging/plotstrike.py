@@ -469,7 +469,6 @@ class PlotStrike(object):
                 gg = medpt[binlist, :]
                 if self.plot_tipper == 'y':
                     tr = medtipr[binlist, :]
-
                     # compute the historgram for the tipper strike
                     trhist = np.histogram(tr[np.nonzero(tr)].flatten(),
                                           bins=360 / bw,

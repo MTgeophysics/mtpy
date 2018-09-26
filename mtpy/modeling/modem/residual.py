@@ -93,7 +93,7 @@ class Residual(object):
             res_obj.read_data_file(self.residual_fn)
 
         # pass relevant arguments through residual object
-        for att in ['center_position_EN', 'data_period_list',
+        for att in ['center_position_EN', 'period_list',
                     'wave_sign_impedance', 'wave_sign_tipper']:
             if hasattr(res_obj, att):
                 setattr(self, att, getattr(res_obj, att))

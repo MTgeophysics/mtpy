@@ -24,10 +24,18 @@ try:
     for line in lines:
         if ('#' in line): continue
 
-        epsg_code = int(re.compile('<(\d+)>').findall(line)[0])
-        epsg_string = re.compile('>(.*)<').findall(line)[0].strip()
+        epsg_code_val = re.compile('<(\d+)>').findall(line)
 
-        EPSG_DICT[epsg_code] = epsg_string
+        #print( "epsg_code_val", epsg_code_val)
+
+	if epsg_code_val is not None and len(epsg_code_val)>0 and epsg_code_val[0].isdigit():
+            epsg_code = int(epsg_code_val[0])
+            epsg_string = re.compile('>(.*)<').findall(line)[0].strip()
+
+            EPSG_DICT[epsg_code] = epsg_string
+        else:
+            print( "epsg_code_val", epsg_code_val)
+
     # end for
 except ImportError:
     pass

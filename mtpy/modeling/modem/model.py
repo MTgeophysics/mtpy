@@ -1711,12 +1711,21 @@ class Model(object):
 
     def add_topography_to_model2(self, topographyfile=None, topographyarray=None,
                                  interp_method='nearest', air_resistivity=1e12,
-                                 topography_buffer=None, add_topo_type='log'):
+                                 topography_buffer=None, airlayer_type = 'log'):
         """
         if air_layers is non-zero, will add topo: read in topograph file, make a surface model.
         Call project_stations_on_topography in the end, which will re-write the .dat file.
 
         If n_airlayers is zero, then cannot add topo data, only bathymetry is needed.
+        
+        :param topographyfile: file containing topography (arcgis ascii grid)
+        :param topographyarray: alternative to topographyfile - array of elevation values on model grid
+        :param interp_method: interpolation method for topography, 'nearest', 'linear', or 'cubic'
+        :param air_resistivity: resistivity value to assign to air
+        :param topography_buffer: buffer around stations to calculate minimum and maximum topography value to use for meshing
+        :param airlayer_type: how to set air layer thickness - options are 'constant' for constant air layer thickness,
+                              or 'log', for logarithmically increasing air layer thickness upward
+        
         """
         # first, get surface data
         if topographyfile is not None:
@@ -1749,25 +1758,30 @@ class Model(object):
             print('*** MAX ELEVATION = {0}'.format(topo_core.max()))
             print('*** MIN ELEVATION = {0}'.format(max(topo_core.min(),0)))
             ### Add logarithmically expanding cells to the nodes
-            if add_topo_type == 'log':
+            
+            if airlayer_type == 'log':
                 # log increasing airlayers, in reversed order
                 new_air_nodes = mtmesh.make_log_increasing_array(self.z1_layer,
                                                                  topo_core.max() - topo_core_min,
                                                                  self.n_air_layers,
                                                                  increment_factor=0.999)[::-1]
+
                 # try concatenating the nodes and sorting them to make sure
                 # that the top cells are the smallest.  Otherwise the inversion
                 # can do some funky things.
                 self.nodes_z = np.sort(np.concatenate([new_air_nodes, 
                                                       self.nodes_z]))
             ### add cells with the same size as z1 to topography
-            elif add_topo_type == 'linear':
+            elif airlayer_type == 'linear':
                 new_air_nodes = mtmesh.make_equal_spaced_array(self.z1_layer, 
                                                                topo_core_min, 
                                                                topo_core.max())
                 self.nodes_z = np.concatenate([new_air_nodes, self.nodes_z])
                 self.n_air_layers = new_air_nodes.size
                 
+            elif airlayer_type == 'constant':
+                air_cell_thickness = np.ceil((topo_core.max() - topo_core_min)/self.n_air_layers)
+                new_air_nodes = np.array([air_cell_thickness]*self.n_air_layers)
             # sum to get grid cell locations
             # new_airlayers = np.array([new_air_nodes[:ii].sum() 
             #                          for ii in range(len(new_air_nodes) + 1)])
