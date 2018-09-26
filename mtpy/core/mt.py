@@ -725,6 +725,8 @@ class MT(object):
                 l_key = 'fieldnotes.{0}.{1}'.format(f_key.lower(),
                                                     t_key.lower())
                 l_value = getattr(obj, t_key)
+                if l_value in [None, 'None', 'none']:
+                    continue
                 info_list.append('{0} = {1}'.format(l_key, l_value))
 
         # get processing information
@@ -738,49 +740,69 @@ class MT(object):
                                 a_key)
                             l_value = getattr(self.Processing.Software.Author,
                                               a_key)
+                            if l_value in [None, 'None', 'none']:
+                                continue
                             info_list.append('{0} = {1}'.format(l_key,
                                                                 l_value))
                     else:
                         l_key = 'processing.software.{0}'.format(s_key)
                         l_value = getattr(self.Processing.Software, s_key)
+                        if l_value in [None, 'None', 'none']:
+                            continue
                         info_list.append('{0} = {1}'.format(l_key,
                                                             l_value))
-            elif p_key.lower() == 'remotesite' and \
-                 self.Processing.RemoteSite.id is not None:
-                for s_key in sorted(
-                        self.Processing.RemoteSite.__dict__.keys()):
-                    if s_key == 'Location':
-                        for a_key in sorted(
-                                self.Processing.RemoteSite.Location.__dict__.keys()):
-                            l_key = 'processing.remote_site.location.{0}'.format(
-                                a_key)
-                            l_value = getattr(self.Processing.RemoteSite.Location,
-                                              a_key)
+            elif p_key.lower() == 'remotesite':
+                if self.Processing.RemoteSite.id is None:
+                    continue
+                else:
+                    for s_key in sorted(
+                            self.Processing.RemoteSite.__dict__.keys()):
+                        if s_key == 'Location':
+                            for a_key in sorted(
+                                    self.Processing.RemoteSite.Location.__dict__.keys()):
+                                l_key = 'processing.remote_site.location.{0}'.format(
+                                    a_key)
+                                l_value = getattr(self.Processing.RemoteSite.Location,
+                                                  a_key)
+                                if l_value in [None, 'None', 'none']:
+                                    continue
+                                info_list.append('{0} = {1}'.format(l_key,
+                                                                    l_value))
+                        else:
+                            l_key = 'processing.remote_site.{0}'.format(s_key)
+                            l_value = getattr(self.Processing.RemoteSite, s_key)
+                            if l_value in [None, 'None', 'none']:
+                                continue
                             info_list.append('{0} = {1}'.format(l_key,
                                                                 l_value))
-                    else:
-                        l_key = 'processing.remote_site.{0}'.format(s_key)
-                        l_value = getattr(self.Processing.RemoteSite, s_key)
-                        info_list.append('{0} = {1}'.format(l_key,
-                                                            l_value))
-            else:
+            elif p_key.lower() in ['datum', 'coordinate_system',
+                                   'sign_convention', 'remote_reference',
+                                   'processed_by']:
                 l_key = 'processing.{0}'.format(p_key)
                 l_value = getattr(self.Processing, p_key)
+                if l_value in [None, 'None', 'none']:
+                    continue
                 info_list.append('{0} = {1}'.format(l_key, l_value))
 
         # get copyright information
         for c_key in sorted(self.Copyright.__dict__.keys()):
-            if c_key.lower() == 'citation' and \
-               self.Copyright.Citation.author is not None:
-                for p_key in sorted(self.Copyright.Citation.__dict__.keys()):
-                    l_key = 'copyright.citation.{0}'.format(p_key.lower())
-                    l_value = getattr(self.Copyright.Citation, p_key)
-                    info_list.append('{0} = {1}'.format(l_key, l_value))
+            if c_key.lower() == 'citation':
+                if self.Copyright.Citation.author is not None:
+                    for p_key in sorted(self.Copyright.Citation.__dict__.keys()):
+                        l_key = 'copyright.citation.{0}'.format(p_key.lower())
+                        l_value = getattr(self.Copyright.Citation, p_key)
+                        if l_value in [None, 'None', 'none']:
+                            continue
+                        info_list.append('{0} = {1}'.format(l_key, l_value))
+                else:
+                    continue
             else:
                 l_key = 'copyright.{0}'.format(c_key.lower())
                 l_value = getattr(self.Copyright, c_key)
                 if type(l_value) is list:
                     l_value = ''.join(l_value)
+                if l_value in [None, 'None', 'none']:
+                    continue
                 info_list.append('{0} = {1}'.format(l_key, l_value))
 
         # get provenance
@@ -789,15 +811,21 @@ class MT(object):
                 for s_key in self.Provenance.Creator.__dict__.keys():
                     l_key = 'provenance.creator.{0}'.format(s_key)
                     l_value = getattr(self.Provenance.Creator, s_key)
+                    if l_value in [None, 'None', 'none']:
+                        continue
                     info_list.append('{0} = {1}'.format(l_key, l_value))
             elif p_key.lower() == 'submitter':
                 for s_key in self.Provenance.Submitter.__dict__.keys():
                     l_key = 'provenance.submitter.{0}'.format(s_key)
                     l_value = getattr(self.Provenance.Submitter, s_key)
+                    if l_value in [None, 'None', 'none']:
+                        continue
                     info_list.append('{0} = {1}'.format(l_key, l_value))
             else:
                 l_key = 'provenance.{0}'.format(p_key)
                 l_value = getattr(self.Provenance, p_key)
+                if l_value in [None, 'None', 'none']:
+                    continue
                 info_list.append('{0} = {1}'.format(l_key, l_value))
 
         return info_list
