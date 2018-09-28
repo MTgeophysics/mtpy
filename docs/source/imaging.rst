@@ -18,6 +18,9 @@ Package Imaging
 .. automodule:: mtpy.imaging.penetration
 	:members:
 
+.. automodule:: mtpy.imaging.plot_resphase_maps
+	:members:
+
 **Module Plot Phase Tensor Maps**
 =================================
 
