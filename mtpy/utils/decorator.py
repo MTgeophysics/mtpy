@@ -80,9 +80,9 @@ class gdal_data_check(object):
                                   "https://trac.osgeo.org/gdal/wiki/FAQInstallationAndBuilding#HowtosetGDAL_DATAvariable for "
                                   "more information.")
             else:
-                print "GDAL_DATA environment variable not set. Please see " \
+                print ("GDAL_DATA environment variable not set. Please see " \
                       "https://trac.osgeo.org/gdal/wiki/FAQInstallationAndBuilding#HowtosetGDAL_DATAvariable for " \
-                      "more information."
+                      "more information.")
 
     def __call__(self, *args, **kwargs):  # pragma: no cover
         return self._func(*args, **kwargs)

@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 plots edi files as resistivity and phase vs period
+Only works for Windows installation due to hard-coded paths
 
 CreatedOn:      Wed Sep 18 15:35:39 2013
 CreatedBy:      Alison Kirkby
@@ -13,6 +14,7 @@ LastUpdated:    2018-03-22  AK updated to use as script rather than command line
 """
 import os
 import os.path as op
+
 os.chdir(r'C:\mtpywin\mtpy') # change to your path to your mtpy installation
 
 from mtpy.core import mt
