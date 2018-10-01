@@ -15,7 +15,7 @@ A Python Toolbox for Magnetotelluric (MT) Data Processing, Analysis, Modelling a
 
 - Issue tracking: https://github.com/MTgeophysics/mtpy/issues
 
---Wiki Pages: https://github.com/MTgeophysics/mtpy/wiki
+- Wiki Pages: https://github.com/MTgeophysics/mtpy/wiki
 
 
 Note that this repository has superseded the `geophysics/mtpy <https://github.com/geophysics/mtpy/tree/beta>`_
@@ -45,15 +45,13 @@ Contacts
 
 
 
-System Requirements (Draft)
+System Requirements
 ==========================
 
-
--  Software
--  Python 2.7+ 
+-  Python 2.7.*
 -  Python 3  (Todo)
 
-Setup Guide for Developers (Draft)
+Setup Guide for Developers
 ==========================
 
 1. Obtain the source code from https://github.com/MTgeophysics/mtpy:
@@ -67,15 +65,18 @@ Setup Guide for Developers (Draft)
     - ``pip install -v --user -e .`` (user's own home ~/.local/lib/python2.7/site-packages/mtpy.egg-link)
    
    OR 
+   
    - ``pip install -v -e .``  (into python lib's dir site-packages, write-permission required)
    
    OR 
+   
    - `` export  PYTHONPATH=/your_path2/mtpy2:$PYTHONPATH `` (each session)
    
    OR 
+   
    - ``python setup.py develop --user``
    
-   To verify the install : 
+To verify the install : 
    - ``pip list | grep mtpy``
 
    To uninstall the package: 
