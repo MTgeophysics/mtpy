@@ -58,22 +58,19 @@ Setup Guide for Developers
 
 2. Obtain the source code from https://github.com/MTgeophysics/mtpy:
 
-   -  ``git clone https://github.com/MTgeophysics/mtpy.git``
+-  ``git clone https://github.com/MTgeophysics/mtpy.git``
+- ``cd mtpy``
 
-   - ``cd mtpy``
-
-   - ``pip install -v --user -e .`` (user's own home ~/.local/lib/python2.7/site-packages/mtpy.egg-link)
-   
+   - ``pip install -v --user -e .`` (into user's own home ~/.local/lib/python2.7/site-packages/mtpy.egg-link)
    OR 
    
-   - ``pip install -v -e .``  (into python lib's dir site-packages, write-permission required)
-   
+   - ``python setup.py develop --user``   
    OR 
    
-      - ``python setup.py develop --user``
+   - ``pip install -v -e .``  (into python lib's dir site-packages, write-permission required)   
    OR 
    
-      - `` export  PYTHONPATH=/Path2/mtpy:$PYTHONPATH `` (Only valid for each session)
+   - `` export  PYTHONPATH=/Path2/mtpy:$PYTHONPATH `` (Only valid for each session)
    
    
 To verify the install: 
