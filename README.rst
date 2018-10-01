@@ -54,13 +54,14 @@ System Requirements
 Setup Guide for Developers
 ==========================
 
-1. Obtain the source code from https://github.com/MTgeophysics/mtpy:
+1. Install Python and dependency packages. See Wiki Pages: https://github.com/MTgeophysics/mtpy/wiki
 
-   -  ``git clone https://github.com/MTgeophysics/mtpy.git``
 
-2. Install Python dependencies. And
-   
-    - ``cd mtpy``
+2 Obtain the source code from https://github.com/MTgeophysics/mtpy:
+
+-  ``git clone https://github.com/MTgeophysics/mtpy.git``
+
+- ``cd mtpy``
    
     - ``pip install -v --user -e .`` (user's own home ~/.local/lib/python2.7/site-packages/mtpy.egg-link)
    
@@ -77,20 +78,13 @@ Setup Guide for Developers
    - ``python setup.py develop --user``
    
 To verify the install : 
-   - ``pip list | grep mtpy``
 
-   To uninstall the package: 
-   - ``pip uninstall -v mtpy``
+- ``pip list | grep mtpy``
 
-3. Run unit tests + PyLint
+To uninstall the mtpy package: 
 
-   - ``./check-code.sh``
+- ``pip uninstall -v mtpy``
 
-   (this script is run by Travis. You can alternatively run ``py.test`` at commandline)
-   
-  4. Run further functional tests 
-
-   See examples: ``tests/testcases.sh``
 
 
 License
