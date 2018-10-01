@@ -54,16 +54,15 @@ System Requirements
 Setup Guide for Developers
 ==========================
 
-1. Install Python and dependency packages. See Wiki Pages: https://github.com/MTgeophysics/mtpy/wiki
+1. Install Python environment and dependency packages. See Wiki Pages: https://github.com/MTgeophysics/mtpy/wiki
 
-
-2 Obtain the source code from https://github.com/MTgeophysics/mtpy:
+2. Obtain the source code from https://github.com/MTgeophysics/mtpy:
 
 -  ``git clone https://github.com/MTgeophysics/mtpy.git``
 
 - ``cd mtpy``
-   
-    - ``pip install -v --user -e .`` (user's own home ~/.local/lib/python2.7/site-packages/mtpy.egg-link)
+
+   - ``pip install -v --user -e .`` (user's own home ~/.local/lib/python2.7/site-packages/mtpy.egg-link)
    
    OR 
    
@@ -77,7 +76,7 @@ Setup Guide for Developers
    
    - ``python setup.py develop --user``
    
-To verify the install : 
+To verify the install: 
 
 - ``pip list | grep mtpy``
 
@@ -93,7 +92,6 @@ License
 MTpy is licensed under the GPL version 3
 
 The license agreement is contained in the repository and should be kept together with the code.
-
 
 
 Conventions
