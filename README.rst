@@ -9,11 +9,13 @@ Overview
 
 A Python Toolbox for Magnetotelluric (MT) Data Processing, Analysis, Modelling and Visualization
 
-Documentation: http://mtpy2.readthedocs.io/en/develop/
+- Documentation: http://mtpy2.readthedocs.io/en/develop/
 
-Home Page: https://github.com/MTgeophysics/mtpy
+- Home Page: https://github.com/MTgeophysics/mtpy
 
-Issue tracking: https://github.com/MTgeophysics/mtpy/issues
+- Issue tracking: https://github.com/MTgeophysics/mtpy/issues
+
+--Wiki Pages: https://github.com/MTgeophysics/mtpy/wiki
 
 
 Note that this repository has superseded the `geophysics/mtpy <https://github.com/geophysics/mtpy/tree/beta>`_
@@ -48,7 +50,8 @@ System Requirements (Draft)
 
 
 -  Software
--  Python 2.7+ or Python 3.5+
+-  Python 2.7+ 
+-  Python 3  (Todo)
 
 Setup Guide for Developers (Draft)
 ==========================
@@ -59,33 +62,34 @@ Setup Guide for Developers (Draft)
 
 2. Install Python dependencies. And
    
-    ``cd mtpy``
+    - ``cd mtpy``
    
-    ``pip install -v --user -e .`` (user's own home ~/.local/lib/python2.7/site-packages/mtpy.egg-link)
+    - ``pip install -v --user -e .`` (user's own home ~/.local/lib/python2.7/site-packages/mtpy.egg-link)
    
-   OR ``pip install -v -e .``  (into python lib's dir site-packages, write-permission required)
+   OR 
+   - ``pip install -v -e .``  (into python lib's dir site-packages, write-permission required)
    
-   OR `` export  PYTHONPATH=/your_path2/mtpy2:$PYTHONPATH `` (each session)
+   OR 
+   - `` export  PYTHONPATH=/your_path2/mtpy2:$PYTHONPATH `` (each session)
    
-   OR ``python setup.py develop --user``
+   OR 
+   - ``python setup.py develop --user``
    
-   To verify the install : ``pip list | grep mtpy``
+   To verify the install : 
+   - ``pip list | grep mtpy``
 
-   To uninstall the package: ``pip uninstall -v mtpy``
+   To uninstall the package: 
+   - ``pip uninstall -v mtpy``
 
 3. Run unit tests + PyLint
 
-   ``./check-code.sh``
+   - ``./check-code.sh``
 
    (this script is run by Travis. You can alternatively run ``py.test`` at commandline)
    
   4. Run further functional tests 
 
    See examples: ``tests/testcases.sh``
-
-
-
-
 
 
 License
