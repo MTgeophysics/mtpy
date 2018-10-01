@@ -1,7 +1,17 @@
 #!/usr/bin/env bash
 
-# in Ubuntu 16.04 desktop
-# IF the system default python 2.7 is used.
+# Here is a user guide for Ubuntu 16.04 desktop users.
+# Assume the system default python 2.7 is used.
+# We plan to migrate mtpy to python3 later. But Not at this point of time.
+# check the version by command
+# python -V
+
+# Note that it's easy to be confused if your system has multiple version of python.
+# we recommend to use Ananconda python which is independent of the operating system:
+# See wiki page:
+# https://github.com/MTgeophysics/mtpy/wiki/MTPy-installation-guide-for-Linux-system
+
+# Keep this script for reference.
 
 sudo apt-get install python-pip
 

@@ -1,7 +1,7 @@
 MTpy: A Python Toolbox for Magnetotelluric (MT) Data Processing, Analysis, Modelling and Visualization
 ==================================
 
-|Build Status| |Coverage Status| |Documentation Status|
+|Build Status|  |Documentation Status|
 
 
 Overview
@@ -9,11 +9,13 @@ Overview
 
 A Python Toolbox for Magnetotelluric (MT) Data Processing, Analysis, Modelling and Visualization
 
-Documentation: http://mtpy2.readthedocs.io/en/develop/
+- Documentation: http://mtpy2.readthedocs.io/en/develop/
 
-Home Page: https://github.com/MTgeophysics/mtpy
+- Home Page: https://github.com/MTgeophysics/mtpy
 
-Issue tracking: https://github.com/MTgeophysics/mtpy/issues
+- Issue tracking: https://github.com/MTgeophysics/mtpy/issues
+
+- Wiki Pages: https://github.com/MTgeophysics/mtpy/wiki
 
 
 Note that this repository has superseded the `geophysics/mtpy <https://github.com/geophysics/mtpy/tree/beta>`_
@@ -43,48 +45,41 @@ Contacts
 
 
 
-System Requirements (Draft)
+System Requirements
 ==========================
 
+-  Python 2.7.*
+-  Python 3  (Todo)
 
--  Software
--  Python 2.7+ or Python 3.5+
-
-Setup Guide for Developers (Draft)
+Setup Guide for Developers
 ==========================
 
-1. Obtain the source code from https://github.com/MTgeophysics/mtpy:
+1. Install Python environment and dependency packages. See Wiki Pages: https://github.com/MTgeophysics/mtpy/wiki
 
-   -  ``git clone https://github.com/MTgeophysics/mtpy.git``
+2. Obtain the source code from https://github.com/MTgeophysics/mtpy:
 
-2. Install Python dependencies. And
+-  ``git clone https://github.com/MTgeophysics/mtpy.git``
+- ``cd mtpy``
+
+   - ``pip install -v --user -e .`` (into user's own home ~/.local/lib/python2.7/site-packages/mtpy.egg-link)
+   OR 
    
-    ``cd mtpy``
+   - ``python setup.py develop --user``   
+   OR 
    
-    ``pip install -v --user -e .`` (user's own home ~/.local/lib/python2.7/site-packages/mtpy.egg-link)
+   - ``pip install -v -e .``  (into python lib's dir site-packages, write-permission required)   
+   OR 
    
-   OR ``pip install -v -e .``  (into python lib's dir site-packages, write-permission required)
+   - `` export  PYTHONPATH=/Path2/mtpy:$PYTHONPATH `` (Only valid for each session)
    
-   OR `` export  PYTHONPATH=/your_path2/mtpy2:$PYTHONPATH `` (each session)
    
-   OR ``python setup.py develop --user``
-   
-   To verify the install : ``pip list | grep mtpy``
+To verify the install: 
 
-   To uninstall the package: ``pip uninstall -v mtpy``
+- ``pip list | grep mtpy``
 
-3. Run unit tests + PyLint
+To uninstall the mtpy package: 
 
-   ``./check-code.sh``
-
-   (this script is run by Travis. You can alternatively run ``py.test`` at commandline)
-   
-  4. Run further functional tests 
-
-   See examples: ``tests/testcases.sh``
-
-
-
+- ``pip uninstall -v mtpy``
 
 
 
@@ -94,7 +89,6 @@ License
 MTpy is licensed under the GPL version 3
 
 The license agreement is contained in the repository and should be kept together with the code.
-
 
 
 Conventions
@@ -118,6 +112,7 @@ Conventions
 
 .. |Build Status| image:: https://travis-ci.org/MTgeophysics/mtpy.svg?branch=develop
    :target: https://travis-ci.org/MTgeophysics/mtpy
+
 .. |Coverage Status| image:: https://coveralls.io/repos/github/MTgeophysics/mtpy/badge.svg?branch=develop
    :target: https://coveralls.io/github/MTgeophysics/mtpy?branch=develop
 
