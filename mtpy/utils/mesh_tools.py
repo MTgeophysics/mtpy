@@ -15,6 +15,15 @@ import scipy.interpolate as spi
 
 
 
+def grid_centre(grid_edges):
+    """
+    calculate the grid centres from an array that defines grid edges
+    :param grid_edges: array containing grid edges
+    :returns: grid_centre: centre points of grid
+    """
+    return np.mean([grid_edges[1:], grid_edges[:-1]], axis=0)
+    
+
 def rotate_mesh(grid_east,grid_north,origin,
                 rotation_angle,return_centre = False):
     """

@@ -2,7 +2,8 @@ from unittest import TestCase
 import numpy as np
 import pytest
 
-from mtpy.utils.calculator import get_period_list, make_log_increasing_array, z_error2r_phi_error
+from mtpy.utils.calculator import get_period_list, make_log_increasing_array,\
+                                  z_error2r_phi_error, nearest_index
 
 
 class TestCalculator(TestCase):
@@ -32,6 +33,17 @@ class TestCalculator(TestCase):
         
         return
         
+    
+    def test_nearest_index(self):
+        
+        freqfind = 8.
+        self.assertTrue(nearest_index(freqfind,self.freq)==1)
+        
+        freqfind2 = 1.2
+        self.assertTrue(nearest_index(freqfind2,self.freq)==2)
+        
+        freqfind3 = 1000.
+        self.assertTrue(nearest_index(freqfind3,self.freq)==0)
 
 
     def test_get_period_list(self):
