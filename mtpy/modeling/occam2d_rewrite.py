@@ -3030,13 +3030,21 @@ class Response(object):
         if os.path.isfile(self.resp_fn) == False:
             raise OccamInputError('Could not find {0}'.format(self.resp_fn))
 
-        r_arr = np.loadtxt(self.resp_fn, dtype=[('station', np.int),
+        r_arr_tmp = np.loadtxt(self.resp_fn)
+        r_arr = np.array(len(r_arr_tmp), dtype=[('station', np.int),
                                                 ('freq', np.int),
                                                 ('comp', np.int),
                                                 ('z', np.int),
                                                 ('data', np.float),
                                                 ('resp', np.float),
                                                 ('err', np.float)])
+        r_arr['station'] = r_arr_tmp[:,0]
+        r_arr['freq'] = r_arr_tmp[:,1]
+        r_arr['comp'] = r_arr_tmp[:,2]
+        r_arr['z'] = r_arr_tmp[:,3]
+        r_arr['data'] = r_arr_tmp[:,4]
+        r_arr['resp'] = r_arr_tmp[:,5]
+        r_arr['err'] = r_arr_tmp[:,6]
 
         num_stat = r_arr['station'].max()
         num_freq = r_arr['freq'].max()
