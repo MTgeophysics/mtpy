@@ -35,7 +35,7 @@ try:
 
             EPSG_DICT[epsg_code] = epsg_string
         else:
-            print("epsg_code_val NOT found: ", epsg_code_val)
+            pass  #print("epsg_code_val NOT found for this line ", line, epsg_code_val)
 
 except ImportError:
     pass
