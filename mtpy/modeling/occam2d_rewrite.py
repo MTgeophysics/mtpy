@@ -3031,7 +3031,7 @@ class Response(object):
             raise OccamInputError('Could not find {0}'.format(self.resp_fn))
 
         r_arr_tmp = np.loadtxt(self.resp_fn)
-        r_arr = np.array(len(r_arr_tmp), dtype=[('station', np.int),
+        r_arr = np.zeros(len(r_arr_tmp), dtype=[('station', np.int),
                                                 ('freq', np.int),
                                                 ('comp', np.int),
                                                 ('z', np.int),
