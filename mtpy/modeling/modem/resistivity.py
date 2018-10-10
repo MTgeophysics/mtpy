@@ -126,9 +126,8 @@ def lon_lat_grid_spacing(center, width, height, to_wgs84):
     return center_lon, center_lat, shifted_lon - center_lon, shifted_lat - center_lat
 
 
-def interpolated_layer(y, x, layer):
-    # could not figure out why the transpose is needed here
-    return interp2d(y, x, layer.T)  # bounds_error=True
+def interpolated_layer(x, y, layer):
+    return interp2d(x, y, layer)  # bounds_error=True
 
 
 def converter(in_spatial_ref, out_spatial_ref):
@@ -178,8 +177,8 @@ def main():
                 for x in resistivity_data['x']
                 for y in resistivity_data['y']]
 
-    interpolation_funcs = [interpolated_layer(resistivity_data['y'],
-                                              resistivity_data['x'],
+    interpolation_funcs = [interpolated_layer(resistivity_data['x'],
+                                              resistivity_data['y'],
                                               resistivity_data['resistivity'][z_index, :, :])
                            for z_index in range(resistivity_data['z'].shape[0])]
 
@@ -201,7 +200,7 @@ def main():
                 lon, lat = longitudes[j], latitudes[i]
                 x, y = from_wgs84(lon, lat)
 
-                result[i, j] = interp_func(y, x)
+                result[i, j] = interp_func(x, y)
 
         return result
 
