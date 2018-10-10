@@ -2,7 +2,7 @@
 
 import os
 import sys
-from os.path import join
+from os.path import join, abspath
 
 import numpy as np
 from netCDF4 import Dataset
@@ -140,7 +140,7 @@ def converter(in_spatial_ref, out_spatial_ref):
 
 def main():
     # Define Data and Model Paths
-    MT_PATH = '/home/jami/Documents/GA-work/mtpy'
+    MT_PATH = abspath(join(__file__, '../../../..'))
 
     data = Data()
     data.read_data_file(data_fn=join(MT_PATH, 'examples/model_files/ModEM/ModEM_Data.dat'))
@@ -200,10 +200,11 @@ def main():
                 result[i, j] = interp_func(y, x)
 
         return result
+
     for z_index in range(result['depth'].shape[0]):
         print 'layer #', z_index + 1
         result['resistivity'][z_index, :, :] = uniform_layer(interpolation_funcs[z_index], result['latitude'], result['longitude'])
-        print result['resistivity'][z_index,0,0]
+
     write_to_file('wgs84.nc', global_ref, result)
 
 
