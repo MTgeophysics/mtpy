@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 import os
-import sys
 from os.path import join, abspath
 
 import numpy as np
@@ -15,7 +14,7 @@ from mtpy.modeling.modem import Model, Data
 
 # Create a cell-centred NetCDF file
 def create_dataset(filename):
-    if(os.path.exists(filename)):
+    if os.path.exists(filename):
         print filename, 'already exists, removing'
         os.remove(filename)
 
@@ -53,6 +52,7 @@ def set_grid_mapping_attrs_projected(crs_var, spatial_ref):
     crs_var.latitude_of_projection_origin = spatial_ref.GetProjParm(osr.SRS_PP_LATITUDE_OF_ORIGIN)
     crs_var.scale_factor_at_central_meridian = spatial_ref.GetProjParm(osr.SRS_PP_SCALE_FACTOR)
 
+
 def set_grid_mapping_attrs_geographic(crs_var, spatial_ref):
     crs_var.spatial_ref = spatial_ref.ExportToWkt()
     crs_var.crs_wkt = spatial_ref.ExportToWkt()
@@ -61,6 +61,7 @@ def set_grid_mapping_attrs_geographic(crs_var, spatial_ref):
     crs_var.semi_major_axis = spatial_ref.GetSemiMajor()
     crs_var.grid_mapping_name = 'latitude_longitude'
     crs_var.units = spatial_ref.GetAttrValue('UNIT')
+
 
 def write_to_file(filename, spatial_ref, resistivity_data):
     with create_dataset(filename) as dataset:
@@ -115,6 +116,7 @@ def uniform_interior_grid(arr, spacing, mid):
 def median_spacing(arr):
     return np.median(arr[1:] - arr[:-1])
 
+
 def lon_lat_grid_spacing(center, width, height, to_wgs84):
     center_x, center_y = center.east.item(), center.north.item()
     center_lon, center_lat = to_wgs84(center_x, center_y)
@@ -123,9 +125,10 @@ def lon_lat_grid_spacing(center, width, height, to_wgs84):
 
     return center_lon, center_lat, shifted_lon - center_lon, shifted_lat - center_lat
 
+
 def interpolated_layer(y, x, layer):
     # could not figure out why the transpose is needed here
-    return interp2d(y, x, layer.T) #, bounds_error=True)
+    return interp2d(y, x, layer.T)  # bounds_error=True
 
 
 def converter(in_spatial_ref, out_spatial_ref):
@@ -174,7 +177,7 @@ def main():
     lat_list = [to_wgs84(x, y)[1]
                 for x in resistivity_data['x']
                 for y in resistivity_data['y']]
-    
+
     interpolation_funcs = [interpolated_layer(resistivity_data['y'],
                                               resistivity_data['x'],
                                               resistivity_data['resistivity'][z_index, :, :])
@@ -186,8 +189,9 @@ def main():
         'depth': resistivity_data['z']
     }
 
-    result['resistivity'] = np.zeros((result['depth'].shape[0], result['latitude'].shape[0], result['longitude'].shape[0]))
-    
+    result['resistivity'] = np.zeros(tuple(result[key].shape[0]
+                                           for key in ['depth', 'latitude', 'longitude']))
+
     def uniform_layer(interp_func, latitudes, longitudes):
         lats, lons = latitudes.shape[0], longitudes.shape[0]
 
@@ -196,14 +200,15 @@ def main():
             for i in range(lats):
                 lon, lat = longitudes[j], latitudes[i]
                 x, y = from_wgs84(lon, lat)
-                
+
                 result[i, j] = interp_func(y, x)
 
         return result
 
     for z_index in range(result['depth'].shape[0]):
         print 'layer #', z_index + 1
-        result['resistivity'][z_index, :, :] = uniform_layer(interpolation_funcs[z_index], result['latitude'], result['longitude'])
+        result['resistivity'][z_index, :, :] = uniform_layer(interpolation_funcs[z_index],
+                                                             result['latitude'], result['longitude'])
 
     write_to_file('wgs84.nc', global_ref, result)
 
