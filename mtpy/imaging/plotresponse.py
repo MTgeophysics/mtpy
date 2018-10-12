@@ -60,7 +60,7 @@ class PlotResponse(mtpl.PlotSettings):
     and call redraw_plot().  If you know more aout matplotlib and want to 
     change axes parameters, that can be done by changing the parameters in the
     axes attributes and then call update_plot(), note the plot must be open.
-    
+
     
     Arguments:
     ----------

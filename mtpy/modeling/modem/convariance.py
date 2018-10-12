@@ -118,13 +118,19 @@ class Covariance(object):
         # --> smoothing in north direction
         n_smooth_line = ''
         for zz in range(self.grid_dimensions[2]):
-            n_smooth_line += ' {0:<5.1f}'.format(self.smoothing_north)
+            if not np.iterable(self.smoothing_north):
+                n_smooth_line += ' {0:<5.1f}'.format(self.smoothing_north)
+            else:
+                n_smooth_line += ' {0:<5.1f}'.format(self.smoothing_north[zz])
         clines.append(n_smooth_line + '\n')
 
         # --> smoothing in east direction
         e_smooth_line = ''
         for zz in range(self.grid_dimensions[2]):
-            e_smooth_line += ' {0:<5.1f}'.format(self.smoothing_east)
+            if not np.iterable(self.smoothing_east):
+                e_smooth_line += ' {0:<5.1f}'.format(self.smoothing_east)
+            else:
+                e_smooth_line += ' {0:<5.1f}'.format(self.smoothing_east[zz])
         clines.append(e_smooth_line + '\n')
 
         # --> smoothing in vertical direction

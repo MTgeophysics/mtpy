@@ -96,6 +96,20 @@ def get_period_list(period_min,period_max,periods_per_decade,include_outside_ran
     return np.logspace(start_period,stop_period,(stop_period-start_period)*periods_per_decade + 1)
 
 
+def nearest_index(val,array):
+    """
+    find the index of the nearest value in the array
+    :param val: the value to search for
+    :param array: the array to search in
+    
+    :return: index: integer describing position of nearest value in array
+    
+    """
+    # absolute difference between value and array
+    diff = np.abs(array-val)
+    
+    return np.where(diff==min(diff))[0][0]
+
 
 def make_log_increasing_array(z1_layer, target_depth, n_layers, increment_factor=0.999):
     """

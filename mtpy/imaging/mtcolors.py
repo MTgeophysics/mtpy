@@ -248,6 +248,8 @@ cmapdict = {'mt_yl2rd' : mt_yl2rd,
             'mt_rd2wh2bl': mt_rd2wh2bl,
             'mt_rd2wh2bl_r': mt_rd2wh2bl_r,
             'mt_rdylbu': mt_rdylbu}
+# add matplotlib built-in colormaps
+cmapdict.update(cm.cmap_d)
 
 #make functions for getting the color from each map according to the variable
 #cvar

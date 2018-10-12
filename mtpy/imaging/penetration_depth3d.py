@@ -43,7 +43,7 @@ _logger = MtPyLog.get_mtpy_logger(__name__)
 # This is the major function to be maintained!!!
 # use the Zcompotent=[det, zxy, zyx]
 def plot_latlon_depth_profile(edi_dir, period, zcomponent='det', showfig=True, savefig=True, savepath = None, fig_dpi=400,
-                              fontsize=14):
+                              fontsize=14, file_format='png'):
     """
     MT penetration depth profile in lat-lon coordinates with pixelsize = 0.002
     :param savefig:
@@ -79,7 +79,7 @@ def plot_latlon_depth_profile(edi_dir, period, zcomponent='det', showfig=True, s
     if savefig:
         if savepath is None:
             savepath = 'E:/tmp'
-        savefn = 'P3Depth_Period%s.jpg' % image.get_period_fmt()
+        savefn = 'P3Depth_Period%s.%s' % (image.get_period_fmt(),file_format)
         path2savefile = os.path.join(savepath, savefn)
         image.export_image(path2savefile, dpi=fig_dpi, bbox_inches='tight')
 

@@ -5,17 +5,18 @@ import os, re
 
 HAS_GDAL = gdal_data_check(None)._gdal_data_found
 
-if(not HAS_GDAL):
+if (not HAS_GDAL):
     try:
         import pyproj
     except ImportError:
         raise RuntimeError("Either GDAL or PyProj must be installed")
-    # end try
+        # end try
 # end if
 
 EPSG_DICT = {}
 try:
     import pyproj
+
     epsgfn = os.path.join(pyproj.pyproj_datadir, 'epsg')
 
     f = open(epsgfn, 'r')
@@ -26,17 +27,16 @@ try:
 
         epsg_code_val = re.compile('<(\d+)>').findall(line)
 
-        #print( "epsg_code_val", epsg_code_val)
+        # print( "epsg_code_val", epsg_code_val)
 
-	if epsg_code_val is not None and len(epsg_code_val)>0 and epsg_code_val[0].isdigit():
+        if epsg_code_val is not None and len(epsg_code_val) > 0 and epsg_code_val[0].isdigit():
             epsg_code = int(epsg_code_val[0])
             epsg_string = re.compile('>(.*)<').findall(line)[0].strip()
 
             EPSG_DICT[epsg_code] = epsg_string
         else:
-            print( "epsg_code_val", epsg_code_val)
+            pass  #print("epsg_code_val NOT found for this line ", line, epsg_code_val)
 
-    # end for
 except ImportError:
     pass
 # end try

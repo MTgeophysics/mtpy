@@ -27,124 +27,124 @@ __all__ = ['PlotSlices']
 
 
 class PlotSlices(object):
-    #    """
-    #    * Plot all cartesian axis-aligned slices and be able to scroll through the model
-    #    * Extract arbitrary profiles (e.g. along a seismic line) from a model
-    #
-    #    :Example: ::
-    #
-    #        >>> import mtpy.modeling.modem as modem
-    #        >>> mfn = r"/home/modem/Inv1/Modular_NLCG_100.rho"
-    #        >>> dfn = r"/home/modem/Inv1/ModEM_data.dat"
-    #        >>> pds = ws.PlotSlices(model_fn=mfn, data_fn=dfn)
-    #
-    #    ======================= ===================================================
-    #    Buttons                  Description
-    #    ======================= ===================================================
-    #    'e'                     moves n-s slice east by one model block
-    #    'w'                     moves n-s slice west by one model block
-    #    'n'                     moves e-w slice north by one model block
-    #    'm'                     moves e-w slice south by one model block
-    #    'd'                     moves depth slice down by one model block
-    #    'u'                     moves depth slice up by one model block
-    #    ======================= ===================================================
-    #
-    #
-    #    ======================= ===================================================
-    #    Attributes              Description
-    #    ======================= ===================================================
-    #    ax_en                   matplotlib.axes instance for depth slice  map view
-    #    ax_ez                   matplotlib.axes instance for e-w slice
-    #    ax_map                  matplotlib.axes instance for location map
-    #    ax_nz                   matplotlib.axes instance for n-s slice
-    #    climits                 (min , max) color limits on resistivity in log
-    #                            scale. *default* is (0, 4)
-    #    cmap                    name of color map for resisitiviy.
-    #                            *default* is 'jet_r'
-    #    data_fn                 full path to data file name
-    #    draw_colorbar           show colorbar on exported plot; default True
-    #    dscale                  scaling parameter depending on map_scale
-    #    east_line_xlist         list of line nodes of east grid for faster plotting
-    #    east_line_ylist         list of line nodes of east grid for faster plotting
-    #    ew_limits               (min, max) limits of e-w in map_scale units
-    #                            *default* is None and scales to station area
-    #    fig                     matplotlib.figure instance for figure
-    #    fig_aspect              aspect ratio of plots. *default* is 1
-    #    fig_dpi                 resolution of figure in dots-per-inch
-    #                            *default* is 300
-    #    fig_num                 figure instance number
-    #    fig_size                [width, height] of figure window.
-    #                            *default* is [6,6]
-    #    font_dict               dictionary of font keywords, internally created
-    #    font_size               size of ticklables in points, axes labes are
-    #                            font_size+2. *default* is 4
-    #    grid_east               relative location of grid nodes in e-w direction
-    #                            in map_scale units
-    #    grid_north              relative location of grid nodes in n-s direction
-    #                            in map_scale units
-    #    grid_z                  relative location of grid nodes in z direction
-    #                            in map_scale units
-    #    index_east              index value of grid_east being plotted
-    #    index_north             index value of grid_north being plotted
-    #    index_vertical          index value of grid_z being plotted
-    #    initial_fn              full path to initial file
-    #    key_press               matplotlib.canvas.connect instance
-    #    map_scale               [ 'm' | 'km' ] scale of map. *default* is km
-    #    mesh_east               np.meshgrid(grid_east, grid_north)[0]
-    #    mesh_en_east            np.meshgrid(grid_east, grid_north)[0]
-    #    mesh_en_north           np.meshgrid(grid_east, grid_north)[1]
-    #    mesh_ez_east            np.meshgrid(grid_east, grid_z)[0]
-    #    mesh_ez_vertical        np.meshgrid(grid_east, grid_z)[1]
-    #    mesh_north              np.meshgrid(grid_east, grid_north)[1]
-    #    mesh_nz_north           np.meshgrid(grid_north, grid_z)[0]
-    #    mesh_nz_vertical        np.meshgrid(grid_north, grid_z)[1]
-    #    model_fn                full path to model file
-    #    ms                      size of station markers in points. *default* is 2
-    #    nodes_east              relative distance betwen nodes in e-w direction
-    #                            in map_scale units
-    #    nodes_north             relative distance betwen nodes in n-s direction
-    #                            in map_scale units
-    #    nodes_z                 relative distance betwen nodes in z direction
-    #                            in map_scale units
-    #    north_line_xlist        list of line nodes north grid for faster plotting
-    #    north_line_ylist        list of line nodes north grid for faster plotting
-    #    ns_limits               (min, max) limits of plots in n-s direction
-    #                            *default* is None, set veiwing area to station area
-    #    plot_yn                 [ 'y' | 'n' ] 'y' to plot on instantiation
-    #                            *default* is 'y'
-    #    plot_stations           default False
-    #    plot_grid               show grid on exported plot; default False
-    #    res_model               np.ndarray(n_north, n_east, n_vertical) of
-    #                            model resistivity values in linear scale
-    #    save_format             exported format; default png
-    #    save_path               path to save exported plots to; default current working folder
-    #    station_color           color of station marker. *default* is black
-    #    station_dict_east       location of stations for each east grid row
-    #    station_dict_north      location of stations for each north grid row
-    #    station_east            location of stations in east direction
-    #    station_fn              full path to station file
-    #    station_font_color      color of station label
-    #    station_font_pad        padding between station marker and label
-    #    station_font_rotation   angle of station label
-    #    station_font_size       font size of station label
-    #    station_font_weight     weight of font for station label
-    #    station_id              [min, max] index values for station labels
-    #    station_marker          station marker
-    #    station_names           name of stations
-    #    station_north           location of stations in north direction
-    #    subplot_bottom          distance between axes and bottom of figure window
-    #    subplot_hspace          distance between subplots in vertical direction
-    #    subplot_left            distance between axes and left of figure window
-    #    subplot_right           distance between axes and right of figure window
-    #    subplot_top             distance between axes and top of figure window
-    #    subplot_wspace          distance between subplots in horizontal direction
-    #    title                   title of plot
-    #    xminorticks             location of xminorticks
-    #    yminorticks             location of yminorticks
-    #    z_limits                (min, max) limits in vertical direction,
-    #    ======================= ===================================================
-    #
-    #    """
+    """
+    * Plot all cartesian axis-aligned slices and be able to scroll through the model
+    * Extract arbitrary profiles (e.g. along a seismic line) from a model
+
+    :Example: ::
+
+        >>> import mtpy.modeling.modem as modem
+        >>> mfn = r"/home/modem/Inv1/Modular_NLCG_100.rho"
+        >>> dfn = r"/home/modem/Inv1/ModEM_data.dat"
+        >>> pds = ws.PlotSlices(model_fn=mfn, data_fn=dfn)
+
+    ======================= ===================================================
+    Buttons                  Description
+    ======================= ===================================================
+    'e'                     moves n-s slice east by one model block
+    'w'                     moves n-s slice west by one model block
+    'n'                     moves e-w slice north by one model block
+    'm'                     moves e-w slice south by one model block
+    'd'                     moves depth slice down by one model block
+    'u'                     moves depth slice up by one model block
+    ======================= ===================================================
+
+
+    ======================= ===================================================
+    Attributes              Description
+    ======================= ===================================================
+    ax_en                   matplotlib.axes instance for depth slice  map view
+    ax_ez                   matplotlib.axes instance for e-w slice
+    ax_map                  matplotlib.axes instance for location map
+    ax_nz                   matplotlib.axes instance for n-s slice
+    climits                 (min , max) color limits on resistivity in log
+                            scale. *default* is (0, 4)
+    cmap                    name of color map for resisitiviy.
+                            *default* is 'jet_r'
+    data_fn                 full path to data file name
+    draw_colorbar           show colorbar on exported plot; default True
+    dscale                  scaling parameter depending on map_scale
+    east_line_xlist         list of line nodes of east grid for faster plotting
+    east_line_ylist         list of line nodes of east grid for faster plotting
+    ew_limits               (min, max) limits of e-w in map_scale units
+                            *default* is None and scales to station area
+    fig                     matplotlib.figure instance for figure
+    fig_aspect              aspect ratio of plots. *default* is 1
+    fig_dpi                 resolution of figure in dots-per-inch
+                            *default* is 300
+    fig_num                 figure instance number
+    fig_size                [width, height] of figure window.
+                            *default* is [6,6]
+    font_dict               dictionary of font keywords, internally created
+    font_size               size of ticklables in points, axes labes are
+                            font_size+2. *default* is 4
+    grid_east               relative location of grid nodes in e-w direction
+                            in map_scale units
+    grid_north              relative location of grid nodes in n-s direction
+                            in map_scale units
+    grid_z                  relative location of grid nodes in z direction
+                            in map_scale units
+    index_east              index value of grid_east being plotted
+    index_north             index value of grid_north being plotted
+    index_vertical          index value of grid_z being plotted
+    initial_fn              full path to initial file
+    key_press               matplotlib.canvas.connect instance
+    map_scale               [ 'm' | 'km' ] scale of map. *default* is km
+    mesh_east               np.meshgrid(grid_east, grid_north)[0]
+    mesh_en_east            np.meshgrid(grid_east, grid_north)[0]
+    mesh_en_north           np.meshgrid(grid_east, grid_north)[1]
+    mesh_ez_east            np.meshgrid(grid_east, grid_z)[0]
+    mesh_ez_vertical        np.meshgrid(grid_east, grid_z)[1]
+    mesh_north              np.meshgrid(grid_east, grid_north)[1]
+    mesh_nz_north           np.meshgrid(grid_north, grid_z)[0]
+    mesh_nz_vertical        np.meshgrid(grid_north, grid_z)[1]
+    model_fn                full path to model file
+    ms                      size of station markers in points. *default* is 2
+    nodes_east              relative distance betwen nodes in e-w direction
+                            in map_scale units
+    nodes_north             relative distance betwen nodes in n-s direction
+                            in map_scale units
+    nodes_z                 relative distance betwen nodes in z direction
+                            in map_scale units
+    north_line_xlist        list of line nodes north grid for faster plotting
+    north_line_ylist        list of line nodes north grid for faster plotting
+    ns_limits               (min, max) limits of plots in n-s direction
+                            *default* is None, set veiwing area to station area
+    plot_yn                 [ 'y' | 'n' ] 'y' to plot on instantiation
+                            *default* is 'y'
+    plot_stations           default False
+    plot_grid               show grid on exported plot; default False
+    res_model               np.ndarray(n_north, n_east, n_vertical) of
+                            model resistivity values in linear scale
+    save_format             exported format; default png
+    save_path               path to save exported plots to; default current working folder
+    station_color           color of station marker. *default* is black
+    station_dict_east       location of stations for each east grid row
+    station_dict_north      location of stations for each north grid row
+    station_east            location of stations in east direction
+    station_fn              full path to station file
+    station_font_color      color of station label
+    station_font_pad        padding between station marker and label
+    station_font_rotation   angle of station label
+    station_font_size       font size of station label
+    station_font_weight     weight of font for station label
+    station_id              [min, max] index values for station labels
+    station_marker          station marker
+    station_names           name of stations
+    station_north           location of stations in north direction
+    subplot_bottom          distance between axes and bottom of figure window
+    subplot_hspace          distance between subplots in vertical direction
+    subplot_left            distance between axes and left of figure window
+    subplot_right           distance between axes and right of figure window
+    subplot_top             distance between axes and top of figure window
+    subplot_wspace          distance between subplots in horizontal direction
+    title                   title of plot
+    xminorticks             location of xminorticks
+    yminorticks             location of yminorticks
+    z_limits                (min, max) limits in vertical direction,
+    ======================= ===================================================
+
+    """
 
     def __init__(self, model_fn, data_fn=None, **kwargs):
         self.model_fn = model_fn

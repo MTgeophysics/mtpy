@@ -42,10 +42,10 @@ class PlotResponse(object):
     Attributes               Description
     ======================== ==================================================
     color_mode               [ 'color' | 'bw' ] color or black and white plots
-    cted                     color for data TE mode
-    ctem                     color for data TM mode
-    ctmd                     color for model TE mode
-    ctmm                     color for model TM mode
+    cted                     color for data Z_XX and Z_XY mode
+    ctem                     color for model Z_XX and Z_XY mode
+    ctmd                     color for data Z_YX and Z_YY mode
+    ctmm                     color for model Z_YX and Z_YY mode
     data_fn                  full path to data file
     data_object              WSResponse instance
     e_capsize                cap size of error bars in points (*default* is .5)
@@ -66,10 +66,10 @@ class PlotResponse(object):
     ms                       size of markers (*default* is 1.5)
     lw_r                     line width response curves (*default* is .5)
     ms_r                     size of markers response curves (*default* is 1.5)
-    mted                     marker for data TE mode
-    mtem                     marker for data TM mode
-    mtmd                     marker for model TE mode
-    mtmm                     marker for model TM mode
+    mted                     marker for data Z_XX and Z_XY mode
+    mtem                     marker for model Z_XX and Z_XY mode
+    mtmd                     marker for data Z_YX and Z_YY mode
+    mtmm                     marker for model Z_YX and Z_YY mode
     phase_limits             limits of phase
     plot_component           [ 2 | 4 ] 2 for TE and TM or 4 for all components
     plot_style               [ 1 | 2 ] 1 to plot each mode in a seperate

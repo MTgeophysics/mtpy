@@ -68,8 +68,7 @@ class PlotPTMaps(mtplottools.MTEllipse):
     cb_residual_tick_step      tick step for residual pt. *default* is 3
     cb_tick_step               tick step for phase tensor color bar,
                                *default* is 45
-    data                       np.ndarray(n_station, n_periods, 2, 2)
-                               impedance tensors for station data
+    data_obj                   data object (read in from ModEM data file)
     data_fn                    full path to data fle
     dscale                     scaling parameter depending on map_scale
     ellipse_cmap               color map for pt ellipses. *default* is
@@ -210,12 +209,15 @@ class PlotPTMaps(mtplottools.MTEllipse):
                                         {'size': 2,
                                          'ellipse_range':[0,0],
                                          'ellipse_colorby':'phimin',
-                                         'ellipse_cmap':'mt_bl2gr2rd'})
+                                         'ellipse_cmap':'mt_bl2gr2rd',
+                                         'normalise':False})
 
         self._read_ellipse_dict(self._ellipse_dict)
 
         self.ellipse_size = kwargs.pop(
             'ellipse_size', self._ellipse_dict['size'])
+            
+        self.normalise_ellipses = kwargs.pop('normalise_ellipses',False)
 
         self.cb_tick_step = kwargs.pop('cb_tick_step', None)
         # update default colorbar tick step based on ellipse_range
@@ -930,6 +932,7 @@ class PlotPTMaps(mtplottools.MTEllipse):
                 np.savetxt(filename, data_to_write, header=header,
                            fmt=['%.4e', '%s', '%.2f', '%.2f', '%.2f', '%.2f', '%.2f', '%.3f'])
 
+
     def write_pt_data_to_gmt(self, period=None, epsg=None, savepath='.', center_utm=None,
                              colorby='phimin', attribute='data', clim=None):
         """
@@ -1016,8 +1019,11 @@ class PlotPTMaps(mtplottools.MTEllipse):
                     :, 0], gmtdata[
                     :, 1])
 
-        # normalise by maximum value of phimax
-        norm = np.amax(gmtdata[:, 4])
+        if self.normalise_ellipses:
+            norm = gmtdata[:,4]
+        else:
+            # normalise by maximum value of phimax
+            norm = np.amax(gmtdata[:, 4])
         gmtdata[:, 5] /= norm
         gmtdata[:, 4] /= norm
         if attribute != 'resid':

@@ -1,7 +1,7 @@
-#! /usr/bin/bash
+#! /usr/bin/env bash
 
 # Purpose: Run this script on the command line to see your software environment
-# This script can run in both Linux and Windows git-bash terminal.
+# This script can run in Windows git-bash terminal.
 #
 # How to run:
 #
@@ -11,7 +11,7 @@
 echo "check git version  ...."
 git --version
 
-echo "Check python version ... "
+echo "Check python version ...(should be python 2.7.??) "
 python -V
 
 echo "check path to python, conda, and spyder"
@@ -28,16 +28,14 @@ conda info
 
 echo "Testing some plotting functions. Close the popup figure to continue ....."
 
-echo "Running python mtpy/imaging/plot_response.py "
-python mtpy/imaging/plot_response.py
-
-echo "Running python examples/scripts/plot_edis.py" 
+echo "Try to run a simple script: examples/scripts/plot_edis.py"
 python examples/scripts/plot_edis.py
 
-echo " Strating the MTPY GUi...."
-python -OO mtpy/gui/SmartMT/start.py &
 
-#echo "Staring Spyder......................"
+#echo " Check strating the MTPY GUi...."
+#python -OO mtpy/gui/SmartMT/start.py &
+
+#echo "Check staring spyder......................"
 #spyder &
 
 
