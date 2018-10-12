@@ -518,18 +518,19 @@ class PlotResponse(object):
 
                 # set legends for tipper components
             # fake a line
-            l1 = plt.Line2D([0], [0], linewidth=0, color='w', linestyle='None',
-                            marker='.')
-            t_label_list = ['Re{$T_x$}', 'Im{$T_x$}', 'Re{$T_y$}', 'Im{$T_y$}']
-            label_list += [['$T_{x}$'], ['$T_{y}$']]
-            for ax, label in zip(self.ax_list[-4:], t_label_list):
-                ax.legend([l1], [label], loc='upper left',
-                          markerscale=.01,
-                          borderaxespad=.05,
-                          labelspacing=.01,
-                          handletextpad=.05,
-                          borderpad=.05,
-                          prop={'size': max([self.font_size, 6])})
+            if self.plot_tipper:
+                l1 = plt.Line2D([0], [0], linewidth=0, color='w', linestyle='None',
+                                marker='.')
+                t_label_list = ['Re{$T_x$}', 'Im{$T_x$}', 'Re{$T_y$}', 'Im{$T_y$}']
+                label_list += [['$T_{x}$'], ['$T_{y}$']]
+                for ax, label in zip(self.ax_list[-4:], t_label_list):
+                    ax.legend([l1], [label], loc='upper left',
+                              markerscale=.01,
+                              borderaxespad=.05,
+                              labelspacing=.01,
+                              handletextpad=.05,
+                              borderpad=.05,
+                              prop={'size': max([self.font_size, 6])})
 
 
 
@@ -602,6 +603,8 @@ class PlotResponse(object):
                     ylabels[0] = ''
                     ax.set_yticklabels(ylabels)
                     plt.setp(ax.get_xticklabels(), visible=False)
+                if aa < 4:
+                    ax.yaxis.set_major_formatter(LogFormatterSciNotation())
 
             # plot model response
             if self.resp_object is not None:
