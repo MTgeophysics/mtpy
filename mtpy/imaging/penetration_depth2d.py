@@ -41,7 +41,8 @@ _logger = MtPyLog.get_mtpy_logger(__name__)
 
 
 # use the Zcompotent=[det, zxy, zyx]
-def plot2Dprofile(edi_dir, period_index_list=None, zcomponent='det', edi_list=None, tick_params={}, **kwargs):
+def plot2Dprofile(edi_dir, period_index_list=None, zcomponent='det', 
+                  edi_list=None, tick_params={}, save=False,savepath=None,**kwargs):
     #edi_dir = "/Softlab/Githubz/mtpy2/tests/data/edifiles/"
     # edi_dir="E:/Githubz/mtpy2/tests/data/edifiles/"
     # edi_dir=r"E:\Githubz\mtpy2\examples\data/edi2"
@@ -54,6 +55,13 @@ def plot2Dprofile(edi_dir, period_index_list=None, zcomponent='det', edi_list=No
     edis = load_edi_files(edi_dir, file_list=edi_list)
     plot = Depth2D(edis, period_index_list, zcomponent)
     plot.plot(tick_params, **kwargs)
+    if save:
+        if os.path.isdir(savepath):
+            savepath == os.path.join(savepath,'Depth2D.png')
+        if savepath is not None:
+            plot._fig.savefig(savepath)
+        else:
+            savepath = os.path.join(edi_dir,'Depth2D.png')
     plot.show()
 
 
