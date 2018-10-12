@@ -1726,7 +1726,7 @@ class ZenSchedule(object):
         if t1_dict is not None:
             time_list = [{'dt':self.initial_dt,'df':t1_dict['df']}]
     
-            kk = np.where(np.array(df_list)==t1_dict['df'])[0]-ndf+1
+            kk = np.where(np.array(df_list) == t1_dict['df'])[0][0]-ndf+1
             df_list = np.append(df_list[kk:], df_list[:kk])
             df_length_list = np.append(df_length_list[kk:], df_length_list[:kk])
             time_list.append(dict([('dt',t1_dict['dt']), ('df',df_list[0])]))
