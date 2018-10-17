@@ -5,11 +5,11 @@ import numpy as np
 import time
 
 from tswave import TSWave
-
+import re
 class TSData():
     def __init__(self, filename=None):
 
-        self.dict = {}
+        self.wavelist = {}
 
         if filename is not None:
             self.loadFile(filename)
@@ -17,56 +17,45 @@ class TSData():
 
 
     def loadFile(self, filename):
-        rawdata = pyasdf.ASDFDataSet(filename, mode="r")
+        self.rawdata = pyasdf.ASDFDataSet(filename, mode="r")
+
+        count = 0
+        for stationname in self.rawdata.waveforms.list():
+            for network in self.rawdata.waveforms[stationname].StationXML:
+                if network.code not in self.wavelist:
+                    self.wavelist[network.code] = {}
+                for station in network:
+                    if station.code not in self.wavelist[network.code]:
+                        self.wavelist[network.code][station.code] = {}
+                    for channel in station:
+                        wavename = network.code+'.'+station.code+'.'+channel.location_code + '.' + channel.code
+                        if wavename not in self.wavelist[network.code][station.code]:
+                            self.wavelist[network.code][station.code][wavename] = [channel]
+                            #print(wavename, self.wavelist[network.code][station.code][wavename])
+                        else:
+                            self.wavelist[network.code][station.code][wavename].append(channel)
 
 
-        for name in rawdata.waveforms.list():
-            for w  in rawdata.waveforms[name].raw_recording:
-                fullname = name+'.'+w.meta['location']+'.'+w.meta['channel']
-
-                if fullname in self.dict:
-                    self.dict[fullname].expandWave(w)
-                else:
-                    self.dict[fullname] = TSWave(w)
 
 
 
 
 
+    def getwaveform(self, wave, starttime=None, endtime=None):
+        print("getwave")
+        ntwk = re.sub('([^.]+)(.*)','\\1',wave.wavename)
+        sttn = re.sub('([^.]+\.)([^.]+)(.*)','\\2',wave.wavename)
+        outwave = self.rawdata.get_waveforms(network=ntwk, station=sttn, location=wave.channelitem.location_code, \
+                                          channel=wave.channelitem.code, starttime=wave.channelitem.start_date, \
+                     #endtime=wave.channelitem.end_date, tag="raw_recording")
+                                             endtime=wave.channelitem.start_date+10000, tag="raw_recording")
+        print("""self.rawdata.get_waveforms(network="""+ntwk+""", station="""+sttn+""", 
+        location="""+wave.channelitem.location_code+""", channel="""+wave.channelitem.code+""", 
+        starttime="""+str(wave.channelitem.start_date)+""", endtime="""+str(wave.channelitem.end_date)+""", tag="raw_recording")""")
 
-    def getwaveform(self, waveformname, starttime=None, endtime=None):
-        wave = self.dict[waveformname].getWave(starttime, endtime)
-        return wave
+        return outwave
 
 
-    # def getwaveformshift(self, shift):
-    #
-    #     shift = (self.endtime-self.starttime+1)*shift
-    #     self.starttime = self.starttime + shift
-    #     self.endtime = self.endtime + shift
-    #
-    #     return [wave for wave in self.vis]
-    #
-    # def getwaveform
-    #
-    #     if self.start==0 and shift<0:
-    #         pass
-    #     elif self.end == len(self.currentdata) and shift >0:
-    #         pass
-    #     else:
-    #         if self.start+shift<0:
-    #             shift = -self.start
-    #         if self.end+shift>len(self.currentdata):
-    #             shift = len(self.currentdata) -self.end
-    #
-    #         self.start = int(self.start+shift)
-    #         self.end = int(self.end+shift)
-    #
-    #         self.times = np.array(self.currenttimes[self.start: self.end])
-    #         self.data = np.array(self.currentdata[self.start: self.end])
-    #
-    #     return [self.times,
-    #             self.data]
 
     def getwaveformresample(self, shift):
 
@@ -105,6 +94,7 @@ class TSData():
                 self.end=len(self.currentdata)
 
 
+
             self.decirate = decirate
 
             self.times = np.array(self.currenttimes[self.start: self.end])
@@ -120,4 +110,5 @@ class TSData():
         return self.aspect
 
     def getList(self):
-        return list(self.dict)
+        return self.wavelist
+

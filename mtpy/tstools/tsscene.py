@@ -44,15 +44,18 @@ class TSScene(QGraphicsScene):
 
         self.wheelactive = False
 
-    def togglewave(self, wavename, colorcode=0):
-        if wavename in self.visibleWave:
-            handle = (self.visibleWave[wavename])[1]
+    def togglewave(self, wave, colorcode=0):
+        if wave.wavename in self.visibleWave:
+            handle = (self.visibleWave[wave.wavename])[1]
             self.removewave(handle)
-            self.visibleWave.pop(wavename, None)
+            self.visibleWave.pop(wave.wavename, None)
         else:
-            waveform = self.data.getwaveform(wavename, self.starttime, self.endtime)
-            handle = self.displaywave(wavename, waveform, colorcode)
-            self.visibleWave[wavename] = (waveform, handle, colorcode)
+            print("togglewave")
+            waveform = self.data.getwaveform(wave)
+            print(type(waveform))
+            waveform = waveform[0]
+            handle = self.displaywave(wave.wavename, waveform, colorcode)
+            self.visibleWave[wave.wavename] = (waveform, handle, colorcode)
 
     def displaywave(self, wavename, waveform, colorcode):
 
