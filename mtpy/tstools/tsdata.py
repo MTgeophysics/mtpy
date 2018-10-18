@@ -55,6 +55,7 @@ class TSData():
         location="""+wave.channelitem.location_code+""", channel="""+wave.channelitem.code+""", 
         starttime="""+str(wave.channelitem.start_date)+""", endtime="""+str(wave.channelitem.end_date)+""", tag="raw_recording")""")
 
+
         return outwave
 
 

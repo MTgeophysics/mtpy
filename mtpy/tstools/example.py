@@ -23,6 +23,8 @@ from tswaveitem import TSWaveItem
 from tsscene import TSScene
 from tsdata import TSData
 
+import datetime
+
 class TSWindow(QWidget):
     def __init__(self):
         super(TSWindow,self).__init__()
@@ -51,6 +53,7 @@ class TSWindow(QWidget):
 
         self.wavetree = QTreeWidget()
         self.wavetree.itemClicked.connect(self.showWave)
+        self.wavetree.itemDoubleClicked.connect(self.exportWave)
 
         buttonlayout.addWidget(self.wavetree)
         buttonregion = QWidget()
@@ -62,22 +65,35 @@ class TSWindow(QWidget):
         self.setLayout(layout)
         self.setWindowTitle("TSView")
 
+        self.time = datetime.datetime.now()
+
     def showWave(self, wave):
         print("here",wave.wavename)
-        if wave.channelitem is None:
-            print("empty channelitem")
-            return
+
+        timenow = datetime.datetime.now()
+        if (timenow-self.time).seconds>1:
+            self.time = timenow
+
+            if wave.channelitem is None:
+                print("empty channelitem")
+                return
+            else:
+                print("showwave")
+                self.scene.togglewave(wave)
+
+
+                print(wave.channelitem.start_date, wave.channelitem.end_date)
         else:
-            print("showwave")
-            self.scene.togglewave(wave)
-
-
-            print(wave.channelitem.start_date, wave.channelitem.end_date)
+            self.time = timenow
+            self.exportWave(wave)
         #wavename = self.wavelistmodel.itemFromIndex(index).text()
         #self.scene.togglewave(wavename, index.row())
 
 
-
+    def exportWave(self, wave):
+        print("export",wave.wavename)
+        fname = QFileDialog.getSaveFileName(self, 'Save to','/g/data1a/ge3/yuhang/code/mtpy/mtpy/tstools')
+        self.scene.exportwaveform(wave.wavename, fname[0])
 
     def setList(self):
         item = self.wavetree.invisibleRootItem()
@@ -121,6 +137,8 @@ class TSWindow(QWidget):
         if len(fname[0])>0:
             self.scene.setdata(fname[0])
             self.setList()
+
+
 
 
 

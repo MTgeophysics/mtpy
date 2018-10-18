@@ -51,9 +51,9 @@ class TSScene(QGraphicsScene):
             self.visibleWave.pop(wave.wavename, None)
         else:
             print("togglewave")
-            waveform = self.data.getwaveform(wave, self.starttime, self.endtime)
-            print(type(waveform))
-            waveform = waveform[0]
+            stream = self.data.getwaveform(wave, self.starttime, self.endtime)
+            print(type(stream))
+            waveform = stream[0]
             handle = self.displaywave(wave.wavename, waveform, colorcode)
             self.visibleWave[wave.wavename] = (wave, handle, colorcode)
 
@@ -166,3 +166,16 @@ class TSScene(QGraphicsScene):
 
     def getList(self):
         return self.data.getList()
+
+
+    def exportwaveform(self, wavename, filename):
+        print(wavename)
+        print(list(self.visibleWave))
+        if wavename in self.visibleWave:
+            wave = self.visibleWave[wavename][0]
+            stream = self.data.getwaveform(wave, self.starttime, self.endtime)
+            print(type(stream),'type of stream')
+            stream.write(filename+".mseed", format='MSEED', encoding=3, reclen=256)
+        else:
+            pass
+
