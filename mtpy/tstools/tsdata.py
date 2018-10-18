@@ -43,12 +43,14 @@ class TSData():
 
     def getwaveform(self, wave, starttime=None, endtime=None):
         print("getwave")
+        if starttime is None:
+            starttime = wave.channelitem.start_date
+            endtime = starttime+1000
+
         ntwk = re.sub('([^.]+)(.*)','\\1',wave.wavename)
         sttn = re.sub('([^.]+\.)([^.]+)(.*)','\\2',wave.wavename)
         outwave = self.rawdata.get_waveforms(network=ntwk, station=sttn, location=wave.channelitem.location_code, \
-                                          channel=wave.channelitem.code, starttime=wave.channelitem.start_date, \
-                     #endtime=wave.channelitem.end_date, tag="raw_recording")
-                                             endtime=wave.channelitem.start_date+10000, tag="raw_recording")
+                            channel=wave.channelitem.code, starttime=starttime, endtime=endtime, tag="raw_recording")
         print("""self.rawdata.get_waveforms(network="""+ntwk+""", station="""+sttn+""", 
         location="""+wave.channelitem.location_code+""", channel="""+wave.channelitem.code+""", 
         starttime="""+str(wave.channelitem.start_date)+""", endtime="""+str(wave.channelitem.end_date)+""", tag="raw_recording")""")
