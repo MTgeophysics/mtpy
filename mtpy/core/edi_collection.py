@@ -143,6 +143,26 @@ class EdiCollection(object):
         return all_periods
 
 
+    def get_period_occurance(self,aper):
+        """
+        For a given aperiod, compute its occurance frequencies among the stations/edi
+        :param aper: a float value of the period
+        :return:
+        """
+        station_list = []
+        afreq = 1.0 / aper
+        acount = 0
+        for mt_obj in self.mt_obj_list:
+            # if afreq in mt_obj.Z.freq:
+            if is_num_in_seq(afreq, mt_obj.Z.freq):
+                acount = acount + 1
+                station_list.append(mt_obj.station)
+
+        # print (station_list)
+
+        occ_percentage = (100.0*acount)/self.num_of_edifiles
+
+        return occ_percentage
 
     def get_periods_by_stats(self, percentage=10.0):
         """
