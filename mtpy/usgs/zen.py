@@ -36,7 +36,94 @@ except ImportError:
 datetime_fmt = '%Y-%m-%d,%H:%M:%S'
 datetime_sec = '%Y-%m-%d %H:%M:%S.%f'
 #==============================================================================
-# 
+# =============================================================================
+#  Get leap seconds
+# =============================================================================
+def calculate_leap_seconds(year, month, day):
+    """
+    get the leap seconds for the given year to convert GPS time to UTC time
+    
+    .. note:: GPS time started in 1980
+    .. note:: GPS time is leap seconds ahead of UTC time, therefore you 
+              should subtract leap seconds from GPS time to get UTC time.
+    
+    =========================== ===============================================
+    Date Range                  Leap Seconds
+    =========================== ===============================================
+    1981-07-01 - 1982-07-01     1
+    1982-07-01 - 1983-07-01     2
+    1983-07-01 - 1985-07-01     3
+    1985-07-01 - 1988-01-01     4
+    1988-01-01 - 1990-01-01     5
+    1990-01-01 - 1991-01-01     6
+    1991-01-01 - 1992-07-01     7
+    1992-07-01 - 1993-07-01     8
+    1993-07-01 - 1994-07-01     9
+    1994-07-01 - 1996-01-01     10
+    1996-01-01 - 1997-07-01     11
+    1997-07-01 - 1999-01-01     12
+    1999-01-01 - 2006-01-01     13
+    2006-01-01 - 2009-01-01     14
+    2009-01-01 - 2012-07-01     15
+    2012-07-01 - 2015-07-01     16
+    2015-07-01 - 2017-01-01	    17
+    2017-01-01 - ????-??-??	    18
+    =========================== ===============================================
+    """
+    leap_second_dict = {0: {'min':datetime.date(1980, 1, 1), 
+                            'max':datetime.date(1981, 7, 1)},
+                        1: {'min':datetime.date(1981, 7, 1), 
+                            'max':datetime.date(1982, 7, 1)},
+                        2: {'min':datetime.date(1982, 7, 1), 
+                            'max':datetime.date(1983, 7, 1)},
+                        3: {'min':datetime.date(1983, 7, 1), 
+                            'max':datetime.date(1985, 7, 1)},
+                        4: {'min':datetime.date(1985, 7, 1), 
+                            'max':datetime.date(1988, 1, 1)},
+                        5: {'min':datetime.date(1988, 1, 1), 
+                            'max':datetime.date(1990, 1, 1)},
+                        6: {'min':datetime.date(1990, 1, 1), 
+                            'max':datetime.date(1991, 1, 1)},
+                        7: {'min':datetime.date(1991, 1, 1), 
+                            'max':datetime.date(1992, 7, 1)},
+                        8: {'min':datetime.date(1992, 7, 1), 
+                            'max':datetime.date(1993, 7, 1)},
+                        9: {'min':datetime.date(1993, 7, 1), 
+                            'max':datetime.date(1994, 7, 1)},
+                        10: {'min':datetime.date(1994, 7, 1), 
+                            'max':datetime.date(1996, 1, 1)},
+                        11: {'min':datetime.date(1996, 1, 1), 
+                            'max':datetime.date(1997, 7, 1)},
+                        12: {'min':datetime.date(1997, 7, 1), 
+                            'max':datetime.date(1999, 1, 1)},
+                        13: {'min':datetime.date(1999, 1, 1), 
+                            'max':datetime.date(2006, 1, 1)},
+                        14: {'min':datetime.date(2006, 1, 1), 
+                            'max':datetime.date(2009, 1, 1)},
+                        15: {'min':datetime.date(2009, 1, 1), 
+                            'max':datetime.date(2012, 7, 1)},
+                        16: {'min':datetime.date(2012, 7, 1), 
+                            'max':datetime.date(2015, 7, 1)},
+                        17: {'min':datetime.date(2015, 7, 1), 
+                            'max':datetime.date(2017, 1, 1)},
+                        18: {'min':datetime.date(2017, 1, 1), 
+                            'max':datetime.date(2020, 7, 1)}}
+    
+    year = int(year)
+    month = int(month)
+    day = int(day)
+    
+    # make the date a datetime object, easier to test
+    given_date = datetime.date(year, month, day)
+    
+    # made an executive decision that the date can be equal to the min, but 
+    # no the max, otherwise get an error.
+    for leap_key in sorted(leap_second_dict.keys()):
+        if given_date < leap_second_dict[leap_key]['max'] and\
+           given_date >= leap_second_dict[leap_key]['min']:
+            return int(leap_key)
+    
+    return None
 #==============================================================================
 class Z3D_Header(object):
     """
@@ -335,6 +422,7 @@ class Z3D_Schedule(object):
         self.datetime = datetime.datetime.strptime('{0},{1}'.format(self.Date,
                                                                     self.Time),
                                                    datetime_fmt)
+        
 #==============================================================================
 #  Meta data class    
 #==============================================================================
@@ -827,7 +915,12 @@ class Zen3D(object):
         """
         if type(schedule_dt) is not datetime.datetime:
             raise TypeError('New schedule datetime must be type datetime.datetime')
-        self.schedule.datetime = schedule_dt  
+        self.schedule.datetime = schedule_dt 
+        
+        # set the leap seconds
+        self._leap_seconds = calculate_leap_seconds(self.schedule.datetime.year,
+                                                    self.schedule.datetime.month,
+                                                    self.schedule.datetime.day)
         
     @property
     def coil_num(self):
@@ -944,6 +1037,15 @@ class Zen3D(object):
             dt_str = self.header.schedule.replace('T', ',')
             self.schedule.Date = dt_str.split(',')[0]
             self.schedule.Time = dt_str.split(',')[1]
+            year, month, day = [int(dd) for dd in self.schedule.Date.split('-')]
+            hour, minute, second = [int(dd) for dd in self.schedule.Time.split(':')]
+            self.schedule.datetime = datetime.datetime(year, month, day,
+                                                       hour, minute, second)
+        
+        # set the leap seconds
+        self._leap_seconds = calculate_leap_seconds(self.schedule.datetime.year,
+                                                    self.schedule.datetime.month,
+                                                    self.schedule.datetime.day)
 
     #======================================     
     def _read_metadata(self, fn=None, fid=None):
