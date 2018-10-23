@@ -832,8 +832,8 @@ class USGSasc(Metadata):
                 azm_value += self.declination
             self.channel_dict[chn]['Azimuth'] = azm_value
             self.channel_dict[chn]['ChnNum'] = '{0}{1}'.format(self.channel_dict[chn]['ChnNum'][:-1],
-                                                               getattr(station_db, 
-                                                                       '{0}_num'.format(chn.lower())))
+                                                               int(getattr(station_db, 
+                                                                       '{0}_num'.format(chn.lower()))))
             
             
         # get location
