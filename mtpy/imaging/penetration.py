@@ -235,11 +235,11 @@ class Depth2D(ImagingBase):
 
 class Depth3D(ImagingBase):
     """
-    For a batch of MT_stations (input as a list of MT objects),
+    For a set of EDI files (input as a list of MT objects),
     plot the Penetration Depth vs the station_location,
-    for a given period value or index (1/freq)-
-    Note that the values of periods within10% tolerance (ptol=0.1) are considered as equal.
-    Setting a smaller value for ptol(=0.05)may result less MT sites data included.
+    for a given period value or index
+    Note that the values of periods within tolerance (ptol=0.1) are considered as equal.
+    Setting a smaller value for ptol may result less MT sites data included.
     """
     def __init__(self, data=None, period=None, rho='det', ptol=0.1):
         super(Depth3D, self).__init__()
@@ -278,9 +278,6 @@ class Depth3D(ImagingBase):
                                                                                  self._period,
                                                                                  whichrho=self._rho, ptol=self._ptol)
 
-        # create figure
-        self._fig = plt.figure(figsize=(8, 6), dpi=200)
-        self._fig.set_tight_layout(True)
         if check_period_values(periods) is False:
             # plt.plot(periods, "-^")
             # title = "ERROR: Periods are NOT equal !!!"
@@ -288,13 +285,12 @@ class Depth3D(ImagingBase):
             # self._fig.canvas.set_window_title(title)
             # plt.show()
 
-            self._logger.error("Can NOT use period index, because the periods are not consistent equal across EDI files")
-            print("Please select a value from the EDI files period list shown below:")
+            print("Can NOT use period index, because the indexed-periods are not equal across EDI files as shown below: ")
             print(periods)
-            # plot pendepth3D using the first from the list periods
+
+            print("***  Plot pendepth3D using the first value from the period list above ***")
+
             self._period=periods[0]
-            self._fig.clf()
-            self._fig = None
             self.plot(period_by_index=False)
             #raise ImagingError("MT Periods values are NOT equal! In such case a float value must be selected from the period list")
         else:
@@ -306,6 +302,11 @@ class Depth3D(ImagingBase):
                 self._period_fmt = str(mtpy.utils.calculator.roundsf(period0, 4))
             else:
                 self._period_fmt = "%.2f" % period0
+
+            # create figure
+            self._fig = plt.figure(figsize=(8, 6), dpi=200)
+            self._fig.set_tight_layout(True)
+
             bbox = get_bounding_box(latlons)
 
             self._logger.debug("Bounding Box %s", bbox)

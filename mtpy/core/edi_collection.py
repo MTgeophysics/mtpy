@@ -140,7 +140,7 @@ class EdiCollection(object):
         self._logger.info("Number of MT Periods: %s", len(all_periods))
         self._logger.debug("Periods List: %s", str(all_periods))
 
-        return all_periods
+        return sorted(all_periods)
 
 
     def get_period_occurance(self,aper):
