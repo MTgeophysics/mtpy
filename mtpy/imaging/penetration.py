@@ -279,18 +279,26 @@ class Depth3D(ImagingBase):
                                                                                  whichrho=self._rho, ptol=self._ptol)
 
         # create figure
-        self._fig = plt.figure(figsize=(8, 6), dpi=80)
+        self._fig = plt.figure(figsize=(8, 6), dpi=200)
         self._fig.set_tight_layout(True)
-
         if check_period_values(periods) is False:
-            self._logger.error("The period values are NOT equal - Please check!!! %s", periods)
-            plt.plot(periods, "-^")
-            title = "ERROR: Periods are NOT equal !!!"
-            plt.title(title, )
-            self._fig.canvas.set_window_title(title)
-            raise ImagingError("Period values NOT equal across the EDI files. Please check!!!")
+            # plt.plot(periods, "-^")
+            # title = "ERROR: Periods are NOT equal !!!"
+            # plt.title(title, )
+            # self._fig.canvas.set_window_title(title)
+            # plt.show()
+
+            self._logger.error("Can NOT use period index, because the periods are not consistent equal across EDI files")
+            print("Please select a value from the EDI files period list shown below:")
+            print(periods)
+            # plot pendepth3D using the first from the list periods
+            self._period=periods[0]
+            self._fig.clf()
+            self._fig = None
+            self.plot(period_by_index=False)
+            #raise ImagingError("MT Periods values are NOT equal! In such case a float value must be selected from the period list")
         else:
-            # good case
+            # good normal case
             period0 = periods[0]
 
             if period0 < 1.0:
@@ -452,6 +460,8 @@ class Depth3D(ImagingBase):
             mycb.outline.set_linewidth(2)
             mycb.set_label(label='Penetration Depth ({})'.format(z_unit), size=fontsize)
             mycb.set_cmap(my_cmap)
+
+        return
 
     def set_data(self, data):
         # this plot need a list of edi files
@@ -638,7 +648,7 @@ def get_penetration_depth_generic(edi_file_list, period_sec, whichrho='det', pto
     # sort all frequencies so that they are in descending order,
     # use set to remove repeats and make an array.
     all_periods = 1.0 / np.array(sorted(list(set(all_freqs)), reverse=True))
-    print("Here is a list of ALL the periods in your edi files:\t ", all_periods)
+    # print("Here is a list of ALL the periods in your edi files:\t ", all_periods)
 
     return stations, periods, pendep, latlons
 
