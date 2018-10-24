@@ -124,7 +124,6 @@ class Z3DCollection(object):
 
         self.chn_order = ['hx','ex','hy','ey','hz']
         self.meta_notes = None
-        self.leap_seconds = 16
         self.verbose = True
         
     def get_time_blocks(self, z3d_dir):
@@ -251,7 +250,6 @@ class Z3DCollection(object):
         print('-'*50)
         for ii, fn in enumerate(fn_list):
             z3d_obj = zen.Zen3D(fn)
-            z3d_obj._leap_seconds = self.leap_seconds
             try:
                 z3d_obj.read_z3d()
             except zen.ZenGPSError:
@@ -318,24 +316,26 @@ class Z3DCollection(object):
         
         if decimate > 1:
             ts_len /= decimate
-        
-        print(ts_len, meta_arr.size)
+            
+        ### make an empty pandas dataframe to put data into, seems like the
+        ### fastes way so far.
         ts_db = pd.DataFrame(np.zeros((ts_len, meta_arr.size)),
                              columns=list(meta_arr['comp']),
                              dtype=np.float32)
-        
+        ### loop over each time series and find the earliest time all TS start
+        ### and latest time all TS end.
         for ii, m_arr in enumerate(meta_arr):
             z3d_obj = zen.Zen3D(m_arr['fn'])
-            z3d_obj._leap_seconds = self.leap_seconds
             z3d_obj.read_z3d()
             
             dt_index = z3d_obj.ts_obj.ts.data.index.astype(np.int64)/10**9
             index_0 = np.where(dt_index == start)[0][0]
-            #index_1 = np.where(dt_index == stop)[0][0]
             index_1 = min([ts_len-index_0, z3d_obj.ts_obj.ts.shape[0]-index_0])
+            
+            ### check to see what the time difference is, should be 0, 
+            ### but sometimes not, then need to account for that.
             t_diff = ts_len-(index_1-index_0)
             meta_arr[ii]['t_diff'] = t_diff
-
             if t_diff != 0:
                 if self.verbose:
                     print '{0} off by {1} points --> {2} sec'.format(z3d_obj.ts_obj.fn,
