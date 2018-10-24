@@ -414,8 +414,12 @@ class PlotPTMaps(mtplottools.MTEllipse):
         for i in range(len(pt_array[k])):
             lon = pt_array[k]['lon'][i]
             lat = pt_array[k]['lat'][i]
-            phimax = pt_array[k]['phimax'][i] / pt_array[k]['phimax'].max()
-            phimin = pt_array[k]['phimin'][i] / pt_array[k]['phimax'].max()
+            if self.normalise_ellipses:
+                phimax = pt_array[k]['phimax'][i] / pt_array[k]['phimax'][i]
+                phimin = pt_array[k]['phimin'][i] / pt_array[k]['phimax'][i]
+            else:
+                phimax = pt_array[k]['phimax'][i] / pt_array[k]['phimax'].max()
+                phimin = pt_array[k]['phimin'][i] / pt_array[k]['phimax'].max()
             az = pt_array[k]['azimuth'][i]
             if ptarray == 'resid':
                 phimin = np.abs(phimin)
