@@ -208,6 +208,7 @@ class PlotStrike(object):
         self.period_tolerance = kwargs.pop('period_tolerance', .05)
         self.pt_error_floor = kwargs.pop('pt_error_floor', None)
         self.fold = kwargs.pop('fold', True)
+        self.show_ptphimin = kwargs.pop('show_ptphimin',False)
         self.bin_width = kwargs.pop('bin_width', 5)
 
         self.font_size = kwargs.pop('font_size', 7)
@@ -351,7 +352,7 @@ class PlotStrike(object):
             # leave as the total unit circle 0 to 360
             elif self.fold == False:
                 az[np.where(az < 0)] += 360
-
+                
             # make a dictionary of strikes with keys as period
             mdictpt = dict([(ff, jj) for ff, jj in zip(mt.period, az)])
             ptlist.append(mdictpt)
@@ -414,7 +415,9 @@ class PlotStrike(object):
                         medtipr[ll, ii] = tiprlist[ii][mp]
                     else:
                         pass
-
+                    
+#        medpt = np.hstack([medpt,medpt+180])
+        
         # make the arrays local variables
         self._medinv = medinv
         self._medpt = medpt
@@ -725,7 +728,15 @@ class PlotStrike(object):
             invhist = np.histogram(hh[np.nonzero(hh)].flatten(),
                                    bins=360 / bw,
                                    range=histrange)
-            pthist = np.histogram(gg[np.nonzero(gg)].flatten(),
+            if not self.fold:
+                ptplotdata = np.hstack([gg[np.nonzero(gg)].flatten(),gg[np.nonzero(gg)].flatten()+180])
+            else:
+                ptplotdata = gg[np.nonzero(gg)].flatten()
+                
+            if self.show_ptphimin:
+                ptplotdata = np.hstack([ptplotdata,(ptplotdata+90)%360])
+            
+            pthist = np.histogram(ptplotdata,
                                   bins=360 / bw,
                                   range=histrange)
 
