@@ -879,6 +879,7 @@ class TipperShapeFile(object):
         self.save_path = os.getcwd()
         self.arrow_size = 1000
         self.arrow_direction = 1
+        self.arrow_threshold = 1.5
         self.ptol = .05
         self.arrow_head_width = 50
         self.arrow_head_height = 100
@@ -1057,6 +1058,8 @@ class TipperShapeFile(object):
             layer.CreateField(field_ang_real)
 
             for tp_arr in self.tip_dict[plot_per]:
+                if tp_arr['mag_real'] > self.arrow_threshold:
+                    continue
                 cos_t = np.cos(-np.deg2rad(tp_arr['ang_real']))
                 sin_t = np.sin(-np.deg2rad(tp_arr['ang_real']))
                 # calculate the points to make the line
@@ -1198,6 +1201,8 @@ class TipperShapeFile(object):
             layer.CreateField(field_ang_imag)
 
             for tp_arr in self.tip_dict[plot_per]:
+                if tp_arr['mag_imag'] > self.arrow_threshold:
+                    continue
                 cos_t = np.cos(-np.deg2rad(tp_arr['ang_imag']))
                 sin_t = np.sin(-np.deg2rad(tp_arr['ang_imag']))
                 # calculate the points to make the line

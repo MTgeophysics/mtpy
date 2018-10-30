@@ -38,6 +38,8 @@ import mtpy.utils.configfile as mtcfg
 import geopandas as gpd
 from shapely.geometry import Point
 
+# science base
+import sciencebasepy as sb
 
 # =============================================================================
 # 
@@ -2289,3 +2291,200 @@ class XMLMetadata(object):
             fid.write(xml_str)
             
         return self.xml_fn
+    
+# =============================================================================
+# Science Base Functions
+# =============================================================================
+def sb_locate_child_item(sb_session, station, sb_page_id):
+    """
+    See if there is a child item already for the given station.  If there is
+    not an existing child item returns False.
+    
+    :param sb_session: sciencebase session object
+    :type sb_session: sciencebasepy.SbSession
+    
+    :param station: station to archive
+    :type station: string
+    
+    :param sb_page_id: page id of the sciencebase database to download to
+    :type sb_page_id: string
+    
+    :returns: page id for the station child item
+    :rtype: string or False
+    """
+    for item_id in sb_session.get_child_ids(sb_page_id):
+        ### for some reason there is a child item that doesn't play nice
+        ### so have to skip it
+        try:
+            item_title = sb_session.get_item(item_id, {'fields':'title'})['title']
+        except:
+            continue
+        if station in item_title:
+            return item_id
+    
+    return False
+
+def sb_sort_fn_list(fn_list):
+    """
+    sort the file name list to xml, edi, png
+    
+    :param fn_list: list of files to sort
+    :type fn_list: list
+    
+    :returns: sorted list ordered by xml, edi, png, zip files
+    """
+    
+    fn_list_sort = [None, None, None]
+    index_dict = {'xml':0, 'edi':1, 'png':2}
+    
+    for ext in ['xml', 'edi', 'png']:
+        for fn in fn_list:
+            if fn.endswith(ext):
+                fn_list_sort[index_dict[ext]] = fn
+                fn_list.remove(fn)
+                break
+    fn_list_sort += sorted(fn_list)
+    
+    # check to make sure all the files are there
+    if fn_list_sort[0] is None:
+        print('\t\t!! No .xml file found !!')
+    if fn_list_sort[1] is None:
+        print('\t\t!! No .edi file found !!')
+    if fn_list_sort[2] is None:
+        print('\t\t!! No .png file found !!')
+        
+    # get rid of any Nones in the list in case there aren't all the files
+    fn_list_sort[:] = (value for value in fn_list_sort if value is not None)
+        
+    return fn_list_sort
+
+def sb_session_login(sb_session, sb_username, sb_password=None):
+    """
+    login in to sb session using the input credentials.  Checks to see if
+    you are already logged in.  If no password is given, the password will be
+    requested through the command prompt.  
+    
+    .. note:: iPython shells will echo your password.  Use a Python command
+              shell to not have your password echoed. 
+              
+    :param sb_session: sciencebase session object
+    :type sb_session: sciencebasepy.SbSession
+    
+    :param sb_username: sciencebase username, typically your full USGS email
+    :type sb_username: string
+    
+    :param sb_password: AD password
+    :type sb_password: string
+    
+    :returns: logged in sciencebasepy.SbSession 
+    """
+    
+    if not sb_session.is_logged_in():
+        if sb_password is None:
+            sb_session.loginc(sb_username)
+        else:
+            sb_session.login(sb_username, sb_password)
+        time.sleep(5)
+    
+    return sb_session
+
+def sb_get_fn_list(archive_dir):
+    """
+    Get the list of files to archive looking for .zip, .edi, .png within the
+    archive directory.  Sorts in the order of xml, edi, png, zip
+    
+    :param archive_dir: full path to the directory to be archived
+    :type archive_dir: string
+    
+    :returns: list of files to archive ordered by xml, edi, png, zip
+
+    """
+    
+    fn_list = [os.path.join(archive_dir, fn) 
+               for fn in os.listdir(archive_dir)
+               if fn.endswith('.zip') or fn.endswith('.xml') or 
+               fn.endswith('.edi') or fn.endswith('.png')]
+    
+    return sb_sort_fn_list(fn_list)
+    
+    
+def sb_upload_data(sb_page_id, archive_station_dir, sb_username, 
+                   sb_password=None):
+    """
+    Upload a given archive station directory to a new child item of the given
+    sciencebase page.  
+    
+    .. note:: iPython shells will echo your password.  Use a Python command
+              shell to not have your password echoed.
+    
+    
+    :param sb_page_id: page id of the sciencebase database to download to
+    :type sb_page_id: string
+    
+    :param archive_station_dir: full path to the station directory to archive
+    :type archive_station_dir: string
+    
+    :param sb_username: sciencebase username, typically your full USGS email
+    :type sb_username: string
+    
+    :param sb_password: AD password
+    :type sb_password: string
+    
+    :returns: child item created on the sciencebase page
+    :rtype: dictionary
+    
+    :Example: ::
+        >>> import mtpy.usgs.usgs_archive as archive
+        >>> sb_page = '521e213451bd21451n'
+        >>> child_item = archive.sb_upload_data(sb_page, 
+                                                r"/home/mt/archive_station",
+                                                'jdoe@usgs.gov')
+    """
+    ### initialize a session
+    session = sb.SbSession()
+    
+    ### login to session, note if you run this in a console your password will
+    ### be visible, otherwise run from a command line > python sciencebase_upload.py
+    sb_session_login(session, sb_username, sb_password)
+    
+    station = os.path.basename(archive_station_dir)
+
+    ### File to upload
+    upload_fn_list = sb_get_fn_list(archive_station_dir)
+    
+    ### check if child item is already created
+    child_id = sb_locate_child_item(session, station, sb_page_id)
+    ## it is faster to remove the child item and replace it all
+    if child_id:
+        session.delete_item(session.get_item(child_id))
+        sb_action = 'Updated'
+            
+    else:
+        sb_action = 'Created'
+    
+    ### make a new child item 
+    new_child_dict = {'title':'station {0}'.format(station),
+                      'parentId':sb_page_id,
+                      'summary': 'Magnetotelluric data'}
+    new_child = session.create_item(new_child_dict)
+    
+    # sort list so that xml, edi, png, zip files
+    # upload data
+    try:
+        item = session.upload_files_and_upsert_item(new_child, upload_fn_list)
+    except:
+        sb_session_login(session, sb_username, sb_password)
+        # if you want to keep the order as read on the sb page, 
+        # need to reverse the order cause it sorts by upload date.
+        for fn in upload_fn_list[::-1]:
+            try:
+                item = session.upload_file_to_item(new_child, fn)
+            except:
+                print('\t +++ Could not upload {0} +++'.format(fn))
+                continue
+        
+    print('==> {0} child for {1}'.format(sb_action, station))
+    
+    session.logout()
+    
+    return item
