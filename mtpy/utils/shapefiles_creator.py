@@ -15,13 +15,13 @@ Revision History:
 
 from __future__ import print_function
 
-import csv
+import fnmatch
 import glob
 import logging
 import os
 import sys
-import click
 
+import click
 import geopandas as gpd
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -31,7 +31,6 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 from shapely.geometry import Point, Polygon, LineString, LinearRing
 
 from mtpy.core.edi_collection import EdiCollection
-import mtpy.core.mt as mt
 from mtpy.utils.decorator import deprecated
 from mtpy.utils.mtpylog import MtPyLog
 
@@ -40,7 +39,7 @@ mpl.rcParams['lines.linewidth'] = 2
 mpl.rcParams['figure.figsize'] = [10, 6]
 
 _logger = MtPyLog.get_mtpy_logger(__name__)  # logger inside this file/module
-_logger.setLevel(logging.DEBUG) # set your logger level
+_logger.setLevel(logging.DEBUG)  # set your logger level
 
 
 class ShapeFilesCreator(EdiCollection):
@@ -70,7 +69,7 @@ class ShapeFilesCreator(EdiCollection):
 
         # call the super constructor
         super(ShapeFilesCreator, self).__init__(edilist=edifile_list, outdir=outdir)
-        #python-3 syntax: super().__init__(edilist=edifile_list, outdir=outdir)
+        # python-3 syntax: super().__init__(edilist=edifile_list, outdir=outdir)
 
         self.stations_distances = self.get_stations_distances_stats()
 
@@ -82,7 +81,6 @@ class ShapeFilesCreator(EdiCollection):
 
         return
 
-
     def create_phase_tensor_shp(self, period, ellipsize=None, target_epsg_code=4283, export_fig=False):
         """
         create phase tensor ellipses shape file correspond to a MT period
@@ -90,14 +88,14 @@ class ShapeFilesCreator(EdiCollection):
         """
 
         if ellipsize is None:  # automatically decide suitable ellipse size.
-            ellipsize = self.stations_distances.get("Q1PERCENT")/2  # a half or a third of the min_distance?
+            ellipsize = self.stations_distances.get("Q1PERCENT") / 2  # a half or a third of the min_distance?
             self._logger.info("Automatically Selected Max-Ellispse Size = %s", ellipsize)
 
         pt = self.get_phase_tensor_tippers(period)
 
         self._logger.debug("phase tensor values =: %s", pt)
 
-        if len(pt)<1:
+        if len(pt) < 1:
             self._logger.warn("No phase tensor for the period %s for any MT station", period)
             return None
 
@@ -108,7 +106,7 @@ class ShapeFilesCreator(EdiCollection):
         mt_locations = [Point(xy) for xy in zip(pdf['lon'], pdf['lat'])]
         # OR pdf['geometry'] = pdf.apply(lambda z: Point(z.lon, z.lat), axis=1)
         # if you want to df = df.drop(['Lon', 'Lat'], axis=1)
-        #orig_crs = {'init': 'epsg:4326'}  # initial crs WGS84
+        # orig_crs = {'init': 'epsg:4326'}  # initial crs WGS84
         # orig_crs = {'init': 'epsg:4283'}  # initial crs GDA94
 
         geopdf = gpd.GeoDataFrame(pdf, crs=self.orig_crs, geometry=mt_locations)
@@ -148,8 +146,8 @@ class ShapeFilesCreator(EdiCollection):
         if target_epsg_code is None:
             self._logger.info("The orginal Geopandas Dataframe CRS: %s", geopdf.crs)
             # {'init': 'epsg:4283', 'no_defs': True}
-            #raise Exception("Must provide a target_epsg_code")
-            target_epsg_code= geopdf.crs['init'][5:]
+            # raise Exception("Must provide a target_epsg_code")
+            target_epsg_code = geopdf.crs['init'][5:]
         else:
             geopdf.to_crs(epsg=target_epsg_code, inplace=True)
             # world = world.to_crs({'init': 'epsg:3395'})
@@ -164,14 +162,14 @@ class ShapeFilesCreator(EdiCollection):
         self._logger.info("Geopandas Dataframe CRS: %s", geopdf.crs)
 
         if export_fig is True:
-            bbox_dict= self.get_bounding_box(epsgcode=target_epsg_code)
+            bbox_dict = self.get_bounding_box(epsgcode=target_epsg_code)
             # this bbox ensures that the whole MT-stations area is covered independent of periods
             print(bbox_dict)
-            path2jpg = path2shp.replace(".shp",".jpg")
-            export_geopdf_to_image(geopdf, bbox_dict,  path2jpg, colorby='phi_max', colormap='nipy_spectral_r') # showfig=True)
+            path2jpg = path2shp.replace(".shp", ".jpg")
+            export_geopdf_to_image(geopdf, bbox_dict, path2jpg, colorby='phi_max',
+                                   colormap='nipy_spectral_r')  # showfig=True)
 
-        return (geopdf,path2shp)
-
+        return (geopdf, path2shp)
 
     def create_tipper_real_shp(self, period, line_length=None, target_epsg_code=4283, export_fig=False):
         """
@@ -197,7 +195,7 @@ class ShapeFilesCreator(EdiCollection):
         tip_mag_re_maxval = pdf['tip_mag_re'].max()
 
         if (tip_mag_re_maxval > 0.00000001):
-            line_length_normalized = line_length/tip_mag_re_maxval
+            line_length_normalized = line_length / tip_mag_re_maxval
         else:
             line_length_normalized = line_length
 
@@ -211,7 +209,6 @@ class ShapeFilesCreator(EdiCollection):
                                                    -np.deg2rad(x.tip_ang_re)))]), axis=1)
 
         geopdf = gpd.GeoDataFrame(pdf, crs=self.orig_crs, geometry='tip_re')
-
 
         if target_epsg_code is None:
             self._logger.info("Geopandas Datframe CRS: %s", geopdf.crs)
@@ -233,11 +230,12 @@ class ShapeFilesCreator(EdiCollection):
 
         if export_fig is True:
             bbox_dict = self.get_bounding_box(epsgcode=target_epsg_code)
-            #this bbox_dict ensures that we can set a consistent display area cover all ground stations,
+            # this bbox_dict ensures that we can set a consistent display area cover all ground stations,
             # not just this period-dependent geopdf
             self._logger.debug("All MT stations area bounding box %s", bbox_dict)
             path2jpg = path2shp.replace(".shp", ".jpg")
-            export_geopdf_to_image(geopdf, bbox_dict, path2jpg, colorby='phi_max', colormap='nipy_spectral_r')  # showfig=True)
+            export_geopdf_to_image(geopdf, bbox_dict, path2jpg, colorby='phi_max',
+                                   colormap='nipy_spectral_r')  # showfig=True)
 
         return (geopdf, path2shp)
 
@@ -265,17 +263,19 @@ class ShapeFilesCreator(EdiCollection):
 
         tip_mag_im_maxval = pdf['tip_mag_im'].max()
 
-        if(tip_mag_im_maxval > 0.00000001):
-            line_length_normalized = line_length/tip_mag_im_maxval
+        if (tip_mag_im_maxval > 0.00000001):
+            line_length_normalized = line_length / tip_mag_im_maxval
         else:
             line_length_normalized = line_length
 
         self._logger.debug(pdf['period'])
 
-        pdf['tip_im'] = pdf.apply(lambda x:  LineString([(float(x.lon), float(x.lat)),
-                            (float(x.lon) + line_length_normalized * x.tip_mag_im * np.cos(-np.deg2rad(x.tip_ang_im)),
-                            float(x.lat) + line_length_normalized * x.tip_mag_im * np.sin(-np.deg2rad(x.tip_ang_im)))]),
-                            axis=1)
+        pdf['tip_im'] = pdf.apply(lambda x: LineString([(float(x.lon), float(x.lat)),
+                                                        (float(x.lon) + line_length_normalized * x.tip_mag_im * np.cos(
+                                                            -np.deg2rad(x.tip_ang_im)),
+                                                         float(x.lat) + line_length_normalized * x.tip_mag_im * np.sin(
+                                                             -np.deg2rad(x.tip_ang_im)))]),
+                                  axis=1)
 
         geopdf = gpd.GeoDataFrame(pdf, crs=self.orig_crs, geometry='tip_im')
 
@@ -305,15 +305,18 @@ class ShapeFilesCreator(EdiCollection):
             self._logger.debug("All MT stations area bounding box %s", bbox_dict)
 
             path2jpg = path2shp.replace(".shp", ".jpg")
-            export_geopdf_to_image(geopdf, bbox_dict, path2jpg, colorby='phi_max', colormap='nipy_spectral_r')  # showfig=True)
+            export_geopdf_to_image(geopdf, bbox_dict, path2jpg, colorby='phi_max',
+                                   colormap='nipy_spectral_r')  # showfig=True)
 
         return (geopdf, path2shp)
+
+
 ####################################################################
 # Using geopandas to convert CSV files into shape files
 # Refs:
 #   http://toblerity.org/shapely/manual.html#polygons
 #   https://geohackweek.github.io/vector/04-geopandas-intro/
-#===================================================================
+# ===================================================================
 @deprecated("This function needs csv file as its input.")
 def create_ellipse_shp_from_csv(csvfile, esize=0.03, target_epsg_code=4283):
     """
@@ -376,6 +379,7 @@ def create_ellipse_shp_from_csv(csvfile, esize=0.03, target_epsg_code=4283):
 
     return pdf
 
+
 @deprecated("This function needs csv file as its input.")
 def create_tipper_real_shp_from_csv(csvfile, line_length=0.03, target_epsg_code=4283):
     """ create tipper lines shape from a csv file
@@ -416,6 +420,7 @@ def create_tipper_real_shp_from_csv(csvfile, line_length=0.03, target_epsg_code=
     pdf.to_file(shp_fname, driver='ESRI Shapefile')
 
     return pdf
+
 
 @deprecated("This function needs csv file as its input.")
 def create_tipper_imag_shp_from_csv(csvfile, line_length=0.03, target_epsg_code=4283):
@@ -458,7 +463,9 @@ def create_tipper_imag_shp_from_csv(csvfile, line_length=0.03, target_epsg_code=
 
     return pdf
 
-def export_geopdf_to_image(geopdf, bbox, jpg_file_name, target_epsg_code=None, colorby=None, colormap=None, showfig=False):
+
+def export_geopdf_to_image(geopdf, bbox, jpg_file_name, target_epsg_code=None, colorby=None, colormap=None,
+                           showfig=False):
     """
     Export a geopandas dataframe to a jpe_file, with optionally a new epsg projection.
     :param geopdf: a geopandas dataframe
@@ -472,7 +479,7 @@ def export_geopdf_to_image(geopdf, bbox, jpg_file_name, target_epsg_code=None, c
 
     if target_epsg_code is None:
         p = geopdf
-        #target_epsg_code = '4283'  # EDI orginal lat/lon epsg 4326=WGS84 or 4283=GDA94
+        # target_epsg_code = '4283'  # EDI orginal lat/lon epsg 4326=WGS84 or 4283=GDA94
         target_epsg_code = geopdf.crs['init'][5:]
     else:
         p = geopdf.to_crs(epsg=target_epsg_code)
@@ -530,7 +537,7 @@ def export_geopdf_to_image(geopdf, bbox, jpg_file_name, target_epsg_code=None, c
 
         # automatically adjust plot xy-scope
         margin = 0.02  # degree
-        margin = 0.05 * (bbox['MaxLon'] - bbox['MinLon'] + bbox['MaxLat']- bbox['MinLat'])
+        margin = 0.05 * (bbox['MaxLon'] - bbox['MinLon'] + bbox['MaxLat'] - bbox['MinLat'])
         myax.set_xlim((bbox['MinLon'] - margin, bbox['MaxLon'] + margin))
         myax.set_ylim((bbox['MinLat'] - margin, bbox['MaxLat'] + margin))
 
@@ -552,7 +559,7 @@ def export_geopdf_to_image(geopdf, bbox, jpg_file_name, target_epsg_code=None, c
         # myax.set_ylim([7400000, 7900000])
 
         # automatically adjust plot xy-scope
-        #margin = 2000  # meters
+        # margin = 2000  # meters
         margin = 0.05 * (bbox['MaxLon'] - bbox['MinLon'] + bbox['MaxLat'] - bbox['MinLat'])
         myax.set_xlim((bbox['MinLon'] - margin, bbox['MaxLon'] + margin))
         myax.set_ylim((bbox['MinLat'] - margin, bbox['MaxLat'] + margin))
@@ -588,6 +595,7 @@ def export_geopdf_to_image(geopdf, bbox, jpg_file_name, target_epsg_code=None, c
     del (geopdf)
     del (fig)
 
+
 @deprecated("This function uses csv-files folder as its input.")
 def process_csv_folder(csv_folder, bbox_dict, target_epsg_code=4283):
     """
@@ -622,7 +630,6 @@ def process_csv_folder(csv_folder, bbox_dict, target_epsg_code=4283):
         jpg_file_name = acsv.replace('.csv', '_ellips_epsg%s.jpg' % target_epsg_code)
         export_geopdf_to_image(my_gdf, bbox_dict, jpg_file_name, target_epsg_code)
 
-
     return
 
 
@@ -645,32 +652,32 @@ if __name__ == "__main__OLD_V0":
     # edifiles2 = edifiles[0:-1:2]
     shp_maker = ShapeFilesCreator(edifiles, path2out)
     # ptdic = shp_maker.create_csv_files_deprecated()  # dest_dir=path2out)    #  create csv files E:/temp1
-    ptdic =shp_maker.create_phase_tensor_csv(path2out)  # compare csv in E:/temp2
+    ptdic = shp_maker.create_phase_tensor_csv(path2out)  # compare csv in E:/temp2
 
     # print ptdic
     # print ptdic[ptdic.keys()[0]]
 
     # edisobj = mtpy.core.edi_collection.EdiCollection(edifiles)
-    edisobj =  EdiCollection(edifiles)
+    edisobj = EdiCollection(edifiles)
     bbox_dict = edisobj.bound_box_dict
     print(bbox_dict)
 
     bbox_dict2 = shp_maker.bound_box_dict
-    print (bbox_dict2)
+    print(bbox_dict2)
     if bbox_dict != bbox_dict2:
         raise Exception("parent-child's attribute bbo_dic not equal!!!")
 
     # create shapefiles and plots
     # epsg projection 4283 - gda94
-    #process_csv_folder(path2out, bbox_dict)
+    # process_csv_folder(path2out, bbox_dict)
 
-# Further testing epsg codes:
+    # Further testing epsg codes:
     # epsg projection 28354 - gda94 / mga zone 54
     # epsg projection 32754 - wgs84 / utm zone 54s
     #  GDA94/GALCC =3112
-    for my_epsgcode in [3112,]:  #[4326, 4283, 3112, 32755]:   # 32754, 28355]:
+    for my_epsgcode in [3112, ]:  # [4326, 4283, 3112, 32755]:   # 32754, 28355]:
 
-        bbox_dict=edisobj.get_bounding_box(epsgcode=my_epsgcode)
+        bbox_dict = edisobj.get_bounding_box(epsgcode=my_epsgcode)
         print(bbox_dict)
         process_csv_folder(path2out, bbox_dict, target_epsg_code=my_epsgcode)
 
@@ -695,20 +702,20 @@ if __name__ == "__main__d":
     edi_list = edifiles[::everysite]  # subset of the edi files
     shp_maker = ShapeFilesCreator(edi_list, path2out)
 
-    station_distance_stats= shp_maker.get_stations_distances_stats()
+    station_distance_stats = shp_maker.get_stations_distances_stats()
 
-    esize = None   # if None, auto selected default in the method
+    esize = None  # if None, auto selected default in the method
     tipsize = None  # if None, auto selected default in the method
 
     _logger.info("User-defined Max-Ellispse Size =:%s", esize)
     _logger.info("User-defined Max-Tipper Length/Size =:%s", tipsize)
 
-    shp_maker.create_phase_tensor_shp(999.99, ellipsize=esize) # nothing created for non-existent peri
+    shp_maker.create_phase_tensor_shp(999.99, ellipsize=esize)  # nothing created for non-existent peri
 
     min_period = shp_maker.all_unique_periods[0]
     max_period = shp_maker.all_unique_periods[-1]
 
-    #for aper in [min_period, max_period]:
+    # for aper in [min_period, max_period]:
     for aper in shp_maker.all_unique_periods[::5]:  # ascending order: from short to long periods
         # default projection as target output
         # shp_maker.create_phase_tensor_shp(2.85)
@@ -726,13 +733,13 @@ if __name__ == "__main__d":
 # Command Wrapper for shape files from edi
 # ===================================================
 @click.command(context_settings=dict(help_option_names=['-h', '--help']))
-@click.option('-i','--input',type=str,
+@click.option('-i', '--input', type=str,
               default='examples/data/edi_files_2', \
               help='input edi files dir ')
-@click.option('-c','--code',type=int,default=3112,
+@click.option('-c', '--code', type=int, default=3112,
               help='epsg code [3112, 4326, 4283, 32754, 32755, 28353, 28354, 28355]')
-@click.option('-o','--output',type=str,default="temp",help='Output directory')
-def generate_shape_files(input,output,code):
+@click.option('-o', '--output', type=str, default="temp", help='Output directory')
+def generate_shape_files(input, output, code):
     print("=======================================================================")
     print("Generating Shapes File requires following inputs edi files directory   ")
     print("Default epsg code 3112                                                 ")
@@ -750,15 +757,15 @@ def generate_shape_files(input,output,code):
 
     # station_distance_stats= shp_maker.get_stations_distances_stats()
 
-    esize = None   # if None, auto selected default in the method
+    esize = None  # if None, auto selected default in the method
     tipsize = None  # if None, auto selected default in the method
 
-    shp_maker.create_phase_tensor_shp(999.99, ellipsize=esize) # nothing created for non-existent peri
+    shp_maker.create_phase_tensor_shp(999.99, ellipsize=esize)  # nothing created for non-existent peri
 
     # min_period = shp_maker.all_unique_periods[0]
     # max_period = shp_maker.all_unique_periods[-1]
 
-    #for aper in [min_period, max_period]:
+    # for aper in [min_period, max_period]:
     for aper in shp_maker.all_unique_periods[::5]:  # ascending order: from short to long periods
         # default projection as target output
         # shp_maker.create_phase_tensor_shp(2.85)
@@ -772,8 +779,86 @@ def generate_shape_files(input,output,code):
             shp_maker.create_tipper_imag_shp(aper, line_length=tipsize, target_epsg_code=my_epsgcode, export_fig=True)
 
 
+def recursive_glob(dirname, ext='*.edi'):
+    """
+    Under the dirname recursively find all files with extension ext.
+    Return a list of the full-path to the types of files of interest.
+
+    This function is useful to handle a nested directories of EDI files.
+
+    :param dirname: a single dir OR a list of dirs.
+    :param ext: eg, ".xml"
+    :return: a list of path2files
+    """
+
+    if isinstance(dirname, (list,)):  # the input argument is a list of directory
+        filelist = []
+        for adir in dirname:
+            filelist.extend(recursive_glob(adir))
+        return filelist
+    else:  # input variable is a single dir
+        matches = []
+        for root, dirnames, filenames in os.walk(dirname):
+            for filename in fnmatch.filter(filenames, ext):
+                matches.append(os.path.join(root, filename))
+        return matches
+
+
+def plot_phase_tensor_ellipses_and_tippers(edi_dir, outfile=None, iperiod=0):
+    """plot phase tensor ellipses and tipers into one figure
+    
+    :return: 
+    """
+
+    edifiles = recursive_glob(edi_dir)
+
+    print("Number of EDI files found = %s" % len(edifiles))
+
+    myobj = ShapeFilesCreator(edifiles, "c:/temp")
+
+    allper = myobj.all_unique_periods
+
+    gpd_phtensor = myobj.create_phase_tensor_shp(allper[iperiod], export_fig=False)[0]
+
+    gpd_retip = myobj.create_tipper_real_shp(allper[iperiod], export_fig=False)[0]
+
+    gpd_imtip = myobj.create_tipper_imag_shp(allper[iperiod], export_fig=False)[0]
+
+    world = gpd.read_file(gpd.datasets.get_path('naturalearth_lowres'))
+
+    # composing two layers in a map
+    f, ax = plt.subplots(1, figsize=(20, 12))
+
+    # ax.set_xlim([140.5,141])
+    # ax.set_ylim([-21,-20])
+
+    # Add layer of polygons on the axis
+
+    # world.plot(ax=ax, alpha=0.5)  # background map
+    gpd_phtensor.plot(ax=ax, linewidth=2, facecolor='grey', edgecolor='black')
+    gpd_retip.plot(ax=ax, color='red', linewidth=4)
+    gpd_imtip.plot(ax=ax, color='blue', linewidth=4)
+
+    if outfile is not None:
+        plt.savefig(outfile) #( 'C:/temp/phase_tensor_tippers.png')
+
+    # Display
+    plt.show()
+
+    return
+
+
 if __name__ == "__main__":
-    generate_shape_files()
+    # generate_shape_files()  # click CLI interface
 
+    edi_dir = r'C:\mtpywin\mtpy\examples\data\edi_files_2'
+    # edi_dir=r'C:\mtpywin\mtpy\examples\data\edi_files' # no tipper
+    # edi_dir = 'E:/Data/MT_Datasets/3D_MT_data_edited_fromDuanJM'
+    # edi_dir = r"E:\Data\MT_Datasets\GA_UA_edited_10s-10000s"
+    # edi_dir = r"E:\Data\MT_Datasets\Isa_EDI_edited_10Hz_1000s"
+    # edi_dir = r"E:\Data\MT_Datasets\728889\EDI_files" # narrow area, not shown
+    # edi_dir = r"E:\Data\MT_Datasets\75098\EDI_files"  # cross UTM zones 51 and 52, No tippers?
+    # edi_dir =r"E:\Data\MT_Datasets\75099_Youanmi\EDI_Files_edited"
 
-
+    # edi_dir = sys.argv[1]
+    plot_phase_tensor_ellipses_and_tippers(edi_dir, outfile=r'C:/temp/phase_tensor_tipper.png', iperiod=10)
