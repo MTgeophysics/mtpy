@@ -843,7 +843,7 @@ def plot_phase_tensor_ellipses_and_tippers(edi_dir, outfile=None, iperiod=0):
         plt.savefig(outfile) #( 'C:/temp/phase_tensor_tippers.png')
 
     # Display
-    plt.show()
+    # plt.show()
 
     return
 
@@ -851,9 +851,8 @@ def plot_phase_tensor_ellipses_and_tippers(edi_dir, outfile=None, iperiod=0):
 if __name__ == "__main__":
     # generate_shape_files()  # click CLI interface
 
-    edi_dir = r'C:\mtpywin\mtpy\examples\data\edi_files_2'
-    # edi_dir=r'C:\mtpywin\mtpy\examples\data\edi_files' # no tipper
-    # edi_dir = 'E:/Data/MT_Datasets/3D_MT_data_edited_fromDuanJM'
+    # edi_dir = r'C:\mtpywin\mtpy\examples\data\edi_files_2'
+    edi_dir = 'E:/Data/MT_Datasets/3D_MT_data_edited_fromDuanJM'
     # edi_dir = r"E:\Data\MT_Datasets\GA_UA_edited_10s-10000s"
     # edi_dir = r"E:\Data\MT_Datasets\Isa_EDI_edited_10Hz_1000s"
     # edi_dir = r"E:\Data\MT_Datasets\728889\EDI_files" # narrow area, not shown
@@ -861,4 +860,7 @@ if __name__ == "__main__":
     # edi_dir =r"E:\Data\MT_Datasets\75099_Youanmi\EDI_Files_edited"
 
     # edi_dir = sys.argv[1]
-    plot_phase_tensor_ellipses_and_tippers(edi_dir, outfile=r'C:/temp/phase_tensor_tipper.png', iperiod=10)
+
+    for pindex in range(0,30):  # how many periods to do
+        pngfile= os.path.join('C:/temp2', "phase_tensor_tipper_%s.png"%pindex)
+        plot_phase_tensor_ellipses_and_tippers(edi_dir, outfile=pngfile, iperiod=pindex)
