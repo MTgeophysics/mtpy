@@ -183,7 +183,7 @@ class ShapeFilesCreator(EdiCollection):
 
         if line_length is None:  # auto-calculate the tipper arrow length
             line_length = self.stations_distances.get("Q1PERCENT")
-            self._logger.info("Automatically Selected Max-Tipper Length/Size = %s", line_length)
+            self._logger.info("Automatically Selected Max Tipper Length  = %s", line_length)
 
         pt = self.get_phase_tensor_tippers(period)
         self._logger.debug("phase tensor values =: %s", pt)
@@ -196,7 +196,10 @@ class ShapeFilesCreator(EdiCollection):
 
         tip_mag_re_maxval = pdf['tip_mag_re'].max()
 
-        line_length_normalized = line_length/tip_mag_re_maxval
+        if (tip_mag_re_maxval > 0.00000001):
+            line_length_normalized = line_length/tip_mag_re_maxval
+        else:
+            line_length_normalized = line_length
 
         self._logger.debug(pdf['period'])
 
@@ -238,7 +241,7 @@ class ShapeFilesCreator(EdiCollection):
 
         return (geopdf, path2shp)
 
-    def create_tipper_imag_shp(self, period, line_length=4, target_epsg_code=4283, export_fig=False):
+    def create_tipper_imag_shp(self, period, line_length=None, target_epsg_code=4283, export_fig=False):
         """
         create imagery tipper lines shapefile from a csv file
         The shapefile consists of lines without arrow.
@@ -249,7 +252,7 @@ class ShapeFilesCreator(EdiCollection):
 
         if line_length is None:  # auto-calculate the tipper arrow length
             line_length = self.stations_distances.get("Q1PERCENT")
-            self._logger.info("Automatically Selected Max-Tipper Length/Size =: %s", line_length)
+            self._logger.info("Automatically Selected Max-Tipper Length =: %s", line_length)
 
         pt = self.get_phase_tensor_tippers(period)
         self._logger.debug("phase tensor values =: %s", pt)
@@ -262,7 +265,10 @@ class ShapeFilesCreator(EdiCollection):
 
         tip_mag_im_maxval = pdf['tip_mag_im'].max()
 
-        line_length_normalized = line_length / tip_mag_im_maxval
+        if(tip_mag_im_maxval > 0.00000001):
+            line_length_normalized = line_length/tip_mag_im_maxval
+        else:
+            line_length_normalized = line_length
 
         self._logger.debug(pdf['period'])
 
@@ -721,7 +727,7 @@ if __name__ == "__main__d":
 # ===================================================
 @click.command(context_settings=dict(help_option_names=['-h', '--help']))
 @click.option('-i','--input',type=str,
-              default='examples/data/edi_files', \
+              default='examples/data/edi_files_2', \
               help='input edi files dir ')
 @click.option('-c','--code',type=int,default=3112,
               help='epsg code [3112, 4326, 4283, 32754, 32755, 28353, 28354, 28355]')
