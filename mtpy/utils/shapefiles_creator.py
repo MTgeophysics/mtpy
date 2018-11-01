@@ -1,8 +1,8 @@
 #! /usr/bin/env python
 """
 Description:
-
     Create shape files for Phase Tensor Ellipses, Tipper Real/Imag.
+    export the phase tensor map and tippers into jpeg/png images
 
 CreationDate:   2017-03-06
 Developer:      fei.zhang@ga.gov.au
@@ -10,12 +10,12 @@ Developer:      fei.zhang@ga.gov.au
 Revision History:
     LastUpdate:     10/11/2017   FZ fix bugs after the big merge
     LastUpdate:     20/11/2017   change from freq to period filenames, allow to specify a period
+    LastUpdate:     30/10/2018   combine ellipses and tippers together, refactorings
 
 """
 
 from __future__ import print_function
 
-import fnmatch
 import glob
 import logging
 import os
@@ -33,6 +33,7 @@ from shapely.geometry import Point, Polygon, LineString, LinearRing
 from mtpy.core.edi_collection import EdiCollection
 from mtpy.utils.decorator import deprecated
 from mtpy.utils.mtpylog import MtPyLog
+from mtpy.utils.edi_folders import recursive_glob
 
 mpl.rcParams['lines.linewidth'] = 2
 # mpl.rcParams['lines.color'] = 'r'
@@ -45,6 +46,10 @@ _logger.setLevel(logging.DEBUG)  # set your logger level
 class ShapeFilesCreator(EdiCollection):
     """ Extend the EdiCollection parent class,
     create phase tensor and tipper shapefiles for a list of edifiles
+
+    :param edifile_list: [path2edi,...]
+    :param outdir: path2output dir, where the shp file will be written.
+    :param orig_crs = {'init': 'epsg:4283'}  # GDA94
     """
 
     def __init__(self, edifile_list, outdir, orig_crs={'init': 'epsg:4283'}):
@@ -52,9 +57,8 @@ class ShapeFilesCreator(EdiCollection):
         loop through a list of edi files, create required shapefiles
         :param edifile_list: [path2edi,...]
         :param outdir: path2output dir, where the shp file will be written.
-        :param orig_crs = {'init': 'epsg:4326'}  # initial crs WGS84
-        :param orig_crs = {'init': 'epsg:4283'}  # initial crs GDA94
-
+        :param orig_crs = {'init': 'epsg:4283'}  # GDA94
+        # {'init': 'epsg:4326'}  # WGS84
         """
 
         self.orig_crs = orig_crs
@@ -311,16 +315,61 @@ class ShapeFilesCreator(EdiCollection):
         return (geopdf, path2shp)
 
 
+def plot_phase_tensor_ellipses_and_tippers(edi_dir, outfile=None, iperiod=0):
+    """
+    plot phase tensor ellipses and tipers into one figure.
+    :param edi_dir: edi directory
+    :param outfile: save figure to output file
+    :param iperiod: the index of periods
+    :return: saved figure file
+    """
+
+    edifiles = recursive_glob(edi_dir)
+
+    print("Number of EDI files found = %s" % len(edifiles))
+
+    myobj = ShapeFilesCreator(edifiles, "c:/temp")
+
+    allper = myobj.all_unique_periods
+
+    gpd_phtensor = myobj.create_phase_tensor_shp(allper[iperiod], export_fig=False)[0]
+
+    gpd_retip = myobj.create_tipper_real_shp(allper[iperiod], export_fig=False)[0]
+
+    gpd_imtip = myobj.create_tipper_imag_shp(allper[iperiod], export_fig=False)[0]
+
+    world = gpd.read_file(gpd.datasets.get_path('naturalearth_lowres'))
+
+    # composing two layers in a map
+    f, ax = plt.subplots(1, figsize=(20, 12))
+
+    # ax.set_xlim([140.5,141])
+    # ax.set_ylim([-21,-20])
+
+    # Add layer of polygons on the axis
+
+    # world.plot(ax=ax, alpha=0.5)  # background map
+    gpd_phtensor.plot(ax=ax, linewidth=2, facecolor='grey', edgecolor='black')
+    gpd_retip.plot(ax=ax, color='red', linewidth=4)
+    gpd_imtip.plot(ax=ax, color='blue', linewidth=4)
+
+    if outfile is not None:
+        plt.savefig(outfile)  # ( 'C:/temp/phase_tensor_tippers.png')
+
+    # Display
+    # plt.show()
+
+    return outfile
+
 ####################################################################
 # Using geopandas to convert CSV files into shape files
 # Refs:
 #   http://toblerity.org/shapely/manual.html#polygons
 #   https://geohackweek.github.io/vector/04-geopandas-intro/
 # ===================================================================
-@deprecated("This function needs csv file as its input.")
 def create_ellipse_shp_from_csv(csvfile, esize=0.03, target_epsg_code=4283):
     """
-    create phase tensor ellipse geometry from a csv file
+    create phase tensor ellipse geometry from a csv file. This function needs csv file as its input.
     :param csvfile: a csvfile with full path
     :param esize: ellipse size, defaut 0.03 is about 3KM in the max ellipse rad
     :return: a geopandas dataframe
@@ -380,9 +429,8 @@ def create_ellipse_shp_from_csv(csvfile, esize=0.03, target_epsg_code=4283):
     return pdf
 
 
-@deprecated("This function needs csv file as its input.")
 def create_tipper_real_shp_from_csv(csvfile, line_length=0.03, target_epsg_code=4283):
-    """ create tipper lines shape from a csv file
+    """ create tipper lines shape from a csv file. This function needs csv file as its input.
     The shape is a line without arrow.
     Must use a GIS software such as ArcGIS to display and add an arrow at each line's end
     line_length=4  how long will be the line (arrow)
@@ -422,9 +470,8 @@ def create_tipper_real_shp_from_csv(csvfile, line_length=0.03, target_epsg_code=
     return pdf
 
 
-@deprecated("This function needs csv file as its input.")
 def create_tipper_imag_shp_from_csv(csvfile, line_length=0.03, target_epsg_code=4283):
-    """ create imagery tipper lines shape from a csv file
+    """ create imagery tipper lines shape from a csv file. this function needs csv file as input.
     The shape is a line without arrow.
     Must use a GIS software such as ArcGIS to display and add an arrow at each line's end
     line_length=4  how long will be the line (arrow)
@@ -596,10 +643,10 @@ def export_geopdf_to_image(geopdf, bbox, jpg_file_name, target_epsg_code=None, c
     del (fig)
 
 
-@deprecated("This function uses csv-files folder as its input.")
 def process_csv_folder(csv_folder, bbox_dict, target_epsg_code=4283):
     """
-    process all *.csv files in a dir, ude target_epsg_code=4283 GDA94 as default
+    process all *.csv files in a dir, ude target_epsg_code=4283 GDA94 as default.
+    This function uses csv-files folder as its input.
     :param csv_folder:
     :return:
     """
@@ -633,10 +680,13 @@ def process_csv_folder(csv_folder, bbox_dict, target_epsg_code=4283):
     return
 
 
+
+#############################################################################
 # ==================================================================
 # python mtpy/utils/shapefiles_creator.py data/edifiles /e/tmp
 # ==================================================================
-# @deprecated("This needs csv file as its input.")
+#############################################################################
+
 if __name__ == "__main__OLD_V0":
 
     edidir = sys.argv[1]
@@ -730,7 +780,7 @@ if __name__ == "__main__d":
 
 
 # ===================================================
-# Command Wrapper for shape files from edi
+# Click Command Wrapper for shape files from edi
 # ===================================================
 @click.command(context_settings=dict(help_option_names=['-h', '--help']))
 @click.option('-i', '--input', type=str,
@@ -779,88 +829,8 @@ def generate_shape_files(input, output, code):
             shp_maker.create_tipper_imag_shp(aper, line_length=tipsize, target_epsg_code=my_epsgcode, export_fig=True)
 
 
-def recursive_glob(dirname, ext='*.edi'):
-    """
-    Under the dirname recursively find all files with extension ext.
-    Return a list of the full-path to the types of files of interest.
-
-    This function is useful to handle a nested directories of EDI files.
-
-    :param dirname: a single dir OR a list of dirs.
-    :param ext: eg, ".xml"
-    :return: a list of path2files
-    """
-
-    if isinstance(dirname, (list,)):  # the input argument is a list of directory
-        filelist = []
-        for adir in dirname:
-            filelist.extend(recursive_glob(adir))
-        return filelist
-    else:  # input variable is a single dir
-        matches = []
-        for root, dirnames, filenames in os.walk(dirname):
-            for filename in fnmatch.filter(filenames, ext):
-                matches.append(os.path.join(root, filename))
-        return matches
-
-
-def plot_phase_tensor_ellipses_and_tippers(edi_dir, outfile=None, iperiod=0):
-    """plot phase tensor ellipses and tipers into one figure
-    
-    :return: 
-    """
-
-    edifiles = recursive_glob(edi_dir)
-
-    print("Number of EDI files found = %s" % len(edifiles))
-
-    myobj = ShapeFilesCreator(edifiles, "c:/temp")
-
-    allper = myobj.all_unique_periods
-
-    gpd_phtensor = myobj.create_phase_tensor_shp(allper[iperiod], export_fig=False)[0]
-
-    gpd_retip = myobj.create_tipper_real_shp(allper[iperiod], export_fig=False)[0]
-
-    gpd_imtip = myobj.create_tipper_imag_shp(allper[iperiod], export_fig=False)[0]
-
-    world = gpd.read_file(gpd.datasets.get_path('naturalearth_lowres'))
-
-    # composing two layers in a map
-    f, ax = plt.subplots(1, figsize=(20, 12))
-
-    # ax.set_xlim([140.5,141])
-    # ax.set_ylim([-21,-20])
-
-    # Add layer of polygons on the axis
-
-    # world.plot(ax=ax, alpha=0.5)  # background map
-    gpd_phtensor.plot(ax=ax, linewidth=2, facecolor='grey', edgecolor='black')
-    gpd_retip.plot(ax=ax, color='red', linewidth=4)
-    gpd_imtip.plot(ax=ax, color='blue', linewidth=4)
-
-    if outfile is not None:
-        plt.savefig(outfile) #( 'C:/temp/phase_tensor_tippers.png')
-
-    # Display
-    # plt.show()
-
-    return
-
-
 if __name__ == "__main__":
-    # generate_shape_files()  # click CLI interface
 
-    # edi_dir = r'C:\mtpywin\mtpy\examples\data\edi_files_2'
-    edi_dir = 'E:/Data/MT_Datasets/3D_MT_data_edited_fromDuanJM'
-    # edi_dir = r"E:\Data\MT_Datasets\GA_UA_edited_10s-10000s"
-    # edi_dir = r"E:\Data\MT_Datasets\Isa_EDI_edited_10Hz_1000s"
-    # edi_dir = r"E:\Data\MT_Datasets\728889\EDI_files" # narrow area, not shown
-    # edi_dir = r"E:\Data\MT_Datasets\75098\EDI_files"  # cross UTM zones 51 and 52, No tippers?
-    # edi_dir =r"E:\Data\MT_Datasets\75099_Youanmi\EDI_Files_edited"
+    print("Please see examples/scripts/create_pt_shapefiles.py")
 
-    # edi_dir = sys.argv[1]
-
-    for pindex in range(0,30):  # how many periods to do
-        pngfile= os.path.join('C:/temp2', "phase_tensor_tipper_%s.png"%pindex)
-        plot_phase_tensor_ellipses_and_tippers(edi_dir, outfile=pngfile, iperiod=pindex)
+  # generate_shape_files()  # click CLI interface

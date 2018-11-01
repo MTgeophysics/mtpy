@@ -59,7 +59,7 @@ class Data(object):
                        list of full paths to .edi files you want to invert for
 
     ====================== ====================================================
-    Attributes/Key Words   Description
+    Attributes              Description
     ====================== ====================================================
     _dtype                 internal variable defining the data type of
                            data_array
@@ -234,7 +234,7 @@ class Data(object):
         >>> #invert for every third period in inv_period_list
         >>> inv_period_list = inv_period_list[np.arange(0, len(inv_period_list, 3))]
         >>> md.period_list = inv_period_list
-        >>> md.write_data_file(save_path=r"/home/modem/inv1")
+    >>> md.write_data_file(save_path=r"/home/modem/inv1")
 
     :Example 3 --> change error values: ::
 
