@@ -643,7 +643,8 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
 
                         if maxlength > self.arrow_threshold:
                             pass
-                        else:
+                        elif ((txr > 0) or (tyr>0)):
+#                        else:
                             self.ax.arrow(offset * self.xstretch,
                                           np.log10(ff) * self.ystretch,
                                           txr,
@@ -668,7 +669,8 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
                                             (tyi / self.arrow_size) ** 2)
                         if maxlength > self.arrow_threshold:
                             pass
-                        else:
+#                        else:
+                        elif ((txr > 0) or (tyr>0)):
                             self.ax.arrow(offset * self.xstretch,
                                           np.log10(ff) * self.ystretch,
                                           txi,

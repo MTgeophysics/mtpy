@@ -235,11 +235,11 @@ class Depth2D(ImagingBase):
 
 class Depth3D(ImagingBase):
     """
-    For a batch of MT_stations (input as a list of MT objects),
+    For a set of EDI files (input as a list of MT objects),
     plot the Penetration Depth vs the station_location,
-    for a given period value or index (1/freq)-
-    Note that the values of periods within10% tolerance (ptol=0.1) are considered as equal.
-    Setting a smaller value for ptol(=0.05)may result less MT sites data included.
+    for a given period value or index
+    Note that the values of periods within tolerance (ptol=0.1) are considered as equal.
+    Setting a smaller value for ptol may result less MT sites data included.
     """
     def __init__(self, data=None, period=None, rho='det', ptol=0.1):
         super(Depth3D, self).__init__()
@@ -278,19 +278,23 @@ class Depth3D(ImagingBase):
                                                                                  self._period,
                                                                                  whichrho=self._rho, ptol=self._ptol)
 
-        # create figure
-        self._fig = plt.figure(figsize=(8, 6), dpi=80)
-        self._fig.set_tight_layout(True)
-
         if check_period_values(periods) is False:
-            self._logger.error("The period values are NOT equal - Please check!!! %s", periods)
-            plt.plot(periods, "-^")
-            title = "ERROR: Periods are NOT equal !!!"
-            plt.title(title, )
-            self._fig.canvas.set_window_title(title)
-            raise ImagingError("Period values NOT equal across the EDI files. Please check!!!")
+            # plt.plot(periods, "-^")
+            # title = "ERROR: Periods are NOT equal !!!"
+            # plt.title(title, )
+            # self._fig.canvas.set_window_title(title)
+            # plt.show()
+
+            print("Can NOT use period index, because the indexed-periods are not equal across EDI files as shown below: ")
+            print(periods)
+
+            print("***  Plot pendepth3D using the first value from the period list above ***")
+
+            self._period=periods[0]
+            self.plot(period_by_index=False)
+            #raise ImagingError("MT Periods values are NOT equal! In such case a float value must be selected from the period list")
         else:
-            # good case
+            # good normal case
             period0 = periods[0]
 
             if period0 < 1.0:
@@ -298,6 +302,11 @@ class Depth3D(ImagingBase):
                 self._period_fmt = str(mtpy.utils.calculator.roundsf(period0, 4))
             else:
                 self._period_fmt = "%.2f" % period0
+
+            # create figure
+            self._fig = plt.figure(figsize=(8, 6), dpi=200)
+            self._fig.set_tight_layout(True)
+
             bbox = get_bounding_box(latlons)
 
             self._logger.debug("Bounding Box %s", bbox)
@@ -452,6 +461,8 @@ class Depth3D(ImagingBase):
             mycb.outline.set_linewidth(2)
             mycb.set_label(label='Penetration Depth ({})'.format(z_unit), size=fontsize)
             mycb.set_cmap(my_cmap)
+
+        return
 
     def set_data(self, data):
         # this plot need a list of edi files
@@ -638,7 +649,7 @@ def get_penetration_depth_generic(edi_file_list, period_sec, whichrho='det', pto
     # sort all frequencies so that they are in descending order,
     # use set to remove repeats and make an array.
     all_periods = 1.0 / np.array(sorted(list(set(all_freqs)), reverse=True))
-    print("Here is a list of ALL the periods in your edi files:\t ", all_periods)
+    # print("Here is a list of ALL the periods in your edi files:\t ", all_periods)
 
     return stations, periods, pendep, latlons
 

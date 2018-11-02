@@ -1,9 +1,8 @@
 """
 Description:
-    For a batch of MT_stations,  plot the Penetration Depth vs the station_location,
-    for a given period value or index (1/freq)-
+    Given a set of EDI files plot the Penetration Depth vs the station_location.
     Note that the values of periods within10% tolerance (ptol=0.1) are considered as equal.
-    Setting a smaller value for ptol(=0.05)may result less MT sites data included.
+    Setting a smaller value for ptol(=0.05) may result less MT sites data included.
 
 Usage:
     python mtpy/imaging/penetration_depth3d.py /path2/edi_files_dir/  period_index
