@@ -593,13 +593,11 @@ class ModEMPlotPTMap(QtWidgets.QMainWindow, mtplottools.MTArrows,
             axm = self.figure.add_subplot(gs[0, 1], 
                                           aspect='equal',
                                           sharex=axd, 
-                                          sharey=axd,
-                                          adjustable='datalim')
+                                          sharey=axd)
             axr = self.figure.add_subplot(gs[0, 2], 
                                           aspect='equal',
                                           sharex=axd,
-                                          sharey=axd,
-                                          adjustable='datalim')
+                                          sharey=axd)
             ax_list = [axd, axm, axr]
 #        
         else:
@@ -927,8 +925,6 @@ class ModEMPlotPTMap(QtWidgets.QMainWindow, mtplottools.MTArrows,
         #Model and residual
         if self.modem_resp_fn is not None:
             for aa, ax in enumerate([axm, axr]):
-                ax.set_xlim(self.ew_limits)
-                ax.set_ylim(self.ns_limits)
                 ax.set_xlabel('Easting ({0})'.format(self.map_scale), 
                                fontdict=font_dict)
                 plt.setp(ax.yaxis.get_ticklabels(), visible=False)
