@@ -18,7 +18,6 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QStandardItemModel
 from PyQt5.QtGui import QStandardItem
 
-from tswaveitem import TSWaveItem
 
 from tsscene import TSScene
 from tsdata import TSData
@@ -58,7 +57,8 @@ class TSWindow(QWidget):
         self.setWindowTitle("TSView")
 
     def showwave(self, wave):
-        self.scene.togglewave(wave.text(0))
+        if wave.childCount()==0:
+            self.scene.togglewave(wave.text(0))
 
 
 
@@ -106,6 +106,6 @@ class TSWindow(QWidget):
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     widget = TSWindow()
-    widget.resize(1024, 768)
+    widget.resize(1680, 1050)
     widget.show()
     sys.exit(app.exec_())

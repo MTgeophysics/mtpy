@@ -13,7 +13,7 @@ from tsdata import TSData
 
 
 class TSScene(QGraphicsScene):
-    def __init__(self, width=14, height=4):
+    def __init__(self, width=14, height=12, numofchannel=4):
         super(TSScene, self).__init__()
 
 
@@ -34,7 +34,12 @@ class TSScene(QGraphicsScene):
         self.downx = None
         self.data = None
 
-        self.axes = figure.add_subplot(111)
+        self.axes = []
+        for i in range(numofchannel):
+            self.axes.append(figure.add_subplot(str(numofchannel)+'1'+str(i+1)))
+
+        self.axesavailability = [True for i in range(numofchannel)]
+
 
         self.visibleWave = {}
 
@@ -45,32 +50,40 @@ class TSScene(QGraphicsScene):
 
     def togglewave(self, wave, colorcode=0):
         if wave in self.visibleWave:
-            handle = (self.visibleWave[wave])[0]
-            self.removewave(handle)
+            axes = self.visibleWave[wave][0]
+            handle = self.visibleWave[wave][1]
+            self.removewave(axes, handle)
             self.visibleWave.pop(wave, None)
+            self.axesavailability[self.axes.index(axes)] = True
+
         else:
             stream, wavename, starttime, endtime = self.data.getwaveform(wave, self.starttime, self.endtime)
             waveform = stream[0]
-            handle = self.displaywave(wavename, waveform, colorcode)
-            self.visibleWave[wave] = (handle, colorcode, starttime, endtime)
+            axes, handle = self.displaywave(wavename, waveform, colorcode)
+            self.visibleWave[wave] = (axes, handle, colorcode, starttime, endtime)
 
     def displaywave(self, wavename, waveform, colorcode):
+        if True not in self.axesavailability:
+            pass
+        else:
+            location = self.axesavailability.index(True)
+            axes = self.axes[location]
+            self.axesavailability[location] = False
 
-        #self.axes.remove()
-        colorcode = 'C'+str(colorcode%10)
+            colorcode = 'C'+str(colorcode%10)
 
-        times = [waveform.meta['starttime']+t for t in waveform.times()]
-        handle = self.axes.plot(times, waveform.data,linestyle="-", label=wavename, color=colorcode)
-        self.axes.legend()
-        self.downx = None
+            times = [waveform.meta['starttime']+t for t in waveform.times()]
+            handle = axes.plot(times, waveform.data,linestyle="-", label=wavename, color=colorcode)
+            axes.legend()
+            self.downx = None
 
-        self.canvas.draw()
+            self.canvas.draw()
 
-        self.starttime = waveform.meta['starttime']
-        self.endtime = waveform.meta['endtime']
+            self.starttime = waveform.meta['starttime']
+            self.endtime = waveform.meta['endtime']
 
 
-        return handle
+            return axes, handle
 
 
     def timeshift(self, shift):
@@ -80,9 +93,9 @@ class TSScene(QGraphicsScene):
         endtime = self.endtime + shift
 
         for wave in self.visibleWave:
-            if starttime<self.visibleWave[wave][2]:
+            if starttime<self.visibleWave[wave][3]:
                 starttime = self.starttime
-            if endtime>self.visibleWave[wave][3]:
+            if endtime>self.visibleWave[wave][4]:
                 endtime = self.endtime
 
         if starttime!=self.starttime and endtime!=self.endtime:
@@ -91,7 +104,7 @@ class TSScene(QGraphicsScene):
             tmplist = self.visibleWave.copy()
             for wave in tmplist:
                 self.togglewave(wave)
-                self.togglewave(wave, tmplist[wave][1])
+                self.togglewave(wave, tmplist[wave][2])
 
 
     def timescale(self, delta):
@@ -103,9 +116,9 @@ class TSScene(QGraphicsScene):
         print(starttime, endtime,'='*8)
 
         for wave in self.visibleWave:
-            if starttime<self.visibleWave[wave][2]:
+            if starttime<self.visibleWave[wave][3]:
                 starttime = self.starttime
-            if endtime>self.visibleWave[wave][3]:
+            if endtime>self.visibleWave[wave][4]:
                 endtime = self.endtime
 
         print(starttime, endtime,'!'*8)
@@ -124,12 +137,11 @@ class TSScene(QGraphicsScene):
 
         self.wheelactive = False
 
-    def removewave(self, handle):
+    def removewave(self, axes, handle):
         handle.pop(0).remove()
-        self.axes.relim()
-        self.axes.autoscale_view(True, True, True)
-        if len(self.visibleWave)>0:
-            self.axes.legend()
+        axes.relim()
+        axes.autoscale_view(True, True, True)
+        axes.legend()
         self.canvas.draw()
 
 
