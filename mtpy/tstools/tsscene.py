@@ -20,14 +20,13 @@ class TSScene(QGraphicsScene):
 
         self.pixmap = QPixmap()
 
-        self.figure = Figure()
-        self.figure.set_size_inches(width, height)
-        self.axes = self.figure.add_subplot(111)
-        self.figure.tight_layout()
-        self.canvas = FigureCanvas(self.figure)
+        figure = Figure()
+        figure.set_size_inches(width, height)
+        figure.tight_layout()
+        self.canvas = FigureCanvas(figure)
         self.plothandle=self.addWidget(self.canvas)
 
-        self.graphwidth = self.figure.dpi * width
+        self.graphwidth = figure.dpi * width
 
 
         self.line = None
@@ -35,7 +34,7 @@ class TSScene(QGraphicsScene):
         self.downx = None
         self.data = None
 
-        self.axes = self.figure.add_subplot(111)
+        self.axes = figure.add_subplot(111)
 
         self.visibleWave = {}
 
@@ -164,8 +163,8 @@ class TSScene(QGraphicsScene):
     def setdata(self, filename):
         self.data = TSData(filename)
 
-    def getList(self):
-        return self.data.getList()
+    def getlist(self):
+        return self.data.getlist()
 
 
     def exportwaveform(self, wavename, filename):

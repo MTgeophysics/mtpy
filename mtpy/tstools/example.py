@@ -75,7 +75,7 @@ class TSWindow(QWidget):
     # set up wave tree in control region
     def setlist(self):
         item = self.waveTree.invisibleRootItem()
-        self.fillitem(item, self.scene.getList())
+        self.fillitem(item, self.scene.getlist())
         self.waveTree.setSelectionMode(QAbstractItemView.MultiSelection)
         self.waveTree.show()
 
