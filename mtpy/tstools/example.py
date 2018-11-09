@@ -58,11 +58,7 @@ class TSWindow(QWidget):
         self.setWindowTitle("TSView")
 
     def showwave(self, wave):
-        if wave.channelitem is None:
-            print("empty channelitem")
-            return
-        else:
-            self.scene.togglewave(wave)
+        self.scene.togglewave(wave.text(0))
 
 
 
@@ -80,36 +76,22 @@ class TSWindow(QWidget):
         self.waveTree.show()
 
     # build wave tree
-    def fillitem(self, item, value, parent=None):
-        item.setExpanded(False)
+    def fillitem(self, node: QTreeWidgetItem, value: object):
+        node.setExpanded(False)
         if type(value) is dict:
             for key, val in sorted(value.items()):
-                child = TSWaveItem()
+                child = QTreeWidgetItem()
                 child.setText(0, str(key))
-                item.addChild(child)
-                self.fillitem(child, val, str(key))
+                node.addChild(child)
+                self.fillitem(child, val)
         elif type(value) is list:
-            for val in value:
-                child = TSWaveItem()
-                item.addChild(child)
-                if type(val) is dict:
-                    child.setText(0, '[dict]')
-                    self.fillitem(child, val, str(key))
-                elif type(val) is list:
-                    child.setText(0, '[list]')
-                    self.fillitem(child, val, str(key))
-                else:
-                    print(type(val), "!!here")
-                    child.setText(0, str(val))
-                    child.channelitem = val
-                    child.wavename = parent
-                child.setExpanded(True)
-        else:
-            child = TSWaveItem()
-            child.setText(0, str(value))
-            child.channelitem = value
-            child.wavename = parent
-            item.addChild(child)
+            for idx, val in enumerate(value):
+                child = QTreeWidgetItem()
+                child.setText(0, val)
+                node.addChild(child)
+
+
+
 
     def openfile(self):
         fname = QFileDialog.getOpenFileName(self,

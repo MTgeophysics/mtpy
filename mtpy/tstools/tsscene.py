@@ -44,17 +44,15 @@ class TSScene(QGraphicsScene):
         self.wheelactive = False
 
     def togglewave(self, wave, colorcode=0):
-        if wave.wavename in self.visibleWave:
-            handle = (self.visibleWave[wave.wavename])[1]
+        if wave in self.visibleWave:
+            handle = (self.visibleWave[wave])[0]
             self.removewave(handle)
-            self.visibleWave.pop(wave.wavename, None)
+            self.visibleWave.pop(wave, None)
         else:
-            print("togglewave")
-            stream = self.data.getwaveform(wave, self.starttime, self.endtime)
-            print(type(stream))
+            stream, wavename, starttime, endtime = self.data.getwaveform(wave, self.starttime, self.endtime)
             waveform = stream[0]
-            handle = self.displaywave(wave.wavename, waveform, colorcode)
-            self.visibleWave[wave.wavename] = (wave, handle, colorcode)
+            handle = self.displaywave(wavename, waveform, colorcode)
+            self.visibleWave[wave] = (handle, colorcode, starttime, endtime)
 
     def displaywave(self, wavename, waveform, colorcode):
 
@@ -81,19 +79,19 @@ class TSScene(QGraphicsScene):
         starttime = self.starttime + shift
         endtime = self.endtime + shift
 
-        for wavename in self.visibleWave:
-            if starttime<self.visibleWave[wavename][0].channelitem.start_date:
+        for wave in self.visibleWave:
+            if starttime<self.visibleWave[wave][2]:
                 starttime = self.starttime
-            if endtime>self.visibleWave[wavename][0].channelitem.end_date:
+            if endtime>self.visibleWave[wave][3]:
                 endtime = self.endtime
 
         if starttime!=self.starttime and endtime!=self.endtime:
             self.starttime = starttime
             self.endtime = endtime
             tmplist = self.visibleWave.copy()
-            for wavename in tmplist:
-                self.togglewave(tmplist[wavename][0])
-                self.togglewave(tmplist[wavename][0], tmplist[wavename][2])
+            for wave in tmplist:
+                self.togglewave(wave)
+                self.togglewave(wave, tmplist[wave][1])
 
 
     def timescale(self, delta):
@@ -102,13 +100,17 @@ class TSScene(QGraphicsScene):
         starttime = self.starttime + shift
         endtime = self.endtime - shift
 
-        for wavename in self.visibleWave:
-            if starttime<self.visibleWave[wavename][0].channelitem.start_date:
+        print(starttime, endtime,'='*8)
+
+        for wave in self.visibleWave:
+            if starttime<self.visibleWave[wave][2]:
                 starttime = self.starttime
-            if endtime>self.visibleWave[wavename][0].channelitem.end_date:
+            if endtime>self.visibleWave[wave][3]:
                 endtime = self.endtime
 
-        if endtime-starttime<60:
+        print(starttime, endtime,'!'*8)
+
+        if endtime-starttime<0.1:
             pass
         elif starttime==self.starttime and endtime==self.endtime:
             pass
@@ -116,9 +118,9 @@ class TSScene(QGraphicsScene):
             self.starttime = starttime
             self.endtime = endtime
             tmplist = self.visibleWave.copy()
-            for wavename in tmplist:
-                self.togglewave(tmplist[wavename][0])
-                self.togglewave(tmplist[wavename][0], tmplist[wavename][2])
+            for wave in tmplist:
+                self.togglewave(wave)
+                self.togglewave(wave, tmplist[wave][1])
 
         self.wheelactive = False
 

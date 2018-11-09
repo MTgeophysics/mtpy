@@ -10,6 +10,7 @@ import re
 class TSData():
     def __init__(self, filename: str = None):
         self.wavelist = {}
+        self.wavemeta = {}
 
         if filename is not None:
             self.loadFile(filename)
@@ -18,7 +19,6 @@ class TSData():
     def loadFile(self, filename: str):
         rawdata = pyasdf.ASDFDataSet(filename, mode="r")
 
-        count = 0
         for stationname in rawdata.waveforms.list():
             for network in rawdata.waveforms[stationname].StationXML:
                 if network.code not in self.wavelist:
@@ -29,29 +29,27 @@ class TSData():
                     for channel in station:
                         wavename = network.code + '.' + station.code + '.' + channel.location_code + '.' + channel.code
                         if wavename not in self.wavelist[network.code][station.code]:
-                            self.wavelist[network.code][station.code][wavename] = [(rawdata, channel)]
+                            self.wavelist[network.code][station.code][wavename] = [str(channel)]
                         else:
-                            self.wavelist[network.code][station.code][wavename].append((rawdata, channel))
+                            self.wavelist[network.code][station.code][wavename].append(str(channel))
+                        self.wavemeta[str(channel)] = (rawdata, channel, wavename)
 
 
     def getwaveform(self, wave, starttime=None, endtime=None):
+        rawdata, channel, wavename = self.wavemeta[wave]
+
         if starttime is None:
-            starttime = wave.channelitem.start_date
+            starttime = channel.start_date
             endtime = starttime+1000
 
-        print(starttime,"starttime")
-        print(endtime,"endtime")
+        print(starttime,endtime)
 
-        ntwk = re.sub('([^.]+)(.*)','\\1',wave.wavename)
-        sttn = re.sub('([^.]+\.)([^.]+)(.*)','\\2',wave.wavename)
-        outwave = self.rawdata.get_waveforms(network=ntwk, station=sttn, location=wave.channelitem.location_code, \
-                            channel=wave.channelitem.code, starttime=starttime, endtime=endtime, tag="raw_recording")
-        print("""self.rawdata.get_waveforms(network="""+ntwk+""", station="""+sttn+""", 
-        location="""+wave.channelitem.location_code+""", channel="""+wave.channelitem.code+""", 
-        starttime="""+str(wave.channelitem.start_date)+""", endtime="""+str(wave.channelitem.end_date)+""", tag="raw_recording")""")
+        ntwk = re.sub('([^.]+)(.*)','\\1', wavename)
+        sttn = re.sub('([^.]+\.)([^.]+)(.*)','\\2', wavename)
+        outwave = rawdata.get_waveforms(network=ntwk, station=sttn, location=channel.location_code, \
+                            channel=channel.code, starttime=starttime, endtime=endtime, tag="raw_recording")
 
-
-        return outwave
+        return outwave, wavename, channel.start_date, channel.end_date
 
 
 
