@@ -25,101 +25,81 @@ from tsdata import TSData
 
 import datetime
 
+
 class TSWindow(QWidget):
     def __init__(self):
-        super(TSWindow,self).__init__()
+        super(TSWindow, self).__init__()
 
+        # view
         self.scene = TSScene()
-        self.view = QGraphicsView(self.scene)
+        viewWidget = QGraphicsView(self.scene)
 
+        # control
+        self.buttonOpenFile = QPushButton("open file")
+        self.buttonOpenFile.clicked.connect(self.openfile)
+        self.waveTree = QTreeWidget()
+        self.waveTree.itemClicked.connect(self.showwave)
 
-        self.filebutton = QPushButton("open file")
-        self.filebutton.clicked.connect(self.openfile)
+        controlLayout = QVBoxLayout()
+        controlLayout.addWidget(self.buttonOpenFile)
+        controlLayout.addWidget(self.waveTree)
 
+        controlWidget = QWidget()
+        controlWidget.setLayout(controlLayout)
 
-
+        # put together
+        split = QSplitter()
+        split.addWidget(viewWidget)
+        split.addWidget(controlWidget)
 
         layout = QHBoxLayout()
-        split = QSplitter()
-        split.addWidget(self.view)
-
-        buttonlayout = QVBoxLayout()
-        buttonlayout.addWidget(self.filebutton)
-
-        # self.wavelist = QListView()
-        # self.wavelist.clicked.connect(self.showWave)
-        # self.wavelistmodel = QStandardItemModel()
-        # buttonlayout.addWidget(self.wavelist)
-
-        self.wavetree = QTreeWidget()
-        self.wavetree.itemClicked.connect(self.showWave)
-        self.wavetree.itemDoubleClicked.connect(self.exportWave)
-
-        buttonlayout.addWidget(self.wavetree)
-        buttonregion = QWidget()
-        buttonregion.setLayout(buttonlayout)
-
-        split.addWidget(buttonregion)
         layout.addWidget(split)
-
         self.setLayout(layout)
         self.setWindowTitle("TSView")
 
-        self.time = datetime.datetime.now()
-
-    def showWave(self, wave):
-        print("here",wave.wavename)
-
-        timenow = datetime.datetime.now()
-        if (timenow-self.time).seconds>1:
-            self.time = timenow
-
-            if wave.channelitem is None:
-                print("empty channelitem")
-                return
-            else:
-                print("showwave")
-                self.scene.togglewave(wave)
-
-
-                print(wave.channelitem.start_date, wave.channelitem.end_date)
+    def showwave(self, wave):
+        if wave.channelitem is None:
+            print("empty channelitem")
+            return
         else:
-            self.time = timenow
-            self.exportWave(wave)
-        #wavename = self.wavelistmodel.itemFromIndex(index).text()
-        #self.scene.togglewave(wavename, index.row())
+            self.scene.togglewave(wave)
 
 
-    def exportWave(self, wave):
+
+
+    def exportwave(self, wave):
         print("export",wave.wavename)
         fname = QFileDialog.getSaveFileName(self, 'Save to','/g/data1a/ge3/yuhang/code/mtpy/mtpy/tstools')
         self.scene.exportwaveform(wave.wavename, fname[0])
 
-    def setList(self):
-        item = self.wavetree.invisibleRootItem()
-        self.fill_item(item, self.scene.getList())
-        self.wavetree.setSelectionMode(QAbstractItemView.MultiSelection)
-        self.wavetree.show()
+    # set up wave tree in control region
+    def setlist(self):
+        item = self.waveTree.invisibleRootItem()
+        self.fillitem(item, self.scene.getList())
+        self.waveTree.setSelectionMode(QAbstractItemView.MultiSelection)
+        self.waveTree.show()
 
-    def fill_item(self, item, value, parent=None):
+    # build wave tree
+    def fillitem(self, item, value, parent=None):
         item.setExpanded(False)
         if type(value) is dict:
             for key, val in sorted(value.items()):
                 child = TSWaveItem()
                 child.setText(0, str(key))
                 item.addChild(child)
-                self.fill_item(child, val, str(key))
+                self.fillitem(child, val, str(key))
         elif type(value) is list:
             for val in value:
                 child = TSWaveItem()
                 item.addChild(child)
                 if type(val) is dict:
                     child.setText(0, '[dict]')
-                    self.fill_item(child, val, str(key))
+                    self.fillitem(child, val, str(key))
                 elif type(val) is list:
                     child.setText(0, '[list]')
-                    self.fill_item(child, val, str(key))
+                    self.fillitem(child, val, str(key))
                 else:
+                    print(type(val), "!!here")
                     child.setText(0, str(val))
                     child.channelitem = val
                     child.wavename = parent
@@ -132,16 +112,13 @@ class TSWindow(QWidget):
             item.addChild(child)
 
     def openfile(self):
-        fname = QFileDialog.getOpenFileName(self, 'Open file','/g/data/ha3/Passive/_AusArray/OA/ASDF_BU/OA.h5','asdf file (*.h5)')
+        fname = QFileDialog.getOpenFileName(self,
+                                            'Open file',
+                                            '/g/data/ha3/Passive/_AusArray/OA/ASDF_BU/OA.h5', 'asdf file (*.h5)')
 
-        if len(fname[0])>0:
+        if len(fname[0]) > 0:
             self.scene.setdata(fname[0])
-            self.setList()
-
-
-
-
-
+            self.setlist()
 
 
 if __name__ == "__main__":
@@ -150,7 +127,3 @@ if __name__ == "__main__":
     widget.resize(1024, 768)
     widget.show()
     sys.exit(app.exec_())
-
-
-
-

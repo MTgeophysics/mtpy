@@ -43,9 +43,15 @@ class TSData():
 
     def getwaveform(self, wave, starttime=None, endtime=None):
         print("getwave")
+        print(type(wave), 'type1')
+        print(type(wave.channelitem),'type2')
+        print(dir(wave.channelitem))
         if starttime is None:
             starttime = wave.channelitem.start_date
             endtime = starttime+1000
+
+        print(starttime,"starttime")
+        print(endtime,"endtime")
 
         ntwk = re.sub('([^.]+)(.*)','\\1',wave.wavename)
         sttn = re.sub('([^.]+\.)([^.]+)(.*)','\\2',wave.wavename)
