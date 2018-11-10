@@ -23,9 +23,9 @@ def bostick_depth(f, rho):
     :param rho: apparent resistivity
     :return:
     """
-    h = math.sqrt(rho/(f*2*math.pi*mu0))
+    h = (rho/(f*2*math.pi*mu0))**0.5
 
-    print(h)
+    #print(h)
     return h
 
 

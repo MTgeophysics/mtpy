@@ -59,7 +59,7 @@ class Data(object):
                        list of full paths to .edi files you want to invert for
 
     ====================== ====================================================
-    Attributes/Key Words   Description
+    Attributes              Description
     ====================== ====================================================
     _dtype                 internal variable defining the data type of
                            data_array
@@ -234,7 +234,7 @@ class Data(object):
         >>> #invert for every third period in inv_period_list
         >>> inv_period_list = inv_period_list[np.arange(0, len(inv_period_list, 3))]
         >>> md.period_list = inv_period_list
-        >>> md.write_data_file(save_path=r"/home/modem/inv1")
+    >>> md.write_data_file(save_path=r"/home/modem/inv1")
 
     :Example 3 --> change error values: ::
 
@@ -967,7 +967,7 @@ class Data(object):
             new_edi_dir = os.path.join(self.save_path, 'new_edis')  # output edi files according to selected periods
             if not os.path.exists(new_edi_dir):
                 os.mkdir(new_edi_dir)
-            self.fill_data_array(new_edi_dir=new_edi_dir,
+            self.fill_data_array(new_edi_dir=None,
                                  use_original_freq=use_original_freq,
                                  longitude_format=longitude_format)
             # get relative station locations in grid coordinates

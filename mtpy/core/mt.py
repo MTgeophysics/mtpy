@@ -1879,6 +1879,9 @@ class MT(object):
                 new_Z.z[new_nz_index, ii, jj] = z_func_real(
                     new_f) + 1j * z_func_imag(new_f)
                 new_Z.z_err[new_nz_index, ii, jj] = z_func_err(new_f)
+                
+        # compute resistivity and phase for new Z object
+        new_Z.compute_resistivity_phase()
 
         # if there is not tipper than skip
         if self.Tipper.tipper is None:
