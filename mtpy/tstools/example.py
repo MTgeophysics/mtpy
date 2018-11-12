@@ -38,10 +38,13 @@ class TSWindow(QWidget):
         self.buttonOpenFile.clicked.connect(self.openfile)
         self.waveTree = QTreeWidget()
         self.waveTree.itemClicked.connect(self.showwave)
+        self.buttonExportMS = QPushButton("Export MiniSEED")
+        self.buttonExportCSV = QPushButton("Export CSV")
 
         controlLayout = QVBoxLayout()
         controlLayout.addWidget(self.buttonOpenFile)
         controlLayout.addWidget(self.waveTree)
+        controlLayout.addWidget(self.buttonExport)
 
         controlWidget = QWidget()
         controlWidget.setLayout(controlLayout)
@@ -56,7 +59,7 @@ class TSWindow(QWidget):
         self.setLayout(layout)
         self.setWindowTitle("TSView")
 
-    def showwave(self, wave):
+    def showwave(self, wave: QTreeWidgetItem):
         if wave.childCount()==0:
             self.scene.togglewave(wave.text(0))
 
