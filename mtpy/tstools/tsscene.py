@@ -5,75 +5,75 @@ from PyQt5.QtGui import QPixmap
 
 from PyQt5.QtCore import Qt
 
+from matplotlib.axes import Axes
 from matplotlib.figure import Figure
+from matplotlib.lines import Line2D
 from matplotlib.backends.backend_qt5agg import FigureCanvas
 import matplotlib.pyplot as plt
 
 from tsdata import TSData
+from obspy.core.trace import Trace
 
 
 class TSScene(QGraphicsScene):
     def __init__(self, width=14, height=12, numofchannel=4):
         super(TSScene, self).__init__()
 
-
-
-        self.pixmap = QPixmap()
-
+        # set waveform windows
         figure = Figure()
         figure.set_size_inches(width, height)
-        figure.tight_layout()
-        self.canvas = FigureCanvas(figure)
-        self.plothandle=self.addWidget(self.canvas)
-
         self.graphwidth = figure.dpi * width
-
-
-        self.line = None
-
-        self.downx = None
-        self.data = None
-
+        self.canvas = FigureCanvas(figure)
+        self.addWidget(self.canvas)
+        self.axesavailability = [True for i in range(numofchannel)]
         self.axes = []
         for i in range(numofchannel):
             self.axes.append(figure.add_subplot(str(numofchannel)+'1'+str(i+1)))
 
-        self.axesavailability = [True for i in range(numofchannel)]
-
-
+        # set backend data model
+        self.data = None
         self.visibleWave = {}
-
         self.starttime = None
         self.endtime = None
 
+        # prepare for user input
+        self.downx = None
         self.wheelactive = False
 
-    def togglewave(self, wave, colorcode=0):
+    def setdata(self, filename: str):
+        self.data = TSData(filename)
+
+    def getlist(self):
+        return self.data.getlist()
+
+    def togglewave(self, wave: str, colorcode:int=0):
+        print(self.visibleWave)
         if wave in self.visibleWave:
             axes = self.visibleWave[wave][0]
-            handle = self.visibleWave[wave][1]
-            self.removewave(axes, handle)
+            lines = self.visibleWave[wave][1]
+            self.removewave(axes, lines)
             self.visibleWave.pop(wave, None)
             self.axesavailability[self.axes.index(axes)] = True
 
         else:
             stream, wavename, starttime, endtime = self.data.getwaveform(wave, self.starttime, self.endtime)
             waveform = stream[0]
-            axes, handle = self.displaywave(wavename, waveform, colorcode)
-            self.visibleWave[wave] = (axes, handle, colorcode, starttime, endtime)
+            axes, lines = self.displaywave(wavename, waveform)
+            if axes is not None:
+                self.visibleWave[wave] = (axes, lines, colorcode, starttime, endtime)
 
-    def displaywave(self, wavename, waveform, colorcode):
+    def displaywave(self, wavename: str, waveform: Trace, colorcode: int=None):
         if True not in self.axesavailability:
-            pass
+            return None, None
         else:
             location = self.axesavailability.index(True)
             axes = self.axes[location]
             self.axesavailability[location] = False
-
-            colorcode = 'C'+str(colorcode%10)
+            if colorcode is None:
+                colorcode = 'C'+str(location%10)
 
             times = [waveform.meta['starttime']+t for t in waveform.times()]
-            handle = axes.plot(times, waveform.data,linestyle="-", label=wavename, color=colorcode)
+            lines = axes.plot(times, waveform.data,linestyle="-", label=wavename, color=colorcode)
             axes.legend()
             self.downx = None
 
@@ -83,8 +83,14 @@ class TSScene(QGraphicsScene):
             self.endtime = waveform.meta['endtime']
 
 
-            return axes, handle
+            return axes, lines
 
+    def removewave(self, axes: Axes, lines: Line2D):
+        lines.pop(0).remove()
+        axes.relim()
+        axes.autoscale_view(True, True, True)
+        axes.legend()
+        self.canvas.draw()
 
     def timeshift(self, shift):
         shift = (self.endtime-self.starttime)*shift
@@ -137,12 +143,7 @@ class TSScene(QGraphicsScene):
 
         self.wheelactive = False
 
-    def removewave(self, axes, handle):
-        handle.pop(0).remove()
-        axes.relim()
-        axes.autoscale_view(True, True, True)
-        axes.legend()
-        self.canvas.draw()
+
 
 
     def mousePressEvent(self, event):
@@ -171,14 +172,6 @@ class TSScene(QGraphicsScene):
             self.timescale(delta)
 
 
-
-
-
-    def setdata(self, filename):
-        self.data = TSData(filename)
-
-    def getlist(self):
-        return self.data.getlist()
 
 
     def exportwaveform(self, wavename, filename):

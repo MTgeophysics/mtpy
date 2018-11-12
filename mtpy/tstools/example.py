@@ -56,7 +56,7 @@ class TSWindow(QWidget):
         self.setLayout(layout)
         self.setWindowTitle("TSView")
 
-    def showwave(self, wave):
+    def showwave(self, wave: QTreeWidgetItem):
         if wave.childCount()==0:
             self.scene.togglewave(wave.text(0))
 

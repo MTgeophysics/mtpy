@@ -4,6 +4,8 @@ import numpy as np
 import time
 
 from tswave import TSWave
+from datetime import datetime
+
 import re
 
 
@@ -35,8 +37,8 @@ class TSData():
                         self.wavemeta[str(channel)] = (rawdata, channel, wavename)
 
 
-    def getwaveform(self, wave, starttime=None, endtime=None):
-        rawdata, channel, wavename = self.wavemeta[wave]
+    def getwaveform(self, waveform: str, starttime: datetime=None, endtime: datetime=None):
+        rawdata, channel, wavename = self.wavemeta[waveform]
 
         if starttime is None:
             starttime = channel.start_date
