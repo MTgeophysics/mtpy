@@ -29,7 +29,7 @@ elst = [op.join(edipath,f) for f in os.listdir(edipath) if (f.endswith('.edi'))]
 
 strikeplot = PlotStrike(fn_list=elst,
                         fold=False,
-#                        show_ptphimin=True,
+                        show_ptphimin=False,
                         plot_type=2 # 1 means divide into separate plots for different decades
                                     # 2 means combine all data into one rose plot
                                     )

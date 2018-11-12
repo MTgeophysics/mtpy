@@ -16,10 +16,10 @@ wd = r'C:\mtpywin\mtpy\examples\model_files\Occam1d'
 
 # model and data file names
 modelfn=op.join(wd,'Model1D')
-datafn=op.join(wd,'Occam1d_DataFile_TE.dat')
+datafn=op.join(wd,'Occam1d_DataFile_DET.dat')
 
-iterfn  = op.join(wd,'OccamStartup1D_011.iter')
-respfn  = op.join(wd,'OccamStartup1D_011.resp')
+iterfn  = op.join(wd,'ITER_97.iter')
+respfn  = op.join(wd,'ITER_97.resp')
 
 # read in the model, don't need these lines to view the model but useful if you want to analyse the data
 oc1m = mtoc1d.Model(model_fn=modelfn)
@@ -39,5 +39,5 @@ pr = mtoc1d.Plot1DResponse(data_te_fn = datafn,
                            iter_te_fn = iterfn,
                            resp_tm_fn = respfn,
                            iter_tm_fn = iterfn,
-                           depth_limits = (0,20)
+                           depth_limits = (0,10)
                            )
