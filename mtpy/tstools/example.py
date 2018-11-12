@@ -38,10 +38,13 @@ class TSWindow(QWidget):
         self.buttonOpenFile.clicked.connect(self.openfile)
         self.waveTree = QTreeWidget()
         self.waveTree.itemClicked.connect(self.showwave)
+        self.buttonExportMS = QPushButton("Export MiniSEED")
+        self.buttonExportCSV = QPushButton("Export CSV")
 
         controlLayout = QVBoxLayout()
         controlLayout.addWidget(self.buttonOpenFile)
         controlLayout.addWidget(self.waveTree)
+        controlLayout.addWidget(self.buttonExport)
 
         controlWidget = QWidget()
         controlWidget.setLayout(controlLayout)
