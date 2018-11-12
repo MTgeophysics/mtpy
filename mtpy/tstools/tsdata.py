@@ -37,7 +37,7 @@ class TSData():
                         self.wavemeta[str(channel)] = (rawdata, channel, wavename)
 
 
-    def getwaveform(self, waveform: str, starttime: datetime=None, endtime: datetime=None, resamplerate: int=0):
+    def getwaveform(self, waveform: str, starttime: datetime=None, endtime: datetime=None, numofsamples: int=0):
         rawdata, channel, wavename = self.wavemeta[waveform]
 
         if starttime is None:
@@ -54,18 +54,19 @@ class TSData():
 
         outwave = outwave[0]
 
-        if resamplerate==0:
+        if numofsamples==0:
             pass
         else:
-            rate = round(float(len(outwave.data))/resamplerate)
+            rate = round(float(len(outwave.data)) / numofsamples)
             if rate>16:
                 tmp = trace.Trace()
-                tmp.data = outwave.data[::decirate].copy()
-                tmp.meta['delta'] = outwave.meta['delta'] * decirate
+                tmp.data = outwave.data[::rate].copy()
+                tmp.meta['delta'] = outwave.meta['delta'] * rate
                 tmp.meta['starttime'] = outwave.meta['starttime']
                 outwave = tmp.decimate(1, True)
-            else:
+            elif rate>=1:
                 outwave.decimate(rate)
+
 
         return outwave, wavename, channel.start_date, channel.end_date
 

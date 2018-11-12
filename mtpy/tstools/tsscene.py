@@ -56,7 +56,7 @@ class TSScene(QGraphicsScene):
             self.axesavailability[self.axes.index(axes)] = True
 
         else:
-            waveform, wavename, starttime, endtime = self.data.getwaveform(wave, self.starttime, self.endtime,)
+            waveform, wavename, starttime, endtime = self.data.getwaveform(wave, self.starttime, self.endtime,1000)
             axes, lines = self.displaywave(wavename, waveform)
             if axes is not None:
                 self.visibleWave[wave] = (axes, lines, colorcode, starttime, endtime)
