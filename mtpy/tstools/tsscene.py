@@ -56,8 +56,7 @@ class TSScene(QGraphicsScene):
             self.axesavailability[self.axes.index(axes)] = True
 
         else:
-            stream, wavename, starttime, endtime = self.data.getwaveform(wave, self.starttime, self.endtime)
-            waveform = stream[0]
+            waveform, wavename, starttime, endtime = self.data.getwaveform(wave, self.starttime, self.endtime,)
             axes, lines = self.displaywave(wavename, waveform)
             if axes is not None:
                 self.visibleWave[wave] = (axes, lines, colorcode, starttime, endtime)
@@ -174,9 +173,7 @@ class TSScene(QGraphicsScene):
 
 
 
-    def exportwaveform(self, wavename, filename):
-        print(wavename)
-        print(list(self.visibleWave))
+    def exportwaveform(self, filename):
         if wavename in self.visibleWave:
             wave = self.visibleWave[wavename][0]
             stream = self.data.getwaveform(wave, self.starttime, self.endtime)
