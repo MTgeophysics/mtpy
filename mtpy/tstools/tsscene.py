@@ -1,7 +1,7 @@
 
 from PyQt5.QtWidgets import QGraphicsScene
 
-from PyQt5.QtGui import QPixmap
+from PyQt5.QtGui import QMouseEvent
 
 from PyQt5.QtCore import Qt
 
@@ -92,7 +92,7 @@ class TSScene(QGraphicsScene):
         axes.legend()
         self.canvas.draw()
 
-    def timeshift(self, shift):
+    def timeshift(self, shift: float):
         shift = (self.endtime-self.starttime)*shift
 
         starttime = self.starttime + shift
@@ -113,7 +113,7 @@ class TSScene(QGraphicsScene):
                 self.togglewave(wave, tmplist[wave][2])
 
 
-    def timescale(self, delta):
+    def timescale(self, delta: float):
         shift = (self.endtime - self.starttime) * -delta*0.1
 
         starttime = self.starttime + shift
@@ -146,23 +146,23 @@ class TSScene(QGraphicsScene):
 
 
 
-    def mousePressEvent(self, event):
+    def mousePressEvent(self, event: QMouseEvent):
         super(TSScene, self).mousePressEvent(event)
         self.downx = event.scenePos().x()
 
 
-    def mouseMoveEvent(self, event):
+    def mouseMoveEvent(self, event: QMouseEvent):
         if self.downx is not None:
             self.upx = event.scenePos().x()
             shift = float(self.downx - self.upx) / self.graphwidth
             self.timeshift(shift)
             self.downx=self.upx
 
-    def mouseReleaseEvent(self, event):
+    def mouseReleaseEvent(self, event: QMouseEvent):
         super(TSScene, self).mousePressEvent(event)
         self.downx = None
 
-    def wheelEvent(self, event):
+    def wheelEvent(self, event: QMouseEvent):
         super(TSScene, self).wheelEvent(event)
 
         delta = -event.delta() / 8 / 15
