@@ -13,9 +13,17 @@ import matplotlib.pyplot as plt
 
 from tsdata import TSData
 from obspy.core.trace import Trace
+from obspy.core.stream import Stream
+from PyQt5.QtCore import pyqtSignal
 
+from obspy.core.utcdatetime import UTCDateTime
+from datetime import datetime
 
 class TSScene(QGraphicsScene):
+
+    starttimechanged = pyqtSignal(str)
+    endtimechanged = pyqtSignal(str)
+
     def __init__(self, width=14, height=12, numofchannel=4):
         super(TSScene, self).__init__()
 
@@ -39,6 +47,15 @@ class TSScene(QGraphicsScene):
         # prepare for user input
         self.downx = None
         self.wheelactive = False
+
+    def applytime(self, start: str, end: str):
+        self.starttime = UTCDateTime(start)
+        self.endtime = UTCDateTime(end)
+
+        tmplist = self.visibleWave.copy()
+        for wave in tmplist:
+            self.togglewave(wave)
+            self.togglewave(wave, tmplist[wave][2])
 
     def setdata(self, filename: str):
         self.data = TSData(filename)
@@ -81,7 +98,8 @@ class TSScene(QGraphicsScene):
             self.starttime = waveform.meta['starttime']
             self.endtime = waveform.meta['endtime']
 
-
+            self.starttimechanged.emit(self.starttime.strftime("%Y-%m-%d %H:%M:%S"))
+            self.endtimechanged.emit(self.endtime.strftime("%Y-%m-%d %H:%M:%S"))
             return axes, lines
 
     def removewave(self, axes: Axes, lines: Line2D):
@@ -92,6 +110,9 @@ class TSScene(QGraphicsScene):
         self.canvas.draw()
 
     def timeshift(self, shift: float):
+        if self.starttime is None:
+            return
+
         shift = (self.endtime-self.starttime)*shift
 
         starttime = self.starttime + shift
@@ -113,6 +134,9 @@ class TSScene(QGraphicsScene):
 
 
     def timescale(self, delta: float):
+        if self.starttime is None:
+            return
+
         shift = (self.endtime - self.starttime) * -delta*0.1
 
         starttime = self.starttime + shift
@@ -173,12 +197,19 @@ class TSScene(QGraphicsScene):
 
 
 
-    def exportwaveform(self, filename):
-        if wavename in self.visibleWave:
-            wave = self.visibleWave[wavename][0]
-            stream = self.data.getwaveform(wave, self.starttime, self.endtime)
-            print(type(stream),'type of stream')
-            stream.write(filename+".mseed", format='MSEED', encoding=3, reclen=256)
-        else:
-            pass
+    def exportwaveform(self, filename: tuple):
+        print('here'*10)
+        traces = []
+        for wave in self.visibleWave:
+            waveform, wavename, starttime, endtime = self.data.getwaveform(wave, self.starttime, self.endtime, 0)
+            traces.append(waveform)
 
+        stream = Stream(traces=traces)
+        if 'MSEED' in filename[1]:
+            stream.write(filename[0] + ".mseed", format='MSEED')
+        elif 'txt' in filename[1]:
+            stream.write(filename[0] + ".txt", format='TSPAIR')
+
+
+    def gettimeboundary(self):
+        return self.starttime, self.endtime

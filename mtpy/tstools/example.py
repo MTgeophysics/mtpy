@@ -14,6 +14,10 @@ from PyQt5.QtWidgets import QTreeWidget
 from PyQt5.QtWidgets import QTreeWidgetItem
 from PyQt5.QtWidgets import QListView
 from PyQt5.QtWidgets import QSplitter
+from PyQt5.QtWidgets import QDateTimeEdit
+from PyQt5.QtCore import QDateTime
+from PyQt5.QtWidgets import QLabel
+from PyQt5.QtWidgets import QLineEdit
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QStandardItemModel
 from PyQt5.QtGui import QStandardItem
@@ -29,17 +33,42 @@ class TSWindow(QWidget):
     def __init__(self):
         super(TSWindow, self).__init__()
 
+        # time edit
+        startlabel = QLabel('Start time')
+        self.starttime = QLineEdit()
+        endlabel = QLabel('End time')
+        self.endtime = QLineEdit()
+        buttonApply = QPushButton("Apply")
+        buttonApply.clicked.connect(self.applytime)
+
+        timeLayout = QHBoxLayout()
+        timeLayout.addWidget(startlabel)
+        timeLayout.addWidget(self.starttime)
+        timeLayout.addWidget(endlabel)
+        timeLayout.addWidget(self.endtime)
+        timeLayout.addWidget(buttonApply)
+        timeWidget = QWidget()
+        timeWidget.setLayout(timeLayout)
+
         # view
         self.scene = TSScene()
-        viewWidget = QGraphicsView(self.scene)
+        self.scene.starttimechanged.connect(self.starttime.setText)
+        self.scene.endtimechanged.connect(self.endtime.setText)
+
+        viewLayout = QVBoxLayout()
+        viewLayout.addWidget(timeWidget)
+        viewLayout.addWidget(QGraphicsView(self.scene))
+        viewWidget = QWidget()
+        viewWidget.setLayout(viewLayout)
 
         # control
         self.buttonOpenFile = QPushButton("open file")
         self.buttonOpenFile.clicked.connect(self.openfile)
         self.waveTree = QTreeWidget()
         self.waveTree.itemClicked.connect(self.showwave)
-        self.buttonExportMS = QPushButton("Export MiniSEED")
-        self.buttonExportCSV = QPushButton("Export CSV")
+        self.buttonExport = QPushButton("Export")
+        self.buttonExport.clicked.connect(self.export)
+
 
         controlLayout = QVBoxLayout()
         controlLayout.addWidget(self.buttonOpenFile)
@@ -58,6 +87,10 @@ class TSWindow(QWidget):
         layout.addWidget(split)
         self.setLayout(layout)
         self.setWindowTitle("TSView")
+
+    def applytime(self):
+        self.scene.applytime(self.starttime.text(), self.endtime.text())
+        return
 
     def showwave(self, wave: QTreeWidgetItem):
         if wave.childCount()==0:
@@ -93,14 +126,17 @@ class TSWindow(QWidget):
                 child.setText(0, val)
                 node.addChild(child)
 
-
-
+    def export(self):
+        fname = QFileDialog.getSaveFileName(self,
+                                            'Save as',
+                                            '/g/data1a/ge3/yuhang/tmp', 'MiniSEED (*.MSEED);; Text files (*.txt)')
+        if len(fname[0]) > 0:
+            self.scene.exportwaveform(fname)
 
     def openfile(self):
         fname = QFileDialog.getOpenFileName(self,
                                             'Open file',
                                             '/g/data/ha3/Passive/_AusArray/OA/ASDF_BU/OA.h5', 'asdf file (*.h5)')
-
         if len(fname[0]) > 0:
             self.scene.setdata(fname[0])
             self.setlist()

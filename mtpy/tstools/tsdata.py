@@ -58,7 +58,9 @@ class TSData():
             pass
         else:
             rate = round(float(len(outwave.data)) / numofsamples)
-            if rate>16:
+            if rate<=1:
+                pass
+            elif rate>16:
                 tmp = trace.Trace()
                 tmp.data = outwave.data[::rate].copy()
                 tmp.meta['delta'] = outwave.meta['delta'] * rate
