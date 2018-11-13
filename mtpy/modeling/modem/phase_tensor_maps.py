@@ -910,9 +910,15 @@ class PlotPTMaps(mtplottools.MTEllipse):
 
         pk = periodIdx
         try:
-            vals = getattr(self, 'pt_' + ptarray + '_arr')[pk][key]
+            print "getting", key
+            if key == 'phimean':
+                vals = np.mean([getattr(self, 'pt_' + ptarray + '_arr')[pk]['phimin'],
+                                getattr(self, 'pt_' + ptarray + '_arr')[pk]['phimax']],axis=0)
+            else:
+                vals = getattr(self, 'pt_' + ptarray + '_arr')[pk][key]
             return vals
         except:
+
             print 'Attribute %s not found' % ('pt_' + ptarray + '_arr')
             logging.error(traceback.format_exc())
             exit(-1)

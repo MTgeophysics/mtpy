@@ -125,6 +125,7 @@ class PlotResPhaseMaps(mtpl.PlotSettings):
              nn=7,
              p = 4,
              show_stations = True,
+             show_station_names = False,
              save_path = os.getcwd(),
              file_ext = 'png',
              cmap='rainbow',
@@ -376,7 +377,11 @@ class PlotResPhaseMaps(mtpl.PlotSettings):
                 cb.ax.tick_params(axis='both', which='minor', labelsize=self.font_size-1)
 
                 # show stations
-                if (show_stations): ax.scatter(x, y, 2, marker='v', c='k', edgecolor='none')
+                if (show_stations): 
+                    ax.scatter(x, y, 2, marker='v', c='k', edgecolor='none')
+                    if show_station_names:
+                        for isn, mt_obj in enumerate(self.mt_list):
+                            plt.text(lon[isn],lat[isn],mt_obj.station,fontsize=self.font_size-2)
 
                 # Label plots
                 label = ''
