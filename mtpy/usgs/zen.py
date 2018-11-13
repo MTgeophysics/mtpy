@@ -824,7 +824,7 @@ class Zen3D(object):
 
         self.units = 'counts'
         
-        self.ts_obj = mtts.MT_TS()
+        self.ts_obj = mtts.MTTS()
         
     @property
     def station(self):
@@ -1198,7 +1198,7 @@ class Zen3D(object):
 #                
 
         # trim the data after taking out the gps stamps
-        self.ts_obj = mtts.MT_TS()
+        self.ts_obj = mtts.MTTS()
         self.ts_obj.ts = data[np.nonzero(data)]
         
         # convert data to mV
