@@ -395,6 +395,8 @@ class MT_TS(object):
                            if an empty dictionary is input the filter looks
                            for 60 Hz and harmonics to filter out. 
         :type notch_dict: dictionary
+        
+        :returns: filtered data as a Pandas data frame.
                              
         """
         if notches is None:        
@@ -408,8 +410,6 @@ class MT_TS(object):
         
         ts, filt_list = mtfilter.adaptive_notch_filter(self.ts.data, **kwargs)
         
-        self.ts.data = ts
-        
         print '\t Filtered frequency with bandstop:'
         for ff in filt_list:
             try:
@@ -417,7 +417,11 @@ class MT_TS(object):
                                                              np.nan_to_num(ff[1]))
             except ValueError:
                 pass
-        
+            
+        ts_return = self.ts.copy()
+        ts_return.data = ts
+        return ts_return
+    
     # decimate data
     def decimate(self, dec_factor=1):
         """
@@ -426,15 +430,18 @@ class MT_TS(object):
         :param dec_factor: decimation factor
         :type dec_factor: int
 
-        * refills ts.data with decimated data and replaces sampling_rate
+        :returns: decimated data with new sampling rate
+        :rtype: numpy array
             
         """
         # be sure the decimation factor is an integer
         dec_factor = int(dec_factor)
         
         if dec_factor > 1:
-            self.ts = signal.decimate(self.ts.data, dec_factor, n=8)
-            self.sampling_rate /= float(dec_factor)
+            ts_return_arr = signal.decimate(self.ts.data, dec_factor, n=8)
+            df_return = self.sampling_rate / float(dec_factor)
+            
+        return ts_return_arr, df_return
             
     def low_pass_filter(self, low_pass_freq=15, cutoff_freq=55):
         """
@@ -445,14 +452,18 @@ class MT_TS(object):
         
         :param cutoff_freq: cut off frequency in Hz
         :type cutoff_freq: float
-        
-        * filters ts.data
+            
+        :returns: filtered data
+        :rtype: Pandas data frame
         """
         
-        self.ts = mtfilter.low_pass(self.ts.data, 
-                                    low_pass_freq,
-                                    cutoff_freq,
-                                    self.sampling_rate)
+        return_ts = self.ts.copy()
+        return_ts.data = mtfilter.low_pass(return_ts.data, 
+                                           low_pass_freq,
+                                           cutoff_freq,
+                                           return_ts.sampling_rate)
+        
+        return return_ts
     
     ###------------------------------------------------------------------
     ### read and write file types

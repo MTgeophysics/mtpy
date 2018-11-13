@@ -1473,7 +1473,7 @@ class Zen3D(object):
         except AttributeError:
             self.read_z3d()
                   
-        self.ts_obj.apply_addaptive_notch_filter(**notch_dict) 
+        self.ts_obj.ts = self.ts_obj.apply_addaptive_notch_filter(**notch_dict) 
         
     #==================================================
     def write_ascii_mt_file(self, save_fn=None, fmt='%.8e', notch_dict=None,
@@ -1574,8 +1574,7 @@ class Zen3D(object):
         # decimate the data.  try resample at first, see how that goes
         # make the attribute time series equal to the decimated data.
         if dec > 1:
-            self.ts_obj.decimate(dec)
-            self.df = self.ts_obj.sampling_rate
+            self.ts_obj.ts, self.ts_obj.sampling_rate = self.ts_obj.decimate(dec)
 
         # apply notch filter if desired
         if notch_dict is not None:
@@ -1655,7 +1654,7 @@ class Zen3D(object):
         """
         plot the spectra of time series
         """
-        self.ts_obj.estimate_spectra()
+        self.ts_obj.plot_spectra(fig_num=fig_num)
         
 
 #==============================================================================
