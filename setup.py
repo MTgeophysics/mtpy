@@ -52,6 +52,7 @@ setup_kwargs['packages'] = [
                             'mtpy.imaging',
                             'mtpy.utils',
                             'mtpy.modeling',
+                            'mtpy.modeling.modem',
                             'mtpy.processing',
                             'mtpy.analysis',
                             #'mtpy.test',

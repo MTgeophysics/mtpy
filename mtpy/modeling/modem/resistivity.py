@@ -8,9 +8,7 @@ from osgeo import osr
 from scipy.interpolate import interp2d
 from pyproj import Proj, transform
 
-from mtpy.modeling.modem import Model, Data
-from mtpy.modeling.nc import write_resistivity_grid
-from mtpy.modeling.lib import wgs84_crs
+from mtpy.modeling.modem import Model, Data, write_resistivity_grid, wgs84_crs, get_utm_zone
 
 
 def mid_point(arr):

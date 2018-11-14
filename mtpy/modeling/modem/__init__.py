@@ -17,6 +17,9 @@ from .plot_slices import PlotSlices
 from .plot_rms_maps import PlotRMSMaps
 from .phase_tensor_maps import PlotPTMaps
 
+from .nc import write_resistivity_grid
+from .lib import wgs84_crs, get_utm_zone
+
 __all__ = [
             'ModEMError', 'DataError', 'Stations', 'Data', 'Model', 'Residual',
            'ControlInv', 'ControlFwd', 'Covariance', 'ModEMConfig', 'ModelManipulator',
