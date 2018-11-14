@@ -2,6 +2,7 @@
 from PyQt5.QtWidgets import QGraphicsScene
 
 from PyQt5.QtGui import QMouseEvent
+from PyQt5.QtGui import QPen
 
 from PyQt5.QtCore import Qt
 
@@ -47,6 +48,7 @@ class TSScene(QGraphicsScene):
         # prepare for user input
         self.downx = None
         self.wheelactive = False
+        self.rect = None
 
     def applytime(self, start: str, end: str):
         self.starttime = UTCDateTime(start)
@@ -90,6 +92,8 @@ class TSScene(QGraphicsScene):
 
             times = [waveform.meta['starttime']+t for t in waveform.times()]
             span = round(len(times)/4)
+            if span<1:
+                span = 1
             axes.set_xticks(times[::span])
             axes.set_xticklabels([t.strftime("%Y(%-j) %H:%M:%S") for t in times[::span]])
             lines = axes.plot(times, waveform.data,linestyle="-", label=wavename, color=colorcode)
@@ -175,18 +179,33 @@ class TSScene(QGraphicsScene):
     def mousePressEvent(self, event: QMouseEvent):
         super(TSScene, self).mousePressEvent(event)
         self.downx = event.scenePos().x()
+        self.downbutton = event.button()
+        print(self.downx)
 
 
     def mouseMoveEvent(self, event: QMouseEvent):
         if self.downx is not None:
-            self.upx = event.scenePos().x()
-            shift = float(self.downx - self.upx) / self.graphwidth
-            self.timeshift(shift)
-            self.downx=self.upx
+            if self.downbutton == Qt.LeftButton:
+                self.upx = event.scenePos().x()
+                shift = float(self.downx - self.upx) / self.graphwidth
+                self.timeshift(shift)
+                self.downx=self.upx
+            elif self.downbutton == Qt.RightButton:
+                self.removeItem(self.rect)
+                self.rect = self.addRect(self.downx,0, event.screenPos().x()-self.downx, self.height(), pen=QPen(Qt.red))
 
     def mouseReleaseEvent(self, event: QMouseEvent):
         super(TSScene, self).mousePressEvent(event)
+        if event.button() == Qt.RightButton:
+            left = 225
+            right = 1215
+            start = self.starttime+(self.downx-left)/(right-left)*(self.endtime-self.starttime)
+            end = self.starttime+(event.scenePos().x()-left)/(right-left)*(self.endtime-self.starttime)
+            self.applytime(start, end)
         self.downx = None
+        self.downbutton = None
+        self.removeItem(self.rect)
+        self.rect = None
 
     def wheelEvent(self, event: QMouseEvent):
         super(TSScene, self).wheelEvent(event)
