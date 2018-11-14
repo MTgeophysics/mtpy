@@ -65,6 +65,7 @@ class TSWindow(QWidget):
         self.buttonOpenFile = QPushButton("open file")
         self.buttonOpenFile.clicked.connect(self.openfile)
         self.waveTree = QTreeWidget()
+        self.waveTree.header().hide()
         self.waveTree.itemClicked.connect(self.showwave)
         self.buttonExport = QPushButton("Export")
         self.buttonExport.clicked.connect(self.export)
