@@ -52,22 +52,28 @@ class TSData():
         outwave = rawdata.get_waveforms(network=ntwk, station=sttn, location=channel.location_code, \
                             channel=channel.code, starttime=starttime, endtime=endtime, tag="raw_recording")
 
-        outwave = outwave[0]
+        if len(outwave)>0:
+            outwave = outwave[0]
 
-        if numofsamples==0:
-            pass
-        else:
-            rate = round(float(len(outwave.data)) / numofsamples)
-            if rate<=1:
+            if numofsamples==0:
                 pass
-            elif rate>16:
-                tmp = trace.Trace()
-                tmp.data = outwave.data[::rate].copy()
-                tmp.meta['delta'] = outwave.meta['delta'] * rate
-                tmp.meta['starttime'] = outwave.meta['starttime']
-                outwave = tmp.decimate(1, True)
-            elif rate>=1:
-                outwave.decimate(rate)
+            else:
+                rate = round(float(len(outwave.data)) / numofsamples)
+                if rate<=1:
+                    pass
+                elif rate>16:
+                    tmp = trace.Trace()
+                    tmp.data = outwave.data[::rate].copy()
+                    tmp.meta['delta'] = outwave.meta['delta'] * rate
+                    tmp.meta['starttime'] = outwave.meta['starttime']
+                    outwave = tmp.decimate(1, True)
+                elif rate>=1:
+                    outwave.decimate(rate)
+        else:
+            outwave = trace.Trace()
+            outwave.data = np.array([np.nan]*numofsamples)
+            outwave.meta['starttime'] = starttime
+            outwave.meta['delta'] = (endtime-starttime)/numofsamples
 
 
         return outwave, wavename, channel.start_date, channel.end_date

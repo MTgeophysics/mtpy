@@ -87,30 +87,38 @@ class TSScene(QGraphicsScene):
             location = self.axesavailability.index(True)
             axes = self.axes[location]
             self.axesavailability[location] = False
-            if colorcode is None:
-                colorcode = 'C'+str(location%10)
+            if wavename is not None and waveform is not None:
+                if colorcode is None:
+                    colorcode = 'C'+str(location%10)
 
-            times = [waveform.meta['starttime']+t for t in waveform.times()]
-            span = round(len(times)/4)
-            if span<1:
-                span = 1
-            axes.set_xticks(times[::span])
-            axes.set_xticklabels([t.strftime("%Y(%-j) %H:%M:%S") for t in times[::span]])
-            lines = axes.plot(times, waveform.data,linestyle="-", label=wavename, color=colorcode)
-            axes.legend()
-            self.downx = None
+                times = [waveform.meta['starttime']+t for t in waveform.times()]
+                span = round(len(times)/4)
+                if span<1:
+                    span = 1
+                axes.set_xticks(times[::span])
+                axes.set_xticklabels([t.strftime("%Y-%m-%d %H:%M:%S") for t in times[::span]])
+                lines = axes.plot(times, waveform.data,linestyle="-", label=wavename, color=colorcode)
+                axes.legend()
+                self.downx = None
 
-            self.canvas.draw()
+                self.canvas.draw()
 
-            self.starttime = waveform.meta['starttime']
-            self.endtime = waveform.meta['endtime']
+                self.starttime = waveform.meta['starttime']
+                self.endtime = waveform.meta['endtime']
 
-            self.starttimechanged.emit(self.starttime.strftime("%Y-%m-%d %H:%M:%S"))
-            self.endtimechanged.emit(self.endtime.strftime("%Y-%m-%d %H:%M:%S"))
+                self.starttimechanged.emit(self.starttime.strftime("%Y-%m-%d %H:%M:%S"))
+                self.endtimechanged.emit(self.endtime.strftime("%Y-%m-%d %H:%M:%S"))
+                return axes, lines
+            else:
+                lines = None
+                axes.legend([wavename])
+
             return axes, lines
 
+
     def removewave(self, axes: Axes, lines: Line2D):
-        lines.pop(0).remove()
+        if lines is not None:
+            lines.pop(0).remove()
         axes.relim()
         axes.autoscale_view(True, True, True)
         axes.legend()
