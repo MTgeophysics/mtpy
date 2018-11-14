@@ -51,6 +51,8 @@ class TSScene(QGraphicsScene):
         self.rect = None
 
     def applytime(self, start: str, end: str):
+        if self.data is None:
+            return
         self.starttime = UTCDateTime(start)
         self.endtime = UTCDateTime(end)
 
@@ -186,12 +188,16 @@ class TSScene(QGraphicsScene):
 
     def mousePressEvent(self, event: QMouseEvent):
         super(TSScene, self).mousePressEvent(event)
+        if self.starttime is None:
+            return
         self.downx = event.scenePos().x()
         self.downbutton = event.button()
         print(self.downx)
 
 
     def mouseMoveEvent(self, event: QMouseEvent):
+        if self.starttime is None:
+            return
         if self.downx is not None:
             if self.downbutton == Qt.LeftButton:
                 self.upx = event.scenePos().x()
@@ -204,6 +210,8 @@ class TSScene(QGraphicsScene):
 
     def mouseReleaseEvent(self, event: QMouseEvent):
         super(TSScene, self).mousePressEvent(event)
+        if self.starttime is None:
+            return
         if event.button() == Qt.RightButton:
             left = 225
             right = 1215
