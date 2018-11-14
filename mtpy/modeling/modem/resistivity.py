@@ -4,98 +4,13 @@ import os
 from os.path import join, abspath
 
 import numpy as np
-from netCDF4 import Dataset
 from osgeo import osr
 from scipy.interpolate import interp2d
 from pyproj import Proj, transform
 
 from mtpy.modeling.modem import Model, Data
-
-
-# Create a cell-centred NetCDF file
-def create_dataset(filename):
-    if os.path.exists(filename):
-        print filename, 'already exists, removing'
-        os.remove(filename)
-
-    return Dataset(filename, 'w', format='NETCDF4')
-
-
-# get the CRS
-def get_spatial_ref(center):
-    result = osr.SpatialReference()
-    result.SetWellKnownGeogCS('WGS84')
-    is_northern = center.lat.item() >= 0
-    zone_number = int(1 + (center.lon.item() + 180.0) / 6.0)
-    result.SetUTM(zone_number, is_northern)
-    return result
-
-
-def global_spatial_ref():
-    result = osr.SpatialReference()
-    result.ImportFromEPSG(4326)
-    return result
-
-
-def set_grid_mapping_attrs_projected(crs_var, spatial_ref):
-    # currently unused
-    crs_var.spatial_ref = spatial_ref.ExportToWkt()
-    crs_var.crs_wkt = spatial_ref.ExportToWkt()
-    crs_var.inverse_flattening = spatial_ref.GetInvFlattening()
-    crs_var.long_name = spatial_ref.GetAttrValue('PROJCS')
-    crs_var.semi_major_axis = spatial_ref.GetSemiMajor()
-    crs_var.semi_minor_axis = spatial_ref.GetSemiMinor()
-    crs_var.grid_mapping_name = spatial_ref.GetAttrValue('PROJECTION')
-    crs_var.longitude_of_central_meridian = spatial_ref.GetProjParm(osr.SRS_PP_CENTRAL_MERIDIAN)
-    crs_var.false_easting = spatial_ref.GetProjParm(osr.SRS_PP_FALSE_EASTING)
-    crs_var.false_northing = spatial_ref.GetProjParm(osr.SRS_PP_FALSE_NORTHING)
-    crs_var.latitude_of_projection_origin = spatial_ref.GetProjParm(osr.SRS_PP_LATITUDE_OF_ORIGIN)
-    crs_var.scale_factor_at_central_meridian = spatial_ref.GetProjParm(osr.SRS_PP_SCALE_FACTOR)
-
-
-def set_grid_mapping_attrs_geographic(crs_var, spatial_ref):
-    crs_var.spatial_ref = spatial_ref.ExportToWkt()
-    crs_var.crs_wkt = spatial_ref.ExportToWkt()
-    crs_var.inverse_flattening = spatial_ref.GetInvFlattening()
-    crs_var.long_name = spatial_ref.GetAttrValue('GEOGCS')
-    crs_var.semi_major_axis = spatial_ref.GetSemiMajor()
-    crs_var.grid_mapping_name = 'latitude_longitude'
-    crs_var.units = spatial_ref.GetAttrValue('UNIT')
-
-
-def write_to_file(filename, spatial_ref, resistivity_data):
-    with create_dataset(filename) as dataset:
-        dataset.description = 'Resistivity Model'
-
-        # dimensions
-        dataset.createDimension('latitude', resistivity_data['latitude'].shape[0])
-        dataset.createDimension('longitude', resistivity_data['longitude'].shape[0])
-        dataset.createDimension('depth', resistivity_data['depth'].shape[0])
-
-        # variables
-        x = dataset.createVariable('latitude', 'f4', ('latitude',))
-        y = dataset.createVariable('longitude', 'f4', ('longitude',))
-        z = dataset.createVariable('depth', 'f4', ('depth',))
-
-        for var in [x, y]:
-            var.units = 'degree'
-        z.units = 'km'
-
-        resistivity = dataset.createVariable('resistivity', 'f4', ('depth', 'latitude', 'longitude'))
-        resistivity.grid_mapping = 'crs'
-        resistivity.long_name = 'resistivity'
-        resistivity.units = "ohm-m"
-
-        # populate variables
-        x[:] = resistivity_data['latitude']
-        y[:] = resistivity_data['longitude']
-        z[:] = resistivity_data['depth']
-
-        resistivity[:, :, :] = resistivity_data['resistivity']
-
-        # attach crs info
-        crs_var = dataset.createVariable('crs', 'i4', ())
-        set_grid_mapping_attrs_geographic(crs_var, spatial_ref)
+from mtpy.modeling.nc import write_resistivity_grid
+from mtpy.modeling.lib import wgs84_crs
 
 
 def mid_point(arr):
@@ -130,6 +45,7 @@ def interpolated_layer(x, y, layer):
     return interp2d(x, y, layer)  # bounds_error=True
 
 
+# TODO can this be done with lib.Points3D?
 def converter(in_spatial_ref, out_spatial_ref):
     in_proj = Proj(in_spatial_ref.ExportToProj4())
     out_proj = Proj(out_spatial_ref.ExportToProj4())
@@ -160,15 +76,15 @@ def main():
         'resistivity': np.transpose(model.res_model, axes=(2, 0, 1))
     }
 
-    spatial_ref = get_spatial_ref(center)
-    global_ref = global_spatial_ref()
+    spatial_ref = get_utm_zone(center.lat.item(), center.lon.item())
 
-    to_wgs84 = converter(spatial_ref, global_ref)
-    from_wgs84 = converter(global_ref, spatial_ref)
+    to_wgs84 = converter(spatial_ref, wgs84_crs)
+    from_wgs84 = converter(wgs84_crs, spatial_ref)
 
     center_lon, center_lat, width, height = lon_lat_grid_spacing(center, median_spacing(model.grid_east),
                                                                  median_spacing(model.grid_north), to_wgs84)
 
+    # TODO use lib.Grid3D?
     lon_list = [to_wgs84(x, y)[0]
                 for x in resistivity_data['x']
                 for y in resistivity_data['y']]
@@ -209,7 +125,9 @@ def main():
         result['resistivity'][z_index, :, :] = uniform_layer(interpolation_funcs[z_index],
                                                              result['latitude'], result['longitude'])
 
-    write_to_file('wgs84.nc', global_ref, result)
+    write_resistivity_grid('wgs84.nc', wgs84_crs,
+                           result['latitude'], result['longitude'], result['depth'],
+                           result['resistivity'], z_label='depth')
 
 
 if __name__ == '__main__':
