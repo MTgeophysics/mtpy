@@ -3,7 +3,6 @@ import obspy.core.trace as trace
 import numpy as np
 import time
 
-from tswave import TSWave
 from datetime import datetime
 
 import re
