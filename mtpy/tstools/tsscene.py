@@ -24,7 +24,7 @@ class TSScene(QGraphicsScene):
     starttimechanged = pyqtSignal(str)
     endtimechanged = pyqtSignal(str)
 
-    def __init__(self, width=14, height=12, numofchannel=4):
+    def __init__(self, width=14, height=9, numofchannel=4):
         super(TSScene, self).__init__()
 
         # set waveform windows
@@ -63,7 +63,7 @@ class TSScene(QGraphicsScene):
     def getlist(self):
         return self.data.getlist()
 
-    def togglewave(self, wave: str, colorcode:int=0):
+    def togglewave(self, wave: str, colorcode:int=0, samplerate: int=1000):
         print(self.visibleWave)
         if wave in self.visibleWave:
             axes = self.visibleWave[wave][0]
@@ -73,7 +73,7 @@ class TSScene(QGraphicsScene):
             self.axesavailability[self.axes.index(axes)] = True
 
         else:
-            waveform, wavename, starttime, endtime = self.data.getwaveform(wave, self.starttime, self.endtime,1000)
+            waveform, wavename, starttime, endtime = self.data.getwaveform(wave, self.starttime, self.endtime,samplerate)
             axes, lines = self.displaywave(wavename, waveform)
             if axes is not None:
                 self.visibleWave[wave] = (axes, lines, colorcode, starttime, endtime)
@@ -89,6 +89,9 @@ class TSScene(QGraphicsScene):
                 colorcode = 'C'+str(location%10)
 
             times = [waveform.meta['starttime']+t for t in waveform.times()]
+            span = round(len(times)/4)
+            axes.set_xticks(times[::span])
+            axes.set_xticklabels([t.strftime("%Y(%-j) %H:%M:%S") for t in times[::span]])
             lines = axes.plot(times, waveform.data,linestyle="-", label=wavename, color=colorcode)
             axes.legend()
             self.downx = None
