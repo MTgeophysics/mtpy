@@ -2,7 +2,7 @@
 """
 USGS Archive
 ==============
-    
+
     * Collect z3d files into logical scheduled blocks
     * Merge Z3D files into USGS ascii format
     * Collect metadata information
@@ -20,6 +20,7 @@ import datetime
 from collections import Counter
 
 import zipfile
+import h5py
 import gzip
 import urllib2 as url
 import xml.etree.ElementTree as ET
@@ -42,31 +43,31 @@ from shapely.geometry import Point
 import sciencebasepy as sb
 
 # =============================================================================
-# 
+#
 # =============================================================================
 def get_nm_elev(lat, lon):
     """
     Get national map elevation for a given lat and lon.
-    
+
     Queries the national map website for the elevation value.
-    
+
     :param lat: latitude in decimal degrees
     :type lat: float
-    
+
     :param lon: longitude in decimal degrees
     :type lon: float
-    
+
     :return: elevation (meters)
     :rtype: float
-    
+
     :Example: ::
-        
+
         >>> import mtpy.usgs.usgs_archive as archive
         >>> archive.get_nm_elev(35.467, -115.3355)
         >>> 809.12
-        
+
     .. note:: Needs an internet connection to work.
-        
+
     """
     nm_url = r"https://nationalmap.gov/epqs/pqs.php?x={0:.5f}&y={1:.5f}&units=Meters&output=xml"
 
@@ -76,12 +77,12 @@ def get_nm_elev(lat, lon):
     except url.HTTPError:
         print('GET_ELEVATION_ERROR: Could not connect to internet')
         return -666
-    
+
     # read the xml response and convert to a float
     info = ET.ElementTree(ET.fromstring(response.read()))
     info = info.getroot()
     for elev in info.iter('Elevation'):
-        nm_elev = float(elev.text) 
+        nm_elev = float(elev.text)
     return nm_elev
 
 # =============================================================================
@@ -90,17 +91,17 @@ def get_nm_elev(lat, lon):
 class Z3DCollection(object):
     """
     Collects .z3d files into useful arrays and lists
-    
+
     ================= ============================= ===========================
     Attribute         Description                   Default
     ================= ============================= ===========================
     chn_order         list of the order of channels [hx, ex, hy, ey, hz]
     meta_notes        extraction of notes from      None
-                      the .z3d files 
+                      the .z3d files
     leap_seconds      number of leap seconds for    16 [2016]
                       a given year
     ================= ============================= ===========================
-    
+
     ===================== =====================================================
     Methods               Description
     ===================== =====================================================
@@ -108,64 +109,65 @@ class Z3DCollection(object):
     check_sampling_rate   Check the sampling rate a given time block
     check_time_series     Get information for a given time block
     merge_ts              Merge a given schedule block making sure that they
-                          line up in time.  
-    get_chn_order         Get the appropriate channels, in case some are 
-                          missing 
+                          line up in time.
+    get_chn_order         Get the appropriate channels, in case some are
+                          missing
     ===================== =====================================================
-    
+
     :Example: ::
-        
+
         >>> import mtpy.usgs.usgs_archive as archive
         >>> z3d_path = r"/Data/Station_00"
         >>> zc = archive.Z3DCollection()
         >>> fn_list = zc.get_time_blocks(z3d_path)
-        
-    """   
-    
+
+    """
+
     def __init__(self):
 
         self.chn_order = ['hx','ex','hy','ey','hz']
         self.meta_notes = None
         self.verbose = True
-        
+        self._pd_dt_fmt = '%Y-%m-%d %H:%M:%S.%f'
+
     def get_time_blocks(self, z3d_dir):
         """
         Organize z3d files into blocks based on start time and sampling rate
         in the file name.
-        
+
         .. note:: This assumes the z3d file is named
                   * station_date_time_samplingrate_chn.z3d
-                  
+
         :param z3d_dir: full path to z3d files
         :type z3d_dir: string
-        
+
         :returns: nested list of files for each time block, sorted by time
-        
+
         :Example: ::
-            
+
             >>> import mtpy.usgs.usgs_archive as archive
             >>> zc = archive.Z3DCollection()
             >>> fn_list = zc.get_time_blocks(r"/home/mt_data/station_01")
-         
+
         """
-        
+
         fn_list = os.listdir(z3d_dir)
         merge_list = np.array([[fn]+\
                               os.path.basename(fn)[:-4].split('_')
                               for fn in fn_list if fn.lower().endswith('.z3d')])
-                                  
-        merge_list = np.array([merge_list[:,0], 
-                               merge_list[:,1],  
+
+        merge_list = np.array([merge_list[:,0],
+                               merge_list[:,1],
                                np.core.defchararray.add(merge_list[:,2],
                                                         merge_list[:,3]),
                                merge_list[:,4],
                                merge_list[:,5]])
         merge_list = merge_list.T
-                      
+
         time_counts = Counter(merge_list[:,2])
         time_list = time_counts.keys()
         log_lines = []
-        
+
         return_list = []
         for tt in sorted(time_list):
             block_list = []
@@ -179,58 +181,58 @@ class Z3DCollection(object):
             return_list.append(block_list)
             log_lines.append('\n---> Merged Time Series Lengths and Start Time \n')
             log_lines.append('\n')
-            
+
         with open(os.path.join(z3d_dir, 'z3d_merge.log'), 'w') as fid:
             fid.writelines(log_lines)
-        
+
         return return_list
-   
+
     #==================================================
     def check_sampling_rate(self, time_array):
         """
         Check to make sure the sampling rate is the same for all channels
-        
+
         :param time_array: structured array with key df for sampling rate
-                           made by check_time_series 
+                           made by check_time_series
         :type time_array: np.ndarray
-        
+
         :returns: sampling rate
         :rtype: float
         """
-        
+
         nz = len(time_array)
-        
+
         df_array = time_array['df']
-            
+
         tf_array = np.zeros((nz, nz))
-        
+
         for jj in range(nz):
             tf_array[jj] = np.in1d(df_array, [df_array[jj]])
-        
+
         false_test = np.where(tf_array == False)
-        
+
         if len(false_test[0]) != 0:
             raise IOError('Sampling rates are not the same for all channels '+\
                           'Check file(s)'+time_array[false_test[0]]['fn'])
-            
+
         return df_array.mean()
-        
+
     #==================================================
     def check_time_series(self, fn_list):
         """
         Check to make sure timeseries line up with eachother.
-        
+
         :param fn_list: list of files to merge
         :type fn_list: list
-        
+
         :return: time_array
         :rtype: np.ndarray including all important information for merging
         """
         # get number of channels
         n_fn = len(fn_list)
-        
+
         # make an empty array to put things into
-        t_arr = np.zeros(n_fn, 
+        t_arr = np.zeros(n_fn,
                          dtype=[('comp', 'S3'),
                                 ('start', np.int64),
                                 ('stop', np.int64),
@@ -238,7 +240,7 @@ class Z3DCollection(object):
                                 ('df', np.float32),
                                 ('lat', np.float32),
                                 ('lon', np.float32),
-                                ('elev', np.float32), 
+                                ('elev', np.float32),
                                 ('ch_azm', np.float32),
                                 ('ch_length', np.float32),
                                 ('ch_num', np.int32),
@@ -246,9 +248,9 @@ class Z3DCollection(object):
                                 ('n_samples', np.int32),
                                 ('t_diff', np.int32),
                                 ('std', np.float32)])
-    
+
         t_arr['ch_num'] = np.arange(1, n_fn+1)
-            
+
         print('-'*50)
         for ii, fn in enumerate(fn_list):
             z3d_obj = zen.Zen3D(fn)
@@ -257,10 +259,10 @@ class Z3DCollection(object):
             except zen.ZenGPSError:
                 print('xxxxxx BAD FILE: Skipping {0} xxxx'.format(fn))
                 continue
-            
+
             # convert the time index into an integer
             dt_index = z3d_obj.ts_obj.ts.data.index.astype(np.int64)/10.**9
-            
+
             # extract useful data
             t_arr[ii]['comp'] = z3d_obj.metadata.ch_cmp.lower()
             t_arr[ii]['start'] = dt_index[0]
@@ -287,38 +289,41 @@ class Z3DCollection(object):
 
         # cut the array to only those channels with data
         t_arr = t_arr[np.nonzero(t_arr['start'])]
-        
+
         return t_arr
-    
+
     def merge_ts(self, fn_list, decimate=1):
         """
         Merge z3d's based on a mutual start and stop time
-        
+
         :param fn_list: list of Z3D files to merge together (full paths)
         :type fn_list: list
-        
+
         :return: pandas database of merged time series
         :rtype: pandas database
-        
+
         :return: time_array that includes all important information
         :rtype: np.ndarray
-        
+
         """
         meta_arr = self.check_time_series(fn_list)
         df = self.check_sampling_rate(meta_arr)
-        
+
         # get the start and stop times that correlates with all time series
         start = meta_arr['start'].max()
         stop = meta_arr['stop'].min()
-        
+
+        dt_struct = datetime.datetime.utcfromtimestamp(start)
+        start_time_utc = datetime.datetime.strftime(dt_struct, self._pd_dt_fmt)
+
         # figure out the max length of the array, getting the time difference into
         # seconds and then multiplying by the sampling rate
         max_ts_len = int((stop-start)*df)
         ts_len = min([meta_arr['n_samples'].max(), max_ts_len])
-        
+
         if decimate > 1:
             ts_len /= decimate
-            
+
         ### make an empty pandas dataframe to put data into, seems like the
         ### fastes way so far.
         ts_db = pd.DataFrame(np.zeros((ts_len, meta_arr.size)),
@@ -329,12 +334,12 @@ class Z3DCollection(object):
         for ii, m_arr in enumerate(meta_arr):
             z3d_obj = zen.Zen3D(m_arr['fn'])
             z3d_obj.read_z3d()
-            
+
             dt_index = z3d_obj.ts_obj.ts.data.index.astype(np.int64)/10**9
             index_0 = np.where(dt_index == start)[0][0]
             index_1 = min([ts_len-index_0, z3d_obj.ts_obj.ts.shape[0]-index_0])
-            
-            ### check to see what the time difference is, should be 0, 
+
+            ### check to see what the time difference is, should be 0,
             ### but sometimes not, then need to account for that.
             t_diff = ts_len-(index_1-index_0)
             meta_arr[ii]['t_diff'] = t_diff
@@ -345,31 +350,40 @@ class Z3DCollection(object):
                                                                      t_diff/z3d_obj.ts_obj.sampling_rate)
             if decimate > 1:
                  ts_db[:, ii] = sps.resample(z3d_obj.ts_obj.ts.data[index_0:index_1],
-                                              ts_len, 
+                                              ts_len,
                                               window='hanning')
 
             else:
                 ts_db[m_arr['comp']][0:ts_len-t_diff] = z3d_obj.ts_obj.ts.data[index_0:index_1]
 
-        # reorder the columns        
+        # reorder the columns
         ts_db = ts_db[self.get_chn_order]
-        
-        # return the pandas database and the metadata array 
-        return ts_db, meta_arr 
-    
+
+        # set the index to be UTC time
+        dt_freq = '{0:.0f}N'.format(1./(df)*1E9)
+
+        dt_index = pd.date_range(start=start_time_utc,
+                                 periods=ts_db.shape[0],
+                                 freq=dt_freq)
+
+        ts_db.index = dt_index
+
+        # return the pandas database and the metadata array
+        return ts_db, meta_arr
+
     def get_chn_order(self, chn_list):
         """
         Get the order of the array channels according to the components.
-        
-        .. note:: If you want to change the channel order, change the 
+
+        .. note:: If you want to change the channel order, change the
                   parameter Z3DCollection.chn_order
-        
+
         :param chn_list: list of channels in data
         :type chn_list: list
-        
-        :return: channel order list 
+
+        :return: channel order list
         """
-        
+
         if len(chn_list) == 5:
             return self.chn_order
         else:
@@ -379,8 +393,42 @@ class Z3DCollection(object):
                     if chn_00.lower() == chn_01.lower():
                         chn_order.append(chn_00.lower())
                         continue
-            
+
             return chn_order
+
+# =============================================================================
+# schedule
+# =============================================================================
+class ScheduleDB(object):
+    """
+    Container for a single schedule item
+    """
+
+    def __init__(self, time_series_database):
+
+        self._time_fmt = '%Y-%m-%dT%H:%M:%S %Z'
+        self.ts_db = time_series_database
+
+    @property
+    def start_time(self):
+        return '{0} UTC'.format(self.ts_db.index[0].isoformat())
+
+    @property
+    def stop_time(self):
+        return '{0} UTC'.format(self.ts_db.index[-1].isoformat())
+
+    @property
+    def n_chan(self):
+        return self.ts_db.shape[1]
+
+    @property
+    def sampling_rate(self):
+        return 1.0e9/self.ts_db.index[0].freq.nanos
+
+    @property
+    def n_samples(self):
+        return self.ts_db.shape[0]
+
 
 #==============================================================================
 # Need a dummy utc time zone for the date time format
@@ -396,10 +444,10 @@ class UTC(datetime.tzinfo):
 # =============================================================================
 #  Metadata for usgs ascii file
 # =============================================================================
-class Metadata(object):
+class AsciiMetadata(object):
     """
     Container for all the important metadata in a USGS ascii file.
-    
+
     ========================= =================================================
     Attributes                Description
     ========================= =================================================
@@ -412,13 +460,13 @@ class Metadata(object):
     AcqStartTime              Start time of station YYYY-MM-DDThh:mm:ss UTC
     AcqStopTime               Stop time of station YYYY-MM-DDThh:mm:ss UTC
     AcqSmpFreq                Sampling rate samples/second
-    AcqNumSmp                 Number of samples 
+    AcqNumSmp                 Number of samples
     Nchan                     Number of channels
     CoordinateSystem          [ Geographic North | Geomagnetic North ]
     ChnSettings               Channel settings, see below
     MissingDataFlag           Missing data value
     ========================= =================================================
-    
+
     *ChnSettings*
     ========================= =================================================
     Keys                      Description
@@ -426,12 +474,12 @@ class Metadata(object):
     ChnNum                    SiteID+channel number
     ChnID                     Component [ ex | ey | hx | hy | hz ]
     InstrumentID              Data logger + sensor number
-    Azimuth                   Setup angle of componet in degrees relative to 
+    Azimuth                   Setup angle of componet in degrees relative to
                               CoordinateSystem
-    Dipole_Length             Dipole length in meters 
-    ========================= =================================================                
+    Dipole_Length             Dipole length in meters
+    ========================= =================================================
 
-    
+
     """
     def __init__(self, fn=None, **kwargs):
         self.fn = fn
@@ -452,7 +500,7 @@ class Metadata(object):
         self._time_fmt = '%Y-%m-%dT%H:%M:%S %Z'
         self._metadata_len = 30
         self.declination = 0.0
-        
+
         self._key_list = ['SurveyID',
                           'SiteID',
                           'RunID',
@@ -468,7 +516,7 @@ class Metadata(object):
                           'ChnSettings',
                           'MissingDataFlag',
                           'DataSet']
-        
+
         self._chn_settings = ['ChnNum',
                               'ChnID',
                               'InstrumentID',
@@ -482,37 +530,37 @@ class Metadata(object):
 
         for key in kwargs.keys():
             setattr(self, key, kwargs[key])
-            
+
     @property
     def SiteID(self):
         return self._station
     @SiteID.setter
     def SiteID(self, station):
         self._station = station
-        
+
     @property
     def SiteLatitude(self):
         return self._latitude
         #return gis_tools.convert_position_float2str(self._latitude)
-    
+
     @SiteLatitude.setter
     def SiteLatitude(self, lat):
         self._latitude = gis_tools.assert_lat_value(lat)
-        
+
     @property
     def SiteLongitude(self):
         return self._longitude
         #return gis_tools.convert_position_float2str(self._longitude)
-    
+
     @SiteLongitude.setter
     def SiteLongitude(self, lon):
         self._longitude = gis_tools.assert_lon_value(lon)
-        
+
     @property
     def SiteElevation(self):
         """
         get elevation from national map
-        """  
+        """
         # the url for national map elevation query
         nm_url = r"https://nationalmap.gov/epqs/pqs.php?x={0:.5f}&y={1:.5f}&units=Meters&output=xml"
 
@@ -522,18 +570,18 @@ class Metadata(object):
         except url.HTTPError:
             print nm_url.format(self._longitude, self._latitude)
             return -666
-        
+
         # read the xml response and convert to a float
         info = ET.ElementTree(ET.fromstring(response.read()))
         info = info.getroot()
         for elev in info.iter('Elevation'):
-            nm_elev = float(elev.text) 
-        return nm_elev 
-        
+            nm_elev = float(elev.text)
+        return nm_elev
+
     @property
     def AcqStartTime(self):
         return self._start_time.strftime(self._time_fmt)
-    
+
     @AcqStartTime.setter
     def AcqStartTime(self, time_string):
         if type(time_string) in [int, np.int64]:
@@ -543,11 +591,11 @@ class Metadata(object):
         self._start_time = datetime.datetime(dt.year, dt.month, dt.day,
                                              dt.hour, dt.minute, dt.second,
                                              dt.microsecond, tzinfo=UTC())
-        
+
     @property
     def AcqStopTime(self):
         return self._stop_time.strftime(self._time_fmt)
-    
+
     @AcqStopTime.setter
     def AcqStopTime(self, time_string):
         if type(time_string) in [int, np.int64]:
@@ -557,18 +605,18 @@ class Metadata(object):
         self._stop_time = datetime.datetime(dt.year, dt.month, dt.day,
                                             dt.hour, dt.minute, dt.second,
                                             dt.microsecond, tzinfo=UTC())
-    
+
     @property
     def Nchan(self):
         return self._chn_num
-    
+
     @Nchan.setter
     def Nchan(self, n_channel):
         try:
             self._chn_num = int(n_channel)
         except ValueError:
             print("{0} is not a number, setting Nchan to 0".format(n_channel))
-            
+
     @property
     def AcqSmpFreq(self):
         return self._sampling_rate
@@ -582,16 +630,16 @@ class Metadata(object):
 
     @AcqNumSmp.setter
     def AcqNumSmp(self, n_samples):
-        self._n_samples = int(n_samples)  
+        self._n_samples = int(n_samples)
 
     def read_metadata(self, fn=None, meta_lines=None):
         """
         Read in a meta from the raw string or file.  Populate all metadata
         as attributes.
-        
+
         :param fn: full path to USGS ascii file
         :type fn: string
-        
+
         :param meta_lines: lines of metadata to read
         :type meta_lines: list
         """
@@ -632,16 +680,16 @@ class Metadata(object):
                                 self.channel_dict[comp][key] = value
                         else:
                             print('Not sure what line this is')
-                            
+
     def write_metadata(self, chn_list=['Ex', 'Ey', 'Hx', 'Hy', 'Hz']):
         """
         Write out metadata in the format of USGS ascii.
-        
+
         :return: list of metadate lines.
-        
+
         .. note:: meant to use '\n'.join(lines) to write out in a file.
         """
-        
+
         lines = []
         for key in self._key_list:
             if key in ['ChnSettings']:
@@ -664,17 +712,17 @@ class Metadata(object):
                     lines.append('{0}: {1:.5f}'.format(key, getattr(self, key)))
                 else:
                     lines.append('{0}: {1}'.format(key, getattr(self, key)))
-        
+
         return lines
 
 
 # =============================================================================
 # Class for the asc file
 # =============================================================================
-class USGSasc(Metadata):
+class USGSasc(AsciiMetadata):
     """
-    Read and write USGS ascii formatted time series. 
-    
+    Read and write USGS ascii formatted time series.
+
     =================== =======================================================
     Attributes          Description
     =================== =======================================================
@@ -683,7 +731,7 @@ class USGSasc(Metadata):
     station_dir         Full path to station directory
     meta_notes          Notes of how the station was collected
     =================== =======================================================
-    
+
     ============================== ============================================
     Methods                        Description
     ============================== ============================================
@@ -697,9 +745,9 @@ class USGSasc(Metadata):
     write_asc_file                 Write an USGS ascii file
     write_station_info_metadata    Write metadata to a .cfg file
     ============================== ============================================
-    
+
     :Example: ::
-        
+
         >>> zc = Z3DCollection()
         >>> fn_list = zc.get_time_blocks(z3d_path)
         >>> zm = USGSasc()
@@ -711,7 +759,7 @@ class USGSasc(Metadata):
         >>> zm.write_asc_file(str_fmt='%15.7e')
         >>> zm.write_station_info_metadata()
     """
-    
+
     def __init__(self, **kwargs):
         Metadata.__init__(self)
         self.ts = None
@@ -720,50 +768,50 @@ class USGSasc(Metadata):
         self.meta_notes = None
         for key in kwargs.keys():
             setattr(self, key, kwargs[key])
-            
+
     def get_z3d_db(self, fn_list):
         """
         Merge time series from Z3D files into a pandas database
-        
+
         :param fn_list: list of Z3D files to merge (full paths)
         :type fn_list: list
-        
+
         Fills ts attribute as pandas database.
         """
         zc_obj = Z3DCollection()
         self.ts, meta_arr = zc_obj.merge_ts(fn_list)
         self.fill_metadata(meta_arr)
         self.meta_notes = zc_obj.meta_notes
-        
+
     def locate_mtft24_cfg_fn(self):
         """
         Try to automatically detect mtft24 file
-        
+
         :return: path to mtft24.cfg file
         """
         for fn in os.listdir(self.station_dir):
             if 'mtft24' in fn and fn.endswith('cfg'):
                 return os.path.join(self.station_dir, fn)
-            
+
         return None
-            
+
     def get_metadata_from_mtft24_cfg(self, mtft24_cfg_fn=None):
         """
         Read in a MTFT24 configuration file and fill in meta data
-        
+
         :param mtft24_cfg_fn: full path to mtft24.cfg
         :type: string
         """
         if mtft24_cfg_fn is None:
             mtft24_cfg_fn = self.locate_mtft24_cfg_fn()
-            
+
         zm = zonge.ZongeMTFT()
         try:
             zm.read_cfg(mtft24_cfg_fn)
         except TypeError:
             print('*** No MTFT24 file for {0} ***'.format(self.SiteID))
             return False
-        
+
         # need to update channel dict
         # figure out channel order first
         chn_order = dict([(cc.lower(), ii) for ii, cc in enumerate(zm.Chn_Cmp)])
@@ -775,12 +823,12 @@ class USGSasc(Metadata):
                 try:
                     inst = self.channel_dict[chn]['InstrumentID'].split('-')[1]
                     if inst != zm.Chn_ID[index]:
-                        self.channel_dict[chn]['InstrumentID'] = '{0}-{1}'.format(stem, 
+                        self.channel_dict[chn]['InstrumentID'] = '{0}-{1}'.format(stem,
                                                                                  zm.Chn_ID[index])
                 except IndexError:
-                    self.channel_dict[chn]['InstrumentID'] = '{0}-{1}'.format(stem, 
+                    self.channel_dict[chn]['InstrumentID'] = '{0}-{1}'.format(stem,
                                                                              zm.Chn_ID[index])
-            
+
             # get azimuth direction
             if 'geographic' in self.CoordinateSystem.lower() and chn.lower() != 'hz':
                 azm = float(zm.Chn_Azimuth[index])+self.declination
@@ -790,29 +838,29 @@ class USGSasc(Metadata):
                 self.channel_dict[chn]['Azimuth'] = azm
             elif int(np.nan_to_num(self.channel_dict[chn]['Azimuth'])) != int(azm):
                 self.channel_dict[chn]['Azimuth'] = azm
-                
+
             # get dipole length
             if float(np.nan_to_num(self.channel_dict[chn]['Dipole_Length'])) != float(zm.Chn_Length[index]):
-                if 'e' in chn.lower(): 
+                if 'e' in chn.lower():
                     self.channel_dict[chn]['Dipole_Length'] = float(zm.Chn_Length[index])
         return True
-        
+
     def get_metadata_from_survey_csv(self, survey_fn):
         """
         get station information from a survey .csv file
-        
+
         :param survey_fn: full path to survey summary .csv file
         :type survey_fn: string
-        
+
         """
-        
+
         s_cfg = USGScfg()
         try:
             station_db = s_cfg.get_station_info_from_csv(survey_fn, self.SiteID)
         except ValueError:
             print('Could not find information for {0}'.format(self.SiteID))
             return False
-        
+
         # fill metadata
         for chn in self.channel_dict.keys():
             if 'h' in chn.lower():
@@ -820,35 +868,35 @@ class USGSasc(Metadata):
                 stem = station_db.zen_num
                 h_attr = '{0}_{1}'.format(chn.lower(), 'id')
                 h_id = getattr(station_db, h_attr)
-                self.channel_dict[chn]['InstrumentID'] = '{0}-{1}'.format(stem, 
+                self.channel_dict[chn]['InstrumentID'] = '{0}-{1}'.format(stem,
                                                                           h_id)
             elif 'e' in chn.lower():
                 self.channel_dict[chn]['InstrumentID'] = station_db.zen_num
                 e_attr = '{0}_{1}'.format(chn.lower(), 'len')
                 e_len = getattr(station_db, e_attr)
                 self.channel_dict[chn]['Dipole_Length'] = e_len
-        
+
             azm_attr = '{0}_{1}'.format(chn.lower(), 'azm')
             azm_value = getattr(station_db, azm_attr)
             if 'geographic' in self.CoordinateSystem:
                 azm_value += self.declination
             self.channel_dict[chn]['Azimuth'] = azm_value
             self.channel_dict[chn]['ChnNum'] = '{0}{1}'.format(self.channel_dict[chn]['ChnNum'][:-1],
-                                                               int(getattr(station_db, 
+                                                               int(getattr(station_db,
                                                                        '{0}_num'.format(chn.lower()))))
-            
-            
+
+
         # get location
         self.SiteLatitude = float(station_db.lat)
         self.SiteLongitude = float(station_db.lon)
-            
+
         return True
-        
+
     def fill_metadata(self, meta_arr):
         """
-        Fill in metadata from time array made by 
+        Fill in metadata from time array made by
         Z3DCollection.check_time_series.
-        
+
         :param meta_arr: structured array of metadata for the Z3D files to be
                          combined.
         :type meta_arr: np.ndarray
@@ -869,7 +917,7 @@ class USGSasc(Metadata):
         self.SiteLongitude = np.median(meta_arr['lon'])
         self.SiteID = os.path.basename(meta_arr['fn'][0]).split('_')[0]
         self.station_dir = os.path.dirname(meta_arr['fn'][0])
-        
+
         # if geographic coordinates add in declination
         if 'geographic' in self.CoordinateSystem.lower():
             meta_arr['ch_azm'][np.where(meta_arr['comp'] != 'hz')] += self.declination
@@ -893,13 +941,13 @@ class USGSasc(Metadata):
     def read_asc_file(self, fn=None):
         """
         Read in a USGS ascii file and fill attributes accordingly.
-        
+
         :param fn: full path to .asc file to be read in
         :type fn: string
         """
         if fn is not None:
             self.fn = fn
-        st = datetime.datetime.now()    
+        st = datetime.datetime.now()
         data_line = self.read_metadata()
         self.ts = pd.read_csv(self.fn,
                               delim_whitespace=True,
@@ -908,108 +956,108 @@ class USGSasc(Metadata):
         et = datetime.datetime.now()
         read_time = et-st
         print('Reading took {0}'.format(read_time.total_seconds()))
-        
+
     def convert_electrics(self):
         """
         Convert electric fields into mV/km
         """
-        
+
         try:
             self.ts.ex /= (self.channel_dict['Ex']['Dipole_Length']/1000.)
         except AttributeError:
             print('No EX')
-            
-                
+
+
         try:
             self.ts.ey /= (self.channel_dict['Ey']['Dipole_Length']/1000.)
         except AttributeError:
             print('No EY')
-            
-    def _make_file_name(self, save_path=None, compression=True, 
+
+    def _make_file_name(self, save_path=None, compression=True,
                         compress_type='zip'):
         """
         get the file name to save to
-        
+
         :param save_path: full path to directory to save file to
         :type save_path: string
-        
+
         :param compression: compress file
         :type compression: [ True | False ]
-        
+
         :return: save_fn
         :rtype: string
-        
+
         """
         # make the file name to save to
         if save_path is not None:
-            save_fn = os.path.join(save_path, 
+            save_fn = os.path.join(save_path,
                                    '{0}_{1}T{2}_{3:.0f}.asc'.format(self.SiteID,
                                     self._start_time.strftime('%Y-%m-%d'),
                                     self._start_time.strftime('%H%M%S'),
                                     self.AcqSmpFreq))
         else:
-            save_fn = os.path.join(self.station_dir, 
+            save_fn = os.path.join(self.station_dir,
                                    '{0}_{1}T{2}_{3:.0f}.asc'.format(self.SiteID,
                                     self._start_time.strftime('%Y-%m-%d'),
                                     self._start_time.strftime('%H%M%S'),
                                     self.AcqSmpFreq))
-            
+
         if compression:
             if compress_type == 'zip':
                 save_fn = save_fn + '.zip'
             elif compress_type == 'gzip':
                 save_fn = save_fn + '.gz'
-            
+
         return save_fn
-        
-    def write_asc_file(self, save_fn=None, chunk_size=1024, str_fmt='%15.7e', 
-                       full=True, compress=False, save_dir=None, 
+
+    def write_asc_file(self, save_fn=None, chunk_size=1024, str_fmt='%15.7e',
+                       full=True, compress=False, save_dir=None,
                        compress_type='zip'):
         """
         Write an ascii file in the USGS ascii format.
-        
+
         :param save_fn: full path to file name to save the merged ascii to
         :type save_fn: string
-        
+
         :param chunck_size: chunck size to write file in blocks, larger numbers
-                            are typically slower. 
+                            are typically slower.
         :type chunck_size: int
-        
+
         :param str_fmt: format of the data as written
         :type str_fmt: string
-        
+
         :param full: write out the complete file, mostly for testing.
         :type full: boolean [ True | False ]
-        
-        :param compress: compress file 
+
+        :param compress: compress file
         :type compress: boolean [ True | False ]
-        
+
         :param compress_type: compress file using zip or gzip
         :type compress_type: boolean [ zip | gzip ]
         """
         # get the filename to save to
-        save_fn = self._make_file_name(save_path=save_dir, 
+        save_fn = self._make_file_name(save_path=save_dir,
                                        compression=compress,
                                        compress_type=compress_type)
         # get the number of characters in the desired string
         s_num = int(str_fmt[1:str_fmt.find('.')])
-        
+
         # convert electric fields into mV/km
         self.convert_electrics()
-        
+
         print('==> {0}'.format(save_fn))
         print('START --> {0}'.format(time.ctime()))
         st = datetime.datetime.now()
-        
+
         # write meta data first
         # sort channel information same as columns
         meta_lines = self.write_metadata(chn_list=[c.capitalize() for c in self.ts.columns])
         if compress == True and compress_type == 'gzip':
             with gzip.open(save_fn, 'wb') as fid:
-                h_line = [''.join(['{0:>{1}}'.format(c.capitalize(), s_num) 
+                h_line = [''.join(['{0:>{1}}'.format(c.capitalize(), s_num)
                           for c in self.ts.columns])]
                 fid.write('\n'.join(meta_lines+h_line) + '\n')
-                
+
                 # write out data
                 if full is False:
                     out = np.array(self.ts[0:chunk_size])
@@ -1021,8 +1069,8 @@ class USGSasc(Metadata):
                     et = datetime.datetime.now()
                     write_time = et-st
                     print('Writing took: {0} seconds'.format(write_time.total_seconds()))
-                    return 
-                
+                    return
+
                 for chunk in range(int(self.ts.shape[0]/chunk_size)):
                     out = np.array(self.ts[chunk*chunk_size:(chunk+1)*chunk_size])
                     out[np.where(out == 0)] = float(self.MissingDataFlag)
@@ -1037,10 +1085,10 @@ class USGSasc(Metadata):
                 zip_file = True
                 print(zip_file)
             with open(save_fn, 'w') as fid:
-                h_line = [''.join(['{0:>{1}}'.format(c.capitalize(), s_num) 
+                h_line = [''.join(['{0:>{1}}'.format(c.capitalize(), s_num)
                           for c in self.ts.columns])]
                 fid.write('\n'.join(meta_lines+h_line) + '\n')
-                
+
                 # write out data
                 if full is False:
                     out = np.array(self.ts[0:chunk_size])
@@ -1052,15 +1100,15 @@ class USGSasc(Metadata):
                     et = datetime.datetime.now()
                     write_time = et-st
                     print('Writing took: {0} seconds'.format(write_time.total_seconds()))
-                    return 
-                
+                    return
+
                 for chunk in range(int(self.ts.shape[0]/chunk_size)):
                     out = np.array(self.ts[chunk*chunk_size:(chunk+1)*chunk_size])
                     out[np.where(out == 0)] = float(self.MissingDataFlag)
                     out = np.char.mod(str_fmt, out)
                     lines = '\n'.join([''.join(out[ii, :]) for ii in range(out.shape[0])])
                     fid.write(lines+'\n')
-                    
+
         # for some fucking reason, all interal variables don't exist anymore
         # and if you try to do the zipping nothing happens, so have to do
         # it externally.  WTF
@@ -1068,11 +1116,11 @@ class USGSasc(Metadata):
         et = datetime.datetime.now()
         write_time = et-st
         print('Writing took: {0} seconds'.format(write_time.total_seconds()))
-        
+
     def write_station_info_metadata(self, save_dir=None, mtft_bool=False):
         """
         write out station info that can later be put into a data base
-        
+
         the data we need is
             - site name
             - site id number
@@ -1089,16 +1137,16 @@ class USGSasc(Metadata):
             - end date
             - instrument type (lp, bb)
             - number of channels
-            
+
         """
         if save_dir is not None:
-            save_fn = os.path.join(save_dir, 
+            save_fn = os.path.join(save_dir,
                                    '{0}_{1}T{2}_{3:.0f}.cfg'.format(self.SiteID,
                                     self._start_time.strftime('%Y-%m-%d'),
                                     self._start_time.strftime('%H%M%S'),
                                     self.AcqSmpFreq))
         else:
-            save_fn = os.path.join(self.station_dir, 
+            save_fn = os.path.join(self.station_dir,
                                        '{0}_{1}T{2}_{3:.0f}.cfg'.format(self.SiteID,
                                         self._start_time.strftime('%Y-%m-%d'),
                                         self._start_time.strftime('%H%M%S'),
@@ -1131,7 +1179,7 @@ class USGSasc(Metadata):
             meta_dict[key]['hx_std'] = None
             meta_dict[key]['hx_start'] = None
             meta_dict[key]['hx_num'] = None
-            
+
         try:
             meta_dict[key]['hy_azm'] = self.channel_dict['Hy']['Azimuth']
             meta_dict[key]['hy_id'] = self.channel_dict['Hy']['InstrumentID'].split('-')[1]
@@ -1166,7 +1214,7 @@ class USGSasc(Metadata):
             meta_dict[key]['hz_std'] = None
             meta_dict[key]['hz_start'] = None
             meta_dict[key]['hz_num'] = None
-        
+
         try:
             meta_dict[key]['ex_azm'] = self.channel_dict['Ex']['Azimuth']
             meta_dict[key]['ex_id'] = self.channel_dict['Ex']['InstrumentID']
@@ -1205,48 +1253,140 @@ class USGSasc(Metadata):
             meta_dict[key]['ey_std'] = None
             meta_dict[key]['ey_start'] = None
             meta_dict[key]['ey_num'] = None
-        
+
         meta_dict[key]['start_date'] = self.AcqStartTime
         meta_dict[key]['stop_date'] = self.AcqStopTime
         meta_dict[key]['sampling_rate'] = self.AcqSmpFreq
         meta_dict[key]['n_samples'] = self.AcqNumSmp
         meta_dict[key]['n_chan'] = self.Nchan
-        
-        
+
+
         if meta_dict[key]['zen_num'] in [24, 25, 26, 46, '24', '25', '26', '46',
                                         'ZEN24', 'ZEN25', 'ZEN26', 'ZEN46']:
             meta_dict[key]['collected_by'] = 'USGS'
         else:
             meta_dict[key]['collected_by'] = 'OSU'
-        
+
         # in the old OSU z3d files there are notes in the metadata section
         # pass those on
         meta_dict[key]['notes'] = self.meta_notes
-            
+
         mtcfg.write_dict_to_configfile(meta_dict, save_fn)
-        
+
         return save_fn
+
+
+# =============================================================================
+#  HDF5 object
+# =============================================================================
+class USGSHDF5(object):
+    """
+    Container for HDF5 format
+    """
+
+    def __init__(self, **kwargs):
+        self.hdf5_fn = None
+        self.hdf5_obj = None
+
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+
+    def write_hdf5(self, z3d_dir, hdf5_fn=None, compress=True):
+        """
+        write hdf5 file
+        """
+        if hdf5_fn is not None:
+            self.hdf5_fn = hdf5_fn
+        else:
+            self.hdf5_fn = os.path.join(z3d_dir, 
+                                        '{0}.hdf5'.format(os.path.basename(z3d_dir)))
+
+        # need to over write existing files
+        if os.path.exists(self.hdf5_fn):
+            os.remove(self.hdf5_fn)
+
+        st = datetime.datetime.now()
+
+        ### get the file names for each block of z3d files
+        zc = Z3DCollection()
+        fn_list = zc.get_time_blocks(z3d_dir)
+
+        h5_obj = h5py.File(self.hdf5_fn, 'w')
+        h5_obj.attrs['datum'] = 'WGS84'
+        h5_obj.attrs['station'] = os.path.basename(z3d_dir)
+        lat_list = []
+        lon_list = []
+        for ii, fn_block in enumerate(fn_list, 1):
+            ts_db, meta_arr = zc.merge_ts(fn_list[0])
+            sch_obj = ScheduleDB(ts_db)
+            # get lat and lon for statistics
+            lat_list.append(meta_arr['lat'].mean())
+            lon_list.append(meta_arr['lon'].mean())
+
+            # fill channel attributes
+            for m_arr in meta_arr:
+                for c_attr, h_attr in zip(['ch_num', 'ch_length', 'ch_azm'],
+                                          ['sensor', 'length', 'azimuth']):
+                    h5_obj.attrs['{0}_{1}'.format(m_arr['comp'].lower(), h_attr)] = m_arr[c_attr]
+
+            # create group for schedule action
+            schedule = h5_obj.create_group('schedule_{0:02}'.format(ii))
+            # add metadata
+            schedule.attrs['start_time'] = sch_obj.start_time
+            schedule.attrs['stop_time'] = sch_obj.stop_time
+            schedule.attrs['n_samples'] = sch_obj.n_samples
+            schedule.attrs['n_channels'] = sch_obj.n_chan
+            schedule.attrs['sampling_rate'] = sch_obj.sampling_rate
+
+            ### add datasets for each channel
+            for comp in ts_db.columns:
+                if compress:
+                    d_set = schedule.create_dataset(comp, data=ts_db[comp],
+                                                    compression='gzip',
+                                                    compression_opts=4)
+                else:
+                    d_set = schedule.create_dataset(comp, data=ts_db[comp])
+            #    m_arr = meta_arr[np.where(meta_arr['comp'] == comp)][0]
+            #    for d_attr in ['ch_length', 'ch_num', 'ch_azm']:
+            #        d_set.attrs[d_attr] = m_arr[d_attr]
+            
+        ### set attributes
+        station_lat = np.median(np.array(lat_list))
+        station_lon = np.median(np.array(lon_list))
+        h5_obj.attrs['latitude'] = station_lat
+        h5_obj.attrs['longitude'] = station_lon
+        h5_obj.attrs['elevation'] = get_nm_elev(station_lat, station_lon)
         
+        ### close file
+        h5_obj.close()
+
+        et = datetime.datetime.now()
+
+        t_diff = et-st
+
+        print('Took --> {0:.2f} seconds'.format(t_diff.total_seconds()))
+
+        return self.hdf5_fn
 # =============================================================================
 # Functions to help analyze config files
 # =============================================================================
 class USGScfg(object):
     """
     container to deal with configuration files needed for USGS archiving
-    
+
     =========================== ===============================================
     Attributes                  Description
     =========================== ===============================================
     db                          Pandas dataframe
-    std_tol                     Tolerance for std 
-    note_names                  look for names to put in notes 
+    std_tol                     Tolerance for std
+    note_names                  look for names to put in notes
     =========================== ===============================================
-    
+
     =========================== ===============================================
     Methods                     Description
     =========================== ===============================================
-    combine_run_cfg             Get information from all .cfg files in  
-                                a station directory and put in a Pandas 
+    combine_run_cfg             Get information from all .cfg files in
+                                a station directory and put in a Pandas
                                 dataframe
     summarize_runs              Summarize a run database
     make_station_db             Make a station database
@@ -1260,32 +1400,32 @@ class USGScfg(object):
     get_station_info_from_csv   Get station information from survey summar csv
     =========================== ===============================================
     """
-    
+
     def __init__(self, **kwargs):
         self.db = None
         self.std_tol = .005
         self.note_names = ['_start', '_nsamples']
-        
+
     def combine_run_cfg(self, cfg_dir, write=True):
         """
         Combine all the cfg files for each run into a master spreadsheet
-        
+
         :param cfg_dir: directory to cfg files for a station
                         /home/mtdata/station
         :type cfg_dir: string
-        
+
         :param write: write a csv file summarizing the runs
         :type write: boolean [ True | False ]
-        
+
         .. note:: the station name is assumed to be the same as the folder name
-        
+
         """
         station = os.path.basename(cfg_dir)
-            
+
         cfg_fn_list = sorted([os.path.join(cfg_dir, fn) for fn in os.listdir(cfg_dir)
-                              if 'mt' not in fn and 'runs' not in fn 
+                              if 'mt' not in fn and 'runs' not in fn
                               and fn.endswith('.cfg')])
-        
+
         count = 0
         for cfg_fn in cfg_fn_list:
             cfg_dict = mtcfg.read_configfile(cfg_fn)
@@ -1300,24 +1440,24 @@ class USGScfg(object):
             cfg_db = cfg_db.replace('None', '0')
         except UnboundLocalError:
             return None, None
-        
+
         cfg_db.lat = cfg_db.lat.astype(np.float)
         cfg_db.lon = cfg_db.lon.astype(np.float)
-        
+
         if write:
             csv_fn = os.path.join(cfg_dir, '{0}_runs.csv'.format(station))
             cfg_db.to_csv(csv_fn, index=False)
             return cfg_db, csv_fn
         else:
             return cfg_db, None
-        
+
     def summarize_runs(self, run_db):
         """
         summarize the runs into a single row database
-        
+
         :param run_db: run dataframe
         :type run_db: Pandas Dataframe
-        
+
         :return: station_db
         :rtype: Pandas Dataframe
         """
@@ -1329,11 +1469,11 @@ class USGScfg(object):
         station_dict['lon'] = run_db.lon.astype(np.float).mean()
         station_dict['nm_elev'] = get_nm_elev(station_dict['lat'],
                                               station_dict['lon'])
-        
+
         station_dict['hx_azm'] = run_db.hx_azm.astype(np.float).median()
         station_dict['hy_azm'] = run_db.hy_azm.astype(np.float).median()
         station_dict['hz_azm'] = run_db.hz_azm.astype(np.float).median()
-        
+
         try:
             station_dict['hx_id'] = run_db.hx_id.astype(np.float).median()
             station_dict['hy_id'] = run_db.hy_id.astype(np.float).median()
@@ -1342,40 +1482,40 @@ class USGScfg(object):
             station_dict['hx_id'] = 2254
             station_dict['hy_id'] = 2264
             station_dict['hz_id'] = 2274
-        
+
         station_dict['ex_len'] = run_db.ex_len.astype(np.float).median()
         station_dict['ey_len'] = run_db.ey_len.astype(np.float).median()
-        
+
         station_dict['ex_azm'] = run_db.ex_azm.astype(np.float).median()
         station_dict['ey_azm'] = run_db.ey_azm.astype(np.float).median()
-        
+
         station_dict['ex_num'] = run_db.ex_num.median()
         station_dict['ey_num'] = run_db.ey_num.median()
         station_dict['hx_num'] = run_db.hx_num.median()
         station_dict['hy_num'] = run_db.hy_num.median()
         station_dict['hz_num'] = run_db.hz_num.median()
-        
+
         station_dict['n_chan'] = run_db.n_chan.max()
-        
+
         station_dict['sampling_rate'] = run_db.sampling_rate.astype(np.float).median()
-        
+
         station_dict['zen_num'] = run_db.zen_num.iloc[0]
-        
+
         station_dict['collected_by'] = run_db.collected_by.iloc[0]
         station_dict['notes'] = ''.join([run_db.notes.iloc[ii] for ii in range(len(run_db))])
         station_dict['mtft_file'] = run_db.mtft_file.iloc[0]
-        
+
         station_dict['start_date'] = run_db.start_date.min()
         station_dict['stop_date'] = run_db.stop_date.max()
-        
+
         station_dict['type'] = 'wb'
         station_dict['quality'] = 5
-        
+
         return pd.DataFrame([station_dict])
-        
+
     def make_station_db(self, cfg_db, station):
         """
-        Following Danny's instructions make a file with the following 
+        Following Danny's instructions make a file with the following
         information
         # make a single file that summarizes
             * (1) site name
@@ -1390,13 +1530,13 @@ class USGScfg(object):
             * (10) Ey dipole length [m]
             * (11) wideband channels
             * (12) long period channel
-            
+
         :param cfg_db: summarized dataframe for one station
         :type cfg_db: pandas datafram
-        
+
         :param station: station name
         :type station: string
-        
+
         :return: station database
         :rtype: pandas daraframe
         """
@@ -1415,10 +1555,10 @@ class USGScfg(object):
         station_dict['ey_len'] = cfg_db.ey_len.astype(np.float).median()
         station_dict['wb'] = cfg_db.n_chan.astype(np.int).median()
         station_dict['lp'] = 0
-        
+
         s_db = pd.DataFrame([station_dict])
         return s_db
-    
+
     def make_location_db(self, cfg_db, station):
         """
         make a file for Danny including:
@@ -1430,13 +1570,13 @@ class USGScfg(object):
                 * (6) end date
                 * (7) instrument type [W = wideband, L = long period]
                 * (8) quality factor from 1-5 [5 is best]
-                
+
         :param cfg_db: summarized dataframe for one station
         :type cfg_db: pandas datafram
-        
+
         :param station: station name
         :type station: string
-        
+
         :return: station database
         :rtype: pandas daraframe
         """
@@ -1451,30 +1591,30 @@ class USGScfg(object):
         loc_dict['End_date'] = cfg_db.stop_date.max().split('T')[0].replace('-', '')
         loc_dict['Data_type'] = 'W'
         loc_dict['Qual_fac'] = 5
-        
+
         l_db = pd.DataFrame([loc_dict])
         return l_db
-    
+
     def combine_all_station_info(self, survey_dir, skip_stations=None, write=True):
         """
         A convinience function to:
             * combine all cfg files for each run into a single spreadsheet
             * combine all runs to make a station and location file
             * combine all stations into a spreadsheet for Danny
-            
+
         :param survey_dir: directory where all the station folders are
         :type survey_dir: string
-        
+
         :param skip_stations: list of stations to skip
         :type skip_stations: list
-        
+
         """
         if type(skip_stations) is not list:
             skip_stations = [skip_stations]
-            
-        #s_fn = os.path.join(survey_dir, 'usgs_station_info.csv') 
+
+        #s_fn = os.path.join(survey_dir, 'usgs_station_info.csv')
         l_fn = os.path.join(survey_dir, 'usgs_location_info.csv')
-        
+
         s_count = 0
         for station in os.listdir(survey_dir):
             cfg_dir = os.path.join(survey_dir, station)
@@ -1483,12 +1623,12 @@ class USGScfg(object):
             if station in skip_stations:
                 continue
 
-            # get the database and write a csv file            
+            # get the database and write a csv file
             cfg_db, csv_fn = self.combine_run_cfg(cfg_dir)
             if cfg_db is None:
                 print('*** No Information for {0} ***'.format(station))
                 continue
-            
+
             s_db = self.summarize_runs(cfg_db)
             # get station and location information
             if s_count == 0:
@@ -1500,14 +1640,14 @@ class USGScfg(object):
                 survey_db = survey_db.append(s_db, ignore_index=True)
 #                s_db = s_db.append(self.make_station_db(cfg_db, station))
                 l_db = l_db.append(self.make_location_db(cfg_db, station))
-                s_count += 1 
-        
+                s_count += 1
+
 #        s_db.to_csv(s_fn, index=False)
         l_db.to_csv(l_fn, index=False)
-        
+
         survey_db.lat = survey_db.lat.astype(np.float)
         survey_db.lon = survey_db.lon.astype(np.float)
-#        
+#
 #        return csv_fn, s_fn, l_fn
         if write:
             csv_fn = os.path.join(survey_dir, 'survey_summary.csv')
@@ -1543,7 +1683,7 @@ class USGScfg(object):
                     if test == False:
                         database.notes[0] += ' {0} is off;'.format(comp)
         return database
-    
+
     def check_std(self, database):
         """
         check standard deviation for bad data
@@ -1554,7 +1694,7 @@ class USGScfg(object):
             pass
         elif database.notes[0][-1] != ';':
             database.notes[0] += ';'
-            
+
         column_bool = database.columns.str.contains('_std')
         name_labels = database.columns[column_bool].tolist()
         value_arr = np.array(database[database.columns[column_bool]]).flatten()
@@ -1563,9 +1703,9 @@ class USGScfg(object):
         for name, value in zip(name_labels, value_arr):
             if value > self.std_tol:
                 database.notes[0] += ' {0} is large;'.format(name)
-        
+
         return database
-    
+
     def check_db(self, database):
         """
         convinience function to check all values in database
@@ -1573,19 +1713,19 @@ class USGScfg(object):
         for key in self.note_names:
             database = self.check_data(database, key)
         database = self.check_std(database)
-        
+
         return database
-    
+
     def write_shp_file(self, survey_csv_fn, save_path=None):
         """
         write a shape file with important information
-        
+
         :param survey_csv_fn: full path to survey_summary.csv
         :type survey_csf_fn: string
-        
+
         :param save_path: directory to save shape file to
         :type save_path: string
-        
+
         :return: full path to shape files
         :rtype: string
         """
@@ -1594,89 +1734,89 @@ class USGScfg(object):
         else:
             save_fn = os.path.join(os.path.dirname(survey_csv_fn),
                                    'survey_sites.shp')
-    
+
         survey_db = pd.read_csv(survey_csv_fn)
         geometry = [Point(x, y) for x, y in zip(survey_db.lon, survey_db.lat)]
         crs = {'init':'epsg:4326'}
         survey_db = survey_db.drop(['lat', 'lon'], axis=1)
-        survey_db = survey_db.rename(columns={'collected_by':'operator', 
+        survey_db = survey_db.rename(columns={'collected_by':'operator',
                                               'nm_elev':'elev',
                                               'zen_num':'instr_id'})
-        
+
         # list of columns to take from the database
-        col_list = ['siteID', 
-                    'elev', 
+        col_list = ['siteID',
+                    'elev',
                     'hx_azm',
                     'hy_azm',
-                    'hz_azm', 
-                    'hx_id', 
-                    'hy_id', 
-                    'hz_id', 
+                    'hz_azm',
+                    'hx_id',
+                    'hy_id',
+                    'hz_id',
                     'ex_len',
                     'ey_len',
                     'ex_azm',
-                    'ey_azm', 
-                    'n_chan', 
+                    'ey_azm',
+                    'n_chan',
                     'instr_id',
                     'operator',
                     'type',
                     'quality',
                     'start_date',
                     'stop_date']
-        
+
         survey_db = survey_db[col_list]
-        
-        geo_db = gpd.GeoDataFrame(survey_db, 
+
+        geo_db = gpd.GeoDataFrame(survey_db,
                                   crs=crs,
                                   geometry=geometry)
-        
+
         geo_db.to_file(save_fn)
-        
+
         print('*** Wrote survey shapefile to {0}'.format(save_fn))
         return save_fn
-    
+
     def read_survey_csv(self, survey_csv):
         """
         Read in a survey .csv file that will overwrite existing metadata
         parameters.
-        
+
         :param survey_csv: full path to survey_summary.csv file
         :type survey_csv: string
-        
+
         :return: survey summary database
         :rtype: pandas dataframe
         """
-        db = pd.read_csv(survey_csv, 
+        db = pd.read_csv(survey_csv,
                          dtype={'lat':np.float,
                                 'lon':np.float})
         for key in ['hx_id', 'hy_id', 'hz_id']:
             db[key] = db[key].fillna(0)
             db[key] = db[key].astype(np.int)
-            
+
         return db
-    
+
     def get_station_info_from_csv(self, survey_csv, station):
         """
         get station information from a survey .csv file
-        
+
         :param survey_csv: full path to survey_summary.csv file
         :type survey_csv: string
-        
+
         :param station: station name
         :type station: string
-        
+
         :return: station database
         :rtype: pandas dataframe
-        
+
         .. note:: station must be verbatim for whats in summary.
         """
-        
+
         db = self.read_survey_csv(survey_csv)
         try:
             station_index = db.index[db.siteID == station].tolist()[0]
         except IndexError:
             raise ValueError('Could not find {0}, check name'.format(station))
-        
+
         return db.iloc[station_index]
 
 # =============================================================================
@@ -1702,12 +1842,12 @@ class Person(object):
         self.program = None
         self.liability = None
         self.funding_source = None
-        
+
 class Citation(object):
     """
     Data type for a citation
     """
-    
+
     def __init__(self):
         self._author = None
         self.title = None
@@ -1717,27 +1857,27 @@ class Citation(object):
         self.volume = None
         self.doi_url = None
         self._orcid = []
-        
+
     @property
     def author(self):
         return self._author
-    
+
     @author.setter
     def author(self, author):
         if type(author) is not list:
             author = [author]
         self._author = author
-        
+
     @property
     def orcid(self):
         return self._orcid
-    
+
     @orcid.setter
     def orcid(self, orcid):
         if type(orcid) is not list:
             orcid = [orcid]
         self._orcid = orcid
-        
+
 class Survey(object):
     """
     data type to hold survey information
@@ -1751,54 +1891,54 @@ class Survey(object):
         self._south = None
         self._elev_min = None
         self._elev_max = None
-        
+
     @property
     def east(self):
         return self._east
     @east.setter
     def east(self, east):
         self._east = float(east)
-    
+
     @property
     def west(self):
         return self._west
     @west.setter
     def west(self, west):
         self._west = float(west)
-        
+
     @property
     def north(self):
         return self._north
     @north.setter
     def north(self, north):
         self._north = float(north)
-        
+
     @property
     def south(self):
         return self._south
     @south.setter
     def south(self, south):
         self._south = float(south)
-    
+
     @property
     def elev_min(self):
         return self._elev_min
     @elev_min.setter
     def elev_min(self, elev_min):
         self._elev_min = float(elev_min)
-        
+
     @property
     def elev_max(self):
         return self._elev_max
     @elev_max.setter
     def elev_max(self, elev_max):
         self._elev_max = float(elev_max)
-        
+
 class Processing(object):
     """
     Data type for processing steps
     """
-    
+
     def __init__(self):
         self.step_01 = None
         self.date_01 = None
@@ -1806,7 +1946,7 @@ class Attachment(object):
     """
     Data type for attachments
     """
-    
+
     def __int__(self):
         self.fn = None
         self.description = None
@@ -1814,37 +1954,37 @@ class Attachment(object):
 class XMLMetadata(object):
     """
     Container for important information to put in the metadata xml file
-    
-    The assumed workflow is to make a text file with key = value pairs for the 
+
+    The assumed workflow is to make a text file with key = value pairs for the
     important information.
-    
+
         ###==================================================###
         ### Metadata Configuration File for Science Base XML ###
         ###==================================================###
-        
+
         ### General Information
         authors = [Jared R. Peacock, Kevin Denton, Dave Ponce]
         title = Magnetotelluric data from Mountain Pass, CA
         doi_url = https://doi.org/10.5066/F7610XTR
-        
+
         ### Key words to associate with dataset
-        keywords_general = [Magnetotellurics, MT, Time Series, Impedance, 
+        keywords_general = [Magnetotellurics, MT, Time Series, Impedance,
                             Apparent Resistivity, Phase, Tipper]
-        
+
         ### Key words that are synonymous with USGS
-        keywords_thesaurus = [Earth magnetic field, Geophysics, 
+        keywords_thesaurus = [Earth magnetic field, Geophysics,
                               Electromagnetic surveying]
-        
+
     Then convert that to an XML format.
-    
+
     :Example: ::
-        
-        >>> import mtpy.usgs.science_base as sb 
+
+        >>> import mtpy.usgs.science_base as sb
         >>> sb_xml = sb.SurveyMetadata()
         >>> sb_xml.read_config_file(r"/home/data/survey_config.txt")
         >>> sb_xml.write_xml_file(r"/home/data/science_base.xml")
     """
-    
+
     def __init__(self, **kwargs):
 
         self.usgs_str = 'U.S. Geological Survey'
@@ -1859,19 +1999,19 @@ class XMLMetadata(object):
         self.supplement_info = None
         self.survey = Survey()
         self.submitter = Person()
-        
+
         self.sc_dict = {'GGGSC': 'Geology, Geophysics, and Geochemistry Science Center',
                         'GMEGSC': 'Geology, Minerals, Energy, and Geophysics Science Center'}
         self.program_dict = {'MRP': 'Mineral Resources Program',
                              'VHP': 'Volcano Hazards Program'}
-        
+
         self.keywords_general = None
         self.keywords_thesaurus = None
         self.locations = None
         self.temporal = None
-        
+
         self.use_constraint = None
-        self.science_base = Person() 
+        self.science_base = Person()
         self.complete_warning = None
         self.horizontal_accuracy = None
         self.vertical_accuracy = None
@@ -1879,7 +2019,7 @@ class XMLMetadata(object):
         self.guide = Attachment()
         self.dictionary = Attachment()
         self.shapefile = Attachment()
-        
+
         self.udom = 'Station identifier of MT sounding used to distinguish '+\
                     'between the soundings associated with this survey.'
         self.lat_def = 'Latitude coordinate of station referenced to the '+\
@@ -1888,27 +2028,27 @@ class XMLMetadata(object):
                        'World Geodetic Service Datum of 1984 (WGS84)'
         self.elev_def = 'Elevation, referenced to the North American '+\
                         'Vertical Datum of 1988 (NAVD 88)'
-        
+
         self.metadata = ET.Element('metadata')
-        
+
         for key in kwargs.keys():
             setattr(self, key, kwargs[key])
-            
+
     def _get_date(self, date_time_str):
         """
         get the date from date_time_string
         """
-        
+
         try:
             date, time = date_time_str.split('T', 1)
         except ValueError:
             date = date_time_str
         date = date.replace('-', '').replace("'", '')
         return date
-    
+
     def _get_time(self, date_time_str):
         """
-        get time string 
+        get time string
         """
         try:
             date, time = date_time_str.split('T', 1)
@@ -1918,8 +2058,8 @@ class XMLMetadata(object):
         time = time.replace(':', '')
         time += '00Z'
 
-        return time         
-        
+        return time
+
     def read_config_file(self, config_fn):
         """
         Read in configuration file
@@ -1927,7 +2067,7 @@ class XMLMetadata(object):
         # read in the configuration file
         with open(config_fn, 'r') as fid:
             lines = fid.readlines()
-            
+
         for line in lines:
             # skip comment lines
             if line.find('#') == 0 or len(line.strip()) < 2:
@@ -1939,21 +2079,21 @@ class XMLMetadata(object):
             if value.find('[') >= 0 and value.find(']') >= 0 and value.find('<') != 0:
                 value = value.replace('[', '').replace(']', '')
                 value = [v.strip() for v in value.split(',')]
-            
-            # if there is a dot, meaning an object with an attribute separate 
+
+            # if there is a dot, meaning an object with an attribute separate
             if key.find('.') > 0:
                 obj, obj_attr = key.split('.')
                 setattr(getattr(self, obj), obj_attr, value)
             else:
                 setattr(self, key, value)
-                
+
     def _set_id_info(self):
         """
         set the ID information
         """
         add_info_str = 'Additional information about Originator: '
         idinfo = ET.SubElement(self.metadata, 'idinfo')
-        
+
         citation = ET.SubElement(idinfo, 'citation')
         citeinfo = ET.SubElement(citation, 'citeinfo')
         for author in self.authors:
@@ -1961,10 +2101,10 @@ class XMLMetadata(object):
         ET.SubElement(citeinfo, 'pubdate').text = datetime.datetime.now().strftime('%Y')
         ET.SubElement(citeinfo, 'title').text = self.title
         ET.SubElement(citeinfo, 'geoform').text = self.file_types
-        
+
         pubinfo = ET.SubElement(citeinfo, 'pubinfo')
         ET.SubElement(pubinfo, 'pubplace').text = 'Denver, CO'
-        ET.SubElement(pubinfo, 'publish').text = self.usgs_str 
+        ET.SubElement(pubinfo, 'publish').text = self.usgs_str
         ET.SubElement(citeinfo, 'onlink').text = self.doi_url
         # journal publication
         if self.journal_citation:
@@ -1978,25 +2118,25 @@ class XMLMetadata(object):
             serinfo = ET.SubElement(jciteinfo, 'serinfo')
             ET.SubElement(serinfo, 'sername').text = self.journal_citation.journal
             ET.SubElement(serinfo, 'issue').text = self.journal_citation.volume
-            
+
             jpubinfo = ET.SubElement(jciteinfo, 'pubinfo')
             ET.SubElement(jpubinfo, 'pubplace').text = 'Denver, CO'
             ET.SubElement(jpubinfo, 'publish').text = self.usgs_str
             # set orcid id #s if given
             if len(self.journal_citation.orcid) > 0:
-                orcid_str = ', '.join(['{0}, https://orcid.org/{1}'.format(author, orcnum) 
+                orcid_str = ', '.join(['{0}, https://orcid.org/{1}'.format(author, orcnum)
                                       for author, orcnum in zip(self.journal_citation.author,
                                                                 self.journal_citation.orcid)
                                       if orcnum not in [None, 'none', 'None']])
                 ET.SubElement(jciteinfo, 'othercit').text = add_info_str+orcid_str
             ET.SubElement(jciteinfo, 'onlink').text = self.journal_citation.doi_url
-            
+
         # description
         description = ET.SubElement(idinfo, 'descript')
         ET.SubElement(description, 'abstract').text = self.abstract
         ET.SubElement(description, 'purpose').text = self.purpose
         ET.SubElement(description, 'supplinf').text = self.supplement_info
-        
+
         # dates covered
         time_period = ET.SubElement(idinfo, 'timeperd')
         time_info = ET.SubElement(time_period, 'timeinfo')
@@ -2008,19 +2148,19 @@ class XMLMetadata(object):
         ET.SubElement(dates, 'endtime').text = self._get_time(self.survey.end_date)
         ET.SubElement(time_period, 'current').text = 'ground condition'
 
-        
+
         # status
         status = ET.SubElement(idinfo, 'status')
         ET.SubElement(status, 'progress').text = 'Complete'
         ET.SubElement(status, 'update').text = 'As needed'
-         
+
         # extent
         extent = ET.SubElement(idinfo, 'spdom')
         bounding = ET.SubElement(extent, 'bounding')
         for name in ['westbc', 'eastbc', 'northbc', 'southbc']:
-            ET.SubElement(bounding, name).text = '{0:.5f}'.format(getattr(self.survey, 
+            ET.SubElement(bounding, name).text = '{0:.5f}'.format(getattr(self.survey,
                                                                          name[:-2]))
-            
+
         ### keywords
         keywords = ET.SubElement(idinfo, 'keywords')
         t1 = ET.SubElement(keywords, 'theme')
@@ -2030,35 +2170,35 @@ class XMLMetadata(object):
         ET.SubElement(t1, 'themekey').text = self.program_dict[self.submitter.program]
         ET.SubElement(t1, 'themekey').text = self.submitter.program
         for kw in self.keywords_general:
-            ET.SubElement(t1, 'themekey').text = kw     
-        
+            ET.SubElement(t1, 'themekey').text = kw
+
         # categories
         t2 = ET.SubElement(keywords, 'theme')
         ET.SubElement(t2, 'themekt').text = 'ISO 19115 Topic Categories'
         ET.SubElement(t2, 'themekey').text = 'GeoscientificInformation'
-        
+
         # USGS thesaurus
         t3 = ET.SubElement(keywords, 'theme')
         ET.SubElement(t3, 'themekt').text = 'USGS Thesaurus'
         for kw in self.keywords_thesaurus:
             ET.SubElement(t3, 'themekey').text = kw
-        
+
         # places
         place = ET.SubElement(keywords, 'place')
         ET.SubElement(place, 'placekt').text = 'Geographic Names Information System (GNIS)'
         for loc in self.locations:
             ET.SubElement(place, 'placekey').text = loc
-            
+
         # time periods
         temporal = ET.SubElement(keywords, 'temporal')
         ET.SubElement(temporal, 'tempkt').text = 'None'
         for temp in self.temporal:
             ET.SubElement(temporal, 'tempkey').text = temp
-            
+
         ## constraints
         ET.SubElement(idinfo, 'accconst').text = 'None'
         ET.SubElement(idinfo, 'useconst').text = self.use_constraint
-        
+
         ### contact information
         ptcontact = ET.SubElement(idinfo, 'ptcontac')
         contact_info = ET.SubElement(ptcontact, 'cntinfo')
@@ -2069,7 +2209,7 @@ class XMLMetadata(object):
         ET.SubElement(c_address, 'addrtype').text = 'Mailing and physical'
         for key in ['address', 'city', 'state', 'postal', 'country']:
             ET.SubElement(c_address, key).text = getattr(self.submitter, key)
-        
+
         ET.SubElement(contact_info, 'cntvoice').text = self.submitter.phone
         ET.SubElement(contact_info, 'cntemail').text = self.submitter.email
         # funding source
@@ -2077,8 +2217,8 @@ class XMLMetadata(object):
             ET.SubElement(idinfo, 'datacred').text = self.program_dict[self.submitter.funding_source]
         except KeyError:
             ET.SubElement(idinfo, 'datacred').text = self.submitter.funding_source
-            
-        
+
+
     def _set_data_quality(self):
         """
         Set data quality section
@@ -2091,14 +2231,14 @@ class XMLMetadata(object):
         ET.SubElement(data_quality, 'logic').text = 'No formal logical accuracy tests'+\
                                                     ' were conducted.'
         ET.SubElement(data_quality, 'complete').text = self.complete_warning
-        
+
         # accuracy
         position_acc = ET.SubElement(data_quality, 'posacc')
         h_acc = ET.SubElement(position_acc, 'horizpa')
         ET.SubElement(h_acc, 'horizpar').text = self.horizontal_accuracy
         v_acc = ET.SubElement(position_acc, 'vertacc')
         ET.SubElement(v_acc, 'vertaccr').text = self.vertical_accuracy
-        
+
         # lineage
         lineage = ET.SubElement(data_quality, 'lineage')
         step_num = len(self.processing.__dict__.keys())/2
@@ -2111,46 +2251,46 @@ class XMLMetadata(object):
             else:
                 ET.SubElement(processing_step, 'procdate').text = self._get_date(getattr(self.processing,
                                                                              'date_{0:02}'.format(step)))
-        
+
     def _set_spational_info(self):
         """
         set spatial information
         """
         spref = ET.SubElement(self.metadata, 'spref')
-        
+
         horizontal_sys = ET.SubElement(spref, 'horizsys')
         h_geographic = ET.SubElement(horizontal_sys, 'geograph')
         ET.SubElement(h_geographic, 'latres').text = '0.0197305745'
         ET.SubElement(h_geographic, 'longres').text = '0.0273088247'
         ET.SubElement(h_geographic, 'geogunit').text = 'Decimal seconds'
-        
+
         h_geodetic = ET.SubElement(horizontal_sys, 'geodetic')
         ET.SubElement(h_geodetic, 'horizdn').text = 'D_WGS_1984'
         ET.SubElement(h_geodetic, 'ellips').text = 'WGS_1984'
         ET.SubElement(h_geodetic, 'semiaxis').text = '6378137.0'
         ET.SubElement(h_geodetic, 'denflat').text = '298.257223563'
-        
+
     def _set_extra_info(self, station=False):
         """
         set the extra info, still not sure what that stands for
         """
         eainfo = ET.SubElement(self.metadata, 'eainfo')
-        
+
         # write the shape file parameters only if its the overall xml
         if station is False:
-            detailed = ET.SubElement(eainfo, 'detailed')    
+            detailed = ET.SubElement(eainfo, 'detailed')
             entry_type = ET.SubElement(detailed, 'enttyp')
             ET.SubElement(entry_type, 'enttypl').text = self.shapefile.fn
             ET.SubElement(entry_type, 'enttypd').text = self.shapefile.description
             ET.SubElement(entry_type, 'enttypds').text = self.usgs_str
-            
+
             station_attr = ET.SubElement(detailed, 'attr')
             ET.SubElement(station_attr, 'attrlabl').text = 'Stn_name'
             ET.SubElement(station_attr, 'attrdef').text = 'Individual station name within MT survey.'
             ET.SubElement(station_attr, 'attrdefs').text = self.usgs_str
             station_attr_dom = ET.SubElement(station_attr, 'attrdomv')
-            ET.SubElement(station_attr_dom, 'udom').text = self.udom 
-            
+            ET.SubElement(station_attr_dom, 'udom').text = self.udom
+
             lat_attr = ET.SubElement(detailed, 'attr')
             ET.SubElement(lat_attr, 'attrlabl').text = 'Lat_WGS84'
             ET.SubElement(lat_attr, 'attrdef').text = self.lat_def
@@ -2160,7 +2300,7 @@ class XMLMetadata(object):
             ET.SubElement(lat_rdom, 'rdommin').text = '{0:.5f}'.format(self.survey.south)
             ET.SubElement(lat_rdom, 'rdommax').text = '{0:.5f}'.format(self.survey.north)
             ET.SubElement(lat_rdom, 'attrunit').text = 'Decimal degrees'
-            
+
             lon_attr = ET.SubElement(detailed, 'attr')
             ET.SubElement(lon_attr, 'attrlabl').text = 'Lon_WGS84'
             ET.SubElement(lon_attr, 'attrdef').text = self.lon_def
@@ -2170,7 +2310,7 @@ class XMLMetadata(object):
             ET.SubElement(lon_rdom, 'rdommin').text = '{0:.5f}'.format(self.survey.west)
             ET.SubElement(lon_rdom, 'rdommax').text = '{0:.5f}'.format(self.survey.east)
             ET.SubElement(lon_rdom, 'attrunit').text = 'Decimal degrees'
-            
+
             elev_attr = ET.SubElement(detailed, 'attr')
             ET.SubElement(elev_attr, 'attrlabl').text = 'Elev_NAVD88'
             ET.SubElement(elev_attr, 'attrdef').text = self.elev_def
@@ -2180,28 +2320,28 @@ class XMLMetadata(object):
             ET.SubElement(elev_rdom, 'rdommin').text = '{0:.1f}'.format(self.survey.elev_min)
             ET.SubElement(elev_rdom, 'rdommax').text = '{0:.1f}'.format(self.survey.elev_max)
             ET.SubElement(elev_rdom, 'attrunit').text = 'Meters'
-            
+
             sd_attr = ET.SubElement(detailed, 'attr')
             ET.SubElement(sd_attr, 'attrlabl').text = 'Start_date'
             ET.SubElement(sd_attr, 'attrdef').text = 'Starting date for station data acquisition'
             ET.SubElement(sd_attr, 'attrdefs').text = self.usgs_str
             sd_attr_dom = ET.SubElement(sd_attr, 'attrdomv')
             ET.SubElement(sd_attr_dom, 'udom').text = 'Dated in YYYYMMDD format'
-            
+
             ed_attr = ET.SubElement(detailed, 'attr')
             ET.SubElement(ed_attr, 'attrlabl').text = 'End_date'
             ET.SubElement(ed_attr, 'attrdef').text = 'Ending date for station data acquisition'
             ET.SubElement(ed_attr, 'attrdefs').text = self.usgs_str
             ed_attr_dom = ET.SubElement(ed_attr, 'attrdomv')
             ET.SubElement(ed_attr_dom, 'udom').text = 'Dated in YYYYMMDD format'
-            
+
             dt_attr = ET.SubElement(detailed, 'attr')
             ET.SubElement(dt_attr, 'attrlabl').text = 'Data_type'
             ET.SubElement(dt_attr, 'attrdef').text = 'Type of data acquired'
             ET.SubElement(dt_attr, 'attrdefs').text = self.usgs_str
             dt_attr_dom = ET.SubElement(dt_attr, 'attrdomv')
             ET.SubElement(dt_attr_dom, 'udom').text = 'W = wideband, L = long-period'
-            
+
             dq_attr = ET.SubElement(detailed, 'attr')
             ET.SubElement(dq_attr, 'attrlabl').text = 'Qual_fac'
             ET.SubElement(dq_attr, 'attrdef').text = 'Data quality factor'
@@ -2213,22 +2353,22 @@ class XMLMetadata(object):
                                 '2 = serious issues with one or both modes',
                                 '1 = poor TF that can barely be used for inversion'])
             ET.SubElement(dq_attr_dom, 'udom').text = dq_str
-        
+
         overview = ET.SubElement(eainfo, 'overview')
         ET.SubElement(overview, 'eaover').text = self.guide.fn
         ET.SubElement(overview, 'eadetcit').text = self.guide.description
-        
+
         overview_02 = ET.SubElement(eainfo, 'overview')
         ET.SubElement(overview_02, 'eaover').text = self.dictionary.fn
         ET.SubElement(overview_02, 'eadetcit').text = self.dictionary.description
-            
+
     def _set_distribution_info(self):
         """
         write distribution information block
         """
 
         distinfo = ET.SubElement(self.metadata, 'distinfo')
-        
+
         distribute = ET.SubElement(distinfo, 'distrib')
         center_info = ET.SubElement(distribute, 'cntinfo')
         center_perp = ET.SubElement(center_info, 'cntperp')
@@ -2242,16 +2382,16 @@ class XMLMetadata(object):
         ET.SubElement(center_info, 'cntvoice').text = self.science_base.phone
         ET.SubElement(center_info, 'cntemail').text = self.science_base.email
         ET.SubElement(distinfo, 'distliab').text = self.science_base.liability
-        
+
     def _set_meta_info(self):
         """
         set the metadata info section
         """
         meta_info = ET.SubElement(self.metadata, 'metainfo')
-        
+
         ET.SubElement(meta_info, 'metd').text = datetime.datetime.now().strftime('%Y%m%d')
         meta_center = ET.SubElement(meta_info, 'metc')
-        
+
         ### contact information
         meta_contact = ET.SubElement(meta_center, 'cntinfo')
         meta_perp = ET.SubElement(meta_contact, 'cntperp')
@@ -2262,10 +2402,10 @@ class XMLMetadata(object):
         ET.SubElement(meta_address, 'addrtype').text = 'Mailing and physical'
         for key in ['address', 'city', 'state', 'postal', 'country']:
             ET.SubElement(meta_address, key).text = getattr(self.submitter, key)
-        
+
         ET.SubElement(meta_contact, 'cntvoice').text = self.submitter.phone
         ET.SubElement(meta_contact, 'cntemail').text = self.submitter.email
-        
+
         ET.SubElement(meta_info, 'metstdn').text = 'Content Standard for Digital '+\
                                                         'Geospatial Metadata'
         ET.SubElement(meta_info, 'metstdv').text = 'FGDC-STD-001-1998'
@@ -2275,23 +2415,23 @@ class XMLMetadata(object):
         write xml file
         """
         self.xml_fn = xml_fn
-        
+
         self._set_id_info()
         self._set_data_quality()
         self._set_spational_info()
         self._set_extra_info(write_station)
         self._set_distribution_info()
         self._set_meta_info()
-        
+
         # write the xml in a readable format
         xml_str = ET.tostring(self.metadata)
-        xml_str = minidom.parseString(xml_str).toprettyxml(indent="    ", 
+        xml_str = minidom.parseString(xml_str).toprettyxml(indent="    ",
                                                            encoding='UTF-8')
         with open(self.xml_fn, 'w') as fid:
             fid.write(xml_str)
-            
+
         return self.xml_fn
-    
+
 # =============================================================================
 # Science Base Functions
 # =============================================================================
@@ -2299,16 +2439,16 @@ def sb_locate_child_item(sb_session, station, sb_page_id):
     """
     See if there is a child item already for the given station.  If there is
     not an existing child item returns False.
-    
+
     :param sb_session: sciencebase session object
     :type sb_session: sciencebasepy.SbSession
-    
+
     :param station: station to archive
     :type station: string
-    
+
     :param sb_page_id: page id of the sciencebase database to download to
     :type sb_page_id: string
-    
+
     :returns: page id for the station child item
     :rtype: string or False
     """
@@ -2321,22 +2461,22 @@ def sb_locate_child_item(sb_session, station, sb_page_id):
             continue
         if station in item_title:
             return item_id
-    
+
     return False
 
 def sb_sort_fn_list(fn_list):
     """
     sort the file name list to xml, edi, png
-    
+
     :param fn_list: list of files to sort
     :type fn_list: list
-    
+
     :returns: sorted list ordered by xml, edi, png, zip files
     """
-    
+
     fn_list_sort = [None, None, None]
     index_dict = {'xml':0, 'edi':1, 'png':2}
-    
+
     for ext in ['xml', 'edi', 'png']:
         for fn in fn_list:
             if fn.endswith(ext):
@@ -2344,7 +2484,7 @@ def sb_sort_fn_list(fn_list):
                 fn_list.remove(fn)
                 break
     fn_list_sort += sorted(fn_list)
-    
+
     # check to make sure all the files are there
     if fn_list_sort[0] is None:
         print('\t\t!! No .xml file found !!')
@@ -2352,129 +2492,129 @@ def sb_sort_fn_list(fn_list):
         print('\t\t!! No .edi file found !!')
     if fn_list_sort[2] is None:
         print('\t\t!! No .png file found !!')
-        
+
     # get rid of any Nones in the list in case there aren't all the files
     fn_list_sort[:] = (value for value in fn_list_sort if value is not None)
-        
+
     return fn_list_sort
 
 def sb_session_login(sb_session, sb_username, sb_password=None):
     """
     login in to sb session using the input credentials.  Checks to see if
     you are already logged in.  If no password is given, the password will be
-    requested through the command prompt.  
-    
+    requested through the command prompt.
+
     .. note:: iPython shells will echo your password.  Use a Python command
-              shell to not have your password echoed. 
-              
+              shell to not have your password echoed.
+
     :param sb_session: sciencebase session object
     :type sb_session: sciencebasepy.SbSession
-    
+
     :param sb_username: sciencebase username, typically your full USGS email
     :type sb_username: string
-    
+
     :param sb_password: AD password
     :type sb_password: string
-    
-    :returns: logged in sciencebasepy.SbSession 
+
+    :returns: logged in sciencebasepy.SbSession
     """
-    
+
     if not sb_session.is_logged_in():
         if sb_password is None:
             sb_session.loginc(sb_username)
         else:
             sb_session.login(sb_username, sb_password)
         time.sleep(5)
-    
+
     return sb_session
 
 def sb_get_fn_list(archive_dir):
     """
     Get the list of files to archive looking for .zip, .edi, .png within the
     archive directory.  Sorts in the order of xml, edi, png, zip
-    
+
     :param archive_dir: full path to the directory to be archived
     :type archive_dir: string
-    
+
     :returns: list of files to archive ordered by xml, edi, png, zip
 
     """
-    
-    fn_list = [os.path.join(archive_dir, fn) 
+
+    fn_list = [os.path.join(archive_dir, fn)
                for fn in os.listdir(archive_dir)
-               if fn.endswith('.zip') or fn.endswith('.xml') or 
+               if fn.endswith('.zip') or fn.endswith('.xml') or
                fn.endswith('.edi') or fn.endswith('.png')]
-    
+
     return sb_sort_fn_list(fn_list)
-    
-    
-def sb_upload_data(sb_page_id, archive_station_dir, sb_username, 
+
+
+def sb_upload_data(sb_page_id, archive_station_dir, sb_username,
                    sb_password=None):
     """
     Upload a given archive station directory to a new child item of the given
-    sciencebase page.  
-    
+    sciencebase page.
+
     .. note:: iPython shells will echo your password.  Use a Python command
               shell to not have your password echoed.
-    
-    
+
+
     :param sb_page_id: page id of the sciencebase database to download to
     :type sb_page_id: string
-    
+
     :param archive_station_dir: full path to the station directory to archive
     :type archive_station_dir: string
-    
+
     :param sb_username: sciencebase username, typically your full USGS email
     :type sb_username: string
-    
+
     :param sb_password: AD password
     :type sb_password: string
-    
+
     :returns: child item created on the sciencebase page
     :rtype: dictionary
-    
+
     :Example: ::
         >>> import mtpy.usgs.usgs_archive as archive
         >>> sb_page = '521e213451bd21451n'
-        >>> child_item = archive.sb_upload_data(sb_page, 
+        >>> child_item = archive.sb_upload_data(sb_page,
                                                 r"/home/mt/archive_station",
                                                 'jdoe@usgs.gov')
     """
     ### initialize a session
     session = sb.SbSession()
-    
+
     ### login to session, note if you run this in a console your password will
     ### be visible, otherwise run from a command line > python sciencebase_upload.py
     sb_session_login(session, sb_username, sb_password)
-    
+
     station = os.path.basename(archive_station_dir)
 
     ### File to upload
     upload_fn_list = sb_get_fn_list(archive_station_dir)
-    
+
     ### check if child item is already created
     child_id = sb_locate_child_item(session, station, sb_page_id)
     ## it is faster to remove the child item and replace it all
     if child_id:
         session.delete_item(session.get_item(child_id))
         sb_action = 'Updated'
-            
+
     else:
         sb_action = 'Created'
-    
-    ### make a new child item 
+
+    ### make a new child item
     new_child_dict = {'title':'station {0}'.format(station),
                       'parentId':sb_page_id,
                       'summary': 'Magnetotelluric data'}
     new_child = session.create_item(new_child_dict)
-    
+
     # sort list so that xml, edi, png, zip files
     # upload data
     try:
         item = session.upload_files_and_upsert_item(new_child, upload_fn_list)
     except:
         sb_session_login(session, sb_username, sb_password)
-        # if you want to keep the order as read on the sb page, 
+        # if you want to keep the order as read on the sb page,
         # need to reverse the order cause it sorts by upload date.
         for fn in upload_fn_list[::-1]:
             try:
@@ -2482,9 +2622,9 @@ def sb_upload_data(sb_page_id, archive_station_dir, sb_username,
             except:
                 print('\t +++ Could not upload {0} +++'.format(fn))
                 continue
-        
+
     print('==> {0} child for {1}'.format(sb_action, station))
-    
+
     session.logout()
-    
+
     return item

@@ -676,7 +676,6 @@ class MT(object):
         """
         make an edi header class
         """
-
         header = MTedi.Header()
         header.acqby = self.Site.acquired_by
         header.acqdate = self.Site.start_date
@@ -686,13 +685,17 @@ class MT(object):
         header.elev = self.elev
         header.fileby = self.Site.acquired_by
         header.lat = self.lat
-        if type(self.Site.project) is list:
-            header.loc = ','.join(self.Site.project)
+        header.lon = self.lon
+        if isinstance(self.Site.project, list):
             header.project = ','.join(self.Site.project)
         else:
-            header.loc = self.Site.project
             header.project = self.Site.project
-        header.lon = self.lon
+            
+        if isinstance(self.Site.loc, list):
+            header.loc = ','.join(self.Site.loc)
+        else:
+            header.loc = self.Site.loc
+            
         if type(self.Site.survey) is list:
             header.survey = ','.join(self.Site.survey)
         else:
@@ -1988,6 +1991,7 @@ class Site(object):
         self.id = None
         self.Location = Location()
         self.project = None
+        self.loc = None
         self.run_list = None
         self.start_date = None
         self.survey = None

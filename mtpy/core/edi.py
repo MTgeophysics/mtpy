@@ -1085,8 +1085,8 @@ class Header(object):
             self.get_header_list()
 
         header_lines = ['>HEAD\n']
-        # for key in sorted(self._header_keys):
-        for key in self._header_keys:  # FZ: NOT sorting
+        for key in sorted(self._header_keys):
+        #for key in self._header_keys:  # FZ: NOT sorting
             try:
                 value = getattr(self, key)
             except Exception, ex:
