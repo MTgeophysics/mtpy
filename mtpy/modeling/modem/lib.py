@@ -13,7 +13,7 @@ def epsg_to_crs(epsg):
 def get_utm_zone(latitude, longitude):
     result = osr.SpatialReference()
     result.SetWellKnownGeogCS('WGS84')
-    is_northern = latitude >= 0
+    is_northern = int(latitude >= 0)
     zone_number = int(1 + (longitude + 180.0) / 6.0)
     result.SetUTM(zone_number, is_northern)
     return result
