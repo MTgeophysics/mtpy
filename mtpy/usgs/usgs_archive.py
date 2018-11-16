@@ -1281,62 +1281,41 @@ class USGSHDF5(object):
     
     """
 
-    def __init__(self, **kwargs):
-        self.hdf5_fn = None
-        self.hdf5_obj = None
-        self._coordinate_system = 'Geomagnetic North'
-        self._datum = 'WGS84'
-        self._declination = 0.0
-        self._station = None
-        self._instrument_id = None
-        self._units = 'mV'
-        self._latitude = None
-        self._longitude = None
+    def __init__(self, hdf5_fn=None, **kwargs):
+        self.hdf5_fn = hdf5_fn
         
+#        self._attr_dict = dict([(u'coordinate_system', 'Geomagnetic North'),
+#                                (u'datum', 'WGS84'),
+#                                (u'elevation', 0),
+#                                (u'ex_azimuth', 0),
+#                                (u'ex_length', 0),
+#                                (u'ex_number', 0),
+#                                (u'ey_azimuth', 0),
+#                                (u'ey_length', 0),
+#                                (u'ey_number', 0),
+#                                (u'hx_azimuth', 0),
+#                                (u'hx_number', 0),
+#                                (u'hx_sensor', 0),
+#                                (u'hy_azimuth', 0),
+#                                (u'hy_number', 0),
+#                                (u'hy_sensor', 0),
+#                                (u'hz_azimuth', 0),
+#                                (u'hz_number', 0),
+#                                (u'hz_sensor', 0),
+#                                (u'instrument_id', 'None'),
+#                                (u'latitude', 0),
+#                                (u'longitude', 0),
+#                                (u'start', '0000-00-00T00:00:00 UTC'),
+#                                (u'station', 'mt'),
+#                                (u'stop', '0000-00-00T00:00:00 UTC'),
+#                                (u'units', 'mV')])
 
+                
         for key, value in kwargs.items():
             setattr(self, key, value)
             
-    @property
-    def station(self):
-        """
-        station name
-        """
-        if self.hdf5_obj is None:
-            return self._station
-        else:
-            return self.hdf5_obj.attrs['station']
-
-    @property
-    def latitude(self):
-        """
-        station latitude in decimal degrees
-        """
-        if self.hdf5_obj is None:
-            return self._latitude
-        else:
-            return self.hdf5_obj.attrs['latitude']
-    @property
-    def longitude(self):
-        """
-        station latitude in decimal degrees
-        """
-        if self.hdf5_obj is None:
-            return self._longitude
-        else:
-            return self.hdf5_obj.attrs['longitude']
-        
-    @property
-     def elevation(self):
-        """
-        station latitude in decimal degrees
-        """
-        if self.hdf5_obj is None:
-            return self._elevation
-        else:
-            return self.hdf5_obj.attrs['elevation']   
-        
-    
+        if self.hdf5_fn is not None:
+            self.read_hdf5(self.hdf5_fn)
             
     def update_metadata(self, metadata_arr, csv_fn):
         """
@@ -1535,8 +1514,18 @@ class USGSHDF5(object):
         :param hdf5_fn: full path to hdf5 file
         :type hdf5_fn: string
         
+        :returns: h5py.File object with read/write privelages
+        :rtype: h5py.File
+        
+        :Example: ::
+            
+            >>> import mtpy.usgs.usgs_archive as archive
+            >>> h5_obj = archive.USGSHDF5(r"/home/mt/station.hdf5")
+            >>> h5_obj.attrs['latitude'] = 46.85930
+            >>> h5_obj.close()
+        
         """ 
-        self.hdf5_obj = h5py.File(hdf5_fn, 'r')
+        return h5py.File(hdf5_fn, 'r+')
         
 # =============================================================================
 # Functions to help analyze config files
