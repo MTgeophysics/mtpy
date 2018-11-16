@@ -1290,6 +1290,9 @@ class USGSHDF5(object):
         self._station = None
         self._instrument_id = None
         self._units = 'mV'
+        self._latitude = None
+        self._longitude = None
+        
 
         for key, value in kwargs.items():
             setattr(self, key, value)
@@ -1299,12 +1302,45 @@ class USGSHDF5(object):
         """
         station name
         """
-        return self._station
+        if self.hdf5_obj is None:
+            return self._station
+        else:
+            return self.hdf5_obj.attrs['station']
+
+    @property
+    def latitude(self):
+        """
+        station latitude in decimal degrees
+        """
+        if self.hdf5_obj is None:
+            return self._latitude
+        else:
+            return self.hdf5_obj.attrs['latitude']
+    @property
+    def longitude(self):
+        """
+        station latitude in decimal degrees
+        """
+        if self.hdf5_obj is None:
+            return self._longitude
+        else:
+            return self.hdf5_obj.attrs['longitude']
+        
+    @property
+     def elevation(self):
+        """
+        station latitude in decimal degrees
+        """
+        if self.hdf5_obj is None:
+            return self._elevation
+        else:
+            return self.hdf5_obj.attrs['elevation']   
+        
+    
             
     def update_metadata(self, metadata_arr, csv_fn):
         """
         Update metadata extracted from Z3D files with data from a csv file
-        
         """
         
         cfg_obj = USGScfg()
@@ -1342,7 +1378,54 @@ class USGSHDF5(object):
     def write_hdf5(self, z3d_dir, hdf5_fn=None, csv_fn=None, compress=True,
                    station=None):
         """
-        write hdf5 file
+        Write an hdf5 file to archive in science base.
+        
+        :param z3d_dir: full path to directory of station z3d files
+        :type z3d_dir: string
+        
+        :param hdf5_fn: full path to save the hdf5 file
+        :type hdf5_fn: string
+        
+        :param csv_fn: full path to station csv file to overwrite metadata
+        :type csv_fn: string
+        
+        :param compress: boolean to compress the file
+        :type compress: boolean [ True | False ]
+        
+        :param station: station name if different from the folder name
+        :type station: string
+        
+        :returns: full path to saved hdf5 file
+        :rtype: string
+        
+        .. note:: If hdf5_fn is None, the saved file name will be z3d_dir.hdf5
+        
+        .. note:: If you want to overwrite metadata you can input a csv file
+                  that is formatted with specific headings. 
+                  
+                  ===================== =======================================
+                  name                  description
+                  ===================== =======================================
+                  station               station name 
+                  lat                   latitude of station (decimal degrees)
+                  lon                   longitude of station (decimal degrees)
+                  hx_azm                azimuth of HX (degrees from north=0)
+                  hy_azm                azimuth of HY (degrees from north=0)
+                  hz_azm                azimuth of HZ (degrees from horizon=0) 
+                  hx_id                 instrument id number for HX
+                  hy_id                 instrument id number for HY
+                  hz_id                 instrument id number for HZ
+                  ex_length             dipole length (m) for EX
+                  ey_length             dipole length (m) for EX
+                  ex_azm                azimuth of EX (degrees from north=0)
+                  ey_azm                azimuth of EY (degrees from north=0)
+                  ex_num                channel number of EX
+                  ey_num                channel number of EX
+                  hx_num                channel number of EX
+                  hy_num                channel number of EX
+                  hz_num                channel number of EX 
+                  box                   instrument id 
+                  ===================== =======================================
         """
         if hdf5_fn is not None:
             self.hdf5_fn = hdf5_fn
@@ -1396,15 +1479,16 @@ class USGSHDF5(object):
                             f_attr = 'length'
                     h5_obj.attrs['{0}_{1}'.format(m_arr['comp'], f_attr)] = m_arr[c_attr]
 
-            # create group for schedule action
+            ### create group for schedule action
             schedule = h5_obj.create_group('schedule_{0:02}'.format(ii))
-            # add metadata
+            ### add metadata
             schedule.attrs['start_time'] = sch_obj.start_time
             schedule.attrs['stop_time'] = sch_obj.stop_time
             schedule.attrs['n_samples'] = sch_obj.n_samples
             schedule.attrs['n_channels'] = sch_obj.n_chan
             schedule.attrs['sampling_rate'] = sch_obj.sampling_rate
             
+            ### want to get the earliest and latest times
             start_list.append(sch_obj.start_time)
             stop_list.append(sch_obj.stop_time)
 
@@ -1416,9 +1500,8 @@ class USGSHDF5(object):
                                                     compression_opts=4)
                 else:
                     d_set = schedule.create_dataset(comp, data=ts_db[comp])
-            #    m_arr = meta_arr[np.where(meta_arr['comp'] == comp)][0]
-            #    for d_attr in ['ch_length', 'ch_num', 'ch_azm']:
-            #        d_set.attrs[d_attr] = m_arr[d_attr]
+                ### might be good to have some notes, will make space for it
+                d_set.attrs['notes'] = ''
 
         ### calculate the lat and lon
         station_lat = np.median(np.array(lat_list))
@@ -1452,8 +1535,9 @@ class USGSHDF5(object):
         :param hdf5_fn: full path to hdf5 file
         :type hdf5_fn: string
         
-        """
-        pass
+        """ 
+        self.hdf5_obj = h5py.File(hdf5_fn, 'r')
+        
 # =============================================================================
 # Functions to help analyze config files
 # =============================================================================
