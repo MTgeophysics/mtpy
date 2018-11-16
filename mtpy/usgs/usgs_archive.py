@@ -1283,6 +1283,11 @@ class USGSHDF5(object):
 
     def __init__(self, hdf5_fn=None, **kwargs):
         self.hdf5_fn = hdf5_fn
+        self.datum = 'WGS84'
+        self.coordinate_system = 'Geomagnetic North'
+        self.instrument_id = 'mt01'
+        self.station = 'mt01'
+        self.units = 'mV'
         
 #        self._attr_dict = dict([(u'coordinate_system', 'Geomagnetic North'),
 #                                (u'datum', 'WGS84'),
@@ -1313,9 +1318,6 @@ class USGSHDF5(object):
                 
         for key, value in kwargs.items():
             setattr(self, key, value)
-            
-        if self.hdf5_fn is not None:
-            self.read_hdf5(self.hdf5_fn)
             
     def update_metadata(self, metadata_arr, csv_fn):
         """
@@ -1412,9 +1414,9 @@ class USGSHDF5(object):
             self.hdf5_fn = os.path.join(z3d_dir,
                                         '{0}.hdf5'.format(os.path.basename(z3d_dir)))
         if station is not None:
-            self._station = station
+            self.station = station
         else:
-            self._station = os.path.basename(z3d_dir)
+            self.station = os.path.basename(z3d_dir)
             
         # need to over write existing files
         if os.path.exists(self.hdf5_fn):
@@ -1488,13 +1490,13 @@ class USGSHDF5(object):
 
         ### set main attributes
         h5_obj.attrs['station'] = self.station
-        h5_obj.attrs['coordinate_system'] = self._coordinate_system 
-        h5_obj.attrs['datum'] = self._datum
+        h5_obj.attrs['coordinate_system'] = self.coordinate_system 
+        h5_obj.attrs['datum'] = self.datum
         h5_obj.attrs['latitude'] = station_lat
         h5_obj.attrs['longitude'] = station_lon
         h5_obj.attrs['elevation'] = get_nm_elev(station_lat, station_lon)
         h5_obj.attrs['instrument_id'] = list(set(instr_id_list))[0]
-        h5_obj.attrs['units'] = self._units
+        h5_obj.attrs['units'] = self.units
         h5_obj.attrs['start'] = sorted(start_list)[0]
         h5_obj.attrs['stop'] = sorted(stop_list)[-1]
         
