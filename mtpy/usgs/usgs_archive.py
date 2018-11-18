@@ -402,7 +402,6 @@ class ScheduleDB(object):
 
     def __init__(self, time_series_database):
 
-        self._time_fmt = '%Y-%m-%dT%H:%M:%S %Z'
         self.ts_db = time_series_database
 
     @property
