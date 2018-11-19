@@ -84,6 +84,96 @@ def get_nm_elev(lat, lon):
     return nm_elev
 
 # =============================================================================
+# schedule
+# =============================================================================
+class ScheduleDB(object):
+    """
+    Container for a single schedule item
+    """
+
+    def __init__(self, time_series_database, meta_db=None):
+
+        self.ts_db = time_series_database
+        self.meta_db = meta_db
+
+    @property
+    def start_time(self):
+        """
+        Start time in UTC string format
+        """
+        return '{0} UTC'.format(self.ts_db.index[0].isoformat())
+
+    @property
+    def stop_time(self):
+        """
+        Stop time in UTC string format
+        """
+        return '{0} UTC'.format(self.ts_db.index[-1].isoformat())
+    
+    @property
+    def start_seconds(self):
+        """
+        Start time in epoch seconds
+        """
+        return self.ts_db.index[0].to_datetime64().astype(np.int64)/1e9
+    
+    @property
+    def stop_seconds(self):
+        """
+        sopt time in epoch seconds
+        """
+        return self.ts_db.index[-1].to_datetime64().astype(np.int64)/1e9
+
+    @property
+    def n_chan(self):
+        """
+        number of channels
+        """
+        return self.ts_db.shape[1]
+
+    @property
+    def sampling_rate(self):
+        """
+        sampling rate
+        """
+        return np.round(1.0e9/self.ts_db.index[0].freq.nanos, decimals=1)
+
+    @property
+    def n_samples(self):
+        """
+        number of samples
+        """
+        return self.ts_db.shape[0]
+    
+    def write_metadata_csv(self, csv_dir):
+        """
+        write metadata to a csv file
+        """
+        
+        csv_fn = self._make_csv_fn(csv_dir)
+        self.meta_db.to_csv(csv_fn)
+            
+    def _make_csv_fn(self, csv_dir):
+        if not isinstance(self.meta_db, pd.Series):
+            raise ValueError('meta_db is not a Pandas Series, {0}'.format(type(self.meta_db)))
+        csv_fn = '{0}_{1}_{2}_{3}.csv'.format(self.meta_db.station,
+                                              self.ts_db.index[0].strftime('%Y%m%d'),
+                                              self.ts_db.index[1].strftime('%H%M%S'),
+                                              self.sampling_rate)
+        
+        return os.path.join(csv_dir, csv_fn)
+#==============================================================================
+# Need a dummy utc time zone for the date time format
+#==============================================================================
+class UTC(datetime.tzinfo):
+    def utcoffset(self, df):
+        return datetime.timedelta(hours=0)
+    def dst(self, df):
+        return datetime.timedelta(0)
+    def tzname(self, df):
+        return "UTC"
+
+# =============================================================================
 # Collect Z3d files
 # =============================================================================
 class Z3DCollection(object):
@@ -141,7 +231,7 @@ class Z3DCollection(object):
                                      ('ch_sensor', 'S10'),
                                      ('n_samples', np.int32),
                                      ('t_diff', np.int32),
-                                     ('std', np.float32),
+                                     ('standard_deviation', np.float32),
                                      ('station', 'S12')])
 
     def _empty_meta_arr(self):
@@ -172,8 +262,11 @@ class Z3DCollection(object):
                 else:
                     m_name = '{0}_{1}'.format(cc, name)
                 dtype_list.append((m_name, n_dtype[0]))
+        ### make an empy data frame, for now just 1 set.
+        df = pd.DataFrame(np.zeros(1, dtype=dtype_list))
         
-        return pd.DataFrame(np.zeros(1, dtype=dtype_list))
+        ### return a pandas series, easier to access than dataframe
+        return df.iloc[0]
 
     def get_time_blocks(self, z3d_dir):
         """
@@ -264,23 +357,32 @@ class Z3DCollection(object):
     
     def merge_z3d(self, fn_list):
         """
-        Fill metadata from a block of Z3D files
+        Merge a block of z3d files and fill metadata.
+        
+        :param fn_list: list of z3d files from same schedule action
+        :type fn_list: list of strings
+        
+        :returns: ScheduleDB object that contains metadata and TS dataframes
+        :rtype: ScheduleDB
+        
         """
+        # length of file list
         n_fn = len(fn_list)
         
+        ### get empty series to fill
         meta_db = self._empty_meta_arr()
-        meta_db = meta_db.iloc[0]
         
+        ### need to get some statistics from the files, sometimes a file can
+        ### be corrupt so we can make some of these lists
         lat = np.zeros(n_fn)
         lon = np.zeros(n_fn)
         elev = np.zeros(n_fn)
-        station = np.zeros(n_fn)
+        station = np.zeros(n_fn, dtype='S12')
         sampling_rate = np.zeros(n_fn)
-        zen_num = np.zeros(n_fn)
+        zen_num = np.zeros(n_fn, dtype='S4')
         start = []
         stop = []
         n_samples = []
-        
         ts_list = []
         
         print('-'*50)
@@ -291,12 +393,12 @@ class Z3DCollection(object):
             except zen.ZenGPSError:
                 print('xxxxxx BAD FILE: Skipping {0} xxxx'.format(fn))
                 continue
-
+            # get the components from the file
             comp = z3d_obj.metadata.ch_cmp.lower()
             # convert the time index into an integer
             dt_index = z3d_obj.ts_obj.ts.data.index.astype(np.int64)/10.**9
 
-            # extract useful data
+            # extract useful data that will be for the full station
             sampling_rate[ii] = z3d_obj.df
             lat[ii] = z3d_obj.header.lat
             lon[ii] = z3d_obj.header.long
@@ -304,6 +406,7 @@ class Z3DCollection(object):
             station[ii] = z3d_obj.station
             zen_num[ii] = int(z3d_obj.header.box_number)
             
+            #### get channel setups
             meta_db['comp'] += '{} '.format(comp)
             meta_db['{0}_{1}'.format(comp, 'start')] = dt_index[0]
             meta_db['{0}_{1}'.format(comp, 'stop')] = dt_index[-1]
@@ -315,14 +418,16 @@ class Z3DCollection(object):
                 meta_db['{0}_{1}'.format(comp, 'length')] = z3d_obj.metadata.ch_length
             ### get sensor number
             elif 'h' in comp:
-                meta_db['{0}_{1}'.format(comp, 'sensor')] = int(float(z3d_obj.metadata.ch_number))
-            
+                meta_db['{0}_{1}'.format(comp, 'sensor')] = int(z3d_obj.metadata.ch_number)
             meta_db['{0}_{1}'.format(comp, 'num')] = ii+1
             meta_db['{0}_{1}'.format(comp,'n_samples')] = z3d_obj.ts_obj.ts.shape[0]
             n_samples.append(z3d_obj.ts_obj.ts.shape[0])
             meta_db['{0}_{1}'.format(comp,'t_diff')] = int((dt_index[-1]-dt_index[0])*z3d_obj.df)-\
                                       z3d_obj.ts_obj.ts.shape[0]
-            meta_db['{0}_{1}'.format(comp,'std')] = z3d_obj.ts_obj.ts.std()
+            # give deviation in percent
+            meta_db['{0}_{1}'.format(comp,'standard_deviation')] = \
+                                100*abs(z3d_obj.ts_obj.ts.std()[0]/\
+                                        z3d_obj.ts_obj.ts.median()[0])
             try:
                 meta_db['notes'] = z3d_obj.metadata.notes.replace('\r', ' ').replace('\x00', '').rstrip()
             except AttributeError:
@@ -336,30 +441,45 @@ class Z3DCollection(object):
         meta_db.elevation = get_nm_elev(meta_db.latitude,
                                         meta_db.longitude)
         meta_db.station = self._median_value(station)
-        meta_db.instrument_id = 'ZEN{0:.0f}'.format(self._median_value(zen_num))
+        meta_db.instrument_id = 'ZEN{0}'.format(self._median_value(zen_num))
         meta_db.sampling_rate = self._median_value(sampling_rate)
         
         ### merge time series into a single data base
-        ts_db = self.merge_ts_list(ts_list)
-        dt_index = ts_db.index.astype(np.int64)/10.**9
-        meta_db.start = dt_index[0]
-        meta_db.stop = dt_index[-1]
-        meta_db.n_chan = ts_db.shape[1]
-        meta_db.n_samples = ts_db.shape[0]
+        sch_obj = self.merge_ts_list(ts_list)
+        meta_db.start = sch_obj.start_seconds
+        meta_db.stop = sch_obj.stop_seconds
+        meta_db.n_chan = sch_obj.n_chan
+        meta_db.n_samples = sch_obj.n_samples
+        sch_obj.meta_db = meta_db
         
-        return meta_db, ts_db
+        return sch_obj
     
     def merge_ts_list(self, ts_list, decimate=1):
         """
-        merge time series
+        Merge time series from a list of TS objects.
+        
+        Looks for the maximum start time and the minimum stop time to align
+        the time series.  Indexed by UTC time.
+        
+        :param ts_list: list of mtpy.core.ts.TS objects from z3d files
+        :type ts_list: list
+        
+        :param decimate: factor to decimate the data by
+        :type decimate: int
+        
+        :returns: merged time series
+        :rtype: pandas DataFrame indexed by UTC time
         """
+        comp_list = [ts_obj.component.lower() for ts_obj in ts_list]
         df = ts_list[0].sampling_rate
         dt_index_list = [ts_obj.ts.data.index.astype(np.int64)/10.**9
                          for ts_obj in ts_list]
         
+        # get start and stop times
         start = max([dt[0] for dt in dt_index_list])
         stop = min([dt[-1] for dt in dt_index_list])
         
+        ### make start time in UTC
         dt_struct = datetime.datetime.utcfromtimestamp(start)
         start_time_utc = datetime.datetime.strftime(dt_struct, self._pd_dt_fmt)
 
@@ -367,12 +487,9 @@ class Z3DCollection(object):
         # seconds and then multiplying by the sampling rate
         max_ts_len = int((stop-start)*df)
         ts_len = min([ts_obj.ts.size for ts_obj in ts_list]+[max_ts_len])
-
         if decimate > 1:
             ts_len /= decimate
 
-        comp_list = [ts_obj.component.lower() for ts_obj in ts_list]
-        
         ### make an empty pandas dataframe to put data into, seems like the
         ### fastes way so far.
         ts_db = pd.DataFrame(np.zeros((ts_len, len(comp_list))),
@@ -406,7 +523,7 @@ class Z3DCollection(object):
                                  freq=dt_freq)
         ts_db.index = dt_index
         
-        return ts_db
+        return ScheduleDB(ts_db)
 
     #==================================================
     def check_time_series(self, fn_list):
@@ -458,7 +575,7 @@ class Z3DCollection(object):
             t_arr[ii]['n_samples'] = z3d_obj.ts_obj.ts.shape[0]
             t_arr[ii]['t_diff'] = int((dt_index[-1]-dt_index[0])*z3d_obj.df)-\
                                       z3d_obj.ts_obj.ts.shape[0]
-            t_arr[ii]['std'] = z3d_obj.ts_obj.ts.std()
+            t_arr[ii]['standard_deviation'] = z3d_obj.ts_obj.ts.std()
             t_arr[ii]['station'] = z3d_obj.station
             try:
                 self.meta_notes = z3d_obj.metadata.notes.replace('\r', ' ').replace('\x00', '').rstrip()
@@ -648,48 +765,6 @@ class Z3DCollection(object):
         meta_dict['notes'] = ''
 
         return pd.Series(meta_dict)
-# =============================================================================
-# schedule
-# =============================================================================
-class ScheduleDB(object):
-    """
-    Container for a single schedule item
-    """
-
-    def __init__(self, time_series_database):
-
-        self.ts_db = time_series_database
-
-    @property
-    def start_time(self):
-        return '{0} UTC'.format(self.ts_db.index[0].isoformat())
-
-    @property
-    def stop_time(self):
-        return '{0} UTC'.format(self.ts_db.index[-1].isoformat())
-
-    @property
-    def n_chan(self):
-        return self.ts_db.shape[1]
-
-    @property
-    def sampling_rate(self):
-        return np.round(1.0e9/self.ts_db.index[0].freq.nanos, decimals=1)
-
-    @property
-    def n_samples(self):
-        return self.ts_db.shape[0]
-
-#==============================================================================
-# Need a dummy utc time zone for the date time format
-#==============================================================================
-class UTC(datetime.tzinfo):
-    def utcoffset(self, df):
-        return datetime.timedelta(hours=0)
-    def dst(self, df):
-        return datetime.timedelta(0)
-    def tzname(self, df):
-        return "UTC"
 
 # =============================================================================
 #  Metadata for usgs ascii file
@@ -1756,7 +1831,128 @@ class USGSHDF5(object):
         
         """ 
         return h5py.File(hdf5_fn, 'r+')
+
+# =============================================================================
+# Functions to analyze csv files
+# =============================================================================
+def read_pd_series(csv_fn):
+    """
+    read a pandas series and turn it into a dataframe
+    
+    :param csv_fn: full path to schedule csv
+    :type csv_fn: string
+    
+    :returns: pandas dataframe 
+    :rtype: pandas.DataFrame
+    """
+    series = pd.read_csv(csv_fn, index_col=0, header=None, squeeze=True)
+    
+    return pd.DataFrame(dict([(k, [v]) for k, v in zip(series.index,
+                                                       series.values)]))
+
+def combine_station_runs(csv_dir):
+    """
+    combine all scheduled runs into a single data frame
+    
+    :param csv_dir: full path the station csv files
+    :type csv_dir: string
+    
+    """
+    station = os.path.basename(csv_dir)
+
+    csv_fn_list = sorted([os.path.join(csv_dir, fn) for fn in os.listdir(csv_dir)
+                          if 'runs' not in fn and fn.endswith('.csv')])
+
+    count = 0
+    for ii, csv_fn in enumerate(csv_fn_list):
+        if ii == 0:
+            run_df = read_pd_series(csv_fn)
+
+        else:
+            run_df = run_df.append(read_pd_series(csv_fn), ignore_index=True)
+            count += 1
+            
+    ### replace any None with 0, makes it easier
+    try:
+        run_df = run_df.replace('None', '0')
+    except UnboundLocalError:
+        return None, None
+
+    ### make lat and lon floats
+    run_df.lat = run_df.lat.astype(np.float)
+    run_df.lon = run_df.lon.astype(np.float)
+
+    ### write combined csv file
+    csv_fn = os.path.join(csv_dir, '{0}_runs.csv'.format(station))
+    run_df.to_csv(csv_fn, index=False)
+    return run_df, csv_fn
+
+def summarize_station_runs(run_df):
+    """
+    summarize all runs into a single row dataframe to be appended to survey df
+    
+    :param run_df: combined run dataframe for a single station
+    :type run_df: pd.DataFrame
+    
+    :returns: single row data frame with summarized information
+    :rtype: pd.DataFrame
+    """
+    station_dict = pd.compat.OrderedDict() 
+    for col in run_df.columns:
+        if col == 'start':
+            value = run_df['start'].max()
+        elif col == 'stop':
+            value = run_df['stop'].min()
+        else:
+            try:
+                value = run_df[col].median()
+            except TypeError:
+                value = list(set(run_df[col]))[0]
+        station_dict[col] = value
         
+    return pd.DataFrame(station_dict)
+
+def combine_survey_csv(survey_dir, skip_stations=None):
+    """
+    Combine all stations into a single data frame
+    
+    :param survey_dir: full path to survey directory
+    :type survey_dir: string
+    
+    :param skip_stations: list of stations to skip
+    :type skip_stations: list
+    
+    :returns: data frame with all information summarized
+    :rtype: pandas.DataFrame
+    
+    :returns: full path to csv file
+    :rtype: string
+    """
+    
+    if not isinstance(skip_stations, list):
+        skip_stations = [skip_stations]
+        
+    count = 0
+    for station in os.listdir(survey_dir):
+        station_dir = os.path.join(survey_dir, station)
+        if not os.path.isdir(station_dir):
+            continue
+        if station in skip_stations:
+            continue
+        
+        # get the database and write a csv file
+        run_df, run_fn = combine_station_runs(station_dir)
+        if run_df is None:
+            print('*** No Information for {0} ***'.format(station))
+            continue
+        if count == 0:
+            survey_df = summarize_station_runs(run_df)
+            count += 1
+        else:
+            survey_df = survey_df.append(summarize_station_runs(run_df))
+            count += 1
+        
+
 # =============================================================================
 # Functions to help analyze config files
 # =============================================================================
