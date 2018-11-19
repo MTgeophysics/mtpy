@@ -269,6 +269,7 @@ class Z3DCollection(object):
         n_fn = len(fn_list)
         
         meta_db = self._empty_meta_arr()
+        meta_db = meta_db.iloc[0]
         
         lat = np.zeros(n_fn)
         lon = np.zeros(n_fn)
@@ -278,6 +279,7 @@ class Z3DCollection(object):
         zen_num = np.zeros(n_fn)
         start = []
         stop = []
+        n_samples = []
         
         print('-'*50)
         for ii, fn in enumerate(fn_list):
@@ -300,7 +302,7 @@ class Z3DCollection(object):
             station[ii] = z3d_obj.station
             zen_num[ii] = int(z3d_obj.header.box_number)
             
-            meta_db['comp'] += comp+' '
+            meta_db['comp'] += '{} '.format(comp)
             meta_db['{0}_{1}'.format(comp, 'start')] = dt_index[0]
             meta_db['{0}_{1}'.format(comp, 'stop')] = dt_index[-1]
             start.append(dt_index[0])
@@ -315,6 +317,7 @@ class Z3DCollection(object):
             
             meta_db['{0}_{1}'.format(comp, 'num')] = ii+1
             meta_db['{0}_{1}'.format(comp,'n_samples')] = z3d_obj.ts_obj.ts.shape[0]
+            n_samples.append(z3d_obj.ts_obj.ts.shape[0])
             meta_db['{0}_{1}'.format(comp,'t_diff')] = int((dt_index[-1]-dt_index[0])*z3d_obj.df)-\
                                       z3d_obj.ts_obj.ts.shape[0]
             meta_db['{0}_{1}'.format(comp,'std')] = z3d_obj.ts_obj.ts.std()
@@ -322,21 +325,22 @@ class Z3DCollection(object):
                 meta_db['notes'] = z3d_obj.metadata.notes.replace('\r', ' ').replace('\x00', '').rstrip()
             except AttributeError:
                 pass
-            
-            meta_db['latitude'] = self._median_value(lat)
-            meta_db['longitude'] = self._median_value(lon)
-            meta_db['elevation'] = get_nm_elev(meta_db['latitude'][0],
-                                               meta_db['longitude'][0])
-            meta_db['station'] = self._median_value(station)
-            meta_db['instrument_id'] = 'ZEN{0}'.format(self._median_value(zen_num))
-            meta_db['sampling_rate'] = self._median_value(sampling_rate)
-            
-            meta_db['comp'] = meta_db['comp'][0].strip().replace(' ', ',')
-            meta_db['n_chan'] = len(meta_db['comp'][0].split(','))
-            meta_db['start'] = max(start)
-            meta_db['stop'] = min(stop)
 
-        return meta_db.iloc[0]
+        meta_db.latitude = self._median_value(lat)
+        meta_db.longitude = self._median_value(lon)
+        meta_db.elevation = get_nm_elev(meta_db.latitude,
+                                        meta_db.longitude)
+        meta_db.station = self._median_value(station)
+        meta_db.instrument_id = 'ZEN{0:.0f}'.format(self._median_value(zen_num))
+        meta_db.sampling_rate = self._median_value(sampling_rate)
+        
+        meta_db.comp = meta_db.comp.strip().replace(' ', ',')
+        meta_db.n_chan = len(meta_db.comp.split(','))
+        meta_db.start = max(start)
+        meta_db.stop = min(stop)
+        meta_db.n_samples = max(n_samples)
+
+        return meta_db
 
     #==================================================
     def check_time_series(self, fn_list):
