@@ -127,6 +127,53 @@ class Z3DCollection(object):
         self.meta_notes = None
         self.verbose = True
         self._pd_dt_fmt = '%Y-%m-%d %H:%M:%S.%f'
+        self._meta_dtype = np.dtype([('comp', 'S3'),
+                                     ('start', np.int64),
+                                     ('stop', np.int64),
+                                     ('fn', 'S140'),
+                                     ('sampling_rate', np.float32),
+                                     ('latitude', np.float32),
+                                     ('longitude', np.float32),
+                                     ('elevation', np.float32),
+                                     ('ch_azm', np.float32),
+                                     ('ch_length', np.float32),
+                                     ('ch_num', np.int32),
+                                     ('ch_sensor', 'S10'),
+                                     ('n_samples', np.int32),
+                                     ('t_diff', np.int32),
+                                     ('std', np.float32),
+                                     ('station', 'S12')])
+
+    def _empty_meta_arr(self):
+        """
+        Create an empty pandas Series
+        """
+        dtype_list = [('station', 'S10'),
+                      ('latitude', np.float),
+                      ('longitude', np.float),
+                      ('elevation', np.float),
+                      ('start', np.int64),
+                      ('stop', np.int64),
+                      ('sampling_rate', np.float),
+                      ('n_chan', np.int),
+                      ('n_samples', np.int),
+                      ('instrument_id', 'S10'),
+                      ('collected_by', 'S30'),
+                      ('notes', 'S200'),
+                      ('comp', 'S24')]
+        
+        for cc in ['ex', 'ey', 'hx', 'hy', 'hz']:
+            for name, n_dtype in self._meta_dtype.fields.items():
+                if name in ['station', 'latitude', 'longitude', 'elevation',
+                            'sampling_rate', 'comp']:
+                    continue
+                elif 'ch' in name:
+                    m_name = name.replace('ch', cc)
+                else:
+                    m_name = '{0}_{1}'.format(cc, name)
+                dtype_list.append((m_name, n_dtype[0]))
+        
+        return pd.DataFrame(np.zeros(1, dtype=dtype_list))
 
     def get_time_blocks(self, z3d_dir):
         """
@@ -214,6 +261,82 @@ class Z3DCollection(object):
                           'Check file(s)'+time_array[false_test[0]]['fn'])
 
         return df_array.mean()
+    
+    def fill_metadata(self, fn_list):
+        """
+        Fill metadata from a block of Z3D files
+        """
+        n_fn = len(fn_list)
+        
+        meta_db = self._empty_meta_arr()
+        
+        lat = np.zeros(n_fn)
+        lon = np.zeros(n_fn)
+        elev = np.zeros(n_fn)
+        station = np.zeros(n_fn)
+        sampling_rate = np.zeros(n_fn)
+        zen_num = np.zeros(n_fn)
+        start = []
+        stop = []
+        
+        print('-'*50)
+        for ii, fn in enumerate(fn_list):
+            z3d_obj = zen.Zen3D(fn)
+            try:
+                z3d_obj.read_z3d()
+            except zen.ZenGPSError:
+                print('xxxxxx BAD FILE: Skipping {0} xxxx'.format(fn))
+                continue
+
+            comp = z3d_obj.metadata.ch_cmp.lower()
+            # convert the time index into an integer
+            dt_index = z3d_obj.ts_obj.ts.data.index.astype(np.int64)/10.**9
+
+            # extract useful data
+            sampling_rate[ii] = z3d_obj.df
+            lat[ii] = z3d_obj.header.lat
+            lon[ii] = z3d_obj.header.long
+            elev[ii] = z3d_obj.header.alt
+            station[ii] = z3d_obj.station
+            zen_num[ii] = int(z3d_obj.header.box_number)
+            
+            meta_db['comp'] += comp+' '
+            meta_db['{0}_{1}'.format(comp, 'start')] = dt_index[0]
+            meta_db['{0}_{1}'.format(comp, 'stop')] = dt_index[-1]
+            start.append(dt_index[0])
+            stop.append(dt_index[-1])
+            meta_db['{0}_{1}'.format(comp, 'fn')] = fn
+            meta_db['{0}_{1}'.format(comp, 'azm')] = z3d_obj.metadata.ch_azimuth
+            if 'e' in comp:
+                meta_db['{0}_{1}'.format(comp, 'length')] = z3d_obj.metadata.ch_length
+            ### get sensor number
+            elif 'h' in comp:
+                meta_db['{0}_{1}'.format(comp, 'sensor')] = int(float(z3d_obj.metadata.ch_number))
+            
+            meta_db['{0}_{1}'.format(comp, 'num')] = ii+1
+            meta_db['{0}_{1}'.format(comp,'n_samples')] = z3d_obj.ts_obj.ts.shape[0]
+            meta_db['{0}_{1}'.format(comp,'t_diff')] = int((dt_index[-1]-dt_index[0])*z3d_obj.df)-\
+                                      z3d_obj.ts_obj.ts.shape[0]
+            meta_db['{0}_{1}'.format(comp,'std')] = z3d_obj.ts_obj.ts.std()
+            try:
+                meta_db['notes'] = z3d_obj.metadata.notes.replace('\r', ' ').replace('\x00', '').rstrip()
+            except AttributeError:
+                pass
+            
+            meta_db['latitude'] = self._median_value(lat)
+            meta_db['longitude'] = self._median_value(lon)
+            meta_db['elevation'] = get_nm_elev(meta_db['latitude'][0],
+                                               meta_db['longitude'][0])
+            meta_db['station'] = self._median_value(station)
+            meta_db['instrument_id'] = 'ZEN{0}'.format(self._median_value(zen_num))
+            meta_db['sampling_rate'] = self._median_value(sampling_rate)
+            
+            meta_db['comp'] = meta_db['comp'][0].strip().replace(' ', ',')
+            meta_db['n_chan'] = len(meta_db['comp'][0].split(','))
+            meta_db['start'] = max(start)
+            meta_db['stop'] = min(stop)
+
+        return meta_db.iloc[0]
 
     #==================================================
     def check_time_series(self, fn_list):
@@ -230,23 +353,8 @@ class Z3DCollection(object):
         n_fn = len(fn_list)
 
         # make an empty array to put things into
-        t_arr = np.zeros(n_fn,
-                         dtype=[('comp', 'S3'),
-                                ('start', np.int64),
-                                ('stop', np.int64),
-                                ('fn', 'S140'),
-                                ('df', np.float32),
-                                ('lat', np.float32),
-                                ('lon', np.float32),
-                                ('elev', np.float32),
-                                ('ch_azm', np.float32),
-                                ('ch_length', np.float32),
-                                ('ch_num', np.int32),
-                                ('ch_box', 'S6'),
-                                ('n_samples', np.int32),
-                                ('t_diff', np.int32),
-                                ('std', np.float32)])
-
+        t_arr = np.zeros(n_fn, dtype=self._meta_dtype)
+    
         t_arr['ch_num'] = np.arange(1, n_fn+1)
 
         print('-'*50)
@@ -266,13 +374,14 @@ class Z3DCollection(object):
             t_arr[ii]['start'] = dt_index[0]
             t_arr[ii]['stop'] = dt_index[-1]
             t_arr[ii]['fn'] = fn
-            t_arr[ii]['df'] = z3d_obj.df
-            t_arr[ii]['lat'] = z3d_obj.header.lat
-            t_arr[ii]['lon'] = z3d_obj.header.long
-            t_arr[ii]['elev'] = z3d_obj.header.alt
+            t_arr[ii]['sampling_rate'] = z3d_obj.df
+            t_arr[ii]['latitude'] = z3d_obj.header.lat
+            t_arr[ii]['longitude'] = z3d_obj.header.long
+            t_arr[ii]['elevation'] = z3d_obj.header.alt
             t_arr[ii]['ch_azm'] = z3d_obj.metadata.ch_azimuth
             if 'e' in t_arr[ii]['comp']:
                 t_arr[ii]['ch_length'] = z3d_obj.metadata.ch_length
+            ### get sensor number
             if 'h' in t_arr[ii]['comp']:
                 t_arr[ii]['ch_num'] = int(float(z3d_obj.metadata.ch_number))
             t_arr[ii]['ch_box'] = int(z3d_obj.header.box_number)
@@ -280,6 +389,7 @@ class Z3DCollection(object):
             t_arr[ii]['t_diff'] = int((dt_index[-1]-dt_index[0])*z3d_obj.df)-\
                                       z3d_obj.ts_obj.ts.shape[0]
             t_arr[ii]['std'] = z3d_obj.ts_obj.ts.std()
+            t_arr[ii]['station'] = z3d_obj.station
             try:
                 self.meta_notes = z3d_obj.metadata.notes.replace('\r', ' ').replace('\x00', '').rstrip()
             except AttributeError:
@@ -355,7 +465,7 @@ class Z3DCollection(object):
                 ts_db[m_arr['comp']][0:ts_len-t_diff] = z3d_obj.ts_obj.ts.data[index_0:index_1]
 
         # reorder the columns
-        ts_db = ts_db[self.get_chn_order]
+        ts_db = ts_db[self.get_chn_order(self.chn_order)]
 
         # set the index to be UTC time
         dt_freq = '{0:.0f}N'.format(1./(df)*1E9)
@@ -366,6 +476,7 @@ class Z3DCollection(object):
 
         # return the pandas database and the metadata array
         return ts_db, meta_arr
+
 
     def get_chn_order(self, chn_list):
         """
@@ -391,7 +502,82 @@ class Z3DCollection(object):
                         continue
 
             return chn_order
+        
+    def _median_value(self, value_array):
+        """
+        get the median value from a metadata entry
+        """
+        try:
+            return np.median(value_array[np.nonzero(value_array)])
+        except TypeError:
+            return list(set(value_array))[0]
+        
+    def convert_metadata_to_db(self, metadata_arr):
+        """
+        write out station info that can later be put into a data base
 
+        the data we need is
+            - site name
+            - site id number
+            - lat
+            - lon
+            - national map elevation
+            - hx azimuth
+            - ex azimuth
+            - hy azimuth
+            - hz azimuth
+            - ex length
+            - ey length
+            - start date
+            - end date
+            - instrument type (lp, bb)
+            - number of channels
+
+        """
+        meta_dict = {}
+
+        meta_dict = {}
+        meta_dict['station'] = self._median_value(metadata_arr['station'])
+        meta_dict['latitude'] = self._median_value(metadata_arr['latitude'])
+        meta_dict['longitude'] = self._median_value(metadata_arr['longitude'])
+        meta_dict['elevation'] = get_nm_elev(meta_dict['latitude'],
+                                             meta_dict['longitude'])
+        meta_dict['start'] = metadata_arr['start'].max()
+        meta_dict['stop'] = metadata_arr['stop'].min()
+        meta_dict['sampling_rate'] = self._median_value(metadata_arr['sampling_rate'])
+        meta_dict['n_chan'] = len(metadata_arr['comp'])
+        meta_dict['n_samples'] = metadata_arr['n_samples'].min()
+        meta_dict['instrument_id'] = self._median_value(metadata_arr['ch_box'])
+        
+        for cc in ['ex', 'ey', 'hx', 'hy', 'hz']:
+            try:
+                c_find = np.where(metadata_arr['comp'] == cc)[0][0]
+                find = True
+            except IndexError:
+                find = False
+            for name in self._meta_dtype.names:
+                if name in ['station', 'latitude', 'longitude', 'elevation']:
+                    continue
+                elif 'ch' in name:
+                    m_name = name.replace('ch', cc)
+                else:
+                    m_name = '{0}_{1}'.format(cc, name)
+                if find:
+                    meta_dict[m_name] = metadata_arr[c_find][name]
+                else:
+                    meta_dict[m_name] = None
+
+        if meta_dict['instrument_id'] in [24, 25, 26, 46, '24', '25', '26', '46',
+                                          'ZEN24', 'ZEN25', 'ZEN26', 'ZEN46']:
+            meta_dict['collected_by'] = 'USGS'
+        else:
+            meta_dict['collected_by'] = 'OSU'
+
+        # in the old OSU z3d files there are notes in the metadata section
+        # pass those on
+        meta_dict['notes'] = ''
+
+        return pd.Series(meta_dict)
 # =============================================================================
 # schedule
 # =============================================================================
@@ -1287,33 +1473,6 @@ class USGSHDF5(object):
         self.instrument_id = 'mt01'
         self.station = 'mt01'
         self.units = 'mV'
-        
-#        self._attr_dict = dict([(u'coordinate_system', 'Geomagnetic North'),
-#                                (u'datum', 'WGS84'),
-#                                (u'elevation', 0),
-#                                (u'ex_azimuth', 0),
-#                                (u'ex_length', 0),
-#                                (u'ex_number', 0),
-#                                (u'ey_azimuth', 0),
-#                                (u'ey_length', 0),
-#                                (u'ey_number', 0),
-#                                (u'hx_azimuth', 0),
-#                                (u'hx_number', 0),
-#                                (u'hx_sensor', 0),
-#                                (u'hy_azimuth', 0),
-#                                (u'hy_number', 0),
-#                                (u'hy_sensor', 0),
-#                                (u'hz_azimuth', 0),
-#                                (u'hz_number', 0),
-#                                (u'hz_sensor', 0),
-#                                (u'instrument_id', 'None'),
-#                                (u'latitude', 0),
-#                                (u'longitude', 0),
-#                                (u'start', '0000-00-00T00:00:00 UTC'),
-#                                (u'station', 'mt'),
-#                                (u'stop', '0000-00-00T00:00:00 UTC'),
-#                                (u'units', 'mV')])
-
                 
         for key, value in kwargs.items():
             setattr(self, key, value)
