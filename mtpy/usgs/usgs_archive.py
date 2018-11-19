@@ -262,7 +262,7 @@ class Z3DCollection(object):
 
         return df_array.mean()
     
-    def fill_metadata(self, fn_list):
+    def merge_z3d(self, fn_list):
         """
         Fill metadata from a block of Z3D files
         """
@@ -280,6 +280,8 @@ class Z3DCollection(object):
         start = []
         stop = []
         n_samples = []
+        
+        ts_list = []
         
         print('-'*50)
         for ii, fn in enumerate(fn_list):
@@ -325,7 +327,10 @@ class Z3DCollection(object):
                 meta_db['notes'] = z3d_obj.metadata.notes.replace('\r', ' ').replace('\x00', '').rstrip()
             except AttributeError:
                 pass
+            
+            ts_list.append(z3d_obj.ts_obj)
 
+        ### fill in meta data for the station
         meta_db.latitude = self._median_value(lat)
         meta_db.longitude = self._median_value(lon)
         meta_db.elevation = get_nm_elev(meta_db.latitude,
@@ -334,13 +339,74 @@ class Z3DCollection(object):
         meta_db.instrument_id = 'ZEN{0:.0f}'.format(self._median_value(zen_num))
         meta_db.sampling_rate = self._median_value(sampling_rate)
         
-        meta_db.comp = meta_db.comp.strip().replace(' ', ',')
-        meta_db.n_chan = len(meta_db.comp.split(','))
-        meta_db.start = max(start)
-        meta_db.stop = min(stop)
-        meta_db.n_samples = max(n_samples)
+        ### merge time series into a single data base
+        ts_db = self.merge_ts_list(ts_list)
+        dt_index = ts_db.index.astype(np.int64)/10.**9
+        meta_db.start = dt_index[0]
+        meta_db.stop = dt_index[-1]
+        meta_db.n_chan = ts_db.shape[1]
+        meta_db.n_samples = ts_db.shape[0]
+        
+        return meta_db, ts_db
+    
+    def merge_ts_list(self, ts_list, decimate=1):
+        """
+        merge time series
+        """
+        df = ts_list[0].sampling_rate
+        dt_index_list = [ts_obj.ts.data.index.astype(np.int64)/10.**9
+                         for ts_obj in ts_list]
+        
+        start = max([dt[0] for dt in dt_index_list])
+        stop = min([dt[-1] for dt in dt_index_list])
+        
+        dt_struct = datetime.datetime.utcfromtimestamp(start)
+        start_time_utc = datetime.datetime.strftime(dt_struct, self._pd_dt_fmt)
 
-        return meta_db
+        # figure out the max length of the array, getting the time difference into
+        # seconds and then multiplying by the sampling rate
+        max_ts_len = int((stop-start)*df)
+        ts_len = min([ts_obj.ts.size for ts_obj in ts_list]+[max_ts_len])
+
+        if decimate > 1:
+            ts_len /= decimate
+
+        comp_list = [ts_obj.component.lower() for ts_obj in ts_list]
+        
+        ### make an empty pandas dataframe to put data into, seems like the
+        ### fastes way so far.
+        ts_db = pd.DataFrame(np.zeros((ts_len, len(comp_list))),
+                             columns=comp_list,
+                             dtype=np.float32)
+        for ts_obj in ts_list:
+            comp = ts_obj.component.lower()
+            dt_index = ts_obj.ts.data.index.astype(np.int64)/10**9
+            index_0 = np.where(dt_index == start)[0][0]
+            index_1 = min([ts_len-index_0, ts_obj.ts.shape[0]-index_0])
+
+            ### check to see what the time difference is, should be 0,
+            ### but sometimes not, then need to account for that.
+            t_diff = ts_len-(index_1-index_0)
+            if decimate > 1:
+                 ts_db[comp][0:(ts_len-t_diff)/decimate] = \
+                                 sps.resample(ts_obj.ts.data[index_0:index_1],
+                                              ts_len,
+                                              window='hanning')
+
+            else:
+                ts_db[comp][0:ts_len-t_diff] = ts_obj.ts.data[index_0:index_1]
+
+        # reorder the columns
+        ts_db = ts_db[self.get_chn_order(comp_list)]
+
+        # set the index to be UTC time
+        dt_freq = '{0:.0f}N'.format(1./(df)*1E9)
+        dt_index = pd.date_range(start=start_time_utc,
+                                 periods=ts_db.shape[0],
+                                 freq=dt_freq)
+        ts_db.index = dt_index
+        
+        return ts_db
 
     #==================================================
     def check_time_series(self, fn_list):
