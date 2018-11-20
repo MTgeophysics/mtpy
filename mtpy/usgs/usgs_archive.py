@@ -1607,8 +1607,7 @@ class USGSasc(AsciiMetadata):
 class USGSHDF5(object):
     """
     Container for HDF5 time series format to store in Science Base.
-    
-    
+
     """
 
     def __init__(self, hdf5_fn=None, **kwargs):
@@ -1618,10 +1617,12 @@ class USGSHDF5(object):
         self.instrument_id = 'mt01'
         self.station = 'mt01'
         self.units = 'mV'
+        self.declination = 0.0
         self._attr_list = ['station',
                            'latitude',
                            'longitude',
                            'elevation',
+                           'declination',
                            'start',
                            'stop',
                            'datum',
@@ -1669,8 +1670,8 @@ class USGSHDF5(object):
                 continue
         return schedule_obj
         
-    def write_hdf5(self, z3d_dir, hdf5_fn=None, csv_fn=None, compress=True,
-                   station=None):
+    def write_hdf5(self, z3d_dir, save_dir=None, hdf5_fn=None, csv_fn=None,
+                   compress=True, station=None):
         """
         Write an hdf5 file to archive in science base.
         
@@ -1723,16 +1724,21 @@ class USGSHDF5(object):
                   instrument_id         instrument id 
                   ===================== =======================================
         """
-        if hdf5_fn is not None:
-            self.hdf5_fn = hdf5_fn
-        else:
-            self.hdf5_fn = os.path.join(z3d_dir,
-                                        '{0}.hdf5'.format(os.path.basename(z3d_dir)))
         if station is not None:
             self.station = station
         else:
             self.station = os.path.basename(z3d_dir)
+        if save_dir is not None:
+            archive_dir = save_dir
+        else:
+            archive_dir = z3d_dir
             
+        if hdf5_fn is not None:
+            self.hdf5_fn = hdf5_fn
+        else:
+            self.hdf5_fn = os.path.join(archive_dir,
+                                        '{0}.hdf5'.format(self.station))
+  
         # need to over write existing files
         if os.path.exists(self.hdf5_fn):
             os.remove(self.hdf5_fn)
@@ -1795,6 +1801,7 @@ class USGSHDF5(object):
                     ### might be good to have some notes, will make space for it
                     d_set.attrs['notes'] = ''
     
+                sch_obj.write_metadata_csv(archive_dir)
             ### calculate the lat and lon
             station_lat = np.median(np.array(lat_list, dtype=np.float))
             station_lon = np.median(np.array(lon_list, dtype=np.float))
