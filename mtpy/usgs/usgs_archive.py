@@ -159,7 +159,7 @@ class ScheduleDB(object):
         csv_fn = '{0}_{1}_{2}_{3}.csv'.format(self.meta_db.station,
                                               self.ts_db.index[0].strftime('%Y%m%d'),
                                               self.ts_db.index[1].strftime('%H%M%S'),
-                                              self.sampling_rate)
+                                              int(self.sampling_rate))
         
         return os.path.join(csv_dir, csv_fn)
 #==============================================================================
@@ -225,7 +225,7 @@ class Z3DCollection(object):
                                      ('latitude', np.float32),
                                      ('longitude', np.float32),
                                      ('elevation', np.float32),
-                                     ('ch_azm', np.float32),
+                                     ('ch_azimuth', np.float32),
                                      ('ch_length', np.float32),
                                      ('ch_num', np.int32),
                                      ('ch_sensor', 'S10'),
@@ -418,7 +418,7 @@ class Z3DCollection(object):
                 meta_db['{0}_{1}'.format(comp, 'length')] = z3d_obj.metadata.ch_length
             ### get sensor number
             elif 'h' in comp:
-                meta_db['{0}_{1}'.format(comp, 'sensor')] = int(z3d_obj.metadata.ch_number)
+                meta_db['{0}_{1}'.format(comp, 'sensor')] = int(z3d_obj.metadata.ch_number.split('.')[0])
             meta_db['{0}_{1}'.format(comp, 'num')] = ii+1
             meta_db['{0}_{1}'.format(comp,'n_samples')] = z3d_obj.ts_obj.ts.shape[0]
             n_samples.append(z3d_obj.ts_obj.ts.shape[0])
@@ -565,7 +565,7 @@ class Z3DCollection(object):
             t_arr[ii]['latitude'] = z3d_obj.header.lat
             t_arr[ii]['longitude'] = z3d_obj.header.long
             t_arr[ii]['elevation'] = z3d_obj.header.alt
-            t_arr[ii]['ch_azm'] = z3d_obj.metadata.ch_azimuth
+            t_arr[ii]['ch_azimuth'] = z3d_obj.metadata.ch_azimuth
             if 'e' in t_arr[ii]['comp']:
                 t_arr[ii]['ch_length'] = z3d_obj.metadata.ch_length
             ### get sensor number
@@ -1245,14 +1245,14 @@ class USGSasc(AsciiMetadata):
 
         # if geographic coordinates add in declination
         if 'geographic' in self.CoordinateSystem.lower():
-            meta_arr['ch_azm'][np.where(meta_arr['comp'] != 'hz')] += self.declination
+            meta_arr['ch_azimuth'][np.where(meta_arr['comp'] != 'hz')] += self.declination
 
         # fill channel dictionary with appropriate values
         self.channel_dict = dict([(comp.capitalize(),
                                    {'ChnNum':'{0}{1}'.format(self.SiteID, ii+1),
                                     'ChnID':meta_arr['comp'][ii].capitalize(),
                                     'InstrumentID':meta_arr['ch_box'][ii],
-                                    'Azimuth':meta_arr['ch_azm'][ii],
+                                    'Azimuth':meta_arr['ch_azimuth'][ii],
                                     'Dipole_Length':meta_arr['ch_length'][ii],
                                     'n_samples':meta_arr['n_samples'][ii],
                                     'n_diff':meta_arr['t_diff'][ii],
@@ -1488,7 +1488,7 @@ class USGSasc(AsciiMetadata):
         meta_dict[key]['elev'] = self.SiteElevation
         meta_dict[key]['mtft_file'] = mtft_bool
         try:
-            meta_dict[key]['hx_azm'] = self.channel_dict['Hx']['Azimuth']
+            meta_dict[key]['hx_azimuth'] = self.channel_dict['Hx']['Azimuth']
             meta_dict[key]['hx_id'] = self.channel_dict['Hx']['InstrumentID'].split('-')[1]
             meta_dict[key]['hx_nsamples'] = self.channel_dict['Hx']['n_samples']
             meta_dict[key]['hx_ndiff'] = self.channel_dict['Hx']['n_diff']
@@ -1497,7 +1497,7 @@ class USGSasc(AsciiMetadata):
             meta_dict[key]['zen_num'] = self.channel_dict['Hx']['InstrumentID'].split('-')[0]
             meta_dict[key]['hx_num'] = self.channel_dict['Hx']['ChnNum'][-1]
         except KeyError:
-            meta_dict[key]['hx_azm'] = None
+            meta_dict[key]['hx_azimuth'] = None
             meta_dict[key]['hx_id'] = None
             meta_dict[key]['hx_nsamples'] = None
             meta_dict[key]['hx_ndiff'] = None
@@ -1506,7 +1506,7 @@ class USGSasc(AsciiMetadata):
             meta_dict[key]['hx_num'] = None
 
         try:
-            meta_dict[key]['hy_azm'] = self.channel_dict['Hy']['Azimuth']
+            meta_dict[key]['hy_azimuth'] = self.channel_dict['Hy']['Azimuth']
             meta_dict[key]['hy_id'] = self.channel_dict['Hy']['InstrumentID'].split('-')[1]
             meta_dict[key]['hy_nsamples'] = self.channel_dict['Hy']['n_samples']
             meta_dict[key]['hy_ndiff'] = self.channel_dict['Hy']['n_diff']
@@ -1515,7 +1515,7 @@ class USGSasc(AsciiMetadata):
             meta_dict[key]['zen_num'] = self.channel_dict['Hy']['InstrumentID'].split('-')[0]
             meta_dict[key]['hy_num'] = self.channel_dict['Hy']['ChnNum'][-1:]
         except KeyError:
-            meta_dict[key]['hy_azm'] = None
+            meta_dict[key]['hy_azimuth'] = None
             meta_dict[key]['hy_id'] = None
             meta_dict[key]['hy_nsamples'] = None
             meta_dict[key]['hy_ndiff'] = None
@@ -1523,7 +1523,7 @@ class USGSasc(AsciiMetadata):
             meta_dict[key]['hy_start'] = None
             meta_dict[key]['hy_num'] = None
         try:
-            meta_dict[key]['hz_azm'] = self.channel_dict['Hz']['Azimuth']
+            meta_dict[key]['hz_azimuth'] = self.channel_dict['Hz']['Azimuth']
             meta_dict[key]['hz_id'] = self.channel_dict['Hz']['InstrumentID'].split('-')[1]
             meta_dict[key]['hz_nsamples'] = self.channel_dict['Hz']['n_samples']
             meta_dict[key]['hz_ndiff'] = self.channel_dict['Hz']['n_diff']
@@ -1532,7 +1532,7 @@ class USGSasc(AsciiMetadata):
             meta_dict[key]['zen_num'] = self.channel_dict['Hz']['InstrumentID'].split('-')[0]
             meta_dict[key]['hz_num'] = self.channel_dict['Hz']['ChnNum'][-1:]
         except KeyError:
-            meta_dict[key]['hz_azm'] = None
+            meta_dict[key]['hz_azimuth'] = None
             meta_dict[key]['hz_id'] = None
             meta_dict[key]['hz_nsamples'] = None
             meta_dict[key]['hz_ndiff'] = None
@@ -1541,7 +1541,7 @@ class USGSasc(AsciiMetadata):
             meta_dict[key]['hz_num'] = None
 
         try:
-            meta_dict[key]['ex_azm'] = self.channel_dict['Ex']['Azimuth']
+            meta_dict[key]['ex_azimuth'] = self.channel_dict['Ex']['Azimuth']
             meta_dict[key]['ex_id'] = self.channel_dict['Ex']['InstrumentID']
             meta_dict[key]['ex_len'] = self.channel_dict['Ex']['Dipole_Length']
             meta_dict[key]['ex_nsamples'] = self.channel_dict['Ex']['n_samples']
@@ -1551,7 +1551,7 @@ class USGSasc(AsciiMetadata):
             meta_dict[key]['zen_num'] = self.channel_dict['Ex']['InstrumentID']
             meta_dict[key]['ex_num'] = self.channel_dict['Ex']['ChnNum'][-1:]
         except KeyError:
-            meta_dict[key]['ex_azm'] = None
+            meta_dict[key]['ex_azimuth'] = None
             meta_dict[key]['ex_id'] = None
             meta_dict[key]['ex_len'] = None
             meta_dict[key]['ex_nsamples'] = None
@@ -1560,7 +1560,7 @@ class USGSasc(AsciiMetadata):
             meta_dict[key]['ex_start'] = None
             meta_dict[key]['ex_num'] = None
         try:
-            meta_dict[key]['ey_azm'] = self.channel_dict['Ey']['Azimuth']
+            meta_dict[key]['ey_azimuth'] = self.channel_dict['Ey']['Azimuth']
             meta_dict[key]['ey_id'] = self.channel_dict['Ey']['InstrumentID']
             meta_dict[key]['ey_len'] = self.channel_dict['Ey']['Dipole_Length']
             meta_dict[key]['ey_nsamples'] = self.channel_dict['Ey']['n_samples']
@@ -1570,7 +1570,7 @@ class USGSasc(AsciiMetadata):
             meta_dict[key]['zen_num'] = self.channel_dict['Ey']['InstrumentID']
             meta_dict[key]['ey_num'] = self.channel_dict['Ey']['ChnNum'][-1:]
         except KeyError:
-            meta_dict[key]['ey_azm'] = None
+            meta_dict[key]['ey_azimuth'] = None
             meta_dict[key]['ey_id'] = None
             meta_dict[key]['ey_len'] = None
             meta_dict[key]['ey_nsamples'] = None
@@ -1618,46 +1618,56 @@ class USGSHDF5(object):
         self.instrument_id = 'mt01'
         self.station = 'mt01'
         self.units = 'mV'
+        self._attr_list = ['station',
+                           'latitude',
+                           'longitude',
+                           'elevation',
+                           'start',
+                           'stop',
+                           'datum',
+                           'coordinate_system',
+                           'units',
+                           'instrument_id',
+                           'ex_azimuth',
+                           'ex_length',
+                           'ex_sensor',
+                           'ex_num',
+                           'ey_azimuth',
+                           'ey_length',
+                           'ey_sensor',
+                           'ey_num',
+                           'hx_azimuth',
+                           'hx_sensor',
+                           'hx_num',
+                           'hy_azimuth',
+                           'hy_sensor',
+                           'hy_num',
+                           'hz_azimuth',
+                           'hz_sensor',
+                           'hz_num']
                 
         for key, value in kwargs.items():
             setattr(self, key, value)
             
-    def update_metadata(self, metadata_arr, csv_fn):
+    def update_metadata(self, schedule_obj, csv_fn):
         """
         Update metadata extracted from Z3D files with data from a csv file
         """
-        
-        cfg_obj = USGScfg()
         ### get the station data base
         try:
-            station_db = cfg_obj.get_station_info_from_csv(csv_fn, self.station)
+            station_db = get_station_info_from_csv(csv_fn, self.station)
         except ValueError:
             print('Could not find information for {0}'.format(self.station))
             return False
-        # fill metadata
-        for m_arr in metadata_arr:
-            for attr in m_arr.dtype.names:
-                if attr in ['ch_azm', 'ch_length', 'ch_num']:
-                    db_attr = attr.replace('ch', m_arr['comp'].lower())
-                    if 'h' in m_arr['comp'] and attr == 'ch_length':
-                        db_attr = db_attr.replace('length', 'id')
-                elif attr in ['ch_box']:
-                    db_attr = 'box'
-                else: 
-                    db_attr = attr
-                ### need to skip std because that is a function in a pd db 
-                if attr == 'std':
-                    continue
-                
-                ### check to see if the attribute exists in the csv
-                try: 
-                    db_value = getattr(station_db, db_attr)
-                except AttributeError:
-                    continue
-                ### set the array value with the data base value
-                m_arr[attr] = db_value
-                
-        return metadata_arr
+        
+        ### loop over the columns assuming they have the same keys as the 
+        ### metadata series
+        for col in station_db.columns:
+            try:
+                schedule_obj.meta_db[col] = station_db[col]
+            except AttributeError:
+                continue
+        return schedule_obj
         
     def write_hdf5(self, z3d_dir, hdf5_fn=None, csv_fn=None, compress=True,
                    station=None):
@@ -1691,24 +1701,26 @@ class USGSHDF5(object):
                   name                  description
                   ===================== =======================================
                   station               station name 
-                  lat                   latitude of station (decimal degrees)
-                  lon                   longitude of station (decimal degrees)
-                  hx_azm                azimuth of HX (degrees from north=0)
-                  hy_azm                azimuth of HY (degrees from north=0)
-                  hz_azm                azimuth of HZ (degrees from horizon=0) 
-                  hx_id                 instrument id number for HX
-                  hy_id                 instrument id number for HY
-                  hz_id                 instrument id number for HZ
+                  latitude              latitude of station (decimal degrees)
+                  longitude             longitude of station (decimal degrees)
+                  hx_azimuth            azimuth of HX (degrees from north=0)
+                  hy_azimuth            azimuth of HY (degrees from north=0)
+                  hz_azimuth            azimuth of HZ (degrees from horizon=0)
+                  ex_azimuth            azimuth of EX (degrees from north=0)
+                  ey_azimuth            azimuth of EY (degrees from north=0)
+                  hx_sensor             instrument id number for HX
+                  hy_sensor             instrument id number for HY
+                  hz_sensor             instrument id number for HZ
+                  ex_sensor             instrument id number for EX
+                  ey_sensor             instrument id number for EY
                   ex_length             dipole length (m) for EX
                   ey_length             dipole length (m) for EX
-                  ex_azm                azimuth of EX (degrees from north=0)
-                  ey_azm                azimuth of EY (degrees from north=0)
                   ex_num                channel number of EX
                   ey_num                channel number of EX
                   hx_num                channel number of EX
                   hy_num                channel number of EX
                   hz_num                channel number of EX 
-                  box                   instrument id 
+                  instrument_id         instrument id 
                   ===================== =======================================
         """
         if hdf5_fn is not None:
@@ -1731,80 +1743,73 @@ class USGSHDF5(object):
         zc = Z3DCollection()
         fn_list = zc.get_time_blocks(z3d_dir)
 
-        h5_obj = h5py.File(self.hdf5_fn, 'w')
-
-        lat_list = []
-        lon_list = []
-        instr_id_list = []
-        start_list = []
-        stop_list = []
-        for ii, fn_block in enumerate(fn_list, 1):
-            ts_db, meta_arr = zc.merge_ts(fn_block)
-            if csv_fn is not None:
-                meta_arr = self.update_metadata(meta_arr, csv_fn)
-            sch_obj = ScheduleDB(ts_db)
-            # get lat and lon for statistics
-            lat_list.append(meta_arr['lat'].mean())
-            lon_list.append(meta_arr['lon'].mean())
-            instr_id_list.append(list(set(meta_arr['ch_box']))[0])
-
-            # fill channel attributes
-            for m_arr in meta_arr:
-                for c_attr in ['ch_num', 'ch_length', 'ch_azm']:
-                    ### rename the attributes
-                    if c_attr == 'ch_num':
-                        f_attr = 'number'
-                    elif c_attr == 'ch_azm':
-                        f_attr = 'azimuth'
-                    elif c_attr == 'ch_length':
-                        if 'h' in m_arr['comp']:
-                            f_attr = 'sensor'
-                        elif 'e' in m_arr['comp']:
-                            f_attr = 'length'
-                    h5_obj.attrs['{0}_{1}'.format(m_arr['comp'], f_attr)] = m_arr[c_attr]
-
-            ### create group for schedule action
-            schedule = h5_obj.create_group('schedule_{0:02}'.format(ii))
-            ### add metadata
-            schedule.attrs['start_time'] = sch_obj.start_time
-            schedule.attrs['stop_time'] = sch_obj.stop_time
-            schedule.attrs['n_samples'] = sch_obj.n_samples
-            schedule.attrs['n_channels'] = sch_obj.n_chan
-            schedule.attrs['sampling_rate'] = sch_obj.sampling_rate
-            
-            ### want to get the earliest and latest times
-            start_list.append(sch_obj.start_time)
-            stop_list.append(sch_obj.stop_time)
-
-            ### add datasets for each channel
-            for comp in ts_db.columns:
-                if compress:
-                    d_set = schedule.create_dataset(comp, data=ts_db[comp],
-                                                    compression='gzip',
-                                                    compression_opts=4)
-                else:
-                    d_set = schedule.create_dataset(comp, data=ts_db[comp])
-                ### might be good to have some notes, will make space for it
-                d_set.attrs['notes'] = ''
-
-        ### calculate the lat and lon
-        station_lat = np.median(np.array(lat_list))
-        station_lon = np.median(np.array(lon_list))
-
-        ### set main attributes
-        h5_obj.attrs['station'] = self.station
-        h5_obj.attrs['coordinate_system'] = self.coordinate_system 
-        h5_obj.attrs['datum'] = self.datum
-        h5_obj.attrs['latitude'] = station_lat
-        h5_obj.attrs['longitude'] = station_lon
-        h5_obj.attrs['elevation'] = get_nm_elev(station_lat, station_lon)
-        h5_obj.attrs['instrument_id'] = list(set(instr_id_list))[0]
-        h5_obj.attrs['units'] = self.units
-        h5_obj.attrs['start'] = sorted(start_list)[0]
-        h5_obj.attrs['stop'] = sorted(stop_list)[-1]
-        
-        ### close file
-        h5_obj.close()
+        ### Use with so that it will close if something goes amiss
+        with h5py.File(self.hdf5_fn, 'w') as h5_obj:
+            lat_list = []
+            lon_list = []
+            instr_id_list = []
+            start_list = []
+            stop_list = []
+            for ii, fn_block in enumerate(fn_list, 1):
+                sch_obj = zc.merge_z3d(fn_block)
+                if csv_fn is not None:
+                    sch_obj = self.update_metadata(sch_obj, csv_fn)
+    
+                # get lat and lon for statistics
+                lat_list.append(sch_obj.meta_db.latitude)
+                lon_list.append(sch_obj.meta_db.longitude)
+                instr_id_list.append(sch_obj.meta_db.instrument_id)
+    
+                for key in self._attr_list:
+                    try:
+                        h5_obj.attrs[key] = sch_obj.meta_db[key]
+                    except TypeError:
+                        h5_obj.attrs[key] = 'None'
+                    except KeyError:
+                        try:
+                            h5_obj.attrs[key] = getattr(self, key)
+                        except AttributeError:
+                            print('\txxx No information for {0}'.format(key))
+    
+                ### create group for schedule action
+                schedule = h5_obj.create_group('schedule_{0:02}'.format(ii))
+                ### add metadata
+                schedule.attrs['start_time'] = sch_obj.start_time
+                schedule.attrs['stop_time'] = sch_obj.stop_time
+                schedule.attrs['n_samples'] = sch_obj.n_samples
+                schedule.attrs['n_channels'] = sch_obj.n_chan
+                schedule.attrs['sampling_rate'] = sch_obj.sampling_rate
+                
+                ### want to get the earliest and latest times
+                start_list.append(sch_obj.start_time)
+                stop_list.append(sch_obj.stop_time)
+    
+                ### add datasets for each channel
+                for comp in sch_obj.ts_db.columns:
+                    if compress:
+                        d_set = schedule.create_dataset(comp, data=sch_obj.ts_db[comp],
+                                                        compression='gzip',
+                                                        compression_opts=4)
+                    else:
+                        d_set = schedule.create_dataset(comp, data=sch_obj.ts_db[comp])
+                    ### might be good to have some notes, will make space for it
+                    d_set.attrs['notes'] = ''
+    
+            ### calculate the lat and lon
+            station_lat = np.median(np.array(lat_list, dtype=np.float))
+            station_lon = np.median(np.array(lon_list, dtype=np.float))
+    
+            ### set main attributes
+            h5_obj.attrs['station'] = self.station
+            h5_obj.attrs['coordinate_system'] = self.coordinate_system 
+            h5_obj.attrs['datum'] = self.datum
+            h5_obj.attrs['latitude'] = station_lat
+            h5_obj.attrs['longitude'] = station_lon
+            h5_obj.attrs['elevation'] = get_nm_elev(station_lat, station_lon)
+            h5_obj.attrs['instrument_id'] = list(set(instr_id_list))[0]
+            h5_obj.attrs['units'] = self.units
+            h5_obj.attrs['start'] = sorted(start_list)[0]
+            h5_obj.attrs['stop'] = sorted(stop_list)[-1]
 
         et = datetime.datetime.now()
         t_diff = et-st
@@ -1879,8 +1884,8 @@ def combine_station_runs(csv_dir):
         return None, None
 
     ### make lat and lon floats
-    run_df.lat = run_df.lat.astype(np.float)
-    run_df.lon = run_df.lon.astype(np.float)
+    run_df.latitude = run_df.latitude.astype(np.float)
+    run_df.longitude = run_df.longitude.astype(np.float)
 
     ### write combined csv file
     csv_fn = os.path.join(csv_dir, '{0}_runs.csv'.format(station))
@@ -1951,7 +1956,58 @@ def combine_survey_csv(survey_dir, skip_stations=None):
         else:
             survey_df = survey_df.append(summarize_station_runs(run_df))
             count += 1
-        
+            
+    survey_df.latitude = survey_df.latitude.astype(np.float)
+    survey_df.longitude = survey_df.longitude.astype(np.float)
+    
+    csv_fn = os.path.join(survey_dir, 'survey_summary.csv')
+    survey_df.to_csv(csv_fn, index=False)
+    
+    return survey_df, csv_fn
+
+def read_survey_csv(survey_csv):
+    """
+    Read in a survey .csv file that will overwrite existing metadata
+    parameters.
+
+    :param survey_csv: full path to survey_summary.csv file
+    :type survey_csv: string
+
+    :return: survey summary database
+    :rtype: pandas dataframe
+    """
+    db = pd.read_csv(survey_csv,
+                     dtype={'lat':np.float,
+                            'lon':np.float})
+    for key in ['hx_id', 'hy_id', 'hz_id']:
+        db[key] = db[key].fillna(0)
+        db[key] = db[key].astype(np.int)
+
+    return db
+
+def get_station_info_from_csv(survey_csv, station):
+    """
+    get station information from a survey .csv file
+
+    :param survey_csv: full path to survey_summary.csv file
+    :type survey_csv: string
+
+    :param station: station name
+    :type station: string
+
+    :return: station database
+    :rtype: pandas dataframe
+
+    .. note:: station must be verbatim for whats in summary.
+    """
+
+    db = read_survey_csv(survey_csv)
+    try:
+        station_index = db.index[db.siteID == station].tolist()[0]
+    except IndexError:
+        raise ValueError('Could not find {0}, check name'.format(station))
+
+    return db.iloc[station_index]
 
 # =============================================================================
 # Functions to help analyze config files
@@ -2056,9 +2112,9 @@ class USGScfg(object):
         station_dict['nm_elev'] = get_nm_elev(station_dict['lat'],
                                               station_dict['lon'])
 
-        station_dict['hx_azm'] = run_db.hx_azm.astype(np.float).median()
-        station_dict['hy_azm'] = run_db.hy_azm.astype(np.float).median()
-        station_dict['hz_azm'] = run_db.hz_azm.astype(np.float).median()
+        station_dict['hx_azimuth'] = run_db.hx_azimuth.astype(np.float).median()
+        station_dict['hy_azimuth'] = run_db.hy_azimuth.astype(np.float).median()
+        station_dict['hz_azimuth'] = run_db.hz_azimuth.astype(np.float).median()
 
         try:
             station_dict['hx_id'] = run_db.hx_id.astype(np.float).median()
@@ -2072,8 +2128,8 @@ class USGScfg(object):
         station_dict['ex_len'] = run_db.ex_len.astype(np.float).median()
         station_dict['ey_len'] = run_db.ey_len.astype(np.float).median()
 
-        station_dict['ex_azm'] = run_db.ex_azm.astype(np.float).median()
-        station_dict['ey_azm'] = run_db.ey_azm.astype(np.float).median()
+        station_dict['ex_azimuth'] = run_db.ex_azimuth.astype(np.float).median()
+        station_dict['ey_azimuth'] = run_db.ey_azimuth.astype(np.float).median()
 
         station_dict['ex_num'] = run_db.ex_num.median()
         station_dict['ey_num'] = run_db.ey_num.median()
@@ -2134,8 +2190,8 @@ class USGScfg(object):
         station_dict['lon'] = cfg_db.lon.astype(np.float).mean()
         station_dict['nm_elev'] = get_nm_elev(station_dict['lat'],
                                               station_dict['lon'])
-        station_dict['hx_azm'] = cfg_db.hx_azm.astype(np.float).median()
-        station_dict['ex_azm'] = cfg_db.ex_azm.astype(np.float).median()
+        station_dict['hx_azimuth'] = cfg_db.hx_azimuth.astype(np.float).median()
+        station_dict['ex_azimuth'] = cfg_db.ex_azimuth.astype(np.float).median()
         station_dict['start_date'] = cfg_db.start_date.min().split('T')[0].replace('-', '')
         station_dict['ex_len'] = cfg_db.ex_len.astype(np.float).median()
         station_dict['ey_len'] = cfg_db.ey_len.astype(np.float).median()
@@ -2332,16 +2388,16 @@ class USGScfg(object):
         # list of columns to take from the database
         col_list = ['siteID',
                     'elev',
-                    'hx_azm',
-                    'hy_azm',
-                    'hz_azm',
+                    'hx_azimuth',
+                    'hy_azimuth',
+                    'hz_azimuth',
                     'hx_id',
                     'hy_id',
                     'hz_id',
                     'ex_len',
                     'ey_len',
-                    'ex_azm',
-                    'ey_azm',
+                    'ex_azimuth',
+                    'ey_azimuth',
                     'n_chan',
                     'instr_id',
                     'operator',
