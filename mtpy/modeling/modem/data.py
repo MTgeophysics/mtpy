@@ -33,12 +33,7 @@ try:
     from evtk.hl import pointsToVTK
 except ImportError:
     print('If you want to write a vtk file for 3d viewing, you need download '
-          'and install evtk from https://bitbucket.org/pauloh/pyevtk', file=sys.stderr)
-
-    print('Note: if you are using Windows you should build evtk first with'
-          'either MinGW or cygwin using the command: \n'
-          '    python setup.py build -compiler=mingw32  or \n'
-          '    python setup.py build -compiler=cygwin')
+          'and install evtk from https://pypi.org/project/PyEVTK', file=sys.stderr)
 
 
 # =============================================================================
@@ -1593,7 +1588,8 @@ class Data(object):
         pointsToVTK(vtk_fn,
                     self.station_locations.rel_north / 1000.,
                     self.station_locations.rel_east / 1000.,
-                    self.station_locations.rel_elev / 1000.)
+                    self.station_locations.rel_elev / 1000.,
+                    {'station':self.station_locations.rel_elev / 1000.})
 
         self._logger.info('Wrote station file to {0}'.format(vtk_fn))
 
