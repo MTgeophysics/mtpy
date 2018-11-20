@@ -413,7 +413,7 @@ class Z3DCollection(object):
             start.append(dt_index[0])
             stop.append(dt_index[-1])
             meta_db['{0}_{1}'.format(comp, 'fn')] = fn
-            meta_db['{0}_{1}'.format(comp, 'azm')] = z3d_obj.metadata.ch_azimuth
+            meta_db['{0}_{1}'.format(comp, 'azmimuth')] = z3d_obj.metadata.ch_azimuth
             if 'e' in comp:
                 meta_db['{0}_{1}'.format(comp, 'length')] = z3d_obj.metadata.ch_length
             ### get sensor number
@@ -1663,9 +1663,9 @@ class USGSHDF5(object):
         
         ### loop over the columns assuming they have the same keys as the 
         ### metadata series
-        for col in station_db.columns:
+        for index in station_db.index:
             try:
-                schedule_obj.meta_db[col] = station_db[col]
+                schedule_obj.meta_db[index] = station_db[index]
             except AttributeError:
                 continue
         return schedule_obj
@@ -1818,6 +1818,8 @@ class USGSHDF5(object):
             h5_obj.attrs['start'] = sorted(start_list)[0]
             h5_obj.attrs['stop'] = sorted(stop_list)[-1]
 
+        run_df, run_csv = combine_station_runs(archive_dir)
+        
         et = datetime.datetime.now()
         t_diff = et-st
         print('Took --> {0:.2f} seconds'.format(t_diff.total_seconds()))
@@ -1984,9 +1986,9 @@ def read_survey_csv(survey_csv):
     :rtype: pandas dataframe
     """
     db = pd.read_csv(survey_csv,
-                     dtype={'lat':np.float,
-                            'lon':np.float})
-    for key in ['hx_id', 'hy_id', 'hz_id']:
+                     dtype={'latitude':np.float,
+                            'longitude':np.float})
+    for key in ['hx_sensor', 'hy_sensor', 'hz_sensor']:
         db[key] = db[key].fillna(0)
         db[key] = db[key].astype(np.int)
 
@@ -2010,7 +2012,7 @@ def get_station_info_from_csv(survey_csv, station):
 
     db = read_survey_csv(survey_csv)
     try:
-        station_index = db.index[db.siteID == station].tolist()[0]
+        station_index = db.index[db.station == station].tolist()[0]
     except IndexError:
         raise ValueError('Could not find {0}, check name'.format(station))
 
