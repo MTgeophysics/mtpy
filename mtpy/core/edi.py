@@ -601,6 +601,10 @@ class Edi(object):
 
         # write out data only impedance and tipper
         z_data_lines = [self._data_header_str.format('impedances'.upper())]
+        self.Z.z = np.nan_to_num(self.Z.z)
+        self.Z.z_err = np.nan_to_num(self.Z.z_err)
+        self.Tipper.tipper = np.nan_to_num(self.Tipper.tipper)
+        self.Tipper.tipper_err = np.nan_to_num(self.Tipper.tipper_err)
         for ii in range(2):
             for jj in range(2):
                 z_lines_real = self._write_data_block(self.Z.z[:, ii, jj].real,
