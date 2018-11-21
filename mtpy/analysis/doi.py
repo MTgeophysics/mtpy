@@ -29,6 +29,7 @@ def bostick_depth(f, rho):
     return h
 
 
+
 def bostick_resistivity(f, rho, pha):
     """
     :param f:  f is not used?

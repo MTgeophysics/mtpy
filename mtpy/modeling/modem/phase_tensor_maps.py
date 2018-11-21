@@ -241,6 +241,8 @@ class PlotPTMaps(mtplottools.MTEllipse):
         self.pt_data_arr = None
         self.pt_resp_arr = None
         self.pt_resid_arr = None
+        
+        self.residual_pt_type= kwargs.pop('residual_pt_type','heise')
 
         # FZ: do not call plot in the constructor! it's not pythonic
         self.plot_yn = kwargs.pop('plot_yn', 'n')
@@ -350,7 +352,8 @@ class PlotPTMaps(mtplottools.MTEllipse):
                 mpt = self.resp_obj.mt_dict[key].pt
                 try:
                     rpt = mtpt.ResidualPhaseTensor(pt_object1=dpt,
-                                                   pt_object2=mpt)
+                                                   pt_object2=mpt,
+                                                   residualtype=self.residual_pt_type)
                     rpt = rpt.residual_pt
                     res_pt_arr[:, ii]['east'] = east
                     res_pt_arr[:, ii]['north'] = north
@@ -361,8 +364,8 @@ class PlotPTMaps(mtplottools.MTEllipse):
                     res_pt_arr[:, ii]['azimuth'] = rpt.azimuth
                     res_pt_arr[:, ii]['skew'] = rpt.beta
                     res_pt_arr[:, ii]['station'] = self.data_obj.mt_dict[key].station
-                    res_pt_arr[:, ii]['geometric_mean'] = np.sqrt(abs(rpt.phimin[0] *
-                                                                      rpt.phimax[0]))
+                    res_pt_arr[:, ii]['geometric_mean'] = np.sqrt(np.abs(rpt.phimin) *
+                                                                  np.abs(rpt.phimax))
                 except mtex.MTpyError_PT:
                     print key, dpt.pt.shape, mpt.pt.shape
 
@@ -910,9 +913,15 @@ class PlotPTMaps(mtplottools.MTEllipse):
 
         pk = periodIdx
         try:
-            vals = getattr(self, 'pt_' + ptarray + '_arr')[pk][key]
+            print "getting", key
+            if key == 'phimean':
+                vals = np.mean([getattr(self, 'pt_' + ptarray + '_arr')[pk]['phimin'],
+                                getattr(self, 'pt_' + ptarray + '_arr')[pk]['phimax']],axis=0)
+            else:
+                vals = getattr(self, 'pt_' + ptarray + '_arr')[pk][key]
             return vals
         except:
+
             print 'Attribute %s not found' % ('pt_' + ptarray + '_arr')
             logging.error(traceback.format_exc())
             exit(-1)
