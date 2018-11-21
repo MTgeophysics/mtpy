@@ -1554,6 +1554,7 @@ class DefineMeasurement(object):
             for x_key in sorted(m_key_list, key=lambda x: x[1]):
                 x_key = x_key[0]
                 m_obj = getattr(self, x_key)
+            
                 if m_obj.chtype.lower().find('h') >= 0:
                     head = 'hmeas'
                 elif m_obj.chtype.lower().find('e') >= 0:
