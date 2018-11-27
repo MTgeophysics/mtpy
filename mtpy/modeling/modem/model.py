@@ -1602,7 +1602,8 @@ class Model(object):
 
 
     def interpolate_elevation2(self, surfacefile=None, surface=None,
-                               surfacename=None, method='nearest'):
+                               surfacename=None, method='nearest',
+                               max_elev=None):
         """
         project a surface to the model grid and add resulting elevation data
         to a dictionary called surface_dict. Assumes the surface is in lat/long
@@ -1650,43 +1651,31 @@ class Model(object):
         if not hasattr(self, 'surface_dict'):
             self.surface_dict = {}
 
-#        # read the surface data in from ascii if surface not provided
-#        if surface is None:
-#            surface = mtfh.read_surface_ascii(surfacefile)
-#
-#        x, y, elev = surface
-#
-#        # if lat/lon provided as a 1D list, convert to a 2d grid of points
-#        if len(x.shape) == 1:
-#            x, y = np.meshgrid(x, y)
-#
-#        xs, ys, utm_zone = gis_tools.project_points_ll2utm(y, x,
-#                                                           epsg=self.station_locations.model_epsg,
-#                                                           utm_zone=self.station_locations.model_utm_zone
-#                                                           )
-
         # get centre position of model grid in real world coordinates
-        x0, y0 = self.station_locations.center_point.east[0], self.station_locations.center_point.north[0]
+        x0, y0 = (self.station_locations.center_point.east[0],
+                  self.station_locations.center_point.north[0])
 
 
         if self.mesh_rotation_angle is None:
             self.mesh_rotation_angle = 0
         
         xg, yg = mtmesh.rotate_mesh(self.grid_east, self.grid_north,
-                                   [x0,y0],
-                                   self.mesh_rotation_angle,
-                                   return_centre = True)
+                                    [x0, y0],
+                                    self.mesh_rotation_angle,
+                                    return_centre = True)
         
         elev_mg = mtmesh.interpolate_elevation_to_grid(xg, yg,
                                                        surfacefile=surfacefile,
                                                        epsg=self.station_locations.model_epsg,
                                                        utm_zone=self.station_locations.model_utm_zone,
                                                        method=method)
-
+        
+        ###  sometimes need to put a cap on the elevation, cause the inversion
+        ###  doesn't like it when there is just one land cell
+        if max_elev is not None:
+            elev_mg[np.where(elev_mg >= max_elev)] = max_elev
 
         print(" Elevation data type and shape  *** ", type(elev_mg), elev_mg.shape, len(yg), len(xg))
-        # <type 'numpy.ndarray'>  (65, 92), 65 92: it's 2D image with cell index as pixels
-        # np.savetxt('E:/tmp/elev_mg.txt', elev_mg, fmt='%10.5f')
 
         # get a name for surface
         if surfacename is None:
@@ -1706,7 +1695,8 @@ class Model(object):
 
     def add_topography_to_model2(self, topographyfile=None, topographyarray=None,
                                  interp_method='nearest', air_resistivity=1e12,
-                                 topography_buffer=None, airlayer_type = 'log'):
+                                 topography_buffer=None, airlayer_type = 'log',
+                                 max_elev=None):
         """
         if air_layers is non-zero, will add topo: read in topograph file, make a surface model.
         Call project_stations_on_topography in the end, which will re-write the .dat file.
@@ -1714,19 +1704,40 @@ class Model(object):
         If n_airlayers is zero, then cannot add topo data, only bathymetry is needed.
         
         :param topographyfile: file containing topography (arcgis ascii grid)
-        :param topographyarray: alternative to topographyfile - array of elevation values on model grid
-        :param interp_method: interpolation method for topography, 'nearest', 'linear', or 'cubic'
-        :param air_resistivity: resistivity value to assign to air
-        :param topography_buffer: buffer around stations to calculate minimum and maximum topography value to use for meshing
-        :param airlayer_type: how to set air layer thickness - options are 'constant' for constant air layer thickness,
-                              or 'log', for logarithmically increasing air layer thickness upward
+        :type topographyfile: string
         
+        :param topographyarray: alternative to topographyfile, 
+                                array of elevation values on model grid
+        :type topographyarray: (lat, lon, elev) tuple of np.arrays
+        
+        :param interp_method: interpolation method for topography, 
+                              [ 'nearest' | 'linear' | 'cubic' ]
+        :type interp_method: string
+        
+        :param air_resistivity: resistivity value to assign to air,
+                                default is 1E12
+        :type air_resistivity: float
+        
+        :param topography_buffer: buffer around stations to calculate minimum
+                                  and maximum topography value to use for meshing
+        :type topography_buffer: int
+        
+        :param airlayer_type: how to set air layer thickness options are:
+                              - 'constant' for constant air layer thickness,
+                              - 'log' for logarithmically increasing
+                              - 'linear' for linear increase in air layers
+        :type airlayer_type: string
+        
+        :param max_elev: maximum elevation of the topography
+                         useful if there are peaks in the topography.
+        :type max_elev: float (in meters)
         """
         # first, get surface data
         if topographyfile is not None:
             self.interpolate_elevation2(surfacefile=topographyfile,
                                         surfacename='topography',
-                                        method=interp_method)
+                                        method=interp_method,
+                                        max_elev=max_elev)
         if topographyarray is not None:
             self.surface_dict['topography'] = topographyarray
 
@@ -1777,9 +1788,7 @@ class Model(object):
             elif airlayer_type == 'constant':
                 air_cell_thickness = np.ceil((topo_core.max() - topo_core_min)/self.n_air_layers)
                 new_air_nodes = np.array([air_cell_thickness]*self.n_air_layers)
-            # sum to get grid cell locations
-            # new_airlayers = np.array([new_air_nodes[:ii].sum() 
-            #                          for ii in range(len(new_air_nodes) + 1)])
+
             # maximum topography cell on the grid
             topo_max_grid = topo_core_min + new_air_nodes.sum()
             # round to nearest whole number and convert subtract the max
@@ -1791,13 +1800,6 @@ class Model(object):
             self._logger.debug("new_airlayers {}".format(self.grid_z[0:self.n_air_layers]))
 
             self._logger.debug("self.grid_z[0:2] {}".format(self.grid_z[0:2]))
-
-            # add new air layers, cut_off some tailing layers to preserve array size.
-            #            self.grid_z = np.concatenate([new_airlayers, self.grid_z[self.n_airlayers+1:] - self.grid_z[self.n_airlayers] + new_airlayers[-1]], axis=0)
-            #self.grid_z = np.concatenate([new_airlayers[:-1], self.grid_z + new_airlayers[-1]], axis=0)
-
-        # print(" NEW self.grid_z shape and values = ", self.grid_z.shape, self.grid_z)
-        #            print self.grid_z
 
         # update the z-centre as the top air layer
         self.grid_center[2] = self.grid_z[0]
