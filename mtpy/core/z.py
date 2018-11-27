@@ -111,21 +111,12 @@ class ResPhase(object):
             for idx_f in range(self.freq.size):
                 for ii in range(2):
                     for jj in range(2):
-#                        r_err, phi_err = MTcc.z_error2r_phi_error(
-#                            np.real(self._z[idx_f, ii, jj]),
-#                            self._z_err[idx_f, ii, jj],
-#                            np.imag(self._z[idx_f, ii, jj]),
-#                            self._z_err[idx_f, ii, jj])
-
                         r_err, phi_err = MTcc.z_error2r_phi_error(
                                 self._z[idx_f, ii, jj].real,
                                 self._z[idx_f, ii, jj].imag,
                                 self._z_err[idx_f, ii, jj])
                         self._resistivity_err[idx_f, ii, jj] = \
                             self._resistivity[idx_f, ii, jj] * r_err
-#                        self._resistivity_err[idx_f, ii, jj] = \
-#                            0.4 * np.abs(self._z[idx_f, ii, jj]) / \
-#                            self.freq[idx_f] * r_err
                         self._phase_err[idx_f, ii, jj] = phi_err
 
     def set_res_phase(self, res_array, phase_array, freq, res_err_array=None,

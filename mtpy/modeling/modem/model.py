@@ -17,12 +17,11 @@ import sys
 import numpy as np
 from matplotlib import pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-from scipy import stats as stats, interpolate as spi
+from scipy import stats as stats
 
-import mtpy
 import mtpy.utils.calculator as mtcc
 from mtpy.modeling import ws3dinv as ws
-from mtpy.utils import mesh_tools as mtmesh, gis_tools as gis_tools, filehandling as mtfh
+from mtpy.utils import mesh_tools as mtmesh, gis_tools as gis_tools
 from mtpy.utils.mtpylog import MtPyLog
 from .exception import ModelError
 import mtpy.utils.gocad as mtgocad
@@ -612,7 +611,7 @@ class Model(object):
         num_z = self.n_layers - self.pad_z + 1  # - self.n_airlayers
         # numz = self.n_layers - self.pad_z + 1   - self.n_airlayers
         factor_z = 1.2  # first few layers excluding the air_layers.
-        exp_list = [self.z1_layer * (factor_z ** nz) for nz in xrange(0, num_z)]
+        exp_list = [self.z1_layer * (factor_z ** nn) for nn in xrange(0, num_z)]
         log_z = np.array(exp_list)
         z_nodes = log_z
 
@@ -1602,8 +1601,8 @@ class Model(object):
         print("FZ:***3 sea_level = ", self.sea_level)
 
 
-    def interpolate_elevation2(self, surfacefile=None, surface=None, surfacename=None,
-                               method='nearest'):
+    def interpolate_elevation2(self, surfacefile=None, surface=None,
+                               surfacename=None, method='nearest'):
         """
         project a surface to the model grid and add resulting elevation data
         to a dictionary called surface_dict. Assumes the surface is in lat/long
@@ -1673,12 +1672,12 @@ class Model(object):
         if self.mesh_rotation_angle is None:
             self.mesh_rotation_angle = 0
         
-        xg,yg = mtmesh.rotate_mesh(self.grid_east,self.grid_north,
+        xg, yg = mtmesh.rotate_mesh(self.grid_east, self.grid_north,
                                    [x0,y0],
                                    self.mesh_rotation_angle,
                                    return_centre = True)
         
-        elev_mg = mtmesh.interpolate_elevation_to_grid(xg,yg,
+        elev_mg = mtmesh.interpolate_elevation_to_grid(xg, yg,
                                                        surfacefile=surfacefile,
                                                        epsg=self.station_locations.model_epsg,
                                                        utm_zone=self.station_locations.model_utm_zone,
@@ -1704,10 +1703,6 @@ class Model(object):
         self.surface_dict[surfacename] = elev_mg
 
         return
-
-    
-    
-
 
     def add_topography_to_model2(self, topographyfile=None, topographyarray=None,
                                  interp_method='nearest', air_resistivity=1e12,
@@ -1823,39 +1818,7 @@ class Model(object):
         # assign bathymetry
         self.assign_resistivity_from_surfacedata(np.zeros_like(top),
                                                  bottom,
-                                                 0.3
-                                                 )
-
-        ##        logger.info("begin to assign sea water resistivity")
-        #        # first make a mask for all-land =1, which will be modified later according to air, water
-        #        self.covariance_mask = np.ones_like(self.res_model)  # of grid size (xc, yc, zc)
-        #
-        #        # assign model areas below sea level but above topography, as seawater
-        #        # get grid node centres
-        #        gcz = np.mean([self.grid_z[:-1], self.grid_z[1:]], axis=0)
-        #
-        #        # convert topography to local grid coordinates
-        #        topo = -self.surface_dict['topography']
-        #        # assign values
-        #        for j in range(len(self.res_model)):
-        #            for i in range(len(self.res_model[j])):
-        #                # assign all sites above the topography to air
-        #                ii1 = np.where(gcz <= topo[j, i])[0]
-        #                if len(ii1) > 0:
-        #                    self.covariance_mask[j, i, ii1] = 0.
-        #                # assign sea water to covariance and model res arrays
-        #                ii = np.where(
-        #                    np.all([gcz > 0., gcz <= topo[j, i]], axis=0))[0]
-        #                if len(ii) > 0:
-        #                    self.covariance_mask[j, i, ii] = 9.
-        #                    self.res_model[j, i, ii] = sea_resistivity
-        #                    print "assigning sea", j, i, ii
-        #
-        #        self.covariance_mask = self.covariance_mask[::-1]
-
-        #        self.station_grid_index = self.project_stations_on_topography()
-
-        #        logger.debug("NEW res_model and cov_mask shapes: %s, %s", self.res_model.shape, self.covariance_mask.shape)
+                                                 0.3)
 
         return
 
