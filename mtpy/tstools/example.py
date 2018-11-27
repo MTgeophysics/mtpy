@@ -14,143 +14,138 @@ from PyQt5.QtWidgets import QTreeWidget
 from PyQt5.QtWidgets import QTreeWidgetItem
 from PyQt5.QtWidgets import QListView
 from PyQt5.QtWidgets import QSplitter
+from PyQt5.QtWidgets import QDateTimeEdit
+from PyQt5.QtCore import QDateTime
+from PyQt5.QtWidgets import QLabel
+from PyQt5.QtWidgets import QLineEdit
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QStandardItemModel
 from PyQt5.QtGui import QStandardItem
 
-from tswaveitem import TSWaveItem
 
 from tsscene import TSScene
 from tsdata import TSData
 
 import datetime
 
+
 class TSWindow(QWidget):
     def __init__(self):
-        super(TSWindow,self).__init__()
+        super(TSWindow, self).__init__()
 
+        # time edit
+        startlabel = QLabel('Start time')
+        self.starttime = QLineEdit()
+        endlabel = QLabel('End time')
+        self.endtime = QLineEdit()
+        buttonApply = QPushButton("Apply")
+        buttonApply.clicked.connect(self.applytime)
+
+        timeLayout = QHBoxLayout()
+        timeLayout.addWidget(startlabel)
+        timeLayout.addWidget(self.starttime)
+        timeLayout.addWidget(endlabel)
+        timeLayout.addWidget(self.endtime)
+        timeLayout.addWidget(buttonApply)
+        timeWidget = QWidget()
+        timeWidget.setLayout(timeLayout)
+
+        # view
         self.scene = TSScene()
-        self.view = QGraphicsView(self.scene)
+        self.scene.starttimechanged.connect(self.starttime.setText)
+        self.scene.endtimechanged.connect(self.endtime.setText)
+
+        viewLayout = QVBoxLayout()
+        viewLayout.addWidget(timeWidget)
+        viewLayout.addWidget(QGraphicsView(self.scene))
+        viewWidget = QWidget()
+        viewWidget.setLayout(viewLayout)
+
+        # control
+        self.buttonOpenFile = QPushButton("open file")
+        self.buttonOpenFile.clicked.connect(self.openfile)
+        self.waveTree = QTreeWidget()
+        self.waveTree.header().hide()
+        self.waveTree.itemClicked.connect(self.showwave)
+        self.buttonExport = QPushButton("Export")
+        self.buttonExport.clicked.connect(self.export)
 
 
-        self.filebutton = QPushButton("open file")
-        self.filebutton.clicked.connect(self.openfile)
+        controlLayout = QVBoxLayout()
+        controlLayout.addWidget(self.buttonOpenFile)
+        controlLayout.addWidget(self.waveTree)
+        controlLayout.addWidget(self.buttonExport)
 
+        controlWidget = QWidget()
+        controlWidget.setLayout(controlLayout)
 
-
+        # put together
+        split = QSplitter()
+        split.addWidget(viewWidget)
+        split.addWidget(controlWidget)
 
         layout = QHBoxLayout()
-        split = QSplitter()
-        split.addWidget(self.view)
-
-        buttonlayout = QVBoxLayout()
-        buttonlayout.addWidget(self.filebutton)
-
-        # self.wavelist = QListView()
-        # self.wavelist.clicked.connect(self.showWave)
-        # self.wavelistmodel = QStandardItemModel()
-        # buttonlayout.addWidget(self.wavelist)
-
-        self.wavetree = QTreeWidget()
-        self.wavetree.itemClicked.connect(self.showWave)
-        self.wavetree.itemDoubleClicked.connect(self.exportWave)
-
-        buttonlayout.addWidget(self.wavetree)
-        buttonregion = QWidget()
-        buttonregion.setLayout(buttonlayout)
-
-        split.addWidget(buttonregion)
         layout.addWidget(split)
-
         self.setLayout(layout)
         self.setWindowTitle("TSView")
 
-        self.time = datetime.datetime.now()
+    def applytime(self):
+        self.scene.applytime(self.starttime.text(), self.endtime.text())
+        return
 
-    def showWave(self, wave):
-        print("here",wave.wavename)
-
-        timenow = datetime.datetime.now()
-        if (timenow-self.time).seconds>1:
-            self.time = timenow
-
-            if wave.channelitem is None:
-                print("empty channelitem")
-                return
-            else:
-                print("showwave")
-                self.scene.togglewave(wave)
+    def showwave(self, wave: QTreeWidgetItem):
+        if wave.childCount()==0:
+            self.scene.togglewave(wave.text(0))
 
 
-                print(wave.channelitem.start_date, wave.channelitem.end_date)
-        else:
-            self.time = timenow
-            self.exportWave(wave)
-        #wavename = self.wavelistmodel.itemFromIndex(index).text()
-        #self.scene.togglewave(wavename, index.row())
 
 
-    def exportWave(self, wave):
+    def exportwave(self, wave):
         print("export",wave.wavename)
         fname = QFileDialog.getSaveFileName(self, 'Save to','/g/data1a/ge3/yuhang/code/mtpy/mtpy/tstools')
         self.scene.exportwaveform(wave.wavename, fname[0])
 
-    def setList(self):
-        item = self.wavetree.invisibleRootItem()
-        self.fill_item(item, self.scene.getList())
-        self.wavetree.setSelectionMode(QAbstractItemView.MultiSelection)
-        self.wavetree.show()
+    # set up wave tree in control region
+    def setlist(self):
+        item = self.waveTree.invisibleRootItem()
+        self.fillitem(item, self.scene.getlist())
+        self.waveTree.setSelectionMode(QAbstractItemView.MultiSelection)
+        self.waveTree.show()
 
-    def fill_item(self, item, value, parent=None):
-        item.setExpanded(False)
+    # build wave tree
+    def fillitem(self, node: QTreeWidgetItem, value: object):
+        node.setExpanded(False)
         if type(value) is dict:
             for key, val in sorted(value.items()):
-                child = TSWaveItem()
+                child = QTreeWidgetItem()
                 child.setText(0, str(key))
-                item.addChild(child)
-                self.fill_item(child, val, str(key))
+                node.addChild(child)
+                self.fillitem(child, val)
         elif type(value) is list:
-            for val in value:
-                child = TSWaveItem()
-                item.addChild(child)
-                if type(val) is dict:
-                    child.setText(0, '[dict]')
-                    self.fill_item(child, val, str(key))
-                elif type(val) is list:
-                    child.setText(0, '[list]')
-                    self.fill_item(child, val, str(key))
-                else:
-                    child.setText(0, str(val))
-                    child.channelitem = val
-                    child.wavename = parent
-                child.setExpanded(True)
-        else:
-            child = TSWaveItem()
-            child.setText(0, str(value))
-            child.channelitem = value
-            child.wavename = parent
-            item.addChild(child)
+            for idx, val in enumerate(value):
+                child = QTreeWidgetItem()
+                child.setText(0, val)
+                node.addChild(child)
+
+    def export(self):
+        fname = QFileDialog.getSaveFileName(self,
+                                            'Save as',
+                                            '/g/data1a/ge3/yuhang/tmp', 'MiniSEED (*.MSEED);; Text files (*.txt)')
+        if len(fname[0]) > 0:
+            self.scene.exportwaveform(fname)
 
     def openfile(self):
-        fname = QFileDialog.getOpenFileName(self, 'Open file','/g/data/ha3/Passive/_AusArray/OA/ASDF_BU/OA.h5','asdf file (*.h5)')
-
-        if len(fname[0])>0:
+        fname = QFileDialog.getOpenFileName(self,
+                                            'Open file',
+                                            '/g/data/ha3/Passive/_AusArray/OA/ASDF_BU/OA.h5', 'asdf file (*.h5)')
+        if len(fname[0]) > 0:
             self.scene.setdata(fname[0])
-            self.setList()
-
-
-
-
-
+            self.setlist()
 
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     widget = TSWindow()
-    widget.resize(1024, 768)
+    widget.resize(1680, 1050)
     widget.show()
     sys.exit(app.exec_())
-
-
-
-

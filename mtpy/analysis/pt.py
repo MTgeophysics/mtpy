@@ -888,7 +888,7 @@ class ResidualPhaseTensor():
 
     """
 
-    def __init__(self, pt_object1=None, pt_object2=None):
+    def __init__(self, pt_object1=None, pt_object2=None, residualtype='heise'):
         """
             Initialise an instance of the ResidualPhaseTensor class.
 
@@ -907,6 +907,7 @@ class ResidualPhaseTensor():
         self._pt1err = None
         self._pt2err = None
         self.freq = None
+        self.residualtype = residualtype
 
         if pt_object1 is not None or  pt_object2 is not None:
             if not ((isinstance(pt_object1, PhaseTensor) and\
@@ -937,45 +938,51 @@ class ResidualPhaseTensor():
 
         # --> compute residual phase tensor
         if pt1 is not None and pt2 is not None:
-            if pt1.dtype not in [float, int]:
-                raise ValueError
-            if pt2.dtype not in [float, int]:
-                raise ValueError
-            if not pt1.shape == pt2.shape:
-                raise MTex.MTpyError_PT('PT arrays not the same shape')
-            if (not len(pt1.shape) in [2, 3]):
-                raise MTex.MTpyError_PT('PT array is not a valid shape')
-
-            if len(pt1.shape) == 3:
-                self.rpt = np.zeros_like(pt1)
-
-                for idx in range(len(pt1)):
-                    try:
-                        self.rpt[idx] = np.eye(2) - np.dot(np.matrix(pt1[idx]).I,
-                                                           np.matrix(pt2[idx]))
-                    except np.linalg.LinAlgError:
-                        #print 'Singular matrix at index {0}, frequency {1:.5g}'.format(idx, self.freq[idx])
-                        #print 'Setting residual PT to zeros. '
-                        self.rpt[idx] = np.zeros((2, 2))
-
-                self._pt1 = pt1
-                self._pt2 = pt2
-
-            else:
-                self.rpt = np.zeros((1,2,2))
-                try:
-                    self.rpt[0] = np.eye(2)-np.dot(np.matrix(pt1).I,
-                                                     np.matrix(pt2))
-                except np.linalg.LinAlgError:
-                    #print 'Singular matrix at frequency {0:.5g}'.format(self.freq)
-                    #print 'Setting residual PT to zeros. '
-                    pass
-
-                self._pt1 =  np.zeros((1,2,2))
-                self._pt1[0] = pt1
-                self._pt2 =  np.zeros((1,2,2))
-                self._pt2[0] = pt2
-
+                if pt1.dtype not in [float, int]:
+                    raise ValueError
+                if pt2.dtype not in [float, int]:
+                    raise ValueError
+                if not pt1.shape == pt2.shape:
+                    raise MTex.MTpyError_PT('PT arrays not the same shape')
+                if (not len(pt1.shape) in [2, 3]):
+                    raise MTex.MTpyError_PT('PT array is not a valid shape')
+                if self.residualtype == 'heise':
+                    if len(pt1.shape) == 3:
+                        self.rpt = np.zeros_like(pt1)
+        
+                        for idx in range(len(pt1)):
+                            try:
+#                                self.rpt[idx] = np.eye(2) - np.dot(np.matrix(pt1[idx]).I,
+#                                                                   np.matrix(pt2[idx]))
+                                self.rpt[idx] = np.eye(2) - 0.5*(np.dot(np.matrix(pt1[idx]).I,np.matrix(pt2[idx]))+\
+                                                                 np.dot(np.matrix(pt2[idx]),np.matrix(pt1[idx]).I))
+                            except np.linalg.LinAlgError:
+                                #print 'Singular matrix at index {0}, frequency {1:.5g}'.format(idx, self.freq[idx])
+                                #print 'Setting residual PT to zeros. '
+                                self.rpt[idx] = np.zeros((2, 2))
+        
+                        self._pt1 = pt1
+                        self._pt2 = pt2
+        
+                    else:
+                        self.rpt = np.zeros((1,2,2))
+                        try:
+#                            self.rpt[0] = np.eye(2)-np.dot(np.matrix(pt1).I,
+#                                                             np.matrix(pt2))
+                            self.rpt[idx] = np.eye(2) - 0.5*(np.dot(np.matrix(pt2[idx]).I,np.matrix(pt1[idx]))+\
+                                                             np.dot(np.matrix(pt1[idx]),np.matrix(pt2[idx]).I))
+                            
+                        except np.linalg.LinAlgError:
+                            #print 'Singular matrix at frequency {0:.5g}'.format(self.freq)
+                            #print 'Setting residual PT to zeros. '
+                            pass
+        
+                        self._pt1 =  np.zeros((1,2,2))
+                        self._pt1[0] = pt1
+                        self._pt2 =  np.zeros((1,2,2))
+                        self._pt2[0] = pt2
+                elif self.residualtype == 'booker':
+                    self.rpt = pt1 - pt2
 
         else:
             print  ('Could not determine ResPT - both PhaseTensor objects must'
@@ -999,17 +1006,44 @@ class ResidualPhaseTensor():
                 if self.rpt_err is not None:
                     if self.rpt_err.shape != pt1err.shape:
                         raise MTex.MTpyError_value
-
-                if len(pt1err.shape) == 3:
-                    self.rpt_err = np.zeros((len(pt1),2,2))
-
-                    for idx in range(len(pt1err)):
-                        matrix1 = pt1[idx]
-                        matrix1err = pt1err[idx]
+                if self.residualtype == 'heise':
+                    if len(pt1err.shape) == 3:
+                        self.rpt_err = np.zeros((len(pt1),2,2))
+    
+                        for idx in range(len(pt1err)):
+                            matrix1 = pt1[idx]
+                            matrix1err = pt1err[idx]
+                            try:
+                                matrix2, matrix2err = MTcc.invertmatrix_incl_errors(
+                                                pt2[idx], inmatrix_err = pt2err[idx])
+    
+                                summand1,err1 = MTcc.multiplymatrices_incl_errors(
+                                                    matrix2, matrix1,
+                                                    inmatrix1_err = matrix2err,
+                                                    inmatrix2_err =  matrix1err)
+                                summand2,err2 = MTcc.multiplymatrices_incl_errors(
+                                                    matrix1, matrix2,
+                                                    inmatrix1_err = matrix1err,
+                                                    inmatrix2_err =  matrix2err)
+                                self.rpt_err[idx] = np.sqrt(0.25*err1**2 +0.25*err2**2)
+                            except MTex.MTpyError_inputarguments:
+                                self.rpt_err[idx] = 1e10
+    
+    
+                        self._pt_err1 = pt1err
+                        self._pt_err2 = pt2err
+    
+                    else:
+                        self.rpt_err = np.zeros((1, 2, 2))
                         try:
+                            self.rpt_err[0] = np.eye(2) - 0.5 * np.array(
+                                            np.dot( np.matrix(pt2).I, np.matrix(pt1) )
+                                            + np.dot( np.matrix(pt1), np.matrix(pt2).I))
+                            matrix1 = pt1
+                            matrix1err = pt1err
                             matrix2, matrix2err = MTcc.invertmatrix_incl_errors(
-                                            pt2[idx], inmatrix_err = pt2err[idx])
-
+                                                           pt2, inmatrix_err = pt2err)
+    
                             summand1,err1 = MTcc.multiplymatrices_incl_errors(
                                                 matrix2, matrix1,
                                                 inmatrix1_err = matrix2err,
@@ -1018,42 +1052,17 @@ class ResidualPhaseTensor():
                                                 matrix1, matrix2,
                                                 inmatrix1_err = matrix1err,
                                                 inmatrix2_err =  matrix2err)
-                            self.rpt_err[idx] = np.sqrt(0.25*err1**2 +0.25*err2**2)
+    
+                            self.rpt_err = np.sqrt(0.25*err1**2 +0.25*err2**2)
                         except MTex.MTpyError_inputarguments:
                             self.rpt_err[idx] = 1e10
-
-
-                    self._pt_err1 = pt1err
-                    self._pt_err2 = pt2err
-
-                else:
-                    self.rpt_err = np.zeros((1, 2, 2))
-                    try:
-                        self.rpt_err[0] = np.eye(2) - 0.5 * np.array(
-                                        np.dot( np.matrix(pt2).I, np.matrix(pt1) )
-                                        + np.dot( np.matrix(pt1), np.matrix(pt2).I))
-                        matrix1 = pt1
-                        matrix1err = pt1err
-                        matrix2, matrix2err = MTcc.invertmatrix_incl_errors(
-                                                       pt2, inmatrix_err = pt2err)
-
-                        summand1,err1 = MTcc.multiplymatrices_incl_errors(
-                                            matrix2, matrix1,
-                                            inmatrix1_err = matrix2err,
-                                            inmatrix2_err =  matrix1err)
-                        summand2,err2 = MTcc.multiplymatrices_incl_errors(
-                                            matrix1, matrix2,
-                                            inmatrix1_err = matrix1err,
-                                            inmatrix2_err =  matrix2err)
-
-                        self.rpt_err = np.sqrt(0.25*err1**2 +0.25*err2**2)
-                    except MTex.MTpyError_inputarguments:
-                        self.rpt_err[idx] = 1e10
-            
-                    self._pt1err =  np.zeros((1,2,2))  
-                    self._pt1err[0] = pt1err
-                    self._pt2err = np.zeros((1, 2, 2))
-                    self._pt2err[0] = pt2err
+                
+                        self._pt1err =  np.zeros((1,2,2))  
+                        self._pt1err[0] = pt1err
+                        self._pt2err = np.zeros((1, 2, 2))
+                        self._pt2err[0] = pt2err
+                elif self.residualtype == 'booker':
+                    self.rpt_err = pt1err + pt2err
 
             except MTex.MTpyError_value:
                 raise MTex.MTpyError_PT('ERROR - both PhaseTensor objects must'
