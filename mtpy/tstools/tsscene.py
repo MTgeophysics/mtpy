@@ -68,7 +68,6 @@ class TSScene(QGraphicsScene):
         return self.data.getlist()
 
     def togglewave(self, wave: str, colorcode:int=0, samplerate: int=1000):
-        print(self.visibleWave)
         if wave in self.visibleWave:
             axes = self.visibleWave[wave][0]
             lines = self.visibleWave[wave][1]
@@ -159,7 +158,6 @@ class TSScene(QGraphicsScene):
         starttime = self.starttime + shift
         endtime = self.endtime - shift
 
-        print(starttime, endtime,'='*8)
 
         for wave in self.visibleWave:
             if starttime<self.visibleWave[wave][3]:
@@ -167,7 +165,6 @@ class TSScene(QGraphicsScene):
             if endtime>self.visibleWave[wave][4]:
                 endtime = self.endtime
 
-        print(starttime, endtime,'!'*8)
 
         if endtime-starttime<0.1:
             pass
@@ -192,7 +189,6 @@ class TSScene(QGraphicsScene):
             return
         self.downx = event.scenePos().x()
         self.downbutton = event.button()
-        print(self.downx)
 
 
     def mouseMoveEvent(self, event: QMouseEvent):
@@ -236,7 +232,6 @@ class TSScene(QGraphicsScene):
 
 
     def exportwaveform(self, filename: tuple):
-        print('here'*10)
         traces = []
         for wave in self.visibleWave:
             waveform, wavename, starttime, endtime = self.data.getwaveform(wave, self.starttime, self.endtime, 0)

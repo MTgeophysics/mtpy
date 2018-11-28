@@ -17,12 +17,11 @@ import sys
 import numpy as np
 from matplotlib import pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-from scipy import stats as stats, interpolate as spi
+from scipy import stats as stats
 
-import mtpy
 import mtpy.utils.calculator as mtcc
 from mtpy.modeling import ws3dinv as ws
-from mtpy.utils import mesh_tools as mtmesh, gis_tools as gis_tools, filehandling as mtfh
+from mtpy.utils import mesh_tools as mtmesh, gis_tools as gis_tools
 from mtpy.utils.mtpylog import MtPyLog
 from .exception import ModelError
 import mtpy.utils.gocad as mtgocad
@@ -612,7 +611,7 @@ class Model(object):
         num_z = self.n_layers - self.pad_z + 1  # - self.n_airlayers
         # numz = self.n_layers - self.pad_z + 1   - self.n_airlayers
         factor_z = 1.2  # first few layers excluding the air_layers.
-        exp_list = [self.z1_layer * (factor_z ** nz) for nz in xrange(0, num_z)]
+        exp_list = [self.z1_layer * (factor_z ** nn) for nn in xrange(0, num_z)]
         log_z = np.array(exp_list)
         z_nodes = log_z
 
@@ -1602,8 +1601,9 @@ class Model(object):
         print("FZ:***3 sea_level = ", self.sea_level)
 
 
-    def interpolate_elevation2(self, surfacefile=None, surface=None, surfacename=None,
-                               method='nearest'):
+    def interpolate_elevation2(self, surfacefile=None, surface=None,
+                               surfacename=None, method='nearest',
+                               max_elev=None):
         """
         project a surface to the model grid and add resulting elevation data
         to a dictionary called surface_dict. Assumes the surface is in lat/long
@@ -1651,43 +1651,31 @@ class Model(object):
         if not hasattr(self, 'surface_dict'):
             self.surface_dict = {}
 
-#        # read the surface data in from ascii if surface not provided
-#        if surface is None:
-#            surface = mtfh.read_surface_ascii(surfacefile)
-#
-#        x, y, elev = surface
-#
-#        # if lat/lon provided as a 1D list, convert to a 2d grid of points
-#        if len(x.shape) == 1:
-#            x, y = np.meshgrid(x, y)
-#
-#        xs, ys, utm_zone = gis_tools.project_points_ll2utm(y, x,
-#                                                           epsg=self.station_locations.model_epsg,
-#                                                           utm_zone=self.station_locations.model_utm_zone
-#                                                           )
-
         # get centre position of model grid in real world coordinates
-        x0, y0 = self.station_locations.center_point.east[0], self.station_locations.center_point.north[0]
+        x0, y0 = (self.station_locations.center_point.east[0],
+                  self.station_locations.center_point.north[0])
 
 
         if self.mesh_rotation_angle is None:
             self.mesh_rotation_angle = 0
         
-        xg,yg = mtmesh.rotate_mesh(self.grid_east,self.grid_north,
-                                   [x0,y0],
-                                   self.mesh_rotation_angle,
-                                   return_centre = True)
+        xg, yg = mtmesh.rotate_mesh(self.grid_east, self.grid_north,
+                                    [x0, y0],
+                                    self.mesh_rotation_angle,
+                                    return_centre = True)
         
-        elev_mg = mtmesh.interpolate_elevation_to_grid(xg,yg,
+        elev_mg = mtmesh.interpolate_elevation_to_grid(xg, yg,
                                                        surfacefile=surfacefile,
                                                        epsg=self.station_locations.model_epsg,
                                                        utm_zone=self.station_locations.model_utm_zone,
                                                        method=method)
-
+        
+        ###  sometimes need to put a cap on the elevation, cause the inversion
+        ###  doesn't like it when there is just one land cell
+        if max_elev is not None:
+            elev_mg[np.where(elev_mg >= max_elev)] = max_elev
 
         print(" Elevation data type and shape  *** ", type(elev_mg), elev_mg.shape, len(yg), len(xg))
-        # <type 'numpy.ndarray'>  (65, 92), 65 92: it's 2D image with cell index as pixels
-        # np.savetxt('E:/tmp/elev_mg.txt', elev_mg, fmt='%10.5f')
 
         # get a name for surface
         if surfacename is None:
@@ -1705,13 +1693,10 @@ class Model(object):
 
         return
 
-    
-    
-
-
     def add_topography_to_model2(self, topographyfile=None, topographyarray=None,
                                  interp_method='nearest', air_resistivity=1e12,
-                                 topography_buffer=None, airlayer_type = 'log'):
+                                 topography_buffer=None, airlayer_type = 'log',
+                                 max_elev=None):
         """
         if air_layers is non-zero, will add topo: read in topograph file, make a surface model.
         Call project_stations_on_topography in the end, which will re-write the .dat file.
@@ -1719,19 +1704,40 @@ class Model(object):
         If n_airlayers is zero, then cannot add topo data, only bathymetry is needed.
         
         :param topographyfile: file containing topography (arcgis ascii grid)
-        :param topographyarray: alternative to topographyfile - array of elevation values on model grid
-        :param interp_method: interpolation method for topography, 'nearest', 'linear', or 'cubic'
-        :param air_resistivity: resistivity value to assign to air
-        :param topography_buffer: buffer around stations to calculate minimum and maximum topography value to use for meshing
-        :param airlayer_type: how to set air layer thickness - options are 'constant' for constant air layer thickness,
-                              or 'log', for logarithmically increasing air layer thickness upward
+        :type topographyfile: string
         
+        :param topographyarray: alternative to topographyfile, 
+                                array of elevation values on model grid
+        :type topographyarray: (lat, lon, elev) tuple of np.arrays
+        
+        :param interp_method: interpolation method for topography, 
+                              [ 'nearest' | 'linear' | 'cubic' ]
+        :type interp_method: string
+        
+        :param air_resistivity: resistivity value to assign to air,
+                                default is 1E12
+        :type air_resistivity: float
+        
+        :param topography_buffer: buffer around stations to calculate minimum
+                                  and maximum topography value to use for meshing
+        :type topography_buffer: int
+        
+        :param airlayer_type: how to set air layer thickness options are:
+                              - 'constant' for constant air layer thickness,
+                              - 'log' for logarithmically increasing
+                              - 'linear' for linear increase in air layers
+        :type airlayer_type: string
+        
+        :param max_elev: maximum elevation of the topography
+                         useful if there are peaks in the topography.
+        :type max_elev: float (in meters)
         """
         # first, get surface data
         if topographyfile is not None:
             self.interpolate_elevation2(surfacefile=topographyfile,
                                         surfacename='topography',
-                                        method=interp_method)
+                                        method=interp_method,
+                                        max_elev=max_elev)
         if topographyarray is not None:
             self.surface_dict['topography'] = topographyarray
 
@@ -1782,9 +1788,7 @@ class Model(object):
             elif airlayer_type == 'constant':
                 air_cell_thickness = np.ceil((topo_core.max() - topo_core_min)/self.n_air_layers)
                 new_air_nodes = np.array([air_cell_thickness]*self.n_air_layers)
-            # sum to get grid cell locations
-            # new_airlayers = np.array([new_air_nodes[:ii].sum() 
-            #                          for ii in range(len(new_air_nodes) + 1)])
+
             # maximum topography cell on the grid
             topo_max_grid = topo_core_min + new_air_nodes.sum()
             # round to nearest whole number and convert subtract the max
@@ -1796,13 +1800,6 @@ class Model(object):
             self._logger.debug("new_airlayers {}".format(self.grid_z[0:self.n_air_layers]))
 
             self._logger.debug("self.grid_z[0:2] {}".format(self.grid_z[0:2]))
-
-            # add new air layers, cut_off some tailing layers to preserve array size.
-            #            self.grid_z = np.concatenate([new_airlayers, self.grid_z[self.n_airlayers+1:] - self.grid_z[self.n_airlayers] + new_airlayers[-1]], axis=0)
-            #self.grid_z = np.concatenate([new_airlayers[:-1], self.grid_z + new_airlayers[-1]], axis=0)
-
-        # print(" NEW self.grid_z shape and values = ", self.grid_z.shape, self.grid_z)
-        #            print self.grid_z
 
         # update the z-centre as the top air layer
         self.grid_center[2] = self.grid_z[0]
@@ -1823,39 +1820,7 @@ class Model(object):
         # assign bathymetry
         self.assign_resistivity_from_surfacedata(np.zeros_like(top),
                                                  bottom,
-                                                 0.3
-                                                 )
-
-        ##        logger.info("begin to assign sea water resistivity")
-        #        # first make a mask for all-land =1, which will be modified later according to air, water
-        #        self.covariance_mask = np.ones_like(self.res_model)  # of grid size (xc, yc, zc)
-        #
-        #        # assign model areas below sea level but above topography, as seawater
-        #        # get grid node centres
-        #        gcz = np.mean([self.grid_z[:-1], self.grid_z[1:]], axis=0)
-        #
-        #        # convert topography to local grid coordinates
-        #        topo = -self.surface_dict['topography']
-        #        # assign values
-        #        for j in range(len(self.res_model)):
-        #            for i in range(len(self.res_model[j])):
-        #                # assign all sites above the topography to air
-        #                ii1 = np.where(gcz <= topo[j, i])[0]
-        #                if len(ii1) > 0:
-        #                    self.covariance_mask[j, i, ii1] = 0.
-        #                # assign sea water to covariance and model res arrays
-        #                ii = np.where(
-        #                    np.all([gcz > 0., gcz <= topo[j, i]], axis=0))[0]
-        #                if len(ii) > 0:
-        #                    self.covariance_mask[j, i, ii] = 9.
-        #                    self.res_model[j, i, ii] = sea_resistivity
-        #                    print "assigning sea", j, i, ii
-        #
-        #        self.covariance_mask = self.covariance_mask[::-1]
-
-        #        self.station_grid_index = self.project_stations_on_topography()
-
-        #        logger.debug("NEW res_model and cov_mask shapes: %s, %s", self.res_model.shape, self.covariance_mask.shape)
+                                                 0.3)
 
         return
 
