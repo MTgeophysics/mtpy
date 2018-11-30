@@ -55,6 +55,7 @@ class TSWindow(QWidget):
         self.scene.starttimechanged.connect(self.starttime.setText)
         self.scene.endtimechanged.connect(self.endtime.setText)
 
+
         viewLayout = QVBoxLayout()
         viewLayout.addWidget(timeWidget)
         viewLayout.addWidget(QGraphicsView(self.scene))
@@ -137,7 +138,8 @@ class TSWindow(QWidget):
     def openfile(self):
         fname = QFileDialog.getOpenFileName(self,
                                             'Open file',
-                                            '/g/data/ha3/Passive/_AusArray/OA/ASDF_BU/OA.h5', 'asdf file (*.h5)')
+                                            #'/g/data/ha3/Passive/_AusArray/OA/ASDF_BU/OA.h5', 'asdf file (*.h5)')
+                                            '/g/data/ha3/rakib/ausLAMP/Data/Output/fixed/', 'asdf file (*.h5)')
         if len(fname[0]) > 0:
             self.scene.setdata(fname[0])
             self.setlist()
@@ -145,7 +147,10 @@ class TSWindow(QWidget):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
+
     widget = TSWindow()
     widget.resize(1680, 1050)
     widget.show()
+
+
     sys.exit(app.exec_())
