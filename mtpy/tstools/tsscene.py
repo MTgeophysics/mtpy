@@ -24,8 +24,12 @@ from PyQt5.QtCore import pyqtSignal
 
 from obspy.core.utcdatetime import UTCDateTime
 from datetime import datetime
+from multiprocessing import Queue
 
 import numpy as np
+
+
+
 
 class TSScene(QGraphicsScene):
 
@@ -80,7 +84,7 @@ class TSScene(QGraphicsScene):
     def getlist(self):
         return self.data.getlist()
 
-    def togglewave(self, wave: str, colorcode:int=0, samplerate: int=1000):
+    def togglewave(self, wave: str, colorcode:int=0):
         if wave in self.visibleWave:
             axes = self.visibleWave[wave][0]
             lines = self.visibleWave[wave][1]
@@ -89,25 +93,26 @@ class TSScene(QGraphicsScene):
             self.axesavailability[self.axes.index(axes)] = True
 
         else:
-            print(wave)
+            # print(wave)
             waveform, wavename, starttime, endtime = self.data.getwaveform(wave, self.starttime, self.endtime)
             axes, lines = self.displaywave(wavename, waveform)
             if axes is not None:
                 self.visibleWave[wave] = (axes, lines, colorcode, starttime, endtime)
+                #print("togglewave:", starttime, endtime)
 
 
     def displaywave(self, wavename: str, waveform: np.array, colorcode: int=None):
         if True not in self.axesavailability:
             return None, None
         else:
-            print(waveform.shape,'!'*10,'displaywave')
+            # print(waveform.shape,'!'*10,'displaywave')
             location = self.axesavailability.index(True)
             axes = self.axes[location]
             self.axesavailability[location] = False
             if wavename is not None and waveform is not None:
                 if colorcode is None:
                     colorcode = 'C'+str(location%10)
-                print(waveform.shape,'='*8)
+                # print(waveform.shape,'='*8)
                 times = waveform[0,:]
                 span = round(len(times)/4)
                 if span<1:
@@ -121,11 +126,18 @@ class TSScene(QGraphicsScene):
 
                 self.canvas.draw()
 
-                self.starttime = UTCDateTime(times[0])
-                self.endtime = UTCDateTime(times[-1])
+                if self.endtime is not None and self.starttime is not None:
+                    timewindow = self.endtime-self.starttime
+                    if abs(times[0]-times[-1]-timewindow)/timewindow<0.1:
+                        self.starttime = UTCDateTime(times[0])
+                        self.endtime = self.starttime + timewindow
+                else:
+                    self.starttime = UTCDateTime(times[0])
+                    self.endtime = UTCDateTime(times[-1])
 
 
 
+                self.starttimechanged.emit(self.starttime.strftime("%Y-%m-%d %H:%M:%S"))
                 self.endtimechanged.emit(self.endtime.strftime("%Y-%m-%d %H:%M:%S"))
                 return axes, lines
             else:
@@ -179,6 +191,7 @@ class TSScene(QGraphicsScene):
         self.canvas.draw()
 
     def timeshift(self, shift: float):
+        # print("shift")
         self.state = False
 
         if self.starttime is None:
@@ -191,20 +204,26 @@ class TSScene(QGraphicsScene):
         starttime = self.starttime + shift
         endtime = self.endtime + shift
 
+        #print('+'*10,self.endtime- self.starttime )
+
+        #print(starttime, endtime, self.starttime, self.endtime)
+
         for wave in self.visibleWave:
             if starttime<self.visibleWave[wave][3]:
                 starttime = self.starttime
             if endtime>self.visibleWave[wave][4]:
                 endtime = self.endtime
 
+        #print(starttime, endtime, self.starttime, self.endtime,'!!!!!!')
 
 
-
-        if starttime!=self.starttime and endtime!=self.endtime:
+        if starttime!=self.starttime or endtime!=self.endtime:
+            # print('update'*10)
             self.starttime = starttime
             self.endtime = endtime
 
             tmplist = self.visibleWave.copy()
+
             for wave in tmplist:
                 self.togglewave(wave)
                 self.togglewave(wave, tmplist[wave][2])
@@ -270,7 +289,7 @@ class TSScene(QGraphicsScene):
 
             if self.downbutton == Qt.LeftButton and self.state==self.states['ready']:
                 self.state = self.states['busy']
-                QTimer.singleShot(50, self.performshift)
+                QTimer.singleShot(0, self.performshift)
             elif self.downbutton == Qt.LeftButton:
                 print('ignored=============================')
                 pass
