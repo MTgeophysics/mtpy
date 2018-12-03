@@ -28,8 +28,8 @@ source_points.points = source_points.points[mask]
 source_val = source_val[mask]
 
 # resistivity = interp.nearest(source_points, source_val, utm_points)
-resistivity = interp.linear(source_points, source_val, utm_grid)
+resistivity = interp.IDW(source_points, source_val, utm_grid)
 # resistivity = resistivity.reshape(geo_grid.shape[:3])
 print(resistivity.shape)
 
-nc.write_resistivity_grid('nearest.nc', lib.WGS84_crs, geo_grid.y, geo_grid.x, geo_grid.z, resistivity.transpose([2, 0, 1]))
+nc.write_resistivity_grid('IDW.nc', lib.WGS84_crs, geo_grid.y, geo_grid.x, geo_grid.z, resistivity.transpose([2, 0, 1]))

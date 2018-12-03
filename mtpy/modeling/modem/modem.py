@@ -12,13 +12,19 @@ from mtpy.modeling.modem import Model, Data, write_resistivity_grid, wgs84_crs, 
 
 
 def mid_point(arr):
-    # shape should be just a tuple with one value in it
+    """
+    Mid point of a one-dimensional array `arr`.
+    Shape of `arr` should be just a tuple with one value in it.
+    """
     [shape] = arr.shape
     mid = int(shape / 2)
     return arr[mid]
 
 
 def uniform_interior_grid(arr, spacing, mid):
+    """
+    Make a regular grid in lat/lon space.
+    """
     end_points = sorted((arr[0], arr[-1]))
     units = int((end_points[0] - mid) / spacing), int((end_points[1] - mid) / spacing) + 1
 
@@ -27,10 +33,16 @@ def uniform_interior_grid(arr, spacing, mid):
 
 
 def median_spacing(arr):
+    """
+    The spacing that occurs the maximum time.
+    """
     return np.median(arr[1:] - arr[:-1])
 
 
 def lon_lat_grid_spacing(center, width, height, to_wgs84):
+    """
+    Returns center longitude and latitude, and spacing for longitude and latitude.
+    """
     center_x, center_y = center.east.item(), center.north.item()
     center_lon, center_lat = to_wgs84(center_x, center_y)
     shifted_lon, _ = to_wgs84(center_x + width, center_y)
@@ -40,11 +52,17 @@ def lon_lat_grid_spacing(center, width, height, to_wgs84):
 
 
 def interpolated_layer(x, y, layer):
+    """
+    Create the interpolation function for each layer.
+    """
     return interp2d(x, y, layer)  # bounds_error=True
 
 
 # TODO can this be done with lib.Points3D?
 def converter(in_spatial_ref, out_spatial_ref):
+    """
+    Transfrom coordinates from one spatial ref to another.
+    """
     in_proj = Proj(in_spatial_ref.ExportToProj4())
     out_proj = Proj(out_spatial_ref.ExportToProj4())
 
@@ -106,6 +124,9 @@ def main():
                                            for key in ['depth', 'latitude', 'longitude']))
 
     def uniform_layer(interp_func, latitudes, longitudes):
+        """
+        Calculate the interpolated values for the layer.
+        """
         lats, lons = latitudes.shape[0], longitudes.shape[0]
 
         result = np.zeros((lats, lons))
