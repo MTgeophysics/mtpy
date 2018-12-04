@@ -21,7 +21,7 @@ from PyQt5.QtWidgets import QLineEdit
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QStandardItemModel
 from PyQt5.QtGui import QStandardItem
-
+from PyQt5 import QtCore
 
 from tsscene import TSScene
 from tsdata import TSData
@@ -121,12 +121,16 @@ class TSWindow(QWidget):
                 child = QTreeWidgetItem()
                 child.setText(0, str(key))
                 node.addChild(child)
+                child.setFlags(child.flags() & ~Qt.ItemIsSelectable)
                 self.fillitem(child, val)
         elif type(value) is list:
             for idx, val in enumerate(value):
                 child = QTreeWidgetItem()
                 child.setText(0, val)
+                #child.setFlags(Qt.ItemIsSelectable | Qt.ItemIsUserCheckable)
                 node.addChild(child)
+                
+
 
     def export(self):
         fname = QFileDialog.getSaveFileName(self,

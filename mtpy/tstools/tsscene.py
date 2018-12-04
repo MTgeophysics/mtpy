@@ -36,7 +36,7 @@ class TSScene(QGraphicsScene):
     starttimechanged = pyqtSignal(str)
     endtimechanged = pyqtSignal(str)
 
-    def __init__(self, width=14, height=9, numofchannel=4):
+    def __init__(self, width=14, height=12, numofchannel=6):
         super(TSScene, self).__init__()
 
         # set waveform windows
