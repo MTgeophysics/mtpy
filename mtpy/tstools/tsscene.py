@@ -291,7 +291,7 @@ class TSScene(QGraphicsScene):
                 self.state = self.states['busy']
                 QTimer.singleShot(0, self.performshift)
             elif self.downbutton == Qt.LeftButton:
-                print('ignored=============================')
+                # print('ignored=============================')
                 pass
 
 
@@ -330,7 +330,7 @@ class TSScene(QGraphicsScene):
     def exportwaveform(self, filename: tuple):
         traces = []
         for wave in self.visibleWave:
-            waveform, wavename, starttime, endtime = self.data.getwaveform(wave, self.starttime, self.endtime, 0)
+            waveform, wavename, starttime, endtime = self.data.readdisc(wave, self.starttime, self.endtime, False)
             traces.append(waveform)
 
         stream = Stream(traces=traces)

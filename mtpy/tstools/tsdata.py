@@ -55,7 +55,10 @@ class TSData():
         elif self.writecache(waveform, timewindow):
             return self.readcache(waveform, starttime, endtime)
         else:
-            return self.readdisc(rawdata, channel, wavename, starttime, endtime)
+            outwave, wavename, start_date, end_date = self.readdisc(rawdata, channel, wavename, starttime, endtime)
+            wave = np.vstack((outwave.times() + outwave.meta['starttime'].timestamp, outwave.data))
+            wave = np.array(wave).copy()
+            return timewindow, wave, wavename, start_date, end_date
 
 
     def writecache(self, waveform, timewindow):
