@@ -351,7 +351,8 @@ class TSScene(QGraphicsScene):
     def exportwaveform(self, filename: tuple):
         traces = []
         for wave in self.visibleWave:
-            waveform, wavename, starttime, endtime = self.data.readdisc(wave, self.starttime, self.endtime, False)
+            fill_value = 'last'
+            waveform, wavename, starttime, endtime, gaps = self.data.readdisc(wave, self.starttime, self.endtime, resample=False, fill_value=fill_value)
             traces.append(waveform)
 
         stream = Stream(traces=traces)

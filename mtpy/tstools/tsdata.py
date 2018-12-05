@@ -138,7 +138,7 @@ class TSData():
 
         return outwave, wavename, start_date, end_date, gaps
 
-    def readdisc(self, waveform: str, starttime: datetime, endtime: datetime, resample: bool=True):
+    def readdisc(self, waveform: str, starttime: datetime, endtime: datetime, resample: bool=True, fill_value:str='latest'):
         print('readdisc', starttime, endtime)
         rawdata, channel, wavename = self.wavemeta[waveform]
         # print(channel.start_date, channel.end_date)
@@ -166,7 +166,7 @@ class TSData():
 
             mergewave = outwave[0]
             for w in outwave[1:]:
-                mergewave = mergewave.__add__(w,fill_value='latest')
+                mergewave = mergewave.__add__(w,fill_value=fill_value)
                 #print(w.meta['starttime'], w.meta['endtime'],w.meta['starttime']+w.times()[-1])
 
             outwave = mergewave
