@@ -11,7 +11,7 @@ import re
 
 
 class TSData():
-    def __init__(self, filename: str = None, numofsamples: int = 400, cachesize = 1e+2):
+    def __init__(self, filename: str = None, numofsamples: int = 400, cachesize = 1e+9):
         self.wavelist = {}
         self.wavemeta = {}
 
@@ -136,7 +136,7 @@ class TSData():
 
         #print(outwave.shape,'readcache',head, tail)
 
-        return outwave, wavename, start_date, end_date
+        return outwave, wavename, start_date, end_date, gaps
 
     def readdisc(self, waveform: str, starttime: datetime, endtime: datetime, resample: bool=True):
         print('readdisc', starttime, endtime)
