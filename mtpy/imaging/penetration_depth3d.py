@@ -183,7 +183,7 @@ def plot_bar3d_depth(edifiles, per_index, whichrho='det'):
 
         if whichrho == 'det':  # the 2X2 complex Z-matrix's determinant abs value
             # determinant value at the given period index
-            det2 = np.abs(zeta.det[0][per_index])
+            det2 = np.abs(zeta.det[per_index])
             penetration_depth = -scale_param * np.sqrt(0.2 * per * det2 * per)
         elif whichrho == 'zxy':
             penetration_depth = - scale_param * \
@@ -220,7 +220,7 @@ def plot_bar3d_depth(edifiles, per_index, whichrho='det'):
     # import numpy as np
 
     fig = plt.figure()
-    ax1 = fig.add_subplot(111, projection='3d')
+    ax1 = fig.add_subplot(1, 1, 1, projection='3d')
 
     xpos = []  # a seq (1,2,3,4,5,6,7,8,9,10)
     ypos = []  # a seq [2,3,4,5,1,6,2,1,7,2]
