@@ -65,7 +65,15 @@ class TSScene(QGraphicsScene):
 
         self.state = self.states['ready']
         self.installEventFilter(self)
+        self.showgap = False
 
+    def togglegap(self):
+        self.showgap = ~self.showgap
+
+        tmplist = self.visibleWave.copy()
+        for wave in tmplist:
+            self.togglewave(wave)
+            self.togglewave(wave, tmplist[wave][1])
 
     def applytime(self, start: str, end: str):
         if self.data is None:
@@ -91,17 +99,19 @@ class TSScene(QGraphicsScene):
             self.removewave(axes, lines)
             self.visibleWave.pop(wave, None)
             self.axesavailability[self.axes.index(axes)] = True
+            axes.clear()
 
         else:
             # print(wave)
-            waveform, wavename, starttime, endtime = self.data.getwaveform(wave, self.starttime, self.endtime)
-            axes, lines = self.displaywave(wavename, waveform)
+            waveform, wavename, starttime, endtime, gaps = self.data.getwaveform(wave, self.starttime, self.endtime)
+            axes, lines = self.displaywave(wavename, waveform, gaps)
             if axes is not None:
-                self.visibleWave[wave] = (axes, lines, colorcode, starttime, endtime)
+                self.visibleWave[wave] = (axes, lines, colorcode, starttime, endtime, gaps)
                 #print("togglewave:", starttime, endtime)
 
 
-    def displaywave(self, wavename: str, waveform: np.array, colorcode: int=None):
+    def displaywave(self, wavename: str, waveform: np.array, gaps, colorcode: int=None):
+        # print(gaps)
         if True not in self.axesavailability:
             return None, None
         else:
@@ -115,12 +125,23 @@ class TSScene(QGraphicsScene):
                 # print(waveform.shape,'='*8)
                 times = waveform[0,:]
                 span = round(len(times)/4)
-                if span<1:
-                    span = 1
+                print(UTCDateTime(times[0]),UTCDateTime(times[-1]),'out')
+                # print(span)
+                # if span<1:
+                #     span = 1
                 axes.set_xticks(times[::span])
                 #axes.set_xticklabels([datetime(int(t)).strftime("%Y-%m-%d %H:%M:%S") for t in times[::span]])
                 axes.set_xticklabels([UTCDateTime(t).strftime("%Y-%m-%d %H:%M:%S") for t in times[::span]])
+                print([UTCDateTime(t).strftime("%Y-%m-%d %H:%M:%S") for t in times[::span]])
+                print([UTCDateTime(t) for t in times[::span]])
+                print(times[::span])
                 lines = axes.plot(times, waveform[1,:],linestyle="-", label=wavename, color=colorcode)
+                #lines = axes.plot(range(len(times)),times, linestyle="-", label=wavename, color=colorcode)
+                if self.showgap:
+                    for g in gaps:
+                        print(g[4],g[5])
+                        if g[4].timestamp>=times[0] and g[5].timestamp<times[-1]:
+                            axes.axvspan(g[4],g[5],facecolor='0.2',alpha=0.5)
                 axes.legend()
                 self.downx = None
 

@@ -21,6 +21,7 @@ from PyQt5.QtWidgets import QLineEdit
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QStandardItemModel
 from PyQt5.QtGui import QStandardItem
+from PyQt5.QtWidgets import QCheckBox
 from PyQt5 import QtCore
 
 from tsscene import TSScene
@@ -55,9 +56,13 @@ class TSWindow(QWidget):
         self.scene.starttimechanged.connect(self.starttime.setText)
         self.scene.endtimechanged.connect(self.endtime.setText)
 
+        # gap mark
+        gapmarkcheckbox = QCheckBox('mark gaps')
+        gapmarkcheckbox.stateChanged.connect(self.scene.togglegap)
 
         viewLayout = QVBoxLayout()
         viewLayout.addWidget(timeWidget)
+        viewLayout.addWidget(gapmarkcheckbox)
         viewLayout.addWidget(QGraphicsView(self.scene))
         viewWidget = QWidget()
         viewWidget.setLayout(viewLayout)
@@ -142,8 +147,8 @@ class TSWindow(QWidget):
     def openfile(self):
         fname = QFileDialog.getOpenFileName(self,
                                             'Open file',
-                                            #'/g/data/ha3/Passive/_AusArray/OA/ASDF_BU/OA.h5', 'asdf file (*.h5)')
-                                            '/g/data/ha3/rakib/ausLAMP/Data/Output/fixed/', 'asdf file (*.h5)')
+                                            '/g/data/ha3/Passive/_AusArray/OA/ASDF_BU/OA.h5', 'asdf file (*.h5)')
+                                            #'/g/data/ha3/rakib/ausLAMP/Data/Output/fixed/', 'asdf file (*.h5)')
         if len(fname[0]) > 0:
             self.scene.setdata(fname[0])
             self.setlist()
