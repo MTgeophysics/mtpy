@@ -50,6 +50,7 @@ class TSScene(QGraphicsScene):
         for i in range(numofchannel):
             self.axes.append(figure.add_subplot(str(numofchannel)+'1'+str(i+1)))
 
+
         # set backend data model
         self.data = None
         self.visibleWave = {}
@@ -94,13 +95,11 @@ class TSScene(QGraphicsScene):
 
     def togglewave(self, wave: str, colorcode:int=0):
         if wave in self.visibleWave:
-            axes = self.visibleWave[wave][0]
-            lines = self.visibleWave[wave][1]
+            axes, lines, _, _, _, _ = self.visibleWave[wave]
             self.removewave(axes, lines)
             self.visibleWave.pop(wave, None)
-            self.axesavailability[self.axes.index(axes)] = True
-            axes.clear()
-
+            channelid = self.axes.index(axes)
+            self.axesavailability[channelid] = True
         else:
             # print(wave)
             waveform, wavename, starttime, endtime, gaps = self.data.getwaveform(wave, self.starttime, self.endtime)
@@ -132,14 +131,14 @@ class TSScene(QGraphicsScene):
                 axes.set_xticks(times[::span])
                 #axes.set_xticklabels([datetime(int(t)).strftime("%Y-%m-%d %H:%M:%S") for t in times[::span]])
                 axes.set_xticklabels([UTCDateTime(t).strftime("%Y-%m-%d %H:%M:%S") for t in times[::span]])
-                print([UTCDateTime(t).strftime("%Y-%m-%d %H:%M:%S") for t in times[::span]])
-                print([UTCDateTime(t) for t in times[::span]])
-                print(times[::span])
+                #print([UTCDateTime(t).strftime("%Y-%m-%d %H:%M:%S") for t in times[::span]])
+                #print([UTCDateTime(t) for t in times[::span]])
+                #print(times[::span])
                 lines = axes.plot(times, waveform[1,:],linestyle="-", label=wavename, color=colorcode)
                 #lines = axes.plot(range(len(times)),times, linestyle="-", label=wavename, color=colorcode)
                 if self.showgap:
                     for g in gaps:
-                        print(g[4],g[5])
+                        #print(g[4],g[5])
                         if g[4].timestamp>=times[0] and g[5].timestamp<times[-1]:
                             axes.axvspan(g[4],g[5],facecolor='0.2',alpha=0.5)
                 axes.legend()
@@ -208,7 +207,8 @@ class TSScene(QGraphicsScene):
             lines.pop(0).remove()
         axes.relim()
         axes.autoscale_view(True, True, True)
-        axes.legend()
+        #axes.get_legend().remove()
+        axes.clear()
         self.canvas.draw()
 
     def timeshift(self, shift: float):

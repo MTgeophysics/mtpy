@@ -147,8 +147,8 @@ class TSWindow(QWidget):
     def openfile(self):
         fname = QFileDialog.getOpenFileName(self,
                                             'Open file',
-                                            #'/g/data/ha3/Passive/_AusArray/OA/ASDF_BU/OA.h5', 'asdf file (*.h5)')
-                                            '/g/data/ha3/rakib/ausLAMP/Data/Output/fixed/au.vic.h5', 'asdf file (*.h5)')
+                                            '/g/data/ha3/Passive/_AusArray/OA/ASDF_BU/OA.h5', 'asdf file (*.h5)')
+                                            #'/g/data/ha3/rakib/ausLAMP/Data/Output/fixed/au.vic.h5', 'asdf file (*.h5)')
         if len(fname[0]) > 0:
             self.scene.setdata(fname[0])
             self.setlist()
