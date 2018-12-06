@@ -11,7 +11,7 @@ import re
 
 
 class TSData():
-    def __init__(self, filename: str = None, numofsamples: int = 1000):
+    def __init__(self, filename: str = None, numofsamples: int = 400, cachesize = 1e+9):
         self.wavelist = {}
         self.wavemeta = {}
 
@@ -20,6 +20,7 @@ class TSData():
 
         self.wavecache = {}
         self.numofsamples = numofsamples
+        self.cachesize = cachesize
 
 
     def loadFile(self, filename: str):
@@ -50,19 +51,28 @@ class TSData():
 
         #print('!!!!!!timewindow=',timewindow)
 
-        if waveform in self.wavecache and (timewindow is None or abs(self.wavecache[waveform][0] - timewindow)/timewindow<0.01):
+        if waveform in self.wavecache and (timewindow is None or abs(self.wavecache[waveform][0] - timewindow)/timewindow<0.1):
             return self.readcache(waveform, starttime, endtime)
         elif self.writecache(waveform, timewindow):
             return self.readcache(waveform, starttime, endtime)
         else:
-            return self.readdisc(rawdata, channel, wavename, starttime, endtime)
+            outwave, wavename, start_date, end_date, gaps= self.readdisc(waveform, starttime, endtime)
+            #print(outwave.meta['starttime'],outwave.meta['starttime']+outwave.times()[-1],'here')
+            #print((outwave.times() + outwave.meta['starttime'].timestamp)[::100],'time')
+            wave = np.vstack((outwave.times() + outwave.meta['starttime'].timestamp, outwave.data))
+
+            wave = wave[:, wave[0, :] != np.nan]
+            wave = wave[:, wave[1, :] != np.nan]
+
+            #print(wave[0,200],type(wave[0,200]))
+            return wave, wavename, start_date, end_date, gaps
 
 
     def writecache(self, waveform, timewindow):
-        # print('writecache', timewindow)
+        #print('writecache', timewindow)
         _, channel, _ = self.wavemeta[waveform]
-        if (channel.end_date - channel.start_date) / channel.sample_rate < 1e+9:
-            outwave, wavename, start_date, end_date = \
+        if (channel.end_date - channel.start_date) / channel.sample_rate < self.cachesize:
+            outwave, wavename, start_date, end_date, gaps = \
                 self.readdisc(waveform, channel.start_date, channel.end_date, False)
 
             if timewindow is None:
@@ -90,21 +100,23 @@ class TSData():
             # print('writecache length=',len(outwave.data))
 
             #self.wavecache[waveform] = timewindow, outwave, wavename, start_date, end_date
-            self.wavecache[waveform] = timewindow, np.vstack((outwave.times()+outwave.meta['starttime'].timestamp, outwave.data)) , wavename, start_date, end_date
+            wave = np.vstack((outwave.times() + outwave.meta['starttime'].timestamp, outwave.data))
+            wave = np.array(wave).copy()
+            self.wavecache[waveform] = timewindow, wave , wavename, start_date, end_date, gaps
 
             # print(type(outwave.data),'!'*10)
 
-            print(np.vstack((outwave.data, outwave.times())).shape,'!'*10,'writecache')
-            print(np.vstack((outwave.times()+outwave.meta['starttime'].timestamp, outwave.data)).shape,'writecache')
-            print(waveform)
+            #print(np.vstack((outwave.data, outwave.times())).shape,'!'*10,'writecache')
+            #print(np.vstack((outwave.times()+outwave.meta['starttime'].timestamp, outwave.data)).shape,'writecache')
+            #print(waveform)
 
             return True
         else:
             return False
 
     def readcache(self, waveform: str, starttime: datetime, endtime: datetime):
-        # print('readcache', starttime, endtime)
-        timewindow, wave, wavename, start_date, end_date = self.wavecache[waveform]
+        #print('readcache', starttime, endtime)
+        timewindow, wave, wavename, start_date, end_date, gaps = self.wavecache[waveform]
         # print(timewindow, wave, wavename, start_date, end_date)
 
         if starttime is None:
@@ -114,24 +126,27 @@ class TSData():
             endtime = end_date
 
 
-        #outwave = wave.slice(starttime, endtime)
-        print(wave[0,0],wave[0,-1],starttime, endtime)
 
-        head = np.argmax(wave[0,:] > starttime)
-        tail = np.argmax(wave[0,:] > endtime)
-        if tail == 0 and wave[0,0]<endtime:
-            tail = len(wave[0,:])
+        head = int((starttime - start_date)/(wave[0,1]-wave[0,0]))
+        tail = int((endtime - start_date) / (wave[0,1] - wave[0,0]))
+        # print(head, tail,'+'*10)
+        if tail >= wave.shape[1]:
+            tail = wave.shape[1]-1
         outwave = wave[:,head: tail]
 
-        print(outwave.shape,'readcache',head, tail)
+        #print(outwave.shape,'readcache',head, tail)
 
-        return outwave, wavename, starttime, endtime
+        return outwave, wavename, start_date, end_date, gaps
 
-    def readdisc(self, waveform: str, starttime: datetime, endtime: datetime, resample: bool=True):
+    def readdisc(self, waveform: str, starttime: datetime, endtime: datetime, resample: bool=True, fill_value:str='latest'):
         print('readdisc', starttime, endtime)
         rawdata, channel, wavename = self.wavemeta[waveform]
+        # print(channel.start_date, channel.end_date)
         ntwk = re.sub('([^.]+)(.*)','\\1', wavename)
         sttn = re.sub('([^.]+\.)([^.]+)(.*)','\\2', wavename)
+
+        #print(channel.start_date, channel.end_date,'readin')
+
 
         if starttime is None:
             starttime = channel.start_date
@@ -139,13 +154,29 @@ class TSData():
         if endtime is None:
             endtime = channel.end_date
 
+        #print(starttime, endtime, 'read2')
+
         outwave = rawdata.get_waveforms(network=ntwk, station=sttn, location=channel.location_code, \
                             channel=channel.code, starttime=starttime, endtime=endtime, tag="raw_recording")
-        #print(ntwk, sttn, channel.location_code, channel.code, starttime, endtime, "raw_recording")
-        #print(outwave)
+
+
 
         if len(outwave)>0:
-            outwave = outwave[0]
+            gaps = outwave.get_gaps()
+
+            mergewave = outwave[0]
+            for w in outwave[1:]:
+                mergewave = mergewave.__add__(w,fill_value=fill_value)
+                #print(w.meta['starttime'], w.meta['endtime'],w.meta['starttime']+w.times()[-1])
+
+            outwave = mergewave
+
+            #print(outwave.meta['starttime'], outwave.meta['endtime'],'merged')
+
+            #print(UTCDateTime(outwave.meta['starttime'].timestamp+outwave.times()[-1]), outwave.meta['endtime'],'read3')
+
+
+
 
             rate = round(float(len(outwave.data)) / self.numofsamples)
             if resample == False or rate<=1:
@@ -156,6 +187,7 @@ class TSData():
                 tmp.meta['delta'] = outwave.meta['delta'] * rate
                 tmp.meta['starttime'] = outwave.meta['starttime']
                 outwave = tmp  # .decimate(1, True)
+                #print(outwave.meta['endtime'], 'new endtime  ')
             elif rate>=1:
                 outwave.decimate(rate)
         else:
@@ -164,8 +196,9 @@ class TSData():
             outwave.meta['starttime'] = starttime
             outwave.meta['delta'] = (endtime-starttime)/self.numofsamples
 
+        #print(outwave.times()[::100])
 
-        return outwave, wavename, channel.start_date, channel.end_date
+        return outwave, wavename, channel.start_date, channel.end_date, gaps
 
 
 

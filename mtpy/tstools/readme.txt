@@ -1,7 +1,11 @@
-under linux:
 
-conda env create -f environment.yml
 
-conda activate tstools
+$conda update conda
 
-python example.py
+$conda env create -f environment.yml
+
+$conda activate tstools
+
+$python example.py
+
+$conda deactivate
