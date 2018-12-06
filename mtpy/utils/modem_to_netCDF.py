@@ -1,18 +1,20 @@
 #!/usr/bin/env python
 """
+# created by U.Zannat from GA, Nov, 2018
 +++++++++++++++++
-This code work on MTpy modEM format output and generate a netCDF file.
+This code works on MTpy modEM format output and generate a netCDF file.
 The modEM format generates an irregular grid in local unit(east, north, depth).
 Here we converted that grid in global crs (in lon, lat, depth) and in regular
-grid. The regular spacing we used here is the median of our input data. The 
+grid. The regular spacing we used here is the mode of our input data. The 
 interpolation is done in local grid to have the advantage of having the same
-unit for our three variable (east, norht, depth in km).
+unit for our three variables (east, north, depth in km).
 +++++++++++++++++
 """
 import os
 from os.path import join, abspath
 
 import numpy as np
+from scipy import stats
 from osgeo import osr
 from scipy.interpolate import interp2d
 from pyproj import Proj, transform
@@ -45,8 +47,7 @@ def median_spacing(arr):
     """
     The spacing that occurs the maximum time.
     """
-    return np.median(arr[1:] - arr[:-1])
-
+    return stats.mode(arr[1:] - arr[:-1]).mode.item()
 
 def lon_lat_grid_spacing(center, width, height, to_wgs84):
     """
@@ -153,7 +154,7 @@ def main():
         result['resistivity'][z_index, :, :] = uniform_layer(interpolation_funcs[z_index],
                                                              result['latitude'], result['longitude'])
 
-    write_resistivity_grid('wgs84.nc', wgs84_crs,
+    write_resistivity_grid('wgs84.nc.mode', wgs84_crs,
                            result['latitude'], result['longitude'], result['depth'],
                            result['resistivity'], z_label='depth')
 

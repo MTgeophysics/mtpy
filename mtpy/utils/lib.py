@@ -1,3 +1,6 @@
+"""
+Some utility functions for winGliknk format.
+"""
 import numpy as np
 
 from osgeo import osr
@@ -11,6 +14,9 @@ def epsg_to_crs(epsg):
     return source_ref
 
 def get_utm_zone(latitude, longitude):
+    """
+    Returns zone number and hemisphere if lat, lon is provided.
+    """
     result = osr.SpatialReference()
     result.SetWellKnownGeogCS('WGS84')
     is_northern = int(latitude >= 0)
@@ -19,11 +25,17 @@ def get_utm_zone(latitude, longitude):
     return result
 
 def crs_to_str(crs):
+    """
+::    Retrieve the crs as string.
+    """
     return crs.GetAttrValue('GEOGCS') or crs.GetAttrValue('PROJCS')
 
 wgs84_crs = epsg_to_crs(4326)
 
 def transform_coords(coordinates, from_crs, to_crs):
+    """
+    A GDAL functionality to transform coordinates from one spatial ref to another.
+    """
     if from_crs.IsSame(to_crs):
         return coordinates
 
@@ -62,6 +74,7 @@ class Interval:
 
 def bounds(arr):
     return Interval(left=np.min(arr), right=np.max(arr))
+
 
 
 class Points3D:
