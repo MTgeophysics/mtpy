@@ -69,7 +69,7 @@ class TSData():
 
 
     def writecache(self, waveform, timewindow):
-        print('writecache', timewindow)
+        #print('writecache', timewindow)
         _, channel, _ = self.wavemeta[waveform]
         if (channel.end_date - channel.start_date) / channel.sample_rate < self.cachesize:
             outwave, wavename, start_date, end_date, gaps = \
@@ -115,7 +115,7 @@ class TSData():
             return False
 
     def readcache(self, waveform: str, starttime: datetime, endtime: datetime):
-        print('readcache', starttime, endtime)
+        #print('readcache', starttime, endtime)
         timewindow, wave, wavename, start_date, end_date, gaps = self.wavecache[waveform]
         # print(timewindow, wave, wavename, start_date, end_date)
 

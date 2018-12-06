@@ -27,7 +27,7 @@ from datetime import datetime
 from multiprocessing import Queue
 
 import numpy as np
-
+import time
 
 
 
@@ -45,6 +45,11 @@ class TSScene(QGraphicsScene):
         self.graphwidth = figure.dpi * width
         self.canvas = FigureCanvas(figure)
         self.addWidget(self.canvas)
+        self.canvas.mpl_connect('button_press_event',self.button_press_event)
+        self.canvas.mpl_connect('button_release_event', self.button_release_event)
+        self.canvas.mpl_connect('motion_notify_event', self.motion_notify_event)
+        self.canvas.mpl_connect('scroll_event', self.scroll_event)
+
         self.axesavailability = [True for i in range(numofchannel)]
         self.axes = []
         for i in range(numofchannel):
@@ -58,15 +63,19 @@ class TSScene(QGraphicsScene):
         self.endtime = None
 
         # prepare for user input
-        self.downx = None
+        self.downxcoord = None
         self.wheelactive = False
         self.rect = None
 
-        self.states = {'ready':0, 'busy':1}
-
-        self.state = self.states['ready']
         self.installEventFilter(self)
         self.showgap = False
+        self.downbutton = None
+        self.currentxdata = None
+
+        self.count = 0
+        self.state = 'ready'
+
+
 
     def togglegap(self):
         self.showgap = ~self.showgap
@@ -124,7 +133,7 @@ class TSScene(QGraphicsScene):
                 # print(waveform.shape,'='*8)
                 times = waveform[0,:]
                 span = round(len(times)/4)
-                print(UTCDateTime(times[0]),UTCDateTime(times[-1]),'out')
+                # print(UTCDateTime(times[0]),UTCDateTime(times[-1]),'out')
                 # print(span)
                 # if span<1:
                 #     span = 1
@@ -142,7 +151,6 @@ class TSScene(QGraphicsScene):
                         if g[4].timestamp>=times[0] and g[5].timestamp<times[-1]:
                             axes.axvspan(g[4],g[5],facecolor='0.2',alpha=0.5)
                 axes.legend()
-                self.downx = None
 
                 self.canvas.draw()
 
@@ -166,40 +174,7 @@ class TSScene(QGraphicsScene):
 
             return axes, lines
 
-    def displaywave_(self, wavename: str, waveform: Trace, colorcode: int=None):
-        if True not in self.axesavailability:
-            return None, None
-        else:
-            location = self.axesavailability.index(True)
-            axes = self.axes[location]
-            self.axesavailability[location] = False
-            if wavename is not None and waveform is not None:
-                if colorcode is None:
-                    colorcode = 'C'+str(location%10)
 
-                times = [waveform.meta['starttime']+t for t in waveform.times()]
-                span = round(len(times)/4)
-                if span<1:
-                    span = 1
-                axes.set_xticks(times[::span])
-                axes.set_xticklabels([t.strftime("%Y-%m-%d %H:%M:%S") for t in times[::span]])
-                lines = axes.plot(times, waveform.data,linestyle="-", label=wavename, color=colorcode)
-                axes.legend()
-                self.downx = None
-
-                self.canvas.draw()
-
-                self.starttime = waveform.meta['starttime']
-                self.endtime = waveform.meta['endtime']
-
-                self.starttimechanged.emit(self.starttime.strftime("%Y-%m-%d %H:%M:%S"))
-                self.endtimechanged.emit(self.endtime.strftime("%Y-%m-%d %H:%M:%S"))
-                return axes, lines
-            else:
-                lines = None
-                axes.legend([wavename])
-
-            return axes, lines
 
 
     def removewave(self, axes: Axes, lines: Line2D):
@@ -211,17 +186,17 @@ class TSScene(QGraphicsScene):
         axes.clear()
         self.canvas.draw()
 
-    def timeshift(self, shift: float):
-        # print("shift")
-        self.state = False
-
+    def timeshift(self):
+        print(self.currentxdata, '2' * 10)
+        if self.downxcoord is None:
+            return
+        shift = self.downxcoord-self.currentxdata
+        if shift == 0:
+            print('skipped')
+            return
+        print('shift=',shift)
         if self.starttime is None:
             return
-
-        #print('shift=',self.starttime- self.endtime)
-
-        shift = (self.endtime-self.starttime)*shift
-
         starttime = self.starttime + shift
         endtime = self.endtime + shift
 
@@ -285,60 +260,64 @@ class TSScene(QGraphicsScene):
 
 
 
-    def mousePressEvent(self, event: QMouseEvent):
-        super(TSScene, self).mousePressEvent(event)
+
+
+    def button_press_event(self, event):
+
         if self.starttime is None:
             return
-        self.downx = event.scenePos().x()
-        self.downbutton = event.button()
-        self.state = self.states['ready']
+        self.downxcoord = event.xdata
+        self.downx = event.x
+        self.downbutton = event.button
+        self.count = 0
 
 
-    def performshift(self):
-        if self.state == self.states['busy']:
-            shift = float(self.downx - self.currentx) / self.graphwidth
-            self.timeshift(shift)
-            self.downx = self.currentx
-            self.state = self.states['ready']
+    def release(self):
+        self.timeshift()
+        self.state = 'ready'
 
+    def motion_notify_event(self, event):
+        # print(event.button, self.starttime, self.downbutton, self.downxcoord, event.xdata)
+        self.count += 1
+        self.currentxdata = event.xdata
 
-    def mouseMoveEvent(self, event: QMouseEvent):
-        #print(self.state)
         if self.starttime is None:
             return
-        if self.downx is not None:
+        elif self.downxcoord is not None:
+            if self.downbutton == 1 and self.state == 'ready':
+                #shift = self.downxcoord-event.xdata
+                #self.downxcoord = event.xdata
+                self.state = 'busy'
+                print(self.currentxdata,'1'*10)
+                QTimer.singleShot(0.2, self.release)
+                #self.timeshift(shift)
+            elif self.downbutton == 1:
+                print("skip","="*10)
+            elif self.downbutton == 3:
+                if self.rect is not None:
+                    self.removeItem(self.rect)
+                self.rect = self.addRect(self.downx, 0, event.x - self.downx, self.height(), pen=QPen(Qt.red))
 
-            if self.downbutton == Qt.LeftButton and self.state==self.states['ready']:
-                self.state = self.states['busy']
-                QTimer.singleShot(0, self.performshift)
-            elif self.downbutton == Qt.LeftButton:
-                # print('ignored=============================')
-                pass
-
-
-            elif self.downbutton == Qt.RightButton:
-                self.removeItem(self.rect)
-                self.rect = self.addRect(self.downx,0, event.scenePos().x()-self.downx, self.height(), pen=QPen(Qt.red))
-
-    def mouseReleaseEvent(self, event: QMouseEvent):
-        super(TSScene, self).mousePressEvent(event)
+    def button_release_event(self, event):
         if self.starttime is None:
             return
-        if event.button() == Qt.RightButton:
+        if event.button == 3:
             left = 225
             right = 1215
-            start = self.starttime+(self.downx-left)/(right-left)*(self.endtime-self.starttime)
-            end = self.starttime+(event.scenePos().x()-left)/(right-left)*(self.endtime-self.starttime)
+            start = self.downxcoord
+            end = event.xdata
             self.applytime(start, end)
         # self.downx = None
         self.downbutton = None
         self.removeItem(self.rect)
         self.rect = None
+        self.downxcoord = None
+        print(self.count,'count!!!!!!!!')
+        self.count=0
 
-    def wheelEvent(self, event: QMouseEvent):
-        super(TSScene, self).wheelEvent(event)
+    def scroll_event(self, event):
 
-        delta = -event.delta() / 8 / 15
+        delta = -event.step
 
         if self.wheelactive==False:
             self.wheelactive = True
@@ -366,13 +345,5 @@ class TSScene(QGraphicsScene):
         return self.starttime, self.endtime
 
 
-    def eventFilter(self, source, event):
-        #print(event.type())
-        if event.type() == 155:
-            #print(event)
-            if event.buttons() == QtCore.Qt.LeftButton:
-                self.currentx = event.scenePos().x()
-            else:
-                pass # do other stuff
 
         return False
