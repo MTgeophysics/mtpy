@@ -21,6 +21,8 @@ from tsdata import TSData
 from obspy.core.trace import Trace
 from obspy.core.stream import Stream
 from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtCore import QTimeLine
+
 
 from obspy.core.utcdatetime import UTCDateTime
 from datetime import datetime
@@ -75,7 +77,16 @@ class TSScene(QGraphicsScene):
         self.count = 0
         self.state = 'ready'
 
+        self.timeline = QTimeLine(20)
+        self.timeline.setCurrentTime(0)
+        self.timeline.setUpdateInterval(20)
+        self.timeline.finished.connect(self.timeshift)
+        self.timeline.finished.connect(self.animfinished)
 
+
+    def animfinished(self):
+        self.state = 'ready'
+        self.timeline.setCurrentTime(0)
 
     def togglegap(self):
         self.showgap = ~self.showgap
@@ -187,16 +198,20 @@ class TSScene(QGraphicsScene):
         self.canvas.draw()
 
     def timeshift(self):
-        print(self.currentxdata, '2' * 10)
-        if self.downxcoord is None:
+        #print(self.currentxdata, '2' * 10)
+        #print(self.timeline.currentTime(),'current time')
+        if self.downxcoord is None or self.currentxdata is None:
             return
         shift = self.downxcoord-self.currentxdata
         if shift == 0:
             print('skipped')
             return
-        print('shift=',shift)
+        #print('shift=',shift)
         if self.starttime is None:
             return
+
+        #shift = shift/3.0
+
         starttime = self.starttime + shift
         endtime = self.endtime + shift
 
@@ -272,27 +287,22 @@ class TSScene(QGraphicsScene):
         self.count = 0
 
 
-    def release(self):
-        self.timeshift()
-        self.state = 'ready'
+
 
     def motion_notify_event(self, event):
         # print(event.button, self.starttime, self.downbutton, self.downxcoord, event.xdata)
         self.count += 1
         self.currentxdata = event.xdata
+        #print(self.currentxdata,"+" * 10)
 
         if self.starttime is None:
             return
         elif self.downxcoord is not None:
-            if self.downbutton == 1 and self.state == 'ready':
-                #shift = self.downxcoord-event.xdata
-                #self.downxcoord = event.xdata
+            if self.downbutton == 1 and self.timeline.currentTime()==0:
                 self.state = 'busy'
-                print(self.currentxdata,'1'*10)
-                QTimer.singleShot(0.2, self.release)
-                #self.timeshift(shift)
+                self.timeline.start()
             elif self.downbutton == 1:
-                print("skip","="*10)
+                print("skip",self.timeline.currentTime(),"="*10)
             elif self.downbutton == 3:
                 if self.rect is not None:
                     self.removeItem(self.rect)
@@ -312,7 +322,8 @@ class TSScene(QGraphicsScene):
         self.removeItem(self.rect)
         self.rect = None
         self.downxcoord = None
-        print(self.count,'count!!!!!!!!')
+        self.currentxdata = None
+        #print(self.count,'count!!!!!!!!')
         self.count=0
 
     def scroll_event(self, event):
