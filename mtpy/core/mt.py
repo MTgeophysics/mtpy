@@ -2194,6 +2194,16 @@ class Instrument(object):
 
         for key in kwargs.keys():
             setattr(self, key, kwargs[key])
+            
+    def get_length(self):
+        """
+        get dipole length
+        """
+        
+        try:
+            return np.sqrt((self.x2 - self.x)**2 + (self.y2 - self.y)**2)
+        except AttributeError:
+            return 0
 
 
 # ==============================================================================
