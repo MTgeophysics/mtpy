@@ -59,7 +59,7 @@ class TSScene(QGraphicsScene):
 
 
         # set backend data model
-        self.data = None
+        self.data = TSData()
         self.visibleWave = {}
         self.starttime = None
         self.endtime = None
@@ -107,8 +107,8 @@ class TSScene(QGraphicsScene):
             self.togglewave(wave)
             self.togglewave(wave, tmplist[wave][2])
 
-    def setdata(self, filename: str):
-        self.data = TSData(filename)
+    def loadfile(self, filename: str):
+        self.data.loadFile(filename)
 
     def getlist(self):
         return self.data.getlist()
@@ -148,9 +148,10 @@ class TSScene(QGraphicsScene):
                 # print(span)
                 # if span<1:
                 #     span = 1
-                axes.set_xticks(times[::span])
-                #axes.set_xticklabels([datetime(int(t)).strftime("%Y-%m-%d %H:%M:%S") for t in times[::span]])
-                axes.set_xticklabels([UTCDateTime(t).strftime("%Y-%m-%d %H:%M:%S") for t in times[::span]])
+                if span>0:
+                    axes.set_xticks(times[::span])
+                    #axes.set_xticklabels([datetime(int(t)).strftime("%Y-%m-%d %H:%M:%S") for t in times[::span]])
+                    axes.set_xticklabels([UTCDateTime(t).strftime("%Y-%m-%d %H:%M:%S") for t in times[::span]])
                 #print([UTCDateTime(t).strftime("%Y-%m-%d %H:%M:%S") for t in times[::span]])
                 #print([UTCDateTime(t) for t in times[::span]])
                 #print(times[::span])
@@ -165,12 +166,12 @@ class TSScene(QGraphicsScene):
 
                 self.canvas.draw()
 
-                if self.endtime is not None and self.starttime is not None:
+                if self.endtime is not None and self.starttime is not None and len(times)>0:
                     timewindow = self.endtime-self.starttime
                     if abs(times[0]-times[-1]-timewindow)/timewindow<0.1:
                         self.starttime = UTCDateTime(times[0])
                         self.endtime = self.starttime + timewindow
-                else:
+                elif len(times)>0:
                     self.starttime = UTCDateTime(times[0])
                     self.endtime = UTCDateTime(times[-1])
 

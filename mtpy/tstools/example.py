@@ -114,6 +114,10 @@ class TSWindow(QWidget):
     # set up wave tree in control region
     def setlist(self):
         item = self.waveTree.invisibleRootItem()
+
+        for c in reversed(range(item.childCount())):
+            item.removeChild(item.child(c))
+
         self.fillitem(item, self.scene.getlist())
         self.waveTree.setSelectionMode(QAbstractItemView.MultiSelection)
         self.waveTree.show()
@@ -149,7 +153,7 @@ class TSWindow(QWidget):
                                             '/g/data/ha3/Passive/_AusArray/OA/ASDF_BU/OA.h5', 'asdf file (*.h5)')
                                             #'/g/data/ha3/rakib/ausLAMP/Data/Output/fixed/au.vic.h5', 'asdf file (*.h5)')
         if len(fname[0]) > 0:
-            self.scene.setdata(fname[0])
+            self.scene.loadfile(fname[0])
             self.setlist()
 
 
@@ -166,7 +170,7 @@ class TSWindow(QWidget):
                                             '/g/data/ha3/Passive/_AusArray/OA/ASDF_BU/OA.h5', 'asdf file (*.h5)')
                                             #'/g/data/ha3/rakib/ausLAMP/Data/Output/fixed/au.vic.h5', 'asdf file (*.h5)')
         if len(fname[0]) > 0:
-            self.scene.setdata(fname[0])
+            self.scene.loadfile(fname[0])
             self.setlist()
 
 

@@ -14,6 +14,7 @@ class TSData():
     def __init__(self, filename: str = None, numofsamples: int = 400, cachesize = 1e+9):
         self.wavelist = {}
         self.wavemeta = {}
+        print("ini","!"*10)
 
         if filename is not None:
             self.loadFile(filename)
@@ -40,7 +41,7 @@ class TSData():
                         else:
                             self.wavelist[network.code][station.code][wavename].append(str(channel))
                         self.wavemeta[str(channel)] = (rawdata, channel, wavename)
-
+        print(len(self.wavemeta))
 
     def getwaveform(self, waveform: str, starttime: datetime=None, endtime: datetime=None):
 
