@@ -138,36 +138,31 @@ class TSScene(QGraphicsScene):
 
 
     def displaywave(self, wavename: str, waveform: np.array, gaps, colorcode: int=None):
-        # print(gaps)
+
         if True not in self.axesavailability:
             return None, None
         else:
-            # print(waveform.shape,'!'*10,'displaywave')
+
             location = self.axesavailability.index(True)
             axes = self.axes[location]
             self.axesavailability[location] = False
             if wavename is not None and waveform is not None:
                 if colorcode is None:
                     colorcode = 'C'+str(location%10)
-                # print(waveform.shape,'='*8)
+
                 times = waveform[0,:]
                 span = round(len(times)/4)
-                # print(UTCDateTime(times[0]),UTCDateTime(times[-1]),'out')
-                # print(span)
-                # if span<1:
-                #     span = 1
-                if span>0:
-                    axes.set_xticks(times[::span])
-                    #axes.set_xticklabels([datetime(int(t)).strftime("%Y-%m-%d %H:%M:%S") for t in times[::span]])
-                    axes.set_xticklabels([UTCDateTime(t).strftime("%Y-%m-%d %H:%M:%S") for t in times[::span]])
-                #print([UTCDateTime(t).strftime("%Y-%m-%d %H:%M:%S") for t in times[::span]])
-                #print([UTCDateTime(t) for t in times[::span]])
-                #print(times[::span])
+
+                if span<1:
+                    span = 1
+
+                axes.set_xticks(times[::span])
+                axes.set_xticklabels([UTCDateTime(t).strftime("%Y-%m-%d %H:%M:%S") for t in times[::span]])
+
                 lines = axes.plot(times, waveform[1,:],linestyle="-", label=wavename, color=colorcode)
-                #lines = axes.plot(range(len(times)),times, linestyle="-", label=wavename, color=colorcode)
                 if self.showgap:
                     for g in gaps:
-                        #print(g[4],g[5])
+
                         if g[4].timestamp>=times[0] and g[5].timestamp<times[-1]:
                             axes.axvspan(g[4],g[5],facecolor='0.2',alpha=0.5)
                 axes.legend()
@@ -202,31 +197,22 @@ class TSScene(QGraphicsScene):
             lines.pop(0).remove()
         axes.relim()
         axes.autoscale_view(True, True, True)
-        #axes.get_legend().remove()
         axes.clear()
         self.canvas.draw()
 
     def timeshift(self):
-        #print(self.currentxdata, '2' * 10)
-        #print(self.timeline.currentTime(),'current time')
         if self.downxcoord is None or self.currentxdata is None:
             return
         shift = self.downxcoord-self.currentxdata
         if shift == 0:
             print('skipped')
             return
-        #print('shift=',shift)
+
         if self.starttime is None:
             return
 
-        #shift = shift/3.0
-
         starttime = self.starttime + shift
         endtime = self.endtime + shift
-
-        #print('+'*10,self.endtime- self.starttime )
-
-        #print(starttime, endtime, self.starttime, self.endtime)
 
         for wave in self.visibleWave:
             if starttime<self.visibleWave[wave][3]:
@@ -234,11 +220,8 @@ class TSScene(QGraphicsScene):
             if endtime>self.visibleWave[wave][4]:
                 endtime = self.visibleWave[wave][4]
 
-        #print(starttime, endtime, self.starttime, self.endtime,'!!!!!!')
-
 
         if starttime!=self.starttime and endtime!=self.endtime:
-            # print('update'*10)
             self.starttime = starttime
             self.endtime = endtime
 
