@@ -73,14 +73,17 @@ class TSWindow(QWidget):
         self.waveTree = QTreeWidget()
         self.waveTree.header().hide()
         self.waveTree.itemClicked.connect(self.showwave)
-        self.buttonExport = QPushButton("Export")
-        self.buttonExport.clicked.connect(self.export)
+        self.buttonExportMeta = QPushButton("Export Meta Data")
+        self.buttonExportMeta.clicked.connect(self.exportmeta)
+        self.buttonExportWave = QPushButton("Export Waveforms")
+        self.buttonExportWave.clicked.connect(self.exportwave)
 
 
         controlLayout = QVBoxLayout()
         controlLayout.addWidget(self.buttonOpenFile)
         controlLayout.addWidget(self.waveTree)
-        controlLayout.addWidget(self.buttonExport)
+        controlLayout.addWidget(self.buttonExportMeta)
+        controlLayout.addWidget(self.buttonExportWave)
 
         controlWidget = QWidget()
         controlWidget.setLayout(controlLayout)
@@ -106,10 +109,7 @@ class TSWindow(QWidget):
 
 
 
-    def exportwave(self, wave):
-        print("export",wave.wavename)
-        fname = QFileDialog.getSaveFileName(self, 'Save to','/g/data1a/ge3/yuhang/code/mtpy/mtpy/tstools')
-        self.scene.exportwaveform(wave.wavename, fname[0])
+
 
     # set up wave tree in control region
     def setlist(self):
@@ -136,8 +136,24 @@ class TSWindow(QWidget):
                 node.addChild(child)
                 
 
+    def exportmeta(self):
+        fname = QFileDialog.getSaveFileName(self,
+                                            'Save as',
+                                            '/g/data1a/ge3/yuhang/tmp', 'Text files (*.txt)')
+        if len(fname[0]) > 0:
+            self.scene.exportmetadata(fname)
 
-    def export(self):
+    def openfile(self):
+        fname = QFileDialog.getOpenFileName(self,
+                                            'Open file',
+                                            '/g/data/ha3/Passive/_AusArray/OA/ASDF_BU/OA.h5', 'asdf file (*.h5)')
+                                            #'/g/data/ha3/rakib/ausLAMP/Data/Output/fixed/au.vic.h5', 'asdf file (*.h5)')
+        if len(fname[0]) > 0:
+            self.scene.setdata(fname[0])
+            self.setlist()
+
+
+    def exportwave(self):
         fname = QFileDialog.getSaveFileName(self,
                                             'Save as',
                                             '/g/data1a/ge3/yuhang/tmp', 'MiniSEED (*.MSEED);; Text files (*.txt)')

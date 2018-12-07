@@ -336,6 +336,20 @@ class TSScene(QGraphicsScene):
             self.wheelactive = False
 
 
+    def exportmetadata(self, filename: tuple):
+        wavelist = self.getlist()
+        
+        outfile =  open(filename[0]+'.txt','w')
+        for network in wavelist:
+            for station in wavelist[network]:
+                for wave in wavelist[network][station]:
+                    for w in wavelist[network][station][wave]:
+                        outfile.write("%s\n\n" % w)
+
+        outfile.close()
+
+
+
 
 
     def exportwaveform(self, filename: tuple):
