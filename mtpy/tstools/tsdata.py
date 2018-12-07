@@ -198,6 +198,7 @@ class TSData():
             outwave.meta['delta'] = (endtime-starttime)/self.numofsamples
 
         #print(outwave.times()[::100])
+        print(channel.start_date, channel.end_date,'==================')
 
         return outwave, wavename, channel.start_date, channel.end_date, gaps
 

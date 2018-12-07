@@ -77,9 +77,9 @@ class TSScene(QGraphicsScene):
         self.count = 0
         self.state = 'ready'
 
-        self.timeline = QTimeLine(20)
+        self.timeline = QTimeLine(1)
         self.timeline.setCurrentTime(0)
-        self.timeline.setUpdateInterval(20)
+        self.timeline.setUpdateInterval(1)
         self.timeline.finished.connect(self.timeshift)
         self.timeline.finished.connect(self.animfinished)
 
@@ -99,6 +99,14 @@ class TSScene(QGraphicsScene):
     def applytime(self, start: str, end: str):
         if self.data is None:
             return
+
+
+        for wave in self.visibleWave:
+            if start<self.visibleWave[wave][3]:
+                start = self.visibleWave[wave][3]
+            if end>self.visibleWave[wave][4]:
+                end = self.visibleWave[wave][4]
+
         self.starttime = UTCDateTime(start)
         self.endtime = UTCDateTime(end)
 
@@ -222,14 +230,14 @@ class TSScene(QGraphicsScene):
 
         for wave in self.visibleWave:
             if starttime<self.visibleWave[wave][3]:
-                starttime = self.starttime
+                starttime = self.visibleWave[wave][3]
             if endtime>self.visibleWave[wave][4]:
-                endtime = self.endtime
+                endtime = self.visibleWave[wave][4]
 
         #print(starttime, endtime, self.starttime, self.endtime,'!!!!!!')
 
 
-        if starttime!=self.starttime or endtime!=self.endtime:
+        if starttime!=self.starttime and endtime!=self.endtime:
             # print('update'*10)
             self.starttime = starttime
             self.endtime = endtime
@@ -303,11 +311,14 @@ class TSScene(QGraphicsScene):
                 self.state = 'busy'
                 self.timeline.start()
             elif self.downbutton == 1:
-                print("skip",self.timeline.currentTime(),"="*10)
+                pass
             elif self.downbutton == 3:
                 if self.rect is not None:
                     self.removeItem(self.rect)
-                self.rect = self.addRect(self.downx, 0, event.x - self.downx, self.height(), pen=QPen(Qt.red))
+                if self.downx < event.x:
+                    self.rect = self.addRect(self.downx, 0, event.x - self.downx, self.height(), pen=QPen(Qt.red))
+                else:
+                    self.rect = self.addRect(event.x, 0, self.downx - event.x, self.height(), pen=QPen(Qt.red))
 
     def button_release_event(self, event):
         if self.starttime is None:
@@ -315,8 +326,12 @@ class TSScene(QGraphicsScene):
         if event.button == 3:
             left = 225
             right = 1215
-            start = self.downxcoord
-            end = event.xdata
+            if self.downxcoord < event.xdata:
+                start = self.downxcoord
+                end = event.xdata
+            else:
+                start = event.xdata
+                end = self.downxcoord
             self.applytime(start, end)
         # self.downx = None
         self.downbutton = None
