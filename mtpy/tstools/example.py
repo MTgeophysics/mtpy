@@ -53,7 +53,7 @@ class TSWindow(QWidget):
         timeWidget.setLayout(timeLayout)
 
         # view
-        self.scene = TSScene()
+        self.scene = TSScene(self)
         self.scene.starttimechanged.connect(self.starttime.setText)
         self.scene.endtimechanged.connect(self.endtime.setText)
 
@@ -74,6 +74,7 @@ class TSWindow(QWidget):
         self.waveTree = TSWaveTree()
         self.waveTree.header().hide()
         self.waveTree.itemClicked.connect(self.clickwave)
+        self.waveTree.viewsegments.connect(self.scene.getsegments)
         self.buttonExportMeta = QPushButton("Export Meta Data")
         self.buttonExportMeta.clicked.connect(self.exportmeta)
         self.buttonExportWave = QPushButton("Export Waveforms")

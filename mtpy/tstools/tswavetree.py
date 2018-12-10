@@ -1,12 +1,18 @@
 from PyQt5.QtWidgets import QTreeWidget
 from PyQt5.QtWidgets import QTreeWidgetItem
 from PyQt5.QtCore import Qt
+from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtWidgets import QAbstractItemView
+from PyQt5.QtWidgets import QWidget
+from PyQt5.QtWidgets import QListWidget
+from PyQt5.QtWidgets import QListView
+from PyQt5.QtWidgets import QDialog
 from PyQt5.QtWidgets import QMenu
-from PyQt5 import QtGui
-from PyQt5 import QtCore
+from PyQt5.QtWidgets import QVBoxLayout
 
 class TSWaveTree(QTreeWidget):
+    viewsegments = pyqtSignal(str)
+
     def __init__(self):
         super(TSWaveTree, self).__init__()
         self.setContextMenuPolicy(Qt.CustomContextMenu)
@@ -52,8 +58,24 @@ class TSWaveTree(QTreeWidget):
 
             if action == actionviewwave:
                 self.itemClicked.emit(currentitem, self.currentColumn())
+                currentitem.setSelected(not currentitem.isSelected())
             elif action == actionviewsegment:
                 print("view segments")
+                self.viewsegments.emit(currentitem.text(0))
+                #
+                #
+                # wavelist = QListWidget()
+                # wavelist.addItem("123")
+                # wavelist.addItem("456")
+                # wavelist.addItem("789")
+                #
+                # wavelistwindowlayout = QVBoxLayout()
+                # wavelistwindowlayout.addWidget(wavelist)
+                #
+                # wavelistwindow = QDialog(self)
+                # wavelistwindow.setWindowTitle('segments in '+currentitem.parent().text(0))
+                # wavelistwindow.setLayout(wavelistwindowlayout)
+                # wavelistwindow.show()
 
 
 

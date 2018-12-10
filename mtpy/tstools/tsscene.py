@@ -23,7 +23,12 @@ from obspy.core.stream import Stream
 from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtCore import QTimeLine
 
-
+from PyQt5.QtWidgets import QMenu
+from PyQt5.QtWidgets import QListWidget
+from PyQt5 import QtGui
+from PyQt5 import QtCore
+from PyQt5.QtWidgets import QDialog
+from PyQt5.QtWidgets import QVBoxLayout
 from obspy.core.utcdatetime import UTCDateTime
 from datetime import datetime
 from multiprocessing import Queue
@@ -38,8 +43,8 @@ class TSScene(QGraphicsScene):
     starttimechanged = pyqtSignal(str)
     endtimechanged = pyqtSignal(str)
 
-    def __init__(self, width=14, height=12, numofchannel=6):
-        super(TSScene, self).__init__()
+    def __init__(self, parent, width=14, height=12, numofchannel=6):
+        super(TSScene, self).__init__(parent)
 
         # set waveform windows
         figure = Figure()
@@ -120,6 +125,25 @@ class TSScene(QGraphicsScene):
 
     def getlist(self):
         return self.data.getlist()
+
+    def getsegments(self, wave: str):
+        waves = self.data.getsegments(wave)
+
+
+        wavelist = QListWidget()
+        for w in waves:
+            wavelist.addItem(w)
+            print(w)
+
+        wavelistwindowlayout = QVBoxLayout()
+        wavelistwindowlayout.addWidget(wavelist)
+
+        wavelistwindow = QDialog(self.parent())
+        wavelistwindow.setWindowTitle('segments')
+        wavelistwindow.setLayout(wavelistwindowlayout)
+        wavelistwindow.resize(800,600)
+        wavelistwindow.show()
+
 
     def togglewave(self, wave: str, colorcode:int=0):
         if wave in self.visibleWave:

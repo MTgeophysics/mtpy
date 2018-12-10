@@ -121,6 +121,19 @@ class TSData():
 
         return outwave, wavename, start_date, end_date, gaps
 
+    def getsegments(self, waveform: str):
+        rawdata, channel, wavename = self.wavemeta[waveform]
+        ntwk = re.sub('([^.]+)(.*)','\\1', wavename)
+        sttn = re.sub('([^.]+\.)([^.]+)(.*)','\\2', wavename)
+        outwave = rawdata.get_waveforms(network=ntwk, station=sttn, location=channel.location_code, \
+                    channel=channel.code, starttime=channel.start_date, endtime=channel.end_date, tag="raw_recording")
+
+        return [str(w) for w in outwave]
+
+
+
+
+
     def readdisc(self, waveform: str, starttime: datetime, endtime: datetime, resample: bool=True, fill_value:str='latest'):
         print('readdisc', starttime, endtime)
         rawdata, channel, wavename = self.wavemeta[waveform]
