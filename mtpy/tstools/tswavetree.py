@@ -11,7 +11,7 @@ from PyQt5.QtWidgets import QMenu
 from PyQt5.QtWidgets import QVBoxLayout
 
 class TSWaveTree(QTreeWidget):
-    viewsegments = pyqtSignal(str)
+    viewsegments = pyqtSignal(str, object)
 
     def __init__(self):
         super(TSWaveTree, self).__init__()
@@ -61,7 +61,7 @@ class TSWaveTree(QTreeWidget):
                 currentitem.setSelected(not currentitem.isSelected())
             elif action == actionviewsegment:
                 print("view segments")
-                self.viewsegments.emit(currentitem.text(0))
+                self.viewsegments.emit(currentitem.text(0), currentitem)
                 #
                 #
                 # wavelist = QListWidget()

@@ -37,6 +37,7 @@ import numpy as np
 import time
 
 
+import re
 
 class TSScene(QGraphicsScene):
 
@@ -126,23 +127,43 @@ class TSScene(QGraphicsScene):
     def getlist(self):
         return self.data.getlist()
 
-    def getsegments(self, wave: str):
+    def getsegments(self, wave: str, item: object):
         waves = self.data.getsegments(wave)
 
 
         wavelist = QListWidget()
         for w in waves:
             wavelist.addItem(w)
-            print(w)
+            # print(w)
+        wavelist.itemDoubleClicked.connect(self.segmentselected)
 
         wavelistwindowlayout = QVBoxLayout()
         wavelistwindowlayout.addWidget(wavelist)
 
-        wavelistwindow = QDialog(self.parent())
-        wavelistwindow.setWindowTitle('segments')
-        wavelistwindow.setLayout(wavelistwindowlayout)
-        wavelistwindow.resize(800,600)
-        wavelistwindow.show()
+        self.wavelistwindow = QDialog(self.parent())
+        self.wavelistwindow.setWindowTitle('segments')
+        self.wavelistwindow.setLayout(wavelistwindowlayout)
+        self.wavelistwindow.resize(800,600)
+        self.wavelistwindow.show()
+        self.segmentsource = wave
+        self.currentitem = item
+
+    def segmentselected(self, segment: str):
+
+        matches = re.match(r'[^ ]+ \| ([^ ]+) - ([^ ]+) \| .*', segment.text(), flags=0)
+        start = UTCDateTime(matches.group(1))
+        end = UTCDateTime(matches.group(2))
+        print(start)
+        print(end)
+
+        if self.segmentsource in self.visibleWave:
+            self.applytime(start, end)
+        else:
+            self.starttime = start
+            self.endtime = end
+            print(self.segmentsource)
+            self.togglewave(self.segmentsource)
+            self.currentitem.setSelected(True)
 
 
     def togglewave(self, wave: str, colorcode:int=0):
