@@ -9,7 +9,6 @@ from PyQt5.QtWidgets import QVBoxLayout
 from PyQt5.QtWidgets import QHBoxLayout
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtWidgets import QFileDialog
-from PyQt5.QtWidgets import QAbstractItemView
 from PyQt5.QtWidgets import QTreeWidget
 from PyQt5.QtWidgets import QTreeWidgetItem
 from PyQt5.QtWidgets import QListView
@@ -18,7 +17,7 @@ from PyQt5.QtWidgets import QDateTimeEdit
 from PyQt5.QtCore import QDateTime
 from PyQt5.QtWidgets import QLabel
 from PyQt5.QtWidgets import QLineEdit
-from PyQt5.QtCore import Qt
+
 from PyQt5.QtGui import QStandardItemModel
 from PyQt5.QtGui import QStandardItem
 from PyQt5.QtWidgets import QCheckBox
@@ -26,6 +25,8 @@ from PyQt5 import QtCore
 
 from tsscene import TSScene
 from tsdata import TSData
+from tswavetree import TSWaveTree
+
 
 import datetime
 
@@ -70,9 +71,9 @@ class TSWindow(QWidget):
         # control
         self.buttonOpenFile = QPushButton("open file")
         self.buttonOpenFile.clicked.connect(self.openfile)
-        self.waveTree = QTreeWidget()
+        self.waveTree = TSWaveTree()
         self.waveTree.header().hide()
-        self.waveTree.itemClicked.connect(self.showwave)
+        self.waveTree.itemClicked.connect(self.clickwave)
         self.buttonExportMeta = QPushButton("Export Meta Data")
         self.buttonExportMeta.clicked.connect(self.exportmeta)
         self.buttonExportWave = QPushButton("Export Waveforms")
@@ -102,7 +103,7 @@ class TSWindow(QWidget):
         self.scene.applytime(self.starttime.text(), self.endtime.text())
         return
 
-    def showwave(self, wave: QTreeWidgetItem):
+    def clickwave(self, wave: QTreeWidgetItem):
         if wave.childCount()==0:
             self.scene.togglewave(wave.text(0))
 
@@ -111,34 +112,7 @@ class TSWindow(QWidget):
 
 
 
-    # set up wave tree in control region
-    def setlist(self):
-        item = self.waveTree.invisibleRootItem()
 
-        for c in reversed(range(item.childCount())):
-            item.removeChild(item.child(c))
-
-        self.fillitem(item, self.scene.getlist())
-        self.waveTree.setSelectionMode(QAbstractItemView.MultiSelection)
-        self.waveTree.show()
-
-    # build wave tree
-    def fillitem(self, node: QTreeWidgetItem, value: object):
-        node.setExpanded(False)
-        if type(value) is dict:
-            for key, val in sorted(value.items()):
-                child = QTreeWidgetItem()
-                child.setText(0, str(key))
-                node.addChild(child)
-                child.setFlags(child.flags() & ~Qt.ItemIsSelectable)
-                self.fillitem(child, val)
-        elif type(value) is list:
-            for idx, val in enumerate(value):
-                child = QTreeWidgetItem()
-                child.setText(0, val)
-                #child.setFlags(Qt.ItemIsSelectable | Qt.ItemIsUserCheckable)
-                node.addChild(child)
-                
 
     def exportmeta(self):
         fname = QFileDialog.getSaveFileName(self,
@@ -154,7 +128,7 @@ class TSWindow(QWidget):
                                             #'/g/data/ha3/rakib/ausLAMP/Data/Output/fixed/au.vic.h5', 'asdf file (*.h5)')
         if len(fname[0]) > 0:
             self.scene.loadfile(fname[0])
-            self.setlist()
+            self.waveTree.settree(self.scene.getlist())
 
 
     def exportwave(self):
@@ -171,7 +145,7 @@ class TSWindow(QWidget):
                                             #'/g/data/ha3/rakib/ausLAMP/Data/Output/fixed/au.vic.h5', 'asdf file (*.h5)')
         if len(fname[0]) > 0:
             self.scene.loadfile(fname[0])
-            self.setlist()
+            self.waveTree.settree(self.scene.getlist())
 
 
 if __name__ == "__main__":
