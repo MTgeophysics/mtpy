@@ -128,8 +128,10 @@ class TSWindow(QWidget):
                                             '/g/data/ha3/Passive/_AusArray/OA/ASDF_BU/OA.h5', 'asdf file (*.h5)')
                                             #'/g/data/ha3/rakib/ausLAMP/Data/Output/fixed/au.vic.h5', 'asdf file (*.h5)')
         if len(fname[0]) > 0:
+            selecteditems = [i.text(0) for i in self.waveTree.selectedItems()]
             self.scene.loadfile(fname[0])
-            self.waveTree.settree(self.scene.getlist())
+            self.waveTree.settree(self.scene.getlist(), selecteditems)
+
 
 
     def exportwave(self):
@@ -139,14 +141,7 @@ class TSWindow(QWidget):
         if len(fname[0]) > 0:
             self.scene.exportwaveform(fname)
 
-    def openfile(self):
-        fname = QFileDialog.getOpenFileName(self,
-                                            'Open file',
-                                            '/g/data/ha3/Passive/_AusArray/OA/ASDF_BU/OA.h5', 'asdf file (*.h5)')
-                                            #'/g/data/ha3/rakib/ausLAMP/Data/Output/fixed/au.vic.h5', 'asdf file (*.h5)')
-        if len(fname[0]) > 0:
-            self.scene.loadfile(fname[0])
-            self.waveTree.settree(self.scene.getlist())
+
 
 
 if __name__ == "__main__":

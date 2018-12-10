@@ -20,18 +20,18 @@ class TSWaveTree(QTreeWidget):
 
 
     # set up wave tree in control region
-    def settree(self, wavelist):
+    def settree(self, wavelist, selecteditems):
         item = self.invisibleRootItem()
 
         for c in reversed(range(item.childCount())):
             item.removeChild(item.child(c))
 
-        self.fillitem(item, wavelist)
+        self.fillitem(item, wavelist, selecteditems)
         self.setSelectionMode(QAbstractItemView.MultiSelection)
         self.show()
 
     # build wave tree
-    def fillitem(self, node: QTreeWidgetItem, value: object):
+    def fillitem(self, node: QTreeWidgetItem, value: object, selecteditems):
         node.setExpanded(False)
         if type(value) is dict:
             for key, val in sorted(value.items()):
@@ -39,13 +39,15 @@ class TSWaveTree(QTreeWidget):
                 child.setText(0, str(key))
                 node.addChild(child)
                 child.setFlags(child.flags() & ~Qt.ItemIsSelectable)
-                self.fillitem(child, val)
+                self.fillitem(child, val, selecteditems)
         elif type(value) is list:
             for idx, val in enumerate(value):
                 child = QTreeWidgetItem()
                 child.setText(0, val)
                 # child.setFlags(Qt.ItemIsSelectable | Qt.ItemIsUserCheckable)
                 node.addChild(child)
+                if val in selecteditems:
+                    child.setSelected(True)
 
 
     def custommenu(self, pos):

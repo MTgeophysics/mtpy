@@ -99,8 +99,10 @@ class TSScene(QGraphicsScene):
 
         tmplist = self.visibleWave.copy()
         for wave in tmplist:
-            self.togglewave(wave)
-            self.togglewave(wave, tmplist[wave][1])
+            self.refreshwave(wave,tmplist[wave][1])
+
+            # self.togglewave(wave)
+            # self.togglewave(wave, tmplist[wave][1])
 
     def applytime(self, start: str, end: str):
         if self.data is None:
@@ -118,8 +120,9 @@ class TSScene(QGraphicsScene):
 
         tmplist = self.visibleWave.copy()
         for wave in tmplist:
-            self.togglewave(wave)
-            self.togglewave(wave, tmplist[wave][2])
+            self.refreshwave(wave, tmplist[wave][1])
+            # self.togglewave(wave)
+            # self.togglewave(wave, tmplist[wave][2])
 
     def loadfile(self, filename: str):
         self.data.loadFile(filename)
@@ -166,6 +169,19 @@ class TSScene(QGraphicsScene):
             self.currentitem.setSelected(True)
 
 
+    def refreshwave(self, wave: str, colorcode:int=0):
+        if wave in self.visibleWave:
+            axes, lines, _, _, _, _ = self.visibleWave[wave]
+            self.removewave(axes, lines)
+            self.visibleWave.pop(wave, None)
+            channelid = self.axes.index(axes)
+            self.axesavailability[channelid] = True
+            waveform, wavename, starttime, endtime, gaps = self.data.getwaveform(wave, self.starttime, self.endtime)
+            axes, lines = self.displaywave(wavename, waveform, gaps)
+            if axes is not None:
+                self.visibleWave[wave] = (axes, lines, colorcode, starttime, endtime, gaps)
+
+
     def togglewave(self, wave: str, colorcode:int=0):
         if wave in self.visibleWave:
             axes, lines, _, _, _, _ = self.visibleWave[wave]
@@ -173,8 +189,12 @@ class TSScene(QGraphicsScene):
             self.visibleWave.pop(wave, None)
             channelid = self.axes.index(axes)
             self.axesavailability[channelid] = True
+            if len(self.visibleWave)==0:
+                self.starttime = None
+                self.endtime = None
         else:
             # print(wave)
+
             waveform, wavename, starttime, endtime, gaps = self.data.getwaveform(wave, self.starttime, self.endtime)
             axes, lines = self.displaywave(wavename, waveform, gaps)
             if axes is not None:
@@ -273,8 +293,9 @@ class TSScene(QGraphicsScene):
             tmplist = self.visibleWave.copy()
 
             for wave in tmplist:
-                self.togglewave(wave)
-                self.togglewave(wave, tmplist[wave][2])
+                self.refreshwave(wave, tmplist[wave][1])
+                # self.togglewave(wave)
+                # self.togglewave(wave, tmplist[wave][2])
 
 
 
@@ -306,8 +327,9 @@ class TSScene(QGraphicsScene):
             self.endtime = endtime
             tmplist = self.visibleWave.copy()
             for wave in tmplist:
-                self.togglewave(wave)
-                self.togglewave(wave, tmplist[wave][1])
+                self.refreshwave(wave, tmplist[wave][1])
+                # self.togglewave(wave)
+                # self.togglewave(wave, tmplist[wave][1])
 
 
 
@@ -374,7 +396,7 @@ class TSScene(QGraphicsScene):
 
         delta = -event.step
 
-        if self.wheelactive==False:
+        if self.wheelactive==False and event.xdata>= self.starttime and event.xdata<= self.endtime:
             self.wheelactive = True
             self.timescale(delta)
             self.wheelactive = False
