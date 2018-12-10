@@ -498,7 +498,7 @@ class PlotStrike(object):
                 pthist = np.histogram(gg[np.nonzero(gg)].flatten(),
                                       bins=360 / bw,
                                       range=histrange)
-
+        
                 # plot the histograms
                 self.barinv = self.axhinv.bar((invhist[1][:-1]) * np.pi / 180,
                                               invhist[0],
@@ -728,17 +728,20 @@ class PlotStrike(object):
             invhist = np.histogram(hh[np.nonzero(hh)].flatten(),
                                    bins=360 / bw,
                                    range=histrange)
+
             if not self.fold:
                 ptplotdata = np.hstack([gg[np.nonzero(gg)].flatten(),gg[np.nonzero(gg)].flatten()+180])
             else:
                 ptplotdata = gg[np.nonzero(gg)].flatten()
-                
+
             if self.show_ptphimin:
                 ptplotdata = np.hstack([ptplotdata,(ptplotdata+90)%360])
-            
+                
+
             pthist = np.histogram(ptplotdata,
                                   bins=360 / bw,
-                                  range=histrange)
+                                  range=histrange
+                                  )
 
             # plot the histograms
             self.barinv = self.axhinv.bar((invhist[1][:-1]) * np.pi / 180,
@@ -765,7 +768,8 @@ class PlotStrike(object):
 
                 trhist = np.histogram(tr[np.nonzero(tr)].flatten(),
                                       bins=360 / bw,
-                                      range=histrange)
+                                      range=histrange
+                                      )
 
                 self.bartr = self.axhtip.bar((trhist[1][:-1]) * np.pi / 180,
                                              trhist[0],
@@ -912,6 +916,7 @@ class PlotStrike(object):
                   'measured clockwise positive.'
             if show:
                 plt.show()
+                
 
     def save_plot(self, save_fn, file_format='pdf',
                   orientation='portrait', fig_dpi=None, close_plot='y'):

@@ -37,14 +37,17 @@ def bostick_resistivity(f, rho, pha):
     :param pha: phase in radian
     :return:
     """
-    if pha > 2*math.pi:
-        print("WARN: pha is too large, in unit degree? ", pha)
-        pha_rad = pha * math.pi / 180.0
+    if not np.iterable(pha):
+        if pha > 2*math.pi:
+            print("WARN: pha is too large, in unit degree? ", pha)
+            pha_rad = pha * math.pi / 180.0
+        else:
+            pha_rad=pha
     else:
-        pha_rad=pha
+        pha_rad = pha
 
     rho_b = rho*(math.pi / (2 * pha_rad) - 1)
-    print(rho_b)
+#    print(rho_b)
     return rho_b
 
 
