@@ -29,9 +29,29 @@ def bostick_depth(f, rho):
     return h
 
 
-
-def bostick_resistivity(f, rho, pha):
+def bostick_resistivity(f, rho):
     """
+    :param f:  f is not used?
+    :param rho:
+    :param pha: phase in radian
+    :return: bostick resistivity, ohm-m
+    
+    """    
+    logt, logrho = np.log10(1./f), np.log10(rho)
+    m = np.gradient(logrho,logt,edge_order=2)
+    # bostick resistivity only valid for -1 < m < 1
+    m[m>1] = np.nan
+    m[m<-1] = np.nan
+    
+    return rho * (1. + m)/(1. - m)
+
+
+def old_bostick_resistivity(f, rho, pha):
+    """
+    seems to be after weidelt et al 1980 version of bostick resistivity
+    however this is not the correct formula
+    need to use the formula that uses gradient - see chave and jones 2012 p149
+    
     :param f:  f is not used?
     :param rho:
     :param pha: phase in radian
@@ -45,8 +65,12 @@ def bostick_resistivity(f, rho, pha):
             pha_rad=pha
     else:
         pha_rad = pha
+        
+    # ensure pha_rad is positive
+    pha_rad[np.nonzero(pha_rad)] = pha_rad[np.nonzero(pha_rad)] % (2.*math.pi)
+    print pha_rad
 
-    rho_b = rho*(math.pi / (2 * pha_rad) - 1)
+    rho_b = rho*((math.pi / (2 * pha_rad)) - 1)
 #    print(rho_b)
     return rho_b
 
