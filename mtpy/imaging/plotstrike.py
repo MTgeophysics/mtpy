@@ -729,13 +729,26 @@ class PlotStrike(object):
                                    bins=360 / bw,
                                    range=histrange)
 
+            ptplotdata = gg[np.nonzero(gg)].flatten()
+            print ptplotdata.min(),ptplotdata.max()
+
             if not self.fold:
-                ptplotdata = np.hstack([gg[np.nonzero(gg)].flatten(),gg[np.nonzero(gg)].flatten()+180])
-            else:
-                ptplotdata = gg[np.nonzero(gg)].flatten()
+                ptplotdata = np.hstack([ptplotdata,ptplotdata+180])
+            print self.fold,self.show_ptphimin
 
             if self.show_ptphimin:
-                ptplotdata = np.hstack([ptplotdata,(ptplotdata+90)%360])
+                if self.fold:
+                    # we are working in matplotlib coordinates (counterclockwise from east)
+                    # therefore range of values is -90 to 90 for a range of 0 to 180 east of north
+                    # if 0 to 90 need to subtract 90 to get angle of phimin
+                    # if -90 to 0 need to add 90 to get angle of phimin.
+                    zero_to_90 = np.where(np.all([ptplotdata > 0, ptplotdata <= 90],axis=0))
+                    m90_to_zero = np.where(np.all([ptplotdata > -90, ptplotdata < 0],axis=0))
+                    ptplotdata = np.hstack([ptplotdata,
+                                            ptplotdata[zero_to_90] - 90,
+                                            ptplotdata[m90_to_zero] + 90])
+                else:
+                    ptplotdata = np.hstack([ptplotdata,(ptplotdata+90)%360])
                 
 
             pthist = np.histogram(ptplotdata,
