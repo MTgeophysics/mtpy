@@ -118,7 +118,7 @@ class Residual(object):
 
         :param data_fn:
         :param resp_fn:
-        :return:
+        :returns: residual file name
         """
 
         data_obj = self._read_data_file(data_fn=data_fn)
@@ -132,6 +132,8 @@ class Residual(object):
         print "writing to file",data_obj.fn_basename
         data_obj.write_data_file(fill=False, compute_error=False, 
                                  fn_basename=data_obj.fn_basename)
+        
+        return data_obj.data_fn 
 
     def _read_data_file(self, data_fn=None):
         """
