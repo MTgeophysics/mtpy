@@ -1,7 +1,15 @@
-under linux:
+Windows:
 
-conda env create -f environment.yml
+>conda update conda
+>conda create -c conda-forge --name tstools python=3.6 pyqt pyasdf matplotlib
+>source activate tstools
+>python example.py
+>conda deactivate
 
-conda activate tstools
+Linux:
 
-python example.py
+$conda update conda
+$conda env create -f environment.yml
+$conda activate tstools
+$python example.py
+$conda deactivate

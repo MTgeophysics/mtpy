@@ -3,8 +3,13 @@ from PyQt5.QtWidgets import QGraphicsScene
 
 from PyQt5.QtGui import QMouseEvent
 from PyQt5.QtGui import QPen
+from PyQt5 import QtGui
 
+from PyQt5.QtCore import QTimer
 from PyQt5.QtCore import Qt
+from PyQt5 import QtCore
+
+from PyQt5 import QtWidgets
 
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
@@ -16,17 +21,31 @@ from tsdata import TSData
 from obspy.core.trace import Trace
 from obspy.core.stream import Stream
 from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtCore import QTimeLine
 
+from PyQt5.QtWidgets import QMenu
+from PyQt5.QtWidgets import QListWidget
+from PyQt5 import QtGui
+from PyQt5 import QtCore
+from PyQt5.QtWidgets import QDialog
+from PyQt5.QtWidgets import QVBoxLayout
 from obspy.core.utcdatetime import UTCDateTime
 from datetime import datetime
+from multiprocessing import Queue
+
+import numpy as np
+import time
+
+
+import re
 
 class TSScene(QGraphicsScene):
 
     starttimechanged = pyqtSignal(str)
     endtimechanged = pyqtSignal(str)
 
-    def __init__(self, width=14, height=9, numofchannel=4):
-        super(TSScene, self).__init__()
+    def __init__(self, parent, width=14, height=12, numofchannel=6):
+        super(TSScene, self).__init__(parent)
 
         # set waveform windows
         figure = Figure()
@@ -34,57 +53,161 @@ class TSScene(QGraphicsScene):
         self.graphwidth = figure.dpi * width
         self.canvas = FigureCanvas(figure)
         self.addWidget(self.canvas)
+        self.canvas.mpl_connect('button_press_event',self.button_press_event)
+        self.canvas.mpl_connect('button_release_event', self.button_release_event)
+        self.canvas.mpl_connect('motion_notify_event', self.motion_notify_event)
+        self.canvas.mpl_connect('scroll_event', self.scroll_event)
+
         self.axesavailability = [True for i in range(numofchannel)]
         self.axes = []
         for i in range(numofchannel):
             self.axes.append(figure.add_subplot(str(numofchannel)+'1'+str(i+1)))
 
+
         # set backend data model
-        self.data = None
+        self.data = TSData()
         self.visibleWave = {}
         self.starttime = None
         self.endtime = None
 
         # prepare for user input
-        self.downx = None
+        self.downxcoord = None
         self.wheelactive = False
         self.rect = None
+
+        self.installEventFilter(self)
+        self.showgap = False
+        self.downbutton = None
+        self.currentxdata = None
+
+        self.count = 0
+        self.state = 'ready'
+
+        self.timeline = QTimeLine(1)
+        self.timeline.setCurrentTime(0)
+        self.timeline.setUpdateInterval(1)
+        self.timeline.finished.connect(self.timeshift)
+        self.timeline.finished.connect(self.animfinished)
+
+
+    def animfinished(self):
+        self.state = 'ready'
+        self.timeline.setCurrentTime(0)
+
+    def togglegap(self):
+        self.showgap = ~self.showgap
+
+        tmplist = self.visibleWave.copy()
+        for wave in tmplist:
+            self.refreshwave(wave,tmplist[wave][1])
+
+            # self.togglewave(wave)
+            # self.togglewave(wave, tmplist[wave][1])
 
     def applytime(self, start: str, end: str):
         if self.data is None:
             return
+
+
+        for wave in self.visibleWave:
+            if start<self.visibleWave[wave][3]:
+                start = self.visibleWave[wave][3]
+            if end>self.visibleWave[wave][4]:
+                end = self.visibleWave[wave][4]
+
         self.starttime = UTCDateTime(start)
         self.endtime = UTCDateTime(end)
 
         tmplist = self.visibleWave.copy()
         for wave in tmplist:
-            self.togglewave(wave)
-            self.togglewave(wave, tmplist[wave][2])
+            self.refreshwave(wave, tmplist[wave][1])
+            # self.togglewave(wave)
+            # self.togglewave(wave, tmplist[wave][2])
 
-    def setdata(self, filename: str):
-        self.data = TSData(filename)
+    def loadfile(self, filename: str):
+        self.data.loadFile(filename)
 
     def getlist(self):
         return self.data.getlist()
 
-    def togglewave(self, wave: str, colorcode:int=0, samplerate: int=1000):
+    def getsegments(self, wave: str, item: object):
+        waves = self.data.getsegments(wave)
+
+
+        wavelist = QListWidget()
+        for w in waves:
+            wavelist.addItem(w)
+            # print(w)
+        wavelist.itemDoubleClicked.connect(self.segmentselected)
+
+        wavelistwindowlayout = QVBoxLayout()
+        wavelistwindowlayout.addWidget(wavelist)
+
+        self.wavelistwindow = QDialog(self.parent())
+        self.wavelistwindow.setWindowTitle('segments')
+        self.wavelistwindow.setLayout(wavelistwindowlayout)
+        self.wavelistwindow.resize(800,600)
+        self.wavelistwindow.show()
+        self.segmentsource = wave
+        self.currentitem = item
+
+    def segmentselected(self, segment: str):
+
+        matches = re.match(r'[^ ]+ \| ([^ ]+) - ([^ ]+) \| .*', segment.text(), flags=0)
+        start = UTCDateTime(matches.group(1))
+        end = UTCDateTime(matches.group(2))
+        print(start)
+        print(end)
+
+        if self.segmentsource in self.visibleWave:
+            self.applytime(start, end)
+        else:
+            self.starttime = start
+            self.endtime = end
+            print(self.segmentsource)
+            self.togglewave(self.segmentsource)
+            self.currentitem.setSelected(True)
+
+
+    def refreshwave(self, wave: str, colorcode:int=0):
         if wave in self.visibleWave:
-            axes = self.visibleWave[wave][0]
-            lines = self.visibleWave[wave][1]
+            axes, lines, _, _, _, _ = self.visibleWave[wave]
             self.removewave(axes, lines)
             self.visibleWave.pop(wave, None)
-            self.axesavailability[self.axes.index(axes)] = True
-
-        else:
-            waveform, wavename, starttime, endtime = self.data.getwaveform(wave, self.starttime, self.endtime,samplerate)
-            axes, lines = self.displaywave(wavename, waveform)
+            channelid = self.axes.index(axes)
+            self.axesavailability[channelid] = True
+            waveform, wavename, starttime, endtime, gaps = self.data.getwaveform(wave, self.starttime, self.endtime)
+            axes, lines = self.displaywave(wavename, waveform, gaps)
             if axes is not None:
-                self.visibleWave[wave] = (axes, lines, colorcode, starttime, endtime)
+                self.visibleWave[wave] = (axes, lines, colorcode, starttime, endtime, gaps)
 
-    def displaywave(self, wavename: str, waveform: Trace, colorcode: int=None):
+
+    def togglewave(self, wave: str, colorcode:int=0):
+        if wave in self.visibleWave:
+            axes, lines, _, _, _, _ = self.visibleWave[wave]
+            self.removewave(axes, lines)
+            self.visibleWave.pop(wave, None)
+            channelid = self.axes.index(axes)
+            self.axesavailability[channelid] = True
+            if len(self.visibleWave)==0:
+                self.starttime = None
+                self.endtime = None
+        else:
+            # print(wave)
+
+            waveform, wavename, starttime, endtime, gaps = self.data.getwaveform(wave, self.starttime, self.endtime)
+            axes, lines = self.displaywave(wavename, waveform, gaps)
+            if axes is not None:
+                self.visibleWave[wave] = (axes, lines, colorcode, starttime, endtime, gaps)
+                #print("togglewave:", starttime, endtime)
+
+
+    def displaywave(self, wavename: str, waveform: np.array, gaps, colorcode: int=None):
+
         if True not in self.axesavailability:
             return None, None
         else:
+
             location = self.axesavailability.index(True)
             axes = self.axes[location]
             self.axesavailability[location] = False
@@ -92,20 +215,35 @@ class TSScene(QGraphicsScene):
                 if colorcode is None:
                     colorcode = 'C'+str(location%10)
 
-                times = [waveform.meta['starttime']+t for t in waveform.times()]
+                times = waveform[0,:]
                 span = round(len(times)/4)
+
                 if span<1:
                     span = 1
+
                 axes.set_xticks(times[::span])
-                axes.set_xticklabels([t.strftime("%Y-%m-%d %H:%M:%S") for t in times[::span]])
-                lines = axes.plot(times, waveform.data,linestyle="-", label=wavename, color=colorcode)
+                axes.set_xticklabels([UTCDateTime(t).strftime("%Y-%m-%d %H:%M:%S") for t in times[::span]])
+
+                lines = axes.plot(times, waveform[1,:],linestyle="-", label=wavename, color=colorcode)
+                if self.showgap:
+                    for g in gaps:
+
+                        if g[4].timestamp>=times[0] and g[5].timestamp<times[-1]:
+                            axes.axvspan(g[4],g[5],facecolor='0.2',alpha=0.5)
                 axes.legend()
-                self.downx = None
 
                 self.canvas.draw()
 
-                self.starttime = waveform.meta['starttime']
-                self.endtime = waveform.meta['endtime']
+                if self.endtime is not None and self.starttime is not None and len(times)>0:
+                    timewindow = self.endtime-self.starttime
+                    if abs(times[0]-times[-1]-timewindow)/timewindow<0.1:
+                        self.starttime = UTCDateTime(times[0])
+                        self.endtime = self.starttime + timewindow
+                elif len(times)>0:
+                    self.starttime = UTCDateTime(times[0])
+                    self.endtime = UTCDateTime(times[-1])
+
+
 
                 self.starttimechanged.emit(self.starttime.strftime("%Y-%m-%d %H:%M:%S"))
                 self.endtimechanged.emit(self.endtime.strftime("%Y-%m-%d %H:%M:%S"))
@@ -117,37 +255,51 @@ class TSScene(QGraphicsScene):
             return axes, lines
 
 
+
+
     def removewave(self, axes: Axes, lines: Line2D):
         if lines is not None:
             lines.pop(0).remove()
         axes.relim()
         axes.autoscale_view(True, True, True)
-        axes.legend()
+        axes.clear()
         self.canvas.draw()
 
-    def timeshift(self, shift: float):
-        if self.starttime is None:
+    def timeshift(self):
+        if self.downxcoord is None or self.currentxdata is None:
+            return
+        shift = self.downxcoord-self.currentxdata
+        if shift == 0:
+            print('skipped')
             return
 
-        shift = (self.endtime-self.starttime)*shift
+        if self.starttime is None:
+            return
 
         starttime = self.starttime + shift
         endtime = self.endtime + shift
 
         for wave in self.visibleWave:
             if starttime<self.visibleWave[wave][3]:
-                starttime = self.starttime
+                starttime = self.visibleWave[wave][3]
             if endtime>self.visibleWave[wave][4]:
-                endtime = self.endtime
+                endtime = self.visibleWave[wave][4]
+
 
         if starttime!=self.starttime and endtime!=self.endtime:
             self.starttime = starttime
             self.endtime = endtime
-            tmplist = self.visibleWave.copy()
-            for wave in tmplist:
-                self.togglewave(wave)
-                self.togglewave(wave, tmplist[wave][2])
 
+            tmplist = self.visibleWave.copy()
+
+            for wave in tmplist:
+                self.refreshwave(wave, tmplist[wave][1])
+                # self.togglewave(wave)
+                # self.togglewave(wave, tmplist[wave][2])
+
+
+
+        return
 
     def timescale(self, delta: float):
         if self.starttime is None:
@@ -175,58 +327,93 @@ class TSScene(QGraphicsScene):
             self.endtime = endtime
             tmplist = self.visibleWave.copy()
             for wave in tmplist:
-                self.togglewave(wave)
-                self.togglewave(wave, tmplist[wave][1])
-
-        self.wheelactive = False
-
+                self.refreshwave(wave, tmplist[wave][1])
+                # self.togglewave(wave)
+                # self.togglewave(wave, tmplist[wave][1])
 
 
 
-    def mousePressEvent(self, event: QMouseEvent):
-        super(TSScene, self).mousePressEvent(event)
+
+
+
+    def button_press_event(self, event):
+
         if self.starttime is None:
             return
-        self.downx = event.scenePos().x()
-        self.downbutton = event.button()
+        self.downxcoord = event.xdata
+        self.downx = event.x
+        self.downbutton = event.button
+        self.count = 0
 
 
-    def mouseMoveEvent(self, event: QMouseEvent):
+
+
+    def motion_notify_event(self, event):
+        # print(event.button, self.starttime, self.downbutton, self.downxcoord, event.xdata)
+        self.count += 1
+        self.currentxdata = event.xdata
+        #print(self.currentxdata,"+" * 10)
+
         if self.starttime is None:
             return
-        if self.downx is not None:
-            if self.downbutton == Qt.LeftButton:
-                self.upx = event.scenePos().x()
-                shift = float(self.downx - self.upx) / self.graphwidth
-                self.timeshift(shift)
-                self.downx=self.upx
-            elif self.downbutton == Qt.RightButton:
-                self.removeItem(self.rect)
-                self.rect = self.addRect(self.downx,0, event.screenPos().x()-self.downx, self.height(), pen=QPen(Qt.red))
+        elif self.downxcoord is not None:
+            if self.downbutton == 1 and self.timeline.currentTime()==0:
+                self.state = 'busy'
+                self.timeline.start()
+            elif self.downbutton == 1:
+                pass
+            elif self.downbutton == 3:
+                if self.rect is not None:
+                    self.removeItem(self.rect)
+                if self.downx < event.x:
+                    self.rect = self.addRect(self.downx, 0, event.x - self.downx, self.height(), pen=QPen(Qt.red))
+                else:
+                    self.rect = self.addRect(event.x, 0, self.downx - event.x, self.height(), pen=QPen(Qt.red))
 
-    def mouseReleaseEvent(self, event: QMouseEvent):
-        super(TSScene, self).mousePressEvent(event)
+    def button_release_event(self, event):
         if self.starttime is None:
             return
-        if event.button() == Qt.RightButton:
+        if event.button == 3:
             left = 225
             right = 1215
-            start = self.starttime+(self.downx-left)/(right-left)*(self.endtime-self.starttime)
-            end = self.starttime+(event.scenePos().x()-left)/(right-left)*(self.endtime-self.starttime)
+            if self.downxcoord < event.xdata:
+                start = self.downxcoord
+                end = event.xdata
+            else:
+                start = event.xdata
+                end = self.downxcoord
             self.applytime(start, end)
-        self.downx = None
+        # self.downx = None
         self.downbutton = None
         self.removeItem(self.rect)
         self.rect = None
+        self.downxcoord = None
+        self.currentxdata = None
+        #print(self.count,'count!!!!!!!!')
+        self.count=0
 
-    def wheelEvent(self, event: QMouseEvent):
-        super(TSScene, self).wheelEvent(event)
+    def scroll_event(self, event):
 
-        delta = -event.delta() / 8 / 15
+        delta = -event.step
 
-        if self.wheelactive==False:
+        if self.wheelactive==False and event.xdata>= self.starttime and event.xdata<= self.endtime:
             self.wheelactive = True
             self.timescale(delta)
+            self.wheelactive = False
+
+
+    def exportmetadata(self, filename: tuple):
+        wavelist = self.getlist()
+        
+        outfile =  open(filename[0]+'.txt','w')
+        for network in wavelist:
+            for station in wavelist[network]:
+                for wave in wavelist[network][station]:
+                    for w in wavelist[network][station][wave]:
+                        outfile.write("%s\n\n" % w)
+
+        outfile.close()
+
 
 
 
@@ -234,7 +421,8 @@ class TSScene(QGraphicsScene):
     def exportwaveform(self, filename: tuple):
         traces = []
         for wave in self.visibleWave:
-            waveform, wavename, starttime, endtime = self.data.getwaveform(wave, self.starttime, self.endtime, 0)
+            fill_value = 'last'
+            waveform, wavename, starttime, endtime, gaps = self.data.readdisc(wave, self.starttime, self.endtime, resample=False, fill_value=fill_value)
             traces.append(waveform)
 
         stream = Stream(traces=traces)
@@ -246,3 +434,7 @@ class TSScene(QGraphicsScene):
 
     def gettimeboundary(self):
         return self.starttime, self.endtime
+
+
+
+        return False
