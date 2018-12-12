@@ -48,7 +48,7 @@ class TSData():
         if starttime is None or endtime is None:
             timewindow = None
         else:
-            timewindow = endtime-starttime
+            timewindow = endtime.timestamp-starttime.timestamp
 
         if waveform in self.wavecache and (timewindow is None or abs(self.wavecache[waveform][0] - timewindow)/timewindow<0.1):
             return self.readcache(waveform, starttime, endtime)
@@ -186,7 +186,7 @@ class TSData():
             outwave.meta['delta'] = (endtime-starttime)/self.numofsamples
 
         # print(channel.start_date, channel.end_date,'==================')
-
+        print("reading finished")
         return outwave, wavename, channel.start_date, channel.end_date, gaps
 
 

@@ -27,13 +27,21 @@ from tsscene import TSScene
 from tsdata import TSData
 from tswavetree import TSWaveTree
 
+from obspy.core import UTCDateTime
 
-import datetime
+import re
+
+import matplotlib
+
+from _datetime import datetime
 
 
 class TSWindow(QWidget):
     def __init__(self):
         super(TSWindow, self).__init__()
+
+
+
 
         # time edit
         startlabel = QLabel('Start time')
@@ -73,7 +81,9 @@ class TSWindow(QWidget):
         self.buttonOpenFile.clicked.connect(self.openfile)
         self.waveTree = TSWaveTree()
         self.waveTree.header().hide()
-        self.waveTree.itemClicked.connect(self.clickwave)
+        self.waveTree.viewwave.connect(self.showwave)
+        self.waveTree.hidewave.connect(self.hidewave)
+        self.waveTree.viewfull.connect(self.showfullwave)
         self.waveTree.viewsegments.connect(self.scene.getsegments)
         self.buttonExportMeta = QPushButton("Export Meta Data")
         self.buttonExportMeta.clicked.connect(self.exportmeta)
@@ -104,11 +114,20 @@ class TSWindow(QWidget):
         self.scene.applytime(self.starttime.text(), self.endtime.text())
         return
 
-    def clickwave(self, wave: QTreeWidgetItem):
+    def showwave(self, wave: QTreeWidgetItem):
         if wave.childCount()==0:
-            self.scene.togglewave(wave.text(0))
+            self.scene.showwave(wave.text(0))
 
+    def hidewave(self, wave: QTreeWidgetItem):
+        if wave.childCount() == 0:
+            self.scene.hidewave(wave.text(0))
 
+    def showfullwave(self, wave: QTreeWidgetItem):
+        if wave.childCount() == 0:
+            result = re.search('Time range: ([^\s]+) - ([^\s]+)\\n',wave.text(0))
+            #self.scene.showwave(wave.text(0), datetime.strptime(result.group(1), '%Y-%m-%dT%H:%M:%S.%fZ'), datetime.strptime(result.group(2), '%Y-%m-%dT%H:%M:%S.%fZ'))
+
+            self.scene.showwave(wave.text(0), UTCDateTime(result.group(1)), UTCDateTime(result.group(2)))
 
 
 

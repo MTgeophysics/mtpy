@@ -11,13 +11,19 @@ from PyQt5.QtWidgets import QMenu
 from PyQt5.QtWidgets import QVBoxLayout
 
 class TSWaveTree(QTreeWidget):
-    viewsegments = pyqtSignal(str, object)
+    viewsegments = pyqtSignal(object)
+    viewwave = pyqtSignal(object)
+    viewfull = pyqtSignal(object)
+    hidewave = pyqtSignal(object)
 
     def __init__(self):
         super(TSWaveTree, self).__init__()
         self.setContextMenuPolicy(Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self.custommenu)
+        self.itemClicked.connect(self.disableuserselection)
 
+    def disableuserselection(self, item):
+        item.setSelected(not item.isSelected())
 
     # set up wave tree in control region
     def settree(self, wavelist, selecteditems):
@@ -44,6 +50,7 @@ class TSWaveTree(QTreeWidget):
             for idx, val in enumerate(value):
                 child = QTreeWidgetItem()
                 child.setText(0, val)
+                child.setFlags(child.flags() & ~Qt.ItemIsUserCheckable)
                 # child.setFlags(Qt.ItemIsSelectable | Qt.ItemIsUserCheckable)
                 node.addChild(child)
                 if val in selecteditems:
@@ -54,16 +61,23 @@ class TSWaveTree(QTreeWidget):
         currentitem = self.itemAt(pos)
         if currentitem.childCount()==0:
             menu = QMenu(self)
-            actionviewwave = menu.addAction("view/hide waveform")
+            actionviewwave = menu.addAction("view waveform")
+            actionhidewave = menu.addAction("hide waveform")
+            actionviewfull = menu.addAction("view FULL waveform")
             actionviewsegment = menu.addAction("view segments")
             action = menu.exec_(self.mapToGlobal(pos))
 
             if action == actionviewwave:
-                self.itemClicked.emit(currentitem, self.currentColumn())
-                currentitem.setSelected(not currentitem.isSelected())
+                self.viewwave.emit(currentitem)
+                currentitem.setSelected(True)
+            elif action == actionhidewave:
+                self.hidewave.emit(currentitem)
+                currentitem.setSelected(False)
+            elif action == actionviewfull:
+                self.viewfull.emit(currentitem)
+                currentitem.setSelected(True)
             elif action == actionviewsegment:
-                print("view segments")
-                self.viewsegments.emit(currentitem.text(0), currentitem)
+                self.viewsegments.emit(currentitem)
                 #
                 #
                 # wavelist = QListWidget()
