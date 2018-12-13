@@ -78,6 +78,22 @@ class TSWaveTree(QTreeWidget):
                 currentitem.setSelected(True)
             elif action == actionviewsegment:
                 self.viewsegments.emit(currentitem)
+        elif currentitem.child(0).childCount()>0 and currentitem.child(0).child(0).childCount()==0:
+            menu = QMenu(self)
+            actionviewgroup = menu.addAction("view all channels")
+            actionhidegroup = menu.addAction("hide all channels")
+            action = menu.exec_(self.mapToGlobal(pos))
+            if action == actionviewgroup:
+                for c in range(currentitem.childCount()):
+                    self.viewwave.emit(currentitem.child(c).child(0))
+                    currentitem.child(c).child(0).setSelected(True)
+            elif action == actionhidegroup:
+                for c in range(currentitem.childCount()):
+                    self.hidewave.emit(currentitem.child(c).child(0))
+                    currentitem.child(c).child(0).setSelected(False)
+
+
+
                 #
                 #
                 # wavelist = QListWidget()

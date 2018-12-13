@@ -11,7 +11,7 @@ import re
 
 
 class TSData():
-    def __init__(self, filename: str = None, numofsamples: int = 400, cachesize = 1e+9):
+    def __init__(self, filename: str = None, numofsamples: int = 400, cachesize = 1e8):
         self.wavelist = {}
         self.wavemeta = {}
         print("ini","!"*10)
