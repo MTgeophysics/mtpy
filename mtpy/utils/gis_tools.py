@@ -485,7 +485,7 @@ def project_points_ll2utm(lat, lon, datum='WGS84', utm_zone=None, epsg=None):
         lat[ii] = assert_lat_value(lat[ii])
         lon[ii] = assert_lon_value(lon[ii])
     '''
-
+    
     if lat is None or lon is None:
         return None, None, None
 
@@ -539,7 +539,7 @@ def project_points_ll2utm(lat, lon, datum='WGS84', utm_zone=None, epsg=None):
             pp = pyproj.Proj(projstring)
         # end if
     # end if
-
+    
     if HAS_GDAL:
         ll2utm = osr.CoordinateTransformation(ll_cs, utm_cs).TransformPoints
         easting, northing, elev = np.array(ll2utm(np.array([lon, lat]).T)).T

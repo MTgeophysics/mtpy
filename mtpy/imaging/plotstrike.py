@@ -336,6 +336,7 @@ class PlotStrike(object):
             pt = mt.pt
             az = 90 - pt.azimuth
             az_err = pt.azimuth_err
+            az[pt.phimax == 0] = np.nan
 
             # need to add 90 because pt assumes 0 is north and
             # negative because measures clockwise.
@@ -470,6 +471,9 @@ class PlotStrike(object):
                 # extract just the subset for each decade
                 hh = medinv[binlist, :]
                 gg = medpt[binlist, :]
+                ptplotdata = gg[np.nonzero(gg)].flatten()
+                ptplotdata = ptplotdata[np.isfinite(ptplotdata)]
+                
                 if self.plot_tipper == 'y':
                     tr = medtipr[binlist, :]
                     # compute the historgram for the tipper strike
@@ -495,7 +499,7 @@ class PlotStrike(object):
                 invhist = np.histogram(hh[np.nonzero(hh)].flatten(),
                                        bins=360 / bw,
                                        range=histrange)
-                pthist = np.histogram(gg[np.nonzero(gg)].flatten(),
+                pthist = np.histogram(ptplotdata,
                                       bins=360 / bw,
                                       range=histrange)
         
@@ -599,11 +603,11 @@ class PlotStrike(object):
                         if ptmode < 0:
                             ptmode += 360
 
-                        ptmedian = 90 - np.median(gg[np.nonzero(gg)])
+                        ptmedian = 90 - np.median(ptplotdata)
                         if ptmedian < 0:
                             ptmedian += 360
 
-                        ptmean = 90 - np.mean(gg[np.nonzero(gg)])
+                        ptmean = 90 - np.mean(ptplotdata)
                         if ptmean < 0:
                             ptmean += 360
 
@@ -730,12 +734,11 @@ class PlotStrike(object):
                                    range=histrange)
 
             ptplotdata = gg[np.nonzero(gg)].flatten()
-            print ptplotdata.min(),ptplotdata.max()
-
+            ptplotdata = ptplotdata[np.isfinite(ptplotdata)]
+            
             if not self.fold:
                 ptplotdata = np.hstack([ptplotdata,ptplotdata+180])
-            print self.fold,self.show_ptphimin
-
+                
             if self.show_ptphimin:
                 if self.fold:
                     # we are working in matplotlib coordinates (counterclockwise from east)
@@ -862,11 +865,11 @@ class PlotStrike(object):
                     if ptmode < 0:
                         ptmode += 360
 
-                    ptmedian = 90 - np.median(gg[np.nonzero(gg)])
+                    ptmedian = 90 - np.median(ptplotdata)
                     if ptmedian < 0:
                         ptmedian += 360
 
-                    ptmean = 90 - np.mean(gg[np.nonzero(gg)])
+                    ptmean = 90 - np.mean(ptplotdata)
                     if ptmean < 0:
                         ptmean += 90
 
@@ -929,6 +932,7 @@ class PlotStrike(object):
                   'measured clockwise positive.'
             if show:
                 plt.show()
+            
                 
 
     def save_plot(self, save_fn, file_format='pdf',
@@ -1246,13 +1250,15 @@ class PlotStrike(object):
             # extract just the subset for each decade
             hh = self._medinv[binlist, :]
             gg = self._medpt[binlist, :]
+            ptplotdata = gg[np.nonzero(gg)].flatten()
+            ptplotdata = ptplotdata[np.isfinite(ptplotdata)]
             tr = self._medtp[binlist, :]
 
             # estimate the histogram for the decade for invariants and pt
             invhist = np.histogram(hh[np.nonzero(hh)].flatten(),
                                    bins=360 / bw,
                                    range=histrange)
-            pthist = np.histogram(gg[np.nonzero(gg)].flatten(),
+            pthist = np.histogram(ptplotdata,
                                   bins=360 / bw,
                                   range=histrange)
 
@@ -1298,12 +1304,12 @@ class PlotStrike(object):
 
             #--> compute pt statistics
             # == > mean
-            ptmean = 90 - np.mean(gg[np.nonzero(gg)])
+            ptmean = 90 - np.mean(ptplotdata)
             if ptmean < 0:
-                ptmean = np.mean(gg[np.nonzero(gg)])
+                ptmean = np.mean(ptplotdata)
 
             # == > median
-            ptmed = 90 - np.median(gg[np.nonzero(gg)])
+            ptmed = 90 - np.median(ptplotdata)
             if ptmed < 0:
                 ptmed += 360
 

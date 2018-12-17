@@ -1186,7 +1186,8 @@ class Startup(object):
         self.model_step = kwargs.pop('model_step', None)
         self._startup_fn = 'OccamStartup1D'
         self._ss = ' ' * 3
-
+        
+        
     def write_startup_file(self, save_path=None, **kwargs):
         """
         Make a 1D input file for Occam 1D
@@ -2473,9 +2474,15 @@ def parse_arguments(arguments):
     parser.add_argument('-nl', '--n_layers',
                         help='number of layers in the inversion',
                         type=int, default=80)
+    parser.add_argument('-z1', '--z1_layer',
+                        help='thickness of z1 layer',
+                        type=float, default=10)
     parser.add_argument('-td', '--target_depth',
                         help='target depth for the inversion in metres',
                         type=int, default=10000)
+    parser.add_argument('-rho0', '--start_rho',
+                        help='starting resistivity value for the inversion',
+                        type=float, default=100)
     parser.add_argument('-s', '--master_savepath',
                         help='master directory to save suite of runs into',
                         default='inversion_suite')
@@ -2568,7 +2575,7 @@ def generate_inputfiles(**input_parameters):
         elif input_parameters['rotation_angle'] == 'file':
             with open(op.join(input_parameters['working_directory'], input_parameters['rotation_angle_file'])) as f:
                 line = f.readline().strip().split()
-                print line, eo.station
+
                 while string.upper(line[0]) != string.upper(eo.station):
                     line = f.readline().strip().split()
                     if len(line) == 0:
@@ -2577,7 +2584,7 @@ def generate_inputfiles(**input_parameters):
             rotangle = float(line[1])
         else:
             rotangle = input_parameters['rotation_angle']
-        print "rotation angle", rotangle
+            
         # create a working directory to store the inversion files in
         svpath = 'station' + eo.station
         wd = op.join(wkdir_master, svpath)
@@ -2587,7 +2594,8 @@ def generate_inputfiles(**input_parameters):
 
         # create the model file
         ocm = Model(n_layers=input_parameters['n_layers'], save_path=wd,
-                    target_depth=input_parameters['target_depth'])
+                    target_depth=input_parameters['target_depth'],
+                    z1_layer=input_parameters['z1_layer'])
         ocm.write_model_file()
 
         for mode in input_parameters['modes']:
@@ -2605,7 +2613,8 @@ def generate_inputfiles(**input_parameters):
                 save_path=wd)
 
             ocs = Startup(data_fn=ocd.data_fn,
-                          model_fn=ocm.model_fn)
+                          model_fn=ocm.model_fn,
+                          start_rho=input_parameters['start_rho'])
             startup_fn = 'OccamStartup1D' + mode
             ocs.write_startup_file(save_path=wd,
                                    startup_fn=op.join(wd, startup_fn),
@@ -2673,6 +2682,7 @@ def build_run():
             startupnew = Startup(data_fn=op.join(wd, startup.data_file),
                                  model_fn=op.join(wd, startup.model_file),
                                  max_iter=input_parameters['iteration_max'],
+                                 start_rho=input_parameters['start_rho'],
                                  target_rms=target_rms)
             startupnew.write_startup_file(startup_fn=op.join(wd, startupfile), save_path=wd)
             # run occam again
