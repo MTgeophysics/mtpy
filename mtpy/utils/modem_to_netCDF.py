@@ -5,7 +5,7 @@
 This code works on MTpy modEM format output and generate a netCDF file.
 The modEM format generates an irregular grid in local unit(east, north, depth).
 Here we converted that grid in global crs (in lon, lat, depth) and in regular
-grid. The regular spacing we used here is the mode of our input data. The 
+grid. The regular spacing we used here is the mode of our input data. The
 interpolation is done in local grid to have the advantage of having the same
 unit for our three variables (east, north, depth in km).
 +++++++++++++++++
@@ -15,11 +15,13 @@ from os.path import join, abspath
 
 import numpy as np
 from scipy import stats
-from osgeo import osr
 from scipy.interpolate import interp2d
 from pyproj import Proj, transform
 
-from mtpy.modeling.modem import Model, Data, write_resistivity_grid, wgs84_crs, get_utm_zone
+from mtpy.modeling.modem import Model, Data
+from mtpy.utils import lib
+from mtpy.utils import nc
+from mtpy.utils import gis_tools
 
 
 def mid_point(arr):
@@ -68,14 +70,10 @@ def interpolated_layer(x, y, layer):
     return interp2d(x, y, layer)  # bounds_error=True
 
 
-# TODO can this be done with lib.Points3D?
-def converter(in_spatial_ref, out_spatial_ref):
+def converter(in_proj, out_proj):
     """
-    Transfrom coordinates from one spatial ref to another.
+    Transfrom coordinates from one epsg to another.
     """
-    in_proj = Proj(in_spatial_ref.ExportToProj4())
-    out_proj = Proj(out_spatial_ref.ExportToProj4())
-
     def result(x, y):
         return transform(in_proj, out_proj, x, y)
 
@@ -85,7 +83,7 @@ def converter(in_spatial_ref, out_spatial_ref):
 def main():
     # Define Data and Model Paths
     MT_PATH = abspath(join(__file__, '../../../'))
-    
+
     data = Data()
     data.read_data_file(data_fn=join(MT_PATH, 'examples/model_files/ModEM/ModEM_Data.dat'))
 
@@ -102,15 +100,16 @@ def main():
         'resistivity': np.transpose(model.res_model, axes=(2, 0, 1))
     }
 
-    spatial_ref = get_utm_zone(center.lat.item(), center.lon.item())
+    zone_number, is_northern, utm_zone = gis_tools.get_utm_zone(center.lat.item(), center.lon.item())
 
-    to_wgs84 = converter(spatial_ref, wgs84_crs)
-    from_wgs84 = converter(wgs84_crs, spatial_ref)
+    wgs84_proj = Proj(init='epsg:4326')
+    source_proj = Proj('+proj=utm +zone=%d +%s +datum=%s' % (zone_number, 'north' if is_northern else 'south', 'WGS84'))
+    to_wgs84 = converter(source_proj, wgs84_proj)
+    from_wgs84 = converter(wgs84_proj, source_proj)
 
     center_lon, center_lat, width, height = lon_lat_grid_spacing(center, median_spacing(model.grid_east),
                                                                  median_spacing(model.grid_north), to_wgs84)
 
-    # TODO use lib.Grid3D?
     lon_list = [to_wgs84(x, y)[0]
                 for x in resistivity_data['x']
                 for y in resistivity_data['y']]
@@ -154,9 +153,9 @@ def main():
         result['resistivity'][z_index, :, :] = uniform_layer(interpolation_funcs[z_index],
                                                              result['latitude'], result['longitude'])
 
-    write_resistivity_grid('wgs84.nc.mode', wgs84_crs,
-                           result['latitude'], result['longitude'], result['depth'],
-                           result['resistivity'], z_label='depth')
+    nc.write_resistivity_grid('wgs84.nc', 4326,
+                              result['latitude'], result['longitude'], result['depth'],
+                              result['resistivity'], z_label='depth')
 
 
 if __name__ == '__main__':

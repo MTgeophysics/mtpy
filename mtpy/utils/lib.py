@@ -1,45 +1,10 @@
 """
-Some utility functions for winGliknk format.
+Some utility functions for winGlink format.
 """
 import numpy as np
+from pyproj import transform, Proj
+from mtpy.utils import gis_tools
 
-from osgeo import osr
-
-def epsg_to_crs(epsg):
-    """
-    A CRS from its EPSG code.
-    """
-    source_ref = osr.SpatialReference()
-    source_ref.ImportFromEPSG(epsg)
-    return source_ref
-
-def get_utm_zone(latitude, longitude):
-    """
-    Returns zone number and hemisphere if lat, lon is provided.
-    """
-    result = osr.SpatialReference()
-    result.SetWellKnownGeogCS('WGS84')
-    is_northern = int(latitude >= 0)
-    zone_number = int(1 + (longitude + 180.0) / 6.0)
-    result.SetUTM(zone_number, is_northern)
-    return result
-
-def crs_to_str(crs):
-    """
-::    Retrieve the crs as string.
-    """
-    return crs.GetAttrValue('GEOGCS') or crs.GetAttrValue('PROJCS')
-
-wgs84_crs = epsg_to_crs(4326)
-
-def transform_coords(coordinates, from_crs, to_crs):
-    """
-    A GDAL functionality to transform coordinates from one spatial ref to another.
-    """
-    if from_crs.IsSame(to_crs):
-        return coordinates
-
-    return osr.CoordinateTransformation(from_crs, to_crs).TransformPoints(coordinates)
 
 class Interval:
     """
@@ -76,15 +41,14 @@ def bounds(arr):
     return Interval(left=np.min(arr), right=np.max(arr))
 
 
-
 class Points3D:
     """
     A collection of 3D points in (x, y, z) coordinates.
     """
-    def __init__(self, points, crs):
+    def __init__(self, points, epsg):
         assert len(points.shape) == 2
         self.points = points
-        self.crs = crs
+        self.epsg = epsg
         assert self.dim == 3
 
     @property
@@ -107,13 +71,8 @@ class Points3D:
     def z(self):
         return self.points[:, 2]
 
-    def fix_false_origin(self):
-        false_easting = self.crs.GetProjParm(osr.SRS_PP_FALSE_EASTING)
-        false_northing = self.crs.GetProjParm(osr.SRS_PP_FALSE_NORTHING)
-        return Points3D(np.array([self.x - false_easting, self.y - false_northing, self.z]).T, self.crs)
-
     def clipping_mask(self, grid):
-        assert self.crs.IsSame(grid.crs)
+        assert self.epsg == grid.epsg
 
         xbounds, ybounds, zbounds = grid.bounds
 
@@ -124,39 +83,40 @@ class Points3D:
                          zbounds.clipping_mask(self.z)))
 
     def __repr__(self):
-        return "<collection of {} points in {}>".format(self.count, crs_to_str(self.crs))
+        return "<collection of {} points in epsg:{}>".format(self.count, self.epsg)
 
-    def to_crs(self, crs):
-        xy = np.array([self.x, self.y]).T
-        new_xy = np.array(transform_coords(xy, self.crs, crs))[:, 0:2]
-        new_xyz = np.array([new_xy[:, 0], new_xy[:, 1], self.z]).T
-        return Points3D(new_xyz, crs)
+    def to_epsg(self, epsg):
+        proj_from = Proj(gis_tools.EPSG_DICT[self.epsg])
+        proj_to = Proj(gis_tools.EPSG_DICT[epsg])
+        new_x, new_y = transform(proj_from, proj_to, self.x, self.y)
+        new_xyz = np.array([new_x, new_y, self.z]).T
+        return Points3D(new_xyz, epsg)
 
     def to_gridded_array(self, shape):
         return self.points.reshape(shape)
 
 
 class Grid3D:
-    def __init__(self, x, y, z, crs):
+    def __init__(self, x, y, z, epsg):
         assert len(x.shape) == 1
         assert len(y.shape) == 1
         assert len(z.shape) == 1
 
-        self.crs = crs
+        self.epsg = epsg
         self.x = x
         self.y = y
         self.z = z
         self.grid = np.stack(np.meshgrid(x, y, z), axis=-1)
 
     @staticmethod
-    def from_extent_and_resolution(left, right, resolution, crs):
+    def from_extent_and_resolution(left, right, resolution, epsg):
         # coords are for cell centers
         x, y, z = [np.arange(left[dim] + resolution[dim] / 2., right[dim], resolution[dim])
                    for dim in range(3)]
-        return Grid3D(x, y, z, crs)
+        return Grid3D(x, y, z, epsg)
 
     def __repr__(self):
-        return "<grid of shape {} in {}>".format(self.grid.shape, crs_to_str(self.crs))
+        return "<grid of shape {} in epsg:{}>".format(self.grid.shape, self.epsg)
 
     @property
     def shape(self):
@@ -168,4 +128,4 @@ class Grid3D:
 
     def flatten(self):
         xdim, ydim, zdim, vec_dim = self.grid.shape
-        return Points3D(self.grid.reshape((xdim * ydim * zdim, vec_dim)), self.crs)
+        return Points3D(self.grid.reshape((xdim * ydim * zdim, vec_dim)), self.epsg)

@@ -10,16 +10,17 @@ def create_dataset(filename, overwrite=True):
 
     return Dataset(filename, 'w', format='NETCDF4')
 
-def set_grid_mapping_attrs_geographic(crs_var, spatial_ref):
-    crs_var.spatial_ref = spatial_ref.ExportToWkt()
-    crs_var.crs_wkt = spatial_ref.ExportToWkt()
-    crs_var.inverse_flattening = spatial_ref.GetInvFlattening()
-    crs_var.long_name = spatial_ref.GetAttrValue('GEOGCS')
-    crs_var.semi_major_axis = spatial_ref.GetSemiMajor()
+def set_grid_mapping_attrs_geographic(crs_var, epsg_code):
+    # for now, we only support epsg 4326
+    assert epsg_code == 4326
+    wkt = 'GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]]'
+    crs_var.spatial_ref = wkt
+    crs_var.crs_wkt = wkt
+    crs_var.long_name = 'WGS 84'
     crs_var.grid_mapping_name = 'latitude_longitude'
-    crs_var.units = spatial_ref.GetAttrValue('UNIT')
+    crs_var.units = 'degree'
 
-def write_resistivity_grid(output_file, spatial_ref,
+def write_resistivity_grid(output_file, epsg_code,
                            latitude, longitude, elevation, resistivity_data,
                            **kwargs):
     """ resistivity_data in (elevation, latitude, longitude) grid. """
@@ -57,19 +58,4 @@ def write_resistivity_grid(output_file, spatial_ref,
 
         # attach crs info
         crs_var = dataset.createVariable('crs', 'i4', ())
-        set_grid_mapping_attrs_geographic(crs_var, spatial_ref)
-
-def set_grid_mapping_attrs_projected(crs_var, spatial_ref):
-    # currently unused
-    crs_var.spatial_ref = spatial_ref.ExportToWkt()
-    crs_var.crs_wkt = spatial_ref.ExportToWkt()
-    crs_var.inverse_flattening = spatial_ref.GetInvFlattening()
-    crs_var.long_name = spatial_ref.GetAttrValue('PROJCS')
-    crs_var.semi_major_axis = spatial_ref.GetSemiMajor()
-    crs_var.semi_minor_axis = spatial_ref.GetSemiMinor()
-    crs_var.grid_mapping_name = spatial_ref.GetAttrValue('PROJECTION')
-    crs_var.longitude_of_central_meridian = spatial_ref.GetProjParm(osr.SRS_PP_CENTRAL_MERIDIAN)
-    crs_var.false_easting = spatial_ref.GetProjParm(osr.SRS_PP_FALSE_EASTING)
-    crs_var.false_northing = spatial_ref.GetProjParm(osr.SRS_PP_FALSE_NORTHING)
-    crs_var.latitude_of_projection_origin = spatial_ref.GetProjParm(osr.SRS_PP_LATITUDE_OF_ORIGIN)
-    crs_var.scale_factor_at_central_meridian = spatial_ref.GetProjParm(osr.SRS_PP_SCALE_FACTOR)
+        set_grid_mapping_attrs_geographic(crs_var, epsg_code)
