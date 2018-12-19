@@ -4,8 +4,8 @@ from scipy.interpolate import griddata
 
 def IDW(source_points, source_values, query_points, k=6, p=5):
     tree = KDTree(source_points.points, k)
-    distances, indices = tree.query(query_points.points, k=k, p=p)
-    inv_dist = 1. / distances
+    distances, indices = tree.query(query_points.points, k=k)
+    inv_dist = 1. / np.power(distances, p)
     weights = inv_dist / inv_dist.sum(axis=1)[:, np.newaxis]
     return (weights * source_values[indices]).sum(axis=1)
 
