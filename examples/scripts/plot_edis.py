@@ -17,11 +17,12 @@ import os.path as op
 import tempfile
 
 try:
-    PACK_ROOT = os.environ['PACK_ROOT']
-    MTPY_PATH = os.path.join(PACK_ROOT, 'mtpy')
+    # PACK_ROOT = os.environ['PACK_ROOT']
+    # MTPY_PATH = os.path.join(PACK_ROOT, 'mtpy')
+    MTPY_PATH=os.environ['MTPY_ROOT']
 except:
-    print("Define path variable PACK_ROOT to point to root of folder containing mtpy installation.")
-    raise
+    print("Define environment variable MTPY_ROOT to be the mtpy source code (clone) directory.")
+    raise ("MTPY_ROOT env var not defined")
 
 os.chdir(MTPY_PATH) # change to your path to your mtpy installation
 
