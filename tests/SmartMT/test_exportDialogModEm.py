@@ -39,7 +39,7 @@ edi_paths = [
 ]
 
 
-@pytest.mark.skip("Not yet implemented")
+@pytest.mark.skip(reason="Not yet implemented")
 class TestExportDialogModEm(TestCase):
     @classmethod
     def setUpClass(cls):
