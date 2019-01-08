@@ -22,7 +22,7 @@ try:
     MTPY_PATH=os.environ['MTPY_ROOT']
 except:
     print("Define environment variable MTPY_ROOT to be the mtpy source code (clone) directory.")
-    raise ("MTPY_ROOT env var not defined")
+    raise Exception("MTPY_ROOT var not defined")
 
 os.chdir(MTPY_PATH) # change to your path to your mtpy installation
 
