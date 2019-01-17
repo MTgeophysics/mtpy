@@ -23,6 +23,7 @@ from mtpy.utils import lib
 from mtpy.utils import nc
 from mtpy.utils import gis_tools
 
+import argparse
 
 def mid_point(arr):
     """
@@ -80,16 +81,14 @@ def converter(in_proj, out_proj):
     return result
 
 
-def main():
+def main(data_file, model_file, output_file, source_proj=None):
     # Define Data and Model Paths
-    MT_PATH = abspath(join(__file__, '../../../'))
-
     data = Data()
-    data.read_data_file(data_fn=join(MT_PATH, 'examples/model_files/ModEM/ModEM_Data.dat'))
+    data.read_data_file(data_fn=data_file)
 
     # create a model object using the data object and read in model data
     model = Model(data_obj=data)
-    model.read_model_file(model_fn=join(MT_PATH, 'examples/model_files/ModEM/ModEM_Model_File.rho'))
+    model.read_model_file(model_fn=model_file)
 
     center = data.center_point
 
@@ -100,10 +99,14 @@ def main():
         'resistivity': np.transpose(model.res_model, axes=(2, 0, 1))
     }
 
-    zone_number, is_northern, utm_zone = gis_tools.get_utm_zone(center.lat.item(), center.lon.item())
-
     wgs84_proj = Proj(init='epsg:4326')
-    source_proj = Proj('+proj=utm +zone=%d +%s +datum=%s' % (zone_number, 'north' if is_northern else 'south', 'WGS84'))
+
+    if source_proj is None:
+        zone_number, is_northern, utm_zone = gis_tools.get_utm_zone(center.lat.item(), center.lon.item())
+        source_proj = Proj('+proj=utm +zone=%d +%s +datum=%s' % (zone_number, 'north' if is_northern else 'south', 'WGS84'))
+    else:
+        source_proj = Proj(init='epsg:' + source_proj)
+
     to_wgs84 = converter(source_proj, wgs84_proj)
     from_wgs84 = converter(wgs84_proj, source_proj)
 
@@ -149,14 +152,20 @@ def main():
         return result
 
     for z_index in range(result['depth'].shape[0]):
-        print 'layer #', z_index + 1
         result['resistivity'][z_index, :, :] = uniform_layer(interpolation_funcs[z_index],
                                                              result['latitude'], result['longitude'])
 
-    nc.write_resistivity_grid('wgs84.nc', 4326,
+    nc.write_resistivity_grid(output_file, wgs84_proj,
                               result['latitude'], result['longitude'], result['depth'],
                               result['resistivity'], z_label='depth')
 
 
 if __name__ == '__main__':
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('modem_data', help="ModEM data file")
+    parser.add_argument('modem_model', help="ModEM model file")
+    parser.add_argument('--epsg', help="EPSG code for source CRS")
+    parser.add_argument('--output-file', default="output.nc", help="Name of output NetCDF file")
+    args = parser.parse_args()
+
+    main(args.modem_data, args.modem_model, args.output_file, args.epsg)
