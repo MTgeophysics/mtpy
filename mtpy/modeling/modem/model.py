@@ -278,10 +278,6 @@ class Model(object):
         self.pad_stretch_h = 1.2
         self.pad_stretch_v = 1.2
 
-        # method to use to create padding
-        self.pad_method = 'extent1'
-        self.z_mesh_method = 'new' # method to make z mesh
-
         self.z1_layer = 10
         self.z_target_depth = 50000
         self.z_bottom = 300000
@@ -306,7 +302,18 @@ class Model(object):
         # grid locations
         self.grid_east = None
         self.grid_north = None
-        self.grid_z = None
+        self.grid_z = kwargs.pop('grid_z',None)
+        if self.grid_z is not None:
+            self.n_layers = len(self.grid_z)
+            self.z_mesh_method = 'custom'
+        else:
+            self.z_mesh_method = 'new'
+        if 'z_mesh_method' in kwargs.keys():
+            self.z_mesh_method = kwargs['z_mesh_method']
+ 
+        # method to use to create padding
+        self.pad_method = 'extent1'
+       
         self.grid_center = None
 
         # resistivity model
@@ -514,9 +521,15 @@ class Model(object):
 #            
 #            self.nodes_z = np.append(z_nodes, z_padding)
 
-        if self.z_mesh_method == 'new':
+        if self.z_mesh_method == 'custom':
+            if self.grid_z is None:
+                self.z_mesh_method = 'new'
+                self._logger.warn('No grid_z provided, creating new z mesh using default method')
+        
+        if self.z_mesh_method == 'custom':
+                self.nodes_z, z_grid = self.grid_z[1:]-self.grid_z[:-1], self.grid_z
+        elif self.z_mesh_method == 'new':
             self.nodes_z,z_grid = self.make_z_mesh_new()
-
         else:
             raise NameError("Z mesh method \"{}\" is not supported".format(self.z_mesh_method))
 
@@ -622,7 +635,7 @@ class Model(object):
         self.grid_z = np.hstack([add_layers,self.grid_z + add_layers[-1] + layer_thickness])
         
         # update the number of layers
-        self.n_layers += len(add_layers)
+        self.n_layers = len(self.grid_z) - 1
         
         # add the extra layer to the res model
         self.res_model = np.vstack([self.res_model[:,:,:n_add_layers].T,self.res_model.T]).T
@@ -1689,7 +1702,7 @@ class Model(object):
 
     def add_topography_to_model2(self, topographyfile=None, topographyarray=None,
                                  interp_method='nearest', air_resistivity=1e12,
-                                 topography_buffer=None, airlayer_type = 'log'):
+                                 topography_buffer=None, airlayer_type = 'log_up'):
         """
         if air_layers is non-zero, will add topo: read in topograph file, make a surface model.
         Call project_stations_on_topography in the end, which will re-write the .dat file.
@@ -1731,29 +1744,44 @@ class Model(object):
             topo_core = self.surface_dict['topography'][core_cells]
             topo_core_min = max(topo_core.min(),0)
             
-            if airlayer_type == 'log':
+            if airlayer_type == 'log_up':
                 # log increasing airlayers, in reversed order
                 new_air_nodes = mtmesh.make_log_increasing_array(self.z1_layer,
                                                                  topo_core.max() - topo_core_min,
                                                                  self.n_air_layers,
                                                                  increment_factor=0.999)[::-1]
+#            elif airlayer_type == 'log_increasing_down':
+#                # increase the number of layers
+#                self.n_layers += self.n_air_layers
+#                # make a new mesh
+#                self.nodes_z,z_grid = self.make_z_mesh_new()
+#                # reset the new grid
+#                self.n_layers -= self.n_air_layers
+#                # adjust level
+#                
+#                self.grid_z -= topo_core.max() - topo_core_min
+                
             elif airlayer_type == 'constant':
                 air_cell_thickness = np.ceil((topo_core.max() - topo_core_min)/self.n_air_layers)
                 new_air_nodes = np.array([air_cell_thickness]*self.n_air_layers)
-            # sum to get grid cell locations
+
+#            if 'down' not in airlayer_type:
+             # sum to get grid cell locations
             new_airlayers = np.array([new_air_nodes[:ii].sum() for ii in range(len(new_air_nodes) + 1)])
             # maximum topography cell on the grid
             topo_max_grid = topo_core_min + new_airlayers[-1]
             # round to nearest whole number and convert subtract the max elevation (so that sea level is at topo_core_min)
             new_airlayers = np.around(new_airlayers - topo_max_grid)
-
-            self._logger.debug("new_airlayers {}".format(new_airlayers))
-
-            self._logger.debug("self.grid_z[0:2] {}".format(self.grid_z[0:2]))
-
             # add new air layers, cut_off some tailing layers to preserve array size.
             #            self.grid_z = np.concatenate([new_airlayers, self.grid_z[self.n_airlayers+1:] - self.grid_z[self.n_airlayers] + new_airlayers[-1]], axis=0)
             self.grid_z = np.concatenate([new_airlayers[:-1], self.grid_z + new_airlayers[-1]], axis=0)
+
+
+#            self._logger.debug("new_airlayers {}".format(new_airlayers))
+
+            self._logger.debug("self.grid_z[0:2] {}".format(self.grid_z[0:2]))
+
+
 
         # print(" NEW self.grid_z shape and values = ", self.grid_z.shape, self.grid_z)
         #            print self.grid_z
