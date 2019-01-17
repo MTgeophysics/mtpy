@@ -280,9 +280,7 @@ class Model(object):
 
         # method to use to create padding
         self.pad_method = 'extent1'
-        self.z_mesh_method = 'new' # method to make z mesh, 'original','original_refactor','exp' or 'new'
-                                        # use: code embedded in make_mesh function, or make_z_mesh or 'make_z_mesh_exp' or 'make_z_mesh_new' respectively
-                                        # temporary fix until I have a chance to test all 4
+        self.z_mesh_method = 'new' # method to make z mesh
 
         self.z1_layer = 10
         self.z_target_depth = 50000
@@ -495,31 +493,28 @@ class Model(object):
                 continue
 
         # --> make depth grid
-        if self.z_mesh_method == 'original':
-            log_z = np.logspace(np.log10(self.z1_layer),
-                                np.log10(self.z_target_depth - np.logspace(np.log10(self.z1_layer),
-                                                                           np.log10(self.z_target_depth),
-                                                                           num=self.n_layers)[-2]),
-                                num=self.n_layers - self.pad_z)
-    
-            z_nodes = np.array([np.round(zz, -int(np.floor(np.log10(zz)) - 1)) for zz in
-                                log_z])
+#        if self.z_mesh_method == 'original':
+#            log_z = np.logspace(np.log10(self.z1_layer),
+#                                np.log10(self.z_target_depth - np.logspace(np.log10(self.z1_layer),
+#                                                                           np.log10(self.z_target_depth),
+#                                                                           num=self.n_layers)[-2]),
+#                                num=self.n_layers - self.pad_z)
+#    
+#            z_nodes = np.array([np.round(zz, -int(np.floor(np.log10(zz)) - 1)) for zz in
+#                                log_z])
+#
+#            # padding cells in the vertical
+#            z_padding = mtmesh.get_padding_cells(z_nodes[-1],
+#                                                 self.z_bottom - z_nodes.sum(),
+#                                                 self.pad_z,
+#                                                 self.pad_stretch_v)
+#            # make the blocks into nodes as oppose to total width
+#            z_padding = np.array([z_padding[ii + 1] - z_padding[ii]
+#                                  for ii in range(z_padding.size - 1)])
+#            
+#            self.nodes_z = np.append(z_nodes, z_padding)
 
-            # padding cells in the vertical
-            z_padding = mtmesh.get_padding_cells(z_nodes[-1],
-                                                 self.z_bottom - z_nodes.sum(),
-                                                 self.pad_z,
-                                                 self.pad_stretch_v)
-            # make the blocks into nodes as oppose to total width
-            z_padding = np.array([z_padding[ii + 1] - z_padding[ii]
-                                  for ii in range(z_padding.size - 1)])
-            
-            self.nodes_z = np.append(z_nodes, z_padding)
-        elif self.z_mesh_method == 'original_refactor':
-            self.nodes_z,z_grid = self.make_z_mesh()
-        elif self.z_mesh_method == 'exp':
-            self.nodes_z,z_grid = self.make_z_mesh_exp()
-        elif self.z_mesh_method == 'new':
+        if self.z_mesh_method == 'new':
             self.nodes_z,z_grid = self.make_z_mesh_new()
 
         else:
@@ -557,74 +552,6 @@ class Model(object):
         print('    therefore rotating the stations will have a similar effect', file=file)
         print('    as rotating the mesh.', file=file)
         print('-' * 15, file=file)
-
-    def make_z_mesh(self):
-        """
-        Create a mesh grid for vertical Earth layers.
-        Refactored from the original make_mesh function, in order to modularize the logics.
-        :return: (z_nodes, z_grid)
-        """
-
-        # keep the following section. may want to use later.
-        # --> make depth gridz using logspace, target the depth to z_target_depth
-        # log_z = np.logspace(np.log10(self.z1_layer),
-        #                     np.log10(self.z_target_depth),
-        #                     num=self.n_layers - self.pad_z - self.n_airlayers + 1)
-
-        # derive the z_cell size (vertical layers thickness)
-        # log_z = log_z[1:] - log_z[:-1]  # the first layer thickness will not be equal to the intended z1_layer !!
-        # #z_nodes = np.array([zz - zz % 10 ** np.floor(np.log10(zz)) for zz in log_z])  # why this to make round numbers?
-        # z_nodes = log_z
-        # FZ: try not using these dubious code above.
-
-        # FZ: use simple formula. relation between first z1_layer, stretch_v and target depth:
-        p = self.pad_stretch_v
-        nzf = np.log10((p - 1) * self.z_target_depth / self.z1_layer) / np.log10(p) - 1
-        nz = int(nzf)
-        if nz > self.n_layers:
-            self.n_layers = nz  # adjust z layers to prevent too big numbers.
-
-        num_z = self.n_layers - self.pad_z + 1  # - self.n_airlayers
-        # numz = self.n_layers - self.pad_z + 1   - self.n_airlayers
-        factor_z = 1.2  # first few layers excluding the air_layers.
-        exp_list = [self.z1_layer * (factor_z ** nz) for nz in xrange(0, num_z)]
-        log_z = np.array(exp_list)
-        z_nodes = log_z
-
-        self._logger.debug("cell_sizes log_z = %s" % log_z)
-        self._logger.debug("and z_nodes = %s" % z_nodes)
-
-        # index of top of padding
-        itp = len(z_nodes) - 1
-
-        self._logger.debug("index of top of padding itp= %s" % itp)
-
-        # padding cells in the end of the vertical direction
-        for ii in range(1, self.pad_z + 1):
-            z_0 = np.float(z_nodes[itp])
-            # wrong: pad_d = np.round(z_0 * self.pad_stretch_v * ii, -2)
-            pad_d = np.round(z_0 * self.pad_stretch_v ** ii, 2)
-            z_nodes = np.append(z_nodes, pad_d)
-
-        # JM said there should be no air layer in this mesh building stage ???
-        # add air layers and define ground surface level.
-        # initial layer thickness is same as z1_layer
-        # add_air = self.n_airlayers
-        add_air = 0  # FZ: will add No air layers below if add_air=0
-        z_nodes = np.hstack([[self.z1_layer] * add_air, z_nodes])
-
-        # make an array of sum values as coordinates of the horizontal lines
-        z_grid = np.array([z_nodes[:ii].sum()
-                           for ii in range(z_nodes.shape[0] + 1)])
-
-        # z_grid point at zero level
-        # wrong: the following line does not make any sense if no air layer was added above.
-        # incorrrect: self.sea_level = z_grid[self.n_airlayers]
-        self.sea_level = z_grid[add_air]
-        self._logger.debug("FZ:***1 sea_level = %s" % self.sea_level)
-
-        return z_nodes, z_grid
-
 
 
     def make_z_mesh_new(self):
