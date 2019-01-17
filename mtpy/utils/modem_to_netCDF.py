@@ -81,6 +81,64 @@ def converter(in_proj, out_proj):
     return result
 
 
+def interpolation(resistivity_dict, source_proj, center, model):
+    
+    wgs84_proj = Proj(init='epsg:4326')
+    
+    if source_proj is None:
+        zone_number, is_northern, utm_zone = gis_tools.get_utm_zone(center.lat.item(), center.lon.item())
+        source_proj = Proj('+proj=utm +zone=%d +%s +datum=%s' % (zone_number, 'north' if is_northern else 'south', 'WGS84'))
+    else:
+        source_proj = Proj(init='epsg:' + source_proj)
+        
+    to_wgs84 = converter(source_proj, wgs84_proj)
+    from_wgs84 = converter(wgs84_proj, source_proj)
+    
+    center_lon, center_lat, width, height = lon_lat_grid_spacing(center, median_spacing(model.grid_east),median_spacing(model.grid_north), to_wgs84)
+
+    lon_list = [to_wgs84(x, y)[0]
+                for x in resistivity_dict['x']
+                for y in resistivity_dict['y']]
+
+    lat_list = [to_wgs84(x, y)[1]
+                for x in resistivity_dict['x']
+                for y in resistivity_dict['y']]
+    
+    interpolation_funcs = [interpolated_layer(resistivity_dict['x'],
+                                              resistivity_dict['y'],
+                                              resistivity_dict['resistivity'][z_index, :, :])
+                           for z_index in range(resistivity_dict['z'].shape[0])]
+
+    result = {
+        'longitude': uniform_interior_grid(sorted(lon_list), width, center_lon),
+        'latitude': uniform_interior_grid(sorted(lat_list), height, center_lat),
+        'depth': resistivity_dict['z']}
+
+    result['resistivity'] = np.zeros(tuple(result[key].shape[0]
+                                           for key in ['depth', 'latitude', 'longitude']))
+
+    def uniform_layer(interp_func, latitudes, longitudes):
+        """
+        Calculate the interpolated values for the layer.
+        """
+        lats, lons = latitudes.shape[0], longitudes.shape[0]
+
+        ll_result = np.zeros((lats, lons))
+        for j in range(lons):
+            for i in range(lats):
+                lon, lat = longitudes[j], latitudes[i]
+                x, y = from_wgs84(lon, lat)
+
+                ll_result[i, j] = interp_func(x, y)
+
+        return ll_result
+
+    for z_index in range(result['depth'].shape[0]):
+        result['resistivity'][z_index, :, :] = uniform_layer(interpolation_funcs[z_index],
+                                                             result['latitude'], result['longitude'])
+
+    return result
+
 def main(data_file, model_file, output_file, source_proj=None):
     # Define Data and Model Paths
     data = Data()
@@ -100,61 +158,7 @@ def main(data_file, model_file, output_file, source_proj=None):
     }
 
     wgs84_proj = Proj(init='epsg:4326')
-
-    if source_proj is None:
-        zone_number, is_northern, utm_zone = gis_tools.get_utm_zone(center.lat.item(), center.lon.item())
-        source_proj = Proj('+proj=utm +zone=%d +%s +datum=%s' % (zone_number, 'north' if is_northern else 'south', 'WGS84'))
-    else:
-        source_proj = Proj(init='epsg:' + source_proj)
-
-    to_wgs84 = converter(source_proj, wgs84_proj)
-    from_wgs84 = converter(wgs84_proj, source_proj)
-
-    center_lon, center_lat, width, height = lon_lat_grid_spacing(center, median_spacing(model.grid_east),
-                                                                 median_spacing(model.grid_north), to_wgs84)
-
-    lon_list = [to_wgs84(x, y)[0]
-                for x in resistivity_data['x']
-                for y in resistivity_data['y']]
-
-    lat_list = [to_wgs84(x, y)[1]
-                for x in resistivity_data['x']
-                for y in resistivity_data['y']]
-
-    interpolation_funcs = [interpolated_layer(resistivity_data['x'],
-                                              resistivity_data['y'],
-                                              resistivity_data['resistivity'][z_index, :, :])
-                           for z_index in range(resistivity_data['z'].shape[0])]
-
-    result = {
-        'longitude': uniform_interior_grid(sorted(lon_list), width, center_lon),
-        'latitude': uniform_interior_grid(sorted(lat_list), height, center_lat),
-        'depth': resistivity_data['z']
-    }
-
-    result['resistivity'] = np.zeros(tuple(result[key].shape[0]
-                                           for key in ['depth', 'latitude', 'longitude']))
-
-    def uniform_layer(interp_func, latitudes, longitudes):
-        """
-        Calculate the interpolated values for the layer.
-        """
-        lats, lons = latitudes.shape[0], longitudes.shape[0]
-
-        result = np.zeros((lats, lons))
-        for j in range(lons):
-            for i in range(lats):
-                lon, lat = longitudes[j], latitudes[i]
-                x, y = from_wgs84(lon, lat)
-
-                result[i, j] = interp_func(x, y)
-
-        return result
-
-    for z_index in range(result['depth'].shape[0]):
-        result['resistivity'][z_index, :, :] = uniform_layer(interpolation_funcs[z_index],
-                                                             result['latitude'], result['longitude'])
-
+    result = interpolation(resistivity_data, source_proj, center, model)
     nc.write_resistivity_grid(output_file, wgs84_proj,
                               result['latitude'], result['longitude'], result['depth'],
                               result['resistivity'], z_label='depth')
