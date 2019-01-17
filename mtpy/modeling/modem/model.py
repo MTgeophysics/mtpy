@@ -588,7 +588,45 @@ class Model(object):
         z_grid = np.array([z_nodes[:ii].sum() for ii in range(z_nodes.shape[0] + 1)])
 
         return z_nodes, z_grid
+
     
+    def add_layers_to_mesh(self,n_add_layers=None,layer_thickness=None,where='top'):
+        """
+        Function to add constant thickness layers to the top or bottom of mesh.
+        Note: It is assumed these layers are added before the topography. If 
+        you want to add topography layers, use function add_topography_to_model2
+
+        :param n_add_layers: integer, number of layers to add
+        :param layer_thickness: real value or list/array. Thickness of layers,
+                                defaults to z1 layer. Can provide a single value
+                                or a list/array containing multiple layer
+                                thicknesses.
+        :param where: where to add, top or bottom
+   
+        
+        """
+        # create array containing layers to add
+        if layer_thickness is None:
+            layer_thickness = self.z1_layer
+        if np.iterable(layer_thickness):
+            add_layers = np.insert(np.cumsum(layer_thickness),0,0)[:-1]
+            layer_thickness = layer_thickness[-1]
+            
+            if n_add_layers != len(add_layers):
+                self._logger.warn("Updating number of layers to reflect the length of the layer thickness array")
+            n_add_layers = len(add_layers)
+        else:
+            add_layers = np.arange(0,n_add_layers*layer_thickness,layer_thickness)
+            
+        # create a new z grid
+        self.grid_z = np.hstack([add_layers,self.grid_z + add_layers[-1] + layer_thickness])
+        
+        # update the number of layers
+        self.n_layers += len(add_layers)
+        
+        # add the extra layer to the res model
+        self.res_model = np.vstack([self.res_model[:,:,:n_add_layers].T,self.res_model.T]).T
+        
 
     def assign_resistivity_from_surfacedata(self, top_surface, bottom_surface, resistivity_value):
         """
