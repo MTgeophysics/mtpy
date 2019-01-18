@@ -322,7 +322,7 @@ class Model(object):
 
         # initial file stuff
         self.model_fn = None
-        self.save_path = os.getcwd()
+        self.save_path = None
         self.model_fn_basename = 'ModEM_Model_File.rho'
         if self.model_fn is not None:
             self.save_path = os.path.dirname(self.model_fn)
@@ -1105,21 +1105,10 @@ class Model(object):
         for key in kwargs.keys():
             setattr(self, key, kwargs[key])
 
-        if self.save_path is not None:
-            self.model_fn = os.path.join(self.save_path,
-                                         self.model_fn_basename)
-
-        if self.model_fn is None:
-            if self.save_path is None:
-                self.save_path = os.getcwd()
-                self.model_fn = os.path.join(self.save_path,
-                                             self.model_fn_basename)
-            elif os.path.isdir(self.save_path):
-                self.model_fn = os.path.join(self.save_path,
-                                             self.model_fn_basename)
-            else:
-                self.save_path = os.path.dirname(self.save_path)
-                self.model_fn = self.save_path
+        self.save_path,self.model_fn, self.model_fn_basename = \
+        mtfh.validate_save_file(savepath=self.save_path,
+                                savefile=self.model_fn,
+                                basename=self.model_fn_basename)
 
         # get resistivity model
         if self.res_model is None:
@@ -1464,14 +1453,21 @@ class Model(object):
             clip = [clip, clip, clip]
 
         # determine save path
-        savepath = None
         if fn is not None:
-            savepath = os.path.dirname(fn)
-            if len(savepath) == 0:
-                savepath = None
-        if savepath is None:
-            savepath = self.save_path
-        
+            # if fn is a full path, convert to a file name
+            fndir = os.path.basename(fn)
+            if os.path.isdir(fndir):
+                sg_basename = os.path.basename(fn)
+            else:
+                sg_basename = fn
+        else:
+            # create a basename if fn is None
+            sg_basename = os.path.basename(self.model_fn).split('.')[0]
+                
+        self.save_path, fn, sg_basename = \
+        mtfh.validate_save_file(savepath=self.save_path,
+                                savefile=fn,
+                                basename=sg_basename)
 
         if fn is None:
             fn = os.path.join(os.path.dirname(self.model_fn),
@@ -1508,7 +1504,7 @@ class Model(object):
                   clip[0]:nxin - clip[0] - 1, :nzin - clip[2] - 1]
 
         sgObj = mtgocad.Sgrid(resistivity=resvals, grid_xyz=gridedges,
-                              fn=fn, workdir=savepath)
+                              fn=sg_basename, workdir=self.save_path)
         sgObj.write_sgrid_file()
 
 
