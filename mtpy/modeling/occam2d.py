@@ -1013,6 +1013,12 @@ class Profile():
         easts = np.zeros(self.num_edi)
         norths = np.zeros(self.num_edi)
         utm_zones = np.zeros(self.num_edi)
+        
+        if self.model_epsg is None:
+            latlist = np.array([mtObj.lat for mtObj in self.edi_list])
+            lonlist = np.array([mtObj.lon for mtObj in self.edi_list])
+            lonc,latc = mtcc.centre_point(lonlist,latlist)
+            self.model_epsg = gis_tools.get_epsg(latc,lonc)
 
         for ii, edi in enumerate(self.edi_list):
             # find strike angles for each station if a strike angle is not given

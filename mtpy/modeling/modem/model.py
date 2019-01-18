@@ -1750,32 +1750,37 @@ class Model(object):
                                                                  topo_core.max() - topo_core_min,
                                                                  self.n_air_layers,
                                                                  increment_factor=0.999)[::-1]
-#            elif airlayer_type == 'log_increasing_down':
-#                # increase the number of layers
-#                self.n_layers += self.n_air_layers
-#                # make a new mesh
-#                self.nodes_z,z_grid = self.make_z_mesh_new()
-#                # reset the new grid
-#                self.n_layers -= self.n_air_layers
-#                # adjust level
-#                
-#                self.grid_z -= topo_core.max() - topo_core_min
-                
+            elif airlayer_type == 'log_increasing_down':
+                # increase the number of layers
+                self.n_layers += self.n_air_layers
+                # make a new mesh
+                self.nodes_z,z_grid = self.make_z_mesh_new()
+                # adjust level
+                self.grid_z -= topo_core.max() - topo_core_min
+                # adjust number of air layers. This is pre-determined by
+                # topographic elevation and grid parameters
+                gcz = (self.grid_z[1:] + self.grid_z[:-1])/2.
+                if self.n_air_layers != sum(gcz<0):
+                    self._logger.warn("Number of air layers updated from {} to {}. airlayer_type log_increasing_down does not allow changing of number of air layers".format(self.n_air_layers, sum(gcz<0)))
+
+                self.n_air_layers = sum(gcz<0)
+                self.n_layers -= self.n_air_layers
+                                
             elif airlayer_type == 'constant':
                 air_cell_thickness = np.ceil((topo_core.max() - topo_core_min)/self.n_air_layers)
                 new_air_nodes = np.array([air_cell_thickness]*self.n_air_layers)
 
-#            if 'down' not in airlayer_type:
-             # sum to get grid cell locations
-            new_airlayers = np.array([new_air_nodes[:ii].sum() for ii in range(len(new_air_nodes) + 1)])
-            # maximum topography cell on the grid
-            topo_max_grid = topo_core_min + new_airlayers[-1]
-            # round to nearest whole number and convert subtract the max elevation (so that sea level is at topo_core_min)
-            new_airlayers = np.around(new_airlayers - topo_max_grid)
-            # add new air layers, cut_off some tailing layers to preserve array size.
-            #            self.grid_z = np.concatenate([new_airlayers, self.grid_z[self.n_airlayers+1:] - self.grid_z[self.n_airlayers] + new_airlayers[-1]], axis=0)
-            self.grid_z = np.concatenate([new_airlayers[:-1], self.grid_z + new_airlayers[-1]], axis=0)
-
+            if 'down' not in airlayer_type:
+                 # sum to get grid cell locations
+                new_airlayers = np.array([new_air_nodes[:ii].sum() for ii in range(len(new_air_nodes) + 1)])
+                # maximum topography cell on the grid
+                topo_max_grid = topo_core_min + new_airlayers[-1]
+                # round to nearest whole number and convert subtract the max elevation (so that sea level is at topo_core_min)
+                new_airlayers = np.around(new_airlayers - topo_max_grid)
+                # add new air layers, cut_off some tailing layers to preserve array size.
+                #            self.grid_z = np.concatenate([new_airlayers, self.grid_z[self.n_airlayers+1:] - self.grid_z[self.n_airlayers] + new_airlayers[-1]], axis=0)
+                self.grid_z = np.concatenate([new_airlayers[:-1], self.grid_z + new_airlayers[-1]], axis=0)
+                
 
 #            self._logger.debug("new_airlayers {}".format(new_airlayers))
 
@@ -1793,8 +1798,12 @@ class Model(object):
         new_res_model = np.ones((self.nodes_north.size,
                                  self.nodes_east.size,
                                  self.nodes_z.size)) * self.res_initial_value
-        new_res_model[:, :, self.n_air_layers:] = self.res_model
+
+        if 'down' not in airlayer_type:
+            new_res_model[:, :, self.n_air_layers:] = self.res_model
+        
         self.res_model = new_res_model
+
 
         
         # assign topography
