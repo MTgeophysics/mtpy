@@ -1,25 +1,19 @@
 #!/usr/bin/env python
 """
-# created by U.Zannat from GA, Nov, 2018
-+++++++++++++++++
-This code works on MTpy modEM format output and generate a netCDF file.
-The modEM format generates an irregular grid in local unit(east, north, depth).
-Here we converted that grid in global crs (in lon, lat, depth) and in regular
-grid. The regular spacing we used here is the mode of our input data. The
-interpolation is done in local grid to have the advantage of having the same
-unit for our three variables (east, north, depth in km).
-+++++++++++++++++
-"""
-import os
-from os.path import join, abspath
+This code works on MTpy ModEM format output and generate a netCDF file.
+The ModEM format generates an irregular grid in local units (east, north, depth).
+Here we converted that into a regular grid in global CRS (in lon, lat, depth).
+The regular spacing we used here is the statistical mode of the spacing our input data.
+The interpolation is done in local grid before reprojecting.
 
+@author Umma Zannat, GA, 2019
+"""
 import numpy as np
 from scipy import stats
 from scipy.interpolate import interp2d
 from pyproj import Proj, transform
 
 from mtpy.modeling.modem import Model, Data
-from mtpy.utils import lib
 from mtpy.utils import nc
 from mtpy.utils import gis_tools
 
@@ -81,29 +75,24 @@ def converter(in_proj, out_proj):
     return result
 
 
-def interpolation(resistivity_dict, source_proj, center, model):
-    
-    wgs84_proj = Proj(init='epsg:4326')
-    
-    if source_proj is None:
-        zone_number, is_northern, utm_zone = gis_tools.get_utm_zone(center.lat.item(), center.lon.item())
-        source_proj = Proj('+proj=utm +zone=%d +%s +datum=%s' % (zone_number, 'north' if is_northern else 'south', 'WGS84'))
-    else:
-        source_proj = Proj(init='epsg:' + source_proj)
-        
-    to_wgs84 = converter(source_proj, wgs84_proj)
-    from_wgs84 = converter(wgs84_proj, source_proj)
-    
-    center_lon, center_lat, width, height = lon_lat_grid_spacing(center, median_spacing(model.grid_east),median_spacing(model.grid_north), to_wgs84)
+def interpolate(resistivity_dict, source_proj, grid_proj, center, east_spacing, north_spacing):
+    """
+    Interpolate resistivity data to a regular grid.
+    """
 
-    lon_list = [to_wgs84(x, y)[0]
+    to_grid = converter(source_proj, grid_proj)
+    from_grid = converter(grid_proj, source_proj)
+
+    center_lon, center_lat, width, height = lon_lat_grid_spacing(center, east_spacing, north_spacing, to_grid)
+
+    lon_list = [to_grid(x, y)[0]
                 for x in resistivity_dict['x']
                 for y in resistivity_dict['y']]
 
-    lat_list = [to_wgs84(x, y)[1]
+    lat_list = [to_grid(x, y)[1]
                 for x in resistivity_dict['x']
                 for y in resistivity_dict['y']]
-    
+
     interpolation_funcs = [interpolated_layer(resistivity_dict['x'],
                                               resistivity_dict['y'],
                                               resistivity_dict['resistivity'][z_index, :, :])
@@ -127,7 +116,7 @@ def interpolation(resistivity_dict, source_proj, center, model):
         for j in range(lons):
             for i in range(lats):
                 lon, lat = longitudes[j], latitudes[i]
-                x, y = from_wgs84(lon, lat)
+                x, y = from_grid(lon, lat)
 
                 ll_result[i, j] = interp_func(x, y)
 
@@ -149,6 +138,11 @@ def main(data_file, model_file, output_file, source_proj=None):
     model.read_model_file(model_fn=model_file)
 
     center = data.center_point
+    if source_proj is None:
+        zone_number, is_northern, utm_zone = gis_tools.get_utm_zone(center.lat.item(), center.lon.item())
+        source_proj = Proj('+proj=utm +zone=%d +%s +datum=%s' % (zone_number, 'north' if is_northern else 'south', 'WGS84'))
+    else:
+        source_proj = Proj(init='epsg:' + str(source_proj))
 
     resistivity_data = {
         'x': center.east.item() + (model.grid_east[1:] + model.grid_east[:-1])/2,
@@ -157,9 +151,11 @@ def main(data_file, model_file, output_file, source_proj=None):
         'resistivity': np.transpose(model.res_model, axes=(2, 0, 1))
     }
 
-    wgs84_proj = Proj(init='epsg:4326')
-    result = interpolation(resistivity_data, source_proj, center, model)
-    nc.write_resistivity_grid(output_file, wgs84_proj,
+    grid_proj = Proj(init='epsg:4326')
+    result = interpolate(resistivity_data, source_proj, grid_proj, center,
+                         median_spacing(model.grid_east), median_spacing(model.grid_north))
+
+    nc.write_resistivity_grid(output_file, grid_proj,
                               result['latitude'], result['longitude'], result['depth'],
                               result['resistivity'], z_label='depth')
 
@@ -168,7 +164,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('modem_data', help="ModEM data file")
     parser.add_argument('modem_model', help="ModEM model file")
-    parser.add_argument('--epsg', help="EPSG code for source CRS")
+    parser.add_argument('--epsg', help="EPSG code for source CRS", type=int)
     parser.add_argument('--output-file', default="output.nc", help="Name of output NetCDF file")
     args = parser.parse_args()
 

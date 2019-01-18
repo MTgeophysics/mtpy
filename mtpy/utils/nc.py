@@ -1,3 +1,8 @@
+"""
+Utilities to write data to NetCDF files.
+
+@author Umma Zannat
+"""
 import os
 
 from netCDF4 import Dataset
@@ -9,6 +14,11 @@ from mtpy.utils import gis_tools
 
 
 def IDW(source_points, source_values, query_points, k=6, p=5):
+    """
+    Inverse Distance Weighting interpolation method with power `p`
+    and `k` nearest neighbors.
+    Returns the interpolated values at `query_points`.
+    """
     tree = KDTree(source_points, k)
     distances, indices = tree.query(query_points, k=k)
     inv_dist = 1. / np.power(distances, p)
@@ -17,6 +27,7 @@ def IDW(source_points, source_values, query_points, k=6, p=5):
 
 
 def create_dataset(filename, overwrite=True):
+    """ Create a NetCDF dataset. """
     if os.path.exists(filename):
         if overwrite:
             os.remove(filename)
@@ -27,7 +38,10 @@ def create_dataset(filename, overwrite=True):
 
 
 def set_grid_mapping_attrs_geographic(crs_var, proj):
-    # for now, we only support epsg 4326
+    """
+    Attach CRS information to a NetCDF variable.
+    Currenly only supports WGS84 (EPSG:4326).
+    """
     # this is because without GDAL we don't know what the WKT is
     wgs84 = Proj(init='epsg:4326')
     assert proj.srs == wgs84.srs
@@ -43,7 +57,7 @@ def set_grid_mapping_attrs_geographic(crs_var, proj):
 def write_resistivity_grid(output_file, epsg_code,
                            latitude, longitude, elevation, resistivity_data,
                            **kwargs):
-    """ resistivity_data in (elevation, latitude, longitude) grid. """
+    """ Resistivity_data in (elevation, latitude, longitude) grid. """
 
     with create_dataset(output_file) as dataset:
         dataset.description = 'Resistivity Model'
@@ -113,10 +127,14 @@ class Interval:
 
 
 def bounds(arr):
+    """ The bounds (min, max) of an array as an Interval. """
     return Interval(left=np.min(arr), right=np.max(arr))
 
 
 def clipping_mask(arr, grid):
+    """
+    Create mask for an array of points where the points fall inside the grid.
+    """
     xbounds = bounds(grid[:, :, :, 0])
     ybounds = bounds(grid[:, :, :, 1])
     zbounds = bounds(grid[:, :, :, 2])
@@ -129,6 +147,9 @@ def clipping_mask(arr, grid):
 
 
 def transform_3d(proj_from, proj_to, arr):
+    """
+    Transform the x, y coordinates of the points but keep the z coordinate unchanged.
+    """
     x = arr[:, 0]
     y = arr[:, 1]
     z = arr[:, 2]
@@ -136,6 +157,10 @@ def transform_3d(proj_from, proj_to, arr):
     return np.array([new_x, new_y, z]).T
 
 def grid_from_extent_and_resolution(left, right, resolution):
+    """
+    Create a grid from the coordinates of two opposite corners, and also resolution.
+    The grid coordinate arrays are also returned.
+    """
     # coords are for cell centers
     x, y, z = [np.arange(left[dim] + resolution[dim] / 2., right[dim], resolution[dim])
                for dim in range(3)]
@@ -143,5 +168,11 @@ def grid_from_extent_and_resolution(left, right, resolution):
 
 
 def flatten_grid(arr):
+    """
+    Flatten the array of point positions, so the resultant array
+    is two-dimensional, where the first dimension is the index of the point
+    and the second is the vector component (0, 1, 2 for x, y, z). Useful
+    for IDW input.
+    """
     xdim, ydim, zdim, vec_dim = arr.shape
     return arr.reshape((xdim * ydim * zdim, vec_dim))
