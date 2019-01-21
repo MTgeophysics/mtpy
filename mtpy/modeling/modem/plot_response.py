@@ -1984,6 +1984,7 @@ class PlotResponse(object):
         plt.show()   # --> BE SURE TO SHOW THE PLOT
 
 
+
     def redraw_plot(self):
         """
         redraw plot if parameters were changed

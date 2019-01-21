@@ -172,6 +172,60 @@ def make_unique_folder(wd,basename = 'run'):
         
     return savepath
 
+
+def validate_save_file(savepath=None,savefile=None,basename=None,prioritise_savefile = False):
+    """
+    Return savepath, savefile and basename, ensuring they are internally
+    consistent and populating missing fields from the others or using defaults.
+    
+    Prioritises savepath and basename. I.e. if savepath, savefile and basename
+    are all valid but inconsistent, savefile will be updated to reflect
+    savepath and basename
+    
+    :param savepath: directory to save to
+    :param savefile: full file path to save to
+    :param basename: base file name to save to
+    
+    """
+    
+    if prioritise_savefile:
+        if savefile is not None:
+            if os.path.exists(savefile):
+                if os.path.isdir(savefile):
+                    savepath = None
+                else:
+                    savepath, basename = None, None
+                    
+    
+    # first, check if savepath is a valid directory
+    if savepath is not None:
+        if not os.path.isdir(savepath):
+            if not os.path.exists(savepath):
+                savepath = None
+            else:
+                savepath = os.path.dirname(savepath)
+
+    # second, if basename is None, get it from savefile or set a default
+    if basename is None:
+        if savefile is not None:
+            basename = os.path.basename(savefile)
+        else:
+            basename = 'default.dat'
+
+    # third, if savepath is None, get it from savefile or set a default
+    if savepath is None:
+        if savefile is not None:
+            savepath = os.path.dirname(savefile)
+            if not os.path.isdir(savepath):
+                savepath = os.getcwd()
+        else:
+            savepath = os.getcwd()
+    
+    # finally, make savefile so it is consistent with savepath and basename
+    savefile = os.path.join(savepath,basename)
+            
+    return savepath, savefile, basename
+    
             
 def sort_folder_list(wkdir,order_file,indices=[0,9999],delimiter = ''):
     """

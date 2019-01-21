@@ -221,6 +221,30 @@ def get_utm_zone(latitude, longitude):
 
     return zone_number, is_northern, '{0:02.0f}{1}'.format(zone_number, n_str)
 
+def utm_zone_to_epsg(zone_number, is_northern):
+    """
+    get epsg code (WGS84 datum) for a given utm zone
+    
+    """
+    for key in EPSG_DICT.keys():
+        val = EPSG_DICT[key]
+        if ('+zone={:<2}'.format(zone_number) in val) and ('+datum=WGS84' in val):
+            if is_northern:
+                if '+south' not in val:
+                    return key
+            else:
+                if '+south' in val:
+                    return key
+    
+def get_epsg(latitude, longitude):
+    """
+    get epsg code for the utm projection (WGS84 datum) of a given latitude
+    and longitude pair
+    """  
+    zone_no,is_northern,utm_str = get_utm_zone(latitude, longitude)
+    
+    return utm_zone_to_epsg(zone_no,is_northern)
+
 def project_point_ll2utm(lat, lon, datum='WGS84', utm_zone=None, epsg=None):
     """
     Project a point that is in Lat, Lon (will be converted to decimal degrees)

@@ -30,6 +30,13 @@ mu0 = 4e-7*math.pi
 
 #=================================================================
 
+def centre_point(xarray, yarray):
+    """
+    get the centre point of arrays of x and y values
+    """
+    return (xarray.max() + xarray.min())/2., (yarray.max() + yarray.min())/2.
+
+
 def roundsf(number, sf):
     """
     round a number to a specified number of significant figures (sf)

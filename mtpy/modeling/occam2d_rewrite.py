@@ -49,6 +49,8 @@ import mtpy.analysis.geometry as MTgy
 import mtpy.core.mt as mt
 import mtpy.modeling.winglinktools as MTwl
 from mtpy.imaging.mtplottools import plot_errorbar
+from mtpy.utils.calculator import centre_point
+from mtpy.utils.gis_tools import get_epsg,project_point_ll2utm
 
 
 # ==============================================================================
@@ -952,6 +954,7 @@ class Profile():
         self.station_list = kwargs.pop('station_list', None)
         self.geoelectric_strike = kwargs.pop('geoelectric_strike', None)
         self.profile_angle = kwargs.pop('profile_angle', None)
+        self.model_epsg = kwargs.pop('model_epsg',None)
         self.edi_list = edi_list
         self._rotate_to_strike = True
         self.num_edi = 0
@@ -1046,6 +1049,13 @@ class Profile():
         norths = np.zeros(self.num_edi)
         utm_zones = np.zeros(self.num_edi)
 
+        if self.model_epsg is None:
+            latlist = np.array([mtObj.lat for mtObj in self.edi_list])
+            lonlist = np.array([mtObj.lon for mtObj in self.edi_list])
+            lonc,latc = centre_point(lonlist,latlist)
+            self.model_epsg = get_epsg(latc,lonc)
+
+
         for ii, edi in enumerate(self.edi_list):
             # find strike angles for each station if a strike angle is not
             # given
@@ -1059,6 +1069,11 @@ class Profile():
                     strike_angles[ii] = np.median(gstrike)
                 except:
                     pass
+
+            if self.model_epsg is not None:
+                edi.east,edi.north,edi.utm_zone = \
+                project_point_ll2utm(edi.lat, edi.lon,
+                                     epsg=self.model_epsg)
 
             easts[ii] = edi.east
             norths[ii] = edi.north

@@ -192,10 +192,12 @@ class TestModemInputFilesBuilder(TestCase):
         
         mo.make_mesh()
         mo.write_model_file(save_path=self._output_dir)
+        
 
         # add topography to res model
         mo.add_topography_to_model2(AUS_TOPO_FILE)
         mo.write_model_file(save_path=self._output_dir)
+        
 
         
         co = Covariance()

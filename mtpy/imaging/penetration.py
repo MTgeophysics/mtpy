@@ -279,6 +279,7 @@ class Depth3D(ImagingBase):
                                                                                  whichrho=self._rho, ptol=self._ptol)
 
         if check_period_values(periods, ptol=self._ptol) is False:
+
             # plt.plot(periods, "-^")
             # title = "ERROR: Periods are NOT equal !!!"
             # plt.title(title, )
@@ -592,6 +593,7 @@ def get_penetration_depth_generic(edi_file_list, period_sec, whichrho='det', pto
             mt_obj = mt.MT(afile)
         elif isinstance(afile, mt.MT):
             mt_obj = afile
+            afile = mt_obj.fn
         else:
             raise Exception("Unsupported list of objects %s" % type(afile))
 
@@ -681,7 +683,7 @@ def check_period_values(period_list, ptol=0.1):
 
     upper_bound = p0 * (1 + ptol)
     lower_bound = p0 * (1 - ptol)
-    if all((per > lower_bound and (per < upper_bound)) for per in period_list[1:]):
+    if all((per > lower_bound) and (per < upper_bound) for per in period_list[1:]):
         return True
     else:
         return False
