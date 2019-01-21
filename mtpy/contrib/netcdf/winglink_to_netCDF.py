@@ -15,7 +15,7 @@ import argparse
 import numpy as np
 from pyproj import Proj
 
-from mtpy.utils import nc
+import nc
 
 
 def read_winglink_xyzv(input_file, false_easting=0.0, false_northing=0.0):
@@ -73,7 +73,7 @@ if __name__ == "__main__":
     parser.add_argument('output_file', help='output .nc file')
     parser.add_argument('--source-proj', help='EPSG projection code for input file', type=int, default=32753)
     parser.add_argument('--false-easting', help="false easting to correct", type=float, default=500000.0)
-    parser.add_argument('--false-northing', help="false easting to correct", type=float, default=10000000.0)
+    parser.add_argument('--false-northing', help="false northing to correct", type=float, default=10000000.0)
     parser.add_argument('--grid-proj', help='EPSG projection code for output grid', type=int, default=4326)
     parser.add_argument('--grid-corner-1', help="one corner of the output grid in x,y,z format", type=str, default="131.5,-31.0,-4500.0")
     parser.add_argument('--grid-corner-2', help="the other corner of the output grid in x,y,z format", type=str, default="132.5,-30.0,-125.0")

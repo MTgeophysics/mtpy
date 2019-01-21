@@ -14,8 +14,8 @@ from scipy.interpolate import interp2d
 from pyproj import Proj, transform
 
 from mtpy.modeling.modem import Model, Data
-from mtpy.utils import nc
 from mtpy.utils import gis_tools
+import nc
 
 import argparse
 

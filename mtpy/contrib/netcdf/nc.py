@@ -37,19 +37,20 @@ def create_dataset(filename, overwrite=True):
     return Dataset(filename, 'w', format='NETCDF4')
 
 
+def proj_to_epsg(proj):
+    for word in proj.srs.split():
+        key, value = word.split('=')
+        if key == "+init":
+            return value
+
+    raise ValueError('EPSG code not found for projection')
+
+
 def set_grid_mapping_attrs_geographic(crs_var, proj):
     """
     Attach CRS information to a NetCDF variable.
-    Currenly only supports WGS84 (EPSG:4326).
     """
-    # this is because without GDAL we don't know what the WKT is
-    wgs84 = Proj(init='epsg:4326')
-    assert proj.srs == wgs84.srs
-
-    wkt = 'GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]]'
-    crs_var.spatial_ref = wkt
-    crs_var.crs_wkt = wkt
-    crs_var.long_name = 'WGS 84'
+    crs_var.spatial_reference = proj_to_epsg(proj)
     crs_var.grid_mapping_name = 'latitude_longitude'
     crs_var.units = 'degree'
 
