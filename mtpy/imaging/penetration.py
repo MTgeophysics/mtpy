@@ -278,7 +278,7 @@ class Depth3D(ImagingBase):
                                                                                  self._period,
                                                                                  whichrho=self._rho, ptol=self._ptol)
 
-        if check_period_values(periods) is False:
+        if check_period_values(periods, ptol=self._ptol) is False:
             # plt.plot(periods, "-^")
             # title = "ERROR: Periods are NOT equal !!!"
             # plt.title(title, )
@@ -296,6 +296,7 @@ class Depth3D(ImagingBase):
         else:
             # good normal case
             period0 = periods[0]
+            print ("plotting for period %s" %period0)
 
             if period0 < 1.0:
                 # kept 4 signifiant digits - nonzero digits
