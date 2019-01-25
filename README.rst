@@ -37,9 +37,6 @@ Contacts
 | **Rakib Hassan**
 | Rakib.Hassan@ga.gov.au
 
-| **Yingzhi Gou**
-| Yingzhi.Gou@ga.gov.au
-
 | **Jinming Duan**
 | Jingming.Duan@ga.gov.au
 
