@@ -104,7 +104,7 @@ class PlotResponse(object):
         self.resp_fn = resp_fn
 
         self.data_object = None
-        self.resp_object = []
+        self.resp_object = None
 
         self.color_mode = kwargs.pop('color_mode', 'color')
 
@@ -198,21 +198,21 @@ class PlotResponse(object):
         if self.plot_style == 2:
             self._plot_2col()
 
-
-
-    def _plot(self):
+    def read_data_file(self):
         """
-        plot as an internal function of this class
+        read data file 
         """
-
-        self.data_object = Data()
-        self.data_object.read_data_file(self.data_fn)
-
-        # get shape of impedance tensors
-        ns = len(self.data_object.mt_dict.keys())
-
-        # read in response files
-        if self.resp_fn != None:
+        if self.data_object is None:
+            self.data_object = Data()
+            self.data_object.read_data_file(self.data_fn)
+        else:
+            return
+        
+    def read_resp_file(self):
+        """
+        read response files
+        """
+        if self.resp_object is None:
             self.resp_object = []
             if type(self.resp_fn) is not list:
                 resp_obj = Data()
@@ -223,6 +223,22 @@ class PlotResponse(object):
                     resp_obj = Data()
                     resp_obj.read_data_file(rfile)
                     self.resp_object.append(resp_obj)
+        else: 
+            return
+
+    def _plot(self):
+        """
+        plot as an internal function of this class
+        """
+
+        self.read_data_file()
+
+        # get shape of impedance tensors
+        ns = len(self.data_object.mt_dict.keys())
+
+        # read in response files
+        if self.resp_fn != None:
+            self.read_resp_file()
 
         # get number of response files
         nr = len(self.resp_object)
@@ -586,7 +602,7 @@ class PlotResponse(object):
                                   fontdict=fontdict)
 
                 if aa > 7:
-                    ax.yaxis.set_major_locator(MultipleLocator(.1))
+                    #ax.yaxis.set_major_locator(MultipleLocator(.2))
                     if self.tipper_limits is not None:
                         ax.set_ylim(self.tipper_limits)
                     else:
