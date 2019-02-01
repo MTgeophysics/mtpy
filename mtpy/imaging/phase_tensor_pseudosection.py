@@ -360,7 +360,7 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
         try:
             self.cb_position = cb_dict['position']
         except KeyError:
-            self.cb_position = None
+            self.cb_position = [.93, .25, .015, .6]
 
         # set the stretching in each direction
         stretch = kwargs.pop('stretch', (200, 25))
@@ -375,6 +375,7 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
         self.fig_num = kwargs.pop('fig_num', 1)
         self.plot_num = kwargs.pop('plot_num', 1)
         self.plot_title = kwargs.pop('plot_title', None)
+        self.plot_ref_ellipse = kwargs.pop('plot_ref_ellipse', False)
         self.fig_dpi = kwargs.pop('fig_dpi', 300)
         self.tscale = kwargs.pop('tscale', 'period')
         self.fig_size = kwargs.pop('fig_size', [6, 6])
@@ -463,7 +464,9 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
 
         # create a plot instance
         self.fig = plt.figure(self.fig_num, self.fig_size, dpi=self.fig_dpi)
+        self.fig.clf()
         self.ax = self.fig.add_subplot(1, 1, 1, aspect='equal')
+        
 
         # FZ: control tick rotation=30 not that good
         plt.xticks(rotation='vertical')
@@ -829,7 +832,7 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
                     'weight': 'bold'},
                     ncol=2,
                     markerscale=.5,
-                    borderaxespad=.005,
+                    borderaxespad=.0075,
                     borderpad=.25)
 
             # make a scale arrow
@@ -915,23 +918,24 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
             self.cb.ax.tick_params(axis='y', direction='in')
 
         # --> add reference ellipse
-        ref_ellip = patches.Ellipse((0, .0),
-                                    width=es,
-                                    height=es,
-                                    angle=0)
-        ref_ellip.set_facecolor((0, 0, 0))
-        ref_ax_loc = list(self.ax2.get_position().bounds)
-        ref_ax_loc[0] *= .95
-        ref_ax_loc[1] -= .17
-        ref_ax_loc[2] = .1
-        ref_ax_loc[3] = .1
-        self.ref_ax = self.fig.add_axes(ref_ax_loc, aspect='equal')
-        self.ref_ax.add_artist(ref_ellip)
-        self.ref_ax.set_xlim(-es / 2. * 1.05, es / 2. * 1.05)
-        self.ref_ax.set_ylim(-es / 2. * 1.05, es / 2. * 1.05)
-        plt.setp(self.ref_ax.xaxis.get_ticklabels(), visible=False)
-        plt.setp(self.ref_ax.yaxis.get_ticklabels(), visible=False)
-        self.ref_ax.set_title(r'$\Phi$ = 1')
+        if self.plot_ref_ellipse:
+            ref_ellip = patches.Ellipse((0, .0),
+                                        width=es,
+                                        height=es,
+                                        angle=0)
+            ref_ellip.set_facecolor((0, 0, 0))
+            ref_ax_loc = list(self.ax2.get_position().bounds)
+            ref_ax_loc[0] *= .95
+            ref_ax_loc[1] -= .17
+            ref_ax_loc[2] = .1
+            ref_ax_loc[3] = .1
+            self.ref_ax = self.fig.add_axes(ref_ax_loc, aspect='equal')
+            self.ref_ax.add_artist(ref_ellip)
+            self.ref_ax.set_xlim(-es / 2. * 1.05, es / 2. * 1.05)
+            self.ref_ax.set_ylim(-es / 2. * 1.05, es / 2. * 1.05)
+            plt.setp(self.ref_ax.xaxis.get_ticklabels(), visible=False)
+            plt.setp(self.ref_ax.yaxis.get_ticklabels(), visible=False)
+            self.ref_ax.set_title(r'$\Phi$ = 1')
 
         # put the grid lines behind
         #        [line.set_zorder(10000) for line in self.ax.lines]
@@ -1276,7 +1280,6 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
             >>> pt1.redraw_plot()
         """
 
-        #plt.close(self.fig)
         self.plot()
 
     def __str__(self):

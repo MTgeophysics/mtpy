@@ -547,7 +547,7 @@ class PlotStations(object):
             >>> p1.redraw_plot()
         """
 
-        plt.close(self.fig)
+        self.fig.clf()
         self.plot()
 
     def __str__(self):

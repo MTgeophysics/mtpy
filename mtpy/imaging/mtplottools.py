@@ -1358,7 +1358,7 @@ def get_station_locations(mt_list, map_scale='latlon', ref_point=(0, 0)):
         x_arr[ii] = x
         y_arr[ii] = y
 
-        map_station_dict[mt.station] = (x, y, mt_obj.elev)
+        map_station_dict[mt_obj.station] = (x, y, mt_obj.elev)
 
     return map_station_dict, x_arr, y_arr
 
