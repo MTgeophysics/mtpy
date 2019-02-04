@@ -26,7 +26,7 @@ def main():
     args = sys.argv[1:]
 
     if len(args) == 0:
-        print '\n\tError - no station name given\n'
+        print('\n\tError - no station name given\n')
         return
 
     lo_stations = args[0]
@@ -34,8 +34,8 @@ def main():
         lo_stations = lo_stations.split(',')
         lo_stations = [i.upper() for i in lo_stations]
     except:
-        print 'Error - station name list could not be read!'
-        print '(Must be comma-separated list...no whitespaces)\n'
+        print('Error - station name list could not be read!')
+        print('(Must be comma-separated list...no whitespaces)\n')
 
     outfile = op.abspath(op.join(os.curdir, 'dummy_survey.cfg'))
     outfile = MTfh.make_unique_filename(outfile)

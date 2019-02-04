@@ -654,25 +654,25 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
                                             np.sqrt(abs(rpt.residual_pt.phimin[0][rr]*\
                                                     rpt.residual_pt.phimax[0][rr]))
                             except IndexError:
-                                print '-'*50
-                                print mt1.station 
-                                print 'freq_index for 1:  {0}'.format(f_index)
-                                print 'freq looking for:  {0}'.format(freq)
-                                print 'index in big    :  {0}'.format(aa)
-                                print 'index in 1      :  {0} '.format(rr)
-                                print 'len_1 = {0}, len_2 = {1}'.format(
-                                        len(mt2.freq), len(mt1.freq))
-                                print 'len rpt_freq = {0}'.format(len(rpt.freq))
+                                print('-'*50)
+                                print(mt1.station) 
+                                print('freq_index for 1:  {0}'.format(f_index))
+                                print('freq looking for:  {0}'.format(freq))
+                                print('index in big    :  {0}'.format(aa))
+                                print('index in 1      :  {0} '.format(rr))
+                                print('len_1 = {0}, len_2 = {1}'.format(
+                                        len(mt2.freq), len(mt1.freq)))
+                                print('len rpt_freq = {0}'.format(len(rpt.freq)))
                         except KeyError:
-                            print 'Station {0} does not have {1:.5f}Hz'.format(
-                                   mt1.station, freq)
+                            print('Station {0} does not have {1:.5f}Hz'.format(
+                                   mt1.station, freq))
                         
                     
                     break
                 else:
                     pass
             if station_find == False:
-                print 'Did not find {0} from list 1 in list 2'.format(mt1.station)
+                print('Did not find {0} from list 1 in list 2'.format(mt1.station))
                
         # from the data get the relative offsets and sort the data by them
         self.rpt_array.sort(order=['lon', 'lat'])
@@ -706,7 +706,7 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
         self.rpt_array['geometric_mean'] = np.sqrt(abs(filt_phimin_arr*\
                                                    filt_phimax_arr))
         
-        print 'Applying Median Filter with kernel {0}'.format(kernel)
+        print('Applying Median Filter with kernel {0}'.format(kernel))
     
     #-------------------------------------------------------------------------
     def _get_relative_position(self):
@@ -736,8 +736,8 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
                     #check to make sure the zone is the same this needs
                     #to be more rigorously done
                     if zone1 != zone:
-                        print 'Zone change at station {0}'.format(
-                                                            rpt['station'])
+                        print('Zone change at station {0}'.format(
+                                                            rpt['station']))
                         if zone1[0:2] == zone[0:2]:
                             pass
                         elif int(zone1[0:2])<int(zone[0:2]):
@@ -761,8 +761,8 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
                 
                 else:
                     if zone1 != zone:
-                        print 'Zone change at station {0}'.format(
-                                                            rpt['station'])
+                        print('Zone change at station {0}'.format(
+                                                            rpt['station']))
                         if zone1[0:2] == zone[0:2]:
                             pass
                         elif int(zone1[0:2])<int(zone[0:2]):
@@ -812,7 +812,7 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
           try:
             self._apply_median_filter(kernel=self.med_filt_kernel)
           except:
-            print 'Warning - Could not apply median filter'
+            print('Warning - Could not apply median filter')
             
         #get frequency index
         self._get_plot_freq_index()
@@ -900,7 +900,7 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
                rpt['phimax'][f_index] > 100: 
                 eheight = .0000001*es
                 ewidth = .0000001*es
-                print 'Bad data at {0}'.format(rpt['station'])
+                print('Bad data at {0}'.format(rpt['station']))
             
             else:
                 scaling = es/emax
@@ -1152,7 +1152,7 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
             pass
         
         self.fig_fn = save_fn
-        print 'Saved figure to: '+self.fig_fn
+        print('Saved figure to: '+self.fig_fn)
 
     def update_plot(self):
         """

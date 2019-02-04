@@ -29,7 +29,7 @@ edi_prefix = 'qel'
 
 
 def main():
-    print
+    print()
     if len(sys.argv) < 4:
         sys.exit('\nNeed at least 4 arguments:\n '
                  '<stationname> \n <path to Birrp output files> \n '
@@ -46,7 +46,7 @@ def main():
         string2strip = sys.argv[4]
 
     if not op.isdir(datadir):
-        print '\tERROR - Data directory does not exist: {0}\n'.format(datadir)
+        print('\tERROR - Data directory does not exist: {0}\n'.format(datadir))
         sys.exit()
 
     try:
@@ -58,7 +58,7 @@ def main():
         if not op.isfile(survey_cfg_fn):
             raise
     except:
-        print '\tERROR - Config file does not exist: {0}\n'.format(survey_cfg_fn)
+        print('\tERROR - Config file does not exist: {0}\n'.format(survey_cfg_fn))
         sys.exit()
 
     try:
@@ -70,7 +70,7 @@ def main():
         if not op.isfile(instr_resp_fn):
             raise
     except:
-        print '\tERROR - Instrument response file does not exist: {0}\n'.format(instr_resp_fn)
+        print('\tERROR - Instrument response file does not exist: {0}\n'.format(instr_resp_fn))
         sys.exit()
 
     convert2edi(
@@ -93,10 +93,10 @@ def convert2edi(station, directory, survey_configfile,
         op.join(basedir, instrument_response_file))
     survey_configfile = op.abspath(op.join(basedir, survey_configfile))
 
-    print
-    print station, directory, survey_configfile, None, instrument_response_file
-    print directory
-    print
+    print()
+    print(station, directory, survey_configfile, None, instrument_response_file)
+    print(directory)
+    print()
 
     if string2strip is not None:
 
@@ -108,7 +108,7 @@ def convert2edi(station, directory, survey_configfile,
         j_file = j_filename_list[0]
         new_j_file = '%s.j' % (station.upper())
         shutil.move(j_file, new_j_file)
-        print 'renamed j_file %s into %s' % (j_file, new_j_file)
+        print('renamed j_file %s into %s' % (j_file, new_j_file))
 
         coh_filenames_list = [i for i in os.listdir(
             directory) if op.basename(i).upper().endswith('c2'.upper())]
@@ -117,12 +117,12 @@ def convert2edi(station, directory, survey_configfile,
             suffix1 = op.splitext(op.splitext(coh)[-2])[-1]
             newcoh = '%s' % (station.upper()) + suffix1 + suffix2
             shutil.move(coh, newcoh)
-            print 'renamed coh file %s into %s' % (coh, newcoh)
+            print('renamed coh file %s into %s' % (coh, newcoh))
 
     edifn, cohfn = MTbp.convertbirrpoutput(station, directory,
                                            survey_configfile, None, instrument_response_file)
     if edifn is None:
-        print
+        print()
         try:
             os.remove(infn_coh)
         except:
@@ -206,7 +206,7 @@ def convert2edi(station, directory, survey_configfile,
             outfn, allow_overwrite=True, use_info_string=True)
         if outfn_true is None:
             raise
-        print 'EDI file written: {0}\n'.format(outfn_true)
+        print('EDI file written: {0}\n'.format(outfn_true))
     # except:
     #     print '\tERROR - could not write final EDI file {0}\n'.format(outfn)
 
@@ -218,7 +218,7 @@ def convert2edi(station, directory, survey_configfile,
     try:
         os.rename(infn_coh, outfn_coh)
     except:
-        print 'Warning - could not find coherence file: {0}'.format(infn_coh)
+        print('Warning - could not find coherence file: {0}'.format(infn_coh))
 
     # rename j file, so that another one can be found and processed, if this code
     # is called within a loop:

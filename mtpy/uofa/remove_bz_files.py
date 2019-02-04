@@ -17,9 +17,9 @@ import os.path as op
 def main():
 
     if len(sys.argv) < 2:
-        print '\nNeed at least 1 argument: <directory to clean> \n\n'\
+        print('\nNeed at least 1 argument: <directory to clean> \n\n'\
             'Optional flag: \n [-R]\n'\
-            ' (recursive)\n\n'
+            ' (recursive)\n\n')
         return
 
     path = sys.argv[1]
@@ -55,15 +55,15 @@ def remove_files(path, recursive_flag=False):
             path) for f in filenames if op.splitext(f.lower())[1] == '.bz']
 
     if len(lo_files) == 0:
-        print '\nFound no files to delete\n'
+        print('\nFound no files to delete\n')
         return
 
-    print '\nFound files to delete:\n {0}'.format(lo_files)
+    print('\nFound files to delete:\n {0}'.format(lo_files))
 
     confirm = False
 
     while confirm is False:
-        answer = raw_input(
+        answer = input(
             '\n\t Do you want to remove the files permanently? (y/n) ')
         try:
             answer = answer.lower()[0]
@@ -72,12 +72,12 @@ def remove_files(path, recursive_flag=False):
         except:
             pass
 
-    print
+    print()
     if answer == 'y':
-        print '....deleting files...',
+        print('....deleting files...', end=' ')
         for f in lo_files:
             os.remove(f)
-        print 'Done!\n'
+        print('Done!\n')
 
     return
 

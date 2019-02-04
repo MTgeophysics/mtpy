@@ -66,7 +66,7 @@ class Covariance(object):
                                       '| 8. Two integer layer indices and Nx x Ny block of masks, repeated as needed.|',
                                       '+{0}+'.format('-' * 77)])
 
-        for key in kwargs.keys():
+        for key in list(kwargs.keys()):
             if hasattr(self, key):
                 setattr(self, key, kwargs[key])
             else:
@@ -89,7 +89,7 @@ class Covariance(object):
             if save_path is None:
                 save_path = os.path.dirname(model_fn)
 
-            print 'Reading {0}'.format(model_fn)
+            print('Reading {0}'.format(model_fn))
             self.grid_dimensions = mod_obj.res_model.shape
             if self.mask_arr is None:
                 self.mask_arr = np.ones_like(mod_obj.res_model)

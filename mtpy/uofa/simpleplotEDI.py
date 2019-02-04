@@ -12,7 +12,7 @@ def main():
     fn = sys.argv[1]
 
     if not op.isfile(fn):
-        print '\n\tFile does not exist: {0}\n'.format(fn)
+        print('\n\tFile does not exist: {0}\n'.format(fn))
         sys.exit()
     saveplot = False
     if len(sys.argv) > 2:
@@ -28,7 +28,7 @@ def plotedi(fn, saveplot=False, component=None):
     try:
         edi.readfile(fn)
     except:
-        print '\n\tERROR - not a valid EDI file: {0}\n'.format(fn)
+        print('\n\tERROR - not a valid EDI file: {0}\n'.format(fn))
         sys.exit()
 
     # if saveplot is True:

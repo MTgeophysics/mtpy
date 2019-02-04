@@ -92,7 +92,7 @@ y
 #------------------------------------------------------------------------------
 
 
-print
+print()
 
 basedir = op.abspath(os.curdir)
 outdir = op.join(basedir, outputdir)
@@ -143,7 +143,7 @@ for block in lo_subdirs:
         int(float(date))
 
     except:
-        print '\t Warning - not a valid naming format for subdirectory %s \n' % (block)
+        print('\t Warning - not a valid naming format for subdirectory %s \n' % (block))
         continue
 
     current_indir = op.join(indir, block)
@@ -166,7 +166,7 @@ for block in lo_subdirs:
     # abbreviation for easier handling:
     bn = filebasename
 
-    print '...processing station %s, date: %s ' % (station, date)
+    print('...processing station %s, date: %s ' % (station, date))
 
     current_birrp_string = birrp_string % (outdata_name, len(notch_frequencies), notchstring,
                                            relative_indir, bn, xchannel,
@@ -184,13 +184,13 @@ for block in lo_subdirs:
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE)
         o, e = P.communicate(current_birrp_string)
-        print '\t...Done!\n'
+        print('\t...Done!\n')
     # except:
     #     print '\t...ERROR - processing failed!\n'
     # pdb.set_trace()
 
     os.chdir(outdir)
-print 'Processing outputs in directory %s' % (outdir)
-print
+print('Processing outputs in directory %s' % (outdir))
+print()
 
 os.chdir(basedir)

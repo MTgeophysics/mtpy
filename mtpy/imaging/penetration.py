@@ -22,7 +22,7 @@ from scipy.interpolate import griddata
 
 import mtpy
 import mtpy.modeling.occam2d_rewrite as occam2d
-from imaging_base import ImagingBase, ParameterError, ImagingError
+from .imaging_base import ImagingBase, ParameterError, ImagingError
 from mtpy.core import mt as mt
 from mtpy.utils.decorator import deprecated
 from mtpy.utils.mtpylog import MtPyLog
@@ -151,7 +151,7 @@ class Depth2D(ImagingBase):
         pr.generate_profile()
         # pr.plot_profile(station_id=[0, 4])
         
-        if 'fontsize' in kwargs.keys():
+        if 'fontsize' in list(kwargs.keys()):
             fontsize = kwargs['fontsize']
         else:
             fontsize = 16
@@ -297,7 +297,7 @@ class Depth3D(ImagingBase):
         else:
             # good normal case
             period0 = periods[0]
-            print ("plotting for period %s" %period0)
+            print(("plotting for period %s" %period0))
 
             if period0 < 1.0:
                 # kept 4 signifiant digits - nonzero digits

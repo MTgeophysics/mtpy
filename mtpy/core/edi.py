@@ -27,8 +27,8 @@ try:
 
     ssd_test = True
 except ImportError:
-    print 'Need scipy.stats.distributions to compute spectra errors'
-    print 'Could not find scipy.stats.distributions, check distribution'
+    print('Need scipy.stats.distributions to compute spectra errors')
+    print('Could not find scipy.stats.distributions, check distribution')
     ssd_test = False
 
 tab = ' ' * 4
@@ -330,7 +330,7 @@ class Edi(object):
             except KeyError:
                 self.Tipper.rotation_angle = np.zeros_like(freq_arr)
 
-        if 'txr.exp' in data_dict.keys():
+        if 'txr.exp' in list(data_dict.keys()):
             tipper_arr[:, 0, 0] = np.array(data_dict['txr.exp']) + \
                                   np.array(data_dict['txi.exp']) * 1j
             tipper_arr[:, 0, 1] = np.array(data_dict['tyr.exp']) + \
@@ -394,10 +394,10 @@ class Edi(object):
         # get an object that contains the indices for each component
         cc = index_locator(comp_list)
 
-        freq_arr = np.array(sorted(data_dict.keys(), reverse=True))
+        freq_arr = np.array(sorted(list(data_dict.keys()), reverse=True))
 
-        z_arr = np.zeros((len(data_dict.keys()), 2, 2), dtype=np.complex)
-        t_arr = np.zeros((len(data_dict.keys()), 1, 2), dtype=np.complex)
+        z_arr = np.zeros((len(list(data_dict.keys())), 2, 2), dtype=np.complex)
+        t_arr = np.zeros((len(list(data_dict.keys())), 1, 2), dtype=np.complex)
 
         z_err_arr = np.zeros_like(z_arr, dtype=np.float)
         t_err_arr = np.zeros_like(t_arr, dtype=np.float)
@@ -935,7 +935,7 @@ class Header(object):
                              'project',
                              'survey']
 
-        for key in kwargs.keys():
+        for key in list(kwargs.keys()):
             setattr(self, key, kwargs[key])
 
         if self.edi_fn is not None or self.edi_lines is not None:
@@ -1094,7 +1094,7 @@ class Header(object):
         for key in self._header_keys:  # FZ: NOT sorting
             try:
                 value = getattr(self, key)
-            except Exception, ex:
+            except Exception as ex:
                 self._logger.debug("key value: %s %s %s", key, value, ex)
                 value = None
             if key in ['progdate', 'progvers']:
@@ -1548,7 +1548,7 @@ class DefineMeasurement(object):
         measurement_lines.append('\n')
 
         # need to write the >XMEAS type, but sort by channel number
-        m_key_list = [(kk, self.__dict__[kk].id) for kk in self.__dict__.keys()
+        m_key_list = [(kk, self.__dict__[kk].id) for kk in list(self.__dict__.keys())
                       if kk.find('meas_') == 0]
         if len(m_key_list) == 0:
             self._logger.info('No XMEAS information.')
@@ -1597,7 +1597,7 @@ class DefineMeasurement(object):
         get a dictionary for the xmeas parts
         """
         meas_dict = {}
-        for key in self.__dict__.keys():
+        for key in list(self.__dict__.keys()):
             if key.find('meas_') == 0:
                 meas_attr = getattr(self, key)
                 meas_key = meas_attr.chtype
@@ -1642,7 +1642,7 @@ class HMeasurement(object):
             else:
                 setattr(self, key, '0.0')
 
-        for key in kwargs.keys():
+        for key in list(kwargs.keys()):
             try:
                 setattr(self, key, float(kwargs[key]))
             except ValueError:
@@ -1690,7 +1690,7 @@ class EMeasurement(object):
             else:
                 setattr(self, key, '0.0')
 
-        for key in kwargs.keys():
+        for key in list(kwargs.keys()):
             try:
                 setattr(self, key, float(kwargs[key]))
             except ValueError:
@@ -1843,7 +1843,7 @@ class DataSection(object):
 
         # FZ: need to modify the nfreq (number of freqs), when re-writing effective EDI files)
         if over_dict is not None:
-            for akey in over_dict.keys():
+            for akey in list(over_dict.keys()):
                 self.__setattr__(akey, over_dict[akey])
 
         if data_sect_list is not None:

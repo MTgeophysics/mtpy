@@ -353,7 +353,7 @@ class PlotRMSMaps(object):
             self.fig_dpi = save_fig_dpi
 
         self.fig.savefig(save_fn, dpi=self.fig_dpi)
-        print 'saved file to {0}'.format(save_fn)
+        print('saved file to {0}'.format(save_fn))
 
         if fig_close:
             plt.close(self.fig)

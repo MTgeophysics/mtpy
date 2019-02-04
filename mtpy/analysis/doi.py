@@ -59,7 +59,7 @@ def old_bostick_resistivity(f, rho, pha):
     """
     if not np.iterable(pha):
         if pha > 2*math.pi:
-            print("WARN: pha is too large, in unit degree? ", pha)
+            print(("WARN: pha is too large, in unit degree? ", pha))
             pha_rad = pha * math.pi / 180.0
         else:
             pha_rad=pha
@@ -68,7 +68,7 @@ def old_bostick_resistivity(f, rho, pha):
         
     # ensure pha_rad is positive
     pha_rad[np.nonzero(pha_rad)] = pha_rad[np.nonzero(pha_rad)] % (2.*math.pi)
-    print pha_rad
+    print(pha_rad)
 
     rho_b = rho*((math.pi / (2 * pha_rad)) - 1)
 #    print(rho_b)
@@ -101,16 +101,16 @@ def sensitivity(z, sigma_conduct=100.0, freq=10.0):
 # ===========================================
 if __name__ == "__main__":
 
-    for n in xrange(0,36):
+    for n in range(0,36):
         zn = 0.1*n
         sen = sensitivity(zn, sigma_conduct=10.0, freq=1.0)
         #print (zn, sen)  # sen is a complex value
-        print "%s, %s" % (zn, np.absolute(sen))
+        print("%s, %s" % (zn, np.absolute(sen)))
 
 
     # Below show that the sensitivity is indepedent of freq and conductivty !!!!
 
-    zn_list=0.1*np.array(range(0,40))
+    zn_list=0.1*np.array(list(range(0,40)))
     sens_list = [np.absolute(sensitivity(zn, sigma_conduct=0.20, freq=10)) for zn in zn_list]
     sens_list2= [np.absolute(sensitivity(zn, sigma_conduct=2000.0, freq=0.1)) for zn in zn_list]
 

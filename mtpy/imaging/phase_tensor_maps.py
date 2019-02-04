@@ -734,7 +734,7 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
                         # check to make sure the zone is the same this needs
                         # to be more rigorously done
                         if zone1 != zone:
-                            print 'Zone change at station ' + mt.station
+                            print('Zone change at station ' + mt.station)
                             if zone1[0:2] == zone[0:2]:
                                 pass
                             elif int(zone1[0:2]) < int(zone[0:2]):
@@ -762,7 +762,7 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
 
                     else:
                         if zone1 != zone:
-                            print 'Zone change at station ' + mt.station
+                            print('Zone change at station ' + mt.station)
                             if zone1[0:2] == zone[0:2]:
                                 pass
                             elif int(zone1[0:2]) < int(zone[0:2]):
@@ -1109,7 +1109,7 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
                                        orientation=self.cb_orientation,
                                        ticks=bounds[1:-1])
         else:
-            if cmap in mtcl.cmapdict.keys():
+            if cmap in list(mtcl.cmapdict.keys()):
                 cmap_input = mtcl.cmapdict[cmap]
             else:
                 cmap_input = mtcl.cm.get_cmap(cmap)

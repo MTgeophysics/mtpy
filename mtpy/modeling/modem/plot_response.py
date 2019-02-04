@@ -177,7 +177,7 @@ class PlotResponse(object):
 
         self.plot_style = kwargs.pop('plot_style', 1)
         if self.plot_style not in [1, 2]:
-            print("self.plot_style = %s. It MUST be either 1 (default) or 2 (2 column figures)" % str(self.plot_style))
+            print(("self.plot_style = %s. It MUST be either 1 (default) or 2 (2 column figures)" % str(self.plot_style)))
             self.plot_style = 1
 
         self.plot_component = kwargs.pop('plot_component', 4)
@@ -209,7 +209,7 @@ class PlotResponse(object):
         self.data_object.read_data_file(self.data_fn)
 
         # get shape of impedance tensors
-        ns = len(self.data_object.mt_dict.keys())
+        ns = len(list(self.data_object.mt_dict.keys()))
 
         # read in response files
         if self.resp_fn != None:
@@ -257,13 +257,13 @@ class PlotResponse(object):
                         if station == int(pstation):
                             pstation_list.append(ii)
         else:
-            pstation_list = self.data_object.mt_dict.keys()
+            pstation_list = list(self.data_object.mt_dict.keys())
 
         for jj, station in enumerate(pstation_list):
             z_obj = self.data_object.mt_dict[station].Z
             t_obj = self.data_object.mt_dict[station].Tipper
             period = self.data_object.period_list
-            print 'Plotting: {0}'.format(station)
+            print('Plotting: {0}'.format(station))
 
 
             # --> make key word dictionaries for plotting
@@ -463,7 +463,7 @@ class PlotResponse(object):
                                                  **kw_yy)
 
 
-            print ("self.plot_tipper = {}".format(self.plot_tipper))
+            print(("self.plot_tipper = {}".format(self.plot_tipper)))
             # ----------------------------------------------
             # get error bar list for editing later
             if not self.plot_tipper:
@@ -474,7 +474,7 @@ class PlotResponse(object):
                                       [eryy[1][0], eryy[1][1], eryy[2][0]]]
                     line_list = [[erxx[0]], [erxy[0]], [eryx[0]], [eryy[0]]]
                 except IndexError:
-                    print 'Found no Z components for {0}'.format(self.station)
+                    print('Found no Z components for {0}'.format(self.station))
                     line_list = [[None], [None],
                                  [None], [None]]
 
@@ -496,7 +496,7 @@ class PlotResponse(object):
                                       [ertx[1][0], ertx[1][1], ertx[2][0]],
                                       [erty[1][0], erty[1][1], erty[2][0]]]
                 except IndexError:
-                    print 'Found no Z components for {0}'.format(station)
+                    print('Found no Z components for {0}'.format(station))
                     line_list = [[None], [None],
                                  [None], [None],
                                  [None], [None]]
@@ -782,7 +782,7 @@ class PlotResponse(object):
         self.data_object.read_data_file(self.data_fn)
 
         # get shape of impedance tensors
-        ns = len(self.data_object.mt_dict.keys())
+        ns = len(list(self.data_object.mt_dict.keys()))
 
         # read in response files
         if self.resp_fn is not None:
@@ -832,7 +832,7 @@ class PlotResponse(object):
                         if station == int(pstation):
                             pstation_list.append(ii)
         else:
-            pstation_list = self.data_object.mt_dict.keys()
+            pstation_list = list(self.data_object.mt_dict.keys())
 
         for jj, station in enumerate(pstation_list):
             z_obj = self.data_object.mt_dict[station].Z
@@ -2069,4 +2069,4 @@ class PlotResponse(object):
             pass
 
         self.fig_fn = save_fn
-        print 'Saved figure to: ' + self.fig_fn
+        print('Saved figure to: ' + self.fig_fn)

@@ -409,7 +409,7 @@ def interpolate_strike_angles(angles, in_periods):
             ang2 = None
 
             jj = in_line
-            print in_line
+            print(in_line)
             while jj < len(angles):
                 jj += 1
                 if not np.isnan(angles[jj]):
@@ -424,7 +424,7 @@ def interpolate_strike_angles(angles, in_periods):
             delta_ang = ang2 - ang1
             per_step = periods[in_line] - per1
             new_angles[in_line] = ang1 + delta_ang / delta_per * per_step
-            print jj
+            print(jj)
 
         in_line += 1
 

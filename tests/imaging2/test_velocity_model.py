@@ -46,14 +46,14 @@ class Test_VelocityModel(TestCase):
         maxDepths_10nn = numpy.array(maxDepths_10nn)
 
         mean, std = numpy.mean(maxDepths), numpy.std(maxDepths)
-        print 'Mean of maximum depths reached, computed for each cdp: %f; std: %f'%(mean, std)
+        print('Mean of maximum depths reached, computed for each cdp: %f; std: %f'%(mean, std))
 
         self.assertGreaterEqual(mean, 60e3, 'Mean of maximum depth reached must >= 60e3 m')
         self.assertGreaterEqual(std, 2e3, 'Std. of maximum depth reached must >= 2e3 m')
 
         mean_5nn, std_5nn = numpy.mean(maxDepths_5nn), numpy.std(maxDepths_5nn)
-        print 'Mean of maximum depths reached, computed for mean depth profile ' \
-              'of 5 neighbouring cdps, at each cdp location: %f; std: %f'%(mean_5nn, std_5nn)
+        print('Mean of maximum depths reached, computed for mean depth profile ' \
+              'of 5 neighbouring cdps, at each cdp location: %f; std: %f'%(mean_5nn, std_5nn))
 
         self.assertGreaterEqual(mean_5nn, 60e3, 'Mean of maximum depth reached must >= 60e3 m')
         self.assertGreaterEqual(std_5nn, 1.5e3, 'Std. of maximum depth reached must >= 1.5e3 m')
@@ -61,8 +61,8 @@ class Test_VelocityModel(TestCase):
         self.assertLess(std_5nn, std, 'Std. should be smaller because of lateral averaging')
 
         mean_10nn, std_10nn = numpy.mean(maxDepths_10nn), numpy.std(maxDepths_10nn)
-        print 'Mean of maximum depths reached, computed for mean depth profile ' \
-              'of 10 neighbouring cdps, at each cdp location: %f; std: %f'%(mean_10nn, std_10nn)
+        print('Mean of maximum depths reached, computed for mean depth profile ' \
+              'of 10 neighbouring cdps, at each cdp location: %f; std: %f'%(mean_10nn, std_10nn))
 
         self.assertGreaterEqual(mean_10nn, 60e3, 'Mean of maximum depth reached must >= 60e3 m')
         self.assertGreaterEqual(std_10nn, 1.0e3, 'Std. of maximum depth reached must >= 1.0e3 m')
@@ -90,7 +90,7 @@ class Test_VelocityModel(TestCase):
         mean, std = numpy.mean(v._cdp_mean_interval_velocity), \
                     numpy.std(v._cdp_mean_interval_velocity)
 
-        print 'Mean interval velocity for all cdps: %f; std: %f'%(mean, std)
+        print('Mean interval velocity for all cdps: %f; std: %f'%(mean, std))
         self.assertLessEqual(mean, 6e3, 'Mean velocity exceeds 6000 m/s')
     # end func
 # end class

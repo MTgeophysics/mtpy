@@ -1,4 +1,4 @@
-from __future__ import print_function
+
 
 import shutil
 from difflib import unified_diff
@@ -39,8 +39,8 @@ def diff_files(after, before, ignores=None):
 
     if ignores:
         for ignored_term in ignores:
-            before_lines = filter(lambda line: ignored_term not in line, before_lines)
-            after_lines = filter(lambda line: ignored_term not in line, before_lines)
+            before_lines = [line for line in before_lines if ignored_term not in line]
+            after_lines = [line for line in before_lines if ignored_term not in line]
 
     msg = "Comparing {} and {}:\n".format(before, after)
 

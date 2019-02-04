@@ -277,7 +277,7 @@ class Ui_MainWindow(object):
 
         self.dirpath = os.path.dirname(fn)
 
-        print self.dirpath
+        print(self.dirpath)
 
         station_list = sorted(self.modem_data.mt_dict.keys())
 
@@ -301,7 +301,7 @@ class Ui_MainWindow(object):
         """
         get response file name
         """
-        print self.dirpath
+        print(self.dirpath)
         fn_dialog = QtGui.QFileDialog(directory=self.dirpath)
         fn = str(fn_dialog.getOpenFileName(caption='Choose ModEM response file',
                                            filter='*.dat'))
@@ -1076,31 +1076,31 @@ class PlotSettings(QtGui.QWidget):
         try:
             self.fs = float(text)
         except ValueError:
-            print "Enter a float point number"
+            print("Enter a float point number")
 
     def set_text_e_capthick(self, text):
         try:
             self.e_capthick = float(text)
         except ValueError:
-            print "Enter a float point number"
+            print("Enter a float point number")
 
     def set_text_e_capsize(self, text):
         try:
             self.e_capsize = float(text)
         except ValueError:
-            print "Enter a float point number"
+            print("Enter a float point number")
 
     def set_text_lw(self, text):
         try:
             self.lw = float(text)
         except ValueError:
-            print "Enter a float point number"
+            print("Enter a float point number")
 
     def set_text_ms(self, text):
         try:
             self.ms = float(text)
         except ValueError:
-            print "Enter a float point number"
+            print("Enter a float point number")
 
     def set_cted(self):
         imag_color = QtGui.QColorDialog().getColor()
@@ -1108,7 +1108,7 @@ class PlotSettings(QtGui.QWidget):
         if imag_color.isValid():
             self.cted = imag_color.getRgbF()
         else:
-            print 'Not a valid color'
+            print('Not a valid color')
 
     def set_ctmd(self):
         imag_color = QtGui.QColorDialog().getColor()
@@ -1116,7 +1116,7 @@ class PlotSettings(QtGui.QWidget):
         if imag_color.isValid():
             self.ctmd = imag_color.getRgbF()
         else:
-            print 'Not a valid color'
+            print('Not a valid color')
 
     def set_ctrd(self):
         imag_color = QtGui.QColorDialog().getColor()
@@ -1124,7 +1124,7 @@ class PlotSettings(QtGui.QWidget):
         if imag_color.isValid():
             self.ctrd = imag_color.getRgbF()
         else:
-            print 'Not a valid color'
+            print('Not a valid color')
 
     def set_ctid(self):
         imag_color = QtGui.QColorDialog().getColor()
@@ -1132,19 +1132,19 @@ class PlotSettings(QtGui.QWidget):
         if imag_color.isValid():
             self.ctid = imag_color.getRgbF()
         else:
-            print 'Not a valid color'
+            print('Not a valid color')
 
     def set_text_mted(self, text):
         try:
             self.mted = str(text)
         except ValueError:
-            print "Enter a string"
+            print("Enter a string")
 
     def set_text_mtmd(self, text):
         try:
             self.mtmd = str(text)
         except ValueError:
-            print "Enter a string"
+            print("Enter a string")
 
     def set_ctem(self):
         imag_color = QtGui.QColorDialog().getColor()
@@ -1152,7 +1152,7 @@ class PlotSettings(QtGui.QWidget):
         if imag_color.isValid():
             self.ctem = imag_color.getRgbF()
         else:
-            print 'Not a valid color'
+            print('Not a valid color')
 
     def set_ctmm(self):
         imag_color = QtGui.QColorDialog().getColor()
@@ -1160,7 +1160,7 @@ class PlotSettings(QtGui.QWidget):
         if imag_color.isValid():
             self.ctmm = imag_color.getRgbF()
         else:
-            print 'Not a valid color'
+            print('Not a valid color')
 
     def set_ctrm(self):
         imag_color = QtGui.QColorDialog().getColor()
@@ -1168,7 +1168,7 @@ class PlotSettings(QtGui.QWidget):
         if imag_color.isValid():
             self.ctrm = imag_color.getRgbF()
         else:
-            print 'Not a valid color'
+            print('Not a valid color')
 
     def set_ctim(self):
         imag_color = QtGui.QColorDialog().getColor()
@@ -1176,19 +1176,19 @@ class PlotSettings(QtGui.QWidget):
         if imag_color.isValid():
             self.ctim = imag_color.getRgbF()
         else:
-            print 'Not a valid color'
+            print('Not a valid color')
 
     def set_text_mtem(self, text):
         try:
             self.mtem = str(text)
         except ValueError:
-            print "Enter a string"
+            print("Enter a string")
 
     def set_text_mtmm(self, text):
         try:
             self.mtmm = str(text)
         except ValueError:
-            print "Enter a string"
+            print("Enter a string")
 
     def set_text_res_xx(self, text):
         if text == 'None':
@@ -1196,7 +1196,7 @@ class PlotSettings(QtGui.QWidget):
         text = text.replace('(', '').replace(')', '')
         t_list = text.split(',')
         if len(t_list) != 2:
-            print 'enter as (min, max)'
+            print('enter as (min, max)')
         l_list = []
         for txt in t_list:
             try:
@@ -1212,7 +1212,7 @@ class PlotSettings(QtGui.QWidget):
         text = text.replace('(', '').replace(')', '')
         t_list = text.split(',')
         if len(t_list) != 2:
-            print 'enter as (min, max)'
+            print('enter as (min, max)')
         l_list = []
         for txt in t_list:
             try:
@@ -1228,7 +1228,7 @@ class PlotSettings(QtGui.QWidget):
         text = text.replace('(', '').replace(')', '')
         t_list = text.split(',')
         if len(t_list) != 2:
-            print 'enter as (min, max)'
+            print('enter as (min, max)')
         l_list = []
         for txt in t_list:
             try:
@@ -1244,7 +1244,7 @@ class PlotSettings(QtGui.QWidget):
         text = text.replace('(', '').replace(')', '')
         t_list = text.split(',')
         if len(t_list) != 2:
-            print 'enter as (min, max)'
+            print('enter as (min, max)')
         l_list = []
         for txt in t_list:
             try:
@@ -1260,7 +1260,7 @@ class PlotSettings(QtGui.QWidget):
         text = text.replace('(', '').replace(')', '')
         t_list = text.split(',')
         if len(t_list) != 2:
-            print 'enter as (min, max)'
+            print('enter as (min, max)')
         l_list = []
         for txt in t_list:
             try:
@@ -1276,7 +1276,7 @@ class PlotSettings(QtGui.QWidget):
         text = text.replace('(', '').replace(')', '')
         t_list = text.split(',')
         if len(t_list) != 2:
-            print 'enter as (min, max)'
+            print('enter as (min, max)')
         l_list = []
         for txt in t_list:
             try:
@@ -1292,7 +1292,7 @@ class PlotSettings(QtGui.QWidget):
         text = text.replace('(', '').replace(')', '')
         t_list = text.split(',')
         if len(t_list) != 2:
-            print 'enter as (min, max)'
+            print('enter as (min, max)')
         l_list = []
         for txt in t_list:
             try:
@@ -1308,7 +1308,7 @@ class PlotSettings(QtGui.QWidget):
         text = text.replace('(', '').replace(')', '')
         t_list = text.split(',')
         if len(t_list) != 2:
-            print 'enter as (min, max)'
+            print('enter as (min, max)')
         l_list = []
         for txt in t_list:
             try:
@@ -1324,7 +1324,7 @@ class PlotSettings(QtGui.QWidget):
         text = text.replace('(', '').replace(')', '')
         t_list = text.split(',')
         if len(t_list) != 2:
-            print 'enter as (min, max)'
+            print('enter as (min, max)')
         l_list = []
         for txt in t_list:
             try:

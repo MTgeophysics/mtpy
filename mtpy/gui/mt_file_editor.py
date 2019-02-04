@@ -280,7 +280,7 @@ class SiteTab(QtWidgets.QWidget):
             self.lat_edit.setText(self.Site.Location.latitude)
             self.lon_edit.setText(self.Site.Location.longitude)
         else:
-            print self.Site.Location.easting, self.Site.Location.northing, self.Site.Location.utm_zone
+            print(self.Site.Location.easting, self.Site.Location.northing, self.Site.Location.utm_zone)
             
     def _set_utm(self):
         if self.Site.Location.latitude is not None and \
@@ -909,7 +909,7 @@ class ProvenanceTab(QtWidgets.QWidget):
     
     def set_creation_time(self):
         date = self.creation_time_edit.date()
-        print date.toPyDate()
+        print(date.toPyDate())
 
     def set_creator_name(self):
         pass

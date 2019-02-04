@@ -12,13 +12,12 @@ import mtpy.core.mt as mt
 from mtpy.utils.mtpylog import MtPyLog
 
 
-class ImagingBase:
+class ImagingBase(metaclass=abc.ABCMeta):
     """
     Description:
         This is the base class for all the imaging classes, with standardized API (as abstract methods)
         Also some common functionality should be implemented here.
     """
-    __metaclass__ = abc.ABCMeta
 
     def __init__(self):
         self._logger = MtPyLog.get_mtpy_logger(self.__class__.__name__)

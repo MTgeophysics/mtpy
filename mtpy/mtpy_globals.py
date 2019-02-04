@@ -6,7 +6,7 @@ Author: fei.zhang@ga.gov.au
 
 FZ Last Updated: 2017-12-04
 """
-from __future__ import print_function
+
 import os
 import tempfile
 

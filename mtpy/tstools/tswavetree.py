@@ -29,7 +29,7 @@ class TSWaveTree(QTreeWidget):
     def settree(self, wavelist, selecteditems):
         item = self.invisibleRootItem()
 
-        for c in reversed(range(item.childCount())):
+        for c in reversed(list(range(item.childCount()))):
             item.removeChild(item.child(c))
 
         self.fillitem(item, wavelist, selecteditems)

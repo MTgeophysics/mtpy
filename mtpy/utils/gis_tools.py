@@ -8,7 +8,7 @@ Created on Fri Apr 14 14:47:48 2017
 # ==============================================================================
 # Imports
 # ==============================================================================
-from __future__ import print_function
+
 from mtpy.utils import HAS_GDAL, EPSG_DICT
 from mtpy.utils.decorator import gdal_data_check, deprecated
 import numpy as np
@@ -226,7 +226,7 @@ def utm_zone_to_epsg(zone_number, is_northern):
     get epsg code (WGS84 datum) for a given utm zone
     
     """
-    for key in EPSG_DICT.keys():
+    for key in list(EPSG_DICT.keys()):
         val = EPSG_DICT[key]
         if ('+zone={:<2}'.format(zone_number) in val) and ('+datum=WGS84' in val):
             if is_northern:

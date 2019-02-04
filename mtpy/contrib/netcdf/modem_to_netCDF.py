@@ -15,7 +15,7 @@ from pyproj import Proj, transform
 
 from mtpy.modeling.modem import Model, Data
 from mtpy.utils import gis_tools
-import nc
+from . import nc
 
 import argparse
 

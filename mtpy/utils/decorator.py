@@ -24,7 +24,7 @@ class deprecated(object):
     def __call__(self, cls_or_func):  # pragma: no cover
         if inspect.isfunction(cls_or_func):
             if hasattr(cls_or_func, 'func_code'):
-                _code = cls_or_func.func_code
+                _code = cls_or_func.__code__
             else:
                 _code = cls_or_func.__code__
             fmt = "Call to deprecated function or method {name} ({reason})."

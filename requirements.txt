@@ -13,3 +13,4 @@ netcdf4
 #networkx
 numpydoc>=0.7.0
 # basemap
+flake8

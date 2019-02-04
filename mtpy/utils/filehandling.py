@@ -129,7 +129,7 @@ def read_stationdatafile(textfile,read_duplicates = True):
             except:
                 pass
         sname = line[0]
-        if sname not in stationdict.keys():
+        if sname not in list(stationdict.keys()):
             stationdict[sname] = line[1:]
         else:
             if read_duplicates:
@@ -386,7 +386,7 @@ def EDL_make_Nhour_files(n_hours,inputdir, sampling , stationname = None, output
     pattern = '*.[ebEB][xyzXYZ]'
     if stationname is not None:
         pattern = '*{0}*.[ebEB][xyzXYZ]'.format(stationname.lower())
-    print '\nSearching for files with pattern: ',pattern
+    print('\nSearching for files with pattern: ',pattern)
 
     for folder in lo_foldernames:
         wd = op.abspath(op.realpath(folder)) 
@@ -421,8 +421,8 @@ def EDL_make_Nhour_files(n_hours,inputdir, sampling , stationname = None, output
             if not os.access(outpath, os.W_OK):
                 raise
         except:
-            print 'Cannot generate writable output directory {0} - using'\
-                    ' generic location "dayfiles" instead'.format(outpath)
+            print('Cannot generate writable output directory {0} - using'\
+                    ' generic location "dayfiles" instead'.format(outpath))
             outpath = op.join(wd,'{0}hourfiles'.format(int(n_hours)))    
             pass
 
@@ -496,7 +496,7 @@ def EDL_make_Nhour_files(n_hours,inputdir, sampling , stationname = None, output
 
             try:
 
-                print 'Reading file %s' %(f)
+                print('Reading file %s' %(f))
                 #starting time of current file
                 file_start_time = lo_sorted_starttimes[idx_f]
 
@@ -515,7 +515,7 @@ def EDL_make_Nhour_files(n_hours,inputdir, sampling , stationname = None, output
                 Fin.close()
                 #data_in = np.loadtxt(f)
             except:
-                print 'WARNING - could not read file - skipping...'
+                print('WARNING - could not read file - skipping...')
                 continue
             no_samples = len(data_in)
 
@@ -691,7 +691,7 @@ def EDL_make_Nhour_files(n_hours,inputdir, sampling , stationname = None, output
                 arrayindex = 0
                 
                 F.close()
-                print '\t wrote file %s'%(new_file)
+                print('\t wrote file %s'%(new_file))
 
                 fileopen = False
                 complete = False
@@ -746,7 +746,7 @@ def EDL_make_dayfiles(inputdir, sampling , stationname = None, outputdir = None)
     pattern = '*.[ebEB][xyzXYZ]'
     if stationname is not None:
         pattern = '*{0}*.[ebEB][xyzXYZ]'.format(stationname.lower())
-    print '\nSearching for files with pattern: ',pattern
+    print('\nSearching for files with pattern: ',pattern)
 
     for folder in lo_foldernames:
         wd = op.abspath(op.realpath(folder)) 
@@ -781,8 +781,8 @@ def EDL_make_dayfiles(inputdir, sampling , stationname = None, outputdir = None)
             if not os.access(outpath, os.W_OK):
                 raise
         except:
-            print 'Cannot generate writable output directory {0} - using'\
-                    ' generic location "dayfiles" instead'.format(outpath)
+            print('Cannot generate writable output directory {0} - using'\
+                    ' generic location "dayfiles" instead'.format(outpath))
             outpath = op.join(wd,'dayfiles')    
             pass
 
@@ -852,7 +852,7 @@ def EDL_make_dayfiles(inputdir, sampling , stationname = None, outputdir = None)
 
             try:
 
-                print 'Reading file %s' %(f)
+                print('Reading file %s' %(f))
                 #starting time of current file
                 file_start_time = lo_sorted_starttimes[idx_f]
 
@@ -872,7 +872,7 @@ def EDL_make_dayfiles(inputdir, sampling , stationname = None, outputdir = None)
                 Fin.close()
                 #data_in = np.loadtxt(f)
             except:
-                print 'WARNING - could not read file - skipping...'
+                print('WARNING - could not read file - skipping...')
                 continue
             no_samples = len(data_in)
 
@@ -973,7 +973,7 @@ def EDL_make_dayfiles(inputdir, sampling , stationname = None, outputdir = None)
                     #outfile_data.extend(data_in[:,1].tolist())
 
                 arrayindex += len(data_in)
-                print len(data_in),arrayindex
+                print(len(data_in),arrayindex)
 
                 arrayindex += len(data_in)
                 outfile_endtime = (arrayindex+1)*sampling + outfile_starttime
@@ -1044,7 +1044,7 @@ def EDL_make_dayfiles(inputdir, sampling , stationname = None, outputdir = None)
                 
 
                 F.close()
-                print '\t wrote file %s'%(new_file)
+                print('\t wrote file %s'%(new_file))
 
                 fileopen = 0
                 incomplete = 0
@@ -1320,7 +1320,7 @@ def get_ts_header_string(header_dictionary):
     
     header_string = '# '
     for headerelement in lo_headerelements:
-        if header_dictionary.has_key(headerelement):
+        if headerelement in header_dictionary:
             header_string += '{0} '.format(str(header_dictionary[headerelement]))
         else:
             header_string += '\t '   
@@ -1424,7 +1424,7 @@ def reorient_files(lo_files, configfile, lo_stations = None, outdir = None):
         except:
             raise MTex.MTpyError_inputarguments('ERROR - "lo_stations"'
                                                 ' argument must be iterable!')
-    print '\t re-orienting data for collection of stations:\n{0}'.format(lo_stations)
+    print('\t re-orienting data for collection of stations:\n{0}'.format(lo_stations))
     #Do not require list of headers as input, as this function can be called directly rather than from a 'calibratefiles.py'-like script - so the list not necessarily exists in beforehand - 
     #collect header lines of files in list
     lo_headers = []
@@ -1443,10 +1443,10 @@ def reorient_files(lo_files, configfile, lo_stations = None, outdir = None):
 
     if len(lo_headers) == 0 :
         if lo_stations is not None:
-            print 'ERROR - No files with header lines found for station(s)'\
-                                                    ' {0}'.format(lo_stations)
+            print('ERROR - No files with header lines found for station(s)'\
+                                                    ' {0}'.format(lo_stations))
         else:
-            print 'ERROR - No files with header lines found'
+            print('ERROR - No files with header lines found')
         return 1
 
     lo_stationnames = list(set(lo_stationnames))
@@ -1460,8 +1460,8 @@ def reorient_files(lo_files, configfile, lo_stations = None, outdir = None):
             if not op.isdir(ori_outdir):
                 os.makedirs(ori_outdir)
         except:
-            print 'Output directory cannot be generated: {0} - using generic'\
-                                                ' location'.format(ori_outdir)
+            print('Output directory cannot be generated: {0} - using generic'\
+                                                ' location'.format(ori_outdir))
             ori_outdir = op.abspath(op.join(os.curdir,'reoriented'))
     try:
         if not op.isdir(ori_outdir):
@@ -1480,8 +1480,8 @@ def reorient_files(lo_files, configfile, lo_stations = None, outdir = None):
         try:
             stationconfig = config_dict[sta]
         except:
-            print 'Warning - No config file entry for station {0} -'\
-                                        ' no processing possible'.format(sta)
+            print('Warning - No config file entry for station {0} -'\
+                                        ' no processing possible'.format(sta))
             continue
         
         declination = float(stationconfig.get('declination',0.))
@@ -1569,7 +1569,7 @@ def reorient_files(lo_files, configfile, lo_stations = None, outdir = None):
                 if z_file is not None:
                     shutil.copyfile(z_file, z_outfn)
                     written_files.append(z_outfn)
-                print '\tSuccessfullly written files {0}'.format(written_files)
+                print('\tSuccessfullly written files {0}'.format(written_files))
 
 
             

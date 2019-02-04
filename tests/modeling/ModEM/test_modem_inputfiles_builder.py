@@ -119,7 +119,7 @@ class TestModemInputFilesBuilder(TestCase):
             # print ("Comparing", output_data_file, "and", expected_data_file)
 
             is_identical, msg = diff_files(output_data_file, expected_data_file)
-            print msg
+            print(msg)
             self.assertTrue(is_identical, "The output file is not the same with the baseline file.")
 
         
@@ -221,5 +221,5 @@ class TestModemInputFilesBuilder(TestCase):
             # print ("Comparing", output_data_file, "and", expected_data_file)
 
             is_identical, msg = diff_files(output_data_file, expected_data_file)
-            print msg
+            print(msg)
             self.assertTrue(is_identical, "The output file is not the same with the baseline file.")

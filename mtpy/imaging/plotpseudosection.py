@@ -512,8 +512,8 @@ class PlotResPhasePseudoSection(object):
                         pass
 
                 if jj is None:
-                    print 'did not find period {0:.6g} (s) for {1}'.format(
-                               rper, self.station_list[ii])
+                    print('did not find period {0:.6g} (s) for {1}'.format(
+                               rper, self.station_list[ii]))
 
     def plot(self, show=True, get_rp_arrays=True):
 
@@ -587,7 +587,7 @@ class PlotResPhasePseudoSection(object):
                 axr.set_aspect(self.aspect)
                 axp.set_aspect(self.aspect)
 
-                axr.set_xticks(self.offset_list[range(0,ns,self.xtickspace)])
+                axr.set_xticks(self.offset_list[list(range(0,ns,self.xtickspace))])
                 if self.xtickspace != 1:
                     axr.set_xticks(self.offset_list)#, minor=True)
                 plt.setp(axr.get_xticklabels(), visible=False)
@@ -624,7 +624,7 @@ class PlotResPhasePseudoSection(object):
                                vmax=self.phase_limits[1])
                 if self.show_grid:
                     axp.grid(which='major', alpha=.25)
-                axp.set_xticks(self.offset_list[range(0,ns,self.xtickspace)])
+                axp.set_xticks(self.offset_list[list(range(0,ns,self.xtickspace))])
                 axp.set_xticklabels([self.station_list[st]
                                     for st in range(0,ns,self.xtickspace)],
                                     rotation=self.station_label_rotation,
@@ -765,7 +765,7 @@ class PlotResPhasePseudoSection(object):
                                    np.log10(self.plot_period.max())))
 
                 #set x ticks but remove labels
-                axr.set_xticks(self.offset_list[range(0,ns,self.xtickspace)])
+                axr.set_xticks(self.offset_list[list(range(0,ns,self.xtickspace))])
                 if self.xtickspace != 1:
                     axr.set_xticks(self.offset_list, minor=True)
 
@@ -814,7 +814,7 @@ class PlotResPhasePseudoSection(object):
                                    np.log10(self.plot_period.max())))
 
                 axp.grid(which='major', alpha=.25)
-                axp.set_xticks(self.offset_list[range(0,ns,self.xtickspace)])
+                axp.set_xticks(self.offset_list[list(range(0,ns,self.xtickspace))])
                 axp.set_xticklabels([self.station_list[st]
                                     for st in range(0,ns,self.xtickspace)])
                 if self.xtickspace != 1:
@@ -992,7 +992,7 @@ class PlotResPhasePseudoSection(object):
             pass
 
         self.fig_fn = save_fn
-        print 'Saved figure to: '+self.fig_fn
+        print('Saved figure to: '+self.fig_fn)
 
     def update_plot(self):
         """
@@ -1070,7 +1070,7 @@ class PlotResPhasePseudoSection(object):
                      'append':False, 'add':False}
 
 
-        for key in fn_dict.keys():
+        for key in list(fn_dict.keys()):
             fid = file(os.path.join(svpath, 'PseudoSection.'+key), 'w')
             fid.write(''.join(header_list))
             for ii, per in enumerate(self.plot_period):
@@ -1085,8 +1085,8 @@ class PlotResPhasePseudoSection(object):
                 fid.write(''.join(line))
             fid.close()
 
-        print 'Wrote files to: '+\
-                        os.path.join(svpath, 'PseudoSection.component')
+        print('Wrote files to: '+\
+                        os.path.join(svpath, 'PseudoSection.component'))
 
     def __str__(self):
         """

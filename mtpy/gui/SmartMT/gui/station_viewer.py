@@ -406,7 +406,7 @@ class StationViewer(QWidget):
                         # emit selection changed signal
                         # self.ui.treeWidget_stations.emit(QtCore.SIGNAL("selectionChanged()"))
                 if self.useblit:
-                    for station, annotation_artist in self._annotation_artists.iteritems():
+                    for station, annotation_artist in self._annotation_artists.items():
                         artist.setp(annotation_artist, color='red' if station in self.selected_stations else 'black')
                         self._axes.draw_artist(annotation_artist)
                     self.blit(self._axes.bbox)

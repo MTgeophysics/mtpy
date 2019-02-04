@@ -48,7 +48,7 @@ class Sgrid():
             self.fn = headerfn
 
         if self.fn is None:
-            print "Cannot read, no header file name provided"
+            print("Cannot read, no header file name provided")
             return
 
         with open(op.join(self.workdir, self.fn)) as header:
@@ -142,7 +142,7 @@ class Sgrid():
         hdrfn = os.path.join(self.workdir,self.fn)
         if not hdrfn.endswith('.sg'):
             hdrfn += '.sg'
-        print "saving sgrid to ",hdrfn
+        print("saving sgrid to ",hdrfn)
         with open(hdrfn, 'w') as hdrfile:
             hdrfile.writelines(headerlines)
 

@@ -9,7 +9,7 @@ ModEM
 # revised by AK 2017 to bring across functionality from ak branch
 
 """
-from __future__ import print_function
+
 
 import os
 import sys
@@ -308,7 +308,7 @@ class Model(object):
             self.z_mesh_method = 'custom'
         else:
             self.z_mesh_method = 'new'
-        if 'z_mesh_method' in kwargs.keys():
+        if 'z_mesh_method' in list(kwargs.keys()):
             self.z_mesh_method = kwargs['z_mesh_method']
  
         # method to use to create padding
@@ -331,7 +331,7 @@ class Model(object):
         self.title = 'Model File written by MTpy.modeling.modem'
         self.res_scale = 'loge'
 
-        for key in kwargs.keys():
+        for key in list(kwargs.keys()):
             if hasattr(self, key):
                 setattr(self, key, kwargs[key])
             else:
@@ -1102,7 +1102,7 @@ class Model(object):
                             *default* is 'loge'
 
         """
-        for key in kwargs.keys():
+        for key in list(kwargs.keys()):
             setattr(self, key, kwargs[key])
 
         self.save_path,self.model_fn, self.model_fn_basename = \
@@ -1352,8 +1352,8 @@ class Model(object):
         ws_model_obj.read_model_file()
 
         # set similar attributes
-        for ws_key in ws_model_obj.__dict__.keys():
-            for md_key in self.__dict__.keys():
+        for ws_key in list(ws_model_obj.__dict__.keys()):
+            for md_key in list(self.__dict__.keys()):
                 if ws_key == md_key:
                     setattr(self, ws_key, ws_model_obj.__dict__[ws_key])
 
@@ -1683,7 +1683,7 @@ class Model(object):
             else:
                 ii = 1
                 surfacename = 'surface%01i' % ii
-                while surfacename in self.surface_dict.keys():
+                while surfacename in list(self.surface_dict.keys()):
                     ii += 1
                     surfacename = 'surface%01i' % ii
 
@@ -1728,7 +1728,7 @@ class Model(object):
 
         elif self.n_air_layers > 0:  # FZ: new logic, add equal blocksize air layers on top of the simple flat-earth grid
             # get grid centre
-            gcx, gcy = [np.mean([arr[:-1], arr[1:]], axis=0) for arr in self.grid_east, self.grid_north]
+            gcx, gcy = [np.mean([arr[:-1], arr[1:]], axis=0) for arr in (self.grid_east, self.grid_north)]
             # get core cells
             if topography_buffer is None:
                 topography_buffer = 5 * (self.cell_size_east ** 2 + self.cell_size_north ** 2) ** 0.5
@@ -1925,7 +1925,7 @@ class Model(object):
             
         # make depth indices into a list
         if depth_index == 'all':
-            depthindices = range(len(z))
+            depthindices = list(range(len(z)))
         elif np.iterable(depth_index):
             depthindices = np.array(depth_index).astype(int)
         else:

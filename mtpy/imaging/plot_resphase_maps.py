@@ -273,8 +273,8 @@ class PlotResPhaseMaps(mtpl.PlotSettings):
                         # end for
 
                         if (len(set(zl)) > 1 or len(set(zle)) > 1):
-                            print 'Warning: multiple UTM zones detected. ' \
-                                  'Using geographical coordinates instead'
+                            print('Warning: multiple UTM zones detected. ' \
+                                  'Using geographical coordinates instead')
                             x = lon
                             y = lat
                             ex = elon

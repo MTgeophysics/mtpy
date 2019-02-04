@@ -28,7 +28,7 @@ from mtpy.gui.SmartMT.utils.validator import DirectoryValidator
 IMAGE_FORMATS = []
 _temp_fig = plt.figure()
 _file_types = _temp_fig.canvas.get_supported_filetypes()
-for type, description in _file_types.iteritems():
+for type, description in _file_types.items():
     IMAGE_FORMATS.append((type, description))
 plt.close(_temp_fig)
 del _temp_fig, _file_types

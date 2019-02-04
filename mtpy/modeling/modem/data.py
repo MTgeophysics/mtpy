@@ -10,7 +10,7 @@ ModEM
 # revised by AK 2017 to bring across functionality from ak branch
 
 """
-from __future__ import print_function
+
 import os
 import sys
 import csv
@@ -352,7 +352,7 @@ class Data(object):
                                        'Imag',
                                        'Error\n'])
         
-        for key in kwargs.keys():
+        for key in list(kwargs.keys()):
             # have to set rotation angle after period list has been set
             if key != 'rotation_angle':
                 if hasattr(self, key):
@@ -376,7 +376,7 @@ class Data(object):
                 
                 
 
-        if 'rotation_angle' in kwargs.keys():
+        if 'rotation_angle' in list(kwargs.keys()):
             setattr(self, 'rotation_angle', kwargs['rotation_angle'])
 #            self._set_rotation_angle(self.rotation_angle)
 
@@ -636,7 +636,7 @@ class Data(object):
         if self.period_list is None:
             self.get_period_list()
 
-        ns = len(self.mt_dict.keys())
+        ns = len(list(self.mt_dict.keys()))
         nf = len(self.period_list)
 
         d_array = False
@@ -1401,7 +1401,7 @@ class Data(object):
                     pass
 
         # find inversion mode
-        for inv_key in self.inv_mode_dict.keys():
+        for inv_key in list(self.inv_mode_dict.keys()):
             inv_mode_list = self.inv_mode_dict[inv_key]
             if len(inv_mode_list) != inv_list:
                 continue
@@ -1494,7 +1494,7 @@ class Data(object):
         # make mt_dict an attribute for easier manipulation later
         self.mt_dict = data_dict
 
-        ns = len(self.mt_dict.keys())
+        ns = len(list(self.mt_dict.keys()))
         nf = len(self.period_list)
         self._set_dtype((nf, 2, 2), (nf, 1, 2))
         self.data_array = np.zeros(ns, dtype=self._dtype)
@@ -1780,7 +1780,7 @@ class Data(object):
             writer = csv.writer(csvf)
             writer.writerow(csv_header)
 
-        for period_num in xrange(num_periods):
+        for period_num in range(num_periods):
             per= period_list[period_num]
             freq = freq_list[period_num]
             self._logger.info("Working on period %s; frequency: %s", per, freq )
