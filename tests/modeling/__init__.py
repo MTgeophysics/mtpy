@@ -1,4 +1,4 @@
-
+from __future__ import print_function
 
 import shutil
 from difflib import unified_diff

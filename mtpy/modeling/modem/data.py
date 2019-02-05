@@ -10,7 +10,7 @@ ModEM
 # revised by AK 2017 to bring across functionality from ak branch
 
 """
-
+from __future__ import print_function
 import os
 import sys
 import csv

@@ -5,14 +5,14 @@
     Date: 20/06/2017
 """
 
-import abc
+import abc,six
 import mtpy.core.mt as mt
 # get a logger object for this module, using the utility class MtPyLog to
 # config the logger
 from mtpy.utils.mtpylog import MtPyLog
 
-
-class ImagingBase(metaclass=abc.ABCMeta):
+@six.add_metaclass(abc.ABCMeta)
+class ImagingBase():
     """
     Description:
         This is the base class for all the imaging classes, with standardized API (as abstract methods)
