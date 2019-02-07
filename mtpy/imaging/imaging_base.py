@@ -50,7 +50,7 @@ class ImagingBase():
             self.plot()
         self._fig.savefig(fn, **kwargs)
 
-    @abc.abstractmethod
+    # @abc.abstractmethod
     def set_data(self, data):
         pass
 

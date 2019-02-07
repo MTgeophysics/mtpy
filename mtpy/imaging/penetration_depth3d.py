@@ -64,7 +64,7 @@ def plot_latlon_depth_profile(edi_dir, period, zcomponent='det', showfig=True, s
 
     edis = load_edi_files(edi_dir)
 
-    image = Depth3D(edis, period, rho=zcomponent, ptol=ptol)
+    image = Depth3D(edis=edis, period=period, rho=zcomponent, ptol=ptol)
     if isinstance(period, int):  # period is considered as an index
         image.plot(period_by_index=True, fontsize=fontsize)
     elif isinstance(period, float):  # period is considered as the actual value of period in second

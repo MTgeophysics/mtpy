@@ -24,6 +24,8 @@ from mtpy.imaging import penetration_depth3d as pen3d
 # change the variable below according to your edi files folder
 # USE / for Unix and Win-Dos compatible
 edidir = r'C:/mtpywin/mtpy/Alison_penetrationDepth3D/EDI_files'  # unequal periods  across EDI files
+edidir = '/g/data/ha3/fxz547/Data/3D_MT_data_edited_fromDuanJM'
+
 # edidir = r"E:/Data/MT_Datasets/Cloncurry"  # unequal periods across EDI files
 # edidir = r'C:/mtpywin/mtpy/examples/data/edi2' # equal periods  across EDI files
 
@@ -37,7 +39,7 @@ edifiles = glob.glob(os.path.join(edidir, "*.edi"))
 
 # Create plot for a period index number 1,2,3 ..., 10 for determinant. This may not make sense sometimes.
 # change to your preferred file resolution
-pen3d.plot_latlon_depth_profile(edidir, 4, 'det', showfig=True, savefig=True, savepath=savepath, fig_dpi=400)
+#pen3d.plot_latlon_depth_profile(edidir, 4, 'det', showfig=True, savefig=True, savepath=savepath, fig_dpi=400)
 
 # The recommended way is to use a float value for the period.
 # provide a float value (e.g. 100.0) of the period, which should be in the EDI files.
