@@ -17,23 +17,41 @@ Revision History:
 import glob
 import os
 import sys
+import tempfile
 
 from mtpy.core.edi_collection import EdiCollection
 from mtpy.imaging import penetration_depth3d as pen3d
 
-# change the variable below according to your edi files folder
+
+try:
+    # PACK_ROOT = os.environ['PACK_ROOT']
+    # mtpy_path = os.path.join(PACK_ROOT, 'mtpy')
+    mtpy_path = os.environ['MTPY_ROOT']
+except:
+    print("Warn: The environment variable MTPY_ROOT is not defined. We will guess")
+    mtpy_path = os.path.abspath('../..')
+
+if not os.path.isdir(mtpy_path):
+    raise Exception("the guessed mtpy dir %s is not a folder!"% mtpy_path)
+
+edidir = os.path.join(mtpy_path,'examples/data/edi2')
+
+
+# If you have own edi change the variable below according to your edi files folder
 # USE / for Unix and Win-Dos compatible
-edidir = r'C:/mtpywin/mtpy/Alison_penetrationDepth3D/EDI_files'  # unequal periods  across EDI files
-edidir = '/g/data/ha3/fxz547/Data/3D_MT_data_edited_fromDuanJM'
+# edidir = r'C:/mtpywin/mtpy/Alison_penetrationDepth3D/EDI_files'  # unequal periods  across EDI files
+# edidir = '/g/data/ha3/fxz547/Data/3D_MT_data_edited_fromDuanJM'
 
-# edidir = r"E:/Data/MT_Datasets/Cloncurry"  # unequal periods across EDI files
-# edidir = r'C:/mtpywin/mtpy/examples/data/edi2' # equal periods  across EDI files
 
-savepath = r'C:/tmp'
+temp_dir = tempfile.gettempdir()
+print('Using temporary directory ' + temp_dir)
+savepath = temp_dir
+# savepath = r'C:/tmp'
 
 if not os.path.isdir(edidir):
     print ("please provide the path to edi folder")
     sys.exit(1)
+
 
 edifiles = glob.glob(os.path.join(edidir, "*.edi"))
 
