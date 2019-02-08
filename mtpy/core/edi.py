@@ -1105,11 +1105,12 @@ class Header(object):
                     value = '%.6f'%value
                 else:
                     value = gis_tools.convert_position_float2str(value)
-            if key in ['elev', 'declination']:
+            if key in ['elev', 'declination'] and value is not None:
                 try:
                     value = '{0:.3f}'.format(value)
                 except ValueError:
-                    value = '0.000'
+                    raise Exception("value error for key elev or declination")
+                    # value = '0.000'
             
             if key in ['filedate']:
                 value = datetime.datetime.utcnow().strftime(

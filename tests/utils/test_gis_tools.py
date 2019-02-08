@@ -42,7 +42,11 @@ class TestGisTools(TestCase):
 
         print((zone, easting, northing))
 
-        self.assertTrue(zone == self.zone)
+
+        if isinstance(zone, np.bytes_):
+            utm_zone = zone.decode('UTF-8')
+
+        self.assertTrue(utm_zone == self.zone)
         self.assertTrue(np.isclose(easting, self.easting))
         self.assertTrue(np.isclose(northing, self.northing))
 

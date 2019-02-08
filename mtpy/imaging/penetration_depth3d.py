@@ -393,7 +393,7 @@ def plot_many_periods(edidir, n_periods=5):
             #  cannot interpolate due to not enough data points
             plot_latlon_depth_profile(edidir, period_sec, zcomponent='det', showfig=False)
         except Exception as exwhy:
-            print((exwhy.message))
+            print(str(exwhy))
 
 
 # =============================================================================================
