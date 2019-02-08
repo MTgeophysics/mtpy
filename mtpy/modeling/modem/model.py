@@ -1125,64 +1125,65 @@ class Model(object):
             self.res_model[:, :, :] = self.res_initial_value
 
         # --> write file
-        ifid = file(self.model_fn, 'w')
-        ifid.write('# {0}\n'.format(self.title.upper()))
-        ifid.write('{0:>5}{1:>5}{2:>5}{3:>5} {4}\n'.format(self.nodes_north.size,
-                                                           self.nodes_east.size,
-                                                           self.nodes_z.size,
-                                                           0,
-                                                           self.res_scale.upper()))
+        with open(self.model_fn, 'w') as ifid:
+            ifid.write('# {0}\n'.format(self.title.upper()))
+            ifid.write('{0:>5}{1:>5}{2:>5}{3:>5} {4}\n'.format(self.nodes_north.size,
+                                                               self.nodes_east.size,
+                                                               self.nodes_z.size,
+                                                               0,
+                                                               self.res_scale.upper()))
 
-        # write S --> N node block
-        for ii, nnode in enumerate(self.nodes_north):
-            ifid.write('{0:>12.3f}'.format(abs(nnode)))
+            # write S --> N node block
+            for ii, nnode in enumerate(self.nodes_north):
+                ifid.write('{0:>12.3f}'.format(abs(nnode)))
 
-        ifid.write('\n')
-
-        # write W --> E node block
-        for jj, enode in enumerate(self.nodes_east):
-            ifid.write('{0:>12.3f}'.format(abs(enode)))
-        ifid.write('\n')
-
-        # write top --> bottom node block
-        for kk, zz in enumerate(self.nodes_z):
-            ifid.write('{0:>12.3f}'.format(abs(zz)))
-        ifid.write('\n')
-
-        # write the resistivity in log e format
-        if self.res_scale.lower() == 'loge':
-            write_res_model = np.log(self.res_model[::-1, :, :])
-        elif self.res_scale.lower() == 'log' or \
-                        self.res_scale.lower() == 'log10':
-            write_res_model = np.log10(self.res_model[::-1, :, :])
-        elif self.res_scale.lower() == 'linear':
-            write_res_model = self.res_model[::-1, :, :]
-        else:
-            raise ModelError("resistivity scale \"{}\" is not supported.".format(self.res_scale))
-
-        # write out the layers from resmodel
-        for zz in range(self.nodes_z.size):
             ifid.write('\n')
-            for ee in range(self.nodes_east.size):
-                for nn in range(self.nodes_north.size):
-                    ifid.write('{0:>13.5E}'.format(write_res_model[nn, ee, zz]))
+
+            # write W --> E node block
+            for jj, enode in enumerate(self.nodes_east):
+                ifid.write('{0:>12.3f}'.format(abs(enode)))
+            ifid.write('\n')
+
+            # write top --> bottom node block
+            for kk, zz in enumerate(self.nodes_z):
+                ifid.write('{0:>12.3f}'.format(abs(zz)))
+            ifid.write('\n')
+
+            # write the resistivity in log e format
+            if self.res_scale.lower() == 'loge':
+                write_res_model = np.log(self.res_model[::-1, :, :])
+            elif self.res_scale.lower() == 'log' or \
+                            self.res_scale.lower() == 'log10':
+                write_res_model = np.log10(self.res_model[::-1, :, :])
+            elif self.res_scale.lower() == 'linear':
+                write_res_model = self.res_model[::-1, :, :]
+            else:
+                raise ModelError("resistivity scale \"{}\" is not supported.".format(self.res_scale))
+
+            # write out the layers from resmodel
+            for zz in range(self.nodes_z.size):
                 ifid.write('\n')
+                for ee in range(self.nodes_east.size):
+                    for nn in range(self.nodes_north.size):
+                        ifid.write('{0:>13.5E}'.format(write_res_model[nn, ee, zz]))
+                    ifid.write('\n')
 
-        if self.grid_center is None:
-            # compute grid center
-            center_east = -self.nodes_east.__abs__().sum() / 2
-            center_north = -self.nodes_north.__abs__().sum() / 2
-            center_z = 0
-            self.grid_center = np.array([center_north, center_east, center_z])
+            if self.grid_center is None:
+                # compute grid center
+                center_east = -self.nodes_east.__abs__().sum() / 2
+                center_north = -self.nodes_north.__abs__().sum() / 2
+                center_z = 0
+                self.grid_center = np.array([center_north, center_east, center_z])
 
-        ifid.write('\n{0:>16.3f}{1:>16.3f}{2:>16.3f}\n'.format(self.grid_center[0],
-                                                               self.grid_center[1], self.grid_center[2]))
+            ifid.write('\n{0:>16.3f}{1:>16.3f}{2:>16.3f}\n'.format(self.grid_center[0],
+                                                                   self.grid_center[1], self.grid_center[2]))
 
-        if self.mesh_rotation_angle is None:
-            ifid.write('{0:>9.3f}\n'.format(0))
-        else:
-            ifid.write('{0:>9.3f}\n'.format(self.mesh_rotation_angle))
-        ifid.close()
+            if self.mesh_rotation_angle is None:
+                ifid.write('{0:>9.3f}\n'.format(0))
+            else:
+                ifid.write('{0:>9.3f}\n'.format(self.mesh_rotation_angle))
+
+            # not needed ifid.close()
 
         self._logger.info('Wrote file to: {0}'.format(self.model_fn))
 
@@ -1243,9 +1244,8 @@ class Model(object):
 
         self.save_path = os.path.dirname(self.model_fn)
 
-        ifid = file(self.model_fn, 'r')
-        ilines = ifid.readlines()
-        ifid.close()
+        with open(self.model_fn, 'r') as ifid:
+            ilines = ifid.readlines()
 
         self.title = ilines[0].strip()
 

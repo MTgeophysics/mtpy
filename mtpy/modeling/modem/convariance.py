@@ -165,9 +165,10 @@ class Covariance(object):
                     cline += '{0:^3.0f}'.format(write_mask_arr[nn, ee, zz])
                 clines.append(cline + '\n')
 
-        cfid = file(self.cov_fn, 'w')
-        cfid.writelines(clines)
-        cfid.close()
+        with open(self.cov_fn, 'w') as cfid:
+            cfid.writelines(clines)
+
+        # not needed cfid.close()
 
         self._logger.info('Wrote covariance file to {0}'.format(self.cov_fn))
 

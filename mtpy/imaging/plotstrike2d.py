@@ -424,7 +424,7 @@ class PlotStrike2D(object):
 
                     # compute the historgram for the tipper strike
                     trhist = np.histogram(tr[np.nonzero(tr)].flatten(),
-                                          bins=360 / bw,
+                                          bins=int(360/bw),
                                           range=histrange)
 
                     # make a bar graph with each bar being width of bw degrees
@@ -443,7 +443,7 @@ class PlotStrike2D(object):
 
                 # estimate the histogram for the decade for invariants and pt
                 pthist = np.histogram(gg[np.nonzero(gg)].flatten(),
-                                      bins=360 / bw,
+                                      bins=int(360/bw),
                                       range=histrange)
 
                 # plot the histograms
@@ -595,7 +595,7 @@ class PlotStrike2D(object):
 
             # estimate the histogram for the decade for invariants and pt
             pthist = np.histogram(gg[np.nonzero(gg)].flatten(),
-                                  bins=360 / bw,
+                                  bins=int(360/bw),
                                   range=histrange)
 
             # plot the histograms
@@ -613,7 +613,7 @@ class PlotStrike2D(object):
                 tr = self._medtp[binlist, :]
 
                 trhist = np.histogram(tr[np.nonzero(tr)].flatten(),
-                                      bins=360 / bw,
+                                      bins=int(360/bw),
                                       range=histrange)
 
                 self.bartr = self.axhtip.bar((trhist[1][:-1]) * np.pi / 180,
@@ -902,7 +902,7 @@ class PlotStrike2D(object):
                     pass
 
                 zshist = np.histogram(zs[np.nonzero(zs)].flatten(),
-                                      bins=360 / bw,
+                                      bins=int(360/bw),
                                       range=histrange)
 
                 #==============================================================
@@ -957,7 +957,7 @@ class PlotStrike2D(object):
 
                 # == > compute mode
                 azhist = np.histogram(az[np.nonzero(az)].flatten(),
-                                      bins=360 / bw,
+                                      bins=int(360/bw),
                                       range=histrange)
                 ptmode1 = 90 - azhist[1][np.where(
                     azhist[0] == azhist[0].max())[0][0]]
@@ -988,7 +988,7 @@ class PlotStrike2D(object):
                     tipr[np.where(tipr < 0)] = tipr[np.where(tipr < 0)] + 360
 
                 tphist = np.histogram(tipr[np.nonzero(tipr)].flatten(),
-                                      bins=360 / bw,
+                                      bins=int(360/bw),
                                       range=histrange)
 
                 #==> compute mean
@@ -1025,14 +1025,14 @@ class PlotStrike2D(object):
 
             # estimate the histogram for the decade for invariants and pt
             invhist = np.histogram(hh[np.nonzero(hh)].flatten(),
-                                   bins=360 / bw,
+                                   bins=int(360/bw),
                                    range=histrange)
             pthist = np.histogram(gg[np.nonzero(gg)].flatten(),
-                                  bins=360 / bw,
+                                  bins=int(360/bw),
                                   range=histrange)
 
             trhist = np.histogram(tr[np.nonzero(tr)].flatten(),
-                                  bins=360 / bw,
+                                  bins=int(360/bw),
                                   range=histrange)
 
             #--> include the row for mean, median and mode for each parameter

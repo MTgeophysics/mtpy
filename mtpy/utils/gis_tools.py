@@ -502,7 +502,7 @@ def project_points_ll2utm(lat, lon, datum='WGS84', utm_zone=None, epsg=None):
     # flatten, if necessary
     flattened = False
     llshape = np.shape(lat)
-    if llshape > 1:
+    if llshape[0] > 1:
         flattened = True
         lat = lat.flatten()
         lon = lon.flatten()

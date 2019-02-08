@@ -63,21 +63,21 @@ def read_surface_ascii(ascii_fn):
     |
     S
     """
-    dfid = file(ascii_fn, 'r')
-    d_dict = {}
-    skiprows = 0
-    for ii in range(6):
-        dline = dfid.readline()
-        dline = dline.strip().split()
-        key = dline[0].strip().lower()
-        value = float(dline[1].strip())
-        d_dict[key] = value
-        # check if key is an integer
-        try:
-            int(key)
-        except:
-            skiprows += 1
-    dfid.close()
+    with open(ascii_fn, 'r') as dfid:
+        d_dict = {}
+        skiprows = 0
+        for ii in range(6):
+            dline = dfid.readline()
+            dline = dline.strip().split()
+            key = dline[0].strip().lower()
+            value = float(dline[1].strip())
+            d_dict[key] = value
+            # check if key is an integer
+            try:
+                int(key)
+            except:
+                skiprows += 1
+    # not required dfid.close()
 
     x0 = d_dict['xllcorner']
     y0 = d_dict['yllcorner']
@@ -346,7 +346,7 @@ def EDL_make_Nhour_files(n_hours,inputdir, sampling , stationname = None, output
 
     try:
         if 24%n_hours != 0:
-            raise
+            raise Exception("problem!!!")
     except:
         sys.exit('ERROR - File block length must be on of: 1,2,3,4,6,8,12 \n')
     
@@ -374,7 +374,7 @@ def EDL_make_Nhour_files(n_hours,inputdir, sampling , stationname = None, output
 
     try:
         if type(inputdir)==str:
-            raise
+            raise Exception("problem!!!")
         lo_foldernames = [i for i in inputdir]
     except TypeError:
         lo_foldernames = [inputdir]
@@ -417,9 +417,9 @@ def EDL_make_Nhour_files(n_hours,inputdir, sampling , stationname = None, output
                 try:
                     os.makedirs(outpath)
                 except:
-                    raise
+                    raise Exception("problem!!!")
             if not os.access(outpath, os.W_OK):
-                raise
+                raise Exception("problem!!!")
         except:
             print('Cannot generate writable output directory {0} - using'\
                     ' generic location "dayfiles" instead'.format(outpath))
@@ -734,7 +734,7 @@ def EDL_make_dayfiles(inputdir, sampling , stationname = None, outputdir = None)
     """
     try:
         if type(inputdir)==str:
-            raise
+            raise Exception("problem!!!")
         lo_foldernames = [i for i in inputdir]
     except TypeError:
         lo_foldernames = [inputdir]
@@ -777,9 +777,9 @@ def EDL_make_dayfiles(inputdir, sampling , stationname = None, outputdir = None)
                 try:
                     os.makedirs(outpath)
                 except:
-                    raise
+                    raise Exception("problem!!!")
             if not os.access(outpath, os.W_OK):
-                raise
+                raise Exception("problem!!!")
         except:
             print('Cannot generate writable output directory {0} - using'\
                     ' generic location "dayfiles" instead'.format(outpath))
@@ -1226,10 +1226,10 @@ def validate_ts_file(tsfile):
 
         if header['station'] is None:
             #print 'header'
-            raise
+            raise Exception("header has no station")
         if header['channel'] is None:
             #print 'channel'
-            raise
+            raise Exception("header has no channel")
         
         sr = float(header['samplingrate'])
         t0 = float(header['t_min'])
@@ -1239,10 +1239,10 @@ def validate_ts_file(tsfile):
         
         if len(data) != ns:
             #print 'data length'
-            raise
+            raise Exception("data length wrong")
         if data.dtype not in [int, float]:
             #print 'data type'
-            raise
+            raise Exception("data type wrong")
 
     except:
         #print 'number'
@@ -1277,7 +1277,7 @@ def read_ts_header(tsfile):
                 if firstline == '#':
                     firstline = ''
         if firstline[0] != '#':
-            raise
+            raise Exception("First line does not begin with #")
     except:
         raise MTex.MTpyError_ts_data('No header line found -'
             ' check file: {0}'.format(tsfile))
@@ -1418,7 +1418,7 @@ def reorient_files(lo_files, configfile, lo_stations = None, outdir = None):
     if lo_stations is not None:
         try:
             if type(lo_stations) == str:
-                raise
+                raise Exception("problem!!!")
             #check, if it's iterable:
             dummy = [i for i in lo_stations]
         except:
