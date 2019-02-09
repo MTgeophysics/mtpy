@@ -1309,9 +1309,10 @@ class Data(object):
             raise DataError(
                 'Could not find {0}, check path'.format(self.data_fn))
 
-        dfid = file(self.data_fn, 'r')
-        dlines = dfid.readlines()
-        dfid.close()
+        with open (self.data_fn, 'r') as dfid:
+            dlines = dfid.readlines()
+
+        # dfid.close()
 
         header_list = []
         metadata_list = []

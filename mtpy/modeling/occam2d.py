@@ -728,9 +728,9 @@ class Mesh():
             for tt in range(4):
                 mesh_lines.append(''.join(self.mesh_values[:, zz, tt]) + '\n')
 
-        mfid = file(self.mesh_fn, 'w')
-        mfid.writelines(mesh_lines)
-        mfid.close()
+        with open(self.mesh_fn, 'w') as mfid:
+            mfid.writelines(mesh_lines)
+        # mfid.close()
 
         print('Wrote Mesh file to {0}'.format(self.mesh_fn))
 
@@ -770,9 +770,8 @@ class Mesh():
         """
         self.mesh_fn = mesh_fn
 
-        mfid = file(self.mesh_fn, 'r')
-
-        mlines = mfid.readlines()
+        with open(self.mesh_fn, 'r') as mfid:
+            mlines = mfid.readlines()
 
         nh = int(mlines[1].strip().split()[1])
         nv = int(mlines[1].strip().split()[2])
@@ -1505,7 +1504,10 @@ class Regularization(Mesh):
 
         # At the top of the mesh model blocks will be 2 combined mesh blocks
         # Note that the padding cells are combined into one model block
-        station_col = [2] * ((self.x_nodes.shape[0] - 2 * self.num_x_pad_cells) / 2)
+        var = (self.x_nodes.shape[0] - 2 * self.num_x_pad_cells)
+        print ("******* var=", var)
+
+        station_col = [2] *int((self.x_nodes.shape[0] - 2 * self.num_x_pad_cells) / 2)
         model_cols = [self.num_x_pad_cells] + station_col + [self.num_x_pad_cells]
         station_widths = [self.x_nodes[ii] + self.x_nodes[ii + 1] for ii in
                           range(self.num_x_pad_cells,
@@ -1698,9 +1700,9 @@ class Regularization(Mesh):
             reg_lines.append(''.join(['{0:>5}'.format(cc) for cc in col]) + '\n')
 
         reg_lines.append('{0:<18}{1}\n'.format('NO. EXCEPTIONS:', '0'))
-        rfid = file(self.reg_fn, 'w')
-        rfid.writelines(reg_lines)
-        rfid.close()
+        with open(self.reg_fn, 'w') as rfid:
+            rfid.writelines(reg_lines)
+            # rfid.close()
 
         print('Wrote Regularization file to {0}'.format(self.reg_fn))
 
@@ -1963,9 +1965,9 @@ class Startup(object):
                 sline = []
         slines.append(''.join(list(sline + ['\n'])))
         # --> write file
-        sfid = file(self.startup_fn, 'w')
-        sfid.writelines(slines)
-        sfid.close()
+        with open(self.startup_fn, 'w') as sfid:
+            sfid.writelines(slines)
+            # sfid.close()
 
         print('Wrote Occam2D startup file to {0}'.format(self.startup_fn))
 
@@ -2729,7 +2731,7 @@ class Data(Profile):
         data_lines.append(self._data_header)
         data_lines += self.data_list
 
-        dfid = file(self.data_fn, 'w')
+        dfid = open(self.data_fn, 'w')
         dfid.writelines(data_lines)
         dfid.close()
 
@@ -3122,7 +3124,7 @@ class Model(Startup):
         self.save_path = os.path.dirname(self.iter_fn)
 
         # open file, read lines, close file
-        ifid = file(self.iter_fn, 'r')
+        ifid = open(self.iter_fn, 'r')
         ilines = ifid.readlines()
         ifid.close()
 
