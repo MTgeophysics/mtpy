@@ -359,7 +359,10 @@ class PTShapeFile(object):
 
                 #
                 # 5) create a field to color by
-                new_feature.SetField("Name", pt_array['station'])
+                val_sta = pt_array['station']
+                print(" the type of pt_array['station'] = ", type(val_sta))
+                # decode the string cal_sta (numpy_bytes_ )  back into ASCII
+                new_feature.SetField("Name", pt_array['station'].decode('UTF-8'))
                 new_feature.SetField("phi_min", pt_array['phimin'])
                 new_feature.SetField("phi_max", pt_array['phimax'])
                 new_feature.SetField("skew", pt_array['skew'])
