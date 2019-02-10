@@ -9,7 +9,8 @@ from tests.modeling import diff_files
 class TestModEM_Model(TestCase):
     def setUp(self):
         self.model_epsg = 28355
-        self._temp_dir = make_temp_dir(self.__name__)
+        #self._temp_dir = make_temp_dir(self.__name__)
+        self._temp_dir = make_temp_dir("TestModEM_Model_tmp")
         # directory to save created input files
         self._output_dir = make_temp_dir(self._testMethodName, base_dir=self._temp_dir)
         self._model_dir = os.path.join(SAMPLE_DIR, 'ModEM') 
