@@ -1018,7 +1018,7 @@ class Data(object):
                         if zz.real != 0.0 and zz.imag != 0.0 and zz.real != 1e32 and zz.imag != 1e32:
                             if self.formatting == '1':
                                 per = '{0:<12.5e}'.format(self.period_list[ff])
-                                sta = '{0:>7}'.format(self.data_array[ss]['station'])
+                                sta = '{0:>7}'.format(self.data_array[ss]['station'].decode('UTF-8'))
                                 lat = '{0:> 9.3f}'.format(self.data_array[ss]['lat'])
                                 lon = '{0:> 9.3f}'.format(self.data_array[ss]['lon'])
                                 eas = '{0:> 12.3f}'.format(self.data_array[ss]['rel_east'])
@@ -1063,8 +1063,8 @@ class Data(object):
                                                                             float(ima)])))))
                             abs_err = '{0:> 14.6e}'.format(abs(abs_err))
                             # make sure that x==north, y==east, z==+down
-                            dline = ''.join([per, sta, lat, lon, nor, eas, ele,
-                                             com, rea, ima, abs_err, '\n'])
+                            dline = ''.join([per, sta, lat, lon, nor, eas, ele, com, rea, ima, abs_err, '\n'])
+
                             d_lines.append(dline)
 
         with open(self.data_fn, 'w') as dfid:
