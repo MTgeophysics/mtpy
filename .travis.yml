@@ -4,6 +4,7 @@ sudo: required  # use VM instead of docker
 language: python
 python:
   - "2.7"
+  - "3.6"
   # does not have headers provided, please ask https://launchpad.net/~pypy/+archive/ppa
   # maintainers to fix their pypy-dev package.
   # - "pypy"
@@ -20,10 +21,10 @@ env:
     - COVERALLS_PARALLEL=true
   matrix:
 #    - MATPLOTLIB_VERSION=2.1.0 QT_VERSION=4
-    - MATPLOTLIB_VERSION=2.0.2 QT_VERSION=5
+#    - MATPLOTLIB_VERSION=2.0.2 QT_VERSION=5
     - MATPLOTLIB_VERSION=2.1.0 QT_VERSION=5
 #    - MATPLOTLIB_VERSION=2.0.2 QT_VERSION=4
-    - MATPLOTLIB_VERSION=1.5.3 QT_VERSION=5
+#    - MATPLOTLIB_VERSION=1.5.3 QT_VERSION=5
 
 stages:
   - name: prepare cache
@@ -32,27 +33,29 @@ stages:
 
 jobs:
   include:
-    - stage: prepare cache  # run saperate job to build dependencies to avoid 50 min timeout on travis
-      script: true # place holder, the before_Script will run anyway
-      env:
-        - MATPLOTLIB_VERSION=2.0.2 QT_VERSION=5
+#    - stage: prepare cache  # run saperate job to build dependencies to avoid 50 min timeout on travis
+#      script: true # place holder, the before_Script will run anyway
+#      env:
+#        - MATPLOTLIB_VERSION=2.0.2 QT_VERSION=5
     - stage: prepare cache
       script: true
       env:
         - MATPLOTLIB_VERSION=2.1.0 QT_VERSION=5
+
 #    - stage: prepare cache
 #      script: true
 #      env:
 #        - MATPLOTLIB_VERSION=2.0.2 QT_VERSION=4
-    - stage: prepare cache
-      script: true
-      env:
-        - MATPLOTLIB_VERSION=1.5.3 QT_VERSION=5
+#    - stage: prepare cache
+#      script: true
+#      env:
+#        - MATPLOTLIB_VERSION=1.5.3 QT_VERSION=5
 #    - stage: test
-    - stage: GUI Test
-      script: . ./bin/travis-test-gui.sh
-      env:
-        - MATPLOTLIB_VERSION=2.0.2 QT_VERSION=5
+
+#    - stage: GUI Test
+#      script: . ./bin/travis-test-gui.sh
+#      env:
+#        - MATPLOTLIB_VERSION=2.0.2 QT_VERSION=5
 #    - stage: GUI Test
 #      script: . ./bin/travis-test-gui.sh
 #      env:
@@ -73,7 +76,7 @@ matrix:
   allow_failures:
     - env: MATPLOTLIB_VERSION=2.1.0 QT_VERSION=5
 #    - env: MATPLOTLIB_VERSION=2.0.2 QT_VERSION=4
-    - env: MATPLOTLIB_VERSION=1.5.3 QT_VERSION=5
+#    - env: MATPLOTLIB_VERSION=1.5.3 QT_VERSION=5
 
 notifications:
   webhooks: https://coveralls.io/webhook?repo_token=GsdWzB3YUFjVVGCESQode5GgbnUINLZr2

@@ -1,13 +1,11 @@
 matplotlib>=2.0.2
 numpy
 PyYAML>=3.11
-geopandas
 scipy
 pillow
-# pip cannot install pyqt
-#pyqt
 qtpy
 #GDAL
+geopandas
 obspy
 netcdf4
 #networkx
