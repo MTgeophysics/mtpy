@@ -13,30 +13,38 @@
 
 # Keep this script for reference.
 
-sudo apt-get install python-pip
+sudo -H apt-get install python-pip
 
 # spyder  windows
 
 
-sudo add-apt-repository -y ppa:ubuntugis/ubuntugis-unstabl
-sudo apt install gdal-bin python-gdal
-sudo apt-get install libgdal-dev
+sudo -H add-apt-repository -y ppa:ubuntugis/ubuntugis-unstabl
+sudo -H apt install gdal-bin python-gdal
+sudo -H apt-get install libgdal-dev
 
 #  gdal-config --datadir
 
 export GDAL_DATA=$(gdal-config --datadir)
 #export GDAL_DATA=/usr/share/gdal/2.2/
 
-sudo pip install --upgrade pandas
-sudo pip install --upgrade geopandas
-#sudo pip install --upgrade pyyaml
+sudo -H pip install --upgrade pandas
+sudo -H pip install --upgrade geopandas
+#sudo -H pip install --upgrade pyyaml
 
 pip install pytest-xdist  # add xdist for distributing tests
 #pip install pytest-xvfb  # run xvfb automatically
 pip install pytest-cov  # code coverage
 pip install coveralls
 
-sudo pip install -q -r requirements.txt
+sudo -H pip install -q -r requirements.txt
+
+
+# show installed package versions for debugging
+pip freeze
+
+
+export CACHED=TRUE
+
 
 #cd $HOME
 #
@@ -44,12 +52,12 @@ sudo pip install -q -r requirements.txt
 #
 #cd mtpy
 #
-#sudo pip install -r requirements.txt
+#sudo -H pip install -r requirements.txt
 
 
 # OK python -c "import geopandas"
 
-#sudo apt install python-pytest
+#sudo -H apt install python-pytest
 
 #pytest  tests/core/test_edi.py
 #pytest  tests/core/test_ediCollection.py
