@@ -29,30 +29,30 @@ export GDAL_DATA=$(gdal-config --datadir)
 
 sudo -H pip install --upgrade pandas
 sudo -H pip install --upgrade geopandas
-#sudo -H pip install --upgrade pyyaml
+sudo -H pip install --upgrade pyyaml
 
-pip install pytest-xdist  # add xdist for distributing tests
+sudo -H pip install pytest-xdist  # add xdist for distributing tests
 #pip install pytest-xvfb  # run xvfb automatically
-pip install pytest-cov  # code coverage
-pip install coveralls
+sudo -H pip install pytest-cov  # code coverage
+sudo -H pip install coveralls
 
 sudo -H pip install -q -r requirements.txt
 
 
-# show installed package versions for debugging
+echo "************************** show installed python package versions *********************** "
 pip freeze
 
 
 export CACHED=TRUE
 
 
-#cd $HOME
-#
-#git clone https://github.com/MTgeophysics/mtpy.git
-#
-#cd mtpy
-#
-#sudo -H pip install -r requirements.txt
+cd $HOME
+
+git clone https://github.com/MTgeophysics/mtpy.git
+
+cd mtpy
+
+sudo -H pip install -r requirements.txt
 
 
 # OK python -c "import geopandas"
