@@ -15,7 +15,6 @@
 
 sudo apt-get install python-pip
 
-sudo apt-get install --upgrade spyder
 # spyder  windows
 
 

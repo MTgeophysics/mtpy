@@ -1,5 +1,4 @@
 matplotlib>=2.0.2
-# PyYAML
 numpy
 scipy
 pillow
@@ -13,3 +12,4 @@ numpydoc>=0.7.0
 # basemap
 pytest
 flake8
+pyyaml
