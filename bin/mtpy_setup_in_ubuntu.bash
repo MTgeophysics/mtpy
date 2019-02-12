@@ -13,30 +13,30 @@
 
 # Keep this script for reference.
 
-sudo -H apt-get install python-pip
+ apt-get install python-pip
 
 # spyder  windows
 
 
-sudo -H add-apt-repository -y ppa:ubuntugis/ubuntugis-unstabl
-sudo -H apt install gdal-bin python-gdal
-sudo -H apt-get install libgdal-dev
+ add-apt-repository -y ppa:ubuntugis/ubuntugis-unstabl
+ apt install gdal-bin python-gdal
+ apt-get install libgdal-dev
 
 #  gdal-config --datadir
 
 export GDAL_DATA=$(gdal-config --datadir)
 #export GDAL_DATA=/usr/share/gdal/2.2/
 
-sudo -H pip install --upgrade pandas
-sudo -H pip install --upgrade geopandas
-sudo -H pip install --upgrade pyyaml
+ pip install --upgrade pandas
+ pip install --upgrade geopandas
+ pip install --upgrade pyyaml
 
-sudo -H pip install pytest-xdist  # add xdist for distributing tests
+ pip install pytest-xdist  # add xdist for distributing tests
 #pip install pytest-xvfb  # run xvfb automatically
-sudo -H pip install pytest-cov  # code coverage
-sudo -H pip install coveralls
+ pip install pytest-cov  # code coverage
+ pip install coveralls
 
-sudo -H pip install -q -r requirements.txt
+ pip install -q -r requirements.txt
 
 
 echo "************************** show installed python package versions *********************** "
@@ -52,12 +52,12 @@ git clone https://github.com/MTgeophysics/mtpy.git
 
 cd mtpy
 
-sudo -H pip install -r requirements.txt
+pip install -r requirements.txt
 
 
 # OK python -c "import geopandas"
 
-#sudo -H apt install python-pytest
+# apt install python-pytest
 
 #pytest  tests/core/test_edi.py
 #pytest  tests/core/test_ediCollection.py
