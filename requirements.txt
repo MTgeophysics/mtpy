@@ -1,5 +1,5 @@
 matplotlib>=2.0.2
-PyYAML>=3.11
+# PyYAML
 numpy
 scipy
 pillow
