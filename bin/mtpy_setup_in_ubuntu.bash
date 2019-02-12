@@ -16,7 +16,7 @@ set -ex
 
 # Keep this script for reference.
 
-sudo apt -y install python-pip
+# sudo apt -y install python-pip
 
 
 sudo add-apt-repository -y ppa:ubuntugis/ubuntugis-unstabl
