@@ -1,4 +1,5 @@
-dist: trusty
+#dist: trusty   # 14.04  LTS
+dist: xenial    # 16.04 LTS
 sudo: required  # use VM instead of docker
 
 language: python
@@ -22,7 +23,7 @@ env:
   matrix:
 #    - MATPLOTLIB_VERSION=2.1.0 QT_VERSION=4
 #    - MATPLOTLIB_VERSION=2.0.2 QT_VERSION=5
-    - MATPLOTLIB_VERSION=2.1.0 QT_VERSION=5
+#    - MATPLOTLIB_VERSION=2.1.0 QT_VERSION=5
 #    - MATPLOTLIB_VERSION=2.0.2 QT_VERSION=4
 #    - MATPLOTLIB_VERSION=1.5.3 QT_VERSION=5
 
@@ -37,10 +38,10 @@ jobs:
 #      script: true # place holder, the before_Script will run anyway
 #      env:
 #        - MATPLOTLIB_VERSION=2.0.2 QT_VERSION=5
-    - stage: prepare cache
-      script: true
-      env:
-        - MATPLOTLIB_VERSION=2.1.0 QT_VERSION=5
+#    - stage: prepare cache
+#      script: true
+#      env:
+#        - MATPLOTLIB_VERSION=2.1.0 QT_VERSION=5
 
 #    - stage: prepare cache
 #      script: true
@@ -74,7 +75,7 @@ after_success:
 matrix:
   fast_finish: true
   allow_failures:
-    - env: MATPLOTLIB_VERSION=2.1.0 QT_VERSION=5
+#    - env: MATPLOTLIB_VERSION=2.1.0 QT_VERSION=5
 #    - env: MATPLOTLIB_VERSION=2.0.2 QT_VERSION=4
 #    - env: MATPLOTLIB_VERSION=1.5.3 QT_VERSION=5
 
