@@ -16,7 +16,7 @@ set -ex
 
 # Keep this script for reference.
 
-sudo apt -y install python-pip  python3-pip
+# sudo apt -y install python-pip  python3-pip
 
 sudo add-apt-repository -y ppa:ubuntugis/ppa
 sudo apt update
