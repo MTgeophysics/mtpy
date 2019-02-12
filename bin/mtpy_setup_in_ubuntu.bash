@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+# for Travis-ci, the following script sets installs all dependencies
+set -ex
+
 # Here is a user guide for Ubuntu 16.04 desktop users.
 # Assume the system default python 2.7 is used.
 # We plan to migrate mtpy to python3 later. But Not at this point of time.
@@ -13,12 +16,12 @@
 
 # Keep this script for reference.
 
-sudo apt-get install python-pip
+sudo apt -y install python-pip
 
 
 sudo add-apt-repository -y ppa:ubuntugis/ubuntugis-unstabl
-sudo apt install gdal-bin python-gdal
-sudo apt-get install libgdal-dev
+sudo apt -y install gdal-bin python-gdal
+sudo apt -y install libgdal-dev
 
 # gdal-config --datadir
 
@@ -37,21 +40,8 @@ export GDAL_DATA=$(gdal-config --datadir) && echo GDAL_DATA=$GDAL_DATA
 
  pip install -q -r requirements.txt
 
-
 echo "************************** show installed python package versions *********************** "
 pip freeze
-
-
-export CACHED=TRUE
-
-
-cd $HOME
-
-git clone https://github.com/MTgeophysics/mtpy.git
-
-cd mtpy
-
-pip install -r requirements.txt
 
 
 # OK python -c "import geopandas"
