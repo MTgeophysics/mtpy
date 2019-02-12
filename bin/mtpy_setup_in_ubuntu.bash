@@ -44,8 +44,8 @@ sudo pip install -r requirements.txt
 
 sudo apt install python-pytest
 
-pytest  tests/core/test_edi.py
-pytest  tests/core/test_ediCollection.py
+#pytest  tests/core/test_edi.py
+#pytest  tests/core/test_ediCollection.py
 
 # pytest tests/core/
 # py.test tests/core/

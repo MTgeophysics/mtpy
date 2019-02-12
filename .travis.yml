@@ -27,10 +27,10 @@ env:
 #    - MATPLOTLIB_VERSION=2.0.2 QT_VERSION=4
 #    - MATPLOTLIB_VERSION=1.5.3 QT_VERSION=5
 
-stages:
-  - name: prepare cache
-  - test
-  - name: GUI Test
+#stages:
+#  - name: prepare cache
+#  - test
+#  - name: GUI Test
 
 jobs:
   include:
@@ -64,7 +64,8 @@ jobs:
 #    - stage: deploy
 
 before_script:
-  - chmod -vR +x ./bin/* && . ./bin/travis-setup-env.sh  
+  #- chmod -vR +x ./bin/* && . ./bin/travis-setup-env.sh
+  - chmod -vR +x ./bin/* && . ./bin/mtpy_setup_in_ubuntu.bash
 
 script: # testing stages, will run only in testing stages
   - MTPY_TEST_COMPARE_IMAGE=False py.test -v -n4 --dist=loadscope --cov=mtpy --cov-report= tests --ignore=tests/SmartMT
