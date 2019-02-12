@@ -30,7 +30,7 @@ export GDAL_DATA=$(gdal-config --datadir)
 
 sudo pip install --upgrade pandas
 sudo pip install --upgrade geopandas
-sudo pip install --upgrade pyyaml
+#sudo pip install --upgrade pyyaml
 
 pip install pytest-xdist  # add xdist for distributing tests
 #pip install pytest-xvfb  # run xvfb automatically
