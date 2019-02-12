@@ -13,20 +13,19 @@
 
 # Keep this script for reference.
 
- apt-get install python-pip
-
-# spyder  windows
+sudo apt-get install python-pip
 
 
- add-apt-repository -y ppa:ubuntugis/ubuntugis-unstabl
- apt install gdal-bin python-gdal
- apt-get install libgdal-dev
+sudo add-apt-repository -y ppa:ubuntugis/ubuntugis-unstabl
+sudo apt install gdal-bin python-gdal
+sudo apt-get install libgdal-dev
 
-#  gdal-config --datadir
+# gdal-config --datadir
 
-export GDAL_DATA=$(gdal-config --datadir)
-#export GDAL_DATA=/usr/share/gdal/2.2/
+export GDAL_DATA=$(gdal-config --datadir) && echo GDAL_DATA=$GDAL_DATA
 
+
+# do not use sudo for pip install !
  pip install --upgrade pandas
  pip install --upgrade geopandas
  pip install --upgrade pyyaml
