@@ -16,11 +16,12 @@ set -ex
 
 # Keep this script for reference.
 
-sudo apt -y install python-pip
+sudo apt -y install python-pip  python3-pip
 
-
-sudo add-apt-repository -y ppa:ubuntugis/ubuntugis-unstabl
-sudo apt -y install gdal-bin python-gdal
+sudo add-apt-repository -y ppa:ubuntugis/ppa
+sudo apt update
+sudo apt upgrade # if you already have gdal 1.11 installed
+sudo apt -y install gdal-bin python-gdal python3-gdal #
 sudo apt -y install libgdal-dev
 
 # gdal-config --datadir
