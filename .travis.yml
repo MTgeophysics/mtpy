@@ -68,7 +68,7 @@ before_script:
   - chmod -vR +x ./bin/* && . ./bin/mtpy_setup_in_ubuntu.bash
 
 script: # testing stages, will run only in testing stages
-  - MTPY_TEST_COMPARE_IMAGE=False && pytest -v --cov=mtpy --ignore=tests/SmartMT tests
+  - MTPY_TEST_COMPARE_IMAGE=False && pytest -v --ignore=tests/SmartMT tests
 
 after_success:
   - coveralls
