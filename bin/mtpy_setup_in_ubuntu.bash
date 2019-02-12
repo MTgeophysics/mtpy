@@ -37,7 +37,7 @@ pip install pytest-xdist  # add xdist for distributing tests
 pip install pytest-cov  # code coverage
 pip install coveralls
 
-pip install -q -r requirements.txt
+sudo pip install -q -r requirements.txt
 
 #cd $HOME
 #
