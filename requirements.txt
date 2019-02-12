@@ -1,6 +1,6 @@
 matplotlib>=2.0.2
-numpy
 PyYAML>=3.11
+numpy
 scipy
 pillow
 qtpy
