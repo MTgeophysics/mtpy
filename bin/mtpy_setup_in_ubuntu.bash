@@ -42,7 +42,7 @@ sudo pip install -r requirements.txt
 
 # OK python -c "import geopandas"
 
-sudo apt install python-pytest
+#sudo apt install python-pytest
 
 #pytest  tests/core/test_edi.py
 #pytest  tests/core/test_ediCollection.py
