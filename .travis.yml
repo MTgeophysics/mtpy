@@ -28,8 +28,7 @@ install:
   - conda update -q conda
   - conda info -a
   - conda create -q -n test-env python=$TRAVIS_PYTHON_VERSION pytest pytest-cov pyyaml
-  - conda init bash
-  - conda activate test-env
+  - source activate test-env
   - conda install geopandas netcdf4
   - pip install  obspy
   - pip install pytest-xdist  pytest-cov coveralls
