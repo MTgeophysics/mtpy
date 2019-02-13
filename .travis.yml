@@ -32,6 +32,7 @@ install:
   - conda install geopandas netcdf4
   - pip install  obspy
   - pip install pytest-xdist  pytest-cov coveralls
+  - pip install configparser  # for python27
 
 
 #  - pip install pyvolve
