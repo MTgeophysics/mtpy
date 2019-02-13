@@ -3,8 +3,8 @@ sudo: required  # use VM instead of docker
 
 language: python
 python:
-  #- "2.7"
-  - "3.6"
+  - "2.7"
+  - "3.7"
   # does not have headers provided, please ask https://launchpad.net/~pypy/+archive/ppa
   # maintainers to fix their pypy-dev package.
   # - "pypy"
@@ -43,7 +43,7 @@ install:
 script:
   # - python -m pytest --cov=./
 
-  - MTPY_TEST_COMPARE_IMAGE=False; py.test -v -n2 --dist=loadscope --cov=mtpy --cov-report= tests --ignore=tests/SmartMT
+  - MTPY_TEST_COMPARE_IMAGE=False; py.test -v --cov=mtpy --cov-report= tests --ignore=tests/SmartMT
 
 after_failure:
     - cat config.log
