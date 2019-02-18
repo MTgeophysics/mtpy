@@ -1,11 +1,11 @@
 matplotlib>=2.0.2
-numpy
+obspy==1.1.0
+# numpy
 scipy
 pillow
 qtpy
 #GDAL
 geopandas
-obspy
 netcdf4
 #networkx
 numpydoc>=0.7.0
