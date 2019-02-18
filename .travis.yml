@@ -4,12 +4,13 @@ sudo: required  # use VM instead of docker
 language: python
 python:
   - "2.7"
-#  - "3.6" # anaconda pytest hang!
-  - "3.7"
+#  - "3.6" # No output has been received in the last 10m0s,
+#           this potentially indicates a stalled build or something wrong with the build itself
+#  - "3.7"
+
   # does not have headers provided, please ask https://launchpad.net/~pypy/+archive/ppa
   # maintainers to fix their pypy-dev package.
   # - "pypy"
-
 
 
 # command to install dependencies
@@ -35,11 +36,9 @@ install:
   - pip install pytest-xdist  pytest-cov coveralls
   - pip install configparser  # for python27
 
-
 # command to run tests
 script:
   # - python -m pytest --cov=./
-
   - MTPY_TEST_COMPARE_IMAGE=False; py.test -v --cov=mtpy --cov-report= tests --ignore=tests/SmartMT
 
 after_failure:
