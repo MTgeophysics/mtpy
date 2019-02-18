@@ -4,9 +4,8 @@ sudo: required  # use VM instead of docker
 language: python
 python:
   - "2.7"
-#  - "3.5"   # anaconda pytest hang!
-#  - "3.6"
-#  - "3.7"
+#  - "3.6" # anaconda pytest hang!
+  - "3.7"
   # does not have headers provided, please ask https://launchpad.net/~pypy/+archive/ppa
   # maintainers to fix their pypy-dev package.
   # - "pypy"
@@ -37,10 +36,7 @@ install:
   - pip install configparser  # for python27
 
 
-#  - pip install pyvolve
-#  - pip install dendropy
 # command to run tests
-
 script:
   # - python -m pytest --cov=./
 
