@@ -418,7 +418,7 @@ class PlotResponses(QtGui.QWidget):
         data file changed outside the program reload it
         """
         
-        print '{0} changed'.format(self.data_fn)
+        print('{0} changed'.format(self.data_fn))
         self.data_fn = self._data_fn
         
     def save_edits(self):
@@ -622,7 +622,7 @@ class PlotResponses(QtGui.QWidget):
                                   [epyy[1][0], epyy[1][1], epyy[2][0]]]
                 line_list = [[erxx[0]], [erxy[0]], [eryx[0]], [eryy[0]]]
             except IndexError:
-                print 'Found no Z components for {0}'.format(self.station)
+                print('Found no Z components for {0}'.format(self.station))
                 line_list = [[None], [None], 
                              [None], [None]]
                                      
@@ -654,7 +654,7 @@ class PlotResponses(QtGui.QWidget):
                                   [erty[1][0], erty[1][1], erty[2][0]],
                                   [epty[1][0], epty[1][1], epty[2][0]]]
             except IndexError:
-                print 'Found no Z components for {0}'.format(self.station)
+                print('Found no Z components for {0}'.format(self.station))
                 line_list = [[None], [None], 
                              [None], [None],
                              [None], [None]]

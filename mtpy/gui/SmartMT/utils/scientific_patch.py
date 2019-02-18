@@ -68,5 +68,5 @@ def format_float(value):
     """modified form of 'g' format specifier."""
     string = "{:g}".format(value).replace("e+", "e")
     string = re.sub("e(-?)0*(\d+)", r"e\1\2", string)
-    print string
+    print(string)
     return string

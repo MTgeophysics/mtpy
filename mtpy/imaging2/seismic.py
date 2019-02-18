@@ -149,7 +149,7 @@ class Segy:
         if(time_shift>0):
             time_shift /= 1e3  # convert to seconds
             if (time_shift >= self._ts[-1]):
-                raise (RuntimeError, 'Time-shift > trace length..')
+                raise RuntimeError
             shiftIdx = numpy.ceil(time_shift / numpy.max(self._si))
             shiftIdx = numpy.int_(shiftIdx)
         # end if
@@ -196,7 +196,7 @@ class VelocityModel:
         try:
             f = open(stacking_velocity_fn)
         except Exception as err:
-            print ('Failed to read %s' % (stacking_velocity_fn))
+            print(('Failed to read %s' % (stacking_velocity_fn)))
             logging.error(traceback.format_exc())
             exit(-1)
 

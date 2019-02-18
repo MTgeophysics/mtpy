@@ -24,7 +24,7 @@ class deprecated(object):
     def __call__(self, cls_or_func):  # pragma: no cover
         if inspect.isfunction(cls_or_func):
             if hasattr(cls_or_func, 'func_code'):
-                _code = cls_or_func.func_code
+                _code = cls_or_func.__code__
             else:
                 _code = cls_or_func.__code__
             fmt = "Call to deprecated function or method {name} ({reason})."
@@ -87,7 +87,7 @@ class gdal_data_check(object):
         if 'GDAL_DATA' not in os.environ:
             # gdal data not defined, try to define
             from subprocess import Popen, PIPE
-            self._logger.warn("GDAL_DATA environment variable is not set  Please see https://trac.osgeo.org/gdal/wiki/FAQInstallationAndBuilding#HowtosetGDAL_DATAvariable ")
+            self._logger.warning("GDAL_DATA environment variable is not set  Please see https://trac.osgeo.org/gdal/wiki/FAQInstallationAndBuilding#HowtosetGDAL_DATAvariable ")
             try:
                 # try to find out gdal_data path using gdal-config
                 self._logger.info("Trying to find gdal-data path ...")

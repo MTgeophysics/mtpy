@@ -14,18 +14,38 @@ Revision History:
 
 """
 
-import os, sys
+import os
+import sys
+import tempfile
 from mtpy.imaging import penetration_depth2d as pen2d
 import matplotlib.pyplot as plt
 
+
+try:
+    # PACK_ROOT = os.environ['PACK_ROOT']
+    # mtpy_path = os.path.join(PACK_ROOT, 'mtpy')
+    mtpy_path = os.environ['MTPY_ROOT']
+except:
+    print("Warn: The environment variable MTPY_ROOT is not defined. We will guess")
+    mtpy_path = os.path.abspath('../..')
+
+if not os.path.isdir(mtpy_path):
+    raise Exception("the guessed mtpy dir %s is not a folder!"% mtpy_path)
+
 # change the variable below according to your edi files folder !!!
-edidir = r'C:/mtpywin/mtpy/data/edifiles'  # / is Unix and Win-Dos compatible
+# edidir = r'C:/mtpywin/mtpy/data/edifiles'  # / is Unix and Win-Dos compatible
 # or get this variable from the cmdline:  edidir = sys.argv[1]
 
-savepath = r'C:\tmp'
+edidir = os.path.join(mtpy_path,'data','edifiles2')
+
+# savepath = r'C:\tmp'
+temp_dir = tempfile.gettempdir()
+print('Using temporary directory ' + temp_dir)
+savepath = temp_dir
+
 
 if not os.path.isdir(edidir):
-    print ("please provide the path to edi folder")
+    print ("Error: please provide the path to edi folder")
     sys.exit(1)
 
 period_index_list = [0, 1, 10, 20, 30, 40, 50, 59]  # user to customise

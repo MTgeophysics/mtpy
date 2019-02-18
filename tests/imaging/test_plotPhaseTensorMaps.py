@@ -61,7 +61,8 @@ class TestPlotPhaseTensorMaps(ImageTestCase):
         #                      'yborderpad': 0.015}
 
     @unittest.skipUnless(os.path.isdir("data/edifiles2"), "data file not found")
-    @unittest.expectedFailure
+    # @unittest.expectedFailure
+    @pytest.mark.skip(reason="no way of currently testing this")
     def test_edifiles2_input(self):
         """
         testing to use Z and tipper objects as input

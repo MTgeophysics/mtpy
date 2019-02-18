@@ -39,13 +39,13 @@ def butter_bandpass(lowcut, highcut, samplingrate, order=4):
         b, a = signal.butter(order, wn, btype='band')
     
     elif high >= 0.95:
-        print 'highpass', low, 1.2*low, 0.8*low
+        print('highpass', low, 1.2*low, 0.8*low)
         order,wn = signal.buttord(15*low, 0.05*low, gpass=0.0, gstop=10.0)
-        print order,wn
+        print(order,wn)
         b, a = signal.butter(order, wn, btype='high')
     
     elif low <= 0.05:
-        print 'lowpass', high
+        print('lowpass', high)
         order,wn = signal.buttord(high-0.05, high+0.05, gpass=0.0, gstop=10.0)
         b, a = signal.butter(order, wn, btype='low')
 
@@ -131,8 +131,8 @@ def zero_pad(input_array, power=2, pad_fill=0):
         npow = int(np.ceil(np.log10(len_array)))
     
     if npow > 32:
-        print 'Exceeding memory allocation inherent in your computer 2**32'
-        print 'Limiting the zero pad to 2**32'
+        print('Exceeding memory allocation inherent in your computer 2**32')
+        print('Limiting the zero pad to 2**32')
         
     
     pad_array = np.zeros(power**npow)
@@ -427,7 +427,7 @@ def remove_periodic_noise(filename, dt, noiseperiods, save='n'):
             os.mkdir(savepath)
         #savepathCN=os.path.join(savepath,'CN')
         np.savetxt(os.path.join(savepath, filename), bxnf, fmt='%.7g')
-        print 'Saved filtered file to {0}'.format(os.path.join(savepath, 
-                                                               filename))
+        print('Saved filtered file to {0}'.format(os.path.join(savepath, 
+                                                               filename)))
     else:
         return bxnf, pn, filtlst

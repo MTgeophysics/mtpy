@@ -66,7 +66,7 @@ class DataModelAnalysis(object):
         elif self.map_scale == 'm':
             self.dscale = 1.
         else:
-            print("Unknown map scale:", self.map_scale)
+            print(("Unknown map scale:", self.map_scale))
 
         self.xminorticks = kwargs.pop('xminorticks', 10000)
         self.yminorticks = kwargs.pop('yminorticks', 10000)
@@ -116,7 +116,7 @@ class DataModelAnalysis(object):
         gceast, gcnorth = [np.mean([arr[:-1], arr[1:]], axis=0) for arr in
                            [self.modObj.grid_east, self.modObj.grid_north]]
         n_stations = len(sX)
-        for n in xrange(n_stations):
+        for n in range(n_stations):
             xdist = np.abs(gceast - sX[n])
             snos = np.where(xdist == np.amin(xdist))
             ix = snos[0][0]
@@ -174,7 +174,7 @@ class DataModelAnalysis(object):
             sno = snos[0][0]
             actual_location = gcz[sno]
 
-        print (type(snos), len(snos))  # ((index1), (index2), (index3))
+        print((type(snos), len(snos)))  # ((index1), (index2), (index3))
 
         # unpack the index tupple, and get the integer value as index number
         # sno=snos[0][0]
@@ -242,10 +242,10 @@ class DataModelAnalysis(object):
             # print (X,Y,res)
             # print(sX,sY)
 
-            print(len(X), len(Y), Z_location, res.shape, len(sX), len(sY))
+            print((len(X), len(Y), Z_location, res.shape, len(sX), len(sY)))
 
-            for i in xrange(len(X) - 1):
-                for j in xrange(len(Y) - 1):
+            for i in range(len(X) - 1):
+                for j in range(len(Y) - 1):
                     st = stationd.get((i, j), None)  # filter and subset for station location meshgrids
                     if st is not None:
                         arow = [X[i], Y[j], Z_location, res[j, i], st[0], st[1], st[2], st[3], st[4], i, j]
@@ -376,7 +376,7 @@ class DataModelAnalysis(object):
         for dist in slice_locs:
             sdist = int(dist)
 
-            print("**** The user-input slice location is: ****", sdist)
+            print(("**** The user-input slice location is: ****", sdist))
             print("**** The actual location will be at the nearest cell centre ****")
 
             # plot resistivity image at slices in three orientations at a given slice_location=sdist
@@ -403,13 +403,13 @@ if __name__ == "__main__":
         print(rhofiles)
 
         if len(rhofiles) < 1:
-            print ("No rho files found in the dir %s", modeldir)
+            print(("No rho files found in the dir %s", modeldir))
             sys.exit(1)
         else:
             # the file with highest numbers in the last 3 numbers before *.rho
             rhof = sorted(rhofiles)[-1]
 
-        print("Effective Files Used in Plot: ", datf, rhof)
+        print(("Effective Files Used in Plot: ", datf, rhof))
 
     # dat and rho file both provided
     if len(sys.argv) >= 3:

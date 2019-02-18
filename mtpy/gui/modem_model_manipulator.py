@@ -810,8 +810,8 @@ class ModelWidget(QtWidgets.QWidget):
             res[self.npad:-self.npad, -self.npad:, zz] = avg_res_value
             res[0:self.npad, self.npad:-self.npad, zz] = avg_res_value
             res[-self.npad:, self.npad:-self.npad, zz] = avg_res_value
-            print 'avg res for {0:>8.2f} m = {1:>8.2f}'.format(self.model_obj.grid_z[zz],
-                                                               avg_res_value)
+            print('avg res for {0:>8.2f} m = {1:>8.2f}'.format(self.model_obj.grid_z[zz],
+                                                               avg_res_value))
         
         self.model_obj.res_model = res
         self.redraw_plots()

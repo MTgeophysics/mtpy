@@ -41,6 +41,5 @@ for edi_file in edi_list:
     mt_obj = mt.MT(edi_file)
     pt_obj = mt_obj.plot_mt_response(plot_yn='n')
     pt_obj.plot()
-    pt_obj.save_plot(os.path.join(savepath,
-                             os.path.basename(edi_file)[:-4]+'.png'),
-                     fig_dpi=400) # change to your preferred file resolution
+    pt_obj.save_plot(os.path.join(savepath, os.path.basename(edi_file)[:-4]+'.png'), 
+            fig_dpi=400) # change to your preferred file resolution

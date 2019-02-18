@@ -462,7 +462,7 @@ class OccamWidget(QtWidgets.QWidget):
                                         station)
         if not os.path.isdir(self.station_dir):
             os.mkdir(self.station_dir)
-            print 'Made director {0}'.format(self.station_dir)
+            print('Made director {0}'.format(self.station_dir))
 
         self.save_dir = os.path.join(self.station_dir)
 
@@ -567,7 +567,7 @@ class OccamWidget(QtWidgets.QWidget):
             dir_path = os.path.join(self.station_dir, self.data_mode)
             if not os.path.isdir(dir_path):
                 os.mkdir(dir_path)
-                print 'Made directory {0}'.format(dir_path)
+                print('Made directory {0}'.format(dir_path))
 
             dir_list = []
             for roots, dirs, files in os.walk(dir_path):
@@ -588,7 +588,7 @@ class OccamWidget(QtWidgets.QWidget):
 
         if not os.path.isdir(self.save_dir):
             os.mkdir(self.save_dir)
-            print 'Made directory {0}'.format(self.save_dir)
+            print('Made directory {0}'.format(self.save_dir))
 
         # write data file
         if self.occam_data.data_fn is None:
@@ -653,7 +653,7 @@ class OccamWidget(QtWidgets.QWidget):
     def on_click(self, event):
         data_point = event.artist
         iteration = data_point.get_xdata()[event.ind]
-        print 'Picked iteration {0}'.format(iteration)
+        print('Picked iteration {0}'.format(iteration))
         ini_resp_fn = os.path.join(self.save_dir,
                                    '{0}_{1}.resp'.format(self.data_mode,
                                                          iteration))
@@ -702,7 +702,7 @@ class OccamWidget(QtWidgets.QWidget):
 
         if not os.path.isdir(self.save_dir):
             os.mkdir(self.save_dir)
-            print 'Made directory {0}'.format(self.save_dir)
+            print('Made directory {0}'.format(self.save_dir))
 
         self.rewrite_data_file()
 
@@ -757,8 +757,8 @@ class OccamWidget(QtWidgets.QWidget):
         iteration = text
         rms = self.l2_widget.rms_arr['rms'][int(iteration)-1]
         roughness = self.l2_widget.rms_arr['roughness'][int(iteration)-1]
-        print 'Iteration {0}, RMS={1:.2f}, Roughnes={2:.2f}'.format(
-                iteration, rms, roughness)
+        print('Iteration {0}, RMS={1:.2f}, Roughnes={2:.2f}'.format(
+                iteration, rms, roughness))
 
         ini_resp_fn = os.path.join(self.save_dir,
                                    '{0}_{1}.resp'.format(self.data_mode,
@@ -1210,11 +1210,11 @@ class OccamPlot(QtWidgets.QWidget):
                 self.data_obj.res_tm[1, p_index] = tm_err+0.2*tm_err
 
                 if self.data_obj.res_te[1, p_index] != 0:
-                    print 'Res err changed to: {0:.2f}'.format(
-                                            self.data_obj.res_te[1, p_index])
+                    print('Res err changed to: {0:.2f}'.format(
+                                            self.data_obj.res_te[1, p_index]))
                 if self.data_obj.res_tm[1, p_index] != 0:
-                    print 'Res err changed to: {0:.2f}'.format(
-                                            self.data_obj.res_tm[1, p_index])
+                    print('Res err changed to: {0:.2f}'.format(
+                                            self.data_obj.res_tm[1, p_index]))
 
                 # make error bar array
                 eb = self._err_list[self._ax_index][2].get_paths()[p_index].vertices
@@ -1252,11 +1252,11 @@ class OccamPlot(QtWidgets.QWidget):
                 self.data_obj.phase_tm[1, p_index] = tm_err+tm_err*.05
 
                 if self.data_obj.phase_te[1, p_index] != 0:
-                    print 'Phase err changed to: {0:.2f}'.format(
-                                            self.data_obj.phase_te[1, p_index])
+                    print('Phase err changed to: {0:.2f}'.format(
+                                            self.data_obj.phase_te[1, p_index]))
                 if self.data_obj.phase_tm[1, p_index] != 0:
-                    print 'Phase err changed to: {0:.2f}'.format(
-                                            self.data_obj.phase_tm[1, p_index])
+                    print('Phase err changed to: {0:.2f}'.format(
+                                            self.data_obj.phase_tm[1, p_index]))
                 # make error bar array
                 eb = self._err_list[self._ax_index][2].get_paths()[p_index].vertices
 
@@ -1495,7 +1495,7 @@ class PlotL2(QtWidgets.QWidget):
     def on_click(self, event):
         data_point = event.artist
         iteration = data_point.get_xdata()[event.ind]
-        print iteration
+        print(iteration)
 
 #==============================================================================
 # Main execution

@@ -36,12 +36,12 @@ def main():
     """
 
     if len(sys.argv) < 8:
-        print """\n use 7 arguments:
+        print("""\n use 7 arguments:
         <data directory sta A> <data directory sta B> <data directory sta C>
         <channelsA> <channelsB> <channelsC>
         <start time yymmdd-HHhMM> [<destination folder>]
 
-        """
+        """)
         sys.exit()
 
     # deal with command line arguments
@@ -65,7 +65,7 @@ def main():
             'birrpdata_%dh' %
             (int(outputlength)))
 
-    print
+    print()
     if not op.isdir(dst):
         os.makedirs(dst)
 
@@ -173,13 +173,13 @@ def run(dataDirA, dataDirB, dataDirC, channelsA, channelsB, channelsC, timestamp
 
     # print lo_lo_subdirs
     # sys.exit()
-    print
+    print()
     # loop over 3 stations
     for idx_station, station in enumerate(stationlist):
 
         os.chdir(lo_dirs[idx_station])
-        print '\t\tstation', station, op.abspath(os.curdir)
-        print
+        print('\t\tstation', station, op.abspath(os.curdir))
+        print()
 
         lo_subdirs = lo_lo_subdirs[idx_station]
 
@@ -215,7 +215,7 @@ def run(dataDirA, dataDirB, dataDirC, channelsA, channelsB, channelsC, timestamp
         # write data to file
         outfn = 'data%s' % (station)
         outfn = op.join(dst, outfn)
-        print '\n    Writing data to file: {0} ...'.format(outfn)
+        print('\n    Writing data to file: {0} ...'.format(outfn))
 
         Fout = open(outfn, 'w')
 
@@ -226,17 +226,17 @@ def run(dataDirA, dataDirB, dataDirC, channelsA, channelsB, channelsC, timestamp
                 for item in line:
                     Fout.write('%d    ' % int(item))
             except:
-                print idx, line
+                print(idx, line)
                 sys.exit()
             Fout.write('\n')
 
         Fout.close()
-        print '\t ... Done !'
+        print('\t ... Done !')
 
         os.chdir(basedir)
-        print
-        print '\t' + 72 * '-'
-        print
+        print()
+        print('\t' + 72 * '-')
+        print()
 
     # sys.exit()
     # split up files within the destination folder
@@ -249,31 +249,31 @@ def run(dataDirA, dataDirB, dataDirC, channelsA, channelsB, channelsC, timestamp
         finalsample)
 
     if cleanup is False:
-        print '\n No cleanup!\n\n'
+        print('\n No cleanup!\n\n')
         sys.exit()
 
     # loop over all dis and subdirs for cleaning up:
-    print
-    print '\n\t\tcleaning up files ...\n'
+    print()
+    print('\n\t\tcleaning up files ...\n')
     for idx_station, station in enumerate(stationlist):
-        print station
+        print(station)
         os.chdir(lo_dirs[idx_station])
         stationdir = op.abspath('.')
         lo_subdirs = lo_lo_subdirs[idx_station]
         for subdir in lo_subdirs:
             os.chdir(subdir)
-            print '\t', op.abspath('.')
+            print('\t', op.abspath('.'))
             cleanupfiles(keepfiles)
             os.chdir(stationdir)
             # print op.abspath('.')
-        print
+        print()
         os.chdir(basedir)
 
     # print '\n\t removing temporary data files ...\n'
     # remove_datafiles(dst)
 
-    print '\n\n\t\t!! DONE !!\n'
-    print 80 * '=' + '\n'
+    print('\n\n\t\t!! DONE !!\n')
+    print(80 * '=' + '\n')
 
 
 def remove_datafiles(dst):
@@ -347,7 +347,7 @@ def unpackandinterpolate(SymResScriptbase, sammplingrate):
 
     sampling_key = samplingrate_keys['%d' % (int(samplingrate))]
 
-    print 'unpacking files in directory {0}'.format(op.abspath(os.curdir))
+    print('unpacking files in directory {0}'.format(op.abspath(os.curdir)))
 
     lo_files = sorted(os.listdir('.'))
     for f in lo_files:
@@ -356,15 +356,15 @@ def unpackandinterpolate(SymResScriptbase, sammplingrate):
                 os.system("bunzip2 -k -f {0}".format(f))
             except:
                 continue
-            print 'unpacked {0}'.format(f)
+            print('unpacked {0}'.format(f))
 
-    print 'converting to PakBin file'
+    print('converting to PakBin file')
 
-    print SymResScriptbase
+    print(SymResScriptbase)
     pak2bin_string = op.join(SymResScriptbase, "Pak2Bin")
     os.system('"{0}" 00000000.pak'.format(pak2bin_string))
 
-    print 'interpolating to {0} Hz'.format(samplingrate)
+    print('interpolating to {0} Hz'.format(samplingrate))
     interp_string = op.join(SymResScriptbase, "InterpAdl")
     os.system(
         '"{0}" Pak2Bin-300-Data.bin o{1}'.format(interp_string, sampling_key))
@@ -401,8 +401,8 @@ def evaluate_first_directory(
     lastsample = t0 + (len(data) - 1) * stepsize
     # print samplingrate,stepsize,t0,firstsample,len(data),lastsample
 
-    print '\t\tfirst directory: {3} --\n\t{0} data points from {1:.3f} up to t= {2:.3f}\n'.format(
-        len(np.array(data)), t0, lastsample, directory)
+    print('\t\tfirst directory: {3} --\n\t{0} data points from {1:.3f} up to t= {2:.3f}\n'.format(
+        len(np.array(data)), t0, lastsample, directory))
 
     os.chdir(cwd)
 
@@ -457,9 +457,9 @@ def evaluate_intermediate_directory(
 
     gap = t0 - oldend
     no_gapsamples = int(round(gap * samplingrate) - 1)
-    print 30 * ' ' + '--->'
-    print '\tneed {0} samples to bridge gap between {1:.3f} and {2:.3f}'.format(no_gapsamples,
-                                                                                oldend, t0)
+    print(30 * ' ' + '--->')
+    print('\tneed {0} samples to bridge gap between {1:.3f} and {2:.3f}'.format(no_gapsamples,
+                                                                                oldend, t0))
 
     # linspace includes start- and endpoint
     ch1 = np.linspace(olddata[0], firstvalues[0], no_gapsamples + 2)[1:]
@@ -480,7 +480,7 @@ def evaluate_intermediate_directory(
     stepsize = 1. / samplingrate
     lastsample = t0 + (linenumber - 1) * stepsize
 
-    print '\t\tintermediate directory: {2} -- \n\t{0} data points in file up to t= {1:.3f}\n'.format(linenumber, lastsample, directory)
+    print('\t\tintermediate directory: {2} -- \n\t{0} data points in file up to t= {1:.3f}\n'.format(linenumber, lastsample, directory))
 
     os.chdir(cwd)
     return np.array(data), lastsample
@@ -511,10 +511,10 @@ def evaluate_last_directory(directory, samplingrate,
 
     gap = t0 - oldend
     no_gapsamples = int(round(gap * samplingrate) - 1)
-    print 30 * ' ' + '--->'
-    print '\tneed {0} samples to bridge gap between {1:.3f} and {2:.3f}'.format(
-        no_gapsamples, oldend, t0)
-    print '\t\tlast directory: {0} -- '.format(directory)
+    print(30 * ' ' + '--->')
+    print('\tneed {0} samples to bridge gap between {1:.3f} and {2:.3f}'.format(
+        no_gapsamples, oldend, t0))
+    print('\t\tlast directory: {0} -- '.format(directory))
 
     # linspace includes start- and endpoint
     ch1 = np.linspace(olddata[0], firstvalues[0], no_gapsamples + 2)[1:]
@@ -533,7 +533,7 @@ def evaluate_last_directory(directory, samplingrate,
         data.append([int(float(i)) for i in line.strip().split()[:-1]])
         linenumber += 1
 
-    print '\t{0} data points in file up to t= {1:.3f}'.format(linenumber, finalsample)
+    print('\t{0} data points in file up to t= {1:.3f}'.format(linenumber, finalsample))
 
     Fin.close()
 
@@ -551,8 +551,8 @@ def prepare_data(dst, channelsA, channelsB,
     lo_stations = ['A', 'B', 'C']
     lo_lo_channels = [channelsA, channelsB, channelsC]
 
-    print '\t' + 72 * '-' + '\n'
-    print '\t\twriting data to single column files...'
+    print('\t' + 72 * '-' + '\n')
+    print('\t\twriting data to single column files...')
 
     basedir = op.abspath(os.curdir)
 
@@ -606,8 +606,8 @@ def prepare_data(dst, channelsA, channelsB,
         os.remove(fileC)
 
     os.chdir(basedir)
-    print '\n\t...done!\n'
-    print '\t' + 72 * '-'
+    print('\n\t...done!\n')
+    print('\t' + 72 * '-')
 
 
 #========================================================

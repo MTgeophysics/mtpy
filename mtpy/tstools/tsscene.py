@@ -19,7 +19,7 @@ from matplotlib.lines import Line2D
 from matplotlib.backends.backend_qt5agg import FigureCanvas
 import matplotlib.pyplot as plt
 
-from tsdata import TSData
+from .tsdata import TSData
 from obspy.core.trace import Trace
 from obspy.core.stream import Stream
 from PyQt5.QtCore import pyqtSignal
@@ -120,7 +120,7 @@ class TSScene(QGraphicsScene):
 
         self.starttime = UTCDateTime(start)
         self.endtime = UTCDateTime(end)
-        print(self.starttime, self.endtime, '-----------------')
+        print((self.starttime, self.endtime, '-----------------'))
 
         tmplist = self.visibleWave.copy()
         for wave in tmplist:
@@ -168,7 +168,7 @@ class TSScene(QGraphicsScene):
         else:
             self.starttime = start
             self.endtime = end
-            print(self.segmentsource)
+            print((self.segmentsource))
             self.togglewave(self.segmentsource)
             self.currentitem.setSelected(True)
 
@@ -229,7 +229,7 @@ class TSScene(QGraphicsScene):
             # print(wave)
 
             waveform, wavename, starttime, endtime, gaps = self.data.getwaveform(wave, self.starttime, self.endtime)
-            print(starttime, endtime)
+            print((starttime, endtime))
             axes, lines = self.displaywave(wavename, waveform, gaps)
             if axes is not None:
                 self.visibleWave[wave] = (axes, lines, colorcode, starttime, endtime, gaps)
@@ -418,7 +418,7 @@ class TSScene(QGraphicsScene):
                 end = self.downxcoord
             start = UTCDateTime(start)
             end = UTCDateTime(end)
-            print(start,end,'================')
+            print((start,end,'================'))
             self.applytime(start, end)
         # self.downx = None
         self.downbutton = None

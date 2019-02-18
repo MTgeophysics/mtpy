@@ -20,7 +20,7 @@ import scipy.signal as ss
 
 
 def run():
-    print
+    print()
     if len(sys.argv) < 4:
         sys.exit('\nNeed 3 arguments: \n\n '
                  '<path to files> <output directory> <integer downsampling factor>\n \n')
@@ -36,7 +36,7 @@ def run():
     try:
         outpath = op.abspath(op.join(os.curdir, outpath))
         if inpath == outpath:
-            print 'Output directory cannot be the same as the input file location'
+            print('Output directory cannot be the same as the input file location')
             raise
 
         if not op.exists(outpath):
@@ -47,8 +47,8 @@ def run():
         if not os.access(outpath, os.W_OK):
             raise
     except:
-        print 'Cannot generate writable output directory {0} - using'\
-            ' generic location "decimated" instead'.format(outpath)
+        print('Cannot generate writable output directory {0} - using'\
+            ' generic location "decimated" instead'.format(outpath))
         outpath = os.path.join(inpath, 'decimated')
         if not op.exists(outpath):
             os.makedirs(outpath)
@@ -79,7 +79,7 @@ def run():
             header = MTfh.read_ts_header(infile)
         except MTex.MTpyError_ts_data:
             # no TS data file
-            print '\n\tWARNING - not a valid MTpy TS data file: {0} '.format(infile)
+            print('\n\tWARNING - not a valid MTpy TS data file: {0} '.format(infile))
             header = None
             # continue
 
@@ -103,16 +103,16 @@ def run():
             N = len(data)
 
         except:
-            print '\tERROR - file does not contain single column data: {0} - SKIPPED'.format(infile)
+            print('\tERROR - file does not contain single column data: {0} - SKIPPED'.format(infile))
             continue
 
         if header is not None:
             n_samples = header['nsamples']
 
-        print 'Decimating file {0} by factor {1} '.format(infile, decimation_factor)
+        print('Decimating file {0} by factor {1} '.format(infile, decimation_factor))
 
         if n_samples % decimation_factor != 0:
-            print '\tWarning - decimation of file not continuous due to mismatching decimation factor'
+            print('\tWarning - decimation of file not continuous due to mismatching decimation factor')
 
         # to avoid ringing in the downsampled data: use de-meaning, padding,
         # tapering:
@@ -156,8 +156,8 @@ def run():
         # np.savetxt(Fout,new_data)
         Fout.close()
 
-    print '\nOutput files written to {0}'.format(outpath)
-    print '\n...Done\n'
+    print('\nOutput files written to {0}'.format(outpath))
+    print('\n...Done\n')
 
 
 def taper_data(data):
@@ -175,7 +175,7 @@ def taper_data(data):
 
     # restriction to data with more than 50 samples
     if 0:  # (N <= 50 ):
-        print ' useful tapering impossible !\n Returned original data'
+        print(' useful tapering impossible !\n Returned original data')
         return data
 
     else:

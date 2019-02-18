@@ -32,11 +32,11 @@ import mtpy.processing.birrp as MTbp
 def main():
 
     if len(sys.argv) < 5:
-        print '\nNeed at least 4 arguments: <path to BIRRP executable> '\
+        print('\nNeed at least 4 arguments: <path to BIRRP executable> '\
             '<station name> <remote station name> <directory for'\
             ' time series>\n\n'\
             'Optional arguments: \n [coherence threshold]\n'\
-            ' [start time] \n [end time]\n\n'
+            ' [start time] \n [end time]\n\n')
         return
 
     try:
@@ -44,8 +44,8 @@ def main():
         if not 0 < coherence_th <= 1:
             raise
     except:
-        print ' Warning - Coherence value invalid (float from interval ]0,1]) '\
-            '- set to 0.5 instead'
+        print(' Warning - Coherence value invalid (float from interval ]0,1]) '\
+            '- set to 0.5 instead')
         coherence_th = 0.5
 
     try:
@@ -62,7 +62,7 @@ def main():
     birrp_exe = op.abspath(op.realpath(birrp_exe_raw))
 
     if not op.isfile(birrp_exe):
-        print '\nError - Birrp executable not existing: {0}\n'.format(birrp_exe)
+        print('\nError - Birrp executable not existing: {0}\n'.format(birrp_exe))
 
     stationname = sys.argv[2].upper()
     rr_stationname = sys.argv[3].upper()
@@ -71,7 +71,7 @@ def main():
     ts_dir = op.abspath(op.realpath(ts_dir_raw))
 
     if not op.isdir(ts_dir):
-        print '\nError - Time series directory not existing: {0}\n'.format(ts_dir)
+        print('\nError - Time series directory not existing: {0}\n'.format(ts_dir))
         return
 
     if 1:

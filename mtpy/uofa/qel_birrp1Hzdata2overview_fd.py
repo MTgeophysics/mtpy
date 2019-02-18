@@ -16,7 +16,7 @@ def main():
     if len(sys.argv) < 7:
         sys.exit('\n\tERROR - need 6 arguments as input: \n <input dir> <output dir>'
                  ' <stationA> <stationB> <stationC> <prefix>\n')
-    print
+    print()
 
     indir = sys.argv[1]
     indir = op.abspath(op.join(os.curdir, indir))
@@ -72,10 +72,10 @@ def main():
                                                          alldata[2][i], alldata[3][i])
             Fout.write(s)
         Fout.close()
-        print '\tdata file written: {0}\n'.format(outfn)
+        print('\tdata file written: {0}\n'.format(outfn))
 
-    print
-    print '\tDone!\n'
+    print()
+    print('\tDone!\n')
 
 
 def read_timestampfile(indir, prefix):
@@ -93,7 +93,7 @@ def read_timestampfile(indir, prefix):
         except:
             continue
 
-    for k, v in in_dict.items():
+    for k, v in list(in_dict.items()):
         if k.lower().startswith('sampl'):
             sampling = float(v)
             if sampling % 1 == 0:

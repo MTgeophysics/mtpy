@@ -489,8 +489,8 @@ class Ui_MainWindow(object):
             bbox.expanded(1.5, 1.5))
         self.backgrounds = [self.figure.canvas.copy_from_bbox(ax.bbox)
                             for ax in self.ax_list]
-        print '-' * 50
-        print bbox
+        print('-' * 50)
+        print(bbox)
 
     def status_checked_ptz(self, toggled):
         """
@@ -691,7 +691,7 @@ class Ui_MainWindow(object):
 #            ax.draw_artist(ax.xaxis)
 #            ax.draw_artist(ax.yaxis)
 
-            for spine in ax.spines.values():
+            for spine in list(ax.spines.values()):
                 ax.draw_artist(spine)
 #
 #        for background in self.backgrounds:
@@ -1382,31 +1382,31 @@ class PlotSettings(QtGui.QWidget):
         try:
             self.fs = float(text)
         except ValueError:
-            print "Enter a float point number"
+            print("Enter a float point number")
 
     def set_text_e_capthick(self, text):
         try:
             self.e_capthick = float(text)
         except ValueError:
-            print "Enter a float point number"
+            print("Enter a float point number")
 
     def set_text_e_capsize(self, text):
         try:
             self.e_capsize = float(text)
         except ValueError:
-            print "Enter a float point number"
+            print("Enter a float point number")
 
     def set_text_lw(self, text):
         try:
             self.lw = float(text)
         except ValueError:
-            print "Enter a float point number"
+            print("Enter a float point number")
 
     def set_text_ms(self, text):
         try:
             self.ms = float(text)
         except ValueError:
-            print "Enter a float point number"
+            print("Enter a float point number")
 
     def set_text_cted(self, text):
         if text == 'None':
@@ -1414,7 +1414,7 @@ class PlotSettings(QtGui.QWidget):
         text = text.replace('(', '').replace(')', '')
         t_list = text.split(',')
         if len(t_list) != 3:
-            print 'enter as (r, g, b)'
+            print('enter as (r, g, b)')
         l_list = []
         for txt in t_list:
             try:
@@ -1430,7 +1430,7 @@ class PlotSettings(QtGui.QWidget):
         text = text.replace('(', '').replace(')', '')
         t_list = text.split(',')
         if len(t_list) != 3:
-            print 'enter as (r, g, b)'
+            print('enter as (r, g, b)')
         l_list = []
         for txt in t_list:
             try:
@@ -1444,13 +1444,13 @@ class PlotSettings(QtGui.QWidget):
         try:
             self.mted = str(text)
         except ValueError:
-            print "Enter a string"
+            print("Enter a string")
 
     def set_text_mtmd(self, text):
         try:
             self.mtmd = str(text)
         except ValueError:
-            print "Enter a string"
+            print("Enter a string")
 
     def set_text_ctem(self, text):
         if text == 'None':
@@ -1458,7 +1458,7 @@ class PlotSettings(QtGui.QWidget):
         text = text.replace('(', '').replace(')', '')
         t_list = text.split(',')
         if len(t_list) != 3:
-            print 'enter as (r, g, b)'
+            print('enter as (r, g, b)')
         l_list = []
         for txt in t_list:
             try:
@@ -1474,7 +1474,7 @@ class PlotSettings(QtGui.QWidget):
         text = text.replace('(', '').replace(')', '')
         t_list = text.split(',')
         if len(t_list) != 3:
-            print 'enter as (r, g, b)'
+            print('enter as (r, g, b)')
         l_list = []
         for txt in t_list:
             try:
@@ -1488,13 +1488,13 @@ class PlotSettings(QtGui.QWidget):
         try:
             self.mtem = str(text)
         except ValueError:
-            print "Enter a string"
+            print("Enter a string")
 
     def set_text_mtmm(self, text):
         try:
             self.mtmm = str(text)
         except ValueError:
-            print "Enter a string"
+            print("Enter a string")
 
     def set_text_res_xx(self, text):
         if text == 'None':
@@ -1502,7 +1502,7 @@ class PlotSettings(QtGui.QWidget):
         text = text.replace('(', '').replace(')', '')
         t_list = text.split(',')
         if len(t_list) != 2:
-            print 'enter as (min, max)'
+            print('enter as (min, max)')
         l_list = []
         for txt in t_list:
             try:
@@ -1518,7 +1518,7 @@ class PlotSettings(QtGui.QWidget):
         text = text.replace('(', '').replace(')', '')
         t_list = text.split(',')
         if len(t_list) != 2:
-            print 'enter as (min, max)'
+            print('enter as (min, max)')
         l_list = []
         for txt in t_list:
             try:
@@ -1534,7 +1534,7 @@ class PlotSettings(QtGui.QWidget):
         text = text.replace('(', '').replace(')', '')
         t_list = text.split(',')
         if len(t_list) != 2:
-            print 'enter as (min, max)'
+            print('enter as (min, max)')
         l_list = []
         for txt in t_list:
             try:
@@ -1550,7 +1550,7 @@ class PlotSettings(QtGui.QWidget):
         text = text.replace('(', '').replace(')', '')
         t_list = text.split(',')
         if len(t_list) != 2:
-            print 'enter as (min, max)'
+            print('enter as (min, max)')
         l_list = []
         for txt in t_list:
             try:
@@ -1566,7 +1566,7 @@ class PlotSettings(QtGui.QWidget):
         text = text.replace('(', '').replace(')', '')
         t_list = text.split(',')
         if len(t_list) != 2:
-            print 'enter as (min, max)'
+            print('enter as (min, max)')
         l_list = []
         for txt in t_list:
             try:
@@ -1582,7 +1582,7 @@ class PlotSettings(QtGui.QWidget):
         text = text.replace('(', '').replace(')', '')
         t_list = text.split(',')
         if len(t_list) != 2:
-            print 'enter as (min, max)'
+            print('enter as (min, max)')
         l_list = []
         for txt in t_list:
             try:
@@ -1598,7 +1598,7 @@ class PlotSettings(QtGui.QWidget):
         text = text.replace('(', '').replace(')', '')
         t_list = text.split(',')
         if len(t_list) != 2:
-            print 'enter as (min, max)'
+            print('enter as (min, max)')
         l_list = []
         for txt in t_list:
             try:
@@ -1614,7 +1614,7 @@ class PlotSettings(QtGui.QWidget):
         text = text.replace('(', '').replace(')', '')
         t_list = text.split(',')
         if len(t_list) != 2:
-            print 'enter as (min, max)'
+            print('enter as (min, max)')
         l_list = []
         for txt in t_list:
             try:
@@ -1630,7 +1630,7 @@ class PlotSettings(QtGui.QWidget):
         text = text.replace('(', '').replace(')', '')
         t_list = text.split(',')
         if len(t_list) != 2:
-            print 'enter as (min, max)'
+            print('enter as (min, max)')
         l_list = []
         for txt in t_list:
             try:

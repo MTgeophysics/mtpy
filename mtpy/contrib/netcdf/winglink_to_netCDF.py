@@ -15,7 +15,7 @@ import argparse
 import numpy as np
 from pyproj import Proj
 
-import nc
+from . import nc
 
 
 def read_winglink_xyzv(input_file, false_easting=0.0, false_northing=0.0):

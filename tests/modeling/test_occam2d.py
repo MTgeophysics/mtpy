@@ -140,10 +140,10 @@ class TestOccam2D(TestCase):
                             "Ref output data file does not exist, nothing to compare with"
                             )
 
-            print ("Comparing", output_data_file, "and", expected_data_file)
+            print(("Comparing", output_data_file, "and", expected_data_file))
 
             is_identical, msg = diff_files(output_data_file, expected_data_file, ignores=['Date/Time:'])
-            print msg
+            print(msg)
             self.assertTrue(is_identical, "The output file is not the same with the baseline file.")
 
     def test_plot_model_and_responses(self):

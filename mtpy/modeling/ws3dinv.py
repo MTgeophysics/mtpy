@@ -326,7 +326,7 @@ class WSData(object):
             mt_obj = mt.MT(edi)
             if self.rotation_angle is not None:
                 mt_obj.rotation_angle = self.rotation_angle
-            print '{0}{1}{0}'.format('-'*20, mt_obj.station)
+            print('{0}{1}{0}'.format('-'*20, mt_obj.station))
 
             # get only those periods that are within the station data
             interp_periods = self.period_list[np.where(
@@ -338,7 +338,7 @@ class WSData(object):
 
             for kk, ff in enumerate(interp_periods):
                 jj = np.where(self.period_list == ff)[0][0]
-                print '    {0:.6g} (s)'.format(ff)
+                print('    {0:.6g} (s)'.format(ff))
 
                 self.data[ss]['z_data'][jj, :] = interp_z.z[kk, :, :]*zconv
                 self.data[ss]['z_data_err'][jj, :] = interp_z.z_err[kk, :, :]*zconv
@@ -466,7 +466,7 @@ class WSData(object):
                     ofid.write('{0:.5e} '.format(self.z_err_map[jj]))
                 ofid.write('\n')
         ofid.close()
-        print 'Wrote file to: {0}'.format(self.data_fn)
+        print('Wrote file to: {0}'.format(self.data_fn))
 
         self.station_east = self.data['east']
         self.station_north = self.data['north']
@@ -758,7 +758,7 @@ class WSStation(object):
             sfid.write('{0:<14}{1:^14}{2:^14}{3:^14}\n'.format(ss, ee, nn, zz))
         sfid.close()
 
-        print 'Wrote station locations to {0}'.format(self.station_fn)
+        print('Wrote station locations to {0}'.format(self.station_fn))
 
     def read_station_file(self, station_fn=None):
         """
@@ -1054,8 +1054,8 @@ class WSMesh(object):
                 self.station_locations['east'][:] = new_coords[0, :]
                 self.station_locations['north'][:] = new_coords[1, :]
 
-                print 'Rotated stations by {0:.1f} deg clockwise from N'.format(
-                                                        self.rotation_angle)
+                print('Rotated stations by {0:.1f} deg clockwise from N'.format(
+                                                        self.rotation_angle))
             #remove the average distance to get coordinates in a relative space
             self.station_locations['east'] -= self.station_locations['east'].mean()
             self.station_locations['north'] -= self.station_locations['north'].mean()
@@ -1213,17 +1213,17 @@ class WSMesh(object):
                                     north_grid[yy[0]]-self.cell_size_north/2
 
         #--> print out useful information
-        print '-'*15
-        print '   Number of stations = {0}'.format(len(self.station_locations))
-        print '   Dimensions: '
-        print '      e-w = {0}'.format(east_grid.shape[0])
-        print '      n-s = {0}'.format(north_grid.shape[0])
-        print '       z  = {0} (without 7 air layers)'.format(z_grid.shape[0])
-        print '   Extensions: '
-        print '      e-w = {0:.1f} (m)'.format(east_nodes.__abs__().sum())
-        print '      n-s = {0:.1f} (m)'.format(north_nodes.__abs__().sum())
-        print '      0-z = {0:.1f} (m)'.format(self.nodes_z.__abs__().sum())
-        print '-'*15
+        print('-'*15)
+        print('   Number of stations = {0}'.format(len(self.station_locations)))
+        print('   Dimensions: ')
+        print('      e-w = {0}'.format(east_grid.shape[0]))
+        print('      n-s = {0}'.format(north_grid.shape[0]))
+        print('       z  = {0} (without 7 air layers)'.format(z_grid.shape[0]))
+        print('   Extensions: ')
+        print('      e-w = {0:.1f} (m)'.format(east_nodes.__abs__().sum()))
+        print('      n-s = {0:.1f} (m)'.format(north_nodes.__abs__().sum()))
+        print('      0-z = {0:.1f} (m)'.format(self.nodes_z.__abs__().sum()))
+        print('-'*15)
 
         #write a station location file for later
         stations = WSStation()
@@ -1422,7 +1422,7 @@ class WSMesh(object):
                                    (self.res_model < self.res_list[h_index]))
                 self.res_model_int[indexes] = self.res_dict[res]
 
-        print 'Converted resistivity model to integers.'
+        print('Converted resistivity model to integers.')
 
     def write_initial_file(self, **kwargs):
         """
@@ -1599,7 +1599,7 @@ class WSMesh(object):
                     ifid.write('\n')
             ifid.close()
 
-        print 'Wrote file to: {0}'.format(self.initial_fn)
+        print('Wrote file to: {0}'.format(self.initial_fn))
 
     def read_initial_file(self, initial_fn):
         """
@@ -1823,7 +1823,7 @@ class WSModel(object):
         try:
             self.lagrange = float(info[8])
         except IndexError:
-            print 'Did not get Lagrange Multiplier'
+            print('Did not get Lagrange Multiplier')
 
         #get lengths of things
         n_north, n_east, n_z, n_res = np.array(mlines[1].strip().split(),
@@ -1905,7 +1905,7 @@ class WSModel(object):
                             self.grid_z,
                             cellData={'resistivity':self.res_model})
 
-        print 'Wrote vtk file to {0}'.format(save_fn)
+        print('Wrote vtk file to {0}'.format(save_fn))
 
 
 #==============================================================================
@@ -2158,9 +2158,9 @@ class WSModelManipulator(object):
                 self.res_model[np.where(self.res_model_int==ii+1)] = rdict[ii+1]
 
         elif self.initial_fn is None and self.model_fn is None:
-            print 'Need to input either an initial file or model file to plot'
+            print('Need to input either an initial file or model file to plot')
         else:
-            print 'Input just initial file or model file not both.'
+            print('Input just initial file or model file not both.')
 
         #--> read in data file if given
         if self.data_fn is not None:
@@ -2391,8 +2391,8 @@ class WSModelManipulator(object):
 
     def set_res_value(self, label):
         self.res_value = float(label)
-        print 'set resistivity to ', label
-        print self.res_value
+        print('set resistivity to ', label)
+        print(self.res_value)
 
 
     def _on_key_callback(self,event):
@@ -2409,10 +2409,10 @@ class WSModelManipulator(object):
 
             if self.depth_index>len(self.grid_z)-1:
                 self.depth_index = len(self.grid_z)-1
-                print 'already at deepest depth'
+                print('already at deepest depth')
 
-            print 'Plotting Depth {0:.3f}'.format(self.grid_z[self.depth_index]/\
-                    self.dscale)+'('+self.map_scale+')'
+            print('Plotting Depth {0:.3f}'.format(self.grid_z[self.depth_index]/\
+                    self.dscale)+'('+self.map_scale+')')
 
             self.redraw_plot()
         #go up a layer on push of - key
@@ -2422,8 +2422,8 @@ class WSModelManipulator(object):
             if self.depth_index < 0:
                 self.depth_index = 0
 
-            print 'Plotting Depth {0:.3f} '.format(self.grid_z[self.depth_index]/\
-                    self.dscale)+'('+self.map_scale+')'
+            print('Plotting Depth {0:.3f} '.format(self.grid_z[self.depth_index]/\
+                    self.dscale)+'('+self.map_scale+')')
 
             self.redraw_plot()
 
@@ -2437,12 +2437,12 @@ class WSModelManipulator(object):
         elif self.event_change_depth.key == 'a':
             try:
                 if self.depth_index == 0:
-                    print 'No layers above'
+                    print('No layers above')
                 else:
                     self.res_model[:, :, self.depth_index] = \
                                        self.res_model[:, :, self.depth_index-1]
             except IndexError:
-                print 'No layers above'
+                print('No layers above')
 
             self.redraw_plot()
 
@@ -2452,7 +2452,7 @@ class WSModelManipulator(object):
                 self.res_model[:, :, self.depth_index] = \
                                     self.res_model[:, :, self.depth_index+1]
             except IndexError:
-                print 'No more layers below'
+                print('No more layers below')
 
             self.redraw_plot()
 
@@ -2648,7 +2648,7 @@ def cmap_discretize(cmap, N):
     cdict = {}
     for ki,key in enumerate(('red','green','blue')):
         cdict[key] = [(indices[i], colors_rgba[i-1,ki], colors_rgba[i,ki])
-                       for i in xrange(N+1)]
+                       for i in range(N+1)]
     # Return colormap object.
     return colors.LinearSegmentedColormap(cmap.name + "_%d"%N, cdict, 1024)
 #==============================================================================
@@ -3091,7 +3091,7 @@ class PlotResponse(object):
             data_z_err = self.data_object.z_data_err[jj]
             period = self.data_object.period_list
             station = self.data_object.station_names[jj]
-            print 'Plotting: {0}'.format(station)
+            print('Plotting: {0}'.format(station))
 
             #check for masked points
             data_z[np.where(data_z == 7.95204E5-7.95204E5j)] = 0.0+0.0j
@@ -3589,12 +3589,12 @@ class PlotResponse(object):
                     rms_xy = resp_z_err[:, 0, 1].std()
                     rms_yx = resp_z_err[:, 1, 0].std()
                     rms_yy = resp_z_err[:, 1, 1].std()
-                    print ' --- response {0} ---'.format(rr)
-                    print '  RMS = {:.2f}'.format(rms)
-                    print '      RMS_xx = {:.2f}'.format(rms_xx)
-                    print '      RMS_xy = {:.2f}'.format(rms_xy)
-                    print '      RMS_yx = {:.2f}'.format(rms_yx)
-                    print '      RMS_yy = {:.2f}'.format(rms_yy)
+                    print(' --- response {0} ---'.format(rr))
+                    print('  RMS = {:.2f}'.format(rms))
+                    print('      RMS_xx = {:.2f}'.format(rms_xx))
+                    print('      RMS_xy = {:.2f}'.format(rms_xy))
+                    print('      RMS_yx = {:.2f}'.format(rms_yx))
+                    print('      RMS_yy = {:.2f}'.format(rms_yy))
 
                     if self.plot_style == 1:
                         if self.plot_component == 2:
@@ -4024,7 +4024,7 @@ class PlotResponse(object):
             pass
 
         self.fig_fn = save_fn
-        print 'Saved figure to: '+self.fig_fn
+        print('Saved figure to: '+self.fig_fn)
 
     def update_plot(self):
         """
@@ -4256,7 +4256,7 @@ class PlotDepthSlice(object):
                 self.station_north = wsdata.data['north']/self.dscale
                 self.station_names = wsdata.data['station']
             else:
-                print 'Could not find data file {0}'.format(self.data_fn)
+                print('Could not find data file {0}'.format(self.data_fn))
 
         #--> read in station file
         if self.station_fn is not None:
@@ -4267,7 +4267,7 @@ class PlotDepthSlice(object):
                 self.station_north = wsstations.north/self.dscale
                 self.station_names = wsstations.names
             else:
-                print 'Could not find station file {0}'.format(self.station_fn)
+                print('Could not find station file {0}'.format(self.station_fn))
 
         #--> read in initial file
         if self.initial_fn is not None:
@@ -4310,7 +4310,7 @@ class PlotDepthSlice(object):
 
         #create an list of depth slices to plot
         if self.depth_index == None:
-            zrange = range(self.grid_z.shape[0])
+            zrange = list(range(self.grid_z.shape[0]))
         elif type(self.depth_index) is int:
             zrange = [self.depth_index]
         elif type(self.depth_index) is list or \
@@ -4833,7 +4833,7 @@ class PlotPTMaps(mtplottools.MTEllipse):
                 self.ns_limits = (self.grid_north[5], self.grid_north[-5])
 
         for ff, per in enumerate(self.plot_period_list):
-            print 'Plotting Period: {0:.5g}'.format(per)
+            print('Plotting Period: {0:.5g}'.format(per))
             fig = plt.figure('{0:.5g}'.format(per), figsize=self.fig_size,
                              dpi=self.fig_dpi)
             fig.clf()
@@ -5200,7 +5200,7 @@ class PlotPTMaps(mtplottools.MTEllipse):
                 pass
 
             self.fig_fn = save_fn
-            print 'Saved figure to: '+self.fig_fn
+            print('Saved figure to: '+self.fig_fn)
 
 #==============================================================================
 # ESTIMATE SKIN DEPTH FOR MODEL
@@ -5259,15 +5259,15 @@ def estimate_skin_depth(res_model, grid_z, period, dscale=1000):
     #get the depth slice
     depth = grid_z[period_index]
 
-    print '-'*60
-    print ' input period                   {0:.6g} (s)'.format(period)
-    print ' estimated skin depth period    {0:.6g} (s)'.format(
-                                               skin_depth_period[period_index])
-    print ' estimate apparent resisitivity {0:.0f} (Ohm-m)'.format(
-           apparent_res_xy[period_index].mean())
-    print ' estimated depth                {0:.6g} ({1})'.format(depth, ms)
-    print ' index                          {0}'.format(period_index)
-    print '-'*60
+    print('-'*60)
+    print(' input period                   {0:.6g} (s)'.format(period))
+    print(' estimated skin depth period    {0:.6g} (s)'.format(
+                                               skin_depth_period[period_index]))
+    print(' estimate apparent resisitivity {0:.0f} (Ohm-m)'.format(
+           apparent_res_xy[period_index].mean()))
+    print(' estimated depth                {0:.6g} ({1})'.format(depth, ms))
+    print(' index                          {0}'.format(period_index))
+    print('-'*60)
 
 
     return depth, period_index
@@ -5488,7 +5488,7 @@ class PlotSlices(object):
                 self.station_north = wsdata.data['north']/self.dscale
                 self.station_names = wsdata.data['station']
             else:
-                print 'Could not find data file {0}'.format(self.data_fn)
+                print('Could not find data file {0}'.format(self.data_fn))
 
         #--> read in station file
         if self.station_fn is not None:
@@ -5499,7 +5499,7 @@ class PlotSlices(object):
                 self.station_north = wsstations.north/self.dscale
                 self.station_names = wsstations.names
             else:
-                print 'Could not find station file {0}'.format(self.station_fn)
+                print('Could not find station file {0}'.format(self.station_fn))
 
         #--> read in initial file
         if self.initial_fn is not None:
@@ -5643,7 +5643,7 @@ class PlotSlices(object):
 
         if key_press == 'n':
             if self.index_north == self.grid_north.shape[0]:
-                print 'Already at northern most grid cell'
+                print('Already at northern most grid cell')
             else:
                 self.index_north += 1
                 if self.index_north > self.grid_north.shape[0]:
@@ -5653,7 +5653,7 @@ class PlotSlices(object):
 
         if key_press == 'm':
             if self.index_north == 0:
-                print 'Already at southern most grid cell'
+                print('Already at southern most grid cell')
             else:
                 self.index_north -= 1
                 if self.index_north < 0:
@@ -5663,7 +5663,7 @@ class PlotSlices(object):
 
         if key_press == 'e':
             if self.index_east == self.grid_east.shape[0]:
-                print 'Already at eastern most grid cell'
+                print('Already at eastern most grid cell')
             else:
                 self.index_east += 1
                 if self.index_east > self.grid_east.shape[0]:
@@ -5673,7 +5673,7 @@ class PlotSlices(object):
 
         if key_press == 'w':
             if self.index_east == 0:
-                print 'Already at western most grid cell'
+                print('Already at western most grid cell')
             else:
                 self.index_east -= 1
                 if self.index_east < 0:
@@ -5683,25 +5683,25 @@ class PlotSlices(object):
 
         if key_press == 'd':
             if self.index_vertical == self.grid_z.shape[0]:
-                print 'Already at deepest grid cell'
+                print('Already at deepest grid cell')
             else:
                 self.index_vertical += 1
                 if self.index_vertical > self.grid_z.shape[0]:
                     self.index_vertical = self.grid_z.shape[0]
             self._update_ax_en()
-            print 'Depth = {0:.5g} ({1})'.format(self.grid_z[self.index_vertical],
-                                                 self.map_scale)
+            print('Depth = {0:.5g} ({1})'.format(self.grid_z[self.index_vertical],
+                                                 self.map_scale))
 
         if key_press == 'u':
             if self.index_vertical == 0:
-                print 'Already at surface grid cell'
+                print('Already at surface grid cell')
             else:
                 self.index_vertical -= 1
                 if self.index_vertical < 0:
                     self.index_vertical = 0
             self._update_ax_en()
-            print 'Depth = {0:.5gf} ({1})'.format(self.grid_z[self.index_vertical],
-                                                 self.map_scale)
+            print('Depth = {0:.5gf} ({1})'.format(self.grid_z[self.index_vertical],
+                                                 self.map_scale))
 
     def _update_ax_ez(self):
         """
@@ -5970,7 +5970,7 @@ class PlotSlices(object):
             pass
 
         self.fig_fn = save_fn
-        print 'Saved figure to: '+self.fig_fn
+        print('Saved figure to: '+self.fig_fn)
 
 #==============================================================================
 # STARTUP FILES
@@ -6073,11 +6073,11 @@ class WSStartup(object):
             slines.append('{0:<20}{1}\n'.format('DATA_FILE',
                                                 os.path.basename(self.data_fn)))
             if len(os.path.basename(self.data_fn)) > 70:
-                print 'Data file is too long, going to get an error at runtime'
+                print('Data file is too long, going to get an error at runtime')
         else:
             slines.append('{0:<20}{1}\n'.format('DATA_FILE',self.data_fn))
             if len(self.data_fn) > 70:
-                print 'Data file is too long, going to get an error at runtime'
+                print('Data file is too long, going to get an error at runtime')
 
         slines.append('{0:<20}{1}\n'.format('OUTPUT_FILE', self.output_stem))
 
@@ -6110,7 +6110,7 @@ class WSStartup(object):
         sfid.write(''.join(slines))
         sfid.close()
 
-        print 'Wrote startup file to: {0}'.format(self.startup_fn)
+        print('Wrote startup file to: {0}'.format(self.startup_fn))
 
     def read_startup_file(self, startup_fn=None):
         """
@@ -6152,7 +6152,7 @@ class WSStartup(object):
         try:
             self.static_fn = slines[10][0].strip()
         except IndexError:
-            print 'Did not find static_fn'
+            print('Did not find static_fn')
 
 
 

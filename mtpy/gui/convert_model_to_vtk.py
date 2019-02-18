@@ -117,7 +117,7 @@ class ConvertModel2VTK(QtGui.QWidget):
         self.cwd = os.path.abspath(str(self.cwd_edit.text()))
         os.chdir(self.cwd)
         if not os.path.exists(self.cwd):
-            print('Path doesnt exist {0}'.format(self.cwd))
+            print(('Path doesnt exist {0}'.format(self.cwd)))
             
         self.set_fn_lists()
     

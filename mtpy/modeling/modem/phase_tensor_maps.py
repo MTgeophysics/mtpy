@@ -299,7 +299,7 @@ class PlotPTMaps(mtplottools.MTEllipse):
         put pt parameters into something useful for plotting
         """
 
-        ns = len(self.data_obj.mt_dict.keys())
+        ns = len(list(self.data_obj.mt_dict.keys()))
         nf = len(self.data_obj.period_list)
 
         data_pt_arr = np.zeros((nf, ns), dtype=[('phimin', np.float),
@@ -367,7 +367,7 @@ class PlotPTMaps(mtplottools.MTEllipse):
                     res_pt_arr[:, ii]['geometric_mean'] = np.sqrt(np.abs(rpt.phimin) *
                                                                   np.abs(rpt.phimax))
                 except mtex.MTpyError_PT:
-                    print key, dpt.pt.shape, mpt.pt.shape
+                    print(key, dpt.pt.shape, mpt.pt.shape)
 
                 model_pt_arr[:, ii]['east'] = east
                 model_pt_arr[:, ii]['north'] = north
@@ -475,7 +475,7 @@ class PlotPTMaps(mtplottools.MTEllipse):
 
         """
 
-        print("The input parameter period is", period)
+        print(("The input parameter period is", period))
 
         # --> read in data first
         if self.data_obj is None:
@@ -522,9 +522,9 @@ class PlotPTMaps(mtplottools.MTEllipse):
 
         # -------------plot phase tensors------------------------------------
         if period > len(self.plot_period_list) - 1:
-            print(
+            print((
                 "Error: the period exceeds the max value:", len(
-                    self.plot_period_list) - 1)
+                    self.plot_period_list) - 1))
 
         # FZ: changed below to plot a given period index
         # for ff, per in enumerate(self.plot_period_list):
@@ -532,7 +532,7 @@ class PlotPTMaps(mtplottools.MTEllipse):
             
             data_ii = self.period_dict[per]
 
-            print 'Plotting Period: {0:.5g}'.format(per)
+            print('Plotting Period: {0:.5g}'.format(per))
             fig = plt.figure('{0:.5g}'.format(per), figsize=self.fig_size,
                              dpi=self.fig_dpi)
             fig.clf()
@@ -710,7 +710,7 @@ class PlotPTMaps(mtplottools.MTEllipse):
             cb_location = (3.35 * bb[2] / 5 + bb[0],
                            y1 * self.cb_pt_pad, .295 * bb[2], .02)
             cbaxd = fig.add_axes(cb_location)
-            if self.ellipse_cmap in mtcl.cmapdict.keys():
+            if self.ellipse_cmap in list(mtcl.cmapdict.keys()):
                 ecmap = mtcl.cmapdict[self.ellipse_cmap]
             else:
                 ecmap = self.ellipse_cmap
@@ -913,7 +913,7 @@ class PlotPTMaps(mtplottools.MTEllipse):
 
         pk = periodIdx
         try:
-            print "getting", key
+            print("getting", key)
             if key == 'phimean':
                 vals = np.mean([getattr(self, 'pt_' + ptarray + '_arr')[pk]['phimin'],
                                 getattr(self, 'pt_' + ptarray + '_arr')[pk]['phimax']],axis=0)
@@ -922,7 +922,7 @@ class PlotPTMaps(mtplottools.MTEllipse):
             return vals
         except:
 
-            print 'Attribute %s not found' % ('pt_' + ptarray + '_arr')
+            print('Attribute %s not found' % ('pt_' + ptarray + '_arr'))
             logging.error(traceback.format_exc())
             exit(-1)
 
@@ -1162,4 +1162,4 @@ class PlotPTMaps(mtplottools.MTEllipse):
                 pass
 
             self.fig_fn = save_fn
-            print 'Saved figure to: ' + self.fig_fn
+            print('Saved figure to: ' + self.fig_fn)

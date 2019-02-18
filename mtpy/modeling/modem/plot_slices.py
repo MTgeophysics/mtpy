@@ -312,8 +312,8 @@ class PlotSlices(object):
                 import networkx as nx
                 from sklearn.neighbors import NearestNeighbors
             except:
-                print "Failed to import either 'networkx' or 'scikit' python packages; " \
-                      "station/nodal ordering may be incorrect..s"
+                print("Failed to import either 'networkx' or 'scikit' python packages; " \
+                      "station/nodal ordering may be incorrect..s")
                 return np.arange(len(x))
             # end try
 
@@ -344,7 +344,7 @@ class PlotSlices(object):
         assert option in ['STA', 'XY', 'XYZ'], 'Invalid option; Aborting..'
         if(option == 'STA'):
             if(self.md_data is None):
-                print 'Station coordinates not available. Aborting..'
+                print('Station coordinates not available. Aborting..')
                 exit(-1)
         elif(option == 'XY'):
             assert type(coords)==np.ndarray and coords.ndim==2 and coords.shape[1]==2, \
@@ -426,7 +426,7 @@ class PlotSlices(object):
         xyz_list = np.array(_xyz_list)
         if(absolute_query_locations):
             if(self.md_data is None):
-                print 'Station coordinates not available. Aborting..'
+                print('Station coordinates not available. Aborting..')
                 exit(-1)
             #end if
 
@@ -520,7 +520,7 @@ class PlotSlices(object):
 
                 self.md_data = md_data
             else:
-                print 'Could not find data file {0}'.format(self.data_fn)
+                print('Could not find data file {0}'.format(self.data_fn))
 
     def plot(self):
         """
@@ -531,16 +531,16 @@ class PlotSlices(object):
 
 
         """
-        print "=============== ==============================================="
-        print "    Buttons                  Description                       "
-        print "=============== ==============================================="
-        print "     'e'          moves n-s slice east by one model block"
-        print "     'w'          moves n-s slice west by one model block"
-        print "     'n'          moves e-w slice north by one model block"
-        print "     'm'          moves e-w slice south by one model block"
-        print "     'd'          moves depth slice down by one model block"
-        print "     'u'          moves depth slice up by one model block"
-        print "=============== ==============================================="
+        print("=============== ===============================================")
+        print("    Buttons                  Description                       ")
+        print("=============== ===============================================")
+        print("     'e'          moves n-s slice east by one model block")
+        print("     'w'          moves n-s slice west by one model block")
+        print("     'n'          moves e-w slice north by one model block")
+        print("     'm'          moves e-w slice south by one model block")
+        print("     'd'          moves depth slice down by one model block")
+        print("     'u'          moves depth slice up by one model block")
+        print("=============== ===============================================")
 
         self.font_dict = {'size': self.font_size*0.75, 'weight': 'bold'}
 
@@ -744,7 +744,7 @@ class PlotSlices(object):
                                       edgecolor='none')
 
             self.selected_indices = np.arange(indmin, indmax)
-            print 'Selected indices: ' + str(self.selected_indices)
+            print('Selected indices: ' + str(self.selected_indices))
 
             self.ax_span.set_yticks([])
             self.ax_span.set_title('%s Extent: Click+Drag to Select Sub-range'%
@@ -978,7 +978,7 @@ class PlotSlices(object):
     
 
                 fpath = os.path.join(self.save_path, fn)
-                print('Exporting %s..'%(fpath))
+                print(('Exporting %s..'%(fpath)))
                 fig.savefig(fpath, dpi=self.fig_dpi, bbox_inches='tight')
                 fnlist.append(fpath)
     
@@ -998,7 +998,7 @@ class PlotSlices(object):
 
         if key_press == 'n':
             if self.index_north == self.grid_north.size:
-                print 'Already at northern most grid cell'
+                print('Already at northern most grid cell')
             else:
                 self.index_north += 1
                 if self.index_north > self.grid_north.size:
@@ -1008,7 +1008,7 @@ class PlotSlices(object):
 
         if key_press == 'm':
             if self.index_north == 0:
-                print 'Already at southern most grid cell'
+                print('Already at southern most grid cell')
             else:
                 self.index_north -= 1
                 if self.index_north < 0:
@@ -1018,7 +1018,7 @@ class PlotSlices(object):
 
         if key_press == 'e':
             if self.index_east == self.grid_east.size:
-                print 'Already at eastern most grid cell'
+                print('Already at eastern most grid cell')
             else:
                 self.index_east += 1
                 if self.index_east > self.grid_east.size:
@@ -1028,7 +1028,7 @@ class PlotSlices(object):
 
         if key_press == 'w':
             if self.index_east == 0:
-                print 'Already at western most grid cell'
+                print('Already at western most grid cell')
             else:
                 self.index_east -= 1
                 if self.index_east < 0:
@@ -1038,27 +1038,27 @@ class PlotSlices(object):
 
         if key_press == 'd':
             if self.index_vertical == self.grid_z.size:
-                print 'Already at deepest grid cell'
+                print('Already at deepest grid cell')
             else:
                 self.index_vertical += 1
                 if self.index_vertical > self.grid_z.size:
                     self.index_vertical = self.grid_z.size
             self._update_ax_en()
             self._update_ax_nz()
-            print 'Depth = {0:.5g} ({1})'.format(self.grid_z[self.index_vertical],
-                                                 self.map_scale)
+            print('Depth = {0:.5g} ({1})'.format(self.grid_z[self.index_vertical],
+                                                 self.map_scale))
 
         if key_press == 'u':
             if self.index_vertical == 0:
-                print 'Already at surface grid cell'
+                print('Already at surface grid cell')
             else:
                 self.index_vertical -= 1
                 if self.index_vertical < 0:
                     self.index_vertical = 0
             self._update_ax_en()
             self._update_ax_nz()
-            print 'Depth = {0:.5gf} ({1})'.format(self.grid_z[self.index_vertical],
-                                                  self.map_scale)
+            print('Depth = {0:.5gf} ({1})'.format(self.grid_z[self.index_vertical],
+                                                  self.map_scale))
         self.update_range_func(self.current_label)
     # end func
 
@@ -1347,7 +1347,7 @@ class PlotSlices(object):
             pass
 
         self.fig_fn = save_fn
-        print 'Saved figure to: ' + self.fig_fn
+        print('Saved figure to: ' + self.fig_fn)
 
 
 if __name__=='__main__':

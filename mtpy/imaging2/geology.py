@@ -61,7 +61,7 @@ class Geology:
         try:
             sf = fiona.open(sfn)
         except Exception as err:
-            print 'Failed to read %s' % (sfn)
+            print('Failed to read %s' % (sfn))
             logging.error(traceback.format_exc())
             exit(-1)
 
@@ -111,7 +111,7 @@ class Geology:
             try:
                 f = open(lutfn)
             except Exception as err:
-                print 'Failed to read %s' % (lutfn)
+                print('Failed to read %s' % (lutfn))
                 logging.error(traceback.format_exc())
                 exit(-1)
 
@@ -158,7 +158,7 @@ class Geology:
         
 
         ecolor_is_fcolor = False
-        if ('edgecolor' in kwargs.keys() and kwargs['edgecolor'] == 'face'):
+        if ('edgecolor' in list(kwargs.keys()) and kwargs['edgecolor'] == 'face'):
             ecolor_is_fcolor = True
         # Process geometry
         for i, feature in enumerate(self._geometries):
@@ -176,13 +176,13 @@ class Geology:
                     px,py = x,y
                 else:
                     px, py = m(x, y)
-                ppolygon = Polygon(zip(px, py))
+                ppolygon = Polygon(list(zip(px, py)))
                 
                 if (fcolor is not None): kwargs['facecolor'] = fcolor
-                if ('edgecolor' not in kwargs.keys() and not ecolor_is_fcolor):
+                if ('edgecolor' not in list(kwargs.keys()) and not ecolor_is_fcolor):
                     kwargs['edgecolor'] = 'none'
                 else: kwargs['edgecolor'] = fcolor
-                if ('fill') not in kwargs.keys(): kwargs['fill'] = True
+                if ('fill') not in list(kwargs.keys()): kwargs['fill'] = True
 
                 pp = PolygonPatch(ppolygon, **kwargs)
                 patches.append(pp)
@@ -202,13 +202,13 @@ class Geology:
                         px,py = x,y
                     else:
                         px, py = m(x, y)
-                    ppolygon = Polygon(zip(px, py))
+                    ppolygon = Polygon(list(zip(px, py)))
 
                     if (fcolor is not None): kwargs['facecolor'] = fcolor
-                    if ('edgecolor' not in kwargs.keys() and not ecolor_is_fcolor):
+                    if ('edgecolor' not in list(kwargs.keys()) and not ecolor_is_fcolor):
                         kwargs['edgecolor'] = 'none'
                     else: kwargs['edgecolor'] = fcolor
-                    if ('fill') not in kwargs.keys(): kwargs['fill'] = True
+                    if ('fill') not in list(kwargs.keys()): kwargs['fill'] = True
 
                     pp = PolygonPatch(ppolygon, **kwargs)
                     patches.append(pp)
@@ -261,7 +261,7 @@ class Geology:
         :return:
         '''
         # set default line colour to black
-        if 'color' not in kwargs.keys():
+        if 'color' not in list(kwargs.keys()):
             kwargs['color'] = 'k'
         
         if ax is None:
@@ -278,7 +278,7 @@ class Geology:
         handles = set()
 
         ecolor_is_fcolor = False
-        if ('edgecolor' in kwargs.keys() and kwargs['edgecolor'] == 'face'):
+        if ('edgecolor' in list(kwargs.keys()) and kwargs['edgecolor'] == 'face'):
             ecolor_is_fcolor = True
         # Process geometry
         for i, feature in enumerate(self._geometries):
@@ -296,14 +296,14 @@ class Geology:
                 
                 px, py = self._xy_to_local(x, y, epsg_from, epsg_to,
                                            centre_shift, scale_factor)
-                ppolygon = Polygon(zip(px, py))
+                ppolygon = Polygon(list(zip(px, py)))
 
                 if (fcolor is not None): kwargs['facecolor'] = fcolor
-                if ('edgecolor' not in kwargs.keys() and not ecolor_is_fcolor):
+                if ('edgecolor' not in list(kwargs.keys()) and not ecolor_is_fcolor):
                     kwargs['edgecolor'] = 'none'
                 else:
                     kwargs['edgecolor'] = fcolor
-                if ('fill') not in kwargs.keys(): kwargs['fill'] = True
+                if ('fill') not in list(kwargs.keys()): kwargs['fill'] = True
 
                 pp = PolygonPatch(ppolygon, **kwargs)
                 patches.append(pp)
@@ -321,14 +321,14 @@ class Geology:
                     x, y = polygon.exterior.coords.xy
                     px, py = self._xy_to_local(x, y, epsg_from, epsg_to,
                                                centre_shift, scale_factor)
-                    ppolygon = Polygon(zip(px, py))
+                    ppolygon = Polygon(list(zip(px, py)))
                     
                     if (fcolor is not None): kwargs['facecolor'] = fcolor
-                    if ('edgecolor' not in kwargs.keys() and not ecolor_is_fcolor):
+                    if ('edgecolor' not in list(kwargs.keys()) and not ecolor_is_fcolor):
                         kwargs['edgecolor'] = 'none'
                     else:
                         kwargs['edgecolor'] = fcolor
-                    if ('fill') not in kwargs.keys(): kwargs['fill'] = True
+                    if ('fill') not in list(kwargs.keys()): kwargs['fill'] = True
 
                     pp = PolygonPatch(ppolygon, **kwargs)
                     patches.append(pp)

@@ -34,7 +34,7 @@ class Control():
         self.penalty_weight_anisotropy = [0.1, 1.0, 10.0]
         self.working_directory = '.'
 
-        for key in input_parameters.keys():
+        for key in list(input_parameters.keys()):
             setattr(self, key, input_parameters[key])
 
         if not os.path.exists(self.working_directory):
@@ -59,7 +59,7 @@ class Control():
         for thing in [self.penalty_weight_structure, self.penalty_weight_anisotropy]:
             ctlfile.write('  '.join([str(i) for i in thing]) + '\n')
         ctlfile.close()
-        print "written control file to {}".format(self.working_directory)
+        print("written control file to {}".format(self.working_directory))
 
     inmodel_kwds = ['inmodel_dictionary']
 
@@ -77,7 +77,7 @@ class Inmodel():
         self.inmodel_dictionary = {0: [100, 100, 0]}
         # inmodel file, in format topdepth: [minres,maxres,strike]
 
-        for key in input_parameters.keys():
+        for key in list(input_parameters.keys()):
             setattr(self, key, input_parameters[key])
 
     def build_inmodel(self):
@@ -114,7 +114,7 @@ class Inmodel():
         mthick = np.array([mdepths[i + 1] - mdepths[i]
                            for i in range(len(mi))])
 
-        keys = self.inmodel_dictionary.keys()
+        keys = list(self.inmodel_dictionary.keys())
 
         keys.sort()
         for key in keys:
@@ -136,7 +136,7 @@ class Inmodel():
         np.savetxt(os.path.join(self.working_directory, 'inmodel.dat'),
                    self.inmodel,
                    fmt=['%5i', '%11.4e', '%11.4e', '%11.4e', '%11.4e'])
-        print "written inmodel file to {}".format(self.working_directory)
+        print("written inmodel file to {}".format(self.working_directory))
 
     def read_inmodel(self):
         """
@@ -170,7 +170,7 @@ class Inmodel():
             try:
                 self.read_inmodel()
             except IOError:
-                print "please define working directory"
+                print("please define working directory")
                 return
 
         data = self.inmodel
@@ -202,7 +202,7 @@ class Data():
         self.edipath = None
         self.mode = 'I'
 
-        for key in input_parameters.keys():
+        for key in list(input_parameters.keys()):
             if hasattr(self, key):
                 setattr(self, key, input_parameters[key])
 
@@ -309,7 +309,7 @@ class Data():
             if len(dlst) == 1:
                 self.datafile = dlst[0]
             else:
-                print "please define datafile"
+                print("please define datafile")
                 return
 
         # define path to file
@@ -388,7 +388,7 @@ class Data():
         use mtpy.analysis.geometry to rotate a z array and recalculate res and phase
 
         """
-        import pek1dclasses as pek1dc
+        from . import pek1dclasses as pek1dc
 
         if not hasattr(self, 'z'):
             self.read_datafile()
@@ -421,7 +421,7 @@ class Response():
         self.misfit_threshold = 1.1
         self.station = None
 
-        for key in input_parameters.keys():
+        for key in list(input_parameters.keys()):
             if hasattr(self, key):
                 setattr(self, key, input_parameters[key])
 
@@ -467,7 +467,7 @@ class Response():
         use mtpy.analysis.geometry to rotate a z array and recalculate res and phase
 
         """
-        import pek1dclasses as pek1dc
+        from . import pek1dclasses as pek1dc
 
         if not hasattr(self, 'z'):
             self.read_respfile()
@@ -507,7 +507,7 @@ class Fit():
         self.misfit_threshold = 1.1
         self.station = None
 
-        for key in input_parameters.keys():
+        for key in list(input_parameters.keys()):
             if hasattr(self, key):
                 setattr(self, key, input_parameters[key])
 
@@ -598,7 +598,7 @@ class Model():
         self.y = 0.
         self.input_parameters = input_parameters
 
-        for key in input_parameters.keys():
+        for key in list(input_parameters.keys()):
             if hasattr(self, key):
                 setattr(self, key, input_parameters[key])
 
@@ -697,7 +697,7 @@ class Model():
         """
         if self.models is None:
             self.read_model()
-        print self.station
+        print(self.station)
         # get model of interest
         model = self.models[self.modelno - 1]
 
@@ -723,7 +723,7 @@ class Model():
             depth_aniso_max = model_filt[:, 1][aniso == aniso_max][0]
             i += 1
             if i > len(model_filt):
-                print "can't get stable strike"
+                print("can't get stable strike")
                 break
 
         params = model_filt[aniso == aniso_max][0]
@@ -764,7 +764,7 @@ class Model_suite():
         self.station_xyfile = None
         self.anisotropy_surface_file = 'model%03i_aniso_depth.dat'
 
-        for key in input_parameters.keys():
+        for key in list(input_parameters.keys()):
             setattr(self, key, input_parameters[key])
 
         if self.station_listfile is not None:
@@ -772,7 +772,7 @@ class Model_suite():
                 self.station_list = [i.strip() for i in open(
                     self.station_listfile).readlines()]
             except:
-                print "can't open station list file"
+                print("can't open station list file")
 
         if self.model_list == []:
             self.inmodel_list = []
@@ -794,13 +794,13 @@ class Model_suite():
                 model.read_model()
                 self.model_list.append(model)
             except IOError:
-                print folder, "model file not found"
+                print(folder, "model file not found")
             try:
                 inmodel = Inmodel(working_directory=folder)
                 inmodel.read_inmodel()
                 self.inmodel_list.append(inmodel)
             except IOError:
-                print "inmodel file not found"
+                print("inmodel file not found")
 
         if self.station_xyfile is not None:
             self.update_multiple_locations_from_file()

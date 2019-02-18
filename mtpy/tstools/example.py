@@ -23,9 +23,9 @@ from PyQt5.QtGui import QStandardItem
 from PyQt5.QtWidgets import QCheckBox
 from PyQt5 import QtCore
 
-from tsscene import TSScene
-from tsdata import TSData
-from tswavetree import TSWaveTree
+from .tsscene import TSScene
+from .tsdata import TSData
+from .tswavetree import TSWaveTree
 
 from obspy.core import UTCDateTime
 

@@ -34,7 +34,7 @@ def recursive_glob(dirname, ext='*.edi'):
     """
     import fnmatch
 
-    if isinstance(dirname, (list,)):  # the input argument is a list of directory
+    if isinstance(dirname, list):  # the input argument is a list of directory
         filelist = []
         for adir in dirname:
             filelist.extend(recursive_glob(adir))
@@ -73,7 +73,7 @@ class EdiFolders(object):
                     pass
 
             if edi_files_count >= self.edifiles_threshold:
-                print('Found directory: %s ==> %s *.%s files' % (dirName, edi_files_count, self.filetype))
+                print(('Found directory: %s ==> %s *.%s files' % (dirName, edi_files_count, self.filetype)))
                 self.folders_of_interest.append(dirName)
 
             #If it's a folder then recursive call
@@ -91,7 +91,7 @@ class EdiFolders(object):
 if __name__ == "__main__":
 
     if len(sys.argv) <= 1:
-        print("USAGE: %s  %s [%s] [%s]" % (sys.argv[0], "start_path_dir", "ftype", "edi_threshold"))
+        print(("USAGE: %s  %s [%s] [%s]" % (sys.argv[0], "start_path_dir", "ftype", "edi_threshold")))
         sys.exit(1)
     else:
         root_dir = sys.argv[1]
@@ -110,6 +110,6 @@ if __name__ == "__main__":
 
         edi_dirs_list = sObj.find_edi_folders(root_dir)
 
-        print ("Number of interesting folders found =", len(edi_dirs_list))
+        print(("Number of interesting folders found =", len(edi_dirs_list)))
 
         print (edi_dirs_list)
