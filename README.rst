@@ -45,8 +45,8 @@ Contacts
 System Requirements
 ==========================
 
--  Python 2.7.*
--  Python 3  (Todo)
+-  Python 2.7
+-  Python 3.6+
 
 Setup Guide for Developers
 ==========================
@@ -73,6 +73,8 @@ Setup Guide for Developers
 To verify the install: 
 
 - ``pip list | grep mtpy``
+
+- ``pip show mtpy``
 
 To uninstall the mtpy package: 
 
