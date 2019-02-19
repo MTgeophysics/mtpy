@@ -1866,9 +1866,10 @@ class DataSection(object):
         # need to sort the list so it is descending order by channel number
         ch_list = [(key.upper(), getattr(self, key))
                    for key in self._kw_list[4:]]
-        ch_list = sorted(ch_list, key=lambda x: x[1])
+        #ch_list = sorted(ch_list, key=lambda x: x[1])  #FZ: x[1] can be None, not working for Py3
+        ch_list2 = sorted(ch_list, key=lambda x: x[0])
 
-        for ch in ch_list:
+        for ch in ch_list2:
             data_sect_lines.append('{0}{1}={2}\n'.format(tab,
                                                          ch[0],
                                                          ch[1]))
