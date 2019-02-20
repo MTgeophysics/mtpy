@@ -14,7 +14,7 @@ Revision History:
 
 import os
 from unittest import TestCase
-from mtpy.imaging2.seismic import VelocityModel
+from mtpy.imaging.seismic import VelocityModel
 import numpy
 
 class Test_VelocityModel(TestCase):
