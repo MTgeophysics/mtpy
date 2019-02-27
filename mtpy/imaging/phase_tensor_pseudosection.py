@@ -389,9 +389,9 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
         self.scale_arrow = kwargs.pop('scale_arrow', False)
         self.scale_arrow_dict = kwargs.pop('scale_arrow_dict', {})
 
-        if 'size' not in self.scale_arrow_dict.keys():
+        if 'size' not in list(self.scale_arrow_dict.keys()):
             self.scale_arrow_dict['size'] = 1.
-        if 'text_offset_y' not in self.scale_arrow_dict.keys():
+        if 'text_offset_y' not in list(self.scale_arrow_dict.keys()):
             self.scale_arrow_dict['text_offset_y'] = 0.
 
         self._rot_z = kwargs.pop('rot_z', 0)
@@ -837,9 +837,9 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
 
             # make a scale arrow
             if self.scale_arrow:
-                print (
+                print((
                     np.log10(
-                        self.ylimits[1] - self.scale_arrow_dict['text_offset_y'])) * self.ystretch
+                        self.ylimits[1] - self.scale_arrow_dict['text_offset_y'])) * self.ystretch)
                 txrl = self.scale_arrow_dict['size']
                 self.ax.arrow(min(self.offsetlist) * self.xstretch,
                               np.log10(self.ylimits[1]) * self.ystretch,
@@ -860,10 +860,10 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
         self.ax.grid(alpha=.25, which='both', color=(.25, .25, .25))
 
         # print out the min an max of the parameter plotted
-        print '-' * 25
-        print ck + ' min = {0:.2f}'.format(min(minlist))
-        print ck + ' max = {0:.2f}'.format(max(maxlist))
-        print '-' * 25
+        print('-' * 25)
+        print(ck + ' min = {0:.2f}'.format(min(minlist)))
+        print(ck + ' max = {0:.2f}'.format(max(maxlist)))
+        print('-' * 25)
 
         # ==> make a colorbar with appropriate colors
         if self.cb_position is None:
@@ -1352,7 +1352,7 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
             pass
 
         self.fig_fn = save_fn
-        print 'Saved figure to: ' + self.fig_fn
+        print('Saved figure to: ' + self.fig_fn)
 
     def save_figure2(self, save_fn, file_format='jpg', orientation='portrait', fig_dpi=None, close_plot='y'):
         """
@@ -1405,7 +1405,7 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
         else:  # FZ: assume save-fn is a path2file= "path2/afile.fmt"
             file_format=save_fn.split('.')[-1]
             if file_format is None or file_format not in ['png', 'jpg']:
-                print ("Error: output file name is not correctly provided:", save_fn)
+                print(("Error: output file name is not correctly provided:", save_fn))
                 raise Exception("output file name is not correctly provided!!!")
 
             path2savefile=save_fn
@@ -1422,6 +1422,6 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
 
         self.fig_fn=path2savefile
         #logger.debug('Saved figure to: %s', self.fig_fn)
-        print ('Saved figure to: ', self.fig_fn)
+        print(('Saved figure to: ', self.fig_fn))
 
         return self.fig_fn

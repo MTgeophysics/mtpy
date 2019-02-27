@@ -66,7 +66,7 @@ class TestExportDialog(TestCase):
         self.assertTrue(self.dialog.ui.comboBox_directory.currentText() == os.path.expanduser("~"), "Default Path")
         # file type
         self.assertTrue(set(["{} (.{})".format(desc, ext)
-                             for ext, desc in self._fig.canvas.get_supported_filetypes().iteritems()]) ==
+                             for ext, desc in self._fig.canvas.get_supported_filetypes().items()]) ==
                         set([str(self.dialog.ui.comboBox_fileType.itemText(i))
                              for i in range(self.dialog.ui.comboBox_fileType.count())]),
                         "Supported Formats")
@@ -153,7 +153,7 @@ class TestExportDialog(TestCase):
         self.dialog.exec_ = self._fake_export_dialog_exec_cancel  # should not create file
         self.dialog._msg_box.exec_ = self._fake_msg_dialog_exec_cancel
         fname = self.dialog.export_to_file(self._fig)
-        print self._fig.get_dpi(), self.dialog.ui.spinBox_dpi.value()
+        print(self._fig.get_dpi(), self.dialog.ui.spinBox_dpi.value())
         self.assertTrue(self.dialog.ui.spinBox_dpi.value() == self._fig.get_dpi())
         self.assertTrue(fname is None)
         self.assertFalse(os.path.exists(self.dialog.get_save_file_name()), "File exists")

@@ -734,7 +734,7 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
                         # check to make sure the zone is the same this needs
                         # to be more rigorously done
                         if zone1 != zone:
-                            print 'Zone change at station ' + mt.station
+                            print('Zone change at station ' + mt.station)
                             if zone1[0:2] == zone[0:2]:
                                 pass
                             elif int(zone1[0:2]) < int(zone[0:2]):
@@ -762,7 +762,7 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
 
                     else:
                         if zone1 != zone:
-                            print 'Zone change at station ' + mt.station
+                            print('Zone change at station ' + mt.station)
                             if zone1[0:2] == zone[0:2]:
                                 pass
                             elif int(zone1[0:2]) < int(zone[0:2]):
@@ -1109,7 +1109,7 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
                                        orientation=self.cb_orientation,
                                        ticks=bounds[1:-1])
         else:
-            if cmap in mtcl.cmapdict.keys():
+            if cmap in list(mtcl.cmapdict.keys()):
                 cmap_input = mtcl.cmapdict[cmap]
             else:
                 cmap_input = mtcl.cm.get_cmap(cmap)
@@ -1374,17 +1374,17 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
 
         # ----------------------write files-------------------------------------
         svfn = 'Map_{0:.6g}Hz'.format(self.plot_freq)
-        ptminfid = file(os.path.join(svpath, svfn + '.phimin'), 'w')
-        ptmaxfid = file(os.path.join(svpath, svfn + '.phimax'), 'w')
-        ptazmfid = file(os.path.join(svpath, svfn + '.azimuth'), 'w')
-        ptskwfid = file(os.path.join(svpath, svfn + '.skew'), 'w')
-        ptellfid = file(os.path.join(svpath, svfn + '.ellipticity'), 'w')
-        tprmgfid = file(os.path.join(svpath, svfn + '.tipper_mag_real'), 'w')
-        tprazfid = file(os.path.join(svpath, svfn + '.tipper_ang_real'), 'w')
-        tpimgfid = file(os.path.join(svpath, svfn + '.tipper_mag_imag'), 'w')
-        tpiazfid = file(os.path.join(svpath, svfn + '.tipper_ang_imag'), 'w')
-        statnfid = file(os.path.join(svpath, svfn + '.station'), 'w')
-        tablefid = file(os.path.join(svpath, svfn + '.table'), 'w')
+        ptminfid = open(os.path.join(svpath, svfn + '.phimin'), 'w')
+        ptmaxfid = open(os.path.join(svpath, svfn + '.phimax'), 'w')
+        ptazmfid = open(os.path.join(svpath, svfn + '.azimuth'), 'w')
+        ptskwfid = open(os.path.join(svpath, svfn + '.skew'), 'w')
+        ptellfid = open(os.path.join(svpath, svfn + '.ellipticity'), 'w')
+        tprmgfid = open(os.path.join(svpath, svfn + '.tipper_mag_real'), 'w')
+        tprazfid = open(os.path.join(svpath, svfn + '.tipper_ang_real'), 'w')
+        tpimgfid = open(os.path.join(svpath, svfn + '.tipper_mag_imag'), 'w')
+        tpiazfid = open(os.path.join(svpath, svfn + '.tipper_ang_imag'), 'w')
+        statnfid = open(os.path.join(svpath, svfn + '.station'), 'w')
+        tablefid = open(os.path.join(svpath, svfn + '.table'), 'w')
 
         for ly in range(ylist.shape[0]):
             for lx in range(xlist.shape[0]):

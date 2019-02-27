@@ -499,7 +499,7 @@ class PlotMultipleResponses(mtpl.PlotSettings):
         nrows = index
 
         # set height ratios of the subplots
-        hr = [2, 1.5] + [1] * (len(pdict.keys()) - 2)
+        hr = [2, 1.5] + [1] * (len(list(pdict.keys())) - 2)
 
         #        if self.plot_style == '1':
         #            self.plotlist = []
@@ -855,7 +855,7 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                 axp.set_xticklabels(tklabels,
                                     fontdict={'size': self.font_size})
 
-                if len(pdict.keys()) > 2:
+                if len(list(pdict.keys())) > 2:
                     plt.setp(axp.xaxis.get_ticklabels(), visible=False)
                     plt.setp(axp.xaxis.get_label(), visible=False)
 
@@ -1414,7 +1414,7 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                               color=(.25, .25, .25),
                               lw=.25)
 
-                    if len(pdict.keys()) > 2:
+                    if len(list(pdict.keys())) > 2:
                         plt.setp(axp2.xaxis.get_ticklabels(), visible=False)
                         plt.setp(axp2.xaxis.get_label(), visible=False)
 
@@ -2117,7 +2117,7 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                             which='both',
                             color=(.25, .25, .25),
                             lw=.25)
-            if len(pdict.keys()) > 2:
+            if len(list(pdict.keys())) > 2:
                 plt.setp(self.axpxy.xaxis.get_ticklabels(), visible=False)
                 self.axpxy.set_xlabel('')
 
@@ -2132,7 +2132,7 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                             lw=.25)
             plt.setp(self.axpyx.yaxis.get_ticklabels(), visible=False)
 
-            if len(pdict.keys()) > 2:
+            if len(list(pdict.keys())) > 2:
                 plt.setp(self.axpyx.xaxis.get_ticklabels(), visible=False)
                 self.axpyx.set_xlabel('')
 
@@ -2225,7 +2225,7 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                                 which='both',
                                 color=(.25, .25, .25),
                                 lw=.25)
-                if len(pdict.keys()) > 3:
+                if len(list(pdict.keys())) > 3:
                     plt.setp(self.axpxy.xaxis.get_ticklabels(), visible=False)
                     self.axpxy.set_xlabel('')
                     plt.setp(self.axpyx.xaxis.get_ticklabels(), visible=False)

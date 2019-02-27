@@ -22,7 +22,7 @@ from scipy.interpolate import griddata
 
 import mtpy
 import mtpy.modeling.occam2d_rewrite as occam2d
-from imaging_base import ImagingBase, ParameterError, ImagingError
+from .imaging_base import ImagingBase, ParameterError, ImagingError
 from mtpy.core import mt as mt
 from mtpy.utils.decorator import deprecated
 from mtpy.utils.mtpylog import MtPyLog
@@ -151,7 +151,7 @@ class Depth2D(ImagingBase):
         pr.generate_profile()
         # pr.plot_profile(station_id=[0, 4])
         
-        if 'fontsize' in kwargs.keys():
+        if 'fontsize' in list(kwargs.keys()):
             fontsize = kwargs['fontsize']
         else:
             fontsize = 16
@@ -241,13 +241,14 @@ class Depth3D(ImagingBase):
     Note that the values of periods within tolerance (ptol=0.1) are considered as equal.
     Setting a smaller value for ptol may result less MT sites data included.
     """
-    def __init__(self, data=None, period=None, rho='det', ptol=0.1):
+    def __init__(self, edis=None, period=None, rho='det', ptol=0.1):
         super(Depth3D, self).__init__()
         self._rho = None
         self._period = None
         self._period_fmt = None
         self._ptol = ptol
-        self.set_data(data)
+        self.set_data(edis)
+        #self._set_edis(edis)
         self.set_rho(rho)
         self.set_period(period)
 
@@ -278,7 +279,8 @@ class Depth3D(ImagingBase):
                                                                                  self._period,
                                                                                  whichrho=self._rho, ptol=self._ptol)
 
-        if check_period_values(periods) is False:
+        if check_period_values(periods, ptol=self._ptol) is False:
+
             # plt.plot(periods, "-^")
             # title = "ERROR: Periods are NOT equal !!!"
             # plt.title(title, )
@@ -296,6 +298,7 @@ class Depth3D(ImagingBase):
         else:
             # good normal case
             period0 = periods[0]
+            print(("plotting for period %s" %period0))
 
             if period0 < 1.0:
                 # kept 4 signifiant digits - nonzero digits
@@ -591,6 +594,7 @@ def get_penetration_depth_generic(edi_file_list, period_sec, whichrho='det', pto
             mt_obj = mt.MT(afile)
         elif isinstance(afile, mt.MT):
             mt_obj = afile
+            afile = mt_obj.fn
         else:
             raise Exception("Unsupported list of objects %s" % type(afile))
 
@@ -680,7 +684,7 @@ def check_period_values(period_list, ptol=0.1):
 
     upper_bound = p0 * (1 + ptol)
     lower_bound = p0 * (1 - ptol)
-    if all((per > lower_bound and (per < upper_bound)) for per in period_list[1:]):
+    if all((per > lower_bound) and (per < upper_bound) for per in period_list[1:]):
         return True
     else:
         return False

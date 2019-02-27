@@ -14,7 +14,7 @@ Revision History:
 
 """
 
-from __future__ import print_function
+
 
 import glob
 import logging
@@ -133,7 +133,7 @@ class ShapeFilesCreator(EdiCollection):
         # apply formula to generate ellipses
 
         ellipse_list = []
-        for i in xrange(0, len(azimuth)):
+        for i in range(0, len(azimuth)):
             x = x0[i] + height[i] * np.cos(theta) * np.cos(azimuth[i]) - \
                 width[i] * np.sin(theta) * np.sin(azimuth[i])
             y = y0[i] + height[i] * np.cos(theta) * np.sin(azimuth[i]) + \
@@ -401,7 +401,7 @@ def create_ellipse_shp_from_csv(csvfile, esize=0.03, target_epsg_code=4283):
     # apply formula to generate ellipses
 
     ellipse_list = []
-    for i in xrange(0, len(azimuth)):
+    for i in range(0, len(azimuth)):
         x = x0[i] + height[i] * np.cos(theta) * np.cos(azimuth[i]) - \
             width[i] * np.sin(theta) * np.sin(azimuth[i])
         y = y0[i] + height[i] * np.cos(theta) * np.sin(azimuth[i]) + \

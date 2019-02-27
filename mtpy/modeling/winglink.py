@@ -76,7 +76,7 @@ def read_output_file(output_fn):
             station = line.rstrip().split(':')[1][1:]
             idict[station] = {}
             stationlst.append(station)
-            print 'Reading in station: ', station
+            print('Reading in station: ', station)
             idict[station]['index'] = index
             index += 1
             for key in dkeys:
@@ -106,7 +106,7 @@ def read_output_file(output_fn):
     # data points.
 
     data = {}
-    for st in idict.keys():
+    for st in list(idict.keys()):
         data[st] = {}
         data[st]['station'] = st
         data[st]['index'] = int(idict[st]['index'])
@@ -353,11 +353,11 @@ class PlotResponse():
         wl_data = read_output_file(self.wl_data_fn)
 
         # create station list
-        self.station_list = wl_data.keys()
+        self.station_list = list(wl_data.keys())
 
         #---------------plot each respones in a different figure---------------
         if self.plot_type == '1':
-            pstation_list = range(len(self.station_list))
+            pstation_list = list(range(len(self.station_list)))
 
         else:
             if type(self.plot_type) is not list:
@@ -897,7 +897,7 @@ class PlotResponse():
             if close_fig == 'y':
                 plt.close(fdict['fig'])
 
-            print "saved figure to {0}".format(os.path.join(save_path, svfn))
+            print("saved figure to {0}".format(os.path.join(save_path, svfn)))
 
 
 #==============================================================================
@@ -1059,7 +1059,7 @@ class PlotPseudoSection(object):
             nr = 1
 
         wl_data = read_output_file(self.wl_data_fn)
-        stations = wl_data.keys()
+        stations = list(wl_data.keys())
 
         #--> need to sort the stations to be in order
         slst = np.array([(ss, wl_data[ss]['index']) for ss in stations],
@@ -1067,7 +1067,7 @@ class PlotPseudoSection(object):
         slst.sort(order='index')
         stations = slst['station']
 
-        ns = len(wl_data.keys())
+        ns = len(list(wl_data.keys()))
         #--> get periods in decreasing order for easier plotting
         periods = []
         for ss in stations:
@@ -1630,7 +1630,7 @@ class PlotPseudoSection(object):
             pass
 
         self.fig_fn = save_fn
-        print 'Saved figure to: ' + self.fig_fn
+        print('Saved figure to: ' + self.fig_fn)
 
     def update_plot(self):
         """
@@ -1826,7 +1826,7 @@ class PlotMisfitPseudoSection(object):
         self.misfit_tip_real = np.zeros((n_periods, n_stations))
         self.misfit_tip_imag = np.zeros((n_periods, n_stations))
 
-        for rr, r_dict in zip(range(n_stations), resp_obj.resp):
+        for rr, r_dict in zip(list(range(n_stations)), resp_obj.resp):
             self.misfit_te_res[:, rr] = r_dict['te_res'][1]
             self.misfit_tm_res[:, rr] = r_dict['tm_res'][1]
             self.misfit_te_phase[:, rr] = r_dict['te_phase'][1]
@@ -2108,7 +2108,7 @@ class PlotMisfitPseudoSection(object):
             pass
 
         self.fig_fn = save_fn
-        print 'Saved figure to: ' + self.fig_fn
+        print('Saved figure to: ' + self.fig_fn)
 
     def update_plot(self):
         """

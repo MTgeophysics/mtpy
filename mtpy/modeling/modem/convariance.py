@@ -66,7 +66,7 @@ class Covariance(object):
                                       '| 8. Two integer layer indices and Nx x Ny block of masks, repeated as needed.|',
                                       '+{0}+'.format('-' * 77)])
 
-        for key in kwargs.keys():
+        for key in list(kwargs.keys()):
             if hasattr(self, key):
                 setattr(self, key, kwargs[key])
             else:
@@ -89,7 +89,7 @@ class Covariance(object):
             if save_path is None:
                 save_path = os.path.dirname(model_fn)
 
-            print 'Reading {0}'.format(model_fn)
+            print('Reading {0}'.format(model_fn))
             self.grid_dimensions = mod_obj.res_model.shape
             if self.mask_arr is None:
                 self.mask_arr = np.ones_like(mod_obj.res_model)
@@ -165,9 +165,10 @@ class Covariance(object):
                     cline += '{0:^3.0f}'.format(write_mask_arr[nn, ee, zz])
                 clines.append(cline + '\n')
 
-        cfid = file(self.cov_fn, 'w')
-        cfid.writelines(clines)
-        cfid.close()
+        with open(self.cov_fn, 'w') as cfid:
+            cfid.writelines(clines)
+
+        # not needed cfid.close()
 
         self._logger.info('Wrote covariance file to {0}'.format(self.cov_fn))
 

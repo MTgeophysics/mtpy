@@ -25,7 +25,7 @@ setup_kwargs['entry_points'] = {'console_scripts':
                      'modem_pyqt = mtpy.gui.modem_pyqt:main',
                      'modem_plot_response = mtpy.gui.modem_plot_response:main',
                      'modem_plot_pt_maps = mtpy.gui.modem_plot_pt_maps:main',
-			    'modem_mesh_builder = mtpy.gui.modem_mesh_builder:main',
+                     'modem_mesh_builder = mtpy.gui.modem_mesh_builder:main',
                      'modem2vtk = mtpy.utils.modem2vtk:main',
                      'occam1d_gui = mtpy.gui.occam1d_gui:main',
                      'edi_editor = mtpy.gui.edi_editor:main']}
@@ -52,6 +52,9 @@ setup_kwargs['packages'] = [
                             'mtpy.imaging',
                             'mtpy.utils',
                             'mtpy.modeling',
+                            'mtpy.modeling.modem',
+                            'mtpy.contrib',
+                            'mtpy.contrib.netcdf',
                             'mtpy.processing',
                             'mtpy.analysis',
                             #'mtpy.test',
@@ -63,10 +66,8 @@ setup_kwargs['packages'] = [
 #                                     'scipy>=0.14.0',
 #                                     'matplotlib>=1.3.1']
 
-	
-
 setup(name="mtpy",
-	version='1.0.dev',
+	version='1.0.01',
 	description=("Python toolkit for standard MT data processing."),
 	license="GNU GENERAL PUBLIC LICENSE v3",
 	**setup_kwargs)

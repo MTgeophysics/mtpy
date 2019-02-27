@@ -436,7 +436,7 @@ class PlotMTResponse(PlotSettings):
 
         self.plot_yn = 'y'
 
-        for key in kwargs.keys():
+        for key in list(kwargs.keys()):
             if hasattr(self, key):
                 setattr(self, key, kwargs[key])
             else:
@@ -480,12 +480,12 @@ class PlotMTResponse(PlotSettings):
 
         if self.plot_tipper.find('y') == 0:
             if np.all(self.Tipper.tipper == 0 + 0j) or self.Tipper is None:
-                print 'No Tipper data for station {0}'.format(self.station)
+                print('No Tipper data for station {0}'.format(self.station))
                 self.plot_tipper = 'n'
 
         if self.plot_pt == 'y':
             if np.all(self.Z.z == 0 + 0j) or self.Z is None:
-                print 'No Tipper data for station {0}'.format(self.station)
+                print('No Tipper data for station {0}'.format(self.station))
                 self.plot_pt = 'n'
 
         # set x-axis limits from short period to long period
@@ -530,7 +530,7 @@ class PlotMTResponse(PlotSettings):
         nrows = index
 
         # set height ratios of the subplots
-        hr = [2, 1.5] + [1] * (len(pdict.keys()) - 2)
+        hr = [2, 1.5] + [1] * (len(list(pdict.keys())) - 2)
 
         # create a grid to place the figures into, set to have 2 rows and 2
         # columns to put any of the 4 components.  Make the phase plot
@@ -1088,7 +1088,7 @@ class PlotMTResponse(PlotSettings):
                            color=(.25, .25, .25),
                            lw=.25)
 
-            if len(pdict.keys()) > 2:
+            if len(list(pdict.keys())) > 2:
                 plt.setp(self.axp2.xaxis.get_ticklabels(), visible=False)
                 plt.setp(self.axp2.xaxis.get_label(), visible=False)
 
@@ -1224,7 +1224,7 @@ class PlotMTResponse(PlotSettings):
             pass
 
         self.fig_fn = save_fn
-        print 'Saved figure to: ' + self.fig_fn
+        print('Saved figure to: ' + self.fig_fn)
 
     def update_plot(self):
         """

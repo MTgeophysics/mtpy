@@ -19,7 +19,7 @@ import mtpy.utils.exceptions as MTex
 
 
 def run():
-    print
+    print()
     if len(sys.argv) < 4:
         sys.exit('\nNeed 3 arguments: \n\n '
                  '<path to files> <output directory> <integer downsampling factor>\n \n')
@@ -35,7 +35,7 @@ def run():
     try:
         outpath = op.abspath(op.join(os.curdir, outpath))
         if inpath == outpath:
-            print 'Output directory cannot be the same as the input file location'
+            print('Output directory cannot be the same as the input file location')
             raise
 
         if not op.exists(outpath):
@@ -46,8 +46,8 @@ def run():
         if not os.access(outpath, os.W_OK):
             raise
     except:
-        print 'Cannot generate writable output directory {0} - using'\
-            ' generic location "decimated" instead'.format(outpath)
+        print('Cannot generate writable output directory {0} - using'\
+            ' generic location "decimated" instead'.format(outpath))
         outpath = os.path.join(inpath, 'decimated')
         if not op.exists(outpath):
             os.makedirs(outpath)
@@ -78,7 +78,7 @@ def run():
             header = MTfh.read_ts_header(infile)
         except MTex.MTpyError_ts_data:
             # no TS data file
-            print '\n\tWARNING - not a valid MTpy TS data file: {0} '.format(infile)
+            print('\n\tWARNING - not a valid MTpy TS data file: {0} '.format(infile))
             header = None
             # continue
 
@@ -118,7 +118,7 @@ def run():
             #old_data = np.array(old_data)
 
         except:
-            print '\tERROR - file does not contain single column data: {0} - SKIPPED'.format(infile)
+            print('\tERROR - file does not contain single column data: {0} - SKIPPED'.format(infile))
             continue
 
         #len_data = len(old_data)
@@ -129,10 +129,10 @@ def run():
             # print '\tWARNING - header shows wrong number of samples: {0}
             # instead of {1}'.format(n_samples,len_data)
 
-        print 'Decimating file {0} by factor {1} '.format(infile, decimation_factor)
+        print('Decimating file {0} by factor {1} '.format(infile, decimation_factor))
 
         if n_samples % decimation_factor != 0:
-            print '\tWarning - decimation of file not continuous due to mismatching decimation factor'
+            print('\tWarning - decimation of file not continuous due to mismatching decimation factor')
 
         #new_data = old_data[::decimation_factor]
 
@@ -164,8 +164,8 @@ def run():
         # np.savetxt(Fout,new_data)
         Fout.close()
 
-    print '\nOutput files written to {0}'.format(outpath)
-    print '\n...Done\n'
+    print('\nOutput files written to {0}'.format(outpath))
+    print('\n...Done\n')
 
 
 if __name__ == '__main__':

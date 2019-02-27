@@ -71,8 +71,8 @@ def main():
             if not os.access(outpath, os.W_OK):
                 raise
         except:
-            print 'Cannot generate writable output directory {0} - using generic'\
-                ' location "ascii" instead'.format(outpath)
+            print('Cannot generate writable output directory {0} - using generic'\
+                ' location "ascii" instead'.format(outpath))
             outdir = None
     if outdir is None:
         outpath = op.join(os.curdir, 'ascii')
@@ -122,13 +122,13 @@ def main():
 
         for idx_fn, fn in enumerate(lo_infiles):
 
-            print 'reading file {0}'.format(fn)
+            print('reading file {0}'.format(fn))
             try:
                 outfn = MTms.convertfile_miniseed2ts(fn, lo_outfiles[idx_fn])
 
-                print 'wrote file(s) {0}'.format(outfn)
+                print('wrote file(s) {0}'.format(outfn))
             except:
-                print 'Warning - file {0} is not in valid miniseed  format!!!'.format(fn)
+                print('Warning - file {0} is not in valid miniseed  format!!!'.format(fn))
                 continue
 
 

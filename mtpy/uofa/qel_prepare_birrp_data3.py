@@ -25,12 +25,12 @@ def main():
     """
 
     if len(sys.argv) < 8:
-        print """\n use 7 arguments:
+        print("""\n use 7 arguments:
         <data directory sta A> <data directory sta B> <data directory sta C>
         <channelsA> <channelsB> <channelsC>
         <start time yymmdd-HHhMM> [<destination folder>]
 
-        """
+        """)
         sys.exit()
     # deal with command line arguments
     dataDirA = sys.argv[1]
@@ -48,7 +48,7 @@ def main():
     except:
         dst = op.join(op.abspath(os.curdir), 'birrpdata_6h')
 
-    print
+    print()
     if not op.isdir(dst):
         os.makedirs(dst)
     for datafile in lo_datafiles:
@@ -142,10 +142,10 @@ def run(dataDirA, dataDirB, dataDirC, channelsA,
         print("\n WARNING - could not find overlapping data in given directories\n")
         pass
 
-    print staAsrc, starttimeA, staB1src, staB2src
+    print(staAsrc, starttimeA, staB1src, staB2src)
 
     base = op.abspath(os.curdir)
-    print base
+    print(base)
     unpack_and_copy(staAsrc, op.join(dst, "dataA"))
     os.chdir(base)
 
@@ -252,7 +252,7 @@ def prepare_data(dst, channelsA, channelsB, channelsC):
 
     base = op.abspath(os.curdir)
     os.chdir(dst)
-    print 'working in directory {0}'.format(os.path.abspath(os.curdir))
+    print('working in directory {0}'.format(os.path.abspath(os.curdir)))
 
     fileA = 'dataA'
     fileB1 = 'dataB1'
@@ -272,31 +272,31 @@ def prepare_data(dst, channelsA, channelsB, channelsC):
     timespanA = round(A1_int - A0_int + (A1_frac - A0_frac) * 1e-6, 5)
     no_samplesA = int(timespanA * 1e6) / 2000 + 1
 
-    print 'Info file A (from, to, samples): ', "{0:.6f}".format(startA), "{0:.6f}".format(endA), no_samplesA
-    print
+    print('Info file A (from, to, samples): ', "{0:.6f}".format(startA), "{0:.6f}".format(endA), no_samplesA)
+    print()
 
-    print 'writing data to single column files...'
+    print('writing data to single column files...')
 
     tA = time.gmtime(startA)
     filebase = '{0:04d}{1:02d}{2:02d}-{3:02d}h{4:02d}'.format(
         tA[0], tA[1], tA[2], tA[3], tA[4])
 
-    print 'extract time axis from file {0}'.format(fileA)
+    print('extract time axis from file {0}'.format(fileA))
     os.system(
         r"awk '{print $5}'" +
         " {0} > {1}.time &".format(
             fileA,
             filebase))
 
-    print 'forking child 1 ...'
+    print('forking child 1 ...')
 
     pid = os.fork()
     if pid == 0:
-        print 'child 1 ({0}) takes over station A '.format(os.getpid())
+        print('child 1 ({0}) takes over station A '.format(os.getpid()))
 
         for idx_c, ch in enumerate(lo_channels[:-1]):
             if idx_c in channelsA:
-                print 'pid ({0})'.format(os.getpid()), idx_c, ch
+                print('pid ({0})'.format(os.getpid()), idx_c, ch)
 
                 fnA = '{0}.staA.{1}'.format(filebase, ch)
 
@@ -317,15 +317,15 @@ def prepare_data(dst, channelsA, channelsB, channelsC):
                         else:
                             F.write('{0:.4f}\n'.format(d))
                 # np.savetxt(fnA,data,fmt='%.2f')
-                print 'file {0} done'.format(fnA)
+                print('file {0} done'.format(fnA))
         os._exit(0)
 
     if pid > 0:
-        print 'forking child 2 ...'
+        print('forking child 2 ...')
         pid2 = os.fork()
         if pid2 > 0:
             child2 = pid2
-            print 'parent ({0}) builds B'.format(os.getpid())
+            print('parent ({0}) builds B'.format(os.getpid()))
             Bdata_section = build_section(
                 fileB1,
                 fileB2,
@@ -337,7 +337,7 @@ def prepare_data(dst, channelsA, channelsB, channelsC):
                 filebase +
                 '.staB')
         else:
-            print 'child 2 ({0}) builds C'.format(os.getpid())
+            print('child 2 ({0}) builds C'.format(os.getpid()))
             Cdata_section = build_section(
                 fileC1,
                 fileC2,
@@ -413,7 +413,7 @@ def build_section(fileB1, fileB2, channels, A0_int,
         t1_int = int(startB2)
         t1_frac = int(np.round((startB2 - t1_int) * 1e6 / 2000)) * 2000
 
-        print "end {1}: {0:.6f}".format(endB1, fileB1), "start {1}: {0:.6f}".format(startB2, fileB2)
+        print("end {1}: {0:.6f}".format(endB1, fileB1), "start {1}: {0:.6f}".format(startB2, fileB2))
         # print t0_int,t0_frac,t1_int,t1_frac
 
         gap = round(t1_int - t0_int + (t1_frac - t0_frac) * 1e-6, 5)
@@ -424,9 +424,9 @@ def build_section(fileB1, fileB2, channels, A0_int,
         # no_samples,'{0:.6f}'.format(t0_frac),'{0:.6f}'.format(t0_frac+gap*1e-6)
         taxis = (np.arange(no_samples + 1) * 2000 + t0_frac)[1:]
         taxis = taxis * 1e-6 + t0_int
-        print
+        print()
 
-        print 'bridging gap  ', "{0:.6f}".format(taxis[0]), ' --> ', "{0:.6f}".format(taxis[-1]), '  ', len(taxis), 'samples'
+        print('bridging gap  ', "{0:.6f}".format(taxis[0]), ' --> ', "{0:.6f}".format(taxis[-1]), '  ', len(taxis), 'samples')
 
         # and the same for the actual values...:
 
@@ -455,15 +455,15 @@ def build_section(fileB1, fileB2, channels, A0_int,
         gapAB1 = round(t0_int - A0_int + (t0_frac - A0_frac) * 1e-6, 5)
         no_samplesAB1 = int(gapAB1 * 1e6) / 2000 + 1
 
-        print '\ntake the last {0} samples from {1}'.format(no_samplesAB1, fileB1)
+        print('\ntake the last {0} samples from {1}'.format(no_samplesAB1, fileB1))
 
         gapAB2 = round(A1_int - t1_int + (A1_frac - t1_frac) * 1e-6, 5)
         no_samplesAB2 = int(gapAB2 * 1e6) / 2000 + 1
 
-        print 'take  {0} samples from gap'.format(len(bridge_data))
-        print 'take the first {0} samples from {1}'.format(no_samplesAB2, fileB2)
-        print '(total samples: {0})'.format(no_samplesAB1 + len(bridge_data) + no_samplesAB2)
-        print
+        print('take  {0} samples from gap'.format(len(bridge_data)))
+        print('take the first {0} samples from {1}'.format(no_samplesAB2, fileB2))
+        print('(total samples: {0})'.format(no_samplesAB1 + len(bridge_data) + no_samplesAB2))
+        print()
         # sys.exit()
 
         dataOut = np.zeros((no_samplesA, 4), np.float32)
@@ -488,25 +488,25 @@ def build_section(fileB1, fileB2, channels, A0_int,
                     # print val
                     pass
             except:
-                print val, idx, samples2skip
-                print np.array([float(val[0]), float(val[1]), float(val[2]), float(val[3]), np.float64(val[4])])
+                print(val, idx, samples2skip)
+                print(np.array([float(val[0]), float(val[1]), float(val[2]), float(val[3]), np.float64(val[4])]))
                 sys.exit()
 
             idx += 1
 
-        print val
+        print(val)
 
         # sys.exit()
 
         # assume end is in B2
-        print 'interpolating gap ... '
+        print('interpolating gap ... ')
         dataOut[no_samplesAB1:no_samplesAB1 + len(bridge_data)] = bridge_data
         # print ' waiting for child 1'
         # os.waitpid(child, 0)
 
         # else:
         B2data = np.zeros((no_samplesAB2, 4), np.float32)
-        print 'reading file data B2/C2 ... ({0})'.format(os.getpid())
+        print('reading file data B2/C2 ... ({0})'.format(os.getpid()))
         idx = 0
         # idx,val in enumerate(GetFirstLine(fileB2,no_samplesAB2)):
         for line in open(fileB2):
@@ -526,7 +526,7 @@ def build_section(fileB1, fileB2, channels, A0_int,
 
     for idx_c, ch in enumerate(lo_channels[:-1]):
         if idx_c in channels:
-            print 'pid ({0})'.format(os.getpid()), idx_c, ch
+            print('pid ({0})'.format(os.getpid()), idx_c, ch)
             fnB = '{0}.{1}'.format(filebase, ch)
             data = (dataOut[:, idx_c])
 
@@ -540,7 +540,7 @@ def build_section(fileB1, fileB2, channels, A0_int,
                         F.write('{0:.10f}\n'.format(d))
                         # F.write('{0:.2f}\n'.format(d))
 
-            print 'file {0} done'.format(fnB)
+            print('file {0} done'.format(fnB))
 
 
 def unpack_and_copy(src, dst):
@@ -548,7 +548,7 @@ def unpack_and_copy(src, dst):
     base = op.abspath(os.curdir)
 
     os.chdir(src)
-    print op.abspath(os.curdir)
+    print(op.abspath(os.curdir))
 
     lo_files = sorted(os.listdir('.'))
     for f in lo_files:
@@ -558,14 +558,14 @@ def unpack_and_copy(src, dst):
                 #os.system("bzcat -k -f {0} > ".format(f))
             except:
                 continue
-            print 'unpacked {0}'.format(f)
+            print('unpacked {0}'.format(f))
 
     pak2bin_string = op.join(scriptbase, "Pak2Bin")
     os.system('"{0}" 00000000.pak'.format(pak2bin_string))
     interp_string = op.join(scriptbase, "InterpAdl")
     os.system('"{0}" Pak2Bin-300-Data.bin o8'.format(interp_string))
     shutil.move("ELPakData.interp500.adl", dst)
-    print 'moving file {0} to {1}'.format("ELPakData.interp500.adl", dst)
+    print('moving file {0} to {1}'.format("ELPakData.interp500.adl", dst))
 
     files = sorted(os.listdir('.'))
     files2kill = [i for i in files if i.endswith('.pak')]

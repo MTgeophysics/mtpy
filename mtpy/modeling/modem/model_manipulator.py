@@ -463,7 +463,7 @@ class ModelManipulator(Model):
     #        print self.res_value
     def set_res_value(self, val):
         self.res_value = 10 ** val
-        print 'set resistivity to ', self.res_value
+        print('set resistivity to ', self.res_value)
 
     def _on_key_callback(self, event):
         """
@@ -479,10 +479,10 @@ class ModelManipulator(Model):
 
             if self.depth_index > len(self.grid_z) - 1:
                 self.depth_index = len(self.grid_z) - 1
-                print 'already at deepest depth'
+                print('already at deepest depth')
 
-            print 'Plotting Depth {0:.3f}'.format(self.grid_z[self.depth_index] / \
-                                                  self.dscale) + '(' + self.map_scale + ')'
+            print('Plotting Depth {0:.3f}'.format(self.grid_z[self.depth_index] / \
+                                                  self.dscale) + '(' + self.map_scale + ')')
 
             self.redraw_plot()
         # go up a layer on push of - key
@@ -492,8 +492,8 @@ class ModelManipulator(Model):
             if self.depth_index < 0:
                 self.depth_index = 0
 
-            print 'Plotting Depth {0:.3f} '.format(self.grid_z[self.depth_index] / \
-                                                   self.dscale) + '(' + self.map_scale + ')'
+            print('Plotting Depth {0:.3f} '.format(self.grid_z[self.depth_index] / \
+                                                   self.dscale) + '(' + self.map_scale + ')')
 
             self.redraw_plot()
 
@@ -507,12 +507,12 @@ class ModelManipulator(Model):
         elif self.event_change_depth.key == 'a':
             try:
                 if self.depth_index == 0:
-                    print 'No layers above'
+                    print('No layers above')
                 else:
                     self.res_model[:, :, self.depth_index] = \
                         self.res_model[:, :, self.depth_index - 1]
             except IndexError:
-                print 'No layers above'
+                print('No layers above')
 
             self.redraw_plot()
 
@@ -522,7 +522,7 @@ class ModelManipulator(Model):
                 self.res_model[:, :, self.depth_index] = \
                     self.res_model[:, :, self.depth_index + 1]
             except IndexError:
-                print 'No more layers below'
+                print('No more layers below')
 
             self.redraw_plot()
 

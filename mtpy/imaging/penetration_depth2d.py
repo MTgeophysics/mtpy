@@ -149,14 +149,14 @@ def barplot_multi_station_penentration_depth(
 if __name__ == "__main__old":
 
     if len(sys.argv) < 2:
-        print("Usage: %s edi_dir" % sys.argv[0])
+        print(("Usage: %s edi_dir" % sys.argv[0]))
         print ("python examples/penetration_depth2d.py tests/data/edifiles/ 0 1 10 20 30 40 50 59")
         sys.exit(1)
     elif os.path.isdir(sys.argv[1]):
         edi_dir = sys.argv[1]  # the first argument is path2_edi_dir
         # the second,.... will be period index list
         period_index_list = sys.argv[2:]
-        print ("period_index_list = {}".format(period_index_list))
+        print(("period_index_list = {}".format(period_index_list)))
 
         # the rho zcomponent can be det, zxy zyx
         plot2Dprofile(edi_dir, period_index_list, zcomponent='det')

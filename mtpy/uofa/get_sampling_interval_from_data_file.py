@@ -32,10 +32,10 @@ def main():
         if length <= 0:
             raise
     except:
-        print 'Could not understand second argument - must be a length in seconds (int/float) - set to 3600 '
+        print('Could not understand second argument - must be a length in seconds (int/float) - set to 3600 ')
         length = 3600
 
-    print MTfh.get_sampling_interval_fromdatafile(filename, length=length)
+    print(MTfh.get_sampling_interval_fromdatafile(filename, length=length))
 
 
 if __name__ == '__main__':

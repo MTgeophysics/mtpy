@@ -1,15 +1,15 @@
 matplotlib>=2.0.2
-numpy
-PyYAML>=3.11
-geopandas
+obspy==1.1.0
+# numpy
 scipy
 pillow
-# pip cannot install pyqt
-#pyqt
 qtpy
 #GDAL
-obspy
+geopandas
 netcdf4
 #networkx
 numpydoc>=0.7.0
 # basemap
+pytest
+flake8
+pyyaml

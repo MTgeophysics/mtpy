@@ -1,4 +1,4 @@
-from __future__ import print_function
+
 
 import os
 from unittest import TestCase
@@ -10,7 +10,7 @@ from mtpy.gui.SmartMT.visualization import VisualizationBase
 from tests import EDI_DATA_DIR
 
 qtpy = pytest.importorskip("qtpy")
-pytestmark = pytest.mark.skipif(os.name == "posix" and 'DISPLAY' not in os.environ)
+pytestmark = pytest.mark.skipif(os.name == "posix" and 'DISPLAY' not in os.environ, reason="Not Run in posix with Display not set")
 
 import random
 import sys

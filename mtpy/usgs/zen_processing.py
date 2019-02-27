@@ -18,7 +18,7 @@ import time
 import datetime
 import os
 import sys
-from cStringIO import StringIO
+from io import StringIO
 
 import mtpy.utils.filehandling as mtfh
 import mtpy.processing.birrp as birrp
@@ -75,7 +75,7 @@ class BIRRP_processing(birrp.BIRRP_Parameters):
                                 '2844', '2854']
         self._max_nread = 20000000
         
-        for key in kwargs.keys():
+        for key in list(kwargs.keys()):
             setattr(self, key, kwargs[key])
                                 
  
@@ -210,17 +210,17 @@ class BIRRP_processing(birrp.BIRRP_Parameters):
                     self.rrfn_list.append(list(r_list[np.where(r_list != '')]))
                     
             else:
-                print('Not enough points {0}'.format(nread_ii))
-                print('skipping time block {0} for sampling rate {1}'.format(
+                print(('Not enough points {0}'.format(nread_ii)))
+                print(('skipping time block {0} for sampling rate {1}'.format(
                       time.strftime(datetime_fmt, time.localtime(start_dt)),
-                      -self.deltat))
+                      -self.deltat)))
 
         # need to check for the number of points to be read in, there is 
         # a memory max, for this computer the max is self._max_nread   
         print sum(self.nread, self._max_nread)
         if sum(self.nread) > self._max_nread:
             self.nread[-1] = self._max_nread-sum(self.nread[0:-1])
-            print 'processing {0} points'.format(sum(self.nread))
+            print('processing {0} points'.format(sum(self.nread)))
         
         try:
             self.mcomps = len(self.fn_list[0])
@@ -243,26 +243,26 @@ class BIRRP_processing(birrp.BIRRP_Parameters):
             self.hx_cal = cal_dict[str(hx)]
             self.rrhx_cal = cal_dict[str(hx)]
         except KeyError:
-            print 'Did not find HX calibration for {0}'.format(hx)
+            print('Did not find HX calibration for {0}'.format(hx))
             self.hx_cal = cal_dict['2284'] 
             self.rrhx_cal = cal_dict['2284'] 
-            print 'Setting calibration coil number to 2284 as default.'            
+            print('Setting calibration coil number to 2284 as default.')            
         #--> HY                                                 
         try:
             self.hy_cal = cal_dict[str(hy)]
             self.rrhy_cal = cal_dict[str(hy)]
         except KeyError:
-            print 'Did not find HY calibration for {0}'.format(hy)
+            print('Did not find HY calibration for {0}'.format(hy))
             self.hy_cal = cal_dict['2284'] 
             self.rrhy_cal = cal_dict['2284'] 
-            print 'Setting calibration coil number to 2284 as default.'            
+            print('Setting calibration coil number to 2284 as default.')            
         #--> HZ                                                 
         try:
             self.hz_cal = cal_dict[str(hz)]
         except KeyError:
-            print 'Did not find HZ calibration for {0}'.format(hz)
+            print('Did not find HZ calibration for {0}'.format(hz))
             self.hz_cal = cal_dict['2284'] 
-            print 'Setting calibration coil number to 2284 as default.'
+            print('Setting calibration coil number to 2284 as default.')
             
         return self.__dict__
                         
@@ -273,7 +273,7 @@ class BIRRP_processing(birrp.BIRRP_Parameters):
         
         birrp_dict = mtcfg.read_configfile(birrp_config_fn)
         
-        for birrp_key in birrp_dict.keys():
+        for birrp_key in list(birrp_dict.keys()):
             setattr(self, birrp_key, birrp_dict[birrp_key])
         
 #==============================================================================
@@ -375,7 +375,7 @@ class Survey_Config(object):
         fn = os.path.join(self.save_path, '{0}.cfg'.format(self.station))
         mtcfg.write_dict_to_configfile({self.station:self.__dict__}, fn)
         
-        print 'Wrote survey config file to {0}'.format(fn)
+        print('Wrote survey config file to {0}'.format(fn))
         
         return fn
 
@@ -488,7 +488,7 @@ class Z3D_to_edi(object):
                                          ('start_dt', 'S22'),
                                          ('end_dt', 'S22')])
         
-        for key in kwargs.keys():
+        for key in list(kwargs.keys()):
             setattr(self, key, kwargs[key])
 
         
@@ -533,15 +533,15 @@ class Z3D_to_edi(object):
         if fn_count == 0:
             raise ValueError('No Z3D files found for in {0}'.format(station_dir))
         else:
-            print 'Found {0} Z3D files in {1}'.format(fn_count, station_dir)
+            print('Found {0} Z3D files in {1}'.format(fn_count, station_dir))
         
         # check for maximum number of blocks
-        for df_key in fn_block_dict.keys():
+        for df_key in list(fn_block_dict.keys()):
             date_dict = fn_block_dict[df_key]
             dates = sorted(date_dict.keys())
             if len(dates) == 0:
-                print 'No Z3D files found for {0} in {1}'.format(str(df_key),
-                                                                 station_dir)
+                print('No Z3D files found for {0} in {1}'.format(str(df_key),
+                                                                 station_dir))
 
             if len(dates) > self.max_blocks:
                 for pop_date in dates[-(len(dates)-self.max_blocks):]:
@@ -557,7 +557,7 @@ class Z3D_to_edi(object):
             self.coil_cal_path = coil_cal_path
             
         if self.coil_cal_path is None or not os.path.isdir(self.coil_cal_path):
-            print 'could not find calibration path {0}'.format(self.coil_cal_path)
+            print('could not find calibration path {0}'.format(self.coil_cal_path))
             self.calibration_dict = dict([(cc, '') for cc in 
                                           self._coil_calibration_list])
             return 
@@ -630,7 +630,7 @@ class Z3D_to_edi(object):
         
         # number of components to process        
         self.num_comp = n_comps
-        print ' --> processing {0} components'.format(self.num_comp)
+        print(' --> processing {0} components'.format(self.num_comp))
                     
         jj = 0  # index for fn_array            
         for df_key in self.df_list:
@@ -639,7 +639,7 @@ class Z3D_to_edi(object):
             except KeyError:
                 df_notch_dict = None
                 
-            for date_key in fn_dict[df_key].keys():
+            for date_key in list(fn_dict[df_key].keys()):
                 for fn in fn_dict[df_key][date_key]:
                     fn_arr[jj] = self._convert_z3d_to_mt_ts(fn, df_notch_dict)
                     
@@ -660,7 +660,7 @@ class Z3D_to_edi(object):
             self.rr_station_dir = rr_station_dir
             
         if self.rr_station_dir is not None:
-            print '*** Tranforming remote reference Z3D to mtpy format ***'
+            print('*** Tranforming remote reference Z3D to mtpy format ***')
             
             # get the maximum number of remote reference time series
             # multiply by 3 just to be save
@@ -676,7 +676,7 @@ class Z3D_to_edi(object):
                     except KeyError:
                         df_notch_dict = None
                         
-                    for date_key in rr_fn_dict[df_key].keys():
+                    for date_key in list(rr_fn_dict[df_key].keys()):
                         for fn in rr_fn_dict[df_key][date_key]:
                             rr_fn_arr[rr] = self._convert_z3d_to_mt_ts(fn,
                                                                        df_notch_dict,
@@ -724,8 +724,8 @@ class Z3D_to_edi(object):
         """
         num_files = 0
         num_comp = []
-        for df_key in fn_dict.keys(): 
-            for date_key in fn_dict[df_key].keys():
+        for df_key in list(fn_dict.keys()): 
+            for date_key in list(fn_dict[df_key].keys()):
                 # in case there is decimation, then we need to double the
                 # number of 256 files
                 if df_key == 256 and 16 in self.df_list:
@@ -782,9 +782,15 @@ class Z3D_to_edi(object):
             try:
                 cal_fn = self.calibration_dict[chn_num]
             except KeyError:
+<<<<<<< HEAD
                 print 'Did not find calibration for {0}, number {1}'.format(comp, 
                                                                             chn_num) 
                 cal_fn = self.calibration_dict['2284']
+=======
+                print('Did not find calibration for {0}, number {1}'.format(comp, 
+                                                                        chn_num)) 
+                cal_fn = None
+>>>>>>> 1fffa1ccb835c016f1be5c18b37b54bddf182ac2
                 
             if remote == False:
                 setattr(self.survey_config, comp, chn_num)
@@ -893,7 +899,7 @@ class Z3D_to_edi(object):
             self.max_blocks = max_blocks
             
         if not os.path.isdir(self.station_dir):
-            print '{0} is not a valid directory, check path.'.format(self.station_dir) 
+            print('{0} is not a valid directory, check path.'.format(self.station_dir)) 
             return None
             
         fn_arr = np.zeros(len(os.listdir(self.station_dir)),
@@ -973,7 +979,7 @@ class Z3D_to_edi(object):
             else:
                 count = 0
         except mtts.MT_TS_Error:
-            print '  Skipped {0}'.format(fn)
+            print('  Skipped {0}'.format(fn))
             count = 0
             
         return return_fn_arr, count
@@ -1085,9 +1091,9 @@ class Z3D_to_edi(object):
                             if abs(t_diff) > 5*3600:
                                 continue
                             else:
-                                print 'Using rr {0} for TS starting on {1}'.format(f_station,
-                                                                                   rr_arr['start_dt'])
-                                print 'For station TS starting on      {0}'.format(sdate)
+                                print('Using rr {0} for TS starting on {1}'.format(f_station,
+                                                                                   rr_arr['start_dt']))
+                                print('For station TS starting on      {0}'.format(sdate))
                         
                                 dt_arr = self._fill_birrp_fn_arr(rr_arr,
                                                                  remote=True)
@@ -1097,9 +1103,9 @@ class Z3D_to_edi(object):
                             if abs(t_diff) > 4*60:
                                 continue
                             else:
-                                print 'Using rr {0} for TS starting on {1}'.format(f_station,
-                                                                                   rr_arr['start_dt'])
-                                print 'For station TS starting on      {0}'.format(sdate)
+                                print('Using rr {0} for TS starting on {1}'.format(f_station,
+                                                                                   rr_arr['start_dt']))
+                                print('For station TS starting on      {0}'.format(sdate))
                         
                                 dt_arr = self._fill_birrp_fn_arr(rr_arr,
                                                                  remote=True)
@@ -1110,9 +1116,9 @@ class Z3D_to_edi(object):
                             if abs(t_diff) > 5*3600:
                                 continue
                             else:
-                                print 'Using rr {0} for TS starting on {1}'.format(f_station,
-                                                                                   rr_arr['start_dt'])
-                                print 'For station TS starting on      {0}'.format(sdate)
+                                print('Using rr {0} for TS starting on {1}'.format(f_station,
+                                                                                   rr_arr['start_dt']))
+                                print('For station TS starting on      {0}'.format(sdate))
                         
                                 dt_arr = self._fill_birrp_fn_arr(rr_arr,
                                                                  remote=True)
@@ -1169,7 +1175,7 @@ class Z3D_to_edi(object):
                                                                  'rr_{0}_{1:02}_cal_fn'.format(rr_b_arr['comp'], 
                                                                  rr_index-1))
                         except AttributeError:
-                            print 'Could not find calibration for {0}'.format(rr_b_arr['fn'])
+                            print('Could not find calibration for {0}'.format(rr_b_arr['fn']))
                             
                         rr_b_arr['rr_num'] = rr_index
                         rr_count += 1
@@ -1185,7 +1191,7 @@ class Z3D_to_edi(object):
                                 continue
                             if rr_b_arr['nread'] != rr_min_read:
                                 rr_b_arr['nskip'] = rr_n_skip
-                                print rr_b_arr['fn'], rr_n_skip
+                                print(rr_b_arr['fn'], rr_n_skip)
                         
                     # append the remote reference data to station data                                                                        
                     s_fn_birrp_arr = np.append(s_fn_birrp_arr, rr_birrp_fn_arr)
@@ -1268,7 +1274,7 @@ class Z3D_to_edi(object):
             
         script_fn_list = []            
         # loop through by keys, which should be sampling rates
-        df_keys = birrp_arr_dict.keys()
+        df_keys = list(birrp_arr_dict.keys())
         for df_key in df_keys:
             # make a path unique to the sampling rate
             bf_path = os.path.join(save_path, '{0:.0f}'.format(df_key))
@@ -1314,7 +1320,7 @@ class Z3D_to_edi(object):
         if not os.path.exists(save_path):
             os.mkdir(save_path)
             
-        s_keys = fn_birrp_dict.keys()
+        s_keys = list(fn_birrp_dict.keys())
         script_fn_list = []
         for df in s_keys:
             bf_path = os.path.join(save_path, '{0:.0f}'.format(df))
@@ -1340,7 +1346,7 @@ class Z3D_to_edi(object):
                 pro_obj.nsctinc = 2
                 pro_obj.nfsect = 2
                 pro_obj.ainlin = .0001
-            for b_key in birrp_params_dict.keys():
+            for b_key in list(birrp_params_dict.keys()):
                 setattr(pro_obj, b_key, birrp_params_dict[b_key])
             
             pro_dict = pro_obj.get_processing_dict(fn_birrp_arr, 
@@ -1360,7 +1366,7 @@ class Z3D_to_edi(object):
                                                                  script_fn[:-7]))
                                                                  
             mtcfg.write_dict_to_configfile(birrp_dict, cfg_fn)
-            print 'Wrote BIRRP config file for edi file to {0}'.format(cfg_fn)
+            print('Wrote BIRRP config file for edi file to {0}'.format(cfg_fn))
     
             self.birrp_config_fn = cfg_fn
         
@@ -1414,7 +1420,7 @@ class Z3D_to_edi(object):
                     if fn[-4:] == '.cfg':
                         self.survey_config_fn = os.path.join(ts_dir, fn)
                         
-        print self.survey_config_fn
+        print(self.survey_config_fn)
         
         j2edi_obj = birrp.J_To_Edi(station=self.survey_config.station,
                                    survey_config_fn=self.survey_config_fn,
@@ -1574,7 +1580,7 @@ class Z3D_to_edi(object):
         r_plot = self.plot_responses()
         
         et = time.time()
-        print '--> Processing took {0:02.0f}:{1:02.0f} minutes'.format((et-st)//60, (et-st)%60)
+        print('--> Processing took {0:02.0f}:{1:02.0f} minutes'.format((et-st)//60, (et-st)%60))
         
         return r_plot, comb_edi_fn
         
@@ -1591,11 +1597,11 @@ class Z3D_to_edi(object):
         """
         
         if type(edi_fn_list) is str:
-            print 'Only one edi file, skipping combining'
+            print('Only one edi file, skipping combining')
             return
             
         if type(edi_fn_list) is list and len(edi_fn_list) == 1:
-            print 'Only one edi file, skipping combining'
+            print('Only one edi file, skipping combining')
             return
             
         data_arr = np.zeros(100, 
@@ -1615,7 +1621,7 @@ class Z3D_to_edi(object):
                     break
                 except ValueError:
                     pass
-            if sr_key in sr_dict.keys():
+            if sr_key in list(sr_dict.keys()):
                 try:
                     edi_obj = mtedi.Edi(edi_fn)
                     # locate frequency range
@@ -1632,10 +1638,10 @@ class Z3D_to_edi(object):
         
                     count += len(f_index[0])
                 except IndexError:
-                    print 'Something went wrong with processing {0}'.format(edi_fn)
+                    print('Something went wrong with processing {0}'.format(edi_fn))
                 
             else:
-                print '{0} was not in combining dictionary'.format(sr_key)
+                print('{0} was not in combining dictionary'.format(sr_key))
                 
         # now replace
         data_arr = data_arr[np.nonzero(data_arr['freq'])]
@@ -1709,7 +1715,7 @@ def get_remote_reference_schedule(survey_path, plot=True):
                        if fn.lower().endswith('ex.z3d')]
             
             if len(fn_list) == 0:
-                print 'No Z3D files found in folder: {0} '.format(station)
+                print('No Z3D files found in folder: {0} '.format(station))
                 continue
     
             station_date_arr = np.zeros(len(fn_list), dtype=[('df', np.float),
@@ -1919,8 +1925,8 @@ def compute_mt_response(survey_dir, station='mt000', copy_date=None,
             zen.copy_from_sd(station, save_path=survey_dir, 
                              copy_date=copy_date, copy_type='after')
     except IOError:
-        print 'No files copied from SD cards'
-        print 'Looking in  {0} for Z3D files'.format(station_dir)
+        print('No files copied from SD cards')
+        print('Looking in  {0} for Z3D files'.format(station_dir))
     
     #--> process data
      
@@ -1933,9 +1939,9 @@ def compute_mt_response(survey_dir, station='mt000', copy_date=None,
                                               max_blocks=max_blocks,
                                               notch_dict=notch_dict)
         except mtex.MTpyError_inputarguments:
-            print '==> Data not good!! Did not produce a proper .edi file' 
+            print('==> Data not good!! Did not produce a proper .edi file') 
             et = time.time()
-            print '--> took {0} seconds'.format(et-st)
+            print('--> took {0} seconds'.format(et-st))
             rp = None
     
     #--> write log file

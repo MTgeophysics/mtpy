@@ -15,6 +15,8 @@ def test_read_write():
 
     new_edi_fn = os.path.join(output_dir, os.path.basename(path2edi))
 
+    print(new_edi_fn)
+
     ret_edi = edi_obj.write_edi_file(new_edi_fn=new_edi_fn)
 
     print(ret_edi)

@@ -129,7 +129,7 @@ class Residual(object):
             self.residual_array[comp] = self.residual_array[comp] - resp_obj.data_array[comp]
 
         data_obj.fn_basename = resp_obj.fn_basename[:-3] + 'res'
-        print "writing to file",data_obj.fn_basename
+        print("writing to file",data_obj.fn_basename)
         data_obj.write_data_file(fill=False, compute_error=False, 
                                  fn_basename=data_obj.fn_basename)
         
@@ -163,7 +163,7 @@ class Residual(object):
             resp_obj = Data()
             resp_obj.read_data_file(self.resp_fn)
         else:
-            print "Cannot read data, please provide data_fn"
+            print("Cannot read data, please provide data_fn")
             return
 
         # pass relevant arguments through residual object

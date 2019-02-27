@@ -466,7 +466,7 @@ class PlotPhaseTensor(mtpl.MTEllipse):
             stlist.append(erxy[0])
             stlabel.append('Z_inv')
         except AttributeError:
-            print 'Could not get z_invariants from pt, input z if desired.'
+            print('Could not get z_invariants from pt, input z if desired.')
 
         if self._mt.tipper is not None:
             # strike from tipper
@@ -754,7 +754,7 @@ class PlotPhaseTensor(mtpl.MTEllipse):
             pass
 
         self.fig_fn = save_fn
-        print 'Saved figure to: ' + self.fig_fn
+        print('Saved figure to: ' + self.fig_fn)
 
     def update_plot(self):
         """

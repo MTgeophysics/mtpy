@@ -30,10 +30,10 @@ import mtpy.processing.birrp as MTbp
 def main():
 
     if len(sys.argv) < 4:
-        print '\nNeed at least 3 arguments: <path to BIRRP executable> '\
+        print('\nNeed at least 3 arguments: <path to BIRRP executable> '\
             '<station name> <directory for time series>\n\n'\
             'Optional arguments: \n [coherence threshold]\n'\
-            ' [start time] \n [end time]\n\n'
+            ' [start time] \n [end time]\n\n')
         return
 
     try:
@@ -41,7 +41,7 @@ def main():
         if not 0 <= coherence_th <= 1:
             raise
     except:
-        print 'coherence value invalid (float from interval [0,1]) - set to 0 instead'
+        print('coherence value invalid (float from interval [0,1]) - set to 0 instead')
         coherence_th = 0
 
     try:

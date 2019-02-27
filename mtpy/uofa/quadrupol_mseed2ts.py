@@ -55,7 +55,7 @@ def main():
                 continue
             option = o[1].lower()
             if option not in ['c', 'i']:
-                print 'unknown option: {0}'.format(option)
+                print('unknown option: {0}'.format(option))
                 continue
             if option == 'c':
                 combine_flag = True
@@ -83,8 +83,8 @@ def main():
             if not os.access(outpath, os.W_OK):
                 raise
         except:
-            print 'Cannot generate writable output directory {0} - using generic'\
-                ' location "ascii" instead'.format(outpath)
+            print('Cannot generate writable output directory {0} - using generic'\
+                ' location "ascii" instead'.format(outpath))
             outdir = None
     if outdir is None:
         outpath = op.join(os.curdir, 'ascii')
@@ -141,14 +141,14 @@ def convert_ms2ts(indir, outdir, combine=True, invert=False):
 
         for idx_fn, fn in enumerate(lo_infiles):
 
-            print 'reading file {0}'.format(fn)
+            print('reading file {0}'.format(fn))
             try:
                 outfn = MTms.quadrupol_convertfile_miniseed2ts(fn,
                                                                lo_outfiles[idx_fn], combine, invert)
 
-                print 'wrote file(s) {0}'.format(outfn)
+                print('wrote file(s) {0}'.format(outfn))
             except:
-                print 'Warning - file {0} is not in valid miniseed  format!!!'.format(fn)
+                print('Warning - file {0} is not in valid miniseed  format!!!'.format(fn))
                 continue
 
 

@@ -9,7 +9,7 @@ from unittest import TestCase
 
 import matplotlib
 from matplotlib import _png
-from matplotlib.testing.compare import verify
+# from matplotlib.testing.compare import verify # this verify function is deprecated matplotlib2.1
 
 from mtpy.utils.mtpylog import MtPyLog
 from tests import TEST_DIR, make_temp_dir, TEST_TEMP_DIR
@@ -145,7 +145,7 @@ class ImageCompare(object):
                                 os.rmdir(os.path.dirname(test_image))
                     else:
                         # checking if the created image is empty
-                        verify(test_image)
+                        # verify(test_image) # if issues with test_image, nonexistent? raise exception.
                         actual_image = _png.read_png_int(test_image)
                         actual_image = actual_image[:, :, :3]  # remove the alpha channel (if exists)
                         import numpy as np

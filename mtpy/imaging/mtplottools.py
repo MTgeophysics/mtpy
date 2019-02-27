@@ -105,12 +105,12 @@ class MTArrows(object):
 
         # Set class property values from kwargs and pop them
         for v in vars(self):
-            if(v in kwargs.keys()):
+            if(v in list(kwargs.keys())):
                 setattr(self, v, kwargs.pop(v, None))
 
     def _read_arrow_dict(self, arrow_dict):
 
-        for key in arrow_dict.keys():
+        for key in list(arrow_dict.keys()):
             setattr(self, key, arrow_dict[key])
 
 
@@ -192,7 +192,7 @@ class MTEllipse(object):
 
         # Set class property values from kwargs and pop them
         for v in vars(self):
-            if(v in kwargs.keys()):
+            if(v in list(kwargs.keys())):
                 setattr(self, v, kwargs.pop(v, None))
 
 
@@ -205,12 +205,12 @@ class MTEllipse(object):
                         'ellipse_range':[0,0],
                         'ellipse_colorby':'skew',
                         'ellipse_cmap':'mt_bl2gr2rd'}
-        for key in default_dict.keys():
-            if key not in ellipse_dict.keys():
+        for key in list(default_dict.keys()):
+            if key not in list(ellipse_dict.keys()):
                 ellipse_dict[key] = default_dict[key]
         
         # --> set the ellipse properties
-        for key in ellipse_dict.keys():
+        for key in list(ellipse_dict.keys()):
             setattr(self, key, ellipse_dict[key])
 
         try:
@@ -322,7 +322,7 @@ class PlotSettings(MTArrows, MTEllipse):
 
         # Set class property values from kwargs and pop them
         for v in vars(self):
-            if(v in kwargs.keys()):
+            if(v in list(kwargs.keys())):
                 setattr(self, v, kwargs.pop(v, None))
 
 
@@ -803,7 +803,7 @@ class MTplot(mt.MT):
 
         # Set class property values from kwargs and pop them
         for v in vars(self):
-            if(v in kwargs.keys()):
+            if(v in list(kwargs.keys())):
                 setattr(self, v, kwargs.pop(v, None))
 
 
@@ -1107,7 +1107,7 @@ def get_mtlist(fn_list=None, res_object_list=None, z_object_list=None,
     if fn_list is not None:
         ns = len(fn_list)
         mt_list = [MTplot(fn=fn) for fn in fn_list]
-        print 'Reading {0} stations'.format(ns)
+        print('Reading {0} stations'.format(ns))
         return mt_list
 
     elif mt_object_list is not None:
@@ -1126,7 +1126,7 @@ def get_mtlist(fn_list=None, res_object_list=None, z_object_list=None,
                 mt_obj._Tipper = tip_obj
         except TypeError:
             pass
-        print 'Reading {0} stations'.format(ns)
+        print('Reading {0} stations'.format(ns))
         return mt_list
 
 
@@ -1338,7 +1338,11 @@ def get_station_locations(mt_list, map_scale='latlon', ref_point=(0, 0)):
                 # check to make sure the zone is the same this needs
                 # to be more rigorously done
                 if zone1 != zone:
+<<<<<<< HEAD
                     print 'Zone change at station ' + mt_obj.station
+=======
+                    print('Zone change at station ' + mt.station)
+>>>>>>> 1fffa1ccb835c016f1be5c18b37b54bddf182ac2
                     if zone1[0:2] == zone[0:2]:
                         pass
                     elif int(zone1[0:2]) < int(zone[0:2]):
@@ -1547,8 +1551,13 @@ def get_rp_arrays(mt_list, plot_period, sort_by='line', line_direction='ew',
                         pass
 
                 if jj is None:
+<<<<<<< HEAD
                     print 'did not find period {0:.6g} (s) for {1}'.format(
                         rper, mt_obj.station)
+=======
+                    print('did not find period {0:.6g} (s) for {1}'.format(
+                        rper, mt.station))
+>>>>>>> 1fffa1ccb835c016f1be5c18b37b54bddf182ac2
         return resxx, resxy, resyx, resyy, phasexx, phasexy, phaseyx, phaseyy, \
                station_list, offset_list
 
@@ -1608,8 +1617,13 @@ def get_rp_arrays(mt_list, plot_period, sort_by='line', line_direction='ew',
                         pass
 
                 if jj is None:
+<<<<<<< HEAD
                     print 'did not find period {0:.6g} (s) for {1}'.format(
                         rper, mt_obj.station)
+=======
+                    print('did not find period {0:.6g} (s) for {1}'.format(
+                        rper, mt.station))
+>>>>>>> 1fffa1ccb835c016f1be5c18b37b54bddf182ac2
         return resxx, resxy, resyx, resyy, + \
             phasexx, phasexy, phaseyx, phaseyy, x, y, map_dict
 
@@ -1731,8 +1745,13 @@ def get_pt_arrays(mt_list, plot_period, sort_by='line', line_direction='ew',
                         pass
 
                 if jj is None:
+<<<<<<< HEAD
                     print 'did not find period {0:.6g} (s) for {1}'.format(
                         rper, mt_obj.station)
+=======
+                    print('did not find period {0:.6g} (s) for {1}'.format(
+                        rper, mt.station))
+>>>>>>> 1fffa1ccb835c016f1be5c18b37b54bddf182ac2
         return phimin, phimax, skew, azimuth, ellipticity, slist, olist
 
     elif sort_by == 'map':
@@ -1778,8 +1797,13 @@ def get_pt_arrays(mt_list, plot_period, sort_by='line', line_direction='ew',
                         pass
 
                 if jj is None:
+<<<<<<< HEAD
                     print 'did not find period {0:.6g} (s) for {1}'.format(
                         rper, mt_obj.station)
+=======
+                    print('did not find period {0:.6g} (s) for {1}'.format(
+                        rper, mt.station))
+>>>>>>> 1fffa1ccb835c016f1be5c18b37b54bddf182ac2
         return phimin, phimax, skew, azimuth, ellipticity, x, y, map_dict
 
 

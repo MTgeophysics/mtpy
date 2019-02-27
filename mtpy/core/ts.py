@@ -143,10 +143,17 @@ class MTTS(object):
                            'declination',
                            'gain',
                            'conversion']
+<<<<<<< HEAD
 
         for key, value in kwargs.items():
             setattr(self, key, value)
 
+=======
+        
+        for key in list(kwargs.keys()):
+            setattr(self, key, kwargs[key])
+            
+>>>>>>> 1fffa1ccb835c016f1be5c18b37b54bddf182ac2
     ###-------------------------------------------------------------
     ## make sure some attributes have the correct data type
     # make sure that the time series is a pandas data frame
@@ -354,8 +361,13 @@ class MTTS(object):
         """
 
         if start_time is None:
+<<<<<<< HEAD
             print 'Start time is None, skipping calculating index'
             return
+=======
+            print('Start time is None, skipping calculating index')
+            return 
+>>>>>>> 1fffa1ccb835c016f1be5c18b37b54bddf182ac2
         dt_freq = '{0:.0f}N'.format(1./(self.sampling_rate)*1E9)
 
         dt_index = pd.date_range(start=start_time,
@@ -363,8 +375,13 @@ class MTTS(object):
                                  freq=dt_freq)
 
         self.ts.index = dt_index
+<<<<<<< HEAD
         print "   * Reset time seies index to start at {0}".format(start_time)
 
+=======
+        print("   * Reset time seies index to start at {0}".format(start_time))
+    
+>>>>>>> 1fffa1ccb835c016f1be5c18b37b54bddf182ac2
     # convert time to epoch seconds
     def _convert_dt_to_sec(self, date_time_str):
         """
@@ -409,12 +426,23 @@ class MTTS(object):
                   'rp':rp}
 
         ts, filt_list = mtfilter.adaptive_notch_filter(self.ts.data, **kwargs)
+<<<<<<< HEAD
 
         print '\t Filtered frequency with bandstop:'
         for ff in filt_list:
             try:
                 print '\t\t{0:>6.5g} Hz  {1:>6.2f} db'.format(np.nan_to_num(ff[0]),
                                                               np.nan_to_num(ff[1]))
+=======
+        
+        self.ts.data = ts
+        
+        print('\t Filtered frequency with bandstop:')
+        for ff in filt_list:
+            try:
+                print('\t\t{0:>6.5g} Hz  {1:>6.2f} db'.format(np.nan_to_num(ff[0]),
+                                                             np.nan_to_num(ff[1])))
+>>>>>>> 1fffa1ccb835c016f1be5c18b37b54bddf182ac2
             except ValueError:
                 pass
 
@@ -591,9 +619,15 @@ class MTTS(object):
         # get an estimation of how long it took to write the file
         et = datetime.datetime.utcnow()
         time_diff = et-st
+<<<<<<< HEAD
 
         print '--> Wrote {0}'.format(fn_ascii)
         print '    Took {0:.2f} seconds'.format(time_diff.seconds+time_diff.microseconds*1E-6)
+=======
+        
+        print('--> Wrote {0}'.format(fn_ascii))
+        print('    Took {0:.2f} seconds'.format(time_diff.seconds+time_diff.microseconds*1E-6))
+>>>>>>> 1fffa1ccb835c016f1be5c18b37b54bddf182ac2
 
     def read_ascii_header(self, fn_ascii):
         """
@@ -625,14 +659,14 @@ class MTTS(object):
                         setattr(self, key, value)
                     except AttributeError:
                         if key not in ['n_samples', 'start_time_epoch_sec']:
-                            print 'Could not set {0} to {1}'.format(key, value)
+                            print('Could not set {0} to {1}'.format(key, value))
                 # skip the header lines
                 elif line.find('***') > 0:
                     pass
                 else:
                     line_list = line[1:].strip().split()
                     if len(line_list) == 9:
-                        print 'Reading old MT TS format'
+                        print('Reading old MT TS format')
                         self.station = line_list[0]
                         self.component = line_list[1].lower()
                         self.sampling_rate = float(line_list[2])
@@ -659,6 +693,7 @@ class MTTS(object):
         """
 
         self.read_ascii_header(fn_ascii)
+<<<<<<< HEAD
 
         self.ts = pd.read_csv(self.fn,
                               sep='\n',
@@ -668,6 +703,17 @@ class MTTS(object):
 
         print 'Read in {0}'.format(self.fn)
 
+=======
+        
+        self.ts = pd.read_csv(self.fn, 
+                              sep='\n', 
+                              skiprows=self._end_header_line,
+                              memory_map=True,
+                              names=['data'])
+        
+        print('Read in {0}'.format(self.fn))
+        
+>>>>>>> 1fffa1ccb835c016f1be5c18b37b54bddf182ac2
     def plot_spectra(self, spectra_type='welch', **kwargs):
         """
         Plot spectra using the spectral type
