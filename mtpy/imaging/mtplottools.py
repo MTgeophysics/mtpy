@@ -1612,7 +1612,6 @@ def get_rp_arrays(mt_list, plot_period, sort_by='line', line_direction='ew',
                     print 'did not find period {0:.6g} (s) for {1}'.format(
                         rper, mt_obj.station)
 
->>>>>>> 1fffa1ccb835c016f1be5c18b37b54bddf182ac2
         return resxx, resxy, resyx, resyy, + \
             phasexx, phasexy, phaseyx, phaseyy, x, y, map_dict
 
