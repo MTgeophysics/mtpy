@@ -141,6 +141,7 @@ class ModEMPlotPTMap(QtWidgets.QMainWindow, mtplottools.MTArrows,
         #make a widget that will be the period list
         self.list_widget = QtWidgets.QListWidget()
         self.list_widget.itemClicked.connect(self.get_period)
+        self.list_widget.currentItemChanged.connect(self.get_station)
         self.list_widget.setMaximumWidth(150)
         
         # make a depth text bar

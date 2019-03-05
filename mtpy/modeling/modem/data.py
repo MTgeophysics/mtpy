@@ -30,7 +30,7 @@ from mtpy.modeling.modem.station import Stations
 from mtpy.modeling.modem.model import Model
 
 try:
-    from evtk.hl import pointsToVTK
+    from pyevtk.hl import pointsToVTK
 except ImportError:
     print('If you want to write a vtk file for 3d viewing, you need download '
           'and install evtk from https://pypi.org/project/PyEVTK', file=sys.stderr)

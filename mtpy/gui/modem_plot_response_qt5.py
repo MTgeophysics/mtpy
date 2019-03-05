@@ -350,6 +350,7 @@ class PlotResponses(QtWidgets.QWidget):
         #make a widget that will be the station list
         self.list_widget = QtWidgets.QListWidget()
         self.list_widget.itemClicked.connect(self.get_station)
+        self.list_widget.currentItemChanged.connect(self.get_station)
         self.list_widget.setMaximumWidth(150)
         
         self.save_edits_button = QtWidgets.QPushButton()
