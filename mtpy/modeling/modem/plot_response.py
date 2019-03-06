@@ -202,7 +202,6 @@ class PlotResponse(object):
         """
         read data file 
         """
-<<<<<<< HEAD
         if self.data_object is None:
             self.data_object = Data()
             self.data_object.read_data_file(self.data_fn)
@@ -214,17 +213,6 @@ class PlotResponse(object):
         read response files
         """
         if self.resp_object is None:
-=======
-
-        self.data_object = Data()
-        self.data_object.read_data_file(self.data_fn)
-
-        # get shape of impedance tensors
-        ns = len(list(self.data_object.mt_dict.keys()))
-
-        # read in response files
-        if self.resp_fn != None:
->>>>>>> 1fffa1ccb835c016f1be5c18b37b54bddf182ac2
             self.resp_object = []
             if type(self.resp_fn) is not list:
                 resp_obj = Data()
