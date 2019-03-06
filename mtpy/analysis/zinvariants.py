@@ -184,8 +184,8 @@ class Zinvariants:
             ex = x1 * e1 - x2 * e2 - x3 * e3 + x4 * e4
 
             if ex == 0.0:
-                print 'Could not compute invariants for {0:5e} Hz'.format(
-                       self.freq[ii])
+                print('Could not compute invariants for {0:5e} Hz'.format(
+                       self.freq[ii]))
                 self.inv1[ii] = np.nan
                 self.inv2[ii] = np.nan
                 self.inv3[ii] = np.nan

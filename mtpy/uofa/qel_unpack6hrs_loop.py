@@ -1,4 +1,4 @@
-import qel_prepare_birrp_data3 as ppb
+from . import qel_prepare_birrp_data3 as ppb
 import os
 import sys
 import os.path as op
@@ -61,8 +61,8 @@ for idx_s, station in enumerate(station_names):
 
     channelsA = channels[idx_s]
 
-    print dataDirA, dataDirB, dataDirC
-    print channelsA, channelsB, channelsC
+    print(dataDirA, dataDirB, dataDirC)
+    print(channelsA, channelsB, channelsC)
 
     for idx_date, date in enumerate(dates):
         timestamp = time.strptime(date, "%Y-%m-%d-at-%H-%M-%S")

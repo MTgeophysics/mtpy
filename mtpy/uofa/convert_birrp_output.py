@@ -47,7 +47,7 @@ def main():
             if o[0] == '-':
                 option = o[1].lower()
                 if option not in ['b', 'i']:
-                    print 'unknown option: {0}'.format(option)
+                    print('unknown option: {0}'.format(option))
                     continue
                 else:
                     try:
@@ -61,14 +61,14 @@ def main():
                         if option == 'i':
                             instr_resp_fn = argument
                     except:
-                        print 'option "{0}" not followed by valid argument: "{1}"'\
-                            ''.format(option, argument)
+                        print('option "{0}" not followed by valid argument: "{1}"'\
+                            ''.format(option, argument))
 
     edifn, cohfn = convertbirrpoutput(
         stationname, datadir, survey_cfg_fn, birrp_cfg_fn, instr_resp_fn)
 
-    print 'EDI/coh - files generated for station {0}:\n{1}\n{2}'\
-        ''.format(stationname, edifn, cohfn)
+    print('EDI/coh - files generated for station {0}:\n{1}\n{2}'\
+        ''.format(stationname, edifn, cohfn))
 
 
 def convertbirrpoutput(stationname, datadir, survey_configfile, birrp_configfile=None,
@@ -98,8 +98,8 @@ def convertbirrpoutput(stationname, datadir, survey_configfile, birrp_configfile
             if not op.isfile(birrp_configfile):
                 raise
         except:
-            print 'Birrp config file not existing: {0} - using generic values'\
-                ''.format(birrp_configfile)
+            print('Birrp config file not existing: {0} - using generic values'\
+                ''.format(birrp_configfile))
             birrp_configfile = None
 
     if instr_response_file is not None:
@@ -130,11 +130,11 @@ def convertbirrpoutput(stationname, datadir, survey_configfile, birrp_configfile
             cohfn = MTbp.convert2coh(stationname, datadir)
         except:
             try:
-                print 'trying to find files for uppercase stationname'
+                print('trying to find files for uppercase stationname')
                 cohfn = MTbp.convert2coh(stationname.upper(), datadir)
             except:
                 cohfn = None
-                print 'Could not generate coherence file'
+                print('Could not generate coherence file')
         try:
             edifn = MTbp.convert2edi_incl_instrument_correction(stationname,
                                                                 datadir,
@@ -152,7 +152,7 @@ def convertbirrpoutput(stationname, datadir, survey_configfile, birrp_configfile
                                                                     ir_fn)
             except:
                 edifn = None
-                print 'Could not generate EDI file'
+                print('Could not generate EDI file')
 
         return edifn, cohfn
 
@@ -160,11 +160,11 @@ def convertbirrpoutput(stationname, datadir, survey_configfile, birrp_configfile
         cohfn = MTbp.convert2coh(stationname, datadir)
     except:
         try:
-            print 'trying to find files for uppercase stationname'
+            print('trying to find files for uppercase stationname')
             cohfn = MTbp.convert2coh(stationname.upper(), datadir)
         except:
             cohfn = None
-            print 'Could not generate coherence file'
+            print('Could not generate coherence file')
 
     try:
         edifn = MTbp.convert2edi(stationname,
@@ -180,7 +180,7 @@ def convertbirrpoutput(stationname, datadir, survey_configfile, birrp_configfile
 
         except:
             raise
-            print 'Could not generate EDI file'
+            print('Could not generate EDI file')
             edifn = None
 
     return edifn, cohfn

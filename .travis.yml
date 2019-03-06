@@ -1,79 +1,48 @@
-dist: trusty
+dist: xenial    # 16.04 LTS
 sudo: required  # use VM instead of docker
 
 language: python
 python:
   - "2.7"
+#  - "3.6" # No output has been received in the last 10m0s,
+#           this potentially indicates a stalled build or something wrong with the build itself
+#  - "3.7"
+
   # does not have headers provided, please ask https://launchpad.net/~pypy/+archive/ppa
   # maintainers to fix their pypy-dev package.
   # - "pypy"
 
-cache:
-  pip: true  # make cache for pip dependencies
-  directories:
-    - builds  # cached files
 
-install: true  # skip default install step which would be called before the prepare cache stage
-
-env:
-  global:
-    - COVERALLS_PARALLEL=true
-  matrix:
-#    - MATPLOTLIB_VERSION=2.1.0 QT_VERSION=4
-    - MATPLOTLIB_VERSION=2.0.2 QT_VERSION=5
-    - MATPLOTLIB_VERSION=2.1.0 QT_VERSION=5
-#    - MATPLOTLIB_VERSION=2.0.2 QT_VERSION=4
-    - MATPLOTLIB_VERSION=1.5.3 QT_VERSION=5
-
-stages:
-  - name: prepare cache
-  - test
-  - name: GUI Test
-
-jobs:
-  include:
-    - stage: prepare cache  # run saperate job to build dependencies to avoid 50 min timeout on travis
-      script: true # place holder, the before_Script will run anyway
-      env:
-        - MATPLOTLIB_VERSION=2.0.2 QT_VERSION=5
-    - stage: prepare cache
-      script: true
-      env:
-        - MATPLOTLIB_VERSION=2.1.0 QT_VERSION=5
-#    - stage: prepare cache
-#      script: true
-#      env:
-#        - MATPLOTLIB_VERSION=2.0.2 QT_VERSION=4
-    - stage: prepare cache
-      script: true
-      env:
-        - MATPLOTLIB_VERSION=1.5.3 QT_VERSION=5
-#    - stage: test
-    - stage: GUI Test
-      script: . ./bin/travis-test-gui.sh
-      env:
-        - MATPLOTLIB_VERSION=2.0.2 QT_VERSION=5
-#    - stage: GUI Test
-#      script: . ./bin/travis-test-gui.sh
-#      env:
-#        - MATPLOTLIB_VERSION=2.0.2 QT_VERSION=4
-#    - stage: deploy
+# command to install dependencies
 
 before_script:
-  - chmod -vR +x ./bin/* && . ./bin/travis-setup-env.sh  
+#  - wget https://github.com/adamallo/SimPhy/releases/download/v1.0.2/SimPhy_1.0.2.tar.gz -O /tmp/simphy.tar.gz
+#  - tar -xvf /tmp/simphy.tar.gz
+#  - chmod +x $PWD/SimPhy_1.0.2/bin/*
+#  - export PATH=$PATH:$PWD/SimPhy_1.0.2/bin
 
-script: # testing stages, will run only in testing stages
-  - MTPY_TEST_COMPARE_IMAGE=False py.test -v -n4 --dist=loadscope --cov=mtpy --cov-report= tests --ignore=tests/SmartMT
+install:
+  - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
+  - bash miniconda.sh -b -p $HOME/miniconda
+  - export PATH="$HOME/miniconda/bin:$PATH"
+  - hash -r
+  - conda config --set always_yes yes --set changeps1 no
+  - conda update -q conda
+  - conda info -a
+  - conda create -q -n test-env python=$TRAVIS_PYTHON_VERSION pytest pytest-cov pyyaml
+  - source activate test-env
+  - conda install geopandas netcdf4
+  - pip install  obspy
+  - pip install pytest-xdist  pytest-cov coveralls
+  - pip install configparser  # for python27
+
+# command to run tests
+script:
+  # - python -m pytest --cov=./
+  - MTPY_TEST_COMPARE_IMAGE=False; py.test -v --cov=mtpy --cov-report= tests --ignore=tests/SmartMT
+
+after_failure:
+    - cat config.log
 
 after_success:
-  - coveralls
-
-matrix:
-  fast_finish: true
-  allow_failures:
-    - env: MATPLOTLIB_VERSION=2.1.0 QT_VERSION=5
-#    - env: MATPLOTLIB_VERSION=2.0.2 QT_VERSION=4
-    - env: MATPLOTLIB_VERSION=1.5.3 QT_VERSION=5
-
-notifications:
-  webhooks: https://coveralls.io/webhook?repo_token=GsdWzB3YUFjVVGCESQode5GgbnUINLZr2
+    - coveralls

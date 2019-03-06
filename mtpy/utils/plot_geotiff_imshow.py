@@ -59,7 +59,7 @@ def plot_geotiff(geofile='/e/Data/uncoverml/GA-cover2/PM_Gravity.tif', show=True
     inproj = osr.SpatialReference()
     inproj.ImportFromWkt(proj)
 
-    print("Input Spatial Ref Projection : ", str(inproj))
+    print(("Input Spatial Ref Projection : ", str(inproj)))
 
     # these need cartopy, pyepsg , still has error
     #   File "/usr/lib/python2.7/xml/etree/ElementTree.py", line 1517, in _raiseerror
@@ -80,7 +80,7 @@ def plot_geotiff(geofile='/e/Data/uncoverml/GA-cover2/PM_Gravity.tif', show=True
 
     my_ext = (transform[0], transform[0] + ds.RasterXSize * transform[1],
               transform[3] + ds.RasterYSize * transform[5], transform[3])
-    print my_ext
+    print(my_ext)
 
     #     print ("Projection Info = %s"%(proj))
     #     print ("xOrigin = %s,  yOrigin = %s "%(xOrigin, yOrigin))

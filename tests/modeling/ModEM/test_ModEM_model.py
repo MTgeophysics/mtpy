@@ -9,7 +9,8 @@ from tests.modeling import diff_files
 class TestModEM_Model(TestCase):
     def setUp(self):
         self.model_epsg = 28355
-        self._temp_dir = make_temp_dir(self.__name__)
+        #self._temp_dir = make_temp_dir(self.__name__)
+        self._temp_dir = make_temp_dir("TestModEM_Model_tmp")
         # directory to save created input files
         self._output_dir = make_temp_dir(self._testMethodName, base_dir=self._temp_dir)
         self._model_dir = os.path.join(SAMPLE_DIR, 'ModEM') 
@@ -46,7 +47,7 @@ class TestModEM_Model(TestCase):
                         )
 
         is_identical, msg = diff_files(output_data_file, expected_data_file)
-        print msg
+        print(msg)
         self.assertTrue(is_identical, "The output file is not the same with the baseline file.")
         
     
@@ -84,7 +85,7 @@ class TestModEM_Model(TestCase):
                         )
 
         is_identical, msg = diff_files(output_data_file, expected_data_file)
-        print msg
+        print(msg)
         self.assertTrue(is_identical, "The output file is not the same with the baseline file.")
 
     def test_make_z_mesh_new(self):

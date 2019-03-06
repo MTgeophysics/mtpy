@@ -178,7 +178,7 @@ class ZongeMTFT():
         self.MTFT_SpikeDev = 4
         self.MTFT_NotchFlt = 'Yes'
         self.MTFT_NotchFrq =  list(np.arange(60, 600, 60))
-        self.MTFT_NotchWidth = range(1,len(self.MTFT_NotchFrq)+1)
+        self.MTFT_NotchWidth = list(range(1,len(self.MTFT_NotchFrq)+1))
         self.MTFT_StackFlt = 'No'
         self.MTFT_StackTaper = 'Yes'
         self.MTFT_StackFrq = [60,1808,4960]
@@ -305,7 +305,7 @@ class ZongeMTFT():
         from values in meta dict set attribute values
         
         """
-        for key in self.meta_dict.keys():
+        for key in list(self.meta_dict.keys()):
             setattr(self, key.replace('.', '_'), self.meta_dict[key])
     
     def sort_ts_lst(self):
@@ -380,8 +380,8 @@ class ZongeMTFT():
             local_npts = int(local_zc.meta_data['TS.NPNT'][0])
             tdiff = self.rr_tdiff_dict[local_df]
             
-            print '='*60
-            print ts_dict['LocalFile'], local_start_date, local_start_time
+            print('='*60)
+            print(ts_dict['LocalFile'], local_start_date, local_start_time)
             self.log_lines.append('='*60+'\n')
             self.log_lines.append('{0} {1} {2} \n'.format(ts_dict['LocalFile'],
                                   local_start_date, local_start_time)) 
@@ -409,7 +409,7 @@ class ZongeMTFT():
                 if local_start_date == remote_start_date and \
                    local_df == remote_df and \
                    local_start_time[0:2] == remote_start_time[0:2]:
-                    print rrfn, remote_start_date, remote_start_time
+                    print(rrfn, remote_start_date, remote_start_time)
                     self.log_lines.append('{0} {1} {2}\n'.format(rrfn, 
                                           remote_start_date, 
                                           remote_start_time))
@@ -434,7 +434,7 @@ class ZongeMTFT():
                         
                         #if time series is longer than remote reference
                         elif remote_npts < local_npts:
-                            print '{0} local_npts > remote_npts {0}'.format('*'*4)
+                            print('{0} local_npts > remote_npts {0}'.format('*'*4))
                             self.log_lines.append('{0} local_npts > remote_npts {0}\n'.format('*'*4))
                             #read in cache file
                             local_zc.read_cache(os.path.join(self.cache_path,
@@ -448,10 +448,10 @@ class ZongeMTFT():
                             local_zc.meta_data['TS.NPNT'] = \
                                             [str(local_zc.ts.shape[0])]
                             
-                            print 'Resized Local TS in {0} to {1}'.format(
+                            print('Resized Local TS in {0} to {1}'.format(
                                os.path.join(self.cache_path, 
                                             ts_dict['LocalFile']),
-                               local_zc.ts.shape)
+                               local_zc.ts.shape))
                             self.log_lines.append('Resized Local TS in {0} to {1}\n'.format(
                                os.path.join(self.cache_path, 
                                             ts_dict['LocalFile']),
@@ -480,7 +480,7 @@ class ZongeMTFT():
                                                         
                         #if remote reference is longer than time series
                         elif remote_npts > local_npts:
-                            print '{0} local_npts < remote_npts {0}'.format('*'*4)
+                            print('{0} local_npts < remote_npts {0}'.format('*'*4))
                             self.log_lines.append('{0} local_npts < remote_npts {0}\n'.format('*'*4))
                             
                             remote_zc.read_cache(os.path.join(self.Remote_Path,
@@ -493,9 +493,9 @@ class ZongeMTFT():
                             remote_zc.meta_data['TS.NPNT'] = \
                                             [str(remote_zc.ts.shape[0])]
                             
-                            print 'Resized Remote TS in {0} to {1}'.format(
+                            print('Resized Remote TS in {0} to {1}'.format(
                                     os.path.join(self.Remote_Path, rrfn),
-                                    remote_zc.ts.shape)
+                                    remote_zc.ts.shape))
                             self.log_lines.append('Resized Remote TS in {0} to {1}\n'.format(
                                     os.path.join(self.Remote_Path, rrfn),
                                     remote_zc.ts.shape))
@@ -548,14 +548,14 @@ class ZongeMTFT():
                         #remote start time is later than local
                         if time_diff > 0:
                             
-                            print ('Time difference is {0} seconds'.format(
-                                                                time_diff))
+                            print(('Time difference is {0} seconds'.format(
+                                                                time_diff)))
                             self.log_lines.append('Time difference is {0} seconds\n'.format(
                                                                 time_diff))
-                            print 'Skipping {0} points in {1}'.format(
+                            print('Skipping {0} points in {1}'.format(
                                                 skip_points,
                                                 os.path.join(self.cache_path, 
-                                                        ts_dict['LocalFile']))
+                                                        ts_dict['LocalFile'])))
                             self.log_lines.append('Skipping {0} points in {1}\n'.format(
                                                 skip_points,
                                                 os.path.join(self.cache_path, 
@@ -577,7 +577,7 @@ class ZongeMTFT():
                             #the local to match the remote so mtft doesn't
                             #get angry
                             if remote_zc.ts.shape[0] < local_zc.ts.shape[0]:
-                                print '{0} local_npts > remote_npts {0}'.format('*'*4)
+                                print('{0} local_npts > remote_npts {0}'.format('*'*4))
                                 self.log_lines.append('{0} local_npts > remote_npts {0}\n'.format('*'*4))                                
                                 #read in cache file
                                 local_zc.read_cache(os.path.join(self.cache_path,
@@ -592,10 +592,10 @@ class ZongeMTFT():
                                                 [str(local_zc.ts.shape[0])]
                                 
                                 
-                                print 'Resized Local TS in {0} to {1}'.format(
+                                print('Resized Local TS in {0} to {1}'.format(
                                    os.path.join(self.cache_path, 
                                                 ts_dict['LocalFile']),
-                                   local_zc.ts.shape)
+                                   local_zc.ts.shape))
                                 self.log_lines.append('Resized Local TS in {0} to {1}\n'.format(
                                    os.path.join(self.cache_path, 
                                                 ts_dict['LocalFile']),
@@ -627,7 +627,7 @@ class ZongeMTFT():
                             #reshape local file if number of points is larger
                             #than the remote reference.
                             elif remote_zc.ts.shape[0] > local_zc.ts.shape[0]:
-                                print '{0} local_npts < remote_npts {0}'.format('*'*4)
+                                print('{0} local_npts < remote_npts {0}'.format('*'*4))
                                 self.log_lines.append('{0} local_npts < remote_npts {0}\n'.format('*'*4))                                
                                 #reset local meta data 
                                 local_zc.meta_data['TS.NPNT'] = \
@@ -644,9 +644,9 @@ class ZongeMTFT():
                                 remote_zc.meta_data['TS.NPNT'] = \
                                                 [str(remote_zc.ts.shape[0])]
                                 
-                                print 'Resized Remote TS in {0} to {1}'.format(
+                                print('Resized Remote TS in {0} to {1}'.format(
                                         os.path.join(self.Remote_Path, rrfn),
-                                        remote_zc.ts.shape)
+                                        remote_zc.ts.shape))
                                 self.log_lines.append('Resized Remote TS in {0} to {1}\n'.format(
                                         os.path.join(self.Remote_Path, rrfn),
                                         remote_zc.ts.shape))
@@ -708,14 +708,14 @@ class ZongeMTFT():
                         #local start time is later than remote start time                        
                         elif time_diff < 0:
                             
-                            print ('Time difference is {0} seconds'.format(
-                                                                    time_diff))
+                            print(('Time difference is {0} seconds'.format(
+                                                                    time_diff)))
                             self.log_lines.append('Time difference is {0} seconds\n'.format(
                                                                     time_diff))
-                            print 'Skipping {0} points in {1}'.format(
+                            print('Skipping {0} points in {1}'.format(
                                                 skip_points,
                                                 os.path.join(self.Remote_Path,
-                                                             rrfn))
+                                                             rrfn)))
                             self.log_lines.append('Skipping {0} points in {1}\n'.format(
                                                 skip_points,
                                                 os.path.join(self.Remote_Path,
@@ -737,7 +737,7 @@ class ZongeMTFT():
                             #the local to match the remote so mtft doesn't
                             #get angry
                             if remote_zc.ts.shape[0] < local_npts:
-                                print '{0} local_npts > remote_npts {0}'.format('*'*4)
+                                print('{0} local_npts > remote_npts {0}'.format('*'*4))
                                 self.log_lines.append('{0} local_npts > remote_npts {0}\n'.format('*'*4))                                
                                 #reset remote meta data 
                                 remote_zc.meta_data['TS.NPNT'] = \
@@ -758,10 +758,10 @@ class ZongeMTFT():
                                 local_zc.meta_data['TS.NPNT'] = \
                                                 [str(local_zc.ts.shape[0])]
                                
-                                print 'Resized Local TS in {0} to {1}'.format(
+                                print('Resized Local TS in {0} to {1}'.format(
                                    os.path.join(self.cache_path, 
                                                 ts_dict['LocalFile']),
-                                   local_zc.ts.shape)
+                                   local_zc.ts.shape))
                                 self.log_lines.append('Resized Local TS in {0} to {1}\n'.format(
                                    os.path.join(self.cache_path, 
                                                 ts_dict['LocalFile']),
@@ -794,7 +794,7 @@ class ZongeMTFT():
                             #reshape local file if number of points is larger
                             #than the remote reference.
                             elif remote_zc.ts.shape[0] > local_npts:
-                                print '{0} local_npts < remote_npts {0}'.format('*'*4)
+                                print('{0} local_npts < remote_npts {0}'.format('*'*4))
                                 self.log_lines.append('{0} local_npts < remote_npts {0}\n'.format('*'*4))                                
                                 #resize remote ts accordingly
                                 remote_zc.ts = np.resize(remote_zc.ts, 
@@ -804,9 +804,9 @@ class ZongeMTFT():
                                 remote_zc.meta_data['TS.NPNT'] = \
                                                 [str(remote_zc.ts.shape[0])]
                                 
-                                print 'Resized Remote TS in {0} to {1}'.format(
+                                print('Resized Remote TS in {0} to {1}'.format(
                                         os.path.join(self.Remote_Path, rrfn),
-                                        remote_zc.ts.shape)
+                                        remote_zc.ts.shape))
                                 self.log_lines.append('Resized Remote TS in {0} to {1}\n'.format(
                                         os.path.join(self.Remote_Path, rrfn),
                                         remote_zc.ts.shape))
@@ -859,8 +859,8 @@ class ZongeMTFT():
                                 break
                         
             if rrfind == False:
-                print ('Did not find remote reference time series '
-                       'for {0}'.format(ts_dict['LocalFile']))
+                print(('Did not find remote reference time series '
+                       'for {0}'.format(ts_dict['LocalFile'])))
                 self.log_lines.append('Did not find remote reference time series '
                        'for {0}\n'.format(ts_dict['LocalFile']))
                        
@@ -947,7 +947,7 @@ class ZongeMTFT():
                 setup_dict['Setup.Use'] = 'Yes'
                 setup_dict['Unit.Length'] = 'm'
                 setup_dict['Chn.Cmp'] = cc
-                setup_dict['Chn.ID'] = range(1,comp_num+1)
+                setup_dict['Chn.ID'] = list(range(1,comp_num+1))
                 setup_dict['Chn.Length'] = [100]*len(cc)
                 setup_dict['Chn.Gain'] = [1]*len(cc)
                 setup_dict['Ant.FrqMin'] = self.Ant_FrqMin
@@ -1035,12 +1035,12 @@ class ZongeMTFT():
                 try:
                     setup_dict['chn_dict']['Hx'][0] = survey_dict['hx']
                 except KeyError:
-                    print 'No hx data'
+                    print('No hx data')
                     self.log_lines.append('No hx data from survey file.\n')
                 try:
                     setup_dict['chn_dict']['Hy'][0] = survey_dict['hy']
                 except KeyError:
-                    print 'No hy data'
+                    print('No hy data')
                     self.log_lines.append('No hy data from survey file.\n')
                 
                 try:
@@ -1049,25 +1049,25 @@ class ZongeMTFT():
                     else:
                         setup_dict['chn_dict']['Hz'][0] = survey_dict['hz']
                 except KeyError:
-                    print 'No hz data'
+                    print('No hz data')
                     self.log_lines.append('No hz data from survey file.\n')
                 
                 try:
                     setup_dict['chn_dict']['Ex'][2] = \
                                                  survey_dict['e_xaxis_length']
                 except KeyError:
-                    print 'No ex data'
+                    print('No ex data')
                     self.log_lines.append('No ex data from survey file.\n')
                 try:
                     setup_dict['chn_dict']['Ey'][2] = \
                                                  survey_dict['e_yaxis_length']
                 except KeyError:
-                    print 'No ey data'
+                    print('No ey data')
                     self.log_lines.append('No ey data from survey file.\n')
                     
             except KeyError:
-                print ('Could not find survey information from ' 
-                       '{0} for {1}'.format(survey_file, station_name))
+                print(('Could not find survey information from ' 
+                       '{0} for {1}'.format(survey_file, station_name)))
                 self.log_lines.append('Could not find survey information from ' 
                        '{0} for {1}\n'.format(survey_file, station_name))
             
@@ -1077,18 +1077,18 @@ class ZongeMTFT():
                     try:
                         setup_dict['chn_dict']['Hxr'][0] = survey_dict['hx']
                     except KeyError:
-                        print 'No hxr data'
+                        print('No hxr data')
                         self.log_lines.append('No hxr data from survey file.\n')
                         
                     try:
                         setup_dict['chn_dict']['Hyr'][0] = survey_dict['hy']
                     except KeyError:
-                        print 'No hyr data'
+                        print('No hyr data')
                         self.log_lines.append('No hyr data from survey file.\n')
                
                 except KeyError:
-                    print ('Could not find survey information from ' 
-                           '{0} for {1}'.format(survey_file, rr_station_name))
+                    print(('Could not find survey information from ' 
+                           '{0} for {1}'.format(survey_file, rr_station_name)))
                     self.log_lines.append('Could not find survey information from ' 
                            '{0} for {1}\n'.format(survey_file, rr_station_name))
                            
@@ -1131,7 +1131,7 @@ class ZongeMTFT():
         
         #--> get number of components
         self.compute_number_of_setups()
-        print 'Number of setups = {0}'.format(self.Setup_Number)
+        print('Number of setups = {0}'.format(self.Setup_Number))
         
         #--> get remote reference information if needed
         if remote_path is not None:
@@ -1210,7 +1210,7 @@ class ZongeMTFT():
                 pass                            
         
         cfid.close()
-        print 'Wrote config file to {0}'.format(save_path)
+        print('Wrote config file to {0}'.format(save_path))
         self.log_lines.append('Wrote config file to {0}\n'.format(save_path))
         
         #write log file
@@ -1509,7 +1509,7 @@ class ZongeMTEdit():
                                 self.string_fmt_lst[-1])))
     
         cfid.close()
-        print 'Wrote mtedit config file to {0}'.format(self.cfg_fn)
+        print('Wrote mtedit config file to {0}'.format(self.cfg_fn))
         
     
 #==============================================================================
@@ -1658,19 +1658,19 @@ class ZongeMTAvg():
             if len(alines) > 140:  
                 self.comp_dict = dict([(ckey, np.zeros(len(alines)/4, 
                                                        dtype=self.info_dtype))
-                                        for ckey in self.comp_flag.keys()])
+                                        for ckey in list(self.comp_flag.keys())])
             # if there are only 2
             else:
                 self.comp_dict = dict([(ckey, np.zeros(len(alines)/2, 
                                                        dtype=self.info_dtype))
-                                        for ckey in self.comp_flag.keys()])
+                                        for ckey in list(self.comp_flag.keys())])
         self.comp_lst_z = []
         self.comp_lst_tip = []
         ii = 0                        
         for aline in alines:
             if aline.find('=') > 0 and aline.find('$') == 0:
                 alst = [aa.strip() for aa in aline.strip().split('=')]
-                if alst[1].lower() in self.comp_flag.keys():
+                if alst[1].lower() in list(self.comp_flag.keys()):
                     akey = alst[1].lower()
                     self.comp_flag[akey] = True
                     if akey[0] == 'z':
@@ -1700,7 +1700,7 @@ class ZongeMTAvg():
         self.fill_Z()
         self.fill_Tipper()
         
-        print 'Read file {0}'.format(avg_fn)
+        print('Read file {0}'.format(avg_fn))
         
     def convert2complex(self, zmag, zphase):
         """
@@ -1753,7 +1753,7 @@ class ZongeMTAvg():
             new_freq_dict = self._match_freq(sorted(self.freq_dict_x.keys()), 
                                              freq)
             
-            new_nz = len(new_freq_dict.keys())
+            new_nz = len(list(new_freq_dict.keys()))
             #fill z according to index values
             new_Z = mtz.Z()
             new_Z.z = np.zeros((new_nz, 2, 2), dtype='complex')
@@ -1789,7 +1789,7 @@ class ZongeMTAvg():
 
                 zr, zi = self.convert2complex(self.comp_dict[ikey]['z.mag'][:nz].copy(),
                                               self.comp_dict[ikey]['z.phz'][:nz].copy())
-                for kk, zzr, zzi in zip(range(len(zr)), zr, zi):
+                for kk, zzr, zzi in zip(list(range(len(zr))), zr, zi):
                     ll = self.freq_dict[self.comp_dict[ikey]['freq'][kk]]
                     if ikey.find('yx') > 0 and self.z_coordinate == 'up':
                         new_Z.z[ll, ii, jj] = -1*(zzr+zzi*1j)
@@ -1836,7 +1836,7 @@ class ZongeMTAvg():
         """
         
         if self.comp_flag['tzy'] == False and self.comp_flag['tzx'] == False:
-            print 'No Tipper found'
+            print('No Tipper found')
             return
             
         flst = np.array([len(np.nonzero(self.comp_dict[comp]['freq'])[0])
@@ -1849,7 +1849,7 @@ class ZongeMTAvg():
             new_freq_dict = self._match_freq(sorted(self.freq_dict.keys()), 
                                              freq)
             
-            new_nz = len(new_freq_dict.keys())
+            new_nz = len(list(new_freq_dict.keys()))
             #fill z according to index values
             new_Tipper = mtz.Tipper()
             new_Tipper.tipper = np.zeros((new_nz, 1, 2), dtype='complex')
@@ -1882,7 +1882,7 @@ class ZongeMTAvg():
 
                 tr, ti = self.convert2complex(self.comp_dict[ikey]['z.mag'][:nz],
                                               self.comp_dict[ikey]['z.phz'][:nz])
-                for kk, tzr, tzi in zip(range(len(tr)), tr, ti):
+                for kk, tzr, tzi in zip(list(range(len(tr))), tr, ti):
                     ll = self.freq_dict[self.comp_dict[ikey]['freq'][kk]]
                     
                     if self.z_coordinate == 'up':
@@ -2014,7 +2014,7 @@ class ZongeMTAvg():
                 survey_dict['rr_station_longitude'] = gis_tools.assert_lon_value(
                                                rrsurvey_dict.pop('longitude',0.0))
             except KeyError:
-                print 'Could not find station information for remote reference'
+                print('Could not find station information for remote reference')
         else:
             rrsurvey_dict = None
             
@@ -2092,7 +2092,7 @@ class ZongeMTAvg():
         
         #--> put parameters about how transfer function was found
         if mtedit_dict is not None:
-            for mkey in mtedit_dict.keys():
+            for mkey in list(mtedit_dict.keys()):
                 self.edi.Info.info_list.append('{0}: {1}'.format(mkey,
                                                            mtedit_dict[mkey]))
         
@@ -2269,14 +2269,14 @@ class ZongeMTAvg():
         #============ WRITE EDI FILE ==========================================
         edi_fn = self.edi.write_edi_file(new_edi_fn=save_path)
         
-        print 'Wrote .edi file to {0}'.format(edi_fn)
+        print('Wrote .edi file to {0}'.format(edi_fn))
         
         if copy_path is not None:
             copy_edi_fn = os.path.join(copy_path, os.path.basename(edi_fn))
             if not os.path.exists(copy_path):
                 os.mkdir(copy_path)
             shutil.copy(edi_fn, copy_edi_fn)
-            print 'Copied {0} to {1}'.format(edi_fn, copy_edi_fn)
+            print('Copied {0} to {1}'.format(edi_fn, copy_edi_fn))
         
         return edi_fn
         
@@ -2390,7 +2390,7 @@ class ZongeMTAvg():
                 survey_dict['rr_station_longitude'] = gis_tools.assert_lon_value(
                                                rrsurvey_dict.pop('longitude',0.0))
             except KeyError:
-                print 'Could not find station information for remote reference'
+                print('Could not find station information for remote reference')
         else:
             rrsurvey_dict = None
             
@@ -2458,12 +2458,12 @@ class ZongeMTAvg():
         info_dict['max lines'] = 1000
         
         #--> put the rest of the survey parameters in the info block
-        for skey in survey_dict.keys():
+        for skey in list(survey_dict.keys()):
             info_dict[skey] = survey_dict[skey]
         
         #--> put parameters about how fourier coefficients were found
         if mtft_dict:
-            for mkey in mtft_dict.keys():
+            for mkey in list(mtft_dict.keys()):
                 if mkey == 'setup_lst' or \
                    mkey.lower() == 'mtft.tsplot.chnrange':
                     pass
@@ -2472,7 +2472,7 @@ class ZongeMTAvg():
         
         #--> put parameters about how transfer function was found
         if mtedit_dict:
-            for mkey in mtedit_dict.keys():
+            for mkey in list(mtedit_dict.keys()):
                 info_dict[mkey] = mtedit_dict[mkey]
         
         #--> set info dict as attribute of edi
@@ -2645,14 +2645,14 @@ class ZongeMTAvg():
         #============ WRITE EDI FILE ==========================================
         edi_fn = self.edi.writefile(save_path)
         
-        print 'Wrote .edi file to {0}'.format(edi_fn)
+        print('Wrote .edi file to {0}'.format(edi_fn))
         
         if copy_path is not None:
             copy_edi_fn = os.path.join(copy_path, os.path.basename(edi_fn))
             if not os.path.exists(copy_path):
                 os.mkdir(copy_path)
             shutil.copy(edi_fn, copy_edi_fn)
-            print 'Copied {0} to {1}'.format(edi_fn, copy_edi_fn)
+            print('Copied {0} to {1}'.format(edi_fn, copy_edi_fn))
         
         return edi_fn
         

@@ -352,9 +352,9 @@ class PlotTF(object):
                         ' is not definded see mtpy.processing.tf for options')
 
         #print information for user
-        print '{0} tf parameters {0}'.format('-'*5)
+        print('{0} tf parameters {0}'.format('-'*5))
         for kw in sorted(kwargs.keys()):
-            print '{0}{1} = {2}'.format(' '*4, kw, kwargs[kw])
+            print('{0}{1} = {2}'.format(' '*4, kw, kwargs[kw]))
 
     def plot(self):
         """
@@ -624,4 +624,4 @@ class PlotTF(object):
             pass
 
         self.fig_fn = save_fn
-        print 'Saved figure to: {0}'.format(self.fig_fn)
+        print('Saved figure to: {0}'.format(self.fig_fn))

@@ -115,7 +115,7 @@ class EgbertZ(EgbertHeader):
         self.z_fn = z_fn
         self._header_count = 0
         
-        for key in kwargs.keys():
+        for key in list(kwargs.keys()):
             setattr(self, key, kwargs[key])
             
     def read_egbert_file(self, z_fn=None):

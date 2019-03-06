@@ -83,9 +83,9 @@ class Data():
             # end if
 
             self._filesDict[dt] = f
-            print('Selecting %s ..'%os.path.basename(f))
+            print(('Selecting %s ..'%os.path.basename(f)))
         #end for
-        print ('\nAdded %d files'%(len(self._filesDict.keys())))
+        print(('\nAdded %d files'%(len(list(self._filesDict.keys())))))
     #end func
 
     def ouput(self, prefix, outputPath):
@@ -157,7 +157,7 @@ class Data():
         assert len(prefix), 'Error: invalid prefix. Aborting..'
         assert os.path.exists(outputPath), 'Error: invalid output path. Aborting..'
 
-        if(len(self._filesDict.keys())==0): return
+        if(len(list(self._filesDict.keys()))==0): return
 
         print('\nReading data files..')
         bxyz = None

@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+# for Travis-ci, the following script sets installs all dependencies
+set -ex
+
 # Here is a user guide for Ubuntu 16.04 desktop users.
 # Assume the system default python 2.7 is used.
 # We plan to migrate mtpy to python3 later. But Not at this point of time.
@@ -13,39 +16,41 @@
 
 # Keep this script for reference.
 
-sudo apt-get install python-pip
+# sudo apt -y install python-pip  python3-pip
 
-sudo apt-get install --upgrade spyder
-# spyder  windows
+sudo add-apt-repository -y ppa:ubuntugis/ppa
+sudo apt update
+# sudo apt upgrade # if you already have gdal 1.11 installed
+sudo apt -y install gdal-bin python-gdal python3-gdal #
+sudo apt -y install libgdal-dev
+
+# gdal-config --datadir
+
+export GDAL_DATA=$(gdal-config --datadir) && echo GDAL_DATA=$GDAL_DATA
 
 
-sudo add-apt-repository -y ppa:ubuntugis/ubuntugis-unstabl
-sudo apt install gdal-bin python-gdal
-sudo apt-get install libgdal-dev
+# do not use sudo for pip install !
+ pip install --upgrade pandas
+ pip install --upgrade geopandas
+ pip install --upgrade pyyaml
 
-#  gdal-config --datadir
+ pip install pytest-xdist  # add xdist for distributing tests
+#pip install pytest-xvfb  # run xvfb automatically
+ pip install pytest-cov  # code coverage
+ pip install coveralls
 
-export GDAL_DATA=$(gdal-config --datadir)
-#export GDAL_DATA=/usr/share/gdal/2.2/
+ pip install -q -r requirements.txt
 
-sudo pip install --upgrade pandas
-sudo pip install --upgrade geopandas
-
-cd $HOME
-
-git clone https://github.com/MTgeophysics/mtpy.git
-
-cd mtpy
-
-sudo pip install -r requirements.txt
+echo "************************** show installed python package versions *********************** "
+pip freeze
 
 
 # OK python -c "import geopandas"
 
-sudo apt install python-pytest
+# apt install python-pytest
 
-pytest  tests/core/test_edi.py
-pytest  tests/core/test_ediCollection.py
+#pytest  tests/core/test_edi.py
+#pytest  tests/core/test_ediCollection.py
 
 # pytest tests/core/
 # py.test tests/core/

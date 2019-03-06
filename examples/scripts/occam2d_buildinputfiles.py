@@ -7,6 +7,7 @@ Created on Wed Apr 15 09:51:02 2015
 sets up input files for running 2d occam inversions using the occam2d_rewrite module
 
 """
+
 import mtpy.modeling.occam2d_rewrite as occam2d
 import os
 import os.path as op

@@ -158,7 +158,7 @@ def main():
                                   ffactor=1, edipath=edipath)
             flstall.append(flst)
         except ValueError:
-            print 'Did not run ', pdict['station'], pdict['day'], pdict['start']
+            print('Did not run ', pdict['station'], pdict['day'], pdict['start'])
     #    brp.plotBFfiles(flst['edifile'],
     #                    cohfile=flst['cohfile'],
     #                    cfilelst=flst['cfilelst'],

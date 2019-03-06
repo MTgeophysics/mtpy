@@ -337,7 +337,7 @@ class PlotStations(object):
             self.ax.imshow(im, origin='lower', extent=self.image_extent,
                            aspect='auto')
 
-        for key in self.mt_list.map_dict.keys():
+        for key in list(self.mt_list.map_dict.keys()):
             self.ax.scatter(self.mt_list.map_dict[key][0],
                             self.mt_list.map_dict[key][1],
                             marker=self.marker,
@@ -415,7 +415,7 @@ class PlotStations(object):
                   ['{0:^15}'.format(hh) for hh in hdr_list[1:]] + ['\n']
 
         tfid.write(''.join(hdr_str))
-        for ss in self.mt_list.map_dict.keys():
+        for ss in list(self.mt_list.map_dict.keys()):
             x = self.mt_list.map_dict[ss][0]
             y = self.mt_list.map_dict[ss][1]
             z = self.mt_list.map_dict[ss][2]
@@ -433,7 +433,7 @@ class PlotStations(object):
 
         tfid.close()
 
-        print 'Saved file to: ', fn_svpath
+        print('Saved file to: ', fn_svpath)
 
     def save_plot(self, save_fn, file_format='pdf',
                   orientation='portrait', fig_dpi=None, close_plot='y'):
@@ -512,7 +512,7 @@ class PlotStations(object):
             pass
 
         self.fig_fn = save_fn
-        print 'Saved figure to: ' + self.fig_fn
+        print('Saved figure to: ' + self.fig_fn)
 
     def update_plot(self):
         """

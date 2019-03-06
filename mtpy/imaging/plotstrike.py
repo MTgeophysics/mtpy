@@ -324,6 +324,7 @@ class PlotStrike(object):
             pt = mt.pt
             az = 90 - pt.azimuth
             az_err = pt.azimuth_err
+            az[pt.phimax == 0] = np.nan
 
             # need to add 90 because pt assumes 0 is north and
             # negative because measures clockwise.
@@ -372,8 +373,13 @@ class PlotStrike(object):
             tip_list.append(tiprdict)
 
         #--> get min and max period
+<<<<<<< HEAD
         self.max_per = np.max([np.max(mm.keys()) for mm in inv_list])
         self.min_per = np.min([np.min(mm.keys()) for mm in pt_list])
+=======
+        maxper = np.max([np.max(list(mm.keys())) for mm in invlist])
+        minper = np.min([np.min(list(mm.keys())) for mm in ptlist])
+>>>>>>> 1fffa1ccb835c016f1be5c18b37b54bddf182ac2
 
         # make empty arrays to put data into for easy manipulation
         medinv = np.zeros((nt, nc))
@@ -389,10 +395,17 @@ class PlotStrike(object):
                                  enumerate(self.period_arr)])
 
         # put data into arrays
+<<<<<<< HEAD
         for ii, mm in enumerate(inv_list):
             mperiod = mm.keys()
             for jj, mp in enumerate(mperiod):
                 for kk in self.period_dict.keys():
+=======
+        for ii, mm in enumerate(invlist):
+            mperiod = list(mm.keys())
+            for jj, mp in enumerate(mperiod):
+                for kk in list(pdict.keys()):
+>>>>>>> 1fffa1ccb835c016f1be5c18b37b54bddf182ac2
                     if mp > kk * (1 - self.period_tolerance) and \
                             mp < kk * (1 + self.period_tolerance):
                         ll = self.period_dict[kk]
@@ -476,13 +489,21 @@ class PlotStrike(object):
                         binlist.append(ii)
 
                 # extract just the subset for each decade
+<<<<<<< HEAD
                 hh = self.med_inv[binlist, :]
                 gg = self.med_pt[binlist, :]
+=======
+                hh = medinv[binlist, :]
+                gg = medpt[binlist, :]
+                ptplotdata = gg[np.nonzero(gg)].flatten()
+                ptplotdata = ptplotdata[np.isfinite(ptplotdata)]
+                
+>>>>>>> 1fffa1ccb835c016f1be5c18b37b54bddf182ac2
                 if self.plot_tipper == 'y':
                     tr = self.med_tip[binlist, :]
                     # compute the historgram for the tipper strike
                     trhist = np.histogram(tr[np.nonzero(tr)].flatten(),
-                                          bins=360 / bw,
+                                          bins=int(360/bw),
                                           range=histrange)
 
                     # make a bar graph with each bar being width of bw degrees
@@ -501,10 +522,10 @@ class PlotStrike(object):
 
                 # estimate the histogram for the decade for invariants and pt
                 invhist = np.histogram(hh[np.nonzero(hh)].flatten(),
-                                       bins=360 / bw,
+                                       bins= int(360/bw),
                                        range=histrange)
-                pthist = np.histogram(gg[np.nonzero(gg)].flatten(),
-                                      bins=360 / bw,
+                pthist = np.histogram(ptplotdata,
+                                      bins=int(360/bw),
                                       range=histrange)
         
                 # plot the histograms
@@ -579,13 +600,13 @@ class PlotStrike(object):
                         if invmean < 0:
                             invmean += 360
 
-                        print '-----Period Range {0:.3g} to {1:.3g} (s)-----'.format(10**bb,
-                                                                                     10**(bb + 1))
+                        print('-----Period Range {0:.3g} to {1:.3g} (s)-----'.format(10**bb,
+                                                                                     10**(bb + 1)))
 
-                        print '   *Z-Invariants:  median={0:.1f} mode={1:.1f} mean={2:.1f}'.format(
+                        print('   *Z-Invariants:  median={0:.1f} mode={1:.1f} mean={2:.1f}'.format(
                             invmedian,
                             invmode,
-                            invmode)
+                            invmode))
 
                         #--> set title of subplot
                         axh.set_title(self.title_dict[bb], fontdict=fd,
@@ -607,11 +628,11 @@ class PlotStrike(object):
                         if ptmode < 0:
                             ptmode += 360
 
-                        ptmedian = 90 - np.median(gg[np.nonzero(gg)])
+                        ptmedian = 90 - np.median(ptplotdata)
                         if ptmedian < 0:
                             ptmedian += 360
 
-                        ptmean = 90 - np.mean(gg[np.nonzero(gg)])
+                        ptmean = 90 - np.mean(ptplotdata)
                         if ptmean < 0:
                             ptmean += 360
 
@@ -624,13 +645,13 @@ class PlotStrike(object):
 
                         # print out the results for the strike angles
 
-                        print '   *PT Strike:     median={0:.1f} mode={1:.1f} mean={2:.1f}'.format(
+                        print('   *PT Strike:     median={0:.1f} mode={1:.1f} mean={2:.1f}'.format(
                             ptmedian,
                             ptmode,
-                            ptmean)
+                            ptmean))
 
                         if self.plot_tipper != 'y':
-                            print '\n'
+                            print('\n')
 
                         #if nb > 5:
                         #    axh.set_title(self.title_dict[bb], fontdict=fd,
@@ -664,14 +685,22 @@ class PlotStrike(object):
                                  bbox={'facecolor': (0, .1, .9), 'alpha': .25})
 
                         # print out statistics for strike angle
-                        print '   *Tipper Strike: median={0:.1f} mode={1:.1f} mean={2:.1f}'.format(
+                        print('   *Tipper Strike: median={0:.1f} mode={1:.1f} mean={2:.1f}'.format(
                             tpmedian,
                             tpmode,
+<<<<<<< HEAD
                             tpmode)
                         print '\n'
                         #if nb > 5:
                         #    axh.set_title(self.title_dict[bb], fontdict=fd,
                         #                  bbox={'facecolor': 'white', 'alpha': .25})
+=======
+                            tpmode))
+                        print('\n')
+                        if nb > 5:
+                            axh.set_title(self.title_dict[bb], fontdict=fd,
+                                          bbox={'facecolor': 'white', 'alpha': .25})
+>>>>>>> 1fffa1ccb835c016f1be5c18b37b54bddf182ac2
 
                     # set plot labels
                     if jj == 1:
@@ -693,8 +722,8 @@ class PlotStrike(object):
 
                     plt.setp(axh.yaxis.get_ticklabels(), visible=False)
 
-            print 'Note: North is assumed to be 0 and the strike angle is measured' +\
-                  'clockwise positive.'
+            print('Note: North is assumed to be 0 and the strike angle is measured' +\
+                  'clockwise positive.')
 
             if show:
                 plt.show()
@@ -734,16 +763,24 @@ class PlotStrike(object):
 
             # estimate the histogram for the decade for invariants and pt
             invhist = np.histogram(hh[np.nonzero(hh)].flatten(),
-                                   bins=360 / bw,
+                                   bins=int(360/bw),
                                    range=histrange)
 
             ptplotdata = gg[np.nonzero(gg)].flatten()
+<<<<<<< HEAD
             print ptplotdata.min(), ptplotdata.max()
 
             if not self.fold:
                 ptplotdata = np.hstack([ptplotdata,ptplotdata+180])
             print self.fold, self.show_ptphimin
 
+=======
+            ptplotdata = ptplotdata[np.isfinite(ptplotdata)]
+            
+            if not self.fold:
+                ptplotdata = np.hstack([ptplotdata,ptplotdata+180])
+                
+>>>>>>> 1fffa1ccb835c016f1be5c18b37b54bddf182ac2
             if self.show_ptphimin:
                 if self.fold:
                     # we are working in matplotlib coordinates (counterclockwise from east)
@@ -760,7 +797,7 @@ class PlotStrike(object):
                 
 
             pthist = np.histogram(ptplotdata,
-                                  bins=360 / bw,
+                                  bins=int(360/bw),
                                   range=histrange
                                   )
 
@@ -788,7 +825,7 @@ class PlotStrike(object):
                 tr = self._medtp[binlist, :]
 
                 trhist = np.histogram(tr[np.nonzero(tr)].flatten(),
-                                      bins=360 / bw,
+                                      bins= int(360/bw),
                                       range=histrange
                                       )
 
@@ -846,13 +883,13 @@ class PlotStrike(object):
                     if invmean < 0:
                         invmean += 360
 
-                    print '-----Period Range {0:.3g} to {1:.3g} (s)-----'.format(10**brange[0],
-                                                                                 10**brange[-1])
+                    print('-----Period Range {0:.3g} to {1:.3g} (s)-----'.format(10**brange[0],
+                                                                                 10**brange[-1]))
 
-                    print '   *Z-Invariants:  median={0:.1f} mode={1:.1f} mean={2:.1f}'.format(
+                    print('   *Z-Invariants:  median={0:.1f} mode={1:.1f} mean={2:.1f}'.format(
                         invmedian,
                         invmode,
-                        invmode)
+                        invmode))
 
                     axh.set_title('Strike (Z)', fontdict=fd,
                                   bbox={'facecolor': (.9, 0, .1), 'alpha': 0.25})
@@ -870,11 +907,11 @@ class PlotStrike(object):
                     if ptmode < 0:
                         ptmode += 360
 
-                    ptmedian = 90 - np.median(gg[np.nonzero(gg)])
+                    ptmedian = 90 - np.median(ptplotdata)
                     if ptmedian < 0:
                         ptmedian += 360
 
-                    ptmean = 90 - np.mean(gg[np.nonzero(gg)])
+                    ptmean = 90 - np.mean(ptplotdata)
                     if ptmean < 0:
                         ptmean += 90
 
@@ -886,13 +923,13 @@ class PlotStrike(object):
                              bbox={'facecolor': (.9, .9, 0), 'alpha': 0.25})
 
                     # print results of strike analysis for pt
-                    print '   *PT Strike:     median={0:.1f} mode={1:.1f} mean={2:.1f}'.format(
+                    print('   *PT Strike:     median={0:.1f} mode={1:.1f} mean={2:.1f}'.format(
                         ptmedian,
                         ptmode,
-                        ptmean)
+                        ptmean))
 
                     if self.plot_tipper != 'y':
-                        print '\n'
+                        print('\n')
 
                     axh.set_title('PT Azimuth', fontdict=fd,
                                   bbox={'facecolor': (.9, .9, 0), 'alpha': 0.25})
@@ -921,10 +958,10 @@ class PlotStrike(object):
                              verticalalignment='baseline',
                              fontdict={'size': self.text_size},
                              bbox={'facecolor': (0, .1, .9), 'alpha': 0.25})
-                    print '   *Tipper Stike:  median={0:.1f} mode={1:.1f} mean={2:.1f}\n'.format(
+                    print('   *Tipper Stike:  median={0:.1f} mode={1:.1f} mean={2:.1f}\n'.format(
                         tpmedian,
                         tpmode,
-                        tpmean)
+                        tpmean))
 
                     axh.set_title('Tipper Strike', fontdict=fd,
                                   bbox={'facecolor': (0, .1, .9), 'alpha': 0.25})
@@ -933,10 +970,11 @@ class PlotStrike(object):
                 axh.titleOffsetTrans._t = (0, .15)
 
             # remind the user what the assumptions of the strike angle are
-            print 'Note: North is assumed to be 0 and the strike angle is ' +\
-                  'measured clockwise positive.'
+            print('Note: North is assumed to be 0 and the strike angle is ' +\
+                  'measured clockwise positive.')
             if show:
                 plt.show()
+            
                 
 
     def save_plot(self, save_fn, file_format='pdf',
@@ -1016,7 +1054,7 @@ class PlotStrike(object):
             pass
 
         self.fig_fn = save_fn
-        print 'Saved figure to: ' + self.fig_fn
+        print('Saved figure to: ' + self.fig_fn)
 
     def update_plot(self):
         """
@@ -1135,7 +1173,7 @@ class PlotStrike(object):
                     pass
 
                 zshist = np.histogram(zs[np.nonzero(zs)].flatten(),
-                                      bins=360 / bw,
+                                      bins=int(360/bw),
                                       range=histrange)
 
                 #==============================================================
@@ -1190,7 +1228,7 @@ class PlotStrike(object):
 
                 # == > compute mode
                 azhist = np.histogram(az[np.nonzero(az)].flatten(),
-                                      bins=360 / bw,
+                                      bins=int(360/bw),
                                       range=histrange)
                 ptmode1 = 90 - azhist[1][np.where(
                     azhist[0] == azhist[0].max())[0][0]]
@@ -1221,7 +1259,7 @@ class PlotStrike(object):
                     tipr[np.where(tipr < 0)] = tipr[np.where(tipr < 0)] + 360
 
                 tphist = np.histogram(tipr[np.nonzero(tipr)].flatten(),
-                                      bins=360 / bw,
+                                      bins=int(360/bw),
                                       range=histrange)
 
                 #==> compute mean
@@ -1254,18 +1292,20 @@ class PlotStrike(object):
             # extract just the subset for each decade
             hh = self._medinv[binlist, :]
             gg = self._medpt[binlist, :]
+            ptplotdata = gg[np.nonzero(gg)].flatten()
+            ptplotdata = ptplotdata[np.isfinite(ptplotdata)]
             tr = self._medtp[binlist, :]
 
             # estimate the histogram for the decade for invariants and pt
             invhist = np.histogram(hh[np.nonzero(hh)].flatten(),
-                                   bins=360 / bw,
+                                   bins=int(360/bw),
                                    range=histrange)
-            pthist = np.histogram(gg[np.nonzero(gg)].flatten(),
-                                  bins=360 / bw,
+            pthist = np.histogram(ptplotdata,
+                                  bins=int(360/bw),
                                   range=histrange)
 
             trhist = np.histogram(tr[np.nonzero(tr)].flatten(),
-                                  bins=360 / bw,
+                                  bins=int(360/bw),
                                   range=histrange)
 
             #--> include the row for mean, median and mode for each parameter
@@ -1306,12 +1346,12 @@ class PlotStrike(object):
 
             #--> compute pt statistics
             # == > mean
-            ptmean = 90 - np.mean(gg[np.nonzero(gg)])
+            ptmean = 90 - np.mean(ptplotdata)
             if ptmean < 0:
-                ptmean = np.mean(gg[np.nonzero(gg)])
+                ptmean = np.mean(ptplotdata)
 
             # == > median
-            ptmed = 90 - np.median(gg[np.nonzero(gg)])
+            ptmed = 90 - np.median(ptplotdata)
             if ptmed < 0:
                 ptmed += 360
 

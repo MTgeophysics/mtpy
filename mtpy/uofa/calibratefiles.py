@@ -151,10 +151,10 @@ def main():
             cal_outdir = op.abspath(op.join(os.curdir, outdir))
             if not op.isdir(cal_outdir):
                 os.makedirs(cal_outdir)
-                print 'generated ', cal_outdir
+                print('generated ', cal_outdir)
         except:
-            print 'Output directory cannot be generated: '\
-                '{0} - using generic location'.format(cal_outdir)
+            print('Output directory cannot be generated: '\
+                '{0} - using generic location'.format(cal_outdir))
 
             cal_outdir = op.abspath(op.join(pathname[0], 'calibrated'))
     try:
@@ -165,11 +165,11 @@ def main():
         sys.exit(
             'Generic directory cannot be generated: {0}'.format(cal_outdir))
 
-    print '\t Output directory ok: {0}\n'.format(cal_outdir)
+    print('\t Output directory ok: {0}\n'.format(cal_outdir))
 
     # if re-orientation is required, do it first:
     if orientation is True:
-        print '\n\t....re-orient data first...\n'
+        print('\n\t....re-orient data first...\n')
         ori_outdir = op.abspath(op.join(cal_outdir, '../reoriented_tmp'))
         try:
             if not op.isdir(ori_outdir):
@@ -217,7 +217,7 @@ def main():
         if stationname is not None:
             if stationname.upper() != curr_station.upper():
                 continue
-        print 'reading file {0}...'.format(filename)
+        print('reading file {0}...'.format(filename))
 
         channel = lo_allheaders[file_idx]['channel']
         lo_calibrated_stations.append(curr_station)
@@ -227,8 +227,8 @@ def main():
         try:
             stationdict = config_dict[curr_station]
         except:
-            print 'no entry for station {0} found in configuration file'\
-                ' {1} skipping file'.format(curr_station, configfile)
+            print('no entry for station {0} found in configuration file'\
+                ' {1} skipping file'.format(curr_station, configfile))
             continue
 
         latitude = float(stationdict['latitude'])
@@ -279,13 +279,13 @@ def main():
     lo_calibrated_stations = list(set(lo_calibrated_stations))
     if len(lo_calibrated_files) == 0:
         if stationname is not None:
-            print 'No files found for station {0}'.format(stationname)
+            print('No files found for station {0}'.format(stationname))
             return
         else:
-            print 'No files found for stations {0}'.format(lo_allstations)
+            print('No files found for stations {0}'.format(lo_allstations))
 
-    print '{0} files calibrated for stations'\
-        ' {1}'.format(len(lo_calibrated_files), lo_calibrated_stations)
+    print('{0} files calibrated for stations'\
+        ' {1}'.format(len(lo_calibrated_files), lo_calibrated_stations))
 
 if __name__ == '__main__':
     main()

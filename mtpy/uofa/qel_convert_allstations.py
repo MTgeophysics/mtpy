@@ -86,7 +86,7 @@ dirs = os.listdir(indir)
 
 dirs = sorted([i for i in dirs if op.isdir(op.join(indir, i))])
 
-print dirs
+print(dirs)
 basedir = op.abspath(os.curdir)
 
 for stationdir in dirs:
@@ -108,7 +108,7 @@ for stationdir in dirs:
         year = int(float(fullday[-6:-4]))
 
         os.chdir(daydir)
-        print op.abspath(os.curdir)
+        print(op.abspath(os.curdir))
 
         donefiles = os.listdir('.')
         donefiles = [i for i in donefiles if i.lower().endswith('.j.done')]
@@ -125,7 +125,7 @@ for stationdir in dirs:
                 station, '.', survey_configfile, instr_resp, string2strip=string2strip, datestring=fullday)
 
         except:
-            print 'no information found in folder {0}'.format(op.abspath(os.curdir))
+            print('no information found in folder {0}'.format(op.abspath(os.curdir)))
             continue
         try:
             colfile = edi2col.convert2columns(op.basename(outfn))
@@ -136,13 +136,13 @@ for stationdir in dirs:
             basedir, outdir, '{0}{1:02d}{1:02d}{2:02d}'.format(
                 outdir_prefix, year, month, day), 'edi')
 
-        print outfn, outfn_coh, colfile
+        print(outfn, outfn_coh, colfile)
 
         if not op.isdir(outdir_edi):
             os.makedirs(outdir_edi)
         try:
             shutil.copy(op.basename(outfn), outdir_edi)
-            print 'copied EDI file to %s' % (outdir_edi)
+            print('copied EDI file to %s' % (outdir_edi))
         except:
             pass
 
@@ -182,7 +182,7 @@ for stationdir in dirs:
             plotfn = smplplt.plotedi(
                 outfn, saveplot=True, component=plot_component)
             shutil.copy(op.basename(plotfn), outdir_plots)
-            print 'copied res/phase plot %s' % (plotfn)
+            print('copied res/phase plot %s' % (plotfn))
 
         except:
             pass
@@ -190,7 +190,7 @@ for stationdir in dirs:
         try:
             plotfncoh = smplpltCOH.plotcoh(outfn_coh, saveplot=True)
             shutil.copy(op.basename(plotfncoh), outdir_plots)
-            print 'copied coherence plot %s' % (plotfncoh)
+            print('copied coherence plot %s' % (plotfncoh))
 
         except:
             pass
@@ -206,4 +206,4 @@ for stationdir in dirs:
     os.chdir(indir)
 
 os.chdir(basedir)
-print
+print()

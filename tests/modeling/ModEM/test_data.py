@@ -113,7 +113,7 @@ def _test_gen(edi_path, error_type_tipper, error_type_z, comp_error_type):
                 "expected output data file does not exist, nothing to compare"
             )
 
-            print "\ncomparing", output_data_file, "and", expected_data_file
+            print("\ncomparing", output_data_file, "and", expected_data_file)
             with open(output_data_file, 'r') as output:
                 with open(expected_data_file, 'r') as expected:
                     diff = difflib.unified_diff(
@@ -128,7 +128,7 @@ def _test_gen(edi_path, error_type_tipper, error_type_z, comp_error_type):
                         count += 1
                     self.assertTrue(count == 0, "output different!")
         else:
-            print "no expected output exist, nothing to compare"
+            print("no expected output exist, nothing to compare")
 
     return test_func
 

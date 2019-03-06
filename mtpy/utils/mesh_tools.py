@@ -129,6 +129,9 @@ def interpolate_elevation_to_grid(grid_east, grid_north, epsg=None,
     # if lat/lon provided as a 1D list, convert to a 2d grid of points
     if len(x.shape) == 1:
         x, y = np.meshgrid(x, y)
+        
+    if len(grid_east.shape) == 1:
+        grid_east,grid_north=np.meshgrid(grid_east,grid_north)
 
     if(fast):
         m_buffer = 1 # use a buffer of 1 degree around mesh-bounds

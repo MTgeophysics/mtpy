@@ -7,7 +7,7 @@ Author: fei.zhang@ga.gov.au
 CreateDate: 2017-04-20
 """
 
-from __future__ import print_function
+
 
 import csv
 import glob
@@ -187,7 +187,7 @@ class EdiCollection(object):
                 self._logger.info("Period=%s is excluded. it is from stations: %s ", aper, station_list)
 
         mydict_ordered = sorted(
-            adict.items(), key=lambda value: value[1], reverse=True)
+            list(adict.items()), key=lambda value: value[1], reverse=True)
         # for apair in mydict_ordered:
         #     print (apair)
 
@@ -786,10 +786,10 @@ class EdiCollection(object):
         pdf = pd.DataFrame(mt_stations, columns=['Station', 'Lat', 'Lon',  'UtmZone'])
 
         mt_distances = []
-        for i in xrange(len(pdf)):
+        for i in range(len(pdf)):
             xi=pdf.iloc[i]['Lat']
             yi=pdf.iloc[i]['Lon']
-            for j in xrange(i+1, len(pdf)):
+            for j in range(i+1, len(pdf)):
                 xj = pdf.iloc[j]['Lat']
                 yj = pdf.iloc[j]['Lon']
                 dist = math.sqrt((xi-xj)**2 + (yi - yj)**2)
@@ -853,7 +853,7 @@ class EdiCollection(object):
 
         utmzones=self.get_station_utmzones_stats()
 
-        number_zones = len(utmzones.items())
+        number_zones = len(list(utmzones.items()))
         self._logger.info("This Edi fileset has %s UTM Zone(s): %s ", number_zones, utmzones)
 
         return
