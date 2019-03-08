@@ -1761,7 +1761,8 @@ class MT(object):
 
         return new_z_obj
 
-    def interpolate(self, new_freq_array, interp_type='slinear', bounds_error=True, period_buffer=None):
+    def interpolate(self, new_freq_array, interp_type='slinear', 
+                    bounds_error=True, period_buffer=None):
         """
         Interpolate the impedance tensor onto different frequencies
 
