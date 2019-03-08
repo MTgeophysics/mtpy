@@ -15,7 +15,6 @@ from matplotlib.ticker import MultipleLocator
 from mtpy.analysis.zinvariants import Zinvariants
 import mtpy.imaging.mtplottools as mtpl
 
-
 #==============================================================================
 
 
@@ -203,14 +202,21 @@ class PlotStrike(object):
         self.plot_type = kwargs.pop('plot_type', 2)
         self.plot_title = kwargs.pop('plot_title', None)
         self.plot_range = kwargs.pop('plot_range', 'data')
-        self.plot_tipper = kwargs.pop('plot_tipper', 'n')
+        self.plot_tipper = kwargs.pop('plot_tipper', False)
+        self.plot_orientation = 'h'
 
         self.period_tolerance = kwargs.pop('period_tolerance', .05)
         self.pt_error_floor = kwargs.pop('pt_error_floor', None)
         self.fold = kwargs.pop('fold', True)
         self.show_ptphimin = kwargs.pop('show_ptphimin',False)
         self.bin_width = kwargs.pop('bin_width', 5)
-
+        self.color = kwargs.pop('color', True)
+        self.color_inv = (.7, 0, .2)
+        self.color_pt = (.2, 0, .7)
+        self.color_tip = (.2, .65, .2)
+        self.ring_spacing = 10
+        self.ring_limits = None
+        
         self.font_size = kwargs.pop('font_size', 7)
 
         text_dict = kwargs.pop('text_dict', {})
@@ -223,21 +229,24 @@ class PlotStrike(object):
             self.text_size = text_dict['size']
         except KeyError:
             self.text_size = self.font_size
+            
+        for key, value in kwargs.items():
+            setattr(self, key, value)
 
         # make a dictionary for plotting titles
         self.title_dict = {}
-        self.title_dict[-5] = '10$^{-5}$--10$^{-4}$s'
-        self.title_dict[-4] = '10$^{-4}$--10$^{-3}$s'
-        self.title_dict[-3] = '10$^{-3}$--10$^{-2}$s'
-        self.title_dict[-2] = '10$^{-2}$--10$^{-1}$s'
-        self.title_dict[-1] = '10$^{-1}$--10$^{0}$s'
-        self.title_dict[0] = '10$^{0}$--10$^{1}$s'
-        self.title_dict[1] = '10$^{1}$--10$^{2}$s'
-        self.title_dict[2] = '10$^{2}$--10$^{3}$s'
-        self.title_dict[3] = '10$^{3}$--10$^{4}$s'
-        self.title_dict[4] = '10$^{4}$--10$^{5}$s'
-        self.title_dict[5] = '10$^{5}$--10$^{6}$s'
-        self.title_dict[6] = '10$^{6}$--10$^{7}$s'
+        self.title_dict[-5] = '10$^{-5}$ - 10$^{-4}$ s'
+        self.title_dict[-4] = '10$^{-4}$ - 10$^{-3}$ s'
+        self.title_dict[-3] = '10$^{-3}$ - 10$^{-2}$ s'
+        self.title_dict[-2] = '10$^{-2}$ - 10$^{-1}$ s'
+        self.title_dict[-1] = '10$^{-1}$ - 10$^{0}$ s'
+        self.title_dict[0] = '10$^{0}$ - 10$^{1}$ s'
+        self.title_dict[1] = '10$^{1}$ - 10$^{2}$ s'
+        self.title_dict[2] = '10$^{2}$ - 10$^{3}$ s'
+        self.title_dict[3] = '10$^{3}$ - 10$^{4}$ s'
+        self.title_dict[4] = '10$^{4}$ - 10$^{5}$ s'
+        self.title_dict[5] = '10$^{5}$ - 10$^{6}$ s'
+        self.title_dict[6] = '10$^{6}$ - 10$^{7}$ s'
 
         self.plot_yn = kwargs.pop('plot_yn', 'y')
         if self.plot_yn == 'y':
@@ -373,13 +382,8 @@ class PlotStrike(object):
             tip_list.append(tiprdict)
 
         #--> get min and max period
-<<<<<<< HEAD
         self.max_per = np.max([np.max(mm.keys()) for mm in inv_list])
         self.min_per = np.min([np.min(mm.keys()) for mm in pt_list])
-=======
-        maxper = np.max([np.max(list(mm.keys())) for mm in invlist])
-        minper = np.min([np.min(list(mm.keys())) for mm in ptlist])
->>>>>>> 1fffa1ccb835c016f1be5c18b37b54bddf182ac2
 
         # make empty arrays to put data into for easy manipulation
         medinv = np.zeros((nt, nc))
@@ -395,17 +399,10 @@ class PlotStrike(object):
                                  enumerate(self.period_arr)])
 
         # put data into arrays
-<<<<<<< HEAD
         for ii, mm in enumerate(inv_list):
             mperiod = mm.keys()
             for jj, mp in enumerate(mperiod):
                 for kk in self.period_dict.keys():
-=======
-        for ii, mm in enumerate(invlist):
-            mperiod = list(mm.keys())
-            for jj, mp in enumerate(mperiod):
-                for kk in list(pdict.keys()):
->>>>>>> 1fffa1ccb835c016f1be5c18b37b54bddf182ac2
                     if mp > kk * (1 - self.period_tolerance) and \
                             mp < kk * (1 + self.period_tolerance):
                         ll = self.period_dict[kk]
@@ -466,21 +463,33 @@ class PlotStrike(object):
             self.fig = plt.figure(self.fig_num, dpi=self.fig_dpi)
             plt.clf()
             nb = len(brange)
+            n_subplots = 2
+            if self.plot_tipper:
+                n_subplots += 1
             for jj, bb in enumerate(brange, 1):
                 # make subplots for invariants and phase tensor azimuths
-                if self.plot_tipper == 'n':
-                    self.axhinv = self.fig.add_subplot(2, nb, jj, polar=True)
-                    self.axhpt = self.fig.add_subplot(
-                        2, nb, jj + nb, polar=True)
-                    axlist = [self.axhinv, self.axhpt]
-
-                if self.plot_tipper == 'y':
-                    self.axhinv = self.fig.add_subplot(3, nb, jj, polar=True)
-                    self.axhpt = self.fig.add_subplot(
-                        3, nb, jj + nb, polar=True)
-                    self.axhtip = self.fig.add_subplot(3, nb, jj + 2 * nb,
+                if 'h' in self.plot_orientation:
+                    self.axhinv = self.fig.add_subplot(n_subplots, nb, jj,
                                                        polar=True)
-                    axlist = [self.axhinv, self.axhpt, self.axhtip]
+                    self.axhpt = self.fig.add_subplot(n_subplots, nb, jj + nb,
+                                                      polar=True)
+                elif 'v' in self.plot_orientation:
+                    self.axhinv = self.fig.add_subplot(nb, n_subplots, 2*jj-1,
+                                                       polar=True)
+                    self.axhpt = self.fig.add_subplot(nb, n_subplots, 2*jj,
+                                                      polar=True)
+                axlist = [self.axhinv, self.axhpt]
+
+                if self.plot_tipper:
+                    if 'h' in self.plot_orientation:
+                        self.axhtip = self.fig.add_subplot(n_subplots, nb,
+                                                           jj + 2 * nb,
+                                                           polar=True)
+                    elif 'v' in self.plot_orientation:
+                        self.axhtip = self.fig.add_subplot(n_subplots, nb,
+                                                           2*jj + 2,
+                                                           polar=True)
+                    axlist.append(self.axhtip)
 
                 # make a list of indicies for each decades
                 binlist = []
@@ -489,17 +498,13 @@ class PlotStrike(object):
                         binlist.append(ii)
 
                 # extract just the subset for each decade
-<<<<<<< HEAD
                 hh = self.med_inv[binlist, :]
                 gg = self.med_pt[binlist, :]
-=======
-                hh = medinv[binlist, :]
-                gg = medpt[binlist, :]
+
                 ptplotdata = gg[np.nonzero(gg)].flatten()
                 ptplotdata = ptplotdata[np.isfinite(ptplotdata)]
-                
->>>>>>> 1fffa1ccb835c016f1be5c18b37b54bddf182ac2
-                if self.plot_tipper == 'y':
+
+                if self.plot_tipper:
                     tr = self.med_tip[binlist, :]
                     # compute the historgram for the tipper strike
                     trhist = np.histogram(tr[np.nonzero(tr)].flatten(),
@@ -514,11 +519,14 @@ class PlotStrike(object):
                     # set color of the bars according to the number in that bin
                     # tipper goes from dark blue (low) to light blue (high)
                     for cc, bar in enumerate(bartr):
-                        try:
-                            fc = float(trhist[0][cc]) / trhist[0].max() * .9
-                            bar.set_facecolor((0, 1 - fc / 2, fc))
-                        except ZeroDivisionError:
-                            pass
+                        if self.color:
+                            try:
+                                fc = float(trhist[0][cc]) / trhist[0].max() * .9
+                                bar.set_facecolor((0, 1 - fc / 2, fc))
+                            except ZeroDivisionError:
+                                pass
+                        else:
+                            bar.set_facecolor(self.color_tip)
 
                 # estimate the histogram for the decade for invariants and pt
                 invhist = np.histogram(hh[np.nonzero(hh)].flatten(),
@@ -531,28 +539,36 @@ class PlotStrike(object):
                 # plot the histograms
                 self.barinv = self.axhinv.bar((invhist[1][:-1]) * np.pi / 180,
                                               invhist[0],
-                                              width=bw * np.pi / 180)
+                                              width=bw * np.pi / 180,
+                                              zorder=10)
 
                 self.barpt = self.axhpt.bar((pthist[1][:-1]) * np.pi / 180,
                                             pthist[0],
-                                            width=bw * np.pi / 180)
+                                            width=bw * np.pi / 180,
+                                            zorder=10)
 
                 # set the color of the bars according to the number in that bin
                 # invariants go from purple (low) to red (high)
                 for cc, bar in enumerate(self.barinv):
-                    try:
-                        fc = float(invhist[0][cc]) / invhist[0].max() * .8
-                        bar.set_facecolor((fc, 0, 1 - fc))
-                    except ZeroDivisionError:
-                        pass
+                    if self.color:
+                        try:
+                            fc = float(invhist[0][cc]) / invhist[0].max() * .8
+                            bar.set_facecolor((fc, 0, 1 - fc))
+                        except ZeroDivisionError:
+                            pass
+                    else:
+                        bar.set_facecolor(self.color_inv)
 
                 # pt goes from green (low) to orange (high)
                 for cc, bar in enumerate(self.barpt):
-                    try:
-                        fc = float(pthist[0][cc]) / pthist[0].max() * .8
-                        bar.set_facecolor((fc, 1 - fc, 0))
-                    except ZeroDivisionError:
-                        pass
+                    if self.color:
+                        try:
+                            fc = float(pthist[0][cc]) / pthist[0].max() * .8
+                            bar.set_facecolor((fc, 1 - fc, 0))
+                        except ZeroDivisionError:
+                            pass
+                    else:
+                        bar.set_facecolor(self.color_pt)
 
                 # make axis look correct with N to the top at 90.
                 for aa, axh in enumerate(axlist):
@@ -565,8 +581,12 @@ class PlotStrike(object):
                                               '', '', '',
                                               '', '', '',
                                               '', '', ''])
+                    ### set y limits if asked for
+                    if self.ring_limits is not None:
+                        axh.set_ylim(self.ring_limits)
+                    axh.yaxis.set_major_locator(MultipleLocator(self.ring_spacing))
                     # make a light grid
-                    axh.grid(alpha=.25)
+                    axh.grid(alpha=.25, zorder=0)
 
                     # properties for the invariants
                     if aa == 0:
@@ -585,12 +605,14 @@ class PlotStrike(object):
                         if invmode < 0:
                             invmode += 360
 
+                        ### place the estimated strike
                         axh.text(-np.pi/2, axh.get_ylim()[1] * self.text_pad,
                                  '{0:.1f}$^o$'.format(invmode),
                                  horizontalalignment='center',
                                  verticalalignment='baseline',
                                  fontdict={'size': self.text_size},
-                                 bbox={'facecolor': (.9, 0, .1), 'alpha': .25})
+                                 bbox={'facecolor': self.color_inv,
+                                       'alpha': .25})
 
                         # print out the statistics of the strike angles
                         invmedian = 90 - np.median(hh[np.nonzero(hh)])
@@ -609,11 +631,18 @@ class PlotStrike(object):
                             invmode))
 
                         #--> set title of subplot
-                        axh.set_title(self.title_dict[bb], fontdict=fd,
-                                      bbox={'facecolor': 'white', 'alpha': .25})
+                        if 'h' in self.plot_orientation:
+                            axh.set_title(self.title_dict[bb], fontdict=fd,
+                                          bbox={'facecolor': 'white', 'alpha': .25})
 
-                        #--> set the title offset
-                        axh.titleOffsetTrans._t = (0, .1)
+                            #--> set the title offset
+                            axh.titleOffsetTrans._t = (0, .1)
+                        elif 'v' in self.plot_orientation:
+                            axh.set_ylabel(self.title_dict[bb], fontdict=fd,
+                                           bbox={'facecolor': 'white', 'alpha': .25}, 
+                                           rotation=0,
+                                           labelpad=50)
+                            axh.yaxis.set_label_position("right")
 
                     # set pt axes properties
                     elif aa == 1:
@@ -635,13 +664,14 @@ class PlotStrike(object):
                         ptmean = 90 - np.mean(ptplotdata)
                         if ptmean < 0:
                             ptmean += 360
-
+                        ### put the estimated strike
                         axh.text(-np.pi/2, axh.get_ylim()[1] * self.text_pad,
                                  '{0:.1f}$^o$'.format(ptmode),
                                  horizontalalignment='center',
                                  verticalalignment='baseline',
                                  fontdict={'size': self.text_size},
-                                 bbox={'facecolor': (.9, .9, 0), 'alpha': .25})
+                                 bbox={'facecolor': self.color_pt, 
+                                       'alpha': .25})
 
                         # print out the results for the strike angles
 
@@ -650,12 +680,8 @@ class PlotStrike(object):
                             ptmode,
                             ptmean))
 
-                        if self.plot_tipper != 'y':
+                        if not self.plot_tipper:
                             print('\n')
-
-                        #if nb > 5:
-                        #    axh.set_title(self.title_dict[bb], fontdict=fd,
-                        #                  bbox={'facecolor': 'white', 'alpha': .25})
 
                     # set tipper axes properties
                     elif aa == 2:
@@ -676,48 +702,57 @@ class PlotStrike(object):
                         tpmean = 90 - np.mean(tr[np.nonzero(tr)])
                         if tpmean < 0:
                             tpmean += 360
-
+                        
+                        ### put the estimated strike 
                         axh.text(-np.pi/2, axh.get_ylim()[1] * self.text_pad,
                                  '{0:.1f}$^o$'.format(tpmode),
                                  horizontalalignment='center',
                                  verticalalignment='baseline',
                                  fontdict={'size': self.text_size},
-                                 bbox={'facecolor': (0, .1, .9), 'alpha': .25})
+                                 bbox={'facecolor': self.color_tip, 
+                                       'alpha': .25})
 
                         # print out statistics for strike angle
                         print('   *Tipper Strike: median={0:.1f} mode={1:.1f} mean={2:.1f}'.format(
                             tpmedian,
                             tpmode,
-<<<<<<< HEAD
-                            tpmode)
-                        print '\n'
-                        #if nb > 5:
-                        #    axh.set_title(self.title_dict[bb], fontdict=fd,
-                        #                  bbox={'facecolor': 'white', 'alpha': .25})
-=======
                             tpmode))
                         print('\n')
                         if nb > 5:
                             axh.set_title(self.title_dict[bb], fontdict=fd,
                                           bbox={'facecolor': 'white', 'alpha': .25})
->>>>>>> 1fffa1ccb835c016f1be5c18b37b54bddf182ac2
+
 
                     # set plot labels
-                    if jj == 1:
+                    if jj == 1 and 'h' in self.plot_orientation:
                         if aa == 0:
                             axh.set_ylabel('Strike (Z)', fontdict=fd,
                                            labelpad=self.font_size,
-                                           bbox={'facecolor': (.9, 0, .1),
+                                           bbox={'facecolor': self.color_inv,
                                                  'alpha': 0.25})
                         elif aa == 1:
                             axh.set_ylabel('PT Azimuth', fontdict=fd,
                                            labelpad=self.font_size,
-                                           bbox={'facecolor': (.9, .9, 0),
+                                           bbox={'facecolor': self.color_pt,
                                                  'alpha': .25})
                         elif aa == 2:
                             axh.set_ylabel('Tipper Strike', fd,
                                            labelpad=self.font_size,
-                                           bbox={'facecolor': (0, .1, .9),
+                                           bbox={'facecolor': self.color_tip,
+                                                 'alpha': 0.25})
+                    # set plot labels
+                    if jj == 1 and 'v' in self.plot_orientation:
+                        if aa == 0:
+                            axh.set_title('Strike (Z)', fontdict=fd,
+                                           bbox={'facecolor': self.color_inv,
+                                                 'alpha': 0.25})
+                        elif aa == 1:
+                            axh.set_title('PT Azimuth', fontdict=fd,
+                                           bbox={'facecolor': self.color_pt,
+                                                 'alpha': .25})
+                        elif aa == 2:
+                            axh.set_title('Tipper Strike', fd,
+                                           bbox={'facecolor': self.color_tip,
                                                  'alpha': 0.25})
 
                     plt.setp(axh.yaxis.get_ticklabels(), visible=False)
@@ -767,20 +802,11 @@ class PlotStrike(object):
                                    range=histrange)
 
             ptplotdata = gg[np.nonzero(gg)].flatten()
-<<<<<<< HEAD
-            print ptplotdata.min(), ptplotdata.max()
-
-            if not self.fold:
-                ptplotdata = np.hstack([ptplotdata,ptplotdata+180])
-            print self.fold, self.show_ptphimin
-
-=======
             ptplotdata = ptplotdata[np.isfinite(ptplotdata)]
             
             if not self.fold:
                 ptplotdata = np.hstack([ptplotdata,ptplotdata+180])
                 
->>>>>>> 1fffa1ccb835c016f1be5c18b37b54bddf182ac2
             if self.show_ptphimin:
                 if self.fold:
                     # we are working in matplotlib coordinates (counterclockwise from east)
@@ -821,7 +847,7 @@ class PlotStrike(object):
                 bar.set_facecolor((fc, 1 - fc, 0))
 
             # plot tipper if desired
-            if self.plot_tipper == 'y':
+            if self.plot_tipper:
                 tr = self._medtp[binlist, :]
 
                 trhist = np.histogram(tr[np.nonzero(tr)].flatten(),
@@ -1089,7 +1115,7 @@ class PlotStrike(object):
             >>> p1.redraw_plot()
         """
 
-        plt.close(self.fig)
+        self.fig.clf()
         self.plot()
 
     def __str__(self):
