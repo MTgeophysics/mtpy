@@ -373,13 +373,8 @@ class PlotStrike(object):
             tip_list.append(tiprdict)
 
         #--> get min and max period
-<<<<<<< HEAD
         self.max_per = np.max([np.max(mm.keys()) for mm in inv_list])
         self.min_per = np.min([np.min(mm.keys()) for mm in pt_list])
-=======
-        maxper = np.max([np.max(list(mm.keys())) for mm in invlist])
-        minper = np.min([np.min(list(mm.keys())) for mm in ptlist])
->>>>>>> 1fffa1ccb835c016f1be5c18b37b54bddf182ac2
 
         # make empty arrays to put data into for easy manipulation
         medinv = np.zeros((nt, nc))
@@ -395,17 +390,10 @@ class PlotStrike(object):
                                  enumerate(self.period_arr)])
 
         # put data into arrays
-<<<<<<< HEAD
         for ii, mm in enumerate(inv_list):
             mperiod = mm.keys()
             for jj, mp in enumerate(mperiod):
                 for kk in self.period_dict.keys():
-=======
-        for ii, mm in enumerate(invlist):
-            mperiod = list(mm.keys())
-            for jj, mp in enumerate(mperiod):
-                for kk in list(pdict.keys()):
->>>>>>> 1fffa1ccb835c016f1be5c18b37b54bddf182ac2
                     if mp > kk * (1 - self.period_tolerance) and \
                             mp < kk * (1 + self.period_tolerance):
                         ll = self.period_dict[kk]
@@ -489,16 +477,12 @@ class PlotStrike(object):
                         binlist.append(ii)
 
                 # extract just the subset for each decade
-<<<<<<< HEAD
                 hh = self.med_inv[binlist, :]
                 gg = self.med_pt[binlist, :]
-=======
-                hh = medinv[binlist, :]
-                gg = medpt[binlist, :]
+
                 ptplotdata = gg[np.nonzero(gg)].flatten()
                 ptplotdata = ptplotdata[np.isfinite(ptplotdata)]
-                
->>>>>>> 1fffa1ccb835c016f1be5c18b37b54bddf182ac2
+
                 if self.plot_tipper == 'y':
                     tr = self.med_tip[binlist, :]
                     # compute the historgram for the tipper strike
@@ -688,19 +672,11 @@ class PlotStrike(object):
                         print('   *Tipper Strike: median={0:.1f} mode={1:.1f} mean={2:.1f}'.format(
                             tpmedian,
                             tpmode,
-<<<<<<< HEAD
-                            tpmode)
-                        print '\n'
-                        #if nb > 5:
-                        #    axh.set_title(self.title_dict[bb], fontdict=fd,
-                        #                  bbox={'facecolor': 'white', 'alpha': .25})
-=======
                             tpmode))
                         print('\n')
                         if nb > 5:
                             axh.set_title(self.title_dict[bb], fontdict=fd,
                                           bbox={'facecolor': 'white', 'alpha': .25})
->>>>>>> 1fffa1ccb835c016f1be5c18b37b54bddf182ac2
 
                     # set plot labels
                     if jj == 1:
@@ -767,20 +743,11 @@ class PlotStrike(object):
                                    range=histrange)
 
             ptplotdata = gg[np.nonzero(gg)].flatten()
-<<<<<<< HEAD
-            print ptplotdata.min(), ptplotdata.max()
-
-            if not self.fold:
-                ptplotdata = np.hstack([ptplotdata,ptplotdata+180])
-            print self.fold, self.show_ptphimin
-
-=======
             ptplotdata = ptplotdata[np.isfinite(ptplotdata)]
             
             if not self.fold:
                 ptplotdata = np.hstack([ptplotdata,ptplotdata+180])
                 
->>>>>>> 1fffa1ccb835c016f1be5c18b37b54bddf182ac2
             if self.show_ptphimin:
                 if self.fold:
                     # we are working in matplotlib coordinates (counterclockwise from east)
