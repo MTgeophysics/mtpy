@@ -351,7 +351,7 @@ class ScriptFile(BIRRP_Parameters):
                        segement)
     nar                Prewhitening Filter (3< >15) or 0 if not desired',
     imode              Output file mode (0=ascii; 1=binary; 2=headerless ascii; 
-                       3=ascii in TS mode',
+                       3=ascii in TS mode),
     jmode              input file mode (0=user defined; 1=sconvert2tart time 
                                         YYYY-MM-DD HH:MM:SS)',
     nread              Number of points to be read for each data set  
