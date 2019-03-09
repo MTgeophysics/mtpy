@@ -62,12 +62,15 @@ setup_kwargs['packages'] = [
                             'mtpy.usgs',
                             'mtpy.gui']
      
-# setup_kwargs['install_requires'] = ['numpy>=1.8.1',
-#                                     'scipy>=0.14.0',
-#                                     'matplotlib>=1.3.1']
+setup_kwargs['install_requires'] = ['numpy>=1.8.1',
+                                     'scipy>=0.14.0',
+                                     'matplotlib',
+                                     'pyyaml',
+                                     'pyproj',
+                                     'configparser']
 
 setup(name="mtpy",
-	version='1.0.01',
+	version='1.0.2',
 	description=("Python toolkit for standard MT data processing."),
 	license="GNU GENERAL PUBLIC LICENSE v3",
 	**setup_kwargs)

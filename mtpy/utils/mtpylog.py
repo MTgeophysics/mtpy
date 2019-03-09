@@ -21,7 +21,8 @@ import inspect
 class MtPyLog(object):
     # def __init__(self, path2configfile=None):
     @staticmethod
-    def load_configure(path2configfile='logging.yml'):
+    def load_configure(path2configfile=None):
+    # def load_configure(path2configfile='logging.yml'):
         """
         configure/setup the logging according to the input configfile
 

@@ -78,7 +78,7 @@ class gdal_data_check(object):
             if(raise_error):
                 raise ImportError("GDAL  is NOT installed correctly")
             else:
-                print ("GDAL is not working !!!")
+                print ("Ignore GDAL as it is not working. Will use pyproj")
 
     def __call__(self, *args, **kwargs):  # pragma: no cover
         return self._func(*args, **kwargs)
