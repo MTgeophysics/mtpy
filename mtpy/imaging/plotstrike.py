@@ -104,6 +104,8 @@ class PlotStrike(object):
         
         :param ring_limits: (min count, max count) set each plot have these 
                             limits 
+                            
+        :param plot_orientation: [ 'h' | 'v' ] horizontal or vertical plots
 
     :Example: ::
 
