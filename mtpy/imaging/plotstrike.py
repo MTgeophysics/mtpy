@@ -38,130 +38,92 @@ class PlotStrike(object):
 
     Arguments
     ----------
-        **fn_list** : list of strings
-                          full paths to .edi files to plot
+        :param fn_list: full paths to .edi files to plot
 
-        **z_object** : class mtpy.core.z.Z
-                      object of mtpy.core.z.  If this is input be sure the
-                      attribute z.freq is filled.  *default* is None
+        :param z_object: object of mtpy.core.z.  If this is input be sure the
+                          attribute z.freq is filled.  *default* is None
 
-        **mt_object** : class mtpy.imaging.mtplot.MTplot
-                        object of mtpy.imaging.mtplot.MTplot
-                        *default* is None
+        :param mt_object: object of mtpy.imaging.mtplot.MTplot
+                         *default* is None
 
-        **fignum** : int
-                     figure number to be plotted. *Default* is 1
+        :param fig_num: figure number to be plotted. *Default* is 1
 
-        **fs** : float
-                 font size for labels of plotting. *Default* is 10
+        :param fs: font size for labels of plotting. *Default* is 10
 
-        **dpi** : int
-                  dots-per-inch resolution of figure, 300 is needed for
-                  publications. *Default* is 300
+        :param rot_z: angle of rotation clockwise positive. *Default* is 0
 
-        **rot_z** : float
-                     angle of rotation clockwise positive. *Default* is 0
-
-        **period_tolerance** : float
+        :param period_tolerance: float
                    Tolerance level to match periods from different edi files.
                    *Default* is 0.05
 
-        **text_dict** : dictionary
-                  *'pad' : float
-                           padding of the angle label at the bottom of each
-                           polar diagram.  *Default* is 1.65
+        :param text_pad: padding of the angle label at the bottom of each
+                         polar diagram.  *Default* is 1.65
 
-                  *'size' : float
-                            font size
+        :param text_size: font size
 
 
-        **plot_range** : [ 'data' | (period_min,period_max) ]
+        :param plot_range: [ 'data' | (period_min,period_max) ]
                     period range to estimate the strike angle. Options are:
                         * *'data'* for estimating the strike for all periods
                             in the data.
                         * (pmin,pmax) for period min and period max, input as
                           (log10(pmin),log10(pmax))
 
-        **plot_type** : [ 1 | 2 ]
-                        -*1* to plot individual decades in one plot
-                        -*2* to plot all period ranges into one polar diagram
+        :param plot_type: [ 1 | 2 ]
+                        - *1* to plot individual decades in one plot
+                        - *2* to plot all period ranges into one polar diagram
                               for each strike angle estimation
 
-        **plot_tipper** : [ 'y' | 'n' ]
-                      -*'y'* to plot the tipper strike
-                      -*'n'* to not plot tipper strike
+        :param plot_tipper: [ True | False ]
+                          - True to plot the tipper strike
+                          - False to not plot tipper strike
 
-        **pt_error_floor** : float
-                    Maximum error in degrees that is allowed to estimate strike.
-                    *Default* is None allowing all estimates to be used.
+        :param pt_error_floor: Maximum error in degrees that is allowed to 
+                               estimate strike. *Default* is None allowing all 
+                               estimates to be used.
 
-        **fold** : [ True | False ]
-                    *True to plot only from 0 to 180
-                    *False to plot from 0 to 360
-
+        :param fold: [ True | False ]
+                    * True to plot only from 0 to 180
+                    * False to plot from 0 to 360
+                    
+        :param plot_orthogonal: [ True | False]
+                                * True to plot the orthogonal strike directions
+                                * False to not
+        
+        :param color: [ True | False ]
+                      * True to plot shade colors
+                      * False to plot all in one color
+                      
+        :param color_inv: color of invariants plots
+        
+        :param color_pt: color of phase tensor plots
+        
+        :param color_tip: color of tipper plots
+        
+        :param ring_spacing: spacing of rings in polar plots
+        
+        :param ring_limits: (min count, max count) set each plot have these 
+                            limits 
 
     :Example: ::
 
-        >>> import os
+        >>> import glob
         >>> import mtpy.imaging.mtplot as mtplot
-        >>> edipath = r"/home/EDIFiles"
-        >>> edilist = [os.path.join(edipath,edi) for edi in os.listdir(edipath)
-        >>> ...       if edi.find('.edi')>0]
-        >>> #---plot rose plots in decades with tipper and an error floor on pt
-        >>> strike = mtplot.plot_strike(fn_list=edilist, plot_type=1,\
-                                        pt_error_floor=5)
-        >>> #---plot all decades into one rose plot for each estimation---
-        >>> strike.plot_type = 2
+        >>> edi_dir = r"/home/EDIFiles"
+        >>> edi_list = glob.glob("{0}\*.edi".format(edi_dir)
+        >>> #---plot rose plots in decades 
+        >>> strike = mtplot.plot_strike(fn_list=edilist, plot_type=1)
+        >>> #---Turn on Tipper
+        >>> strike.plot_tipper = True
+        >>> #---Plot only main directions
+        >>> strike.plot_orthogonal = False
+        >>> # Redraw plot
+        >>> strike.redraw_plot()
+        >>> # plot only from 0-180
+        >>> strike.fold = True
         >>> strike.redraw_plot()
         >>> #---save the plot---
         >>> strike.save_plot(r"/home/Figures")
-        'Figure saved to /home/Figures/StrikeAnalysis_.pdf'
-
-    Attributes
-    -----------
-
-        -ax_inv            matplotlib.axes instance for invariant strike
-        -ax_pt             matplotlib.axes instance for phase tensor strike
-        -ax_tip            matplotlib.axes instance for tipper strike
-
-        -bar_inv            matplotlib.axes.bar instance for invariant strike
-        -bar_pt             matplotlib.axes.bar instance for pt strike
-        -bar_tr             matplotlib.axes.bar instance for tipper strike
-
-        -bin_width         width of histogram bins in degrees
-
-        -fig               matplotlib.figure instance of plot
-        -fig_dpi           dots-per-inch resolution of figure
-        -fig_num           number of figure being plotted
-        -fig_size          size of figure in inches
-        -fold              boolean to fold angles to range from [0,180] or
-                           [0,360]
-
-        -font_size         font size of axes tick labels
-
-        -mt_list            list of mtplot.MTplot instances containing all
-                           the important information for each station
-        -period_tolerance  tolerance to look for periods being plotted
-
-        -plot_range        range of periods to plot
-        -plot_tipper       string to tell program to plot induction arrows
-        -plot_type         string to tell program how to plot strike angles
-        -plot_yn           plot strike on instance creation
-        -pt_error_floor    error floor to plot phase tensor strike, anything
-                           above this error will not be plotted
-        -text_pad          padding between text and rose diagram
-        -text_size         font size of text labeling the mode of the histogram
-        -title_dict        title dictionary
-
-    Methods
-    --------
-
-        -plot                 plots the pseudo section
-        -redraw_plot          on call redraws the plot from scratch
-        -save_figure          saves figure to a file of given format
-        -update_plot          updates the plot while still active
-        -export_pt_params_to_file       writes parameters of the phase tensor and tipper
-                              to text files.
 
     """
 
@@ -194,23 +156,21 @@ class PlotStrike(object):
             pass
 
         #--> set plot properties
-        self.fig_num = kwargs.pop('fig_num', 1)
-        self.fig_dpi = kwargs.pop('fig_dpi', 300)
-        self.fig_size = kwargs.pop('fig_size', [7, 5])
+        self.fig_num = 1
+        self.fig_dpi = 300
+        self.fig_size = [7, 5]
 
-        self.plot_num = kwargs.pop('plot_num', 1)
-        self.plot_type = kwargs.pop('plot_type', 2)
-        self.plot_title = kwargs.pop('plot_title', None)
-        self.plot_range = kwargs.pop('plot_range', 'data')
-        self.plot_tipper = kwargs.pop('plot_tipper', False)
+        self.plot_type =  2
+        self.plot_title = None
+        self.plot_range = 'data'
+        self.plot_tipper = False
         self.plot_orientation = 'h'
 
-        self.period_tolerance = kwargs.pop('period_tolerance', .05)
-        self.pt_error_floor = kwargs.pop('pt_error_floor', None)
-        self.fold = kwargs.pop('fold', True)
-        self.show_ptphimin = kwargs.pop('show_ptphimin',False)
-        self.bin_width = kwargs.pop('bin_width', 5)
-        self.color = kwargs.pop('color', True)
+        self.period_tolerance = .05
+        self.pt_error_floor = None
+        self.fold = True
+        self.bin_width = 5
+        self.color = True
         self.color_inv = (.7, 0, .2)
         self.color_pt = (.2, 0, .7)
         self.color_tip = (.2, .65, .2)
@@ -218,18 +178,9 @@ class PlotStrike(object):
         self.ring_limits = None
         self.plot_orthogonal = True
         
-        self.font_size = kwargs.pop('font_size', 7)
-
-        text_dict = kwargs.pop('text_dict', {})
-        try:
-            self.text_pad = text_dict['pad']
-        except KeyError:
-            self.text_pad = 0.6
-
-        try:
-            self.text_size = text_dict['size']
-        except KeyError:
-            self.text_size = self.font_size
+        self.font_size = 7
+        self.text_pad = 0.6
+        self.text_size = self.font_size
             
         for key, value in kwargs.items():
             setattr(self, key, value)
@@ -940,7 +891,7 @@ class PlotStrike(object):
         Arguments
         -----------
 
-            **save_fn** : string
+            **save_fn: string
                           full path to save figure to, can be input as
                           - directory path -> the directory path to save to
                             in which the file will be saved as
@@ -950,20 +901,20 @@ class PlotStrike(object):
                             path.  If you use this option then the format
                             will be assumed to be provided by the path
 
-            **file_format** : [ pdf | eps | jpg | png | svg ]
+            **file_format: [ pdf | eps | jpg | png | svg ]
                               file type of saved figure pdf,svg,eps...
 
-            **orientation** : [ landscape | portrait ]
+            **orientation: [ landscape | portrait ]
                               orientation in which the file will be saved
                               *default* is portrait
 
-            **fig_dpi** : int
+            **fig_dpi: int
                           The resolution in dots-per-inch the file will be
                           saved.  If None then the dpi will be that at
                           which the figure was made.  I don't think that
                           it can be larger than dpi of the figure.
 
-            **close_plot** : [ y | n ]
+            **close_plot: [ y | n ]
                              -'y' will close the plot after saving.
                              -'n' will leave plot open
 
