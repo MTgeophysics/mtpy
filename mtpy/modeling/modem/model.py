@@ -23,6 +23,7 @@ import mtpy.utils.calculator as mtcc
 from mtpy.modeling import ws3dinv as ws
 from mtpy.utils import mesh_tools as mtmesh, gis_tools as gis_tools
 from mtpy.utils.mtpylog import MtPyLog
+from mtpy.utils import filehandling as mtfh
 from .exception import ModelError
 import mtpy.utils.gocad as mtgocad
 
