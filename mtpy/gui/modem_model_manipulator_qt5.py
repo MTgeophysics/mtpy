@@ -25,6 +25,7 @@ import matplotlib.widgets as widgets
 from matplotlib.figure import Figure
 
 import numpy as np
+from scipy import signal
 
 import mtpy.modeling.modem as modem
 
@@ -129,10 +130,10 @@ class ModEM_Model_Manipulator(QtWidgets.QMainWindow):
                                         self.res_popup.res_max)
         
     def pad_fill(self):
-        pass
-    
+        self.model_widget.set_fill_params()
+        
     def smooth(self):
-        pass
+        self.model_widget.set_smooth_params()
 
 # =============================================================================
 # Resistivity limits widget
@@ -186,29 +187,134 @@ class PadFill(QtWidgets.QWidget):
     """
     widget to get pad filling parameters
     """
-    pad_num_changed = QtCore.pyqtSignal()
+    apply_button_pushed = QtCore.pyqtSignal()
+    undo_button_pushed = QtCore.pyqtSignal()
     def __init__(self):
         super(PadFill, self).__init__()
         
-        self.pad_num = 1
+        self.n_pad = 3
+        self.avg_range = 7
         
         self.setup_ui()
         
     def setup_ui(self):
         self.pad_edit = QtWidgets.QLineEdit()
-        self.pad_edit.setText('{0:.0f}'.format(self.pad_num))
+        self.pad_edit.setText('{0:.0f}'.format(self.n_pad))
         self.pad_edit.editingFinished.connect(self.set_pad_num)
-        
         self.pad_label = QtWidgets.QLabel('Number of Cells')
         
-        layout = QtWidgets.QHBoxLayout()
-        layout.addWidget(self.pad_label)
-        layout.addWidget(self.pad_edit)
+        self.avg_edit = QtWidgets.QLineEdit()
+        self.avg_edit.setText('{0:.0f}'.format(self.avg_range))
+        self.avg_edit.editingFinished.connect(self.set_avg_range)
+        self.avg_label = QtWidgets.QLabel('Number of cells to find average')
+        
+        self.apply_button = QtWidgets.QPushButton()
+        self.apply_button.setText('Apply')
+        self.apply_button.clicked.connect(self.emit_apply_signal)
+        
+        self.undo_button = QtWidgets.QPushButton()
+        self.undo_button.setText('Undo')
+        self.undo_button.clicked.connect(self.emit_undo_signal)
+        
+        pad_layout = QtWidgets.QHBoxLayout()
+        pad_layout.addWidget(self.pad_label)
+        pad_layout.addWidget(self.pad_edit)
+        
+        avg_layout = QtWidgets.QHBoxLayout()
+        avg_layout.addWidget(self.avg_label)
+        avg_layout.addWidget(self.avg_edit)
+        
+        layout = QtWidgets.QVBoxLayout()
+        layout.addLayout(pad_layout)
+        layout.addLayout(avg_layout)
+        layout.addWidget(self.apply_button)
+        layout.addWidget(self.undo_button)
+        
+        self.setLayout(layout)
+        self.show()
         
     def set_pad_num(self):
-        self.pad_num = int(str(self.pad_edit.text()))
-        self.pad_edit.setText('{0:.0f}'.format(self.pad_num))
-        self.pad_num_changed.emit()
+        self.n_pad = int(str(self.pad_edit.text()))
+        self.pad_edit.setText('{0:.0f}'.format(self.n_pad))
+        
+    def set_avg_range(self):
+        self.avg_range = int(str(self.avg_edit.text()))
+        self.avg_edit.setText('{0:.0f}'.format(self.avg_range))
+        
+    def emit_apply_signal(self):
+        self.apply_button_pushed.emit()
+    
+    def emit_undo_signal(self):
+        self.undo_button_pushed.emit()
+        
+# =============================================================================
+# Smoothing widget
+# =============================================================================
+class Smooth(QtWidgets.QWidget):
+    """
+    smoothing widget
+    """
+    apply_button_pushed = QtCore.pyqtSignal()
+    undo_button_pushed = QtCore.pyqtSignal()
+    def __init__(self):
+        super(Smooth, self).__init__()
+        
+        self.radius = 5
+        self.sigma = 1
+        
+        self.setup_ui()
+        
+    def setup_ui(self):
+        self.radius_edit = QtWidgets.QLineEdit()
+        self.radius_edit.setText('{0:.0f}'.format(self.radius))
+        self.radius_edit.editingFinished.connect(self.set_radius)
+        self.radius_label = QtWidgets.QLabel('Gaussian Radius')
+        
+        self.sigma_edit = QtWidgets.QLineEdit()
+        self.sigma_edit.setText('{0:.3f}'.format(self.sigma))
+        self.sigma_edit.editingFinished.connect(self.set_sigma)
+        self.sigma_label = QtWidgets.QLabel('Gaussian Full Width Half Max')
+        
+        self.apply_button = QtWidgets.QPushButton()
+        self.apply_button.setText('Apply')
+        self.apply_button.clicked.connect(self.emit_apply_signal)
+        
+        self.undo_button = QtWidgets.QPushButton()
+        self.undo_button.setText('Undo')
+        self.undo_button.clicked.connect(self.emit_undo_signal)
+        
+        
+        radius_layout = QtWidgets.QHBoxLayout()
+        radius_layout.addWidget(self.radius_label)
+        radius_layout.addWidget(self.radius_edit)
+        
+        sigma_layout = QtWidgets.QHBoxLayout()
+        sigma_layout.addWidget(self.sigma_label)
+        sigma_layout.addWidget(self.sigma_edit)
+        
+        layout = QtWidgets.QVBoxLayout()
+        layout.addLayout(radius_layout)
+        layout.addLayout(sigma_layout)
+        layout.addWidget(self.apply_button)
+        layout.addWidget(self.undo_button)
+        
+        self.setLayout(layout)
+        self.show()
+    
+    def set_radius(self):
+        self.radius = int(str(self.radius_edit.text()))
+        self.radius_edit.setText('{0:.0f}'.format(self.radius))
+        
+    def set_sigma(self):
+        self.sigma = float(str(self.sigma_edit.text()))
+        self.sigma_edit.setText('{0:.3f}'.format(self.sigma))
+    
+    def emit_apply_signal(self):
+        self.apply_button_pushed.emit()
+    
+    def emit_undo_signal(self):
+        self.undo_button_pushed.emit()
+        
 #==============================================================================
 # Model Widget
 #==============================================================================
@@ -643,6 +749,12 @@ class ModelWidget(QtWidgets.QWidget):
                                                         useblit=True)
         
         
+    def undo(self):
+        """
+        reset the resistivity model to its original
+        """
+        self.new_res_model = self.model_obj.res_model.copy()
+        
     def initialize_vectors(self):
         """
         get all the plotting vectors
@@ -982,15 +1094,77 @@ class ModelWidget(QtWidgets.QWidget):
                 self.north_slider.setValue(self.north_index)
                 self.north_slider.triggerAction(QtWidgets.QAbstractSlider.SliderMove)
     
-    def set_avg_pad(self):
-        pass
-    
-    def set_npad(self):
-        pass
-    
+    def set_fill_params(self):
+        """
+        fill the area outside the main station area
+        """
+        
+        self.avg_widget = PadFill()
+        self.avg_widget.apply_button_pushed.connect(self.fill_outside_area)
+        self.avg_widget.undo_button_pushed.connect(self.undo_tools)
+
+        
     def fill_outside_area(self):
-        pass
-    
+        """
+        fill areas outside given area
+        """
+        avg_range = self.avg_widget.avg_range
+        n_pad = self.avg_widget.n_pad
+
+        x_range = np.append(np.arange(avg_range), np.arange(-avg_range, 0, 1))
+        y_range = np.append(np.arange(avg_range), np.arange(-avg_range, 0, 1))
+        
+        x_index, y_index = np.meshgrid(x_range, y_range)
+        for zz in range(self.new_res_model.shape[2]):
+            avg_res_value = np.mean([np.median(self.new_res_model[x_index, y_index, zz]),
+                                     np.median(self.new_res_model[avg_range:-avg_range, 0:avg_range, zz]),
+                                     np.median(self.new_res_model[avg_range:-avg_range, -avg_range:, zz]),
+                                     np.median(self.new_res_model[0:avg_range, avg_range:-avg_range, zz]),
+                                     np.median(self.new_res_model[-avg_range:, avg_range:-avg_range, zz])])
+                                    
+            #self.new_res_model[x_index, y_index, zz] = avg_res_value
+            self.new_res_model[:, -n_pad:, zz] = avg_res_value
+            self.new_res_model[:, 0:n_pad, zz] = avg_res_value
+            self.new_res_model[0:n_pad, n_pad:-n_pad, zz] = avg_res_value
+            self.new_res_model[-n_pad:, n_pad:-n_pad, zz] = avg_res_value
+        
+        self.redraw_plots()
+        
+    def undo_tools(self):
+        """
+        undo fill outside area
+        """
+        
+        self.undo()
+        self.redraw_plots()
+        
+    def set_smooth_params(self):
+        """
+        set smoothing parameters
+        """
+        self.smooth_widget = Smooth()
+        self.smooth_widget.apply_button_pushed.connect(self.smooth_model)
+        self.smooth_widget.undo_button_pushed.connect(self.undo_tools)
+        
+    def smooth_model(self):
+        """
+        smooth model with 2D gaussian filter
+        """
+        radius = self.smooth_widget.radius
+        sigma = self.smooth_widget.sigma**2
+        
+        gx, gy = np.mgrid[-radius:radius+1, 
+                          -radius:radius+1]
+                      
+        gauss = (1./(2*np.pi*sigma))*np.exp(-((gx**2)+(gy**2))/(2*sigma))
+        
+        for zz in range(self.new_res_model.smooth_res.shape[2]):
+            self.new_res_model[:, :, zz] = signal.convolve(self.new_res_model[:, :, zz],
+                                                           gauss,
+                                                           mode='same')
+
+        self.redraw_plots()
+        
     def map_copy_down(self):
         """
         copy the current map down the number of layers given
