@@ -1763,7 +1763,7 @@ class Model(object):
                 # increase the number of layers
                 self.n_layers += self.n_air_layers
                 # make a new mesh
-                self.nodes_z,z_grid = self.make_z_mesh_new()
+                self.nodes_z, z_grid = self.make_z_mesh_new()
                 # adjust level
                 self.grid_z -= topo_core.max() - topo_core_min
                 # adjust number of air layers. This is pre-determined by
