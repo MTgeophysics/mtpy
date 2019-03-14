@@ -1158,7 +1158,7 @@ class ModelWidget(QtWidgets.QWidget):
                       
         gauss = (1./(2*np.pi*sigma))*np.exp(-((gx**2)+(gy**2))/(2*sigma))
         
-        for zz in range(self.new_res_model.smooth_res.shape[2]):
+        for zz in range(self.new_res_model.shape[2]):
             self.new_res_model[:, :, zz] = signal.convolve(self.new_res_model[:, :, zz],
                                                            gauss,
                                                            mode='same')
