@@ -300,13 +300,6 @@ class PlotStrike(object):
 
         for dd, mt in enumerate(self.mt_list):
 
-            #--> set the period
-            period = mt.period
-
-            # get maximum length of periods
-            if len(period) > nt:
-                nt = len(period)
-
             #-----------get strike angle from invariants-----------------------
             zinv = Zinvariants(mt.Z)
 
@@ -384,23 +377,20 @@ class PlotStrike(object):
             tiprdict = dict([(ff, jj) for ff, jj in zip(mt.period, tipr)])
             tiprlist.append(tiprdict)
 
-        #--> get min and max period
-        maxper = np.max([np.max(list(mm.keys())) for mm in invlist])
-        minper = np.min([np.min(list(mm.keys())) for mm in ptlist])
 
+        # get unique periods from all data and min and max values
+        plist = np.unique(np.hstack([mm.keys() for mm in ptlist]))
+        minper = np.min(plist)
+        maxper = np.max(plist)
+        nt = len(plist)
+        
+        pdict = dict([(ii, jj) for jj, ii in enumerate(plist)])
+        
         # make empty arrays to put data into for easy manipulation
         medinv = np.zeros((nt, nc))
         medpt = np.zeros((nt, nc))
         medtipr = np.zeros((nt, nc))
-
-        # make a list of periods from the longest period list
-        plist = np.logspace(
-            np.log10(minper),
-            np.log10(maxper),
-            num=nt,
-            base=10)
-        pdict = dict([(ii, jj) for jj, ii in enumerate(plist)])
-
+        
         self._plist = plist
 
         # put data into arrays
@@ -471,7 +461,9 @@ class PlotStrike(object):
                 # extract just the subset for each decade
                 hh = medinv[binlist, :]
                 gg = medpt[binlist, :]
-                ptplotdata = gg[np.nonzero(gg)].flatten()
+                
+                ptplotdata = gg.flatten()
+                ptplotdata = ptplotdata[np.nonzero(ptplotdata)]
                 ptplotdata = ptplotdata[np.isfinite(ptplotdata)]
                 
                 if self.plot_tipper == 'y':
@@ -495,20 +487,26 @@ class PlotStrike(object):
                         except ZeroDivisionError:
                             pass
 
-                # estimate the histogram for the decade for invariants and pt
-                invhist = np.histogram(hh[np.nonzero(hh)].flatten(),
+
+                plotinvdata = hh.flatten()
+                plotinvdata = plotinvdata[np.nonzero(plotinvdata)]
+                plotinvdata = plotinvdata[np.isfinite(plotinvdata)]
+                
+                invhist = np.histogram(plotinvdata,
                                        bins= int(360/bw),
                                        range=histrange)
                 pthist = np.histogram(ptplotdata,
                                       bins=int(360/bw),
                                       range=histrange)
-        
+
                 # plot the histograms
-                self.barinv = self.axhinv.bar((invhist[1][:-1]) * np.pi / 180,
+                invhistdata = np.mean([invhist[1][:-1],invhist[1][1:]],axis=0) * np.pi / 180
+                pthistdata = np.mean([pthist[1][:-1],pthist[1][1:]],axis=0) * np.pi / 180
+                self.barinv = self.axhinv.bar(invhistdata,
                                               invhist[0],
                                               width=bw * np.pi / 180)
 
-                self.barpt = self.axhpt.bar((pthist[1][:-1]) * np.pi / 180,
+                self.barpt = self.axhpt.bar(pthistdata,
                                             pthist[0],
                                             width=bw * np.pi / 180)
 
@@ -568,10 +566,10 @@ class PlotStrike(object):
                                  bbox={'facecolor': (.9, 0, .1), 'alpha': .25})
 
                         # print out the statistics of the strike angles
-                        invmedian = 90 - np.median(hh[np.nonzero(hh)])
+                        invmedian = 90 - np.median(plotinvdata)
                         if invmedian < 0:
                             invmedian += 360
-                        invmean = 90 - np.mean(hh[np.nonzero(hh)])
+                        invmean = 90 - np.mean(plotinvdata)
                         if invmean < 0:
                             invmean += 360
 
@@ -727,13 +725,19 @@ class PlotStrike(object):
             # extract just the subset for each decade
             hh = medinv[binlist, :]
             gg = medpt[binlist, :]
+            
+            
+            plotinvdata = hh.flatten()
+            plotinvdata = plotinvdata[np.nonzero(plotinvdata)]
+            plotinvdata = plotinvdata[np.isfinite(plotinvdata)]
 
             # estimate the histogram for the decade for invariants and pt
             invhist = np.histogram(hh[np.nonzero(hh)].flatten(),
                                    bins=int(360/bw),
                                    range=histrange)
 
-            ptplotdata = gg[np.nonzero(gg)].flatten()
+            ptplotdata = gg.flatten()
+            ptplotdata = ptplotdata[np.nonzero(ptplotdata)]
             ptplotdata = ptplotdata[np.isfinite(ptplotdata)]
             
             if not self.fold:
@@ -758,13 +762,17 @@ class PlotStrike(object):
                                   bins=int(360/bw),
                                   range=histrange
                                   )
-
+            
+            # centre points for the bins
+            invhistdata = np.mean([invhist[1][:-1],invhist[1][1:]],axis=0) * np.pi / 180
+            pthistdata = np.mean([pthist[1][:-1],pthist[1][1:]],axis=0) * np.pi / 180
+            
             # plot the histograms
-            self.barinv = self.axhinv.bar((invhist[1][:-1]) * np.pi / 180,
+            self.barinv = self.axhinv.bar(invhistdata,
                                           invhist[0],
                                           width=bw * np.pi / 180)
 
-            self.barpt = self.axhpt.bar((pthist[1][:-1]) * np.pi / 180,
+            self.barpt = self.axhpt.bar(pthistdata,
                                         pthist[0],
                                         width=bw * np.pi / 180)
 
@@ -834,10 +842,10 @@ class PlotStrike(object):
                              bbox={'facecolor': (.9, 0, .1), 'alpha': .25})
 
                     # print out the statistics of the strike angles
-                    invmedian = 90 - np.median(hh[np.nonzero(hh)])
+                    invmedian = 90 - np.median(invhistdata)
                     if invmedian < 0:
                         invmedian += 360
-                    invmean = 90 - np.mean(hh[np.nonzero(hh)])
+                    invmean = 90 - np.mean(invhistdata)
                     if invmean < 0:
                         invmean += 360
 

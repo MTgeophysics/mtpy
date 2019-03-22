@@ -128,13 +128,13 @@ class Covariance(object):
         e_smooth_line = ''
         for zz in range(self.grid_dimensions[2]):
             if not np.iterable(self.smoothing_east):
-                e_smooth_line += ' {0:<5.1f}'.format(self.smoothing_east)
+                e_smooth_line += ' {0:<5.2f}'.format(self.smoothing_east)
             else:
-                e_smooth_line += ' {0:<5.1f}'.format(self.smoothing_east[zz])
+                e_smooth_line += ' {0:<5.2f}'.format(self.smoothing_east[zz])
         clines.append(e_smooth_line + '\n')
 
         # --> smoothing in vertical direction
-        clines.append(' {0:<5.1f}\n'.format(self.smoothing_z))
+        clines.append(' {0:<5.2f}\n'.format(self.smoothing_z))
         clines.append('\n')
 
         # --> number of times to apply smoothing
