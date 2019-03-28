@@ -552,8 +552,9 @@ class PlotStrike(object):
                         # need to subtract 90 again because the histogram is
                         # for ploting 0 east, 90 north measuring
                         # counter-clockwise
-                        invmode = 90 - invhist[1][np.where(
-                            invhist[0] == invhist[0].max())[0][0]]
+                        print invhist[1][np.where(invhist[0] == invhist[0].max())[0]]
+                        invmode = 90 - np.mean(invhist[1][np.where(
+                            invhist[0] == invhist[0].max())[0]])
 
                         if invmode < 0:
                             invmode += 360
@@ -940,6 +941,8 @@ class PlotStrike(object):
                   'measured clockwise positive.')
             if show:
                 plt.show()
+        
+        return ptplotdata,plotinvdata
             
                 
 

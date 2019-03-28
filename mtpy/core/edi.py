@@ -1169,7 +1169,7 @@ class Information(object):
         self.edi_fn = edi_fn
         self.edi_lines = edi_lines
         self.info_list = None
-        self.info_dict = None
+        self.info_dict = {}
 
         if self.edi_fn is not None or self.edi_lines is not None:
             self.read_info()
