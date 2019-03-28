@@ -1172,7 +1172,7 @@ class ModelWidget(QtWidgets.QWidget):
                                                            gauss,
                                                            mode='same')
         ### need to elevation
-        elev_index = np.where(self.model_obj.res_model > 10E10)    
+        elev_index = np.where(self.model_obj.res_model > 1E10)    
         self.new_res_model[elev_index] = 1E12
 
         self.redraw_plots()
@@ -1181,8 +1181,8 @@ class ModelWidget(QtWidgets.QWidget):
         """
         remove the effect of elevation cells
         """
-        
-        res_array[np.where(res_array) > 1E11] = res_array[np.where(res_array <1E10)].mean()
+        mean_value = res_array[np.where(res_array <1E10)].mean()
+        res_array[np.where(res_array > 1E10)] = mean_value
         
         return res_array
         
