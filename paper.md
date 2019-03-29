@@ -24,7 +24,6 @@ affiliations:
 bibliography: mtpy.bib
 ---
 
-Alison Kirkby, Fei Zhang, Jared Peacock, Rakib Hassan, Jingming Duan
 
 # Introduction
 
