@@ -21,7 +21,7 @@ affiliations:
     index: 1
   - name: United States Geological Survey
     index: 2
-bibliography: mtpy.bib
+bibliography: paper.bib
 ---
 
 
