@@ -3,7 +3,7 @@ title: "The MTPy software package for magnetotelluric data analysis and visualis
 tags:
   - Python
   - MTPy
-  - magnetotelluric
+  - magnetotellurics
 authors:
   - name: Alison Louise Kirkby
     orcid: 0000-0003-1361-440X
@@ -21,6 +21,7 @@ affiliations:
     index: 1
   - name: United States Geological Survey
     index: 2
+date: 1 April 2019
 bibliography: paper.bib
 ---
 
