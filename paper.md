@@ -36,7 +36,7 @@ MTPy is an open source Python package to assist with MT data processing, analysi
 
 MTPy contains modules to carry out much of the processing and analysis that can be applied to MT data. MTPy works primarily with the industry standard Electronic Data Interchange (EDI) file format however it is compatible with other formats including the Jfile format exported by the Bounded Influence, Remote Reference Processing (BIRRP) code [@chaveetal1987; @chavethomson2004], and xml. The MTPy structure is based on key steps in working with MT data, namely processing, analysis, modelling, and imaging. These sub-packages are based on modules within the core sub-package [Figure 1, @kriegerpeacock2014].
 
-![MTPy package structure showing the key modules that are under active development. The colours in the workflow diagram represent which parts of MTPy are used at each step. For example, modules in the analysis sub-package are used on the impedance tensor data, while visualisation is carried out on time series data, processed data, and the results of analysis and modelling or inversion. This diagram is modified after @kriegerpeacock2014.](mtpy_diagram.png){width="5in"}
+![MTPy package structure showing the key modules that are under active development. The colours in the workflow diagram represent which parts of MTPy are used at each step. For example, modules in the analysis sub-package are used on the impedance tensor data, while visualisation is carried out on time series data, processed data, and the results of analysis and modelling or inversion. This diagram is modified after @kriegerpeacock2014.](paper_figures/mtpy_diagram.png){width="5in"}
 
 The core sub-package contains functionality to read and write MT data from industry standard formats such as EDI. When data are read in, an MT object is created. The MT object contains site metadata from the header of the EDI file, including the location. It also contains the impedance tensor (Z) and the vertical transfer functions (Tipper).
 
@@ -46,11 +46,11 @@ The analysis sub-package includes functions that are commonly used to analyse MT
 
 MTPy also contains the modeling sub-package, which allows users to create inputs to, and visualize outputs from, several of the commonly-used MT inversion codes. These include the Occam 1D and 2D inversion codes [@constableetal1987; @degroothedlin1990], and the ModEM 3D inversion code [@egbertkelbert2012; @kelbertetal2014].
 
-![Example of a single station plot generated using the plotresponse module within the imaging sub-package in MTPy. The plot shows Z~XY~ and Z~YX~ resistivity and phase, induction vectors [Tipper; @parkinson1962], and phase tensors [@caldwelletal2004] as a function of period.](Synth00.png){width="4.4015748031496065in"}
+![Example of a single station plot generated using the plotresponse module within the imaging sub-package in MTPy. The plot shows Z~XY~ and Z~YX~ resistivity and phase, induction vectors [Tipper; @parkinson1962], and phase tensors [@caldwelletal2004] as a function of period.](paper_figures/Synth00.png){width="4.4015748031496065in"}
 
 The imaging sub-package contains functionality to visualise MT data, as well as many of the outputs from the analysis and modelling modules. These include simple plots of resistivity and phase at a single station (e.g. Figure 2), resistivity and phase pseudosections and maps, phase tensor sections and maps (e.g. Figure 3), penetration depth and geoelectric strike plots, and images of resistivity models and the model responses.
 
-![Example of a phase tensor and induction vector map created by the phase_tensor_maps module in the imaging sub-package in MTPy. Phase tensor ellipses are calculated using the method detailed by @caldwelletal2004 and coloured by skew angle in degree.](phase_tensor_map100s.png){width="5in"}
+![Example of a phase tensor and induction vector map created by the phase_tensor_maps module in the imaging sub-package in MTPy. Phase tensor ellipses are calculated using the method detailed by @caldwelletal2004 and coloured by skew angle in degree.](paper_figures/phase_tensor_map100s.png){width="5in"}
 
 The functions in utils underpin these modules, by handling basic underlying functionality such as coordinate transformations, common filehandling operations and calculations that are commonly applied to MT data, such as conversion from impedance tensor (Z) to apparent resistivity and phase.
 
