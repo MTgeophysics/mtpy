@@ -2,6 +2,7 @@
 # do this every time a function in gis_tools is being called.
 from .decorator import gdal_data_check
 import os, re
+import numpy as np
 
 HAS_GDAL = gdal_data_check(None)._gdal_data_found
 
@@ -36,7 +37,16 @@ try:
             EPSG_DICT[epsg_code] = epsg_string
         else:
             pass  #print("epsg_code_val NOT found for this line ", line, epsg_code_val)
+    #end for
+except Exception as e:
+    # Failed to load EPSG codes and corresponding proj4 projections strings from pyproj.
+    # Since version 1.9.5 the epsg file stored in pyproj_datadir has been removed and
+    # replaced by 'proj.db', which is stored in a different folder.
+    # Since the underlying proj4 projection strings haven't changed, we simply load a
+    # local copy of these mappings to ensure backward compatibility.
 
-except ImportError:
-    pass
+    path = os.path.dirname(os.path.abspath(__file__))
+    epsg_dict_fn = os.path.join(path, 'epsg.npy')
+
+    EPSG_DICT = np.load(epsg_dict_fn).item()
 # end try
