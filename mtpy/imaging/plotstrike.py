@@ -552,7 +552,7 @@ class PlotStrike(object):
                         # need to subtract 90 again because the histogram is
                         # for ploting 0 east, 90 north measuring
                         # counter-clockwise
-                        print invhist[1][np.where(invhist[0] == invhist[0].max())[0]]
+                        print (invhist[1][np.where(invhist[0] == invhist[0].max())[0]])
                         invmode = 90 - np.mean(invhist[1][np.where(
                             invhist[0] == invhist[0].max())[0]])
 
