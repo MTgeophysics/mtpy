@@ -48,39 +48,6 @@ System Requirements
 -  Python 2.7
 -  Python 3.6+
 
-Setup Guide for Developers
-==========================
-
-1. Install Python environment and dependency packages. See Wiki Pages: https://github.com/MTgeophysics/mtpy/wiki
-
-2. Obtain the source code from https://github.com/MTgeophysics/mtpy:
-
--  ``git clone https://github.com/MTgeophysics/mtpy.git``
-- ``cd mtpy``
-
-   - ``pip install -v --user -e .`` (into user's own home ~/.local/lib/python2.7/site-packages/mtpy.egg-link)
-   OR 
-   
-   - ``python setup.py develop --user``   
-   OR 
-   
-   - ``pip install -v -e .``  (into python lib's dir site-packages, write-permission required)   
-   OR 
-   
-   - `` export  PYTHONPATH=/Path2/mtpy:$PYTHONPATH `` (Only valid for each session)
-   
-   
-To verify the install: 
-
-- ``pip list | grep mtpy``
-
-- ``pip show mtpy``
-
-To uninstall the mtpy package: 
-
-- ``pip uninstall -v mtpy``
-
-
 
 License
 ===============
@@ -90,8 +57,8 @@ MTpy is licensed under the GPL version 3
 The license agreement is contained in the repository and should be kept together with the code.
 
 
-Conventions
-===============
+Conventions Used in the MTPy Software
+=====================================
 
 1. MTpy uses E- and B-fields (although the sensors may be confusingly named as H-sensors in EDI files)
 2. [E] = microvolts/meter (muV/m)
