@@ -495,18 +495,20 @@ class PlotStrike(object):
                 invhist = np.histogram(plotinvdata,
                                        bins= int(360/bw),
                                        range=histrange)
+
                 pthist = np.histogram(ptplotdata,
                                       bins=int(360/bw),
                                       range=histrange)
 
                 # plot the histograms
-                invhistdata = np.mean([invhist[1][:-1],invhist[1][1:]],axis=0) * np.pi / 180
-                pthistdata = np.mean([pthist[1][:-1],pthist[1][1:]],axis=0) * np.pi / 180
-                self.barinv = self.axhinv.bar(invhistdata,
+                invhistlocs = np.mean([invhist[1][:-1],invhist[1][1:]],axis=0)
+                pthistlocs = np.mean([pthist[1][:-1],pthist[1][1:]],axis=0)
+
+                self.barinv = self.axhinv.bar(invhistlocs * np.pi/180,
                                               invhist[0],
                                               width=bw * np.pi / 180)
 
-                self.barpt = self.axhpt.bar(pthistdata,
+                self.barpt = self.axhpt.bar(pthistlocs * np.pi / 180,
                                             pthist[0],
                                             width=bw * np.pi / 180)
 
@@ -552,9 +554,8 @@ class PlotStrike(object):
                         # need to subtract 90 again because the histogram is
                         # for ploting 0 east, 90 north measuring
                         # counter-clockwise
-                        print invhist[1][np.where(invhist[0] == invhist[0].max())[0]]
-                        invmode = 90 - np.mean(invhist[1][np.where(
-                            invhist[0] == invhist[0].max())[0]])
+                        invmode = 90 - invhistlocs[np.where(
+                            invhist[0] == invhist[0].max())[0][0]]
 
                         if invmode < 0:
                             invmode += 360
@@ -765,15 +766,15 @@ class PlotStrike(object):
                                   )
             
             # centre points for the bins
-            invhistdata = np.mean([invhist[1][:-1],invhist[1][1:]],axis=0) * np.pi / 180
-            pthistdata = np.mean([pthist[1][:-1],pthist[1][1:]],axis=0) * np.pi / 180
+            invhistlocs = np.mean([invhist[1][:-1],invhist[1][1:]],axis=0)
+            pthistlocs = np.mean([pthist[1][:-1],pthist[1][1:]],axis=0)
             
             # plot the histograms
-            self.barinv = self.axhinv.bar(invhistdata,
+            self.barinv = self.axhinv.bar(invhistlocs * np.pi / 180,
                                           invhist[0],
                                           width=bw * np.pi / 180)
 
-            self.barpt = self.axhpt.bar(pthistdata,
+            self.barpt = self.axhpt.bar(pthistlocs * np.pi / 180,
                                         pthist[0],
                                         width=bw * np.pi / 180)
 
@@ -843,10 +844,10 @@ class PlotStrike(object):
                              bbox={'facecolor': (.9, 0, .1), 'alpha': .25})
 
                     # print out the statistics of the strike angles
-                    invmedian = 90 - np.median(invhistdata)
+                    invmedian = 90 - np.median(plotinvdata)
                     if invmedian < 0:
                         invmedian += 360
-                    invmean = 90 - np.mean(invhistdata)
+                    invmean = 90 - np.mean(plotinvdata)
                     if invmean < 0:
                         invmean += 360
 
