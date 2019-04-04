@@ -536,10 +536,11 @@ class PlotStrike(object):
                         MultipleLocator(30 * np.pi / 180))
 
                     # set labels on the correct axis
-                    axh.xaxis.set_ticklabels(['E', '', '',
-                                              'N', '', '',
-                                              'W', '', '',
-                                              'S', '', ''])
+                    axh.xaxis.set_ticks(np.arange(0.,360.,90.)*np.pi/180.)
+                    axh.xaxis.set_ticklabels(['E','N','W','S'])
+                    axh.tick_params(pad=-5)
+#                    axh.set_thetagrids(np.arange(0.,360.,90.),frac=1.1)
+                    
                     # make a light grid
                     axh.grid(alpha=.25)
 
