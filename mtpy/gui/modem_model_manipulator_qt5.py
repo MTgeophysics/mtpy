@@ -1116,6 +1116,7 @@ class ModelWidget(QtWidgets.QWidget):
         
         x_index, y_index = np.meshgrid(x_range, y_range)
         for zz in range(self.new_res_model.shape[2]):
+            self.new_res_model[:, :, zz] = self.mask_elevation_cells(self.new_res_model[:, :, zz])
             avg_res_value = np.mean([np.median(self.new_res_model[x_index, y_index, zz]),
                                      np.median(self.new_res_model[avg_range:-avg_range, 0:avg_range, zz]),
                                      np.median(self.new_res_model[avg_range:-avg_range, -avg_range:, zz]),
@@ -1127,6 +1128,10 @@ class ModelWidget(QtWidgets.QWidget):
             self.new_res_model[:, 0:n_pad, zz] = avg_res_value
             self.new_res_model[0:n_pad, n_pad:-n_pad, zz] = avg_res_value
             self.new_res_model[-n_pad:, n_pad:-n_pad, zz] = avg_res_value
+            
+        ### need to elevation
+        elev_index = np.where(self.model_obj.res_model > 1E10)    
+        self.new_res_model[elev_index] = 1E12
         
         self.redraw_plots()
         
@@ -1158,12 +1163,28 @@ class ModelWidget(QtWidgets.QWidget):
                       
         gauss = (1./(2*np.pi*sigma))*np.exp(-((gx**2)+(gy**2))/(2*sigma))
         
+        
+        
         for zz in range(self.new_res_model.shape[2]):
+            ### need to take into account elevation cells
+            self.new_res_model[:, :, zz] = self.mask_elevation_cells(self.new_res_model[:, :, zz]) 
             self.new_res_model[:, :, zz] = signal.convolve(self.new_res_model[:, :, zz],
                                                            gauss,
                                                            mode='same')
+        ### need to elevation
+        elev_index = np.where(self.model_obj.res_model > 1E10)    
+        self.new_res_model[elev_index] = 1E12
 
         self.redraw_plots()
+        
+    def mask_elevation_cells(self, res_array):
+        """
+        remove the effect of elevation cells
+        """
+        mean_value = res_array[np.where(res_array <1E10)].mean()
+        res_array[np.where(res_array > 1E10)] = mean_value
+        
+        return res_array
         
     def map_copy_down(self):
         """
