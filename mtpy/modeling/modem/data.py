@@ -731,12 +731,13 @@ class Data(object):
                 if new_edi_dir is not None and os.path.isdir(new_edi_dir):
                     # new_edifile = os.path.join(new_edi_dir, mt_obj.station + '.edi')
                     mt_obj.write_mt_file(
-                        save_dir=new_edi_dir,
-                        fn_basename=mt_obj.station,
-                        file_type='edi',
-                        new_Z_obj=interp_z,
-                        new_Tipper_obj=interp_t,
-                        longitude_format=longitude_format)
+                            save_dir=new_edi_dir,
+                            fn_basename=mt_obj.station,
+                            file_type='edi',
+                            new_Z_obj=interp_z,
+                            new_Tipper_obj=interp_t,
+                            longitude_format=longitude_format)
+                        
             else:
                 pass
 
