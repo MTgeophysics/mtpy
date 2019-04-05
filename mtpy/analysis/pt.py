@@ -720,7 +720,7 @@ class PhaseTensor(object):
         phiminerr = None
         if self.pt_err is not None:
             phiminerr = np.sqrt(self._pi2()[1]**2+self._pi1()[1]**2)
-            return np.degrees(np.arctan(phiminerr))
+            return np.degrees(np.arctan(phiminerr))/self.phimin
         else:
             return None
 
@@ -750,7 +750,7 @@ class PhaseTensor(object):
         if self.pt_err is not None:
             phimaxerr = np.sqrt(self._pi2()[1]**2+self._pi1()[1]**2)
  
-            return np.degrees(np.arctan(phimaxerr))
+            return np.degrees(np.arctan(phimaxerr))/self.phimax
         else:
             return None
 

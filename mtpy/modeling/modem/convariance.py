@@ -18,7 +18,7 @@ from .exception import CovarianceError
 from .model import Model
 
 try:
-    from evtk.hl import gridToVTK
+    from pyevtk.hl import gridToVTK
 except ImportError:
     print ('If you want to write a vtk file for 3d viewing, you need download '
            'and install evtk from https://bitbucket.org/pauloh/pyevtk')
