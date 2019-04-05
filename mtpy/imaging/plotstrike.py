@@ -539,7 +539,6 @@ class PlotStrike(object):
                     axh.xaxis.set_ticks(np.arange(0.,360.,90.)*np.pi/180.)
                     axh.xaxis.set_ticklabels(['E','N','W','S'])
                     axh.tick_params(pad=-5)
-#                    axh.set_thetagrids(np.arange(0.,360.,90.),frac=1.1)
                     
                     # make a light grid
                     axh.grid(alpha=.25)
@@ -822,10 +821,9 @@ class PlotStrike(object):
                 plt.setp(axh.yaxis.get_ticklabels(), visible=False)  # works in 2.0.2 not 2.1.0
 
                 # place the correct label at the cardinal directions
-                axh.xaxis.set_ticklabels(['', 'E', '', '',
-                                          'N', '', '',
-                                          'W', '', '',
-                                          'S', '', ''])
+                axh.xaxis.set_ticks(np.arange(0.,360.,90.)*np.pi/180.)
+                axh.xaxis.set_ticklabels(['E','N','W','S'])
+                axh.tick_params(pad=-5)
 
                 # set invariant axes propertiesz
                 if aa == 0:
