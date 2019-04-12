@@ -11,6 +11,10 @@ import numpy as np
 import os
 import time
 import warnings
+import datetime
+import dateutil
+import xml.etree.cElementTree as ET
+from xml.dom import minidom
 
 import mtpy.core.edi as MTedi
 import mtpy.core.z as MTz
@@ -45,7 +49,25 @@ except ImportError:  # pragma: no cover
     _logger.warning('Could not find scipy.interpolate, cannot use method interpolate'
                     'check installation you can get scipy from scipy.org.')
     interp_import = False
+    
+# =============================================================================
+#  global parameters
+# =============================================================================
+dt_fmt = '%Y-%m-%dT%H:%M:%S.%f %Z'
 
+#==============================================================================
+# Need a dummy utc time zone for the date time format
+#==============================================================================
+class UTC(datetime.tzinfo):
+    """
+    An class to hold information about UTC
+    """
+    def utcoffset(self, df):
+        return datetime.timedelta(hours=0)
+    def dst(self, df):
+        return datetime.timedelta(0)
+    def tzname(self, df):
+        return "UTC"
 
 # =============================================================================
 class MT(object):
@@ -703,7 +725,7 @@ class MT(object):
         header.units = self.Site.Location.elev_units
         header.declination = self.Site.Location.declination
         header.progvers = 'MTpy'
-        header.progdate = time.strftime('%Y-%m-%d', time.gmtime())
+        header.progdate = datetime.datetime.now().isoformat()
 
         return header
 
@@ -1276,8 +1298,31 @@ class MT(object):
                 value = obj.value
 
                 setattr(self.Processing, name, value)
-
+                
     def _write_xml_file(self, xml_fn, new_Z=None, new_Tipper=None):
+        """
+        write xml file
+        """
+        
+        emtf = ET.Element('EMTF')
+        self.Site.to_xml(emtf)
+        self.FieldNotes.to_xml(emtf)
+        self.Processing.to_xml(emtf)
+        self.Provenance.to_xml(emtf)
+        self.Copyright.to_xml(emtf)
+        
+        #--> write xml file
+        xmlstr = minidom.parseString(ET.tostring(emtf)).toprettyxml(indent="   ")
+        with open(xml_fn, 'w') as fid:
+            fid.write(xmlstr)
+        
+        print('-'*72)
+        print('    Wrote xml file to: {0}'.format(xml_fn))
+        print('-'*72)
+        
+        return xml_fn
+
+    def _write_xml_file_old(self, xml_fn, new_Z=None, new_Tipper=None):
         """
         Write a xml file.
         """
@@ -1952,13 +1997,73 @@ class MT(object):
         return plot_obj
         # raise NotImplementedError
 
+# =============================================================================
+# general object 
+# =============================================================================
+class General(object):
+    """
+    General class object that will be inhereted by the other object
+    
+    Methods
+    
+    to_xml
+    to_json
+    
+    from_xml
+    from_json
+    """
+    
+    def __init__(self):
+        pass
+    
+    def to_xml(self, parent_et, exclude_none=True):
+        """
+        convert to xml format
+        """
 
-# ==============================================================================
+        for key, value in sorted(self.__dict__.items(),
+                                 key=lambda item:(item[0][0].replace('_', '') +
+                                                  item[0][1:]).lower()):
+            if value is None and exclude_none:
+                continue
+            
+            if isinstance(getattr(self, key), (Location, Instrument, Person,
+                          Software, Citation, DataQuality, FieldNotes, 
+                          Copyright, Processing)):
+                if 'electrode' in key.lower():
+                    k = 'Dipole'
+                    attr = key.split('_')[1]
+                    k_element = ET.SubElement(parent_et, k)
+                    k_element.set('name', attr.upper())
+
+                elif 'magnetometer' in key.lower():
+                    k = 'Magnetometer'
+                    attr = key.split('_')[1]
+                    k_element = ET.SubElement(parent_et, k)
+                    k_element.set('name', attr.upper())
+                else:
+                    k_element = ET.SubElement(parent_et, key)
+                getattr(self, key).to_xml(k_element)
+            
+            elif key[0] == '_':
+                try:
+                    k = key[1:]
+                    v = getattr(self, k)
+                    new_element = ET.SubElement(parent_et, k)
+                    new_element.text = str(v)
+                    
+                except AttributeError:
+                    continue
+            else:
+                new_element = ET.SubElement(parent_et, key)
+                new_element.text = str(value)
+                
+        return 
+# =============================================================================
 # Site details
-# ==============================================================================
+# =============================================================================
 
-
-class Site(object):
+class Site(General):
     """
     Information on the site, including location, id, etc.
 
@@ -1987,6 +2092,7 @@ class Site(object):
     """
 
     def __init__(self, **kwargs):
+        super(Site, self).__init__()
         self.acquired_by = None
         self.end_date = None
         self.id = None
@@ -1994,7 +2100,8 @@ class Site(object):
         self.project = None
         self.loc = None
         self.run_list = None
-        self.start_date = None
+        self._start_date = None
+        self._stop_date = None
         self.survey = None
 
         for key in list(kwargs.keys()):
@@ -2009,19 +2116,49 @@ class Site(object):
     @year_collected.setter
     def year_collected(self, value):
         pass
+    
+    @property
+    def start_date(self):
+        try:
+            return self._start_date.strftime(dt_fmt)
+        except (TypeError, AttributeError):
+            return None
 
+    @start_date.setter
+    def start_date(self, start_date):
+        self._start_date = dateutil.parser.parse(start_date)
+        if self._start_date.tzname() is None:
+            self._start_date = self._start_date.replace(tzinfo=UTC())
 
+    @property
+    def stop_date(self):
+        try:
+            return self._stop_date.strftime(dt_fmt)
+        except (TypeError, AttributeError):
+            return None
+
+    @stop_date.setter
+    def stop_date(self, stop_date):
+        self._stop_date = dateutil.parser.parse(stop_date)
+        if self._stop_date.tzname() is None:
+            self._stop_date = self._stop_date.replace(tzinfo=UTC())
+            
+    def to_xml(self, parent_et):
+        """
+        write_xml
+        """
+        super(Site, self).to_xml(ET.SubElement(parent_et, 'Site'))
+ 
 # ==============================================================================
 # Location class, be sure to put locations in decimal degrees, and note datum
 # ==============================================================================
-
-
-class Location(object):
+class Location(General):
     """
     location details
     """
 
     def __init__(self, **kwargs):
+        super(Location, self).__init__()
         self.datum = 'WGS84'
         self.declination = None
         self.declination_epoch = None
@@ -2114,14 +2251,13 @@ class Location(object):
 
         self.latitude = ll_point[0]
         self.longitude = ll_point[1]
-
-
+        
 # ==============================================================================
 # Field Notes
 # ==============================================================================
 
 
-class FieldNotes(object):
+class FieldNotes(General):
     """
     Field note information.
 
@@ -2143,6 +2279,7 @@ class FieldNotes(object):
     """
 
     def __init__(self, **kwargs):
+        super(FieldNotes, self).__init__()
         null_emeas = MTedi.EMeasurement()
         null_hmeas = MTedi.HMeasurement()
 
@@ -2164,12 +2301,18 @@ class FieldNotes(object):
 
         for key in list(kwargs.keys()):
             setattr(self, key, kwargs[key])
+        
+    def to_xml(self, parent_et):
+        """
+        write_xml
+        """
+        super(FieldNotes, self).to_xml(ET.SubElement(parent_et, 'FieldNotes'))
 
 
 # ==============================================================================
 # Instrument
 # ==============================================================================
-class Instrument(object):
+class Instrument(General):
     """
     Information on an instrument that was used.
 
@@ -2189,6 +2332,7 @@ class Instrument(object):
     """
 
     def __init__(self, **kwargs):
+        super(Instrument, self).__init__()
         self.id = None
         self.manufacturer = None
         self.type = None
@@ -2212,7 +2356,7 @@ class Instrument(object):
 # ==============================================================================
 
 
-class DataQuality(object):
+class DataQuality(General):
     """
     Information on data quality.
 
@@ -2235,6 +2379,7 @@ class DataQuality(object):
     """
 
     def __init__(self, **kwargs):
+        super(DataQuality, self).__init__()
         self.comments = None
         self.good_from_period = None
         self.good_to_period = None
@@ -2250,7 +2395,7 @@ class DataQuality(object):
 # ==============================================================================
 # Citation
 # ==============================================================================
-class Citation(object):
+class Citation(General):
     """
     Information for a citation.
 
@@ -2272,6 +2417,7 @@ class Citation(object):
     """
 
     def __init__(self, **kwargs):
+        super(Citation, self).__init__()
         self.author = None
         self.title = None
         self.journal = None
@@ -2286,7 +2432,7 @@ class Citation(object):
 # ==============================================================================
 # Copyright
 # ==============================================================================
-class Copyright(object):
+class Copyright(General):
     """
     Information of copyright, mainly about how someone else can use these
     data. Be sure to read over the conditions_of_use.
@@ -2307,6 +2453,7 @@ class Copyright(object):
     """
 
     def __init__(self, **kwargs):
+        super(Copyright, self).__init__()
         self.Citation = Citation()
         self.conditions_of_use = ''.join(['All data and metadata for this survey are ',
                                           'available free of charge and may be copied ',
@@ -2327,14 +2474,19 @@ class Copyright(object):
         self.additional_info = None
         for key in list(kwargs.keys()):
             setattr(self, key, kwargs[key])
-
+            
+    def to_xml(self, parent_et):
+        """
+        write_xml
+        """
+        super(Copyright, self).to_xml(ET.SubElement(parent_et, 'Copyright'))
 
 # ==============================================================================
 # Provenance
 # ==============================================================================
 
 
-class Provenance(object):
+class Provenance(General):
     """
     Information of the file history, how it was made
 
@@ -2356,13 +2508,20 @@ class Provenance(object):
     """
 
     def __init__(self, **kwargs):
-        self.creation_time = time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime())
+        super(Provenance, self).__init__()
+        self.creation_time = datetime.datetime.now().isoformat()
         self.creating_application = 'MTpy'
         self.Creator = Person()
         self.Submitter = Person()
 
         for key in list(kwargs.keys()):
             setattr(self, key, kwargs[key])
+            
+    def to_xml(self, parent_et):
+        """
+        write_xml
+        """
+        super(Provenance, self).to_xml(ET.SubElement(parent_et, 'Provenance'))
 
 
 # ==============================================================================
@@ -2370,7 +2529,7 @@ class Provenance(object):
 # ==============================================================================
 
 
-class Person(object):
+class Person(General):
     """
     Information for a person
 
@@ -2391,6 +2550,7 @@ class Person(object):
     """
 
     def __init__(self, **kwargs):
+        super(Person, self).__init__()
         self.email = None
         self.name = None
         self.organization = None
@@ -2405,7 +2565,7 @@ class Person(object):
 # ==============================================================================
 
 
-class Processing(object):
+class Processing(General):
     """
     Information for a processing
 
@@ -2426,6 +2586,7 @@ class Processing(object):
     """
 
     def __init__(self, **kwargs):
+        super(Processing, self).__init__()
         self.Software = Software()
         self.notes = None
         self.processed_by = None
@@ -2435,14 +2596,21 @@ class Processing(object):
 
         for key in list(kwargs.keys()):
             setattr(self, key, kwargs[key])
+            
+    def to_xml(self, parent_et):
+        """
+        write_xml
+        """
+        super(Processing, self).to_xml(ET.SubElement(parent_et, 'Processing'))
 
 
-class Software(object):
+class Software(General):
     """
     software
     """
 
     def __init__(self, **kwargs):
+        super(Software, self).__init__()
         self.name = None
         self.version = None
         self.Author = Person()
