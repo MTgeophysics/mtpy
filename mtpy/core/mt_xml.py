@@ -933,7 +933,7 @@ class MT_XML(XML_Config):
         #new_element.tail = '\n'
         return new_element
 
-    def write_xml_file(self, xml_fn, cfg_fn=None):
+    def write_xml_file(self, xml_fn, emtf, cfg_fn=None):
         """
         write xml from edi
         """
@@ -947,7 +947,7 @@ class MT_XML(XML_Config):
         self._format_data()
 
         # make the top of the tree element        
-        emtf = ET.Element('EM_TF')
+        #emtf = ET.Element('EM_TF')
         
         # loop over the important information sections
         for element in self._order_list:
