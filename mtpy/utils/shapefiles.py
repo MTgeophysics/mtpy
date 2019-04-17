@@ -310,7 +310,7 @@ class PTShapeFile(object):
 
 #            print("period=", plot_per)
 #            print(self.pt_dict.keys()) # (self.pt_dict[plot_per])['phimax'].size)
-            phi_max_val = self.pt_dict[plot_per]['phimax'].max()
+            #phi_max_val = self.pt_dict[plot_per]['phimax'].max()
 
 
             for isite, pt_array in enumerate(self.pt_dict[plot_per]):
@@ -318,8 +318,8 @@ class PTShapeFile(object):
                 # need to make an ellipse first using the parametric
                 # equation
                 azimuth = -np.deg2rad(pt_array['azimuth'])
-                width = self.ellipse_size * (pt_array['phimax'] / phi_max_val)
-                height = self.ellipse_size * (pt_array['phimin'] / phi_max_val)
+                width = self.ellipse_size
+                height = self.ellipse_size * (pt_array['phimin'] / pt_array['phimax'])
 
                 x0 = pt_array['east']
                 y0 = pt_array['north']
@@ -531,13 +531,13 @@ class PTShapeFile(object):
             layer.CreateField(field_normalized_skew)
 
             poly_list = []
-            phimax = self.pt_dict[plot_per]['phimax'].max()
+            #phimax = self.pt_dict[plot_per]['phimax'].max()
             for pt_array in resp_pt_dict[plot_per]:
 
                 # need to make an ellipse first using the parametric equation
                 azimuth = -np.deg2rad(pt_array['azimuth'])
-                width = self.ellipse_size * (pt_array['phimax'] / phimax)
-                height = self.ellipse_size * (pt_array['phimin'] / phimax)
+                width = self.ellipse_size 
+                height = self.ellipse_size * (pt_array['phimin'] / pt_array['phimax'])
                 x0 = pt_array['east']
                 y0 = pt_array['north']
 
