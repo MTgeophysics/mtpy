@@ -1903,9 +1903,12 @@ class Site(General):
 
     @start_date.setter
     def start_date(self, start_date):
-        self._start_date = dateutil.parser.parse(start_date)
+        try:
+            self._start_date = dateutil.parser.parse(start_date)
+        except (ValueError, TypeError):
+            self._start_date = dateutil.parser.parse('1980-01-01')
         if self._start_date.tzname() is None:
-            self._start_date = self._start_date.replace(tzinfo=UTC())
+                self._start_date = self._start_date.replace(tzinfo=UTC())
 
     @property
     def stop_date(self):
