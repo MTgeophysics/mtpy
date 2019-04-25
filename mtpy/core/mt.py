@@ -9,10 +9,10 @@
 # ==============================================================================
 import numpy as np
 import os
-import time
 import warnings
 import datetime
 import dateutil
+import dateutil.parser
 import xml.etree.cElementTree as ET
 from xml.dom import minidom
 
@@ -724,6 +724,7 @@ class MT(object):
             header.survey = self.Site.survey
         header.units = self.Site.Location.elev_units
         header.declination = self.Site.Location.declination
+        header.declination_epoch = self.Site.Location.declination_epoch
         header.progvers = 'MTpy'
         header.progdate = datetime.datetime.now().isoformat()
 
@@ -1908,7 +1909,7 @@ class Site(General):
         except (ValueError, TypeError):
             self._start_date = dateutil.parser.parse('1980-01-01')
         if self._start_date.tzname() is None:
-                self._start_date = self._start_date.replace(tzinfo=UTC())
+            self._start_date = self._start_date.replace(tzinfo=UTC())
 
     @property
     def stop_date(self):

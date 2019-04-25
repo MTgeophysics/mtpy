@@ -219,7 +219,9 @@ class PTShapeFile(object):
                                 mt_obj.pt.azimuth[p_index],
                                 mt_obj.pt.beta[p_index],
                                 2 * mt_obj.pt.beta[p_index],
-                                mt_obj.pt.ellipticity[p_index])  # FZ: get ellipticity begin here
+                                mt_obj.pt.ellipticity[p_index], 
+                                mt_obj.pt.phimax[p_index] - 
+                                mt_obj.pt.phimin[p_index])  # FZ: get ellipticity begin here
 
                     self.pt_dict[plot_per].append(pt_tuple)
                 else:
@@ -234,7 +236,8 @@ class PTShapeFile(object):
                                                      ('azimuth', np.float),
                                                      ('skew', np.float),
                                                      ('n_skew', np.float),
-                                                     ('ellipticity', np.float)])
+                                                     ('ellipticity', np.float),
+                                                     ('diff', np.float)])
         unique_utm_cs = sorted(list(set(utm_cs_list)))
         if len(unique_utm_cs) >1:
             print(("Warning: Multi-UTM-Zones found in the EDI files", unique_utm_cs))
@@ -305,6 +308,9 @@ class PTShapeFile(object):
             field_ellipticity = ogr.FieldDefn('ellipt', ogr.OFTReal)
             # FZ: note osgeo gdal does not like name 'ellipticity'
             layer.CreateField(field_ellipticity)
+            
+            field_diff = ogr.FieldDefn('diff', ogr.OFTReal)
+            layer.CreateField(field_diff)
 
             poly_list = []
 
@@ -368,10 +374,9 @@ class PTShapeFile(object):
                 new_feature.SetField("skew", pt_array['skew'])
                 new_feature.SetField("n_skew", pt_array['n_skew'])
 
-                new_feature.SetField(
-                    "azimuth", pt_array['azimuth'])  # FZ added
-                new_feature.SetField(
-                    "ellipt", pt_array['ellipticity'])  # FZ added
+                new_feature.SetField( "azimuth", pt_array['azimuth'])  # FZ added
+                new_feature.SetField("ellipt", pt_array['ellipticity'])  # FZ added
+                new_feature.SetField("diff", pt_array['diff'])
                 # new_feature.SetField("ellipticity", pt_array['azimuth'])
                 # # FZ added
 
@@ -469,9 +474,11 @@ class PTShapeFile(object):
                                 mpt.phimax[p_index],
                                 mpt.azimuth[p_index],
                                 mpt.beta[p_index],
-                                2 * mpt.beta[p_index])
+                                2 * mpt.beta[p_index],
+                                mpt.phimax[p_index] - mpt.phimin[p_index])
                 except KeyError:
                     pt_tuple = (mt_obj.station, east, north,
+                                0,
                                 0,
                                 0,
                                 0,
@@ -488,7 +495,8 @@ class PTShapeFile(object):
                                                      ('phimax', np.float),
                                                      ('azimuth', np.float),
                                                      ('skew', np.float),
-                                                     ('n_skew', np.float)])
+                                                     ('n_skew', np.float),
+                                                     ('diff', np.float)])
 
         # write files
         for plot_per in self.plot_period:
@@ -529,6 +537,9 @@ class PTShapeFile(object):
 
             field_normalized_skew = ogr.FieldDefn('n_skew', ogr.OFTReal)
             layer.CreateField(field_normalized_skew)
+            
+            field_diff = ogr.FieldDefn('diff', ogr.OFTReal)
+            layer.CreateField(field_diff)
 
             poly_list = []
             #phimax = self.pt_dict[plot_per]['phimax'].max()
@@ -579,6 +590,7 @@ class PTShapeFile(object):
                 new_feature.SetField("phi_max", pt_array['phimax'])
                 new_feature.SetField("skew", pt_array['skew'])
                 new_feature.SetField("n_skew", pt_array['n_skew'])
+                new_feature.SetField("diff", pt_array['diff'])
 
                 # add the new feature to the layer.
                 layer.SetFeature(new_feature)
