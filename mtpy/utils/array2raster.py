@@ -409,10 +409,6 @@ def array2raster(raster_fn, origin, cell_width, cell_height, res_array,
     driver = gdal.GetDriverByName('GTiff')
 
     # make a raster with the shape of the array to be written 
-<<<<<<< HEAD
-=======
-    print(raster_fn, ncols, nrows)
->>>>>>> 1fffa1ccb835c016f1be5c18b37b54bddf182ac2
     out_raster = driver.Create(raster_fn, ncols, nrows, 1, gdal.GDT_Float32)
     
     # geotransform:
