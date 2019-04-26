@@ -405,7 +405,11 @@ class PlotResponses(QtWidgets.QWidget):
         """
         get the station name from the clicked station 
         """
-        self.station = str(widget_item.text()) 
+        try:
+            self.station = str(widget_item.text()) 
+        except AttributeError:
+            print('Error: Widget is None')
+            
         self.plot()
         
     def file_changed_dfn(self):

@@ -9,8 +9,12 @@
 # ==============================================================================
 import numpy as np
 import os
-import time
 import warnings
+import datetime
+import dateutil
+import dateutil.parser
+import xml.etree.cElementTree as ET
+from xml.dom import minidom
 
 import mtpy.core.edi as MTedi
 import mtpy.core.z as MTz
@@ -45,7 +49,25 @@ except ImportError:  # pragma: no cover
     _logger.warning('Could not find scipy.interpolate, cannot use method interpolate'
                     'check installation you can get scipy from scipy.org.')
     interp_import = False
+    
+# =============================================================================
+#  global parameters
+# =============================================================================
+dt_fmt = '%Y-%m-%dT%H:%M:%S.%f %Z'
 
+#==============================================================================
+# Need a dummy utc time zone for the date time format
+#==============================================================================
+class UTC(datetime.tzinfo):
+    """
+    An class to hold information about UTC
+    """
+    def utcoffset(self, df):
+        return datetime.timedelta(hours=0)
+    def dst(self, df):
+        return datetime.timedelta(0)
+    def tzname(self, df):
+        return "UTC"
 
 # =============================================================================
 class MT(object):
@@ -702,8 +724,9 @@ class MT(object):
             header.survey = self.Site.survey
         header.units = self.Site.Location.elev_units
         header.declination = self.Site.Location.declination
+        header.declination_epoch = self.Site.Location.declination_epoch
         header.progvers = 'MTpy'
-        header.progdate = time.strftime('%Y-%m-%d', time.gmtime())
+        header.progdate = datetime.datetime.now().isoformat()
 
         return header
 
@@ -1276,8 +1299,31 @@ class MT(object):
                 value = obj.value
 
                 setattr(self.Processing, name, value)
-
+                
     def _write_xml_file(self, xml_fn, new_Z=None, new_Tipper=None):
+        """
+        write xml file
+        """
+        
+        emtf = ET.Element('EMTF')
+        self.Site.to_xml(emtf)
+        self.FieldNotes.to_xml(emtf)
+        self.Processing.to_xml(emtf)
+        self.Provenance.to_xml(emtf)
+        self.Copyright.to_xml(emtf)
+        
+        #--> write xml file
+        xmlstr = minidom.parseString(ET.tostring(emtf)).toprettyxml(indent="   ")
+        with open(xml_fn, 'w') as fid:
+            fid.write(xmlstr)
+        
+        print('-'*72)
+        print('    Wrote xml file to: {0}'.format(xml_fn))
+        print('-'*72)
+        
+        return xml_fn
+
+    def _write_xml_file_old(self, xml_fn, new_Z=None, new_Tipper=None):
         """
         Write a xml file.
         """
@@ -1296,7 +1342,14 @@ class MT(object):
         
         xml_obj.Z = self.Z
         xml_obj.Tipper = self.Tipper
-
+        
+#        emtf = ET.Element('EM_TF')
+#
+#        self.Site.to_xml(emtf)
+#        self.FieldNotes.to_xml(emtf)
+#        self.Processing.to_xml(emtf)
+#        self.Provenance.to_xml(emtf)
+#        self.Copyright.to_xml(emtf)
         xml_obj = self._xml_set_provenance(xml_obj)
         xml_obj = self._xml_set_copyright(xml_obj)
         xml_obj = self._xml_set_site(xml_obj)
@@ -1305,236 +1358,6 @@ class MT(object):
         xml_obj = self._xml_set_site_layout(xml_obj)
         
         xml_obj.write_xml_file(xml_fn)
-
-    def _xml_set_site(self, xml_obj):
-        """
-        set the Site attributes in the xml object
-        """
-        xml_obj.Site.Project.value = self.Site.project
-        if type(self.Site.survey) is list:
-            xml_obj.Site.Survey.value = ','.join(self.Site.survey)
-        else:
-            xml_obj.Site.Survey.value = self.Site.survey
-        xml_obj.Site.Id.value = self.Site.id
-        xml_obj.Site.AcquiredBy.value = self.Site.acquired_by
-        xml_obj.Site.Start.value = self.Site.start_date
-        xml_obj.Site.End.value = self.Site.end_date
-        xml_obj.Site.RunList.value = self.Site.run_list
-        xml_obj.Site.Orientation.value = 'geomagnetic'
-        try:
-            xml_obj.Site.Orientation.attr = {'angle_to_geographic_north':\
-                                             '{0:.2f}'.format(self.Site.Location.declination)}
-        except ValueError:
-            xml_obj.Site.Orientation.attr = {'angle_to_geographic_north': '0.00'}
-        
-        xml_obj.Site.Location.Latitude.value = self.lat
-        xml_obj.Site.Location.Longitude.value = self.lon
-        xml_obj.Site.Location.Elevation.value = self.elev
-        xml_obj.Site.Location.Elevation.attr = {
-            'units': self.Site.Location.elev_units}
-        xml_obj.Site.Location.Declination.value = self.Site.Location.declination
-        xml_obj.Site.Location.Declination.attr = {
-            'epoch': self.Site.Location.declination_epoch}
-
-        return xml_obj
-
-    def _xml_set_field_notes(self, xml_obj):
-        """
-        Set the FieldNotes attributes of the xml object
-        """
-
-        xml_obj.FieldNotes.Instrument.Type.value = self.FieldNotes.DataLogger.type
-        xml_obj.FieldNotes.Instrument.Id.value = self.FieldNotes.DataLogger.id
-        xml_obj.FieldNotes.Instrument.Manufacturer.value = self.FieldNotes.DataLogger.manufacturer
-
-        # EX
-        xml_obj.FieldNotes.Dipole.Type.value = self.FieldNotes.Electrode_ex.type
-        xml_obj.FieldNotes.Dipole.Id.value = self.FieldNotes.Electrode_ex.id
-        xml_obj.FieldNotes.Dipole.Manufacturer.value = self.FieldNotes.Electrode_ex.manufacturer
-        xml_obj.FieldNotes.Dipole.attr = {'name': 'EX'}
-        
-        length = np.sqrt((self.FieldNotes.Electrode_ex.x2 - self.FieldNotes.Electrode_ex.x) ** 2 +
-                         (self.FieldNotes.Electrode_ex.y2 - self.FieldNotes.Electrode_ex.y) ** 2)
-        xml_obj.FieldNotes.Dipole.Length.value = length
-        try:
-            azm = np.arctan((self.FieldNotes.Electrode_ex.y2 - self.FieldNotes.Electrode_ex.y) /
-                            (self.FieldNotes.Electrode_ex.x2 - self.FieldNotes.Electrode_ex.x))
-        except ZeroDivisionError:
-            azm = 0.0
-        xml_obj.FieldNotes.Dipole.Azimuth.value = np.degrees(azm)
-        xml_obj.FieldNotes.Dipole.Channel.value = self.FieldNotes.Electrode_ex.acqchan
-
-        # EY
-        xml_obj.FieldNotes.Dipole_00.Type.value = self.FieldNotes.Electrode_ey.type
-        xml_obj.FieldNotes.Dipole_00.Id.value = self.FieldNotes.Electrode_ey.id
-        xml_obj.FieldNotes.Dipole_00.Manufacturer.value = self.FieldNotes.Electrode_ey.manufacturer
-        xml_obj.FieldNotes.Dipole_00.attr = {'name': 'EY'}
-        length = np.sqrt((self.FieldNotes.Electrode_ey.x2 - self.FieldNotes.Electrode_ey.x) ** 2 +
-                         (self.FieldNotes.Electrode_ey.y2 - self.FieldNotes.Electrode_ey.y) ** 2)
-        xml_obj.FieldNotes.Dipole_00.Length.value = length
-        try:
-            azm = np.arctan((self.FieldNotes.Electrode_ey.y2 - self.FieldNotes.Electrode_ey.y) /
-                            (self.FieldNotes.Electrode_ey.x2 - self.FieldNotes.Electrode_ey.x))
-        except ZeroDivisionError:
-            azm = 90.0
-        xml_obj.FieldNotes.Dipole_00.Azimuth.value = np.degrees(min([np.pi/2, azm]))
-        xml_obj.FieldNotes.Dipole_00.Channel.value = self.FieldNotes.Electrode_ey.acqchan
-
-        # HX
-        xml_obj.FieldNotes.Magnetometer.Type.value = self.FieldNotes.Magnetometer_hx.type
-        xml_obj.FieldNotes.Magnetometer.Id.value = self.FieldNotes.Magnetometer_hx.id
-        xml_obj.FieldNotes.Magnetometer.Manufacturer.value = self.FieldNotes.Magnetometer_hx.manufacturer
-        xml_obj.FieldNotes.Magnetometer.attr = {'name': 'HX'}
-        xml_obj.FieldNotes.Magnetometer.Azimuth.value = self.FieldNotes.Magnetometer_hx.azm
-        xml_obj.FieldNotes.Magnetometer.Channel.value = self.FieldNotes.Magnetometer_hx.acqchan
-
-        # HY
-        xml_obj.FieldNotes.Magnetometer_00.Type.value = self.FieldNotes.Magnetometer_hy.type
-        xml_obj.FieldNotes.Magnetometer_00.Id.value = self.FieldNotes.Magnetometer_hy.id
-        xml_obj.FieldNotes.Magnetometer_00.Manufacturer.value = self.FieldNotes.Magnetometer_hy.manufacturer
-        xml_obj.FieldNotes.Magnetometer_00.attr = {'name': 'HY'}
-        xml_obj.FieldNotes.Magnetometer_00.Azimuth.value = self.FieldNotes.Magnetometer_hy.azm
-        xml_obj.FieldNotes.Magnetometer_00.Channel.value = self.FieldNotes.Magnetometer_hy.acqchan
-
-        # HZ
-        xml_obj.FieldNotes.Magnetometer_01.Type.value = self.FieldNotes.Magnetometer_hz.type
-        xml_obj.FieldNotes.Magnetometer_01.Id.value = self.FieldNotes.Magnetometer_hz.id
-        xml_obj.FieldNotes.Magnetometer_01.Manufacturer.value = self.FieldNotes.Magnetometer_hz.manufacturer
-        xml_obj.FieldNotes.Magnetometer_01.attr = {'name': 'HZ'}
-        xml_obj.FieldNotes.Magnetometer_01.Azimuth.value = self.FieldNotes.Magnetometer_hz.azm
-        xml_obj.FieldNotes.Magnetometer_01.Channel.value = self.FieldNotes.Magnetometer_hz.acqchan
-
-        # Data Quality Notes
-        xml_obj.FieldNotes.DataQualityNotes.Rating.value = self.FieldNotes.DataQuality.rating
-        xml_obj.FieldNotes.DataQualityNotes.GoodFromPeriod.value = self.FieldNotes.DataQuality.good_from_period
-        xml_obj.FieldNotes.DataQualityNotes.GoodToPeriod.value = self.FieldNotes.DataQuality.good_to_period
-        xml_obj.FieldNotes.DataQualityNotes.Comments.value = self.FieldNotes.DataQuality.comments
-        xml_obj.FieldNotes.DataQualityNotes.Comments.attr = {
-            'author': self.FieldNotes.DataQuality.author}
-        # Data Quality Warnings
-        xml_obj.FieldNotes.DataQualityWarnings.Flag.value = self.FieldNotes.DataQuality.warnings_flag
-        xml_obj.FieldNotes.DataQualityWarnings.Comments.value = self.FieldNotes.DataQuality.warnings_comments
-        xml_obj.FieldNotes.DataQualityWarnings.Comments.attr = {
-            'author': self.FieldNotes.DataQuality.author}
-
-        return xml_obj
-
-    def _xml_set_processing(self, xml_obj):
-        """
-        Set the Processing attributes of the xml object
-        """
-
-        xml_obj.ProcessingInfo.ProcessedBy.value = self.Processing.processed_by
-        xml_obj.ProcessingInfo.ProcessingSoftware.Name.value = self.Processing.Software.name
-        xml_obj.ProcessingInfo.ProcessingSoftware.Author.value = self.Processing.Software.Author.name
-        xml_obj.ProcessingInfo.ProcessingSoftware.Version.value = self.Processing.Software.version
-
-        # TODO: Need to find a way to put in processing parameters.
-
-        xml_obj.ProcessingInfo.SignConvention.value = self.Processing.sign_convention
-
-        xml_obj.ProcessingInfo.RemoteRef.value = self.Processing.remote_reference
-        xml_obj.ProcessingInfo.RemoteInfo.Project.value = self.Processing.RemoteSite.project
-        xml_obj.ProcessingInfo.RemoteInfo.Survey.value = self.Processing.RemoteSite.survey
-        xml_obj.ProcessingInfo.RemoteInfo.ID.value = self.Processing.RemoteSite.id
-        xml_obj.ProcessingInfo.RemoteInfo.YearCollected.value = self.Processing.RemoteSite.year_collected
-        xml_obj.ProcessingInfo.RemoteInfo.AcquiredBy.value = self.Processing.RemoteSite.acquired_by
-        xml_obj.ProcessingInfo.RemoteInfo.Location.Latitude.value = self.Processing.RemoteSite.Location.latitude
-        xml_obj.ProcessingInfo.RemoteInfo.Location.Longitude.value = self.Processing.RemoteSite.Location.longitude
-        xml_obj.ProcessingInfo.RemoteInfo.Location.Elevation.value = self.Processing.RemoteSite.Location.elevation
-        xml_obj.ProcessingInfo.RemoteInfo.Location.Elevation.attr = {
-            'units': self.Processing.RemoteSite.Location.elev_units}
-        xml_obj.ProcessingInfo.RemoteInfo.Location.attr = {
-            'datum': self.Processing.RemoteSite.Location.datum}
-
-        return xml_obj
-
-    def _xml_set_provenance(self, xml_obj):
-        """
-        Set the Provenance attributes of the xml object
-        """
-
-        xml_obj.Provenance.CreatingApplication.value = 'MTpy 0.1.0'
-
-        xml_obj.Provenance.Submitter.Name.value = self.Provenance.Submitter.name
-        xml_obj.Provenance.Submitter.Email.value = self.Provenance.Submitter.email
-        xml_obj.Provenance.Submitter.Org.value = self.Provenance.Submitter.organization
-        xml_obj.Provenance.Submitter.OrgURL.value = self.Provenance.Submitter.organization_url
-
-        xml_obj.Provenance.Creator.Name.value = self.Provenance.Creator.name
-        xml_obj.Provenance.Creator.Email.value = self.Provenance.Creator.email
-        xml_obj.Provenance.Creator.Org.value = self.Provenance.Creator.organization
-        xml_obj.Provenance.Creator.OrgURL.value = self.Provenance.Creator.organization_url
-
-        return xml_obj
-
-    def _xml_set_copyright(self, xml_obj):
-        """
-        Set the Copyright attributes of the xml object
-        """
-
-        xml_obj.Copyright.Citation.Authors.value = self.Copyright.Citation.author
-        xml_obj.Copyright.Citation.Title.value = self.Copyright.Citation.title
-        xml_obj.Copyright.Citation.Year.value = self.Copyright.Citation.year
-        xml_obj.Copyright.Citation.Journal.value = self.Copyright.Citation.journal
-        xml_obj.Copyright.Citation.Volume.value = self.Copyright.Citation.volume
-        xml_obj.Copyright.Citation.DOI.value = self.Copyright.Citation.doi
-        if type(self.Copyright.conditions_of_use) is list:
-            xml_obj.Copyright.ConditionsOfUse.value = ''.join(self.Copyright.conditions_of_use)
-        else:
-            xml_obj.Copyright.ConditionsOfUse.value = self.Copyright.conditions_of_use
-        xml_obj.Copyright.ReleaseStatus.value = self.Copyright.release_status
-        xml_obj.Copyright.AdditionalInfo.value = self.Copyright.additional_info
-
-        return xml_obj
-
-    def _xml_set_site_layout(self, xml_obj):
-        """
-        set the site layout from define measurement
-        """
-        
-        xml_obj.SiteLayout.InputChannels.Magnetic_hx.attr = {'name':"Hx",
-                                                             'orientation':'{0:.2f}'.format(self.FieldNotes.Magnetometer_hx.azm), 
-                                                             'x':'{0:.2f}'.format(self.FieldNotes.Magnetometer_hx.x),
-                                                             'y':'{0:.2f}'.format(self.FieldNotes.Magnetometer_hx.y),
-                                                             'z':'0.00'}
-        xml_obj.SiteLayout.InputChannels.Magnetic_hy.attr = {'name':"Hy",
-                                                             'orientation':'{0:.2f}'.format(max([90, self.FieldNotes.Magnetometer_hy.azm])), 
-                                                             'x':'{0:.2f}'.format(self.FieldNotes.Magnetometer_hy.x),
-                                                             'y':'{0:.2f}'.format(self.FieldNotes.Magnetometer_hy.y),
-                                                             'z':'0.00'}
-        xml_obj.SiteLayout.OutputChannels.Magnetic_hz.attr = {'name':"Hz",
-                                                             'orientation':'{0:.2f}'.format(self.FieldNotes.Magnetometer_hz.azm), 
-                                                             'x':'{0:.2f}'.format(self.FieldNotes.Magnetometer_hz.x),
-                                                             'y':'{0:.2f}'.format(self.FieldNotes.Magnetometer_hz.y),
-                                                             'z':'0.00'}
-        try:
-            azm = np.arctan((self.FieldNotes.Electrode_ex.y2 - self.FieldNotes.Electrode_ex.y) /
-                            (self.FieldNotes.Electrode_ex.x2 - self.FieldNotes.Electrode_ex.x))
-        except ZeroDivisionError:
-            azm = 90.0
-        xml_obj.SiteLayout.OutputChannels.Electric_ex.attr = {'name':"Ex",
-                                                             'orientation':'{0:.2f}'.format(azm), 
-                                                             'x':'{0:.2f}'.format(self.FieldNotes.Electrode_ex.x),
-                                                             'y':'{0:.2f}'.format(self.FieldNotes.Electrode_ex.y),
-                                                             'z':'0.00',
-                                                             'x2':'{0:.2f}'.format(self.FieldNotes.Electrode_ex.x2),
-                                                             'y2':'{0:.2f}'.format(self.FieldNotes.Electrode_ex.y2),
-                                                             'z2':'0.00'}
-        try:
-            azm = np.arctan((self.FieldNotes.Electrode_ey.y2 - self.FieldNotes.Electrode_ey.y) /
-                            (self.FieldNotes.Electrode_ey.x2 - self.FieldNotes.Electrode_ey.x))
-        except ZeroDivisionError:
-            azm = 90.0
-        xml_obj.SiteLayout.OutputChannels.Electric_ey.attr = {'name':"Ey",
-                                                             'orientation':'{0:.2f}'.format(azm), 
-                                                             'x':'{0:.2f}'.format(self.FieldNotes.Electrode_ey.x),
-                                                             'y':'{0:.2f}'.format(self.FieldNotes.Electrode_ey.y),
-                                                             'z':'0.00',
-                                                             'x2':'{0:.2f}'.format(self.FieldNotes.Electrode_ey.x2),
-                                                             'y2':'{0:.2f}'.format(self.FieldNotes.Electrode_ey.y2),
-                                                             'z2':'0.00'}
-        return xml_obj
     
     def read_cfg_file(self, cfg_fn):
         """
@@ -1952,13 +1775,73 @@ class MT(object):
         return plot_obj
         # raise NotImplementedError
 
+# =============================================================================
+# general object 
+# =============================================================================
+class General(object):
+    """
+    General class object that will be inhereted by the other object
+    
+    Methods
+    
+    to_xml
+    to_json
+    
+    from_xml
+    from_json
+    """
+    
+    def __init__(self):
+        pass
+    
+    def to_xml(self, parent_et, exclude_none=True):
+        """
+        convert to xml format
+        """
 
-# ==============================================================================
+        for key, value in sorted(self.__dict__.items(),
+                                 key=lambda item:(item[0][0].replace('_', '') +
+                                                  item[0][1:]).lower()):
+            if value is None and exclude_none:
+                continue
+            
+            if isinstance(getattr(self, key), (Location, Instrument, Person,
+                          Software, Citation, DataQuality, FieldNotes, 
+                          Copyright, Processing)):
+                if 'electrode' in key.lower():
+                    k = 'Dipole'
+                    attr = key.split('_')[1]
+                    k_element = ET.SubElement(parent_et, k)
+                    k_element.set('name', attr.upper())
+
+                elif 'magnetometer' in key.lower():
+                    k = 'Magnetometer'
+                    attr = key.split('_')[1]
+                    k_element = ET.SubElement(parent_et, k)
+                    k_element.set('name', attr.upper())
+                else:
+                    k_element = ET.SubElement(parent_et, key)
+                getattr(self, key).to_xml(k_element)
+            
+            elif key[0] == '_':
+                try:
+                    k = key[1:]
+                    v = getattr(self, k)
+                    new_element = ET.SubElement(parent_et, k)
+                    new_element.text = str(v)
+                    
+                except AttributeError:
+                    continue
+            else:
+                new_element = ET.SubElement(parent_et, key)
+                new_element.text = str(value)
+                
+        return 
+# =============================================================================
 # Site details
-# ==============================================================================
+# =============================================================================
 
-
-class Site(object):
+class Site(General):
     """
     Information on the site, including location, id, etc.
 
@@ -1987,6 +1870,7 @@ class Site(object):
     """
 
     def __init__(self, **kwargs):
+        super(Site, self).__init__()
         self.acquired_by = None
         self.end_date = None
         self.id = None
@@ -1994,7 +1878,8 @@ class Site(object):
         self.project = None
         self.loc = None
         self.run_list = None
-        self.start_date = None
+        self._start_date = None
+        self._stop_date = None
         self.survey = None
 
         for key in list(kwargs.keys()):
@@ -2009,19 +1894,52 @@ class Site(object):
     @year_collected.setter
     def year_collected(self, value):
         pass
+    
+    @property
+    def start_date(self):
+        try:
+            return self._start_date.strftime(dt_fmt)
+        except (TypeError, AttributeError):
+            return None
 
+    @start_date.setter
+    def start_date(self, start_date):
+        try:
+            self._start_date = dateutil.parser.parse(start_date)
+        except (ValueError, TypeError):
+            self._start_date = dateutil.parser.parse('1980-01-01')
+        if self._start_date.tzname() is None:
+            self._start_date = self._start_date.replace(tzinfo=UTC())
 
+    @property
+    def stop_date(self):
+        try:
+            return self._stop_date.strftime(dt_fmt)
+        except (TypeError, AttributeError):
+            return None
+
+    @stop_date.setter
+    def stop_date(self, stop_date):
+        self._stop_date = dateutil.parser.parse(stop_date)
+        if self._stop_date.tzname() is None:
+            self._stop_date = self._stop_date.replace(tzinfo=UTC())
+            
+    def to_xml(self, parent_et):
+        """
+        write_xml
+        """
+        super(Site, self).to_xml(ET.SubElement(parent_et, 'Site'))
+ 
 # ==============================================================================
 # Location class, be sure to put locations in decimal degrees, and note datum
 # ==============================================================================
-
-
-class Location(object):
+class Location(General):
     """
     location details
     """
 
     def __init__(self, **kwargs):
+        super(Location, self).__init__()
         self.datum = 'WGS84'
         self.declination = None
         self.declination_epoch = None
@@ -2114,14 +2032,13 @@ class Location(object):
 
         self.latitude = ll_point[0]
         self.longitude = ll_point[1]
-
-
+        
 # ==============================================================================
 # Field Notes
 # ==============================================================================
 
 
-class FieldNotes(object):
+class FieldNotes(General):
     """
     Field note information.
 
@@ -2143,6 +2060,7 @@ class FieldNotes(object):
     """
 
     def __init__(self, **kwargs):
+        super(FieldNotes, self).__init__()
         null_emeas = MTedi.EMeasurement()
         null_hmeas = MTedi.HMeasurement()
 
@@ -2164,12 +2082,18 @@ class FieldNotes(object):
 
         for key in list(kwargs.keys()):
             setattr(self, key, kwargs[key])
+        
+    def to_xml(self, parent_et):
+        """
+        write_xml
+        """
+        super(FieldNotes, self).to_xml(ET.SubElement(parent_et, 'FieldNotes'))
 
 
 # ==============================================================================
 # Instrument
 # ==============================================================================
-class Instrument(object):
+class Instrument(General):
     """
     Information on an instrument that was used.
 
@@ -2189,6 +2113,7 @@ class Instrument(object):
     """
 
     def __init__(self, **kwargs):
+        super(Instrument, self).__init__()
         self.id = None
         self.manufacturer = None
         self.type = None
@@ -2212,7 +2137,7 @@ class Instrument(object):
 # ==============================================================================
 
 
-class DataQuality(object):
+class DataQuality(General):
     """
     Information on data quality.
 
@@ -2235,6 +2160,7 @@ class DataQuality(object):
     """
 
     def __init__(self, **kwargs):
+        super(DataQuality, self).__init__()
         self.comments = None
         self.good_from_period = None
         self.good_to_period = None
@@ -2250,7 +2176,7 @@ class DataQuality(object):
 # ==============================================================================
 # Citation
 # ==============================================================================
-class Citation(object):
+class Citation(General):
     """
     Information for a citation.
 
@@ -2272,6 +2198,7 @@ class Citation(object):
     """
 
     def __init__(self, **kwargs):
+        super(Citation, self).__init__()
         self.author = None
         self.title = None
         self.journal = None
@@ -2286,7 +2213,7 @@ class Citation(object):
 # ==============================================================================
 # Copyright
 # ==============================================================================
-class Copyright(object):
+class Copyright(General):
     """
     Information of copyright, mainly about how someone else can use these
     data. Be sure to read over the conditions_of_use.
@@ -2307,6 +2234,7 @@ class Copyright(object):
     """
 
     def __init__(self, **kwargs):
+        super(Copyright, self).__init__()
         self.Citation = Citation()
         self.conditions_of_use = ''.join(['All data and metadata for this survey are ',
                                           'available free of charge and may be copied ',
@@ -2327,14 +2255,19 @@ class Copyright(object):
         self.additional_info = None
         for key in list(kwargs.keys()):
             setattr(self, key, kwargs[key])
-
+            
+    def to_xml(self, parent_et):
+        """
+        write_xml
+        """
+        super(Copyright, self).to_xml(ET.SubElement(parent_et, 'Copyright'))
 
 # ==============================================================================
 # Provenance
 # ==============================================================================
 
 
-class Provenance(object):
+class Provenance(General):
     """
     Information of the file history, how it was made
 
@@ -2356,13 +2289,20 @@ class Provenance(object):
     """
 
     def __init__(self, **kwargs):
-        self.creation_time = time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime())
+        super(Provenance, self).__init__()
+        self.creation_time = datetime.datetime.now().isoformat()
         self.creating_application = 'MTpy'
         self.Creator = Person()
         self.Submitter = Person()
 
         for key in list(kwargs.keys()):
             setattr(self, key, kwargs[key])
+            
+    def to_xml(self, parent_et):
+        """
+        write_xml
+        """
+        super(Provenance, self).to_xml(ET.SubElement(parent_et, 'Provenance'))
 
 
 # ==============================================================================
@@ -2370,7 +2310,7 @@ class Provenance(object):
 # ==============================================================================
 
 
-class Person(object):
+class Person(General):
     """
     Information for a person
 
@@ -2391,6 +2331,7 @@ class Person(object):
     """
 
     def __init__(self, **kwargs):
+        super(Person, self).__init__()
         self.email = None
         self.name = None
         self.organization = None
@@ -2405,7 +2346,7 @@ class Person(object):
 # ==============================================================================
 
 
-class Processing(object):
+class Processing(General):
     """
     Information for a processing
 
@@ -2426,6 +2367,7 @@ class Processing(object):
     """
 
     def __init__(self, **kwargs):
+        super(Processing, self).__init__()
         self.Software = Software()
         self.notes = None
         self.processed_by = None
@@ -2435,14 +2377,21 @@ class Processing(object):
 
         for key in list(kwargs.keys()):
             setattr(self, key, kwargs[key])
+            
+    def to_xml(self, parent_et):
+        """
+        write_xml
+        """
+        super(Processing, self).to_xml(ET.SubElement(parent_et, 'Processing'))
 
 
-class Software(object):
+class Software(General):
     """
     software
     """
 
     def __init__(self, **kwargs):
+        super(Software, self).__init__()
         self.name = None
         self.version = None
         self.Author = Person()

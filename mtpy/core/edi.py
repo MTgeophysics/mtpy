@@ -914,6 +914,7 @@ class Header(object):
         self.survey = None
         self.coordinate_system = 'Geomagnetic North'
         self.declination = None
+        self.declination_epoch = None
         self.datum = 'WGS84'
         self.phoenix_edi = False
 
@@ -933,6 +934,7 @@ class Header(object):
                              'progvers',
                              'coordinate_system',
                              'declination',
+                             'declination_epoch',
                              'datum',
                              'project',
                              'survey']

@@ -349,11 +349,19 @@ class Data(object):
                 data_2_err = phi_err[:, 1, 0]
 
             if 'det' in mode.lower():
-                data_1 = rho[:, 0, 1]
-                data_1_err = rho_err[:, 0, 1]
-
-                data_2 = phi[:, 0, 1]
-                data_2_err = phi_err[:, 0, 1]
+                if len(rho.shape) == 1:
+                    data_1 = rho
+                    data_1_err = rho_err
+                else:
+                    data_1 = rho[:, 0, 1]
+                    data_1_err = rho_err[:, 0, 1]
+                
+                if len(phi.shape) == 1:
+                    data_2 = phi
+                    data_2_err = phi_err
+                else:
+                    data_2 = phi[:, 0, 1]
+                    data_2_err = phi_err[:, 0, 1]
 
         if remove_outofquadrant:
             freq, data_1, data_1_err, data_2, data_2_err = self._remove_outofquadrant_phase(

@@ -656,8 +656,8 @@ class ModelWidget(QtWidgets.QWidget):
         
         ## --> make EW cross section axes
         self.north_ax = self.north_figure.add_subplot(1, 1, 1, 
-                                                      sharex=self.map_ax,
-                                                      aspect='equal')
+                                                      sharex=self.map_ax,)
+                                                      #aspect='equal')
         self.north_ax.plot(self.north_east_line_xlist,
                            self.north_east_line_ylist,
                            lw=.25,
@@ -677,7 +677,7 @@ class ModelWidget(QtWidgets.QWidget):
 
         ## --> make NS cross section axes 
         self.east_ax = self.east_figure.add_subplot(1, 1, 1,
-                                                    aspect='equal',
+                                                    #aspect='equal',
                                                     sharex=self.map_ax,
                                                     sharey=self.north_ax)
         ## --> plot the mesh lines, this way only do it once
@@ -988,7 +988,8 @@ class ModelWidget(QtWidgets.QWidget):
         #reset values of resistivity
         for xx in x_change:
             for yy in y_change:
-                self.new_res_model[yy, xx, self.map_index] = self.res_value
+                if self.model_obj.res_model[yy, xx, self.map_index] < 1E10:
+                    self.new_res_model[yy, xx, self.map_index] = self.res_value
         self.redraw_plots()
 
     def east_on_pick(self, eclick, erelease):
@@ -1004,7 +1005,8 @@ class ModelWidget(QtWidgets.QWidget):
         #reset values of resistivity
         for xx in x_change:
             for yy in y_change:
-                self.new_res_model[xx, self.east_index, yy] = self.res_value
+                if self.model_obj.res_model[xx, self.east_index, yy] < 1E10:
+                    self.new_res_model[xx, self.east_index, yy] = self.res_value
 
         self.redraw_plots()                    
 
@@ -1021,6 +1023,7 @@ class ModelWidget(QtWidgets.QWidget):
         #reset values of resistivity
         for xx in x_change:
             for yy in y_change:
+                if self.model_obj.res_model[self.north_index, xx, yy] < 1E10:
                     self.new_res_model[self.north_index, xx, yy] = self.res_value
 
         self.redraw_plots()
@@ -1197,8 +1200,15 @@ class ModelWidget(QtWidgets.QWidget):
         copy_index = self.map_index+(self.map_copy_num+1)
         if copy_index > self.new_res_model.shape[2]:
             copy_index = self.new_res_model.shape[2]
-        self.new_res_model[:, :, self.map_index:copy_index] = \
+#        for m_index in range(self.map_index, copy_index, 1):
+#            nax = np.where(self.new_res_model[:, :, m_index] <1E12)
+#            self.new_res_model[nax] = 
+#        na_index = np.where(self.new_res_model[:, :, self.map_index] < 1E10)
+#        print(na_index)
+        self.new_res_model[:, : , self.map_index:copy_index] = \
             self.new_res_model[:, :, self.map_index].reshape(o_shape)
+            
+        #self.new_res_model[np.where(self.model_obj.res_model > 1E10)] = 1E12
             
         self.redraw_map()
         
@@ -1215,6 +1225,7 @@ class ModelWidget(QtWidgets.QWidget):
             copy_index = 0
         self.new_res_model[:, :, copy_index:self.map_index] = \
             self.new_res_model[:, :, self.map_index].reshape(o_shape)
+        self.new_res_model[np.where(self.model_obj.res_model > 1E10)] = 1E12
             
         self.redraw_map()
         
@@ -1240,6 +1251,8 @@ class ModelWidget(QtWidgets.QWidget):
         self.new_res_model[:, self.east_index:copy_index, :] = \
             self.new_res_model[:, self.east_index, :].reshape(o_shape)
             
+        self.new_res_model[np.where(self.model_obj.res_model > 1E10)] = 1E12
+            
         self.redraw_east()
     
     def east_copy_west(self):
@@ -1256,6 +1269,8 @@ class ModelWidget(QtWidgets.QWidget):
             
         self.new_res_model[:, copy_index:self.east_index, :] = \
             self.new_res_model[:, self.east_index, :].reshape(o_shape)
+            
+        self.new_res_model[np.where(self.model_obj.res_model > 1E10)] = 1E12
             
         self.redraw_east()
     
@@ -1280,6 +1295,7 @@ class ModelWidget(QtWidgets.QWidget):
             
         self.new_res_model[copy_index:self.north_index, :, :] = \
             self.new_res_model[self.north_index, :, :].reshape(o_shape)
+        self.new_res_model[np.where(self.model_obj.res_model > 1E10)] = 1E12
             
         self.redraw_north()
     
@@ -1297,6 +1313,7 @@ class ModelWidget(QtWidgets.QWidget):
             
         self.new_res_model[self.north_index:copy_index:, :, :] = \
             self.new_res_model[self.north_index, :, :].reshape(o_shape)
+        self.new_res_model[np.where(self.model_obj.res_model > 1E10)] = 1E12
             
         self.redraw_north()
     
