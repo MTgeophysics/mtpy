@@ -28,7 +28,7 @@ plotObj = PlotPhaseTensorPseudoSection(fn_list = elst,
                                  plot_tipper = 'yri', # plot tipper ('y') + 'ri' means real+imag
                                  font_size=5,
                                  lw=0.5,
-                                 ellipse_dict = {'ellipse_colorby':'phimin',# option to colour by phimin, phimax, skew, skew_seg
+                                 ellipse_dict = {'ellipse_colorby':'skew_seg',# option to colour by phimin, phimax, skew, skew_seg
                                                  'ellipse_range':[0,90]} # set color limits - default 0,90 for phimin or max,
                                                                          # [-12,12] for skew. If plotting skew_seg need to provide
                                                                          # 3 numbers, the 3rd indicates interval, e.g. [-12,12,3]
