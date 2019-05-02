@@ -5,7 +5,7 @@ Created on Fri Mar 14 10:21:05 2014
 @author: Alison Kirkby
 
 """
-
+from __future__ import print_function
 import os
 import os.path as op
 import mtpy.utils.filehandling as fh
@@ -147,7 +147,8 @@ def create_inmodel_dictionary_from_file(input_file,
         params = [float(pp) for pp in line[1:]]
    #     print elev,params
         inmodel_list.append([round(elev + params[0], 2), params[1:]])
-    print(x, y, "inmodel_list", inmodel_list, end=' ')
+    #print(x, y, "inmodel_list", inmodel_list, end=' ')  # end syntx error
+    print(x, y, "inmodel_list", inmodel_list)
     i = 0
     while i < len(inmodel_list) - 1:
         print(i, end=' ')
