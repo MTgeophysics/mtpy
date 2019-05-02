@@ -48,5 +48,5 @@ except Exception as e:
     path = os.path.dirname(os.path.abspath(__file__))
     epsg_dict_fn = os.path.join(path, 'epsg.npy')
 
-    EPSG_DICT = np.load(epsg_dict_fn).item()
+    EPSG_DICT = np.load(epsg_dict_fn, allow_pickle=True).item()
 # end try
