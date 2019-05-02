@@ -114,9 +114,6 @@ def modem2geotiff(data_file, model_file, output_file, source_proj=None):
     #                           result['latitude'], result['longitude'], result['depth'],
     #                           result['resistivity'], z_label='depth')
 
-    # test_array2geotiff_writer(output_file)
-
-
     print("result['latitude'] ==", result['latitude'])
     print("result['longitude'] ==", result['longitude'])
     print("result['depth'] ==", result['depth'])
@@ -127,7 +124,9 @@ def modem2geotiff(data_file, model_file, output_file, source_proj=None):
 
     # write the depth_index
     depth_index=1
-    array2geotiff_writer(output_file,origin,pixel_width,pixel_height,result['resistivity'][depth_index,:,:])
+    resis_data = result['resistivity'][depth_index,:,:]
+    resis_data2 = resis_data[::-1]  # flipped upside down to get geotiff mapped correctly.
+    array2geotiff_writer(output_file,origin,pixel_width,pixel_height,resis_data2)
 
     return output_file
 
@@ -146,3 +145,6 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     modem2geotiff(args.modem_data, args.modem_model, args.output_file, args.epsg)
+
+
+    test_array2geotiff_writer("test_geotiff_GDAL_img.tif")
