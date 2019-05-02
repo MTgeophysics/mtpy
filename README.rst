@@ -9,13 +9,15 @@ Overview
 
 A Python Toolbox for Magnetotelluric (MT) Data Processing, Analysis, Modelling and Visualization
 
-- Documentation: http://mtpy2.readthedocs.io/en/develop/
-
 - Home Page: https://github.com/MTgeophysics/mtpy
+
+- API Documentation: http://mtpy2.readthedocs.io/en/develop/
 
 - Issue tracking: https://github.com/MTgeophysics/mtpy/issues
 
-- Wiki Pages: https://github.com/MTgeophysics/mtpy/wiki
+- Installation Guide (Wiki Pages): https://github.com/MTgeophysics/mtpy/wiki
+
+- User Guide: https://github.com/MTgeophysics/mtpy/blob/develop/docs/MTPy%20User%20Guide.pdf
 
 
 Note that this repository has superseded the `geophysics/mtpy <https://github.com/geophysics/mtpy/tree/beta>`_
