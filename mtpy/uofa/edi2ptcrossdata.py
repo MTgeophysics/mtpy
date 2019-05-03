@@ -59,10 +59,10 @@ import ipdb
 def main():
 
     if len(sys.argv) < 4:
-        print '\nNeed at least 2 arguments: <EDI file> '\
+        print('\nNeed at least 2 arguments: <EDI file> '\
             '<output directory> <#iterations> \n\n'\
             'Optional arguments: \n [sigma scaling]\n'\
-            ' [batch process flag "-b"] \n\n'
+            ' [batch process flag "-b"] \n\n')
         return
 
     try:
@@ -70,7 +70,7 @@ def main():
         fn_in = op.join(op.abspath(os.curdir), fn_in)
         edi_object = MTedi.Edi(filename=fn_in)
     except:
-        print '\n\tERROR - File is not a valid EDI file: {0}\n'.format(fn_in)
+        print('\n\tERROR - File is not a valid EDI file: {0}\n'.format(fn_in))
         sys.exit()
 
     try:
@@ -79,8 +79,8 @@ def main():
         if not op.isdir(outdir):
             os.makedirs(outdir)
     except:
-        print '\n\tERROR - Output directory does not exist and cannot be'\
-            ' generated: {0}\n'.format(outdir)
+        print('\n\tERROR - Output directory does not exist and cannot be'\
+            ' generated: {0}\n'.format(outdir))
         sys.exit()
 
     try:
@@ -88,7 +88,7 @@ def main():
         if n_iterations < 0:
             raise
     except:
-        print '\n\t ERROR - number of iterations must be a positive integer (incl. 0)\n'
+        print('\n\t ERROR - number of iterations must be a positive integer (incl. 0)\n')
         sys.exit()
 
     fn_out = None
@@ -100,14 +100,14 @@ def main():
                 raise
         except:
             sigma_scaling = 1
-            print '\nWARNING - Invalid sigma scale ..using 1 instead\n'
+            print('\nWARNING - Invalid sigma scale ..using 1 instead\n')
 
     try:
-        print
-        print 'Generating PTcross input data file'
+        print()
+        print('Generating PTcross input data file')
         if n_iterations != 0:
-            print '(evaluating {0} realisations of Z)'.format(n_iterations)
-        print '\t...'
+            print('(evaluating {0} realisations of Z)'.format(n_iterations))
+        print('\t...')
 
         generate_ptcrossdata_file(
             edi_object,
@@ -117,7 +117,7 @@ def main():
             fn_out)
     except:
         raise
-        print '\n\tERROR - could not generate PT Cross Data file - check EDI file!\n'
+        print('\n\tERROR - could not generate PT Cross Data file - check EDI file!\n')
 
 
 def generate_ptcrossdata_file(
@@ -140,7 +140,7 @@ def generate_ptcrossdata_file(
     try:
         Fout = open(outfn, 'w')
     except:
-        print '\n\tERROR - Cannot generate output file!\n'
+        print('\n\tERROR - Cannot generate output file!\n')
         raise
     if n_iterations == 0:
         Fout.write('# {0}   {1:+010.6f}   {2:+011.6f}\n'.format(station,
@@ -181,7 +181,7 @@ def generate_ptcrossdata_file(
                 continue
 
         Fout.close()
-        print '\n\t Done - Written data to file: {0}\n'.format(outfn)
+        print('\n\t Done - Written data to file: {0}\n'.format(outfn))
         return
 
     # for all values n_iterations !=0 loop over abs(n_iterations) #
@@ -209,7 +209,7 @@ def generate_ptcrossdata_file(
                     raise
             except:
                 # correct by nearest neighbour value
-                print f, '\ncorrecting error value', a, '...',
+                print(f, '\ncorrecting error value', a, '...', end=' ')
                 rel_errs = []
                 if idx + 1 != len(freqs):
                     next_z = z[idx + 1][i / 2, i % 2]
@@ -311,7 +311,7 @@ def generate_ptcrossdata_file(
             continue
 
     Fout.close()
-    print '\n\t Done - Written data to file: {0}\n'.format(outfn)
+    print('\n\t Done - Written data to file: {0}\n'.format(outfn))
     return
 
 

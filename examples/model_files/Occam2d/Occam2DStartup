@@ -2,7 +2,7 @@ Format:             OCCAMITER_FLEX
 Description:        startup created by mtpy
 Model File:         Occam2DModel
 Data File:          OccamDataFile.dat
-Date/Time:          Tue Oct 31 12:11:36 2017
+Date/Time:          Fri Sep  7 11:02:58 2018
 Iterations to run:  40
 Target Misfit:      1.0
 Roughness Type:     1

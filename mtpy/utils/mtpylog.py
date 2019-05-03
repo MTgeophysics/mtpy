@@ -21,7 +21,8 @@ import inspect
 class MtPyLog(object):
     # def __init__(self, path2configfile=None):
     @staticmethod
-    def load_configure(path2configfile='logging.yml'):
+    def load_configure(path2configfile=None):
+    # def load_configure(path2configfile='logging.yml'):
         """
         configure/setup the logging according to the input configfile
 
@@ -81,7 +82,7 @@ class MtPyLog(object):
 def test_none_configfile():
     this_fun_name = inspect.getframeinfo(inspect.currentframe())[2]
 
-    print ("starting", this_fun_name)
+    print(("starting", this_fun_name))
     # 1 user provides config file to use from envar or other methods
     UsersOwnConfigFile = ''  # ''logging.yaml'
     # 2 construct a MtPyLog object
@@ -93,7 +94,7 @@ def test_none_configfile():
     logger = myobj.get_mtpy_logger(__name__)  # __main__  # = root config
     # logger = myobj.get_mtpy_logger()  # root
 
-    print(logger, id(logger), logger.level, logger.handlers)
+    print((logger, id(logger), logger.level, logger.handlers))
 
     # 4 use the named-logger
     logger.debug(this_fun_name + ' debug message')
@@ -102,12 +103,12 @@ def test_none_configfile():
     logger.error(this_fun_name + ' error message')
     logger.critical(this_fun_name + ' critical message')
 
-    print ("End of: ", this_fun_name)
+    print(("End of: ", this_fun_name))
 
 
 def test_yaml_configfile(yamlfile='logging.yml'):
     this_fun_name = inspect.getframeinfo(inspect.currentframe())[2]
-    print ("starting", this_fun_name)
+    print(("starting", this_fun_name))
 
     # 1 user provides config file to use from envar or other methods
     UsersOwnConfigFile = yamlfile
@@ -123,7 +124,7 @@ def test_yaml_configfile(yamlfile='logging.yml'):
     # rootLogger; use the above
 
     # logger.setLevel(logging.DEBUG)
-    print(logger, id(logger), logger.name, logger.level, logger.handlers)
+    print((logger, id(logger), logger.name, logger.level, logger.handlers))
 
     # create console handler and set level to debug
     # ch = logging.StreamHandler()
@@ -139,12 +140,12 @@ def test_yaml_configfile(yamlfile='logging.yml'):
     logger.error(this_fun_name + ' error message')
     logger.critical(this_fun_name + ' critical message')
 
-    print ("End of: ", this_fun_name)
+    print(("End of: ", this_fun_name))
 
 
 def test_ini_configfile(UsersOwnConfigFile='logging.conf'):
     this_fun_name = inspect.getframeinfo(inspect.currentframe())[2]
-    print ("starting", this_fun_name)
+    print(("starting", this_fun_name))
 
     # 1 user provides config file to use from envar or other methods
 
@@ -160,7 +161,7 @@ def test_ini_configfile(UsersOwnConfigFile='logging.conf'):
     # rootLogger; use the above
 
     # logger.setLevel(logging.DEBUG)
-    print(logger, id(logger), logger.name, logger.level, logger.handlers)
+    print((logger, id(logger), logger.name, logger.level, logger.handlers))
 
     # create console handler and set level to debug
     # ch = logging.StreamHandler()
@@ -176,7 +177,7 @@ def test_ini_configfile(UsersOwnConfigFile='logging.conf'):
     logger.error(this_fun_name + ' error message')
     logger.critical(this_fun_name + ' critical message')
 
-    print ("End of: ", this_fun_name)
+    print(("End of: ", this_fun_name))
 
 
 def test_json_configfile():
@@ -212,7 +213,7 @@ if __name__ == "__main__":
     # logger = myobj.get_mtpy_logger('')  # root
 
     # 4 use the named-logger
-    print(logger, id(logger), logger.name, logger.level, logger.handlers)
+    print((logger, id(logger), logger.name, logger.level, logger.handlers))
     logger.debug('debug message')
     logger.info('info message')
     logger.warn('warn message')

@@ -430,10 +430,13 @@ class PlotMTResponse(PlotSettings):
         self.phase_limits = None
         self.tipper_limits = None
         self.pt_limits = None
+        
+        # layout params
+        self.show_resphase_xticklabels = False
 
         self.plot_yn = 'y'
 
-        for key in kwargs.keys():
+        for key in list(kwargs.keys()):
             if hasattr(self, key):
                 setattr(self, key, kwargs[key])
             else:
@@ -477,12 +480,12 @@ class PlotMTResponse(PlotSettings):
 
         if self.plot_tipper.find('y') == 0:
             if np.all(self.Tipper.tipper == 0 + 0j) or self.Tipper is None:
-                print 'No Tipper data for station {0}'.format(self.station)
+                print('No Tipper data for station {0}'.format(self.station))
                 self.plot_tipper = 'n'
 
         if self.plot_pt == 'y':
             if np.all(self.Z.z == 0 + 0j) or self.Z is None:
-                print 'No Tipper data for station {0}'.format(self.station)
+                print('No Tipper data for station {0}'.format(self.station))
                 self.plot_pt = 'n'
 
         # set x-axis limits from short period to long period
@@ -527,7 +530,7 @@ class PlotMTResponse(PlotSettings):
         nrows = index
 
         # set height ratios of the subplots
-        hr = [2, 1.5] + [1] * (len(pdict.keys()) - 2)
+        hr = [2, 1.5] + [1] * (len(list(pdict.keys())) - 2)
 
         # create a grid to place the figures into, set to have 2 rows and 2
         # columns to put any of the 4 components.  Make the phase plot
@@ -1085,7 +1088,7 @@ class PlotMTResponse(PlotSettings):
                            color=(.25, .25, .25),
                            lw=.25)
 
-            if len(pdict.keys()) > 2:
+            if len(list(pdict.keys())) > 2:
                 plt.setp(self.axp2.xaxis.get_ticklabels(), visible=False)
                 plt.setp(self.axp2.xaxis.get_label(), visible=False)
 
@@ -1129,6 +1132,22 @@ class PlotMTResponse(PlotSettings):
                             labelspacing=.07,
                             handletextpad=.2,
                             borderpad=.02)
+
+        if self.show_resphase_xticklabels:
+            if self.plot_num in [1,3]:
+                gs.update(hspace=0.2, wspace=.15, left=.1)
+            else:
+                gs.update(hspace=0.2, wspace=.15, left=.07)
+                plt.setp(self.axp2.xaxis.get_ticklabels(), visible=True)
+                plt.setp(self.axr2.xaxis.get_ticklabels(), visible=True)
+                self.axr2.tick_params(axis='x',pad=2,direction='in',which='both',labelsize=self.font_size-1)
+                self.axp2.tick_params(axis='x',pad=2,direction='in',which='both',labelsize=self.font_size-1)
+                self.axp2.set_xlabel('Period (s)',fontsize=self.font_size-1,labelpad=0)#
+            plt.setp(self.axr.xaxis.get_ticklabels(), visible=True)
+            plt.setp(self.axp.xaxis.get_ticklabels(), visible=True)
+            self.axr.tick_params(axis='x',pad=2,direction='in',which='both',labelsize=self.font_size-1)
+            self.axp.tick_params(axis='x',pad=2,direction='in',which='both',labelsize=self.font_size-1)
+#            self.axp.set_xlabel('Period (s)',fontsize=self.font_size-2,labelpad=0)
 
         # make plot_title and show
         if self.plot_title is None:
@@ -1205,7 +1224,7 @@ class PlotMTResponse(PlotSettings):
             pass
 
         self.fig_fn = save_fn
-        print 'Saved figure to: ' + self.fig_fn
+        print('Saved figure to: ' + self.fig_fn)
 
     def update_plot(self):
         """

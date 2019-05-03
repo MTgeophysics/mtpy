@@ -7,6 +7,7 @@ Created on Wed Apr 15 09:51:02 2015
 sets up input files for running 2d occam inversions using the occam2d_rewrite module
 
 """
+
 import mtpy.modeling.occam2d_rewrite as occam2d
 import os
 import os.path as op
@@ -17,7 +18,7 @@ import numpy as np
 edipath = r"C:\mtpywin\mtpy\examples\data\edi_files"
 
 # path to save to
-savepath = r"C:\test\Occam2d"
+savepath = r'C:/tmp'
 
 if not op.exists(savepath):
     os.mkdir(savepath)
@@ -39,9 +40,10 @@ ocd = occam2d.Data(edi_path=edipath,
 ocd.save_path = savepath
 ocd.freq_num = 50 # number of frequencies to invert for
 
-##### make data file
-# geoelectric strike for rotation, if not specified will calculate from the data
-#ocd.geoelectric_strike = 45
+#### make data file
+# geoelectric strike for rotation
+# if not specified will calculate from the data
+ocd.geoelectric_strike = 1
 
 # error floors
 ocd.res_te_err = 10
@@ -58,12 +60,12 @@ ocd.write_data_file()
 ocr = occam2d.Regularization(ocd.station_locations)
 # number of layers
 ocr.n_layers = 60
-# cell width to aim for, note this is the mesh size (2 mesh blocks per model block)
-ocr.cell_width = 1250
-# controls size of padding
-ocr.x_pad_multiplier = 1.9
-# controls aspect ratio of blocks
-ocr.trigger= 0.25
+
+ocr.cell_width = 500 # cell width to aim for, note 
+                      # this is the mesh size (2 mesh 
+                      # blocks per model block)
+ocr.x_pad_multiplier = 1.9 # controls size of padding
+ocr.trigger= 0.25 # controls aspect ratio of blocks
 #ocr.z_bottom = 200000
 
 # z1 layer and target depth in metres
@@ -76,7 +78,7 @@ ocr.write_mesh_file()
 ocr.write_regularization_file()
 ocr.plot_mesh()
 
-#make startup file
+# make startup file
 ocs=occam2d.Startup()
 ocs.iterations_to_run=40
 ocs.data_fn=op.join(ocd.save_path,'OccamDataFile.dat')

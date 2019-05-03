@@ -59,7 +59,7 @@ def main():
     for arg in arglist:
         globlist = glob.glob(arg)
         if len(globlist) == 0:
-            print 'Warning -- cannot read given file(s):\n  %s' % (arg)
+            print('Warning -- cannot read given file(s):\n  %s' % (arg))
         filelist_raw.extend(globlist)
 
     filelist = filelist_raw
@@ -79,11 +79,11 @@ def main():
 
     for f in filelist:
         try:
-            print 'converting file %s ...' % (f)
+            print('converting file %s ...' % (f))
             pakascii2TSascii(f)
 
         except:
-            print 'Warning -- cannot convert given file:\n  %s' % (f)
+            print('Warning -- cannot convert given file:\n  %s' % (f))
             continue
 
     return 0

@@ -105,14 +105,14 @@ class PTShapeFile(object):
         # else:
         #     raise Exception("EDI files List is None")
 
-        for key in kwargs.keys():
+        for key in list(kwargs.keys()):
             setattr(self, key, kwargs[key])
 
         if self.mt_obj_list is not None:
             self._get_plot_period()
             self._get_pt_array()
 
-            print(self.plot_period)
+            print((self.plot_period))
 
         self._proj_dict = {'WGS84': 4326, 'NAD27': 4267, 'GDA94': 4283}
 
@@ -223,7 +223,7 @@ class PTShapeFile(object):
 
                     self.pt_dict[plot_per].append(pt_tuple)
                 else:
-                    print("The period %s is NOT found for this station %s" %(plot_per, mt_obj.station))
+                    print(("The period %s is NOT found for this station %s" %(plot_per, mt_obj.station)))
 
             self.pt_dict[plot_per] = np.array(self.pt_dict[plot_per],
                                               dtype=[('station', '|S15'),
@@ -237,7 +237,7 @@ class PTShapeFile(object):
                                                      ('ellipticity', np.float)])
         unique_utm_cs = sorted(list(set(utm_cs_list)))
         if len(unique_utm_cs) >1:
-            print ("Warning: Multi-UTM-Zones found in the EDI files", unique_utm_cs)
+            print(("Warning: Multi-UTM-Zones found in the EDI files", unique_utm_cs))
 
 
     def write_shape_files(self, periods=None):
@@ -359,7 +359,10 @@ class PTShapeFile(object):
 
                 #
                 # 5) create a field to color by
-                new_feature.SetField("Name", pt_array['station'])
+                val_sta = pt_array['station']
+                print(" the type of pt_array['station'] = ", type(val_sta))
+                # decode the string cal_sta (numpy_bytes_ )  back into ASCII
+                new_feature.SetField("Name", pt_array['station'].decode('UTF-8'))
                 new_feature.SetField("phi_min", pt_array['phimin'])
                 new_feature.SetField("phi_max", pt_array['phimax'])
                 new_feature.SetField("skew", pt_array['skew'])
@@ -392,7 +395,7 @@ class PTShapeFile(object):
 
             data_source.Destroy()
 
-            print 'Wrote shape file to {0}'.format(shape_fn)
+            print('Wrote shape file to {0}'.format(shape_fn))
 
 # ===========================
     def write_data_pt_shape_files_modem(self, modem_data_fn,
@@ -407,7 +410,7 @@ class PTShapeFile(object):
 
         self.plot_period = modem_obj.period_list.copy()
         self.mt_obj_list = [modem_obj.mt_dict[key]
-                            for key in modem_obj.mt_dict.keys()]
+                            for key in list(modem_obj.mt_dict.keys())]
 
         self._get_pt_array()
         self._set_rotation_angle(rotation_angle)
@@ -428,7 +431,7 @@ class PTShapeFile(object):
 
         self.plot_period = modem_data_obj.period_list.copy()
         self.mt_obj_list = [modem_data_obj.mt_dict[key]
-                            for key in modem_data_obj.mt_dict.keys()]
+                            for key in list(modem_data_obj.mt_dict.keys())]
         self._get_pt_array()
 
         self._set_rotation_angle(rotation_angle)
@@ -437,14 +440,14 @@ class PTShapeFile(object):
         modem_resp_obj.read_data_file(modem_resp_fn)
 
         # rotate model response
-        for r_key in modem_resp_obj.mt_dict.keys():
+        for r_key in list(modem_resp_obj.mt_dict.keys()):
             modem_resp_obj.mt_dict[
                 r_key].rotation_angle = float(rotation_angle)
 
         resp_pt_dict = {}
         for p_index, plot_per in enumerate(self.plot_period):
             resp_pt_dict[plot_per] = []
-            for key in modem_data_obj.mt_dict.keys():
+            for key in list(modem_data_obj.mt_dict.keys()):
                 mt_obj = modem_data_obj.mt_dict[key]
                 if self.projection is None:
                     east, north, elev = (mt_obj.lon, mt_obj.lat, 0)
@@ -594,7 +597,7 @@ class PTShapeFile(object):
 
             data_source.Destroy()
 
-            print 'Wrote shape file to {0}'.format(shape_fn)
+            print('Wrote shape file to {0}'.format(shape_fn))
 
     def write_residual_pt_shape_files_modem(self, modem_data_fn, modem_resp_fn,
                                             rotation_angle=0.0, normalize='1'):
@@ -615,7 +618,7 @@ class PTShapeFile(object):
 
         self.plot_period = modem_data_obj.period_list.copy()
         self.mt_obj_list = [modem_data_obj.mt_dict[key]
-                            for key in modem_data_obj.mt_dict.keys()]
+                            for key in list(modem_data_obj.mt_dict.keys())]
         self._get_pt_array()
 
         self._set_rotation_angle(rotation_angle)
@@ -624,14 +627,14 @@ class PTShapeFile(object):
         modem_resp_obj.read_data_file(modem_resp_fn)
 
         # rotate model response
-        for r_key in modem_resp_obj.mt_dict.keys():
+        for r_key in list(modem_resp_obj.mt_dict.keys()):
             modem_resp_obj.mt_dict[
                 r_key].rotation_angle = float(rotation_angle)
 
         residual_pt_dict = {}
         for p_index, plot_per in enumerate(self.plot_period):
             residual_pt_dict[plot_per] = []
-            for key in modem_data_obj.mt_dict.keys():
+            for key in list(modem_data_obj.mt_dict.keys()):
                 mt_obj = modem_data_obj.mt_dict[key]
                 if self.projection is None:
                     east, north, elev = (mt_obj.lon, mt_obj.lat, 0)
@@ -673,7 +676,7 @@ class PTShapeFile(object):
                     #                                            rpt.phimax[0][p_index])))
                     residual_pt_dict[plot_per].append(pt_tuple)
                 except mtpt.MTex.MTpyError_PT:
-                    print key, dpt.pt.shape, mpt.pt.shape
+                    print(key, dpt.pt.shape, mpt.pt.shape)
                     pt_tuple = (mt_obj.station, east, north,
                                 0.0,
                                 0.0,
@@ -804,7 +807,7 @@ class PTShapeFile(object):
 
             data_source.Destroy()
 
-            print 'Wrote shape file to {0}'.format(shape_fn)
+            print('Wrote shape file to {0}'.format(shape_fn))
 
 
 # ==============================================================================
@@ -891,7 +894,7 @@ class TipperShapeFile(object):
         if self.edi_list is not None:
             self.mt_obj_list = [mt.MT(edi) for edi in self.edi_list]
 
-        for key in kwargs.keys():
+        for key in list(kwargs.keys()):
             setattr(self, key, kwargs[key])
 
         if self.mt_obj_list is not None:
@@ -1008,7 +1011,7 @@ class TipperShapeFile(object):
 
         unique_utm_cs = sorted(list(set(utm_cs_list)))
         if len(unique_utm_cs) >1:
-            print ("Warning: Multi-UTM-Zones found in the EDI files", unique_utm_cs)
+            print(("Warning: Multi-UTM-Zones found in the EDI files", unique_utm_cs))
 
     def write_real_shape_files(self):
         """
@@ -1149,7 +1152,7 @@ class TipperShapeFile(object):
 
             data_source.Destroy()
 
-            print 'Wrote shape file to {0}'.format(shape_fn)
+            print('Wrote shape file to {0}'.format(shape_fn))
 
     def write_imag_shape_files(self):
         """
@@ -1290,7 +1293,7 @@ class TipperShapeFile(object):
 
             data_source.Destroy()
 
-            print 'Wrote shape file to {0}'.format(shape_fn)
+            print('Wrote shape file to {0}'.format(shape_fn))
 
     def write_tip_shape_files_modem(self, modem_data_fn, rotation_angle=0.0):
         """
@@ -1303,7 +1306,7 @@ class TipperShapeFile(object):
 
         self.plot_period = modem_obj.period_list.copy()
         self.mt_obj_list = [modem_obj.mt_dict[key]
-                            for key in modem_obj.mt_dict.keys()]
+                            for key in list(modem_obj.mt_dict.keys())]
 
         self._set_rotation_angle(rotation_angle)
 
@@ -1567,9 +1570,9 @@ def create_modem_data_shapefiles():
 if __name__ == "__main__d":
     import sys
     if len(sys.argv) < 3:
-        print(
+        print((
             "USAGE: %s input_edifile_dir output_shape_file_dir" %
-            sys.argv[0])
+            sys.argv[0]))
         sys.exit(1)
 
     src_file_dir = sys.argv[1] # A modem data file  OR edi-folder
@@ -1614,8 +1617,8 @@ def generate_shape_files(input,output):
     print("=======================================================================")
     if not os.path.isdir(output):
         os.mkdir(output)
-    print ("input = {}".format(input))
-    print ("input = {}".format(input[-4:].lower()))
+    print(("input = {}".format(input)))
+    print(("input = {}".format(input[-4:].lower())))
     if input[-4:].lower() == '.dat':
         modem_to_shapefiles(input, output)
     elif os.path.isdir(input):

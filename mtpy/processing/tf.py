@@ -373,7 +373,7 @@ def stft(fx, nh=2 ** 8, tstep=2 ** 7, ng=1, df=1.0, nfbins=2 ** 10):
     if ng != 1:
         if np.remainder(ng, 2) != 1:
             ng = ng - 1
-            print 'ng forced to be odd as ng-1'
+            print('ng forced to be odd as ng-1')
         else:
             pass
         g = normalize_L2(np.hanning(ng))
@@ -613,7 +613,7 @@ def wvd(fx, nh=2 ** 8 - 1, tstep=2 ** 5, nfbins=2 ** 10, df=1.0):
 
     if fm > 1:
         fn = fn[0]
-        print 'computing cross spectra'
+        print('computing cross spectra')
         # compute the analytic signal of function f and dctrend
         fa = wvd_analytic_signal(fx[0])
         fb = wvd_analytic_signal(fx[1])
@@ -724,7 +724,7 @@ def spwvd(fx, tstep=2 ** 5, nfbins=2 ** 10, df=1.0, nh=None, ng=None, sigmat=Non
         fn = len(fx)
         fm = 1
     if fm > 1:
-        print 'computing cross spectra'
+        print('computing cross spectra')
         # compute the analytic signal of function f and dctrend
         fa = wvd_analytic_signal(fx[0])
         fb = wvd_analytic_signal(fx[1])
@@ -734,7 +734,7 @@ def spwvd(fx, tstep=2 ** 5, nfbins=2 ** 10, df=1.0, nh=None, ng=None, sigmat=Non
         fa = wvd_analytic_signal(fx)
         fa = sps.hilbert(dctrend(fx))
         fb = fa.copy()
-        print 'Computed Analytic signal'
+        print('Computed Analytic signal')
 
     # sampling period
     df = float(df)
@@ -764,7 +764,7 @@ def spwvd(fx, tstep=2 ** 5, nfbins=2 ** 10, df=1.0, nh=None, ng=None, sigmat=Non
         sigmag = sigmaf
     nh = int(nh)
     ng = int(ng)
-    print 'nh=' + str(nh) + '; ng=' + str(ng)
+    print('nh=' + str(nh) + '; ng=' + str(ng))
     # calculate windows and normalize
     h = sps.gaussian(nh, sigmah)
     h /= sum(h)
@@ -814,7 +814,7 @@ def spwvd(fx, tstep=2 ** 5, nfbins=2 ** 10, df=1.0, nh=None, ng=None, sigmat=Non
         mm = round(nfbins / 2)
 
         if t <= fn - mm and t >= mm and mm <= Lh:
-            print 'doing weird thing'
+            print('doing weird thing')
             taulst = np.arange(start=-min(Lg, fn - t - mm), stop=min(Lg, fn - t, mm) + 1,
                                step=1, dtype='int')
             gm = g[Lg + taulst] / sum(g[Lg + taulst])
@@ -893,7 +893,7 @@ def robust_wvd(fx, nh=2 ** 7 - 1, ng=2 ** 4 - 1, tstep=2 ** 4, nfbins=2 ** 8, df
         fn = len(fx)
         fm = 1
     if fm > 1:
-        print 'computing cross spectra'
+        print('computing cross spectra')
         # compute the analytic signal of function f and dctrend
         fa = wvd_analytic_signal(fx[0])
         fb = wvd_analytic_signal(fx[1])
@@ -903,7 +903,7 @@ def robust_wvd(fx, nh=2 ** 7 - 1, ng=2 ** 4 - 1, tstep=2 ** 4, nfbins=2 ** 8, df
         fa = wvd_analytic_signal(fx)
         fa = sps.hilbert(dctrend(fx))
         fb = fa.copy()
-        print 'Computed Analytic signal'
+        print('Computed Analytic signal')
 
         # make sure window length is odd
     if nh is None:
@@ -918,8 +918,8 @@ def robust_wvd(fx, nh=2 ** 7 - 1, ng=2 ** 4 - 1, tstep=2 ** 4, nfbins=2 ** 8, df
         ng += 1
     nh = int(nh)
     ng = int(ng)
-    print 'nh = {0}'.format(nh)
-    print 'ng = {0}'.format(ng)
+    print('nh = {0}'.format(nh))
+    print('ng = {0}'.format(ng))
 
     dt = 1. / (df * 2.)
 
@@ -1084,7 +1084,7 @@ def modifiedb(fx, tstep=2 ** 5, nfbins=2 ** 10,
 
     if fm > 1:
         fn = fn[0]
-        print 'computing cross spectra'
+        print('computing cross spectra')
         # compute the analytic signal of function f and dctrend
         fa = wvd_analytic_signal(fx[0])
         fb = wvd_analytic_signal(fx[1])
@@ -1385,7 +1385,7 @@ def smethod(fx, L=11, nh=2 ** 8, tstep=2 ** 7, ng=1, df=1.0, nfbins=2 ** 10,
         fn = len(fx)
         fm = 1
     if fm > 1:
-        print 'computing cross spectra'
+        print('computing cross spectra')
         # compute the analytic signal of function f and dctrend
         # fa=sps.hilbert(dctrend(fx[0]))
         # fb=sps.hilbert(dctrend(fx[1]))
@@ -1496,7 +1496,7 @@ def robust_smethod(fx, L=5, nh=2 ** 7, tstep=2 ** 5, nfbins=2 ** 10, df=1.0,
         fn = len(fx)
         fm = 1
     if fm > 1:
-        print 'computing cross spectra'
+        print('computing cross spectra')
         # compute the analytic signal of function f and dctrend
         fa = fx[0].reshape(fn)
         fb = fx[1].reshape(fn)
@@ -1614,7 +1614,7 @@ def reassigned_smethod(fx, nh=2 ** 7 - 1, tstep=2 ** 4, nfbins=2 ** 9, df=1.0, a
         fn = len(fx)
         fm = 1
     if fm > 1:
-        print 'computing cross spectra'
+        print('computing cross spectra')
         fa = fx[0]
         fb = fx[1]
         fa = fa.reshape(fn)
@@ -1933,7 +1933,7 @@ def stfbss(X, nsources=5, ng=2 ** 5 - 1, nh=2 ** 9 - 1, tstep=2 ** 6 - 1, df=1.0
     if ntfpoints == 0:
         raise ValueError('Found no tf points, relax tolerance')
     else:
-        print 'Found ' + str(ntfpoints) + ' t-f points'
+        print('Found ' + str(ntfpoints) + ' t-f points')
 
     for rr in range(ntfpoints):
         if rr == 0:
@@ -1992,7 +1992,7 @@ def stfbss(X, nsources=5, ng=2 ** 5 - 1, nh=2 ** 9 - 1, tstep=2 ** 6 - 1, df=1.0
                         c * Rjd[:, pi] + s * Rjd[:, qi],
                         -s * Rjd[:, pi] + c * Rjd[:, qi], axis=1)
         updates += upds
-    print 'Updated ' + str(updates) + ' times.'
+    print('Updated ' + str(updates) + ' times.')
 
     # compute estimated signal matrix
     Se = np.dot(V.T, Z)

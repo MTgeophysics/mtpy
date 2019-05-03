@@ -59,7 +59,7 @@ class Data(object):
                        list of full paths to .edi files you want to invert for
 
     ====================== ====================================================
-    Attributes/Key Words   Description
+    Attributes              Description
     ====================== ====================================================
     _dtype                 internal variable defining the data type of
                            data_array
@@ -234,7 +234,7 @@ class Data(object):
         >>> #invert for every third period in inv_period_list
         >>> inv_period_list = inv_period_list[np.arange(0, len(inv_period_list, 3))]
         >>> md.period_list = inv_period_list
-        >>> md.write_data_file(save_path=r"/home/modem/inv1")
+    >>> md.write_data_file(save_path=r"/home/modem/inv1")
 
     :Example 3 --> change error values: ::
 
@@ -353,7 +353,7 @@ class Data(object):
                                        'Imag',
                                        'Error\n'])
         
-        for key in kwargs.keys():
+        for key in list(kwargs.keys()):
             # have to set rotation angle after period list has been set
             if key != 'rotation_angle':
                 if hasattr(self, key):
@@ -361,7 +361,23 @@ class Data(object):
                 else:
                     self._logger.warn("Argument {}={} is not supported thus not been set.".format(key, kwargs[key]))
 
-        if 'rotation_angle' in kwargs.keys():
+        # update period buffer to a default value if it is invalid
+        if self.period_buffer is not None:
+            try:
+                self.period_buffer = float(self.period_buffer)
+                if self.period_buffer < 0.:
+                    self._logger.warn("Period buffer must be > 0, setting to None")
+                    self.period_buffer = None
+                # if provided value between 0 and 1, assume it was meant to be set to 1 + provided value
+                elif self.period_buffer < 1.:
+                    self._logger.warn("Period buffer must be > 1, adding 1 to provided value")
+                    self.period_buffer += 1.
+            except:
+                self._logger.warn("Period buffer must be convertable to an integer or float, setting to None")
+                
+                
+
+        if 'rotation_angle' in list(kwargs.keys()):
             setattr(self, 'rotation_angle', kwargs['rotation_angle'])
 #            self._set_rotation_angle(self.rotation_angle)
 
@@ -396,8 +412,12 @@ class Data(object):
         """
         reset the header sring for file
         """
-
-        h_str = ','.join(['# Created using MTpy calculated {0} error of {1:.0f}%',
+        
+        if 'separate' in error_type:
+            h_str = ','.join(['# Created using MTpy calculated {}error floors of {1:.0f}%,{1:.0f}%,{1:.0f}%,{1:.0f}%',
+                          ' data rotated {2:.1f}_deg clockwise from N\n'])
+        else:
+            h_str = ','.join(['# Created using MTpy calculated {0} error of {1:.0f}%',
                           ' data rotated {2:.1f}_deg clockwise from N\n'])
 
         return h_str.format(error_type, error_value, rotation_angle)
@@ -424,12 +444,11 @@ class Data(object):
         """
         get station locations from edi files
         """
-
         stations_obj = Stations(model_epsg=self.model_epsg,
                                 model_utm_zone=self.model_utm_zone)
         mt_list = [self.mt_dict[s_key] for s_key in sorted(self.mt_dict.keys())]
-
         stations_obj.get_station_locations(mt_list)
+
         # rotate locations if needed
         if self._rotation_angle != 0:
             stations_obj.rotate_stations(self._rotation_angle)
@@ -445,7 +464,7 @@ class Data(object):
         self.data_array[:]['rel_north'] = stations_obj.rel_north
         self.data_array[:]['rel_elev'] = stations_obj.rel_north
         self.data_array[:]['zone'] = stations_obj.utm_zone
-
+        
         # get center point
         self.center_point = stations_obj.center_point
 
@@ -491,7 +510,7 @@ class Data(object):
         for per in self.period_list:
             print('     {0:<12.6f}'.format(per))
         print('-' * 50)
-
+        
         if self.period_list is None:  # YG: is this possible?
             raise ModEMError('Need to input period_min, period_max, '
                              'max_num_periods or a period_list')
@@ -620,7 +639,7 @@ class Data(object):
         if self.period_list is None:
             self.get_period_list()
 
-        ns = len(self.mt_dict.keys())
+        ns = len(list(self.mt_dict.keys()))
         nf = len(self.period_list)
 
         d_array = False
@@ -698,9 +717,9 @@ class Data(object):
                 self._logger.debug("station_name and selected/filtered periods: %s, %s, %s", mt_obj.station,
                                    len(interp_periods), interp_periods)
                 # in this case the below interpolate_impedance_tensor function will degenerate into a same-freq set.
-
+                
             if len(interp_periods) > 0:  # not empty
-                interp_z, interp_t = mt_obj.interpolate(1. / interp_periods)  # ,bounds_error=False)
+                interp_z, interp_t = mt_obj.interpolate(1. / interp_periods, period_buffer=self.period_buffer)  # ,bounds_error=False)
                 #                interp_z, interp_t = mt_obj.interpolate(1./interp_periods)
                 for kk, ff in enumerate(interp_periods):
                     jj = np.where(self.period_list == ff)[0][0]
@@ -843,13 +862,17 @@ class Data(object):
                     continue
 
                 if 'egbert' in self.error_type_z:
-                    if d_xy == 0.0:
-                        d_xy = 1.0
-                    if d_yx == 0.0:
-                        d_yx = 1.0
-                    err = err_value * np.sqrt(d_xy * d_yx)
-                    if err == 1.0:
-                        err = max([d_xx, d_xy, d_yx, d_yy]) * 10
+                    # if both components masked, then take error floor from
+                    # max of z_xx or z_yy
+                    if (d_xy==0.0 and d_yx==0.0):
+                        err = err_value * np.max([d_xx,d_yy])
+                    # else use the off diagonals depending on data availability
+                    else:
+                        if d_xy == 0.0:
+                            d_xy = d_yx
+                        if d_yx == 0.0:
+                            d_yx = d_xy
+                        err = err_value * np.sqrt(d_xy * d_yx)
 
                 elif 'median' in self.error_type_z:
                     err = err_value * np.median(d[nz])
@@ -864,7 +887,16 @@ class Data(object):
                     err = err_value * np.abs(np.linalg.eigvals(d)).mean()
                     if err == 0:
                         err = err_value * d.flatten()[nz].mean()
-
+                
+                elif 'off_diagonals' in self.error_type_z:
+                    # apply same error to xy and xx, and to yx and yy
+                    # value is a % of xy and yx respectively
+                    err = np.array([[d_xy, d_xy],[d_yx, d_yx]])*err_value
+                
+                elif 'separate' in self.error_type_z:
+                    # apply separate error floors to each component
+                    d = d.reshape((2, 2))
+                    err = err_value * d
                 else:
                     raise DataError('error type (z) {0} not understood'.format(self.error_type_z))
 
@@ -874,6 +906,8 @@ class Data(object):
         if 'floor' in self.error_type_z:
             f_index = np.where(self.data_array['z_inv_err'] < self.data_array['z_err'])
             self.data_array['z_inv_err'][f_index] = self.data_array['z_err'][f_index]
+
+
 
     def write_data_file(self, save_path=None, fn_basename=None,
                         rotation_angle=None, compute_error=True, fill=True,
@@ -995,7 +1029,7 @@ class Data(object):
                         if zz.real != 0.0 and zz.imag != 0.0 and zz.real != 1e32 and zz.imag != 1e32:
                             if self.formatting == '1':
                                 per = '{0:<12.5e}'.format(self.period_list[ff])
-                                sta = '{0:>7}'.format(self.data_array[ss]['station'])
+                                sta = '{0:>7}'.format(self.data_array[ss]['station'].decode('UTF-8'))
                                 lat = '{0:> 9.3f}'.format(self.data_array[ss]['lat'])
                                 lon = '{0:> 9.3f}'.format(self.data_array[ss]['lon'])
                                 eas = '{0:> 12.3f}'.format(self.data_array[ss]['rel_east'])
@@ -1040,8 +1074,8 @@ class Data(object):
                                                                             float(ima)])))))
                             abs_err = '{0:> 14.6e}'.format(abs(abs_err))
                             # make sure that x==north, y==east, z==+down
-                            dline = ''.join([per, sta, lat, lon, nor, eas, ele,
-                                             com, rea, ima, abs_err, '\n'])
+                            dline = ''.join([per, sta, lat, lon, nor, eas, ele, com, rea, ima, abs_err, '\n'])
+
                             d_lines.append(dline)
 
         with open(self.data_fn, 'w') as dfid:
@@ -1286,9 +1320,10 @@ class Data(object):
             raise DataError(
                 'Could not find {0}, check path'.format(self.data_fn))
 
-        dfid = file(self.data_fn, 'r')
-        dlines = dfid.readlines()
-        dfid.close()
+        with open (self.data_fn, 'r') as dfid:
+            dlines = dfid.readlines()
+
+        # dfid.close()
 
         header_list = []
         metadata_list = []
@@ -1388,7 +1423,7 @@ class Data(object):
                     pass
 
         # find inversion mode
-        for inv_key in self.inv_mode_dict.keys():
+        for inv_key in list(self.inv_mode_dict.keys()):
             inv_mode_list = self.inv_mode_dict[inv_key]
             if len(inv_mode_list) != inv_list:
                 continue
@@ -1482,7 +1517,7 @@ class Data(object):
         # make mt_dict an attribute for easier manipulation later
         self.mt_dict = data_dict
 
-        ns = len(self.mt_dict.keys())
+        ns = len(list(self.mt_dict.keys()))
         nf = len(self.period_list)
         self._set_dtype((nf, 2, 2), (nf, 1, 2))
         self.data_array = np.zeros(ns, dtype=self._dtype)
@@ -1775,7 +1810,7 @@ class Data(object):
             writer = csv.writer(csvf)
             writer.writerow(csv_header)
 
-        for period_num in xrange(num_periods):
+        for period_num in range(num_periods):
             per= period_list[period_num]
             freq = freq_list[period_num]
             self._logger.info("Working on period %s; frequency: %s", per, freq )

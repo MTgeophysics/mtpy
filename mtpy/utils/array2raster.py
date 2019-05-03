@@ -105,7 +105,7 @@ class ModEM_to_Raster(object):
                                                             lower_left_north,
                                                             center_zone)
             
-            print 'Lower Left Coordinates should be ({0:.5f}, {1:.5f})'.format(ll_lon, ll_lat)
+            print('Lower Left Coordinates should be ({0:.5f}, {1:.5f})'.format(ll_lon, ll_lat))
             return (ll_lon, ll_lat)
         else:
             raise IOError('Need to input model center (lon, lat)')
@@ -141,8 +141,8 @@ class ModEM_to_Raster(object):
             self.pad_north = np.where(model_obj.nodes_north[0:25] >
                                     self.cell_size_north*1.1)[0][-1]
         
-        print 'Pad north = {0}'.format(self.pad_north)    
-        print 'Pad east  = {0}'.format(self.pad_east) 
+        print('Pad north = {0}'.format(self.pad_north))    
+        print('Pad east  = {0}'.format(self.pad_east)) 
 
 
 
@@ -404,7 +404,7 @@ def array2raster(raster_fn, origin, cell_width, cell_height, res_array,
     driver = gdal.GetDriverByName('GTiff')
 
     # make a raster with the shape of the array to be written 
-    print raster_fn, ncols, nrows
+    print(raster_fn, ncols, nrows)
     out_raster = driver.Create(raster_fn, ncols, nrows, 1, gdal.GDT_Float32)
     
     # geotransform:

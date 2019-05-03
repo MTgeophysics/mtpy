@@ -62,14 +62,13 @@ class PlotPTMaps(mtplottools.MTEllipse):
     Attributes                 Description
     ========================== ================================================
     cb_pt_pad                  percentage from top of axes to place pt
-                               color bar. *default* is .90
+                               color bar. *default* is 1.2
     cb_res_pad                 percentage from bottom of axes to place
-                               resistivity color bar. *default* is 1.2
+                               resistivity color bar. *default* is 0.5
     cb_residual_tick_step      tick step for residual pt. *default* is 3
     cb_tick_step               tick step for phase tensor color bar,
                                *default* is 45
-    data                       np.ndarray(n_station, n_periods, 2, 2)
-                               impedance tensors for station data
+    data_obj                   data object (read in from ModEM data file)
     data_fn                    full path to data fle
     dscale                     scaling parameter depending on map_scale
     ellipse_cmap               color map for pt ellipses. *default* is
@@ -210,12 +209,15 @@ class PlotPTMaps(mtplottools.MTEllipse):
                                         {'size': 2,
                                          'ellipse_range':[0,0],
                                          'ellipse_colorby':'phimin',
-                                         'ellipse_cmap':'mt_bl2gr2rd'})
+                                         'ellipse_cmap':'mt_bl2gr2rd',
+                                         'normalise':False})
 
         self._read_ellipse_dict(self._ellipse_dict)
 
         self.ellipse_size = kwargs.pop(
             'ellipse_size', self._ellipse_dict['size'])
+            
+        self.normalise_ellipses = kwargs.pop('normalise_ellipses',False)
 
         self.cb_tick_step = kwargs.pop('cb_tick_step', None)
         # update default colorbar tick step based on ellipse_range
@@ -239,6 +241,8 @@ class PlotPTMaps(mtplottools.MTEllipse):
         self.pt_data_arr = None
         self.pt_resp_arr = None
         self.pt_resid_arr = None
+        
+        self.residual_pt_type= kwargs.pop('residual_pt_type','heise')
 
         # FZ: do not call plot in the constructor! it's not pythonic
         self.plot_yn = kwargs.pop('plot_yn', 'n')
@@ -295,7 +299,7 @@ class PlotPTMaps(mtplottools.MTEllipse):
         put pt parameters into something useful for plotting
         """
 
-        ns = len(self.data_obj.mt_dict.keys())
+        ns = len(list(self.data_obj.mt_dict.keys()))
         nf = len(self.data_obj.period_list)
 
         data_pt_arr = np.zeros((nf, ns), dtype=[('phimin', np.float),
@@ -348,7 +352,8 @@ class PlotPTMaps(mtplottools.MTEllipse):
                 mpt = self.resp_obj.mt_dict[key].pt
                 try:
                     rpt = mtpt.ResidualPhaseTensor(pt_object1=dpt,
-                                                   pt_object2=mpt)
+                                                   pt_object2=mpt,
+                                                   residualtype=self.residual_pt_type)
                     rpt = rpt.residual_pt
                     res_pt_arr[:, ii]['east'] = east
                     res_pt_arr[:, ii]['north'] = north
@@ -359,10 +364,10 @@ class PlotPTMaps(mtplottools.MTEllipse):
                     res_pt_arr[:, ii]['azimuth'] = rpt.azimuth
                     res_pt_arr[:, ii]['skew'] = rpt.beta
                     res_pt_arr[:, ii]['station'] = self.data_obj.mt_dict[key].station
-                    res_pt_arr[:, ii]['geometric_mean'] = np.sqrt(abs(rpt.phimin[0] *
-                                                                      rpt.phimax[0]))
+                    res_pt_arr[:, ii]['geometric_mean'] = np.sqrt(np.abs(rpt.phimin) *
+                                                                  np.abs(rpt.phimax))
                 except mtex.MTpyError_PT:
-                    print key, dpt.pt.shape, mpt.pt.shape
+                    print(key, dpt.pt.shape, mpt.pt.shape)
 
                 model_pt_arr[:, ii]['east'] = east
                 model_pt_arr[:, ii]['north'] = north
@@ -382,7 +387,8 @@ class PlotPTMaps(mtplottools.MTEllipse):
             self.pt_resid_arr = res_pt_arr
 
     def plot_on_axes(self, ax, m, periodIdx, ptarray='data', ellipse_size_factor=10000,
-              cvals=None, map_scale='m', centre_shift=[0, 0], **kwargs):
+                     cvals=None, map_scale='m', centre_shift=[0, 0], plot_tipper='n',
+                     tipper_size_factor=1e5, **kwargs):
 
         '''
         Plots phase tensors for a given period index.
@@ -397,6 +403,9 @@ class PlotPTMaps(mtplottools.MTEllipse):
                       the same length as the number of tuples for each period
         :param map_scale: map length scale
         :param kwargs: list of relevant matplotlib arguments (e.g. zorder, alpha, etc.)
+        :param plot_tipper: string ('n', 'yr', 'yi', or 'yri') to plot
+                            no tipper, real only, imaginary only, or both
+        :param tipper_size_factor: scaling factor for tipper vectors
         '''
 
         assert (periodIdx >= 0 and periodIdx < len(self.plot_period_list)), \
@@ -408,8 +417,12 @@ class PlotPTMaps(mtplottools.MTEllipse):
         for i in range(len(pt_array[k])):
             lon = pt_array[k]['lon'][i]
             lat = pt_array[k]['lat'][i]
-            phimax = pt_array[k]['phimax'][i] / pt_array[k]['phimax'].max()
-            phimin = pt_array[k]['phimin'][i] / pt_array[k]['phimax'].max()
+            if self.normalise_ellipses:
+                phimax = pt_array[k]['phimax'][i] / pt_array[k]['phimax'][i]
+                phimin = pt_array[k]['phimin'][i] / pt_array[k]['phimax'][i]
+            else:
+                phimax = pt_array[k]['phimax'][i] / pt_array[k]['phimax'].max()
+                phimin = pt_array[k]['phimin'][i] / pt_array[k]['phimax'].max()
             az = pt_array[k]['azimuth'][i]
             if ptarray == 'resid':
                 phimin = np.abs(phimin)
@@ -429,14 +442,24 @@ class PlotPTMaps(mtplottools.MTEllipse):
                         y /= 1e3
                 else:
                     x, y = m(lon, lat)
-                
+
+                # matplotlib angles are defined as degrees anticlockwise from positive x direction.
+                # therefore we need to adjust az accordingly             
                 e = Ellipse([x, y],
                             phimax * ellipse_size_factor,
                             phimin * ellipse_size_factor,
-                            az, **kwargs)
+                            90. - az, **kwargs)
                 ax.add_artist(e)
             # end if
         # end for
+        if 'y' in plot_tipper:
+            # if neither r or i provided, assume that we want to plot both
+            if plot_tipper == 'y':
+                plot_tipper = 'yri'
+            self._plot_induction_vectors(ax, m, periodIdx, 
+                                         ptarray=ptarray, size_factor=tipper_size_factor,
+                                         map_scale=map_scale, centre_shift=centre_shift,
+                                         plot_tipper=plot_tipper, **kwargs)
     # end func
 
     def plot(self, period=0, save2file=None, **kwargs):
@@ -452,7 +475,7 @@ class PlotPTMaps(mtplottools.MTEllipse):
 
         """
 
-        print("The input parameter period is", period)
+        print(("The input parameter period is", period))
 
         # --> read in data first
         if self.data_obj is None:
@@ -499,9 +522,9 @@ class PlotPTMaps(mtplottools.MTEllipse):
 
         # -------------plot phase tensors------------------------------------
         if period > len(self.plot_period_list) - 1:
-            print(
+            print((
                 "Error: the period exceeds the max value:", len(
-                    self.plot_period_list) - 1)
+                    self.plot_period_list) - 1))
 
         # FZ: changed below to plot a given period index
         # for ff, per in enumerate(self.plot_period_list):
@@ -509,7 +532,7 @@ class PlotPTMaps(mtplottools.MTEllipse):
             
             data_ii = self.period_dict[per]
 
-            print 'Plotting Period: {0:.5g}'.format(per)
+            print('Plotting Period: {0:.5g}'.format(per))
             fig = plt.figure('{0:.5g}'.format(per), figsize=self.fig_size,
                              dpi=self.fig_dpi)
             fig.clf()
@@ -568,6 +591,7 @@ class PlotPTMaps(mtplottools.MTEllipse):
                                   vmax=self.res_limits[1])
 
             # --> plot data phase tensors
+            print(kwargs)
             for pt in self.pt_data_arr[data_ii]:
                 eheight = pt['phimin'] / \
                     self.pt_data_arr[data_ii]['phimax'].max() * \
@@ -686,8 +710,12 @@ class PlotPTMaps(mtplottools.MTEllipse):
             cb_location = (3.35 * bb[2] / 5 + bb[0],
                            y1 * self.cb_pt_pad, .295 * bb[2], .02)
             cbaxd = fig.add_axes(cb_location)
+            if self.ellipse_cmap in list(mtcl.cmapdict.keys()):
+                ecmap = mtcl.cmapdict[self.ellipse_cmap]
+            else:
+                ecmap = self.ellipse_cmap
             cbd = mcb.ColorbarBase(cbaxd,
-                                   cmap=mtcl.cmapdict[self.ellipse_cmap],
+                                   cmap=ecmap,
                                    norm=Normalize(vmin=ckmin,
                                                   vmax=ckmax),
                                    orientation='horizontal')
@@ -810,6 +838,34 @@ class PlotPTMaps(mtplottools.MTEllipse):
             plt.close(fig)
         self.plot()
 
+    
+    def _plot_induction_vectors(self, ax, m, periodIdx, ptarray='data', size_factor=10000,
+                                 map_scale='m', centre_shift=[0, 0], plot_tipper='yri', **kwargs):
+                                                  
+        if ptarray == 'data':
+            data_array = self.data_obj.data_array
+        elif ptarray == 'resp':
+            data_array = self.resp_obj.data_array
+        rx = data_array['tip'].real[:,periodIdx,0,0]
+        ry = data_array['tip'].real[:,periodIdx,0,1]
+        ix = data_array['tip'].imag[:,periodIdx,0,0]
+        iy = data_array['tip'].imag[:,periodIdx,0,1]
+        
+        lon,lat = self.data_obj.station_locations.lon, self.data_obj.station_locations.lat
+        x,y = m(lon,lat)
+
+        kwargs_tip = {'length_includes_head':True, 
+                      'head_width':size_factor*0.07, 
+                      'head_length': size_factor*0.1}
+        kwargs_tip.update(kwargs)
+        
+        for sidx in range(len(self.data_obj.data_array)):
+            if 'r' in plot_tipper:
+                ax.arrow(x[sidx],y[sidx],size_factor*rx[sidx],size_factor*ry[sidx],color='k',**kwargs_tip)
+            if 'i' in plot_tipper:
+                ax.arrow(x[sidx],y[sidx],size_factor*ix[sidx],size_factor*iy[sidx],color='b',**kwargs_tip)
+
+
     def _get_pt_data_list(self, attribute, xykeys=['east', 'north']):
 
         headerlist = ['period', 'station'] + xykeys + \
@@ -857,10 +913,16 @@ class PlotPTMaps(mtplottools.MTEllipse):
 
         pk = periodIdx
         try:
-            vals = getattr(self, 'pt_' + ptarray + '_arr')[pk][key]
+            print("getting", key)
+            if key == 'phimean':
+                vals = np.mean([getattr(self, 'pt_' + ptarray + '_arr')[pk]['phimin'],
+                                getattr(self, 'pt_' + ptarray + '_arr')[pk]['phimax']],axis=0)
+            else:
+                vals = getattr(self, 'pt_' + ptarray + '_arr')[pk][key]
             return vals
         except:
-            print 'Attribute %s not found' % ('pt_' + ptarray + '_arr')
+
+            print('Attribute %s not found' % ('pt_' + ptarray + '_arr'))
             logging.error(traceback.format_exc())
             exit(-1)
 
@@ -882,6 +944,7 @@ class PlotPTMaps(mtplottools.MTEllipse):
                     data_to_write['azimuth'] = 90. - data_to_write['azimuth']
                 np.savetxt(filename, data_to_write, header=header,
                            fmt=['%.4e', '%s', '%.2f', '%.2f', '%.2f', '%.2f', '%.2f', '%.3f'])
+
 
     def write_pt_data_to_gmt(self, period=None, epsg=None, savepath='.', center_utm=None,
                              colorby='phimin', attribute='data', clim=None):
@@ -969,8 +1032,11 @@ class PlotPTMaps(mtplottools.MTEllipse):
                     :, 0], gmtdata[
                     :, 1])
 
-        # normalise by maximum value of phimax
-        norm = np.amax(gmtdata[:, 4])
+        if self.normalise_ellipses:
+            norm = gmtdata[:,4]
+        else:
+            # normalise by maximum value of phimax
+            norm = np.amax(gmtdata[:, 4])
         gmtdata[:, 5] /= norm
         gmtdata[:, 4] /= norm
         if attribute != 'resid':
@@ -1096,4 +1162,4 @@ class PlotPTMaps(mtplottools.MTEllipse):
                 pass
 
             self.fig_fn = save_fn
-            print 'Saved figure to: ' + self.fig_fn
+            print('Saved figure to: ' + self.fig_fn)

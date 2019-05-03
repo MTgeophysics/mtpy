@@ -302,9 +302,9 @@ class PlotResPhasePseudoSection(object):
         self.text_ypad = kwargs.pop('text_ypad', .95)
         self.text_size = kwargs.pop('text_size', self.font_size)
         self.text_weight = kwargs.pop('text_weight', 'bold')
-
-
-
+        self.station_label_rotation = kwargs.pop('station_label_rotation',0)
+        self.show_grid = kwargs.pop('show_grid',True)
+    
         #--> set colormaps Note only mtcolors is supported
         self.res_cmap = kwargs.pop('res_cmap', mtcl.cmapdict['mt_rd2gr2bl'])
         self.phase_cmap = kwargs.pop('phase_cmap', mtcl.cmapdict['mt_bl2gr2rd'])
@@ -512,10 +512,10 @@ class PlotResPhasePseudoSection(object):
                         pass
 
                 if jj is None:
-                    print 'did not find period {0:.6g} (s) for {1}'.format(
-                               rper, self.station_list[ii])
+                    print('did not find period {0:.6g} (s) for {1}'.format(
+                               rper, self.station_list[ii]))
 
-    def plot(self, show=True):
+    def plot(self, show=True, get_rp_arrays=True):
 
         #--> set subplot spacing
         plt.rcParams['font.size'] = self.font_size
@@ -525,9 +525,10 @@ class PlotResPhasePseudoSection(object):
         plt.rcParams['figure.subplot.top'] = .98
 
         #get apparent resistivity and phase
-        self.get_rp_arrays()
-        if self.shift_yx_phase:
-            self.phaseyx = self.phaseyx + 180
+        if get_rp_arrays:
+            self.get_rp_arrays()
+            if self.shift_yx_phase:
+                self.phaseyx = self.phaseyx + 180
 
         #make a list of tuples to see how many subplots are needed
         ynlist = [self.plot_xx+'xx', self.plot_xy+'xy', self.plot_yx+'yx',
@@ -559,26 +560,39 @@ class PlotResPhasePseudoSection(object):
         if self.plot_style == 'pcolormesh':
             #need to add another element at the end of the array so pcolor
             #will plot the full array
-            xgrid, ygrid = np.meshgrid(np.append(self.offset_list,
-                                                 self.offset_list[-1]*1.1),
-                                       np.append(self.plot_period,
-                                                 self.plot_period[-1]*1.1))
+            # first, get median station spacing
+            mss = np.median(np.abs(self.offset_list[1:] - self.offset_list[:-1]))
+            xgrid_edges = np.mean([self.offset_list[1:],self.offset_list[:-1]],axis=0)
+            xgrid = np.hstack([self.offset_list[:1],xgrid_edges,self.offset_list[-1:]])
+            
+            ygrid_edges = 10**np.mean([np.log10(self.plot_period[1:]),np.log10(self.plot_period[:-1])],axis=0)
+            ygrid = np.hstack([self.plot_period[:1],ygrid_edges,self.plot_period[-1:]])
+            xgrid, ygrid = np.meshgrid(xgrid,ygrid)
+            
+#            xgrid, ygrid = np.meshgrid(np.append(self.offset_list,
+#                                                 self.offset_list[-1]*1.1),
+#                                       np.append(self.plot_period,
+#                                                 self.plot_period[-1]*1.1))
 
             for ii, tt in enumerate(plist):
                 axr = self.fig.add_subplot(gs[0, ii])
                 axp = self.fig.add_subplot(gs[1, ii])
 
                 #plot apparent resistivity
-                axr.pcolormesh(xgrid, ygrid, np.flipud(tt[1]),
+                axr.pcolormesh(xgrid, ygrid, tt[1],#np.flipud(tt[1]),
                                cmap=self.res_cmap,
                                vmin=self.res_limits[0],
                                vmax=self.res_limits[1])
+                
+                axr.set_aspect(self.aspect)
+                axp.set_aspect(self.aspect)
 
-                axr.set_xticks(self.offset_list[range(0,ns,self.xtickspace)])
+                axr.set_xticks(self.offset_list[list(range(0,ns,self.xtickspace))])
                 if self.xtickspace != 1:
-                    axr.set_xticks(self.offset_list, minor=True)
+                    axr.set_xticks(self.offset_list)#, minor=True)
                 plt.setp(axr.get_xticklabels(), visible=False)
-                axr.grid(which='major', alpha=.25)
+                if self.show_grid:
+                    axr.grid(which='major', alpha=.25)
                 axr.set_yscale('log', nonposy='clip')
                 axr.set_xlim(
                     self.offset_list.min(),
@@ -600,17 +614,21 @@ class PlotResPhasePseudoSection(object):
                                                'weight':self.text_weight},
                                      verticalalignment='top',
                                      horizontalalignment='left',
-                                     bbox={'facecolor':'white', 'alpha':.5})
+                                     bbox={'facecolor':'white', 'alpha':.5}
+                                     )
 
                 #plot phase
-                axp.pcolormesh(xgrid, ygrid, np.flipud(tt[2]),
+                axp.pcolormesh(xgrid, ygrid, tt[2],#np.flipud(tt[2]),
                                cmap=self.phase_cmap,
                                vmin=self.phase_limits[0],
                                vmax=self.phase_limits[1])
-                axp.grid(which='major', alpha=.25)
-                axp.set_xticks(self.offset_list[range(0,ns,self.xtickspace)])
+                if self.show_grid:
+                    axp.grid(which='major', alpha=.25)
+                axp.set_xticks(self.offset_list[list(range(0,ns,self.xtickspace))])
                 axp.set_xticklabels([self.station_list[st]
-                                    for st in range(0,ns,self.xtickspace)])
+                                    for st in range(0,ns,self.xtickspace)],
+                                    rotation=self.station_label_rotation,
+                                    fontsize=self.text_size)
                 if self.xtickspace != 1:
                     axp.set_xticks(self.offset_list, minor=True)
                 axp.set_yscale('log', nonposy='clip')
@@ -747,7 +765,7 @@ class PlotResPhasePseudoSection(object):
                                    np.log10(self.plot_period.max())))
 
                 #set x ticks but remove labels
-                axr.set_xticks(self.offset_list[range(0,ns,self.xtickspace)])
+                axr.set_xticks(self.offset_list[list(range(0,ns,self.xtickspace))])
                 if self.xtickspace != 1:
                     axr.set_xticks(self.offset_list, minor=True)
 
@@ -796,7 +814,7 @@ class PlotResPhasePseudoSection(object):
                                    np.log10(self.plot_period.max())))
 
                 axp.grid(which='major', alpha=.25)
-                axp.set_xticks(self.offset_list[range(0,ns,self.xtickspace)])
+                axp.set_xticks(self.offset_list[list(range(0,ns,self.xtickspace))])
                 axp.set_xticklabels([self.station_list[st]
                                     for st in range(0,ns,self.xtickspace)])
                 if self.xtickspace != 1:
@@ -974,7 +992,7 @@ class PlotResPhasePseudoSection(object):
             pass
 
         self.fig_fn = save_fn
-        print 'Saved figure to: '+self.fig_fn
+        print('Saved figure to: '+self.fig_fn)
 
     def update_plot(self):
         """
@@ -1052,7 +1070,7 @@ class PlotResPhasePseudoSection(object):
                      'append':False, 'add':False}
 
 
-        for key in fn_dict.keys():
+        for key in list(fn_dict.keys()):
             fid = file(os.path.join(svpath, 'PseudoSection.'+key), 'w')
             fid.write(''.join(header_list))
             for ii, per in enumerate(self.plot_period):
@@ -1067,8 +1085,8 @@ class PlotResPhasePseudoSection(object):
                 fid.write(''.join(line))
             fid.close()
 
-        print 'Wrote files to: '+\
-                        os.path.join(svpath, 'PseudoSection.component')
+        print('Wrote files to: '+\
+                        os.path.join(svpath, 'PseudoSection.component'))
 
     def __str__(self):
         """

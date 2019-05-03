@@ -1,7 +1,7 @@
 MTpy: A Python Toolbox for Magnetotelluric (MT) Data Processing, Analysis, Modelling and Visualization
 ==================================
 
-|Build Status| |Coverage Status| |Documentation Status|
+|Build Status|  |Documentation Status|
 
 
 Overview
@@ -9,14 +9,19 @@ Overview
 
 A Python Toolbox for Magnetotelluric (MT) Data Processing, Analysis, Modelling and Visualization
 
-This repository has superseded the `geophysics/mtpy <https://github.com/geophysics/mtpy/tree/beta>`_
+- Home Page: https://github.com/MTgeophysics/mtpy
+
+- API Documentation: http://mtpy2.readthedocs.io/en/develop/
+
+- Issue tracking: https://github.com/MTgeophysics/mtpy/issues
+
+- Installation Guide (Wiki Pages): https://github.com/MTgeophysics/mtpy/wiki
+
+- User Guide: https://github.com/MTgeophysics/mtpy/blob/develop/docs/MTPy%20User%20Guide.pdf
+
+
+Note that this repository has superseded the `geophysics/mtpy <https://github.com/geophysics/mtpy/tree/beta>`_
 and `GeoscienceAustralia/mtpy2 <https://github.com/GeoscienceAustralia/mtpy2/tree/develop>`_
-
-Home Page: https://github.com/MTgeophysics/mtpy
-
-Documentation: http://mtpy2.readthedocs.io/en/develop/master_doc.html and http://mtgeophysics.github.io/mtpy
-
-Issue tracking: https://github.com/MTgeophysics/mtpy/issues
 
 
 Contacts
@@ -31,9 +36,6 @@ Contacts
 | **Jared Peacock**
 | peacock.jared@gmail.com
 
-| **Yingzhi Gou**
-| Yingzhi.Gou@ga.gov.au
-
 | **Rakib Hassan**
 | Rakib.Hassan@ga.gov.au
 
@@ -42,49 +44,11 @@ Contacts
 
 
 
-System Requirements (Draft)
+System Requirements
 ==========================
 
-
--  Software
--  Python 2.7+ or Python 3.5+
-
-Setup Guide for Developers (Draft)
-==========================
-
-1. Obtain the source code from https://github.com/MTgeophysics/mtpy:
-
-   -  ``git clone https://github.com/MTgeophysics/mtpy.git``
-
-2. Install Python dependencies. And
-   
-    ``cd mtpy``
-   
-    ``pip install -v --user -e .`` (user's own home ~/.local/lib/python2.7/site-packages/mtpy.egg-link)
-   
-   OR ``pip install -v -e .``  (into python lib's dir site-packages, write-permission required)
-   
-   OR `` export  PYTHONPATH=/your_path2/mtpy2:$PYTHONPATH `` (each session)
-   
-   OR ``python setup.py develop --user``
-   
-   To verify the install : ``pip list | grep mtpy``
-
-   To uninstall the package: ``pip uninstall -v mtpy``
-
-3. Run unit tests + PyLint
-
-   ``./check-code.sh``
-
-   (this script is run by Travis. You can alternatively run ``py.test`` at commandline)
-   
-  4. Run further functional tests 
-
-   See examples: ``tests/testcases.sh``
-
-
-
-
+-  Python 2.7
+-  Python 3.6+
 
 
 License
@@ -95,9 +59,8 @@ MTpy is licensed under the GPL version 3
 The license agreement is contained in the repository and should be kept together with the code.
 
 
-
-Conventions
-===============
+Conventions Used in the MTPy Software
+=====================================
 
 1. MTpy uses E- and B-fields (although the sensors may be confusingly named as H-sensors in EDI files)
 2. [E] = microvolts/meter (muV/m)
@@ -117,10 +80,11 @@ Conventions
 
 .. |Build Status| image:: https://travis-ci.org/MTgeophysics/mtpy.svg?branch=develop
    :target: https://travis-ci.org/MTgeophysics/mtpy
+
 .. |Coverage Status| image:: https://coveralls.io/repos/github/MTgeophysics/mtpy/badge.svg?branch=develop
    :target: https://coveralls.io/github/MTgeophysics/mtpy?branch=develop
 
 .. |Documentation Status| image:: https://readthedocs.org/projects/mtpy2/badge/?version=develop
-   :target: http://mtpy2.readthedocs.io/en/develop/master_doc.html
+   :target: http://mtpy2.readthedocs.io/en/develop/
 
 

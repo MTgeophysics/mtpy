@@ -41,7 +41,8 @@ _logger = MtPyLog.get_mtpy_logger(__name__)
 
 
 # use the Zcompotent=[det, zxy, zyx]
-def plot2Dprofile(edi_dir, period_index_list=None, zcomponent='det', edi_list=None):
+def plot2Dprofile(edi_dir, period_index_list=None, zcomponent='det', 
+                  edi_list=None, tick_params={}, save=False,savepath=None,**kwargs):
     #edi_dir = "/Softlab/Githubz/mtpy2/tests/data/edifiles/"
     # edi_dir="E:/Githubz/mtpy2/tests/data/edifiles/"
     # edi_dir=r"E:\Githubz\mtpy2\examples\data/edi2"
@@ -53,7 +54,14 @@ def plot2Dprofile(edi_dir, period_index_list=None, zcomponent='det', edi_list=No
 
     edis = load_edi_files(edi_dir, file_list=edi_list)
     plot = Depth2D(edis, period_index_list, zcomponent)
-    plot.plot()
+    plot.plot(tick_params, **kwargs)
+    if save:
+        if os.path.isdir(savepath):
+            savepath == os.path.join(savepath,'Depth2D.png')
+        if savepath is not None:
+            plot._fig.savefig(savepath)
+        else:
+            savepath = os.path.join(edi_dir,'Depth2D.png')
     plot.show()
 
 
@@ -141,14 +149,14 @@ def barplot_multi_station_penentration_depth(
 if __name__ == "__main__old":
 
     if len(sys.argv) < 2:
-        print("Usage: %s edi_dir" % sys.argv[0])
+        print(("Usage: %s edi_dir" % sys.argv[0]))
         print ("python examples/penetration_depth2d.py tests/data/edifiles/ 0 1 10 20 30 40 50 59")
         sys.exit(1)
     elif os.path.isdir(sys.argv[1]):
         edi_dir = sys.argv[1]  # the first argument is path2_edi_dir
         # the second,.... will be period index list
         period_index_list = sys.argv[2:]
-        print ("period_index_list = {}".format(period_index_list))
+        print(("period_index_list = {}".format(period_index_list)))
 
         # the rho zcomponent can be det, zxy zyx
         plot2Dprofile(edi_dir, period_index_list, zcomponent='det')

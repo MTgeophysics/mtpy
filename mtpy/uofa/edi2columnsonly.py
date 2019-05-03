@@ -20,7 +20,7 @@ import mtpy.core.edi as MTedi
 
 
 def main():
-    print
+    print()
     if len(sys.argv) < 2:
         sys.exit('\nNeed at least 1 argument:\n '
                  '<EDI file> \n\n')
@@ -32,13 +32,13 @@ def main():
         if not op.isfile(edifn):
             raise
     except:
-        print '\tERROR - EDI file does not exist: {0}\n'.format(edifn)
+        print('\tERROR - EDI file does not exist: {0}\n'.format(edifn))
         sys.exit()
 
     try:
         convert2columns(edifn)
     except:
-        print '\tERROR - could not convert EDI file\n'
+        print('\tERROR - could not convert EDI file\n')
 
 
 def convert2columns(fn):
@@ -46,7 +46,7 @@ def convert2columns(fn):
     try:
         e_object = MTedi.Edi(filename=fn)
     except:
-        print 'invalid EDI file'
+        print('invalid EDI file')
         raise
 
     filebase = op.splitext(fn)[0]
@@ -63,7 +63,7 @@ def convert2columns(fn):
     with open(outfn, 'w') as F:
         F.write(outstring)
 
-    print '\tWritten data to file: {0}\n'.format(outfn)
+    print('\tWritten data to file: {0}\n'.format(outfn))
 
     return outfn
 

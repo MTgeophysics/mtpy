@@ -18,6 +18,9 @@ Package Imaging
 .. automodule:: mtpy.imaging.penetration
 	:members:
 
+.. automodule:: mtpy.imaging.plot_resphase_maps
+	:members:
+
 **Module Plot Phase Tensor Maps**
 =================================
 
@@ -47,3 +50,14 @@ Package Imaging
 
 .. automodule:: mtpy.imaging.plotstrike2d
 	:members:
+
+**Plot MT Response**
+========================
+.. automodule:: mtpy.imaging.plot_mt_response
+    :members:
+
+**Visualization of Models**
+========================
+.. automodule:: mtpy.imaging.plot_depth_slice
+	:members:
+

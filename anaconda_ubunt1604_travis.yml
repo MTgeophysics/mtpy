@@ -1,0 +1,53 @@
+dist: xenial    # 16.04 LTS
+sudo: required  # use VM instead of docker
+
+language: python
+python:
+  - "2.7"
+  - "3.7"
+  # does not have headers provided, please ask https://launchpad.net/~pypy/+archive/ppa
+  # maintainers to fix their pypy-dev package.
+  # - "pypy"
+
+
+
+# command to install dependencies
+
+before_script:
+  - wget https://github.com/adamallo/SimPhy/releases/download/v1.0.2/SimPhy_1.0.2.tar.gz -O /tmp/simphy.tar.gz
+  - tar -xvf /tmp/simphy.tar.gz
+  - chmod +x $PWD/SimPhy_1.0.2/bin/*
+  - export PATH=$PATH:$PWD/SimPhy_1.0.2/bin
+#  - wget https://cran.r-project.org/src/contrib/outbreaker_1.1-8.tar.gz -O /tmp/outbreaker.tar.gz
+#  - R CMD INSTALL --configure-args='CFLAGS="-I/usr/local/opt/gsl/include" LDFLAGS="-L/usr/local/opt/gsl/lib -lgsl -lgslcblas"' /tmp/outbreaker.tar.gz
+
+install:
+  - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
+  - bash miniconda.sh -b -p $HOME/miniconda
+  - export PATH="$HOME/miniconda/bin:$PATH"
+  - hash -r
+  - conda config --set always_yes yes --set changeps1 no
+  - conda update -q conda
+  - conda info -a
+  - conda create -q -n test-env python=$TRAVIS_PYTHON_VERSION pytest pytest-cov pyyaml
+  - conda activate test-env
+  - conda install  geopandas netcdf4
+  - pip install  obspy
+  - pip install pytest-xdist  pytest-cov coveralls
+
+
+#  - pip install pyvolve
+#  - pip install dendropy
+# command to run tests
+
+script:
+  # - python -m pytest --cov=./
+
+  - MTPY_TEST_COMPARE_IMAGE=False; py.test -v --cov=mtpy --cov-report= tests --ignore=tests/SmartMT
+
+after_failure:
+    - cat config.log
+
+after_success:
+    - codecov
+   # - coveralls

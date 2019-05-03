@@ -115,7 +115,7 @@ class Rotate_EDI_Files(QtWidgets.QWidget):
     def set_cwd(self):
         self.cwd = os.path.abspath(str(self.cwd_edit.text()))
         if not os.path.exists(self.cwd):
-            print('Path does not exist {0}'.format(self.cwd))
+            print(('Path does not exist {0}'.format(self.cwd)))
         
     def get_save_path(self):
         dir_dialog = QtWidgets.QFileDialog()
@@ -146,10 +146,10 @@ class Rotate_EDI_Files(QtWidgets.QWidget):
     def rotate_edi_files(self):
         if not os.path.exists(self.save_dir):
             os.mkdir(self.save_dir)
-            print 'Made directory {0}'.format(self.save_dir)
+            print('Made directory {0}'.format(self.save_dir))
             
         for edi in self.edi_list:
-            print '='*40
+            print('='*40)
             edi_fn = os.path.join(self.cwd, '{0}.edi'.format(edi))
             mt_obj = mt.MT(fn=edi_fn)
             mt_obj.rotation_angle = self.rotation_angle

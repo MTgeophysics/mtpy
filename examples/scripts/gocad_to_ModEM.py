@@ -18,11 +18,11 @@ import numpy as np
 from mtpy.modeling.modem import Model,Data,Covariance
 
 # gocad file
-gocad_sgrid_file = r'C:\mtpywin\mtpy\examples\model_files\gocad\sgrid_from_gocad'
+gocad_sgrid_file = r'C:\mtpywin\mtpy\examples\model_files\gocad\ModEM_Model_File.sg'
 
 
 ## Define some other parameters ##
-epsg = 28355 # epsg code your model was projected to. See http://spatialreference.org/
+epsg = 28354 # epsg code your model was projected to. See http://spatialreference.org/
              # to find the epsg code for your projection
 
 # workdir (path to save to)
@@ -34,7 +34,7 @@ workdir = r'C:\tmp'
 # file to get the locations. Alternatively, provide an array of x,y locations 
 # (longitude and latitude) in the case of a new forward model
 #### option 1 ####
-data_fn = r'C:\mtpywin\mtpy\examples\model_files\ModEM_2\ModEM_Data.dat'
+data_fn = r'C:\mtpywin\mtpy\examples\model_files\ModEM\ModEM_Data.dat'
 dObj = Data()
 dObj.read_data_file(data_fn=data_fn)
 

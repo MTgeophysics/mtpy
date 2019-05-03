@@ -73,7 +73,7 @@ def main():
             if not os.access(outpath, os.W_OK):
                 raise
         except:
-            print 'Cannot generate writable output directory {0} - using generic location "miniSeed" instead'.format(outpath)
+            print('Cannot generate writable output directory {0} - using generic location "miniSeed" instead'.format(outpath))
             outdir = None
     if outdir is None:
         outpath = op.join(os.curdir, 'miniSeed')
@@ -129,12 +129,12 @@ def main():
         for idx_fn, fn in enumerate(lo_infiles):
 
             if MTfh.validate_ts_file(fn) is False:
-                print 'Warning - MT ts data file {0} is not valid (check header)!!!'.format(fn)
+                print('Warning - MT ts data file {0} is not valid (check header)!!!'.format(fn))
                 # continue
-            print 'reading file {0}'.format(fn)
+            print('reading file {0}'.format(fn))
             outfn = MTms.convertfile_ts2miniseed(
                 fn, lo_outfiles[idx_fn], location=location, network=network)
-            print 'wrote file {0}'.format(outfn)
+            print('wrote file {0}'.format(outfn))
 
 if __name__ == '__main__':
     main()

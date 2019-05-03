@@ -14,12 +14,74 @@ from mtpy.utils import gis_tools
 import scipy.interpolate as spi
 
 
+
+def grid_centre(grid_edges):
+    """
+    calculate the grid centres from an array that defines grid edges
+    :param grid_edges: array containing grid edges
+    :returns: grid_centre: centre points of grid
+    """
+    return np.mean([grid_edges[1:], grid_edges[:-1]], axis=0)
+    
+
+def rotate_mesh(grid_east,grid_north,origin,
+                rotation_angle,return_centre = False):
+    """
+    rotate a mesh defined by grid_east and grid_north.
+    
+    :param grid_east: 1d array defining the edges of the mesh in the east-west direction
+    :param grid_north: 1d array defining the edges of the mesh in the north-south direction
+    :param origin: real-world position of the (0,0) point in grid_east, grid_north
+    :param rotation_angle: angle in degrees to rotate the grid by
+    :param return_centre: True/False option to return points on centre of grid instead of grid edges
+    
+    :return: grid_east, grid_north - 2d arrays describing the east and north coordinates
+
+    """
+    x0,y0 = origin
+    
+    # centre of grid in relative coordinates
+    if return_centre:
+        gce, gcn = [np.mean([arr[1:], arr[:-1]], axis=0)
+                  for arr in [grid_east,grid_north]]
+    else:
+        gce, gcn = grid_east, grid_north
+        
+    # coordinates (2d array)
+    coords = np.array([arr.flatten() for arr in np.meshgrid(gce,gcn)])
+
+
+    
+    if rotation_angle != 0:
+        # create the rotation matrix
+        cos_ang = np.cos(np.deg2rad(rotation_angle))
+        sin_ang = np.sin(np.deg2rad(rotation_angle))
+        rot_matrix = np.array([[cos_ang, sin_ang],
+                               [-sin_ang, cos_ang]])
+
+        # rotate the relative grid coordinates
+        new_coords = np.array(np.dot(rot_matrix, coords))
+    else:
+        new_coords = coords
+    
+
+    # location of grid centres in real-world coordinates to interpolate elevation onto
+    xg = (new_coords[0] + x0).reshape(len(gcn),len(gce))
+    yg = (new_coords[1] + y0).reshape(len(gcn),len(gce))
+    
+    return xg,yg
+
+
 def interpolate_elevation_to_grid(grid_east,grid_north,epsg=None,utm_zone=None,
-                                  surfacefile=None, surface=None,method='linear'):
+                                  surfacefile=None, surface=None, method='linear',
+                                  fast=True):
     """
     project a surface to the model grid and add resulting elevation data
     to a dictionary called surface_dict. Assumes the surface is in lat/long
     coordinates (wgs84)
+    The 'fast' method extracts a subset of the elevation data that falls within the
+    mesh-bounds and interpolates them onto mesh nodes. This approach significantly
+    speeds up (~ x5) the interpolation procedure.
 
     **returns**
     nothing returned, but surface data are added to surface_dict under
@@ -69,11 +131,32 @@ def interpolate_elevation_to_grid(grid_east,grid_north,epsg=None,utm_zone=None,
     # if lat/lon provided as a 1D list, convert to a 2d grid of points
     if len(x.shape) == 1:
         x, y = np.meshgrid(x, y)
+        
+    if len(grid_east.shape) == 1:
+        grid_east,grid_north=np.meshgrid(grid_east,grid_north)
+
+    if(fast):
+        buffer = 1 # use a buffer of 1 degree around mesh-bounds
+        mlatmin, mlonmin = gis_tools.project_point_utm2ll(grid_east.min(), grid_north.min(),
+                                                          epsg=epsg,
+                                                          utm_zone=utm_zone)
+
+        mlatmax, mlonmax = gis_tools.project_point_utm2ll(grid_east.max(), grid_north.max(),
+                                                          epsg=epsg,
+                                                          utm_zone=utm_zone)
+
+        subsetIndices = (x >= mlonmin-buffer) & \
+                        (x <= mlonmax+buffer) & \
+                        (y >= mlatmin-buffer) & \
+                        (y <= mlatmax+buffer)
+        x = x[subsetIndices]
+        y = y[subsetIndices]
+        elev = elev[subsetIndices]
+    # end if
 
     xs, ys, utm_zone = gis_tools.project_points_ll2utm(y, x,
                                                        epsg=epsg,
-                                                       utm_zone=utm_zone
-                                                       )
+                                                       utm_zone=utm_zone)
 
     # elevation in model grid
     # first, get lat,lon points of surface grid
@@ -81,10 +164,10 @@ def interpolate_elevation_to_grid(grid_east,grid_north,epsg=None,utm_zone=None,
     # corresponding surface elevation points
     values = elev.flatten()
     # xi, the model grid points to interpolate to
-    xi = np.vstack([arr.flatten() for arr in np.meshgrid(grid_east, grid_north)]).T
+    xi = np.vstack([arr.flatten() for arr in [grid_east, grid_north]]).T
     # elevation on the centre of the grid nodes
     elev_mg = spi.griddata(
-        points, values, xi, method=method).reshape(len(grid_north), len(grid_east))
+        points, values, xi, method=method).reshape(grid_north.shape)
 
     return elev_mg
 

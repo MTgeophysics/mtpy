@@ -79,6 +79,7 @@ class Residual(object):
         self.rms_array = None
         self.rms_tip = None
         self.rms_z = None
+           
 
     def read_residual_file(self, residual_fn=None):
         
@@ -93,7 +94,7 @@ class Residual(object):
             res_obj.read_data_file(self.residual_fn)
 
         # pass relevant arguments through residual object
-        for att in ['center_position_EN', 'data_period_list',
+        for att in ['center_position_EN', 'period_list',
                     'wave_sign_impedance', 'wave_sign_tipper']:
             if hasattr(res_obj, att):
                 setattr(self, att, getattr(res_obj, att))
@@ -109,7 +110,8 @@ class Residual(object):
                                                         np.zeros(len(res_obj.station_locations.station_locations)),
                                                         usemask=False)
 
-    def calculate_residual_from_data(self, data_fn=None, resp_fn=None):
+
+    def calculate_residual_from_data(self, data_fn=None, resp_fn=None, save_fn_basename = None):
         """
         created by ak on 26/09/2017
 
@@ -120,15 +122,27 @@ class Residual(object):
 
         data_obj = self._read_data_file(data_fn=data_fn)
         resp_obj = self._read_resp_file(resp_fn=resp_fn)
+        
+        if save_fn_basename is None:
+            save_fn_basename = data_obj.fn_basename[:-3] +'.res'
 
-        self.residual_array = data_obj.data_array
         for comp in ['z', 'tip']:
-            self.residual_array[comp] = self.residual_array[comp] - resp_obj.data_array[comp]
+            data_obj.data_array[comp] = data_obj.data_array[comp] - resp_obj.data_array[comp]
+            
+        self.residual_array = data_obj.data_array.copy()
 
-        data_obj.fn_basename = resp_obj.fn_basename[:-3] + 'res'
-        print "writing to file",data_obj.fn_basename
+        # append some new fields to contain rms values
+        self.rms_array = data_obj.station_locations.station_locations.copy()
+        for field_name in ['rms', 'rms_z', 'rms_tip']:
+            self.rms_array = recfunctions.append_fields(self.rms_array.copy(),
+                                                        field_name,
+                                                        np.zeros(len(resp_obj.station_locations.station_locations)),
+                                                        usemask=False)
+        self.get_rms()
+
+        print("writing to file",save_fn_basename)
         data_obj.write_data_file(fill=False, compute_error=False, 
-                                 fn_basename=data_obj.fn_basename)
+                                 fn_basename=save_fn_basename)
 
     def _read_data_file(self, data_fn=None):
         """
@@ -158,7 +172,7 @@ class Residual(object):
             resp_obj = Data()
             resp_obj.read_data_file(self.resp_fn)
         else:
-            print "Cannot read data, please provide data_fn"
+            print("Cannot read data, please provide data_fn")
             return
 
         # pass relevant arguments through residual object

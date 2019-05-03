@@ -47,7 +47,7 @@ class Stations(object):
         self.model_epsg = None
         self.model_utm_zone = None
 
-        for key in kwargs.keys():
+        for key in list(kwargs.keys()):
             if hasattr(self, key):
                 setattr(self, key, kwargs[key])
 
@@ -125,6 +125,7 @@ class Stations(object):
             * fills station_locations array
 
         """
+        # print input_list
         mt_obj_list = self._get_mt_objs_from_list(input_list)
 
         # if station locations are not input read from the edi files
@@ -257,8 +258,8 @@ class Stations(object):
 
         cos_ang = np.cos(np.deg2rad(rotation_angle))
         sin_ang = np.sin(np.deg2rad(rotation_angle))
-        rot_matrix = np.matrix(np.array([[cos_ang, sin_ang],
-                                         [-sin_ang, cos_ang]]))
+        rot_matrix = np.array([[cos_ang, sin_ang],
+                               [-sin_ang, cos_ang]])
 
         coords = np.array([self.station_locations['rel_east'],
                            self.station_locations['rel_north']])
@@ -271,8 +272,8 @@ class Stations(object):
         self.station_locations['rel_north'] = new_coords[1, :]
         
 
-        print 'Rotated stations by {0:.1f} deg clockwise from N'.format(
-            rotation_angle)
+        print('Rotated stations by {0:.1f} deg clockwise from N'.format(
+            rotation_angle))
         
 
 

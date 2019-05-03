@@ -71,7 +71,7 @@ class Cache_Metadata(object):
         self.station_number = None
         
 
-        for key in kwargs.keys():
+        for key in list(kwargs.keys()):
             setattr(self, key, kwargs[key])
             
     def read_meta_string(self, meta_string=None):
@@ -120,7 +120,7 @@ class Board_Calibration(object):
         self.cal_sys = {}
         self.cal_ant = {}
         
-        for key in kwargs.keys():
+        for key in list(kwargs.keys()):
             setattr(self, key, kwargs[key])
             
     def read_board_cal_str(self, board_cal_str=None):
@@ -225,7 +225,7 @@ class Cache(object):
 
                     key = self._type_dict[int(f_pointer['type'])]        
                     setattr(self, key, meta_obj)
-                    print 'Read in metadata'
+                    print('Read in metadata')
                     return
                             
         
@@ -249,7 +249,7 @@ class Cache(object):
 
                     key = self._type_dict[int(f_pointer['type'])]        
                     setattr(self, key, meta_obj)
-                    print 'Read in metadata'
+                    print('Read in metadata')
                     continue
                 
                 # if the data type is calibration
@@ -259,7 +259,7 @@ class Cache(object):
                     
                     key = self._type_dict[int(f_pointer['type'])]        
                     setattr(self, key, cal_obj)
-                    print 'Read in calibration'
+                    print('Read in calibration')
                     continue
                     
                 # if the data type is time series
@@ -278,8 +278,8 @@ class Cache(object):
                         ts[cc.lower()][:] = ts_arr[:, ii]
                     key = self._type_dict[int(f_pointer['type'])]        
                     setattr(self, key, ts)
-                    print 'Read in time series,  # points = {0}'.format(
-                                                        self.metadata.ts_npnt)
+                    print('Read in time series,  # points = {0}'.format(
+                                                        self.metadata.ts_npnt))
                     return
                 # if the data type is time series
                 elif int(f_pointer['type']) == 15:
@@ -289,7 +289,7 @@ class Cache(object):
                 
                     key = self._type_dict[int(f_pointer['type'])]        
                     setattr(self, key, ts)
-                    print 'Read in other'
+                    print('Read in other')
                     continue
                 
 #==============================================================================
@@ -492,18 +492,18 @@ class ZenCache(object):
                 skip_dict[ii] = np.where(zt.gps_time==time_max)[0][0]
             except IndexError:
                 zt_list.remove(zt_list[ii])
-                print '***SKIPPING {0} '.format(zt.fn)
-                print '   because it does not contain correct gps time'
-                print '   {0} --> {1}'.format(time_max, 
+                print('***SKIPPING {0} '.format(zt.fn))
+                print('   because it does not contain correct gps time')
+                print('   {0} --> {1}'.format(time_max, 
                                              zt.get_date_time(zt.gps_week, 
-                                                             time_max))    
+                                                             time_max)))    
         
         #change data by amount needed        
-        for ii, zt in zip(skip_dict.keys(), zt_list):
+        for ii, zt in zip(list(skip_dict.keys()), zt_list):
             if skip_dict[ii] != 0:
                 skip_points = skip_dict[ii]*zt.df
-                print 'Skipping {0} points for {1}'.format(skip_points,
-                                                            zt.ch_cmp)
+                print('Skipping {0} points for {1}'.format(skip_points,
+                                                            zt.ch_cmp))
                 zt.time_series = zt.time_series[skip_points:]
                 zt.gps_diff = zt.gps_diff[skip_dict[ii]:]
                 zt.gps_list = zt.gps_list[skip_dict[ii]:]
@@ -536,10 +536,10 @@ class ZenCache(object):
             ts_array[:, ii] = ts_trim
             
             if self.verbose:
-                print 'TS length for channel {0} '.format(zt.ch_number)+\
+                print('TS length for channel {0} '.format(zt.ch_number)+\
                       '({0}) '.format(zt.ch_cmp)+\
-                      '= {0}'.format(len(ts_trim))
-                print '    T0 = {0}\n'.format(zt.date_time[0])
+                      '= {0}'.format(len(ts_trim)))
+                print('    T0 = {0}\n'.format(zt.date_time[0]))
             self.log_lines.append(' '*4+\
                                   'TS length for channel {0} '.format(zt.ch_number)+\
                                   '({0}) '.format(zt.ch_cmp)+\
@@ -568,7 +568,7 @@ class ZenCache(object):
                     fn_sort_list.append(fn)
 
         fn_list = fn_sort_list
-        print fn_list
+        print(fn_list)
             
         n_fn = len(fn_list)
         self.zt_list = []
@@ -639,7 +639,7 @@ class ZenCache(object):
         
         #--> write meta data
         meta_str = ''.join([key+self.meta_data[key]+'\n' 
-                             for key in np.sort(self.meta_data.keys())])
+                             for key in np.sort(list(self.meta_data.keys()))])
         
         meta_len = len(meta_str)
         
@@ -691,7 +691,7 @@ class ZenCache(object):
         cfid.close()
         
         if self.verbose:
-            print 'Saved File to: ', self.save_fn
+            print('Saved File to: ', self.save_fn)
         self.log_lines.append('='*72+'\n')
         self.log_lines.append('Saved File to: \n')
         self.log_lines.append(' '*4+'{0}\n'.format(self.save_fn))
@@ -721,7 +721,7 @@ class ZenCache(object):
         
         #--> write meta data
         meta_str = ''.join([key+','+','.join(self.meta_data[key])+'\n' 
-                             for key in np.sort(self.meta_data.keys())
+                             for key in np.sort(list(self.meta_data.keys()))
                              if key != ''])
         
         meta_len = len(meta_str)
@@ -765,7 +765,7 @@ class ZenCache(object):
                  
         cfid.close()
         
-        print 'Rewrote {0}\n to {1}'.format(self.save_fn, self.save_fn_rw)        
+        print('Rewrote {0}\n to {1}'.format(self.save_fn, self.save_fn_rw))        
     
     #==================================================    
     def read_cache_metadata(self, cache_fn):
@@ -795,7 +795,7 @@ class ZenCache(object):
         nav_len_check = np.fromstring(cdata[ii:jj], np.int32)
         if nav_len_check != nav_block['len']:
             if self.verbose:
-                print 'Index for second navigation length is {0}'.format(ii)
+                print('Index for second navigation length is {0}'.format(ii))
             raise CacheNavigationError('Navigation length in data block are'
                                        'not equal: {0} != {1}'.format(
                                        nav_block['len'], nav_len_check))
@@ -820,7 +820,7 @@ class ZenCache(object):
         meta_len_check = np.fromstring(cdata[ii:jj], dtype=np.int32)
         if meta_len_check != meta_block['len']:
             if self.verbose:
-                print 'Index for second meta length is {0}'.format(ii)
+                print('Index for second meta length is {0}'.format(ii))
             raise CacheMetaDataError('Meta length in data blocks are not '
                                      'equal: {0} != {1}'.format(
                                      meta_block['len'], meta_len_check))
@@ -855,7 +855,7 @@ class ZenCache(object):
         nav_len_check = np.fromstring(cdata[ii:jj], np.int32)
         if nav_len_check != nav_block['len']:
             if self.verbose:
-                print 'Index for second navigation length is {0}'.format(ii)
+                print('Index for second navigation length is {0}'.format(ii))
             raise CacheNavigationError('Navigation length in data block are'
                                        'not equal: {0} != {1}'.format(
                                        nav_block['len'], nav_len_check))
@@ -879,7 +879,7 @@ class ZenCache(object):
         meta_len_check = np.fromstring(cdata[ii:jj], dtype=np.int32)
         if meta_len_check != meta_block['len']:
             if self.verbose:
-                print 'Index for second meta length is {0}'.format(ii)
+                print('Index for second meta length is {0}'.format(ii))
             raise CacheMetaDataError('Meta length in data blocks are not'
                                      'equal: {0} != {1}'.format(
                                      meta_block['len'], meta_len_check))
@@ -899,7 +899,7 @@ class ZenCache(object):
         cal_len_check = np.fromstring(cdata[ii:jj], dtype=np.int32)
         if cal_len_check != cal_block['len']:
             if self.verbose:
-                print 'Index for second cal length is {0}'.format(ii)
+                print('Index for second cal length is {0}'.format(ii))
             raise CacheCalibrationError('Cal length in data blocks are not'
                                         'equal: {0} != {1}'.format(
                                         cal_block['len'], cal_len_check))
@@ -917,7 +917,7 @@ class ZenCache(object):
         #resize time series to be length of each channel
         num_chn = len(self.meta_data['ch.cmp'.upper()])
         if self.ts.shape[0]%num_chn != 0:
-            print 'Trimming TS by {0} points'.format(self.ts.shape[0]%num_chn)
+            print('Trimming TS by {0} points'.format(self.ts.shape[0]%num_chn))
         self.ts = np.resize(self.ts, (int(self.ts.shape[0]/num_chn), num_chn))
         
         ii = int(jj)
@@ -925,7 +925,7 @@ class ZenCache(object):
         ts_len_check = np.fromstring(cdata[ii:jj], dtype=np.int32)
         if ts_len_check != ts_block['len']:
             if self.verbose:
-                print 'Index for second ts length is {0}'.format(ii)
+                print('Index for second ts length is {0}'.format(ii))
             raise CacheTimeSeriesError('ts length in data blocks are not'
                                        'equal: {0} != {1}'.format(
                                        ts_block['len'], ts_len_check))
@@ -1004,7 +1004,7 @@ def rename_cac_files(station_dir, station='mb'):
                                                   cac_obj.metadata.ts_adfreq)
         new_fn = os.path.join(save_path, new_fn)
         shutil.move(fn, new_fn)
-        print 'moved {0} to {1}'.format(fn, new_fn)
+        print('moved {0} to {1}'.format(fn, new_fn))
         
 #==============================================================================
 # copy and merge Z3D files from SD cards          
@@ -1129,7 +1129,7 @@ def merge_3d_files(fn_list, save_path=None, verbose=False,
     merge_list = merge_list.T
                               
     time_counts = Counter(merge_list[:,2])
-    time_list = time_counts.keys()
+    time_list = list(time_counts.keys())
     
     log_lines = []
   
@@ -1169,10 +1169,10 @@ def merge_3d_files(fn_list, save_path=None, verbose=False,
         copy_cal_fn = os.path.join(save_path, os.path.basename(calibration_fn))
         
     shutil.copy(calibration_fn, copy_cal_fn)
-    print 'copied {0} to {1}'.format(calibration_fn, copy_cal_fn)
+    print('copied {0} to {1}'.format(calibration_fn, copy_cal_fn))
     
-    print 'Start time: {0}'.format(start_time)
-    print 'End time:   {0}'.format(end_time)
+    print('Start time: {0}'.format(start_time))
+    print('End time:   {0}'.format(end_time))
     
     if os.path.basename(save_path) != 'Merged':
         log_fid = file(os.path.join(save_path, 'Merged', 

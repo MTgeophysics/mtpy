@@ -14,7 +14,6 @@ import os.path as op
 # working directory
 wd = r'C:\mtpywin\mtpy\examples\model_files\Occam1d'
 
-
 # model and data file names
 modelfn=op.join(wd,'Model1D')
 datafn=op.join(wd,'Occam1d_DataFile_DET.dat')
@@ -40,5 +39,5 @@ pr = mtoc1d.Plot1DResponse(data_te_fn = datafn,
                            iter_te_fn = iterfn,
                            resp_tm_fn = respfn,
                            iter_tm_fn = iterfn,
-                           depth_limits = (0,12)
+                           depth_limits = (0,10)
                            )

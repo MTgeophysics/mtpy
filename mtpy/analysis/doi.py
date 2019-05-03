@@ -23,27 +23,55 @@ def bostick_depth(f, rho):
     :param rho: apparent resistivity
     :return:
     """
-    h = math.sqrt(rho/(f*2*math.pi*mu0))
+    h = (rho/(f*2*math.pi*mu0))**0.5
 
-    print(h)
+    #print(h)
     return h
 
 
-def bostick_resistivity(f, rho, pha):
+def bostick_resistivity(f, rho):
     """
+    :param f:  f is not used?
+    :param rho:
+    :param pha: phase in radian
+    :return: bostick resistivity, ohm-m
+    
+    """    
+    logt, logrho = np.log10(1./f), np.log10(rho)
+    m = np.gradient(logrho,logt,edge_order=2)
+    # bostick resistivity only valid for -1 < m < 1
+    m[m>1] = np.nan
+    m[m<-1] = np.nan
+    
+    return rho * (1. + m)/(1. - m)
+
+
+def old_bostick_resistivity(f, rho, pha):
+    """
+    seems to be after weidelt et al 1980 version of bostick resistivity
+    however this is not the correct formula
+    need to use the formula that uses gradient - see chave and jones 2012 p149
+    
     :param f:  f is not used?
     :param rho:
     :param pha: phase in radian
     :return:
     """
-    if pha > 2*math.pi:
-        print("WARN: pha is too large, in unit degree? ", pha)
-        pha_rad = pha * math.pi / 180.0
+    if not np.iterable(pha):
+        if pha > 2*math.pi:
+            print(("WARN: pha is too large, in unit degree? ", pha))
+            pha_rad = pha * math.pi / 180.0
+        else:
+            pha_rad=pha
     else:
-        pha_rad=pha
+        pha_rad = pha
+        
+    # ensure pha_rad is positive
+    pha_rad[np.nonzero(pha_rad)] = pha_rad[np.nonzero(pha_rad)] % (2.*math.pi)
+    print(pha_rad)
 
-    rho_b = rho*(math.pi / (2 * pha_rad) - 1)
-    print(rho_b)
+    rho_b = rho*((math.pi / (2 * pha_rad)) - 1)
+#    print(rho_b)
     return rho_b
 
 
@@ -73,16 +101,16 @@ def sensitivity(z, sigma_conduct=100.0, freq=10.0):
 # ===========================================
 if __name__ == "__main__":
 
-    for n in xrange(0,36):
+    for n in range(0,36):
         zn = 0.1*n
         sen = sensitivity(zn, sigma_conduct=10.0, freq=1.0)
         #print (zn, sen)  # sen is a complex value
-        print "%s, %s" % (zn, np.absolute(sen))
+        print("%s, %s" % (zn, np.absolute(sen)))
 
 
     # Below show that the sensitivity is indepedent of freq and conductivty !!!!
 
-    zn_list=0.1*np.array(range(0,40))
+    zn_list=0.1*np.array(list(range(0,40)))
     sens_list = [np.absolute(sensitivity(zn, sigma_conduct=0.20, freq=10)) for zn in zn_list]
     sens_list2= [np.absolute(sensitivity(zn, sigma_conduct=2000.0, freq=0.1)) for zn in zn_list]
 

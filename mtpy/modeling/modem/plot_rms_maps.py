@@ -16,7 +16,7 @@ from matplotlib import colors as colors, pyplot as plt, colorbar as mcb
 from matplotlib.ticker import MultipleLocator, FormatStrFormatter
 import scipy.interpolate as interpolate
 
-from mtpy.modeling.modem.data import Data
+from mtpy.modeling.modem import Data, Residual
 
 __all__ = ['PlotRMSMaps']
 
@@ -202,10 +202,10 @@ class PlotRMSMaps(object):
         rms_1 = 1. / self.rms_max
 
         if self.tick_locator is None:
-            x_locator = np.round((self.residual.data_array['lon'].max() -
-                                  self.residual.data_array['lon'].min()) / 5, 2)
-            y_locator = np.round((self.residual.data_array['lat'].max() -
-                                  self.residual.data_array['lat'].min()) / 5, 2)
+            x_locator = np.round((self.residual.residual_array['lon'].max() -
+                                  self.residual.residual_array['lon'].min()) / 5, 2)
+            y_locator = np.round((self.residual.residual_array['lat'].max() -
+                                  self.residual.residual_array['lat'].min()) / 5, 2)
 
             if x_locator > y_locator:
                 self.tick_locator = x_locator
@@ -233,15 +233,26 @@ class PlotRMSMaps(object):
             ii = p_dict['index'][0]
             jj = p_dict['index'][1]
 
-            for r_arr in self.residual.data_array:
-                # calulate the rms self.residual/error
-                if p_dict['plot_num'] < 5:
-                    rms = r_arr['z'][self.period_index, ii, jj].__abs__() / \
-                          r_arr['z_err'][self.period_index, ii, jj].real
-
+#            for r_arr in self.residual.residual_array:
+            for ridx in range(len(self.residual.residual_array)):
+                
+                if self.period_index == 'all':
+                    r_arr = self.residual.rms_array[ridx]
+                    if p_dict['plot_num'] < 5:
+                        rms = r_arr['rms_z']
+                    else:
+                        rms = r_arr['rms_tip']
                 else:
-                    rms = r_arr['tip'][self.period_index, ii, jj].__abs__() / \
-                          r_arr['tip_err'][self.period_index, ii, jj].real
+                    r_arr = self.residual.residual_array[ridx]
+                    
+                    # calulate the rms self.residual/error
+                    if p_dict['plot_num'] < 5:
+                        rms = r_arr['z'][self.period_index, ii, jj].__abs__() / \
+                              r_arr['z_err'][self.period_index, ii, jj].real
+    
+                    else:
+                        rms = r_arr['tip'][self.period_index, ii, jj].__abs__() / \
+                              r_arr['tip_err'][self.period_index, ii, jj].real
 
                 # color appropriately
                 if np.nan_to_num(rms) == 0.0:
@@ -292,8 +303,8 @@ class PlotRMSMaps(object):
                 ax.set_xlabel('Longitude (deg)', fontdict=self.font_dict)
                 ax.set_ylabel('Latitude (deg)', fontdict=self.font_dict)
 
-            ax.text(self.residual.data_array['lon'].min() + .005 - self.pad_x,
-                    self.residual.data_array['lat'].max() - .005 + self.pad_y,
+            ax.text(self.residual.residual_array['lon'].min() + .005 - self.pad_x,
+                    self.residual.residual_array['lat'].max() - .005 + self.pad_y,
                     p_dict['label'],
                     verticalalignment='top',
                     horizontalalignment='left',
@@ -305,11 +316,11 @@ class PlotRMSMaps(object):
 
             # [line.set_zorder(3) for line in ax.lines]
 
-            ax.set_xlim(self.residual.data_array['lon'].min() - self.pad_x,
-                        self.residual.data_array['lon'].max() + self.pad_x)
+            ax.set_xlim(self.residual.residual_array['lon'].min() - self.pad_x,
+                        self.residual.residual_array['lon'].max() + self.pad_x)
 
-            ax.set_ylim(self.residual.data_array['lat'].min() - self.pad_y,
-                        self.residual.data_array['lat'].max() + self.pad_y)
+            ax.set_ylim(self.residual.residual_array['lat'].min() - self.pad_y,
+                        self.residual.residual_array['lat'].max() + self.pad_y)
 
             ax.xaxis.set_major_locator(MultipleLocator(self.tick_locator))
             ax.yaxis.set_major_locator(MultipleLocator(self.tick_locator))
@@ -490,7 +501,10 @@ class PlotRMSMaps(object):
         if save_fn_basename is not None:
             pass
         else:
-            save_fn_basename = '{0:02}_RMS_{1:.5g}_s.{2}'.format(self.period_index,
+            if self.period_index == 'all':
+                save_fn_basename = 'RMS_AllPeriods.{}'.format(fig_format)
+            else:
+                save_fn_basename = '{0:02}_RMS_{1:.5g}_s.{2}'.format(self.period_index,
                                                                  self.residual.period_list[self.period_index],
                                                                  fig_format)
         save_fn = os.path.join(self.save_path, save_fn_basename)
@@ -499,7 +513,7 @@ class PlotRMSMaps(object):
             self.fig_dpi = save_fig_dpi
 
         self.fig.savefig(save_fn, dpi=self.fig_dpi)
-        print 'saved file to {0}'.format(save_fn)
+        print('saved file to {0}'.format(save_fn))
 
         if fig_close:
             plt.close(self.fig)

@@ -30,6 +30,13 @@ mu0 = 4e-7*math.pi
 
 #=================================================================
 
+def centre_point(xarray, yarray):
+    """
+    get the centre point of arrays of x and y values
+    """
+    return (xarray.max() + xarray.min())/2., (yarray.max() + yarray.min())/2.
+
+
 def roundsf(number, sf):
     """
     round a number to a specified number of significant figures (sf)
@@ -95,6 +102,20 @@ def get_period_list(period_min,period_max,periods_per_decade,include_outside_ran
         
     return np.logspace(start_period,stop_period,(stop_period-start_period)*periods_per_decade + 1)
 
+
+def nearest_index(val,array):
+    """
+    find the index of the nearest value in the array
+    :param val: the value to search for
+    :param array: the array to search in
+    
+    :return: index: integer describing position of nearest value in array
+    
+    """
+    # absolute difference between value and array
+    diff = np.abs(array-val)
+    
+    return np.where(diff==min(diff))[0][0]
 
 
 def make_log_increasing_array(z1_layer, target_depth, n_layers, increment_factor=0.999):
@@ -280,9 +301,54 @@ def propagate_error_rect2polar(x,x_error,y, y_error):
     return rho_err, phi_err
 
 
+
+def z_error2r_phi_error(z_real, z_imag, error):
+    """
+    Error estimation from rectangular to polar coordinates.
+    
+    By standard error propagation, relative error in resistivity is 
+    2*relative error in z amplitude. 
+    
+    Uncertainty in phase (in degrees) is computed by defining a circle around 
+    the z vector in the complex plane. The uncertainty is the absolute angle
+    between the vector to (x,y) and the vector between the origin and the
+    tangent to the circle.
+    
+    :returns:
+        tuple containing relative error in resistivity, absolute error in phase
+    
+    :inputs:
+        z_real = real component of z (real number or array)
+        z_imag = imaginary component of z (real number or array)
+        error = absolute error in z (real number or array)
+    
+    """
+        
+    z_amp = np.abs(z_real + 1j*z_imag)
+
+    z_rel_err = error/z_amp
+    
+    res_rel_err = 2.*z_rel_err
+    
+    #if the relative error of the amplitude is >=100% that means that the relative 
+    #error of the resistivity is 200% - that is then equivalent to an uncertainty 
+    #in the phase angle of 90 degrees:
+    if np.iterable(z_real):
+        phi_err = np.degrees(np.arctan(z_rel_err))   
+        phi_err[res_rel_err > 1.] = 90.
+        
+    else:
+        if res_rel_err > 1.:
+            phi_err = 90
+        else:
+            phi_err = np.degrees(np.arctan(z_rel_err))    
+    
+    
+    return res_rel_err, phi_err
+    
     
 
-def z_error2r_phi_error(x,x_error,y, y_error):
+def old_z_error2r_phi_error(x,x_error,y, y_error):
     """
         Error estimation from rect to polar, but with small variation needed for 
         MT: the so called 'relative phase error' is NOT the relative phase error,
@@ -387,8 +453,8 @@ def rotatematrix_incl_errors(inmatrix, angle, inmatrix_err = None) :
     cphi = np.cos(phi)
     sphi = np.sin(phi)
 
-    rotmat = np.matrix([[ cphi,sphi],[-sphi,cphi] ])
-    rotated_matrix = np.dot(np.dot( rotmat, inmatrix ),rotmat.I  ) 
+    rotmat = np.array([[ cphi,sphi],[-sphi,cphi] ])
+    rotated_matrix = np.dot(np.dot( rotmat, inmatrix ),np.linalg.inv(rotmat)  ) 
     #print rotmat
 
     #print inmatrix
@@ -438,10 +504,10 @@ def rotatevector_incl_errors(invector, angle, invector_err = None):
     cphi = np.cos(phi)
     sphi = np.sin(phi)
 
-    rotmat = np.matrix([[ cphi,sphi],[-sphi,cphi] ])
+    rotmat = np.array([[ cphi,sphi],[-sphi,cphi] ])
 
     if invector.shape == (1,2):
-        rotated_vector = np.dot( invector, rotmat.I )
+        rotated_vector = np.dot( invector, np.linalg.inv(rotmat) )
     else:
         rotated_vector = np.dot( rotmat, invector )
     
@@ -452,7 +518,7 @@ def rotatevector_incl_errors(invector, angle, invector_err = None):
         errvec = np.zeros_like(invector_err)
 
         if invector_err.shape == (1,2):
-            errvec = np.dot( invector_err, np.abs(rotmat.I) )
+            errvec = np.dot( invector_err, np.abs(np.linalg.inv(rotmat) ))
         else:
             errvec = np.dot( np.abs(rotmat), invector_err )
 
