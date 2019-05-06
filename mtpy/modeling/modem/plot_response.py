@@ -119,8 +119,8 @@ class PlotResponse(object):
         # color mode
         if self.color_mode == 'color':
             # color for data
-            self.cted = kwargs.pop('cted', (0, 0, 1))
-            self.ctmd = kwargs.pop('ctmd', (1, 0, 0))
+            self.cted = kwargs.pop('cted', (0, 0, .85))
+            self.ctmd = kwargs.pop('ctmd', (.85, 0, 0))
             self.mted = kwargs.pop('mted', 's')
             self.mtmd = kwargs.pop('mtmd', 'o')
 
@@ -540,13 +540,14 @@ class PlotResponse(object):
                 t_label_list = ['Re{$T_x$}', 'Im{$T_x$}', 'Re{$T_y$}', 'Im{$T_y$}']
                 label_list += [['$T_{x}$'], ['$T_{y}$']]
                 for ax, label in zip(self.ax_list[-4:], t_label_list):
-                    ax.legend([l1], [label], loc='upper left',
+                    leg = ax.legend([l1], [label], loc='upper left',
                               markerscale=.01,
                               borderaxespad=.05,
                               labelspacing=.01,
                               handletextpad=.05,
                               borderpad=.05,
                               prop={'size': max([self.font_size, 6])})
+                    leg.get_frame().set_alpha(1.0)
 
 
 
@@ -578,7 +579,7 @@ class PlotResponse(object):
                     elif aa == 1 or aa == 2:
                         ax.set_ylim(self.res_limits_od)
 
-                if aa > 3 and aa < 8 and self.plot_z is False:
+                if aa > 4 and aa < 7 and self.plot_z is False:
                     ax.yaxis.set_major_locator(MultipleLocator(10.0))
                     if self.phase_limits_d is not None:
                         ax.set_ylim(self.phase_limits_d)
@@ -772,7 +773,7 @@ class PlotResponse(object):
                 #                    legend_ax_list += [self.ax_list[-4], self.ax_list[-2]]
 
                 for aa, ax in enumerate(legend_ax_list):
-                    ax.legend(line_list[aa],
+                    leg = ax.legend(line_list[aa],
                               label_list[aa],
                               loc=self.legend_loc,
                               bbox_to_anchor=self.legend_pos,
@@ -782,6 +783,7 @@ class PlotResponse(object):
                               handletextpad=self.legend_handle_text_pad,
                               borderpad=self.legend_border_pad,
                               prop={'size': max([self.font_size, 5])})
+                    leg.get_frame().set_alpha(1.0)
 
             plt.show()
             
