@@ -256,8 +256,8 @@ class Stations(object):
 
         cos_ang = np.cos(np.deg2rad(rotation_angle))
         sin_ang = np.sin(np.deg2rad(rotation_angle))
-        rot_matrix = np.matrix(np.array([[cos_ang, sin_ang],
-                                         [-sin_ang, cos_ang]]))
+        rot_matrix = np.array([[cos_ang, sin_ang],
+                               [-sin_ang, cos_ang]])
 
         coords = np.array([self.station_locations['rel_east'],
                            self.station_locations['rel_north']])

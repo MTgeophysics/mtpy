@@ -15,7 +15,7 @@ from pyproj import Proj, transform
 
 from mtpy.modeling.modem import Model, Data
 from mtpy.utils import gis_tools
-from . import nc
+from mtpy.contrib.netcdf import nc
 
 import argparse
 
@@ -129,6 +129,14 @@ def interpolate(resistivity_dict, source_proj, grid_proj, center, east_spacing, 
     return result
 
 def main(data_file, model_file, output_file, source_proj=None):
+    """
+    Generate an output netcdf file from data_file and model_file
+    :param data_file: modem.dat
+    :param model_file: modem.rho
+    :param output_file: output.nc
+    :param source_proj: None by defult. The UTM zone infered from the input non-uniform grid parameters
+    :return:
+    """
     # Define Data and Model Paths
     data = Data()
     data.read_data_file(data_fn=data_file)
@@ -140,9 +148,14 @@ def main(data_file, model_file, output_file, source_proj=None):
     center = data.center_point
     if source_proj is None:
         zone_number, is_northern, utm_zone = gis_tools.get_utm_zone(center.lat.item(), center.lon.item())
-        source_proj = Proj('+proj=utm +zone=%d +%s +datum=%s' % (zone_number, 'north' if is_northern else 'south', 'WGS84'))
+        #source_proj = Proj('+proj=utm +zone=%d +%s +datum=%s' % (zone_number, 'north' if is_northern else 'south', 'WGS84'))
+
+        epsg_code = gis_tools.get_epsg(center.lat.item(), center.lon.item())
+        print("Input data epsg code is infered as ", epsg_code)
     else:
-        source_proj = Proj(init='epsg:' + str(source_proj))
+        epsg_code = source_proj  # integer
+
+    source_proj = Proj(init='epsg:' + str(epsg_code))
 
     resistivity_data = {
         'x': center.east.item() + (model.grid_east[1:] + model.grid_east[:-1])/2,
@@ -151,7 +164,9 @@ def main(data_file, model_file, output_file, source_proj=None):
         'resistivity': np.transpose(model.res_model, axes=(2, 0, 1))
     }
 
-    grid_proj = Proj(init='epsg:4326')
+    grid_proj = Proj(init='epsg:4326') # output grid Coordinate systems: 4326, 4283, 3112
+    grid_proj = Proj(init='epsg:4283') # output grid Coordinate system 4326, 4283, 3112
+    grid_proj = Proj(init='epsg:3112') # output grid Coordinate system 4326, 4283, 3112
     result = interpolate(resistivity_data, source_proj, grid_proj, center,
                          median_spacing(model.grid_east), median_spacing(model.grid_north))
 
@@ -159,7 +174,10 @@ def main(data_file, model_file, output_file, source_proj=None):
                               result['latitude'], result['longitude'], result['depth'],
                               result['resistivity'], z_label='depth')
 
-
+#####################################################################################################################
+# cd /e/Githubz/mtpy/mtpy/contrib
+# python netcdf/modem_to_netCDF.py ../../examples/model_files/ModEM_2/Modular_MPI_NLCG_004.dat ../../examples/model_files/ModEM_2/Modular_MPI_NLCG_004.rho
+#####################################################################################################################
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('modem_data', help="ModEM data file")

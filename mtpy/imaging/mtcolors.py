@@ -503,6 +503,7 @@ def get_plot_color(colorx, comp, cmap, ckmin=None, ckmax=None, bounds=None):
             return cmapdict[cmap](norm(colorx))
         else:
             return cm.get_cmap(cmap)(norm(colorx))
+    
     elif comp == 'skew_seg' or comp == 'normalized_skew_seg':
         if bounds is None:
             raise IOError('Need to input bounds for segmented colormap')
@@ -523,8 +524,18 @@ def get_plot_color(colorx, comp, cmap, ckmin=None, ckmax=None, bounds=None):
                 cvar = 1.0
                 return get_color(cvar, cmap)
         '''
-
         norm = colors.Normalize(bounds[0], bounds[-1])
+        step = abs(bounds[1] - bounds[0])
+        ### need to get the color into a bin so as to not smear the colors.
+        
+        if colorx > max(bounds):
+            colorx = max(bounds)
+        elif colorx < min(bounds):
+            colorx = min(bounds)
+        elif abs(colorx) <= step:
+            colorx = 0
+        else:
+            colorx = int(step * round(float(colorx - np.sign(colorx) * (abs(colorx) % step))/ step))
 
         if (cmap in list(cmapdict.keys())):
             return cmapdict[cmap](norm(colorx))
