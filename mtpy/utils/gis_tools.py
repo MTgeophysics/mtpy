@@ -8,7 +8,7 @@ Created on Fri Apr 14 14:47:48 2017
 # ==============================================================================
 # Imports
 # ==============================================================================
-from __future__ import print_function
+
 from mtpy.utils import HAS_GDAL, EPSG_DICT
 from mtpy.utils.decorator import gdal_data_check, deprecated
 import numpy as np
@@ -223,6 +223,30 @@ def get_utm_zone(latitude, longitude):
 
     return zone_number, is_northern, '{0:02.0f}{1}'.format(zone_number, n_str)
 
+def utm_zone_to_epsg(zone_number, is_northern):
+    """
+    get epsg code (WGS84 datum) for a given utm zone
+    
+    """
+    for key in list(EPSG_DICT.keys()):
+        val = EPSG_DICT[key]
+        if ('+zone={:<2}'.format(zone_number) in val) and ('+datum=WGS84' in val):
+            if is_northern:
+                if '+south' not in val:
+                    return key
+            else:
+                if '+south' in val:
+                    return key
+    
+def get_epsg(latitude, longitude):
+    """
+    get epsg code for the utm projection (WGS84 datum) of a given latitude
+    and longitude pair
+    """  
+    zone_no,is_northern,utm_str = get_utm_zone(latitude, longitude)
+    
+    return utm_zone_to_epsg(zone_no,is_northern)
+
 def project_point_ll2utm(lat, lon, datum='WGS84', utm_zone=None, epsg=None):
     """
     Project a point that is in Lat, Lon (will be converted to decimal degrees)
@@ -397,9 +421,13 @@ def project_point_utm2ll(easting, northing, utm_zone, datum='WGS84', epsg=None):
         else:
             pp = pyproj.Proj('+init=EPSG:%d'%(epsg))
         # end if
-    elif isinstance(utm_zone, str):
+    elif isinstance(utm_zone, str) or isinstance(utm_zone, np.bytes_):
+        # the isinstance(utm_zone, str) could be False in python3 due to numpy datatype change.
+        # So FZ added  isinstance(utm_zone, np.bytes_) and convert the utm_zone into string
+        if isinstance(utm_zone, np.bytes_):
+            utm_zone = utm_zone.decode('UTF-8') # b'54J'
         try:
-            zone_number = int(utm_zone[0:-1])
+            zone_number = int(utm_zone[0:-1])  #b'54J'
             zone_letter = utm_zone[-1]
         except ValueError:
             raise ValueError('Zone number {0} is not a number'.format(utm_zone[0:-1]))
@@ -409,7 +437,9 @@ def project_point_utm2ll(easting, northing, utm_zone, datum='WGS84', epsg=None):
         is_northern = False if utm_zone < 0 else True
         zone_number = abs(utm_zone)
     else:
-        raise NotImplementedError("utm_zone type ({}) not supported".format(type(utm_zone)))
+        print("epsg and utm_zone", str(epsg), str(utm_zone))
+
+        raise NotImplementedError("utm_zone type (%s, %s) not supported"%(type(utm_zone), str(utm_zone)))
     
     if epsg is None:
         if HAS_GDAL:
@@ -475,7 +505,7 @@ def project_points_ll2utm(lat, lon, datum='WGS84', utm_zone=None, epsg=None):
     # flatten, if necessary
     flattened = False
     llshape = np.shape(lat)
-    if llshape > 1:
+    if llshape[0] > 1:
         flattened = True
         lat = lat.flatten()
         lon = lon.flatten()
@@ -487,7 +517,7 @@ def project_points_ll2utm(lat, lon, datum='WGS84', utm_zone=None, epsg=None):
         lat[ii] = assert_lat_value(lat[ii])
         lon[ii] = assert_lon_value(lon[ii])
     '''
-
+    
     if lat is None or lon is None:
         return None, None, None
 
@@ -541,7 +571,7 @@ def project_points_ll2utm(lat, lon, datum='WGS84', utm_zone=None, epsg=None):
             pp = pyproj.Proj(projstring)
         # end if
     # end if
-
+    
     if HAS_GDAL:
         ll2utm = osr.CoordinateTransformation(ll_cs, utm_cs).TransformPoints
         easting, northing, elev = np.array(ll2utm(np.array([lon, lat]).T)).T

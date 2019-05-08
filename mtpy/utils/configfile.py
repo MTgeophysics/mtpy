@@ -16,9 +16,9 @@ Helper functions for the handling of configuration files
 import sys
 import os
 import os.path as op
-import ConfigParser
+import configparser
 import copy
-import StringIO
+import io
 import mtpy.utils.exceptions as MTex
 import mtpy.utils.gis_tools as gis_tools
 #=================================================================
@@ -127,18 +127,18 @@ def read_configfile(filename):
     # try to parse file - exit, if not a config file
     try:
         #generate config parser instance
-        configobject = ConfigParser.SafeConfigParser()
+        configobject = configparser.SafeConfigParser()
         #do NOT ask, why it does not work with reading from filename directly...:
         with open(filename) as F:
             d = F.read()
-        FH = StringIO.StringIO(d)
+        FH = io.StringIO(d)
         configobject.readfp(d)#filename)
     except:
         try:
             dummy_String = '[DEFAULT]\n' + open(filename, 'r').read()
-            FH = StringIO.StringIO(dummy_String)
+            FH = io.StringIO(dummy_String)
             #generate config parser instance
-            configobject = ConfigParser.SafeConfigParser()
+            configobject = configparser.SafeConfigParser()
             configobject.readfp(FH)
         except:
             raise MTex.MTpyError_inputarguments( 'File is not a proper '
@@ -146,9 +146,9 @@ def read_configfile(filename):
 
     config_dict = configobject._sections      
 
-    if len (config_dict.keys()) != 0:
+    if len (list(config_dict.keys())) != 0:
         defaults = configobject.defaults()
-        if len(defaults.keys()) != 0:
+        if len(list(defaults.keys())) != 0:
             config_dict['DEFAULT'] = configobject.defaults()
     else:
         config_dict = configobject.defaults()
@@ -212,7 +212,7 @@ def read_survey_configfile(filename):
     error_counter = 0
 
     #generate config parser instance
-    configobject = ConfigParser.ConfigParser()
+    configobject = configparser.ConfigParser()
 
     #check, if file is present
     if not op.isfile(filename):
@@ -239,7 +239,7 @@ def read_survey_configfile(filename):
         #read in the sub-dictionary for the current station - bringing all keys
         #to lowercase!
         temp_dict_in = dict((k.lower(),v.lower()) 
-                            for k, v in configobject_dict[station].items())
+                            for k, v in list(configobject_dict[station].items()))
 
         #initialise output sub-directory for current station 
         stationdict = temp_dict_in
@@ -256,7 +256,7 @@ def read_survey_configfile(filename):
 
 
     # Check if a global section is present
-    if config_dict.has_key('GLOBAL'): 
+    if 'GLOBAL' in config_dict: 
         globaldict = config_dict['GLOBAL']
     else:
         #set defaults for location
@@ -271,7 +271,7 @@ def read_survey_configfile(filename):
 
     #remove other general sections to avoid redundancy
     for i in ['MAIN','DEFAULT','GENERAL']:
-        if config_dict.has_key(i):
+        if i in config_dict:
             dummy = config_dict.pop(i)
 
     # RE-loop to check for each station if required keywords are present,
@@ -289,7 +289,7 @@ def read_survey_configfile(filename):
 
         """
 
-        if key in stationdict.keys():
+        if key in list(stationdict.keys()):
             return True, stationdict.get(key)
 
         if globaldict is None or len(globaldict) == 0:
@@ -335,8 +335,8 @@ def read_survey_configfile(filename):
                     found = True
 
                 if found is False:
-                    print 'Station {0} - keyword {1} missing'.format(stationname,
-                                                                     req_keyword)
+                    print('Station {0} - keyword {1} missing'.format(stationname,
+                                                                     req_keyword))
                     error_counter += 1
                     raise Exception
 
@@ -361,8 +361,8 @@ def read_survey_configfile(filename):
 
             except:
                 raise
-                print 'Missing information on station {0} in config file'\
-                        ' - setting default (dummy) value'.format(station)
+                print('Missing information on station {0} in config file'\
+                        ' - setting default (dummy) value'.format(station))
                 stationdict[req_keyword] = list_of_keyword_defaults_general[idx]
             
             #to avoid duplicates remove the now obsolete short form from 
@@ -377,12 +377,12 @@ def read_survey_configfile(filename):
         if stationdict['station_type'] in ['mt','e']:
             #check for required electric field parameters - not done for QEL loggers yet
             for req_keyword in list_of_efield_keywords:
-                if req_keyword.lower() in temp_dict_in.keys():
+                if req_keyword.lower() in list(temp_dict_in.keys()):
                     stationdict[req_keyword.lower()] = \
                                       temp_dict_in[req_keyword.lower()].lower()
                 else:  
-                    print 'Station {0} - keyword {1} missing'.format(stationname,
-                                                                  req_keyword)
+                    print('Station {0} - keyword {1} missing'.format(stationname,
+                                                                  req_keyword))
                     error_counter += 1
                     continue
 
@@ -392,12 +392,12 @@ def read_survey_configfile(filename):
         if stationdict['station_type'] in ['mt','b']:
             #check for required magnetic field parameters
             for req_keyword in list_of_bfield_keywords:
-                if req_keyword.lower() in temp_dict_in.keys():
+                if req_keyword.lower() in list(temp_dict_in.keys()):
                     stationdict[req_keyword.lower()] = \
                                      temp_dict_in[req_keyword.lower()].lower()
                 else:  
-                    print 'Station {0} - keyword {1} missing'.format(stationname,
-                                                                     req_keyword)
+                    print('Station {0} - keyword {1} missing'.format(stationname,
+                                                                     req_keyword))
                     error_counter += 1
                     continue
 
@@ -408,9 +408,9 @@ def read_survey_configfile(filename):
     #re-loop for setting up correct remote reference station information :
     #if rem.ref. station key is present, its information must be contained 
     #in the same config file!
-    for station in config_dict.iterkeys():
+    for station in config_dict.keys():
         stationdict = config_dict[station]
-        if not stationdict.has_key('rr_station'):
+        if 'rr_station' not in stationdict:
             continue
 
         #stationdict['rr_station'] = None
@@ -461,7 +461,7 @@ def read_survey_configfile(filename):
                             gis_tools.assert_elevation_value(stationdict['rr_elevation'])
 
             except:
-                print 'Problem with remote reference station ({0}) -'
+                print('Problem with remote reference station ({0}) -')
                 ' remote reference ({1}) coordinates invalid -'
                 ' remote reference set to None'.format(station, 
                                                        stationdict['rr_station'])
@@ -473,20 +473,20 @@ def read_survey_configfile(filename):
 
 
     if error_counter != 0:
-        print 'Could not read all mandatory sections and options'\
+        print('Could not read all mandatory sections and options'\
                 ' in config file - found {0} errors - check configuration'\
-                ' file before continue!'.format(error_counter)
+                ' file before continue!'.format(error_counter))
         answer = 5
         while not answer in ['y','n']:
-            answer = raw_input('\n\tDo you want to continue anyway? (y/n)')
+            answer = input('\n\tDo you want to continue anyway? (y/n)')
             try:
                 answer = answer.strip().lower()[0]
             except:
                 continue
             if answer == 'n':
-                print
+                print()
                 sys.exit()
-    print 
+    print() 
     return config_dict
 
 #=================================================================
@@ -503,7 +503,7 @@ def write_dict_to_configfile(dictionary, output_filename):
 
     """
 
-    configobject = ConfigParser.ConfigParser()
+    configobject = configparser.ConfigParser()
 
     #check for nested dictionary - 
     #if the dict entry is a key-value pair, it's stored in a section with head 'DEFAULT' 
@@ -535,7 +535,7 @@ def _validate_dictionary(dict2validate,referencedict):
     value is among the allowed ones. 
     """
 
-    for key, value in dict2validate.items():
+    for key, value in list(dict2validate.items()):
         #make everything to strings - easier to compare
         #in case of numbers, make to float first
 
@@ -670,8 +670,8 @@ def read_survey_txt_file(survey_file, delimiter=None):
         #print sstr,len(sstr)
        
         if len(sstr) != len(skeys):
-            print 'cannot read line {0} - wrong number of entries - need {2}\
-                                                    '.format(ss+2,len(skeys))
+            print('cannot read line {0} - wrong number of entries - need {2}\
+                                                    '.format(ss+2,len(skeys)))
             continue
 
         
@@ -710,7 +710,7 @@ def read_survey_txt_file(survey_file, delimiter=None):
         # print sdict['sampling_interval']
         #sys.exit()
         #assigne values to the standard keys
-        for key in sdict.keys():
+        for key in list(sdict.keys()):
 
             if key.lower() in ['ex','e_xaxis_length'] :
                 val = copy.copy(sdict[key])

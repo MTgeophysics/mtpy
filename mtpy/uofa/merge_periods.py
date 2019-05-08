@@ -73,9 +73,9 @@ def regular_periods(periodlist, merge_threshold=15, no_periods=None, t_min=None,
     ignored_points = [True for i in new_period_list if i is None]
 
     if len(merged_periods) != len(periodlist):
-        print '\n\tMerged {0} periods into {1} period-clusters -'\
+        print('\n\tMerged {0} periods into {1} period-clusters -'\
             ' {2} points outside the bins\n'.format(
-                len(periodlist), len(merged_periods), len(ignored_points))
+                len(periodlist), len(merged_periods), len(ignored_points)))
 
     new_period_list = [
         round(
@@ -154,7 +154,7 @@ def merge_periods(periods, merge_threshold):
 
     new_period_list = out_values
     if len(in_values) != cluster_counter:
-        print '\n\tDone -- merged {0} periods into {1} period-clusters\n'.format(len(in_values), cluster_counter)
+        print('\n\tDone -- merged {0} periods into {1} period-clusters\n'.format(len(in_values), cluster_counter))
     return new_period_list
 
 
@@ -231,7 +231,7 @@ def plot_merging(periods, merge_threshold, no_periods=None, t_min=None,
 
     tight_layout()
     show()  # block=True)
-    raw_input()
+    input()
 
 
 if __name__ == '__main__':
@@ -244,15 +244,15 @@ if __name__ == '__main__':
             reverse=False))
     periods = 10**(rnd)
     threshold = 10
-    print """
+    print("""
 
         This is a module - not to be run as as a script!
 
 This call yields an example result plot for merging {0} random periods.
 
-""".format(N)
+""".format(N))
 
     no_periods = 5
-    print min(periods), max(periods)
+    print(min(periods), max(periods))
 
     plot_merging(periods, threshold, no_periods)

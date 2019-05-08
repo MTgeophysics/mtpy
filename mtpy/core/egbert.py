@@ -118,7 +118,7 @@ class EgbertZ(EgbertHeader):
         self.Z = None
         self.Tipper = None
         
-        for key in kwargs.keys():
+        for key in list(kwargs.keys()):
             setattr(self, key, kwargs[key])
             
     def read_egbert_file(self, z_fn=None):

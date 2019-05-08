@@ -35,7 +35,7 @@ def main():
 
     edidir = sys.argv[1]
     if not op.isdir(edidir):
-        print 'Given directory does not exist {0}'.format(edidir)
+        print('Given directory does not exist {0}'.format(edidir))
         sys.exit()
 
     edilist = []
@@ -45,7 +45,7 @@ def main():
             raise
         edilist = [op.abspath(op.join(edidir, i)) for i in edilist]
     except:
-        print 'Given directory does not contain edi files: {0}'.format(edidir)
+        print('Given directory does not contain edi files: {0}'.format(edidir))
 
     outputdir = op.join(edidir, 'decimal_degrees')
     if not op.isdir(outputdir):
@@ -57,7 +57,7 @@ def main():
             if not op.isdir(outputdir):
                 os.makedirs(outputdir)
         except:
-            print 'could not generate output directory - using default'
+            print('could not generate output directory - using default')
             outputdir = op.join(edidir, 'decimal_degrees')
             if not op.isdir(outputdir):
                 os.makedirs(outputdir)

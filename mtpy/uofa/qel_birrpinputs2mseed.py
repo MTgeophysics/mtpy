@@ -26,7 +26,7 @@ def main():
     if len(sys.argv) < 5:
         sys.exit('\n\tERROR - need 4 arguments as input: \n <input dir> <output dir>'
                  '<stationname> <prefix>\n')
-    print
+    print()
 
     indir = sys.argv[1]
     indir = op.abspath(op.join(os.curdir, indir))
@@ -63,9 +63,9 @@ def main():
                 chan = ext[0]
                 infile = op.join(indir, fn)
                 outfn = makeoutfilename(outdir, stationname, prefix, chan)
-                print outfn
+                print(outfn)
                 run(infile, outfn, stationname, t0, samplingrate, chan=chan)
-                print
+                print()
         # except:
         #     continue
 
@@ -106,7 +106,7 @@ def read_timestampfile(indir, prefix):
         except:
             continue
 
-    for k, v in in_dict.items():
+    for k, v in list(in_dict.items()):
         if k.lower().startswith('sampl'):
             sampling = float(v)
             if sampling % 1 == 0:
@@ -124,7 +124,7 @@ def run(infile, outfn, station, t0, samplingrate, chan='n', nw='', loc=''):
 
     # read in data:
     data = []
-    print '\t reading file {0} ... '.format(infile)
+    print('\t reading file {0} ... '.format(infile))
     Fin = open(infile)
     for line in Fin:
         if line.strip()[0] == '#':
@@ -145,7 +145,7 @@ def run(infile, outfn, station, t0, samplingrate, chan='n', nw='', loc=''):
     except:
         lo_chans = ['n']
 
-    print '\t building MiniSeed trace object(s)...'
+    print('\t building MiniSeed trace object(s)...')
     if len(lo_chans) > 1:
         try:
             for c in lo_chans:
@@ -156,7 +156,7 @@ def run(infile, outfn, station, t0, samplingrate, chan='n', nw='', loc=''):
                 else:
                     channel = 'EW'
 
-            print 'station {1} - channel {0} - location {2}'.format(channel, stationname, location)
+            print('station {1} - channel {0} - location {2}'.format(channel, stationname, location))
             if idx_ch in [0, 1]:
                 lo_traces.append(trace.Trace(station=stationname, channel=channel,
                                              location=location, deltat=deltat, tmin=t0, ydata=data[:, idx_ch]))
@@ -185,9 +185,9 @@ def run(infile, outfn, station, t0, samplingrate, chan='n', nw='', loc=''):
     # pdb.set_trace()
     # print '...done!'
 
-    print '\t writing file %s ... ' % outfn
+    print('\t writing file %s ... ' % outfn)
     io.save(lo_traces, outfn)
-    print '\t ...done'
+    print('\t ...done')
     return
 
 

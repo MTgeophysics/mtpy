@@ -27,8 +27,8 @@ try:
 
     ssd_test = True
 except ImportError:
-    print 'Need scipy.stats.distributions to compute spectra errors'
-    print 'Could not find scipy.stats.distributions, check distribution'
+    print('Need scipy.stats.distributions to compute spectra errors')
+    print('Could not find scipy.stats.distributions, check distribution')
     ssd_test = False
 
 tab = ' ' * 4
@@ -281,19 +281,22 @@ class Edi(object):
         z_err_arr = np.zeros((freq_arr.size, 2, 2), dtype=np.float)
 
         # fill impedance tensor
-        z_arr[:, 0, 0] = np.array(data_dict['zxxr']) + \
-                         np.array(data_dict['zxxi']) * 1j
-        z_arr[:, 0, 1] = np.array(data_dict['zxyr']) + \
-                         np.array(data_dict['zxyi']) * 1j
-        z_arr[:, 1, 0] = np.array(data_dict['zyxr']) + \
-                         np.array(data_dict['zyxi']) * 1j
-        z_arr[:, 1, 1] = np.array(data_dict['zyyr']) + \
-                         np.array(data_dict['zyyi']) * 1j
-
-        z_err_arr[:, 0, 0] = np.array(data_dict['zxx.var'])**0.5
-        z_err_arr[:, 0, 1] = np.array(data_dict['zxy.var'])**0.5
-        z_err_arr[:, 1, 0] = np.array(data_dict['zyx.var'])**0.5
-        z_err_arr[:, 1, 1] = np.array(data_dict['zyy.var'])**0.5
+        if 'zxxr' in data_dict.keys():
+            z_arr[:, 0, 0] = np.array(data_dict['zxxr']) + \
+                             np.array(data_dict['zxxi']) * 1j
+            z_err_arr[:, 0, 0] = np.array(data_dict['zxx.var'])**0.5
+        if 'zxyr' in data_dict.keys():
+            z_arr[:, 0, 1] = np.array(data_dict['zxyr']) + \
+                             np.array(data_dict['zxyi']) * 1j
+            z_err_arr[:, 0, 1] = np.array(data_dict['zxy.var'])**0.5
+        if 'zyxr' in data_dict.keys():
+            z_arr[:, 1, 0] = np.array(data_dict['zyxr']) + \
+                             np.array(data_dict['zyxi']) * 1j
+            z_err_arr[:, 1, 0] = np.array(data_dict['zyx.var'])**0.5
+        if 'zyyr' in data_dict.keys():
+            z_arr[:, 1, 1] = np.array(data_dict['zyyr']) + \
+                             np.array(data_dict['zyyi']) * 1j
+            z_err_arr[:, 1, 1] = np.array(data_dict['zyy.var'])**0.5
 
         # check for order of frequency, we want high togit  low
         if freq_arr[0] < freq_arr[1]:
@@ -330,7 +333,7 @@ class Edi(object):
             except KeyError:
                 self.Tipper.rotation_angle = np.zeros_like(freq_arr)
 
-        if 'txr.exp' in data_dict.keys():
+        if 'txr.exp' in list(data_dict.keys()):
             tipper_arr[:, 0, 0] = np.array(data_dict['txr.exp']) + \
                                   np.array(data_dict['txi.exp']) * 1j
             tipper_arr[:, 0, 1] = np.array(data_dict['tyr.exp']) + \
@@ -394,10 +397,10 @@ class Edi(object):
         # get an object that contains the indices for each component
         cc = index_locator(comp_list)
 
-        freq_arr = np.array(sorted(data_dict.keys(), reverse=True))
+        freq_arr = np.array(sorted(list(data_dict.keys()), reverse=True))
 
-        z_arr = np.zeros((len(data_dict.keys()), 2, 2), dtype=np.complex)
-        t_arr = np.zeros((len(data_dict.keys()), 1, 2), dtype=np.complex)
+        z_arr = np.zeros((len(list(data_dict.keys())), 2, 2), dtype=np.complex)
+        t_arr = np.zeros((len(list(data_dict.keys())), 1, 2), dtype=np.complex)
 
         z_err_arr = np.zeros_like(z_arr, dtype=np.float)
         t_err_arr = np.zeros_like(t_arr, dtype=np.float)
@@ -600,6 +603,10 @@ class Edi(object):
 
         # write out data only impedance and tipper
         z_data_lines = [self._data_header_str.format('impedances'.upper())]
+        self.Z.z = np.nan_to_num(self.Z.z)
+        self.Z.z_err = np.nan_to_num(self.Z.z_err)
+        self.Tipper.tipper = np.nan_to_num(self.Tipper.tipper)
+        self.Tipper.tipper_err = np.nan_to_num(self.Tipper.tipper_err)
         for ii in range(2):
             for jj in range(2):
                 z_lines_real = self._write_data_block(self.Z.z[:, ii, jj].real,
@@ -788,7 +795,6 @@ class index_locator(object):
         if self.rhy is None:
             self.rhy = self.hy
 
-
 # ==============================================================================
 #  Header object
 # ==============================================================================
@@ -908,6 +914,7 @@ class Header(object):
         self.survey = None
         self.coordinate_system = 'Geomagnetic North'
         self.declination = None
+        self.declination_epoch = None
         self.datum = 'WGS84'
         self.phoenix_edi = False
 
@@ -927,11 +934,12 @@ class Header(object):
                              'progvers',
                              'coordinate_system',
                              'declination',
+                             'declination_epoch',
                              'datum',
                              'project',
                              'survey']
 
-        for key in kwargs.keys():
+        for key in list(kwargs.keys()):
             setattr(self, key, kwargs[key])
 
         if self.edi_fn is not None or self.edi_lines is not None:
@@ -1086,11 +1094,11 @@ class Header(object):
             self.get_header_list()
 
         header_lines = ['>HEAD\n']
-        # for key in sorted(self._header_keys):
-        for key in self._header_keys:  # FZ: NOT sorting
+        for key in sorted(self._header_keys):
+        #for key in self._header_keys:  # FZ: NOT sorting
             try:
                 value = getattr(self, key)
-            except Exception, ex:
+            except Exception as ex:
                 self._logger.debug("key value: %s %s %s", key, value, ex)
                 value = None
             if key in ['progdate', 'progvers']:
@@ -1101,11 +1109,12 @@ class Header(object):
                     value = '%.6f'%value
                 else:
                     value = gis_tools.convert_position_float2str(value)
-            if key in ['elev', 'declination']:
+            if key in ['elev', 'declination'] and value is not None:
                 try:
                     value = '{0:.3f}'.format(value)
                 except ValueError:
-                    value = '0.000'
+                    raise Exception("value error for key elev or declination")
+                    # value = '0.000'
             
             if key in ['filedate']:
                 value = datetime.datetime.utcnow().strftime(
@@ -1544,7 +1553,7 @@ class DefineMeasurement(object):
         measurement_lines.append('\n')
 
         # need to write the >XMEAS type, but sort by channel number
-        m_key_list = [(kk, self.__dict__[kk].id) for kk in self.__dict__.keys()
+        m_key_list = [(kk, self.__dict__[kk].id) for kk in list(self.__dict__.keys())
                       if kk.find('meas_') == 0]
         if len(m_key_list) == 0:
             self._logger.info('No XMEAS information.')
@@ -1554,10 +1563,13 @@ class DefineMeasurement(object):
             for x_key in sorted(m_key_list, key=lambda x: x[1]):
                 x_key = x_key[0]
                 m_obj = getattr(self, x_key)
-                if m_obj.chtype.lower().find('h') >= 0:
-                    head = 'hmeas'
-                elif m_obj.chtype.lower().find('e') >= 0:
-                    head = 'emeas'
+                if m_obj.chtype is not None:
+                    if m_obj.chtype.lower().find('h') >= 0:
+                        head = 'hmeas'
+                    elif m_obj.chtype.lower().find('e') >= 0:
+                        head = 'emeas'
+                    else:
+                        head = 'None'
                 else:
                     head = 'None'
 
@@ -1590,7 +1602,7 @@ class DefineMeasurement(object):
         get a dictionary for the xmeas parts
         """
         meas_dict = {}
-        for key in self.__dict__.keys():
+        for key in list(self.__dict__.keys()):
             if key.find('meas_') == 0:
                 meas_attr = getattr(self, key)
                 meas_key = meas_attr.chtype
@@ -1635,7 +1647,7 @@ class HMeasurement(object):
             else:
                 setattr(self, key, '0.0')
 
-        for key in kwargs.keys():
+        for key in list(kwargs.keys()):
             try:
                 setattr(self, key, float(kwargs[key]))
             except ValueError:
@@ -1683,7 +1695,7 @@ class EMeasurement(object):
             else:
                 setattr(self, key, '0.0')
 
-        for key in kwargs.keys():
+        for key in list(kwargs.keys()):
             try:
                 setattr(self, key, float(kwargs[key]))
             except ValueError:
@@ -1836,7 +1848,7 @@ class DataSection(object):
 
         # FZ: need to modify the nfreq (number of freqs), when re-writing effective EDI files)
         if over_dict is not None:
-            for akey in over_dict.keys():
+            for akey in list(over_dict.keys()):
                 self.__setattr__(akey, over_dict[akey])
 
         if data_sect_list is not None:
@@ -1855,9 +1867,10 @@ class DataSection(object):
         # need to sort the list so it is descending order by channel number
         ch_list = [(key.upper(), getattr(self, key))
                    for key in self._kw_list[4:]]
-        ch_list = sorted(ch_list, key=lambda x: x[1])
+        #ch_list = sorted(ch_list, key=lambda x: x[1])  #FZ: x[1] can be None, not working for Py3
+        ch_list2 = sorted(ch_list, key=lambda x: x[0])
 
-        for ch in ch_list:
+        for ch in ch_list2:
             data_sect_lines.append('{0}{1}={2}\n'.format(tab,
                                                          ch[0],
                                                          ch[1]))

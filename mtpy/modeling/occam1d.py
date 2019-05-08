@@ -144,7 +144,7 @@ class Data(object):
         self.phase_tm = None
         self.resp_fn = None
 
-        for key in kwargs.keys():
+        for key in list(kwargs.keys()):
             setattr(self, key, kwargs[key])
 
     def write_data_file(self, rp_tuple=None, edi_file=None, save_path=None,
@@ -301,7 +301,7 @@ class Data(object):
                     # assign errors
                     for zdr, zdi, zer, zei, ii in zip(zdetreal, zdetimag,
                                                       zereal, zeimag,
-                                                      range(len(z_obj.det))):
+                                                      list(range(len(z_obj.det)))):
                         # now we can convert errors to polar coordinates
                         de1, de2 = mtcc.z_error2r_phi_error(zdr, zdi, (zei+zer)/2.)
                         de1 *= data_1[ii]
@@ -349,11 +349,19 @@ class Data(object):
                 data_2_err = phi_err[:, 1, 0]
 
             if 'det' in mode.lower():
-                data_1 = rho[:, 0, 1]
-                data_1_err = rho_err[:, 0, 1]
-
-                data_2 = phi[:, 0, 1]
-                data_2_err = phi_err[:, 0, 1]
+                if len(rho.shape) == 1:
+                    data_1 = rho
+                    data_1_err = rho_err
+                else:
+                    data_1 = rho[:, 0, 1]
+                    data_1_err = rho_err[:, 0, 1]
+                
+                if len(phi.shape) == 1:
+                    data_2 = phi
+                    data_2_err = phi_err
+                else:
+                    data_2 = phi[:, 0, 1]
+                    data_2_err = phi_err[:, 0, 1]
 
         if remove_outofquadrant:
             freq, data_1, data_1_err, data_2, data_2_err = self._remove_outofquadrant_phase(
@@ -458,7 +466,7 @@ class Data(object):
         with open(self.data_fn, 'w') as dfid:
             dfid.writelines(dlines)
 
-        print 'Wrote Data File to : {0}'.format(self.data_fn)
+        print('Wrote Data File to : {0}'.format(self.data_fn))
 
         # --> set attributes
 
@@ -880,13 +888,13 @@ class Model(object):
         # if bottom layer less than a factor of 2 greater than target depth then adjust deeper
         elif float(self.bottom_layer) / self.target_depth < bottomlayer_threshold:
             self.bottom_layer = bottomlayer_threshold * self.target_depth
-            print "bottom layer not deep enough for target depth, set to {} m".format(self.bottom_layer)
+            print("bottom layer not deep enough for target depth, set to {} m".format(self.bottom_layer))
 
         if self.z1_layer is None:
             self.z1_layer = mtcc.roundsf(self.target_depth / 1000., 0)
         elif self.target_depth / self.z1_layer < z1_threshold:
             self.z1_layer = self.target_depth / z1_threshold
-            print "z1 layer not deep enough for target depth, set to {} m".format(self.z1_layer)
+            print("z1 layer not deep enough for target depth, set to {} m".format(self.z1_layer))
 
     def write_model_file(self, save_path=None, **kwargs):
         """
@@ -931,7 +939,7 @@ class Model(object):
 
         self.model_fn = os.path.join(self.save_path, self._model_fn)
 
-        for key in kwargs.keys():
+        for key in list(kwargs.keys()):
             setattr(self, key, kwargs[key])
 
         if self.model_depth is None:
@@ -982,7 +990,7 @@ class Model(object):
 
         modfid.close()
 
-        print 'Wrote Model file: {0}'.format(self.model_fn)
+        print('Wrote Model file: {0}'.format(self.model_fn))
 
     def read_model_file(self, model_fn=None):
         """
@@ -1186,7 +1194,8 @@ class Startup(object):
         self.model_step = kwargs.pop('model_step', None)
         self._startup_fn = 'OccamStartup1D'
         self._ss = ' ' * 3
-
+        
+        
     def write_startup_file(self, save_path=None, **kwargs):
         """
         Make a 1D input file for Occam 1D
@@ -1269,7 +1278,7 @@ class Startup(object):
             model.read_model_file(self.model_fn)
 
             # --> get any keywords
-        for key in kwargs.keys():
+        for key in list(kwargs.keys()):
             setattr(self, key, kwargs[key])
 
             # --> write input file
@@ -1309,7 +1318,7 @@ class Startup(object):
                                               np.log10(self.start_rho)))
 
         infid.close()
-        print 'Wrote Input File: {0}'.format(self.startup_fn)
+        print('Wrote Input File: {0}'.format(self.startup_fn))
 
     def read_startup_file(self, startup_fn):
         """
@@ -2029,7 +2038,7 @@ class Plot1DResponse(object):
             pass
 
         self.fig_fn = save_fn
-        print 'Saved figure to: ' + self.fig_fn
+        print('Saved figure to: ' + self.fig_fn)
 
     def __str__(self):
         """
@@ -2065,8 +2074,8 @@ class Run(object):
                                 os.path.basename(self.startup_fn),
                                 self.mode])
         if test == 0:
-            print '=========== Ran Inversion =========='
-            print '  check {0} for files'.format(os.path.dirname(self.startup_fn))
+            print('=========== Ran Inversion ==========')
+            print('  check {0} for files'.format(os.path.dirname(self.startup_fn)))
 
 
 class PlotL2(object):
@@ -2382,7 +2391,7 @@ class PlotL2(object):
             pass
 
         self.fig_fn = save_fn
-        print 'Saved figure to: ' + self.fig_fn
+        print('Saved figure to: ' + self.fig_fn)
 
     def update_plot(self):
         """
@@ -2473,9 +2482,15 @@ def parse_arguments(arguments):
     parser.add_argument('-nl', '--n_layers',
                         help='number of layers in the inversion',
                         type=int, default=80)
+    parser.add_argument('-z1', '--z1_layer',
+                        help='thickness of z1 layer',
+                        type=float, default=10)
     parser.add_argument('-td', '--target_depth',
                         help='target depth for the inversion in metres',
                         type=int, default=10000)
+    parser.add_argument('-rho0', '--start_rho',
+                        help='starting resistivity value for the inversion',
+                        type=float, default=100)
     parser.add_argument('-s', '--master_savepath',
                         help='master directory to save suite of runs into',
                         default='inversion_suite')
@@ -2558,8 +2573,8 @@ def generate_inputfiles(**input_parameters):
     for edifile in edilist:
         # read the edi file to get the station name
         eo = mt.MT(op.join(edipath, edifile))
-        print input_parameters['rotation_angle'], input_parameters['working_directory'], input_parameters[
-            'rotation_angle_file']
+        print(input_parameters['rotation_angle'], input_parameters['working_directory'], input_parameters[
+            'rotation_angle_file'])
         if input_parameters['rotation_angle'] == 'strike':
             spr = input_parameters['strike_period_range']
             fmax, fmin = [1. / np.amin(spr), 1. / np.amax(spr)]
@@ -2568,7 +2583,7 @@ def generate_inputfiles(**input_parameters):
         elif input_parameters['rotation_angle'] == 'file':
             with open(op.join(input_parameters['working_directory'], input_parameters['rotation_angle_file'])) as f:
                 line = f.readline().strip().split()
-                print line, eo.station
+
                 while string.upper(line[0]) != string.upper(eo.station):
                     line = f.readline().strip().split()
                     if len(line) == 0:
@@ -2577,7 +2592,7 @@ def generate_inputfiles(**input_parameters):
             rotangle = float(line[1])
         else:
             rotangle = input_parameters['rotation_angle']
-        print "rotation angle", rotangle
+            
         # create a working directory to store the inversion files in
         svpath = 'station' + eo.station
         wd = op.join(wkdir_master, svpath)
@@ -2587,7 +2602,8 @@ def generate_inputfiles(**input_parameters):
 
         # create the model file
         ocm = Model(n_layers=input_parameters['n_layers'], save_path=wd,
-                    target_depth=input_parameters['target_depth'])
+                    target_depth=input_parameters['target_depth'],
+                    z1_layer=input_parameters['z1_layer'])
         ocm.write_model_file()
 
         for mode in input_parameters['modes']:
@@ -2605,7 +2621,8 @@ def generate_inputfiles(**input_parameters):
                 save_path=wd)
 
             ocs = Startup(data_fn=ocd.data_fn,
-                          model_fn=ocm.model_fn)
+                          model_fn=ocm.model_fn,
+                          start_rho=input_parameters['start_rho'])
             startup_fn = 'OccamStartup1D' + mode
             ocs.write_startup_file(save_path=wd,
                                    startup_fn=op.join(wd, startup_fn),
@@ -2651,7 +2668,7 @@ def build_run():
     # Occam is run twice. First to get the lowest possible misfit.
     # we then set the target rms to a factor (default 1.05) times the minimum rms achieved
     # and run to get the smoothest model.
-    for rundir in run_directories.keys():
+    for rundir in list(run_directories.keys()):
         wd = op.join(master_wkdir, rundir)
         os.chdir(wd)
         for startupfile in run_directories[rundir]:
@@ -2673,6 +2690,7 @@ def build_run():
             startupnew = Startup(data_fn=op.join(wd, startup.data_file),
                                  model_fn=op.join(wd, startup.model_file),
                                  max_iter=input_parameters['iteration_max'],
+                                 start_rho=input_parameters['start_rho'],
                                  target_rms=target_rms)
             startupnew.write_startup_file(startup_fn=op.join(wd, startupfile), save_path=wd)
             # run occam again

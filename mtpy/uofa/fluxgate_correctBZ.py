@@ -43,8 +43,8 @@ try:
     if not os.access(outpath, os.W_OK):
         raise
 except:
-    print 'Cannot generate writable output directory {0} - using'\
-        ' generic location "dayfiles" instead'.format(outdir)
+    print('Cannot generate writable output directory {0} - using'\
+        ' generic location "dayfiles" instead'.format(outdir))
     outpath = pathname
     pass
 
@@ -57,7 +57,7 @@ if len(lo_files) == 0:
     sys.exit('ERROR - no BZ data in directory {0} \n'.format(pathname))
 
 
-print
+print()
 
 
 for bz_file in lo_files:
@@ -77,9 +77,9 @@ for bz_file in lo_files:
         np.savetxt(Fout, 2.2 * data)
         Fout.close()
 
-        print '\tcorrecting file {0} ....output: {1}'.format(infile, outfile)
+        print('\tcorrecting file {0} ....output: {1}'.format(infile, outfile))
 
     except:
-        print '\n\t\tERROR - could not correct file {0}\n'.format(bz_file)
+        print('\n\t\tERROR - could not correct file {0}\n'.format(bz_file))
 
-print '\n...Done\n'
+print('\n...Done\n')

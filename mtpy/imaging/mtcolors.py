@@ -248,6 +248,8 @@ cmapdict = {'mt_yl2rd' : mt_yl2rd,
             'mt_rd2wh2bl': mt_rd2wh2bl,
             'mt_rd2wh2bl_r': mt_rd2wh2bl_r,
             'mt_rdylbu': mt_rdylbu}
+# add matplotlib built-in colormaps
+cmapdict.update(cm.cmap_d)
 
 #make functions for getting the color from each map according to the variable
 #cvar
@@ -298,7 +300,7 @@ def get_color(cvar,cmap):
             return get_matplotlib_cval(cmap,cvar)
 
         except:
-            print 'Color map: {0} is not supported yet.'.format(cmap)
+            print('Color map: {0} is not supported yet.'.format(cmap))
 
 
 def get_matplotlib_cval(cmap,cvar):
@@ -486,7 +488,7 @@ def get_plot_color(colorx, comp, cmap, ckmin=None, ckmax=None, bounds=None):
         return get_color(cvar, cmap)
         '''
         norm = colors.Normalize(ckmin, ckmax)
-        if(cmap in cmapdict.keys()):
+        if(cmap in list(cmapdict.keys())):
             return cmapdict[cmap](norm(colorx))
         else:
             return cm.get_cmap(cmap)(norm(colorx))
@@ -497,7 +499,7 @@ def get_plot_color(colorx, comp, cmap, ckmin=None, ckmax=None, bounds=None):
         '''
 
         norm = colors.Normalize(ckmin, ckmax)
-        if (cmap in cmapdict.keys()):
+        if (cmap in list(cmapdict.keys())):
             return cmapdict[cmap](norm(colorx))
         else:
             return cm.get_cmap(cmap)(norm(colorx))
@@ -524,7 +526,7 @@ def get_plot_color(colorx, comp, cmap, ckmin=None, ckmax=None, bounds=None):
 
         norm = colors.Normalize(bounds[0], bounds[-1])
 
-        if (cmap in cmapdict.keys()):
+        if (cmap in list(cmapdict.keys())):
             return cmapdict[cmap](norm(colorx))
         else:
             return cm.get_cmap(cmap)(norm(colorx))
@@ -549,7 +551,7 @@ def cmap_discretize(cmap, N):
     cdict = {}
     for ki,key in enumerate(('red','green','blue')):
         cdict[key] = [(indices[i], colors_rgba[i-1,ki], colors_rgba[i,ki])
-                       for i in xrange(N+1)]
+                       for i in range(N+1)]
     # Return colormap object.
     return colors.LinearSegmentedColormap(cmap.name + "_%d"%N, cdict, 1024)
 

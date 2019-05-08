@@ -49,6 +49,8 @@ import mtpy.analysis.geometry as MTgy
 import mtpy.core.mt as mt
 import mtpy.modeling.winglinktools as MTwl
 from mtpy.imaging.mtplottools import plot_errorbar
+from mtpy.utils.calculator import centre_point
+from mtpy.utils.gis_tools import get_epsg,project_point_ll2utm
 
 
 # ==============================================================================
@@ -344,14 +346,14 @@ class Mesh():
         if self.elevation_profile is not None:
             self.add_elevation(self.elevation_profile)
 
-        print '=' * 55
-        print '{0:^55}'.format('mesh parameters'.upper())
-        print '=' * 55
-        print '  number of horizontal nodes = {0}'.format(self.x_nodes.shape[0])
-        print '  number of vertical nodes   = {0}'.format(self.z_nodes.shape[0])
-        print '  Total Horizontal Distance  = {0:2f}'.format(self.x_nodes.sum())
-        print '  Total Vertical Distance    = {0:2f}'.format(self.z_nodes.sum())
-        print '=' * 55
+        print('=' * 55)
+        print('{0:^55}'.format('mesh parameters'.upper()))
+        print('=' * 55)
+        print('  number of horizontal nodes = {0}'.format(self.x_nodes.shape[0]))
+        print('  number of vertical nodes   = {0}'.format(self.z_nodes.shape[0]))
+        print('  Total Horizontal Distance  = {0:2f}'.format(self.x_nodes.sum()))
+        print('  Total Vertical Distance    = {0:2f}'.format(self.z_nodes.sum()))
+        print('=' * 55)
 
     def add_elevation(self, elevation_profile=None):
         """
@@ -485,7 +487,7 @@ class Mesh():
             self.mesh_values[-(ii + 1), :,
                              :] = self.mesh_values[-xpad - 2, :, :]
 
-        print '{0:^55}'.format('--- Added Elevation to Mesh --')
+        print('{0:^55}'.format('--- Added Elevation to Mesh --'))
 
     def plot_mesh(self, **kwargs):
         """
@@ -728,7 +730,7 @@ class Mesh():
         mfid.writelines(mesh_lines)
         mfid.close()
 
-        print 'Wrote Mesh file to {0}'.format(self.mesh_fn)
+        print('Wrote Mesh file to {0}'.format(self.mesh_fn))
 
     def read_mesh_file(self, mesh_fn):
         """
@@ -818,9 +820,9 @@ class Mesh():
             else:
                 mlist = list(mline)
                 if len(mlist) != nh - 1:
-                    print '--- Line {0} in {1}'.format(ll, self.mesh_fn)
-                    print 'Check mesh file too many columns'
-                    print 'Should be {0}, has {1}'.format(nh, len(mlist))
+                    print('--- Line {0} in {1}'.format(ll, self.mesh_fn))
+                    print('Check mesh file too many columns')
+                    print('Should be {0}, has {1}'.format(nh, len(mlist)))
                     mlist = mlist[0:nh]
                 for kk in range(4):
                     for jj, mvalue in enumerate(list(mlist)):
@@ -832,7 +834,7 @@ class Mesh():
         self.x_nodes = self.x_nodes[np.nonzero(self.x_nodes)]
         if self.x_nodes.shape[0] != nh - 1:
             new_nh = self.x_nodes.shape[0]
-            print 'The header number {0} should read {1}'.format(nh - 1, new_nh)
+            print('The header number {0} should read {1}'.format(nh - 1, new_nh))
             self.mesh_values.resize(new_nh, nv, 4)
         else:
             new_nh = nh
@@ -840,7 +842,7 @@ class Mesh():
         self.z_nodes = self.z_nodes[np.nonzero(self.z_nodes)]
         if self.z_nodes.shape[0] != nv - 1:
             new_nv = self.z_nodes.shape[0]
-            print 'The header number {0} should read {1}'.format(nv - 1, new_nv)
+            print('The header number {0} should read {1}'.format(nv - 1, new_nv))
             self.mesh_values.resize(new_nh, nv, 4)
 
         # make x_grid and z_grid
@@ -952,6 +954,7 @@ class Profile():
         self.station_list = kwargs.pop('station_list', None)
         self.geoelectric_strike = kwargs.pop('geoelectric_strike', None)
         self.profile_angle = kwargs.pop('profile_angle', None)
+        self.model_epsg = kwargs.pop('model_epsg',None)
         self.edi_list = edi_list
         self._rotate_to_strike = True
         self.num_edi = 0
@@ -979,7 +982,7 @@ class Profile():
                             tmp_edi_list.append(edi)
                             
                     if len(tmp_edi_list) == 0:
-                        print "Didn't find edi file {} in directory {}".format(edi,self.edi_path)
+                        print("Didn't find edi file {} in directory {}".format(edi,self.edi_path))
                     # if only one matching edi use that one
                     elif len(tmp_edi_list) == 1:
                         edi_to_use = tmp_edi_list[0]
@@ -1046,6 +1049,13 @@ class Profile():
         norths = np.zeros(self.num_edi)
         utm_zones = np.zeros(self.num_edi)
 
+        if self.model_epsg is None:
+            latlist = np.array([mtObj.lat for mtObj in self.edi_list])
+            lonlist = np.array([mtObj.lon for mtObj in self.edi_list])
+            lonc,latc = centre_point(lonlist,latlist)
+            self.model_epsg = get_epsg(latc,lonc)
+
+
         for ii, edi in enumerate(self.edi_list):
             # find strike angles for each station if a strike angle is not
             # given
@@ -1059,6 +1069,11 @@ class Profile():
                     strike_angles[ii] = np.median(gstrike)
                 except:
                     pass
+
+            if self.model_epsg is not None:
+                edi.east,edi.north,edi.utm_zone = \
+                project_point_ll2utm(edi.lat, edi.lon,
+                                     epsg=self.model_epsg)
 
             easts[ii] = edi.east
             norths[ii] = edi.north
@@ -1087,8 +1102,8 @@ class Profile():
             if zone == main_utmzone:
                 continue
             else:
-                print ('station {0} is out of main utm zone'.format(self.edi_list[ii].station) +
-                       ' will not be included in profile')
+                print(('station {0} is out of main utm zone'.format(self.edi_list[ii].station) +
+                       ' will not be included in profile'))
 
         # check regression for 2 profile orientations:
         # horizontal (N=N(E)) or vertical(E=E(N))
@@ -1146,12 +1161,12 @@ class Profile():
                     edi.Tipper.rotate((self.profile_angle - 90) % 180 -
                                       edi.Tipper.rotation_angle)
 
-            print '=' * 72
-            print ('Rotated Z and Tipper to align with '
-                   '{0:+.2f} degrees E of N'.format(self.geoelectric_strike))
-            print ('Profile angle is '
-                   '{0:+.2f} degrees E of N'.format(self.profile_angle))
-            print '=' * 72
+            print('=' * 72)
+            print(('Rotated Z and Tipper to align with '
+                   '{0:+.2f} degrees E of N'.format(self.geoelectric_strike)))
+            print(('Profile angle is '
+                   '{0:+.2f} degrees E of N'.format(self.profile_angle)))
+            print('=' * 72)
         else:
             for edi in self.edi_list:
                 edi.Z.rotate((self.profile_angle - 90) %
@@ -1164,12 +1179,12 @@ class Profile():
                     edi.Tipper.rotate((self.profile_angle - 90) % 180 -
                                       edi.Tipper.rotation_angle)
 
-            print '=' * 72
-            print ('Rotated Z and Tipper to be perpendicular  with '
-                   '{0:+.2f} profile angle'.format((self.profile_angle - 90) % 180))
-            print ('Profile angle is '
-                   '{0:+.2f} degrees E of N'.format(self.profile_angle))
-            print '=' * 72
+            print('=' * 72)
+            print(('Rotated Z and Tipper to be perpendicular  with '
+                   '{0:+.2f} profile angle'.format((self.profile_angle - 90) % 180)))
+            print(('Profile angle is '
+                   '{0:+.2f} degrees E of N'.format(self.profile_angle)))
+            print('=' * 72)
 
         # --> project stations onto profile line
         projected_stations = np.zeros((self.num_edi, 2))
@@ -1595,14 +1610,14 @@ class Regularization(Mesh):
 
         self.get_num_free_params()
 
-        print '=' * 55
-        print '{0:^55}'.format('regularization parameters'.upper())
-        print '=' * 55
-        print '   binding offset       = {0:.1f}'.format(self.binding_offset)
-        print '   number layers        = {0}'.format(len(self.model_columns))
-        print '   number of parameters = {0}'.format(self.num_param)
-        print '   number of free param = {0}'.format(self.num_free_param)
-        print '=' * 55
+        print('=' * 55)
+        print('{0:^55}'.format('regularization parameters'.upper()))
+        print('=' * 55)
+        print('   binding offset       = {0:.1f}'.format(self.binding_offset))
+        print('   number layers        = {0}'.format(len(self.model_columns)))
+        print('   number of parameters = {0}'.format(self.num_param))
+        print('   number of free param = {0}'.format(self.num_free_param))
+        print('=' * 55)
 
     def get_num_free_params(self):
         """
@@ -1735,7 +1750,7 @@ class Regularization(Mesh):
         rfid.writelines(reg_lines)
         rfid.close()
 
-        print 'Wrote Regularization file to {0}'.format(self.reg_fn)
+        print('Wrote Regularization file to {0}'.format(self.reg_fn))
 
     def read_regularization_file(self, reg_fn):
         """
@@ -2003,7 +2018,7 @@ class Startup(object):
         sfid.writelines(slines)
         sfid.close()
 
-        print 'Wrote Occam2D startup file to {0}'.format(self.startup_fn)
+        print('Wrote Occam2D startup file to {0}'.format(self.startup_fn))
 
 
 # ------------------------------------------------------------------------------
@@ -2234,7 +2249,7 @@ class Data(Profile):
 
         self.save_path = op.dirname(self.data_fn)
 
-        print 'Reading from {0}'.format(self.data_fn)
+        print('Reading from {0}'.format(self.data_fn))
 
         dfid = open(self.data_fn, 'r')
 
@@ -2260,7 +2275,7 @@ class Data(Profile):
                     elif key == 'strike':
                         key = 'geoelectric_strike'
                     value = t_list[1].split('deg')[0].strip()
-                    print '    {0} = {1}'.format(key, value)
+                    print('    {0} = {1}'.format(key, value))
                     try:
                         setattr(self, key, float(value))
                     except ValueError:
@@ -2268,7 +2283,7 @@ class Data(Profile):
 
         # get number of sites
         nsites = int(dlines[2].strip().split(':')[1].strip())
-        print '    {0} = {1}'.format('number of sites', nsites)
+        print('    {0} = {1}'.format('number of sites', nsites))
 
         # get station names
         self.station_list = np.array([dlines[ii].strip()
@@ -2280,7 +2295,7 @@ class Data(Profile):
 
         # get number of frequencies
         nfreq = int(dlines[4 + 2 * nsites].strip().split(':')[1].strip())
-        print '    {0} = {1}'.format('number of frequencies', nfreq)
+        print('    {0} = {1}'.format('number of frequencies', nfreq))
 
         # get frequencies
         self.freq = np.array([float(dlines[ii].strip())
@@ -2328,7 +2343,7 @@ class Data(Profile):
                     # error
                     self.data[ss][key][1, ff] = float(oerr)
             except ValueError:
-                print 'Could not read line {0}'.format(line)
+                print('Could not read line {0}'.format(line))
 
     def _get_frequencies(self):
         """
@@ -2384,9 +2399,9 @@ class Data(Profile):
         # check, if frequency list is longer than given max value
         if self.freq_num is not None:
             if int(self.freq_num) < self.freq.shape[0]:
-                print ('Number of frequencies exceeds freq_num '
+                print(('Number of frequencies exceeds freq_num '
                        '{0} > {1} '.format(self.freq.shape[0], self.freq_num) +
-                       'Trimming frequencies to {0}'.format(self.freq_num))
+                       'Trimming frequencies to {0}'.format(self.freq_num)))
 
                 excess = self.freq.shape[0] / float(self.freq_num)
                 if excess < 2:
@@ -2810,7 +2825,7 @@ class Data(Profile):
         dfid.writelines(data_lines)
         dfid.close()
 
-        print 'Wrote Occam2D data file to {0}'.format(self.data_fn)
+        print('Wrote Occam2D data file to {0}'.format(self.data_fn))
 
     def get_profile_origin(self):
         """
@@ -2904,7 +2919,7 @@ class Data(Profile):
         # make a reverse dictionary for locating the masked points in the data
         # file
         rploc = dict([('{0}'.format(mp_obj.fndict[key]), int(key) - 1)
-                      for key in mp_obj.fndict.keys()])
+                      for key in list(mp_obj.fndict.keys())])
 
         # make a period dictionary to locate points changed
         frpdict = dict([('{0:.5g}'.format(fr), ff)
@@ -2916,7 +2931,7 @@ class Data(Profile):
             # loop over the 4 main entrie
             for ss, skey in enumerate(['resxy', 'resyx', 'phasexy', 'phaseyx']):
                 # rewrite any coinciding points
-                for frpkey in frpdict.keys():
+                for frpkey in list(frpdict.keys()):
                     try:
                         ff = frpdict[frpkey]
                         floc = self.points.fdict[dd][ss][frpkey]
@@ -3030,13 +3045,21 @@ class Response(object):
         if os.path.isfile(self.resp_fn) == False:
             raise OccamInputError('Could not find {0}'.format(self.resp_fn))
 
-        r_arr = np.loadtxt(self.resp_fn, dtype=[('station', np.int),
+        r_arr_tmp = np.loadtxt(self.resp_fn)
+        r_arr = np.zeros(len(r_arr_tmp), dtype=[('station', np.int),
                                                 ('freq', np.int),
                                                 ('comp', np.int),
                                                 ('z', np.int),
                                                 ('data', np.float),
                                                 ('resp', np.float),
                                                 ('err', np.float)])
+        r_arr['station'] = r_arr_tmp[:,0]
+        r_arr['freq'] = r_arr_tmp[:,1]
+        r_arr['comp'] = r_arr_tmp[:,2]
+        r_arr['z'] = r_arr_tmp[:,3]
+        r_arr['data'] = r_arr_tmp[:,4]
+        r_arr['resp'] = r_arr_tmp[:,5]
+        r_arr['err'] = r_arr_tmp[:,6]
 
         num_stat = r_arr['station'].max()
         num_freq = r_arr['freq'].max()
@@ -3543,7 +3566,7 @@ class PlotResponse():
 
         # ---------------plot each respones in a different figure--------------
         if self.plot_type == '1':
-            pstation_list = range(len(self.station_list))
+            pstation_list = list(range(len(self.station_list)))
 
         else:
             if type(self.plot_type) is not list:
@@ -4007,8 +4030,8 @@ class PlotResponse():
                                               'weight': 'bold'})
                     for ww, wlistation in enumerate(wlslist):
                         if wlistation.find(self.station_list[jj]) == 0:
-                            print '{0} was Found {0} in winglink file'.format(
-                                self.station_list[jj], wlistation)
+                            print('{0} was Found {0} in winglink file'.format(
+                                self.station_list[jj], wlistation))
                             wlrpdict = wlrp_list[ww]
 
                     zrxy = [np.where(wlrpdict['te_res'][0] != 0)[0]]
@@ -4056,7 +4079,7 @@ class PlotResponse():
                     llistte.append('$WLMod_{TE}$ ' + '{0:.2f}'.format(wlrms))
                     llisttm.append('$WLMod_{TM}$ ' + '{0:.2f}'.format(wlrms))
                 except (IndexError, KeyError):
-                    print 'Station not present'
+                    print('Station not present')
             else:
                 if self.plot_num == 1:
                     axrte.set_title(self.station_list[jj],
@@ -4263,7 +4286,7 @@ class PlotResponse():
             if close_fig == 'y':
                 plt.close(fdict['fig'])
 
-            print "saved figure to {0}".format(os.path.join(save_path, svfn))
+            print("saved figure to {0}".format(os.path.join(save_path, svfn)))
 
             # ==============================================================================
 
@@ -4599,8 +4622,8 @@ class PlotModel(Model):
                     fontdict={'size': self.font_size + 1,
                               'weight': 'bold'})
         else:
-            print 'RMS {0:.2f}, Roughness={1:.0f}'.format(self.misfit_value,
-                                                          self.roughness_value)
+            print('RMS {0:.2f}, Roughness={1:.0f}'.format(self.misfit_value,
+                                                          self.roughness_value))
 
             # plot forward model mesh
         # making an extended list seperated by None's speeds up the plotting
@@ -4861,7 +4884,7 @@ class PlotModel(Model):
             pass
 
         self.fig_fn = save_fn
-        print 'Saved figure to: ' + self.fig_fn
+        print('Saved figure to: ' + self.fig_fn)
 
     def update_plot(self):
         """
@@ -5221,7 +5244,7 @@ class PlotL2():
             pass
 
         self.fig_fn = save_fn
-        print 'Saved figure to: ' + self.fig_fn
+        print('Saved figure to: ' + self.fig_fn)
 
     def update_plot(self):
         """
@@ -5979,7 +6002,7 @@ class PlotPseudoSection(object):
             pass
 
         self.fig_fn = save_fn
-        print 'Saved figure to: ' + self.fig_fn
+        print('Saved figure to: ' + self.fig_fn)
 
     def update_plot(self):
         """
@@ -6204,7 +6227,7 @@ class PlotMisfitPseudoSection(object):
         self.misfit_tip_real = np.zeros((n_periods, n_stations))
         self.misfit_tip_imag = np.zeros((n_periods, n_stations))
 
-        for rr, r_dict in zip(range(n_stations), resp_obj.resp):
+        for rr, r_dict in zip(list(range(n_stations)), resp_obj.resp):
             self.misfit_te_res[:, rr] = r_dict['te_res'][1]
             self.misfit_tm_res[:, rr] = r_dict['tm_res'][1]
             self.misfit_te_phase[:, rr] = r_dict['te_phase'][1]
@@ -6486,7 +6509,7 @@ class PlotMisfitPseudoSection(object):
             pass
 
         self.fig_fn = save_fn
-        print 'Saved figure to: ' + self.fig_fn
+        print('Saved figure to: ' + self.fig_fn)
 
     def update_plot(self):
         """
@@ -6661,7 +6684,7 @@ class OccamPointPicker(object):
             for ee, err in enumerate(err_list[nn]):
                 try:
                     errpath = err[2].get_paths()
-                    errarr = np.zeros(len(self.fdict[nn][ee].keys()))
+                    errarr = np.zeros(len(list(self.fdict[nn][ee].keys())))
                     for ff, epath in enumerate(errpath):
                         errv = epath.vertices
                         errarr[ff] = abs(errv[0, 1] - self.data[nn][ee][ff])
@@ -6754,7 +6777,7 @@ class OccamPointPicker(object):
             # check to make sure there is a corresponding res/phase point
             try:
                 kk = (self.ax_num + 2) % 4
-                print kk
+                print(kk)
                 # get the corresponding y-value
                 yd2 = self.data[self.fig_num][kk][ll]
 
@@ -6770,7 +6793,7 @@ class OccamPointPicker(object):
                 # redraw the canvas
                 self.ax.figure.canvas.draw()
             except KeyError:
-                print 'Axis does not contain res/phase point'
+                print('Axis does not contain res/phase point')
 
         # if click the scroll button or middle button change increase the
         # errorbars by the given amount
@@ -6889,7 +6912,7 @@ class OccamPointPicker(object):
             for cid in self.cidlist[self.fig_num]:
                 event.canvas.mpl_disconnect(cid)
             plt.close(event.canvas.figure)
-            print 'Closed figure ', self.fig_num
+            print('Closed figure ', self.fig_num)
 
 
 class Run():
@@ -6915,8 +6938,8 @@ class OccamInputError(Exception):
 if __name__ == "__main__":
 
     if len(sys.argv) < 2:
-        print (
-            "\n please provide path to edi files\n USAGE:  %s path2edifiles" % sys.argv[0])
+        print((
+            "\n please provide path to edi files\n USAGE:  %s path2edifiles" % sys.argv[0]))
         sys.exit(1)
     else:
         edi_dir = sys.argv[1]
@@ -6933,7 +6956,7 @@ if __name__ == "__main__":
 
     pr.generate_profile()
 
-    print (pr.profile_angle)
+    print((pr.profile_angle))
 
     # set station labels to only be from 1st to 4th index of station name
     pr.plot_profile(station_id=[0, 4])

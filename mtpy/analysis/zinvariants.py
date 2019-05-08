@@ -151,7 +151,7 @@ class Zinvariants:
             **q**          : dependent variable suggesting dimensionality
             
         """
-
+        print("computing invariants")
         # get the length of z to initialize some empty arrays           
         nz = self.z.shape[0]
 
@@ -167,7 +167,7 @@ class Zinvariants:
         self.strike = np.zeros(nz)
         self.strike_err = np.zeros(nz)
 
-        c_tf = self.z.all() == 0.0
+        c_tf = np.all(self.z == 0.0)
         if c_tf == True:
             return
         # loop over each freq
@@ -184,8 +184,8 @@ class Zinvariants:
             ex = x1 * e1 - x2 * e2 - x3 * e3 + x4 * e4
 
             if ex == 0.0:
-                print 'Could not compute invariants for {0:5e} Hz'.format(
-                       self.freq[ii])
+                print('Could not compute invariants for {0:5e} Hz'.format(
+                       self.freq[ii]))
                 self.inv1[ii] = np.nan
                 self.inv2[ii] = np.nan
                 self.inv3[ii] = np.nan
@@ -221,7 +221,6 @@ class Zinvariants:
 
                 # if abs(inv7)>1.0:
                 #     print("debug value inv7=", inv7)
-
                 strikeang = .5 * np.arctan2(d12 - d34, d13 + d24) * (180 / np.pi)
                 strikeangerr = abs(.5 * np.arcsin(inv7)) * (180 / np.pi)
 

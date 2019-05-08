@@ -39,7 +39,7 @@ def main():
     # stationdatafolder = sys.argv[2]
 
     #indir =   stationdatafolder
-    print
+    print()
     profile = 1
 
     #profile_prefix = '{0:02d}'.format(profile)
@@ -53,8 +53,8 @@ def main():
         indir = op.abspath(op.join(indir_base, stationname))
 
         if not op.isdir(indir):
-            print 'WARNING - no folder found for station {0} ({1})\n'.format(
-                stationname, indir)
+            print('WARNING - no folder found for station {0} ({1})\n'.format(
+                stationname, indir))
             continue
 
         #outdir = op.abspath(op.join(outdirname,'{0}'.format(profile_prefix+'_'+stationname)))
@@ -68,7 +68,7 @@ def main():
         except:
             continue
 
-        print
+        print()
 
 
 def unpack1station(stationname, indir, outdir):
@@ -81,19 +81,19 @@ def unpack1station(stationname, indir, outdir):
                           for i in all_subdirs if op.isdir(op.join(indir, i))])
 
     # print all_subdirs
-    print '\t=====================\n\tUnpacking station {0}:\n\t====================='.format(stationname)
+    print('\t=====================\n\tUnpacking station {0}:\n\t====================='.format(stationname))
     counter6hrblocks = 0
     for subdir in all_subdirs:
 
         try:
             os.chdir(subdir)
-            print '\n...switched to folder {0}...'.format(op.abspath(os.curdir))
+            print('\n...switched to folder {0}...'.format(op.abspath(os.curdir)))
 
             lo_unpackables = os.listdir('.')
             lo_unpackables = [
                 i for i in lo_unpackables if i.lower().endswith('.bz2')]
             if len(lo_unpackables) > 0:
-                print '...unpacking...'
+                print('...unpacking...')
                 for bz2 in lo_unpackables:
                     os.system('bunzip2 -f -k {0}'.format(bz2))
 
@@ -101,10 +101,10 @@ def unpack1station(stationname, indir, outdir):
             lo_paks = [i for i in lo_paks if i.lower().endswith('.pak')]
 
             if len(lo_paks) == 0:
-                print 'no data - skipping subfolder {0}'.format(subdir)
+                print('no data - skipping subfolder {0}'.format(subdir))
                 continue
 
-            print '...conversion Pak2Asc...'
+            print('...conversion Pak2Asc...')
             try:
                 os.system('{0} fw4 00000000.pak'.format(Pak2Asc_exe))
             except:
@@ -114,16 +114,16 @@ def unpack1station(stationname, indir, outdir):
             new_filename = 'sta{0}_decimated_{1:03d}'.format(
                 stationname, counter6hrblocks)
             shutil.copy2(temp_out_fn, new_filename)
-            print '...remove unpacked data...'
+            print('...remove unpacked data...')
             os.system('rm -f *.pak')
 
             try:
-                print '...moving data to {0}...'.format(outdir)
+                print('...moving data to {0}...'.format(outdir))
                 shutil.copy2(new_filename, outdir)
             except:
-                print "couldn't move data"
+                print("couldn't move data")
 
-            print '...remove all the rest of temporary files...\n'
+            print('...remove all the rest of temporary files...\n')
             os.system('rm -f Pak2Asc-*')
             os.system('rm -f {0}'.format(new_filename))
         except:
@@ -131,8 +131,8 @@ def unpack1station(stationname, indir, outdir):
 
     os.chdir(cwd)
 
-    print '\n\t {0} blocks done for station {1}!\n'.format(counter6hrblocks, stationname)
-    print 'Finished station {0}!\n====================='.format(stationname)
+    print('\n\t {0} blocks done for station {1}!\n'.format(counter6hrblocks, stationname))
+    print('Finished station {0}!\n====================='.format(stationname))
 
     return 0
 

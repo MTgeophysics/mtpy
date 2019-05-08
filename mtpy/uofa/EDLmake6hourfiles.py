@@ -44,7 +44,7 @@ def main():
                  '[optional: <recursive flag -R>]\n'
                  '(set this option for including all subfolders)\n\n')
 
-    print
+    print()
 
     outdir = None
     stationname = None
@@ -79,7 +79,7 @@ def main():
     else:
         stationlist = [None]
 
-    print stationlist
+    print(stationlist)
 
     pathname_raw = sys.argv[1]
     pathname = op.abspath(op.realpath(pathname_raw))
@@ -114,8 +114,8 @@ def main():
             '\n\tERROR - No (sub-) folders for stations {0} found\n'.format(stationlist))
 
     for stationname in stationlist:
-        print '....\n'
-        print 'processing station ', stationname.upper()
+        print('....\n')
+        print('processing station ', stationname.upper())
         # if pathname[0] is not None:
         #     station_pathname = [i for i in pathname if stationname.lower() in i.lower()]
         #     if len(station_pathname) == 0:
@@ -144,7 +144,7 @@ def main():
 
         except:
             sys.exit('\n\tERROR - could not process (sub-)folders')
-    print '\n'
+    print('\n')
 
 
 if __name__ == '__main__':

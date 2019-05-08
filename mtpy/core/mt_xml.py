@@ -43,7 +43,7 @@ class XML_element(object):
         self._attr = attr
         self._value = value
         
-        for key in kwargs.keys():
+        for key in list(kwargs.keys()):
             setattr(self, key, kwargs[key])
             
     @property
@@ -55,7 +55,7 @@ class XML_element(object):
         try:
             self._value = str(value)
         except ValueError:
-            print 'Cannot set {0} to string, set to None'.format(value)
+            print('Cannot set {0} to string, set to None'.format(value))
             self._value = None
             
     @property
@@ -430,7 +430,7 @@ class XML_Config(object):
             setattr(self.DataTypes, 'DataType_{0:02}'.format(ii), d_type)
                                    
         
-        for key in kwargs.keys():
+        for key in list(kwargs.keys()):
             setattr(self, key, kwargs[key])
             
     def read_cfg_file(self, cfg_fn=None):
@@ -636,16 +636,16 @@ class XML_Config(object):
                                                 line_list.append(self._write_cfg_line(attr_04,
                                                                                       [attr_00, attr_01, attr_02, attr_03]))
             else:
-                print 'Not including: {0}'.format(attr_00_name)                     
+                print('Not including: {0}'.format(attr_00_name))                     
 
         # write the file
         with open(self.cfg_fn, 'w') as fid:
             fid.write('\n'.join(line_list))
             
         # show the user something happened
-        print '-'*50
-        print '    Wrote xml configuration file to {0}'.format(self.cfg_fn)
-        print '-'*50
+        print('-'*50)
+        print('    Wrote xml configuration file to {0}'.format(self.cfg_fn))
+        print('-'*50)
         
         
 
@@ -666,7 +666,7 @@ class XML_Config(object):
         
         if XML_element_obj._attr is not None:
             attr_str = ''.join(['({0}={1})'.format(a_key, XML_element_obj._attr[a_key]) 
-                                 for a_key in XML_element_obj._attr.keys()])
+                                 for a_key in list(XML_element_obj._attr.keys())])
         else:
             attr_str = ''
         return '{0}{1}{2} = {3}'.format(parent_str,
@@ -754,7 +754,7 @@ class MT_XML(XML_Config):
                             'Data',
                             'PeriodRange']
         
-        for key in kwargs.keys():
+        for key in list(kwargs.keys()):
             setattr(self, key, kwargs[key])
         
     def _get_name(self, name):
@@ -919,7 +919,7 @@ class MT_XML(XML_Config):
         if XML_element_obj._attr is None:
             XML_element_obj._attr = {}
         else:
-            for key in XML_element_obj._attr.keys():
+            for key in list(XML_element_obj._attr.keys()):
                 XML_element_obj._attr[key] = str(XML_element_obj._attr[key])
 #        if XML_element_obj._name is None:
 #            XML_element_obj._name = 'None'
@@ -933,7 +933,7 @@ class MT_XML(XML_Config):
         #new_element.tail = '\n'
         return new_element
 
-    def write_xml_file(self, xml_fn, cfg_fn=None):
+    def write_xml_file(self, xml_fn, emtf, cfg_fn=None):
         """
         write xml from edi
         """
@@ -947,7 +947,7 @@ class MT_XML(XML_Config):
         self._format_data()
 
         # make the top of the tree element        
-        emtf = ET.Element('EM_TF')
+        #emtf = ET.Element('EM_TF')
         
         # loop over the important information sections
         for element in self._order_list:
@@ -991,9 +991,9 @@ class MT_XML(XML_Config):
         with open(self.xml_fn, 'w') as fid:
             fid.write(xmlstr)
         
-        print '-'*72
-        print '    Wrote xml file to: {0}'.format(self.xml_fn)
-        print '-'*72
+        print('-'*72)
+        print('    Wrote xml file to: {0}'.format(self.xml_fn))
+        print('-'*72)
         
         return self.xml_fn
        

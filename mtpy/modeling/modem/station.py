@@ -47,7 +47,7 @@ class Stations(object):
         self.model_epsg = None
         self.model_utm_zone = None
 
-        for key in kwargs.keys():
+        for key in list(kwargs.keys()):
             if hasattr(self, key):
                 setattr(self, key, kwargs[key])
 
@@ -270,8 +270,8 @@ class Stations(object):
         self.station_locations['rel_north'] = new_coords[1, :]
         
 
-        print 'Rotated stations by {0:.1f} deg clockwise from N'.format(
-            rotation_angle)
+        print('Rotated stations by {0:.1f} deg clockwise from N'.format(
+            rotation_angle))
         
 
 

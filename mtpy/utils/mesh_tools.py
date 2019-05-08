@@ -15,8 +15,17 @@ import scipy.interpolate as spi
 
 
 
-def rotate_mesh(grid_east,grid_north,origin,
-                rotation_angle,return_centre = False):
+def grid_centre(grid_edges):
+    """
+    calculate the grid centres from an array that defines grid edges
+    :param grid_edges: array containing grid edges
+    :returns: grid_centre: centre points of grid
+    """
+    return np.mean([grid_edges[1:], grid_edges[:-1]], axis=0)
+    
+
+def rotate_mesh(grid_east, grid_north, origin, rotation_angle,
+                return_centre=False):
     """
     rotate a mesh defined by grid_east and grid_north.
     
@@ -29,26 +38,24 @@ def rotate_mesh(grid_east,grid_north,origin,
     :return: grid_east, grid_north - 2d arrays describing the east and north coordinates
 
     """
-    x0,y0 = origin
+    x0, y0 = origin
     
     # centre of grid in relative coordinates
     if return_centre:
         gce, gcn = [np.mean([arr[1:], arr[:-1]], axis=0)
-                  for arr in [grid_east,grid_north]]
+                    for arr in [grid_east, grid_north]]
     else:
         gce, gcn = grid_east, grid_north
         
     # coordinates (2d array)
-    coords = np.array([arr.flatten() for arr in np.meshgrid(gce,gcn)])
+    coords = np.array([arr.flatten() for arr in np.meshgrid(gce, gcn)])
 
-
-    
     if rotation_angle != 0:
         # create the rotation matrix
         cos_ang = np.cos(np.deg2rad(rotation_angle))
         sin_ang = np.sin(np.deg2rad(rotation_angle))
-        rot_matrix = np.matrix(np.array([[cos_ang, sin_ang],
-                                         [-sin_ang, cos_ang]]))
+        rot_matrix = np.matrix(np.array([[cos_ang, -sin_ang],
+                                         [sin_ang, cos_ang]]))
 
         # rotate the relative grid coordinates
         new_coords = np.array(np.dot(rot_matrix, coords))
@@ -57,15 +64,15 @@ def rotate_mesh(grid_east,grid_north,origin,
     
 
     # location of grid centres in real-world coordinates to interpolate elevation onto
-    xg = (new_coords[0] + x0).reshape(len(gcn),len(gce))
-    yg = (new_coords[1] + y0).reshape(len(gcn),len(gce))
+    xg = (new_coords[0] + x0).reshape(len(gcn), len(gce))
+    yg = (new_coords[1] + y0).reshape(len(gcn), len(gce))
     
-    return xg,yg
+    return (xg, yg)
 
 
-def interpolate_elevation_to_grid(grid_east,grid_north,epsg=None,utm_zone=None,
-                                  surfacefile=None, surface=None, method='linear',
-                                  fast=True):
+def interpolate_elevation_to_grid(grid_east, grid_north, epsg=None,
+                                  utm_zone=None, surfacefile=None, 
+                                  surface=None, method='linear', fast=True):
     """
     project a surface to the model grid and add resulting elevation data
     to a dictionary called surface_dict. Assumes the surface is in lat/long
@@ -122,21 +129,26 @@ def interpolate_elevation_to_grid(grid_east,grid_north,epsg=None,utm_zone=None,
     # if lat/lon provided as a 1D list, convert to a 2d grid of points
     if len(x.shape) == 1:
         x, y = np.meshgrid(x, y)
+        
+    if len(grid_east.shape) == 1:
+        grid_east,grid_north=np.meshgrid(grid_east,grid_north)
 
     if(fast):
-        buffer = 1 # use a buffer of 1 degree around mesh-bounds
-        mlatmin, mlonmin = gis_tools.project_point_utm2ll(grid_east.min(), grid_north.min(),
+        m_buffer = 1 # use a buffer of 1 degree around mesh-bounds
+        mlatmin, mlonmin = gis_tools.project_point_utm2ll(grid_east.min(), 
+                                                          grid_north.min(),
                                                           epsg=epsg,
                                                           utm_zone=utm_zone)
 
-        mlatmax, mlonmax = gis_tools.project_point_utm2ll(grid_east.max(), grid_north.max(),
+        mlatmax, mlonmax = gis_tools.project_point_utm2ll(grid_east.max(),
+                                                          grid_north.max(),
                                                           epsg=epsg,
                                                           utm_zone=utm_zone)
 
-        subsetIndices = (x >= mlonmin-buffer) & \
-                        (x <= mlonmax+buffer) & \
-                        (y >= mlatmin-buffer) & \
-                        (y <= mlatmax+buffer)
+        subsetIndices = (x >= mlonmin-m_buffer) & \
+                        (x <= mlonmax+m_buffer) & \
+                        (y >= mlatmin-m_buffer) & \
+                        (y <= mlatmax+m_buffer)
         x = x[subsetIndices]
         y = y[subsetIndices]
         elev = elev[subsetIndices]
@@ -154,8 +166,8 @@ def interpolate_elevation_to_grid(grid_east,grid_north,epsg=None,utm_zone=None,
     # xi, the model grid points to interpolate to
     xi = np.vstack([arr.flatten() for arr in [grid_east, grid_north]]).T
     # elevation on the centre of the grid nodes
-    elev_mg = spi.griddata(
-        points, values, xi, method=method).reshape(grid_north.shape)
+    elev_mg = spi.griddata(points, values, xi,
+                           method=method).reshape(grid_north.shape)
 
     return elev_mg
 

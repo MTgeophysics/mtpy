@@ -360,7 +360,7 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
         try:
             self.cb_position = cb_dict['position']
         except KeyError:
-            self.cb_position = None
+            self.cb_position = [.93, .25, .015, .6]
 
         # set the stretching in each direction
         stretch = kwargs.pop('stretch', (200, 25))
@@ -375,6 +375,7 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
         self.fig_num = kwargs.pop('fig_num', 1)
         self.plot_num = kwargs.pop('plot_num', 1)
         self.plot_title = kwargs.pop('plot_title', None)
+        self.plot_ref_ellipse = kwargs.pop('plot_ref_ellipse', False)
         self.fig_dpi = kwargs.pop('fig_dpi', 300)
         self.tscale = kwargs.pop('tscale', 'period')
         self.fig_size = kwargs.pop('fig_size', [6, 6])
@@ -388,9 +389,9 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
         self.scale_arrow = kwargs.pop('scale_arrow', False)
         self.scale_arrow_dict = kwargs.pop('scale_arrow_dict', {})
 
-        if 'size' not in self.scale_arrow_dict.keys():
+        if 'size' not in list(self.scale_arrow_dict.keys()):
             self.scale_arrow_dict['size'] = 1.
-        if 'text_offset_y' not in self.scale_arrow_dict.keys():
+        if 'text_offset_y' not in list(self.scale_arrow_dict.keys()):
             self.scale_arrow_dict['text_offset_y'] = 0.
 
         self._rot_z = kwargs.pop('rot_z', 0)
@@ -463,7 +464,9 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
 
         # create a plot instance
         self.fig = plt.figure(self.fig_num, self.fig_size, dpi=self.fig_dpi)
+        self.fig.clf()
         self.ax = self.fig.add_subplot(1, 1, 1, aspect='equal')
+        
 
         # FZ: control tick rotation=30 not that good
         plt.xticks(rotation='vertical')
@@ -643,7 +646,8 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
 
                         if maxlength > self.arrow_threshold:
                             pass
-                        else:
+                        elif ((txr > 0) or (tyr>0)):
+#                        else:
                             self.ax.arrow(offset * self.xstretch,
                                           np.log10(ff) * self.ystretch,
                                           txr,
@@ -668,7 +672,8 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
                                             (tyi / self.arrow_size) ** 2)
                         if maxlength > self.arrow_threshold:
                             pass
-                        else:
+#                        else:
+                        elif ((txr > 0) or (tyr>0)):
                             self.ax.arrow(offset * self.xstretch,
                                           np.log10(ff) * self.ystretch,
                                           txi,
@@ -827,14 +832,14 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
                     'weight': 'bold'},
                     ncol=2,
                     markerscale=.5,
-                    borderaxespad=.005,
+                    borderaxespad=.0075,
                     borderpad=.25)
 
             # make a scale arrow
             if self.scale_arrow:
-                print (
+                print((
                     np.log10(
-                        self.ylimits[1] - self.scale_arrow_dict['text_offset_y'])) * self.ystretch
+                        self.ylimits[1] - self.scale_arrow_dict['text_offset_y'])) * self.ystretch)
                 txrl = self.scale_arrow_dict['size']
                 self.ax.arrow(min(self.offsetlist) * self.xstretch,
                               np.log10(self.ylimits[1]) * self.ystretch,
@@ -855,10 +860,10 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
         self.ax.grid(alpha=.25, which='both', color=(.25, .25, .25))
 
         # print out the min an max of the parameter plotted
-        print '-' * 25
-        print ck + ' min = {0:.2f}'.format(min(minlist))
-        print ck + ' max = {0:.2f}'.format(max(maxlist))
-        print '-' * 25
+        print('-' * 25)
+        print(ck + ' min = {0:.2f}'.format(min(minlist)))
+        print(ck + ' max = {0:.2f}'.format(max(maxlist)))
+        print('-' * 25)
 
         # ==> make a colorbar with appropriate colors
         if self.cb_position is None:
@@ -913,23 +918,24 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
             self.cb.ax.tick_params(axis='y', direction='in')
 
         # --> add reference ellipse
-        ref_ellip = patches.Ellipse((0, .0),
-                                    width=es,
-                                    height=es,
-                                    angle=0)
-        ref_ellip.set_facecolor((0, 0, 0))
-        ref_ax_loc = list(self.ax2.get_position().bounds)
-        ref_ax_loc[0] *= .95
-        ref_ax_loc[1] -= .17
-        ref_ax_loc[2] = .1
-        ref_ax_loc[3] = .1
-        self.ref_ax = self.fig.add_axes(ref_ax_loc, aspect='equal')
-        self.ref_ax.add_artist(ref_ellip)
-        self.ref_ax.set_xlim(-es / 2. * 1.05, es / 2. * 1.05)
-        self.ref_ax.set_ylim(-es / 2. * 1.05, es / 2. * 1.05)
-        plt.setp(self.ref_ax.xaxis.get_ticklabels(), visible=False)
-        plt.setp(self.ref_ax.yaxis.get_ticklabels(), visible=False)
-        self.ref_ax.set_title(r'$\Phi$ = 1')
+        if self.plot_ref_ellipse:
+            ref_ellip = patches.Ellipse((0, .0),
+                                        width=es,
+                                        height=es,
+                                        angle=0)
+            ref_ellip.set_facecolor((0, 0, 0))
+            ref_ax_loc = list(self.ax2.get_position().bounds)
+            ref_ax_loc[0] *= .95
+            ref_ax_loc[1] -= .17
+            ref_ax_loc[2] = .1
+            ref_ax_loc[3] = .1
+            self.ref_ax = self.fig.add_axes(ref_ax_loc, aspect='equal')
+            self.ref_ax.add_artist(ref_ellip)
+            self.ref_ax.set_xlim(-es / 2. * 1.05, es / 2. * 1.05)
+            self.ref_ax.set_ylim(-es / 2. * 1.05, es / 2. * 1.05)
+            plt.setp(self.ref_ax.xaxis.get_ticklabels(), visible=False)
+            plt.setp(self.ref_ax.yaxis.get_ticklabels(), visible=False)
+            self.ref_ax.set_title(r'$\Phi$ = 1')
 
         # put the grid lines behind
         #        [line.set_zorder(10000) for line in self.ax.lines]
@@ -1274,7 +1280,6 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
             >>> pt1.redraw_plot()
         """
 
-        #plt.close(self.fig)
         self.plot()
 
     def __str__(self):
@@ -1347,7 +1352,7 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
             pass
 
         self.fig_fn = save_fn
-        print 'Saved figure to: ' + self.fig_fn
+        print('Saved figure to: ' + self.fig_fn)
 
     def save_figure2(self, save_fn, file_format='jpg', orientation='portrait', fig_dpi=None, close_plot='y'):
         """
@@ -1400,7 +1405,7 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
         else:  # FZ: assume save-fn is a path2file= "path2/afile.fmt"
             file_format=save_fn.split('.')[-1]
             if file_format is None or file_format not in ['png', 'jpg']:
-                print ("Error: output file name is not correctly provided:", save_fn)
+                print(("Error: output file name is not correctly provided:", save_fn))
                 raise Exception("output file name is not correctly provided!!!")
 
             path2savefile=save_fn
@@ -1417,6 +1422,6 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
 
         self.fig_fn=path2savefile
         #logger.debug('Saved figure to: %s', self.fig_fn)
-        print ('Saved figure to: ', self.fig_fn)
+        print(('Saved figure to: ', self.fig_fn))
 
         return self.fig_fn

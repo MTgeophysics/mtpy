@@ -105,12 +105,12 @@ class MTArrows(object):
 
         # Set class property values from kwargs and pop them
         for v in vars(self):
-            if(v in kwargs.keys()):
+            if(v in list(kwargs.keys())):
                 setattr(self, v, kwargs.pop(v, None))
 
     def _read_arrow_dict(self, arrow_dict):
 
-        for key in arrow_dict.keys():
+        for key in list(arrow_dict.keys()):
             setattr(self, key, arrow_dict[key])
 
 
@@ -192,7 +192,7 @@ class MTEllipse(object):
 
         # Set class property values from kwargs and pop them
         for v in vars(self):
-            if(v in kwargs.keys()):
+            if(v in list(kwargs.keys())):
                 setattr(self, v, kwargs.pop(v, None))
 
 
@@ -205,12 +205,12 @@ class MTEllipse(object):
                         'ellipse_range':[0,0],
                         'ellipse_colorby':'skew',
                         'ellipse_cmap':'mt_bl2gr2rd'}
-        for key in default_dict.keys():
-            if key not in ellipse_dict.keys():
+        for key in list(default_dict.keys()):
+            if key not in list(ellipse_dict.keys()):
                 ellipse_dict[key] = default_dict[key]
         
         # --> set the ellipse properties
-        for key in ellipse_dict.keys():
+        for key in list(ellipse_dict.keys()):
             setattr(self, key, ellipse_dict[key])
 
         try:
@@ -322,7 +322,7 @@ class PlotSettings(MTArrows, MTEllipse):
 
         # Set class property values from kwargs and pop them
         for v in vars(self):
-            if(v in kwargs.keys()):
+            if(v in list(kwargs.keys())):
                 setattr(self, v, kwargs.pop(v, None))
 
 
@@ -803,7 +803,7 @@ class MTplot(mt.MT):
 
         # Set class property values from kwargs and pop them
         for v in vars(self):
-            if(v in kwargs.keys()):
+            if(v in list(kwargs.keys())):
                 setattr(self, v, kwargs.pop(v, None))
 
 
@@ -1107,7 +1107,7 @@ def get_mtlist(fn_list=None, res_object_list=None, z_object_list=None,
     if fn_list is not None:
         ns = len(fn_list)
         mt_list = [MTplot(fn=fn) for fn in fn_list]
-        print 'Reading {0} stations'.format(ns)
+        print('Reading {0} stations'.format(ns))
         return mt_list
 
     elif mt_object_list is not None:
@@ -1122,11 +1122,11 @@ def get_mtlist(fn_list=None, res_object_list=None, z_object_list=None,
                 raise mtex.MTpyError_inputarguments('length ' + \
                                                     ' of z_list is not equal to tip_list' + \
                                                     '; nz={0}, nt={1}'.format(ns, nt))
-            for mt, tip_obj in zip(mt_list, tipper_object_list):
-                mt._Tipper = tip_obj
+            for mt_obj, tip_obj in zip(mt_list, tipper_object_list):
+                mt_obj._Tipper = tip_obj
         except TypeError:
             pass
-        print 'Reading {0} stations'.format(ns)
+        print('Reading {0} stations'.format(ns))
         return mt_list
 
 
@@ -1214,15 +1214,15 @@ def sort_by_offsets(mt_list, line_direction='ew'):
     dtype = [('station', 'S10'), ('offset', float), ('spot', int)]
     slist = []
     # get offsets
-    for ii, mt in enumerate(mt_list):
+    for ii, mt_obj in enumerate(mt_list):
         # get offsets between stations
         if ii == 0:
-            east0 = mt.lon
-            north0 = mt.lat
+            east0 = mt_obj.lon
+            north0 = mt_obj.lat
             offset = 0.0
         else:
-            east = mt.lon
-            north = mt.lat
+            east = mt_obj.lon
+            north = mt_obj.lat
             # if line is predominantly e-w
             if line_direction == 'ew':
                 if east0 < east:
@@ -1240,7 +1240,7 @@ def sort_by_offsets(mt_list, line_direction='ew'):
                 else:
                     offset = 0
         # append values to list for sorting
-        slist.append((mt.station, offset, ii))
+        slist.append((mt_obj.station, offset, ii))
 
     # create a structured array according to the data type and values
     v_array = np.array(slist, dtype=dtype)
@@ -1309,19 +1309,20 @@ def get_station_locations(mt_list, map_scale='latlon', ref_point=(0, 0)):
 
     map_station_dict = {}
     # need to sort by station
-    for ii, mt in enumerate(mt_list):
-        lat_list[ii] = mt.lat
-        lon_list[ii] = mt.lon
-        elev_list[ii] = mt.elev
+    for ii, mt_obj in enumerate(mt_list):
+        lat_list[ii] = mt_obj.lat
+        lon_list[ii] = mt_obj.lon
+        elev_list[ii] = mt_obj.elev
 
         # if map scale is lat lon set parameters
         if map_scale == 'latlon':
-            x = mt.lon - ref_point[0]
-            y = mt.lat - ref_point[1]
+            x = mt_obj.lon - ref_point[0]
+            y = mt_obj.lat - ref_point[1]
 
         # if map scale is in meters easting and northing
         elif map_scale == 'eastnorth' or map_scale == 'eastnorthkm':
-            east, north, zone = gis_tools.project_point_ll2utm(mt.lat, mt.lon)
+            east, north, zone = gis_tools.project_point_ll2utm(mt_obj.lat,
+                                                               mt_obj.lon)
 
             east /= dscale
             north /= dscale
@@ -1337,7 +1338,7 @@ def get_station_locations(mt_list, map_scale='latlon', ref_point=(0, 0)):
                 # check to make sure the zone is the same this needs
                 # to be more rigorously done
                 if zone1 != zone:
-                    print 'Zone change at station ' + mt.station
+                    print 'Zone change at station ' + mt_obj.station
                     if zone1[0:2] == zone[0:2]:
                         pass
                     elif int(zone1[0:2]) < int(zone[0:2]):
@@ -1357,7 +1358,7 @@ def get_station_locations(mt_list, map_scale='latlon', ref_point=(0, 0)):
         x_arr[ii] = x
         y_arr[ii] = y
 
-        map_station_dict[mt.station] = (x, y, mt.elev)
+        map_station_dict[mt_obj.station] = (x, y, mt_obj.elev)
 
     return map_station_dict, x_arr, y_arr
 
@@ -1507,9 +1508,9 @@ def get_rp_arrays(mt_list, plot_period, sort_by='line', line_direction='ew',
         phaseyx = np.zeros((nt, ns))
         phaseyy = np.zeros((nt, ns))
 
-        for ii, mt in enumerate(mt_list_sort):
+        for ii, mt_obj in enumerate(mt_list_sort):
             # get resisitivity and phase in a dictionary and append to a list
-            rp = mt.Z
+            rp = mt_obj.Z
 
             for rr, rper in enumerate(plot_period):
                 jj = None
@@ -1547,7 +1548,8 @@ def get_rp_arrays(mt_list, plot_period, sort_by='line', line_direction='ew',
 
                 if jj is None:
                     print 'did not find period {0:.6g} (s) for {1}'.format(
-                        rper, mt.station)
+                        rper, mt_obj.station)
+
         return resxx, resxy, resyx, resyy, phasexx, phasexy, phaseyx, phaseyy, \
                station_list, offset_list
 
@@ -1566,14 +1568,13 @@ def get_rp_arrays(mt_list, plot_period, sort_by='line', line_direction='ew',
         phaseyx = np.zeros((nt, ns))
         phaseyy = np.zeros((nt, ns))
 
-        for ii, mt in enumerate(mt_list):
+        for ii, mt_obj in enumerate(mt_list):
             # get resisitivity and phase in a dictionary and append to a list
-            rp = mt.get_ResPhase()
-            #            rp = mt.Z
+            rp = mt_obj.Z
 
             for rr, rper in enumerate(plot_period):
                 jj = None
-                for kk, iper in enumerate(mt.period):
+                for kk, iper in enumerate(mt_obj.period):
                     if iper == rper:
                         jj = period_dict[rper]
 
@@ -1609,7 +1610,8 @@ def get_rp_arrays(mt_list, plot_period, sort_by='line', line_direction='ew',
 
                 if jj is None:
                     print 'did not find period {0:.6g} (s) for {1}'.format(
-                        rper, mt.station)
+                        rper, mt_obj.station)
+
         return resxx, resxy, resyx, resyy, + \
             phasexx, phasexy, phaseyx, phaseyy, x, y, map_dict
 
@@ -1700,9 +1702,9 @@ def get_pt_arrays(mt_list, plot_period, sort_by='line', line_direction='ew',
         azimuth = np.zeros((nt, ns))
         ellipticity = np.zeros((nt, ns))
 
-        for ii, mt in enumerate(mt_list_sort):
+        for ii, mt_obj in enumerate(mt_list_sort):
             # get resisitivity and phase in a dictionary and append to a list
-            pt = mt.pt
+            pt = mt_obj.pt
 
             for rr, rper in enumerate(plot_period):
                 jj = None
@@ -1732,7 +1734,8 @@ def get_pt_arrays(mt_list, plot_period, sort_by='line', line_direction='ew',
 
                 if jj is None:
                     print 'did not find period {0:.6g} (s) for {1}'.format(
-                        rper, mt.station)
+                        rper, mt_obj.station)
+
         return phimin, phimax, skew, azimuth, ellipticity, slist, olist
 
     elif sort_by == 'map':
@@ -1746,9 +1749,9 @@ def get_pt_arrays(mt_list, plot_period, sort_by='line', line_direction='ew',
         azimuth = np.zeros((nt, ns))
         ellipticity = np.zeros((nt, ns))
 
-        for ii, mt in enumerate(mt_list):
+        for ii, mt_obj in enumerate(mt_list):
             # get resisitivity and phase in a dictionary and append to a list
-            pt = mt.pt
+            pt = mt_obj.pt
 
             for rr, rper in enumerate(plot_period):
                 jj = None
@@ -1779,7 +1782,7 @@ def get_pt_arrays(mt_list, plot_period, sort_by='line', line_direction='ew',
 
                 if jj is None:
                     print 'did not find period {0:.6g} (s) for {1}'.format(
-                        rper, mt.station)
+                        rper, mt_obj.station)
         return phimin, phimax, skew, azimuth, ellipticity, x, y, map_dict
 
 

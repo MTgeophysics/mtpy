@@ -30,6 +30,13 @@ mu0 = 4e-7*math.pi
 
 #=================================================================
 
+def centre_point(xarray, yarray):
+    """
+    get the centre point of arrays of x and y values
+    """
+    return (xarray.max() + xarray.min())/2., (yarray.max() + yarray.min())/2.
+
+
 def roundsf(number, sf):
     """
     round a number to a specified number of significant figures (sf)
@@ -95,6 +102,20 @@ def get_period_list(period_min,period_max,periods_per_decade,include_outside_ran
         
     return np.logspace(start_period,stop_period,(stop_period-start_period)*periods_per_decade + 1)
 
+
+def nearest_index(val,array):
+    """
+    find the index of the nearest value in the array
+    :param val: the value to search for
+    :param array: the array to search in
+    
+    :return: index: integer describing position of nearest value in array
+    
+    """
+    # absolute difference between value and array
+    diff = np.abs(array-val)
+    
+    return np.where(diff==min(diff))[0][0]
 
 
 def make_log_increasing_array(z1_layer, target_depth, n_layers, increment_factor=0.999):

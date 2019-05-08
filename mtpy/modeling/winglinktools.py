@@ -63,7 +63,7 @@ def readOutputFile(outputfile):
             station = line.rstrip().split(':')[1][1:]
             idict[station] = {}
             stationlst.append(station)
-            print 'Read in station: ', station
+            print('Read in station: ', station)
             for key in dkeys:
                 idict[station][key] = []
         elif line.find('RMS') == 0:
@@ -290,7 +290,7 @@ def plotResponses(outputfile, maxcol=8, plottype='all', **kwargs):
         for station in stationlst:
             for pstation in plottype:
                 if station.find(pstation) >= 0:
-                    print 'plotting ', station
+                    print('plotting ', station)
                     pstationlst.append(station)
 
         gs = gridspec.GridSpec(6, 2, wspace=.05, left=.1)

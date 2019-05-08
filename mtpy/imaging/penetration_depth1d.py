@@ -13,7 +13,7 @@ import sys
 
 import matplotlib as mpl
 from mtpy.utils.mtpylog import MtPyLog
-from penetration import Depth1D
+from .penetration import Depth1D
 
 # mpl.rcParams['lines.linewidth'] = 2
 # mpl.rcParams['lines.color'] = 'r'
@@ -189,9 +189,9 @@ def plot_edi_file(edifile, rholist=['zxy', 'zyx', 'det'], savefile=None, fig_dpi
 if __name__ == '__main__':
 
     if len(sys.argv) < 2:
-        print (
+        print((
             "\n please provide path to edi files\n USAGE:  %s path2edifile" %
-            sys.argv[0])
+            sys.argv[0]))
         sys.exit(1)
     else:
         edi_path = sys.argv[1]

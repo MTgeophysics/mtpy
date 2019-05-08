@@ -79,18 +79,20 @@ class Residual(object):
         self.rms_array = None
         self.rms_tip = None
         self.rms_z = None
+        self.period = None
 
     def read_residual_file(self, residual_fn=None):
         
         # check if residual_fn is contained in object
-        if residual_fn is None:
-            residual_fn = self.residual_fn
+        if residual_fn is not None:
+            self.residual_fn = residual_fn
         if self.residual_fn is None:
             raise Exception("Cannot read residuals, please provide residual_fn")
         
         else:
             res_obj = Data()
             res_obj.read_data_file(self.residual_fn)
+            self.period = res_obj.period_list.copy()
 
         # pass relevant arguments through residual object
         for att in ['center_position_EN', 'period_list',
@@ -108,6 +110,7 @@ class Residual(object):
                                                         field_name,
                                                         np.zeros(len(res_obj.station_locations.station_locations)),
                                                         usemask=False)
+        self.get_rms()
 
     def calculate_residual_from_data(self, data_fn=None, resp_fn=None):
         """
@@ -115,7 +118,7 @@ class Residual(object):
 
         :param data_fn:
         :param resp_fn:
-        :return:
+        :returns: residual file name
         """
 
         data_obj = self._read_data_file(data_fn=data_fn)
@@ -126,9 +129,11 @@ class Residual(object):
             self.residual_array[comp] = self.residual_array[comp] - resp_obj.data_array[comp]
 
         data_obj.fn_basename = resp_obj.fn_basename[:-3] + 'res'
-        print "writing to file",data_obj.fn_basename
+        print("writing to file",data_obj.fn_basename)
         data_obj.write_data_file(fill=False, compute_error=False, 
                                  fn_basename=data_obj.fn_basename)
+        
+        return data_obj.data_fn 
 
     def _read_data_file(self, data_fn=None):
         """
@@ -158,7 +163,7 @@ class Residual(object):
             resp_obj = Data()
             resp_obj.read_data_file(self.resp_fn)
         else:
-            print "Cannot read data, please provide data_fn"
+            print("Cannot read data, please provide data_fn")
             return
 
         # pass relevant arguments through residual object

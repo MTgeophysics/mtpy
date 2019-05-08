@@ -350,6 +350,7 @@ class PlotResponses(QtWidgets.QWidget):
         #make a widget that will be the station list
         self.list_widget = QtWidgets.QListWidget()
         self.list_widget.itemClicked.connect(self.get_station)
+        self.list_widget.currentItemChanged.connect(self.get_station)
         self.list_widget.setMaximumWidth(150)
         
         self.save_edits_button = QtWidgets.QPushButton()
@@ -404,7 +405,11 @@ class PlotResponses(QtWidgets.QWidget):
         """
         get the station name from the clicked station 
         """
-        self.station = str(widget_item.text()) 
+        try:
+            self.station = str(widget_item.text()) 
+        except AttributeError:
+            print('Error: Widget is None')
+            
         self.plot()
         
     def file_changed_dfn(self):
@@ -414,7 +419,6 @@ class PlotResponses(QtWidgets.QWidget):
         
         print '{0} changed'.format(self.data_fn)
         self.data_fn = os.path.abspath(self._data_fn)
-
         
     def save_edits(self):
         """
@@ -616,7 +620,7 @@ class PlotResponses(QtWidgets.QWidget):
                                   [epyy[1][0], epyy[1][1], epyy[2][0]]]
                 line_list = [[erxx[0]], [erxy[0]], [eryx[0]], [eryy[0]]]
             except IndexError:
-                print 'Found no Z components for {0}'.format(self.station)
+                print('Found no Z components for {0}'.format(self.station))
                 line_list = [[None], [None], 
                              [None], [None]]
                                      
@@ -648,7 +652,7 @@ class PlotResponses(QtWidgets.QWidget):
                                   [erty[1][0], erty[1][1], erty[2][0]],
                                   [epty[1][0], epty[1][1], epty[2][0]]]
             except IndexError:
-                print 'Found no Z components for {0}'.format(self.station)
+                print('Found no Z components for {0}'.format(self.station))
                 line_list = [[None], [None], 
                              [None], [None],
                              [None], [None]]

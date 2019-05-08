@@ -330,7 +330,7 @@ class Occam1D:
                                               '\n')
                 datafid.write('\n')
                 datafid.close()
-                print 'Wrote Data File: ', dfilesave
+                print('Wrote Data File: ', dfilesave)
                 returnfn.append(dfilesave)
             self.datafn_te = returnfn[0]
             self.datafn_tm = returnfn[1]
@@ -422,7 +422,7 @@ class Occam1D:
                                       2 * ss + '1' + 2 * ss + string_fmt % rp.phaseyx[ii] + 2 * ss +
                                       string_fmt % (phaseerr / 100. * (180 / np.pi)) + '\n')
             datafid.close()
-            print 'Wrote Data File: ', dfilesave
+            print('Wrote Data File: ', dfilesave)
 
     def make1DModelFile(self, savepath=None, nlayers=100, bottomlayer=10000,
                         basestep=10, z1layer=10, airlayerheight=10000):
@@ -507,7 +507,7 @@ class Occam1D:
 
         modfid.close()
 
-        print 'Wrote Model file: ', self.modelfn
+        print('Wrote Model file: ', self.modelfn)
 
     def make1DInputFile(self, savepath=None, imode='TE', roughtype=1,
                         maxiter=20, targetrms=1.0, rhostart=100,
@@ -672,7 +672,7 @@ class Occam1D:
             infid.write(ss + str(np.log10(rhostart)) + '\n')
 
         infid.close()
-        print 'Wrote Input File: ', self.inputfn
+        print('Wrote Input File: ', self.inputfn)
 
     def read1DModelFile(self):
         """
@@ -1198,7 +1198,7 @@ class Occam1D:
                     self.iterfn_te = [os.path.join(self.savepath, rr)
                                       for rr in os.listdir(self.savepath)
                                       if rr.find('TE_{0}.iter'.format(self.iternum)) > 0][0]
-                    print self.iterfn_te
+                    print(self.iterfn_te)
                     self.read1DIterFile(self.iterfn_te, imode='TE')
 
                 except IndexError:
@@ -2042,7 +2042,7 @@ def blocks_elements_setup(parameter_dict):
 
     # nrk: number of total dummy stations
     nrk = j
-    print "%i dummy stations defined" % (nrk)
+    print("%i dummy stations defined" % (nrk))
 
     spacing1 = (sitlok[1] - sitlok[0]) / 2.
     sides.append(3 * spacing1)
@@ -2333,7 +2333,7 @@ class OccamPointPicker(object):
             # the data file.  Make the error into an array
             for ee, err in enumerate(errlst[nn]):
                 errpath = err[2].get_paths()
-                errarr = np.zeros(len(self.fdict[nn][ee].keys()))
+                errarr = np.zeros(len(list(self.fdict[nn][ee].keys())))
                 for ff, epath in enumerate(errpath):
                     errv = epath.vertices
                     errarr[ff] = abs(errv[0, 1] - self.data[nn][ee][ff])
@@ -2425,7 +2425,7 @@ class OccamPointPicker(object):
                                                       color=(.7, .7, .7), marker=self.marker,
                                                       ms=4)
             except KeyError:
-                print 'Axis does not contain res/phase point'
+                print('Axis does not contain res/phase point')
 
         # if click the scroll button or middle button change increase the
         # errorbars by the given amount
@@ -2553,7 +2553,7 @@ class OccamPointPicker(object):
             for cid in self.cidlst[self.fignum]:
                 event.canvas.mpl_disconnect(cid)
             plt.close(event.canvas.figure)
-            print 'Closed figure ', self.fignum
+            print('Closed figure ', self.fignum)
 
 
 class Occam2DData:
@@ -2724,7 +2724,7 @@ class Occam2DData:
             # name
             for filename in os.listdir(edipath):
                 if fnmatch.fnmatch(filename, station + '*.edi'):
-                    print 'Found station edifile: ', filename
+                    print('Found station edifile: ', filename)
 
                     # create a dictionary for the station data and info
                     surveydict = {}
@@ -2750,8 +2750,8 @@ class Occam2DData:
                             tip = z1.Tipper.tipper[::-1, :, :]
                             tipvar = z1.Tipper.tipper_err[::-1, :]
 
-                        print ('Flipped frequency to descending for station: '
-                               '{0}'.format(station))
+                        print(('Flipped frequency to descending for station: '
+                               '{0}'.format(station)))
                     else:
                         z = z1.Z.z
                         zvar = z1.Z.z_err
@@ -2806,7 +2806,7 @@ class Occam2DData:
         # to the geoelectric strike direction, which gives the relative distance
         # along the strike direction.
         theta = np.arctan(p[0])
-        print 'Profile Line Angle is: {0:.4g}'.format(theta * 180 / np.pi)
+        print('Profile Line Angle is: {0:.4g}'.format(theta * 180 / np.pi))
 
         # plot stations on profile line
         if plotyn == 'y':
@@ -2825,7 +2825,7 @@ class Occam2DData:
             plt.show()
         for ii in range(len(surveylst)):
             if surveylst[ii]['zone'] != surveylst[0]['zone']:
-                print surveylst[ii]['station']
+                print(surveylst[ii]['station'])
             d = (northlst[ii] - sp.polyval(p,
                                            self.eastlst[ii])) * np.cos(theta)
             x0 = self.eastlst[ii] + d * np.sin(theta)
@@ -2893,7 +2893,7 @@ class Occam2DData:
                     farray[ii, 0:len(freqlst[ii])] = freqlst[ii]
 
                 mfreq = np.median(farray, axis=0)
-                print len(mfreq), len(freqstep)
+                print(len(mfreq), len(freqstep))
                 fdict = dict([('%.6g' % mfreq[ff], ii)
                               for ii, ff in enumerate(freqstep, 1)
                               if mfreq[ff] != 0])
@@ -2911,18 +2911,18 @@ class Occam2DData:
 
             # make a dictionary of values
             fdict = dict([('%.6g' % ff, ii) for ii, ff in
-                          enumerate(mfreq[range(0, maxflen, freqstep)], 1)
+                          enumerate(mfreq[list(range(0, maxflen, freqstep))], 1)
                           if ff != 0])
 
         # print the frequencies to look for to make sure its what the user wants
         # make a list of keys that is sorted in descending order
-        klst = [float(dd) for dd in fdict.keys()]
+        klst = [float(dd) for dd in list(fdict.keys())]
         klst.sort(reverse=True)
         klst = ['%.6g' % dd for dd in klst]
 
-        print 'Frequencies to look for are: (# freq(Hz) Period(s)) '
+        print('Frequencies to look for are: (# freq(Hz) Period(s)) ')
         for key in klst:
-            print fdict[key], key, 1. / float(key)
+            print(fdict[key], key, 1. / float(key))
 
         # make lists of parameters to write to file
         reslst = []
@@ -2959,7 +2959,7 @@ class Occam2DData:
                     # put phases in correct quadrant if should be negative
                     if phaseyx > 180:
                         phaseyx = phaseyx - 360
-                        print 'Found Negative Phase', surveylst[kk]['station'], ff
+                        print('Found Negative Phase', surveylst[kk]['station'], ff)
 
                     # calculate errors
                     #res_xy (TE)
@@ -3060,7 +3060,7 @@ class Occam2DData:
                 except KeyError:
                     # search around the frequency given by ftol
                     try:
-                        for key in fdict.keys():
+                        for key in list(fdict.keys()):
                             if ff > float(key) * (1 - ftol) and ff < float(key) * (1 + ftol):
                                 nn = fdict[key]
                                 wt = .2 / (ff)
@@ -3077,7 +3077,7 @@ class Occam2DData:
                                 # negative
                                 if phaseyx > 180:
                                     phaseyx = phaseyx - 360
-                                    print 'Found Negative Phase', surveylst[kk]['station'], ff
+                                    print('Found Negative Phase', surveylst[kk]['station'], ff)
 
                                 # calculate errors
                                 #res_xy (TE)
@@ -3237,15 +3237,15 @@ class Occam2DData:
                      ss + 'DATUM' + ss + 'ERROR' + '\n')
         for ll, datline in enumerate(reslst):
             if datline.find('#IND') >= 0:
-                print 'Found #IND on line ', ll
+                print('Found #IND on line ', ll)
                 ndline = datline.replace('#IND', '00')
-                print 'Replaced with 00'
+                print('Replaced with 00')
                 datfid.write(ndline)
             else:
                 datfid.write(datline)
         datfid.close()
 
-        print 'Wrote Occam2D data file to: ', self.datafn
+        print('Wrote Occam2D data file to: ', self.datafn)
 
     def read2DdataFile(self):
         """
@@ -3316,7 +3316,7 @@ class Occam2DData:
         else:
             self.title = self.titlestr
             self.theta_profile = 0
-            print 'Need to figure out angle of profile line'
+            print('Need to figure out angle of profile line')
         # get number of sits
         nsites = int(dlines[2].strip().split(':')[1].strip())
 
@@ -3467,7 +3467,7 @@ class Occam2DData:
                 try:
                     stationlst.remove(rstation)
                 except ValueError:
-                    print 'Did not find ' + rstation
+                    print('Did not find ' + rstation)
 
         # if flst is not the same as freq make freq=flst
         if flst != None:
@@ -3514,7 +3514,7 @@ class Occam2DData:
                         # put phases in correct quadrant if should be negative
                         if phaseyx > 180:
                             phaseyx = phaseyx - 360
-                            print 'Found Negative Phase at', imp1.station, kk, ff
+                            print('Found Negative Phase at', imp1.station, kk, ff)
 
                         # calculate errors
                         #res_xy (TE)
@@ -3811,15 +3811,15 @@ class Occam2DData:
                      ss + 'DATUM' + ss + 'ERROR' + '\n')
         for ll, datline in enumerate(reslst):
             if datline.find('#IND') >= 0:
-                print 'Found #IND on line ', ll
+                print('Found #IND on line ', ll)
                 ndline = datline.replace('#IND', '00')
-                print 'Replaced with 00'
+                print('Replaced with 00')
                 datfid.write(ndline)
             else:
                 datfid.write(datline)
         datfid.close()
 
-        print 'Rewrote the data file to: ', self.ndatafn
+        print('Rewrote the data file to: ', self.ndatafn)
 
     def makeModelFiles(self, niter=20, targetrms=1.0, nlayers=100, nlperdec=30,
                        z1layer=50, bwidth=200, trigger=.75, savepath=None, rhostart=100,
@@ -3920,8 +3920,8 @@ class Occam2DData:
                 ifid.write(line)
         ifid.close()
 
-        print 'Be sure to check the INMODEL file for clumped numbers near the bottom.'
-        print 'Also, check the MESH and startup files to make sure they are correct.'
+        print('Be sure to check the INMODEL file for clumped numbers near the bottom.')
+        print('Also, check the MESH and startup files to make sure they are correct.')
 
         self.meshfn = meshfn
         self.inmodelfn = inmodelfn
@@ -4022,7 +4022,7 @@ class Occam2DData:
         # get the stations to plot
         # if none plot all of them
         if plottype == None:
-            pstationlst = range(len(self.stationlst))
+            pstationlst = list(range(len(self.stationlst)))
 
         # otherwise pick out the stations to plot along with their index number
         elif type(plottype) is not list:
@@ -4188,7 +4188,7 @@ class Occam2DData:
         # make a reverse dictionary for locating the masked points in the data
         # file
         rploc = dict([('{0}'.format(self.points.fndict[key]), int(key) - 1)
-                      for key in self.points.fndict.keys()])
+                      for key in list(self.points.fndict.keys())])
 
         # make a period dictionary to locate points changed
         frpdict = dict([('{0:.5g}'.format(fr), ff)
@@ -4200,7 +4200,7 @@ class Occam2DData:
             # loop over the 4 main entrie
             for ss, skey in enumerate(['resxy', 'resyx', 'phasexy', 'phaseyx']):
                 # rewrite any coinciding points
-                for frpkey in frpdict.keys():
+                for frpkey in list(frpdict.keys()):
                     try:
                         ff = frpdict[frpkey]
                         floc = self.points.fdict[dd][ss][frpkey]
@@ -4329,15 +4329,15 @@ class Occam2DData:
                      ss + 'DATUM' + ss + 'ERROR' + '\n')
         for ll, datline in enumerate(reslst):
             if datline.find('#IND') >= 0:
-                print 'Found #IND on line ', ll
+                print('Found #IND on line ', ll)
                 ndline = datline.replace('#IND', '00')
-                print 'Replaced with 00'
+                print('Replaced with 00')
                 datfid.write(ndline)
             else:
                 datfid.write(datline)
         datfid.close()
 
-        print 'Wrote Occam2D data file to: ', self.ndatafn
+        print('Wrote Occam2D data file to: ', self.ndatafn)
 
     def read2DRespFile(self, respfn):
         """
@@ -4744,7 +4744,7 @@ class Occam2DData:
                         for ww, wlstation in enumerate(wlslst):
                             #                        print station,wlstation
                             if wlstation.find(station) == 0:
-                                print station, wlstation
+                                print(station, wlstation)
                                 wlrpdict = wlrplst[ww]
 
                         zrxy = [np.where(wlrpdict['resxy'][0] != 0)[0]]
@@ -4775,7 +4775,7 @@ class Occam2DData:
                         llst.append('$WLMod_{TE}$')
                         llst.append('$WLMod_{TM}$')
                     except IndexError:
-                        print 'Station not present'
+                        print('Station not present')
                 else:
                     if plotnum == 1:
                         axrte.set_title(self.stationlst[ii] +
@@ -5084,7 +5084,7 @@ class Occam2DData:
                         for ww, wlstation in enumerate(wlslst):
                             #                        print station,wlstation
                             if wlstation.find(station) == 0:
-                                print station, wlstation
+                                print(station, wlstation)
                                 wlrpdict = wlrplst[ww]
 
                         zrxy = [np.where(wlrpdict['resxy'][0] != 0)[0]]
@@ -5115,7 +5115,7 @@ class Occam2DData:
                         legend_dict['wltm'] = r6[0]
                         legend_label['wltm'] = '$WLMod_{TM}$'
                     except IndexError:
-                        print 'Station not present'
+                        print('Station not present')
                 else:
                     if plotnum == 1:
                         axrte.set_title(self.stationlst[ii] +
@@ -5886,7 +5886,7 @@ class Occam2DModel(Occam2DData):
             hline = mlines[jj].strip().split()
             for mm in hline:
                 hnodes[ii] = float(mm)
-                print ii, hnodes
+                print(ii, hnodes)
                 ii += 1
             jj += 1
 
@@ -5925,7 +5925,7 @@ class Occam2DModel(Occam2DData):
         try:
             self.read2DdataFile()
         except AttributeError:
-            print 'No Data file defined'
+            print('No Data file defined')
 
     def get2DModel(self):
         """
@@ -5949,15 +5949,15 @@ class Occam2DModel(Occam2DData):
         self.read2DIter()
 
         # read in data file as an OccamData type
-        print 'Reading data from: ', self.datafn
+        print('Reading data from: ', self.datafn)
         self.get2DData()
 
         # read in MESH file
-        print 'Reading mesh from: ', self.meshfn
+        print('Reading mesh from: ', self.meshfn)
         self.read2DMesh()
 
         #read in INMODEL
-        print 'Reading model from: ', self.inmodelfn
+        print('Reading model from: ', self.inmodelfn)
         self.read2DInmodel()
         # get the binding offset which is the right side of the furthest left
         # block, this helps locate the model in relative space
@@ -6282,9 +6282,9 @@ class Occam2DModel(Occam2DData):
                     float(self.idict['roughness value'])),
                     fontdict={'size': fs + 1, 'weight': 'bold'})
         else:
-            print 'RMS {0:.2f}, Roughness={1:.0f}'.format(
+            print('RMS {0:.2f}, Roughness={1:.0f}'.format(
                 float(self.idict['misfit value']),
-                float(self.idict['roughness value']))
+                float(self.idict['roughness value'])))
 
         # plot forward model mesh
         if femesh == 'on':

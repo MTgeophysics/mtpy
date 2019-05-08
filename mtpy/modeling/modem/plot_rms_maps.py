@@ -129,7 +129,7 @@ class PlotRMSMaps(object):
         self.fig_num = kwargs.pop('fig_num', 1)
         self.font_dict = {'size': self.font_size + 2, 'weight': 'bold'}
 
-        self.marker = kwargs.pop('marker', 's')
+        self.marker = kwargs.pop('marker', 'o')
         self.marker_size = kwargs.pop('marker_size', 10)
 
         self.rms_max = kwargs.pop('rms_max', 5)
@@ -197,6 +197,9 @@ class PlotRMSMaps(object):
         """
         plot rms in map view
         """
+        
+        self.read_residual_fn()
+        
         font_dict = {'size': self.font_size + 2, 'weight': 'bold'}
         rms_1 = 1. / self.rms_max
 
@@ -327,7 +330,7 @@ class PlotRMSMaps(object):
             ax.yaxis.set_major_formatter(FormatStrFormatter('%2.2f'))
 
         # cb_ax = mcb.make_axes(ax, orientation='vertical', fraction=.1)
-        cb_ax = self.fig.add_axes([self.subplot_right + .02, .225, .02, .45])
+        cb_ax = self.fig.add_axes([self.subplot_right + .01, .225, .02, .45])
         color_bar = mcb.ColorbarBase(cb_ax,
                                      cmap=self.rms_cmap,
                                      norm=colors.Normalize(vmin=self.rms_min,
@@ -370,7 +373,7 @@ class PlotRMSMaps(object):
             self.fig_dpi = save_fig_dpi
 
         self.fig.savefig(save_fn, dpi=self.fig_dpi)
-        print 'saved file to {0}'.format(save_fn)
+        print('saved file to {0}'.format(save_fn))
 
         if fig_close:
             plt.close(self.fig)

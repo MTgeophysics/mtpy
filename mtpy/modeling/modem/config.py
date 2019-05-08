@@ -28,7 +28,7 @@ class ModEMConfig(object):
     def __init__(self, **kwargs):
         self.cfg_dict = {'ModEM_Inversion_Parameters': {}}
 
-        for key in kwargs.keys():
+        for key in list(kwargs.keys()):
             setattr(self, key, kwargs[key])
 
     def write_config_file(self, save_dir=None,
@@ -69,7 +69,7 @@ class ModEMConfig(object):
 
         add_dict = m_obj.get_parameters()
 
-        for key in add_dict.keys():
+        for key in list(add_dict.keys()):
             self.cfg_dict['ModEM_Inversion_Parameters'][key] = add_dict[key]
 
 

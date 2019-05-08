@@ -30,15 +30,10 @@ from mtpy.modeling.modem.station import Stations
 from mtpy.modeling.modem.model import Model
 
 try:
-    from evtk.hl import pointsToVTK
+    from pyevtk.hl import pointsToVTK
 except ImportError:
     print('If you want to write a vtk file for 3d viewing, you need download '
-          'and install evtk from https://bitbucket.org/pauloh/pyevtk', file=sys.stderr)
-
-    print('Note: if you are using Windows you should build evtk first with'
-          'either MinGW or cygwin using the command: \n'
-          '    python setup.py build -compiler=mingw32  or \n'
-          '    python setup.py build -compiler=cygwin')
+          'and install evtk from https://pypi.org/project/PyEVTK', file=sys.stderr)
 
 
 # =============================================================================
@@ -59,7 +54,7 @@ class Data(object):
                        list of full paths to .edi files you want to invert for
 
     ====================== ====================================================
-    Attributes/Key Words   Description
+    Attributes              Description
     ====================== ====================================================
     _dtype                 internal variable defining the data type of
                            data_array
@@ -234,7 +229,7 @@ class Data(object):
         >>> #invert for every third period in inv_period_list
         >>> inv_period_list = inv_period_list[np.arange(0, len(inv_period_list, 3))]
         >>> md.period_list = inv_period_list
-        >>> md.write_data_file(save_path=r"/home/modem/inv1")
+    >>> md.write_data_file(save_path=r"/home/modem/inv1")
 
     :Example 3 --> change error values: ::
 
@@ -353,7 +348,7 @@ class Data(object):
                                        'Imag',
                                        'Error\n'])
         
-        for key in kwargs.keys():
+        for key in list(kwargs.keys()):
             # have to set rotation angle after period list has been set
             if key != 'rotation_angle':
                 if hasattr(self, key):
@@ -377,7 +372,7 @@ class Data(object):
                 
                 
 
-        if 'rotation_angle' in kwargs.keys():
+        if 'rotation_angle' in list(kwargs.keys()):
             setattr(self, 'rotation_angle', kwargs['rotation_angle'])
 #            self._set_rotation_angle(self.rotation_angle)
 
@@ -640,7 +635,7 @@ class Data(object):
         if self.period_list is None:
             self.get_period_list()
 
-        ns = len(self.mt_dict.keys())
+        ns = len(list(self.mt_dict.keys()))
         nf = len(self.period_list)
 
         d_array = False
@@ -736,12 +731,13 @@ class Data(object):
                 if new_edi_dir is not None and os.path.isdir(new_edi_dir):
                     # new_edifile = os.path.join(new_edi_dir, mt_obj.station + '.edi')
                     mt_obj.write_mt_file(
-                        save_dir=new_edi_dir,
-                        fn_basename=mt_obj.station,
-                        file_type='edi',
-                        new_Z_obj=interp_z,
-                        new_Tipper_obj=interp_t,
-                        longitude_format=longitude_format)
+                            save_dir=new_edi_dir,
+                            fn_basename=mt_obj.station,
+                            file_type='edi',
+                            new_Z_obj=interp_z,
+                            new_Tipper_obj=interp_t,
+                            longitude_format=longitude_format)
+                        
             else:
                 pass
 
@@ -1030,7 +1026,7 @@ class Data(object):
                         if zz.real != 0.0 and zz.imag != 0.0 and zz.real != 1e32 and zz.imag != 1e32:
                             if self.formatting == '1':
                                 per = '{0:<12.5e}'.format(self.period_list[ff])
-                                sta = '{0:>7}'.format(self.data_array[ss]['station'])
+                                sta = '{0:>7}'.format(self.data_array[ss]['station'].decode('UTF-8'))
                                 lat = '{0:> 9.3f}'.format(self.data_array[ss]['lat'])
                                 lon = '{0:> 9.3f}'.format(self.data_array[ss]['lon'])
                                 eas = '{0:> 12.3f}'.format(self.data_array[ss]['rel_east'])
@@ -1075,8 +1071,8 @@ class Data(object):
                                                                             float(ima)])))))
                             abs_err = '{0:> 14.6e}'.format(abs(abs_err))
                             # make sure that x==north, y==east, z==+down
-                            dline = ''.join([per, sta, lat, lon, nor, eas, ele,
-                                             com, rea, ima, abs_err, '\n'])
+                            dline = ''.join([per, sta, lat, lon, nor, eas, ele, com, rea, ima, abs_err, '\n'])
+
                             d_lines.append(dline)
 
         with open(self.data_fn, 'w') as dfid:
@@ -1321,9 +1317,10 @@ class Data(object):
             raise DataError(
                 'Could not find {0}, check path'.format(self.data_fn))
 
-        dfid = file(self.data_fn, 'r')
-        dlines = dfid.readlines()
-        dfid.close()
+        with open (self.data_fn, 'r') as dfid:
+            dlines = dfid.readlines()
+
+        # dfid.close()
 
         header_list = []
         metadata_list = []
@@ -1430,7 +1427,7 @@ class Data(object):
                     pass
 
         # find inversion mode
-        for inv_key in self.inv_mode_dict.keys():
+        for inv_key in list(self.inv_mode_dict.keys()):
             inv_mode_list = self.inv_mode_dict[inv_key]
             if len(inv_mode_list) != inv_list:
                 continue
@@ -1524,7 +1521,7 @@ class Data(object):
         # make mt_dict an attribute for easier manipulation later
         self.mt_dict = data_dict
 
-        ns = len(self.mt_dict.keys())
+        ns = len(list(self.mt_dict.keys()))
         nf = len(self.period_list)
         self._set_dtype((nf, 2, 2), (nf, 1, 2))
         self.data_array = np.zeros(ns, dtype=self._dtype)
@@ -1593,8 +1590,8 @@ class Data(object):
         pointsToVTK(vtk_fn,
                     self.station_locations.rel_north / 1000.,
                     self.station_locations.rel_east / 1000.,
-                    self.station_locations.rel_elev / 1000., 
-                    data={'elevation': self.station_locations.rel_elev})
+                    self.station_locations.rel_elev / 1000.,
+                    {'station':self.station_locations.rel_elev / 1000.})
 
         self._logger.info('Wrote station file to {0}'.format(vtk_fn))
 
@@ -1834,7 +1831,7 @@ class Data(object):
             writer = csv.writer(csvf)
             writer.writerow(csv_header)
 
-        for period_num in xrange(num_periods):
+        for period_num in range(num_periods):
             per= period_list[period_num]
             freq = freq_list[period_num]
             self._logger.info("Working on period %s; frequency: %s", per, freq )

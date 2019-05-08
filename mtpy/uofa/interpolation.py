@@ -36,7 +36,7 @@ def interpolate_instrumentresponse(
         return interpolate_lemi_coils_response(freq, instrument_response)
 
     else:
-        print '\n\tERROR - instrument type', instr_type, ' not implemented yet\n'
+        print('\n\tERROR - instrument type', instr_type, ' not implemented yet\n')
         sys.exit()
 
 

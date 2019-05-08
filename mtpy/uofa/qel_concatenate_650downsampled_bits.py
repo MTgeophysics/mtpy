@@ -18,18 +18,18 @@ def main():
     outfilename = sys.argv[2]
 
     indir = op.join(op.abspath(os.curdir), indir)
-    print
+    print()
     if not op.isdir(indir):
-        print 'WARNING - no such directory: %s\n' % (indir)
+        print('WARNING - no such directory: %s\n' % (indir))
         sys.exit()
 
     outfn = op.join(op.abspath(os.curdir), outfilename)
 
     concatenate1station650(indir, outfn)
 
-    print 'Downsampled data written to file %s ' % (outfn)
+    print('Downsampled data written to file %s ' % (outfn))
 
-    print
+    print()
 
 
 def concatenate1station650(indir, outfile):
@@ -45,7 +45,7 @@ def concatenate1station650(indir, outfile):
     lo_files = [op.join(indir, i) for i in lo_files]
 
     if len(lo_files) == 0:
-        print 'ERROR - no file in directory %s\n' % (indir)
+        print('ERROR - no file in directory %s\n' % (indir))
         sys.exit()
 
     # open output file
@@ -59,7 +59,7 @@ def concatenate1station650(indir, outfile):
     W = None
     t0 = None
 
-    print 'Browsing/reading files in %s' % (indir)
+    print('Browsing/reading files in %s' % (indir))
 
     # go through files in directory
     for infile in lo_files:
@@ -105,7 +105,7 @@ def concatenate1station650(indir, outfile):
             Fin.close()
 
         except:
-            print '\tWARNING - could not read data from file: %s' % (infile)
+            print('\tWARNING - could not read data from file: %s' % (infile))
             continue
 
     Fout.close()
