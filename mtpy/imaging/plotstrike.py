@@ -251,13 +251,6 @@ class PlotStrike(object):
         
         for dd, mt in enumerate(self.mt_list):
 
-            #--> set the period
-            period = mt.period
-
-            # get maximum length of periods
-            if len(period) > nt:
-                nt = len(period)
-
             #-----------get strike angle from invariants-----------------------
             zinv = Zinvariants(mt.Z)
 
@@ -336,7 +329,7 @@ class PlotStrike(object):
         #--> get min and max period
         self.max_per = np.max([np.max(mm.keys()) for mm in inv_list])
         self.min_per = np.min([np.min(mm.keys()) for mm in pt_list])
-
+        
         # make empty arrays to put data into for easy manipulation
         medinv = np.zeros((nt, nc))
         medpt = np.zeros((nt, nc))
@@ -520,9 +513,9 @@ class PlotStrike(object):
                 # extract just the subset for each decade
                 plot_inv = self.get_plot_array(self.med_inv[bin_list, :])
                 plot_pt = self.get_plot_array(self.med_pt[bin_list, :])
-
+                
                 if self.plot_tipper:
-                    tr = self.get_plot_array(self.med_tip[bin_list, :])
+                    tr = self.get_plot_array(self.med_tip[binlist, :])
                     # compute the historgram for the tipper strike
                     tr_hist = np.histogram(tr[np.nonzero(tr)].flatten(),
                                               bins=int(360/bw),
@@ -602,6 +595,7 @@ class PlotStrike(object):
                     if self.ring_limits is not None:
                         axh.set_ylim(self.ring_limits)
                     axh.yaxis.set_major_locator(MultipleLocator(self.ring_spacing))
+
                     # make a light grid
                     axh.grid(alpha=.25, zorder=0)
 

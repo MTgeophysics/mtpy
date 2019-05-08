@@ -54,8 +54,9 @@ def rotate_mesh(grid_east, grid_north, origin, rotation_angle,
         # create the rotation matrix
         cos_ang = np.cos(np.deg2rad(rotation_angle))
         sin_ang = np.sin(np.deg2rad(rotation_angle))
-        rot_matrix = np.matrix(np.array([[cos_ang, -sin_ang],
-                                         [sin_ang, cos_ang]]))
+		
+        rot_matrix = np.array([[cos_ang, sin_ang],
+                               [-sin_ang, cos_ang]])
 
         # rotate the relative grid coordinates
         new_coords = np.array(np.dot(rot_matrix, coords))

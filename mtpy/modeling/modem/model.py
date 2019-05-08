@@ -1851,7 +1851,7 @@ class Model(object):
 
 
     def write_xyres(self,location_type='EN',origin=[0,0],model_epsg=None,depth_index='all',
-                    savepath=None,outfile_basename='DepthSlice',log_res=False,model_utm_zone=None):
+                    savepath=None,outfile_basename='DepthSlice',log_res=False,model_utm_zone=None,clip=[0,0]):
         """
         write files containing depth slice data (x, y, res for each depth)
         
@@ -1864,10 +1864,13 @@ class Model(object):
         outfile_basename = string for basename for saving the depth slices.
         log_res = True/False - option to save resistivity values as log10 
                                instead of linear
+        clip = number of cells to clip on each of the east/west and north/south edges
         
         """
         if savepath is None:
             savepath = self.save_path
+
+        
             
         # make a directory to save the files
         savepath = os.path.join(savepath,outfile_basename)
@@ -1884,8 +1887,9 @@ class Model(object):
         
         # reshape the data
         x,y,z = [np.mean([arr[1:], arr[:-1]],axis=0) for arr in \
-                [self.grid_east + origin[0], self.grid_north + origin[1], self.grid_z]]
-        x,y = [arr.flatten() for arr in np.meshgrid(x,y)]
+                [self.grid_east + origin[0], 
+                 self.grid_north + origin[1], self.grid_z]]
+        x,y = [arr.flatten() for arr in np.meshgrid(x[clip[0]:-clip[0]],y[clip[1]:-clip[1]])]
         
         # set format for saving data
         fmt = ['%.1f','%.1f','%.3e']
@@ -1917,7 +1921,8 @@ class Model(object):
         
         for k in depthindices:
             fname = os.path.join(savepath,outfile_basename+'_%1im.xyz'%z[k])
-            vals = self.res_model[:,:,k].flatten()
+            vals = self.res_model[clip[0]:-clip[0],clip[1]:-clip[-1],k].flatten()
+
             if log_res:
                 vals = np.log10(vals)
                 fmt[-1] = '%.3f'

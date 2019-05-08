@@ -12,7 +12,7 @@ import os.path as op
 import os
 
 # path to edis
-edi_path = r'C:\mtpywin\mtpy\examples\data\edi_files_2'
+edi_path = r'c:\Users\jpeacock\Documents\GitHub\mtpy\examples\data\edi_files_2'
 
 # save path
 savepath = r'C:\tmp'
@@ -28,8 +28,8 @@ plotObj = PlotPhaseTensorPseudoSection(fn_list = elst,
                                  plot_tipper = 'yri', # plot tipper ('y') + 'ri' means real+imag
                                  font_size=5,
                                  lw=0.5,
-                                 ellipse_dict = {'ellipse_colorby':'phimin',# option to colour by phimin, phimax, skew, skew_seg
-                                                 'ellipse_range':[0,90]} # set color limits - default 0,90 for phimin or max,
+                                 ellipse_dict = {'ellipse_colorby':'skew_seg',# option to colour by phimin, phimax, skew, skew_seg
+                                                 'ellipse_range':[-6, 6, 3]} # set color limits - default 0,90 for phimin or max,
                                                                          # [-12,12] for skew. If plotting skew_seg need to provide
                                                                          # 3 numbers, the 3rd indicates interval, e.g. [-12,12,3]
                                  )
@@ -40,5 +40,5 @@ plotObj.ellipse_size = 2.5
 
 plotObj.plot()
 
-plotObj.save_figure(save_fn = op.join(savepath,'PhaseTensorSection.png'),
-                    fig_dpi=400) # change to your preferred file resolution
+#plotObj.save_figure(save_fn = op.join(savepath,'PhaseTensorSection.png'),
+#                    fig_dpi=400) # change to your preferred file resolution

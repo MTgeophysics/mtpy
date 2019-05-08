@@ -9,7 +9,7 @@ To plot data only, comment out resp_fn line in PlotResponse
 
 
 """
-import os.path as op
+import os
 
 #from mtpy.imaging.plot_response import PlotResponse
 from mtpy.modeling.modem import PlotResponse
@@ -27,8 +27,8 @@ plot_z = False
 respfn = filestem+'.dat'
 station = 'Synth02'
 
-ro = PlotResponse(data_fn=op.join(wd,datafn),
-                  resp_fn=op.join(wd,respfn),
+ro = PlotResponse(data_fn=os.path.join(wd,datafn),
+                  resp_fn=os.path.join(wd,respfn),
                   plot_type=[station],
                   plot_style=2,  # 1 for 4-colums; 2 for 2-columns
                   plot_z=False,
@@ -39,5 +39,5 @@ ro = PlotResponse(data_fn=op.join(wd,datafn),
 
 ro.plot()
 
-ro.save_figure(r'U:\Software\mtpy\example_plots'
-               ,fig_dpi=400) # change fig_dpi to your desired resolution
+ro.save_figure(os.path.join(savepath,'response.png'),
+               fig_dpi=400) # change fig_dpi to your desired resolution

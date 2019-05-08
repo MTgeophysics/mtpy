@@ -150,6 +150,7 @@ class Geology:
 
         # Populate lookup table
         self.processLUT(lutfn)
+        print("plotting geology")
 
         patches = []
         legend_handles = []
@@ -167,7 +168,8 @@ class Geology:
             if (self._hasLUT):
                 symbol = self._properties[i][self._symbolkey]
                 fcolor = self._lutDict[symbol]
-            if (fcolor == []): fcolor = default_polygon_color
+            if (fcolor in [None,[]]): 
+                fcolor = default_polygon_color
             
             if (isinstance(feature, Polygon)):
                 polygon = feature
@@ -178,10 +180,13 @@ class Geology:
                     px, py = m(x, y)
                 ppolygon = Polygon(list(zip(px, py)))
                 
-                if (fcolor is not None): kwargs['facecolor'] = fcolor
+                if (fcolor is not None): 
+                    kwargs['facecolor'] = fcolor
                 if ('edgecolor' not in list(kwargs.keys()) and not ecolor_is_fcolor):
                     kwargs['edgecolor'] = 'none'
-                else: kwargs['edgecolor'] = fcolor
+                elif ecolor_is_fcolor:
+                    kwargs['edgecolor'] = fcolor
+
                 if ('fill') not in list(kwargs.keys()): kwargs['fill'] = True
 
                 pp = PolygonPatch(ppolygon, **kwargs)
@@ -205,19 +210,20 @@ class Geology:
                     ppolygon = Polygon(list(zip(px, py)))
 
                     if (fcolor is not None): kwargs['facecolor'] = fcolor
-                    if ('edgecolor' not in list(kwargs.keys()) and not ecolor_is_fcolor):
-                        kwargs['edgecolor'] = 'none'
-                    else: kwargs['edgecolor'] = fcolor
-                    if ('fill') not in list(kwargs.keys()): kwargs['fill'] = True
+                if ('edgecolor' not in list(kwargs.keys()) and not ecolor_is_fcolor):
+                    kwargs['edgecolor'] = 'none'
+                elif ecolor_is_fcolor:
+                    kwargs['edgecolor'] = fcolor
+                if ('fill') not in list(kwargs.keys()): kwargs['fill'] = True
 
-                    pp = PolygonPatch(ppolygon, **kwargs)
-                    patches.append(pp)
+                pp = PolygonPatch(ppolygon, **kwargs)
+                patches.append(pp)
 
-                    # filter duplicates
-                    if (symbol not in handles):
-                        handles.add(symbol)
-                        legend_handles.append(pp)
-                        legend_labels.append(symbol)
+                # filter duplicates
+                if (symbol not in handles):
+                    handles.add(symbol)
+                    legend_handles.append(pp)
+                    legend_labels.append(symbol)
                 # end for
             elif (isinstance(feature, LineString)):
                 line = feature
