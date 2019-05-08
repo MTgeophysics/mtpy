@@ -971,7 +971,7 @@ class Model(object):
 
         plt.show()
 
-    def plot_topograph(self):
+    def plot_topography(self):
         """
         display topography elevation data together with station locations on a cell-index N-E map
         :return:
@@ -1000,8 +1000,8 @@ class Model(object):
         # topography data image
         # plt.imshow(elev_mg) # this upside down
         # plt.imshow(elev_mg[::-1])  # this will be correct - water shadow flip of the image
-        imgplot = plt.imshow(self.surface_dict['topography'],
-                             origin='lower')  # the orgin is in the lower left corner SW.
+        x, y = np.meshgrid(self.grid_east, self.grid_north)
+        imgplot = plt.pcolormesh(x, y, self.surface_dict['topography'])  # the orgin is in the lower left corner SW.
         divider = make_axes_locatable(ax)
         # pad = separation from figure to colorbar
         cax = divider.append_axes("right", size="3%", pad=0.2)
@@ -1022,14 +1022,20 @@ class Model(object):
 
         # plot station locations in grid
 
-        sgindex_x = self.station_grid_index[0]
-        sgindex_y = self.station_grid_index[1]
+#        sgindex_x = self.station_grid_index[0]
+#        sgindex_y = self.station_grid_index[1]
+#
+#        self._logger.debug("station grid index x: %s" % sgindex_x)
+#        self._logger.debug("station grid index y: %s" % sgindex_y)
 
-        self._logger.debug("station grid index x: %s" % sgindex_x)
-        self._logger.debug("station grid index y: %s" % sgindex_y)
-
-        ax.scatter(sgindex_x, sgindex_y, marker='v', c='b', s=2)
-
+        #ax.scatter(sgindex_x, sgindex_y, marker='v', c='b', s=2)
+        ax.scatter(self.station_locations.rel_east,
+                   self.station_locations.rel_north, 
+                   marker='v', c='b', s=2)
+        ax.set_xlim((np.floor(self.station_locations.rel_east.min()), 
+                     np.ceil(self.station_locations.rel_east.max())))
+        ax.set_ylim((np.floor(self.station_locations.rel_north.min()), 
+                     np.ceil(self.station_locations.rel_north.max())))
         ax.set_xlabel('Easting Cell Index', fontdict={'size': 9, 'weight': 'bold'})
         ax.set_ylabel('Northing Cell Index', fontdict={'size': 9, 'weight': 'bold'})
         ax.set_title("Elevation and Stations in N-E Map (Cells)")
