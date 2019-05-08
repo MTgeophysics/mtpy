@@ -19,6 +19,7 @@ import mtpy.analysis.pt as MTpt
 import mtpy.analysis.distortion as MTdistortion
 import mtpy.core.jfile as MTj
 import mtpy.core.mt_xml as MTxml
+import mtpy.core.egbert as MTegbert
 
 from mtpy.utils.mtpylog import MtPyLog
 
@@ -346,7 +347,7 @@ class MT(object):
         :param fn: full path to input file
         :type fn: string
 
-        :param file_type: ['edi' | 'j' | 'xml' | ... ]
+        :param file_type: ['edi' | 'j' | 'xml' | 'zmm' | ... ]
                           if None, automatically detects file type by
                           the extension.
         :type file_type: string
@@ -368,6 +369,8 @@ class MT(object):
             self._read_j_file(fn)
         elif file_type.lower() == 'xml':
             self._read_xml_file(fn)
+        elif file_type.lower() == 'zmm':
+            self._read_zmm_file(fn)
         else:
             raise MT_Error('File type not supported yet')
 
@@ -1532,6 +1535,30 @@ class MT(object):
                                                              'y2':'{0:.2f}'.format(self.FieldNotes.Electrode_ey.y2),
                                                              'z2':'0.00'}
         return xml_obj
+    
+    def _read_zmm_file(self, fn):
+        """
+        read EMTF zmm file
+        """
+        zmm_obj = MTegbert.EgbertZ(fn)
+        zmm_obj.read_egbert_file()
+        
+        self.lat = zmm_obj.lat
+        self.lon = zmm_obj.lon
+        self.station = zmm_obj.station
+        self.Z = zmm_obj.Z
+        self.Tipper = MTz.Tipper(np.zeros((self.Z.z.shape[0], 1, 2), 
+                                                 dtype=np.complex),
+                                np.zeros((self.Z.z.shape[0], 1, 2), 
+                                                 dtype=np.float),
+                                self.Z.freq)
+                                
+        self.rotation_angle = -1*zmm_obj.component_dict['hx']['azm']
+        
+        # make notes section
+        self.Notes.info_dict = {'notes':'processed with EMTF'}
+        
+        
     
     def read_cfg_file(self, cfg_fn):
         """
