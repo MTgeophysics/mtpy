@@ -1550,7 +1550,7 @@ class Regularization(Mesh):
 
         # At the top of the mesh model blocks will be 2 combined mesh blocks
         # Note that the padding cells are combined into one model block
-        station_col = [2] * ((self.x_nodes.shape[0] - 2 *
+        station_col = [2] * int((self.x_nodes.shape[0] - 2 *
                               self.num_x_pad_cells + 1) / 2)
         model_cols = [self.num_x_pad_cells] + \
             station_col + [self.num_x_pad_cells]
