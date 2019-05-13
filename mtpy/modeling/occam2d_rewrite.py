@@ -726,7 +726,7 @@ class Mesh():
             for tt in range(4):
                 mesh_lines.append(''.join(self.mesh_values[:, zz, tt]) + '\n')
 
-        mfid = file(self.mesh_fn, 'w')
+        mfid = open(self.mesh_fn, 'w')
         mfid.writelines(mesh_lines)
         mfid.close()
 
@@ -768,9 +768,8 @@ class Mesh():
         """
         self.mesh_fn = mesh_fn
 
-        mfid = file(self.mesh_fn, 'r')
-
-        mlines = mfid.readlines()
+        with open(self.mesh_fn, 'r') as mfid:
+            mlines = mfid.readlines()
 
         nh = int(mlines[1].strip().split()[1])
         nv = int(mlines[1].strip().split()[2])
@@ -1746,7 +1745,7 @@ class Regularization(Mesh):
                 ''.join(['{0:>5}'.format(cc) for cc in col]) + '\n')
 
         reg_lines.append('{0:<18}{1}\n'.format('NO. EXCEPTIONS:', '0'))
-        rfid = file(self.reg_fn, 'w')
+        rfid = open(self.reg_fn, 'w')
         rfid.writelines(reg_lines)
         rfid.close()
 
@@ -1767,12 +1766,12 @@ class Regularization(Mesh):
         self.save_path = os.path.dirname(reg_fn)
 
         rfid = open(self.reg_fn, 'r')
+        rlines = rfid.readlines()
+        rfid.close()
 
         self.model_rows = []
         self.model_columns = []
         ncols = []
-
-        rlines = rfid.readlines()
 
         for ii, iline in enumerate(rlines):
             # read header information
@@ -2014,7 +2013,7 @@ class Startup(object):
                 sline = []
         slines.append(''.join(list(sline + ['\n'])))
         # --> write file
-        sfid = file(self.startup_fn, 'w')
+        sfid = open(self.startup_fn, 'w')
         sfid.writelines(slines)
         sfid.close()
 
@@ -2821,7 +2820,7 @@ class Data(Profile):
         data_lines.append(self._data_header)
         data_lines += self.data_list
 
-        dfid = file(self.data_fn, 'w')
+        dfid = open(self.data_fn, 'w')
         dfid.writelines(data_lines)
         dfid.close()
 
@@ -3205,7 +3204,7 @@ class Model(Startup):
         self.save_path = os.path.dirname(self.iter_fn)
 
         # open file, read lines, close file
-        ifid = file(self.iter_fn, 'r')
+        ifid = open(self.iter_fn, 'r')
         ilines = ifid.readlines()
         ifid.close()
 
