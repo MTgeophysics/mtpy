@@ -26,11 +26,14 @@ and `GeoscienceAustralia/mtpy2 <https://github.com/GeoscienceAustralia/mtpy2/tre
 
 If you use this software in a scientific publication, we'd very much appreciate if you could cite one or both of the following papers:
 
-Kirkby, A.L., Zhang, F., Peacock, J., Hassan, R., Duan, J., 2019. The MTPy software package for magnetotelluric data analysis and visualisation. Journal of Open Source Software, 4(37), 1358. 
+Kirkby, A.L., Zhang, F., Peacock, J., Hassan, R., Duan, J., 2019. The MTPy software package for magnetotelluric data analysis and visualisation. Journal of Open Source Software, 4(37), 1358. https://doi.org/10.21105/joss.01358
+
 .. image:: http://joss.theoj.org/papers/10.21105/joss.01358/status.svg
 
    :target: https://doi.org/10.21105/joss.01358
-Krieger, L., and Peacock, J., 2014. MTPy: A Python toolbox for magnetotellurics. Computers and Geosciences, 72, p167-175. https://doi.org/10.1016/j.cageo.2014.07.013
+
+   
+Krieger, L., and Peacock, J., 2014. MTpy: A Python toolbox for magnetotellurics. Computers and Geosciences, 72, p167-175. https://doi.org/10.1016/j.cageo.2014.07.013
 
 
 
