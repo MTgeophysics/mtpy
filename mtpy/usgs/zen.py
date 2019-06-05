@@ -1775,13 +1775,14 @@ class ZenSchedule(object):
 
         self.dt_format = datetime_fmt
         self.initial_dt = '2000-01-01,00:00:00'
-        self.dt_offset = time.strftime(datetime_fmt, time.gmtime())
-        self.df_list = (4096, 1024, 256)
-        self.df_time_list = ('00:05:00', '00:15:00', '05:40:00')
-        self.master_schedule = self.make_schedule(self.df_list,
+        self.dt_offset = time.strftime(datetime_fmt ,time.gmtime())
+        self.df_list = (4096, 256)
+        self.df_time_list = ('00:10:00','07:50:00')
+        self.master_schedule = self.make_schedule(self.df_list, 
                                                   self.df_time_list,
-                                                  repeat=21)
-
+                                                  repeat=16)
+        self._resync_pause = 20
+                                                  
     #==================================================
     def read_schedule(self, fn):
         """
@@ -2193,9 +2194,12 @@ class ZenSchedule(object):
                 t1 += 24*3600
 
             # subtract 10 seconds for transition between schedule items.
-            t_diff = t1-t0-10
-            str_tuple = (ii+1, t_diff, int(self.sr_dict[str(ss['df'])]), 1)
-            zacq_list.append('$schline{0:.0f} = {1:.0f},{2:.0f},{3:.0f}\n'.format(str_tuple))
+            t_diff = t1-t0-self._resync_pause 
+            zacq_list.append('$schline{0:.0f} = {1:.0f},{2:.0f},{3:.0f}\n'.format(
+                                ii+1, 
+                                t_diff,
+                                int(self.sr_dict[str(ss['df'])]),
+                                1))
 
         fn = os.path.join(save_path, schedule_fn)
         fid = file(fn, 'w')

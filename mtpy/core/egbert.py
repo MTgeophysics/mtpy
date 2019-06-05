@@ -11,7 +11,7 @@ Created on Thu Sep 28 12:34:23 2017
 import os
 
 import numpy as np
-import mtpy.core.z as z
+import mtpy.core.z as mtz
 import mtpy.utils.gis_tools as gis_tools
 #==============================================================================
 class EgbertHeader(object):
@@ -46,7 +46,7 @@ class EgbertHeader(object):
     
     @lon.setter
     def lon(self, lon):
-        self._lon = gis_tools.assert_lon_value(lon)
+        self._lon = -180+gis_tools.assert_lon_value(lon)
         
     def read_header(self, z_fn=None):
         """
@@ -68,6 +68,7 @@ class EgbertHeader(object):
                 line = fid.readline() 
                 
         self.description = ''
+        self.station = header_list[3].lower().strip()
         self.component_dict = {}
         for ii, line in enumerate(header_list):
             if line.find('**') >= 0:
@@ -114,6 +115,8 @@ class EgbertZ(EgbertHeader):
         
         self.z_fn = z_fn
         self._header_count = 0
+        self.Z = None
+        self.Tipper = None
         
         for key in list(kwargs.keys()):
             setattr(self, key, kwargs[key])
@@ -126,4 +129,103 @@ class EgbertZ(EgbertHeader):
             self.z_fn = z_fn
         
         self.read_header()
+        
+        period_list = []
+        z_list = []
+        for period_block in self._get_period_blocks():
+            z_dict = self._read_period_block(period_block)
+            period_list.append(z_dict['period'])
+            z_list.append(z_dict['z'])
+        
+        # make the lists arrays
+        z_list = np.array(z_list)
+        period_list = np.array(period_list)
+            
+        # make z objects
+        self.Z = mtz.Z(z_array=z_list,
+                       z_err_array=np.zeros_like(z_list, dtype=np.float),
+                       freq=1./period_list)
+        
+        
+#        self.mt_obj = mt.MT()
+#        self.mt_obj.lat = self.lat
+#        self.mt_obj.lon = self.lon
+#        self.mt_obj.station = self.station
+#        self.mt_obj.Z = self.Z
+#        self.mt_obj.Tipper = mtz.Tipper(np.zeros((z_list.shape[0], 1, 2), 
+#                                                 dtype=np.complex),
+#                                        np.zeros((z_list.shape[0], 1, 2), 
+#                                                 dtype=np.float),
+#                                        1./np.array(period_list))
+#        self.mt_obj.Notes.info_dict = {'notes':'processed with EMTF'}
+        
+        
+    def _get_period_blocks(self):
+        """
+        split file into period blocks
+        """
+        
+        with open(self.z_fn, 'r') as fid:
+            fn_str = fid.read()
+        
+        period_strings = fn_str.lower().split('period')
+        period_blocks = []
+        for per in period_strings:
+            period_blocks.append(per.split('\n'))
+        
+        return period_blocks[1:]
+        
+    def _read_period_block(self, period_block):
+        """
+        read block:
+            period :      0.01587    decimation level   1    freq. band from   46 to   80
+            number of data point  951173 sampling freq.   0.004 Hz
+             Transfer Functions
+              0.1474E+00 -0.2049E-01  0.1618E+02  0.1107E+02
+             -0.1639E+02 -0.1100E+02  0.5559E-01  0.1249E-01
+             Inverse Coherent Signal Power Matrix
+              0.2426E+03 -0.2980E-06
+              0.9004E+02 -0.2567E+01  0.1114E+03  0.1192E-06
+             Residual Covaraince
+              0.8051E-05  0.0000E+00
+             -0.2231E-05 -0.2863E-06  0.8866E-05  0.0000E+00
+        """
+        z_dict = {}
+        
+        p_list = period_block[0].strip().split(':')
+        z_dict['period'] = float(p_list[1].split()[0].strip())
+        
+        # get impedance
+        zx_list = [float(xx) for xx in period_block[3].strip().split()]
+        zy_list = [float(yy) for yy in period_block[4].strip().split()]
+        z_arr = np.zeros((2, 2), dtype=np.complex)
+        z_arr[0, 0] = zx_list[0]+1j*zx_list[1]
+        z_arr[0, 1] = zx_list[2]+1j*zx_list[3]
+        z_arr[1, 0] = zy_list[0]+1j*zy_list[1]
+        z_arr[1, 1] = zy_list[2]+1j*zy_list[3]
+        
+        z_dict['z'] = z_arr
+        
+        # get errors
+        
+        return z_dict
+    
+#    def zmm_to_edi(self, edi_fn=None):
+#        """
+#        write a simple edi file from zmm
+#        """
+#        if edi_fn is None:
+#            edi_dir = os.path.dirname(self.z_fn)
+#            edi_basename = '{0}.edi'.format(self.station)
+#        else:
+#            edi_dir = os.path.dirname(edi_fn)
+#            edi_basename = os.path.join(edi_fn)
+#        self.mt_obj.write_mt_file(save_dir=edi_dir,
+#                                  fn_basename=edi_basename)
+        
+        
+        
+                
+        
+        
             
