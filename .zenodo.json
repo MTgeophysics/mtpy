@@ -1,0 +1,43 @@
+{
+    "description": "<p>Release for Journal of Open Source Software paper</p>", 
+    "license": "other-open", 
+    "title": "MTgeophysics/mtpy: v1.0", 
+    "version": "v1.0", 
+    "upload_type": "software", 
+    "publication_date": "2019-05-10", 
+    "creators": [
+        {
+            "affiliation": "Geoscience Australia"
+			"name": "Alison Kirkby"
+        },
+        {
+            "affiliation": "Geoscience Australia", 
+            "name": "Fei Zhang"
+        }, 		
+		{
+            "affiliation": "U.S. Geological Survey", 
+            "name": "Jared Peacock"
+        }, 
+        {
+            "affiliation": "Geoscience Australia", 
+            "name": "Rakib Hassan"
+        }, 
+        {
+            "affiliation": "Geoscience Australia", 
+            "name": "Jingming Duan"
+        }
+		], 
+    "access_right": "open", 
+    "related_identifiers": [
+        {
+            "scheme": "url", 
+            "identifier": "https://github.com/MTgeophysics/mtpy/tree/v1.0", 
+            "relation": "isSupplementTo"
+        }, 
+        {
+            "scheme": "doi", 
+            "identifier": "10.5281/zenodo.2698633", 
+            "relation": "isVersionOf"
+        }
+    ]
+}
