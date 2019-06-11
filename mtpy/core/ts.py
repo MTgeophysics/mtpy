@@ -11,6 +11,7 @@
 #==============================================================================
 import os
 import datetime
+import dateutil.parser
 import calendar
 
 import numpy as np
@@ -100,9 +101,9 @@ class MTTS(object):
 
         self.station = 'mt00'
         self._sampling_rate = 1
-        self._start_time_epoch_sec = 0.0
-        self._start_time_utc = None
+        self._start_time_struct = None
         self.component = None
+        self.chn_num = None
         self.coordinate_system = 'geomagnetic'
         self.dipole_length = 0
         self.azimuth = 0
@@ -167,7 +168,7 @@ class MTTS(object):
             self._ts = pd.DataFrame({'data':ts_arr})
             if self.start_time_utc is not None or \
                isinstance(self._ts.index[0], int):
-                self._set_dt_index(self.start_time_utc)
+                self._set_dt_index(self._start_time_struct.strftime(self._date_time_fmt))
 
         elif isinstance(ts_arr, pd.core.frame.DataFrame):
             try:
@@ -175,7 +176,7 @@ class MTTS(object):
                 self._ts = ts_arr
                 # be sure to set the index time
                 if self.start_time_utc is not None:
-                    self._set_dt_index(self.start_time_utc)
+                    self._set_dt_index(self._start_time_struct.strftime(self._date_time_fmt))
             except AttributeError:
                 raise MTTSError('Data frame needs to have a column named "data" '+\
                                    'where the time series data is stored')
@@ -253,7 +254,7 @@ class MTTS(object):
             else:
                 self._sampling_rate = sr
                 if self.start_time_utc is not None:
-                    self._set_dt_index(self.start_time_utc)
+                    self._set_dt_index(self._start_time_struct.strftime(self._date_time_fmt))
 
         except ValueError:
             raise MTTSError("Input sampling rate should be a float not {0}".format(type(sampling_rate)))
@@ -262,7 +263,7 @@ class MTTS(object):
     @property
     def start_time_utc(self):
         """start time in UTC given in time format"""
-        return self._start_time_utc
+        return self._start_time_struct.isoformat()
 
     @start_time_utc.setter
     def start_time_utc(self, start_time):
@@ -275,18 +276,12 @@ class MTTS(object):
         Resets how the ts data frame is indexed, setting the starting time to
         the new start time.
         """
-        start_time = self._valitate_dt_str(start_time)
 
-        if start_time == self.start_time_utc:
-            return
-
-        dt = datetime.datetime.strptime(start_time, self._date_time_fmt)
-        self._start_time_utc = datetime.datetime.strftime(dt,
-                                                          self._date_time_fmt)
+        self._start_time_struct = dateutil.parser.parse(start_time)
 
         # make a time series that the data can be indexed by
         if hasattr(self.ts, 'data'):
-            self._set_dt_index(self._start_time_utc)
+            self._set_dt_index(self._start_time_struct.strftime(self._date_time_fmt))
 
     ## epoch seconds
     @property
@@ -307,44 +302,26 @@ class MTTS(object):
         """
 
         try:
-            self._start_time_epoch_sec = float(epoch_sec)
+            self._start_time_struct = datetime.datetime.fromtimestamp(epoch_sec)
         except ValueError:
             raise MTTSError("Need to input epoch_sec as a float not {0}".format(type(epoch_sec)))
 
-        dt_struct = datetime.datetime.utcfromtimestamp(self._start_time_epoch_sec)
-        # these should be self cosistent
-        dt_utc = datetime.datetime.strftime(dt_struct, self._date_time_fmt)
-        if self.start_time_utc != dt_utc:
-            self.start_time_utc = dt_utc
-
-    def _valitate_dt_str(self, date_time_str):
+    @property
+    def stop_time_epoch_sec(self):
         """
-        Check the format of the date time string against self._date_time_fmt,
-        Basically, replace a comma with a space.
-
-        .. note:: Pandas wants yyyy-mm-dd HH:MM:SS.ss, which is what is set
-                  as the default.
-
-
-        :param date_time_str: date time string
-        :type date_time_str: string
-
-        :returns: validated date time string
+        End time in epoch seconds
         """
-
-        validated_dt_str = date_time_str.replace(',', ' ')
-
-        if validated_dt_str.find('.') == -1:
-            validated_dt_str += '.00'
-
-        try:
-            datetime.datetime.strptime(validated_dt_str, self._date_time_fmt)
-        except ValueError:
-            raise MTTSError('Could not read format of {0}'.format(date_time_str)+\
-                              ' Should be of format {0}'.format(self._date_time_fmt))
-
-        return validated_dt_str
-
+        
+        return self._convert_dt_to_sec(self.ts.index[-1].to_pydatetime())
+    
+    @property
+    def stop_time_utc(self):
+        """
+        End time in UTC
+        """
+        
+        return self.ts.index[-1].isoformat()
+    
     def _set_dt_index(self, start_time):
         """
         get the date time index from the data
@@ -352,7 +329,8 @@ class MTTS(object):
         :param start_time: start time in time format
         :type start_time: string
         """
-
+        if not hasattr(self.ts, 'data'):
+            return
         if start_time is None:
             print('Start time is None, skipping calculating index')
             return 
@@ -365,10 +343,10 @@ class MTTS(object):
 
         self.ts.index = dt_index
 
-        print "   * Reset time seies index to start at {0}".format(start_time)
+        print("   * Reset time seies index to start at {0}".format(start_time))
 
     # convert time to epoch seconds
-    def _convert_dt_to_sec(self, date_time_str):
+    def _convert_dt_to_sec(self, dt_struct):
         """
         convert date time string to epoch seconds
 
@@ -379,8 +357,6 @@ class MTTS(object):
         :returns: time in epoch seconds
 
         """
-        dt_struct = datetime.datetime.strptime(date_time_str,
-                                               self._date_time_fmt)
         dt_time = dt_struct.timetuple()
 
         return calendar.timegm(dt_time)+dt_struct.microsecond*1E-6
@@ -669,6 +645,16 @@ class MTTS(object):
                               names=['data'])
         
         print('Read in {0}'.format(self.fn))
+        
+    def read_file(self, fn):
+        """
+        read a file either .hdf5 or ascii
+        """
+        
+        if fn.endswith('f5'):
+            self.read_hdf5(fn)
+        elif fn[-2:].lower() in ['ex', 'ey', 'hz', 'hy', 'hz']:
+            self.read_ascii(fn)
         
     def plot_spectra(self, spectra_type='welch', **kwargs):
         """
