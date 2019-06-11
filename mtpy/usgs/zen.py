@@ -240,34 +240,32 @@ class Z3DHeader(object):
 
         header_list = self.header_str.split(b'\n')
         for h_str in header_list:
-            if h_str.find(b'=') > 0:
-                h_list = h_str.split(b'=')
+            h_str = h_str.decode()
+            if h_str.find('=') > 0:
+                h_list = h_str.split('=')
                 h_key = h_list[0].strip().lower()
-                h_key = h_key.replace(b' ', b'_').replace(b'/', b'').replace(b'.', b'_')
-                h_key = h_key.decode()
-                h_value = self.convert_value(h_key, h_list[1].strip().decode())
+                h_key = h_key.replace(' ', '_').replace('/', '').replace('.', '_')
+                h_value = self.convert_value(h_key, h_list[1].strip())
                 setattr(self, h_key, h_value)
             elif len(h_str) == 0:
                 continue
             # need to adjust for older versions of z3d files
-            elif h_str.count(b',') > 1:
+            elif h_str.count(',') > 1:
                 self.old_version = True
-                if h_str.find(b'Schedule') >= 0:
-                    h_str = h_str.replace(b',', b'T', 1)
-                for hh in h_str.split(b','):
-                    if hh.find(b';') > 0:
-                        m_key, m_value = hh.split(b';')[1].split(b':')
+                if h_str.find('Schedule') >= 0:
+                    h_str = h_str.replace(',', 'T', 1)
+                for hh in h_str.split(','):
+                    if hh.find(';') > 0:
+                        m_key, m_value = hh.split(';')[1].split(':')
 
-                    elif len(hh.split(b':', 1)) == 2:
-                        m_key, m_value = hh.split(b':', 1)
+                    elif len(hh.split(':', 1)) == 2:
+                        m_key, m_value = hh.split(':', 1)
                     else:
                         print(hh)
 
-                    m_key = m_key.strip().lower().replace(b' ', b'_').replace(b'/', b'').replace(b'.', b'_')
-                    m_key = m_key.decode()
-                    m_value = self.convert_value(m_key.decode(), 
-                                                 m_value.strip().decode())
-                    setattr(self, m_key.decode(), m_value)
+                    m_key = m_key.strip().lower().replace(' ', '_').replace('/', '').replace('.', '_')
+                    m_value = self.convert_value(m_key, m_value.strip())
+                    setattr(self, m_key, m_value)
 
     def convert_value(self, key_string, value_string):
         """
@@ -407,12 +405,13 @@ class Z3DSchedule(object):
 
         meta_list = self.meta_string.split(b'\n')
         for m_str in meta_list:
-            if m_str.find(b'=') > 0:
-                m_list = m_str.split(b'=')
-                m_key = m_list[0].split(b'.')[1].strip()
-                m_key = m_key.replace(b'/', b'')
+            m_str = m_str.decode()
+            if m_str.find('=') > 0:
+                m_list = m_str.split('=')
+                m_key = m_list[0].split('.')[1].strip()
+                m_key = m_key.replace('/', '')
                 m_value = m_list[1].strip()
-                setattr(self, m_key.decode(), m_value.decode())
+                setattr(self, m_key, m_value)
 
         # the first good GPS stamp is on the 3rd, so need to add 2 seconds
         try:
@@ -566,34 +565,38 @@ class Z3DMetadata(object):
         self.coil_cal = []
         self.count = 0
         while self.find_metadata == True:
-            test_str = self.fid.read(self._metadata_length)
+            try:
+                test_str = self.fid.read(self._metadata_length).decode()
+            except UnicodeDecodeError:
+                self.find_metadata = False
+                print('Ended Metadata at {0} bytes'.format(self.fid.tell()))
+                break
             if test_str.lower().find('metadata record') > 0:
                 self.count += 1
                 cal_find = False
-                test_str = test_str.strip().split(b'\n')[1]
-                if test_str.count(b'|') > 1:
-                    for t_str in test_str.split(b'|'):
+                test_str = test_str.strip().split('\n')[1]
+                if test_str.count('|') > 1:
+                    for t_str in test_str.split('|'):
                         # get metadata name and value
-                        if t_str.find(b'=') == -1 and \
-                           t_str.lower().find(b'line.name') == -1:
+                        if t_str.find('=') == -1 and \
+                           t_str.lower().find('line.name') == -1:
                             # get metadata for older versions of z3d files
-                            if len(t_str.split(b',')) == 2:
-                                t_list = t_str.lower().split(b',')
-                                t_key = t_list[0].strip().replace(b'.', b'_')
-                                if t_key == b'ch_varasp':
-                                    t_key = b'ch_length'
+                            if len(t_str.split(',')) == 2:
+                                t_list = t_str.lower().split(',')
+                                t_key = t_list[0].strip().replace('.', '_')
+                                if t_key == 'ch_varasp':
+                                    t_key = 'ch_length'
                                 t_value = t_list[1].strip()
-                                setattr(self, t_key.decode(), t_value.decode())
+                                setattr(self, t_key, t_value)
                             if t_str.count(' ') > 1:
-                                self.notes = t_str.decode()
+                                self.notes = t_str
                         # get metadata for just the line that has line name
                         # because for some reason that is still comma separated
-                        elif t_str.lower().find(b'line.name') >= 0:
+                        elif t_str.lower().find('line.name') >= 0:
                             t_list = t_str.split(',')
                             t_key = t_list[0].strip().replace('.', '_')
                             t_value = t_list[1].strip()
-                            setattr(self, t_key.lower().decode(), 
-                                    t_value.decode())
+                            setattr(self, t_key.lower(), t_value)
                         # get metadata for newer z3d files
                         else:
                             t_list = t_str.split('=')
@@ -601,7 +604,7 @@ class Z3DMetadata(object):
                             t_value = t_list[1].strip()
                             setattr(self, t_key.lower(), t_value)
                 elif test_str.lower().find('cal.brd') >= 0:
-                    t_list = test_str.split(',')
+                    t_list = test_str.split(b',')
                     t_key = t_list[0].strip().replace('.', '_')
                     setattr(self, t_key.lower(), t_list[1])
                     for t_str in t_list[2:]:
@@ -1188,14 +1191,14 @@ class Zen3D(object):
 
             # initalize a data array filled with zeros, everything goes into
             # this array then we parse later
-            data = np.zeros((file_size-512*(1+self.metadata.count))/4,
+            data = np.zeros(int((file_size-512*(1+self.metadata.count))/4 + self.df),
                             dtype=np.int32)
             # go over a while loop until the data cound exceed the file size
             data_count = 0
-            while data_count+self.metadata.m_tell/4 < data.size:
+            while data_count+self.metadata.m_tell/4 < data.size - self.df:
                 # need to make sure the last block read is a multiple of 32 bit
                 read_len = min([self._block_len,
-                                32*((file_size-file_id.tell())//32)])
+                                int(32*((file_size-file_id.tell())//32))])
                 test_str = np.fromstring(file_id.read(read_len),
                                          dtype=np.int32)
                 data[data_count:data_count+len(test_str)] = test_str
@@ -1225,8 +1228,8 @@ class Zen3D(object):
                 break
 
             if self.header.old_version is True or data[gps_find+1] == self._gps_flag_1:
-                gps_str = struct.pack('<'+'i'*self._gps_bytes,
-                                      *data[gps_find:gps_find+self._gps_bytes])
+                gps_str = struct.pack('<'+'i'*int(self._gps_bytes),
+                                      *data[int(gps_find):int(gps_find+self._gps_bytes)])
                 self.gps_stamps[ii] = np.fromstring(gps_str,
                                                     dtype=self._gps_dtype)
                 if ii > 0:
@@ -1234,7 +1237,7 @@ class Zen3D(object):
                                            gps_stamp_find[ii-1]-self._gps_bytes
                 elif ii == 0:
                     self.gps_stamps[ii]['block_len'] = 0
-                data[gps_find:gps_find+self._gps_bytes] = 0
+                data[int(gps_find):int(gps_find+self._gps_bytes)] = 0
 #
 
         # trim the data after taking out the gps stamps
@@ -1252,7 +1255,7 @@ class Zen3D(object):
         # fill time series object metadata
         self.ts_obj.station = self.station
         self.ts_obj.sampling_rate = float(self.df)
-        self.ts_obj.start_time_utc = self.zen_schedule.isoformat().replace('T', ',')
+        self.ts_obj.start_time_utc = self.zen_schedule.isoformat()
         self.ts_obj.component = self.component
         self.ts_obj.coordinate_system = 'geomagnetic'
         try:
@@ -1275,16 +1278,16 @@ class Zen3D(object):
         self.ts_obj.conversion = self._counts_to_mv_conversion
         self.ts_obj.gain = self.header.ad_gain
 
-        # time it
-        et = time.time()
-        print('--> Reading data took: {0:.3f} seconds'.format(et-st))
-        
         self.validate_time_blocks()
         self.convert_gps_time()
-        self.check_start_time()
+        #self.check_start_time()
         
         print('    found {0} GPS time stamps'.format(self.gps_stamps.shape[0]))
         print('    found {0} data points'.format(self.ts_obj.ts.data.size))
+        
+        # time it
+        et = time.time()
+        print('--> Reading data took: {0:.3f} seconds'.format(et-st))
         
     #=================================================
     def trim_data(self):
