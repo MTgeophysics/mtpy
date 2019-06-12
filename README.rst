@@ -3,6 +3,8 @@ MTpy: A Python Toolbox for Magnetotelluric (MT) Data Processing, Analysis, Model
 
 |Build Status|  |Documentation Status|
 
+How to Cite
+===========
 
 If you use this software in a scientific publication, we'd very much appreciate if you could cite one or both of the following papers:
 
