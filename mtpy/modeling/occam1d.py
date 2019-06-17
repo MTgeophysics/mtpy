@@ -280,8 +280,14 @@ class Data(object):
 
                 # error propagation - new error is 0.5 * relative error in zdet
                 # then convert back to absolute error
-                zereal = np.abs(zdetreal) * 0.5 * z_obj.det_err / np.abs(z_obj.det)
-                zeimag = np.abs(zdetimag) * 0.5 * z_obj.det_err / np.abs(z_obj.det)
+#                zereal = np.abs(zdetreal) * 0.5 * z_obj.det_err / np.abs(z_obj.det)
+#                zeimag = np.abs(zdetimag) * 0.5 * z_obj.det_err / np.abs(z_obj.det)
+                
+                # alison's temporary (incorrect, but probably close) fix
+                # take mean of error of off-diagonal components
+                zereal = np.abs(zdetreal) * 0.5 * np.mean([z_obj.z_err[:,0,1],z_obj.z_err[:,1,0]]) / np.abs(z_obj.det)
+                zeimag = np.abs(zdetimag) * 0.5 * np.mean([z_obj.z_err[:,0,1],z_obj.z_err[:,1,0]]) / np.abs(z_obj.det)
+
 
                 if self.mode.endswith('z'):
                     # convert to si units if we are modelling impedance tensor
@@ -416,7 +422,7 @@ class Data(object):
 
         # write frequencies
         dlines.append('# Frequencies:   {0}\n'.format(nf))
-        if freq[0] < freq[1]:
+        if freq[0] < freq[-1]:
             freq = freq[::-1]
             data_1 = data_1[::-1]
             data_2 = data_2[::-1]

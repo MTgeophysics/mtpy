@@ -21,7 +21,7 @@ from mtpy.modeling.modem.data import Model
 from mtpy.utils import exceptions as mtex
 from scipy.spatial import cKDTree
 from scipy.interpolate import interp1d, UnivariateSpline
-from matplotlib import colors
+from matplotlib import colors,cm
 
 __all__ = ['PlotSlices']
 
@@ -630,6 +630,9 @@ class PlotSlices(object):
 
         # plot color bar
         cbx = mcb.make_axes(self.ax_map, fraction=.15, shrink=.75, pad=.15)
+
+        if type(self.cmap) == str:
+            self.cmap=cm.get_cmap(self.cmap)
         cb = mcb.ColorbarBase(cbx[0],
                               cmap=self.cmap,
                               norm=Normalize(vmin=self.climits[0],

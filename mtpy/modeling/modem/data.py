@@ -1508,7 +1508,7 @@ class Data(object):
             self.mt_dict[s_key].pt.set_z_object(mt_obj.Z)
             self.mt_dict[s_key].Tipper.compute_amp_phase()
             self.mt_dict[s_key].Tipper.compute_mag_direction()
-
+            
             self.data_array[ii]['station'] = mt_obj.station
             self.data_array[ii]['lat'] = mt_obj.lat
             self.data_array[ii]['lon'] = mt_obj.lon
@@ -1527,6 +1527,7 @@ class Data(object):
             self.data_array[ii]['tip_err'][:] = mt_obj.Tipper.tipper_err
             self.data_array[ii]['tip_inv_err'][:] = mt_obj.Tipper.tipper_err
 
+        
         # option to provide real world coordinates in eastings/northings
         # (ModEM data file contains real world center in lat/lon but projection
         # is not provided so utm is assumed, causing errors when points cross
