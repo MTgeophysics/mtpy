@@ -20,7 +20,9 @@ import time
 import datetime
 import os
 import sys
-from io import StringIO
+#from io import StringIO
+from io import BytesIO
+
 
 import mtpy.utils.filehandling as mtfh
 import mtpy.processing.birrp as birrp
@@ -1812,7 +1814,8 @@ def get_remote_reference_schedule(survey_path, plot=True):
 class Capturing(list):
     def __enter__(self):
         self._stdout = sys.stdout
-        sys.stdout = self._stringio = StringIO()
+#        sys.stdout = self._stringio = StringIO()
+        sys.stdout = self._stringio = BytesIO()
         return self
     def __exit__(self, *args):
         self.extend(self._stringio.getvalue().splitlines())

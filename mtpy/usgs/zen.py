@@ -236,39 +236,42 @@ class Z3DHeader(object):
                 self.header_str = self.fid.read(self._header_len)
         elif self.fn is not None:
             if self.fid is None:
-                self.fid = file(self.fn, 'rb')
+                self.fid = open(self.fn, 'rb')
                 self.header_str = self.fid.read(self._header_len)
             else:
                 self.fid.seek(0)
                 self.header_str = self.fid.read(self._header_len)
 
-        header_list = self.header_str.split('\n')
+        header_list = self.header_str.split(b'\n')
         for h_str in header_list:
-            if h_str.find('=') > 0:
-                h_list = h_str.split('=')
+            if h_str.find(b'=') > 0:
+                h_list = h_str.split(b'=')
                 h_key = h_list[0].strip().lower()
-                h_key = h_key.replace(' ', '_').replace('/', '').replace('.', '_')
-                h_value = self.convert_value(h_key, h_list[1].strip())
+                h_key = h_key.replace(b' ', b'_').replace(b'/', b'').replace(b'.', b'_')
+                h_key = h_key.decode()
+                h_value = self.convert_value(h_key, h_list[1].strip().decode())
                 setattr(self, h_key, h_value)
             elif len(h_str) == 0:
                 continue
             # need to adjust for older versions of z3d files
-            elif h_str.count(',') > 1:
+            elif h_str.count(b',') > 1:
                 self.old_version = True
-                if h_str.find('Schedule') >= 0:
-                    h_str = h_str.replace(',', 'T', 1)
-                for hh in h_str.split(','):
-                    if hh.find(';') > 0:
-                        m_key, m_value = hh.split(';')[1].split(':')
+                if h_str.find(b'Schedule') >= 0:
+                    h_str = h_str.replace(b',', b'T', 1)
+                for hh in h_str.split(b','):
+                    if hh.find(b';') > 0:
+                        m_key, m_value = hh.split(b';')[1].split(b':')
 
-                    elif len(hh.split(':', 1)) == 2:
-                        m_key, m_value = hh.split(':', 1)
+                    elif len(hh.split(b':', 1)) == 2:
+                        m_key, m_value = hh.split(b':', 1)
                     else:
                          print(hh)
 
-                    m_key = m_key.strip().lower().replace(' ', '_').replace('/', '').replace('.', '_')
-                    m_value = self.convert_value(m_key, m_value.strip())
-                    setattr(self, m_key, m_value)
+                    m_key = m_key.strip().lower().replace(b' ', b'_').replace(b'/', b'').replace(b'.', b'_')
+                    m_key = m_key.decode()
+                    m_value = self.convert_value(m_key.decode(), 
+                                                 m_value.strip().decode())
+                    setattr(self, m_key.decode(), m_value)
 
     def convert_value(self, key_string, value_string):
         """
@@ -399,21 +402,21 @@ class Z3DSchedule(object):
                 self.meta_string = self.fid.read(self._header_len)
         elif self.fn is not None:
             if self.fid is None:
-                self.fid = file(self.fn, 'rb')
+                self.fid = open(self.fn, 'rb')
                 self.fid.seek(self._header_len)
                 self.meta_string = self.fid.read(self._header_len)
             else:
                 self.fid.seek(self._header_len)
                 self.meta_string = self.fid.read(self._header_len)
 
-        meta_list = self.meta_string.split('\n')
+        meta_list = self.meta_string.split(b'\n')
         for m_str in meta_list:
-            if m_str.find('=') > 0:
-                m_list = m_str.split('=')
-                m_key = m_list[0].split('.')[1].strip()
-                m_key = m_key.replace('/', '')
+            if m_str.find(b'=') > 0:
+                m_list = m_str.split(b'=')
+                m_key = m_list[0].split(b'.')[1].strip()
+                m_key = m_key.replace(b'/', b'')
                 m_value = m_list[1].strip()
-                setattr(self, m_key, m_value)
+                setattr(self, m_key.decode(), m_value.decode())
 
         # the first good GPS stamp is on the 3rd, so need to add 2 seconds
         try:
@@ -556,7 +559,7 @@ class Z3DMetadata(object):
                 self.fid.seek(self._header_length+self._schedule_metadata_len)
         elif self.fn is not None:
             if self.fid is None:
-                self.fid = file(self.fn, 'rb')
+                self.fid = open(self.fn, 'rb')
                 self.fid.seek(self._header_length+self._schedule_metadata_len)
             else:
                 self.fid.seek(self._header_length+self._schedule_metadata_len)
@@ -578,29 +581,30 @@ class Z3DMetadata(object):
             if t_find > 0:
                 self.count += 1
                 cal_find = False
-                test_str = test_str.strip().split('\n')[1]
-                if test_str.count('|') > 1:
-                    for t_str in test_str.split('|'):
+                test_str = test_str.strip().split(b'\n')[1]
+                if test_str.count(b'|') > 1:
+                    for t_str in test_str.split(b'|'):
                         # get metadata name and value
-                        if t_str.find('=') == -1 and \
-                           t_str.lower().find('line.name') == -1:
+                        if t_str.find(b'=') == -1 and \
+                           t_str.lower().find(b'line.name') == -1:
                             # get metadata for older versions of z3d files
-                            if len(t_str.split(',')) == 2:
-                                t_list = t_str.lower().split(',')
-                                t_key = t_list[0].strip().replace('.', '_')
-                                if t_key == 'ch_varasp':
-                                    t_key = 'ch_length'
+                            if len(t_str.split(b',')) == 2:
+                                t_list = t_str.lower().split(b',')
+                                t_key = t_list[0].strip().replace(b'.', b'_')
+                                if t_key == b'ch_varasp':
+                                    t_key = b'ch_length'
                                 t_value = t_list[1].strip()
-                                setattr(self, t_key, t_value)
+                                setattr(self, t_key.decode(), t_value.decode())
                             if t_str.count(' ') > 1:
-                                self.notes = t_str
+                                self.notes = t_str.decode()
                         # get metadata for just the line that has line name
                         # because for some reason that is still comma separated
-                        elif t_str.lower().find('line.name') >= 0:
+                        elif t_str.lower().find(b'line.name') >= 0:
                             t_list = t_str.split(',')
                             t_key = t_list[0].strip().replace('.', '_')
                             t_value = t_list[1].strip()
-                            setattr(self, t_key.lower(), t_value)
+                            setattr(self, t_key.lower().decode(), 
+                                    t_value.decode())
                         # get metadata for newer z3d files
                         else:
                             t_list = t_str.split('=')
@@ -679,7 +683,7 @@ class Z3DMetadata(object):
                 self.station = self.rx_stn
             except AttributeError:
                 self.station = None
-                print(u"Need to input station name")
+                print("Need to input station name")
 
 
 
@@ -1083,11 +1087,11 @@ class Zen3D(object):
 
         self.schedule.read_schedule(fn=self.fn, fid=fid)
         if self.header.old_version:
-            dt_str = self.header.schedule.replace('T', ',')
-            self.schedule.Date = dt_str.split(',')[0]
-            self.schedule.Time = dt_str.split(',')[1]
-            year, month, day = [int(dd) for dd in self.schedule.Date.split('-')]
-            hour, minute, second = [int(dd) for dd in self.schedule.Time.split(':')]
+            dt_str = self.header.schedule.replace(b'T', b',')
+            self.schedule.Date = dt_str.split(b',')[0]
+            self.schedule.Time = dt_str.split(b',')[1]
+            year, month, day = [int(dd) for dd in self.schedule.Date.split(b'-')]
+            hour, minute, second = [int(dd) for dd in self.schedule.Time.split(b':')]
             self.schedule.datetime = datetime.datetime(year, month, day,
                                                        hour, minute, second)
 

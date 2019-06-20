@@ -303,7 +303,7 @@ def get_color(cvar,cmap):
             print('Color map: {0} is not supported yet.'.format(cmap))
 
 
-def get_matplotlib_cval(cmap,cvar):
+def get_matplotlib_cval(cmap, cvar):
     """
     gets the color for any matplotlib colormaps
     
