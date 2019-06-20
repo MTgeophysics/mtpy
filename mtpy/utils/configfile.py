@@ -12,7 +12,7 @@ Helper functions for the handling of configuration files
 """
 
 #=================================================================
-
+from __future__ import unicode_literals
 import sys
 import os
 import os.path as op
@@ -335,8 +335,8 @@ def read_survey_configfile(filename):
                     found = True
 
                 if found is False:
-                    print('Station {0} - keyword {1} missing'.format(stationname,
-                                                                     req_keyword))
+                    #print('Station {0} - keyword {1} missing'.format(stationname,
+                    #                                                 req_keyword))
                     error_counter += 1
                     raise Exception
 
@@ -382,7 +382,7 @@ def read_survey_configfile(filename):
                                       temp_dict_in[req_keyword.lower()].lower()
                 else:  
                     print('Station {0} - keyword {1} missing'.format(stationname,
-                                                                  req_keyword))
+                          req_keyword))
                     error_counter += 1
                     continue
 
@@ -397,7 +397,7 @@ def read_survey_configfile(filename):
                                      temp_dict_in[req_keyword.lower()].lower()
                 else:  
                     print('Station {0} - keyword {1} missing'.format(stationname,
-                                                                     req_keyword))
+                          req_keyword))
                     error_counter += 1
                     continue
 
@@ -474,8 +474,8 @@ def read_survey_configfile(filename):
 
     if error_counter != 0:
         print('Could not read all mandatory sections and options'\
-                ' in config file - found {0} errors - check configuration'\
-                ' file before continue!'.format(error_counter))
+              ' in config file - found {0} errors - check configuration'\
+              ' file before continue!'.format(error_counter))
         answer = 5
         while not answer in ['y','n']:
             answer = input('\n\tDo you want to continue anyway? (y/n)')
@@ -486,7 +486,7 @@ def read_survey_configfile(filename):
             if answer == 'n':
                 print()
                 sys.exit()
-    print() 
+    #print() 
     return config_dict
 
 #=================================================================
@@ -508,18 +508,19 @@ def write_dict_to_configfile(dictionary, output_filename):
     #check for nested dictionary - 
     #if the dict entry is a key-value pair, it's stored in a section with head 'DEFAULT' 
     #otherwise, the dict key is taken as section header
+    
     for key, val in sorted(dictionary.items()):
         try:
             for subkey, subval in sorted(val.items()):
                 sectionhead = key
                 if not configobject.has_section(sectionhead):
                     configobject.add_section(sectionhead)
-                configobject.set(sectionhead, subkey, subval)
+                configobject.set(sectionhead, subkey, str(subval))
 
-        except:
+        except (ValueError, AttributeError):
             #if not configobject.has_section('DEFAULT'):
             #    configobject.add_section('')
-            configobject.set('',key,val)
+            configobject.set('', key, str(val))
 
 
     with open(output_filename, 'w') as F:
@@ -671,7 +672,7 @@ def read_survey_txt_file(survey_file, delimiter=None):
        
         if len(sstr) != len(skeys):
             print('cannot read line {0} - wrong number of entries - need {2}\
-                                                    '.format(ss+2,len(skeys)))
+            #                                        '.format(ss+2,len(skeys)))
             continue
 
         

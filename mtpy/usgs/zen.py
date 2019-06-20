@@ -15,6 +15,8 @@ Created on Tue Jun 11 10:53:23 2013
 """
 
 #==============================================================================
+from __future__ import unicode_literals
+
 import time
 import datetime
 import os
@@ -22,6 +24,8 @@ import struct
 import string
 import shutil
 import numpy as np
+import sys
+
 
 import mtpy.imaging.plotspectrogram as plotspectrogram
 import mtpy.core.ts as mtts
@@ -29,7 +33,7 @@ import mtpy.core.ts as mtts
 try:
     import win32api
 except ImportError:
-    print("Cannot find win32api, will not be able to detect drive names")
+    print(u"Cannot find win32api, will not be able to detect drive names")
     
 #==============================================================================
 datetime_fmt = '%Y-%m-%d,%H:%M:%S'
@@ -260,7 +264,7 @@ class Z3DHeader(object):
                     elif len(hh.split(':', 1)) == 2:
                         m_key, m_value = hh.split(':', 1)
                     else:
-                        print hh
+                         print(hh)
 
                     m_key = m_key.strip().lower().replace(' ', '_').replace('/', '').replace('.', '_')
                     m_value = self.convert_value(m_key, m_value.strip())
@@ -388,7 +392,7 @@ class Z3DSchedule(object):
             self.fid = fid
 
         if self.fn is None and self.fid is None:
-            print('no file to read')
+            print(u'no file to read')
         elif self.fn is None:
             if self.fid is not None:
                 self.fid.seek(self._header_len)
@@ -546,7 +550,7 @@ class Z3DMetadata(object):
             self.fid = fid
 
         if self.fn is None and self.fid is None:
-            print('no file to read')
+            print(u'no file to read')
         elif self.fn is None:
             if self.fid is not None:
                 self.fid.seek(self._header_length+self._schedule_metadata_len)
@@ -564,7 +568,14 @@ class Z3DMetadata(object):
         self.count = 0
         while self.find_metadata == True:
             test_str = self.fid.read(self._metadata_length)
-            if test_str.lower().find('metadata record') > 0:
+            try:
+                t_find = test_str.lower().find('metadata record')
+            except UnicodeDecodeError:
+                self.find_metadata = False
+                self.m_tell = self.fid.tell()-self._metadata_length
+                break
+            
+            if t_find > 0:
                 self.count += 1
                 cal_find = False
                 test_str = test_str.strip().split('\n')[1]
@@ -596,6 +607,7 @@ class Z3DMetadata(object):
                             t_key = t_list[0].strip().replace('.', '_')
                             t_value = t_list[1].strip()
                             setattr(self, t_key.lower(), t_value)
+            
                 elif test_str.lower().find('cal.brd') >= 0:
                     t_list = test_str.split(',')
                     t_key = t_list[0].strip().replace('.', '_')
@@ -639,6 +651,7 @@ class Z3DMetadata(object):
                         else:
                             self.coil_cal.append([float(tt.strip())
                                                   for tt in t_str.strip().split(':')])
+        
             else:
                 self.find_metadata = False
                 # need to go back to where the meta data was found so
@@ -666,7 +679,7 @@ class Z3DMetadata(object):
                 self.station = self.rx_stn
             except AttributeError:
                 self.station = None
-                print "Need to input station name"
+                print(u"Need to input station name")
 
 
 
@@ -1161,7 +1174,7 @@ class Zen3D(object):
         if Z3Dfn is not None:
             self.fn = Z3Dfn
 
-        print('------- Reading {0} ---------'.format(self.fn))
+        #print(u'------- Reading {0} ---------'.format(self.fn))
         st = time.time()
 
         #get the file size to get an estimate of how many data points there are
@@ -1197,7 +1210,6 @@ class Zen3D(object):
                 data[data_count:data_count+len(test_str)] = test_str
                 data_count += test_str.size
 
-        #return data
         # find the gps stamps
         gps_stamp_find = np.where(data == self._gps_flag_0)[0]
 
@@ -1205,7 +1217,7 @@ class Zen3D(object):
         try:
             data = data[gps_stamp_find[3]:]
         except IndexError:
-            raise ZenGPSError("Data is clipped, cannot open file")
+            raise ZenGPSError("Data is bad, cannot open file {0}".format(self.fn))
 
         gps_stamp_find = np.where(data == self._gps_flag_0)[0]
 
@@ -1215,7 +1227,8 @@ class Zen3D(object):
             try:
                 data[gps_find+1]
             except IndexError:
-                print('***Failed gps stamp***')
+                pass
+                print(u'***Failed gps stamp***')
                 print('    stamp {0} out of {1}'.format(ii+1, 
                                                         len(gps_stamp_find)))
                 break
@@ -1273,14 +1286,14 @@ class Zen3D(object):
 
         # time it
         et = time.time()
-        print('--> Reading data took: {0:.3f} seconds'.format(et-st))
+        #print(u'--> Reading data took: {0:.3f} seconds'.format(et-st))
         
         self.validate_time_blocks()
         self.convert_gps_time()
         self.check_start_time()
         
-        print('    found {0} GPS time stamps'.format(self.gps_stamps.shape[0]))
-        print('    found {0} data points'.format(self.ts_obj.ts.data.size))
+        #print(u'    found {0} GPS time stamps'.format(self.gps_stamps.shape[0]))
+        #print(u'    found {0} data points'.format(self.ts_obj.ts.data.size))
         
     #=================================================
     def trim_data(self):
@@ -1315,14 +1328,14 @@ class Zen3D(object):
 
         # reset the data and time in the schedule meta data so there is no
         # confusion on when the time series starts
-        self.schedule.Date = zen_start_utc.strftime('%Y-%m-%d')
-        self.schedule.Time = zen_start_utc.strftime('%H:%M:%S')
+        self.schedule.Date = zen_start_utc.strftime(u'%Y-%m-%d')
+        self.schedule.Time = zen_start_utc.strftime(u'%H:%M:%S')
 
         # estimate the time difference between the two
-        time_diff = self.zen_schedule - schedule_time
-        print('    Scheduled time was {0} (GPS time)'.format(s_start))
-        print('    1st good stamp was {0} (UTC time)'.format(zen_start_utc.isoformat()))
-        print('    difference of {0:.2f} seconds'.format(time_diff.total_seconds()))
+        #time_diff = self.zen_schedule - schedule_time
+        #print('    Scheduled time was {0} (GPS time)'.format(s_start))
+        #print('    1st good stamp was {0} (UTC time)'.format(zen_start_utc.isoformat()))
+        #print('    difference of {0:.2f} seconds'.format(time_diff.total_seconds()))
 
         return zen_start_utc
 
@@ -1339,9 +1352,9 @@ class Zen3D(object):
 
         bad_times = np.where(abs(t_diff) > 0.5)[0]
         if len(bad_times) > 0:
-            print('-'*50)
+            print(u'-'*50)
             for bb in bad_times:
-                print('bad time at index {0} > 0.5 s'.format(bb)) 
+                print(u'bad time at index {0} > 0.5 s'.format(bb)) 
 
 	#===================================================
     def validate_time_blocks(self):
@@ -1358,9 +1371,9 @@ class Zen3D(object):
                 self.gps_stamps = self.gps_stamps[bad_blocks[-1]:]
                 self.time_series = self.time_series[ts_skip:]
                 
-                print('{0}Skipped the first {1} seconds'.format(' '*4,
+                print(u'{0}Skipped the first {1} seconds'.format(' '*4,
                                                                 bad_blocks[-1]))
-                print('{0}Skipped first {1} poins in time series'.format(' '*4,
+                print(u'{0}Skipped first {1} poins in time series'.format(' '*4,
                                                                       ts_skip))
             
     #================================================== 
@@ -1572,7 +1585,7 @@ class Zen3D(object):
             self.read_all_info()
 
         if dec > 1:
-            print('Decimating data by factor of {0}'.format(dec))
+            print(u'Decimating data by factor of {0}'.format(dec))
             self.df = self.df/dec
 
         # make a new file name to save to that includes the meta information
@@ -1597,11 +1610,11 @@ class Zen3D(object):
             self.fn_mt_ascii = save_fn
         # if the file already exists skip it
         if os.path.isfile(self.fn_mt_ascii) == True:
-            print('   ************')
-            print('    mtpy file already exists for {0} --> {1}'.format(self.fn,
-                                                                    self.fn_mt_ascii))            
-            print('    skipping')
-            print('   ************')
+            #print(u'   ************')
+            #print('    mtpy file already exists for {0} --> {1}'.format(self.fn,
+            #                                                        self.fn_mt_ascii))            
+            #print('    skipping')
+            #print('   ************')
             # if there is a decimation factor need to read in the time
             # series data to get the length.
             c = self.ts_obj.read_ascii_header(self.fn_mt_ascii)
@@ -1630,13 +1643,13 @@ class Zen3D(object):
         if self.component in ['ex', 'ey']:
             e_scale = float(self.dipole_len)
             self.ts_obj.ts.data /= ((e_scale/100)*2*np.pi)
-            print('Using scales {0} = {1} m'.format(self.metadata.ch_cmp.upper(),
-                                                    e_scale))
+            #print(u'Using scales {0} = {1} m'.format(self.metadata.ch_cmp.upper(),
+            #                                        e_scale))
             self.ts_obj.units = 'mV/km'
 
         self.ts_obj.write_ascii_file(fn_ascii=self.fn_mt_ascii)                                         
         
-        print('Wrote mtpy timeseries file to {0}'.format(self.fn_mt_ascii))
+        #print(u'Wrote mtpy timeseries file to {0}'.format(self.fn_mt_ascii))
     
     #==================================================                                                           
     def plot_time_series(self, fig_num=1):
@@ -2058,8 +2071,8 @@ class ZenSchedule(object):
             for lkey in list(self.light_dict.keys()):
                 sfid.write('{0} {1}\n'.format(lkey, self.light_dict[lkey]))
             sfid.close()
-            #print 'Wrote {0}:\{1} to {2} as {3}'.format(dd, save_name, dname,
-            #                                       self.ch_cmp_dict[dname[-1]])
+#            print(u'Wrote {0}:\{1} to {2} as {3}'.format(dd, save_name, dname,
+#                                                  self.ch_cmp_dict[dname[-1]]))
 
             for dd in list(drive_names.keys()):
                 dname = drive_names[dd]
@@ -2088,7 +2101,7 @@ class ZenSchedule(object):
                     sfid.write('{0} {1}\n'.format(lkey, self.light_dict[lkey]))
                 sfid.close()
 
-                print('Wrote {0}:\{1} to {2} as {3}'.format(dd, save_name, dname,
+                print(u'Wrote {0}:\{1} to {2} as {3}'.format(dd, save_name, dname,
                                                    self.ch_cmp_dict[dname[-1]]))
             return
         else:
@@ -2118,7 +2131,7 @@ class ZenSchedule(object):
                 sfid.write('{0} {1}\n'.format(lkey, self.light_dict[lkey]))
             sfid.close()
 
-            print('Wrote {0}:\{1} to {2} as {3}'.format(dd, save_name, dname,
+            print(u'Wrote {0}:\{1} to {2} as {3}'.format(dd, save_name, dname,
                                                    self.ch_cmp_dict[dname[-1]]))
                                                    
     def write_schedule_for_gui(self, zen_start=None, df_list=None, 
@@ -2206,10 +2219,10 @@ class ZenSchedule(object):
         fid.writelines(zacq_list[0:16])
         fid.close()
         
-        print('Wrote schedule file to {0}'.format(fn))
-        print('+--------------------------------------+')
-        print('|   SET ZEN START TIME TO: {0}    |'.format(zen_start))
-        print('+--------------------------------------+')
+        print(u'Wrote schedule file to {0}'.format(fn))
+        print(u'+--------------------------------------+')
+        print(u'|   SET ZEN START TIME TO: {0}    |'.format(zen_start))
+        print(u'+--------------------------------------+')
 
     def _convert_time_to_seconds(self, time_string):
         """
@@ -2300,7 +2313,7 @@ def get_drive_names():
             pass
 
     if drives == {}:
-        print('No external drives detected, check the connections.')
+        print(u'No external drives detected, check the connections.')
         return None
     return drive_dict
 
@@ -2414,34 +2427,33 @@ def copy_from_sd(station, save_path=r"d:\Peacock\MTData",
 
                             shutil.copy(full_path_fn, full_path_sv)
 
-                            print('copied {0} to {1}\n'.format(full_path_fn, 
-                                                             full_path_sv))
+                            print(u'copied {0} to {1}\n'.format(full_path_fn, 
+                                                               full_path_sv))
                                                              
                             #log_fid.writelines(zt.log_lines)
 
                             log_fid.write('copied {0} to \n'.format(full_path_fn)+\
                                           '       {0}\n'.format(full_path_sv))
                         else:
-                            pass
-#                            print '+++ SKIPPED {0}+++\n'.format(zt.fn)
-#                            log_fid.write(' '*4+\
-#                                          '+++ SKIPPED {0}+++\n'.format(zt.fn))
+                            print('+++ SKIPPED {0}+++\n'.format(zt.fn))
+                            log_fid.write(' '*4+\
+                                          '+++ SKIPPED {0}+++\n'.format(zt.fn))
 
                     else:
                         pass
-#                        print '{0} '.format(full_path_fn)+\
-#                               'not copied due to bad data.'
+                        #print(u'{0} '.format(full_path_fn)+\
+                        #       'not copied due to bad data.')
 #
-#                        log_fid.write(' '*4+'***{0} '.format(full_path_fn)+\
-#                                      'not copied due to bad data.\n\n')
+                        log_fid.write(' '*4+'***{0} '.format(full_path_fn)+\
+                                      'not copied due to bad data.\n\n')
             except WindowsError:
-                print('Faulty file at {0}'.format(full_path_fn))
+                print(u'Faulty file at {0}'.format(full_path_fn))
                 log_fid.write('---Faulty file at {0}\n\n'.format(full_path_fn))
     log_fid.close()
 
     et_test = time.ctime()
-    print('Started at: {0}'.format(st_test))
-    print('Ended at: {0}'.format(et_test))
+    print(u'Started at: {0}'.format(st_test))
+    print(u'Ended at: {0}'.format(et_test))
 
     return fn_list
 

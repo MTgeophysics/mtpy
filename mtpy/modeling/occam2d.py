@@ -1031,7 +1031,7 @@ class Profile():
                 except:
                     pass
 
-            if self.model_epsg is not None:
+            elif self.model_epsg is not None:
                 edi.east,edi.north,edi.utm_zone = \
                 gis_tools.project_point_ll2utm(edi.lat,
                                                edi.lon,

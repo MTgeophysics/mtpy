@@ -1107,7 +1107,7 @@ def get_mtlist(fn_list=None, res_object_list=None, z_object_list=None,
     if fn_list is not None:
         ns = len(fn_list)
         mt_list = [MTplot(fn=fn) for fn in fn_list]
-        print('Reading {0} stations'.format(ns))
+        #print('Reading {0} stations'.format(ns))
         return mt_list
 
     elif mt_object_list is not None:

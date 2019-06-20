@@ -13,6 +13,8 @@ Created on Fri Sep 16 14:29:43 2016
 
 """
 #==============================================================================
+from __future__ import unicode_literals
+
 import numpy as np
 import time
 import datetime
@@ -115,7 +117,6 @@ class BIRRP_processing(birrp.BIRRP_Parameters):
         self.nskip = []
         self.nskipr = []
         self.nread = []
-        #print fn_birrp_list
         for block_arr in fn_birrp_list:
             s_list = np.zeros(len(block_arr), dtype='|S100')
             r_list = np.zeros(2, dtype='|S100')
@@ -210,14 +211,14 @@ class BIRRP_processing(birrp.BIRRP_Parameters):
                     self.rrfn_list.append(list(r_list[np.where(r_list != '')]))
                     
             else:
-                print(('Not enough points {0}'.format(nread_ii)))
-                print(('skipping time block {0} for sampling rate {1}'.format(
+                pass
+                print('Not enough points {0}'.format(nread_ii))
+                print('skipping time block {0} for sampling rate {1}'.format(
                       time.strftime(datetime_fmt, time.localtime(start_dt)),
-                      -self.deltat)))
+                      -self.deltat))
 
         # need to check for the number of points to be read in, there is 
         # a memory max, for this computer the max is self._max_nread   
-        print sum(self.nread, self._max_nread)
         if sum(self.nread) > self._max_nread:
             self.nread[-1] = self._max_nread-sum(self.nread[0:-1])
             print('processing {0} points'.format(sum(self.nread)))
@@ -375,7 +376,7 @@ class Survey_Config(object):
         fn = os.path.join(self.save_path, '{0}.cfg'.format(self.station))
         mtcfg.write_dict_to_configfile({self.station:self.__dict__}, fn)
         
-        print('Wrote survey config file to {0}'.format(fn))
+        #('Wrote survey config file to {0}'.format(fn))
         
         return fn
 
@@ -533,13 +534,15 @@ class Z3D_to_edi(object):
         if fn_count == 0:
             raise ValueError('No Z3D files found for in {0}'.format(station_dir))
         else:
-            print('Found {0} Z3D files in {1}'.format(fn_count, station_dir))
+            pass
+            #print('Found {0} Z3D files in {1}'.format(fn_count, station_dir))
         
         # check for maximum number of blocks
         for df_key in list(fn_block_dict.keys()):
             date_dict = fn_block_dict[df_key]
             dates = sorted(date_dict.keys())
             if len(dates) == 0:
+                pass
                 print('No Z3D files found for {0} in {1}'.format(str(df_key),
                                                                  station_dir))
 
@@ -630,7 +633,7 @@ class Z3D_to_edi(object):
         
         # number of components to process        
         self.num_comp = n_comps
-        print(' --> processing {0} components'.format(self.num_comp))
+        #print(' --> processing {0} components'.format(self.num_comp))
                     
         jj = 0  # index for fn_array            
         for df_key in self.df_list:
@@ -782,15 +785,9 @@ class Z3D_to_edi(object):
             try:
                 cal_fn = self.calibration_dict[chn_num]
             except KeyError:
-<<<<<<< HEAD
-                print 'Did not find calibration for {0}, number {1}'.format(comp, 
-                                                                            chn_num) 
-                cal_fn = self.calibration_dict['2284']
-=======
                 print('Did not find calibration for {0}, number {1}'.format(comp, 
-                                                                        chn_num)) 
-                cal_fn = None
->>>>>>> 1fffa1ccb835c016f1be5c18b37b54bddf182ac2
+                                                                            chn_num)) 
+                cal_fn = self.calibration_dict['2284']
                 
             if remote == False:
                 setattr(self.survey_config, comp, chn_num)
@@ -953,7 +950,7 @@ class Z3D_to_edi(object):
             
         return_fn_arr = np.zeros(1, dtype=self._ts_fn_dtype)
         
-        ts_obj = mtts.MT_TS()
+        ts_obj = mtts.MTTS()
         try:
             ts_obj.read_ascii_header(fn)
 
@@ -1094,7 +1091,7 @@ class Z3D_to_edi(object):
                                 print('Using rr {0} for TS starting on {1}'.format(f_station,
                                                                                    rr_arr['start_dt']))
                                 print('For station TS starting on      {0}'.format(sdate))
-                        
+                                
                                 dt_arr = self._fill_birrp_fn_arr(rr_arr,
                                                                  remote=True)
                                 rr_station_find.append(f_find)
@@ -1104,7 +1101,7 @@ class Z3D_to_edi(object):
                                 continue
                             else:
                                 print('Using rr {0} for TS starting on {1}'.format(f_station,
-                                                                                   rr_arr['start_dt']))
+                                      rr_arr['start_dt']))
                                 print('For station TS starting on      {0}'.format(sdate))
                         
                                 dt_arr = self._fill_birrp_fn_arr(rr_arr,
@@ -1117,9 +1114,9 @@ class Z3D_to_edi(object):
                                 continue
                             else:
                                 print('Using rr {0} for TS starting on {1}'.format(f_station,
-                                                                                   rr_arr['start_dt']))
+                                      rr_arr['start_dt']))
                                 print('For station TS starting on      {0}'.format(sdate))
-                        
+                    
                                 dt_arr = self._fill_birrp_fn_arr(rr_arr,
                                                                  remote=True)
                                 rr_station_find.append(f_find)
@@ -1175,8 +1172,9 @@ class Z3D_to_edi(object):
                                                                  'rr_{0}_{1:02}_cal_fn'.format(rr_b_arr['comp'], 
                                                                  rr_index-1))
                         except AttributeError:
+                            pass
                             print('Could not find calibration for {0}'.format(rr_b_arr['fn']))
-                            
+                            ##
                         rr_b_arr['rr_num'] = rr_index
                         rr_count += 1
                         if rr_count%2 == 0 and rr_count != 0:
@@ -1205,7 +1203,7 @@ class Z3D_to_edi(object):
                 n_last = self._max_nread-sum(nread_list[0:-1])
                 s_dict[df][-1]['nread'][:] = n_last
                 
-                print "reading {0} points from last block".format(n_last)
+                print("reading {0} points from last block".format(n_last))
         
         # return the station dictionary        
         return s_dict
@@ -1420,7 +1418,7 @@ class Z3D_to_edi(object):
                     if fn[-4:] == '.cfg':
                         self.survey_config_fn = os.path.join(ts_dir, fn)
                         
-        print(self.survey_config_fn)
+        #print(self.survey_config_fn)
         
         j2edi_obj = birrp.J_To_Edi(station=self.survey_config.station,
                                    survey_config_fn=self.survey_config_fn,
@@ -1638,9 +1636,11 @@ class Z3D_to_edi(object):
         
                     count += len(f_index[0])
                 except IndexError:
+                    pass
                     print('Something went wrong with processing {0}'.format(edi_fn))
                 
             else:
+                pass
                 print('{0} was not in combining dictionary'.format(sr_key))
                 
         # now replace
@@ -1925,6 +1925,7 @@ def compute_mt_response(survey_dir, station='mt000', copy_date=None,
             zen.copy_from_sd(station, save_path=survey_dir, 
                              copy_date=copy_date, copy_type='after')
     except IOError:
+        pass
         print('No files copied from SD cards')
         print('Looking in  {0} for Z3D files'.format(station_dir))
     
