@@ -167,10 +167,8 @@ class MTTS(object):
         """
         if isinstance(ts_arr, np.ndarray):
             self._ts = pd.DataFrame({'data':ts_arr})
-            if self.start_time_utc is not None or \
-               isinstance(self._ts.index[0], int):
+            if self._start_time_struct is not None:
                 self._set_dt_index(self._start_time_struct.strftime(self._date_time_fmt))
-
         elif isinstance(ts_arr, pd.core.frame.DataFrame):
             try:
                 ts_arr['data']
@@ -264,7 +262,10 @@ class MTTS(object):
     @property
     def start_time_utc(self):
         """start time in UTC given in time format"""
-        return self._start_time_struct.isoformat()
+        if self._start_time_struct is not None:
+            return self._start_time_struct.isoformat()
+        else:
+            return None
 
     @start_time_utc.setter
     def start_time_utc(self, start_time):
@@ -290,7 +291,7 @@ class MTTS(object):
         """start time in epoch seconds"""
         if self.start_time_utc is None:
             return None
-        return self._convert_dt_to_sec(self.start_time_utc)
+        return self._convert_dt_to_sec(self._start_time_struct)
 
     @start_time_epoch_sec.setter
     def start_time_epoch_sec(self, epoch_sec):
@@ -312,17 +313,21 @@ class MTTS(object):
         """
         End time in epoch seconds
         """
-        
-        return self._convert_dt_to_sec(self.ts.index[-1].to_pydatetime())
+        if hasattr(self, 'ts'):
+            return self._convert_dt_to_sec(self.ts.index[-1].to_pydatetime())
+        else:
+            return None
     
     @property
     def stop_time_utc(self):
         """
         End time in UTC
         """
+        if hasattr(self, 'ts'):
+            return self.ts.index[-1].isoformat()
+        else:
+            return None
         
-        return self.ts.index[-1].isoformat()
-    
     def _set_dt_index(self, start_time):
         """
         get the date time index from the data
@@ -535,7 +540,7 @@ class MTTS(object):
         st = datetime.datetime.utcnow()
 
         # get the number of chunks to write
-        chunks = self.ts.shape[0]/chunk_size
+        chunks = int(self.ts.shape[0]/chunk_size)
 
         # make header lines
         header_lines = ['# *** MT time series text file for {0} ***'.format(self.station)]

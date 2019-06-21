@@ -393,15 +393,15 @@ class ScriptFile(BIRRP_Parameters):
         self._comp_list = None
         self.deltat = None
         
-        self._fn_dtype = np.dtype([('fn', 'S100'),
+        self._fn_dtype = np.dtype([('fn', 'U100'),
                                    ('nread', np.int),
                                    ('nskip', np.int),
-                                   ('comp', 'S2'),
-                                   ('calibration_fn', 'S100'),
+                                   ('comp', 'U2'),
+                                   ('calibration_fn', 'U100'),
                                    ('rr', np.bool),
                                    ('rr_num', np.int),
-                                   ('start_dt', 'S19'),
-                                   ('end_dt', 'S19')])
+                                   ('start_dt', 'U19'),
+                                   ('end_dt', 'U19')])
 
         if self.fn_arr is not None:
             self._validate_fn_arr()
@@ -463,7 +463,7 @@ class ScriptFile(BIRRP_Parameters):
         elif num_comp == 5:
             self._comp_list = ['ex', 'ey', 'hz', 'hx', 'hy']
         else:
-            print self.fn_arr
+            print(self.fn_arr)
             raise ValueError('Number of components {0} invalid, check inputs'.format(num_comp))
 
         if self.nref == 0:
@@ -519,7 +519,7 @@ class ScriptFile(BIRRP_Parameters):
             s_lines += ['{0:0.0f}'.format(self.nlev)]
         
         elif self.ilev == 1:
-            #print('Writing Advanced mode')
+            print('Writing Advanced mode')
             s_lines += ['{0:0.0f}'.format(self.nref)]
             if self.nref > 3:
                 s_lines += ['{0:0.0f},{1:0.0f}'.format(self.nr3, self.nr2)]
@@ -606,11 +606,11 @@ class ScriptFile(BIRRP_Parameters):
                                             (fn_arr['rr']==rr) & \
                                             (fn_arr['rr_num']==rr_num))[0][0]
                     except IndexError:
-                        #print(u'Something a miss with remote reference')
-                        #print(self.comp_list)
-                        #print(len(np.where(fn_arr['rr']==True)[0]))
-                        #print(fn_arr['fn'])
-                        #print(self.nref)
+                        print('Something a miss with remote reference')
+                        print(self.comp_list)
+                        print(len(np.where(fn_arr['rr']==True)[0]))
+                        print(fn_arr['fn'])
+                        print(self.nref)
                         raise ValueError('Fuck!')
 
                     if ff == 0:
@@ -632,7 +632,7 @@ class ScriptFile(BIRRP_Parameters):
         with open(self.script_fn, 'w') as fid:
             fid.write('\n'.join(s_lines))
 
-        ##print('Wrote script file to {0}'.format(self.script_fn))
+        print('Wrote script file to {0}'.format(self.script_fn))
 
 
     def make_fn_lines_block_00(self, fn_arr):
@@ -712,49 +712,30 @@ def run(birrp_exe, script_file):
     #change directory to directory of the script file
     os.chdir(os.path.dirname(script_file))
     local_script_fn = os.path.basename(script_file)
-    #print(os.getcwd())
-
-#    # get an input string for communicating with the birrp executable
-#    with open(script_file, 'r') as sfid:
-#        input_string = ''.join(sfid.readlines())
-#
-#    #correct inputstring for potential errorneous line endings due to strange
-#    #operating systems:
-#    temp_string = input_string.split()
-#    temp_string = [i.strip() for i in temp_string]
-#    input_string = '\n'.join(temp_string)
-#    input_string += '\n'
 
     #open a log file to catch process and errors of BIRRP executable
-    #log_file = open('birrp_logfile.log','w')
+    log_file = open('birrp_logfile.log','w')
 
-    #print('*'*10)
-    #print('Processing {0} with {1}'.format(script_file, birrp_exe))
-    #print('Starting Birrp processing at {0}...'.format(time.ctime()))
-    st = time.ctime()
+    print('*'*10)
+    print('Processing {0} with {1}'.format(script_file, birrp_exe))
+    print('Starting Birrp processing at {0}...'.format(time.ctime()))
 
     birrp_process = subprocess.Popen(birrp_exe+'< {0}'.format(local_script_fn),
-                                     stdin=subprocess.PIPE,
-                                     shell=True)
-#                                     stdout=log_file,
-#                                     stderr=log_file)
+                                     shell=True,
+                                     stdout=log_file,
+                                     stderr=log_file)
 
     birrp_process.wait()
 
-
-    #log_file.close()
+    log_file.close()
     #print('_'*20)
     #print('Starting Birrp processing at {0}...'.format(st))
-    #print('Endec Birrp processing at   {0}...'.format(time.ctime()))
-    ##print 'Closed log file: {0}'.format(log_file.name)
-#
-#    #print 'Outputs: {0}'.format(out)
-#    #print 'Errors: {0}'.format(err)
-    
+    print('Ended Birrp processing at   {0}...'.format(time.ctime()))
+
     #go back to initial directory
     os.chdir(current_dir)
 
-    #print('\n{0} DONE !!! {0}\n'.format('='*20))
+    print('\n{0} DONE !!! {0}\n'.format('='*20))
 
 #==============================================================================
 # Write edi file from birrp outputs
@@ -849,7 +830,7 @@ class J_To_Edi(object):
         """
 
         if self.birrp_dir is None:
-            #print('Could not get birrp_config_fn because no birrp directory specified')
+            print('Could not get birrp_config_fn because no birrp directory specified')
             self.birrp_config_fn = None
             return
 
@@ -857,10 +838,10 @@ class J_To_Edi(object):
             self.birrp_config_fn = [os.path.join(self.birrp_dir, fn)
                                     for fn in os.listdir(self.birrp_dir)
                                     if fn.find('birrp_params') > 0][-1]
-            #print('Found {0}'.format(self.birrp_config_fn))
+            print('Found {0}'.format(self.birrp_config_fn))
 
         except IndexError:
-            #print('Could not find a birrp_params config file in {0}'.format(self.birrp_dir))
+            print('Could not find a birrp_params config file in {0}'.format(self.birrp_dir))
             self.birrp_config_fn = None
             return
 
@@ -897,7 +878,7 @@ class J_To_Edi(object):
                          for fn in os.listdir(self.birrp_dir)
                          if fn.endswith('.j')][0]
         except IndexError:
-            #print('Could not find a .j file in {0}, check path.'.format(self.birrp_dir))
+            print('Could not find a .j file in {0}, check path.'.format(self.birrp_dir))
             self.j_fn = None
 
     def _fill_site(self):

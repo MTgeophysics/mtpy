@@ -472,24 +472,24 @@ class Z3D_to_edi(object):
         self._max_nread = 20000000
         
         # data types for different aspects of getting information
-        self._ts_fn_dtype = np.dtype([('station','S6'), 
+        self._ts_fn_dtype = np.dtype([('station','U6'), 
                                       ('npts', np.int), 
                                       ('df', np.int),
-                                      ('start_dt', 'S22'),
-                                      ('end_dt', 'S22'),     
-                                      ('comp', 'S2'),
-                                      ('fn', 'S100'),
-                                      ('calibration_fn', 'S100')])
+                                      ('start_dt', 'U22'),
+                                      ('end_dt', 'U22'),     
+                                      ('comp', 'U2'),
+                                      ('fn', 'U100'),
+                                      ('calibration_fn', 'U100')])
                                    
-        self._birrp_fn_dtype = np.dtype([('fn', 'S100'),
+        self._birrp_fn_dtype = np.dtype([('fn', 'U100'),
                                          ('nread', np.int),
                                          ('nskip', np.int),
-                                         ('comp', 'S2'),
-                                         ('calibration_fn', 'S100'),
+                                         ('comp', 'U2'),
+                                         ('calibration_fn', 'U100'),
                                          ('rr', np.bool),
                                          ('rr_num', np.int),
-                                         ('start_dt', 'S22'),
-                                         ('end_dt', 'S22')])
+                                         ('start_dt', 'U22'),
+                                         ('end_dt', 'U22')])
         
         for key in list(kwargs.keys()):
             setattr(self, key, kwargs[key])
