@@ -604,7 +604,7 @@ class Z3DMetadata(object):
                             t_value = t_list[1].strip()
                             setattr(self, t_key.lower(), t_value)
                 elif test_str.lower().find('cal.brd') >= 0:
-                    t_list = test_str.split(b',')
+                    t_list = test_str.split(',')
                     t_key = t_list[0].strip().replace('.', '_')
                     setattr(self, t_key.lower(), t_list[1])
                     for t_str in t_list[2:]:
@@ -1191,18 +1191,21 @@ class Zen3D(object):
 
             # initalize a data array filled with zeros, everything goes into
             # this array then we parse later
-            data = np.zeros(int((file_size-512*(1+self.metadata.count))/4 + self.df),
+            data = np.zeros(int((file_size-512*(1+self.metadata.count))/4 + 8*self.df),
                             dtype=np.int32)
             # go over a while loop until the data cound exceed the file size
             data_count = 0
-            while data_count+self.metadata.m_tell/4 < data.size - self.df:
+            while True:
                 # need to make sure the last block read is a multiple of 32 bit
                 read_len = min([self._block_len,
                                 int(32*((file_size-file_id.tell())//32))])
                 test_str = np.fromstring(file_id.read(read_len),
                                          dtype=np.int32)
+                if len(test_str) == 0:
+                    break
                 data[data_count:data_count+len(test_str)] = test_str
                 data_count += test_str.size
+                
 
         #return data
         # find the gps stamps
@@ -1277,6 +1280,8 @@ class Zen3D(object):
         self.ts_obj.declination = 0.0
         self.ts_obj.conversion = self._counts_to_mv_conversion
         self.ts_obj.gain = self.header.ad_gain
+        self.ts_obj.chn_num = self.metadata.ch_number
+        self.ts_obj.fn = os.path.basename(self.fn)
 
         self.validate_time_blocks()
         self.convert_gps_time()

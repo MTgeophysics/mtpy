@@ -290,7 +290,7 @@ class MTTS(object):
         """start time in epoch seconds"""
         if self.start_time_utc is None:
             return None
-        return self._convert_dt_to_sec(self.start_time_utc)
+        return self._convert_dt_to_sec(self._start_time_struct)
 
     @start_time_epoch_sec.setter
     def start_time_epoch_sec(self, epoch_sec):
@@ -538,7 +538,8 @@ class MTTS(object):
         st = datetime.datetime.utcnow()
 
         # get the number of chunks to write
-        chunks = self.ts.shape[0]/chunk_size
+        chunks = int(self.ts.shape[0]/chunk_size)
+        print(chunks)
 
         # make header lines
         header_lines = ['# *** MT time series text file for {0} ***'.format(self.station)]
@@ -560,7 +561,7 @@ class MTTS(object):
                 # form
 #                ts_lines = np.array(self.ts.data[cc*chunk_size:(cc+1)*chunk_size],
 #                                    dtype='S22')
-                ts_lines = np.array(self.ts.data[cc*chunk_size:(cc+1)*chunk_size])
+                ts_lines = np.array(self.ts.data[int(cc*chunk_size):int((cc+1)*chunk_size)])
                 ts_lines = np.char.mod(fmt, ts_lines)
                 fid.write('\n'.join(list(ts_lines)))
                 # be sure to write a new line after each chunk otherwise
