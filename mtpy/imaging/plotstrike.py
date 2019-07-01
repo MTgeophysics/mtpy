@@ -379,7 +379,7 @@ class PlotStrike(object):
 
 
         # get unique periods from all data and min and max values
-        plist = np.unique(np.hstack([mm.keys() for mm in ptlist]))
+        plist = np.unique(np.hstack([list(mm.keys()) for mm in ptlist]))
         minper = np.min(plist)
         maxper = np.max(plist)
         nt = len(plist)
