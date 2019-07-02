@@ -131,9 +131,9 @@ def read_configfile(filename):
         #do NOT ask, why it does not work with reading from filename directly...:
         with open(filename) as F:
             d = F.read()
-        FH = io.StringIO(d)
-        configobject.readfp(d)#filename)
-    except:
+        FH = io.StringIO(d.decode())
+        configobject.readfp(FH)#filename)
+    except TypeError:
         try:
             dummy_String = '[DEFAULT]\n' + open(filename, 'r').read()
             FH = io.StringIO(dummy_String)
@@ -508,18 +508,23 @@ def write_dict_to_configfile(dictionary, output_filename):
     #check for nested dictionary - 
     #if the dict entry is a key-value pair, it's stored in a section with head 'DEFAULT' 
     #otherwise, the dict key is taken as section header
-    for key, val in sorted(dictionary.items()):
+    for key, value in sorted(dictionary.items()):
         try:
-            for subkey, subval in sorted(val.items()):
+            for sub_key, sub_value in sorted(value.items()):
                 sectionhead = key
                 if not configobject.has_section(sectionhead):
                     configobject.add_section(sectionhead)
-                configobject.set(sectionhead, subkey, subval)
+                if type(sub_value) not in [str]:
+                    sub_value = str(sub_value)
+                configobject.set(sectionhead, sub_key, sub_value)
 
-        except:
+        except AttributeError:
             #if not configobject.has_section('DEFAULT'):
             #    configobject.add_section('')
-            configobject.set('',key,val)
+            try:
+                configobject.set('', key, value)
+            except TypeError as error:
+                print(key, value, error)
 
 
     with open(output_filename, 'w') as F:

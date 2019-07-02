@@ -782,15 +782,9 @@ class Z3D_to_edi(object):
             try:
                 cal_fn = self.calibration_dict[chn_num]
             except KeyError:
-<<<<<<< HEAD
-                print 'Did not find calibration for {0}, number {1}'.format(comp, 
-                                                                            chn_num) 
-                cal_fn = self.calibration_dict['2284']
-=======
                 print('Did not find calibration for {0}, number {1}'.format(comp, 
                                                                         chn_num)) 
-                cal_fn = None
->>>>>>> 1fffa1ccb835c016f1be5c18b37b54bddf182ac2
+                cal_fn = self.calibration_dict['2284']
                 
             if remote == False:
                 setattr(self.survey_config, comp, chn_num)
@@ -953,7 +947,7 @@ class Z3D_to_edi(object):
             
         return_fn_arr = np.zeros(1, dtype=self._ts_fn_dtype)
         
-        ts_obj = mtts.MT_TS()
+        ts_obj = mtts.MTTS()
         try:
             ts_obj.read_ascii_header(fn)
 
@@ -978,7 +972,7 @@ class Z3D_to_edi(object):
                 count = 1
             else:
                 count = 0
-        except mtts.MT_TS_Error:
+        except mtts.MTTS_Error:
             print('  Skipped {0}'.format(fn))
             count = 0
             
@@ -1365,7 +1359,8 @@ class Z3D_to_edi(object):
             cfg_fn = mtfh.make_unique_filename('{0}_birrp_params.cfg'.format(
                                                                  script_fn[:-7]))
                                                                  
-            mtcfg.write_dict_to_configfile(birrp_dict, cfg_fn)
+            mtcfg.write_dict_to_configfile({os.path.basename(birrp_dict['ofil']):
+                                                             birrp_dict}, cfg_fn)
             print('Wrote BIRRP config file for edi file to {0}'.format(cfg_fn))
     
             self.birrp_config_fn = cfg_fn

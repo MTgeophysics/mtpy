@@ -1277,7 +1277,7 @@ class Zen3D(object):
         
         self.validate_time_blocks()
         self.convert_gps_time()
-        self.check_start_time()
+        #self.check_start_time()
         
         print('    found {0} GPS time stamps'.format(self.gps_stamps.shape[0]))
         print('    found {0} data points'.format(self.ts_obj.ts.data.size))

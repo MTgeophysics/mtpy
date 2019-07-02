@@ -111,7 +111,7 @@ class PlotResponse(object):
         self.ms = kwargs.pop('ms', 1.5)
         self.ms_r = kwargs.pop('ms_r', 3)
         self.lw = kwargs.pop('lw', .5)
-        self.lw_r = kwargs.pop('lw_r', 1.0)
+        self.lw_r = kwargs.pop('lw_r', .5)
         self.ls = kwargs.pop('ls',':')
         self.e_capthick = kwargs.pop('e_capthick', .5)
         self.e_capsize = kwargs.pop('e_capsize', 2)
@@ -170,6 +170,9 @@ class PlotResponse(object):
         self.legend_label_spacing = 0.07
         self.legend_handle_text_pad = .2
         self.legend_border_pad = .15
+        
+        self.text_left = 1.1
+        self.text_top = .01
 
         self.font_size = kwargs.pop('font_size', 6)
 
@@ -249,7 +252,7 @@ class PlotResponse(object):
         # --> set default font size
         plt.rcParams['font.size'] = self.font_size
 
-        fontdict = {'size': self.font_size + 2, 'weight': 'bold'}
+        fontdict = {'size': self.font_size, 'weight': 'bold'}
         if self.plot_z:
             h_ratio = [1, 1, .5]
         elif not self.plot_z:
@@ -258,6 +261,9 @@ class PlotResponse(object):
         ax_list = []
         line_list = []
         label_list = []
+        
+        l1 = plt.Line2D([0], [0], linewidth=0, color='w', linestyle='None',
+                        marker='.')
 
         if self.plot_type != '1':
             pstation_list = []
@@ -286,7 +292,7 @@ class PlotResponse(object):
             kw_xx = {'color': self.cted,
                      'marker': self.mted,
                      'ms': self.ms,
-                     'ls': ':',
+                     'ls': '-',
                      'lw': self.lw,
                      'e_capsize': self.e_capsize,
                      'e_capthick': self.e_capthick}
@@ -294,7 +300,7 @@ class PlotResponse(object):
             kw_yy = {'color': self.ctmd,
                      'marker': self.mtmd,
                      'ms': self.ms,
-                     'ls': ':',
+                     'ls': '-',
                      'lw': self.lw,
                      'e_capsize': self.e_capsize,
                      'e_capthick': self.e_capthick}
@@ -346,9 +352,10 @@ class PlotResponse(object):
                     self.res_limits_od = None
 
             # make figure
-            fig = plt.figure(station, self.fig_size, dpi=self.fig_dpi)
+            self.fig = plt.figure(station, self.fig_size, dpi=self.fig_dpi)
             plt.clf()
-            fig.suptitle(str(station), fontdict=fontdict)
+            self.fig.suptitle('Station {0}'.format(filter(str.isdigit, str(station)),
+                         fontdict=fontdict))
 
             # set the grid of subplots
             if np.all(t_obj.tipper == 0.0) == True:
@@ -364,16 +371,17 @@ class PlotResponse(object):
 
             else:
                 self.plot_tipper = True
-                self.tipper_limits = (np.round(min([t_obj.tipper[ntx, 0, 0].real.min(),
-                                                    t_obj.tipper[nty, 0, 1].real.min(),
-                                                    t_obj.tipper[ntx, 0, 0].imag.min(),
-                                                    t_obj.tipper[nty, 0, 1].imag.min()]),
-                                               1),
-                                      np.round(max([t_obj.tipper[ntx, 0, 0].real.max(),
-                                                    t_obj.tipper[nty, 0, 1].real.max(),
-                                                    t_obj.tipper[ntx, 0, 0].imag.max(),
-                                                    t_obj.tipper[nty, 0, 1].imag.max()]),
-                                               1))
+                if self.tipper_limits is None:
+                    self.tipper_limits = (np.round(min([t_obj.tipper[ntx, 0, 0].real.min(),
+                                                        t_obj.tipper[nty, 0, 1].real.min(),
+                                                        t_obj.tipper[ntx, 0, 0].imag.min(),
+                                                        t_obj.tipper[nty, 0, 1].imag.min()]),
+                                                   1)-.05,
+                                          np.round(max([t_obj.tipper[ntx, 0, 0].real.max(),
+                                                        t_obj.tipper[nty, 0, 1].real.max(),
+                                                        t_obj.tipper[ntx, 0, 0].imag.max(),
+                                                        t_obj.tipper[nty, 0, 1].imag.max()]),
+                                                   1)+.05)
 
                 gs = gridspec.GridSpec(3, 4,
                                    wspace=self.subplot_wspace,
@@ -384,21 +392,21 @@ class PlotResponse(object):
                                    hspace=self.subplot_hspace,
                                    height_ratios=h_ratio)
 
-            axrxx = fig.add_subplot(gs[0, 0])
-            axrxy = fig.add_subplot(gs[0, 1], sharex=axrxx)
-            axryx = fig.add_subplot(gs[0, 2], sharex=axrxx, sharey=axrxy)
-            axryy = fig.add_subplot(gs[0, 3], sharex=axrxx, sharey=axrxx)
+            axrxx = self.fig.add_subplot(gs[0, 0])
+            axrxy = self.fig.add_subplot(gs[0, 1], sharex=axrxx)
+            axryx = self.fig.add_subplot(gs[0, 2], sharex=axrxx, sharey=axrxy)
+            axryy = self.fig.add_subplot(gs[0, 3], sharex=axrxx, sharey=axrxx)
 
-            axpxx = fig.add_subplot(gs[1, 0])
-            axpxy = fig.add_subplot(gs[1, 1], sharex=axrxx)
-            axpyx = fig.add_subplot(gs[1, 2], sharex=axrxx)
-            axpyy = fig.add_subplot(gs[1, 3], sharex=axrxx)
+            axpxx = self.fig.add_subplot(gs[1, 0])
+            axpxy = self.fig.add_subplot(gs[1, 1], sharex=axrxx)
+            axpyx = self.fig.add_subplot(gs[1, 2], sharex=axrxx)
+            axpyy = self.fig.add_subplot(gs[1, 3], sharex=axrxx)
 
             if self.plot_tipper == True:
-                axtxr = fig.add_subplot(gs[2, 0], sharex=axrxx)
-                axtxi = fig.add_subplot(gs[2, 1], sharex=axrxx, sharey=axtxr)
-                axtyr = fig.add_subplot(gs[2, 2], sharex=axrxx)
-                axtyi = fig.add_subplot(gs[2, 3], sharex=axrxx, sharey=axtyr)
+                axtxr = self.fig.add_subplot(gs[2, 0], sharex=axrxx)
+                axtxi = self.fig.add_subplot(gs[2, 1], sharex=axrxx)#, sharey=axtxr)
+                axtyr = self.fig.add_subplot(gs[2, 2], sharex=axrxx)
+                axtyi = self.fig.add_subplot(gs[2, 3], sharex=axrxx)#, sharey=axtyr)
 
                 self.ax_list = [axrxx, axrxy, axryx, axryy,
                                 axpxx, axpxy, axpyx, axpyy,
@@ -528,99 +536,33 @@ class PlotResponse(object):
             # set titles of the Z components
             label_list = [['$Z_{xx}$'], ['$Z_{xy}$'],
                           ['$Z_{yx}$'], ['$Z_{yy}$']]
-            for ax, label in zip(self.ax_list[0:4], label_list):
-                ax.set_title(label[0], fontdict={'size': self.font_size + 2,
-                                                 'weight': 'bold'})
+#            for ax, label in zip(self.ax_list[0:4], label_list):
+##                ax.set_title(label[0], fontdict={'size': self.font_size + 2,
+##                                                 'weight': 'bold'})
+#                leg = ax.legend([l1], [label], loc='upper left',
+#                              markerscale=.01,
+#                              borderaxespad=.05,
+#                              labelspacing=.01,
+#                              handletextpad=.05,
+#                              borderpad=.05,
+#                              prop={'size': max([self.font_size, 6])})
+#                leg.get_frame().set_alpha(1.0)
 
                 # set legends for tipper components
             # fake a line
-            if self.plot_tipper:
-                l1 = plt.Line2D([0], [0], linewidth=0, color='w', linestyle='None',
-                                marker='.')
-                t_label_list = ['Re{$T_x$}', 'Im{$T_x$}', 'Re{$T_y$}', 'Im{$T_y$}']
-                label_list += [['$T_{x}$'], ['$T_{y}$']]
-                for ax, label in zip(self.ax_list[-4:], t_label_list):
-                    leg = ax.legend([l1], [label], loc='upper left',
-                              markerscale=.01,
-                              borderaxespad=.05,
-                              labelspacing=.01,
-                              handletextpad=.05,
-                              borderpad=.05,
-                              prop={'size': max([self.font_size, 6])})
-                    leg.get_frame().set_alpha(1.0)
 
-                # set axis properties
-            for aa, ax in enumerate(self.ax_list):
-                ax.tick_params(axis='y', pad=self.ylabel_pad)
-                if self.plot_tipper==False:
-                    if aa < 4:
-                        if self.plot_z == True:
-                            ax.set_yscale('log', nonposy='clip')
-                    else:
-                        ax.set_xlabel('Period (s)', fontdict=fontdict)
 
-                if aa < 8:
-                    #                    ylabels[-1] = ''
-                    #                    ylabels[0] = ''
-                    #                    ax.set_yticklabels(ylabels)
-                    #                    plt.setp(ax.get_xticklabels(), visible=False)
-                    if self.plot_z == True:
-                        ax.set_yscale('log', nonposy='clip')
+            
 
-                else:
-                    ax.set_xlabel('Period (s)', fontdict=fontdict)
-
-                if aa < 4 and self.plot_z is False:
-                    ax.set_yscale('log', nonposy='clip')
-                    ax.yaxis.set_major_formatter(LogFormatterSciNotation())
-                    if aa == 0 or aa == 3:
-                        ax.set_ylim(self.res_limits_d)
-                    elif aa == 1 or aa == 2:
-                        ax.set_ylim(self.res_limits_od)
-
-                if aa > 4 and aa < 7 and self.plot_z is False:
-                    ax.yaxis.set_major_locator(MultipleLocator(10.0))
-                    if self.phase_limits_d is not None:
-                        ax.set_ylim(self.phase_limits_d)
-                # set axes labels
-                if aa == 0:
-                    if self.plot_z == False:
-                        ax.set_ylabel('App. Res. ($\mathbf{\Omega \cdot m}$)',
-                                      fontdict=fontdict)
-                    elif self.plot_z == True:
-                        ax.set_ylabel('Re[Z (mV/km nT)]',
-                                      fontdict=fontdict)
-                elif aa == 4:
-                    if self.plot_z == False:
-                        ax.set_ylabel('Phase (deg)',
-                                      fontdict=fontdict)
-                    elif self.plot_z == True:
-                        ax.set_ylabel('Im[Z (mV/km nT)]',
-                                      fontdict=fontdict)
-                elif aa == 8:
-                    ax.set_ylabel('Tipper',
-                                  fontdict=fontdict)
-
-                if aa > 7:
-                    #ax.yaxis.set_major_locator(MultipleLocator(.2))
-                    if self.tipper_limits is not None:
-                        ax.set_ylim(self.tipper_limits)
-                    else:
-                        pass
-
-                ax.set_xscale('log', nonposx='clip')
-                ax.set_xlim(xmin=10 ** (np.floor(np.log10(period[0]))) * 1.01,
-                            xmax=10 ** (np.ceil(np.log10(period[-1]))) * .99)
-                ax.grid(True, alpha=.25)
-
-                ylabels = ax.get_yticks().tolist()
-                if aa < 8:
-                    ylabels[-1] = ''
-                    ylabels[0] = ''
-                    ax.set_yticklabels(ylabels)
-                    plt.setp(ax.get_xticklabels(), visible=False)
-                if aa < 4:
-                    ax.yaxis.set_major_formatter(LogFormatterSciNotation())
+#                    leg = ax.legend([l1], [label], loc='upper left',
+#                              markerscale=.01,
+#                              borderaxespad=.05,
+#                              labelspacing=.01,
+#                              handletextpad=.05,
+#                              borderpad=.05,
+#                              prop={'size': max([self.font_size, 6])},
+#                              frameon=False)
+#                    leg.get_frame().set_alpha(1.0)
 
             # plot model response
             if self.resp_object is not None:
@@ -654,7 +596,7 @@ class PlotResponse(object):
                     kw_xx = {'color': self.ctem,
                              'marker': self.mtem,
                              'ms': self.ms_r,
-                             'ls': ':',
+                             'ls': '-',
                              'lw': self.lw_r,
                              'e_capsize': self.e_capsize,
                              'e_capthick': self.e_capthick}
@@ -662,7 +604,7 @@ class PlotResponse(object):
                     kw_yy = {'color': self.ctmm,
                              'marker': self.mtmm,
                              'ms': self.ms_r,
-                             'ls': ':',
+                             'ls': '-',
                              'lw': self.lw_r,
                              'e_capsize': self.e_capsize,
                              'e_capthick': self.e_capthick}
@@ -739,14 +681,18 @@ class PlotResponse(object):
                         line_list[1] += [rerxy[0]]
                         line_list[2] += [reryx[0]]
                         line_list[3] += [reryy[0]]
-                        label_list[0] += ['$Z^m_{xx}$ ' +
-                                          'rms={0:.2f}'.format(rms_xx)]
-                        label_list[1] += ['$Z^m_{xy}$ ' +
-                                          'rms={0:.2f}'.format(rms_xy)]
-                        label_list[2] += ['$Z^m_{yx}$ ' +
-                                          'rms={0:.2f}'.format(rms_yx)]
-                        label_list[3] += ['$Z^m_{yy}$ ' +
-                                          'rms={0:.2f}'.format(rms_yy)]
+#                        label_list[0] += ['$Z^m_{xx}$ ' +
+#                                          'rms={0:.2f}'.format(rms_xx)]
+#                        label_list[1] += ['$Z^m_{xy}$ ' +
+#                                          'rms={0:.2f}'.format(rms_xy)]
+#                        label_list[2] += ['$Z^m_{yx}$ ' +
+#                                          'rms={0:.2f}'.format(rms_yx)]
+#                        label_list[3] += ['$Z^m_{yy}$ ' +
+#                                          'rms={0:.2f}'.format(rms_yy)]
+                        label_list[0] += ['rms={0:.2f}'.format(rms_xx)]
+                        label_list[1] += ['rms={0:.2f}'.format(rms_xy)]
+                        label_list[2] += ['rms={0:.2f}'.format(rms_yx)]
+                        label_list[3] += ['rms={0:.2f}'.format(rms_yy)]
                     else:
                         line_list[0] += [rerxx[0]]
                         line_list[1] += [rerxy[0]]
@@ -754,35 +700,161 @@ class PlotResponse(object):
                         line_list[3] += [reryy[0]]
                         line_list[4] += [rertx[0]]
                         line_list[5] += [rerty[0]]
-                        label_list[0] += ['$Z^m_{xx}$ ' +
-                                          'rms={0:.2f}'.format(rms_xx)]
-                        label_list[1] += ['$Z^m_{xy}$ ' +
-                                          'rms={0:.2f}'.format(rms_xy)]
-                        label_list[2] += ['$Z^m_{yx}$ ' +
-                                          'rms={0:.2f}'.format(rms_yx)]
-                        label_list[3] += ['$Z^m_{yy}$ ' +
-                                          'rms={0:.2f}'.format(rms_yy)]
-                        label_list[4] += ['$T^m_{x}$ ' +
-                                          'rms={0:.2f}'.format(resp_t_err[:, 0, 0].std())]
-                        label_list[5] += ['$T^m_{y}$' +
-                                          'rms={0:.2f}'.format(resp_t_err[:, 0, 1].std())]
-
+#                        label_list[0] += ['$Z^m_{xx}$ ' +
+#                                          'rms={0:.2f}'.format(rms_xx)]
+#                        label_list[1] += ['$Z^m_{xy}$ ' +
+#                                          'rms={0:.2f}'.format(rms_xy)]
+#                        label_list[2] += ['$Z^m_{yx}$ ' +
+#                                          'rms={0:.2f}'.format(rms_yx)]
+#                        label_list[3] += ['$Z^m_{yy}$ ' +
+#                                          'rms={0:.2f}'.format(rms_yy)]
+#                        label_list[4] += ['$T^m_{x}$ ' +
+#                                          'rms={0:.2f}'.format(resp_t_err[:, 0, 0].std())]
+#                        label_list[5] += ['$T^m_{y}$' +
+#                                          'rms={0:.2f}'.format(resp_t_err[:, 0, 1].std())]
+                        label_list[0] += ['rms={0:.2f}'.format(rms_xx)]
+                        label_list[1] += ['rms={0:.2f}'.format(rms_xy)]
+                        label_list[2] += ['rms={0:.2f}'.format(rms_yx)]
+                        label_list[3] += ['rms={0:.2f}'.format(rms_yy)]
                 legend_ax_list = self.ax_list[0:4]
                 #                if self.plot_tipper == True:
                 #                    legend_ax_list += [self.ax_list[-4], self.ax_list[-2]]
 
-                for aa, ax in enumerate(legend_ax_list):
-                    leg = ax.legend(line_list[aa],
-                              label_list[aa],
-                              loc=self.legend_loc,
-                              bbox_to_anchor=self.legend_pos,
-                              markerscale=self.legend_marker_scale,
-                              borderaxespad=self.legend_border_axes_pad,
-                              labelspacing=self.legend_label_spacing,
-                              handletextpad=self.legend_handle_text_pad,
-                              borderpad=self.legend_border_pad,
-                              prop={'size': max([self.font_size, 5])})
-                    leg.get_frame().set_alpha(1.0)
+#                for label, ax in zip(label_list, legend_ax_list):
+#                    ax.set_title(', '.join(label),
+#                                 fontdict={'size': self.font_size + 1},
+#                                 bbox={'facecolor': 'None', 
+#                                       'edgecolor':'None'})
+#                    leg = ax.legend(line_list[aa],
+#                              label_list[aa],
+#                              loc=self.legend_loc,
+#                              bbox_to_anchor=self.legend_pos,
+#                              markerscale=self.legend_marker_scale,
+#                              borderaxespad=self.legend_border_axes_pad,
+#                              labelspacing=self.legend_label_spacing,
+#                              handletextpad=self.legend_handle_text_pad,
+#                              borderpad=self.legend_border_pad,
+#                              prop={'size': max([self.font_size, 5])})
+#                    leg.get_frame().set_alpha(1.0)
+            # set axis properties
+            for aa, ax in enumerate(self.ax_list):
+                #ax.tick_params(axis='y', pad=self.ylabel_pad)
+                ax.tick_params(which='both', width=.75)
+                ax.set_xscale('log', nonposx='clip')
+                ax.xaxis.set_major_formatter(LogFormatterSciNotation())
+                ax.xaxis.set_minor_formatter(LogFormatterSciNotation())
+                ax.set_xlim(xmin=10 ** (np.floor(np.log10(period[0]))) * 1.01,
+                            xmax=10 ** (np.ceil(np.log10(period[-1]))) * .99)
+                ax.yaxis.set_label_coords(-.175, 0.5)
+                for axis in ['top', 'bottom', 'left', 'right']:
+                    ax.spines[axis].set_linewidth(0.75)
+                
+                if self.plot_tipper==False:
+                    if aa < 4:
+                        if self.plot_z == True:
+                            ax.set_yscale('log', nonposy='clip')
+                    else:
+                        ax.set_xlabel('Period (s)', fontdict=fontdict)
+                        
+                if aa < 8:
+#                    ylabels[-1] = ''
+#                    ylabels[0] = ''
+#                    ax.set_yticklabels(ylabels)
+                    plt.setp(ax.get_xticklabels(), visible=False)
+                    if self.plot_z == True:
+                        ax.set_yscale('log', nonposy='clip')
+
+                else:
+                    ax.set_xlabel('Period (s)', fontdict=fontdict)
+
+                if aa < 4 and self.plot_z is False:
+                    ax.set_yscale('log', nonposy='clip')
+                    ax.yaxis.set_major_formatter(LogFormatterSciNotation())
+                    if aa == 0 or aa == 3:
+                        ax.set_ylim(self.res_limits_d)
+                    elif aa == 1 or aa == 2:
+                        ax.set_ylim(self.res_limits_od)
+                ### Phase tick labels
+                if aa > 3 and aa < 8 and self.plot_z is False:
+                    y_min = ax.get_ylim()[0] - ax.get_ylim()[0] % 10
+                    y_max = ax.get_ylim()[1] - ax.get_ylim()[1] % -10
+                    step = (y_max - y_min) / 5
+                    step -= step % -10
+                    y_ticks = np.arange(y_min, y_max, step)
+                    y_tick_labels = ['{0:.0f}'.format(ii) for ii in y_ticks]
+                    y_tick_labels[0] = ''
+                    ax.set_yticks(y_ticks)
+                    ax.set_yticklabels(y_tick_labels)
+                # set axes labels
+                if aa == 0:
+                    if self.plot_z == False:
+                        ax.set_ylabel('Apparent Resistivity ($\mathbf{\Omega \cdot m}$)',
+                                      fontdict=fontdict)
+                    elif self.plot_z == True:
+                        ax.set_ylabel('Re[Z (mV/km nT)]',
+                                      fontdict=fontdict)
+                elif aa == 4:
+                    if self.plot_z == False:
+                        ax.set_ylabel('Phase Angle',
+                                      fontdict=fontdict)
+                    elif self.plot_z == True:
+                        ax.set_ylabel('Im[Z (mV/km nT)]',
+                                      fontdict=fontdict)
+                elif aa == 8:
+                    ax.set_ylabel('Tipper',
+                                  fontdict=fontdict)
+
+#                if aa > 7:
+#                    #ax.yaxis.set_major_locator(MultipleLocator(.2))
+#                    if self.tipper_limits is not None:
+#                        ax.set_ylim(self.tipper_limits)
+#                    else:
+#                        pass
+                #ax.grid(True, alpha=.25)
+
+#                ylabels = ax.get_yticks().tolist()
+                if aa < 8 and self.plot_tipper is True:
+#                    ax.set_ylim((ax.get_ylim()[0]-ax.get_ylim()[0]%5,
+#                                 ax.get_ylim()[1]+ax.get_ylim()[1]//5))
+#
+##                    ylabels[0] = ''
+##                    #ylabels[1] = ''
+##                    ylabels[-1] = ''
+##                    #ylabels[-2] = ''
+###                    ax.set_yticklabels(ylabels)
+#                    print(ylabels)
+                    plt.setp(ax.get_xticklabels(), visible=False)
+                    
+                elif aa < 4 and self.plot_tipper is False:
+#                    ylabels[-1] = ''
+#                    ylabels[0] = ''
+#                    ax.set_yticklabels(ylabels)
+                    plt.setp(ax.get_xticklabels(), visible=False)
+                if aa < 4:
+                    ax.yaxis.set_major_formatter(LogFormatterSciNotation())
+            
+            for label, ax in zip(label_list, legend_ax_list):
+                ax.set_title(', '.join(label),
+                             fontdict={'size': self.font_size + 1},
+                             bbox={'facecolor': 'None', 
+                                   'edgecolor':'None'})
+            if self.plot_tipper:
+                t_label_list = ['Re{$T_x$}', 'Im{$T_x$}',
+                                'Re{$T_y$}', 'Im{$T_y$}']
+                for ax, label in zip(self.ax_list[-4:], t_label_list):
+                    y_min = ax.get_ylim()[0] - ax.get_ylim()[0] % .05
+                    y_max = ax.get_ylim()[1] - ax.get_ylim()[1] % -.05
+                    y_max += .15 
+                    ax.set_ylim((y_min, y_max))
+                    y_ticks = [y_min, (abs(y_max) - abs(y_min)) / 2., y_max]
+                    y_tick_labels = ['{0:.2f}'.format(ii) for ii in y_ticks]
+                    ax.set_yticks(y_ticks)
+                    ax.set_yticklabels(y_tick_labels)
+                    ax.text(ax.get_xlim()[0] * self.text_left,
+                            y_max - self.text_top, 
+                            label,
+                            fontdict={'size':self.font_size},
+                            ha='left', va='top')
 
             plt.show()
             
@@ -895,10 +967,10 @@ class PlotResponse(object):
                 plotr = False
 
             # make figure
-            fig = plt.figure(station, self.fig_size, dpi=self.fig_dpi)
-            self.fig_list.append(fig)
+            self.fig = plt.figure(station, self.fig_size, dpi=self.fig_dpi)
+            self.fig_list.append(self.fig)
             plt.clf()
-            fig.suptitle(str(station), fontdict=fontdict)
+            self.fig.suptitle(str(station), fontdict=fontdict)
 
             # set the grid of subplots
             tipper_zero = (np.round(abs(t_obj.tipper.mean()), 4) == 0.0)
@@ -953,13 +1025,13 @@ class PlotResponse(object):
 #                rp.phaseyx[rp.phaseyx > 180] -= 360
                 if self.plot_component == 2:
                     if plot_tipper == False:
-                        axrxy = fig.add_subplot(gs[0, 0:])
-                        axpxy = fig.add_subplot(gs[1, 0:], sharex=axrxy)
+                        axrxy = self.fig.add_subplot(gs[0, 0:])
+                        axpxy = self.fig.add_subplot(gs[1, 0:], sharex=axrxy)
                     else:
-                        axrxy = fig.add_subplot(gs[0, 0:4])
-                        axpxy = fig.add_subplot(gs[1, 0:4], sharex=axrxy)
-                        axtr = fig.add_subplot(gs[0, 4:], sharex=axrxy)
-                        axti = fig.add_subplot(gs[1, 4:], sharex=axrxy)
+                        axrxy = self.fig.add_subplot(gs[0, 0:4])
+                        axpxy = self.fig.add_subplot(gs[1, 0:4], sharex=axrxy)
+                        axtr = self.fig.add_subplot(gs[0, 4:], sharex=axrxy)
+                        axti = self.fig.add_subplot(gs[1, 4:], sharex=axrxy)
 
 
                     if self.plot_z == False:
@@ -1060,31 +1132,31 @@ class PlotResponse(object):
 
                 elif self.plot_component == 4:
                     if plot_tipper == False:
-                        axrxy = fig.add_subplot(gs[0, 0:2])
-                        axpxy = fig.add_subplot(gs[1, 0:2], sharex=axrxy)
+                        axrxy = self.fig.add_subplot(gs[0, 0:2])
+                        axpxy = self.fig.add_subplot(gs[1, 0:2], sharex=axrxy)
 
-                        axrxx = fig.add_subplot(gs[0, 2:], sharex=axrxy)
-                        axpxx = fig.add_subplot(gs[1, 2:], sharex=axrxy)
+                        axrxx = self.fig.add_subplot(gs[0, 2:], sharex=axrxy)
+                        axpxx = self.fig.add_subplot(gs[1, 2:], sharex=axrxy)
                     else:
-                        # axrxy = fig.add_subplot(gs[0, 0:2])
-                        # axpxy = fig.add_subplot(gs[1, 0:2], sharex=axrxy)
+                        # axrxy = self.fig.add_subplot(gs[0, 0:2])
+                        # axpxy = self.fig.add_subplot(gs[1, 0:2], sharex=axrxy)
                         #
                         #
-                        # axrxx = fig.add_subplot(gs[0, 2:4], sharex=axrxy)
-                        # axpxx = fig.add_subplot(gs[1, 2:4], sharex=axrxy)
+                        # axrxx = self.fig.add_subplot(gs[0, 2:4], sharex=axrxy)
+                        # axpxx = self.fig.add_subplot(gs[1, 2:4], sharex=axrxy)
                         #
-                        # axtr = fig.add_subplot(gs[0, 4:], sharex=axrxy)
-                        # axti = fig.add_subplot(gs[1, 4:], sharex=axrxy)
+                        # axtr = self.fig.add_subplot(gs[0, 4:], sharex=axrxy)
+                        # axti = self.fig.add_subplot(gs[1, 4:], sharex=axrxy)
 
-                        axrxy = fig.add_subplot(gs[0, 0])
-                        axpxy = fig.add_subplot(gs[1, 0], sharex=axrxy)
+                        axrxy = self.fig.add_subplot(gs[0, 0])
+                        axpxy = self.fig.add_subplot(gs[1, 0], sharex=axrxy)
 
 
-                        axrxx = fig.add_subplot(gs[0, 1], sharex=axrxy)
-                        axpxx = fig.add_subplot(gs[1, 1], sharex=axrxy)
+                        axrxx = self.fig.add_subplot(gs[0, 1], sharex=axrxy)
+                        axpxx = self.fig.add_subplot(gs[1, 1], sharex=axrxy)
 
-                        axtr = fig.add_subplot(gs[2, 0], sharex=axrxy)
-                        axti = fig.add_subplot(gs[2, 1], sharex=axrxy)
+                        axtr = self.fig.add_subplot(gs[2, 0], sharex=axrxy)
+                        axti = self.fig.add_subplot(gs[2, 1], sharex=axrxy)
 
 
 

@@ -122,6 +122,7 @@ class PlotRMSMaps(object):
         self.subplot_vspace = kwargs.pop('subplot_vspace', .01)
 
         self.font_size = kwargs.pop('font_size', 8)
+        self.text_pad = .005
 
         self.fig = None
         self.fig_size = kwargs.pop('fig_size', [7.75, 6.75])
@@ -180,6 +181,9 @@ class PlotRMSMaps(object):
                             {'label': r'$Z_{yy}$', 'index': (1, 1), 'plot_num': 4},
                             {'label': r'$T_{x}$', 'index': (0, 0), 'plot_num': 5},
                             {'label': r'$T_{y}$', 'index': (0, 1), 'plot_num': 6}]
+
+        for key, value in kwargs.items():
+            setattr(self, key, value)
 
         if self.plot_yn == 'y':
             self.plot()
@@ -287,10 +291,11 @@ class PlotRMSMaps(object):
                         ms=marker_size,
                         mec=marker_edge_color,
                         mfc=marker_color,
+                        mew=.05,
                         zorder=3)
 
             if p_dict['plot_num'] == 1 or p_dict['plot_num'] == 3:
-                ax.set_ylabel('Latitude (deg)', fontdict=self.font_dict)
+                ax.set_ylabel('Latitude', fontdict=self.font_dict)
                 plt.setp(ax.get_xticklabels(), visible=False)
 
             elif p_dict['plot_num'] == 2 or p_dict['plot_num'] == 4:
@@ -299,22 +304,22 @@ class PlotRMSMaps(object):
 
             elif p_dict['plot_num'] == 6:
                 plt.setp(ax.get_yticklabels(), visible=False)
-                ax.set_xlabel('Longitude (deg)', fontdict=self.font_dict)
+                ax.set_xlabel('Longitude', fontdict=self.font_dict)
 
             else:
-                ax.set_xlabel('Longitude (deg)', fontdict=self.font_dict)
-                ax.set_ylabel('Latitude (deg)', fontdict=self.font_dict)
-
-            ax.text(self.residual.residual_array['lon'].min() + .005 - self.pad_x,
-                    self.residual.residual_array['lat'].max() - .005 + self.pad_y,
+                ax.set_xlabel('Longitude', fontdict=self.font_dict)
+                ax.set_ylabel('Latitude', fontdict=self.font_dict)
+                
+            ax.text(self.residual.residual_array['lon'].min() - self.pad_x + self.text_pad,
+                    self.residual.residual_array['lat'].max() + self.pad_y - self.text_pad,
                     p_dict['label'],
                     verticalalignment='top',
                     horizontalalignment='left',
-                    bbox={'facecolor': 'white'},
+                    bbox={'facecolor': 'white', 'edgecolor':'None'},
                     zorder=3)
 
             ax.tick_params(direction='out')
-            ax.grid(zorder=0, color=(.75, .75, .75))
+            #ax.grid(zorder=0, color=(.75, .75, .75))
 
             # [line.set_zorder(3) for line in ax.lines]
 
@@ -337,13 +342,14 @@ class PlotRMSMaps(object):
                                                            vmax=self.rms_max),
                                      orientation='vertical')
 
-        color_bar.set_label('RMS', fontdict=font_dict)
+        color_bar.set_label('Root-mean-square Error', fontdict=font_dict)
         if self.period_index == 'all':
             self.fig.suptitle('all periods',
                               fontdict={'size': self.font_size + 3, 'weight': 'bold'})
         else:            
-            self.fig.suptitle('period = {0:.5g} (s)'.format(self.residual.period_list[self.period_index]),
+            self.fig.suptitle('period = {0:.5g} s'.format(self.residual.period_list[self.period_index]),
                               fontdict={'size': self.font_size + 3, 'weight': 'bold'})
+        self.ax = ax
         self.fig.show()
 
     def redraw_plot(self):

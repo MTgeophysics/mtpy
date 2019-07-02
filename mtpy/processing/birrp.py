@@ -270,7 +270,8 @@ class BIRRP_Parameters(object):
         cfg_fn = mtfh.make_unique_filename('{0}_birrp_params.cfg'.format(save_fn))
 
         birrp_dict = self._get_parameters()
-        mtcfg.write_dict_to_configfile(birrp_dict, cfg_fn)
+        mtcfg.write_dict_to_configfile({os.path.basename(birrp_dict['ofil']) : 
+                                        birrp_dict}, cfg_fn)
         print('Wrote BIRRP config file for edi file to {0}'.format(cfg_fn))
 #==============================================================================
 # Error classes
@@ -728,7 +729,6 @@ def run(birrp_exe, script_file):
     print('*'*10)
     print('Processing {0} with {1}'.format(script_file, birrp_exe))
     print('Starting Birrp processing at {0}...'.format(time.ctime()))
-    st = time.ctime()
 
     birrp_process = subprocess.Popen(birrp_exe+'< {0}'.format(local_script_fn),
                                      stdin=subprocess.PIPE,
@@ -740,9 +740,7 @@ def run(birrp_exe, script_file):
 
 
     #log_file.close()
-    print('_'*20)
-    print('Starting Birrp processing at {0}...'.format(st))
-    print('Endec Birrp processing at   {0}...'.format(time.ctime()))
+    print('Ended Birrp processing at   {0}...'.format(time.ctime()))
     #print 'Closed log file: {0}'.format(log_file.name)
 #
 #    print 'Outputs: {0}'.format(out)
