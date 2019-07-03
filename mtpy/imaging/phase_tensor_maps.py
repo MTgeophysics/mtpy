@@ -694,7 +694,8 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
             newTipper = None
             fidx = 0
             if(self.interpolate):
-                newZ, newTipper = mt.interpolate([self.plot_freq],bounds_error=False)
+                newZ, newTipper = mt.interpolate([self.plot_freq],
+                                                 bounds_error=False)
             else:
                 fidx = np.argmin(np.fabs(mt.Z.freq - self.plot_freq))
 
@@ -1067,6 +1068,7 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
 
         # make a grid with color lines
         lpax.grid(True, alpha=.3, which='both', color=(0.5, 0.5, 0.5))
+        lpax.set_axisbelow(True)
         if self.minorticks_on:
             plt.minorticks_on()  # turn on minor ticks automatically
 

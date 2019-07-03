@@ -15,13 +15,18 @@ Created on Tue Jun 11 10:53:23 2013
 """
 
 #==============================================================================
+from __future__ import unicode_literals
+
 import time
 import datetime
+import dateutil.parser
 import os
 import struct
 import string
 import shutil
 import numpy as np
+import sys
+
 
 import mtpy.imaging.plotspectrogram as plotspectrogram
 import mtpy.core.ts as mtts
@@ -232,14 +237,15 @@ class Z3DHeader(object):
                 self.header_str = self.fid.read(self._header_len)
         elif self.fn is not None:
             if self.fid is None:
-                self.fid = file(self.fn, 'rb')
+                self.fid = open(self.fn, 'rb')
                 self.header_str = self.fid.read(self._header_len)
             else:
                 self.fid.seek(0)
                 self.header_str = self.fid.read(self._header_len)
 
-        header_list = self.header_str.split('\n')
+        header_list = self.header_str.split(b'\n')
         for h_str in header_list:
+            h_str = h_str.decode()
             if h_str.find('=') > 0:
                 h_list = h_str.split('=')
                 h_key = h_list[0].strip().lower()
@@ -260,7 +266,7 @@ class Z3DHeader(object):
                     elif len(hh.split(':', 1)) == 2:
                         m_key, m_value = hh.split(':', 1)
                     else:
-                        print hh
+                         print(hh)
 
                     m_key = m_key.strip().lower().replace(' ', '_').replace('/', '').replace('.', '_')
                     m_value = self.convert_value(m_key, m_value.strip())
@@ -388,22 +394,23 @@ class Z3DSchedule(object):
             self.fid = fid
 
         if self.fn is None and self.fid is None:
-            print('no file to read')
+            print(u'no file to read')
         elif self.fn is None:
             if self.fid is not None:
                 self.fid.seek(self._header_len)
                 self.meta_string = self.fid.read(self._header_len)
         elif self.fn is not None:
             if self.fid is None:
-                self.fid = file(self.fn, 'rb')
+                self.fid = open(self.fn, 'rb')
                 self.fid.seek(self._header_len)
                 self.meta_string = self.fid.read(self._header_len)
             else:
                 self.fid.seek(self._header_len)
                 self.meta_string = self.fid.read(self._header_len)
 
-        meta_list = self.meta_string.split('\n')
+        meta_list = self.meta_string.split(b'\n')
         for m_str in meta_list:
+            m_str = m_str.decode()
             if m_str.find('=') > 0:
                 m_list = m_str.split('=')
                 m_key = m_list[0].split('.')[1].strip()
@@ -546,13 +553,13 @@ class Z3DMetadata(object):
             self.fid = fid
 
         if self.fn is None and self.fid is None:
-            print('no file to read')
+            print(u'no file to read')
         elif self.fn is None:
             if self.fid is not None:
                 self.fid.seek(self._header_length+self._schedule_metadata_len)
         elif self.fn is not None:
             if self.fid is None:
-                self.fid = file(self.fn, 'rb')
+                self.fid = open(self.fn, 'rb')
                 self.fid.seek(self._header_length+self._schedule_metadata_len)
             else:
                 self.fid.seek(self._header_length+self._schedule_metadata_len)
@@ -563,7 +570,12 @@ class Z3DMetadata(object):
         self.coil_cal = []
         self.count = 0
         while self.find_metadata == True:
-            test_str = self.fid.read(self._metadata_length)
+            try:
+                test_str = self.fid.read(self._metadata_length).decode()
+            except UnicodeDecodeError:
+                self.find_metadata = False
+                print('Ended Metadata at {0} bytes'.format(self.fid.tell()))
+                break
             if test_str.lower().find('metadata record') > 0:
                 self.count += 1
                 cal_find = False
@@ -596,6 +608,7 @@ class Z3DMetadata(object):
                             t_key = t_list[0].strip().replace('.', '_')
                             t_value = t_list[1].strip()
                             setattr(self, t_key.lower(), t_value)
+            
                 elif test_str.lower().find('cal.brd') >= 0:
                     t_list = test_str.split(',')
                     t_key = t_list[0].strip().replace('.', '_')
@@ -639,6 +652,7 @@ class Z3DMetadata(object):
                         else:
                             self.coil_cal.append([float(tt.strip())
                                                   for tt in t_str.strip().split(':')])
+        
             else:
                 self.find_metadata = False
                 # need to go back to where the meta data was found so
@@ -666,7 +680,7 @@ class Z3DMetadata(object):
                 self.station = self.rx_stn
             except AttributeError:
                 self.station = None
-                print "Need to input station name"
+                print("Need to input station name")
 
 
 
@@ -1070,11 +1084,11 @@ class Zen3D(object):
 
         self.schedule.read_schedule(fn=self.fn, fid=fid)
         if self.header.old_version:
-            dt_str = self.header.schedule.replace('T', ',')
-            self.schedule.Date = dt_str.split(',')[0]
-            self.schedule.Time = dt_str.split(',')[1]
-            year, month, day = [int(dd) for dd in self.schedule.Date.split('-')]
-            hour, minute, second = [int(dd) for dd in self.schedule.Time.split(':')]
+            dt_str = self.header.schedule.replace(b'T', b',')
+            self.schedule.Date = dt_str.split(b',')[0]
+            self.schedule.Time = dt_str.split(b',')[1]
+            year, month, day = [int(dd) for dd in self.schedule.Date.split(b'-')]
+            hour, minute, second = [int(dd) for dd in self.schedule.Time.split(b':')]
             self.schedule.datetime = datetime.datetime(year, month, day,
                                                        hour, minute, second)
 
@@ -1161,7 +1175,7 @@ class Zen3D(object):
         if Z3Dfn is not None:
             self.fn = Z3Dfn
 
-        print('------- Reading {0} ---------'.format(self.fn))
+        #print(u'------- Reading {0} ---------'.format(self.fn))
         st = time.time()
 
         #get the file size to get an estimate of how many data points there are
@@ -1184,20 +1198,19 @@ class Zen3D(object):
 
             # initalize a data array filled with zeros, everything goes into
             # this array then we parse later
-            data = np.zeros((file_size-512*(1+self.metadata.count))/4,
+            data = np.zeros(int((file_size-512*(1+self.metadata.count))/4 + self.df),
                             dtype=np.int32)
             # go over a while loop until the data cound exceed the file size
             data_count = 0
-            while data_count+self.metadata.m_tell/4 < data.size:
+            while data_count+self.metadata.m_tell/4 < data.size - self.df:
                 # need to make sure the last block read is a multiple of 32 bit
                 read_len = min([self._block_len,
-                                32*((file_size-file_id.tell())//32)])
+                                int(32*((file_size-file_id.tell())//32))])
                 test_str = np.fromstring(file_id.read(read_len),
                                          dtype=np.int32)
                 data[data_count:data_count+len(test_str)] = test_str
                 data_count += test_str.size
 
-        #return data
         # find the gps stamps
         gps_stamp_find = np.where(data == self._gps_flag_0)[0]
 
@@ -1205,7 +1218,7 @@ class Zen3D(object):
         try:
             data = data[gps_stamp_find[3]:]
         except IndexError:
-            raise ZenGPSError("Data is clipped, cannot open file")
+            raise ZenGPSError("Data is bad, cannot open file {0}".format(self.fn))
 
         gps_stamp_find = np.where(data == self._gps_flag_0)[0]
 
@@ -1215,14 +1228,15 @@ class Zen3D(object):
             try:
                 data[gps_find+1]
             except IndexError:
-                print('***Failed gps stamp***')
+                pass
+                print(u'***Failed gps stamp***')
                 print('    stamp {0} out of {1}'.format(ii+1, 
                                                         len(gps_stamp_find)))
                 break
 
             if self.header.old_version is True or data[gps_find+1] == self._gps_flag_1:
-                gps_str = struct.pack('<'+'i'*self._gps_bytes,
-                                      *data[gps_find:gps_find+self._gps_bytes])
+                gps_str = struct.pack('<'+'i'*int(self._gps_bytes),
+                                      *data[int(gps_find):int(gps_find+self._gps_bytes)])
                 self.gps_stamps[ii] = np.fromstring(gps_str,
                                                     dtype=self._gps_dtype)
                 if ii > 0:
@@ -1230,7 +1244,7 @@ class Zen3D(object):
                                            gps_stamp_find[ii-1]-self._gps_bytes
                 elif ii == 0:
                     self.gps_stamps[ii]['block_len'] = 0
-                data[gps_find:gps_find+self._gps_bytes] = 0
+                data[int(gps_find):int(gps_find+self._gps_bytes)] = 0
 #
 
         # trim the data after taking out the gps stamps
@@ -1248,7 +1262,7 @@ class Zen3D(object):
         # fill time series object metadata
         self.ts_obj.station = self.station
         self.ts_obj.sampling_rate = float(self.df)
-        self.ts_obj.start_time_utc = self.zen_schedule.isoformat().replace('T', ',')
+        self.ts_obj.start_time_utc = self.zen_schedule.isoformat()
         self.ts_obj.component = self.component
         self.ts_obj.coordinate_system = 'geomagnetic'
         try:
@@ -1271,16 +1285,16 @@ class Zen3D(object):
         self.ts_obj.conversion = self._counts_to_mv_conversion
         self.ts_obj.gain = self.header.ad_gain
 
-        # time it
-        et = time.time()
-        print('--> Reading data took: {0:.3f} seconds'.format(et-st))
-        
         self.validate_time_blocks()
         self.convert_gps_time()
         #self.check_start_time()
         
         print('    found {0} GPS time stamps'.format(self.gps_stamps.shape[0]))
         print('    found {0} data points'.format(self.ts_obj.ts.data.size))
+        
+        # time it
+        et = time.time()
+        print('--> Reading data took: {0:.3f} seconds'.format(et-st))
         
     #=================================================
     def trim_data(self):
@@ -1315,8 +1329,8 @@ class Zen3D(object):
 
         # reset the data and time in the schedule meta data so there is no
         # confusion on when the time series starts
-        self.schedule.Date = zen_start_utc.strftime('%Y-%m-%d')
-        self.schedule.Time = zen_start_utc.strftime('%H:%M:%S')
+        self.schedule.Date = zen_start_utc.strftime(u'%Y-%m-%d')
+        self.schedule.Time = zen_start_utc.strftime(u'%H:%M:%S')
 
         # estimate the time difference between the two
         time_diff = self.zen_schedule - schedule_time
@@ -1605,9 +1619,8 @@ class Zen3D(object):
             # if there is a decimation factor need to read in the time
             # series data to get the length.
             c = self.ts_obj.read_ascii_header(self.fn_mt_ascii)
-            self.zen_schedule = datetime.datetime.strptime(self.ts_obj.start_time_utc,
-                                                           datetime_sec)
-            #self.zen_schedule = self.ts_obj.start_time_utc.replace(' ', ',')
+            self.zen_schedule = dateutil.parser.parse(self.ts_obj.start_time_utc)
+
             return
 
         # read in time series data if haven't yet.
@@ -1790,7 +1803,7 @@ class ZenSchedule(object):
 
         """
 
-        sfid = file(fn, 'r')
+        sfid = open(fn, 'r')
         lines = sfid.readlines()
 
         for line in lines:
@@ -2037,7 +2050,7 @@ class ZenSchedule(object):
             save_name = 'Zeus3Ini.cfg'
         elif savename == 2:
             save_name = 'ZEN.cfg'
-            sfid = file(os.path.normpath(os.path.join('c:\\MT', save_name)),
+            sfid = open(os.path.normpath(os.path.join('c:\\MT', save_name)),
                         'w')
             for sa_dict in self.sa_list:
                 new_time = self.add_time(self.dt_offset,
@@ -2058,12 +2071,12 @@ class ZenSchedule(object):
             for lkey in list(self.light_dict.keys()):
                 sfid.write('{0} {1}\n'.format(lkey, self.light_dict[lkey]))
             sfid.close()
-            #print 'Wrote {0}:\{1} to {2} as {3}'.format(dd, save_name, dname,
-            #                                       self.ch_cmp_dict[dname[-1]])
+            print('Wrote {0}:\{1} to {2} as {3}'.format(dd, save_name, dname,
+                                                  self.ch_cmp_dict[dname[-1]]))
 
             for dd in list(drive_names.keys()):
                 dname = drive_names[dd]
-                sfid = file(os.path.normpath(os.path.join(dd+':\\', save_name)),
+                sfid = open(os.path.normpath(os.path.join(dd+':\\', save_name)),
                             'w')
                 for sa_dict in self.sa_list:
                     new_time = self.add_time(self.dt_offset,
@@ -2096,7 +2109,7 @@ class ZenSchedule(object):
          
         for dd in list(drive_names.keys()):
             dname = drive_names[dd]
-            sfid = file(os.path.normpath(os.path.join(dd+':\\', save_name)),
+            sfid = open(os.path.normpath(os.path.join(dd+':\\', save_name)),
                         'w')
             if clear_schedule:
                 sfid.write('clearschedule\n')
@@ -2202,7 +2215,7 @@ class ZenSchedule(object):
                                 1))
 
         fn = os.path.join(save_path, schedule_fn)
-        fid = file(fn, 'w')
+        fid = open(fn, 'w')
         fid.writelines(zacq_list[0:16])
         fid.close()
         
@@ -2357,7 +2370,7 @@ def copy_from_sd(station, save_path=r"d:\Peacock\MTData",
     save_path = os.path.join(save_path, station)
     if not os.path.exists(save_path):
         os.mkdir(save_path)
-    log_fid = file(os.path.join(save_path, 'copy_from_sd.log'), 'w')
+    log_fid = open(os.path.join(save_path, 'copy_from_sd.log'), 'w')
 
     st_test = time.ctime()
     fn_list = []
@@ -2415,25 +2428,24 @@ def copy_from_sd(station, save_path=r"d:\Peacock\MTData",
                             shutil.copy(full_path_fn, full_path_sv)
 
                             print('copied {0} to {1}\n'.format(full_path_fn, 
-                                                             full_path_sv))
+                                                               full_path_sv))
                                                              
                             #log_fid.writelines(zt.log_lines)
 
                             log_fid.write('copied {0} to \n'.format(full_path_fn)+\
                                           '       {0}\n'.format(full_path_sv))
                         else:
-                            pass
-#                            print '+++ SKIPPED {0}+++\n'.format(zt.fn)
-#                            log_fid.write(' '*4+\
-#                                          '+++ SKIPPED {0}+++\n'.format(zt.fn))
+                            print('+++ SKIPPED {0}+++\n'.format(zt.fn))
+                            log_fid.write(' '*4+\
+                                          '+++ SKIPPED {0}+++\n'.format(zt.fn))
 
                     else:
                         pass
-#                        print '{0} '.format(full_path_fn)+\
-#                               'not copied due to bad data.'
+                        #print(u'{0} '.format(full_path_fn)+\
+                        #       'not copied due to bad data.')
 #
-#                        log_fid.write(' '*4+'***{0} '.format(full_path_fn)+\
-#                                      'not copied due to bad data.\n\n')
+                        log_fid.write(' '*4+'***{0} '.format(full_path_fn)+\
+                                      'not copied due to bad data.\n\n')
             except WindowsError:
                 print('Faulty file at {0}'.format(full_path_fn))
                 log_fid.write('---Faulty file at {0}\n\n'.format(full_path_fn))
@@ -2498,7 +2510,7 @@ def delete_files_from_sd(delete_date=None, delete_type=None,
     if delete_folder is not None:
         if not os.path.exists(delete_folder):
             os.mkdir(delete_folder)
-        log_fid = file(os.path.join(delete_folder, 'Log_file.log'), 'w')
+        log_fid = open(os.path.join(delete_folder, 'Log_file.log'), 'w')
 
     if delete_date is not None:
         delete_date = int(delete_date.replace('-', ''))
@@ -2569,7 +2581,7 @@ def delete_files_from_sd(delete_date=None, delete_type=None,
                                 log_lines.append('Moved {0} '.format(full_path_fn)+
                                                  'to {0}\n'.format(delete_folder))
     if delete_folder is not None:
-        log_fid = file(os.path.join(delete_folder, 'Delete_log.log'), 'w')
+        log_fid = open(os.path.join(delete_folder, 'Delete_log.log'), 'w')
         log_fid.writelines(log_lines)
         log_fid.close()
     if verbose:

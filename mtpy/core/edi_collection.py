@@ -398,6 +398,8 @@ class EdiCollection(object):
 
                 pt_dict['phi_min'] = pt.phimin[p_index]
                 pt_dict['phi_max'] = pt.phimax[p_index]
+                pt_dict['phi_min_err'] = pt.phimin_err[p_index]
+                pt_dict['phi_max_err'] = pt.phimax_err[p_index]
                 pt_dict['azimuth']= pt.azimuth[p_index]
                 pt_dict['skew'] = pt.beta[p_index]
                 pt_dict['n_skew'] = 2 * pt.beta[p_index]
