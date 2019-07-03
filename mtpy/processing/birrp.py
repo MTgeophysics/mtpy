@@ -588,7 +588,7 @@ class ScriptFile(BIRRP_Parameters):
             for ff, fn_arr in enumerate(self.fn_arr):
 
                 # get the least amount of data points to read
-                s_lines += ['{0:0.0f}'.format(fn_arr['nread'].min())]
+                s_lines += ['{0:0.0f}'.format(abs(fn_arr['nread'].min()))]
 
                 for cc in self.comp_list:
                     if 'rr' in cc:

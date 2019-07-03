@@ -462,7 +462,7 @@ class Z3D_to_edi(object):
         self.coil_cal_path = r"d:\Peacock\MTData\Ant_calibrations\rsp_cal"
         self._coil_calibration_list = ['2254', '2264', '2274', '2284', '2294',
                                        '2304', '2314', '2324', '2334', '2344',
-                                       '2844', '2854']
+                                       '2844', '2854', ]
         self.num_comp = 5
         self.df_list = [4096, 256, 16]
         self.max_blocks = 3
@@ -564,11 +564,10 @@ class Z3D_to_edi(object):
             
         calibration_dict = {}
         for cal_fn in os.listdir(self.coil_cal_path):
-            for cal_num in self._coil_calibration_list:
-                if cal_num in cal_fn:
-                    calibration_dict[cal_num] = \
-                                    os.path.join(self.coil_cal_path, cal_fn)
-                    break
+            if cal_fn.endswith('.csv'):
+                cal_num = os.path.splitext(cal_fn)[0]
+                calibration_dict[cal_num] = os.path.join(self.coil_cal_path, 
+                                                         cal_fn)
                 
         self.calibration_dict = calibration_dict
         
@@ -663,8 +662,8 @@ class Z3D_to_edi(object):
             print('*** Tranforming remote reference Z3D to mtpy format ***')
             
             # get the maximum number of remote reference time series
-            # multiply by 3 just to be save
-            num_ref = (len(fn_arr)/self.num_comp)*3*len(self.rr_station_dir)
+            # multiply by 3 just to be safe
+            num_ref = (len(fn_arr)/self.num_comp)*4*len(self.rr_station_dir)
             rr_fn_arr = self._make_empty_fn_arr(num_ref)
             rr = 0
             for rr_dir in self.rr_station_dir:

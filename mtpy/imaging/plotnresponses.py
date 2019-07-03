@@ -613,6 +613,7 @@ class PlotMultipleResponses(mtpl.PlotSettings):
 
             # make a figure instance
             self.fig = plt.figure(self.fig_num, self.fig_size, dpi=self.fig_dpi)
+            self.fig.clf()
 
             # make subplots as columns for all stations that need to be plotted
             gs0 = gridspec.GridSpec(1, ns)
@@ -1545,6 +1546,7 @@ class PlotMultipleResponses(mtpl.PlotSettings):
             # make a figure instance
             self.fig = plt.figure(self.fig_num, self.fig_size,
                                   dpi=self.fig_dpi)
+            self.fig.clf()
 
             # make a grid as usual, but put xy and yx in different plots
             # otherwise the plot is too busy to see what's going on.
@@ -2458,7 +2460,6 @@ class PlotMultipleResponses(mtpl.PlotSettings):
             >>> p1.redraw_plot()
         """
 
-        plt.close(self.fig)
         self.plot()
 
     def __str__(self):

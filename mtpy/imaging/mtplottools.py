@@ -1338,7 +1338,7 @@ def get_station_locations(mt_list, map_scale='latlon', ref_point=(0, 0)):
                 # check to make sure the zone is the same this needs
                 # to be more rigorously done
                 if zone1 != zone:
-                    print 'Zone change at station ' + mt_obj.station
+                    print('Zone change at station ' + mt_obj.station)
                     if zone1[0:2] == zone[0:2]:
                         pass
                     elif int(zone1[0:2]) < int(zone[0:2]):
@@ -1547,8 +1547,8 @@ def get_rp_arrays(mt_list, plot_period, sort_by='line', line_direction='ew',
                         pass
 
                 if jj is None:
-                    print 'did not find period {0:.6g} (s) for {1}'.format(
-                        rper, mt_obj.station)
+                    print('did not find period {0:.6g} (s) for {1}'.format(
+                        rper, mt_obj.station))
 
         return resxx, resxy, resyx, resyy, phasexx, phasexy, phaseyx, phaseyy, \
                station_list, offset_list
@@ -1609,8 +1609,8 @@ def get_rp_arrays(mt_list, plot_period, sort_by='line', line_direction='ew',
                         pass
 
                 if jj is None:
-                    print 'did not find period {0:.6g} (s) for {1}'.format(
-                        rper, mt_obj.station)
+                    print('did not find period {0:.6g} (s) for {1}'.format(
+                        rper, mt_obj.station))
 
         return resxx, resxy, resyx, resyy, + \
             phasexx, phasexy, phaseyx, phaseyy, x, y, map_dict
@@ -1733,8 +1733,8 @@ def get_pt_arrays(mt_list, plot_period, sort_by='line', line_direction='ew',
                         pass
 
                 if jj is None:
-                    print 'did not find period {0:.6g} (s) for {1}'.format(
-                        rper, mt_obj.station)
+                    print('did not find period {0:.6g} (s) for {1}'.format(
+                        rper, mt_obj.station))
 
         return phimin, phimax, skew, azimuth, ellipticity, slist, olist
 
@@ -1781,8 +1781,8 @@ def get_pt_arrays(mt_list, plot_period, sort_by='line', line_direction='ew',
                         pass
 
                 if jj is None:
-                    print 'did not find period {0:.6g} (s) for {1}'.format(
-                        rper, mt_obj.station)
+                    print('did not find period {0:.6g} (s) for {1}'.format(
+                        rper, mt_obj.station))
         return phimin, phimax, skew, azimuth, ellipticity, x, y, map_dict
 
 
