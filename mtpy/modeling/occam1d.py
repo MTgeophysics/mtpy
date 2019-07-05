@@ -1460,6 +1460,7 @@ class Plot1DResponse(object):
 
         self.model_fn = model_fn
 
+        self.override_legend_subscript = kwargs.pop('override_legend_subscript',None)
         self.resp_te_fn = resp_te_fn
         if type(self.resp_te_fn) is not list:
             self.resp_te_fn = [self.resp_te_fn]
@@ -1618,7 +1619,10 @@ class Plot1DResponse(object):
                                         capsize=self.e_capsize,
                                         capthick=self.e_capthick)
                 legend_marker_list_te.append(rte[0])
-                legend_label_list_te.append('$Obs_{TE}$')
+                if self.override_legend_subscript is not None:
+                    legend_label_list_tm.append('$Obs_{'+str.upper(self.override_legend_subscript)+'}$')
+                else:
+                    legend_label_list_te.append('$Obs_{TM}$')
             else:
                 pass
             # --------------------plot phase--------------------------------
@@ -1669,7 +1673,10 @@ class Plot1DResponse(object):
                                         capsize=self.e_capsize,
                                         capthick=self.e_capthick)
                 legend_marker_list_tm.append(rtm[0])
-                legend_label_list_tm.append('$Obs_{TM}$')
+                if self.override_legend_subscript is not None:
+                    legend_label_list_tm.append('$Obs_{'+str.upper(self.override_legend_subscript)+'}$')
+                else:
+                    legend_label_list_te.append('$Obs_{TM}$')
             else:
                 pass
 
@@ -1733,7 +1740,10 @@ class Plot1DResponse(object):
                                         capsize=self.e_capsize,
                                         capthick=self.e_capthick)
                 legend_marker_list_te.append(rte[0])
-                legend_label_list_te.append('$Mod_{TE}$' + itnum)
+                if self.override_legend_subscript is not None:
+                    legend_label_list_tm.append('$Mod_{'+str.upper(self.override_legend_subscript)+'}$' + itnum)
+                else:
+                    legend_label_list_te.append('$Mod_{TE}$' + itnum)
             else:
                 pass
 
@@ -1793,7 +1803,10 @@ class Plot1DResponse(object):
                                         capsize=self.e_capsize,
                                         capthick=self.e_capthick)
                 legend_marker_list_tm.append(rtm[0])
-                legend_label_list_tm.append('$Mod_{TM}$' + itnum)
+                if self.override_legend_subscript is not None:
+                    legend_label_list_tm.append('$Mod_{'+str.upper(self.override_legend_subscript)+'}$' + itnum)
+                else:
+                    legend_label_list_te.append('$Mod_{TM}$' + itnum)
             else:
                 pass
 
