@@ -129,10 +129,14 @@ def read_configfile(filename):
         #generate config parser instance
         configobject = configparser.SafeConfigParser()
         #do NOT ask, why it does not work with reading from filename directly...:
-        with open(filename) as F:
+        with open(filename, 'r') as F:
             d = F.read()
-        FH = io.StringIO(d.decode())
-        configobject.readfp(FH)#filename)
+        print(type(d))
+        if type(d) not in [str]:
+            FH = io.StringIO(d.decode())
+        else:
+            FH = io.StringIO(d)
+        configobject.readfp(FH)
     except TypeError:
         try:
             dummy_String = '[DEFAULT]\n' + open(filename, 'r').read()
