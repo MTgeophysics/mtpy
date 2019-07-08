@@ -280,40 +280,43 @@ class Data(object):
 
                 # error propagation - new error is 0.5 * relative error in zdet
                 # then convert back to absolute error
-#                zereal = np.abs(zdetreal) * 0.5 * z_obj.det_err / np.abs(z_obj.det)
-#                zeimag = np.abs(zdetimag) * 0.5 * z_obj.det_err / np.abs(z_obj.det)
+                det_err = mtcc.compute_determinant_error(z_obj.z,z_obj.z_err)
                 
-                # alison's temporary (incorrect, but probably close) fix
-                # take mean of error of off-diagonal components
-                zereal = np.abs(zdetreal) * 0.5 * np.mean([z_obj.z_err[:,0,1],z_obj.z_err[:,1,0]]) / np.abs(z_obj.det)
-                zeimag = np.abs(zdetimag) * 0.5 * np.mean([z_obj.z_err[:,0,1],z_obj.z_err[:,1,0]]) / np.abs(z_obj.det)
+#                # relative errors of real and imaginary components of sqrt determinant
+                zereal = zdetreal * det_err * 0.5 / z_obj.det.real
+                zeimag = zdetimag * det_err * 0.5 / z_obj.det.imag         
+
 
 
                 if self.mode.endswith('z'):
                     # convert to si units if we are modelling impedance tensor
+                    
                     data_1 = zdetreal * np.pi * 4e-4
                     data_1_err = zereal * np.pi * 4e-4
                     data_2 = zdetimag * np.pi * 4e-4
                     data_2_err = zeimag * np.pi * 4e-4
                 else:
                     # convert to res/phase
+                    # data_1 is resistivity
                     data_1 = .2 / freq * np.abs(z_obj.det)
+                    # data_2 is phase
                     data_2 = np.rad2deg(np.arctan2(zdetimag, zdetreal))
 
                     # initialise error arrays
                     data_1_err = np.zeros_like(data_1, dtype=np.float)
                     data_2_err = np.zeros_like(data_2, dtype=np.float)
 
-                    # assign errors
+                    # assign errors, use error based on sqrt of z
                     for zdr, zdi, zer, zei, ii in zip(zdetreal, zdetimag,
                                                       zereal, zeimag,
                                                       list(range(len(z_obj.det)))):
                         # now we can convert errors to polar coordinates
                         de1, de2 = mtcc.z_error2r_phi_error(zdr, zdi, (zei+zer)/2.)
+                        # convert relative resistivity error to absolute
                         de1 *= data_1[ii]
                         data_1_err[ii] = de1
                         data_2_err[ii] = de2
-
+                        
             elif self.mode == 'tez':
                 # convert to si units
                 data_1 = z_obj.z[:, 0, 1].real * np.pi * 4e-4
