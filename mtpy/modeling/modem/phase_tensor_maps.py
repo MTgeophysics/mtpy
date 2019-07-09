@@ -248,6 +248,8 @@ class PlotPTMaps(mtplottools.MTEllipse):
         self.plot_yn = kwargs.pop('plot_yn', 'n')
         if self.plot_yn == 'y':
             self.plot()
+        else:
+            self._read_files()
 
     def _read_files(self):
         """
@@ -444,7 +446,7 @@ class PlotPTMaps(mtplottools.MTEllipse):
                     x, y = m(lon, lat)
 
                 # matplotlib angles are defined as degrees anticlockwise from positive x direction.
-                # therefore we need to adjust az accordingly             
+                # therefore we need to adjust az accordingly
                 e = Ellipse([x, y],
                             phimax * ellipse_size_factor,
                             phimin * ellipse_size_factor,
