@@ -91,13 +91,14 @@ def parse_arguments(arguments):
     for i in [0, 1, 3, 5, 6]:
         args.run_input[i] = int(args.run_input[i])
 
-    if len(args.errorfloor) == 1:
-        args.errorfloor = args.errorfloor[0]
-    elif (len(args.errorfloor) == 2) or (len(args.errorfloor) == 3):
-        ef = args.errorfloor[:2]
-        args.errorfloor = np.array([ef, ef[::-1]])
-    elif len(args.errorfloor) == 4:
-        args.errorfloor = np.reshape(args.errorfloor, [2, 2])
+    if np.iterable(args.errorfloor):
+        if len(args.errorfloor) == 1:
+            args.errorfloor = args.errorfloor[0]
+        elif (len(args.errorfloor) == 2) or (len(args.errorfloor) == 3):
+            ef = args.errorfloor[:2]
+            args.errorfloor = np.array([ef, ef[::-1]])
+        elif len(args.errorfloor) == 4:
+            args.errorfloor = np.reshape(args.errorfloor, [2, 2])
 
     return args
 

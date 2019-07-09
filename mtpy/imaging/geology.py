@@ -210,14 +210,14 @@ class Geology:
                     ppolygon = Polygon(list(zip(px, py)))
 
                     if (fcolor is not None): kwargs['facecolor'] = fcolor
-                if ('edgecolor' not in list(kwargs.keys()) and not ecolor_is_fcolor):
-                    kwargs['edgecolor'] = 'none'
-                elif ecolor_is_fcolor:
-                    kwargs['edgecolor'] = fcolor
-                if ('fill') not in list(kwargs.keys()): kwargs['fill'] = True
-
-                pp = PolygonPatch(ppolygon, **kwargs)
-                patches.append(pp)
+                    if ('edgecolor' not in list(kwargs.keys()) and not ecolor_is_fcolor):
+                        kwargs['edgecolor'] = 'none'
+                    elif ecolor_is_fcolor:
+                        kwargs['edgecolor'] = fcolor
+                    if ('fill') not in list(kwargs.keys()): kwargs['fill'] = True
+    
+                    pp = PolygonPatch(ppolygon, **kwargs)
+                    patches.append(pp)
 
                 # filter duplicates
                 if (symbol not in handles):
