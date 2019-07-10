@@ -1068,6 +1068,7 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
 
         # make a grid with color lines
         lpax.grid(True, alpha=.3, which='both', color=(0.5, 0.5, 0.5))
+        lpax.set_axisbelow(True)
         if self.minorticks_on:
             plt.minorticks_on()  # turn on minor ticks automatically
 

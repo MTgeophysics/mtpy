@@ -9,6 +9,7 @@
 #==============================================================================
 # Imports
 #==============================================================================
+from __future__ import unicode_literals
 import os
 import datetime
 import dateutil.parser
@@ -337,7 +338,7 @@ class MTTS(object):
         if not hasattr(self.ts, 'data'):
             return
         if start_time is None:
-            print('Start time is None, skipping calculating index')
+            #print('Start time is None, skipping calculating index')
             return 
 			
         dt_freq = '{0:.0f}N'.format(1./(self.sampling_rate)*1E9)
@@ -397,6 +398,7 @@ class MTTS(object):
         print('\t Filtered frequency with bandstop:')
         for ff in filt_list:
             try:
+                pass
                 print('\t\t{0:>6.5g} Hz  {1:>6.2f} db'.format(np.nan_to_num(ff[0]),
                                                              np.nan_to_num(ff[1])))
             except ValueError:
@@ -539,8 +541,6 @@ class MTTS(object):
 
         # get the number of chunks to write
         chunks = int(self.ts.shape[0]/chunk_size)
-        print(chunks)
-
         # make header lines
         header_lines = ['# *** MT time series text file for {0} ***'.format(self.station)]
         header_lines += ['# {0} = {1}'.format(attr, getattr(self, attr))
@@ -574,10 +574,10 @@ class MTTS(object):
 
 
         # get an estimation of how long it took to write the file
-        et = datetime.datetime.utcnow()
-        time_diff = et-st
-        print('--> Wrote {0}'.format(fn_ascii))
-        print('    Took {0:.2f} seconds'.format(time_diff.seconds+time_diff.microseconds*1E-6))
+        #et = datetime.datetime.utcnow()
+        #time_diff = et-st
+        #print('--> Wrote {0}'.format(fn_ascii))
+        #print('    Took {0:.2f} seconds'.format(time_diff.seconds+time_diff.microseconds*1E-6))
 
     def read_ascii_header(self, fn_ascii):
         """
@@ -609,6 +609,7 @@ class MTTS(object):
                         setattr(self, key, value)
                     except AttributeError:
                         if key not in ['n_samples', 'start_time_epoch_sec']:
+                            pass
                             print('Could not set {0} to {1}'.format(key, value))
                 # skip the header lines
                 elif line.find('***') > 0:

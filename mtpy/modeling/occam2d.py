@@ -796,10 +796,8 @@ class Mesh():
             line_count += 1
             # needs to be >= nh - 2 as python count starts from 0 and number of
             # horizontal columns is 1 less than listed at the top of the file
-            if h_index >= nh - 2:
+            if h_index >= nh - 1:
                 break
-            
-
 
         # --> fill vertical nodes
         for mline in mlines[line_count:]:
@@ -808,7 +806,7 @@ class Mesh():
                 self.z_nodes[v_index] = float(m_value)
                 v_index += 1
             line_count += 1
-            if v_index >= nv - 2:
+            if v_index >= nv - 1:
                 break
 
         # --> fill model values
@@ -818,7 +816,7 @@ class Mesh():
                 break
             else:
                 mlist = list(mline)
-                if len(mlist) != nh - 1:
+                if len(mlist) != nh:
                     print('--- Line {0} in {1}'.format(ll, self.mesh_fn))
                     print('Check mesh file too many columns')
                     print('Should be {0}, has {1}'.format(nh, len(mlist)))
@@ -1031,7 +1029,7 @@ class Profile():
                 except:
                     pass
 
-            if self.model_epsg is not None:
+            elif self.model_epsg is not None:
                 edi.east,edi.north,edi.utm_zone = \
                 gis_tools.project_point_ll2utm(edi.lat,
                                                edi.lon,

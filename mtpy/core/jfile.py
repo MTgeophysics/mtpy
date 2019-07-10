@@ -7,6 +7,7 @@
 """
 
 #==============================================================================
+#from __future__ import unicode_literals
 import numpy as np
 import os
 
@@ -49,7 +50,7 @@ class JFile(object):
                         value = float(line.split('=')[1].strip())
                     except ValueError:
                         value = 0.0
-                        print('changed {0} to 0.0'.format(name[1:]))
+                        #print('changed {0} to 0.0'.format(name[1:]))
                     j_lines[ii] = '{0} = {1}\n'.format(name, value)
                     break
         
@@ -203,7 +204,7 @@ class JFile(object):
         if j_fn is not None:
             self.j_fn = j_fn
             
-        print('--> Reading {0}'.format(self.j_fn))
+        #print('--> Reading {0}'.format(self.j_fn))
                
         j_line_list = self._validate_j_file()
 
@@ -272,7 +273,7 @@ class JFile(object):
                 all_periods.append(f_key)
         
         if len(list(t_dict['tzx'].keys())) == 0:
-            print('Could not find any Tipper data in {0}'.format(self.j_fn))
+            #print('Could not find any Tipper data in {0}'.format(self.j_fn))
             find_tipper = False
   
         else:

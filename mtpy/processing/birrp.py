@@ -10,14 +10,12 @@ Created on Tue Sep 20 14:33:20 2016
 """
 
 #==============================================================================
+from __future__ import unicode_literals
 import numpy as np
 import os
 import subprocess
 import time
-from datetime import datetime
 
-
-import mtpy.core.z as mtz
 import mtpy.utils.configfile as mtcfg
 import mtpy.utils.filehandling as mtfh
 import mtpy.utils.exceptions as mtex
@@ -146,39 +144,39 @@ class BIRRP_Parameters(object):
 
         # be sure the
         if self.ninp not in [1, 2, 3]:
-            print('Number of inputs {0} not allowed.'.format(self.ninp))
+            #print('Number of inputs {0} not allowed.'.format(self.ninp))
             self.ninp = 2
-            print('  --> setting ninp to {0}'.format(self.ninp))
+            #print('  --> setting ninp to {0}'.format(self.ninp))
 
         if self._nout not in [2, 3]:
-            print('Number of outputs {0} not allowed.'.format(self._nout))
+            #print('Number of outputs {0} not allowed.'.format(self._nout))
             self._nout = 2
-            print('  --> setting nout to {0}'.format(self._nout))
+            #print('  --> setting nout to {0}'.format(self._nout))
 
         if self._nref > 3:
-            print('nref > 3, setting ilev to 1')
+            #print('nref > 3, setting ilev to 1')
             self.ilev = 1
 
         if self.tbw < 0 or self.tbw > 4:
-            print('Total bandwidth of slepian window {0} not allowed.'.format(self.tbw))
+            #print('Total bandwidth of slepian window {0} not allowed.'.format(self.tbw))
             self.tbw = 2
-            print('  --> setting tbw to {0}'.format(self.tbw))
+            #print('  --> setting tbw to {0}'.format(self.tbw))
 
         if np.remainder(np.log2(self.nfft), 2) != 0:
-            print('Window length nfft should be a power of 2 not {0}'.format(self.nfft))
+            #print('Window length nfft should be a power of 2 not {0}'.format(self.nfft))
             self.nfft = 2**np.floor(np.log2(self.nfft))
-            print('  -- > setting nfft to {0}, (2**{1:.0f})'.format(self.nfft,
-                                                              np.log2(self.nfft)))
+            #print('  -- > setting nfft to {0}, (2**{1:.0f})'.format(self.nfft,
+            #                                                  np.log2(self.nfft)))
 
         if np.log2(self.nfft)-self.nsctmax < 4:
-            print('Maximum number of windows {0} is too high'.format(self.nsctmax))
+            #print('Maximum number of windows {0} is too high'.format(self.nsctmax))
             self.nsctmax = np.log2(self.nfft)-4
-            print('  --> setting nsctmax to {0}'.format(self.nsctmax))
+            #print('  --> setting nsctmax to {0}'.format(self.nsctmax))
 
         if self.uin != 0:
-            print('You\'re playing with fire if uin is not 0.')
+            #print('You\'re playing with fire if uin is not 0.')
             self.uin = 0
-            print('  --> setting uin to 0, if you don\'t want that change it back')
+            #print('  --> setting uin to 0, if you don\'t want that change it back')
 
         if self.imode not in [0, 1, 2, 3]:
             raise BIRRP_Parameter_Error('Invalid number for time series mode,'
@@ -189,21 +187,24 @@ class BIRRP_Parameters(object):
                                        'imode, {0}, should be 0, or 1'.format(self.imode))
         if self.ilev == 1:
             if self.nsctinc != 2:
-                print('!WARNING! Check decimation increment nsctinc, should be 2 not {0}'.format(self.nsctinc))
+                pass
+                #print('!WARNING! Check decimation increment nsctinc, should be 2 not {0}'.format(self.nsctinc))
 
             if self.nfsect != 2:
-                print('Will get an error from BIRRP if nfsect is not 2.')
-                print('number of frequencies per section is {0}'.format(self.nfsect))
+                #print('Will get an error from BIRRP if nfsect is not 2.')
+                #print('number of frequencies per section is {0}'.format(self.nfsect))
                 self.nfsect = 2
-                print('  --> setting nfsect to 2')
+                #print('  --> setting nfsect to 2')
 
             if self.nf1 != self.tbw+2:
-                print('!WARNING! First frequency should be around tbw+2.')
-                print('nf1 currently set to {0}'.format(self.nf1))
+                pass
+                #print('!WARNING! First frequency should be around tbw+2.')
+                #print('nf1 currently set to {0}'.format(self.nf1))
 
             if self.nfinc != self.tbw:
-                print('!WARNING! sequence of frequencies per window should be around tbw.')
-                print('nfinc currently set to {0}'.format(self.nfinc))
+                pass
+                #print('!WARNING! sequence of frequencies per window should be around tbw.')
+                #print('nfinc currently set to {0}'.format(self.nfinc))
 
             if self.nprej != 0:
                 if self.prej is None or type(self.prej) is not list:
@@ -211,11 +212,11 @@ class BIRRP_Parameters(object):
                                      '\nInput as a list of frequencies' )
 
             if self.nrr not in [0, 1]:
-                print(('!WARNING! Value for picking remote reference or '+
-                     'two stage processing, nrr, '+
-                     'should be 0 or 1 not {0}'.format(self.nrr)))
+                #print(('!WARNING! Value for picking remote reference or '+
+                #     'two stage processing, nrr, '+
+                #     'should be 0 or 1 not {0}'.format(self.nrr)))
                 self.nrr = 0
-                print('  --> setting nrr to {0}'.format(self.nrr))
+                #print('  --> setting nrr to {0}'.format(self.nrr))
 
 
             if self.c2threshe != 0 or self.c2threshb != 0:
@@ -226,23 +227,23 @@ class BIRRP_Parameters(object):
                     raise BIRRP_Parameter_Error('Need to input a low period (s) threshold as perlo')
 
         if len(self.thetae) != 3:
-            print('Electric rotation angles not input properly {0}'.format(self.thetae))
-            print('input as north, east, orthogonal rotation')
+            #print('Electric rotation angles not input properly {0}'.format(self.thetae))
+            #print('input as north, east, orthogonal rotation')
             self.thetae = [0, 90, 0]
-            print('  --> setting thetae to {0}'.format(self.thetae))
+            #print('  --> setting thetae to {0}'.format(self.thetae))
 
         if len(self.thetab) != 3:
-            print('Magnetic rotation angles not input properly {0}'.format(self.thetab))
-            print('input as north, east, orthogonal rotation')
+            #print('Magnetic rotation angles not input properly {0}'.format(self.thetab))
+            #print('input as north, east, orthogonal rotation')
             self.thetab = [0, 90, 0]
-            print('  --> setting thetab to {0}'.format(self.thetab))
+            #print('  --> setting thetab to {0}'.format(self.thetab))
 
 
         if len(self.thetaf) != 3:
-            print('Fiedl rotation angles not input properly {0}'.format(self.thetaf))
-            print('input as north, east, orthogonal rotation')
+            #print('Fiedl rotation angles not input properly {0}'.format(self.thetaf))
+            #print('input as north, east, orthogonal rotation')
             self.thetaf = [0, 90, 0]
-            print('  --> setting thetaf to {0}'.format(self.thetaf))
+            #print('  --> setting thetaf to {0}'.format(self.thetaf))
 
 
     def read_config_file(self, birrp_config_fn):
@@ -270,8 +271,10 @@ class BIRRP_Parameters(object):
         cfg_fn = mtfh.make_unique_filename('{0}_birrp_params.cfg'.format(save_fn))
 
         birrp_dict = self._get_parameters()
-        mtcfg.write_dict_to_configfile(birrp_dict, cfg_fn)
+        mtcfg.write_dict_to_configfile({os.path.basename(birrp_dict['ofil']) : 
+                                        birrp_dict}, cfg_fn)
         print('Wrote BIRRP config file for edi file to {0}'.format(cfg_fn))
+
 #==============================================================================
 # Error classes
 #==============================================================================
@@ -392,15 +395,15 @@ class ScriptFile(BIRRP_Parameters):
         self._comp_list = None
         self.deltat = None
         
-        self._fn_dtype = np.dtype([('fn', 'S100'),
+        self._fn_dtype = np.dtype([('fn', 'U100'),
                                    ('nread', np.int),
                                    ('nskip', np.int),
-                                   ('comp', 'S2'),
-                                   ('calibration_fn', 'S100'),
+                                   ('comp', 'U2'),
+                                   ('calibration_fn', 'U100'),
                                    ('rr', np.bool),
                                    ('rr_num', np.int),
-                                   ('start_dt', 'S19'),
-                                   ('end_dt', 'S19')])
+                                   ('start_dt', 'U19'),
+                                   ('end_dt', 'U19')])
 
         if self.fn_arr is not None:
             self._validate_fn_arr()
@@ -420,14 +423,14 @@ class ScriptFile(BIRRP_Parameters):
         if self.fn_arr[0].dtype is not self._fn_dtype:
             raise Script_File_Error('fn_arr.dtype needs to be {0}'.format(self._fn_dtype))
 
-        print(self.fn_arr)
+        #print(self.fn_arr)
 
     @property
     def nout(self):
         if self.fn_arr is not None:
             self._nout = len(np.where(self.fn_arr[0]['rr']==False)[0])-2
         else:
-            print('fn_arr is None, set nout to 0')
+            #print('fn_arr is None, set nout to 0')
             self._nout = 0
         return self._nout
 
@@ -436,7 +439,7 @@ class ScriptFile(BIRRP_Parameters):
         if self.fn_arr is not None:
             self._npcs = len(self.fn_arr)
         else:
-            print('fn_arr is None, set npcs to 0')
+            #print('fn_arr is None, set npcs to 0')
             self._npcs = 0
         return self._npcs
 
@@ -446,7 +449,7 @@ class ScriptFile(BIRRP_Parameters):
             num_ref = np.where(self.fn_arr[0]['rr'] == True)[0]
             self._nref = len(num_ref)
         else:
-            print('fn_arr is None, set nref to 0')
+            #print('fn_arr is None, set nref to 0')
             self._nref = 0
 
         if self._nref > 3:
@@ -462,6 +465,7 @@ class ScriptFile(BIRRP_Parameters):
         elif num_comp == 5:
             self._comp_list = ['ex', 'ey', 'hz', 'hx', 'hy']
         else:
+            print(self.fn_arr)
             raise ValueError('Number of components {0} invalid, check inputs'.format(num_comp))
 
         if self.nref == 0:
@@ -584,10 +588,11 @@ class ScriptFile(BIRRP_Parameters):
        #write in filenames
         if self.jmode == 0:
             # loop over each data block
+            #print self.fn_arr
             for ff, fn_arr in enumerate(self.fn_arr):
 
                 # get the least amount of data points to read
-                s_lines += ['{0:0.0f}'.format(fn_arr['nread'].min())]
+                s_lines += ['{0:0.0f}'.format(abs(fn_arr['nread'].min()))]
 
                 for cc in self.comp_list:
                     if 'rr' in cc:
@@ -600,8 +605,8 @@ class ScriptFile(BIRRP_Parameters):
 
                     try:
                         fn_index = np.where((fn_arr['comp']==cc) & \
-                                        (fn_arr['rr']==rr) & \
-                                        (fn_arr['rr_num']==rr_num))[0][0]
+                                            (fn_arr['rr']==rr) & \
+                                            (fn_arr['rr_num']==rr_num))[0][0]
                     except IndexError:
                         print('Something a miss with remote reference')
                         print(self.comp_list)
@@ -709,45 +714,26 @@ def run(birrp_exe, script_file):
     #change directory to directory of the script file
     os.chdir(os.path.dirname(script_file))
     local_script_fn = os.path.basename(script_file)
-    print(os.getcwd())
-
-#    # get an input string for communicating with the birrp executable
-#    with open(script_file, 'r') as sfid:
-#        input_string = ''.join(sfid.readlines())
-#
-#    #correct inputstring for potential errorneous line endings due to strange
-#    #operating systems:
-#    temp_string = input_string.split()
-#    temp_string = [i.strip() for i in temp_string]
-#    input_string = '\n'.join(temp_string)
-#    input_string += '\n'
 
     #open a log file to catch process and errors of BIRRP executable
-    #log_file = open('birrp_logfile.log','w')
+    log_file = open('birrp_logfile.log','w')
 
     print('*'*10)
     print('Processing {0} with {1}'.format(script_file, birrp_exe))
     print('Starting Birrp processing at {0}...'.format(time.ctime()))
-    st = time.ctime()
 
     birrp_process = subprocess.Popen(birrp_exe+'< {0}'.format(local_script_fn),
-                                     stdin=subprocess.PIPE,
-                                     shell=True)
-#                                     stdout=log_file,
-#                                     stderr=log_file)
+                                     shell=True,
+                                     stdout=log_file,
+                                     stderr=log_file)
 
     birrp_process.wait()
 
+    log_file.close()
+    #print('_'*20)
+    #print('Starting Birrp processing at {0}...'.format(st))
+    print('Ended Birrp processing at   {0}...'.format(time.ctime()))
 
-    #log_file.close()
-    print('_'*20)
-    print('Starting Birrp processing at {0}...'.format(st))
-    print('Endec Birrp processing at   {0}...'.format(time.ctime()))
-    #print 'Closed log file: {0}'.format(log_file.name)
-#
-#    print 'Outputs: {0}'.format(out)
-#    print 'Errors: {0}'.format(err)
-    
     #go back to initial directory
     os.chdir(current_dir)
 
@@ -837,7 +823,7 @@ class J_To_Edi(object):
             raise mtex.MTpyError_inputarguments('Could not find {0}, check path'.format(survey_config_fn))
 
         # read in survey information
-        print(self.survey_config_fn, self.station)
+        #print(self.survey_config_fn, self.station)
         self.survey_config_dict = mtcfg.read_survey_configfile(self.survey_config_fn)[self.station.upper()]
 
     def get_birrp_config_fn(self):

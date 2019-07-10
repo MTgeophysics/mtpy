@@ -8,10 +8,13 @@ Created on Fri Apr 14 14:47:48 2017
 # ==============================================================================
 # Imports
 # ==============================================================================
+import geopandas as gpd
+import fiona
+import numpy as np
 
 from mtpy.utils import HAS_GDAL, EPSG_DICT
 from mtpy.utils.decorator import gdal_data_check, deprecated
-import numpy as np
+
 from mtpy.utils.mtpylog import MtPyLog
 
 if HAS_GDAL:
@@ -23,6 +26,10 @@ else:
 
 _logger = MtPyLog.get_mtpy_logger(__name__)
 
+fiona.drvsupport.supported_drivers['KML'] = 'rw'
+fiona.drvsupport.supported_drivers['kml'] = 'rw'
+fiona.drvsupport.supported_drivers['KMZ'] = 'rw'
+fiona.drvsupport.supported_drivers['kmz'] = 'rw'
 
 class GIS_ERROR(Exception):
     pass
@@ -590,6 +597,49 @@ def project_points_ll2utm(lat, lon, datum='WGS84', utm_zone=None, epsg=None):
 
     return projected_point
 # end func
+
+def shp_to_kml(shp_fn, kml_fn=None):
+    """
+    convert shape file to kml
+    
+    :param shp_fn: full path to shape file 
+    :type shp_fn: string
+    
+    :param kml_fn: full path to kml file to save to, default is shp_fn.kml
+    :type kml_fn: string
+    
+    :returns: full path to kml file 
+    """
+    if kml_fn is None:
+        kml_fn = shp_fn[:-4]+'.kml'
+    
+    shp_obj = gpd.read_file(shp_fn)
+    
+    shp_obj.to_file(kml_fn, driver='kml')
+    
+    return kml_fn
+
+
+def kml_to_shp(kml_fn, shp_fn=None):
+    """
+    convert kml to shape file
+    
+    :param kml_fn: full path to kml file 
+    :type kml_fn: string
+    
+    :param shp_fn: full path to shape file to save to, default is shp_fn.kml 
+    :type shp_fn: string
+    
+    :returns: full path to shp file 
+    """
+    if shp_fn is None:
+        shp_fn = kml_fn[:-4]+'.shp'
+    
+    kml_obj = gpd.read_file(kml_fn)
+    
+    kml_obj.to_file(shp_fn, driver='ESRI Shapefile')
+    
+    return shp_fn
 
 # =================================
 # functions from latlon_utm_conversion.py
