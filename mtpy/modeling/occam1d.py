@@ -1712,7 +1712,12 @@ class Plot1DResponse(object):
         for rr, rfn in enumerate(self.resp_te_fn):
             if rfn is None:
                 break
-            itnum = rfn[-7:-5]
+            # accommodate larger number of iterations that might have > 2 digits
+            itnum = rfn[-8:-5]
+            while not str.isdigit(itnum[0]):
+                itnum = itnum[1:]
+                if itnum == '':
+                    break
             if self.color_mode == 'color':
                 cxy = (0, .4 + float(rr) / (3 * nr), 0)
             elif self.color_mode == 'bw':
@@ -1779,7 +1784,12 @@ class Plot1DResponse(object):
         for rr, rfn in enumerate(self.resp_tm_fn):
             if rfn is None:
                 break
-            itnum = rfn[-7:-5]
+            # accommodate larger number of iterations that might have > 2 digits
+            itnum = rfn[-8:-5]
+            while not str.isdigit(itnum[0]):
+                itnum = itnum[1:]
+                if itnum == '':
+                    break
             if self.color_mode == 'color':
                 cyx = (.7 + float(rr) / (4 * nr), .13, .63 - float(rr) / (4 * nr))
             elif self.color_mode == 'bw':
