@@ -257,8 +257,8 @@ def compute_determinant_error(z_array, z_err_array, method = 'theoretical', repe
         error = np.std(detlist,axis=0)
     
     else:
-        error = z_err_array[:,0,1]*np.abs(z_array[:,1,0]) + z_err_array[:,1,0]*np.abs(z_array[:,0,1])\
-             - z_err_array[:,0,0]*np.abs(z_array[:,1,1]) - z_err_array[:,1,1]*np.abs(z_array[:,0,0]) 
+        error = np.abs(z_err_array[:,0,0]*np.abs(z_array[:,1,1]) + z_err_array[:,1,1]*np.abs(z_array[:,0,0]) \
+             - z_err_array[:,0,1]*np.abs(z_array[:,1,0]) - z_err_array[:,1,0]*np.abs(z_array[:,0,1]))
     
     return error
 
