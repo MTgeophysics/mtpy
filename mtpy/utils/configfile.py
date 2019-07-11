@@ -131,7 +131,6 @@ def read_configfile(filename):
         #do NOT ask, why it does not work with reading from filename directly...:
         with open(filename, 'r') as F:
             d = F.read()
-        print(type(d))
         if type(d) not in [str]:
             FH = io.StringIO(d.decode())
         else:

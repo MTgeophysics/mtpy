@@ -415,12 +415,11 @@ class ScriptFile(BIRRP_Parameters):
         """
         make sure fn_arr is an np.array
         """
-
         if type(self.fn_arr[0]) is not np.ndarray:
             raise Script_File_Error('Input fn_arr elements should be numpy arrays'
-                                    'with dtype {0}'.format(self._fn_dtype))
+                                    ' with dtype {0}'.format(self._fn_dtype))
 
-        if self.fn_arr[0].dtype is not self._fn_dtype:
+        if self.fn_arr.dtype is not self._fn_dtype:
             raise Script_File_Error('fn_arr.dtype needs to be {0}'.format(self._fn_dtype))
 
         #print(self.fn_arr)
@@ -742,7 +741,7 @@ def run(birrp_exe, script_file):
 #==============================================================================
 # Write edi file from birrp outputs
 #==============================================================================
-class J_To_Edi(object):
+class J2Edi(object):
     """
     Read in BIRRP out puts, in this case the .j file and convert that into
     an .edi file using the survey_config_fn parameters.
