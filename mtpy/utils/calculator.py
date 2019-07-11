@@ -228,7 +228,7 @@ def rhophi2z(rho, phi, freq):
     return z 
 
 
-def compute_determinant_error(z_array, z_err_array, repeats=1000):
+def compute_determinant_error(z_array, z_err_array, method = 'theoretical', repeats=1000):
     """
     compute the error of the determinant of z using a stochastic method
     seed random z arrays with a normal distribution around the input array
@@ -236,6 +236,7 @@ def compute_determinant_error(z_array, z_err_array, repeats=1000):
     :param z_array: z (impedance) array containing real and imaginary values
     :param z_err_array: impedance error array containing real values,
                         in MT we assume the real and imag errors are the same
+    :param method: method to use, theoretical calculation or stochastic
     
     :return: error: array of real values with same shape as z_err_array 
                     representing the error in the determinant of Z
@@ -243,16 +244,23 @@ def compute_determinant_error(z_array, z_err_array, repeats=1000):
                     representing the error in the (determinant of Z)**0.5
     
     """
-    arraylist = []
-    
-    for r in range(repeats):
-        errmag = np.random.normal(loc=0,scale=z_err_array,size=z_array.shape)
-        arraylist = np.append(arraylist,z_array + errmag*(1. + 1j))
+    if method == 'stochatic':
+        arraylist = []
         
-    arraylist = arraylist.reshape(repeats,z_array.shape[0],2,2)
-    detlist = np.linalg.det(arraylist)
+        for r in range(repeats):
+            errmag = np.random.normal(loc=0,scale=z_err_array,size=z_array.shape)
+            arraylist = np.append(arraylist,z_array + errmag*(1. + 1j))
+            
+        arraylist = arraylist.reshape(repeats,z_array.shape[0],2,2)
+        detlist = np.linalg.det(arraylist)
+        
+        error = np.std(detlist,axis=0)
     
-    return np.std(detlist,axis=0)
+    else:
+        error = z_err_array[:,0,1]*np.abs(z_array[:,1,0]) + z_err_array[:,1,0]*np.abs(z_array[:,0,1])\
+             - z_err_array[:,0,0]*np.abs(z_array[:,1,1]) - z_err_array[:,1,1]*np.abs(z_array[:,0,0]) 
+    
+    return error
 
 
 
