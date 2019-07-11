@@ -541,7 +541,6 @@ class MTTS(object):
 
         # get the number of chunks to write
         chunks = int(self.ts.shape[0]/chunk_size)
-
         # make header lines
         header_lines = ['# *** MT time series text file for {0} ***'.format(self.station)]
         header_lines += ['# {0} = {1}'.format(attr, getattr(self, attr))
@@ -562,7 +561,7 @@ class MTTS(object):
                 # form
 #                ts_lines = np.array(self.ts.data[cc*chunk_size:(cc+1)*chunk_size],
 #                                    dtype='S22')
-                ts_lines = np.array(self.ts.data[cc*chunk_size:(cc+1)*chunk_size])
+                ts_lines = np.array(self.ts.data[int(cc*chunk_size):int((cc+1)*chunk_size)])
                 ts_lines = np.char.mod(fmt, ts_lines)
                 fid.write('\n'.join(list(ts_lines)))
                 # be sure to write a new line after each chunk otherwise
