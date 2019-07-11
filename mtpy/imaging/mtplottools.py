@@ -1139,7 +1139,7 @@ def get_mtlist(fn_list=None, res_object_list=None, z_object_list=None,
 #        try:
 #            ns = len(fn_list)
 #            mt_list = [MTplot(fn=fn) for fn in fn_list]
-#            print 'Reading {0} stations'.format(ns)
+#            print('Reading {0} stations'.format(ns))
 #            return mt_list
 #        except TypeError:
 #            try:
@@ -1172,13 +1172,13 @@ def get_mtlist(fn_list=None, res_object_list=None, z_object_list=None,
 #                            mt._Tipper = tip_obj 
 #                    except TypeError:
 #                        pass
-#                    print 'Reading {0} stations'.format(ns)
+#                    print('Reading {0} stations'.format(ns))
 #                    return mt_list
 #                    
 #                except TypeError:
 #                    try:
 #                        ns = len(mt_object_list)
-#                        print 'Reading {0} stations'.format(ns)
+#                        print('Reading {0} stations'.format(ns))
 #                        return mt_list
 #                    except TypeError:
 #                        raise IOError('Need to input an iteratable list')

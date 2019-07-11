@@ -304,7 +304,7 @@ class Data(object):
 
         self._z_shape = (1, 2, 2)
         self._t_shape = (1, 1, 2)
-        self._dtype = [('station', '|S10'),
+        self._dtype = [('station', '|U10'),
                        ('lat', np.float),
                        ('lon', np.float),
                        ('elev', np.float),
@@ -385,7 +385,7 @@ class Data(object):
         self._z_shape = z_shape
         self._t_shape = t_shape
 
-        self._dtype = [('station', '|S10'),
+        self._dtype = [('station', '|U10'),
                        ('lat', np.float),
                        ('lon', np.float),
                        ('elev', np.float),
@@ -1026,7 +1026,7 @@ class Data(object):
                         if zz.real != 0.0 and zz.imag != 0.0 and zz.real != 1e32 and zz.imag != 1e32:
                             if self.formatting == '1':
                                 per = '{0:<12.5e}'.format(self.period_list[ff])
-                                sta = '{0:>7}'.format(self.data_array[ss]['station'].decode('UTF-8'))
+                                sta = '{0:>7}'.format(self.data_array[ss]['station'])#.decode('UTF-8'))
                                 lat = '{0:> 9.3f}'.format(self.data_array[ss]['lat'])
                                 lon = '{0:> 9.3f}'.format(self.data_array[ss]['lon'])
                                 eas = '{0:> 12.3f}'.format(self.data_array[ss]['rel_east'])
@@ -1270,7 +1270,7 @@ class Data(object):
         ws_data.z_err_map = error_map
         ws_data.z_err = 'data'
         z_shape = (self.period_list.size, 2, 2)
-        data_dtype = [('station', '|S10'),
+        data_dtype = [('station', '|U10'),
                       ('east', np.float),
                       ('north', np.float),
                       ('z_data', (np.complex, z_shape)),
@@ -1361,7 +1361,7 @@ class Data(object):
                         value_list = [float(value) for value in
                                       dline[1:].strip().split()]
 
-                        self.center_point = np.recarray(1, dtype=[('station', '|S10'),
+                        self.center_point = np.recarray(1, dtype=[('station', '|U10'),
                                                                   ('lat', np.float),
                                                                   ('lon', np.float),
                                                                   ('elev', np.float),
@@ -1534,7 +1534,7 @@ class Data(object):
             self.mt_dict[s_key].pt.set_z_object(mt_obj.Z)
             self.mt_dict[s_key].Tipper.compute_amp_phase()
             self.mt_dict[s_key].Tipper.compute_mag_direction()
-
+            
             self.data_array[ii]['station'] = mt_obj.station
             self.data_array[ii]['lat'] = mt_obj.lat
             self.data_array[ii]['lon'] = mt_obj.lon
@@ -1554,6 +1554,7 @@ class Data(object):
             self.data_array[ii]['tip_err'][:] = mt_obj.Tipper.tipper_err
             self.data_array[ii]['tip_inv_err'][:] = mt_obj.Tipper.tipper_err
 
+        
         # option to provide real world coordinates in eastings/northings
         # (ModEM data file contains real world center in lat/lon but projection
         # is not provided so utm is assumed, causing errors when points cross

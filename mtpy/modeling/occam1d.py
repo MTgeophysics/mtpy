@@ -280,34 +280,43 @@ class Data(object):
 
                 # error propagation - new error is 0.5 * relative error in zdet
                 # then convert back to absolute error
-                zereal = np.abs(zdetreal) * 0.5 * z_obj.det_err / np.abs(z_obj.det)
-                zeimag = np.abs(zdetimag) * 0.5 * z_obj.det_err / np.abs(z_obj.det)
+                det_err = mtcc.compute_determinant_error(z_obj.z,z_obj.z_err)
+                
+#                # relative errors of real and imaginary components of sqrt determinant
+                zereal = zdetreal * det_err * 0.5 / z_obj.det.real
+                zeimag = zdetimag * det_err * 0.5 / z_obj.det.imag         
+
+
 
                 if self.mode.endswith('z'):
                     # convert to si units if we are modelling impedance tensor
+                    
                     data_1 = zdetreal * np.pi * 4e-4
                     data_1_err = zereal * np.pi * 4e-4
                     data_2 = zdetimag * np.pi * 4e-4
                     data_2_err = zeimag * np.pi * 4e-4
                 else:
                     # convert to res/phase
+                    # data_1 is resistivity
                     data_1 = .2 / freq * np.abs(z_obj.det)
+                    # data_2 is phase
                     data_2 = np.rad2deg(np.arctan2(zdetimag, zdetreal))
 
                     # initialise error arrays
                     data_1_err = np.zeros_like(data_1, dtype=np.float)
                     data_2_err = np.zeros_like(data_2, dtype=np.float)
 
-                    # assign errors
+                    # assign errors, use error based on sqrt of z
                     for zdr, zdi, zer, zei, ii in zip(zdetreal, zdetimag,
                                                       zereal, zeimag,
                                                       list(range(len(z_obj.det)))):
                         # now we can convert errors to polar coordinates
                         de1, de2 = mtcc.z_error2r_phi_error(zdr, zdi, (zei+zer)/2.)
+                        # convert relative resistivity error to absolute
                         de1 *= data_1[ii]
                         data_1_err[ii] = de1
                         data_2_err[ii] = de2
-
+                        
             elif self.mode == 'tez':
                 # convert to si units
                 data_1 = z_obj.z[:, 0, 1].real * np.pi * 4e-4
@@ -424,7 +433,7 @@ class Data(object):
 
         # write frequencies
         dlines.append('# Frequencies:   {0}\n'.format(nf))
-        if freq[0] < freq[1]:
+        if freq[0] < freq[-1]:
             freq = freq[::-1]
             data_1 = data_1[::-1]
             data_2 = data_2[::-1]
@@ -1462,6 +1471,7 @@ class Plot1DResponse(object):
 
         self.model_fn = model_fn
 
+        self.override_legend_subscript = kwargs.pop('override_legend_subscript',None)
         self.resp_te_fn = resp_te_fn
         if type(self.resp_te_fn) is not list:
             self.resp_te_fn = [self.resp_te_fn]
@@ -1620,7 +1630,10 @@ class Plot1DResponse(object):
                                         capsize=self.e_capsize,
                                         capthick=self.e_capthick)
                 legend_marker_list_te.append(rte[0])
-                legend_label_list_te.append('$Obs_{TE}$')
+                if self.override_legend_subscript is not None:
+                    legend_label_list_tm.append('$Obs_{'+str.upper(self.override_legend_subscript)+'}$')
+                else:
+                    legend_label_list_te.append('$Obs_{TM}$')
             else:
                 pass
             # --------------------plot phase--------------------------------
@@ -1671,7 +1684,10 @@ class Plot1DResponse(object):
                                         capsize=self.e_capsize,
                                         capthick=self.e_capthick)
                 legend_marker_list_tm.append(rtm[0])
-                legend_label_list_tm.append('$Obs_{TM}$')
+                if self.override_legend_subscript is not None:
+                    legend_label_list_tm.append('$Obs_{'+str.upper(self.override_legend_subscript)+'}$')
+                else:
+                    legend_label_list_te.append('$Obs_{TM}$')
             else:
                 pass
 
@@ -1704,7 +1720,12 @@ class Plot1DResponse(object):
         for rr, rfn in enumerate(self.resp_te_fn):
             if rfn is None:
                 break
-            itnum = rfn[-7:-5]
+            # accommodate larger number of iterations that might have > 2 digits
+            itnum = rfn[-8:-5]
+            while not str.isdigit(itnum[0]):
+                itnum = itnum[1:]
+                if itnum == '':
+                    break
             if self.color_mode == 'color':
                 cxy = (0, .4 + float(rr) / (3 * nr), 0)
             elif self.color_mode == 'bw':
@@ -1735,7 +1756,10 @@ class Plot1DResponse(object):
                                         capsize=self.e_capsize,
                                         capthick=self.e_capthick)
                 legend_marker_list_te.append(rte[0])
-                legend_label_list_te.append('$Mod_{TE}$' + itnum)
+                if self.override_legend_subscript is not None:
+                    legend_label_list_tm.append('$Mod_{'+str.upper(self.override_legend_subscript)+'}$' + itnum)
+                else:
+                    legend_label_list_te.append('$Mod_{TE}$' + itnum)
             else:
                 pass
 
@@ -1768,7 +1792,12 @@ class Plot1DResponse(object):
         for rr, rfn in enumerate(self.resp_tm_fn):
             if rfn is None:
                 break
-            itnum = rfn[-7:-5]
+            # accommodate larger number of iterations that might have > 2 digits
+            itnum = rfn[-8:-5]
+            while not str.isdigit(itnum[0]):
+                itnum = itnum[1:]
+                if itnum == '':
+                    break
             if self.color_mode == 'color':
                 cyx = (.7 + float(rr) / (4 * nr), .13, .63 - float(rr) / (4 * nr))
             elif self.color_mode == 'bw':
@@ -1795,7 +1824,10 @@ class Plot1DResponse(object):
                                         capsize=self.e_capsize,
                                         capthick=self.e_capthick)
                 legend_marker_list_tm.append(rtm[0])
-                legend_label_list_tm.append('$Mod_{TM}$' + itnum)
+                if self.override_legend_subscript is not None:
+                    legend_label_list_tm.append('$Mod_{'+str.upper(self.override_legend_subscript)+'}$' + itnum)
+                else:
+                    legend_label_list_te.append('$Mod_{TM}$' + itnum)
             else:
                 pass
 

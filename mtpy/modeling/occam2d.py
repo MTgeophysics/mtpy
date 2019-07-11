@@ -41,6 +41,7 @@ from matplotlib.colors import Normalize
 from matplotlib.ticker import MultipleLocator
 import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
+from matplotlib import cm
 import scipy.interpolate as spi
 import mtpy.core.mt as mt
 import mtpy.modeling.winglink as MTwl
@@ -4343,6 +4344,8 @@ class PlotModel(Model):
 
         self.climits = kwargs.pop('climits', (0, 4))
         self.cmap = kwargs.pop('cmap', 'jet_r')
+        if type(self.cmap) == str:
+            self.cmap = cm.get_cmap(self.cmap)
         self.font_size = kwargs.pop('font_size', 8)
 
         self.femesh = kwargs.pop('femesh', 'off')
