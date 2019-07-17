@@ -168,7 +168,7 @@ class Geology:
             if (self._hasLUT):
                 symbol = self._properties[i][self._symbolkey]
                 fcolor = self._lutDict[symbol]
-            if (fcolor in [None,[]]): 
+            if ((fcolor is None) or (np.iterable(fcolor) and len(fcolor) == 0)): 
                 fcolor = default_polygon_color
             
             if (isinstance(feature, Polygon)):
