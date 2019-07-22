@@ -66,7 +66,7 @@ class Covariance(object):
                                       '| 8. Two integer layer indices and Nx x Ny block of masks, repeated as needed.|',
                                       '+{0}+'.format('-' * 77)])
 
-        for key in kwargs.keys():
+        for key in list(kwargs.keys()):
             if hasattr(self, key):
                 setattr(self, key, kwargs[key])
             else:
@@ -89,7 +89,7 @@ class Covariance(object):
             if save_path is None:
                 save_path = os.path.dirname(model_fn)
 
-            print 'Reading {0}'.format(model_fn)
+            print('Reading {0}'.format(model_fn))
             self.grid_dimensions = mod_obj.res_model.shape
             if self.mask_arr is None:
                 self.mask_arr = np.ones_like(mod_obj.res_model)
@@ -115,20 +115,27 @@ class Covariance(object):
 
         # --> grid dimensions
 
+
         # --> smoothing in north direction
         n_smooth_line = ''
         for zz in range(self.grid_dimensions[2]):
-            n_smooth_line += ' {0:<5.1f}'.format(self.smoothing_north)
+            if not np.iterable(self.smoothing_north):
+                n_smooth_line += ' {0:<5.2f}'.format(self.smoothing_north)
+            else:
+                n_smooth_line += ' {0:<5.2f}'.format(self.smoothing_north[zz])
         clines.append(n_smooth_line + '\n')
 
         # --> smoothing in east direction
         e_smooth_line = ''
         for zz in range(self.grid_dimensions[2]):
-            e_smooth_line += ' {0:<5.1f}'.format(self.smoothing_east)
+            if not np.iterable(self.smoothing_east):
+                e_smooth_line += ' {0:<5.2f}'.format(self.smoothing_east)
+            else:
+                e_smooth_line += ' {0:<5.2f}'.format(self.smoothing_east[zz])
         clines.append(e_smooth_line + '\n')
 
         # --> smoothing in vertical direction
-        clines.append(' {0:<5.1f}\n'.format(self.smoothing_z))
+        clines.append(' {0:<5.2f}\n'.format(self.smoothing_z))
         clines.append('\n')
 
         # --> number of times to apply smoothing
@@ -159,9 +166,10 @@ class Covariance(object):
                     cline += '{0:^3.0f}'.format(write_mask_arr[nn, ee, zz])
                 clines.append(cline + '\n')
 
-        cfid = file(self.cov_fn, 'w')
-        cfid.writelines(clines)
-        cfid.close()
+        with open(self.cov_fn, 'w') as cfid:
+            cfid.writelines(clines)
+
+        # not needed cfid.close()
 
         self._logger.info('Wrote covariance file to {0}'.format(self.cov_fn))
 

@@ -144,7 +144,7 @@ class Data(object):
         self.phase_tm = None
         self.resp_fn = None
 
-        for key in kwargs.keys():
+        for key in list(kwargs.keys()):
             setattr(self, key, kwargs[key])
 
     def write_data_file(self, rp_tuple=None, edi_file=None, save_path=None,
@@ -280,33 +280,43 @@ class Data(object):
 
                 # error propagation - new error is 0.5 * relative error in zdet
                 # then convert back to absolute error
-                zereal = np.abs(zdetreal) * 0.5 * z_obj.det_err / np.abs(z_obj.det)
-                zeimag = np.abs(zdetimag) * 0.5 * z_obj.det_err / np.abs(z_obj.det)
+                det_err = mtcc.compute_determinant_error(z_obj.z,z_obj.z_err)
+                
+#                # relative errors of real and imaginary components of sqrt determinant
+                zereal = zdetreal * det_err * 0.5 / z_obj.det.real
+                zeimag = zdetimag * det_err * 0.5 / z_obj.det.imag         
+
+
 
                 if self.mode.endswith('z'):
                     # convert to si units if we are modelling impedance tensor
+                    
                     data_1 = zdetreal * np.pi * 4e-4
                     data_1_err = zereal * np.pi * 4e-4
                     data_2 = zdetimag * np.pi * 4e-4
                     data_2_err = zeimag * np.pi * 4e-4
                 else:
                     # convert to res/phase
+                    # data_1 is resistivity
                     data_1 = .2 / freq * np.abs(z_obj.det)
+                    # data_2 is phase
                     data_2 = np.rad2deg(np.arctan2(zdetimag, zdetreal))
 
                     # initialise error arrays
                     data_1_err = np.zeros_like(data_1, dtype=np.float)
                     data_2_err = np.zeros_like(data_2, dtype=np.float)
 
-                    # assign errors
+                    # assign errors, use error based on sqrt of z
                     for zdr, zdi, zer, zei, ii in zip(zdetreal, zdetimag,
                                                       zereal, zeimag,
-                                                      range(len(z_obj.det))):
+                                                      list(range(len(z_obj.det)))):
                         # now we can convert errors to polar coordinates
-                        de1, de2 = mtcc.z_error2r_phi_error(zdr, zer, zdi, zei)
+                        de1, de2 = mtcc.z_error2r_phi_error(zdr, zdi, (zei+zer)/2.)
+                        # convert relative resistivity error to absolute
+                        de1 *= data_1[ii]
                         data_1_err[ii] = de1
                         data_2_err[ii] = de2
-
+                        
             elif self.mode == 'tez':
                 # convert to si units
                 data_1 = z_obj.z[:, 0, 1].real * np.pi * 4e-4
@@ -398,7 +408,8 @@ class Data(object):
         if not os.path.exists(self.save_path):
             os.mkdir(self.save_path)
 
-        self.data_fn = os.path.join(self.save_path,
+        if self.data_fn is None:
+            self.data_fn = os.path.join(self.save_path,
                                     '{0}_{1}.dat'.format(self._data_fn, mode.upper()))
 
         # --> write file as a list of lines
@@ -414,7 +425,7 @@ class Data(object):
 
         # write frequencies
         dlines.append('# Frequencies:   {0}\n'.format(nf))
-        if freq[0] < freq[1]:
+        if freq[0] < freq[-1]:
             freq = freq[::-1]
             data_1 = data_1[::-1]
             data_2 = data_2[::-1]
@@ -456,7 +467,7 @@ class Data(object):
         with open(self.data_fn, 'w') as dfid:
             dfid.writelines(dlines)
 
-        print 'Wrote Data File to : {0}'.format(self.data_fn)
+        print('Wrote Data File to : {0}'.format(self.data_fn))
 
         # --> set attributes
 
@@ -628,9 +639,13 @@ class Data(object):
             self.data['phase' + pol][0] = np.rad2deg(
                 np.arctan(self.data['res' + pol][0].imag / self.data['res' + pol][0].real))
             for jjj in range(len(freq)):
+                res_rel_err, phase_err = \
+                    mtcc.z_error2r_phi_error(self.data['z' + pol][0, jjj].real,
+                                             self.data['z' + pol][0, jjj].imag, 
+                                             self.data['z' + pol][1, jjj])
+                    
                 self.data['res' + pol][1, jjj], self.data['phase' + pol][1, jjj] = \
-                    mtcc.z_error2r_phi_error(self.data['z' + pol][0, jjj].real, self.data['z' + pol][1, jjj],
-                                             self.data['z' + pol][0, jjj].imag, self.data['z' + pol][1, jjj])
+                    res_rel_err*self.data['res' + pol][0, jjj], phase_err
 
             self.data['resyx'][0] = 0.2 * np.abs(self.data['zxy'][0]) ** 2. / freq
 
@@ -773,7 +788,6 @@ class Data(object):
                 for jjj in range(len(self.freq)):
                     self.data['phase' + pol][1 + ii, jjj] = \
                         mtcc.z_error2r_phi_error(self.data['z' + pol][0 + ii, jjj].real,
-                                                 self.data['z' + pol][1 + ii, jjj].real,
                                                  self.data['z' + pol][0 + ii, jjj].imag,
                                                  self.data['z' + pol][1 + ii, jjj].real)[1]
             if pol == 'xy':
@@ -875,13 +889,13 @@ class Model(object):
         # if bottom layer less than a factor of 2 greater than target depth then adjust deeper
         elif float(self.bottom_layer) / self.target_depth < bottomlayer_threshold:
             self.bottom_layer = bottomlayer_threshold * self.target_depth
-            print "bottom layer not deep enough for target depth, set to {} m".format(self.bottom_layer)
+            print("bottom layer not deep enough for target depth, set to {} m".format(self.bottom_layer))
 
         if self.z1_layer is None:
             self.z1_layer = mtcc.roundsf(self.target_depth / 1000., 0)
         elif self.target_depth / self.z1_layer < z1_threshold:
             self.z1_layer = self.target_depth / z1_threshold
-            print "z1 layer not deep enough for target depth, set to {} m".format(self.z1_layer)
+            print("z1 layer not deep enough for target depth, set to {} m".format(self.z1_layer))
 
     def write_model_file(self, save_path=None, **kwargs):
         """
@@ -926,7 +940,7 @@ class Model(object):
 
         self.model_fn = os.path.join(self.save_path, self._model_fn)
 
-        for key in kwargs.keys():
+        for key in list(kwargs.keys()):
             setattr(self, key, kwargs[key])
 
         if self.model_depth is None:
@@ -977,7 +991,7 @@ class Model(object):
 
         modfid.close()
 
-        print 'Wrote Model file: {0}'.format(self.model_fn)
+        print('Wrote Model file: {0}'.format(self.model_fn))
 
     def read_model_file(self, model_fn=None):
         """
@@ -1181,7 +1195,8 @@ class Startup(object):
         self.model_step = kwargs.pop('model_step', None)
         self._startup_fn = 'OccamStartup1D'
         self._ss = ' ' * 3
-
+        
+        
     def write_startup_file(self, save_path=None, **kwargs):
         """
         Make a 1D input file for Occam 1D
@@ -1264,7 +1279,7 @@ class Startup(object):
             model.read_model_file(self.model_fn)
 
             # --> get any keywords
-        for key in kwargs.keys():
+        for key in list(kwargs.keys()):
             setattr(self, key, kwargs[key])
 
             # --> write input file
@@ -1304,7 +1319,7 @@ class Startup(object):
                                               np.log10(self.start_rho)))
 
         infid.close()
-        print 'Wrote Input File: {0}'.format(self.startup_fn)
+        print('Wrote Input File: {0}'.format(self.startup_fn))
 
     def read_startup_file(self, startup_fn):
         """
@@ -1448,6 +1463,7 @@ class Plot1DResponse(object):
 
         self.model_fn = model_fn
 
+        self.override_legend_subscript = kwargs.pop('override_legend_subscript',None)
         self.resp_te_fn = resp_te_fn
         if type(self.resp_te_fn) is not list:
             self.resp_te_fn = [self.resp_te_fn]
@@ -1606,7 +1622,10 @@ class Plot1DResponse(object):
                                         capsize=self.e_capsize,
                                         capthick=self.e_capthick)
                 legend_marker_list_te.append(rte[0])
-                legend_label_list_te.append('$Obs_{TE}$')
+                if self.override_legend_subscript is not None:
+                    legend_label_list_tm.append('$Obs_{'+str.upper(self.override_legend_subscript)+'}$')
+                else:
+                    legend_label_list_te.append('$Obs_{TM}$')
             else:
                 pass
             # --------------------plot phase--------------------------------
@@ -1657,7 +1676,10 @@ class Plot1DResponse(object):
                                         capsize=self.e_capsize,
                                         capthick=self.e_capthick)
                 legend_marker_list_tm.append(rtm[0])
-                legend_label_list_tm.append('$Obs_{TM}$')
+                if self.override_legend_subscript is not None:
+                    legend_label_list_tm.append('$Obs_{'+str.upper(self.override_legend_subscript)+'}$')
+                else:
+                    legend_label_list_te.append('$Obs_{TM}$')
             else:
                 pass
 
@@ -1690,7 +1712,12 @@ class Plot1DResponse(object):
         for rr, rfn in enumerate(self.resp_te_fn):
             if rfn is None:
                 break
-            itnum = rfn[-7:-5]
+            # accommodate larger number of iterations that might have > 2 digits
+            itnum = rfn[-8:-5]
+            while not str.isdigit(itnum[0]):
+                itnum = itnum[1:]
+                if itnum == '':
+                    break
             if self.color_mode == 'color':
                 cxy = (0, .4 + float(rr) / (3 * nr), 0)
             elif self.color_mode == 'bw':
@@ -1721,7 +1748,10 @@ class Plot1DResponse(object):
                                         capsize=self.e_capsize,
                                         capthick=self.e_capthick)
                 legend_marker_list_te.append(rte[0])
-                legend_label_list_te.append('$Mod_{TE}$' + itnum)
+                if self.override_legend_subscript is not None:
+                    legend_label_list_tm.append('$Mod_{'+str.upper(self.override_legend_subscript)+'}$' + itnum)
+                else:
+                    legend_label_list_te.append('$Mod_{TE}$' + itnum)
             else:
                 pass
 
@@ -1754,7 +1784,12 @@ class Plot1DResponse(object):
         for rr, rfn in enumerate(self.resp_tm_fn):
             if rfn is None:
                 break
-            itnum = rfn[-7:-5]
+            # accommodate larger number of iterations that might have > 2 digits
+            itnum = rfn[-8:-5]
+            while not str.isdigit(itnum[0]):
+                itnum = itnum[1:]
+                if itnum == '':
+                    break
             if self.color_mode == 'color':
                 cyx = (.7 + float(rr) / (4 * nr), .13, .63 - float(rr) / (4 * nr))
             elif self.color_mode == 'bw':
@@ -1781,7 +1816,10 @@ class Plot1DResponse(object):
                                         capsize=self.e_capsize,
                                         capthick=self.e_capthick)
                 legend_marker_list_tm.append(rtm[0])
-                legend_label_list_tm.append('$Mod_{TM}$' + itnum)
+                if self.override_legend_subscript is not None:
+                    legend_label_list_tm.append('$Mod_{'+str.upper(self.override_legend_subscript)+'}$' + itnum)
+                else:
+                    legend_label_list_te.append('$Mod_{TM}$' + itnum)
             else:
                 pass
 
@@ -2024,7 +2062,7 @@ class Plot1DResponse(object):
             pass
 
         self.fig_fn = save_fn
-        print 'Saved figure to: ' + self.fig_fn
+        print('Saved figure to: ' + self.fig_fn)
 
     def __str__(self):
         """
@@ -2060,8 +2098,8 @@ class Run(object):
                                 os.path.basename(self.startup_fn),
                                 self.mode])
         if test == 0:
-            print '=========== Ran Inversion =========='
-            print '  check {0} for files'.format(os.path.dirname(self.startup_fn))
+            print('=========== Ran Inversion ==========')
+            print('  check {0} for files'.format(os.path.dirname(self.startup_fn)))
 
 
 class PlotL2(object):
@@ -2377,7 +2415,7 @@ class PlotL2(object):
             pass
 
         self.fig_fn = save_fn
-        print 'Saved figure to: ' + self.fig_fn
+        print('Saved figure to: ' + self.fig_fn)
 
     def update_plot(self):
         """
@@ -2462,12 +2500,21 @@ def parse_arguments(arguments):
     parser.add_argument('-rf', '--rms_factor',
                         help='factor to multiply the minimum possible rms by to get the target rms for the second run',
                         type=float, default=1.05)
+    parser.add_argument('-rmsmin','--rms_min',
+                        help='minimum target rms to assign, e.g. set a value of 1.0 to prevent overfitting data',
+                        type=float, default=1.0)
     parser.add_argument('-nl', '--n_layers',
                         help='number of layers in the inversion',
                         type=int, default=80)
+    parser.add_argument('-z1', '--z1_layer',
+                        help='thickness of z1 layer',
+                        type=float, default=10)
     parser.add_argument('-td', '--target_depth',
                         help='target depth for the inversion in metres',
                         type=int, default=10000)
+    parser.add_argument('-rho0', '--start_rho',
+                        help='starting resistivity value for the inversion',
+                        type=float, default=100)
     parser.add_argument('-s', '--master_savepath',
                         help='master directory to save suite of runs into',
                         default='inversion_suite')
@@ -2550,8 +2597,8 @@ def generate_inputfiles(**input_parameters):
     for edifile in edilist:
         # read the edi file to get the station name
         eo = mt.MT(op.join(edipath, edifile))
-        print input_parameters['rotation_angle'], input_parameters['working_directory'], input_parameters[
-            'rotation_angle_file']
+        print(input_parameters['rotation_angle'], input_parameters['working_directory'], input_parameters[
+            'rotation_angle_file'])
         if input_parameters['rotation_angle'] == 'strike':
             spr = input_parameters['strike_period_range']
             fmax, fmin = [1. / np.amin(spr), 1. / np.amax(spr)]
@@ -2560,7 +2607,7 @@ def generate_inputfiles(**input_parameters):
         elif input_parameters['rotation_angle'] == 'file':
             with open(op.join(input_parameters['working_directory'], input_parameters['rotation_angle_file'])) as f:
                 line = f.readline().strip().split()
-                print line, eo.station
+
                 while string.upper(line[0]) != string.upper(eo.station):
                     line = f.readline().strip().split()
                     if len(line) == 0:
@@ -2569,7 +2616,7 @@ def generate_inputfiles(**input_parameters):
             rotangle = float(line[1])
         else:
             rotangle = input_parameters['rotation_angle']
-        print "rotation angle", rotangle
+            
         # create a working directory to store the inversion files in
         svpath = 'station' + eo.station
         wd = op.join(wkdir_master, svpath)
@@ -2578,7 +2625,9 @@ def generate_inputfiles(**input_parameters):
         rundirs[svpath] = []
 
         # create the model file
-        ocm = Model(n_layers=input_parameters['n_layers'], save_path=wd)
+        ocm = Model(n_layers=input_parameters['n_layers'], save_path=wd,
+                    target_depth=input_parameters['target_depth'],
+                    z1_layer=input_parameters['z1_layer'])
         ocm.write_model_file()
 
         for mode in input_parameters['modes']:
@@ -2596,12 +2645,13 @@ def generate_inputfiles(**input_parameters):
                 save_path=wd)
 
             ocs = Startup(data_fn=ocd.data_fn,
-                          model_fn=ocm.model_fn)
+                          model_fn=ocm.model_fn,
+                          start_rho=input_parameters['start_rho'])
             startup_fn = 'OccamStartup1D' + mode
             ocs.write_startup_file(save_path=wd,
                                    startup_fn=op.join(wd, startup_fn),
                                    max_iter=input_parameters['iteration_max'],
-                                   target_rms=0.)
+                                   target_rms=input_parameters['rms_min']/input_parameters['rms_factor'])
             rundirs[svpath].append(startup_fn)
 
     return wkdir_master, rundirs
@@ -2642,7 +2692,7 @@ def build_run():
     # Occam is run twice. First to get the lowest possible misfit.
     # we then set the target rms to a factor (default 1.05) times the minimum rms achieved
     # and run to get the smoothest model.
-    for rundir in run_directories.keys():
+    for rundir in list(run_directories.keys()):
         wd = op.join(master_wkdir, rundir)
         os.chdir(wd)
         for startupfile in run_directories[rundir]:
@@ -2658,10 +2708,14 @@ def build_run():
             startup = Startup()
             startup.read_startup_file(op.join(wd, iterfile))
             # create a new startup file the same as the previous one but target rms is factor*minimum_rms
+            target_rms = float(startup.misfit_value) * input_parameters['rms_factor']
+            if target_rms < input_parameters['rms_min']:
+                target_rms = input_parameters['rms_min']
             startupnew = Startup(data_fn=op.join(wd, startup.data_file),
                                  model_fn=op.join(wd, startup.model_file),
                                  max_iter=input_parameters['iteration_max'],
-                                 target_rms=float(startup.misfit_value) * input_parameters['rms_factor'])
+                                 start_rho=input_parameters['start_rho'],
+                                 target_rms=target_rms)
             startupnew.write_startup_file(startup_fn=op.join(wd, startupfile), save_path=wd)
             # run occam again
             subprocess.call([input_parameters['program_location'],

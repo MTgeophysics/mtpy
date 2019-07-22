@@ -224,10 +224,10 @@ class PlotDepthSlice(object):
                                      'rel_north'] / self.dscale
             self.station_names = md_data.station_locations['station']
         else:
-            print ('Problem with the optional Data file: %s. Please check.' % self.data_fn)
+            print(('Problem with the optional Data file: %s. Please check.' % self.data_fn))
 
         total_horizontal_slices = self.grid_z.shape[0]
-        print ("Total Number of H-slices=", total_horizontal_slices)
+        print(("Total Number of H-slices=", total_horizontal_slices))
 
         return total_horizontal_slices
 
@@ -245,14 +245,14 @@ class PlotDepthSlice(object):
 
         # create an list of depth slices to plot
         if self.depth_index is None:
-            zrange = range(self.grid_z.shape[0])
+            zrange = list(range(self.grid_z.shape[0]))
         elif isinstance(self.depth_index, int):
             zrange = [self.depth_index]
         elif isinstance(self.depth_index, list) or \
                 isinstance(self.depth_index, np.ndarray):
             zrange = self.depth_index
 
-        print ("The depth index list:", zrange)
+        print(("The depth index list:", zrange))
 
         # set the limits of the plot
         if self.ew_limits is None:
@@ -370,7 +370,7 @@ class PlotDepthSlice(object):
             self.fig_list.append(fig)
 
             # Figure Objects
-            print(self.fig_list)
+            print((self.fig_list))
 
             # --> save plots to a common folder
             if self.save_plots == 'y':
@@ -416,7 +416,7 @@ if __name__ == '__main__':
     import sys
 
     if len(sys.argv) < 2:
-        print("Usage: %s file.rho depth_index" % sys.argv[0])
+        print(("Usage: %s file.rho depth_index" % sys.argv[0]))
         sys.exit(1)
 
     depth_ind = -1
@@ -435,5 +435,5 @@ if __name__ == '__main__':
     else:
         print("loop to plot all slices: ************** ")
         max_slices = pltObj.total_horizontal_slices - 2  # 10
-        for index in xrange(1, max_slices):
+        for index in range(1, max_slices):
             pltObj.plot(ind=index)

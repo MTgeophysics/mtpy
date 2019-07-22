@@ -155,7 +155,7 @@ class FileHandler():
             del self._group_dict[group_id]
 
     def get_groups(self):
-        return self._group_dict.keys()
+        return list(self._group_dict.keys())
     # properties
 
     def get_group_members(self, group):
@@ -173,7 +173,7 @@ class FileHandler():
             return None
 
     def get_file_refs(self):
-        return self._file_dict.keys()
+        return list(self._file_dict.keys())
 
     def create_group(self, group_id):
         if group_id not in self._group_dict:

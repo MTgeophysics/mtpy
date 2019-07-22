@@ -276,7 +276,7 @@ class StartGUI(QMainWindow):
 
     def _close_all_images(self, *args, **kwargs):
         close_later = []
-        for title, (subwindow, action) in self.subwindows.iteritems():
+        for title, (subwindow, action) in self.subwindows.items():
             if not isinstance(subwindow.widget(), StationSummary):
                 close_later.append(subwindow)
         for subwindow in close_later:

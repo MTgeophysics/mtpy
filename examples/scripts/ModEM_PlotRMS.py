@@ -21,11 +21,13 @@ from mtpy.modeling.modem import PlotRMSMaps
 
 
 wd = r'C:\mtpywin\mtpy\examples\model_files\ModEM_2'
+savepath = r'C:\tmp'
+
 
 filestem = op.join(wd,'Modular_MPI_NLCG_004')
-datafn = op.join(wd,'ModEM_Data.dat')
-resp_fn=op.join(wd,filestem + '.dat')
 resid_fn=op.join(wd,filestem + '.res')
 
-probj = PlotRMSMaps(resid_fn,period_index=0)
-#probj.save_figure(save_path=wd)
+probj = PlotRMSMaps(resid_fn,period_index='all')
+probj.save_figure(save_path=savepath,
+                  save_fig_dpi = 400 # change to your preferred figure resolution
+                  )

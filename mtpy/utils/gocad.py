@@ -10,7 +10,7 @@ read and write gocad objects
 
 import numpy as np
 import os.path as op
-
+import os
 
 class Sgrid():
     """
@@ -43,13 +43,12 @@ class Sgrid():
         - number of cells in x, y and z direction
 
         """
-        print "headerfn", headerfn
         if headerfn is not None:
             self.workdir = op.dirname(headerfn)
             self.fn = headerfn
 
         if self.fn is None:
-            print "Cannot read, no header file name provided"
+            print("Cannot read, no header file name provided")
             return
 
         with open(op.join(self.workdir, self.fn)) as header:
@@ -140,10 +139,10 @@ class Sgrid():
                                                       'PROP_ESIZE 1 4',
                                                       'END']]
 
-        hdrfn = self.fn
+        hdrfn = os.path.join(self.workdir,self.fn)
         if not hdrfn.endswith('.sg'):
             hdrfn += '.sg'
-
+        print("saving sgrid to ",hdrfn)
         with open(hdrfn, 'w') as hdrfile:
             hdrfile.writelines(headerlines)
 
@@ -168,7 +167,7 @@ class Sgrid():
 
         # write property values
         np.savetxt(
-            self.property_fn,
+            os.path.join(self.workdir,self.property_fn),
             data,
             header=datahdr,
             comments='*',

@@ -112,7 +112,7 @@ class TestOccam1D(TestCase):
                             )
             is_identical, msg = tests.modeling.diff_files(output_data_file, expected_data_file, ignores=["Date/Time"])
 
-            print msg
+            print(msg)
             self.assertTrue(is_identical, "The output file is not the same with the baseline file.")
 
     def test_fun2(self):
@@ -122,7 +122,7 @@ class TestOccam1D(TestCase):
         outdir = self._main_func(os.path.join(EDI_DATA_DIR, 'pb25c.edi'))
 
         # for afile in ("Model1D", "Occam1d_DataFile_DET.dat", "OccamStartup1D"):
-        for afile in ["Occam1d_DataFile_DET.dat", ]:  # only one file is different, the other 2 files same?
+        for afile in ["Occam1d_DataFile_DET.dat"]:  # only one file is different, the other 2 files same?
 
             output_data_file = os.path.join(outdir, afile)
             self.assertTrue(os.path.isfile(output_data_file), "output data file not found")
@@ -134,7 +134,7 @@ class TestOccam1D(TestCase):
                             )
 
             is_identical, msg = tests.modeling.diff_files(output_data_file, expected_data_file)
-            print msg
+            print(msg)
             self.assertFalse(is_identical, "The output file is the same with the baseline file.")
 
     def test_view_outputs(self):

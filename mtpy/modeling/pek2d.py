@@ -91,13 +91,13 @@ class Model():
 
         # correcting dictionary for upper case keys
         input_parameters_nocase = {}
-        for key in input_parameters.keys():
+        for key in list(input_parameters.keys()):
             input_parameters_nocase[key.lower()] = input_parameters[key]
 
         update_dict.update(input_parameters_nocase)
 
         for dictionary in [self.parameters_model, self.parameters_data]:
-            for key in dictionary.keys():
+            for key in list(dictionary.keys()):
                 if key in update_dict:
                     # check if entry exists:
                     try:
@@ -127,7 +127,7 @@ class Model():
                 continue
 
         self.input_parameters = update_dict
-        print self.idir_basename
+        print(self.idir_basename)
         if self.edifiles == []:
             if self.edi_directory is not None:
                 try:
@@ -162,7 +162,7 @@ class Model():
             try:
                 setattr(self, attr, getattr(model, attr))
             except:
-                print "can't assign attribute {}".format(attr)
+                print("can't assign attribute {}".format(attr))
 
     def read_outfile(self, chunk=1750, linelength=52):
         """
@@ -190,7 +190,7 @@ class Model():
                     break
                 nn += chunk
             except:
-                print "invalid outfile, cannot read resistivity values from outfile yet"
+                print("invalid outfile, cannot read resistivity values from outfile yet")
                 return
         m = 0
         while line[0] != '1':
@@ -429,7 +429,7 @@ class Model():
                               z_var=zvar, tipper_real=np.real(t),
                               tipper_imag=np.imag(t), tipper_err=terr)
             properties_interp = {}
-            for key in properties.keys():
+            for key in list(properties.keys()):
                 f = si.interp1d(np.log10(1. / zo.freq), properties[key],
                                 axis=0, kind=imethod)
                 properties_interp[key] = f(np.log10(periodlst))
@@ -445,7 +445,7 @@ class Model():
             self.build_data()
         dfstrings = {}
 
-        for dfile in self.datafile_data.keys():
+        for dfile in list(self.datafile_data.keys()):
             datfstr = '{:<3} '.format(len(self.freq)) + \
                 ' '.join([str(i)
                           for i in self.parameters_data['mode']]) + '\n'
@@ -474,7 +474,7 @@ class Model():
 
         exlf = open(os.path.join(self.working_directory,
                                  self.working_directory, self.exlfile), 'w')
-        dfkeys = self.datafile_strings.keys()
+        dfkeys = list(self.datafile_strings.keys())
         dfkeys.sort()
         for dfile in dfkeys:
             f = open(op.join(self.working_directory,

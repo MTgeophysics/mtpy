@@ -92,7 +92,7 @@ y
 #------------------------------------------------------------------------------
 
 
-print
+print()
 
 basedir = op.abspath(os.curdir)
 outdir = op.join(basedir, outputdir)
@@ -161,7 +161,7 @@ for subdir in lo_subdirs:
     # abbreviation for easier handling:
     bn = filebasename
 
-    print '...processing date %s, station%s ...  ' % (date, station)
+    print('...processing date %s, station%s ...  ' % (date, station))
 
     current_birrp_string = birrp_string % (outdata_name, len(notch_frequencies), notchstring,
                                            relative_indir, bn, xchannel,
@@ -179,13 +179,13 @@ for subdir in lo_subdirs:
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE)
         o, e = P.communicate(current_birrp_string)
-        print '\t...Done!\n'
+        print('\t...Done!\n')
     except:
-        print '\t...ERROR - processing failed!\n'
+        print('\t...ERROR - processing failed!\n')
     # pdb.set_trace()
 
     os.chdir(outdir)
-print 'Processing outputs in directory %s' % (outdir)
-print
+print('Processing outputs in directory %s' % (outdir))
+print()
 
 os.chdir(basedir)

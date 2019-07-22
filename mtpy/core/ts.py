@@ -146,7 +146,7 @@ class MT_TS(object):
                            'gain',
                            'conversion']
         
-        for key in kwargs.keys():
+        for key in list(kwargs.keys()):
             setattr(self, key, kwargs[key])
             
     ###-------------------------------------------------------------
@@ -354,7 +354,7 @@ class MT_TS(object):
         """
         
         if start_time is None:
-            print 'Start time is None, skipping calculating index'
+            print('Start time is None, skipping calculating index')
             return 
         dt_freq = '{0:.0f}N'.format(1./(self.sampling_rate)*1E9)
 
@@ -363,7 +363,7 @@ class MT_TS(object):
                                  freq=dt_freq)
 
         self.ts.index = dt_index
-        print "   * Reset time seies index to start at {0}".format(start_time)
+        print("   * Reset time seies index to start at {0}".format(start_time))
     
     # convert time to epoch seconds
     def _convert_dt_to_sec(self, date_time_str):
@@ -410,11 +410,11 @@ class MT_TS(object):
         
         self.ts.data = ts
         
-        print '\t Filtered frequency with bandstop:'
+        print('\t Filtered frequency with bandstop:')
         for ff in filt_list:
             try:
-                print '\t\t{0:>6.5g} Hz  {1:>6.2f} db'.format(np.nan_to_num(ff[0]),
-                                                             np.nan_to_num(ff[1]))
+                print('\t\t{0:>6.5g} Hz  {1:>6.2f} db'.format(np.nan_to_num(ff[0]),
+                                                             np.nan_to_num(ff[1])))
             except ValueError:
                 pass
         
@@ -579,8 +579,8 @@ class MT_TS(object):
         et = datetime.datetime.utcnow()
         time_diff = et-st
         
-        print '--> Wrote {0}'.format(fn_ascii)
-        print '    Took {0:.2f} seconds'.format(time_diff.seconds+time_diff.microseconds*1E-6)
+        print('--> Wrote {0}'.format(fn_ascii))
+        print('    Took {0:.2f} seconds'.format(time_diff.seconds+time_diff.microseconds*1E-6))
 
     def read_ascii_header(self, fn_ascii):
         """
@@ -612,14 +612,14 @@ class MT_TS(object):
                         setattr(self, key, value)
                     except AttributeError:
                         if key not in ['n_samples', 'start_time_epoch_sec']:
-                            print 'Could not set {0} to {1}'.format(key, value)
+                            print('Could not set {0} to {1}'.format(key, value))
                 # skip the header lines
                 elif line.find('***') > 0:
                     pass
                 else:
                     line_list = line[1:].strip().split()
                     if len(line_list) == 9:
-                        print 'Reading old MT TS format'
+                        print('Reading old MT TS format')
                         self.station = line_list[0]
                         self.component = line_list[1].lower()
                         self.sampling_rate = float(line_list[2])
@@ -647,13 +647,13 @@ class MT_TS(object):
         
         self.read_ascii_header(fn_ascii)
         
-        self.ts = pd.read_csv(self.fn_ascii, 
+        self.ts = pd.read_csv(self.fn, 
                               sep='\n', 
                               skiprows=self._end_header_line,
                               memory_map=True,
                               names=['data'])
         
-        print 'Read in {0}'.format(self.fn_ascii)
+        print('Read in {0}'.format(self.fn))
         
     def plot_spectra(self, spectra_type='welch', **kwargs):
         """

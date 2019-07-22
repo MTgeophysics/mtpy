@@ -8,14 +8,18 @@ Created on Fri Apr 14 14:47:48 2017
 # ==============================================================================
 # Imports
 # ==============================================================================
-from __future__ import print_function
 
+from mtpy.utils import HAS_GDAL, EPSG_DICT
 from mtpy.utils.decorator import gdal_data_check, deprecated
-from osgeo import osr
 import numpy as np
-from osgeo.ogr import OGRERR_NONE
+from mtpy.utils.mtpylog import MtPyLog
 
-from .mtpylog import MtPyLog
+if HAS_GDAL:
+    from osgeo import osr
+    from osgeo.ogr import OGRERR_NONE
+else:
+    import pyproj
+# end if
 
 _logger = MtPyLog.get_mtpy_logger(__name__)
 
@@ -217,28 +221,51 @@ def get_utm_zone(latitude, longitude):
 
     return zone_number, is_northern, '{0:02.0f}{1}'.format(zone_number, n_str)
 
-@gdal_data_check
+def utm_zone_to_epsg(zone_number, is_northern):
+    """
+    get epsg code (WGS84 datum) for a given utm zone
+    
+    """
+    for key in list(EPSG_DICT.keys()):
+        val = EPSG_DICT[key]
+        if ('+zone={:<2}'.format(zone_number) in val) and ('+datum=WGS84' in val):
+            if is_northern:
+                if '+south' not in val:
+                    return key
+            else:
+                if '+south' in val:
+                    return key
+    
+def get_epsg(latitude, longitude):
+    """
+    get epsg code for the utm projection (WGS84 datum) of a given latitude
+    and longitude pair
+    """  
+    zone_no,is_northern,utm_str = get_utm_zone(latitude, longitude)
+    
+    return utm_zone_to_epsg(zone_no,is_northern)
+
 def project_point_ll2utm(lat, lon, datum='WGS84', utm_zone=None, epsg=None):
     """
     Project a point that is in Lat, Lon (will be converted to decimal degrees)
     into UTM coordinates.
-    
+
     Arguments:
     ---------------
         **lat** : float or string (DD:MM:SS.ms)
                   latitude of point
-                  
+
         **lon** : float or string (DD:MM:SS.ms)
                   longitude of point
-        
+
         **datum** : string
                     well known datum ex. WGS84, NAD27, NAD83, etc.
 
         **utm_zone** : string
                        zone number and 'S' or 'N' e.g. '55S'
-                       
+
         **epsg** : int
-                   epsg number defining projection (see 
+                   epsg number defining projection (see
                    http://spatialreference.org/ref/ for moreinfo)
                    Overrides utm_zone if both are provided
 
@@ -246,11 +273,11 @@ def project_point_ll2utm(lat, lon, datum='WGS84', utm_zone=None, epsg=None):
     --------------
         **proj_point**: tuple(easting, northing, zone)
                         projected point in UTM in Datum
-                    
+
     """
     if lat is None or lon is None:
         return None, None, None
-        
+
     # make sure the lat and lon are in decimal degrees
     if np.iterable(lon) and np.iterable(lat):
         lat = np.array([assert_lat_value(lat_value) for lat_value in lat])
@@ -260,35 +287,41 @@ def project_point_ll2utm(lat, lon, datum='WGS84', utm_zone=None, epsg=None):
         lat = np.array([assert_lat_value(lat)])
         lon = np.array([assert_lon_value(lon)])
 
+    if HAS_GDAL:
+        # set lat lon coordinate system
+        ll_cs = osr.SpatialReference()
+        if isinstance(datum, int):
+            ogrerr = ll_cs.ImportFromEPSG(datum)
+            if ogrerr != OGRERR_NONE:
+                raise GIS_ERROR("GDAL/osgeo ogr error code: {}".format(ogrerr))
+        elif isinstance(datum, str):
+            ogrerr = ll_cs.SetWellKnownGeogCS(datum)
+            if ogrerr != OGRERR_NONE:
+                raise GIS_ERROR("GDAL/osgeo ogr error code: {}".format(ogrerr))
+        else:
+            raise GIS_ERROR("""datum {0} not understood, needs to be EPSG as int
+                               or a well known datum as a string""".format(datum))
 
-    # set lat lon coordinate system
-    ll_cs = osr.SpatialReference()
-    if isinstance(datum, int):
-        ogrerr = ll_cs.ImportFromEPSG(datum)
-        if ogrerr != OGRERR_NONE:
-            raise GIS_ERROR("GDAL/osgeo ogr error code: {}".format(ogrerr))
-    elif isinstance(datum, str):
-        ogrerr = ll_cs.SetWellKnownGeogCS(datum)
-        if ogrerr != OGRERR_NONE:
-            raise GIS_ERROR("GDAL/osgeo ogr error code: {}".format(ogrerr))
-    else:
-        raise GIS_ERROR("""datum {0} not understood, needs to be EPSG as int
-                           or a well known datum as a string""".format(datum))
+        # set utm coordinate system
+        utm_cs = osr.SpatialReference()
+    # end if
 
-    # set utm coordinate system
-    utm_cs = osr.SpatialReference()
-    
     # project point on to EPSG coordinate system if given
     if isinstance(epsg, int):
-        ogrerr = utm_cs.ImportFromEPSG(epsg)
-        if ogrerr != OGRERR_NONE:
-            raise GIS_ERROR("GDAL/osgeo ogr error code: {}".format(ogrerr))
-           
+        if HAS_GDAL:
+            ogrerr = utm_cs.ImportFromEPSG(epsg)
+            if ogrerr != OGRERR_NONE:
+                raise GIS_ERROR("GDAL/osgeo ogr error code: {}".format(ogrerr))
+        else:
+            pp = pyproj.Proj('+init=EPSG:%d'%(epsg))
+        # end if
     # otherwise project onto given datum
     elif epsg is None:
-        ogrerr = utm_cs.CopyGeogCSFrom(ll_cs)
-        if ogrerr != OGRERR_NONE:
-            raise GIS_ERROR("GDAL/osgeo ogr error code: {}".format(ogrerr))
+        if HAS_GDAL:
+            ogrerr = utm_cs.CopyGeogCSFrom(ll_cs)
+            if ogrerr != OGRERR_NONE:
+                raise GIS_ERROR("GDAL/osgeo ogr error code: {}".format(ogrerr))
+        # end if
         if utm_zone is None or not isinstance(None, str) or utm_zone.lower() == 'none':
             # get the UTM zone in the datum coordinate system, otherwise
             zone_number, is_northern, utm_zone = get_utm_zone(lat.mean(),
@@ -298,24 +331,35 @@ def project_point_ll2utm(lat, lon, datum='WGS84', utm_zone=None, epsg=None):
             zone_number = int(utm_zone[0:-1])
             is_northern = True if utm_zone[-1].lower() > 'n' else False
 
-        utm_cs.SetUTM(zone_number, is_northern)
+        if(HAS_GDAL):
+            utm_cs.SetUTM(zone_number, is_northern)
+        else:
+            projstring = '+proj=utm +zone=%d +%s +datum=%s' % \
+                         (zone_number, 'north' if is_northern else 'south', datum)
+            pp = pyproj.Proj(projstring)
+        # end if
+    # end if
 
-    # set the transform wgs84_to_utm and do the transform
-    ll2utm = osr.CoordinateTransformation(ll_cs, utm_cs)
-    
     # return different results depending on if lat/lon are iterable
     projected_point = np.zeros_like(lat, dtype=[('easting', np.float),
                                                 ('northing', np.float),
                                                 ('elev', np.float),
                                                 ('utm_zone', 'S4')])
 
+    if(HAS_GDAL):
+        ll2utm = osr.CoordinateTransformation(ll_cs, utm_cs).TransformPoint
+    else:
+        ll2utm = pp
+    # end if
+
     for ii in range(lat.size):
-        point = ll2utm.TransformPoint(lon[ii], lat[ii])
+        point = ll2utm(lon[ii], lat[ii])
         projected_point['easting'][ii] = point[0]
         projected_point['northing'][ii] = point[1]
-        projected_point['elev'][ii] = point[2]
+        if(HAS_GDAL): projected_point['elev'][ii] = point[2]
         projected_point['utm_zone'][ii] = utm_zone if utm_zone is not None else get_utm_zone(lat[ii], lon[ii])[2]
-        
+    # end for
+
     # if just projecting one point, then return as a tuple so as not to break
     # anything.  In the future we should adapt to just return a record array
     if len(projected_point) == 1:
@@ -325,7 +369,6 @@ def project_point_ll2utm(lat, lon, datum='WGS84', utm_zone=None, epsg=None):
     else:
         return np.rec.array(projected_point)
 
-@gdal_data_check
 def project_point_utm2ll(easting, northing, utm_zone, datum='WGS84', epsg=None):
     """
     Project a point that is in Lat, Lon (will be converted to decimal degrees)
@@ -362,17 +405,27 @@ def project_point_utm2ll(easting, northing, utm_zone, datum='WGS84', epsg=None):
     except ValueError:
         raise GIS_ERROR("northing is not a float")
 
-    # set utm coordinate system
-    utm_cs = osr.SpatialReference()
-    utm_cs.SetWellKnownGeogCS(datum)
+    if HAS_GDAL:
+        # set utm coordinate system
+        utm_cs = osr.SpatialReference()
+        utm_cs.SetWellKnownGeogCS(datum)
+    # end if
 
     if epsg is not None:
-        ogrerr = utm_cs.ImportFromEPSG(epsg)
-        if ogrerr != OGRERR_NONE:
-            raise Exception("GDAL/osgeo ogr error code: {}".format(ogrerr))
-    elif isinstance(utm_zone, str):
+        if HAS_GDAL:
+            ogrerr = utm_cs.ImportFromEPSG(epsg)
+            if ogrerr != OGRERR_NONE:
+                raise Exception("GDAL/osgeo ogr error code: {}".format(ogrerr))
+        else:
+            pp = pyproj.Proj('+init=EPSG:%d'%(epsg))
+        # end if
+    elif isinstance(utm_zone, str) or isinstance(utm_zone, np.bytes_):
+        # the isinstance(utm_zone, str) could be False in python3 due to numpy datatype change.
+        # So FZ added  isinstance(utm_zone, np.bytes_) and convert the utm_zone into string
+        if isinstance(utm_zone, np.bytes_):
+            utm_zone = utm_zone.decode('UTF-8') # b'54J'
         try:
-            zone_number = int(utm_zone[0:-1])
+            zone_number = int(utm_zone[0:-1])  #b'54J'
             zone_letter = utm_zone[-1]
         except ValueError:
             raise ValueError('Zone number {0} is not a number'.format(utm_zone[0:-1]))
@@ -382,22 +435,32 @@ def project_point_utm2ll(easting, northing, utm_zone, datum='WGS84', epsg=None):
         is_northern = False if utm_zone < 0 else True
         zone_number = abs(utm_zone)
     else:
-        raise NotImplementedError("utm_zone type ({}) not supported".format(type(utm_zone)))
+        print("epsg and utm_zone", str(epsg), str(utm_zone))
+
+        raise NotImplementedError("utm_zone type (%s, %s) not supported"%(type(utm_zone), str(utm_zone)))
     
     if epsg is None:
-        utm_cs.SetUTM(zone_number, is_northern)
+        if HAS_GDAL:
+            utm_cs.SetUTM(zone_number, is_northern)
+        else:
+            projstring = '+proj=utm +zone=%d +%s +datum=%s' % \
+                         (zone_number, 'north' if is_northern else 'south', datum)
+            pp = pyproj.Proj(projstring)
+        # end if
+    # end if
 
-    ll_cs = utm_cs.CloneGeogCS()
-
-    # set the transform utm to lat lon
-    transform_utm2ll = osr.CoordinateTransformation(utm_cs, ll_cs)
-    ll_point = list(transform_utm2ll.TransformPoint(easting, northing, 0.))
+    if HAS_GDAL:
+        ll_cs = utm_cs.CloneGeogCS()
+        utm2ll = osr.CoordinateTransformation(utm_cs, ll_cs).TransformPoint
+        ll_point = list(utm2ll(easting, northing, 0.))
+    else:
+        ll_point = pp(easting, northing, inverse=True)
+    # end if
 
     # be sure to round out the numbers to remove computing with floats
     return round(ll_point[1], 6), round(ll_point[0], 6)
 
 
-@gdal_data_check
 def project_points_ll2utm(lat, lon, datum='WGS84', utm_zone=None, epsg=None):
     """
     Project a list of points that is in Lat, Lon (will be converted to decimal 
@@ -440,43 +503,52 @@ def project_points_ll2utm(lat, lon, datum='WGS84', utm_zone=None, epsg=None):
     # flatten, if necessary
     flattened = False
     llshape = np.shape(lat)
-    if llshape > 1:
+    if llshape[0] > 1:
         flattened = True
         lat = lat.flatten()
         lon = lon.flatten()
 
+    '''
     # check lat/lon values
+    # this is incredibly slow; disabling for the time being
     for ii in range(len(lat)):
         lat[ii] = assert_lat_value(lat[ii])
         lon[ii] = assert_lon_value(lon[ii])
-
+    '''
+    
     if lat is None or lon is None:
         return None, None, None
 
-    # set utm coordinate system
-    utm_cs = osr.SpatialReference()
-    utm_cs.SetWellKnownGeogCS(datum)
+    if HAS_GDAL:
+        # set utm coordinate system
+        utm_cs = osr.SpatialReference()
+        utm_cs.SetWellKnownGeogCS(datum)
 
-    # set lat, lon coordinate system
-    ll_cs = utm_cs.CloneGeogCS()
-    ll_cs.ExportToPrettyWkt()
+        # set lat, lon coordinate system
+        ll_cs = utm_cs.CloneGeogCS()
+        ll_cs.ExportToPrettyWkt()
+    # end if
 
     # get zone number, north and zone name
     if epsg is not None:
-        # set projection info
-        ogrerr = utm_cs.ImportFromEPSG(epsg)
-        if ogrerr != OGRERR_NONE:
-            raise Exception("GDAL/osgeo ogr error code: {}".format(ogrerr))
-        # get utm zone (for information) if applicable
-        utm_zone = utm_cs.GetUTMZone()
-
-        # Whilst some projections e.g. Geoscience Australia Lambert (epsg3112) do
-        # not yield UTM zones, they provide eastings and northings for the whole
-        # Australian region. We therefore set UTM zones, only when a valid UTM zone
-        # is available
-        if(utm_zone>0):
+        if HAS_GDAL:
             # set projection info
-            utm_cs.SetUTM(abs(utm_zone), utm_zone > 0)
+            ogrerr = utm_cs.ImportFromEPSG(epsg)
+            if ogrerr != OGRERR_NONE:
+                raise Exception("GDAL/osgeo ogr error code: {}".format(ogrerr))
+            # get utm zone (for information) if applicable
+            utm_zone = utm_cs.GetUTMZone()
+
+            # Whilst some projections e.g. Geoscience Australia Lambert (epsg3112) do
+            # not yield UTM zones, they provide eastings and northings for the whole
+            # Australian region. We therefore set UTM zones, only when a valid UTM zone
+            # is available
+            if(utm_zone>0):
+                # set projection info
+                utm_cs.SetUTM(abs(utm_zone), utm_zone > 0)
+        else:
+            pp = pyproj.Proj('+init=EPSG:%d'%(epsg))
+        # end if
     else:
         if utm_zone is not None:
             # get zone number and is_northern from utm_zone string
@@ -488,13 +560,25 @@ def project_points_ll2utm(lat, lon, datum='WGS84', utm_zone=None, epsg=None):
             lonc = (np.nanmax(lon) + np.nanmin(lon)) / 2.
             zone_number, is_northern, utm_zone = get_utm_zone(latc, lonc)
         # set projection info
-        utm_cs.SetUTM(zone_number, is_northern)
 
-    # set the transform wgs84_to_utm and do the transform
-    ll2utm = osr.CoordinateTransformation(ll_cs, utm_cs)
+        if(HAS_GDAL):
+            utm_cs.SetUTM(zone_number, is_northern)
+        else:
+            projstring = '+proj=utm +zone=%d +%s +datum=%s' % \
+                         (zone_number, 'north' if is_northern else 'south', datum)
+            pp = pyproj.Proj(projstring)
+        # end if
+    # end if
+    
+    if HAS_GDAL:
+        ll2utm = osr.CoordinateTransformation(ll_cs, utm_cs).TransformPoints
+        easting, northing, elev = np.array(ll2utm(np.array([lon, lat]).T)).T
 
-    # return different results depending on if lat/lon are iterable
-    easting, northing, elev = np.array(ll2utm.TransformPoints(np.array([lon, lat]).T)).T
+    else:
+        ll2utm = pp
+        easting, northing = ll2utm(lon, lat)
+    # end if
+
     projected_point = (easting, northing, utm_zone)
 
     # reshape back into original shape
@@ -503,7 +587,7 @@ def project_points_ll2utm(lat, lon, datum='WGS84', utm_zone=None, epsg=None):
         lon = lon.reshape(llshape)
 
     return projected_point
-
+# end func
 
 # =================================
 # functions from latlon_utm_conversion.py
@@ -757,20 +841,6 @@ def utm_to_ll(reference_ellipsoid, northing, easting, zone):
     lon = long_origin + lon * _rad2deg
     return lat, lon
 
-# http://spatialreference.org/ref/epsg/28350/proj4/
-epsg_dict = {28350: ['+proj=utm +zone=50 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs', 50],
-             28351: ['+proj=utm +zone=51 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs', 51],
-             28352: ['+proj=utm +zone=52 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs', 52],
-             28353: ['+proj=utm +zone=53 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs', 53],
-             28354: ['+proj=utm +zone=54 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs', 54],
-             28355: ['+proj=utm +zone=55 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs', 55],
-             28356: ['+proj=utm +zone=56 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs', 56],
-             3112: [
-                 '+proj=lcc +lat_1=-18 +lat_2=-36 +lat_0=0 +lon_0=134 +x_0=0 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs',
-                 0],
-             4326: ['+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs', 0]}
-
-
 def epsg_project(x, y, epsg_from, epsg_to):
     """
     project some xy points using the pyproj modules
@@ -783,11 +853,10 @@ def epsg_project(x, y, epsg_from, epsg_to):
         return
     if epsg_from is not None:
         try:
-            p1 = pyproj.Proj(epsg_dict[epsg_from][0])
-            p2 = pyproj.Proj(epsg_dict[epsg_to][0])
+            p1 = pyproj.Proj(EPSG_DICT[epsg_from])
+            p2 = pyproj.Proj(EPSG_DICT[epsg_to])
         except KeyError:
-            print(
-                "Surface or data epsg either not in dictionary or None, please add epsg and Proj4 text to epsg_dict at beginning of modem_new module")
+            print("Surface or data epsg either not in dictionary or None")
             return
 
     return pyproj.transform(p1, p2, x, y)
@@ -900,16 +969,16 @@ if __name__ == "__main__":
     utm = project_point_ll2utm(mylat, mylon)
     print ("project_point_ll2utm(mylat, mylon) =:  ", utm)
 
-    utm2 = transform_ll_to_utm(mylon, mylat)
-    print ("The transform_ll_to_utm(mylon, mylat) results lat, long, elev =: ", utm2[1])
+    if HAS_GDAL:
+        utm2 = transform_ll_to_utm(mylon, mylat)
+        print ("The transform_ll_to_utm(mylon, mylat) results lat, long, elev =: ", utm2[1])
 
-    spref_obj=utm2[0]
-    print("The spatial ref string =:", str(spref_obj))
-    print("The spatial ref WKT format =:", spref_obj.ExportToWkt())
-    print("*********  Details of the spatial reference object ***************")
-    print ("spref.GetAttrValue('projcs')", spref_obj.GetAttrValue('projcs'))
-    print( "spref.GetUTMZone()", spref_obj.GetUTMZone())
-
-# how to get the EPSG code from a UTM zone number?
+        spref_obj=utm2[0]
+        print("The spatial ref string =:", str(spref_obj))
+        print("The spatial ref WKT format =:", spref_obj.ExportToWkt())
+        print("*********  Details of the spatial reference object ***************")
+        print ("spref.GetAttrValue('projcs')", spref_obj.GetAttrValue('projcs'))
+        print( "spref.GetUTMZone()", spref_obj.GetUTMZone())
+    # end if
 
 

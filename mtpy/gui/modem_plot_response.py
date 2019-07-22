@@ -1380,7 +1380,7 @@ class PlotSettings(QtGui.QWidget):
         try:
             return_float = float(str(text))
         except ValueError:
-            print 'Enter a floating point number'
+            print('Enter a floating point number')
             return_float = 1.0
 
         return return_float
@@ -1466,7 +1466,7 @@ class PlotSettings(QtGui.QWidget):
         text = text.replace('(', '').replace(')', '')
         t_list = text.split(',')
         if len(t_list) != 2:
-            print 'enter as (min, max)'
+            print('enter as (min, max)')
         l_list = []
         for txt in t_list:
             try:
@@ -1483,7 +1483,7 @@ class PlotSettings(QtGui.QWidget):
         text = text.replace('(', '').replace(')', '')
         t_list = text.split(',')
         if len(t_list) != 2:
-            print 'enter as (min, max)'
+            print('enter as (min, max)')
         l_list = []
         for txt in t_list:
             try:
@@ -1500,7 +1500,7 @@ class PlotSettings(QtGui.QWidget):
         text = text.replace('(', '').replace(')', '')
         t_list = text.split(',')
         if len(t_list) != 2:
-            print 'enter as (min, max)'
+            print('enter as (min, max)')
         l_list = []
         for txt in t_list:
             try:
@@ -1517,7 +1517,7 @@ class PlotSettings(QtGui.QWidget):
         text = text.replace('(', '').replace(')', '')
         t_list = text.split(',')
         if len(t_list) != 2:
-            print 'enter as (min, max)'
+            print('enter as (min, max)')
         l_list = []
         for txt in t_list:
             try:
@@ -1534,7 +1534,7 @@ class PlotSettings(QtGui.QWidget):
         text = text.replace('(', '').replace(')', '')
         t_list = text.split(',')
         if len(t_list) != 2:
-            print 'enter as (min, max)'
+            print('enter as (min, max)')
         l_list = []
         for txt in t_list:
             try:
@@ -1551,7 +1551,7 @@ class PlotSettings(QtGui.QWidget):
         text = text.replace('(', '').replace(')', '')
         t_list = text.split(',')
         if len(t_list) != 2:
-            print 'enter as (min, max)'
+            print('enter as (min, max)')
         l_list = []
         for txt in t_list:
             try:
@@ -1568,7 +1568,7 @@ class PlotSettings(QtGui.QWidget):
         text = text.replace('(', '').replace(')', '')
         t_list = text.split(',')
         if len(t_list) != 2:
-            print 'enter as (min, max)'
+            print('enter as (min, max)')
         l_list = []
         for txt in t_list:
             try:
@@ -1585,7 +1585,7 @@ class PlotSettings(QtGui.QWidget):
         text = text.replace('(', '').replace(')', '')
         t_list = text.split(',')
         if len(t_list) != 2:
-            print 'enter as (min, max)'
+            print('enter as (min, max)')
         l_list = []
         for txt in t_list:
             try:
@@ -1602,7 +1602,7 @@ class PlotSettings(QtGui.QWidget):
         text = text.replace('(', '').replace(')', '')
         t_list = text.split(',')
         if len(t_list) != 2:
-            print 'enter as (min, max)'
+            print('enter as (min, max)')
         l_list = []
         for txt in t_list:
             try:
@@ -1619,7 +1619,7 @@ class PlotSettings(QtGui.QWidget):
         text = text.replace('(', '').replace(')', '')
         t_list = text.split(',')
         if len(t_list) != 2:
-            print 'enter as (min, max)'
+            print('enter as (min, max)')
         l_list = []
         for txt in t_list:
             try:

@@ -53,15 +53,19 @@ nosetests.xml
 # Eclipse
 .project
 .pydevproject
+
+# local private
 OldWorks
 MANIFEST
 logs
-zprivate
+private
 localsandpit
 localdir
 tmp
 temp
 nohup*
+*.mine
+
 
 *.log
 

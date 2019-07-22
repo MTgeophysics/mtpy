@@ -363,7 +363,7 @@ class ModEMPlotPTMap(QtWidgets.QMainWindow, mtplottools.MTArrows,
         """
         get response file name
         """
-        print self.dir_path
+        print(self.dir_path)
         fn_dialog = QtWidgets.QFileDialog()
         fn = str(fn_dialog.getOpenFileName(caption='Choose ModEM response file',
                                            filter='*.dat', 
@@ -406,7 +406,7 @@ class ModEMPlotPTMap(QtWidgets.QMainWindow, mtplottools.MTArrows,
         """
         put pt parameters into something useful for plotting
         """
-        ns = len(self.modem_data.mt_dict.keys())
+        ns = len(list(self.modem_data.mt_dict.keys()))
         nf = len(self.modem_data.period_list)
         
         data_pt_arr = np.zeros((nf, ns), dtype=[('phimin', np.float),
@@ -501,7 +501,7 @@ class ModEMPlotPTMap(QtWidgets.QMainWindow, mtplottools.MTArrows,
                                                                   
             
                 except mtex.MTpyError_PT:
-                    print 'Could not calculate residual PT for {0}'.format(key)
+                    print('Could not calculate residual PT for {0}'.format(key))
                     
                 res_pt_arr[:, ii]['east'] = east
                 res_pt_arr[:, ii]['north'] = north
@@ -533,9 +533,9 @@ class ModEMPlotPTMap(QtWidgets.QMainWindow, mtplottools.MTArrows,
             return
             
         d_arr_min = np.zeros((self.modem_data.period_list.shape[0],
-                              len(self.modem_data.mt_dict.keys())))
+                              len(list(self.modem_data.mt_dict.keys()))))
         d_arr_max = np.zeros((self.modem_data.period_list.shape[0],
-                              len(self.modem_data.mt_dict.keys())))
+                              len(list(self.modem_data.mt_dict.keys()))))
 #        print self.modem_data.mt_dict[self.modem_data.mt_dict.keys()[0]].Z.z                      
         for ii, mt_key in enumerate(sorted(self.modem_data.mt_dict.keys())):
             mt_obj = self.modem_data.mt_dict[mt_key]
@@ -569,7 +569,7 @@ class ModEMPlotPTMap(QtWidgets.QMainWindow, mtplottools.MTArrows,
         #make sure there is PT data
         if self.modem_data_fn is not None:
             if self.pt_data_arr is None:
-                print 'data array is none'
+                print('data array is none')
                 self._get_pt()
             if self.modem_resp_fn is not None:
                 if self.pt_resp_arr is None:
@@ -608,7 +608,7 @@ class ModEMPlotPTMap(QtWidgets.QMainWindow, mtplottools.MTArrows,
             self.ns_limits = (north_min, north_max)
         #-------------plot phase tensors------------------------------------                    
         data_ii = self.period_dict[self.plot_period]
-        print 'Ploting period {0}'.format(data_ii)
+        print('Ploting period {0}'.format(data_ii))
         
         self.figure.clf()
                          
@@ -645,22 +645,22 @@ class ModEMPlotPTMap(QtWidgets.QMainWindow, mtplottools.MTArrows,
         if self.modem_model_fn is not None:
             self.get_depth_array()
             if self.depth_array[data_ii] == 0:
-                print 'Could not estimate depth for period {0:.5g}'.format(
-                    float(self.plot_period))
+                print('Could not estimate depth for period {0:.5g}'.format(
+                    float(self.plot_period)))
                 d_index = 0
             else:
                 try:
                     d_index = np.where(self.modem_model.grid_z >= 
                                         self.depth_array[data_ii])[0][0]
                                         
-                    print 'Estimated depth for period {0:.5g} is {1:.2f} m'.format(
-                            float(self.plot_period), self.depth_array[data_ii])
+                    print('Estimated depth for period {0:.5g} is {1:.2f} m'.format(
+                            float(self.plot_period), self.depth_array[data_ii]))
                             
                     self.depth_text.setText('{0:.5g}'.format(self.depth_array[data_ii]))
                     
                 except IndexError:
-                    print 'Could not estimate depth for period {0:.2f}'.format(
-                            float(self.plot_period))
+                    print('Could not estimate depth for period {0:.2f}'.format(
+                            float(self.plot_period)))
                     d_index = 0
             
             #need to add an extra row and column to east and north to make sure 
@@ -1441,7 +1441,7 @@ class PlotSettings(QtWidgets.QWidget):
         try:
             self.font_size = float(text)
         except ValueError:
-            print "Enter a floating point number"
+            print("Enter a floating point number")
             
     def set_mapscale(self, text):
         self.map_scale = str(text)
@@ -1450,43 +1450,43 @@ class PlotSettings(QtWidgets.QWidget):
         try:
             self.ew_limits[0] = float(text)
         except ValueError:
-            print "Enter a floating point number"
+            print("Enter a floating point number")
             
     def set_ew_limits_max(self, text):
         try:
             self.ew_limits[1] = float(text)
         except ValueError:
-            print "Enter a floating point number"
+            print("Enter a floating point number")
             
     def set_ns_limits_min(self, text):
         try:
             self.ns_limits[0] = float(text)
         except ValueError:
-            print "Enter a floating point number"
+            print("Enter a floating point number")
             
     def set_ns_limits_max(self, text):
         try:
             self.ns_limits[1] = float(text)
         except ValueError:
-            print "Enter a floating point number"
+            print("Enter a floating point number")
             
     def set_ellipse_size(self, text):
         try:
             self.ellipse_size = float(text)
         except ValueError:
-            print "Enter a floating point number"
+            print("Enter a floating point number")
             
     def set_ellipse_range_min(self, text):
         try:
             self.ellipse_range[0] = float(text) 
         except ValueError:
-            print "Enter a floating point number"
+            print("Enter a floating point number")
             
     def set_ellipse_range_max(self, text):
         try:
             self.ellipse_range[1] = float(text) 
         except ValueError:
-            print "Enter a floating point number"
+            print("Enter a floating point number")
             
     def set_ellipse_range_step(self, text):
         try:
@@ -1494,7 +1494,7 @@ class PlotSettings(QtWidgets.QWidget):
         except IndexError:
             self.ellipse_range.append(float(text))
         except ValueError:
-            print "Enter a floating point number"
+            print("Enter a floating point number")
             
     def set_ellipse_cmap(self, text):
         self.ellipse_cmap = str(text)
@@ -1506,31 +1506,31 @@ class PlotSettings(QtWidgets.QWidget):
         try:
             self.arrow_size = float(text)
         except ValueError:
-            print "Enter a floating point number"
+            print("Enter a floating point number")
             
     def set_arrow_lw(self, text):
         try:
             self.arrow_lw = float(text)
         except ValueError:
-            print "Enter a floating point number"
+            print("Enter a floating point number")
             
     def set_arrow_threshold(self, text):
         try:
             self.arrow_threshold = float(text)
         except ValueError:
-            print "Enter a floating point number"
+            print("Enter a floating point number")
             
     def set_arrow_head_length(self, text):
         try:
             self.arrow_head_length = float(text)
         except ValueError:
-            print "Enter a floating point number"
+            print("Enter a floating point number")
             
     def set_arrow_head_width(self, text):
         try:
             self.arrow_head_width = float(text)
         except ValueError:
-            print "Enter a floating point number"
+            print("Enter a floating point number")
             
     def set_arrow_direction(self, text):
         text = str(text)
@@ -1546,7 +1546,7 @@ class PlotSettings(QtWidgets.QWidget):
         if real_color.isValid():
             self.arrow_color_real = real_color.getRgbF()
         else:
-            print 'Not a valid color'
+            print('Not a valid color')
             
     def get_arrow_color_imag(self):
         imag_color = QtWidgets.QColorDialog().getColor()
@@ -1554,67 +1554,67 @@ class PlotSettings(QtWidgets.QWidget):
         if imag_color.isValid():
             self.arrow_color_imag = imag_color.getRgbF()
         else:
-            print 'Not a valid color'
+            print('Not a valid color')
             
     def set_cb_pt_pad(self, text):
         try:
             self.cb_pt_pad = float(text)
         except ValueError:
-            print "Enter a floating point number"
+            print("Enter a floating point number")
             
     def set_cb_res_pad(self, text):
         try:
             self.cb_res_pad = float(text)
         except ValueError:
-            print "Enter a floating point number"
+            print("Enter a floating point number")
             
     def set_res_limits_min(self, text):
         try:
             self.res_limits[0] = float(text) 
         except ValueError:
-            print "Enter a floating point number"
+            print("Enter a floating point number")
             
     def set_res_limits_max(self, text):
         try:
             self.res_limits[1] = float(text) 
         except ValueError:
-            print "Enter a floating point number"
+            print("Enter a floating point number")
             
     def set_subplot_left(self, text):
         try:
             self.subplot_left = float(text) 
         except ValueError:
-            print "Enter a floating point number"
+            print("Enter a floating point number")
             
     def set_subplot_right(self, text):
         try:
             self.subplot_right = float(text) 
         except ValueError:
-            print "Enter a floating point number"
+            print("Enter a floating point number")
             
     def set_subplot_bottom(self, text):
         try:
             self.subplot_bottom = float(text) 
         except ValueError:
-            print "Enter a floating point number"
+            print("Enter a floating point number")
             
     def set_subplot_top(self, text):
         try:
             self.subplot_top = float(text) 
         except ValueError:
-            print "Enter a floating point number"
+            print("Enter a floating point number")
             
     def set_subplot_hspace(self, text):
         try:
             self.subplot_wspace= float(text) 
         except ValueError:
-            print "Enter a floating point number"
+            print("Enter a floating point number")
             
     def set_subplot_vspace(self, text):
         try:
             self.subplot_hspace= float(text) 
         except ValueError:
-            print "Enter a floating point number"
+            print("Enter a floating point number")
             
     def update_settings(self):
         self.settings_updated.emit()

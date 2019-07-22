@@ -30,6 +30,13 @@ mu0 = 4e-7*math.pi
 
 #=================================================================
 
+def centre_point(xarray, yarray):
+    """
+    get the centre point of arrays of x and y values
+    """
+    return (xarray.max() + xarray.min())/2., (yarray.max() + yarray.min())/2.
+
+
 def roundsf(number, sf):
     """
     round a number to a specified number of significant figures (sf)
@@ -41,7 +48,7 @@ def roundsf(number, sf):
     return np.round(number, rounding)
 
 
-def get_logspace_array(period_min,period_max,periods_per_decade,include_outside_range=True):
+def get_period_list(period_min,period_max,periods_per_decade,include_outside_range=True):
     """
     get a list of values (e.g. periods), evenly spaced in log space and 
     including values on multiples of 10
@@ -64,33 +71,54 @@ def get_logspace_array(period_min,period_max,periods_per_decade,include_outside_
     log_period_min = np.log10(period_min)
     log_period_max = np.log10(period_max)
     
-    # list of periods, around the minimum period, that will be present in specified 
-    # periods per decade
-    aligned_logperiods_min = np.linspace(np.floor(log_period_min),np.ceil(log_period_min),periods_per_decade + 1)
-    lpmin_diff = log_period_min - aligned_logperiods_min
-    # index of starting period, smallest value > 0
-    if include_outside_range:
-        spimin = np.where(lpmin_diff > 0)[0][-1]
+    # check if log_period_min is a whole number
+    if log_period_min % 1 > 0:
+        # list of periods, around the minimum period, that will be present in specified 
+        # periods per decade
+        aligned_logperiods_min = np.linspace(np.floor(log_period_min),np.ceil(log_period_min),periods_per_decade + 1)
+        lpmin_diff = log_period_min - aligned_logperiods_min
+        # index of starting period, smallest value > 0
+        if include_outside_range:
+            spimin = np.where(lpmin_diff > 0)[0][-1]
+        else:
+            spimin = np.where(lpmin_diff < 0)[0][0]
+        start_period = aligned_logperiods_min[spimin]
     else:
-        spimin = np.where(lpmin_diff < 0)[0][0]
-    start_period = aligned_logperiods_min[spimin]
+        start_period = log_period_min
     
-    # list of periods, around the maximum period, that will be present in specified 
-    # periods per decade
-    aligned_logperiods_max = np.linspace(np.floor(log_period_max),np.ceil(log_period_max),periods_per_decade + 1)
-    lpmax_diff = log_period_max - aligned_logperiods_max
-    # index of starting period, smallest value > 0
-    if include_outside_range:
-        spimax = np.where(lpmax_diff < 0)[0][0]
+    if log_period_max % 1 > 0:
+        # list of periods, around the maximum period, that will be present in specified 
+        # periods per decade
+        aligned_logperiods_max = np.linspace(np.floor(log_period_max),np.ceil(log_period_max),periods_per_decade + 1)
+        lpmax_diff = log_period_max - aligned_logperiods_max
+        # index of starting period, smallest value > 0
+        if include_outside_range:
+            spimax = np.where(lpmax_diff < 0)[0][0]
+        else:
+            spimax = np.where(lpmax_diff > 0)[0][-1]
+        stop_period = aligned_logperiods_max[spimax]
     else:
-        spimax = np.where(lpmax_diff > 0)[0][-1]
-    stop_period = aligned_logperiods_max[spimax]
-    
+        stop_period = log_period_max        
+        
     return np.logspace(start_period,stop_period,(stop_period-start_period)*periods_per_decade + 1)
 
 
+def nearest_index(val,array):
+    """
+    find the index of the nearest value in the array
+    :param val: the value to search for
+    :param array: the array to search in
+    
+    :return: index: integer describing position of nearest value in array
+    
+    """
+    # absolute difference between value and array
+    diff = np.abs(array-val)
+    
+    return np.where(diff==min(diff))[0][0]
 
-def make_log_increasing_array(z1_layer, target_depth, n_layers, increment_factor=0.9):
+
+def make_log_increasing_array(z1_layer, target_depth, n_layers, increment_factor=0.999):
     """
     create depth array with log increasing cells, down to target depth,
     inputs are z1_layer thickness, target depth, number of layers (n_layers)
@@ -200,6 +228,42 @@ def rhophi2z(rho, phi, freq):
     return z 
 
 
+def compute_determinant_error(z_array, z_err_array, method = 'theoretical', repeats=1000):
+    """
+    compute the error of the determinant of z using a stochastic method
+    seed random z arrays with a normal distribution around the input array
+
+    :param z_array: z (impedance) array containing real and imaginary values
+    :param z_err_array: impedance error array containing real values,
+                        in MT we assume the real and imag errors are the same
+    :param method: method to use, theoretical calculation or stochastic
+    
+    :return: error: array of real values with same shape as z_err_array 
+                    representing the error in the determinant of Z
+    :return: error_sqrt: array of real values with same shape as z_err_array 
+                    representing the error in the (determinant of Z)**0.5
+    
+    """
+    if method == 'stochatic':
+        arraylist = []
+        
+        for r in range(repeats):
+            errmag = np.random.normal(loc=0,scale=z_err_array,size=z_array.shape)
+            arraylist = np.append(arraylist,z_array + errmag*(1. + 1j))
+            
+        arraylist = arraylist.reshape(repeats,z_array.shape[0],2,2)
+        detlist = np.linalg.det(arraylist)
+        
+        error = np.std(detlist,axis=0)
+    
+    else:
+        error = np.abs(z_err_array[:,0,0]*np.abs(z_array[:,1,1]) + z_err_array[:,1,1]*np.abs(z_array[:,0,0]) \
+             - z_err_array[:,0,1]*np.abs(z_array[:,1,0]) - z_err_array[:,1,0]*np.abs(z_array[:,0,1]))
+    
+    return error
+
+
+
 
 def propagate_error_polar2rect(r,r_error,phi, phi_error):
     """
@@ -274,8 +338,53 @@ def propagate_error_rect2polar(x,x_error,y, y_error):
 
 
 
+def z_error2r_phi_error(z_real, z_imag, error):
+    """
+    Error estimation from rectangular to polar coordinates.
+    
+    By standard error propagation, relative error in resistivity is 
+    2*relative error in z amplitude. 
+    
+    Uncertainty in phase (in degrees) is computed by defining a circle around 
+    the z vector in the complex plane. The uncertainty is the absolute angle
+    between the vector to (x,y) and the vector between the origin and the
+    tangent to the circle.
+    
+    :returns:
+        tuple containing relative error in resistivity, absolute error in phase
+    
+    :inputs:
+        z_real = real component of z (real number or array)
+        z_imag = imaginary component of z (real number or array)
+        error = absolute error in z (real number or array)
+    
+    """
+        
+    z_amp = np.abs(z_real + 1j*z_imag)
 
-def z_error2r_phi_error(x,x_error,y, y_error):
+    z_rel_err = error/z_amp
+    
+    res_rel_err = 2.*z_rel_err
+    
+    #if the relative error of the amplitude is >=100% that means that the relative 
+    #error of the resistivity is 200% - that is then equivalent to an uncertainty 
+    #in the phase angle of 90 degrees:
+    if np.iterable(z_real):
+        phi_err = np.degrees(np.arctan(z_rel_err))   
+        phi_err[res_rel_err > 1.] = 90.
+        
+    else:
+        if res_rel_err > 1.:
+            phi_err = 90
+        else:
+            phi_err = np.degrees(np.arctan(z_rel_err))    
+    
+    
+    return res_rel_err, phi_err
+    
+    
+
+def old_z_error2r_phi_error(x,x_error,y, y_error):
     """
         Error estimation from rect to polar, but with small variation needed for 
         MT: the so called 'relative phase error' is NOT the relative phase error,
@@ -342,7 +451,6 @@ def z_error2r_phi_error(x,x_error,y, y_error):
 
 
 
-
 #rotation:
 #1. rotation positive in clockwise direction
 #2. orientation of new X-axis X' given by rotation angle
@@ -381,8 +489,8 @@ def rotatematrix_incl_errors(inmatrix, angle, inmatrix_err = None) :
     cphi = np.cos(phi)
     sphi = np.sin(phi)
 
-    rotmat = np.matrix([[ cphi,sphi],[-sphi,cphi] ])
-    rotated_matrix = np.dot(np.dot( rotmat, inmatrix ),rotmat.I  ) 
+    rotmat = np.array([[ cphi,sphi],[-sphi,cphi] ])
+    rotated_matrix = np.dot(np.dot( rotmat, inmatrix ),np.linalg.inv(rotmat)  ) 
     #print rotmat
 
     #print inmatrix
@@ -432,10 +540,10 @@ def rotatevector_incl_errors(invector, angle, invector_err = None):
     cphi = np.cos(phi)
     sphi = np.sin(phi)
 
-    rotmat = np.matrix([[ cphi,sphi],[-sphi,cphi] ])
+    rotmat = np.array([[ cphi,sphi],[-sphi,cphi] ])
 
     if invector.shape == (1,2):
-        rotated_vector = np.dot( invector, rotmat.I )
+        rotated_vector = np.dot( invector, np.linalg.inv(rotmat) )
     else:
         rotated_vector = np.dot( rotmat, invector )
     
@@ -446,7 +554,7 @@ def rotatevector_incl_errors(invector, angle, invector_err = None):
         errvec = np.zeros_like(invector_err)
 
         if invector_err.shape == (1,2):
-            errvec = np.dot( invector_err, np.abs(rotmat.I) )
+            errvec = np.dot( invector_err, np.abs(np.linalg.inv(rotmat) ))
         else:
             errvec = np.dot( np.abs(rotmat), invector_err )
 

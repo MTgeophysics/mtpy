@@ -100,7 +100,7 @@ class EDI_Editor_Window(QtGui.QMainWindow):
         get edi file
         """
 
-        print '='*35
+        print('='*35)
         fn_dialog = QtGui.QFileDialog()
         fn = str(fn_dialog.getOpenFileName(caption='Choose EDI file',
                                            directory=self.plot_widget.dir_path,
@@ -616,16 +616,16 @@ class PlotWidget(QtGui.QWidget):
             new_z_obj = self._mt_obj.remove_static_shift(ss_x=self.static_shift_x,
                                                          ss_y=self.static_shift_y)
             # print the static shift applied
-            print "\n    Static shift applied to original data:"
+            print("\n    Static shift applied to original data:")
         else:
             new_z_obj = self.mt_obj.remove_static_shift(ss_x=self.static_shift_x,
                                                         ss_y=self.static_shift_y)
             # print the static shift applied
-            print "\n    - Static shift applied to edited data:"
+            print("\n    - Static shift applied to edited data:")
 
         # print the static shift applied
-        print "        x = {0:<8.5g}, y = {1:<8.5g}".format(self.static_shift_x,
-                                                        self.static_shift_y)          
+        print("        x = {0:<8.5g}, y = {1:<8.5g}".format(self.static_shift_x,
+                                                        self.static_shift_y))          
         self._edited_ss = True
 
         self.mt_obj.Z = new_z_obj
@@ -670,24 +670,24 @@ class PlotWidget(QtGui.QWidget):
            self._edited_mask == False and self._edited_ss == False:
             # remove distortion from original data
             distortion, new_z_object = self._mt_obj.remove_distortion(num_freq=self.num_freq)
-            print '\n    - Removed distortion from original data'
+            print('\n    - Removed distortion from original data')
 
         else:
             # remove distortion from edited data
             distortion, new_z_object = self.mt_obj.remove_distortion(num_freq=self.num_freq)
-            print '\n    - Removed distortion from edited data'
+            print('\n    - Removed distortion from edited data')
 
         self._edited_dist = True
         self.mt_obj.Z = new_z_object
 
-        print '       Distortion matrix:'
-        print '          | {0:+8.5g}  {1:+8.5g} |'.format(distortion[0, 0],
-                                                        distortion[0, 1])
-        print '          | {0:+8.5g}  {1:+8.5g} |'.format(distortion[1, 0],
-                                                        distortion[1, 1]) 
+        print('       Distortion matrix:')
+        print('          | {0:+8.5g}  {1:+8.5g} |'.format(distortion[0, 0],
+                                                        distortion[0, 1]))
+        print('          | {0:+8.5g}  {1:+8.5g} |'.format(distortion[1, 0],
+                                                        distortion[1, 1])) 
         
-        print '          | {0:+.3f}  {1:+.3f} |'.format(distortion[1, 0],
-                                                        distortion[1, 1])
+        print('          | {0:+.3f}  {1:+.3f} |'.format(distortion[1, 0],
+                                                        distortion[1, 1]))
 
         self.redraw_plot()
 
@@ -738,9 +738,9 @@ class PlotWidget(QtGui.QWidget):
 
         self._edited_rot = True
 
-        print '\n   Rotated orginal data clockwise by:'
-        print '      Z = {0:.3g}'.format(self.rotate_z_angle)
-        print '      T = {0:.3g}'.format(self.rotate_tip_angle)
+        print('\n   Rotated orginal data clockwise by:')
+        print('      Z = {0:.3g}'.format(self.rotate_z_angle))
+        print('      T = {0:.3g}'.format(self.rotate_tip_angle))
 
     def rotate_estimate_strike(self):
         """
@@ -824,9 +824,9 @@ class PlotWidget(QtGui.QWidget):
 
         self.redraw_plot()
 
-        print 'Interpolated data onto periods:'
+        print('Interpolated data onto periods:')
         for ff in interp_freq:
-            print '    {0:.6e}'.format(1./ff)
+            print('    {0:.6e}'.format(1./ff))
 
     def edits_set(self, selected_item):
         modes_list = ['Both', 'X', 'Y']
@@ -852,10 +852,10 @@ class PlotWidget(QtGui.QWidget):
         self.reset_parameters()
         self.redraw_plot()
 
-        print '\n'
-        print '-'*35
-        print "Reverted back to original input data."
-        print "Reset editing parameters."
+        print('\n')
+        print('-'*35)
+        print("Reverted back to original input data.")
+        print("Reset editing parameters.")
 
     def reset_parameters(self):
         self.static_shift_x = 1.0
@@ -906,7 +906,7 @@ class PlotWidget(QtGui.QWidget):
         plot_period_o = 1./self._mt_obj.Z.freq
 
         if np.all(self.mt_obj.Tipper.tipper == 0) == True:
-                print 'No Tipper data for station {0}'.format(self.mt_obj.station)
+                print('No Tipper data for station {0}'.format(self.mt_obj.station))
                 self.plot_tipper = False
         else:
             self.plot_tipper = True

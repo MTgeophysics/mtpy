@@ -89,9 +89,9 @@ class PlotControlResistivityPhasePseudoSection(QGroupBox):
         # set up gui
         self.ui.setupUi(self)
 
-        self.ui.comboBox_res_cmap.addItems(cmapdict.keys())
+        self.ui.comboBox_res_cmap.addItems(list(cmapdict.keys()))
         self.ui.comboBox_res_cmap.setCurrentIndex(self.ui.comboBox_res_cmap.findText('mt_rd2gr2bl'))
-        self.ui.comboBox_phase_cmap.addItems(cmapdict.keys())
+        self.ui.comboBox_phase_cmap.addItems(list(cmapdict.keys()))
         self.ui.comboBox_phase_cmap.setCurrentIndex(self.ui.comboBox_phase_cmap.findText('mt_bl2gr2rd'))
 
         self.ui.doubleSpinBox_res_max.setMaximum(np.inf)

@@ -8,8 +8,9 @@ import os
 import pytest
 
 import mtpy.core.ts as mtts
+import imp
 
-reload(mtts)
+imp.reload(mtts)
 
 
 def _read_z3d(fn):

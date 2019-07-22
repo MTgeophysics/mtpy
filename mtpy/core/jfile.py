@@ -49,7 +49,7 @@ class JFile(object):
                         value = float(line.split('=')[1].strip())
                     except ValueError:
                         value = 0.0
-                        print 'changed {0} to 0.0'.format(name[1:])
+                        print('changed {0} to 0.0'.format(name[1:]))
                     j_lines[ii] = '{0} = {1}\n'.format(name, value)
                     break
         
@@ -132,7 +132,7 @@ class JFile(object):
         # put the information into a dictionary 
         for h_line in header_lines[1:]:
             h_dict = self._read_header_line(h_line)
-            for key in h_dict.keys():
+            for key in list(h_dict.keys()):
                 if key == 'filnam':
                     h_key = '{0}_{1:02}'.format(key, fn_count)
                     fn_count += 1
@@ -203,7 +203,7 @@ class JFile(object):
         if j_fn is not None:
             self.j_fn = j_fn
             
-        print '--> Reading {0}'.format(self.j_fn)
+        print('--> Reading {0}'.format(self.j_fn))
                
         j_line_list = self._validate_j_file()
 
@@ -219,8 +219,8 @@ class JFile(object):
         # leaving any missing values as 0
         
         # make empty dictionary that have keys as the component 
-        z_dict = dict([(z_key, {}) for z_key in z_index_dict.keys()])
-        t_dict = dict([(t_key, {}) for t_key in t_index_dict.keys()])
+        z_dict = dict([(z_key, {}) for z_key in list(z_index_dict.keys())])
+        t_dict = dict([(t_key, {}) for t_key in list(t_index_dict.keys())])
         for d_line in data_lines:
             # check to see if we are at the beginning of a component block, if so 
             # set the dictionary key to that value
@@ -258,26 +258,26 @@ class JFile(object):
                 
                 # put the numbers in the correct dictionary as:
                 # key = period, value = [real, imaginary, error]
-                if d_key in z_index_dict.keys():
+                if d_key in list(z_index_dict.keys()):
                     z_dict[d_key][d_value_list[0]] = d_value_list[1:4]
-                elif d_key in t_index_dict.keys():
+                elif d_key in list(t_index_dict.keys()):
                     t_dict[d_key][d_value_list[0]] = d_value_list[1:4]
         
         # --> now we need to get the set of periods for all components  
         # check to see if there is any tipper data output          
 
         all_periods = []            
-        for z_key in z_index_dict.keys():
-            for f_key in z_dict[z_key].keys():
+        for z_key in list(z_index_dict.keys()):
+            for f_key in list(z_dict[z_key].keys()):
                 all_periods.append(f_key)
         
-        if len(t_dict['tzx'].keys()) == 0:
-            print 'Could not find any Tipper data in {0}'.format(self.j_fn)
+        if len(list(t_dict['tzx'].keys())) == 0:
+            print('Could not find any Tipper data in {0}'.format(self.j_fn))
             find_tipper = False
   
         else:
-            for t_key in t_index_dict.keys():
-                for f_key in t_dict[t_key].keys():
+            for t_key in list(t_index_dict.keys()):
+                for f_key in list(t_dict[t_key].keys()):
                     all_periods.append(f_key)
             find_tipper = True
         
@@ -301,8 +301,8 @@ class JFile(object):
                     z_arr[p_index, kk, ll] = z_value
                     z_err_arr[p_index, kk, ll] = z_dict[z_key][per][2]
                 except KeyError:
-                    print 'No value found for period {0:.4g}'.format(per)
-                    print 'For component {0}'.format(z_key)
+                    print('No value found for period {0:.4g}'.format(per))
+                    print('For component {0}'.format(z_key))
             if find_tipper is True:
                 for t_key in sorted(t_index_dict.keys()):
                     kk = t_index_dict[t_key][0]
@@ -312,8 +312,8 @@ class JFile(object):
                         t_arr[p_index, kk, ll] = t_value
                         t_err_arr[p_index, kk, ll] = t_dict[t_key][per][2]
                     except KeyError:
-                        print 'No value found for period {0:.4g}'.format(per)
-                        print 'For component {0}'.format(t_key)
+                        print('No value found for period {0:.4g}'.format(per))
+                        print('For component {0}'.format(t_key))
         
         # put the results into mtpy objects
         freq = 1./all_periods    

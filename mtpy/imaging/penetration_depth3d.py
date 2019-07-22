@@ -1,9 +1,8 @@
 """
 Description:
-    For a batch of MT_stations,  plot the Penetration Depth vs the station_location,
-    for a given period value or index (1/freq)-
+    Given a set of EDI files plot the Penetration Depth vs the station_location.
     Note that the values of periods within10% tolerance (ptol=0.1) are considered as equal.
-    Setting a smaller value for ptol(=0.05)may result less MT sites data included.
+    Setting a smaller value for ptol(=0.05) may result less MT sites data included.
 
 Usage:
     python mtpy/imaging/penetration_depth3d.py /path2/edi_files_dir/  period_index
@@ -42,7 +41,8 @@ _logger = MtPyLog.get_mtpy_logger(__name__)
 
 # This is the major function to be maintained!!!
 # use the Zcompotent=[det, zxy, zyx]
-def plot_latlon_depth_profile(edi_dir, period, zcomponent='det', showfig=True, savefig=True):
+def plot_latlon_depth_profile(edi_dir, period, zcomponent='det', showfig=True, savefig=True, savepath = None, fig_dpi=400,
+                              fontsize=14, file_format='png',ptol=0.1):
     """
     MT penetration depth profile in lat-lon coordinates with pixelsize = 0.002
     :param savefig:
@@ -64,11 +64,11 @@ def plot_latlon_depth_profile(edi_dir, period, zcomponent='det', showfig=True, s
 
     edis = load_edi_files(edi_dir)
 
-    image = Depth3D(edis, period, zcomponent)
+    image = Depth3D(edis=edis, period=period, rho=zcomponent, ptol=ptol)
     if isinstance(period, int):  # period is considered as an index
-        image.plot(period_by_index=True)
+        image.plot(period_by_index=True, fontsize=fontsize)
     elif isinstance(period, float):  # period is considered as the actual value of period in second
-        image.plot()
+        image.plot(fontsize=fontsize)
     else:
         raise Exception("Wrong type of the parameter period, %s" % period)
 
@@ -76,10 +76,11 @@ def plot_latlon_depth_profile(edi_dir, period, zcomponent='det', showfig=True, s
         image.show()
 
     if savefig:
-        savedir = 'E:/tmp'
-        savefn = 'P3Depth_Period%s.jpg' % image.get_period_fmt()
-        path2savefile = os.path.join(savedir, savefn)
-        image.export_image(path2savefile, dpi=200, bbox_inches='tight')
+        if savepath is None:
+            savepath = 'C:/tmp'
+        savefn = 'P3Depth_Period%s.%s' % (image.get_period_fmt(),file_format)
+        path2savefile = os.path.join(savepath, savefn)
+        image.export_image(path2savefile, dpi=fig_dpi, bbox_inches='tight')
 
     # may want to remove the following 2 lines
     # plt.clf()
@@ -107,7 +108,7 @@ def reverse_colourmap(cmap, name='my_cmap_r'):
             data.append((1 - t[0], t[2], t[1]))
         reverse.append(sorted(data))
 
-    linear_l = dict(zip(k, reverse))
+    linear_l = dict(list(zip(k, reverse)))
     my_cmap_r = mpl.colors.LinearSegmentedColormap(name, linear_l)
     return my_cmap_r
 
@@ -391,8 +392,8 @@ def plot_many_periods(edidir, n_periods=5):
             # This will enable the loop continue even though for some freq,
             #  cannot interpolate due to not enough data points
             plot_latlon_depth_profile(edidir, period_sec, zcomponent='det', showfig=False)
-        except Exception, exwhy:
-            print(exwhy.message)
+        except Exception as exwhy:
+            print(str(exwhy))
 
 
 # =============================================================================================
@@ -409,7 +410,7 @@ def plot_many_periods(edidir, n_periods=5):
 if __name__ == "__main__":
 
     if len(sys.argv) < 2:
-        print("Usage: python %s edi_dir period_sec " % sys.argv[0])
+        print(("Usage: python %s edi_dir period_sec " % sys.argv[0]))
         print("usage example: python mtpy/imaging/penetration_depth3d.py  tests/data/edifiles/ 10")
         print("usage example: python mtpy/imaging/penetration_depth3d.py  tests/data/edifiles/ 2.857s")
         sys.exit(1)
@@ -421,13 +422,13 @@ if __name__ == "__main__":
         edi_dir = sys.argv[1]
 
         per = sys.argv[2]
-        print ("The input parameter for period was ", per)
+        print(("The input parameter for period was ", per))
 
         if per.endswith('s'):
             # try float case
             try:
                 period_sec = float(per[:-1])
-                print(" Using period value (second)", period_sec)
+                print((" Using period value (second)", period_sec))
                 plot_latlon_depth_profile(
                     edi_dir, period_sec, zcomponent='det')
             except Exception as ex:
@@ -435,7 +436,7 @@ if __name__ == "__main__":
         else:
             try:
                 period_index = int(per)
-                print(" Using period index", period_index)
+                print((" Using period index", period_index))
                 plot_latlon_depth_profile(
                     edi_dir, period_index, zcomponent='det')
                 sys.exit(0)  # done

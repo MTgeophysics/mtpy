@@ -5,11 +5,11 @@ Created on Fri Mar 14 10:21:05 2014
 @author: Alison Kirkby
 
 """
-
+from __future__ import print_function
 import os
 import os.path as op
 import mtpy.utils.filehandling as fh
-import mtpy.utils.elevation_data as mted
+#import mtpy.utils.elevation_data as mted
 import pek1dclasses as pek1dc
 from sys import argv
 from subprocess import call
@@ -91,13 +91,14 @@ def parse_arguments(arguments):
     for i in [0, 1, 3, 5, 6]:
         args.run_input[i] = int(args.run_input[i])
 
-    if len(args.errorfloor) == 1:
-        args.errorfloor = args.errorfloor[0]
-    elif (len(args.errorfloor) == 2) or (len(args.errorfloor) == 3):
-        ef = args.errorfloor[:2]
-        args.errorfloor = np.array([ef, ef[::-1]])
-    elif len(args.errorfloor) == 4:
-        args.errorfloor = np.reshape(args.errorfloor, [2, 2])
+    if np.iterable(args.errorfloor):
+        if len(args.errorfloor) == 1:
+            args.errorfloor = args.errorfloor[0]
+        elif (len(args.errorfloor) == 2) or (len(args.errorfloor) == 3):
+            ef = args.errorfloor[:2]
+            args.errorfloor = np.array([ef, ef[::-1]])
+        elif len(args.errorfloor) == 4:
+            args.errorfloor = np.reshape(args.errorfloor, [2, 2])
 
     return args
 
@@ -140,28 +141,29 @@ def create_inmodel_dictionary_from_file(input_file,
             try:
                 elev = np.abs(mted.get_elevation(x, y, elevfn) / 1000.)
             except IOError:
-                print "File not found, set elevation to zero instead"
+                print("File not found, set elevation to zero instead")
                 elev = 0.0
         else:
             elev = 0.0
         params = [float(pp) for pp in line[1:]]
    #     print elev,params
         inmodel_list.append([round(elev + params[0], 2), params[1:]])
-    print x, y, "inmodel_list", inmodel_list,
+    #print(x, y, "inmodel_list", inmodel_list, end=' ')  # end syntx error
+    print(x, y, "inmodel_list", inmodel_list)
     i = 0
     while i < len(inmodel_list) - 1:
-        print i,
+        print(i, end=' ')
         if inmodel_list[i][0] > inmodel_list[i + 1][0]:
-            print "remove"
+            print("remove")
             inmodel_list.remove(inmodel_list[i])
         i += 1
-    print "inmodel_list", inmodel_list,
+    print("inmodel_list", inmodel_list, end=' ')
     for item in inmodel_list:
         try:
-            print "item[0],item[1]", item[0], item[1],
+            print("item[0],item[1]", item[0], item[1], end=' ')
             inmodel_dict[item[0]] = item[1]
         except:
-            print "couldn't assign value to dictionary"
+            print("couldn't assign value to dictionary")
 
     # print "inmodel_dict",inmodel_dict
     return inmodel_dict
@@ -247,7 +249,7 @@ def generate_inputfiles(epath, **input_parameters):
     {layer top depth:[minimum_resistivity, maximum_resistivity, strike]}
 
     """
-    import pek1d
+    from . import pek1d
 
     data_kwds = ['working_directory', 'datafile', 'errorfloor',
                  'errorfloor_type', 'edipath', 'mode']
@@ -261,7 +263,7 @@ def generate_inputfiles(epath, **input_parameters):
     inmodel_inputs = {}
 
     build_inmodel = False
-    for key in input_parameters.keys():
+    for key in list(input_parameters.keys()):
         if key in data_kwds:
             data_inputs[key] = input_parameters[key]
         if key in control_kwds:
@@ -291,14 +293,14 @@ def generate_inputfiles(epath, **input_parameters):
 
     Ctl = pek1dc.Control(**control_inputs)
     Ctl.write_ctlfile()
-    print os.path.basename(Data.working_directory), build_inmodel
+    print(os.path.basename(Data.working_directory), build_inmodel)
     if build_inmodel:
-        if 'inmodel_modeldir' in input_parameters.keys():
-            print os.path.basename(Data.working_directory),
+        if 'inmodel_modeldir' in list(input_parameters.keys()):
+            print(os.path.basename(Data.working_directory), end=' ')
             inmodel_dict = pek1d.create_inmodel_dictionary_from_file(input_parameters['inmodel_parameters_file'],
                                                                      Data.edi_object.lon, Data.edi_object.lat,
                                                                      working_directory=data_inputs['working_directory'])
-            print inmodel_dict
+            print(inmodel_dict)
             Inmodel = pek1dc.Inmodel(inmodel_modeldir=input_parameters['inmodel_modeldir'],
                                      inmodel_dictionary=inmodel_dict,
                                      **inmodel_inputs)
@@ -313,7 +315,11 @@ def build_run():
     runs one inversion per processor, make sure you have enough processors!
 
     """
-    from mpi4py import MPI
+    try:
+        from mpi4py import MPI
+        mpi_import = True
+    except:
+        mpi_import = False
 
     # get command line arguments as a dictionary
     input_parameters = update_inputs()
@@ -327,7 +333,10 @@ def build_run():
                         'inmodel_modeldir']
 
     # establish the rank of the computer
-    rank = MPI.COMM_WORLD.Get_rank()
+    if mpi_import:
+        rank = MPI.COMM_WORLD.Get_rank()
+    else:
+        rank = 0
 
     # create a list of edi files to model
     edi_list = create_filelist(input_parameters['working_directory'],
@@ -355,10 +364,10 @@ def build_run():
 
     build_inputs['master_savepath'] = master_directory
     # wait til master directory is made until progressing
-    print "waiting for directory"
+    print("waiting for directory")
     while not os.path.isdir(master_directory):
         time.sleep(1)
-        print '.',
+        print('.', end=' ')
 
     # build a model
     time.sleep(rank)
@@ -367,8 +376,8 @@ def build_run():
     os.chdir(Data.working_directory)
 
     # run the model
-    print "running model on cpu number {} from directory {}".format(rank, Data.working_directory)
-    print "current directory, {}".format(os.getcwd())
+    print("running model on cpu number {} from directory {}".format(rank, Data.working_directory))
+    print("current directory, {}".format(os.getcwd()))
     call([input_parameters['program_location']] + [Data.datafile] + [str(n)
                                                                      for n in input_parameters['run_input']])
 

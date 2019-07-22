@@ -107,7 +107,7 @@ class ControlInv(object):
         cfid.writelines(clines)
         cfid.close()
 
-        print 'Wrote ModEM control file to {0}'.format(self.control_fn)
+        print('Wrote ModEM control file to {0}'.format(self.control_fn))
 
     def read_control_file(self, control_fn=None):
         """

@@ -159,7 +159,7 @@ class MT(object):
             self._fn = os.path.normpath(os.path.abspath(fn))  # store file reference
 
         # provide key words to fill values if an edi file does not exist
-        for key in kwargs.keys():
+        for key in list(kwargs.keys()):
             setattr(self, key, kwargs[key])
 
     # ==========================================================================
@@ -299,8 +299,8 @@ class MT(object):
         self._Tipper.rotate(theta_r)
         self.pt.rotate(theta_r)
 
-        print ("Rotated Z, Tipper, Phase Tensor and Zinvariants by"
-               "{0:.3f} degrees".format(self._rotation_angle))
+        print(("Rotated Z, Tipper, Phase Tensor and Zinvariants by"
+               "{0:.3f} degrees".format(self._rotation_angle)))
 
     @Z.setter
     def Z(self, z_object):
@@ -372,7 +372,9 @@ class MT(object):
             raise MT_Error('File type not supported yet')
 
     def write_mt_file(self, save_dir=None, fn_basename=None, file_type='edi',
-                      new_Z_obj=None, new_Tipper_obj=None, longitude_format='LON'):
+                      new_Z_obj=None, new_Tipper_obj=None, longitude_format='LON',
+                      latlon_format='dms'
+                      ):
         """
         Write an mt file, the supported file types are EDI and XML.
 
@@ -393,7 +395,14 @@ class MT(object):
         :param new_Tipper_obj: new Tipper object
         :type new_Tipper_obj: mtpy.core.z.Tipper
 
-
+        :param longitude_format:  whether to write longitude as LON or LONG. 
+                                  options are 'LON' or 'LONG', default 'LON'
+        :type longitude_format:  string
+        :param latlon_format:  format of latitude and longitude in output edi,
+                               degrees minutes seconds ('dms') or decimal 
+                               degrees ('dd')
+        :type latlon_format:  string
+        
         :returns: full path to file
         :rtype: string
 
@@ -425,7 +434,8 @@ class MT(object):
             fn = self._write_edi_file(fn,
                                       new_Z=new_Z_obj,
                                       new_Tipper=new_Tipper_obj,
-                                      longitude_format=longitude_format)
+                                      longitude_format=longitude_format,
+                                      latlon_format=latlon_format)
         elif file_type == 'xml':
             fn = self._write_xml_file(fn,
                                       new_Z=new_Z_obj,
@@ -492,35 +502,35 @@ class MT(object):
 
         # get information about different sensors
         try:
-            for key in edi_obj.Define_measurement.meas_hx.__dict__.keys():
+            for key in list(edi_obj.Define_measurement.meas_hx.__dict__.keys()):
                 setattr(self.FieldNotes.Magnetometer_hx,
                         key,
                         edi_obj.Define_measurement.meas_hx.__dict__[key])
         except AttributeError:
             pass
         try:
-            for key in edi_obj.Define_measurement.meas_hy.__dict__.keys():
+            for key in list(edi_obj.Define_measurement.meas_hy.__dict__.keys()):
                 setattr(self.FieldNotes.Magnetometer_hy,
                         key,
                         edi_obj.Define_measurement.meas_hy.__dict__[key])
         except AttributeError:
             pass
         try:
-            for key in edi_obj.Define_measurement.meas_hz.__dict__.keys():
+            for key in list(edi_obj.Define_measurement.meas_hz.__dict__.keys()):
                 setattr(self.FieldNotes.Magnetometer_hz,
                         key,
                         edi_obj.Define_measurement.meas_hz.__dict__[key])
         except AttributeError:
             pass
         try:
-            for key in edi_obj.Define_measurement.meas_ex.__dict__.keys():
+            for key in list(edi_obj.Define_measurement.meas_ex.__dict__.keys()):
                 setattr(self.FieldNotes.Electrode_ex,
                         key,
                         edi_obj.Define_measurement.meas_ex.__dict__[key])
         except AttributeError:
             pass
         try:
-            for key in edi_obj.Define_measurement.meas_ey.__dict__.keys():
+            for key in list(edi_obj.Define_measurement.meas_ey.__dict__.keys()):
                 setattr(self.FieldNotes.Electrode_ey,
                         key,
                         edi_obj.Define_measurement.meas_ey.__dict__[key])
@@ -565,7 +575,7 @@ class MT(object):
         parse the notes section if there is any information that is useful
         """
 
-        for a_key in self.Notes.info_dict.keys():
+        for a_key in list(self.Notes.info_dict.keys()):
             a_value = self.Notes.info_dict[a_key]
             try:
                 a_value = float(a_value)
@@ -605,7 +615,8 @@ class MT(object):
                 self.Notes.info_dict.pop(a_key)
 
     # --> write edi file
-    def _write_edi_file(self, new_edi_fn, new_Z=None, new_Tipper=None, longitude_format='LON'):
+    def _write_edi_file(self, new_edi_fn, new_Z=None, new_Tipper=None, 
+                        longitude_format='LON', latlon_format='dms'):
         """
         write a new edi file if things have changed.  Note if new_Z or
         new_Tipper are not None, they are not changed in MT object, you
@@ -655,7 +666,9 @@ class MT(object):
         edi_obj.zrot = self.rotation_angle
 
         # --> write edi file
-        edi_fn = edi_obj.write_edi_file(new_edi_fn=new_edi_fn, longitude_format=longitude_format)
+        edi_fn = edi_obj.write_edi_file(new_edi_fn=new_edi_fn, 
+                                        longitude_format=longitude_format,
+                                        latlon_format=latlon_format)
 
         return edi_fn
 
@@ -712,6 +725,8 @@ class MT(object):
                 l_key = 'fieldnotes.{0}.{1}'.format(f_key.lower(),
                                                     t_key.lower())
                 l_value = getattr(obj, t_key)
+                if l_value in [None, 'None', 'none']:
+                    continue
                 info_list.append('{0} = {1}'.format(l_key, l_value))
 
         # get processing information
@@ -725,66 +740,92 @@ class MT(object):
                                 a_key)
                             l_value = getattr(self.Processing.Software.Author,
                                               a_key)
+                            if l_value in [None, 'None', 'none']:
+                                continue
                             info_list.append('{0} = {1}'.format(l_key,
                                                                 l_value))
                     else:
                         l_key = 'processing.software.{0}'.format(s_key)
                         l_value = getattr(self.Processing.Software, s_key)
+                        if l_value in [None, 'None', 'none']:
+                            continue
                         info_list.append('{0} = {1}'.format(l_key,
                                                             l_value))
-            elif p_key.lower() == 'remotesite' and \
-                 self.Processing.RemoteSite.id is not None:
-                for s_key in sorted(
-                        self.Processing.RemoteSite.__dict__.keys()):
-                    if s_key == 'Location':
-                        for a_key in sorted(
-                                self.Processing.RemoteSite.Location.__dict__.keys()):
-                            l_key = 'processing.remote_site.location.{0}'.format(
-                                a_key)
-                            l_value = getattr(self.Processing.RemoteSite.Location,
-                                              a_key)
+            elif p_key.lower() == 'remotesite':
+                if self.Processing.RemoteSite.id is None:
+                    continue
+                else:
+                    for s_key in sorted(
+                            self.Processing.RemoteSite.__dict__.keys()):
+                        if s_key == 'Location':
+                            for a_key in sorted(
+                                    self.Processing.RemoteSite.Location.__dict__.keys()):
+                                l_key = 'processing.remote_site.location.{0}'.format(
+                                    a_key)
+                                l_value = getattr(self.Processing.RemoteSite.Location,
+                                                  a_key)
+                                if l_value in [None, 'None', 'none']:
+                                    continue
+                                info_list.append('{0} = {1}'.format(l_key,
+                                                                    l_value))
+                        else:
+                            l_key = 'processing.remote_site.{0}'.format(s_key)
+                            l_value = getattr(self.Processing.RemoteSite, s_key)
+                            if l_value in [None, 'None', 'none']:
+                                continue
                             info_list.append('{0} = {1}'.format(l_key,
                                                                 l_value))
-                    else:
-                        l_key = 'processing.remote_site.{0}'.format(s_key)
-                        l_value = getattr(self.Processing.RemoteSite, s_key)
-                        info_list.append('{0} = {1}'.format(l_key,
-                                                            l_value))
-            else:
+            elif p_key.lower() in ['datum', 'coordinate_system',
+                                   'sign_convention', 'remote_reference',
+                                   'processed_by']:
                 l_key = 'processing.{0}'.format(p_key)
                 l_value = getattr(self.Processing, p_key)
+                if l_value in [None, 'None', 'none']:
+                    continue
                 info_list.append('{0} = {1}'.format(l_key, l_value))
 
         # get copyright information
         for c_key in sorted(self.Copyright.__dict__.keys()):
-            if c_key.lower() == 'citation' and \
-               self.Copyright.Citation.author is not None:
-                for p_key in sorted(self.Copyright.Citation.__dict__.keys()):
-                    l_key = 'copyright.citation.{0}'.format(p_key.lower())
-                    l_value = getattr(self.Copyright.Citation, p_key)
-                    info_list.append('{0} = {1}'.format(l_key, l_value))
+            if c_key.lower() == 'citation':
+                if self.Copyright.Citation.author is not None:
+                    for p_key in sorted(self.Copyright.Citation.__dict__.keys()):
+                        l_key = 'copyright.citation.{0}'.format(p_key.lower())
+                        l_value = getattr(self.Copyright.Citation, p_key)
+                        if l_value in [None, 'None', 'none']:
+                            continue
+                        info_list.append('{0} = {1}'.format(l_key, l_value))
+                else:
+                    continue
             else:
                 l_key = 'copyright.{0}'.format(c_key.lower())
                 l_value = getattr(self.Copyright, c_key)
                 if type(l_value) is list:
                     l_value = ''.join(l_value)
+                if l_value in [None, 'None', 'none']:
+                    continue
                 info_list.append('{0} = {1}'.format(l_key, l_value))
 
         # get provenance
         for p_key in sorted(self.Provenance.__dict__.keys()):
             if p_key.lower() == 'creator':
-                for s_key in self.Provenance.Creator.__dict__.keys():
+                for s_key in list(self.Provenance.Creator.__dict__.keys()):
                     l_key = 'provenance.creator.{0}'.format(s_key)
                     l_value = getattr(self.Provenance.Creator, s_key)
+                    if l_value in [None, 'None', 'none']:
+                        continue
                     info_list.append('{0} = {1}'.format(l_key, l_value))
             elif p_key.lower() == 'submitter':
-                for s_key in self.Provenance.Submitter.__dict__.keys():
+                for s_key in list(self.Provenance.Submitter.__dict__.keys()):
                     l_key = 'provenance.submitter.{0}'.format(s_key)
                     l_value = getattr(self.Provenance.Submitter, s_key)
+                    if l_value in [None, 'None', 'none']:
+                        continue
                     info_list.append('{0} = {1}'.format(l_key, l_value))
             else:
                 l_key = 'provenance.{0}'.format(p_key)
                 l_value = getattr(self.Provenance, p_key)
+                if l_value in [None, 'None', 'none']:
+                    continue
                 info_list.append('{0} = {1}'.format(l_key, l_value))
 
         return info_list
@@ -869,7 +910,7 @@ class MT(object):
         """
 
         if self.Z.freq[0] < self.Z.freq[1]:
-            print 'Flipping arrays to be ordered from short period to long'
+            print('Flipping arrays to be ordered from short period to long')
             self.Z.z = self.Z.z.copy()[::-1]
             self.Z.z_err = self.Z.z_err.copy()[::-1]
             self.Z.freq = self.Z.freq.copy()[::-1]
@@ -933,7 +974,7 @@ class MT(object):
         get Site information from xml Site
         """
         # get information
-        for s_attr in xml_obj.Site.__dict__.keys():
+        for s_attr in list(xml_obj.Site.__dict__.keys()):
             if s_attr in ['_name', '_attr', '_value']:
                 continue
             x_obj = getattr(xml_obj.Site, s_attr)
@@ -953,7 +994,7 @@ class MT(object):
 
             value = x_obj.value
             if name == 'location':
-                for l_attr in xml_obj.Site.Location.__dict__.keys():
+                for l_attr in list(xml_obj.Site.Location.__dict__.keys()):
                     if l_attr in ['_name', '_attr', '_value']:
                         continue
                     l_obj = getattr(xml_obj.Site.Location, l_attr)
@@ -987,9 +1028,9 @@ class MT(object):
         get field notes information
         """
 
-        for f_attr in xml_obj.FieldNotes.__dict__.keys():
+        for f_attr in list(xml_obj.FieldNotes.__dict__.keys()):
             if f_attr.lower() == 'instrument':
-                for i_attr in xml_obj.FieldNotes.Instrument.__dict__.keys():
+                for i_attr in list(xml_obj.FieldNotes.Instrument.__dict__.keys()):
                     if i_attr in ['_name', '_attr', '_value']:
                         continue
                     i_obj = getattr(xml_obj.FieldNotes.Instrument, i_attr)
@@ -1014,7 +1055,7 @@ class MT(object):
                 except KeyError:
                     pass
 
-                for e_attr in xml_d_obj.__dict__.keys():
+                for e_attr in list(xml_d_obj.__dict__.keys()):
                     if e_attr in ['_name', '_attr', '_value']:
                         continue
                     e_obj = getattr(xml_d_obj, e_attr)
@@ -1071,7 +1112,7 @@ class MT(object):
                 except KeyError:
                     pass
 
-                for m_attr in xml_d_obj.__dict__.keys():
+                for m_attr in list(xml_d_obj.__dict__.keys()):
                     if m_attr in ['_name', '_attr', '_value']:
                         continue
                     m_obj = getattr(xml_obj.FieldNotes.Magnetometer, m_attr)
@@ -1091,7 +1132,7 @@ class MT(object):
 
             elif 'dataquality' in f_attr.lower():
                 obj = getattr(xml_obj.FieldNotes, f_attr)
-                for d_attr in obj.__dict__.keys():
+                for d_attr in list(obj.__dict__.keys()):
                     if d_attr in ['_name', '_attr', '_value']:
                         continue
                     d_obj = getattr(obj, d_attr)
@@ -1116,11 +1157,11 @@ class MT(object):
         get copyright information
         """
 
-        for f_attr in xml_obj.Copyright.__dict__.keys():
+        for f_attr in list(xml_obj.Copyright.__dict__.keys()):
             if f_attr in ['_name', '_attr', '_value']:
                 continue
             if f_attr.lower() == 'citation':
-                for i_attr in xml_obj.Copyright.Citation.__dict__.keys():
+                for i_attr in list(xml_obj.Copyright.Citation.__dict__.keys()):
                     if i_attr in ['_name', '_attr', '_value']:
                         continue
                     i_obj = getattr(xml_obj.Copyright.Citation, i_attr)
@@ -1144,13 +1185,13 @@ class MT(object):
         """
         get provenance infor
         """
-        for f_attr in xml_obj.Provenance.__dict__.keys():
+        for f_attr in list(xml_obj.Provenance.__dict__.keys()):
             if f_attr in ['_name', '_attr', '_value']:
                 continue
             if f_attr.lower() in ['creator', 'submitter']:
                 obj = getattr(xml_obj.Provenance, f_attr)
                 s_obj = getattr(self.Provenance, f_attr)
-                for i_attr in obj.__dict__.keys():
+                for i_attr in list(obj.__dict__.keys()):
                     if i_attr in ['_name', '_attr', '_value']:
                         continue
                     i_obj = getattr(obj, i_attr)
@@ -1173,12 +1214,12 @@ class MT(object):
         get processing info
         """
 
-        for f_attr in xml_obj.ProcessingInfo.__dict__.keys():
+        for f_attr in list(xml_obj.ProcessingInfo.__dict__.keys()):
             if f_attr in ['_name', '_attr', '_value']:
                 continue
             if 'software' in f_attr.lower():
                 obj = getattr(xml_obj.ProcessingInfo, f_attr)
-                for i_attr in obj.__dict__.keys():
+                for i_attr in list(obj.__dict__.keys()):
                     if i_attr in ['_name', '_attr', '_value']:
                         continue
                     i_obj = getattr(obj, i_attr)
@@ -1192,13 +1233,13 @@ class MT(object):
                     setattr(self.Processing.Software, name, value)
             elif 'remoteinfo' in f_attr.lower():
                 obj = getattr(xml_obj.ProcessingInfo, f_attr)
-                for i_attr in obj.__dict__.keys():
+                for i_attr in list(obj.__dict__.keys()):
                     if i_attr in ['_name', '_attr', '_value']:
                         continue
                     if i_attr.lower() == 'location':
                         loc_obj = getattr(obj, i_attr)
                         
-                        for l_attr in loc_obj.__dict__.keys():
+                        for l_attr in list(loc_obj.__dict__.keys()):
                             if l_attr in ['_name', '_attr', '_value']:
                                 continue
                             l_obj = getattr(loc_obj, l_attr)
@@ -1573,7 +1614,7 @@ class MT(object):
                             cl_obj = getattr(cl_obj, cl_name.capitalize())
                             cl_name = cl_name.capitalize()
                         except AttributeError:
-                            print 'Could not get {0}'.format(cl_name)
+                            print('Could not get {0}'.format(cl_name))
 
                     count += 1
                 setattr(cl_obj, cl_attr, cl_value)
@@ -1636,7 +1677,7 @@ class MT(object):
         with open(cfg_fn, 'w') as fid:
             fid.write('\n'.join(cfg_lines))
 
-        print '--> Wrote MT configuration file to {0}'.format(cfg_fn)
+        print('--> Wrote MT configuration file to {0}'.format(cfg_fn))
 
         return cfg_fn
 
@@ -1712,7 +1753,7 @@ class MT(object):
 
         return new_z_obj
 
-    def interpolate(self, new_freq_array, interp_type='slinear', bounds_error=True):
+    def interpolate(self, new_freq_array, interp_type='slinear', bounds_error=True, period_buffer=None):
         """
         Interpolate the impedance tensor onto different frequencies
 
@@ -1804,9 +1845,25 @@ class MT(object):
 
                 # get frequencies to interpolate on to, making sure the
                 # bounds are with in non-zero components
-                new_nz_index = np.where((new_freq_array >= f.min()) &
-                                        (new_freq_array <= f.max()))
+                new_nz_index = np.where((new_freq_array >= f.min()) & 
+                                        (new_freq_array <= f.max()))[0]
                 new_f = new_freq_array[new_nz_index]
+                
+                
+                # apply period buffer
+                if type(period_buffer) in [float, int]:
+                    new_f_update = []
+                    new_nz_index_update = []
+                    for ifidx,ifreq in enumerate(new_f):
+                        # find nearest data period
+                        difference = np.abs(np.log10(ifreq) - np.log10(f))
+                        fidx = np.where(difference == np.amin(difference))[0][0]
+                        
+                        if max(f[fidx] / ifreq, ifreq / f[fidx]) < period_buffer:
+                            new_f_update.append(ifreq)
+                            new_nz_index_update.append(new_nz_index[ifidx])
+                    new_f = np.array(new_f_update)
+                    new_nz_index = np.array(new_nz_index_update)
 
                 # create a function that does 1d interpolation
                 z_func_real = spi.interp1d(f, z_real, kind=interp_type)
@@ -1817,6 +1874,9 @@ class MT(object):
                 new_Z.z[new_nz_index, ii, jj] = z_func_real(
                     new_f) + 1j * z_func_imag(new_f)
                 new_Z.z_err[new_nz_index, ii, jj] = z_func_err(new_f)
+                
+        # compute resistivity and phase for new Z object
+        new_Z.compute_resistivity_phase()
 
         # if there is not tipper than skip
         if self.Tipper.tipper is None:
@@ -1867,7 +1927,7 @@ class MT(object):
 
             >>> mt_obj = mt.MT(edi_file)
             >>> pr = mt.plot_mt_response()
-            >>> # if you need more infor on plot_mt_response
+            >>> # if you need more info on plot_mt_response
             >>> help(pr)
 
         """
@@ -1927,7 +1987,7 @@ class Site(object):
         self.start_date = None
         self.survey = None
 
-        for key in kwargs.keys():
+        for key in list(kwargs.keys()):
             setattr(self, key, kwargs[key])
             
     @property
@@ -1966,7 +2026,7 @@ class Location(object):
         self.elev_units = 'm'
         self.coordinate_system = 'Geographic North'
 
-        for key in kwargs.keys():
+        for key in list(kwargs.keys()):
             setattr(self, key, kwargs[key])
 
     @property
@@ -2092,7 +2152,7 @@ class FieldNotes(object):
         self.Magnetometer_hy.chtype = 'hy'
         self.Magnetometer_hz.chtype = 'hz'
 
-        for key in kwargs.keys():
+        for key in list(kwargs.keys()):
             setattr(self, key, kwargs[key])
 
 
@@ -2123,7 +2183,7 @@ class Instrument(object):
         self.manufacturer = None
         self.type = None
 
-        for key in kwargs.keys():
+        for key in list(kwargs.keys()):
             setattr(self, key, kwargs[key])
 
 
@@ -2163,7 +2223,7 @@ class DataQuality(object):
         self.warnings_flag = 0
         self.author = None
 
-        for key in kwargs.keys():
+        for key in list(kwargs.keys()):
             setattr(self, key, kwargs[key])
 
 
@@ -2199,7 +2259,7 @@ class Citation(object):
         self.doi = None
         self.year = None
 
-        for key in kwargs.keys():
+        for key in list(kwargs.keys()):
             setattr(self, key, kwargs[key])
 
 
@@ -2245,7 +2305,7 @@ class Copyright(object):
                                           'included for informational purposes only.'])
         self.release_status = None
         self.additional_info = None
-        for key in kwargs.keys():
+        for key in list(kwargs.keys()):
             setattr(self, key, kwargs[key])
 
 
@@ -2281,7 +2341,7 @@ class Provenance(object):
         self.Creator = Person()
         self.Submitter = Person()
 
-        for key in kwargs.keys():
+        for key in list(kwargs.keys()):
             setattr(self, key, kwargs[key])
 
 
@@ -2316,7 +2376,7 @@ class Person(object):
         self.organization = None
         self.organization_url = None
 
-        for key in kwargs.keys():
+        for key in list(kwargs.keys()):
             setattr(self, key, kwargs[key])
 
 
@@ -2353,7 +2413,7 @@ class Processing(object):
         self.remote_reference = None
         self.RemoteSite = Site()
 
-        for key in kwargs.keys():
+        for key in list(kwargs.keys()):
             setattr(self, key, kwargs[key])
 
 

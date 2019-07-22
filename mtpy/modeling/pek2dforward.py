@@ -9,7 +9,7 @@ import mtpy.modeling.pek1dclasses as p1dc
 import numpy as np
 import os
 import os.path as op
-import pek2dforward as p2d
+from . import pek2dforward as p2d
 import string
 import scipy.interpolate as si
 import mtpy.utils.filehandling as fh
@@ -69,13 +69,13 @@ class Model():
 
         # correcting dictionary for upper case keys
         input_parameters_nocase = {}
-        for key in input_parameters.keys():
+        for key in list(input_parameters.keys()):
             input_parameters_nocase[key.lower()] = input_parameters[key]
 
         update_dict.update(input_parameters_nocase)
 
         for dictionary in [self.parameters_model]:
-            for key in dictionary.keys():
+            for key in list(dictionary.keys()):
                 if key in update_dict:
                     # check if entry exists:
                     try:
@@ -235,14 +235,14 @@ class Model():
         modelfilestring.append(rmap)
 
         # add number of resistivity domains (+1 to include air)
-        modelfilestring.append('%5i' % (len(self.resistivity_dict.keys()) + 1))
+        modelfilestring.append('%5i' % (len(list(self.resistivity_dict.keys())) + 1))
 
         # add dictionary contents, assuming rvertical = rmax, slant and dip zero
         # first, air layer, properties always the same
         modelfilestring.append(
             '0   0     -1.00      0.00      0.00      0.00      0.00      0.00')
         # second, dictionary contents
-        for key in self.resistivity_dict.keys():
+        for key in list(self.resistivity_dict.keys()):
             rlist = self.resistivity_dict[key]
             rlist.insert(2, rlist[1])
             rlist += [0., 0.]
@@ -365,7 +365,7 @@ class Model():
                             folder=True)
         models1d = {}
 
-        for key in self.inversion1d_dirdict.keys():
+        for key in list(self.inversion1d_dirdict.keys()):
             idir = self.inversion1d_dirdict[key]
             mod = p1dc.Model(idir)
             mod.read_model()
@@ -387,7 +387,7 @@ class Model():
         xvals = self.stationlocations
         model_list = []
 
-        for key in self.models1d.keys():
+        for key in list(self.models1d.keys()):
             model_list.append(self.models1d[key][:, 2:])
 
         yvals = self.models1d[key][:, 1]
@@ -467,7 +467,7 @@ class Model():
         rdict, rmap, rbinned = p2d.bin_results(np.log10(self.resistivity[:, :, :-1]),
                                                self.binsize_resistivitylog10)
         self.strike_std = []
-        for key in rdict.keys():
+        for key in list(rdict.keys()):
             rdict[key] = [10**r for r in rdict[key]]
             rdict[key].append(
                 np.median(self.resistivity[:, :, -1][rmap == key]))
@@ -496,16 +496,16 @@ def bin_results(in_array, binsize):
     i = 0
 
     for r, rmm in enumerate(rmm_rounded):
-        if list(rmm) not in paramdict.values():
+        if list(rmm) not in list(paramdict.values()):
             try:
                 paramdict[letters[i]] = list(rmm)
                 keys.append(letters[i])
                 i += 1
             except IndexError:
-                print "Cannot assign any more indices, try a larger binsize"
+                print("Cannot assign any more indices, try a larger binsize")
                 return
         else:
-            for key in paramdict.keys():
+            for key in list(paramdict.keys()):
                 if list(rmm) == paramdict[key]:
                     keys.append(key)
 
@@ -536,7 +536,7 @@ class Response():
         # dict with station names as keys and number in modelfile as values
         self.station_dict = {}
 
-        for key in input_parameters.keys():
+        for key in list(input_parameters.keys()):
             setattr(self, key, input_parameters[key])
 
     def read_response(self):
@@ -571,12 +571,12 @@ class Response():
     def find_edifiles(self):
         """
         """
-        search_stringlist = self.station_dict.keys()
+        search_stringlist = list(self.station_dict.keys())
         self.edifiles = fh.get_pathlist(self.edi_directory,
                                         search_stringlist=search_stringlist,
                                         split='_',
                                         extension='.edi')
-        print self.edifiles.keys()
+        print(list(self.edifiles.keys()))
 
     def read_edifiles(self):
         """
@@ -586,4 +586,4 @@ class Response():
 
         if len(self.edifiles) > 0:
             self.edi_objects = [mtedi.Edi(filename=efile) for efile in
-                                self.edifiles.values()]
+                                list(self.edifiles.values())]

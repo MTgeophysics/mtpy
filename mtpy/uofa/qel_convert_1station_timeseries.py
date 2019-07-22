@@ -130,7 +130,7 @@ for date in dirs:
 
     outdir_edi = op.join(basedir, outdir, 'edi')
 
-    print outfn, outfn_coh, colfile
+    print(outfn, outfn_coh, colfile)
 
     if not op.isdir(outdir_edi):
         os.makedirs(outdir_edi)
@@ -183,9 +183,9 @@ for date in dirs:
             op.join(
                 outdir_plots,
                 op.basename(plotfn)))
-        print 'copied res/phase plot %s' % (plotfn)
+        print('copied res/phase plot %s' % (plotfn))
     except:
-        print 'Warning - no res/phase plot for %s' % (fullday)
+        print('Warning - no res/phase plot for %s' % (fullday))
 
     try:
         plotfncoh = smplpltCOH.plotcoh(outfn_coh, saveplot=True)
@@ -194,9 +194,9 @@ for date in dirs:
             op.join(
                 outdir_plots,
                 op.basename(plotfncoh)))
-        print 'copied coherence plot %s' % (plotfncoh)
+        print('copied coherence plot %s' % (plotfncoh))
     except:
-        print 'Warning - no coherence  plot for %s' % (fullday)
+        print('Warning - no coherence  plot for %s' % (fullday))
 
         pass
 
@@ -211,4 +211,4 @@ for date in dirs:
 
 os.chdir(basedir)
 
-print
+print()

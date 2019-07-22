@@ -223,7 +223,7 @@ class FrequencySelection(QGroupBox):
                     num=value[2]
                 )
             elif len(value) == 5:  # (min, max, num, freq, tol)
-                return u'{:.{prec}f} ±{tol}% ({num} selected)'.format(
+                return '{:.{prec}f} ±{tol}% ({num} selected)'.format(
                     value[3], prec=self._prec, tol=value[4], num=value[2])
             # elif isinstance(py_obj, set):
             #     return '{{}}'.format(','.join(['{:.{prec}f}'.format(f, prec=self._prec) for f in py_obj if isinstance(f, float)]))
@@ -279,7 +279,7 @@ class FrequencySelection(QGroupBox):
                 del self._lx[x]
 
         def clear_all_drawing(self):
-            for key in self._lx.keys():
+            for key in list(self._lx.keys()):
                 marker = self._lx[key]
                 if isinstance(marker, tuple):
                     for m in marker:
@@ -409,7 +409,7 @@ class FrequencySelection(QGroupBox):
         def update_figure(self):
             self._axes.cla()
             self.compute_initial_figure()
-            for key in self._lx.keys():
+            for key in list(self._lx.keys()):
                 if isinstance(key, float):
                     self._lx[key] = self._draw_v_line(key)
                 elif isinstance(key, tuple):
@@ -465,7 +465,7 @@ class FrequencySelectionFromFile(QGroupBox):
 
     def _update_stations(self):
         self.model_stations.clear()
-        for mt_obj in self._mt_obj_dict.values():
+        for mt_obj in list(self._mt_obj_dict.values()):
             new_item = QStandardItem()
             new_item.setData(mt_obj.station, QtCore.Qt.DisplayRole)
             new_item.setData(mt_obj.fn, QtCore.Qt.ToolTipRole)

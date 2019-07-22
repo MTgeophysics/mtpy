@@ -98,14 +98,14 @@ def estimate_static_spatial_median(edi_fn, radius=1000., num_freq=20,
             mt_obj_list.append(mt_obj_2)
 
     if len(mt_obj_list) == 0:
-        print 'No stations found within given radius {0:.2f} m'.format(radius)
+        print('No stations found within given radius {0:.2f} m'.format(radius))
         return 1.0, 1.0
 
     # extract the resistivity values from the near by stations
     res_array = np.zeros((len(mt_obj_list), num_freq, 2, 2))
-    print 'These stations are within the given {0} m radius:'.format(radius)
+    print('These stations are within the given {0} m radius:'.format(radius))
     for kk, mt_obj_kk in enumerate(mt_obj_list):
-        print '\t{0} --> {1:.1f} m'.format(mt_obj_kk.station, mt_obj_kk.delta_d)
+        print('\t{0} --> {1:.1f} m'.format(mt_obj_kk.station, mt_obj_kk.delta_d))
         interp_idx = np.where((interp_freq >= mt_obj_kk.Z.freq.min()) &
                               (interp_freq <= mt_obj_kk.Z.freq.max()))
 

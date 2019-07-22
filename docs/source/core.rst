@@ -1,6 +1,6 @@
-*********
-Core: 
-*********
+==================
+Package Core
+==================
 
 **Module z**
 =============
@@ -22,6 +22,15 @@ Core:
 ================
 .. automodule:: mtpy.core.edi
     :members:
+
+
+
+**Module EDI_Collection**
+================
+.. automodule:: mtpy.core.edi_collection
+    :members:
+
+
 
 **Module XML**
 ================

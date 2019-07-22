@@ -127,6 +127,7 @@ class TestOccam2D(TestCase):
 
         :return:
         """
+        
         outdir = self._main_func(edipath=EDI_DATA_DIR)
 
         for afile in ('Occam2DMesh', 'Occam2DModel', 'Occam2DStartup'):
@@ -139,10 +140,10 @@ class TestOccam2D(TestCase):
                             "Ref output data file does not exist, nothing to compare with"
                             )
 
-            print ("Comparing", output_data_file, "and", expected_data_file)
+            print(("Comparing", output_data_file, "and", expected_data_file))
 
             is_identical, msg = diff_files(output_data_file, expected_data_file, ignores=['Date/Time:'])
-            print msg
+            print(msg)
             self.assertTrue(is_identical, "The output file is not the same with the baseline file.")
 
     def test_plot_model_and_responses(self):
@@ -159,8 +160,8 @@ class TestOccam2D(TestCase):
         offset = 0
 
         # go to model results directory and find the latest iteration file
-        iterfile = max([f for f in os.listdir(idir) if f[-5:] == '.iter'])
-        respfile = max([f for f in os.listdir(idir) if f[-5:] == '.resp'])
+        iterfile = 'ITER12.iter'
+        respfile = 'RESP12.resp'
 
         datafn = 'OccamDataFile.dat'
         # get the iteration number

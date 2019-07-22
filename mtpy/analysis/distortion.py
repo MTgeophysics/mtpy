@@ -37,7 +37,6 @@ Edited by JP, 2016
 
 """
 
-# =================================================================
 import copy
 
 import numpy as np
@@ -55,8 +54,8 @@ def find_distortion(z_object, g='det', num_freq=None, lo_dims=None):
     automatically determine the dimensionality over all frequencies, then find
     the appropriate distortion tensor D
     
-    Arguments
-    -------------
+    Parameters
+    ----------
     
         **z_object** : mtpy.core.z object
                        
@@ -74,16 +73,18 @@ def find_distortion(z_object, g='det', num_freq=None, lo_dims=None):
                       *default* is None, meaning calculated from data
                       
     Returns
-    ---------
+    -------
     
         **distortion** : np.ndarray(2, 2)
                          distortion array all real values
         
         **distortion_err** : np.ndarray(2, 2)
                              distortion error array
-                             
-    Example:
-    ---------
+
+
+    Examples
+    --------
+
         :Estimate Distortion: ::
         
             >>> import mtpy.analysis.distortion as distortion
@@ -94,8 +95,8 @@ def find_distortion(z_object, g='det', num_freq=None, lo_dims=None):
     if num_freq is not None:
         if num_freq > z_object.freq.size:
             num_freq = z_object.freq.size
-            print 'Number of frequencies to sweep over is too high for z'
-            print 'setting num_freq to {0}'.format(num_freq)
+            print('Number of frequencies to sweep over is too high for z')
+            print('setting num_freq to {0}'.format(num_freq))
     else:
         num_freq = z_object.freq.size
 
@@ -118,7 +119,7 @@ def find_distortion(z_object, g='det', num_freq=None, lo_dims=None):
     for idx, dim in enumerate(dim_arr):
         if np.any(z_obj.z[idx] == 0.0 + 0.0j) == True:
             dis[idx] = np.identity(2)
-            print 'Found a zero in z at {0}, skipping'.format(idx)
+            print('Found a zero in z at {0}, skipping'.format(idx))
             continue
 
         if dim == 1:
@@ -285,7 +286,7 @@ def find_1d_distortion(z_object, include_non1d=False):
         raise MTex.MTpyError_inputarguments('Z object does not have '
                                             'frequencies with spatial 1D characteristic')
 
-    print lo_dims
+    print(lo_dims)
 
     return find_distortion(z_obj, lo_dims=lo_dims)
 
@@ -325,7 +326,7 @@ def remove_distortion(z_array=None, z_object=None, num_freq=None, g='det'):
     remove distortion from an impedance tensor using the method outlined by 
     Bibby et al., [2005].
     
-    Arguments
+    Parameters
     -----------
     
         **z_array** : np.ndarray((nf, 2, 2))
@@ -344,7 +345,7 @@ def remove_distortion(z_array=None, z_object=None, num_freq=None, g='det'):
                 *default* is 'det'
 
     Returns
-    ------------
+    --------
 
         **distortion** : np.ndarray (2, 2)
                          distortion array
@@ -389,6 +390,6 @@ def remove_distortion(z_array=None, z_object=None, num_freq=None, g='det'):
         return distortion_tensor, distortion_z_obj
 
     except MTex.MTpyError_Z:
-        print 'Could not compute distortion tensor'
+        print('Could not compute distortion tensor')
 
         return np.identity(2), z_obj

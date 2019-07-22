@@ -21,130 +21,130 @@ from mtpy.modeling.modem.data import Model
 from mtpy.utils import exceptions as mtex
 from scipy.spatial import cKDTree
 from scipy.interpolate import interp1d, UnivariateSpline
-from matplotlib import colors
+from matplotlib import colors,cm
 
 __all__ = ['PlotSlices']
 
 
 class PlotSlices(object):
-    #    """
-    #    * Plot all cartesian axis-aligned slices and be able to scroll through the model
-    #    * Extract arbitrary profiles (e.g. along a seismic line) from a model
-    #
-    #    :Example: ::
-    #
-    #        >>> import mtpy.modeling.modem as modem
-    #        >>> mfn = r"/home/modem/Inv1/Modular_NLCG_100.rho"
-    #        >>> dfn = r"/home/modem/Inv1/ModEM_data.dat"
-    #        >>> pds = ws.PlotSlices(model_fn=mfn, data_fn=dfn)
-    #
-    #    ======================= ===================================================
-    #    Buttons                  Description
-    #    ======================= ===================================================
-    #    'e'                     moves n-s slice east by one model block
-    #    'w'                     moves n-s slice west by one model block
-    #    'n'                     moves e-w slice north by one model block
-    #    'm'                     moves e-w slice south by one model block
-    #    'd'                     moves depth slice down by one model block
-    #    'u'                     moves depth slice up by one model block
-    #    ======================= ===================================================
-    #
-    #
-    #    ======================= ===================================================
-    #    Attributes              Description
-    #    ======================= ===================================================
-    #    ax_en                   matplotlib.axes instance for depth slice  map view
-    #    ax_ez                   matplotlib.axes instance for e-w slice
-    #    ax_map                  matplotlib.axes instance for location map
-    #    ax_nz                   matplotlib.axes instance for n-s slice
-    #    climits                 (min , max) color limits on resistivity in log
-    #                            scale. *default* is (0, 4)
-    #    cmap                    name of color map for resisitiviy.
-    #                            *default* is 'jet_r'
-    #    data_fn                 full path to data file name
-    #    draw_colorbar           show colorbar on exported plot; default True
-    #    dscale                  scaling parameter depending on map_scale
-    #    east_line_xlist         list of line nodes of east grid for faster plotting
-    #    east_line_ylist         list of line nodes of east grid for faster plotting
-    #    ew_limits               (min, max) limits of e-w in map_scale units
-    #                            *default* is None and scales to station area
-    #    fig                     matplotlib.figure instance for figure
-    #    fig_aspect              aspect ratio of plots. *default* is 1
-    #    fig_dpi                 resolution of figure in dots-per-inch
-    #                            *default* is 300
-    #    fig_num                 figure instance number
-    #    fig_size                [width, height] of figure window.
-    #                            *default* is [6,6]
-    #    font_dict               dictionary of font keywords, internally created
-    #    font_size               size of ticklables in points, axes labes are
-    #                            font_size+2. *default* is 4
-    #    grid_east               relative location of grid nodes in e-w direction
-    #                            in map_scale units
-    #    grid_north              relative location of grid nodes in n-s direction
-    #                            in map_scale units
-    #    grid_z                  relative location of grid nodes in z direction
-    #                            in map_scale units
-    #    index_east              index value of grid_east being plotted
-    #    index_north             index value of grid_north being plotted
-    #    index_vertical          index value of grid_z being plotted
-    #    initial_fn              full path to initial file
-    #    key_press               matplotlib.canvas.connect instance
-    #    map_scale               [ 'm' | 'km' ] scale of map. *default* is km
-    #    mesh_east               np.meshgrid(grid_east, grid_north)[0]
-    #    mesh_en_east            np.meshgrid(grid_east, grid_north)[0]
-    #    mesh_en_north           np.meshgrid(grid_east, grid_north)[1]
-    #    mesh_ez_east            np.meshgrid(grid_east, grid_z)[0]
-    #    mesh_ez_vertical        np.meshgrid(grid_east, grid_z)[1]
-    #    mesh_north              np.meshgrid(grid_east, grid_north)[1]
-    #    mesh_nz_north           np.meshgrid(grid_north, grid_z)[0]
-    #    mesh_nz_vertical        np.meshgrid(grid_north, grid_z)[1]
-    #    model_fn                full path to model file
-    #    ms                      size of station markers in points. *default* is 2
-    #    nodes_east              relative distance betwen nodes in e-w direction
-    #                            in map_scale units
-    #    nodes_north             relative distance betwen nodes in n-s direction
-    #                            in map_scale units
-    #    nodes_z                 relative distance betwen nodes in z direction
-    #                            in map_scale units
-    #    north_line_xlist        list of line nodes north grid for faster plotting
-    #    north_line_ylist        list of line nodes north grid for faster plotting
-    #    ns_limits               (min, max) limits of plots in n-s direction
-    #                            *default* is None, set veiwing area to station area
-    #    plot_yn                 [ 'y' | 'n' ] 'y' to plot on instantiation
-    #                            *default* is 'y'
-    #    plot_stations           default False
-    #    plot_grid               show grid on exported plot; default False
-    #    res_model               np.ndarray(n_north, n_east, n_vertical) of
-    #                            model resistivity values in linear scale
-    #    save_format             exported format; default png
-    #    save_path               path to save exported plots to; default current working folder
-    #    station_color           color of station marker. *default* is black
-    #    station_dict_east       location of stations for each east grid row
-    #    station_dict_north      location of stations for each north grid row
-    #    station_east            location of stations in east direction
-    #    station_fn              full path to station file
-    #    station_font_color      color of station label
-    #    station_font_pad        padding between station marker and label
-    #    station_font_rotation   angle of station label
-    #    station_font_size       font size of station label
-    #    station_font_weight     weight of font for station label
-    #    station_id              [min, max] index values for station labels
-    #    station_marker          station marker
-    #    station_names           name of stations
-    #    station_north           location of stations in north direction
-    #    subplot_bottom          distance between axes and bottom of figure window
-    #    subplot_hspace          distance between subplots in vertical direction
-    #    subplot_left            distance between axes and left of figure window
-    #    subplot_right           distance between axes and right of figure window
-    #    subplot_top             distance between axes and top of figure window
-    #    subplot_wspace          distance between subplots in horizontal direction
-    #    title                   title of plot
-    #    xminorticks             location of xminorticks
-    #    yminorticks             location of yminorticks
-    #    z_limits                (min, max) limits in vertical direction,
-    #    ======================= ===================================================
-    #
-    #    """
+    """
+    * Plot all cartesian axis-aligned slices and be able to scroll through the model
+    * Extract arbitrary profiles (e.g. along a seismic line) from a model
+
+    :Example: ::
+
+        >>> import mtpy.modeling.modem as modem
+        >>> mfn = r"/home/modem/Inv1/Modular_NLCG_100.rho"
+        >>> dfn = r"/home/modem/Inv1/ModEM_data.dat"
+        >>> pds = ws.PlotSlices(model_fn=mfn, data_fn=dfn)
+
+    ======================= ===================================================
+    Buttons                  Description
+    ======================= ===================================================
+    'e'                     moves n-s slice east by one model block
+    'w'                     moves n-s slice west by one model block
+    'n'                     moves e-w slice north by one model block
+    'm'                     moves e-w slice south by one model block
+    'd'                     moves depth slice down by one model block
+    'u'                     moves depth slice up by one model block
+    ======================= ===================================================
+
+
+    ======================= ===================================================
+    Attributes              Description
+    ======================= ===================================================
+    ax_en                   matplotlib.axes instance for depth slice  map view
+    ax_ez                   matplotlib.axes instance for e-w slice
+    ax_map                  matplotlib.axes instance for location map
+    ax_nz                   matplotlib.axes instance for n-s slice
+    climits                 (min , max) color limits on resistivity in log
+                            scale. *default* is (0, 4)
+    cmap                    name of color map for resisitiviy.
+                            *default* is 'jet_r'
+    data_fn                 full path to data file name
+    draw_colorbar           show colorbar on exported plot; default True
+    dscale                  scaling parameter depending on map_scale
+    east_line_xlist         list of line nodes of east grid for faster plotting
+    east_line_ylist         list of line nodes of east grid for faster plotting
+    ew_limits               (min, max) limits of e-w in map_scale units
+                            *default* is None and scales to station area
+    fig                     matplotlib.figure instance for figure
+    fig_aspect              aspect ratio of plots. *default* is 1
+    fig_dpi                 resolution of figure in dots-per-inch
+                            *default* is 300
+    fig_num                 figure instance number
+    fig_size                [width, height] of figure window.
+                            *default* is [6,6]
+    font_dict               dictionary of font keywords, internally created
+    font_size               size of ticklables in points, axes labes are
+                            font_size+2. *default* is 4
+    grid_east               relative location of grid nodes in e-w direction
+                            in map_scale units
+    grid_north              relative location of grid nodes in n-s direction
+                            in map_scale units
+    grid_z                  relative location of grid nodes in z direction
+                            in map_scale units
+    index_east              index value of grid_east being plotted
+    index_north             index value of grid_north being plotted
+    index_vertical          index value of grid_z being plotted
+    initial_fn              full path to initial file
+    key_press               matplotlib.canvas.connect instance
+    map_scale               [ 'm' | 'km' ] scale of map. *default* is km
+    mesh_east               np.meshgrid(grid_east, grid_north)[0]
+    mesh_en_east            np.meshgrid(grid_east, grid_north)[0]
+    mesh_en_north           np.meshgrid(grid_east, grid_north)[1]
+    mesh_ez_east            np.meshgrid(grid_east, grid_z)[0]
+    mesh_ez_vertical        np.meshgrid(grid_east, grid_z)[1]
+    mesh_north              np.meshgrid(grid_east, grid_north)[1]
+    mesh_nz_north           np.meshgrid(grid_north, grid_z)[0]
+    mesh_nz_vertical        np.meshgrid(grid_north, grid_z)[1]
+    model_fn                full path to model file
+    ms                      size of station markers in points. *default* is 2
+    nodes_east              relative distance betwen nodes in e-w direction
+                            in map_scale units
+    nodes_north             relative distance betwen nodes in n-s direction
+                            in map_scale units
+    nodes_z                 relative distance betwen nodes in z direction
+                            in map_scale units
+    north_line_xlist        list of line nodes north grid for faster plotting
+    north_line_ylist        list of line nodes north grid for faster plotting
+    ns_limits               (min, max) limits of plots in n-s direction
+                            *default* is None, set veiwing area to station area
+    plot_yn                 [ 'y' | 'n' ] 'y' to plot on instantiation
+                            *default* is 'y'
+    plot_stations           default False
+    plot_grid               show grid on exported plot; default False
+    res_model               np.ndarray(n_north, n_east, n_vertical) of
+                            model resistivity values in linear scale
+    save_format             exported format; default png
+    save_path               path to save exported plots to; default current working folder
+    station_color           color of station marker. *default* is black
+    station_dict_east       location of stations for each east grid row
+    station_dict_north      location of stations for each north grid row
+    station_east            location of stations in east direction
+    station_fn              full path to station file
+    station_font_color      color of station label
+    station_font_pad        padding between station marker and label
+    station_font_rotation   angle of station label
+    station_font_size       font size of station label
+    station_font_weight     weight of font for station label
+    station_id              [min, max] index values for station labels
+    station_marker          station marker
+    station_names           name of stations
+    station_north           location of stations in north direction
+    subplot_bottom          distance between axes and bottom of figure window
+    subplot_hspace          distance between subplots in vertical direction
+    subplot_left            distance between axes and left of figure window
+    subplot_right           distance between axes and right of figure window
+    subplot_top             distance between axes and top of figure window
+    subplot_wspace          distance between subplots in horizontal direction
+    title                   title of plot
+    xminorticks             location of xminorticks
+    yminorticks             location of yminorticks
+    z_limits                (min, max) limits in vertical direction,
+    ======================= ===================================================
+
+    """
 
     def __init__(self, model_fn, data_fn=None, **kwargs):
         self.model_fn = model_fn
@@ -152,7 +152,7 @@ class PlotSlices(object):
 
         self.fig_num = kwargs.pop('fig_num', 1)
         self.fig_size = kwargs.pop('fig_size', [6, 6])
-        self.fig_dpi = kwargs.pop('dpi', 300)
+        self.fig_dpi = kwargs.pop('fig_dpi', 300)
         self.fig_aspect = kwargs.pop('fig_aspect', 1)
         self.title = kwargs.pop('title', 'on')
         self.font_size = kwargs.pop('font_size', 4)
@@ -296,13 +296,58 @@ class PlotSlices(object):
                  2: when option is 'XYZ'
                     gv : list of interpolated values of shape (np)
         """
+
+        def get_order(x, y):
+            """
+            :param x: array of x coordinates
+            :param y: array of y coordinates
+            :return: optimal order of points that form a connected path
+
+            This is a tricky problem to solve and is based on a minimum spanning
+            tree. The implementation below has been adopted verbatim from the
+            following link:
+            https://stackoverflow.com/questions/37742358/sorting-points-to-form-a-continuous-line
+            """
+            try:
+                import networkx as nx
+                from sklearn.neighbors import NearestNeighbors
+            except:
+                print("Failed to import either 'networkx' or 'scikit' python packages; " \
+                      "station/nodal ordering may be incorrect..s")
+                return np.arange(len(x))
+            # end try
+
+            points = np.c_[x, y]
+            clf = NearestNeighbors(2).fit(points)
+            G = clf.kneighbors_graph()
+
+            T = nx.from_scipy_sparse_matrix(G)
+            paths = [list(nx.dfs_preorder_nodes(T, i)) for i in range(len(points))]
+            mindist = np.inf
+            minidx = 0
+
+            for i in range(len(points)):
+                p = paths[i]  # order of nodes
+                ordered = points[p]  # ordered nodes
+                # find cost of that order by the sum of euclidean distances between points (i) and (i+1)
+                cost = (((ordered[:-1] - ordered[1:]) ** 2).sum(1)).sum()
+                if cost < mindist:
+                    mindist = cost
+                    minidx = i
+                # end if
+            # end for
+
+            opt_order = paths[minidx]
+            return opt_order
+        # end func
+
         assert option in ['STA', 'XY', 'XYZ'], 'Invalid option; Aborting..'
         if(option == 'STA'):
             if(self.md_data is None):
-                print 'Station coordinates not available. Aborting..'
+                print('Station coordinates not available. Aborting..')
                 exit(-1)
         elif(option == 'XY'):
-            assert type(coords)==np.ndarray and coords.ndim==2 and coords.sshape[1]==2, \
+            assert type(coords)==np.ndarray and coords.ndim==2 and coords.shape[1]==2, \
                 'Shape of coords should be (np, 2); Aborting..'
         elif(option == 'XYZ'):
             assert type(coords)==np.ndarray and coords.ndim==2 and coords.shape[1]==3, \
@@ -330,24 +375,18 @@ class PlotSlices(object):
                 y = np.array(coords[:,1])
             # end if
 
-            xmin = x.min()
-            ymin = y.min()
+            order = get_order(x, y)
+            xx = x[order]
+            yy = y[order]
 
-            x -= xmin
-            y -= ymin
-
-            d = (x**2 + y**2) # compute distances from origin to establish ordering
-            sortedIndices = np.argsort(d)
-            #print("stations",self.md_data.stations_obj.station)
-            #print("sortedINdices",sortedIndices)
-
-            dx = x[sortedIndices][:-1] - x[sortedIndices][1:]
-            dy = y[sortedIndices][:-1] - y[sortedIndices][1:]
-            dst = np.cumsum(np.sqrt(dx ** 2 + dy ** 2)) # compute cumulative distance along profile
+            dx = xx[:-1] - xx[1:]
+            dy = yy[:-1] - yy[1:]
+            dst = np.cumsum(np.sqrt(dx ** 2 + dy ** 2))
             dst = np.insert(dst, 0, 0)
 
-            xio = interp1d(dst, x[sortedIndices])
-            yio = interp1d(dst, y[sortedIndices])
+            xio = interp1d(dst, xx)
+            yio = interp1d(dst, yy)
+            # ====
 
             if(nsteps>-1):
                 d = np.linspace(dst.min(), dst.max(), nsteps) # create regular grid
@@ -387,7 +426,7 @@ class PlotSlices(object):
         xyz_list = np.array(_xyz_list)
         if(absolute_query_locations):
             if(self.md_data is None):
-                print 'Station coordinates not available. Aborting..'
+                print('Station coordinates not available. Aborting..')
                 exit(-1)
             #end if
 
@@ -474,14 +513,14 @@ class PlotSlices(object):
             if os.path.isfile(self.data_fn) == True:
                 md_data = Data()
                 md_data.read_data_file(self.data_fn)
-                self.station_east = md_data.stations_obj.rel_east / self.dscale
-                self.station_north = md_data.stations_obj.rel_north / self.dscale
-                self.station_names = md_data.stations_obj.station
-                self.station_elev = md_data.stations_obj.elev / self.dscale
+                self.station_east = md_data.station_locations.rel_east / self.dscale
+                self.station_north = md_data.station_locations.rel_north / self.dscale
+                self.station_names = md_data.station_locations.station
+                self.station_elev = md_data.station_locations.elev / self.dscale
 
                 self.md_data = md_data
             else:
-                print 'Could not find data file {0}'.format(self.data_fn)
+                print('Could not find data file {0}'.format(self.data_fn))
 
     def plot(self):
         """
@@ -492,16 +531,16 @@ class PlotSlices(object):
 
 
         """
-        print "=============== ==============================================="
-        print "    Buttons                  Description                       "
-        print "=============== ==============================================="
-        print "     'e'          moves n-s slice east by one model block"
-        print "     'w'          moves n-s slice west by one model block"
-        print "     'n'          moves e-w slice north by one model block"
-        print "     'm'          moves e-w slice south by one model block"
-        print "     'd'          moves depth slice down by one model block"
-        print "     'u'          moves depth slice up by one model block"
-        print "=============== ==============================================="
+        print("=============== ===============================================")
+        print("    Buttons                  Description                       ")
+        print("=============== ===============================================")
+        print("     'e'          moves n-s slice east by one model block")
+        print("     'w'          moves n-s slice west by one model block")
+        print("     'n'          moves e-w slice north by one model block")
+        print("     'm'          moves e-w slice south by one model block")
+        print("     'd'          moves depth slice down by one model block")
+        print("     'u'          moves depth slice up by one model block")
+        print("=============== ===============================================")
 
         self.font_dict = {'size': self.font_size*0.75, 'weight': 'bold'}
 
@@ -533,7 +572,7 @@ class PlotSlices(object):
 
 
         self.fig = plt.figure(self.fig_num, figsize=self.fig_size,
-                              dpi=self.fig_dpi)
+                              dpi=self.fig_dpi,frameon=False)
         plt.clf()
 
         # annotations
@@ -591,6 +630,9 @@ class PlotSlices(object):
 
         # plot color bar
         cbx = mcb.make_axes(self.ax_map, fraction=.15, shrink=.75, pad=.15)
+
+        if type(self.cmap) == str:
+            self.cmap=cm.get_cmap(self.cmap)
         cb = mcb.ColorbarBase(cbx[0],
                               cmap=self.cmap,
                               norm=Normalize(vmin=self.climits[0],
@@ -705,7 +747,7 @@ class PlotSlices(object):
                                       edgecolor='none')
 
             self.selected_indices = np.arange(indmin, indmax)
-            print 'Selected indices: ' + str(self.selected_indices)
+            print('Selected indices: ' + str(self.selected_indices))
 
             self.ax_span.set_yticks([])
             self.ax_span.set_title('%s Extent: Click+Drag to Select Sub-range'%
@@ -742,7 +784,8 @@ class PlotSlices(object):
             plt.show()
         else:
             self.fig.set_visible(False)
-            plt.draw()
+            plt.close()
+#            plt.draw()
     # end func
 
     def export_slices(self, plane='N-E', indexlist=[], station_buffer=200, save=True):
@@ -894,6 +937,7 @@ class PlotSlices(object):
 
             # plot the colorbar
             if self.draw_colorbar:
+                
                 cbx = mcb.make_axes(ax1, fraction=.15, shrink=.75, pad=.15)
                 cb = mcb.ColorbarBase(cbx[0],
                                       cmap=self.cmap,
@@ -928,20 +972,21 @@ class PlotSlices(object):
                                                self.map_scale))
             if save:
                 # --> save plots to a common folder
-                fn = '%s-plane-at-%s.%0.3f.%s.%s'%(plane,
+                fn = '%s-plane-at-%s%03i.%0.3f.%s.%s'%(plane,
                                                self.current_label_desc[plane],
+                                               ii,
                                                self.axis_values[plane][ii],
                                                self.map_scale,
                                                self.save_format)
     
 
                 fpath = os.path.join(self.save_path, fn)
-                print('Exporting %s..'%(fpath))
-                fig.savefig(fpath, dpi=self.fig_dpi)
+                print(('Exporting %s..'%(fpath)))
+                fig.savefig(fpath, dpi=self.fig_dpi, bbox_inches='tight')
                 fnlist.append(fpath)
     
                 #fig.clear()
-                #plt.close()
+#                plt.close()
         # end for
         return figlist, fnlist
     #end func
@@ -956,7 +1001,7 @@ class PlotSlices(object):
 
         if key_press == 'n':
             if self.index_north == self.grid_north.size:
-                print 'Already at northern most grid cell'
+                print('Already at northern most grid cell')
             else:
                 self.index_north += 1
                 if self.index_north > self.grid_north.size:
@@ -966,7 +1011,7 @@ class PlotSlices(object):
 
         if key_press == 'm':
             if self.index_north == 0:
-                print 'Already at southern most grid cell'
+                print('Already at southern most grid cell')
             else:
                 self.index_north -= 1
                 if self.index_north < 0:
@@ -976,7 +1021,7 @@ class PlotSlices(object):
 
         if key_press == 'e':
             if self.index_east == self.grid_east.size:
-                print 'Already at eastern most grid cell'
+                print('Already at eastern most grid cell')
             else:
                 self.index_east += 1
                 if self.index_east > self.grid_east.size:
@@ -986,7 +1031,7 @@ class PlotSlices(object):
 
         if key_press == 'w':
             if self.index_east == 0:
-                print 'Already at western most grid cell'
+                print('Already at western most grid cell')
             else:
                 self.index_east -= 1
                 if self.index_east < 0:
@@ -996,27 +1041,27 @@ class PlotSlices(object):
 
         if key_press == 'd':
             if self.index_vertical == self.grid_z.size:
-                print 'Already at deepest grid cell'
+                print('Already at deepest grid cell')
             else:
                 self.index_vertical += 1
                 if self.index_vertical > self.grid_z.size:
                     self.index_vertical = self.grid_z.size
             self._update_ax_en()
             self._update_ax_nz()
-            print 'Depth = {0:.5g} ({1})'.format(self.grid_z[self.index_vertical],
-                                                 self.map_scale)
+            print('Depth = {0:.5g} ({1})'.format(self.grid_z[self.index_vertical],
+                                                 self.map_scale))
 
         if key_press == 'u':
             if self.index_vertical == 0:
-                print 'Already at surface grid cell'
+                print('Already at surface grid cell')
             else:
                 self.index_vertical -= 1
                 if self.index_vertical < 0:
                     self.index_vertical = 0
             self._update_ax_en()
             self._update_ax_nz()
-            print 'Depth = {0:.5gf} ({1})'.format(self.grid_z[self.index_vertical],
-                                                  self.map_scale)
+            print('Depth = {0:.5gf} ({1})'.format(self.grid_z[self.index_vertical],
+                                                  self.map_scale))
         self.update_range_func(self.current_label)
     # end func
 
@@ -1305,7 +1350,7 @@ class PlotSlices(object):
             pass
 
         self.fig_fn = save_fn
-        print 'Saved figure to: ' + self.fig_fn
+        print('Saved figure to: ' + self.fig_fn)
 
 
 if __name__=='__main__':
