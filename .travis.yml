@@ -1,48 +1,35 @@
-dist: xenial    # 16.04 LTS
-sudo: required  # use VM instead of docker
-
+dist: xenial
+sudo: required
 language: python
 python:
-  - "2.7"
-#  - "3.6" # No output has been received in the last 10m0s,
-#           this potentially indicates a stalled build or something wrong with the build itself
-#  - "3.7"
-
-  # does not have headers provided, please ask https://launchpad.net/~pypy/+archive/ppa
-  # maintainers to fix their pypy-dev package.
-  # - "pypy"
-
-
-# command to install dependencies
-
-before_script:
-#  - wget https://github.com/adamallo/SimPhy/releases/download/v1.0.2/SimPhy_1.0.2.tar.gz -O /tmp/simphy.tar.gz
-#  - tar -xvf /tmp/simphy.tar.gz
-#  - chmod +x $PWD/SimPhy_1.0.2/bin/*
-#  - export PATH=$PATH:$PWD/SimPhy_1.0.2/bin
-
+- '2.7'
+before_script: null
 install:
-  - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
-  - bash miniconda.sh -b -p $HOME/miniconda
-  - export PATH="$HOME/miniconda/bin:$PATH"
-  - hash -r
-  - conda config --set always_yes yes --set changeps1 no
-  - conda update -q conda
-  - conda info -a
-  - conda create -q -n test-env python=$TRAVIS_PYTHON_VERSION pytest pytest-cov pyyaml
-  - source activate test-env
-  - conda install geopandas netcdf4
-  - pip install  obspy
-  - pip install pytest-xdist  pytest-cov coveralls
-  - pip install configparser  # for python27
-
-# command to run tests
+- wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
+- bash miniconda.sh -b -p $HOME/miniconda
+- export PATH="$HOME/miniconda/bin:$PATH"
+- hash -r
+- conda config --set always_yes yes --set changeps1 no
+- conda update -q conda
+- conda info -a
+- conda create -q -n test-env python=$TRAVIS_PYTHON_VERSION pytest pytest-cov pyyaml
+- source activate test-env
+- conda install geopandas netcdf4
+- pip install  obspy
+- pip install pytest-xdist  pytest-cov coveralls
+- pip install configparser
 script:
-  # - python -m pytest --cov=./
-  - MTPY_TEST_COMPARE_IMAGE=False; py.test -v --cov=mtpy --cov-report= tests --ignore=tests/SmartMT
+- MTPY_TEST_COMPARE_IMAGE=False; py.test -v --cov=mtpy --cov-report= tests --ignore=tests/SmartMT
+
+deploy:
+  provider: pypi
+  user: zhang01GA
+  password:
+    secure: RSp0jYEt8i10uJyc0oRVuh/qXSmlbCswcK9RS57Ne0tJsZcgNd8RY2mPOWOnTMmvk5s3xRZQSdfoydudlUoePzPuDHvuTbQL0o2Te+On7LOYVFTaJzXlJOkmKfr6YhGunjzH3s5b+lJXRsPKsqUcXAG8QDrgZW8afHT0WCgGYEkCacDwTOj/D3CxY+ATlyr35ok9i91/jPbxawFrPK/bQmBAB3YyLtcXWMOPwOffcBDvBhWJsxOK7LG+B/LfHN4SB3bd4phm30XR5Jfg1mmfMWOiv8jE4pTgcBjbVFS/HEUaEL18RSg68SOaNZ3+1tkDuR370Zh3Ym5WuU8HidgF10+CK/16k1eM1fX40u4tCzPA1n+n2DkcsbBtXNOp6ZqOo2dzdLBgOQhxwvR5dOSHGwXOTc4wl5SJZEdO/Tis93xGw1RPQkCvxu2kXfPS6URuU0v/ujzzXE9+5+fx2UhtDddZTuoek//4z70Zod0Yf7k9tu3zi25hsHPBGWeBkTaaYsFejgfEFrg+h7jCxl8GgGIj4blvOnmN2kuE9uNgVJuYbssDiMCjMwlr8ArTNlubCA8rG61pWC8xCG1PhD2F5gCNf5TclEC1s89CfqVMZstF6haJZ0oK191w1pGXep5ZUoQq4J6hY28ZqHm0NYB9oWCm5BAJQI+AzBJ1Yp7ngtg=
+  on:
+    branch: master
 
 after_failure:
-    - cat config.log
-
+- cat config.log
 after_success:
-    - coveralls
+- coveralls

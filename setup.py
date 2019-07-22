@@ -70,7 +70,7 @@ setup_kwargs['install_requires'] = ['numpy>=1.8.1',
                                      'configparser']
 
 setup(name="mtpy",
-	version='1.0.2',
+	version='1.1.0',
 	description=("Python toolkit for standard MT data processing."),
 	license="GNU GENERAL PUBLIC LICENSE v3",
 	**setup_kwargs)
