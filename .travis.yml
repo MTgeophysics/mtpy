@@ -3,7 +3,7 @@ sudo: required
 language: python
 python:
 - '2.7'
-#- '3.7'
+- '3.7'
 before_script: null
 install:
 - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
@@ -21,13 +21,14 @@ install:
 - pip install configparser
 script:
 - MTPY_TEST_COMPARE_IMAGE=False; py.test -v --cov=mtpy --cov-report= tests/core --ignore=tests/SmartMT
+  #- MTPY_TEST_COMPARE_IMAGE=False; py.test -v --cov=mtpy --cov-report= tests/core --ignore=tests/SmartMT # py3 unit test stall at imaging modules, must skip them
 
 after_failure:
 - cat config.log
 after_success:
 - coveralls
 
-  
+  # docutils 0.15 did not work in python2  
 before_deploy: 
 - pip install docutils==0.14
 
