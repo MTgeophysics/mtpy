@@ -33,6 +33,7 @@ before_deploy:
 - pip install docutils==0.14
 
 deploy:
+  skip_existing: true
   provider: pypi
   user: zhang01ga
   password:
