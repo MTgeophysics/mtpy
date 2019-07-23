@@ -3,6 +3,7 @@ sudo: required
 language: python
 python:
 - '2.7'
+#- '3.7'
 before_script: null
 install:
 - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
@@ -20,16 +21,27 @@ install:
 - pip install configparser
 script:
 - MTPY_TEST_COMPARE_IMAGE=False; py.test -v --cov=mtpy --cov-report= tests --ignore=tests/SmartMT
-
-deploy:
-  provider: pypi
-  user: zhang01GA
-  password:
-    secure: RSp0jYEt8i10uJyc0oRVuh/qXSmlbCswcK9RS57Ne0tJsZcgNd8RY2mPOWOnTMmvk5s3xRZQSdfoydudlUoePzPuDHvuTbQL0o2Te+On7LOYVFTaJzXlJOkmKfr6YhGunjzH3s5b+lJXRsPKsqUcXAG8QDrgZW8afHT0WCgGYEkCacDwTOj/D3CxY+ATlyr35ok9i91/jPbxawFrPK/bQmBAB3YyLtcXWMOPwOffcBDvBhWJsxOK7LG+B/LfHN4SB3bd4phm30XR5Jfg1mmfMWOiv8jE4pTgcBjbVFS/HEUaEL18RSg68SOaNZ3+1tkDuR370Zh3Ym5WuU8HidgF10+CK/16k1eM1fX40u4tCzPA1n+n2DkcsbBtXNOp6ZqOo2dzdLBgOQhxwvR5dOSHGwXOTc4wl5SJZEdO/Tis93xGw1RPQkCvxu2kXfPS6URuU0v/ujzzXE9+5+fx2UhtDddZTuoek//4z70Zod0Yf7k9tu3zi25hsHPBGWeBkTaaYsFejgfEFrg+h7jCxl8GgGIj4blvOnmN2kuE9uNgVJuYbssDiMCjMwlr8ArTNlubCA8rG61pWC8xCG1PhD2F5gCNf5TclEC1s89CfqVMZstF6haJZ0oK191w1pGXep5ZUoQq4J6hY28ZqHm0NYB9oWCm5BAJQI+AzBJ1Yp7ngtg=
-  on:
-    branch: master
+  #- MTPY_TEST_COMPARE_IMAGE=False; py.test -v --cov=mtpy --cov-report= tests/core --ignore=tests/SmartMT # py3 unit test stall at imaging modules, must skip them
 
 after_failure:
 - cat config.log
 after_success:
 - coveralls
+
+# docutils 0.15 did not work in python2  
+before_deploy: 
+- pip install docutils==0.14
+
+deploy:
+  skip_existing: true
+  provider: pypi
+  user: zhang01ga
+  password:
+    secure: O63BKFd0KE5OLAiPbZVSHeiuA41PZvytoXQ/A7CLIRD0NZySWNrP2L1Ngr0fjI2ms155o2PLjvTJ/cx56MDEE/Z+Qc2BwWDYdGCWsyOKQpDwEcblXxT9lYbzAoYLRIJsjMYWx0kJls8H9fRgYTHa003g1u5f0JSYBSj4J0rz/yWQZLmHPQ7nyuio9SCbKB7noC12ItsDkXOYJvvLJxqFu8yLI9VmagKl+VPYpLc0wX+jGMS0EuukEnkknnjdmV+0CukDTkgE4CIXJCHW3PpcXF41/6srdzCZldq7HnYRuSIYjl1YV+p3XoriKinZ0Py/h0xdqaawabD4fYowwhyreL5GOjbt46rjgZCkZEZB2q+7C9nsWJ2XsdqhQc68372ir1KQBSIkmr7W/bfqpBi9CKECS+xytLFr6rMRdmRqR4zMLbJHzwFILfrZZQZMek7QWftFg3xuAiupOKkMTmJQ5kkIVNE+gC3yocIoHiPuxnO7SO9xXYUnSZMl7KXzYnDzk6fPGXjwm1HDhYXnPZoHG0WGDOYpqFx3s967GDdpBg9QqiLTDr5Dte3J/FQjQSr/aD/na5/QQmU36pklWf5yweRSbpI0WgMbS61ihBAB461YPp+wl9/FSclSayo9OIQuSmojKdcAPE3BtgVFk2N3UFZS+oW+Yn6N/LZXgo5uaUM=
+  on:
+    branch: master
+
+after_deploy:
+- pip search mtpy 
+- pip list mtpy 
+#- ./after_deploy_script2.sh
