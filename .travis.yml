@@ -2,8 +2,8 @@ dist: xenial
 sudo: required
 language: python
 python:
-#- '2.7'
-- '3.7'
+- '2.7'
+#- '3.7'
 before_script: null
 install:
 - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
@@ -22,6 +22,15 @@ install:
 script:
 - MTPY_TEST_COMPARE_IMAGE=False; py.test -v --cov=mtpy --cov-report= tests/core --ignore=tests/SmartMT
 
+after_failure:
+- cat config.log
+after_success:
+- coveralls
+
+  
+before_deploy: 
+- pip install docutils==0.14
+
 deploy:
   provider: pypi
   user: zhang01ga
@@ -30,7 +39,7 @@ deploy:
   on:
     branch: master
 
-after_failure:
-- cat config.log
-after_success:
-- coveralls
+after_deploy:
+- pip search mtpy 
+- pip list mtpy 
+#- ./after_deploy_script2.sh
