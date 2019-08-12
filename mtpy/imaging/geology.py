@@ -30,6 +30,7 @@ import fiona
 class Geology:
     def __init__(self, sfn,
                  symbolkey='SYMBOL',
+                 
                  minLon=None, maxLon=None,
                  minLat=None, maxLat=None):
         '''
@@ -82,7 +83,7 @@ class Geology:
         sf.close()
     # end func
 
-    def processLUT(self, lutfn):
+    def processLUT(self, lutfn, lut_delimiter=' '):
         '''
         Loads a colour lookup table of the following format:
 
@@ -118,9 +119,13 @@ class Geology:
             lines = f.readlines()
             for i, line in enumerate(lines):
                 if (i == 0): continue  # skip header
-                key = line.split(' ')[0]
-                color = np.array(line.split(' ')[1].split(','))
-                color = color.astype(np.float) / 256.
+                key = line.split(lut_delimiter)[0]
+                color = np.array(line.split(lut_delimiter)[1].split(','))
+                try:
+                    color = color.astype(np.float) / 256.
+                except ValueError:
+                    # if string value is provided (named matplotlib color), use this as is
+                    color = color[0]
 
                 self._lutDict[key] = color
             # end for
@@ -128,7 +133,7 @@ class Geology:
         # end if
     # end func
 
-    def plot(self, ax, m, lutfn=None, 
+    def plot(self, ax, m, lutfn=None, lut_delimiter=' ',
              default_polygon_color='grey', **kwargs):
         '''
         Plots a shapefile. This function assumes that a shapefile containing polygonal
@@ -149,7 +154,7 @@ class Geology:
         '''
 
         # Populate lookup table
-        self.processLUT(lutfn)
+        self.processLUT(lutfn,lut_delimiter=lut_delimiter)
         print("plotting geology")
 
         patches = []
@@ -162,6 +167,7 @@ class Geology:
         if ('edgecolor' in list(kwargs.keys()) and kwargs['edgecolor'] == 'face'):
             ecolor_is_fcolor = True
         # Process geometry
+        
         for i, feature in enumerate(self._geometries):
             fcolor = None
             symbol = ''
