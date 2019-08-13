@@ -581,7 +581,7 @@ class Model(object):
                                                self.n_layers - self.pad_z - nair)
 
         if self.z_layer_rounding is not None:
-            z_nodes = np.around(log_z,self._z_layer_rounding)
+            z_nodes = np.around(log_z,decimals=self.z_layer_rounding)
         else:
             # round any values less than 100 to the same s.f. as z1_layer
             z_nodes = np.around(log_z[log_z < 100], decimals=-int(np.floor(np.log10(self.z1_layer))))

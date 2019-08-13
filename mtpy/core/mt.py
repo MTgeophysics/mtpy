@@ -1796,9 +1796,10 @@ class MT(object):
         if not isinstance(new_freq_array, np.ndarray):
             new_freq_array = np.array(new_freq_array)
             
-        if 0. < period_buffer < 1.:
-            period_buffer += 1.
-            print("Warning: period buffer must be > 1. Updating to",period_buffer)
+        if period_buffer is not None:
+            if 0. < period_buffer < 1.:
+                period_buffer += 1.
+                print("Warning: period buffer must be > 1. Updating to",period_buffer)
 
         # check the bounds of the new frequency array
         if bounds_error:
