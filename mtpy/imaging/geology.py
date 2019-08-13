@@ -20,6 +20,7 @@ import logging, traceback
 
 from mtpy.utils import gis_tools
 import matplotlib.pyplot as plt
+from matplotlib import colors
 
 from shapely.geometry import LineString, Polygon, MultiPolygon, shape
 from matplotlib.collections import PatchCollection
@@ -120,12 +121,13 @@ class Geology:
             for i, line in enumerate(lines):
                 if (i == 0): continue  # skip header
                 key = line.split(lut_delimiter)[0]
-                color = np.array(line.split(lut_delimiter)[1].split(','))
+                color = np.array(line.strip().split(lut_delimiter)[1].split(','))
                 try:
                     color = color.astype(np.float) / 256.
                 except ValueError:
-                    # if string value is provided (named matplotlib color), use this as is
-                    color = color[0]
+                    # if string value is provided (named matplotlib color), convert to a rgb tuple
+                    color = np.array(colors.to_rgba(color[0])[:3])
+                        
 
                 self._lutDict[key] = color
             # end for
