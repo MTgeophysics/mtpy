@@ -20,6 +20,7 @@ import logging, traceback
 
 from mtpy.utils import gis_tools
 import matplotlib.pyplot as plt
+from matplotlib import colors
 
 from shapely.geometry import LineString, Polygon, MultiPolygon, shape
 from matplotlib.collections import PatchCollection
@@ -30,6 +31,7 @@ import fiona
 class Geology:
     def __init__(self, sfn,
                  symbolkey='SYMBOL',
+                 
                  minLon=None, maxLon=None,
                  minLat=None, maxLat=None):
         '''
@@ -82,7 +84,7 @@ class Geology:
         sf.close()
     # end func
 
-    def processLUT(self, lutfn):
+    def processLUT(self, lutfn, lut_delimiter=' '):
         '''
         Loads a colour lookup table of the following format:
 
@@ -118,9 +120,14 @@ class Geology:
             lines = f.readlines()
             for i, line in enumerate(lines):
                 if (i == 0): continue  # skip header
-                key = line.split(' ')[0]
-                color = np.array(line.split(' ')[1].split(','))
-                color = color.astype(np.float) / 256.
+                key = line.split(lut_delimiter)[0]
+                color = np.array(line.strip().split(lut_delimiter)[1].split(','))
+                try:
+                    color = color.astype(np.float) / 256.
+                except ValueError:
+                    # if string value is provided (named matplotlib color), convert to a rgb tuple
+                    color = np.array(colors.to_rgba(color[0])[:3])
+                        
 
                 self._lutDict[key] = color
             # end for
@@ -128,7 +135,7 @@ class Geology:
         # end if
     # end func
 
-    def plot(self, ax, m, lutfn=None, 
+    def plot(self, ax, m, lutfn=None, lut_delimiter=' ',
              default_polygon_color='grey', **kwargs):
         '''
         Plots a shapefile. This function assumes that a shapefile containing polygonal
@@ -149,7 +156,7 @@ class Geology:
         '''
 
         # Populate lookup table
-        self.processLUT(lutfn)
+        self.processLUT(lutfn,lut_delimiter=lut_delimiter)
         print("plotting geology")
 
         patches = []
@@ -162,6 +169,7 @@ class Geology:
         if ('edgecolor' in list(kwargs.keys()) and kwargs['edgecolor'] == 'face'):
             ecolor_is_fcolor = True
         # Process geometry
+        
         for i, feature in enumerate(self._geometries):
             fcolor = None
             symbol = ''
@@ -175,10 +183,24 @@ class Geology:
                 polygon = feature
                 x, y = polygon.exterior.coords.xy
                 if m is None:
-                    px,py = x,y
+                    px, py = x, y
                 else:
                     px, py = m(x, y)
-                ppolygon = Polygon(list(zip(px, py)))
+                # end if
+
+                holes = []
+                for interior in polygon.interiors:
+                    x, y = interior.coords.xy
+                    if m is None:
+                        ipx, ipy = x, y
+                    else:
+                        ipx, ipy = m(x, y)
+                    # end if
+
+                    holes.append(list(zip(ipx, ipy)))
+                # end for
+
+                ppolygon = Polygon(shell=list(zip(px, py)), holes=holes)
                 
                 if (fcolor is not None): 
                     kwargs['facecolor'] = fcolor
@@ -204,10 +226,24 @@ class Geology:
                 for polygon in multiPolygon:
                     x, y = polygon.exterior.coords.xy
                     if m is None:
-                        px,py = x,y
+                        px, py = x, y
                     else:
                         px, py = m(x, y)
-                    ppolygon = Polygon(list(zip(px, py)))
+                    # end if
+
+                    holes = []
+                    for interior in polygon.interiors:
+                        x, y = interior.coords.xy
+                        if m is None:
+                            ipx, ipy = x, y
+                        else:
+                            ipx, ipy = m(x, y)
+                        # end if
+
+                        holes.append(list(zip(ipx, ipy)))
+                    # end for
+
+                    ppolygon = Polygon(shell=list(zip(px, py)), holes=holes)
 
                     if (fcolor is not None): kwargs['facecolor'] = fcolor
                     if ('edgecolor' not in list(kwargs.keys()) and not ecolor_is_fcolor):
@@ -250,18 +286,19 @@ class Geology:
         yl = (np.array(yl) + centre_shift[1])/scale_factor
         
         return xl,yl
-        
-    
-    def plotlocal(self,epsg_from,epsg_to,centre_shift=[0.,0.],ax=None,
-                  map_scale='m',**kwargs):
+    # end func
+
+    def plotlocal(self, epsg_from, epsg_to, centre_shift=[0.,0.], ax=None,
+                  map_scale='m', default_polygon_color='grey', **kwargs):
         '''
         Plots a shapefile as lines in local coordinates (for overlaying on
         existing depth slice plotting functions, for example)
-        :epsg_from: epsg the sh in
-        :epsg_to: epsg you would like the output to be plotted in
-        :centre_shift: option to shift by [x,y] to convert (for example) to 
+        :epsg_from: source epsg
+        :epsg_to: target epsg
+        :centre_shift: option to shift by [x,y]
         :ax: axes instance to plot on
-        :map_scale: 'km' or 'm' - scale of map we are plotting onto
+        :map_scale: 'km' or 'm'
+        :default_polygon_color: default color
         :kwargs: key word arguments to the matplotlib plot function
         local coordinates.
         :return:
@@ -365,8 +402,8 @@ def main():
     define main function
     :return:
     """
-    imaging2 = os.path.dirname(__file__)
-    mtpy = os.path.dirname(imaging2)
+    imaging = os.path.dirname(os.path.abspath(__file__))
+    mtpy = os.path.dirname(imaging)
     base = os.path.dirname(mtpy)
     examples = os.path.join(base, 'examples')
     data = os.path.join(examples, 'data')
@@ -376,6 +413,17 @@ def main():
 
     pg1 = Geology(polyDataShapefile) # Polygon data
     pg2 = Geology(lineDataShapefile) # Line data
+
+    from mpl_toolkits.basemap import Basemap
+    fig, ax = plt.subplots(1,1)
+    fig.set_size_inches(16,12)
+    m = Basemap(ax=ax, llcrnrlon=110,llcrnrlat=-50,urcrnrlon=155.,urcrnrlat=-10,
+                 resolution='l', projection='merc', lat_0 = 39.5, lon_0 = 1)
+
+    m.drawcoastlines()
+    pg1.plot(ax, m)
+    pg2.plot(ax, m)
+    plt.savefig('/tmp/a.pdf')
 
     return
     # end

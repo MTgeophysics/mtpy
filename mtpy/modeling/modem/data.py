@@ -410,15 +410,16 @@ class Data(object):
         """
         reset the header sring for file
         """
-        
         if 'separate' in error_type:
-            h_str = ','.join(['# Created using MTpy calculated {}error floors of {1:.0f}%,{1:.0f}%,{1:.0f}%,{1:.0f}%',
-                          ' data rotated {2:.1f}_deg clockwise from N\n'])
+            h_str = ','.join(['# Created using MTpy calculated {} '.format(error_type)+\
+                              'error floors of {0:.0f}%,{1:.0f}%,{2:.0f}%,{3:.0f}%',
+                          ' data rotated {4:.1f}_deg clockwise from N\n'])
+            return h_str.format(error_value[0,0], error_value[0,1], error_value[1,0], error_value[1,1], rotation_angle)
         else:
             h_str = ','.join(['# Created using MTpy calculated {0} error of {1:.0f}%',
                           ' data rotated {2:.1f}_deg clockwise from N\n'])
 
-        return h_str.format(error_type, error_value, rotation_angle)
+            return h_str.format(error_type, error_value, rotation_angle)
 
     def get_mt_dict(self):
         """
@@ -714,7 +715,7 @@ class Data(object):
                 # in this case the below interpolate_impedance_tensor function will degenerate into a same-freq set.
                 
             if len(interp_periods) > 0:  # not empty
-                interp_z, interp_t = mt_obj.interpolate(1. / interp_periods, period_buffer=self.period_buffer)  # ,bounds_error=False)
+                interp_z, interp_t = mt_obj.interpolate(1. / interp_periods, period_buffer=self.period_buffer ,bounds_error=False)  #)
                 #                interp_z, interp_t = mt_obj.interpolate(1./interp_periods)
                 for kk, ff in enumerate(interp_periods):
                     jj = np.where(self.period_list == ff)[0][0]
@@ -887,7 +888,7 @@ class Data(object):
                 elif 'separate' in self.error_type_z:
                     # apply separate error floors to each component
                     d = d.reshape((2, 2))
-                    err = err_value * d
+                    err = err_value * np.abs(d)
                 else:
                     raise DataError('error type (z) {0} not understood'.format(self.error_type_z))
 
