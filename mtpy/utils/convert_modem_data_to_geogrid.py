@@ -104,29 +104,27 @@ def modem2geotiff(data_file, model_file, output_file, source_proj=None):
         'resistivity': np.transpose(model.res_model, axes=(2, 0, 1))
     }
 
-    grid_proj = Proj(init='epsg:4326') # output grid Coordinate systems: 4326, 4283, 3112
-    # grid_proj = Proj(init='epsg:4283') # output grid Coordinate system 4326, 4283, 3112
+    #grid_proj = Proj(init='epsg:4326') # output grid Coordinate systems: 4326 WGS84
+    grid_proj = Proj(init='epsg:4283') # output grid Coordinate system , 4283 https://spatialreference.org/ref/epsg/gda94/
     # grid_proj = Proj(init='epsg:3112') # output grid Coordinate system 4326, 4283, 3112
     result = modem2nc.interpolate(resistivity_data, source_proj, grid_proj, center,
                          modem2nc.median_spacing(model.grid_east), modem2nc.median_spacing(model.grid_north))
 
-    # nc.write_resistivity_grid(output_file, grid_proj,
-    #                           result['latitude'], result['longitude'], result['depth'],
-    #                           result['resistivity'], z_label='depth')
 
     print("result['latitude'] ==", result['latitude'])
     print("result['longitude'] ==", result['longitude'])
     print("result['depth'] ==", result['depth'])
 
-    origin=(result['latitude'][0],result['longitude'][0])
+    origin=(result['longitude'][0],result['latitude'][0])
     pixel_width = result['longitude'][1] - result['longitude'][0]
     pixel_height = result['latitude'][1] - result['latitude'][0]
 
     # write the depth_index
     depth_index=1
     resis_data = result['resistivity'][depth_index,:,:]
-    resis_data2 = resis_data[::-1]  # flipped upside down to get geotiff mapped correctly.
-    array2geotiff_writer(output_file,origin,pixel_width,pixel_height,resis_data2)
+    #resis_data_vflip = resis_data[::-1]  # flipped upside down 
+
+    array2geotiff_writer(output_file,origin,pixel_width,pixel_height,resis_data)
 
     return output_file
 
@@ -147,4 +145,4 @@ if __name__ == '__main__':
     modem2geotiff(args.modem_data, args.modem_model, args.output_file, args.epsg)
 
 
-    test_array2geotiff_writer("test_geotiff_GDAL_img.tif")
+    # test_array2geotiff_writer("test_geotiff_GDAL_img.tif")

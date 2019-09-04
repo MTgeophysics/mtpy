@@ -1,16 +1,17 @@
 sphinx==1.8.3
 matplotlib>=2.0.2
-obspy==1.1.0
-# numpy
+numpy
 scipy
 pillow
 qtpy
-#GDAL
-geopandas
 netcdf4
-#networkx
 numpydoc>=0.7.0
-# basemap
 pytest
 flake8
 pyyaml
+pyproj
+geopandas
+#GDAL
+#networkx
+#basemap
+#obspy==1.1.0

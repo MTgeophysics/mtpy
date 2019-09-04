@@ -1,48 +1,47 @@
-dist: xenial    # 16.04 LTS
-sudo: required  # use VM instead of docker
-
+dist: xenial
+sudo: required
 language: python
 python:
-  - "2.7"
-#  - "3.6" # No output has been received in the last 10m0s,
-#           this potentially indicates a stalled build or something wrong with the build itself
-#  - "3.7"
-
-  # does not have headers provided, please ask https://launchpad.net/~pypy/+archive/ppa
-  # maintainers to fix their pypy-dev package.
-  # - "pypy"
-
-
-# command to install dependencies
-
-before_script:
-#  - wget https://github.com/adamallo/SimPhy/releases/download/v1.0.2/SimPhy_1.0.2.tar.gz -O /tmp/simphy.tar.gz
-#  - tar -xvf /tmp/simphy.tar.gz
-#  - chmod +x $PWD/SimPhy_1.0.2/bin/*
-#  - export PATH=$PATH:$PWD/SimPhy_1.0.2/bin
-
+- '2.7'
+#- '3.7'
+before_script: null
 install:
-  - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
-  - bash miniconda.sh -b -p $HOME/miniconda
-  - export PATH="$HOME/miniconda/bin:$PATH"
-  - hash -r
-  - conda config --set always_yes yes --set changeps1 no
-  - conda update -q conda
-  - conda info -a
-  - conda create -q -n test-env python=$TRAVIS_PYTHON_VERSION pytest pytest-cov pyyaml
-  - source activate test-env
-  - conda install geopandas netcdf4
-  - pip install  obspy
-  - pip install pytest-xdist  pytest-cov coveralls
-  - pip install configparser  # for python27
-
-# command to run tests
+- wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
+- bash miniconda.sh -b -p $HOME/miniconda
+- export PATH="$HOME/miniconda/bin:$PATH"
+- hash -r
+- conda config --set always_yes yes --set changeps1 no
+- conda update -q conda
+- conda info -a
+- conda create -q -n test-env python=$TRAVIS_PYTHON_VERSION pytest pytest-cov pyyaml
+- source activate test-env
+- conda install geopandas netcdf4
+- pip install  obspy
+- pip install pytest-xdist  pytest-cov coveralls
+- pip install configparser
 script:
-  # - python -m pytest --cov=./
-  - MTPY_TEST_COMPARE_IMAGE=False; py.test -v --cov=mtpy --cov-report= tests --ignore=tests/SmartMT
+- MTPY_TEST_COMPARE_IMAGE=False; py.test -v --cov=mtpy --cov-report= tests --ignore=tests/SmartMT
+  #- MTPY_TEST_COMPARE_IMAGE=False; py.test -v --cov=mtpy --cov-report= tests/core --ignore=tests/SmartMT # py3 unit test stall at imaging modules, must skip them
 
 after_failure:
-    - cat config.log
-
+- cat config.log
 after_success:
-    - coveralls
+- coveralls
+
+# docutils 0.15 did not work in python2  
+before_deploy: 
+- pip install docutils==0.14
+
+deploy:
+  skip_existing: true
+  provider: pypi
+  user: zhang01ga
+  password:
+    secure: O63BKFd0KE5OLAiPbZVSHeiuA41PZvytoXQ/A7CLIRD0NZySWNrP2L1Ngr0fjI2ms155o2PLjvTJ/cx56MDEE/Z+Qc2BwWDYdGCWsyOKQpDwEcblXxT9lYbzAoYLRIJsjMYWx0kJls8H9fRgYTHa003g1u5f0JSYBSj4J0rz/yWQZLmHPQ7nyuio9SCbKB7noC12ItsDkXOYJvvLJxqFu8yLI9VmagKl+VPYpLc0wX+jGMS0EuukEnkknnjdmV+0CukDTkgE4CIXJCHW3PpcXF41/6srdzCZldq7HnYRuSIYjl1YV+p3XoriKinZ0Py/h0xdqaawabD4fYowwhyreL5GOjbt46rjgZCkZEZB2q+7C9nsWJ2XsdqhQc68372ir1KQBSIkmr7W/bfqpBi9CKECS+xytLFr6rMRdmRqR4zMLbJHzwFILfrZZQZMek7QWftFg3xuAiupOKkMTmJQ5kkIVNE+gC3yocIoHiPuxnO7SO9xXYUnSZMl7KXzYnDzk6fPGXjwm1HDhYXnPZoHG0WGDOYpqFx3s967GDdpBg9QqiLTDr5Dte3J/FQjQSr/aD/na5/QQmU36pklWf5yweRSbpI0WgMbS61ihBAB461YPp+wl9/FSclSayo9OIQuSmojKdcAPE3BtgVFk2N3UFZS+oW+Yn6N/LZXgo5uaUM=
+  on:
+    branch: master
+
+after_deploy:
+- pip search mtpy 
+- pip list mtpy 
+#- ./after_deploy_script2.sh

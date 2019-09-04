@@ -86,6 +86,9 @@ class Residual(object):
         # check if residual_fn is contained in object
         if residual_fn is None:
             residual_fn = self.residual_fn
+        else:
+            self.residual_fn = residual_fn
+            
         if self.residual_fn is None:
             raise Exception("Cannot read residuals, please provide residual_fn")
         
