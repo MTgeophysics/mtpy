@@ -84,7 +84,7 @@ def estimate_static_spatial_median(edi_fn, radius=1000., num_freq=20,
 
     # read the edi file
     mt_obj = mt.MT(edi_fn)
-    mt_obj.Z._compute_res_phase()
+    mt_obj.Z.compute_resistivity_phase()
     interp_freq = mt_obj.Z.freq[freq_skip:num_freq + freq_skip]
 
     # Find stations near by and store them in a list
@@ -110,8 +110,8 @@ def estimate_static_spatial_median(edi_fn, radius=1000., num_freq=20,
                               (interp_freq <= mt_obj_kk.Z.freq.max()))
 
         interp_freq_kk = interp_freq[interp_idx]
-        Z_interp, Tip_interp = mt_obj_kk.interpolate_impedance_tensor(interp_freq_kk)
-        Z_interp._compute_res_phase()
+        Z_interp, Tip_interp = mt_obj_kk.interpolate(interp_freq_kk)
+        Z_interp.compute_resistivity_phase()
         res_array[
             kk,
             interp_idx,
