@@ -30,7 +30,8 @@ def array2geotiff_writer(newRasterfn, rasterOrigin, pixelWidth, pixelHeight, arr
     originX = rasterOrigin[0]
     originY = rasterOrigin[1]
 
-    driver = gdal.GetDriverByName('GTiff')
+    #driver = gdal.GetDriverByName('GTiff')
+    driver = gdal.GetDriverByName('AAIGrid')
     outRaster = driver.Create(newRasterfn, cols, rows, 1, gdal.GDT_Byte)
     outRaster.SetGeoTransform((originX, pixelWidth, 0, originY, 0, pixelHeight))
     outband = outRaster.GetRasterBand(1)
