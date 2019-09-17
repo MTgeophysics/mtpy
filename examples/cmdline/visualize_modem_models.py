@@ -13,7 +13,8 @@ python examples/scripts/visualize_modem_models.py ./examples/data/ModEM_files/Vi
 import os
 import sys
 
-from mtpy.imaging.modem_phase_tensor_maps import PlotPTMaps
+#from mtpy.imaging.modem_phase_tensor_maps import PlotPTMaps
+from mtpy.modeling.modem.phase_tensor_maps import PlotPTMaps
 from mtpy.imaging.plot_depth_slice import PlotDepthSlice
 #from legacy.plot_response import PlotResponse
 #from legacy.plot_rms_map import PlotRMSMaps
