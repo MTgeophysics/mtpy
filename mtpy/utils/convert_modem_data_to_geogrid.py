@@ -30,8 +30,8 @@ def array2geotiff_writer(newRasterfn, rasterOrigin, pixelWidth, pixelHeight, arr
     originX = rasterOrigin[0]
     originY = rasterOrigin[1]
 
-    #driver = gdal.GetDriverByName('GTiff')
-    driver = gdal.GetDriverByName('AAIGrid')
+    driver = gdal.GetDriverByName('GTiff')
+    # driver = gdal.GetDriverByName('AAIGrid')
     outRaster = driver.Create(newRasterfn, cols, rows, 1, gdal.GDT_Byte)
     outRaster.SetGeoTransform((originX, pixelWidth, 0, originY, 0, pixelHeight))
     outband = outRaster.GetRasterBand(1)
@@ -47,7 +47,7 @@ def test_array2geotiff_writer(newRasterfn):
     #rasterOrigin = (-123.25745,45.43013)
     rasterOrigin = (149.298, -34.974)
     pixelWidth = 0.01
-    pixelHeight = 0.01
+    pixelHeight = -0.01  # this is negative value, as a Geotiff image starts from the upper left corner.
     # Define an array: 0 = black 1=bright
     array = np.array([[ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
                       [ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
@@ -65,7 +65,7 @@ def test_array2geotiff_writer(newRasterfn):
 
     array2= 100*array + 10*random
     print (array2)
-    #reversed_arr = array2[::-1]  # reverse the array to flip image upside down (water surface mirrored shadow)
+
     array2geotiff_writer(newRasterfn, rasterOrigin, pixelWidth, pixelHeight, array2)  # convert array to raster
 
 
@@ -146,4 +146,4 @@ if __name__ == '__main__':
     modem2geotiff(args.modem_data, args.modem_model, args.output_file, args.epsg)
 
 
-    # test_array2geotiff_writer("test_geotiff_GDAL_img.tif")
+    test_array2geotiff_writer("test_geotiff_GDAL_img.tif")
