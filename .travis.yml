@@ -43,5 +43,5 @@ deploy:
 
 after_deploy:
 - pip search mtpy 
-- pip list mtpy 
+- pip show mtpy 
 #- ./after_deploy_script2.sh
