@@ -117,9 +117,14 @@ class Data(object):
                                 * 'median'  sets error to
                                             error_value_z * median([Zxx, Zxy, Zyx, Zyy])
                                             (non zeros)
+                           A 2x2 numpy array of error_type_z can be specified to
+                           explicitly set the error_type_z for each component.
 
     error_value_z          percentage to multiply Z by to set error
                            *default* is 5 for 5% of Z as error
+                           A 2x2 numpy array of values can be specified to
+                           explicitly set the error_value_z for each component.
+
     error_value_tipper     absolute error between 0 and 1.
     fn_basename            basename of data file. *default* is 'ModEM_Data.dat'
     formatting             ['1' | '2'], format of the output data file, *default* is '1'
@@ -410,7 +415,7 @@ class Data(object):
         """
         reset the header sring for file
         """
-        if 'separate' in error_type:
+        if (np.atleast_1d(error_value).ndim == 2):
             h_str = ','.join(['# Created using MTpy calculated {} '.format(error_type)+\
                               'error floors of {0:.0f}%,{1:.0f}%,{2:.0f}%,{3:.0f}%',
                           ' data rotated {4:.1f}_deg clockwise from N\n'])
@@ -839,6 +844,17 @@ class Data(object):
         else:
             raise DataError("Unsupported error type (tipper): {}".format(self.error_type_tipper))
 
+        # consistency checks
+        error_type_z_list = np.atleast_1d(self.error_type_z)
+
+        if (error_type_z_list.size != 1 and error_type_z_list.size != 4):
+            raise DataError('Either specify a single error_type_z for all components, or ' \
+                            'a 2x2 numpy array of error_type_z.')
+        elif(np.sum(np.array([1 if 'separate' in item else 0 for item in error_type_z_list]))):
+            if(np.atleast_1d(self.error_value_z).size < 4):
+                raise DataError('error_value_z must be a 2x2 numpy array for error_type_z="separate"')
+        # end if
+
         # compute error for z
         err_value = self.error_value_z / 100.
         for ss in range(self.data_array.shape[0]):
@@ -853,46 +869,62 @@ class Data(object):
                 if d.sum() == 0.0:  # YG: only works if all d >= 0
                     continue
 
-                if 'egbert' in self.error_type_z:
-                    # if both components masked, then take error floor from
-                    # max of z_xx or z_yy
-                    if (d_xy==0.0 and d_yx==0.0):
-                        err = err_value * np.max([d_xx,d_yy])
-                    # else use the off diagonals depending on data availability
+                err = np.zeros((error_type_z_list.size,
+                                np.atleast_2d(err_value).shape[0],
+                                np.atleast_2d(err_value).shape[1]))
+                for ei, error_type_z in enumerate(error_type_z_list.flatten()):
+                    if 'egbert' in error_type_z:
+                        # if both components masked, then take error floor from
+                        # max of z_xx or z_yy
+                        if (d_xy==0.0 and d_yx==0.0):
+                            err[ei] = err_value * np.max([d_xx,d_yy])
+                        # else use the off diagonals depending on data availability
+                        else:
+                            if d_xy == 0.0:
+                                d_xy = d_yx
+                            if d_yx == 0.0:
+                                d_yx = d_xy
+                            err[ei] = err_value * np.sqrt(d_xy * d_yx)
+
+                    elif 'median' in error_type_z:
+                        err[ei] = err_value * np.median(d[nz])
+
+                    elif 'mean_od' in error_type_z:
+                        dod = np.array([d_xy, d_yx])
+                        nzod = np.nonzero(dod)
+                        err[ei] = err_value * np.mean(dod[nzod])
+
+                    elif 'eigen' in error_type_z:
+                        d2d = d.reshape((2, 2))
+                        err[ei] = err_value * np.abs(np.linalg.eigvals(d2d)).mean()
+                        if np.atleast_1d(err[ei]).sum() == 0:
+                            err[ei] = err_value * d[nz].mean()
+
+                    elif 'off_diagonals' in error_type_z:
+                        # apply same error to xy and xx, and to yx and yy
+                        # value is a % of xy and yx respectively
+                        err[ei] = np.array([[d_xy, d_xy],[d_yx, d_yx]])*err_value
+
+                    elif 'separate' in error_type_z:
+                        # apply separate error floors to each component
+                        d2d = d.reshape((2, 2))
+                        err[ei] = err_value * np.abs(d2d)
                     else:
-                        if d_xy == 0.0:
-                            d_xy = d_yx
-                        if d_yx == 0.0:
-                            d_yx = d_xy
-                        err = err_value * np.sqrt(d_xy * d_yx)
+                        raise DataError('error type (z) {0} not understood'.format(error_type_z))
+                # end for
 
-                elif 'median' in self.error_type_z:
-                    err = err_value * np.median(d[nz])
-
-                elif 'mean_od' in self.error_type_z:
-                    d = np.array([d_xy, d_yx])
-                    nz = np.nonzero(d)
-                    err = err_value * np.mean(d[nz])
-
-                elif 'eigen' in self.error_type_z:
-                    d = d.reshape((2, 2))
-                    err = err_value * np.abs(np.linalg.eigvals(d)).mean()
-                    if err == 0:
-                        err = err_value * d.flatten()[nz].mean()
-                
-                elif 'off_diagonals' in self.error_type_z:
-                    # apply same error to xy and xx, and to yx and yy
-                    # value is a % of xy and yx respectively
-                    err = np.array([[d_xy, d_xy],[d_yx, d_yx]])*err_value
-                
-                elif 'separate' in self.error_type_z:
-                    # apply separate error floors to each component
-                    d = d.reshape((2, 2))
-                    err = err_value * np.abs(d)
+                if(error_type_z_list.size == 1):
+                    self.data_array['z_inv_err'][ss, ff, :, :] = err[0]
                 else:
-                    raise DataError('error type (z) {0} not understood'.format(self.error_type_z))
-
-                self.data_array['z_inv_err'][ss, ff, :, :] = err
+                    for ei in np.arange(error_type_z_list.size):
+                        ix, iy = np.divmod(ei, 2)
+                        if (err.shape[1] > 1):
+                            self.data_array['z_inv_err'][ss, ff, ix, iy] = err[ei, ix, iy]
+                        else:
+                            self.data_array['z_inv_err'][ss, ff, ix, iy] = err[ei, 0, 0]
+                        # end if
+                    # end for
+                # end if
 
         # if there is an error floor
         if 'floor' in self.error_type_z:
