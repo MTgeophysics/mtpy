@@ -1874,10 +1874,63 @@ class Model(object):
             self._logger.warn("Provided or default ns_ext not sufficient to fit stations + padding, updating extent")
             self.ns_ext = np.ceil(extent_ratio * inner_ns_ext)
 
+    def _get_xyzres(self,location_type,origin,model_epsg,model_utm_zone,clip):
+        # try getting centre location info from file
+        if type(origin) == str:
+            try:
+                origin = np.loadtxt(origin)
+            except:
+                print("Please provide origin as a list, array or tuple or as a valid filename containing this info")
+                origin = [0,0]
+        
+        # reshape the data and get grid centres
+        x,y,z = [np.mean([arr[1:], arr[:-1]],axis=0) for arr in \
+                [self.grid_east + origin[0], 
+                 self.grid_north + origin[1], self.grid_z]]
+        xsize, ysize = x.shape[0],y.shape[0]
+        x, y, z = np.meshgrid(x[clip[0]:xsize-clip[0]],y[clip[1]:ysize-clip[1]],z)
+        
+        # set format for saving data
+        fmt = ['%.1f','%.1f','%.3e']
+        
 
+        # convert to lat/long if needed
+        if location_type == 'LL':
+            if np.any(origin) == 0:
+                print("Warning, origin coordinates provided as zero, output lat/long are likely to be incorrect")
+            # project using epsg_project as preference as it is faster, but if pyproj not installed, use gdal
+            try:
+                import pyproj
+                xp,yp = gis_tools.epsg_project(x,y,model_epsg,4326)
+            except ImportError:
+                xp,yp = np.zeros_like(x),np.zeros_like(y)
+                for i in range(len(x)):
+                    yp[i],xp[i] = gis_tools.project_point_utm2ll(x[i],y[i],model_utm_zone,epsg=model_epsg)
+            # update format to accommodate lat/lon
+            fmt[:2] = ['%.6f','%.6f']
+        else:
+            xp, yp = x, y
+            
+            
+        resvals = self.res_model[clip[1]:ysize-clip[1],clip[0]:xsize-clip[0]]
+            
+        return xp, yp, z, resvals, fmt
+    
+    
+    def write_xyzres(self,savefile=None,location_type='EN',origin=[0,0],model_epsg=None,log_res=False,model_utm_zone=None,clip=[0,0]):
+        """
+        save a model file as a space delimited x y z res file
+    
+        """
+        xp, yp, z, resvals, fmt = self._get_xyzres(location_type,origin,model_epsg,model_utm_zone,clip)
+        fmt.insert(2, '%.1f')
+        xp, yp, z, resvals = xp.flatten(), yp.flatten(), z.flatten(), resvals.flatten()
+            
+        np.savetxt(savefile,np.vstack([xp,yp,z,resvals]).T,fmt=fmt)
+            
 
-    def write_xyres(self,location_type='EN',origin=[0,0],model_epsg=None,depth_index='all',
-                    savepath=None,outfile_basename='DepthSlice',log_res=False,model_utm_zone=None,clip=[0,0]):
+    def write_xyres(self,savepath=None,location_type='EN',origin=[0,0],model_epsg=None,depth_index='all',
+                    outfile_basename='DepthSlice',log_res=False,model_utm_zone=None,clip=[0,0]):
         """
         write files containing depth slice data (x, y, res for each depth)
         
@@ -1895,48 +1948,18 @@ class Model(object):
         """
         if savepath is None:
             savepath = self.save_path
-
         
-            
         # make a directory to save the files
         savepath = os.path.join(savepath,outfile_basename)
         if not os.path.exists(savepath):
             os.mkdir(savepath)
         
-        # try getting centre location info from file
-        if type(origin) == str:
-            try:
-                origin = np.loadtxt(origin)
-            except:
-                print("Please provide origin as a list, array or tuple or as a valid filename containing this info")
-                origin = [0,0]
+
+        xp, yp, z, resvals, fmt = self._get_xyzres(location_type,origin,model_epsg,model_utm_zone,clip)
+        xp = xp[:,:,0].flatten()
+        yp = yp[:,:,0].flatten()
         
-        # reshape the data
-        x,y,z = [np.mean([arr[1:], arr[:-1]],axis=0) for arr in \
-                [self.grid_east + origin[0], 
-                 self.grid_north + origin[1], self.grid_z]]
-        x,y = [arr.flatten() for arr in np.meshgrid(x[clip[0]:-clip[0]],y[clip[1]:-clip[1]])]
-        
-        # set format for saving data
-        fmt = ['%.1f','%.1f','%.3e']
-        
-        # convert to lat/long if needed
-        if location_type == 'LL':
-            if np.any(origin) == 0:
-                print("Warning, origin coordinates provided as zero, output lat/long are likely to be incorrect")
-            # project using epsg_project as preference as it is faster, but if pyproj not installed, use gdal
-            try:
-                import pyproj
-                xp,yp = gis_tools.epsg_project(x,y,model_epsg,4326)
-            except ImportError:
-                xp,yp = np.zeros_like(x),np.zeros_like(y)
-                for i in range(len(x)):
-                    yp[i],xp[i] = gis_tools.project_point_utm2ll(x[i],y[i],model_utm_zone,epsg=model_epsg)
-            # update format to accommodate lat/lon
-            fmt[:2] = ['%.6f','%.6f']
-        else:
-            xp,yp = x,y
-            
+
         # make depth indices into a list
         if depth_index == 'all':
             depthindices = list(range(len(z)))
@@ -1945,9 +1968,13 @@ class Model(object):
         else:
             depthindices = [depth_index]
         
+
+        
         for k in depthindices:
             fname = os.path.join(savepath,outfile_basename+'_%1im.xyz'%z[k])
-            vals = self.res_model[clip[0]:-clip[0],clip[1]:-clip[-1],k].flatten()
+            
+            # get relevant depth slice
+            vals = resvals[:,:,k].flatten()
 
             if log_res:
                 vals = np.log10(vals)

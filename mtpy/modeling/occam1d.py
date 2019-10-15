@@ -284,8 +284,7 @@ class Data(object):
                 
 #                # relative errors of real and imaginary components of sqrt determinant
                 zereal = zdetreal * det_err * 0.5 / z_obj.det.real
-                zeimag = zdetimag * det_err * 0.5 / z_obj.det.imag         
-
+                zeimag = zdetimag * det_err * 0.5 / z_obj.det.imag
 
 
                 if self.mode.endswith('z'):
@@ -2597,8 +2596,8 @@ def generate_inputfiles(**input_parameters):
     for edifile in edilist:
         # read the edi file to get the station name
         eo = mt.MT(op.join(edipath, edifile))
-        print(input_parameters['rotation_angle'], input_parameters['working_directory'], input_parameters[
-            'rotation_angle_file'])
+        #print(input_parameters['rotation_angle'], input_parameters['working_directory'], input_parameters[
+        #    'rotation_angle_file'])
         if input_parameters['rotation_angle'] == 'strike':
             spr = input_parameters['strike_period_range']
             fmax, fmin = [1. / np.amin(spr), 1. / np.amax(spr)]
@@ -2704,23 +2703,26 @@ def build_run():
                              startupfile,
                              iterstring])
             # read the iter file to get minimum rms
-            iterfile = max([ff for ff in os.listdir(wd) if (ff.startswith(iterstring) and ff.endswith('.iter'))])
-            startup = Startup()
-            startup.read_startup_file(op.join(wd, iterfile))
-            # create a new startup file the same as the previous one but target rms is factor*minimum_rms
-            target_rms = float(startup.misfit_value) * input_parameters['rms_factor']
-            if target_rms < input_parameters['rms_min']:
-                target_rms = input_parameters['rms_min']
-            startupnew = Startup(data_fn=op.join(wd, startup.data_file),
-                                 model_fn=op.join(wd, startup.model_file),
-                                 max_iter=input_parameters['iteration_max'],
-                                 start_rho=input_parameters['start_rho'],
-                                 target_rms=target_rms)
-            startupnew.write_startup_file(startup_fn=op.join(wd, startupfile), save_path=wd)
-            # run occam again
-            subprocess.call([input_parameters['program_location'],
-                             startupfile,
-                             'Smooth' + mode])
+            iterfilelist = [ff for ff in os.listdir(wd) if (ff.startswith(iterstring) and ff.endswith('.iter'))]
+            # only run a second lot of inversions if the first produced outputs
+            if len(iterfilelist) > 0:
+                iterfile = max(iterfilelist)
+                startup = Startup()
+                startup.read_startup_file(op.join(wd, iterfile))
+                # create a new startup file the same as the previous one but target rms is factor*minimum_rms
+                target_rms = float(startup.misfit_value) * input_parameters['rms_factor']
+                if target_rms < input_parameters['rms_min']:
+                    target_rms = input_parameters['rms_min']
+                startupnew = Startup(data_fn=op.join(wd, startup.data_file),
+                                     model_fn=op.join(wd, startup.model_file),
+                                     max_iter=input_parameters['iteration_max'],
+                                     start_rho=input_parameters['start_rho'],
+                                     target_rms=target_rms)
+                startupnew.write_startup_file(startup_fn=op.join(wd, startupfile), save_path=wd)
+                # run occam again
+                subprocess.call([input_parameters['program_location'],
+                                 startupfile,
+                                 'Smooth' + mode])
 
 
 if __name__ == '__main__':
