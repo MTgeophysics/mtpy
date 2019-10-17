@@ -850,9 +850,10 @@ class Data(object):
         if (error_type_z_list.size != 1 and error_type_z_list.size != 4):
             raise DataError('Either specify a single error_type_z for all components, or ' \
                             'a 2x2 numpy array of error_type_z.')
-        elif(np.sum(np.array([1 if 'separate' in item else 0 for item in error_type_z_list]))):
-            if(np.atleast_1d(self.error_value_z).size < 4):
-                raise DataError('error_value_z must be a 2x2 numpy array for error_type_z="separate"')
+            
+#        elif(np.sum(np.array([1 if 'separate' in item else 0 for item in error_type_z_list]))):
+#            if(np.atleast_1d(self.error_value_z).size < 4):
+#                raise DataError('error_value_z must be a 2x2 numpy array for error_type_z="separate"')
         # end if
 
         # compute error for z
@@ -905,10 +906,10 @@ class Data(object):
                         # value is a % of xy and yx respectively
                         err[ei] = np.array([[d_xy, d_xy],[d_yx, d_yx]])*err_value
 
-                    elif 'separate' in error_type_z:
+                    elif 'percent' in error_type_z:
                         # apply separate error floors to each component
-                        d2d = d.reshape((2, 2))
-                        err[ei] = err_value * np.abs(d2d)
+#                        d2d = d.reshape((2, 2))
+                        err[ei] = err_value * np.abs(d[ei])
                     else:
                         raise DataError('error type (z) {0} not understood'.format(error_type_z))
                 # end for
