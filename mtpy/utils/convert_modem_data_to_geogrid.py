@@ -103,7 +103,7 @@ def modem2geotiff(data_file, model_file, output_file, source_proj=None):
         #source_proj = Proj('+proj=utm +zone=%d +%s +datum=%s' % (zone_number, 'north' if is_northern else 'south', 'WGS84'))
 
         epsg_code = gis_tools.get_epsg(center.lat.item(), center.lon.item())
-        print("Input data epsg code is infered as ", epsg_code)
+        print("Input data epsg code is inferred as ", epsg_code)
     else:
         epsg_code = source_proj  # integer
 
@@ -161,8 +161,8 @@ def modem2geogrid_ak(data_file, model_file, output_file, source_proj=None, depth
     model.read_model_file(model_fn=model_file)
 
     print("read inputs")
-    source_proj = 28355
 
+    #source_proj = 28355
     center = data.center_point
     if source_proj is None:
         zone_number, is_northern, utm_zone = gis_tools.get_utm_zone(center.lat.item(), center.lon.item())
@@ -195,8 +195,8 @@ def modem2geogrid_ak(data_file, model_file, output_file, source_proj=None, depth
     print(resistivity_data['x'].shape, resistivity_data['y'].shape, resistivity_data['resistivity'].shape)
 
     # epsgcode= 4326 # 4326 output grid Coordinate systems: 4326 WGS84
-    epsgcode = 28355  # 4283 https://spatialreference.org/ref/epsg/gda94/
-    grid_proj = Proj(init='epsg:%s' % epsgcode)  # output grid Coordinate system
+    # epsgcode = 28355  # 4283 https://spatialreference.org/ref/epsg/gda94/
+    grid_proj = source_proj  # output grid Coordinate system should be the same as the input modem's
     # grid_proj = Proj(init='epsg:3112') # output grid Coordinate system 4326, 4283, 3112
     result = modem2nc.interpolate(resistivity_data, source_proj, grid_proj, center,
                                   modem2nc.median_spacing(model.grid_east), modem2nc.median_spacing(model.grid_north))
@@ -225,7 +225,7 @@ def modem2geogrid_ak(data_file, model_file, output_file, source_proj=None, depth
         # this original image may start from the lower left corner, if so must be flipped.
         resis_data_flip = resis_data[::-1]  # flipped to ensure the image starts from the upper left corner
 
-        array2geotiff_writer(output_file, origin, pixel_width, pixel_height, resis_data_flip, epsg_code=epsgcode)
+        array2geotiff_writer(output_file, origin, pixel_width, pixel_height, resis_data_flip, epsg_code=epsg_code)
 
     return output_file
 
