@@ -208,7 +208,7 @@ class PlotSlices(object):
         self.station_color = kwargs.pop('station_color', 'k')
         self.ms = kwargs.pop('ms', 10)
 
-        self.plot_yn = kwargs.pop('plot_yn', 'n')
+        self.plot_yn = kwargs.pop('plot_yn', 'y')
         self.plot_stations = kwargs.pop('plot_stations', False)
         self.xminorticks = kwargs.pop('xminorticks', 1000)
         self.yminorticks = kwargs.pop('yminorticks', 1000)
@@ -225,7 +225,9 @@ class PlotSlices(object):
         # intersecting the model
         self._initialize_interpolation()
         
-        self.plot()
+        
+        if self.plot_yn == 'y': 
+            self.plot()
 
     def _initialize_interpolation(self):
         self._mx = np.array(self.grid_east)

@@ -1,6 +1,7 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
+from mtpy.modeling.modem import Data
 
 def add_basemap_frame(basemap,tick_interval=2, coastline_kwargs={},states_kwargs={},
                       mlabels=[False,False,False,True],plabels=[True,False,False,False]):
@@ -52,3 +53,34 @@ def plot_data(x,y,values,basemap=None,cbar=False,**param_dict):
     plt.gca().set_aspect(1)
     if cbar:
         plt.colorbar(shrink=0.5)
+        
+        
+def compute_extent_from_modem_data(data_fn,buffer=None,buffer_factor=0.05):
+    """
+    compute extent for a plot from data extent from ModEM data file
+    
+    :param data_fn: full path to modem data file
+    :param buffer: optional argument; buffer in latitude/longitude (if not provided, 
+    this is assumed to be a fraction of the maximum of the north-south or east-west extent)
+    :param buffer_factor: fraction of north-south or east-west extent for buffer (if buffer not provided)
+    
+    """
+    dObj = Data()
+    dObj.read_data_file(data_fn)
+    sloc = dObj.station_locations
+    
+    lonMin, lonMax, latMin, latMax = sloc.lon.min(),sloc.lon.max(),sloc.lat.min(),sloc.lat.max()
+    
+    # compute buffer
+    if buffer is None:
+        buffer = max([(lonMax-lonMin)*buffer_factor,(latMax-latMin)*buffer_factor])
+        
+    return lonMin - buffer, lonMax + buffer, latMin - buffer, latMax + buffer
+    
+
+def compute_lonlat0_from_modem_data(data_fn):
+    dObj = Data()
+    dObj.read_data_file(data_fn)
+    sloc = dObj.station_locations
+    
+    return (sloc.lon.min()+sloc.lon.max())/2.,(sloc.lat.min()+sloc.lat.max())/2.
