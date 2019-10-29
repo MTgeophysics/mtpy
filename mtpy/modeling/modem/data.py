@@ -716,6 +716,9 @@ class Data(object):
                 
             if len(interp_periods) > 0:  # not empty
                 interp_z, interp_t = mt_obj.interpolate(1. / interp_periods, period_buffer=self.period_buffer ,bounds_error=False)  #)
+                # set rotation angle
+                interp_z.rotation_angle = self.rotation_angle*np.ones(len(interp_z.z))
+                interp_t.rotation_angle = self.rotation_angle*np.ones(len(interp_t.tipper))
                 #                interp_z, interp_t = mt_obj.interpolate(1./interp_periods)
                 for kk, ff in enumerate(interp_periods):
                     jj = np.where(self.period_list == ff)[0][0]
