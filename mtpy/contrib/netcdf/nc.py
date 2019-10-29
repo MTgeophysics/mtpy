@@ -7,7 +7,8 @@ import os
 
 from netCDF4 import Dataset
 import numpy as np
-from scipy.spatial import cKDTree as KDTree
+from scipy import spatial
+#Not work import scipy.spatial.cKDTree as KDTree
 from pyproj import transform, Proj
 
 from mtpy.utils import gis_tools
@@ -19,7 +20,7 @@ def IDW(source_points, source_values, query_points, k=6, p=5):
     and `k` nearest neighbors.
     Returns the interpolated values at `query_points`.
     """
-    tree = KDTree(source_points, k)
+    tree = spatial.cKDTree(source_points, k)
     distances, indices = tree.query(query_points, k=k)
     inv_dist = 1. / np.power(distances, p)
     weights = inv_dist / inv_dist.sum(axis=1)[:, np.newaxis]
