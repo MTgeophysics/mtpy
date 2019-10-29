@@ -143,6 +143,93 @@ def modem2geotiff(data_file, model_file, output_file, source_proj=None):
     return output_file
 
 
+def modem2geogrid_ak(data_file, model_file, output_file, source_proj=None, depth_index=None):
+    """
+    Generate an output geotiff file from a modems.dat file and related modems.rho model file
+    :param data_file: modem.dat
+    :param model_file: modem.rho
+    :param output_file: output.tif
+    :param source_proj: None by default. The UTM zone inferred from the input non-uniform grid parameters
+    :return:
+    """
+    # Define Data and Model Paths
+    data = Data()
+    data.read_data_file(data_fn=data_file)
+
+    # create a model object using the data object and read in model data
+    model = Model(data_obj=data)
+    model.read_model_file(model_fn=model_file)
+
+    print("read inputs")
+    source_proj = 28355
+
+    center = data.center_point
+    if source_proj is None:
+        zone_number, is_northern, utm_zone = gis_tools.get_utm_zone(center.lat.item(), center.lon.item())
+        # source_proj = Proj('+proj=utm +zone=%d +%s +datum=%s' % (zone_number, 'north' if is_northern else 'south', 'WGS84'))
+
+        epsg_code = gis_tools.get_epsg(center.lat.item(), center.lon.item())
+        print("Input data epsg code is inferred as ", epsg_code)
+    else:
+        epsg_code = source_proj  # integer
+
+    source_proj = Proj(init='epsg:' + str(epsg_code))
+
+    resistivity_data = {
+        'x': center.east.item() + (model.grid_east[1:] + model.grid_east[:-1]) / 2,
+        'y': center.north.item() + (model.grid_north[1:] + model.grid_north[:-1]) / 2,
+        'z': (model.grid_z[1:] + model.grid_z[:-1]) / 2,
+        'resistivity': np.transpose(model.res_model, axes=(2, 0, 1))
+    }
+
+    #    resistivity_data = {
+    #        'x': center.east.item() + (model.grid_east[7:-6] + model.grid_east[6:-7])/2,
+    #        'y': center.north.item() + (model.grid_north[7:-6] + model.grid_north[6:-7])/2,
+    #        'z': (model.grid_z[1:] + model.grid_z[:-1])/2,
+    #        'resistivity': np.transpose(model.res_model[6:-6,6:-6], axes=(2, 0, 1))
+    #    }
+
+    print(resistivity_data['x'], resistivity_data['y'])
+
+    print("got cell centres")
+    print(resistivity_data['x'].shape, resistivity_data['y'].shape, resistivity_data['resistivity'].shape)
+
+    # epsgcode= 4326 # 4326 output grid Coordinate systems: 4326 WGS84
+    epsgcode = 28355  # 4283 https://spatialreference.org/ref/epsg/gda94/
+    grid_proj = Proj(init='epsg:%s' % epsgcode)  # output grid Coordinate system
+    # grid_proj = Proj(init='epsg:3112') # output grid Coordinate system 4326, 4283, 3112
+    result = modem2nc.interpolate(resistivity_data, source_proj, grid_proj, center,
+                                  modem2nc.median_spacing(model.grid_east), modem2nc.median_spacing(model.grid_north))
+
+    #    print("result['latitude'] ==", result['latitude'])
+    #    print("result['longitude'] ==", result['longitude'])
+    #    print("result['depth'] ==", result['depth'])
+
+    # origin=(result['longitude'][0],result['latitude'][0]) # which corner of the image?
+    origin = (result['longitude'][0], result['latitude'][-1])
+    pixel_width = result['longitude'][1] - result['longitude'][0]
+    pixel_height = result['latitude'][0] - result['latitude'][
+        1]  # This should be negative for geotiff with origin at the upper-left corner
+
+    # write the depth_index
+    #    if depth_index is None:
+    #        depth_indices = [1]
+    #    else:
+    depth_indices = range(len(resistivity_data['z']))
+
+    print(depth_indices)
+    for depth_index in depth_indices:
+        output_file = 'DepthSlice%1im' % (resistivity_data['z'][depth_index])
+        resis_data = result['resistivity'][depth_index, :, :]
+
+        # this original image may start from the lower left corner, if so must be flipped.
+        resis_data_flip = resis_data[::-1]  # flipped to ensure the image starts from the upper left corner
+
+        array2geotiff_writer(output_file, origin, pixel_width, pixel_height, resis_data_flip, epsg_code=epsgcode)
+
+    return output_file
+
+
 #####################################################################################################################
 # Section for quick test run of this script
 # cd /e/Githubz/mtpy
@@ -165,6 +252,7 @@ if __name__ == '__main__':
 
     ##test_array2geotiff("test_geotiff_GDAL_img.tif", args.epsg)
 
-    modem2geotiff(args.modem_data, args.modem_model, args.output_file )
+    #modem2geotiff(args.modem_data, args.modem_model, args.output_file)
+    modem2geogrid_ak(args.modem_data, args.modem_model, args.output_file)
 
 
