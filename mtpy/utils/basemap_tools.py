@@ -3,8 +3,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 from mtpy.modeling.modem import Data
 from mtpy.utils.calculator import nearest_index
-from mpl_toolkits.basemap import Basemap
-
 
         
 
@@ -62,6 +60,8 @@ def compute_lonlat0_from_modem_data(data_obj):
 
 def initialise_basemap(data_obj,buffer=None,**basemap_kwargs):
     
+    from mpl_toolkits.basemap import Basemap
+
     lonMin, lonMax, latMin, latMax = compute_map_extent_from_modem_data(data_obj,buffer=buffer)
     lon_0, lat_0 = compute_lonlat0_from_modem_data(data_obj)
         
