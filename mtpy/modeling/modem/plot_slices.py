@@ -10,6 +10,7 @@ ModEM
 
 """
 import os
+import time
 
 import numpy as np
 from matplotlib import pyplot as plt, gridspec as gridspec, colorbar as mcb
@@ -18,7 +19,10 @@ from matplotlib.widgets import Button, RadioButtons, SpanSelector
 
 from mtpy.modeling.modem.data import Data
 from mtpy.modeling.modem.data import Model
-from mtpy.utils import exceptions as mtex
+from mtpy.utils import exceptions as mtex,basemap_tools
+from mtpy.utils.gis_tools import get_epsg,epsg_project
+from mtpy.utils.calculator import nearest_index
+
 from scipy.spatial import cKDTree
 from scipy.interpolate import interp1d, UnivariateSpline
 from matplotlib import colors,cm
@@ -523,6 +527,51 @@ class PlotSlices(object):
                 self.md_data = md_data
             else:
                 print('Could not find data file {0}'.format(self.data_fn))
+
+
+
+                
+                
+    def basemap_plot(self, depth, model_epsg=None, tick_interval=None, **basemap_kwargs):
+        
+        
+        # initialise plot parameters
+        mpldict={}
+        mpldict['cmap'] = cm.get_cmap(self.cmap)
+        mpldict['norm'] = colors.LogNorm()
+        mpldict['vmin'] = 10**self.climits[0]
+        mpldict['vmax'] = 10**self.climits[1]
+        
+        # find nearest depth index
+        depthIdx = nearest_index(depth,self._mcz*1e3)
+        
+        # get model epsg if not provided
+        if model_epsg is None:
+            model_epsg=get_epsg(self.md_data.center_point['lat'],self.md_data.center_point['lon'])
+            print("Warning!! No EPSG code was provided. Assuming code {}. Please check if this is correct".format(model_epsg))
+        
+        # initialise a basemap with extents, projection etc calculated from data 
+        # if not provided in basemap_kwargs
+        self.bm = basemap_tools.initialise_basemap(self.md_data,**basemap_kwargs)
+        
+        # lat/lon coordinates of resistivity model values
+        loncg,latcg = epsg_project(self._mgx[:,:,0]*1e3 + self.md_data.center_point['east'],
+                                   self._mgy[:,:,0]*1e3 + self.md_data.center_point['north'],
+                                   model_epsg,
+                                   4326)
+               
+        # get x and y projected positions on the basemap                    
+        xcg,ycg = self.bm(loncg,latcg)
+        
+        # 
+        basemap_tools.add_basemap_frame(self.bm,tick_interval=tick_interval)
+        basemap_tools.plot_data(xcg,ycg,self.res_model[:,:,depthIdx],
+                                basemap=self.bm,
+                                **mpldict)
+                                   
+        sx,sy = self.bm(self.md_data.station_locations.lon,self.md_data.station_locations.lat)
+        self.bm.plot(sx,sy,'k.')
+    
 
     def plot(self):
         """

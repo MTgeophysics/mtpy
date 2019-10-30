@@ -2,8 +2,83 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from mtpy.modeling.modem import Data
+from mtpy.utils.calculator import nearest_index
+from mpl_toolkits.basemap import Basemap
 
-def add_basemap_frame(basemap,tick_interval=2, coastline_kwargs={},states_kwargs={},
+
+        
+
+def get_latlon_extents_from_modem_data(data_obj):
+
+    sloc = data_obj.station_locations
+    
+    return sloc.lon.min(),sloc.lon.max(),sloc.lat.min(),sloc.lat.max()
+        
+
+def compute_tick_interval_from_map_extent(lonMin,lonMax,latMin,latMax):
+    """
+    estimate an even tick interval based on map extent based on some sensible options
+    
+    """
+    tick_options = np.array([1.,2.,5.])
+    tick_options = np.hstack([tick_options*0.01,
+                              tick_options*0.1,
+                              tick_options,
+                              tick_options*10.])
+    
+    # return nearest interval from list of options, to the average of latitude
+    # extent and longitude extent
+    return tick_options[nearest_index((lonMax-lonMin+latMax-latMin)/10.,tick_options)]
+    
+
+
+def compute_map_extent_from_modem_data(data_obj,buffer=None,buffer_factor=0.1):
+    """
+    compute extent for a plot from data extent from ModEM data file
+    
+    :param data_fn: full path to modem data file
+    :param buffer: optional argument; buffer in latitude/longitude (if not provided, 
+    this is assumed to be a fraction of the maximum of the north-south or east-west extent)
+    :param buffer_factor: fraction of north-south or east-west extent for buffer (if buffer not provided)
+    
+    """
+
+    lonMin, lonMax, latMin, latMax = get_latlon_extents_from_modem_data(data_obj)
+    
+    # compute buffer
+    if buffer is None:
+        buffer = max([(lonMax-lonMin)*buffer_factor,(latMax-latMin)*buffer_factor])
+        
+    return lonMin - buffer, lonMax + buffer, latMin - buffer, latMax + buffer
+    
+
+def compute_lonlat0_from_modem_data(data_obj):
+    """
+    compute lat0 and lon0 for creating a basemap, using data centre point in modem data file
+    """
+    
+    return data_obj.center_point['lon'], data_obj.center_point['lat']
+
+
+def initialise_basemap(data_obj,**basemap_kwargs):
+    
+    lonMin, lonMax, latMin, latMax = compute_map_extent_from_modem_data(data_obj)
+    lon_0, lat_0 = compute_lonlat0_from_modem_data(data_obj)
+        
+    # update basemap arguments
+    basemap_kwargs['llcrnrlon'] = basemap_kwargs.pop('llcrnrlon',lonMin)
+    basemap_kwargs['urcrnrlon'] = basemap_kwargs.pop('urcrnrlon',lonMax)
+    basemap_kwargs['llcrnrlat'] = basemap_kwargs.pop('llcrnrlat',latMin)
+    basemap_kwargs['urcrnrlat'] = basemap_kwargs.pop('urcrnrlat',latMax)
+    basemap_kwargs['lat_0'] = basemap_kwargs.pop('lat_0',lat_0)
+    basemap_kwargs['lon_0'] = basemap_kwargs.pop('lon_0',lon_0)
+    basemap_kwargs['resolution'] = basemap_kwargs.pop('resolution','i')
+    basemap_kwargs['projection'] = basemap_kwargs.pop('projection','cyl')
+
+    return Basemap(**basemap_kwargs)
+
+
+def add_basemap_frame(basemap,tick_interval=None, coastline_kwargs={},states_kwargs={},
                       mlabels=[False,False,False,True],plabels=[True,False,False,False]):
     """
     add a standard map frame (lat/lon labels and tick marks, coastline and states) to basemap
@@ -14,9 +89,12 @@ def add_basemap_frame(basemap,tick_interval=2, coastline_kwargs={},states_kwargs
     :param mlabels: where to place meridian (longitude) labels on plot (list containing True/False for [left,right,top,bottom])
     :param plabels: where to place parallels (latitudes) labels on plot (list containing True/False for [left,right,top,bottom])
     """
+    if tick_interval is None:
+        tick_interval = compute_tick_interval_from_map_extent(basemap.lonmin,basemap.lonmax,basemap.latmin,basemap.latmax)
+        print("tick_interval",tick_interval)
     
-    basemap.drawmeridians(np.arange(np.floor(basemap.lonmin),np.ceil(basemap.lonmax),2),labels=mlabels)#
-    basemap.drawparallels(np.arange(np.floor(basemap.latmin),np.ceil(basemap.latmax),2),labels=plabels)#
+    basemap.drawmeridians(np.arange(np.floor(basemap.lonmin),np.ceil(basemap.lonmax),tick_interval),labels=mlabels)#
+    basemap.drawparallels(np.arange(np.floor(basemap.latmin),np.ceil(basemap.latmax),tick_interval),labels=plabels)#
 
     basemap.drawcoastlines(**coastline_kwargs)
     basemap.drawstates(**states_kwargs)
@@ -53,34 +131,3 @@ def plot_data(x,y,values,basemap=None,cbar=False,**param_dict):
     plt.gca().set_aspect(1)
     if cbar:
         plt.colorbar(shrink=0.5)
-        
-        
-def compute_extent_from_modem_data(data_fn,buffer=None,buffer_factor=0.05):
-    """
-    compute extent for a plot from data extent from ModEM data file
-    
-    :param data_fn: full path to modem data file
-    :param buffer: optional argument; buffer in latitude/longitude (if not provided, 
-    this is assumed to be a fraction of the maximum of the north-south or east-west extent)
-    :param buffer_factor: fraction of north-south or east-west extent for buffer (if buffer not provided)
-    
-    """
-    dObj = Data()
-    dObj.read_data_file(data_fn)
-    sloc = dObj.station_locations
-    
-    lonMin, lonMax, latMin, latMax = sloc.lon.min(),sloc.lon.max(),sloc.lat.min(),sloc.lat.max()
-    
-    # compute buffer
-    if buffer is None:
-        buffer = max([(lonMax-lonMin)*buffer_factor,(latMax-latMin)*buffer_factor])
-        
-    return lonMin - buffer, lonMax + buffer, latMin - buffer, latMax + buffer
-    
-
-def compute_lonlat0_from_modem_data(data_fn):
-    dObj = Data()
-    dObj.read_data_file(data_fn)
-    sloc = dObj.station_locations
-    
-    return (sloc.lon.min()+sloc.lon.max())/2.,(sloc.lat.min()+sloc.lat.max())/2.
