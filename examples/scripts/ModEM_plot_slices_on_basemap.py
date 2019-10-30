@@ -23,6 +23,7 @@ ps = PlotSlices(model_fn,
                 cmap='jet_r', # color map
                 climits=(0,4), # log10(color_limits) for resistivity
                 plot_stations = True, # True/False, whether or not to plot stations
+                draw_colorbar=True, # whether or not to show a colorbar
                 plot_yn='n')
 
 # loop through depths

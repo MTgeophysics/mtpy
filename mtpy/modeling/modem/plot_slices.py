@@ -582,6 +582,11 @@ class PlotSlices(object):
             sx,sy = self.bm(self.md_data.station_locations.lon,self.md_data.station_locations.lat)
             self.bm.plot(sx,sy,'k.')
             
+            
+        # draw colorbar
+        if self.draw_colorbar:
+            plt.colorbar(shrink=0.5)
+            
         if savepath not in [False,None]:
             plt.savefig(os.path.join(savepath,'DepthSlice%1i%1s.png'%(depth/self.dscale,self.map_scale)),
                         dpi=self.fig_dpi)
