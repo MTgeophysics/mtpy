@@ -156,8 +156,9 @@ def modem2geogrid_ak(data_file, model_file, output_file, source_proj=None, depth
     data = Data()
     data.read_data_file(data_fn=data_file)
 
-    # create a model object using the data object and read in model data
-    model = Model(data_obj=data)
+    # create a model object and read in model data
+    #model = Model(data_obj=data)  # no need of data_obj
+    model = Model()
     model.read_model_file(model_fn=model_file)
 
     print("read inputs")
