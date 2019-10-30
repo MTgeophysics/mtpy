@@ -33,7 +33,7 @@ def array2geotiff_writer(newRasterfn, rasterOrigin, pixelWidth, pixelHeight, arr
 
     driver = gdal.GetDriverByName('GTiff')
     # driver = gdal.GetDriverByName('AAIGrid')
-    outRaster = driver.Create(newRasterfn, cols, rows, 1, gdal.GDT_Byte)
+    outRaster = driver.Create(newRasterfn, cols, rows, 1, gdal.GDT_Float32)
     outRaster.SetGeoTransform((originX, pixelWidth, 0, originY, 0, pixelHeight))
     outband = outRaster.GetRasterBand(1)
     outband.WriteArray(array)
@@ -73,7 +73,7 @@ def test_array2geotiff(newRasterfn, epsg):
 
     random= np.random.rand(array.shape[0],array.shape[1])
 
-    array2= 100*array + 10*random
+    array2= 1000.0*array + 10.0*random
     print (array2)
 
     outfn=array2geotiff_writer(newRasterfn, rasterOrigin, pixelWidth, pixelHeight, array2, epsg_code=epsg)  # write to a raster file
@@ -216,15 +216,16 @@ def modem2geogrid_ak(data_file, model_file, output_file, source_proj=None, depth
     #        depth_indices = [1]
     #    else:
     depth_indices = range(len(resistivity_data['z']))
-
     print(depth_indices)
-    for depth_index in depth_indices:
+
+    #for depth_index in depth_indices:
+    for depth_index in [0,1,2,3]:
         output_file = 'DepthSlice%1im' % (resistivity_data['z'][depth_index])
         resis_data = result['resistivity'][depth_index, :, :]
 
         # this original image may start from the lower left corner, if so must be flipped.
         resis_data_flip = resis_data[::-1]  # flipped to ensure the image starts from the upper left corner
-
+        print(resis_data_flip)
         array2geotiff_writer(output_file, origin, pixel_width, pixel_height, resis_data_flip, epsg_code=epsg_code)
 
     return output_file
