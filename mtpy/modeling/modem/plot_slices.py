@@ -189,6 +189,7 @@ class PlotSlices(object):
         self.grid_east = None
         self.grid_north = None
         self.grid_z = None
+        self.model_epsg = kwargs.pop('model_epsg',None)
 
         self.nodes_east = None
         self.nodes_north = None
@@ -220,10 +221,12 @@ class PlotSlices(object):
         self.draw_colorbar = kwargs.pop('draw_colorbar', True)
         self.save_path = kwargs.pop('save_path', os.getcwd())
         self.save_format = kwargs.pop('save_format', 'png')
+        
 
         # read data
         self.read_files()
         self.get_station_grid_locations()
+
 
         # set up kd-tree for interpolation on to arbitrary surfaces
         # intersecting the model
@@ -517,8 +520,9 @@ class PlotSlices(object):
         # --> read in data file to get station locations
         if self.data_fn is not None:
             if os.path.isfile(self.data_fn) == True:
-                md_data = Data()
+                md_data = Data(model_epsg=self.model_epsg)
                 md_data.read_data_file(self.data_fn)
+                
                 self.station_east = md_data.station_locations.rel_east / self.dscale
                 self.station_north = md_data.station_locations.rel_north / self.dscale
                 self.station_names = md_data.station_locations.station
@@ -532,8 +536,12 @@ class PlotSlices(object):
 
                 
                 
-    def basemap_plot(self, depth, model_epsg=None, tick_interval=None, **basemap_kwargs):
+    def basemap_plot(self, depth, tick_interval=None, savepath=None,
+                     new_figure=True,**basemap_kwargs):
         
+        if self.model_epsg is None:
+            print("No projection information provided, please provide the model epsg code relevant to your model")
+            return
         
         # initialise plot parameters
         mpldict={}
@@ -543,35 +551,43 @@ class PlotSlices(object):
         mpldict['vmax'] = 10**self.climits[1]
         
         # find nearest depth index
-        depthIdx = nearest_index(depth,self._mcz*1e3)
+        depthIdx = nearest_index(depth,self._mcz*self.dscale)
         
-        # get model epsg if not provided
-        if model_epsg is None:
-            model_epsg=get_epsg(self.md_data.center_point['lat'],self.md_data.center_point['lon'])
-            print("Warning!! No EPSG code was provided. Assuming code {}. Please check if this is correct".format(model_epsg))
+        
+        
+        if new_figure:
+            plt.figure()
         
         # initialise a basemap with extents, projection etc calculated from data 
         # if not provided in basemap_kwargs
         self.bm = basemap_tools.initialise_basemap(self.md_data,**basemap_kwargs)
         
         # lat/lon coordinates of resistivity model values
-        loncg,latcg = epsg_project(self._mgx[:,:,0]*1e3 + self.md_data.center_point['east'],
-                                   self._mgy[:,:,0]*1e3 + self.md_data.center_point['north'],
-                                   model_epsg,
+        loncg,latcg = epsg_project(self._mgx[:,:,0]*self.dscale + self.md_data.center_point['east'],
+                                   self._mgy[:,:,0]*self.dscale + self.md_data.center_point['north'],
+                                   self.model_epsg,
                                    4326)
                
         # get x and y projected positions on the basemap                    
         xcg,ycg = self.bm(loncg,latcg)
         
-        # 
+        # add frame to basemap and plot data
         basemap_tools.add_basemap_frame(self.bm,tick_interval=tick_interval)
         basemap_tools.plot_data(xcg,ycg,self.res_model[:,:,depthIdx],
                                 basemap=self.bm,
                                 **mpldict)
                                    
-        sx,sy = self.bm(self.md_data.station_locations.lon,self.md_data.station_locations.lat)
-        self.bm.plot(sx,sy,'k.')
+        # plot stations
+        if self.plot_stations:
+            sx,sy = self.bm(self.md_data.station_locations.lon,self.md_data.station_locations.lat)
+            self.bm.plot(sx,sy,'k.')
+            
+        if savepath not in [False,None]:
+            plt.savefig(os.path.join(savepath,'DepthSlice%1i%1s.png'%(depth/self.dscale,self.map_scale)),
+                        dpi=self.fig_dpi)
+            plt.close()
     
+        
 
     def plot(self):
         """

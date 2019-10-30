@@ -60,9 +60,9 @@ def compute_lonlat0_from_modem_data(data_obj):
     return data_obj.center_point['lon'], data_obj.center_point['lat']
 
 
-def initialise_basemap(data_obj,**basemap_kwargs):
+def initialise_basemap(data_obj,buffer=None,**basemap_kwargs):
     
-    lonMin, lonMax, latMin, latMax = compute_map_extent_from_modem_data(data_obj)
+    lonMin, lonMax, latMin, latMax = compute_map_extent_from_modem_data(data_obj,buffer=buffer)
     lon_0, lat_0 = compute_lonlat0_from_modem_data(data_obj)
         
     # update basemap arguments
@@ -76,6 +76,7 @@ def initialise_basemap(data_obj,**basemap_kwargs):
     basemap_kwargs['projection'] = basemap_kwargs.pop('projection','cyl')
 
     return Basemap(**basemap_kwargs)
+
 
 
 def add_basemap_frame(basemap,tick_interval=None, coastline_kwargs={},states_kwargs={},
@@ -98,6 +99,7 @@ def add_basemap_frame(basemap,tick_interval=None, coastline_kwargs={},states_kwa
 
     basemap.drawcoastlines(**coastline_kwargs)
     basemap.drawstates(**states_kwargs)
+
 
 
 def plot_data(x,y,values,basemap=None,cbar=False,**param_dict):
