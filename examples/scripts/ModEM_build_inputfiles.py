@@ -64,9 +64,11 @@ do = Data(edi_list=edi_list,
                period_buffer = 2, # factor to stretch interpolation by. For example: if period_buffer=2
                                  # then interpolated data points will only be included if they are
                                  # within a factor of 2 of a true data point
-               error_type_z='floor_egbert', # error type (egbert is % of sqrt(zxy*zyx))
-                                            # floor means apply it as an error floor
-               error_value_z=5, # error floor (or value) in percent
+               error_type_z=np.array([['floor_percent','floor_egbert'], # error type, options are 'egbert', 'percent', 'mean_od', 'eigen', 'median', 'off_diagonals'
+                                      ['floor_egbert','percent']]), # add floor to apply it as an error floor
+                                                                    # can supply a 2 x 2 array for each component or a single value
+               error_value_z=np.array([[20.,5.], # error floor value in percent
+                                       [5.,20.]]), # can supply a 2 x 2 array for each component or a single value
                error_type_tipper = 'floor_abs', # type of error to set in tipper, 
                                                 # floor_abs is an absolute value set as a floor
                error_value_tipper =.03,
