@@ -579,7 +579,9 @@ class PlotSlices(object):
                                    
         # plot stations
         if self.plot_stations:
-            sx,sy = self.bm(self.md_data.station_locations.lon,self.md_data.station_locations.lat)
+            # reproject station location eastings and northings to ensure they are in correct spot relative to model
+            slon,slat = epsg_project(self.md_data.station_locations.east,self.md_data.station_locations.north,self.model_epsg,4326)
+            sx,sy = self.bm(slon,slat)
             self.bm.plot(sx,sy,'k.')
             
             

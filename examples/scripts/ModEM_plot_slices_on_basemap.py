@@ -13,13 +13,12 @@ from mtpy.modeling.modem import PlotSlices
 wd = r'C:\mtpywin\mtpy\examples\model_files\ModEM'
 savepath = r'C:/tmp'
 
-
 model_fn = os.path.join(wd,'Modular_MPI_NLCG_004.rho')
 data_fn = os.path.join(wd,'ModEM_Data.dat')
 
 ps = PlotSlices(model_fn,
                 data_fn=data_fn,
-                model_epsg = 28353, # epsg of model to ensure correct projection onto lat/long grid
+                model_epsg = 28353, # epsg used in projection of model grid to ensure correct projection back to lat/long grid
                 cmap='jet_r', # color map
                 climits=(0,4), # log10(color_limits) for resistivity
                 plot_stations = True, # True/False, whether or not to plot stations
