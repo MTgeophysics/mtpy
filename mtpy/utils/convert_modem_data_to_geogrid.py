@@ -155,19 +155,20 @@ def create_geogrid(data_file, model_file, output_file, source_proj=None, depth_i
     :param depth_index: a list of integers, eg, [0,2,4] of the depth slice's index
     :return:
     """
-    # Define Data and Model Paths
-    data = Data()
-    data.read_data_file(data_fn=data_file)
+    print("read inputs from Model Rho File")
 
     # create a model object and read in model data
     #model = Model(data_obj=data)  # no need of data_obj
     model = Model()
     model.read_model_file(model_fn=model_file)
 
-    print("read inputs")
-
-    # source_proj = 28355
+    # get grid centre from either data file or user-defined
+    # center = get_grid_center(data_file)
+    data = Data()
+    data.read_data_file(data_fn=data_file)
     center = data.center_point
+
+    #source_proj = 28355
     if source_proj is None:
         zone_number, is_northern, utm_zone = gis_tools.get_utm_zone(center.lat.item(), center.lon.item())
         # source_proj = Proj('+proj=utm +zone=%d +%s +datum=%s' % (zone_number, 'north' if is_northern else 'south', 'WGS84'))
@@ -178,9 +179,15 @@ def create_geogrid(data_file, model_file, output_file, source_proj=None, depth_i
         epsg_code = source_proj  # integer
 
     source_proj = Proj(init='epsg:' + str(epsg_code))
-
+    # get the grid cells' centres
     gce, gcn, gcz = [np.mean([arr[:-1], arr[1:]], axis=0) for arr in [model.grid_east, model.grid_north, model.grid_z]]
-    gce, gcn = gce[6:-6], gcn[6:-6]  # padding big-sized edge cells
+
+    # get xyz-paddings
+    xpad = 6
+    ypad = 6
+    zpad = 10
+    gce, gcn = gce[xpad:-xpad], gcn[ypad:-ypad]  # padding off big-sized edge cells
+    gcz= gcz[:-zpad]
     # ge,gn = mObj.grid_east[6:-6],mObj.grid_north[6:-6]
 
     print(gce)
@@ -201,12 +208,16 @@ def create_geogrid(data_file, model_file, output_file, source_proj=None, depth_i
     print("The Origin (UpperLeft Corner) =", origin)
     # get_grid_size(),  as the mean/medium value of the original ModeEM model grid
     cs=7500  # grid size
+    #cs = 5000
+    #Todo: cs = get_grid_size(model_file)
     pixel_width = cs
     pixel_height =-cs # This should be negative for geotiff spec, whose origin is at the Upper-Left corner of image.
 
-    (target_gridx, target_gridy) = np.meshgrid(np.arange(gce[0], gce[-1] + cs, cs),
-                                     np.arange(gcn[0], gcn[-1] + cs, cs))
-    resgrid_nopad = model.res_model[::-1][6:-6, 6:-6]
+    (target_gridx, target_gridy) = np.meshgrid(np.arange(gce[0], gce[-1], cs),
+                                     np.arange(gcn[0], gcn[-1], cs))
+
+    #resgrid_nopad = model.res_model[::-1][xpad:-xpad, ypad:-ypad] # can this be simplified as below??
+    resgrid_nopad = model.res_model[xpad:-xpad, ypad:-ypad, 0:-zpad]
 
     if depth_index is None:
         depth_indices = range(len(gcz))
@@ -218,12 +229,13 @@ def create_geogrid(data_file, model_file, output_file, source_proj=None, depth_i
     for di in depth_indices:
     # for di in [0,1,2,3]:
         output_file = 'DepthSlice%1im' % (gcz[di])
-        #resis_data = result['resistivity'][depth_index, :, :]
+        # define interpolation function (interpolate in log10 measure-space)
+        # See https://docs.scipy.org/doc/scipy-0.16.0/reference/interpolate.html
         interpfunc = RegularGridInterpolator((gce, gcn), np.log10(resgrid_nopad[:, :, di].T))
         # evaluate on the regular grid points, which to be output into geogrid formatted files
         newgridres = 10 ** interpfunc(np.vstack([target_gridx.flatten(), target_gridy.flatten()]).T).reshape(target_gridx.shape)
 
-        print("new interpolated resistivity grid shape: ", newgridres.shape)
+        print("new interpolated resistivity grid shape at the index di: ", newgridres.shape, di)
 
         # this original image may start from the lower left corner, if so must be flipped.
         #resis_data_flip = resis_data[::-1]  # flipped to ensure the image starts from the upper left corner
@@ -256,6 +268,6 @@ if __name__ == '__main__':
     ##test_array2geotiff("test_geotiff_GDAL_img.tif", args.epsg)
 
     #modem2geotiff(args.modem_data, args.modem_model, args.output_file)
-    create_geogrid(args.modem_data, args.modem_model, args.output_file, depth_index=[0,1,2,10])
+    create_geogrid(args.modem_data, args.modem_model, args.output_file) # ,depth_index=[0,1,2,10])
 
 
