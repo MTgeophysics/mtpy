@@ -52,6 +52,13 @@ nrows        147
 xllcorner    -164848.1035642
 yllcorner    5611364.73539792
 cellsize     7500"""
+# May need to shift by half cellsize -cs/2
+# [1]: -164848.1035642 -3750
+# Out[1]: -168598.1035642
+#
+# In [2]: 5611364.73539792 - 3750
+# Out[2]: 5607614.73539792
+
 
 for ascfn in ascfilelist:
     depth = float(ascfn[10:-5])  #
