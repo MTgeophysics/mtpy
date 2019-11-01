@@ -61,6 +61,7 @@ def lon_lat_grid_spacing(center, width, height, to_wgs84):
 def interpolated_layer(x, y, layer):
     """
     Create the interpolation function for each layer.
+    see https://docs.scipy.org/doc/scipy-0.16.0/reference/interpolate.html
     """
     return interp2d(x, y, layer)  # bounds_error=True
 
