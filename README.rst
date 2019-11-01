@@ -47,7 +47,7 @@ Contacts
 | **Rakib Hassan**
 | Rakib.Hassan@ga.gov.au
 
-| **Jinming Duan**
+| **Jingming Duan**
 | Jingming.Duan@ga.gov.au
 
 
