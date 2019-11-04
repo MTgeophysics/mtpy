@@ -1,4 +1,4 @@
-# Created using MTpy calculated floor_egbert error of 5%, data rotated 40.0_deg clockwise from N
+# Created using MTpy calculated floor_egbert error of 5% data rotated 40.0_deg clockwise from N
 # Period(s) Code GG_Lat GG_Lon X(m) Y(m) Z(m) Component Real Imag Error
 > Full_Impedance
 > exp(+i\omega t)
@@ -2886,7 +2886,7 @@
 3.16228e+03 Synth27  -22.010  140.010 -260541.625   57804.578       0.000 ZXY -3.503555e-02  1.469952e-02  3.214853e-02
 3.16228e+03 Synth27  -22.010  140.010 -260541.625   57804.578       0.000 ZYX -1.036513e-01 -2.818159e-02  3.125760e-02
 3.16228e+03 Synth27  -22.010  140.010 -260541.625   57804.578       0.000 ZYY -3.134017e-02 -2.705208e-02  3.007853e-02
-# Created using MTpy calculated floor_abs error of 0%, data rotated 40.0_deg clockwise from N
+# Created using MTpy calculated floor_abs error of 0% data rotated 40.0_deg clockwise from N
 # Period(s) Code GG_Lat GG_Lon X(m) Y(m) Z(m) Component Real Imag Error
 > Full_Vertical_Components
 > exp(+i\omega t)
