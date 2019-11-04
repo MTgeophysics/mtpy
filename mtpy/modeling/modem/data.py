@@ -415,14 +415,19 @@ class Data(object):
         """
         reset the header sring for file
         """
+        
+        h_str = []
+        if (np.atleast_1d(error_type).ndim == 2):
+            h_str = '# Created using MTpy calculated {},{},{},{} '.format(error_type[0,0], error_type[0,1], error_type[1,0], error_type[1,1])
+        else:
+            h_str = '# Created using MTpy calculated {} '.format(error_type)
+                          
+        
         if (np.atleast_1d(error_value).ndim == 2):
-            h_str = ','.join(['# Created using MTpy calculated {} '.format(error_type)+\
-                              'error floors of {0:.0f}%,{1:.0f}%,{2:.0f}%,{3:.0f}%',
-                          ' data rotated {4:.1f}_deg clockwise from N\n'])
+            h_str += 'error floors of {0:.0f}%,{1:.0f}%,{2:.0f}%,{3:.0f}%, data rotated {4:.1f}_deg clockwise from N\n'
             return h_str.format(error_value[0,0], error_value[0,1], error_value[1,0], error_value[1,1], rotation_angle)
         else:
-            h_str = ','.join(['# Created using MTpy calculated {0} error of {1:.0f}%',
-                          ' data rotated {2:.1f}_deg clockwise from N\n'])
+            h_str += 'error of {1:.0f}% data rotated {2:.1f}_deg clockwise from N\n'
 
             return h_str.format(error_type, error_value, rotation_angle)
 
