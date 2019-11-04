@@ -57,7 +57,7 @@ class TestData(TestCase):
             if (member.isreg()):
                 if (self._testMethodName in member.name):
 
-                    member.name = os.path.basename(member.name)  # remove the path by reset it
+                    member.name = os.path.basename(member.name)  # remove the path by resetting it
 
                     tf.extract(member, output_dir)  # extract
                 # end if
