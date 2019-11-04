@@ -55,6 +55,12 @@ def array2geotiff_writer(newRasterfn, rasterOrigin, pixelWidth, pixelHeight, arr
 
 
 def test_array2geotiff(newRasterfn, epsg):
+    """
+    A  dummpy array of data to be written into a geotiff file. It looks like a image of "GDAL"
+    :param newRasterfn:
+    :param epsg:
+    :return:
+    """
     #rasterOrigin = (-123.25745,45.43013)
     rasterOrigin = (149.298, -34.974)  # Longitude and Lattitude in Aussi continent
     pixelWidth = 0.01
@@ -84,11 +90,12 @@ def test_array2geotiff(newRasterfn, epsg):
 
 def modem2geotiff(data_file, model_file, output_file, source_proj=None):
     """
-    Generate an output geotiff file from a modems.dat file and related modems.rho model file
+    First version code to generate an output geotiff file from a modems.rho model file and dat file
+    superseded by the new fun create_geogrid()
     :param data_file: modem.dat
     :param model_file: modem.rho
     :param output_file: output.tif
-    :param source_proj: None by defult. The UTM zone infered from the input non-uniform grid parameters
+    :param source_proj: None by default. The UTM zone infered from the input non-uniform grid parameters
     :return:
     """
     # Define Data and Model Paths
@@ -179,7 +186,7 @@ def create_geogrid(data_file, model_file, output_file, source_proj=None, depth_i
         epsg_code = source_proj  # integer
 
     source_proj = Proj(init='epsg:' + str(epsg_code))
-    # get the grid cells' centres
+    # get the grid cells' centres (halfshift -cs/2?)
     gce, gcn, gcz = [np.mean([arr[:-1], arr[1:]], axis=0) for arr in [model.grid_east, model.grid_north, model.grid_z]]
 
     # get xyz-paddings
@@ -203,7 +210,12 @@ def create_geogrid(data_file, model_file, output_file, source_proj=None, depth_i
     # grid_proj = Proj(init='epsg:3112') # output grid Coordinate system 4326, 4283, 3112
 
     print("The Data center point (center.east,center.north) =", center.east, center.north )
-    # origin=(result['longitude'][0],result['latitude'][0]) # which corner of the image?
+    #  May need to shift by half cellsize -cs/2
+    # [1]: -164848.1035642 -3750
+    # Out[1]: -168598.1035642
+    #
+    # In [2]: 5611364.73539792 - 3750
+    # Out[2]: 5607614.73539792
     origin = (gce[0] + center.east,gcn[-1] + center.north)
     print("The Origin (UpperLeft Corner) =", origin)
     # get_grid_size(),  as the mean/medium value of the original ModeEM model grid
