@@ -16,6 +16,7 @@ import sys
 
 import numpy as np
 from matplotlib import pyplot as plt
+from matplotlib import colors
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from scipy import stats as stats, interpolate as spi
 
@@ -1045,7 +1046,45 @@ class Model(object):
         ax.set_title("Elevation and Stations in N-E Map (Cells)")
 
         plt.show()
-
+        
+    def plot_sealevel_resistivity(self):
+        """
+        create a quick pcolor plot of the resistivity at sea level with 
+        stations, to check if we have stations in the sea
+        
+        """
+        if self.res_model is None:
+            print("Can't plot model, please read or create model file first")
+            return        
+        
+        # index of sea level (zero level) in resistivity grid
+        sli = mtcc.nearest_index(self.sea_level,self.grid_z)
+        
+        # make a figure
+        plt.figure(figsize=(10,10))
+        # plot the resistivity model (at sea level)
+        plt.pcolormesh(self.grid_east,self.grid_north,self.res_model[:,:,sli],
+                       vmin=1,vmax=1e4,norm=colors.LogNorm(),ec='0.5',lw=0.01,
+                       cmap='bwr_r')
+        
+        # plot stations
+        if self.station_locations is None:
+            print("Can't plot stations, please read or create data file first")
+        else:
+            plt.plot(self.station_locations.rel_east,self.station_locations.rel_north,'.',color='k')
+            
+        # tidy up plot and make colorbar
+        plt.gca().set_aspect(1)
+        cbar=plt.colorbar(shrink=0.5)
+        cbar.set_label('Resistivity, $\Omega$m')
+        plt.xlabel('Grid East, relative (m)')
+        plt.ylabel('Grid North, relative (m)')
+        plt.title("Resistivity at sea level")
+        
+        
+        
+        
+        
     def write_model_file(self, **kwargs):
         """
         will write an initial file for ModEM.

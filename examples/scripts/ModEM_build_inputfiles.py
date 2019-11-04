@@ -113,6 +113,9 @@ mo.write_model_file(save_path=workdir)
 # update data elevations
 do.project_stations_on_topography(mo)
 
+# show the mesh
+mo.plot_sealevel_resistivity()
+
 
 co = Covariance()
 co.smoothing_east = 0.4
