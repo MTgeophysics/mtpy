@@ -13,7 +13,7 @@ Revision History:
     LastUpdate:     dd/mm/yyyy
 """
 
-import os,sys
+import os, sys
 import argparse
 from pyproj import Proj
 import gdal, osr
@@ -27,7 +27,6 @@ import mtpy.contrib.netcdf.modem_to_netCDF as modem2nc
 
 
 def array2geotiff_writer(newRasterfn, rasterOrigin, pixelWidth, pixelHeight, array, epsg_code=4283):
-
     cols = array.shape[1]
     rows = array.shape[0]
     originX = rasterOrigin[0]
@@ -44,12 +43,11 @@ def array2geotiff_writer(newRasterfn, rasterOrigin, pixelWidth, pixelHeight, arr
     outRaster.SetProjection(outRasterSRS.ExportToWkt())
     outband.FlushCache()
 
-# output to ascii format
+    # output to ascii format
     format2 = 'AAIGrid'
-    newRasterfn2 = "%s.asc"%newRasterfn
+    newRasterfn2 = "%s.asc" % newRasterfn
     driver2 = gdal.GetDriverByName(format2)
     dst_ds_new = driver2.CreateCopy(newRasterfn2, outRaster)
-
 
     return newRasterfn
 
@@ -61,34 +59,35 @@ def test_array2geotiff(newRasterfn, epsg):
     :param epsg:
     :return:
     """
-    #rasterOrigin = (-123.25745,45.43013)
+    # rasterOrigin = (-123.25745,45.43013)
     rasterOrigin = (149.298, -34.974)  # Longitude and Lattitude in Aussi continent
     pixelWidth = 0.01
     pixelHeight = -0.01  # this must be negative value, as a Geotiff image's origin is defined as the upper-left corner.
 
     # Define an image 2D-array: The black=0 pixels trace out GDAL; the bright=1 pixels are white background
-    array = np.array([[ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-                      [ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-                      [ 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 1, 1],
-                      [ 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1],
-                      [ 1, 0, 1, 0, 0, 1, 1, 0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 1, 1],
-                      [ 1, 0, 1, 1, 0, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1],
-                      [ 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 1],
-                      [ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-                      [ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-                      [ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]])
+    array = np.array([[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+                      [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+                      [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 1, 1],
+                      [1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1],
+                      [1, 0, 1, 0, 0, 1, 1, 0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 1, 1],
+                      [1, 0, 1, 1, 0, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1],
+                      [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 1],
+                      [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+                      [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+                      [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]])
 
+    random = np.random.rand(array.shape[0], array.shape[1])
 
-    random= np.random.rand(array.shape[0],array.shape[1])
+    array2 = 1000.0 * array + 10.0 * random
+    print(array2)
 
-    array2= 1000.0*array + 10.0*random
-    print (array2)
-
-    outfn=array2geotiff_writer(newRasterfn, rasterOrigin, pixelWidth, pixelHeight, array2, epsg_code=epsg)  # write to a raster file
+    outfn = array2geotiff_writer(newRasterfn, rasterOrigin, pixelWidth, pixelHeight, array2,
+                                 epsg_code=epsg)  # write to a raster file
 
     return outfn
 
-def modem2geotiff(data_file, model_file, output_file, source_proj=None):
+
+def modem2geotiff_notused(data_file, model_file, output_file, source_proj=None):
     """
     First version code to generate an output geotiff file from a modems.rho model file and dat file
     superseded by the new fun create_geogrid()
@@ -109,7 +108,7 @@ def modem2geotiff(data_file, model_file, output_file, source_proj=None):
     center = data.center_point
     if source_proj is None:
         zone_number, is_northern, utm_zone = gis_tools.get_utm_zone(center.lat.item(), center.lon.item())
-        #source_proj = Proj('+proj=utm +zone=%d +%s +datum=%s' % (zone_number, 'north' if is_northern else 'south', 'WGS84'))
+        # source_proj = Proj('+proj=utm +zone=%d +%s +datum=%s' % (zone_number, 'north' if is_northern else 'south', 'WGS84'))
 
         epsg_code = gis_tools.get_epsg(center.lat.item(), center.lon.item())
         print("Input data epsg code is inferred as ", epsg_code)
@@ -119,35 +118,36 @@ def modem2geotiff(data_file, model_file, output_file, source_proj=None):
     source_proj = Proj(init='epsg:' + str(epsg_code))
 
     resistivity_data = {
-        'x': center.east.item() + (model.grid_east[1:] + model.grid_east[:-1])/2,
-        'y': center.north.item() + (model.grid_north[1:] + model.grid_north[:-1])/2,
-        'z': (model.grid_z[1:] + model.grid_z[:-1])/2,
+        'x': center.east.item() + (model.grid_east[1:] + model.grid_east[:-1]) / 2,
+        'y': center.north.item() + (model.grid_north[1:] + model.grid_north[:-1]) / 2,
+        'z': (model.grid_z[1:] + model.grid_z[:-1]) / 2,
         'resistivity': np.transpose(model.res_model, axes=(2, 0, 1))
     }
 
-    #epsgcode= 4326 # 4326 output grid Coordinate systems: 4326 WGS84
-    epsgcode= 4283  # 4283 https://spatialreference.org/ref/epsg/gda94/
-    grid_proj = Proj(init='epsg:%s'%epsgcode) # output grid Coordinate system 
+    # epsgcode= 4326 # 4326 output grid Coordinate systems: 4326 WGS84
+    epsgcode = 4283  # 4283 https://spatialreference.org/ref/epsg/gda94/
+    grid_proj = Proj(init='epsg:%s' % epsgcode)  # output grid Coordinate system
     # grid_proj = Proj(init='epsg:3112') # output grid Coordinate system 4326, 4283, 3112
     result = modem2nc.interpolate(resistivity_data, source_proj, grid_proj, center,
-                         modem2nc.median_spacing(model.grid_east), modem2nc.median_spacing(model.grid_north))
-
+                                  modem2nc.median_spacing(model.grid_east), modem2nc.median_spacing(model.grid_north))
 
     print("result['latitude'] ==", result['latitude'])
     print("result['longitude'] ==", result['longitude'])
     print("result['depth'] ==", result['depth'])
 
-    #origin=(result['longitude'][0],result['latitude'][0]) # which corner of the image?
-    origin=(result['longitude'][0],result['latitude'][-1])
+    # origin=(result['longitude'][0],result['latitude'][0]) # which corner of the image?
+    origin = (result['longitude'][0], result['latitude'][-1])
     pixel_width = result['longitude'][1] - result['longitude'][0]
-    pixel_height = result['latitude'][0] - result['latitude'][1] # This should be negative for geotiff with origin at the upper-left corner
+    pixel_height = result['latitude'][0] - result['latitude'][
+        1]  # This should be negative for geotiff with origin at the upper-left corner
 
     # write the depth_index
-    depth_index=1
-    resis_data = result['resistivity'][depth_index,:,:] # this original image may start from the lower left corner, if so must be flipped.
+    depth_index = 1
+    resis_data = result['resistivity'][depth_index, :,
+                 :]  # this original image may start from the lower left corner, if so must be flipped.
     resis_data_flip = resis_data[::-1]  # flipped to ensure the image starts from the upper left corner 
 
-    array2geotiff_writer(output_file,origin,pixel_width,pixel_height,resis_data_flip, epsg_code=epsgcode)
+    array2geotiff_writer(output_file, origin, pixel_width, pixel_height, resis_data_flip, epsg_code=epsgcode)
 
     return output_file
 
@@ -165,7 +165,7 @@ def create_geogrid(data_file, model_file, output_file, source_proj=None, depth_i
     print("read inputs from Model Rho File")
 
     # create a model object and read in model data
-    #model = Model(data_obj=data)  # no need of data_obj
+    # model = Model(data_obj=data)  # no need of data_obj
     model = Model()
     model.read_model_file(model_fn=model_file)
 
@@ -175,7 +175,8 @@ def create_geogrid(data_file, model_file, output_file, source_proj=None, depth_i
     data.read_data_file(data_fn=data_file)
     center = data.center_point
 
-    #source_proj = 28355
+    # source_proj = 28355
+    source_proj = 28353
     if source_proj is None:
         zone_number, is_northern, utm_zone = gis_tools.get_utm_zone(center.lat.item(), center.lon.item())
         # source_proj = Proj('+proj=utm +zone=%d +%s +datum=%s' % (zone_number, 'north' if is_northern else 'south', 'WGS84'))
@@ -194,7 +195,7 @@ def create_geogrid(data_file, model_file, output_file, source_proj=None, depth_i
     ypad = 6
     zpad = 10
     gce, gcn = gce[xpad:-xpad], gcn[ypad:-ypad]  # padding off big-sized edge cells
-    gcz= gcz[:-zpad]
+    gcz = gcz[:-zpad]
     # ge,gn = mObj.grid_east[6:-6],mObj.grid_north[6:-6]
 
     print(gce)
@@ -203,32 +204,31 @@ def create_geogrid(data_file, model_file, output_file, source_proj=None, depth_i
 
     print("The Shapes E, N Z =", gce.shape, gcn.shape, gcz.shape)
 
-
     # epsgcode= 4326 # 4326 output grid Coordinate systems: 4326 WGS84
     # epsgcode = 28355  # 4283 https://spatialreference.org/ref/epsg/gda94/
     grid_proj = source_proj  # output grid Coordinate system should be the same as the input modem's
     # grid_proj = Proj(init='epsg:3112') # output grid Coordinate system 4326, 4283, 3112
 
-    print("The Data center point (center.east,center.north) =", center.east, center.north )
+    print("The Data center point (center.east,center.north) =", center.east, center.north)
     #  May need to shift by half cellsize -cs/2
     # [1]: -164848.1035642 -3750
     # Out[1]: -168598.1035642
     #
     # In [2]: 5611364.73539792 - 3750
     # Out[2]: 5607614.73539792
-    origin = (gce[0] + center.east,gcn[-1] + center.north)
+    origin = (gce[0] + center.east, gcn[-1] + center.north)
     print("The Origin (UpperLeft Corner) =", origin)
     # get_grid_size(),  as the mean/medium value of the original ModeEM model grid
-    cs=7500  # grid size
-    #cs = 5000
-    #Todo: cs = get_grid_size(model_file)
+    cs = 8000  # grid size
+    # cs = 5000
+    # Todo: cs = get_grid_size(model_file)
     pixel_width = cs
-    pixel_height =-cs # This should be negative for geotiff spec, whose origin is at the Upper-Left corner of image.
+    pixel_height = -cs  # This should be negative for geotiff spec, whose origin is at the Upper-Left corner of image.
 
     (target_gridx, target_gridy) = np.meshgrid(np.arange(gce[0], gce[-1], cs),
-                                     np.arange(gcn[0], gcn[-1], cs))
+                                               np.arange(gcn[0], gcn[-1], cs))
 
-    #resgrid_nopad = model.res_model[::-1][xpad:-xpad, ypad:-ypad] # can this be simplified as below??
+    # resgrid_nopad = model.res_model[::-1][xpad:-xpad, ypad:-ypad] # can this be simplified as below??
     resgrid_nopad = model.res_model[xpad:-xpad, ypad:-ypad, 0:-zpad]
 
     if depth_index is None:
@@ -239,18 +239,19 @@ def create_geogrid(data_file, model_file, output_file, source_proj=None, depth_i
     print("The Depth Indeces =", depth_indices)
 
     for di in depth_indices:
-    # for di in [0,1,2,3]:
+        # for di in [0,1,2,3]:
         output_file = 'DepthSlice%1im' % (gcz[di])
         # define interpolation function (interpolate in log10 measure-space)
         # See https://docs.scipy.org/doc/scipy-0.16.0/reference/interpolate.html
         interpfunc = RegularGridInterpolator((gce, gcn), np.log10(resgrid_nopad[:, :, di].T))
         # evaluate on the regular grid points, which to be output into geogrid formatted files
-        newgridres = 10 ** interpfunc(np.vstack([target_gridx.flatten(), target_gridy.flatten()]).T).reshape(target_gridx.shape)
+        newgridres = 10 ** interpfunc(np.vstack([target_gridx.flatten(), target_gridy.flatten()]).T).reshape(
+            target_gridx.shape)
 
         print("new interpolated resistivity grid shape at the index di: ", newgridres.shape, di)
 
         # this original image may start from the lower left corner, if so must be flipped.
-        #resis_data_flip = resis_data[::-1]  # flipped to ensure the image starts from the upper left corner
+        # resis_data_flip = resis_data[::-1]  # flipped to ensure the image starts from the upper left corner
 
         array2geotiff_writer(output_file, origin, pixel_width, pixel_height, newgridres, epsg_code=epsg_code)
 
@@ -275,11 +276,9 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    print (args)
+    print(args)
 
     ##test_array2geotiff("test_geotiff_GDAL_img.tif", args.epsg)
 
-    #modem2geotiff(args.modem_data, args.modem_model, args.output_file)
-    create_geogrid(args.modem_data, args.modem_model, args.output_file) # ,depth_index=[0,1,2,10])
-
-
+    # modem2geotiff(args.modem_data, args.modem_model, args.output_file)
+    create_geogrid(args.modem_data, args.modem_model, args.output_file)  # ,depth_index=[0,1,2,10])
