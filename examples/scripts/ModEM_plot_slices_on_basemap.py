@@ -13,6 +13,7 @@ from mtpy.modeling.modem import PlotSlices
 wd = r'C:\mtpywin\mtpy\examples\model_files\ModEM'
 savepath = r'C:/tmp'
 
+
 model_fn = os.path.join(wd,'Modular_MPI_NLCG_004.rho')
 data_fn = os.path.join(wd,'ModEM_Data.dat')
 
@@ -30,5 +31,6 @@ for depth in [2e3, 10e3, 20e3]:
     ps.basemap_plot(depth, # depth to plot (code finds nearest slice)
                     tick_interval = None, # tick interval in degrees, if not provided or None it is calculated from data
                     buffer=None, # buffer around stations in degrees, if not provided or None it is calculated from data
+                    mesh_rotation_angle=0, # option to specify the mesh rotation angle, if rotated grid was used
                     savepath=savepath # savepath to save figure to. If not provided or None/False, figure is not saved
                     )

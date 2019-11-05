@@ -22,6 +22,7 @@ from mtpy.modeling.modem.data import Model
 from mtpy.utils import exceptions as mtex,basemap_tools
 from mtpy.utils.gis_tools import get_epsg,epsg_project
 from mtpy.utils.calculator import nearest_index
+from mtpy.utils.mesh_tools import rotate_mesh
 
 from scipy.spatial import cKDTree
 from scipy.interpolate import interp1d, UnivariateSpline
@@ -537,7 +538,7 @@ class PlotSlices(object):
                 
                 
     def basemap_plot(self, depth, tick_interval=None, savepath=None,
-                     new_figure=True,**basemap_kwargs):
+                     new_figure=True,mesh_rotation_angle=0.,**basemap_kwargs):
         
         if self.model_epsg is None:
             print("No projection information provided, please provide the model epsg code relevant to your model")
@@ -562,9 +563,17 @@ class PlotSlices(object):
         # if not provided in basemap_kwargs
         self.bm = basemap_tools.initialise_basemap(self.md_data,**basemap_kwargs)
         
+        # get eastings/northings of mesh
+        ge,gn = self.md_model.grid_east, self.md_model.grid_north
+        e0,n0 = self.md_data.center_point['east'],self.md_data.center_point['north']
+        if mesh_rotation_angle != 0:
+            mgx, mgy = rotate_mesh(ge,gn,[e0,n0],
+                                   -mesh_rotation_angle)
+        else:
+            mgx, mgy = np.meshgrid(ge + e0, gn + n0)
+        
         # lat/lon coordinates of resistivity model values
-        loncg,latcg = epsg_project(self._mgx[:,:,0]*self.dscale + self.md_data.center_point['east'],
-                                   self._mgy[:,:,0]*self.dscale + self.md_data.center_point['north'],
+        loncg,latcg = epsg_project(mgx,mgy,
                                    self.model_epsg,
                                    4326)
                
@@ -579,8 +588,15 @@ class PlotSlices(object):
                                    
         # plot stations
         if self.plot_stations:
-            # reproject station location eastings and northings to ensure they are in correct spot relative to model
-            slon,slat = epsg_project(self.md_data.station_locations.east,self.md_data.station_locations.north,self.model_epsg,4326)
+            # rotate stations
+            if mesh_rotation_angle != 0:
+                self.md_data.station_locations.rotate_stations(-mesh_rotation_angle)
+            seast,snorth = self.md_data.station_locations.rel_east + self.md_data.center_point['east'],\
+                           self.md_data.station_locations.rel_north + self.md_data.center_point['north']
+
+            # reproject station location eastings and northings
+            slon,slat = epsg_project(seast,snorth,self.model_epsg,4326)
+            
             sx,sy = self.bm(slon,slat)
             self.bm.plot(sx,sy,'k.')
             

@@ -460,7 +460,8 @@ class Data(object):
 
         # rotate locations if needed
         if self._rotation_angle != 0:
-            stations_obj.rotate_stations(self._rotation_angle)
+            # rotate stations the opposite way to the data
+            stations_obj.rotate_stations(-self._rotation_angle)
 
         # fill data array
         self.data_array[:]['station'] = stations_obj.station
@@ -530,17 +531,19 @@ class Data(object):
         if self._rotation_angle == rotation_angle:
             return
 
+#        self._logger.info('Changing rotation angle from {0:.1f} to {1:.1f}'.format(
+#            self._rotation_angle, rotation_angle))
+#
+#        self._rotation_angle = -self._rotation_angle + rotation_angle
+#
+#        if self.rotation_angle == 0:
+#            return
+
         self._logger.info('Changing rotation angle from {0:.1f} to {1:.1f}'.format(
             self._rotation_angle, rotation_angle))
-
-        self._rotation_angle = -self._rotation_angle + rotation_angle
-
-        if self.rotation_angle == 0:
-            return
-
-        self._logger.info('Changing rotation angle from {0:.1f} to {1:.1f}'.format(
-            self._rotation_angle, rotation_angle))
+        
         self._rotation_angle = rotation_angle
+        
 
         if self.mt_dict is None:
             self.get_mt_dict()
@@ -551,6 +554,8 @@ class Data(object):
             angle_to_rotate = self._rotation_angle - mt_obj.Z.rotation_angle
             mt_obj.Z.rotate(angle_to_rotate)
             mt_obj.Tipper.rotate(angle_to_rotate)
+
+
 
         self._logger.info('Data rotated to align with {0:.1f} deg clockwise from N'.format(
             self._rotation_angle))
