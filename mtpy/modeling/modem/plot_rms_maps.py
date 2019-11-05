@@ -12,7 +12,7 @@ ModEM
 import os
 
 import numpy as np
-from matplotlib import colors as colors, pyplot as plt, colorbar as mcb
+from matplotlib import colors as colors, pyplot as plt, colorbar as mcb, cm
 from matplotlib.ticker import MultipleLocator, FormatStrFormatter
 
 from mtpy.modeling.modem import Data, Residual
@@ -140,6 +140,7 @@ class PlotRMSMaps(object):
 
         # colormap for rms, goes white to black from 0 to rms max and
         # red below 1 to show where the data is being over fit
+        
         self.rms_cmap_dict = {'red': ((0.0, 1.0, 1.0),
                                       (0.2, 1.0, 1.0),
                                       (1.0, 0.0, 0.0)),
@@ -149,10 +150,20 @@ class PlotRMSMaps(object):
                               'blue': ((0.0, 0.0, 0.0),
                                        (0.2, 1.0, 1.0),
                                        (1.0, 0.0, 0.0))}
-
-        self.rms_cmap = colors.LinearSegmentedColormap('rms_cmap',
-                                                       self.rms_cmap_dict,
-                                                       256)
+    
+        self.rms_cmap = None
+        if 'rms_cmap' in list(kwargs.keys()):
+            # check if it is a valid matplotlib color stretch
+            if kwargs['rms_cmap'] in dir(cm):
+                self.rms_cmap = cm.get_cmap(kwargs['rms_cmap'])
+            else:
+                print("provided rms_cmap invalid, using default colormap")
+                
+            
+        if self.rms_cmap is None:
+            self.rms_cmap = colors.LinearSegmentedColormap('rms_cmap',
+                                                           self.rms_cmap_dict,
+                                                           256)
 
         self.plot_z_list = [{'label': r'$Z_{xx}$', 'index': (0, 0), 'plot_num': 1},
                             {'label': r'$Z_{xy}$', 'index': (0, 1), 'plot_num': 2},
@@ -216,58 +227,83 @@ class PlotRMSMaps(object):
             jj = p_dict['index'][0]
 
 #            for r_arr in self.residual.residual_array:
+            rms = np.zeros(self.residual.residual_array.shape[0])
             for ridx in range(len(self.residual.residual_array)):
                 
                 if self.period_index == 'all':
                     r_arr = self.residual.rms_array[ridx]
                     if p_dict['plot_num'] < 5:
-                        rms = r_arr['rms_z']
+                        rms[ridx] = r_arr['rms_z']
                     else:
-                        rms = r_arr['rms_tip']
+                        rms[ridx] = r_arr['rms_tip']
                 else:
                     r_arr = self.residual.residual_array[ridx]
                     
                     # calulate the rms self.residual/error
                     if p_dict['plot_num'] < 5:
-                        rms = r_arr['z'][self.period_index, ii, jj].__abs__() / \
+                        rms[ridx] = r_arr['z'][self.period_index, ii, jj].__abs__() / \
                               r_arr['z_err'][self.period_index, ii, jj].real
     
                     else:
-                        rms = r_arr['tip'][self.period_index, ii, jj].__abs__() / \
+                        rms[ridx] = r_arr['tip'][self.period_index, ii, jj].__abs__() / \
                               r_arr['tip_err'][self.period_index, ii, jj].real
-
-                # color appropriately
-                if np.nan_to_num(rms) == 0.0:
-                    marker_color = (1, 1, 1)
-                    marker = '.'
-                    marker_size = .1
-                    marker_edge_color = (1, 1, 1)
-                if rms > self.rms_max:
-                    marker_color = (0, 0, 0)
-                    marker = self.marker
-                    marker_size = self.marker_size
-                    marker_edge_color = (0, 0, 0)
-
-                elif 1 <= rms <= self.rms_max:
-                    r_color = 1 - rms / self.rms_max + rms_1
-                    marker_color = (r_color, r_color, r_color)
-                    marker = self.marker
-                    marker_size = self.marker_size
-                    marker_edge_color = (0, 0, 0)
-
-                elif rms < 1:
-                    r_color = 1 - rms / self.rms_max
-                    marker_color = (1, r_color, r_color)
-                    marker = self.marker
-                    marker_size = self.marker_size
-                    marker_edge_color = (0, 0, 0)
-
-                ax.plot(r_arr['lon'], r_arr['lat'],
-                        marker=marker,
-                        ms=marker_size,
-                        mec=marker_edge_color,
-                        mfc=marker_color,
-                        zorder=3)
+#
+#                # color appropriately
+#                if np.nan_to_num(rms) == 0.0:
+#                    marker_color = (1, 1, 1)
+#                    marker = '.'
+#                    marker_size = .1
+#                    marker_edge_color = (1, 1, 1)
+#                if rms > self.rms_max:
+#                    marker_color = (0, 0, 0)
+#                    marker = self.marker
+#                    marker_size = self.marker_size
+#                    marker_edge_color = (0, 0, 0)
+#
+#                elif 1 <= rms <= self.rms_max:
+#                    r_color = 1 - rms / self.rms_max + rms_1
+#                    marker_color = (r_color, r_color, r_color)
+#                    marker = self.marker
+#                    marker_size = self.marker_size
+#                    marker_edge_color = (0, 0, 0)
+#
+#                elif rms < 1:
+#                    r_color = 1 - rms / self.rms_max
+#                    marker_color = (1, r_color, r_color)
+#                    marker = self.marker
+#                    marker_size = self.marker_size
+#                    marker_edge_color = (0, 0, 0)
+#
+#                ax.plot(r_arr['lon'], r_arr['lat'],
+#                        marker=marker,
+#                        ms=marker_size,
+#                        mec=marker_edge_color,
+#                        mfc=marker_color,
+#                        zorder=3)
+            lon = self.residual.residual_array['lon']
+            lat = self.residual.residual_array['lat']
+            
+            filt = np.nan_to_num(rms).astype(bool)
+            
+            plt.scatter(lon[filt],
+                        lat[filt],
+                        c=rms[filt],
+                        marker=self.marker,
+#                        marker_size=self.marker_size,
+                        edgecolors = (0, 0, 0),
+                        cmap=self.rms_cmap,
+                        norm=colors.Normalize(vmin=self.rms_min,
+                                           vmax=self.rms_max),                        
+                        )
+            if not np.all(filt):
+                filt2 = (1-filt).astype(bool)
+                plt.plot(lon[filt2],
+                            lat[filt2],
+                            '.',
+                            ms=0.1,
+                            mec=(0,0,0),
+                            mfc=(1,1,1)
+                            )
 
             if p_dict['plot_num'] == 1 or p_dict['plot_num'] == 3:
                 ax.set_ylabel('Latitude (deg)', fontdict=font_dict)
