@@ -401,18 +401,33 @@ class PlotRMSMaps(object):
         if new_figure:
             self.fig = plt.figure()
 
-        # initialise a basemap with extents, projection etc calculated from data 
-        # if not provided in basemap_kwargs
-        self.bm = basemap_tools.initialise_basemap(self.residual.station_locations,**basemap_kwargs)
-        basemap_tools.add_basemap_frame(self.bm,tick_interval=tick_interval)
         
         # rotate stations
         if mesh_rotation_angle != 0:
-            self.residual.station_locations.rotate_stations(-mesh_rotation_angle)
+            if hasattr(self,'mesh_rotation_angle'):
+                angle_to_rotate = self.mesh_rotation_angle - mesh_rotation_angle
+            else:
+                angle_to_rotate = -mesh_rotation_angle
+                
+            self.mesh_rotation_angle = mesh_rotation_angle
+
+            self.residual.station_locations.rotate_stations(angle_to_rotate)
             
         # get relative locations
         seast,snorth = self.residual.station_locations.rel_east + self.residual.station_locations.center_point['east'],\
                        self.residual.station_locations.rel_north + self.residual.station_locations.center_point['north']
+        
+        # project station location eastings and northings to lat/long
+        slon,slat = epsg_project(seast,snorth,self.model_epsg,4326)
+        self.residual.station_locations.station_locations['lon'] = slon
+        self.residual.station_locations.station_locations['lat'] = slat    
+
+
+        # initialise a basemap with extents, projection etc calculated from data 
+        # if not provided in basemap_kwargs
+        self.bm = basemap_tools.initialise_basemap(self.residual.station_locations,**basemap_kwargs)
+        basemap_tools.add_basemap_frame(self.bm,tick_interval=tick_interval)
+
 
         # project station location eastings and northings to lat/long
         slon,slat = epsg_project(seast,snorth,self.model_epsg,4326)
@@ -425,14 +440,13 @@ class PlotRMSMaps(object):
             if self.period_index == 'all':
                 rms = self.residual.rms_array['rms']
             else:
-                rms = self.residual.rms_array['rms_period'][self.period_index]
+                rms = self.residual.rms_array['rms_period'][:,self.period_index]
         elif datatype in ['z','tip']:
             if self.period_index == 'all':
                 rms = self.residual.rms_array['rms_{}'.format(datatype)]
             else:
                 rms = self.residual.rms_array['rms_{}_period'.format(datatype)][:,self.period_index]            
             
-        
         filt = np.nan_to_num(rms).astype(bool)
         
         self.bm.scatter(sx[filt], sy[filt],
@@ -457,9 +471,10 @@ class PlotRMSMaps(object):
         color_bar.set_label('RMS')
         
         title_dict = {'all':'Z + Tipper','z':'Z','tip':'Tipper'}
+        print(datatype,title_dict[datatype])
         
         if self.period_index == 'all':
-            plt.title('RMS misfit over all periods for ',title_dict[datatype])
+            plt.title('RMS misfit over all periods for '+title_dict[datatype])
         else:            
             plt.title('RMS misfit for period = {0:.5g} (s)'.format(self.residual.period_list[self.period_index]))        
     
