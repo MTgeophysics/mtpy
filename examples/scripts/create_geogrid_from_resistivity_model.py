@@ -1,0 +1,56 @@
+#! /usr/bin/env python
+"""
+Description:
+    Example python script to create grid formats (geotiff and ascii) from ModEM model file
+
+References:
+
+
+CreationDate:   6/11/2019
+Developer:      fei.zhang@ga.gov.au
+
+Revision History:
+    LastUpdate:     6/11/2019   FZ
+    LastUpdate:     dd/mm/yyyy  Who     Optional description
+"""
+import sys
+from mtpy.utils.convert_modem_data_to_geogrid import create_geogrid
+
+
+def main(dat_file, rho_file, user_option_dict):
+    """
+    define my main function
+    :return:
+    """
+
+    print("User Options:", user_option_dict)
+
+    create_geogrid(dat_file, rho_file, user_options=user_option_dict)  #,depth_index=[0,1,2,10])
+
+    return
+
+# =============================================
+# quick test of this script
+#  python /examples/scripts/create_geogrid_from_resistivity_model.py  /c/Data/JinMing_GridData_sample/JM_model_002/EFTF_NLCG_002.dat /c/Data/JinMing_GridData_sample/JM_model_002/EFTF_NLCG_002.rho
+# ---------------------------------------------
+if __name__ == "__main__":
+
+    if len(sys.argv)<3:
+        print ("USAGE: python %s dat_file rho_file"%sys.argv[0])
+        sys.exit(1)
+
+    # Before calling the function create_geogrid(), a user should provide the right optional parameters.
+    # Otherwise, default parameters will be used, which may not make sense
+    user_option_dict = {
+        "xpad": 6,
+        "ypad": 6,
+        "zpad": 1,
+        "grid_size":8000,
+        # "center_lat":-19.0,  # to override what is found in the file.dat, which may be incorrect.
+        # "center_lon": 138.0,  # to override what is found in the file.dat, which may be incorrect.
+        # "source_proj":28353,
+        "depth_index": None,  # slices [0,1,2,10] to be output
+    }
+
+    # call main function
+    main(sys.argv[1],sys.argv[2], user_option_dict)
