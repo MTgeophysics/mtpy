@@ -45,7 +45,9 @@ def array2geotiff_writer(newRasterfn, rasterOrigin, pixelWidth, pixelHeight, arr
 
     # output to ascii format
     format2 = 'AAIGrid'
-    newRasterfn2 = "%s.asc" % newRasterfn
+    if newRasterfn.endswith(".tif"):
+        _newRasterfn = newRasterfn[:-4]
+    newRasterfn2 = "%s.asc" % _newRasterfn
     driver2 = gdal.GetDriverByName(format2)
     dst_ds_new = driver2.CreateCopy(newRasterfn2, outRaster)
 
@@ -56,7 +58,7 @@ def test_array2geotiff(newRasterfn, epsg):
     """
     A  dummpy array of data to be written into a geotiff file. It looks like a image of "GDAL"
     :param newRasterfn:
-    :param epsg:
+    :param epsg: 4326, 4283
     :return:
     """
     # rasterOrigin = (-123.25745,45.43013)
@@ -152,14 +154,18 @@ def modem2geotiff_notused(data_file, model_file, output_file, source_proj=None):
     return output_file
 
 
-def create_geogrid(data_file, model_file, output_file, source_proj=None, depth_index=None):
+# def create_geogrid(data_file, model_file, output_file, source_proj=None, depth_index=None):
+def create_geogrid(data_file, model_file, user_options={}):
     """
     Generate an output geotiff file and ASCII grid file.
-    :param data_file: modem.dat  used to get the grid center point
-    :param model_file: modem.rho resistivity
-    :param output_file: output.tif
-    :param source_proj: None by default. The UTM zone inferred from the input non-uniform grid parameters
-    :param depth_index: a list of integers, eg, [0,2,4] of the depth slice's index
+    :param data_file: modem.dat  only used to get the grid center point (lat,long), even though it contains EDI files data
+    :param model_file: modem.rho resistivity data model, which are compulsory.
+    :param user_options: a dictionary specify 
+        source_proj: None by default. The UTM zone inferred from the grid centre lat-lon (WGS84 32755)
+        depth_index: a list of integers, eg, [0,2,4] of the depth slice's index to be output. all slices if None
+        center_lat:  The grid center_lat in degrees -38.32
+        center_lon:  The grod center longitude  138.77
+        output_grid_size:  the pixel size in meters, 8000  
     :return:
     """
     print("read inputs from Model Rho File")
@@ -175,8 +181,19 @@ def create_geogrid(data_file, model_file, output_file, source_proj=None, depth_i
     data.read_data_file(data_fn=data_file)
     center = data.center_point
 
-    # source_proj = 28355
-    source_proj = 28353
+    # source_proj = 28355   source_proj = 28353
+    source_proj = user_options.get("source_proj",None)
+    depth_index = user_options.get("depth_index",None)
+    
+    # get xyz-paddings
+    xpad = user_options.get("xpad", 6)
+    ypad = user_options.get("ypad",6)
+    zpad = user_options.get("zpad",20)
+    
+    # output geogrid size in UTM coord meters, usually can be the mean/medium value of the original ModeEM model grid
+    # Todo: cs = get_grid_size(model_file)
+    out_grid_size = user_options.get("grid_size",7000)
+    
     if source_proj is None:
         zone_number, is_northern, utm_zone = gis_tools.get_utm_zone(center.lat.item(), center.lon.item())
         # source_proj = Proj('+proj=utm +zone=%d +%s +datum=%s' % (zone_number, 'north' if is_northern else 'south', 'WGS84'))
@@ -190,10 +207,10 @@ def create_geogrid(data_file, model_file, output_file, source_proj=None, depth_i
     # get the grid cells' centres (halfshift -cs/2?)
     gce, gcn, gcz = [np.mean([arr[:-1], arr[1:]], axis=0) for arr in [model.grid_east, model.grid_north, model.grid_z]]
 
-    # get xyz-paddings
-    xpad = 6
-    ypad = 6
-    zpad = 10
+    # # get xyz-paddings
+    # xpad = 6
+    # ypad = 6
+    # zpad = 10
     gce, gcn = gce[xpad:-xpad], gcn[ypad:-ypad]  # padding off big-sized edge cells
     gcz = gcz[:-zpad]
     # ge,gn = mObj.grid_east[6:-6],mObj.grid_north[6:-6]
@@ -218,15 +235,12 @@ def create_geogrid(data_file, model_file, output_file, source_proj=None, depth_i
     # Out[2]: 5607614.73539792
     origin = (gce[0] + center.east, gcn[-1] + center.north)
     print("The Origin (UpperLeft Corner) =", origin)
-    # get_grid_size(),  as the mean/medium value of the original ModeEM model grid
-    cs = 8000  # grid size
-    # cs = 5000
-    # Todo: cs = get_grid_size(model_file)
-    pixel_width = cs
-    pixel_height = -cs  # This should be negative for geotiff spec, whose origin is at the Upper-Left corner of image.
 
-    (target_gridx, target_gridy) = np.meshgrid(np.arange(gce[0], gce[-1], cs),
-                                               np.arange(gcn[0], gcn[-1], cs))
+    pixel_width = out_grid_size
+    pixel_height = -out_grid_size  # This should be negative for geotiff spec, whose origin is at the Upper-Left corner of image.
+
+    (target_gridx, target_gridy) = np.meshgrid(np.arange(gce[0], gce[-1], out_grid_size),
+                                               np.arange(gcn[0], gcn[-1], out_grid_size))
 
     # resgrid_nopad = model.res_model[::-1][xpad:-xpad, ypad:-ypad] # can this be simplified as below??
     resgrid_nopad = model.res_model[xpad:-xpad, ypad:-ypad, 0:-zpad]
@@ -240,7 +254,7 @@ def create_geogrid(data_file, model_file, output_file, source_proj=None, depth_i
 
     for di in depth_indices:
         # for di in [0,1,2,3]:
-        output_file = 'DepthSlice%1im' % (gcz[di])
+        output_file = 'DepthSlice%1im.tif' % (gcz[di])
         # define interpolation function (interpolate in log10 measure-space)
         # See https://docs.scipy.org/doc/scipy-0.16.0/reference/interpolate.html
         interpfunc = RegularGridInterpolator((gce, gcn), np.log10(resgrid_nopad[:, :, di].T))
@@ -257,28 +271,48 @@ def create_geogrid(data_file, model_file, output_file, source_proj=None, depth_i
 
     return output_file
 
+def get_user_input_params( user_option_file ):
+    """
+    Get the user's input optional parameters from the input text file
+    :param user_option_file: path to a file
+    :return: a dictionary like  {"source_proj":28353,"depth_index":[0,1,2,10],}
+    """
 
+    # Parse the input file to get a disctionary.
+
+    user_dict = {
+        "source_proj": 28353,
+        "depth_index": [0, 1, 2, 10],
+    }
+    return user_dict
 #####################################################################################################################
-# Section for quick test run of this script
+# Quick test of this script
 # cd /e/Githubz/mtpy
-# Default output grid Coordinate systems:'epsg:4283' https://spatialreference.org/ref/epsg/gda94/
-# (not the Old 4326 WGS84)
 # export PYTHONPATH=/g/data/ha3/fxz547/Githubz/mtpy
 # python mtpy/utils/convert_modem_data_to_geogrid.py examples/model_files/ModEM_2/Modular_MPI_NLCG_004.dat examples/model_files/ModEM_2/Modular_MPI_NLCG_004.rho
-# python mtpy/utils/convert_modem_data_to_geogrid.py --output-file EF_NLCG_001_4283.tif tmp/JinMing_GridData_sample/EFTF_MT_model/EF_NLCG_001.dat  tmp/JinMing_GridData_sample/EFTF_MT_model/EF_NLCG_001.rho
+# python mtpy/utils/convert_modem_data_to_geogrid.py tmp/JinMing_GridData_sample/EFTF_MT_model/EF_NLCG_001.dat  tmp/JinMing_GridData_sample/EFTF_MT_model/EF_NLCG_001.rho
+# python mtpy/utils/convert_modem_data_to_geogrid.py /c/Data/JinMing_GridData_sample/JM_model_002/EFTF_NLCG_002.dat /c/Data/JinMing_GridData_sample/JM_model_002/EFTF_NLCG_002.rho --user_option_file path2my.conf
 #####################################################################################################################
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('modem_data', help="ModEM data file")
     parser.add_argument('modem_model', help="ModEM model file")
-    parser.add_argument('--epsg', default=4283, help="EPSG code for the output CRS", type=int)
-    parser.add_argument('--output-file', default="output.tif", help="Name of output file")
+    parser.add_argument('--user_option_file', help="Uer Optional parameter file path")
 
     args = parser.parse_args()
 
-    print(args)
+    print("The cmdline input parameters are:", args)
 
-    ##test_array2geotiff("test_geotiff_GDAL_img.tif", args.epsg)
+    # Before calling the function create_geogrid(), a user should provide the right optional parameters.
+    # Otherwise, default parameters will be used, which may not make sense
+    if args.user_option_file is not None:
+        user_option_dict = get_user_input_params(args.user_option_file)
+        # eg {"source_proj":28353,"depth_index":[0,1,2,10],}
+    else:
+        user_option_dict= {}
 
-    # modem2geotiff(args.modem_data, args.modem_model, args.output_file)
-    create_geogrid(args.modem_data, args.modem_model, args.output_file)  # ,depth_index=[0,1,2,10])
+    print("User Options:", user_option_dict)
+
+    create_geogrid(args.modem_data, args.modem_model, user_options=user_option_dict)  #,depth_index=[0,1,2,10])
+
+    # test_array2geotiff("test_geotiff_GDAL_img.tif", 4326)
