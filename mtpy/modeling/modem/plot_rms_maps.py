@@ -14,6 +14,8 @@ import os
 import numpy as np
 from matplotlib import colors as colors, pyplot as plt, colorbar as mcb, cm
 from matplotlib.ticker import MultipleLocator, FormatStrFormatter
+from mtpy.utils import basemap_tools
+from mtpy.utils.gis_tools import epsg_project
 
 from mtpy.modeling.modem import Data, Residual
 
@@ -132,6 +134,8 @@ class PlotRMSMaps(object):
         self.rms_max = kwargs.pop('rms_max', 5)
         self.rms_min = kwargs.pop('rms_min', 0)
 
+        self.model_epsg = kwargs.pop('model_epsg',None)
+
         self.tick_locator = kwargs.pop('tick_locator', None)
         self.pad_x = kwargs.pop('pad_x', None)
         self.pad_y = kwargs.pop('pad_y', None)
@@ -172,12 +176,15 @@ class PlotRMSMaps(object):
                             {'label': r'$T_{x}$', 'index': (0, 0), 'plot_num': 5},
                             {'label': r'$T_{y}$', 'index': (0, 1), 'plot_num': 6}]
 
+        self.read_residual_fn()
+
         if self.plot_yn == 'y':
             self.plot()
 
     def read_residual_fn(self):
         if self.residual is None:
-            self.residual = Residual(residual_fn=self.residual_fn)
+            self.residual = Residual(residual_fn=self.residual_fn,
+                                     model_epsg=self.model_epsg)
 #            self.residual.read_data_file(self.residual_fn)
             self.residual.read_residual_file()
             self.residual.get_rms()
@@ -188,8 +195,6 @@ class PlotRMSMaps(object):
         """
         plot rms in map view
         """
-
-        self.read_residual_fn()
 
         font_dict = {'size': self.font_size + 2, 'weight': 'bold'}
         rms_1 = 1. / self.rms_max
@@ -361,6 +366,103 @@ class PlotRMSMaps(object):
             self.fig.suptitle('period = {0:.5g} (s)'.format(self.residual.period_list[self.period_index]),
                               fontdict={'size': self.font_size + 3, 'weight': 'bold'})
         self.fig.show()
+    
+    
+    def basemap_plot(self, datatype='all', tick_interval=None, save=False, 
+                     savepath=None, new_figure=True, mesh_rotation_angle=0., 
+                     show_topography=False, **basemap_kwargs):
+        """
+        plot RMS misfit on a basemap using basemap modules in matplotlib
+        
+        :param datatype: type of data to plot misfit for, either 'z', 'tip', or
+                         'all' to plot overall RMS
+        :param tick_interval: tick interval on map in degrees, if None it is 
+                              calculated from the data extent
+        :param save: True/False, whether or not to save and close figure
+        :param savepath: full path of file to save to, if None, saves to 
+                         self.save_path
+        :new_figure: True/False, whether or not to initiate a new figure for
+                     the plot
+        :param mesh_rotation_angle: rotation angle of mesh, in degrees 
+                                    clockwise from north
+        :param show_topography: True/False, option to show the topograpy in the
+                                background
+        :param **basemap_kwargs: provide any valid arguments to Basemap 
+                                 instance (e.g. projection etc - see 
+                                 https://basemaptutorial.readthedocs.io/en/latest/basemap.html)
+                                 and these will be passed to the map.
+        
+        """
+
+        if self.model_epsg is None:
+            print("No projection information provided, please provide the model epsg code relevant to your model")
+            return
+
+        if new_figure:
+            self.fig = plt.figure()
+
+        # initialise a basemap with extents, projection etc calculated from data 
+        # if not provided in basemap_kwargs
+        self.bm = basemap_tools.initialise_basemap(self.residual.station_locations,**basemap_kwargs)
+        basemap_tools.add_basemap_frame(self.bm,tick_interval=tick_interval)
+        
+        # rotate stations
+        if mesh_rotation_angle != 0:
+            self.residual.station_locations.rotate_stations(-mesh_rotation_angle)
+            
+        # get relative locations
+        seast,snorth = self.residual.station_locations.rel_east + self.residual.station_locations.center_point['east'],\
+                       self.residual.station_locations.rel_north + self.residual.station_locations.center_point['north']
+
+        # project station location eastings and northings to lat/long
+        slon,slat = epsg_project(seast,snorth,self.model_epsg,4326)
+        
+        # project to basemap coordinates
+        sx,sy = self.bm(slon,slat)
+        
+        # make scatter plot
+        if datatype == 'all':
+            if self.period_index == 'all':
+                rms = self.residual.rms_array['rms']
+            else:
+                rms = self.residual.rms_array['rms_period'][self.period_index]
+        elif datatype in ['z','tip']:
+            if self.period_index == 'all':
+                rms = self.residual.rms_array['rms_{}'.format(datatype)]
+            else:
+                rms = self.residual.rms_array['rms_{}_period'.format(datatype)][:,self.period_index]            
+            
+        
+        filt = np.nan_to_num(rms).astype(bool)
+        
+        self.bm.scatter(sx[filt], sy[filt],
+                        c=rms[filt],
+                        marker=self.marker,
+                        edgecolors = (0, 0, 0),
+                        cmap=self.rms_cmap,
+                        norm=colors.Normalize(vmin=self.rms_min,
+                                              vmax=self.rms_max)                     
+                        )
+                        
+        if not np.all(filt):
+            filt2 = (1-filt).astype(bool)
+            self.bm.plot(sx[filt2],sy[filt2],'k.')
+            
+        color_bar = plt.colorbar(cmap=self.rms_cmap,
+                                 shrink = 0.6,
+                                 norm=colors.Normalize(vmin=self.rms_min,
+                                                       vmax=self.rms_max),
+                                 orientation='vertical')
+
+        color_bar.set_label('RMS')
+        
+        title_dict = {'all':'Z + Tipper','z':'Z','tip':'Tipper'}
+        
+        if self.period_index == 'all':
+            plt.title('RMS misfit over all periods for ',title_dict[datatype])
+        else:            
+            plt.title('RMS misfit for period = {0:.5g} (s)'.format(self.residual.period_list[self.period_index]))        
+    
 
     def redraw_plot(self):
         plt.close(self.fig)

@@ -32,5 +32,5 @@ for depth in [2e3, 10e3, 20e3]:
                     tick_interval = None, # tick interval in degrees, if not provided or None it is calculated from data
                     buffer=None, # buffer around stations in degrees, if not provided or None it is calculated from data
                     mesh_rotation_angle=0, # option to specify the mesh rotation angle, if rotated grid was used
-                    savepath=savepath # savepath to save figure to. If not provided or None/False, figure is not saved
+#                    savepath=savepath # savepath to save figure to. If not provided or None/False, figure is not saved
                     )

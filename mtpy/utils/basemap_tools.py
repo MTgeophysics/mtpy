@@ -6,11 +6,9 @@ from mtpy.utils.calculator import nearest_index
 
         
 
-def get_latlon_extents_from_modem_data(data_obj):
+def get_latlon_extents_from_modem_data(stations_obj):
 
-    sloc = data_obj.station_locations
-    
-    return sloc.lon.min(),sloc.lon.max(),sloc.lat.min(),sloc.lat.max()
+    return stations_obj.lon.min(),stations_obj.lon.max(),stations_obj.lat.min(),stations_obj.lat.max()
         
 
 def compute_tick_interval_from_map_extent(lonMin,lonMax,latMin,latMax):
@@ -30,7 +28,7 @@ def compute_tick_interval_from_map_extent(lonMin,lonMax,latMin,latMax):
     
 
 
-def compute_map_extent_from_modem_data(data_obj,buffer=None,buffer_factor=0.1):
+def compute_map_extent_from_modem_data(stations_obj,buffer=None,buffer_factor=0.1):
     """
     compute extent for a plot from data extent from ModEM data file
     
@@ -41,7 +39,7 @@ def compute_map_extent_from_modem_data(data_obj,buffer=None,buffer_factor=0.1):
     
     """
 
-    lonMin, lonMax, latMin, latMax = get_latlon_extents_from_modem_data(data_obj)
+    lonMin, lonMax, latMin, latMax = get_latlon_extents_from_modem_data(stations_obj)
     
     # compute buffer
     if buffer is None:
@@ -50,22 +48,26 @@ def compute_map_extent_from_modem_data(data_obj,buffer=None,buffer_factor=0.1):
     return lonMin - buffer, lonMax + buffer, latMin - buffer, latMax + buffer
     
 
-def compute_lonlat0_from_modem_data(data_obj):
+def compute_lonlat0_from_modem_data(stations_obj):
     """
     compute lat0 and lon0 for creating a basemap, using data centre point in modem data file
     """
     
-    return data_obj.center_point['lon'], data_obj.center_point['lat']
+    return stations_obj.center_point['lon'], stations_obj.center_point['lat']
 
 
-def initialise_basemap(data_obj,buffer=None,**basemap_kwargs):
+def initialise_basemap(stations_obj,buffer=None,**basemap_kwargs):
+    """
+    create a new basemap instance
+    
+    """
     
     from mpl_toolkits.basemap import Basemap
 
-    lonMin, lonMax, latMin, latMax = compute_map_extent_from_modem_data(data_obj,buffer=buffer)
-    lon_0, lat_0 = compute_lonlat0_from_modem_data(data_obj)
+    lonMin, lonMax, latMin, latMax = compute_map_extent_from_modem_data(stations_obj,buffer=buffer)
+    lon_0, lat_0 = compute_lonlat0_from_modem_data(stations_obj)
         
-    # update basemap arguments
+    # update basemap arguments with defaults if not provided
     basemap_kwargs['llcrnrlon'] = basemap_kwargs.pop('llcrnrlon',lonMin)
     basemap_kwargs['urcrnrlon'] = basemap_kwargs.pop('urcrnrlon',lonMax)
     basemap_kwargs['llcrnrlat'] = basemap_kwargs.pop('llcrnrlat',latMin)
