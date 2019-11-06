@@ -193,12 +193,18 @@ def create_geogrid(data_file, model_file, user_options={}):
     # output geogrid size in UTM coord meters, usually can be the mean/medium value of the original ModeEM model grid
     # Todo: cs = get_grid_size(model_file)
     out_grid_size = user_options.get("grid_size",7000)
-    
+
+    # user option to override the lat long found in file.dat
+    center_lat = user_options.get("center_lat", center.lat.item())
+    center_lon = user_options.get("center_lon", center.lon.item())
+
+    print ("The center (lat, lon) = (%s,%s)"%(center_lat, center_lon))
+
     if source_proj is None:
-        zone_number, is_northern, utm_zone = gis_tools.get_utm_zone(center.lat.item(), center.lon.item())
+        zone_number, is_northern, utm_zone = gis_tools.get_utm_zone(center_lat, center_lon)
         # source_proj = Proj('+proj=utm +zone=%d +%s +datum=%s' % (zone_number, 'north' if is_northern else 'south', 'WGS84'))
 
-        epsg_code = gis_tools.get_epsg(center.lat.item(), center.lon.item())
+        epsg_code = gis_tools.get_epsg(center_lat, center_lon)
         print("Input data epsg code is inferred as ", epsg_code)
     else:
         epsg_code = source_proj  # integer
