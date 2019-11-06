@@ -537,8 +537,25 @@ class PlotSlices(object):
 
                 
                 
-    def basemap_plot(self, depth, tick_interval=None, savepath=None,
+    def basemap_plot(self, depth, tick_interval=None, save=False, save_path=None,
                      new_figure=True,mesh_rotation_angle=0.,**basemap_kwargs):
+        """
+        plot model depth slice on a basemap using basemap modules in matplotlib
+        
+        :param depth: depth in model to plot
+        :param tick_interval: tick interval on map in degrees, if None it is 
+                              calculated from the data extent
+        :param save: True/False, whether or not to save and close figure
+        :param savepath: full path of file to save to, if None, saves to 
+                         self.save_path
+        :new_figure: True/False, whether or not to initiate a new figure for
+                     the plot
+        :param mesh_rotation_angle: rotation angle of mesh, in degrees 
+                                    clockwise from north
+        :param **basemap_kwargs: provide any valid arguments to Basemap
+                                 instance and these will be passed to the map.
+        
+        """
         
         if self.model_epsg is None:
             print("No projection information provided, please provide the model epsg code relevant to your model")
@@ -561,7 +578,7 @@ class PlotSlices(object):
         
         # initialise a basemap with extents, projection etc calculated from data 
         # if not provided in basemap_kwargs
-        self.bm = basemap_tools.initialise_basemap(self.md_data,**basemap_kwargs)
+        self.bm = basemap_tools.initialise_basemap(self.md_data.station_locations,**basemap_kwargs)
         
         # get eastings/northings of mesh
         ge,gn = self.md_model.grid_east, self.md_model.grid_north
@@ -605,8 +622,10 @@ class PlotSlices(object):
         if self.draw_colorbar:
             plt.colorbar(shrink=0.5)
             
-        if savepath not in [False,None]:
-            plt.savefig(os.path.join(savepath,'DepthSlice%1i%1s.png'%(depth/self.dscale,self.map_scale)),
+        if save:
+            if save_path is not None:
+                self.save_path = save_path
+            plt.savefig(os.path.join(self.save_path,'DepthSlice%1i%1s.png'%(depth/self.dscale,self.map_scale)),
                         dpi=self.fig_dpi)
             plt.close()
     

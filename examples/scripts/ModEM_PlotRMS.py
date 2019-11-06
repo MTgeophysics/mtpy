@@ -30,7 +30,7 @@ resid_fn=op.join(wd,filestem + '.res')
 
 probj = PlotRMSMaps(resid_fn,
                     period_index='all',
-                    rms_cmap='jet', 
+                    rms_cmap='jet', # choose matplotlib colormap or set to None
                     rms_max=5
                     )
 probj.save_figure(save_path=savepath,
