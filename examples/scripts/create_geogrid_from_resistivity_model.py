@@ -16,29 +16,20 @@ Revision History:
 import sys
 from mtpy.utils.convert_modem_data_to_geogrid import create_geogrid
 
-
-def main(dat_file, rho_file, user_option_dict):
-    """
-    define my main function
-    :return:
-    """
-
-    print("User Options:", user_option_dict)
-
-    create_geogrid(dat_file, rho_file, user_options=user_option_dict)  #,depth_index=[0,1,2,10])
-
-    return
-
 # =============================================
 # quick test of this script
 #  python /examples/scripts/create_geogrid_from_resistivity_model.py  /c/Data/JinMing_GridData_sample/JM_model_002/EFTF_NLCG_002.dat /c/Data/JinMing_GridData_sample/JM_model_002/EFTF_NLCG_002.rho
+#  python examples/scripts/create_geogrid_from_resistivity_model.py  /c/Data/JinMing_GridData_sample/EFTF_MT_model/EF_NLCG_001.dat  /c/Data/JinMing_GridData_sample/EFTF_MT_model/EF_NLCG_001.rho
+#  python examples/scripts/create_geogrid_from_resistivity_model.py  /c/Data/Alison_201910/Alison_ModEM_Grid/MT075_ModEM_files/ModEM_Data.dat  /c/Data/Alison_201910/Alison_ModEM_Grid/MT075_ModEM_files/Modular_MPI_NLCG_004.rho
 # ---------------------------------------------
 if __name__ == "__main__":
 
     if len(sys.argv)<3:
-        print ("USAGE: python %s dat_file rho_file"%sys.argv[0])
+        print ("USAGE: python %s dat_file rho_file"% sys.argv[0])
         sys.exit(1)
 
+    dat_file = sys.argv[1]
+    rho_file = sys.argv[2]
     # Before calling the function create_geogrid(), a user should provide the right optional parameters.
     # Otherwise, default parameters will be used, which may not make sense
     user_option_dict = {
@@ -52,5 +43,6 @@ if __name__ == "__main__":
         "depth_index": None,  # slices [0,1,2,10] to be output
     }
 
-    # call main function
-    main(sys.argv[1],sys.argv[2], user_option_dict)
+    print("User Options:", user_option_dict)
+
+    create_geogrid(dat_file, rho_file, user_options=user_option_dict)  # ,depth_index=[0,1,2,10])
