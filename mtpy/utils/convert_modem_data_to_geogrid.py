@@ -155,7 +155,7 @@ def modem2geotiff_notused(data_file, model_file, output_file, source_proj=None):
 
 
 # def create_geogrid(data_file, model_file, output_file, source_proj=None, depth_index=None):
-def create_geogrid(data_file, model_file, user_options={}):
+def create_geogrid(data_file, model_file, out_dir, user_options={}):
     """
     Generate an output geotiff file and ASCII grid file.
     :param data_file: modem.dat  only used to get the grid center point (lat,long), even though it contains EDI files data
@@ -261,6 +261,7 @@ def create_geogrid(data_file, model_file, user_options={}):
     for di in depth_indices:
         # for di in [0,1,2,3]:
         output_file = 'DepthSlice%1im.tif' % (gcz[di])
+        output_file =os.path.join(out_dir, output_file)
         # define interpolation function (interpolate in log10 measure-space)
         # See https://docs.scipy.org/doc/scipy-0.16.0/reference/interpolate.html
         interpfunc = RegularGridInterpolator((gce, gcn), np.log10(resgrid_nopad[:, :, di].T))
@@ -303,6 +304,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('modem_data', help="ModEM data file")
     parser.add_argument('modem_model', help="ModEM model file")
+    parser.add_argument('out_dir', help="output directory")
     parser.add_argument('--user_option_file', help="Uer Optional parameter file path")
 
     args = parser.parse_args()
@@ -319,6 +321,6 @@ if __name__ == '__main__':
 
     print("User Options:", user_option_dict)
 
-    create_geogrid(args.modem_data, args.modem_model, user_options=user_option_dict)  #,depth_index=[0,1,2,10])
+    create_geogrid(args.modem_data, args.modem_model,  args.out_dir, user_options=user_option_dict)  #,depth_index=[0,1,2,10])
 
     # test_array2geotiff("test_geotiff_GDAL_img.tif", 4326)
