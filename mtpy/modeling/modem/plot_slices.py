@@ -537,8 +537,9 @@ class PlotSlices(object):
 
                 
                 
-    def basemap_plot(self, depth, tick_interval=None, save=False, save_path=None,
-                     new_figure=True,mesh_rotation_angle=0.,**basemap_kwargs):
+    def basemap_plot(self, depth, basemap = None,tick_interval=None, save=False, 
+                     save_path=None, new_figure=True,mesh_rotation_angle=0.,
+                     overlay=False,clip=[0,0],**basemap_kwargs):
         """
         plot model depth slice on a basemap using basemap modules in matplotlib
         
@@ -576,9 +577,14 @@ class PlotSlices(object):
         if new_figure:
             plt.figure()
         
-        # initialise a basemap with extents, projection etc calculated from data 
-        # if not provided in basemap_kwargs
-        self.bm = basemap_tools.initialise_basemap(self.md_data.station_locations,**basemap_kwargs)
+        if basemap is None:
+            # initialise a basemap with extents, projection etc calculated from data 
+            # if not provided in basemap_kwargs
+            self.bm = basemap_tools.initialise_basemap(self.md_data.station_locations,**basemap_kwargs)
+            # add frame to basemap and plot data
+            basemap_tools.add_basemap_frame(self.bm,tick_interval=tick_interval)
+        else:
+            self.bm = basemap
         
         # get eastings/northings of mesh
         ge,gn = self.md_model.grid_east, self.md_model.grid_north
@@ -597,9 +603,14 @@ class PlotSlices(object):
         # get x and y projected positions on the basemap                    
         xcg,ycg = self.bm(loncg,latcg)
         
-        # add frame to basemap and plot data
-        basemap_tools.add_basemap_frame(self.bm,tick_interval=tick_interval)
-        basemap_tools.plot_data(xcg,ycg,self.res_model[:,:,depthIdx],
+        # get clip extents
+        rx0,rx1 = clip[0],xcg.shape[1]-clip[0]
+        ry0,ry1 = clip[1],ycg.shape[0]-clip[1]
+        
+        # plot model on basemap, applying clip
+        basemap_tools.plot_data(xcg[ry0:ry1,rx0:rx1],
+                                ycg[ry0:ry1,rx0:rx1],
+                                self.res_model[ry0:ry1,rx0:rx1,depthIdx],
                                 basemap=self.bm,
                                 **mpldict)
                                    
