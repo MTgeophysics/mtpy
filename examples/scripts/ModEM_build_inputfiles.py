@@ -11,7 +11,7 @@ from mtpy.modeling.modem import Model
 from mtpy.modeling.modem import Data
 from mtpy.modeling.modem import Covariance
 from mtpy.core.edi import Edi
-from mtpy.utils.calculator import get_logspace_array
+from mtpy.utils.calculator import get_period_list
 
 import numpy as np
 
@@ -38,7 +38,7 @@ edipath = r'C:\mtpywin\mtpy\examples\data\edi_files_2'
 start_period = 0.002
 stop_period = 2000
 periods_per_decade = 4
-period_list = get_logspace_array(start_period,stop_period,periods_per_decade,
+period_list = get_period_list(start_period,stop_period,periods_per_decade,
                                  include_outside_range=True)
 
 
@@ -64,9 +64,11 @@ do = Data(edi_list=edi_list,
                period_buffer = 2, # factor to stretch interpolation by. For example: if period_buffer=2
                                  # then interpolated data points will only be included if they are
                                  # within a factor of 2 of a true data point
-               error_type_z='floor_egbert', # error type (egbert is % of sqrt(zxy*zyx))
-                                            # floor means apply it as an error floor
-               error_value_z=5, # error floor (or value) in percent
+               error_type_z=np.array([['floor_percent','floor_egbert'], # error type, options are 'egbert', 'percent', 'mean_od', 'eigen', 'median', 'off_diagonals'
+                                      ['floor_egbert','percent']]), # add floor to apply it as an error floor
+                                                                    # can supply a 2 x 2 array for each component or a single value
+               error_value_z=np.array([[20.,5.], # error floor value in percent
+                                       [5.,20.]]), # can supply a 2 x 2 array for each component or a single value
                error_type_tipper = 'floor_abs', # type of error to set in tipper, 
                                                 # floor_abs is an absolute value set as a floor
                error_value_tipper =.03,
@@ -74,11 +76,13 @@ do = Data(edi_list=edi_list,
                                 # See http://spatialreference.org/ to find the epsg code for your projection
                )
 do.write_data_file()
+
+# set elevations to zero as we need to ensure the stations are on the topography
 do.data_array['elev'] = 0.
 do.write_data_file(fill=False)
 
 # create model file
-mo = Model(stations_object=do.stations_obj,
+mo = Model(station_locations=do.station_locations,
                 cell_size_east=8000,
                 cell_size_north=8000,
                 pad_north=7, # number of padding cells in each of the north and south directions
@@ -86,7 +90,9 @@ mo = Model(stations_object=do.stations_obj,
                 pad_z=6, # number of vertical padding cells
                 pad_stretch_v=1.6, # factor to increase by in padding cells (vertical)
                 pad_stretch_h=1.4, # factor to increase by in padding cells (horizontal)
-                n_air_layers = 10, #number of air layers
+                pad_num=3, # number of constant-width cells to add to outside of model before padding cells start 
+                           # this number is currently multiplied by 1.5 internally
+                n_air_layers = 10, #number of air layers, set to 0 to incorporate bathymetry only
                 res_model=100, # halfspace resistivity value for reference model
                 n_layers=100, # total number of z layers, including air
                 z1_layer=10, # first layer thickness
@@ -99,11 +105,16 @@ mo.make_mesh()
 mo.write_model_file(save_path=workdir)
 
 # add topography to res model
+# if the number of air layers is zero - bathymetry only will be added.
+# if the number of air layers is nonzero - topography will be added, discretised into that number of cells 
 mo.add_topography_to_model2(r'C:\mtpywin\mtpy\examples\data\AussieContinent_etopo1.asc')
 mo.write_model_file(save_path=workdir)
 
 # update data elevations
 do.project_stations_on_topography(mo)
+
+# show the mesh
+mo.plot_sealevel_resistivity()
 
 
 co = Covariance()

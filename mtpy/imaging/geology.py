@@ -68,17 +68,18 @@ class Geology:
             exit(-1)
 
         for feature in sf:
-            g = shape(feature['geometry'])
-
-            # filter geometry based on intersection with region
-            # of interest
-            if(self._boundingPoly != None):
-                if (self._boundingPoly.intersects(g)):
+            if feature['geometry'] is not None:
+                g = shape(feature['geometry'])
+    
+                # filter geometry based on intersection with region
+                # of interest
+                if(self._boundingPoly != None):
+                    if (self._boundingPoly.intersects(g)):
+                        self._properties.append(feature['properties'])
+                        self._geometries.append(g)
+                else:
                     self._properties.append(feature['properties'])
                     self._geometries.append(g)
-            else:
-                self._properties.append(feature['properties'])
-                self._geometries.append(g)
             # end for
         # end for
         sf.close()

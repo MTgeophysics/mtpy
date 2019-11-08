@@ -464,7 +464,7 @@ class PlotPTMaps(mtplottools.MTEllipse):
                                          plot_tipper=plot_tipper, **kwargs)
     # end func
 
-    def plot(self, period=0, save2file=None, **kwargs):
+    def plot(self, period = None, periodIdx = 0, save2file=None, **kwargs):
         """ Plot phase tensor maps for data and or response, each figure is of a
         different period.  If response is input a third column is added which is
         the residual phase tensor showing where the model is not fitting the data
@@ -530,6 +530,8 @@ class PlotPTMaps(mtplottools.MTEllipse):
 
         # FZ: changed below to plot a given period index
         # for ff, per in enumerate(self.plot_period_list):
+        # first, reset fig list
+        self.fig_list = []
         for ff, per in enumerate(self.plot_period_list[period:period + 1]):
             
             data_ii = self.period_dict[per]
@@ -1095,15 +1097,18 @@ class PlotPTMaps(mtplottools.MTEllipse):
         with open(op.join(savepath, 'gmtscript_{}.gmt'.format(attribute)), 'wb') as scriptfile:
             scriptfile.writelines(gmtlines)
 
-    def save_figure(self, save_path=None, fig_dpi=None, file_format='pdf',
+
+
+
+    def save_all_figures(self, save_path=None, fig_dpi=None, file_format='pdf',
                     orientation='landscape', close_fig='y'):
         """
-        save_figure will save the figure to save_fn.
+        save_figure will save all figures in fig_list to save_fn.
 
         Arguments:
         -----------
 
-            **save_fn** : string
+            **save_path** : string
                           full path to save figure to, can be input as
                           * directory path -> the directory path to save to
                             in which the file will be saved as
@@ -1165,3 +1170,4 @@ class PlotPTMaps(mtplottools.MTEllipse):
 
             self.fig_fn = save_fn
             print('Saved figure to: ' + self.fig_fn)
+            

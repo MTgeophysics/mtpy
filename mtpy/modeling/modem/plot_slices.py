@@ -10,6 +10,7 @@ ModEM
 
 """
 import os
+import time
 
 import numpy as np
 from matplotlib import pyplot as plt, gridspec as gridspec, colorbar as mcb
@@ -18,7 +19,11 @@ from matplotlib.widgets import Button, RadioButtons, SpanSelector
 
 from mtpy.modeling.modem.data import Data
 from mtpy.modeling.modem.data import Model
-from mtpy.utils import exceptions as mtex
+from mtpy.utils import exceptions as mtex,basemap_tools
+from mtpy.utils.gis_tools import get_epsg,epsg_project
+from mtpy.utils.calculator import nearest_index
+from mtpy.utils.mesh_tools import rotate_mesh
+
 from scipy.spatial import cKDTree
 from scipy.interpolate import interp1d, UnivariateSpline
 from matplotlib import colors,cm
@@ -185,6 +190,7 @@ class PlotSlices(object):
         self.grid_east = None
         self.grid_north = None
         self.grid_z = None
+        self.model_epsg = kwargs.pop('model_epsg',None)
 
         self.nodes_east = None
         self.nodes_north = None
@@ -208,7 +214,7 @@ class PlotSlices(object):
         self.station_color = kwargs.pop('station_color', 'k')
         self.ms = kwargs.pop('ms', 10)
 
-        self.plot_yn = kwargs.pop('plot_yn', 'n')
+        self.plot_yn = kwargs.pop('plot_yn', 'y')
         self.plot_stations = kwargs.pop('plot_stations', False)
         self.xminorticks = kwargs.pop('xminorticks', 1000)
         self.yminorticks = kwargs.pop('yminorticks', 1000)
@@ -216,16 +222,20 @@ class PlotSlices(object):
         self.draw_colorbar = kwargs.pop('draw_colorbar', True)
         self.save_path = kwargs.pop('save_path', os.getcwd())
         self.save_format = kwargs.pop('save_format', 'png')
+        
 
         # read data
         self.read_files()
         self.get_station_grid_locations()
 
+
         # set up kd-tree for interpolation on to arbitrary surfaces
         # intersecting the model
         self._initialize_interpolation()
         
-        self.plot()
+        
+        if self.plot_yn == 'y': 
+            self.plot()
 
     def _initialize_interpolation(self):
         self._mx = np.array(self.grid_east)
@@ -511,8 +521,9 @@ class PlotSlices(object):
         # --> read in data file to get station locations
         if self.data_fn is not None:
             if os.path.isfile(self.data_fn) == True:
-                md_data = Data()
+                md_data = Data(model_epsg=self.model_epsg)
                 md_data.read_data_file(self.data_fn)
+                
                 self.station_east = md_data.station_locations.rel_east / self.dscale
                 self.station_north = md_data.station_locations.rel_north / self.dscale
                 self.station_names = md_data.station_locations.station
@@ -521,6 +532,115 @@ class PlotSlices(object):
                 self.md_data = md_data
             else:
                 print('Could not find data file {0}'.format(self.data_fn))
+
+
+
+                
+                
+    def basemap_plot(self, depth, basemap = None,tick_interval=None, save=False, 
+                     save_path=None, new_figure=True,mesh_rotation_angle=0.,
+                     overlay=False,clip=[0,0],**basemap_kwargs):
+        """
+        plot model depth slice on a basemap using basemap modules in matplotlib
+        
+        :param depth: depth in model to plot
+        :param tick_interval: tick interval on map in degrees, if None it is 
+                              calculated from the data extent
+        :param save: True/False, whether or not to save and close figure
+        :param savepath: full path of file to save to, if None, saves to 
+                         self.save_path
+        :new_figure: True/False, whether or not to initiate a new figure for
+                     the plot
+        :param mesh_rotation_angle: rotation angle of mesh, in degrees 
+                                    clockwise from north
+        :param **basemap_kwargs: provide any valid arguments to Basemap
+                                 instance and these will be passed to the map.
+        
+        """
+        
+        if self.model_epsg is None:
+            print("No projection information provided, please provide the model epsg code relevant to your model")
+            return
+        
+        # initialise plot parameters
+        mpldict={}
+        mpldict['cmap'] = cm.get_cmap(self.cmap)
+        mpldict['norm'] = colors.LogNorm()
+        mpldict['vmin'] = 10**self.climits[0]
+        mpldict['vmax'] = 10**self.climits[1]
+        
+        # find nearest depth index
+        depthIdx = nearest_index(depth,self._mcz*self.dscale)
+        
+        
+        
+        if new_figure:
+            plt.figure()
+        
+        if basemap is None:
+            # initialise a basemap with extents, projection etc calculated from data 
+            # if not provided in basemap_kwargs
+            self.bm = basemap_tools.initialise_basemap(self.md_data.station_locations,**basemap_kwargs)
+            # add frame to basemap and plot data
+            basemap_tools.add_basemap_frame(self.bm,tick_interval=tick_interval)
+        else:
+            self.bm = basemap
+        
+        # get eastings/northings of mesh
+        ge,gn = self.md_model.grid_east, self.md_model.grid_north
+        e0,n0 = self.md_data.center_point['east'],self.md_data.center_point['north']
+        if mesh_rotation_angle != 0:
+            mgx, mgy = rotate_mesh(ge,gn,[e0,n0],
+                                   -mesh_rotation_angle)
+        else:
+            mgx, mgy = np.meshgrid(ge + e0, gn + n0)
+        
+        # lat/lon coordinates of resistivity model values
+        loncg,latcg = epsg_project(mgx,mgy,
+                                   self.model_epsg,
+                                   4326)
+               
+        # get x and y projected positions on the basemap                    
+        xcg,ycg = self.bm(loncg,latcg)
+        
+        # get clip extents
+        rx0,rx1 = clip[0],xcg.shape[1]-clip[0]
+        ry0,ry1 = clip[1],ycg.shape[0]-clip[1]
+        
+        # plot model on basemap, applying clip
+        basemap_tools.plot_data(xcg[ry0:ry1,rx0:rx1],
+                                ycg[ry0:ry1,rx0:rx1],
+                                self.res_model[ry0:ry1,rx0:rx1,depthIdx],
+                                basemap=self.bm,
+                                **mpldict)
+                                   
+        # plot stations
+        if self.plot_stations:
+            # rotate stations
+            if mesh_rotation_angle != 0:
+                self.md_data.station_locations.rotate_stations(-mesh_rotation_angle)
+            seast,snorth = self.md_data.station_locations.rel_east + self.md_data.center_point['east'],\
+                           self.md_data.station_locations.rel_north + self.md_data.center_point['north']
+
+            # reproject station location eastings and northings
+            slon,slat = epsg_project(seast,snorth,self.model_epsg,4326)
+            
+            sx,sy = self.bm(slon,slat)
+            self.bm.plot(sx,sy,'k.')
+            
+            
+        # draw colorbar
+        if self.draw_colorbar:
+            plt.colorbar(shrink=0.5)
+            
+        if save:
+            if save_path is not None:
+                self.save_path = save_path
+            plt.savefig(os.path.join(self.save_path,'DepthSlice%1i%1s.png'%(depth/self.dscale,self.map_scale)),
+                        dpi=self.fig_dpi)
+            plt.close()
+    
+        
 
     def plot(self):
         """
