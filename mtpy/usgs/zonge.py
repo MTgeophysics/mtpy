@@ -21,7 +21,7 @@ import os
 import shutil
 import mtpy.core.z as mtz
 import mtpy.imaging.plot_mt_response as plotresponse
-import mtpy.utils.format as MTft
+import mtpy.utils.gis_tools as gis_tools
 import mtpy.utils.configfile as mtcf
 import mtpy.core.edi as mtedi
 import mtpy.usgs.zen as zen
@@ -2063,12 +2063,8 @@ class ZongeMTAvg():
                 rrsurvey_dict = sdict[rrstation.upper()]
                 survey_dict['rr_station'] = rrsurvey_dict['station']
                 survey_dict['rr_station_elevation'] = rrsurvey_dict['elevation']
-                survey_dict['rr_station_latitude'] = \
-                                        MTft._assert_position_format('lat',
-                                               rrsurvey_dict.pop('latitude',0.0))
-                survey_dict['rr_station_longitude'] = \
-                                        MTft._assert_position_format('lon',
-                                               rrsurvey_dict.pop('longitude',0.0))
+                survey_dict['rr_station_latitude'] = gis_tools.assert_lat_value(rrsurvey_dict.pop('latitude',0.0))                                               
+                survey_dict['rr_station_longitude'] = gis_tools.assert_lon_value(rrsurvey_dict.pop('longitude',0.0))
             except KeyError:
                 print('Could not find station information for remote reference')
         else:
@@ -2416,8 +2412,8 @@ class ZongeMTAvg():
 
         #read in survey file
         survey_dict = {}
-        survey_dict['latitude'] = MTft._assert_position_format('lat', self.GPS_Lat)
-        survey_dict['longitude'] = MTft._assert_position_format('lon', self.GPS_Lon)
+        survey_dict['latitude'] = gis_tools.assert_lat_value(self.GPS_Lat)
+        survey_dict['longitude'] = gis_tools.assert_lon_value(self.GPS_Lon)
         survey_dict['elevation'] = self.Rx_Length
         survey_dict['station'] = station
         if survey_cfg_file is not None:
@@ -2442,12 +2438,8 @@ class ZongeMTAvg():
                 rrsurvey_dict = sdict[rrstation.upper()]
                 survey_dict['rr_station'] = rrsurvey_dict['station']
                 survey_dict['rr_station_elevation'] = rrsurvey_dict['elevation']
-                survey_dict['rr_station_latitude'] = \
-                                        MTft._assert_position_format('lat',
-                                               rrsurvey_dict.pop('latitude',0.0))
-                survey_dict['rr_station_longitude'] = \
-                                        MTft._assert_position_format('lon',
-                                               rrsurvey_dict.pop('longitude',0.0))
+                survey_dict['rr_station_latitude'] = gis_tools.assert_lat_value(rrsurvey_dict.pop('latitude',0.0))
+                survey_dict['rr_station_longitude'] = gis_tools.assert_lon_value(rrsurvey_dict.pop('longitude',0.0))
             except KeyError:
                 print('Could not find station information for remote reference')
         else:
@@ -2499,12 +2491,12 @@ class ZongeMTAvg():
         head_dict['loc'] = survey_dict.pop('location', '')
         
         #--> latitude
-        head_dict['lat'] = MTft._assert_position_format('lat',
+        head_dict['lat'] = gis_tools.assert_lat_value(
                                         survey_dict.pop('latitude',
                                                         0.0))
         
         #--> longitude
-        head_dict['long'] = MTft._assert_position_format('lon',
+        head_dict['long'] = gis_tools.assert_lon_value(
                                          survey_dict.pop('longitude',0.0))
         
         #--> elevation
