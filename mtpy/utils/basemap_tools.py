@@ -74,7 +74,7 @@ def initialise_basemap(stations_obj,buffer=None,**basemap_kwargs):
     basemap_kwargs['urcrnrlat'] = basemap_kwargs.pop('urcrnrlat',latMax)
     basemap_kwargs['lat_0'] = basemap_kwargs.pop('lat_0',lat_0)
     basemap_kwargs['lon_0'] = basemap_kwargs.pop('lon_0',lon_0)
-    basemap_kwargs['resolution'] = basemap_kwargs.pop('resolution','i')
+    basemap_kwargs['resolution'] = basemap_kwargs.pop('resolution','l')
     basemap_kwargs['projection'] = basemap_kwargs.pop('projection','cyl')
 
     return Basemap(**basemap_kwargs)
