@@ -444,7 +444,8 @@ class EdiCollection(object):
             freq_list = 1./np.array(period_list)
         # end if
 
-        with open(csvfname, "wb") as csvf:
+        #with open(csvfname, "wb") as csvf:
+        with open(csvfname, "w",newline="") as csvf:
             writer = csv.writer(csvf)
             writer.writerow(csv_header)
 
@@ -501,7 +502,8 @@ class EdiCollection(object):
                 csv_freq_file = os.path.join(dest_dir,
                                              '{name[0]}_{freq}Hz{name[1]}'.format(
                                                  freq=str(freq), name=os.path.splitext(file_name)))
-                with open(csv_freq_file, "wb") as freq_csvf:
+                #with open(csv_freq_file, "wb") as freq_csvf:
+                with open(csv_freq_file, "w",newline="") as freq_csvf:
                     writer_freq = csv.writer(freq_csvf)
                     writer_freq.writerow(csv_header)
                     writer_freq.writerows(ptlist)
@@ -565,7 +567,7 @@ class EdiCollection(object):
             freq_list = 1./np.array(period_list)
         # end if
 
-        with open(csvfname, "wb") as csvf:
+        with open(csvfname, "w",newline="") as csvf:
             writer = csv.writer(csvf)
             writer.writerow(csv_header)
 
@@ -635,14 +637,14 @@ class EdiCollection(object):
                     self._logger.warn(
                         'Freq %s NOT found for this station %s', freq, mt_obj.station)
 
-            with open(csvfname, "ab") as csvf:  # summary csv for all freqs
+            with open(csvfname, "a",newline="") as csvf:  # summary csv for all freqs
                 writer = csv.writer(csvf)
                 writer.writerows(mtlist)
 
             csv_basename2 = "%s_%sHz.csv" % (csv_basename, str(freq))
             csvfile2 = os.path.join(dest_dir, csv_basename2)
 
-            with open(csvfile2, "wb") as csvf:  # individual csvfile for each freq
+            with open(csvfile2, "w", newline="") as csvf:  # individual csvfile for each freq
                 writer = csv.writer(csvf)
 
                 writer.writerow(csv_header)
@@ -891,7 +893,7 @@ if __name__ == "__main__":
 
         elif os.path.isfile(argv1) and argv1.endswith('.edi'):
             # assume input is a list of EDI files
-            obj = EdiCollection(sys.argv[1:])
+            obj = EdiCollection(sys.argv[1:-2])
         else:
             sys.exit(2)
 
@@ -906,7 +908,7 @@ if __name__ == "__main__":
 
         # obj.create_phase_tensor_csv(outdir)
         #
-        # obj.create_measurement_csv(dest_dir= outdir)
+        obj.create_measurement_csv(dest_dir= outdir)
 
         # obj.create_mt_station_gdf(os.path.join(outdir, 'edi_collection_test.shp'))
 
