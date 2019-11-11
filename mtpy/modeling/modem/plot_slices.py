@@ -370,7 +370,6 @@ class PlotSlices(object):
         xmin = 0
         ymin = 0
         if(option == 'STA' or option == 'XY'):
-
             if(nsteps > -1): assert nsteps > 2, 'Must have more than 2 grid points in the ' \
                                               'horizontal direction. Aborting..'
 
@@ -380,9 +379,13 @@ class PlotSlices(object):
             if(option == 'STA'):
                 x = np.array(self.station_east)
                 y = np.array(self.station_north)
+
+                if(nsteps==-1): nsteps = len(x)
             elif(option == 'XY'):
                 x = np.array(coords[:,0])
                 y = np.array(coords[:,1])
+
+                if(nsteps==-1): nsteps = len(x)
             # end if
 
             order = get_order(x, y)
