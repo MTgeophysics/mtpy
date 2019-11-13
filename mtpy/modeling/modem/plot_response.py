@@ -1944,7 +1944,7 @@ class PlotResponse(object):
 
                         
                 else:
-                    legend_ax_list = self.ax_list[0:self.plot_component / 2]
+                    legend_ax_list = self.ax_list[0:int(self.plot_component / 2)]
                     if plot_tipper == True:
                         if self.plot_component == 2:
                             legend_ax_list.append(self.ax_list[2])
