@@ -471,7 +471,6 @@ class PlotRMSMaps(object):
         color_bar.set_label('RMS')
         
         title_dict = {'all':'Z + Tipper','z':'Z','tip':'Tipper'}
-        print(datatype,title_dict[datatype])
         
         if self.period_index == 'all':
             plt.title('RMS misfit over all periods for '+title_dict[datatype])

@@ -576,6 +576,39 @@ class PlotSlices(object):
         
         if new_figure:
             plt.figure()
+
+        
+        # get eastings/northings of mesh
+        ge,gn = self.md_model.grid_east, self.md_model.grid_north
+        e0,n0 = self.md_data.center_point['east'],self.md_data.center_point['north']
+        
+        if mesh_rotation_angle != 0:
+            if hasattr(self,'mesh_rotation_angle'):
+                angle_to_rotate_stations = self.mesh_rotation_angle - mesh_rotation_angle
+            else:
+                angle_to_rotate_stations = -mesh_rotation_angle
+                
+            self.mesh_rotation_angle = mesh_rotation_angle
+
+
+            mgx, mgy = rotate_mesh(ge,gn,[e0,n0],
+                                   -mesh_rotation_angle)
+        else:
+            mgx, mgy = np.meshgrid(ge + e0, gn + n0)
+
+        # rotate stations if necessary
+        if mesh_rotation_angle != 0:
+            self.md_data.station_locations.rotate_stations(angle_to_rotate_stations)
+                        
+            # get relative locations
+            seast,snorth = self.md_data.station_locations.rel_east + self.md_data.station_locations.center_point['east'],\
+                           self.md_data.station_locations.rel_north + self.md_data.station_locations.center_point['north']
+            
+            # project station location eastings and northings to lat/long
+            slon,slat = epsg_project(seast,snorth,self.model_epsg,4326)
+            self.md_data.station_locations.station_locations['lon'] = slon
+            self.md_data.station_locations.station_locations['lat'] = slat    
+        
         
         if basemap is None:
             # initialise a basemap with extents, projection etc calculated from data 
@@ -585,15 +618,7 @@ class PlotSlices(object):
             basemap_tools.add_basemap_frame(self.bm,tick_interval=tick_interval)
         else:
             self.bm = basemap
-        
-        # get eastings/northings of mesh
-        ge,gn = self.md_model.grid_east, self.md_model.grid_north
-        e0,n0 = self.md_data.center_point['east'],self.md_data.center_point['north']
-        if mesh_rotation_angle != 0:
-            mgx, mgy = rotate_mesh(ge,gn,[e0,n0],
-                                   -mesh_rotation_angle)
-        else:
-            mgx, mgy = np.meshgrid(ge + e0, gn + n0)
+
         
         # lat/lon coordinates of resistivity model values
         loncg,latcg = epsg_project(mgx,mgy,
@@ -617,8 +642,6 @@ class PlotSlices(object):
         # plot stations
         if self.plot_stations:
             # rotate stations
-            if mesh_rotation_angle != 0:
-                self.md_data.station_locations.rotate_stations(-mesh_rotation_angle)
             seast,snorth = self.md_data.station_locations.rel_east + self.md_data.center_point['east'],\
                            self.md_data.station_locations.rel_north + self.md_data.center_point['north']
 
