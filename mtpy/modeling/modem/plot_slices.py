@@ -24,9 +24,12 @@ from mtpy.utils.gis_tools import get_epsg,epsg_project
 from mtpy.utils.calculator import nearest_index
 from mtpy.utils.mesh_tools import rotate_mesh
 
+from mtpy.imaging.seismic import Segy, VelocityModel
+
 from scipy.spatial import cKDTree
 from scipy.interpolate import interp1d, UnivariateSpline
 from matplotlib import colors,cm
+from matplotlib.ticker import LogLocator
 
 __all__ = ['PlotSlices']
 
@@ -1403,6 +1406,102 @@ class PlotSlices(object):
 
         plt.close(self.fig)
         self.plot()
+
+    def plot_resistivity_on_seismic(self, segy_fn, velocity_model=6000, ax=None, cb_ax=None, percent_clip=99, alpha=0.5, **kwargs):
+        """
+        :param segy_fn: SegY file name
+        :param velocity_model: can be either the name of a velocity-model file containing stacking velocities
+                               for the given 2D seismic line, or a floating point value representing a
+                               constant velocity (m/s)
+        :param ax: figure axes
+        :param cb_ax: colorbar axes
+        :param percent_clip: percentile value used for filtering out seismic amplitudes from plot; e.g. for a value
+                             of 99, only seismic amplitudes above the 99th percentile are plotted. The parameter is
+                             tuned to plot only the required level of seismic detail.
+        :param alpha: alpha value used while resistivity and seismic values
+        :param kwargs:
+
+        max_depth : maximum depth extent of plots
+        time_shift : time shift in ms to remove topography
+
+        :return: fig, ax : a figure and an plot axes object are returned when the parameter ax is not provided
+        """
+
+        # process keyword arguments
+        max_depth = kwargs.pop('max_depth', 60e3) # 60 km default
+        time_shift = kwargs.pop('time_shift', 225) # 225 ms
+
+        sl = Segy(segy_fn)
+        vm = None
+
+        if(type(velocity_model) == str):
+            vm = VelocityModel(velocity_model)
+        else:
+            try:
+                vm = np.float_(velocity_model)
+            except:
+                raise ValueError('Invalid velocity model')
+            # end try
+        # end if
+
+        # fetch a depth-migrated image (done using velocity model
+        mdepth, mdist, svals, xy_list = sl.getMigratedProfile(vm, max_depth=max_depth, time_shift=time_shift)
+
+        # fetch resistivity along seismic line
+        gd, gz, mvals = self.get_slice(option='XY', coords=xy_list, nn=1, absolute_query_locations=True)
+
+        # create plot axes, if not provided
+        fig = None
+        if(ax is None):
+            fig, ax = plt.subplots(1, 1)
+            fig.set_size_inches(10,5)
+
+            # if a new figure object is created, user-provided colorbar axes is ignored
+            cb_ax = fig.add_axes([0.25, 0.25, 0.5, 0.025])
+        # end if
+
+        # plot resistivity ==================================================
+        ci = ax.pcolor(gd, gz, mvals,
+                       norm=colors.LogNorm(),
+                       vmin=np.power(10, 0.5), vmax=np.power(10, 7),
+                       cmap='nipy_spectral',
+                       alpha=alpha, linewidth=0,
+                       edgecolors='None',
+                       rasterized=True)
+
+        # deal with white stripes
+        ci.set_antialiaseds(True)
+        ci.set_rasterized(True)
+
+        # plot colorbar
+        if(cb_ax):
+            cb = plt.colorbar(ci, cax=cb_ax, ticks=LogLocator(subs=range(10)),
+                              orientation="horizontal")
+            cb.solids.set_edgecolor('none')
+            cb.solids.set_antialiased(True)
+            cb.solids.set_rasterized(True)
+        # end if
+
+        # Plot seismic ======================================================
+        # compute the 99th percentile and zero out all values below that. This can
+        # be tweaked to plot the required amount of detail without cluttering the
+        # plot
+
+        vmm = np.percentile(svals.flatten(), percent_clip)
+        svalsClipped = np.array(svals)
+        svalsClipped[svalsClipped < vmm] = 0
+        ci = ax.contourf(mdist, mdepth, svalsClipped, 50,
+                         vmin=-vmm, vmax=vmm,
+                         cmap='Greys', alpha=alpha/3., rasterized=True) # use a lower alpha value for seismic amplitudes
+
+        ax.invert_yaxis()
+        ax.set_aspect(1)
+        ax.set_ylim(max_depth)
+
+        if(fig):
+            return fig, ax
+        # end if
+    # end func
 
     def save_figure(self, save_fn=None, fig_dpi=None, file_format='pdf',
                     orientation='landscape', close_fig='y'):
