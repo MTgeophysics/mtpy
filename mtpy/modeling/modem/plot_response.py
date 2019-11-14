@@ -16,7 +16,8 @@ from matplotlib import pyplot as plt, gridspec as gridspec
 from matplotlib.ticker import MultipleLocator
 from matplotlib.ticker import FormatStrFormatter,LogFormatterSciNotation
 from mtpy.imaging import mtplottools as mtplottools
-from mtpy.modeling.modem.data import Data
+from mtpy.modeling.modem import Data, Residual
+from mtpy.core.z import Z, Tipper
 import sys
 
 __all__ = ['PlotResponse']
@@ -116,6 +117,11 @@ class PlotResponse(object):
         self.e_capthick = kwargs.pop('e_capthick', .5)
         self.e_capsize = kwargs.pop('e_capsize', 2)
 
+        self.plot_style = kwargs.pop('plot_style', 1)
+        if self.plot_style not in [1, 2, 3]:
+            print(("self.plot_style = %s. It MUST be either 1 (default; 4 column figures) or 2 (2 column figures) or 3 (1 column figures)" % str(self.plot_style)))
+            self.plot_style = 1
+
         # color mode
         if self.color_mode == 'color':
             # color for data
@@ -125,8 +131,13 @@ class PlotResponse(object):
             self.mtmd = kwargs.pop('mtmd', 'o')
 
             # color for occam2d model
-            self.ctem = kwargs.pop('ctem', (0, .6, .3))
-            self.ctmm = kwargs.pop('ctmm', (.9, 0, .8))
+            if self.plot_style == 3:
+                # if plot_style is 3, set default color for model response to same as data
+                self.ctem = kwargs.pop('ctem',self.cted)
+                self.ctmm = kwargs.pop('ctmm',self.ctmd)
+            else:
+                self.ctem = kwargs.pop('ctem', (0, .6, .3))
+                self.ctmm = kwargs.pop('ctmm', (.9, 0, .8))
             self.mtem = kwargs.pop('mtem', '+')
             self.mtmm = kwargs.pop('mtmm', '+')
 
@@ -150,6 +161,7 @@ class PlotResponse(object):
         self.res_limits_d = kwargs.pop('res_limits_d', None)
         self.res_limits_od = kwargs.pop('res_limits_od', None)
         self.tipper_limits = kwargs.pop('tipper_limits', None)
+        self.period_limits = kwargs.pop('period_limits', None)
 
         self.fig_num = kwargs.pop('fig_num', 1)
         self.fig_size = kwargs.pop('fig_size', [6, 6])
@@ -175,16 +187,13 @@ class PlotResponse(object):
 
         self.plot_type = kwargs.pop('plot_type', '1')
 
-        self.plot_style = kwargs.pop('plot_style', 1)
-        if self.plot_style not in [1, 2]:
-            print(("self.plot_style = %s. It MUST be either 1 (default) or 2 (2 column figures)" % str(self.plot_style)))
-            self.plot_style = 1
-
         self.plot_component = kwargs.pop('plot_component', 4)
         self.plot_yn = kwargs.pop('plot_yn', 'y')
         self.save_plots = kwargs.pop('plot_yn', False)
         self.plot_z = kwargs.pop('plot_z', True)
         self.ylabel_pad = kwargs.pop('ylabel_pad', 1.25)
+        self.label_axes = kwargs.pop('label_axes',True)
+        self.shift_yx_phase = kwargs.pop('shift_yx_phase',False)
 
         self.fig_list = []
 
@@ -197,24 +206,20 @@ class PlotResponse(object):
             self._plot()
         if self.plot_style == 2:
             self._plot_2col()
+        if self.plot_style == 3:
+            self._plot_1col()
 
 
-
-    def _plot(self):
-        """
-        plot as an internal function of this class
-        """
-
+    def _read_files(self):
+        
         self.data_object = Data()
         self.data_object.read_data_file(self.data_fn)
 
-        # get shape of impedance tensors
-        ns = len(list(self.data_object.mt_dict.keys()))
 
         # read in response files
-        if self.resp_fn != None:
+        if self.resp_fn is not None:
             self.resp_object = []
-            if type(self.resp_fn) is not list:
+            if not isinstance(self.resp_fn, list):
                 resp_obj = Data()
                 resp_obj.read_data_file(self.resp_fn)
                 self.resp_object = [resp_obj]
@@ -223,6 +228,18 @@ class PlotResponse(object):
                     resp_obj = Data()
                     resp_obj.read_data_file(rfile)
                     self.resp_object.append(resp_obj)
+
+
+
+    def _plot(self):
+        """
+        plot as an internal function of this class
+        """
+
+        self._read_files()
+        
+        # get shape of impedance tensors
+        ns = len(list(self.data_object.mt_dict.keys()))
 
         # get number of response files
         nr = len(self.resp_object)
@@ -592,8 +609,12 @@ class PlotResponse(object):
                         pass
 
                 ax.set_xscale('log', nonposx='clip')
-                ax.set_xlim(xmin=10 ** (np.floor(np.log10(period[0]))) * 1.01,
-                            xmax=10 ** (np.ceil(np.log10(period[-1]))) * .99)
+                # set period limits
+                if self.period_limits is None:
+                    self.period_limits = (10 ** (np.floor(np.log10(period[0]))) * 1.01,
+                                          10 ** (np.ceil(np.log10(period[-1]))) * .99)
+                ax.set_xlim(xmin=self.period_limits[0],
+                            xmax=self.period_limits[1])
                 ax.grid(True, alpha=.25)
 
                 ylabels = ax.get_yticks().tolist()
@@ -778,24 +799,10 @@ class PlotResponse(object):
         Show the figure and optionally save to a file named save2file
         """
 
-        self.data_object = Data()
-        self.data_object.read_data_file(self.data_fn)
+        self._read_files()
 
         # get shape of impedance tensors
         ns = len(list(self.data_object.mt_dict.keys()))
-
-        # read in response files
-        if self.resp_fn is not None:
-            self.resp_object = []
-            if not isinstance(self.resp_fn, list):
-                resp_obj = Data()
-                resp_obj.read_data_file(self.resp_fn)
-                self.resp_object = [resp_obj]
-            else:
-                for rfile in self.resp_fn:
-                    resp_obj = Data()
-                    resp_obj.read_data_file(rfile)
-                    self.resp_object.append(resp_obj)
 
         # get number of response files
         nr = len(self.resp_object)
@@ -1376,8 +1383,12 @@ class PlotResponse(object):
                         plt.setp(ax.get_xticklabels(), visible=False)
 
                     ax.set_xscale('log', nonposx='clip')
-                    ax.set_xlim(xmin=10 ** (np.floor(np.log10(period[0]))) * 1.01,
-                                xmax=10 ** (np.ceil(np.log10(period[-1]))) * .99)
+                    # set period limits
+                    if self.period_limits is None:
+                        self.period_limits = (10 ** (np.floor(np.log10(period[0]))) * 1.01,
+                                              10 ** (np.ceil(np.log10(period[-1]))) * .99)
+                    ax.set_xlim(xmin=self.period_limits[0],
+                                xmax=self.period_limits[1])
                     ax.grid(True, alpha=.25)
 
             if plotr == True:
@@ -1984,6 +1995,184 @@ class PlotResponse(object):
         plt.show()   # --> BE SURE TO SHOW THE PLOT
 
 
+    def _get_station_index_list(self):
+        """
+        get list of station indices to plot
+        
+        """
+        
+        allstations = self.data_object.station_locations.station
+        allstations_up = [str.upper(val) for val in allstations]
+        if self.plot_type == '1':
+            # plot all stations
+            s_index_list = range(len(allstations))
+        else:
+            s_index_list = []
+            for st in self.plot_type:
+                # if integer, assume it is an index
+                if type(st) == int:
+                    s_index_list.append(st)
+                # else, search for station name (case-sensitive)
+                elif st in allstations:
+                    s_index_list.append(list(allstations).index(st))
+                # else, search for station name (not case-sensitive) 
+                elif str.upper(st) in allstations_up:
+                    s_index_list.append(list(allstations_up).index(str.upper(st)))
+                    
+        return s_index_list
+                    
+
+    def _plot_1col(self):
+        """
+        plot data and response in a 1-column plot
+        All elements of the impedance tensor are overlaid, with diagonals semi-
+        transparent (XX has same color as ctem/cted, YY has same color as ctmm/ctmd)
+        
+        """
+        # read files
+        self._read_files()
+        
+        # get station indices to plot
+        s_index_list = self._get_station_index_list()
+        
+        # collate a list of data objects to plot
+        data_objects = [self.data_object]
+        if type(self.resp_object) in [list,np.ndarray]:
+            data_objects += self.resp_object
+        else:
+            data_objects.append(self.resp_object)
+            
+        # get residual object if data and response are provided
+        if ((self.data_fn is not None) and (self.resp_fn is not None)):
+            rsObj = Residual()
+            rsObj.calculate_residual_from_data(data_fn=self.data_fn,
+                                               resp_fn=self.resp_fn,
+                                               save=False)
+            rms = rsObj.rms
+        else:
+            rms = np.nan
+
+        # get period limits
+        if self.period_limits is None:
+            self.period_limits = (10 ** (np.floor(np.log10(self.data_object.period_list[0]))) * 1.01,
+                                  10 ** (np.ceil(np.log10(self.data_object.period_list[-1]))) * .99)
+        
+        # initialise color/marker/linestyle/transparency lists for plotting
+        color_z = np.array([[[self.cted,self.cted],[self.ctmd,self.ctmd]],
+                            [[self.ctem,self.ctem],[self.ctmm,self.ctmm]]])
+        markers = np.array([[[self.mted,self.mted],[self.mtmd,self.mtmd]],
+                            [[self.mtem,self.mtem],[self.mtmm,self.mtmm]]])
+        linestyles=['','--']
+        alpha = 1.-np.eye(2)*0.8
+        color_tip = np.array([[self.cted,self.ctmd],[self.ctem,self.ctmd]])
+        
+        
+        #--> set default font size
+        plt.rcParams['font.size'] = self.font_size
+
+        fontdict = {'size': self.font_size + 2, 'weight': 'bold'}
+        
+        for ii,si in enumerate(s_index_list):
+            fig = plt.figure(figsize=self.fig_size)
+        
+            # make some axes for the plot
+            if self.label_axes:
+                left = 0.25
+            else:
+                left = 0.15
+            
+            
+            if self.plot_z:
+                gs = gridspec.GridSpec(4,1,height_ratios=[0.85,0.85,0.3,0.3],hspace=0.1,left=left)
+            else:
+                gs = gridspec.GridSpec(4,1,height_ratios=[1,0.7,0.3,0.3],hspace=0.1,left=left)
+            axr = fig.add_subplot(gs[0,0],xscale='log',yscale='log',xlim=self.period_limits)
+            axp = fig.add_subplot(gs[1,0],xscale='log',sharex=axr)
+            axt = [fig.add_subplot(gs[2,0],xscale='log',sharex=axr),
+                   fig.add_subplot(gs[3,0],xscale='log',sharex=axr)]
+            
+            
+            for di in range(2):
+                dObj = data_objects[di]
+                
+                zObj = Z(z_array=dObj.data_array['z'][si],
+                         z_err_array=dObj.data_array['z_err'][si],
+                         freq=1./dObj.period_list)
+                
+                tObj = Tipper(tipper_array=dObj.data_array['tip'][si],
+                              tipper_err_array=dObj.data_array['tip_err'][si],
+                              freq=1./dObj.period_list)
+                
+                if self.plot_z:
+                    data1 = np.abs(zObj.z.real)
+                    data2 = np.abs(zObj.z.imag)
+                    data1label = 'Z (real)'
+                    data2label = 'Z (imag)'
+                    data1err = zObj.z_err
+                    data2err = zObj.z_err
+                    axp.set_yscale('log')
+                else:
+                    data1 = zObj.resistivity
+                    data2 = zObj.phase
+                    if self.shift_yx_phase:
+                        data2[:,1,0] += 180.
+                    data1label = 'Resistivity, $\Omega$m'
+                    data2label = 'Phase, degree'
+                    data1err = zObj.resistivity_err
+                    data2err = zObj.phase_err
+                    
+                if di >= 1:
+                    data1err = np.zeros_like(data1err)
+                    data2err = np.zeros_like(data2err)
+                
+                for i in range(2):
+                    for j in range(2):
+                        kwargs={'color':color_z[di,i,j],
+                                'ls':linestyles[di],
+                                'marker':markers[di,i,j],
+                                'alpha':alpha[i,j]}
+                        nonzero = np.nonzero(data1[:,i,j])[0]
+                        axr.errorbar(1./zObj.freq[nonzero],data1[nonzero][:,i,j],yerr=data1err[nonzero][:,i,j],label='Res'+'XY'[i]+'XY'[j],**kwargs)
+                        axp.errorbar(1./zObj.freq[nonzero],data2[nonzero][:,i,j],yerr=data2err[nonzero][:,i,j],label='Phs'+'XY'[i]+'XY'[j],**kwargs)
+                     
+                    nonzerot = np.nonzero(tObj.tipper[:,0,i])
+                    tipper_err = tObj.tipper_err[nonzerot][:,0,i]
+                    if di >= 1:
+                        tipper_err = np.zeros_like(tipper_err)
+                    
+                    kwargs['alpha'] = 1.
+                    kwargs['color'] = color_tip[di,0]
+                    axt[i].errorbar(1./tObj.freq[nonzerot],tObj.tipper.real[nonzerot][:,0,i],tipper_err,label='Tip'+'XY'[i]+'R',**kwargs)
+                    kwargs['color'] = color_tip[di,1]
+                    axt[i].errorbar(1./tObj.freq[nonzerot],tObj.tipper.imag[nonzerot][:,0,i],tipper_err,label='Tip'+'XY'[i]+'I',**kwargs)
+                    axt[i].set_ylim(self.tipper_limits)
+
+                    
+            sname = self.data_object.station_locations.station[si]
+            
+            axp.set_ylim(self.phase_limits)
+            axr.set_ylim(self.res_limits)
+            axr.set_title('%s, RMS=%.1f'%(sname,rms),fontdict=fontdict)
+            
+            axt[1].set_xlabel('Period, s',fontsize=self.font_size)
+            axr.set_xlim(self.period_limits)
+        
+            for ax in [axr,axp,axt[0]]:
+                plt.setp(ax.xaxis.get_ticklabels(),visible=False)
+            
+            if self.tipper_limits is not None:
+                yticks = [np.round(self.tipper_limits[0]*0.75,1),0,np.round(self.tipper_limits[1]*0.75,1)]
+                for axti in axt:
+                    axti.set_yticks(yticks)
+                    
+            if self.label_axes:
+                axr.set_ylabel(data1label,labelpad=0)
+                axp.set_ylabel(data2label,labelpad=0)
+                
+                axt[0].set_ylabel('Tipper, X',labelpad=0)
+                axt[1].set_ylabel('Tipper, Y',labelpad=0)
+        
+        
 
     def redraw_plot(self):
         """

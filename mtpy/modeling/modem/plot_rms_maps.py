@@ -428,9 +428,6 @@ class PlotRMSMaps(object):
         self.bm = basemap_tools.initialise_basemap(self.residual.station_locations,**basemap_kwargs)
         basemap_tools.add_basemap_frame(self.bm,tick_interval=tick_interval)
 
-
-        # project station location eastings and northings to lat/long
-        slon,slat = epsg_project(seast,snorth,self.model_epsg,4326)
         
         # project to basemap coordinates
         sx,sy = self.bm(slon,slat)
