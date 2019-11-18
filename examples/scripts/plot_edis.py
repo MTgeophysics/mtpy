@@ -27,17 +27,15 @@ except:
 
 os.chdir(mtpy_path) # change to your path to your mtpy installation
 
-
-
 edi_path = os.path.join(mtpy_path, 'examples', 'data', 'edi_files')
-
+edi_path = r"C:/Githubz/mtpy/data/edifiles/"
 edi_list = [os.path.join(edi_path, ff) for ff in os.listdir(edi_path) if ff.endswith('.edi')]
 
 temp_dir = tempfile.gettempdir()
 print('Using temporary directory ' + temp_dir)
 savepath = temp_dir
 
-for edi_file in edi_list:
+for edi_file in edi_list[:3]:
     mt_obj = mt.MT(edi_file)
     pt_obj = mt_obj.plot_mt_response(plot_yn='n')
     pt_obj.plot()

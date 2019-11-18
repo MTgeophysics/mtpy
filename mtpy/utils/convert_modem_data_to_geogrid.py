@@ -179,7 +179,7 @@ def create_geogrid(data_file, model_file, out_dir, user_options={}):
     # center = get_grid_center(data_file)
     data = Data()
     data.read_data_file(data_fn=data_file)
-    center = data.center_point
+    center = data.center_point   # see data.py line1406
 
     # source_proj = 28355   source_proj = 28353
     source_proj = user_options.get("source_proj",None)
@@ -211,14 +211,14 @@ def create_geogrid(data_file, model_file, out_dir, user_options={}):
 
     source_proj = Proj(init='epsg:' + str(epsg_code))
     # get the grid cells' centres (halfshift -cs/2?)
-    gce, gcn, gcz = [np.mean([arr[:-1], arr[1:]], axis=0) for arr in [model.grid_east, model.grid_north, model.grid_z]]
+    mgce, mgcn, mgcz = [np.mean([arr[:-1], arr[1:]], axis=0) for arr in [model.grid_east, model.grid_north, model.grid_z]]
 
     # # get xyz-paddings
     # xpad = 6
     # ypad = 6
     # zpad = 10
-    gce, gcn = gce[xpad:-xpad], gcn[ypad:-ypad]  # padding off big-sized edge cells
-    gcz = gcz[:-zpad]
+    gce, gcn = mgce[xpad:-xpad], mgcn[ypad:-ypad]  # padding off big-sized edge cells
+    gcz = mgcz[:-zpad]
     # ge,gn = mObj.grid_east[6:-6],mObj.grid_north[6:-6]
 
     print(gce)
