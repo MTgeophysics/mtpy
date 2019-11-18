@@ -168,6 +168,11 @@ def create_geogrid(data_file, model_file, out_dir, user_options={}):
         output_grid_size:  the pixel size in meters, 8000  
     :return:
     """
+
+    # First make sure the output directory exist, otherwise create it
+    if not os.path.exists(out_dir):
+        os.mkdir(out_dir)
+
     print("read inputs from Model Rho File")
 
     # create a model object and read in model data
