@@ -310,50 +310,33 @@ class PlotSlices(object):
                     gv : list of interpolated values of shape (np)
         """
 
-        def get_order(x, y):
+        def distance(P1, P2):
             """
-            :param x: array of x coordinates
-            :param y: array of y coordinates
-            :return: optimal order of points that form a connected path
-
-            This is a tricky problem to solve and is based on a minimum spanning
-            tree. The implementation below has been adopted verbatim from the
-            following link:
-            https://stackoverflow.com/questions/37742358/sorting-points-to-form-a-continuous-line
+            Compute Euclidean distance
             """
-            try:
-                import networkx as nx
-                from sklearn.neighbors import NearestNeighbors
 
-                return np.arange(len(x))
-            except:
-                print("Failed to import either 'networkx' or 'scikit' python packages; " \
-                      "station/nodal ordering may be incorrect..s")
-                return np.arange(len(x))
-            # end try
+            return ((P1[0] - P2[0])**2 + (P1[1] - P2[1])**2) ** 0.5
 
-            points = np.c_[x, y]
-            clf = NearestNeighbors(2).fit(points)
-            G = clf.kneighbors_graph()
+        def optimized_path(coords, start=None):
+            """
+            This function was adopted verbatim from the following link:
 
-            T = nx.from_scipy_sparse_matrix(G)
-            paths = [list(nx.dfs_preorder_nodes(T, i)) for i in range(len(points))]
-            mindist = np.inf
-            minidx = 0
+            https://stackoverflow.com/questions/45829155/sort-points-in-order-to-have-a-continuous-curve-using-python
 
-            for i in range(len(points)):
-                p = paths[i]  # order of nodes
-                ordered = points[p]  # ordered nodes
-                # find cost of that order by the sum of euclidean distances between points (i) and (i+1)
-                cost = (((ordered[:-1] - ordered[1:]) ** 2).sum(1)).sum()
-                if cost < mindist:
-                    mindist = cost
-                    minidx = i
-                # end if
-            # end for
+            Order coordinates such that a continuous line can be formed.
+            coords: a list containing coordnates = [ [x1, y1], [x2, y2] , ...]
 
-            opt_order = paths[minidx]
-            return opt_order
+            """
+            if start is None:
+                start = coords[0]
+            pass_by = coords
+            path = [start]
+            pass_by.remove(start)
+            while pass_by:
+                nearest = min(pass_by, key=lambda x: distance(path[-1], x))
+                path.append(nearest)
+                pass_by.remove(nearest)
+            return path
         # end func
 
         assert option in ['STA', 'XY', 'XYZ'], 'Invalid option; Aborting..'
@@ -393,9 +376,10 @@ class PlotSlices(object):
                 if(nsteps==-1): nsteps = len(x)
             # end if
 
-            order = get_order(x, y)
-            xx = x[order]
-            yy = y[order]
+            xy = [[a, b] for a, b in zip(x,y)]
+            ordered_xy = np.array(optimized_path(xy))
+            xx = ordered_xy[:, 0]
+            yy = ordered_xy[:, 1]
 
             dx = xx[:-1] - xx[1:]
             dy = yy[:-1] - yy[1:]
