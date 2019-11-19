@@ -316,6 +316,7 @@ class PlotSlices(object):
             """
 
             return ((P1[0] - P2[0])**2 + (P1[1] - P2[1])**2) ** 0.5
+        # end func
 
         def optimized_path(coords, start=None):
             """
