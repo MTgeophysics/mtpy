@@ -1407,12 +1407,15 @@ class PlotSlices(object):
         plt.close(self.fig)
         self.plot()
 
-    def plot_resistivity_on_seismic(self, segy_fn, velocity_model=6000, ax=None, cb_ax=None, percent_clip=99, alpha=0.5, **kwargs):
+    def plot_resistivity_on_seismic(self, segy_fn, velocity_model=6000, pick_every=10, ax=None, cb_ax=None, percent_clip=99, alpha=0.5, **kwargs):
         """
         :param segy_fn: SegY file name
         :param velocity_model: can be either the name of a velocity-model file containing stacking velocities
                                for the given 2D seismic line, or a floating point value representing a
                                constant velocity (m/s)
+        :param pick_every: this parameter controls the decimation factor for the SegY file; e.g. if pick_every=10,
+                           every 10th trace from the SegY file is read in. This significantly speeds up plotting
+                           routines.
         :param ax: figure axes
         :param cb_ax: colorbar axes
         :param percent_clip: percentile value used for filtering out seismic amplitudes from plot; e.g. for a value
@@ -1431,7 +1434,7 @@ class PlotSlices(object):
         max_depth = kwargs.pop('max_depth', 60e3) # 60 km default
         time_shift = kwargs.pop('time_shift', 225) # 225 ms
 
-        sl = Segy(segy_fn)
+        sl = Segy(segy_fn, pick_every=pick_every)
         vm = None
 
         if(type(velocity_model) == str):
