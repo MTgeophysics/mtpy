@@ -324,6 +324,8 @@ class PlotSlices(object):
             try:
                 import networkx as nx
                 from sklearn.neighbors import NearestNeighbors
+
+                return np.arange(len(x))
             except:
                 print("Failed to import either 'networkx' or 'scikit' python packages; " \
                       "station/nodal ordering may be incorrect..s")
