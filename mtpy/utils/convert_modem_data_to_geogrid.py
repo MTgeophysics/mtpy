@@ -244,7 +244,7 @@ def create_geogrid(data_file, model_file, out_dir, user_options={}):
     #
     # In [2]: 5611364.73539792 - 3750
     # Out[2]: 5607614.73539792
-    origin = (gce[0] + center.east, gcn[-1] + center.north)
+    origin = (gce[0] + center.east, gcn[-1] + center.north-0.5*out_grid_size)
     print("The Origin (UpperLeft Corner) =", origin)
 
     pixel_width = out_grid_size
@@ -279,7 +279,7 @@ def create_geogrid(data_file, model_file, out_dir, user_options={}):
         # this original image may start from the lower left corner, if so must be flipped.
         # resis_data_flip = resis_data[::-1]  # flipped to ensure the image starts from the upper left corner
 
-        array2geotiff_writer(output_file, origin, pixel_width, pixel_height, newgridres, epsg_code=epsg_code)
+        array2geotiff_writer(output_file, origin, pixel_width, pixel_height, newgridres[::-1], epsg_code=epsg_code)
 
     return output_file
 
