@@ -868,9 +868,9 @@ class EdiCollection(object):
 
         return min_dist, max_dist
 
-    def calculate_aver_resistivity(self, component="det",rotation_angle=0, out_dir="/c/temp"):
+    def calculate_aver_impedance(self, component="det", rotation_angle=0, out_dir="/c/temp"):
         """
-        calculate the average apparent resistivity of all edi (MT-stations) for each period.
+        calculate the average impedance tensor Z (related to apparent resistivity) of all edi (MT-stations) for each period.
         algorithm:
         -	1 make sure the stations all have the same period range, if not, interpolate onto common periods
         -	2 rotate to strike if necessary
@@ -891,7 +891,7 @@ class EdiCollection(object):
         self._logger.info("result will be in the dir %s", out_dir)
 
         # summary csv file
-        csv_basename = "average_resisitivity"
+        csv_basename = "z_average_impedance"
         csvfname = os.path.join(out_dir, "%s.csv" % csv_basename)
 
         pt_dict = {}
@@ -899,7 +899,7 @@ class EdiCollection(object):
         csv_header = [
             'FREQ', 'STATION', 'LAT', 'LON', 'ZXXre', 'ZXXim',
             'ZXYre', 'ZXYim', 'ZYXre', 'ZYXim', 'ZYYre', 'ZYYim',
-            'RHOxx', 'RHOxy', 'RHOyx', 'RHOyy', "DETERM"
+             "DETERM"
         ]
 
         freq_list = self.all_frequencies
@@ -943,9 +943,6 @@ class EdiCollection(object):
                     station, lat, lon = (
                         mt_obj.station, mt_obj.lat, mt_obj.lon)
 
-                    resist_phase = mtplottools.ResPhase(z_object=zobj)
-                    # resist_phase.compute_res_phase()
-
                     mt_stat = [freq, station, lat, lon,
                                zobj.z[p_index, 0, 0].real,
                                zobj.z[p_index, 0, 0].imag,
@@ -955,8 +952,6 @@ class EdiCollection(object):
                                zobj.z[p_index, 1, 0].imag,
                                zobj.z[p_index, 1, 1].real,
                                zobj.z[p_index, 1, 1].imag,
-                               resist_phase.resxx[p_index], resist_phase.resxy[p_index],
-                               resist_phase.resyx[p_index], resist_phase.resyy[p_index],
                                 np.abs(zobj.det[0])
                                ]
                     mtlist.append(mt_stat)
@@ -1016,7 +1011,7 @@ if __name__ == "__main__":
         # obj.create_phase_tensor_csv(outdir)
         #
         #obj.create_measurement_csv(dest_dir= outdir)
-        obj.calculate_aver_resistivity(out_dir=outdir)
+        obj.calculate_aver_impedance(out_dir=outdir)
 
         # obj.create_mt_station_gdf(os.path.join(outdir, 'edi_collection_test.shp'))
 
