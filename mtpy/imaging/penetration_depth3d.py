@@ -23,6 +23,7 @@ import mtpy.core.mt as mt
 from mtpy.imaging.penetration import get_index, load_edi_files, Depth3D
 from mtpy.utils.decorator import deprecated
 from mtpy.utils.mtpylog import MtPyLog
+import logging
 
 # mpl.rcParams['lines.linewidth'] = 2
 # mpl.rcParams['lines.color'] = 'r'
@@ -32,6 +33,9 @@ from mtpy.utils.mtpylog import MtPyLog
 # get a logger object for this module, using the utility class MtPyLog to
 # config the logger
 _logger = MtPyLog.get_mtpy_logger(__name__)
+#_logger.setLevel(logging.DEBUG)
+_logger.setLevel(logging.INFO)
+
 
 
 # logger =
@@ -292,7 +296,7 @@ def get_penetration_depths_from_edi_file(edifile, rholist=['det']):
 
     scale_param = np.sqrt(1.0 / (2.0 * np.pi * 4 * np.pi * 10 ** (-7)))
 
-    _logger.debug("the scale parameter= %s", scale_param)
+    _logger.debug("the scale parameter should be 355.88127 =?= %s", scale_param)
 
     # The periods array
     periods = 1.0 / freqs
@@ -307,7 +311,7 @@ def get_penetration_depths_from_edi_file(edifile, rholist=['det']):
                             np.sqrt(zeta.resistivity[:, 1, 0] * periods)
 
     if 'det' in rholist:
-        # determinant
+        # determinant is |Zeta|**2
         det2 = np.abs(zeta.det[0])
         penetration_depth = scale_param * \
                             np.sqrt(0.2 * periods * det2 * periods)
@@ -316,8 +320,9 @@ def get_penetration_depths_from_edi_file(edifile, rholist=['det']):
     return latlong_d
 
 
-def create_csv_file(edi_dir, outputcsv=None, zcomponent='det'):
-    """ Loop over all edi files, and create a csv file with columns:
+def create_penetration_depth_csv(edi_dir, outputcsv, zcomponent='det'):
+    """ Loop over all edi files, and create a csv file with the columns:
+    Header Lat, Lon, per0, per1,per2,.....
     lat, lon, pendepth0, pendepth1, ...
     :param edi_dir: path_to_edifiles_dir
     :param zcomponent: det | zxy  | zyx
@@ -325,6 +330,10 @@ def create_csv_file(edi_dir, outputcsv=None, zcomponent='det'):
     :return:
     """
     import csv
+
+    if not os.path.isdir(edi_dir):
+        _logger.error("input edi directory not exists", edi_dir)
+        raise Exception("MTPy Exception: EDI Dir not exist")
 
     edi_files = glob.glob(os.path.join(edi_dir, "*.edi"))
 
@@ -336,20 +345,24 @@ def create_csv_file(edi_dir, outputcsv=None, zcomponent='det'):
     for afile in edi_files:
         # for efile in edi_files[:2]:
         _logger.debug("processing %s", afile)
-        lat, lon, per, depths = get_penetration_depths_from_edi_file(afile)
+        lat, lon, periods, depths = get_penetration_depths_from_edi_file(afile)
         if periods_list0 is None:
-            periods_list0 = per  # initial value assignment
-            depth_string = ','.join(['%.2f' % num for num in depths])
-            latlon_dep.append((lat, lon, depth_string))
+            periods_list0 = periods  # initial value assignment
+            #depth_string = ','.join(['%.2f' % num for num in depths])
+            #latlon_dep.append((lat, lon, depth_string))
+            latlon_dep.append(["Lat","Lon"] + list(periods)) #The first line header
+            latlon_dep.append([lat, lon] + list(depths))
+
 
         # same length and same values.
-        elif len(per) == len(periods_list0) and (per == periods_list0).all():
-            depth_string = ','.join(['%.2f' % num for num in depths])
-            latlon_dep.append((lat, lon, depth_string))
+        elif len(periods) == len(periods_list0) and (periods == periods_list0).all():
+            # depth_string = ','.join(['%.2f' % num for num in depths])
+            # latlon_dep.append((lat, lon, depth_string))
+            latlon_dep.append([lat, lon] + list(depths))
         else:
             _logger.error(
                 "MT Periods Not Equal !! %s VS %s",
-                per,
+                periods,
                 periods_list0)
             # raise Exception ("MTPy Exception: Periods Not Equal")
             # pass this edi, let's continue
@@ -357,10 +370,10 @@ def create_csv_file(edi_dir, outputcsv=None, zcomponent='det'):
     # logger.debug(latlon_dep)
 
     if outputcsv is None:
-        outputcsv = r"E:/tmp/MT_pen_depth.csv"
+        _logger.error("Output CSV file must be provided", outputcsv)
 
     _logger.info("Saving to csv file: %s", outputcsv)
-    with open(outputcsv, "wb") as f:
+    with open(outputcsv, "w", newline="") as f:
         writer = csv.writer(f)
         writer.writerows(latlon_dep)
 
@@ -411,12 +424,18 @@ if __name__ == "__main__":
 
     if len(sys.argv) < 2:
         print(("Usage: python %s edi_dir period_sec " % sys.argv[0]))
-        print("usage example: python mtpy/imaging/penetration_depth3d.py  tests/data/edifiles/ 10")
-        print("usage example: python mtpy/imaging/penetration_depth3d.py  tests/data/edifiles/ 2.857s")
+        print("usage example: python mtpy/imaging/penetration_depth3d.py  examples/data/edi_files/ 10")
+        print("usage example: python mtpy/imaging/penetration_depth3d.py  examples/data/edi_files/ 2.857s")
         sys.exit(1)
     elif len(sys.argv) == 2:
-        # do multiple periods
-        plot_many_periods(sys.argv[1])
+        edi_dir= sys.argv[1]
+
+        bname =os.path.basename(os.path.normpath(edi_dir))
+        print ("dir base name", bname)
+        create_penetration_depth_csv(edi_dir, "C:/tmp/%s_MT_pen_depths.csv"%bname)
+
+        # plot pendepth over multiple periods
+        # plot_many_periods( edi_dir )
 
     elif len(sys.argv) > 2 and os.path.isdir(sys.argv[1]):
         edi_dir = sys.argv[1]
@@ -448,6 +467,5 @@ if __name__ == "__main__":
                 # plot_gridded_profile(edi_dir, period_index, zcomponent='det')   # 2D image
                 # plot_latlon_depth_profile(edi_dir, period_index,zcomponent='det')
                 # plot_bar3d_depth(edi_dir, period_index)
-                # create_csv_file(edi_dir, r"E:/tmp/my_mt_pendepth.csv")
     else:
         print("Please provide an edi directory and period_index_OR_value")
