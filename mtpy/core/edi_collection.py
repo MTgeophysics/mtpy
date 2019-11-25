@@ -7,8 +7,6 @@ Author: fei.zhang@ga.gov.au
 CreateDate: 2017-04-20
 """
 
-
-
 import csv
 import glob
 import os
@@ -528,8 +526,7 @@ class EdiCollection(object):
             ptm.export_params_to_file(save_path=dest_dir)
         return
 
-    def create_measurement_csv(self, dest_dir, period_list=None,
-                                interpolate=True):
+    def create_measurement_csv(self, dest_dir, period_list=None, interpolate=True):
         """
         create csv file from the data of EDI files: IMPEDANCE, APPARENT RESISTIVITIES AND PHASES
         see also utils/shapefiles_creator.py
@@ -672,7 +669,6 @@ class EdiCollection(object):
 
         :return:
         """
-
 
         if period_list is None:
             period_list = np.array(self.get_periods_by_stats())
@@ -871,9 +867,120 @@ class EdiCollection(object):
         max_dist = mt_distances.get("MAX_DIST")
 
         return min_dist, max_dist
-        
 
+    def calculate_aver_resistivity(self, component="det",rotation_angle=0, out_dir="/c/temp"):
+        """
+        calculate the average apparent resistivity of all edi (MT-stations) for each period.
+        algorithm:
+        -	1 make sure the stations all have the same period range, if not, interpolate onto common periods
+        -	2 rotate to strike if necessary
+        -	3 calculate: the determinant of the impedance tensor, or the geometric mean, if necessary
+        -	4 get the median resistivity for each period
+        -	5 get the median resistivity overall by taking the median of the above
 
+        :param component: ="det" – defaut, returns average for determinant of impedance tensor;
+                          ="geom_mean" – returns average geometric mean of the off diagonals sqrtroot(Zxy*Zyx)
+                          ="separate" returns a 2x2 array containing average for each component of the impedance tensor.
+        :param rotation_angle: angle to rotate the data by before calculating mean.
+        :return: A_dictinary=: {Period->Median_Resist_On_Stations, "OVER_ALL"-> Median_Resist}
+        """
+
+        if not os.path.exists(out_dir):
+            os.mkdir(out_dir)
+
+        self._logger.info("result will be in the dir %s", out_dir)
+
+        # summary csv file
+        csv_basename = "average_resisitivity"
+        csvfname = os.path.join(out_dir, "%s.csv" % csv_basename)
+
+        pt_dict = {}
+
+        csv_header = [
+            'FREQ', 'STATION', 'LAT', 'LON', 'ZXXre', 'ZXXim',
+            'ZXYre', 'ZXYim', 'ZYXre', 'ZYXim', 'ZYYre', 'ZYYim',
+            'RHOxx', 'RHOxy', 'RHOyx', 'RHOyy', "DETERM"
+        ]
+
+        freq_list = self.all_frequencies
+
+        with open(csvfname, "w", newline="") as csvf:
+            writer = csv.writer(csvf)
+            writer.writerow(csv_header)
+
+        for freq in freq_list:
+            mtlist = []
+            for mt_obj in self.mt_obj_list:
+                f_index_list = None
+                zobj = None
+
+                #if (interpolate):
+                if True:
+                    f_index_list = [0]
+
+                    newZ, newTipper = mt_obj.interpolate([freq], bounds_error=False)
+
+                    zobj = newZ
+                else:
+                    freq_max = freq * (1 + self.ptol)
+                    freq_min = freq * (1 - self.ptol)
+                    f_index_list = np.where((mt_obj.Z.freq < freq_max) & (mt_obj.Z.freq > freq_min))
+
+                    zobj = mt_obj.Z
+                # end if
+
+                # print("Debug type(zobj.det) ******", type(zobj.det), zobj.det.size, zobj.det, np.abs(zobj.det[0]))
+
+                if len(f_index_list) > 1:
+                    self._logger.warn("more than one freq found %s", f_index_list)
+
+                if len(f_index_list) >= 1:
+                    p_index = f_index_list[0]
+
+                    self._logger.debug("The freqs index %s", f_index_list)
+                    # geographic coord lat long and elevation
+                    # long, lat, elev = (mt_obj.lon, mt_obj.lat, 0)
+                    station, lat, lon = (
+                        mt_obj.station, mt_obj.lat, mt_obj.lon)
+
+                    resist_phase = mtplottools.ResPhase(z_object=zobj)
+                    # resist_phase.compute_res_phase()
+
+                    mt_stat = [freq, station, lat, lon,
+                               zobj.z[p_index, 0, 0].real,
+                               zobj.z[p_index, 0, 0].imag,
+                               zobj.z[p_index, 0, 1].real,
+                               zobj.z[p_index, 0, 1].imag,
+                               zobj.z[p_index, 1, 0].real,
+                               zobj.z[p_index, 1, 0].imag,
+                               zobj.z[p_index, 1, 1].real,
+                               zobj.z[p_index, 1, 1].imag,
+                               resist_phase.resxx[p_index], resist_phase.resxy[p_index],
+                               resist_phase.resyx[p_index], resist_phase.resyy[p_index],
+                                np.abs(zobj.det[0])
+                               ]
+                    mtlist.append(mt_stat)
+
+                else:
+                    self._logger.warn(
+                        'Freq %s NOT found for this station %s', freq, mt_obj.station)
+
+            with open(csvfname, "a", newline="") as csvf:  # summary csv for all freqs
+                writer = csv.writer(csvf)
+                writer.writerows(mtlist)
+
+            csv_basename2 = "%s_%sHz.csv" % (csv_basename, str(freq))
+            csvfile2 = os.path.join(out_dir, csv_basename2)
+
+            with open(csvfile2, "w", newline="") as csvf:  # individual csvfile for each freq
+                writer = csv.writer(csvf)
+
+                writer.writerow(csv_header)
+                writer.writerows(mtlist)
+
+            pt_dict[freq] = mtlist
+
+        return pt_dict
 
 ##################################################################
 if __name__ == "__main__":
@@ -899,7 +1006,7 @@ if __name__ == "__main__":
 
         outdir = sys.argv[2]
 
-        obj.show_obj(dest_dir = outdir)
+        #obj.show_obj(dest_dir = outdir)
 
         mt_distances = obj.get_stations_distances_stats()
         min_dist = mt_distances.get("MIN_DIST")
@@ -908,7 +1015,8 @@ if __name__ == "__main__":
 
         # obj.create_phase_tensor_csv(outdir)
         #
-        obj.create_measurement_csv(dest_dir= outdir)
+        #obj.create_measurement_csv(dest_dir= outdir)
+        obj.calculate_aver_resistivity(out_dir=outdir)
 
         # obj.create_mt_station_gdf(os.path.join(outdir, 'edi_collection_test.shp'))
 
