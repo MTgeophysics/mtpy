@@ -878,11 +878,11 @@ class EdiCollection(object):
         -	4 get the median resistivity for each period
         -	5 get the median resistivity overall by taking the median of the above
 
-        :param component: ="det" – defaut, returns average for determinant of impedance tensor;
-                          ="geom_mean" – returns average geometric mean of the off diagonals sqrtroot(Zxy*Zyx)
-                          ="separate" returns a 2x2 array containing average for each component of the impedance tensor.
+        :param component: =det – default, returns average for determinant of impedance tensor;
+                          =geom_mean – returns average geometric mean of the off diagonals sqrtroot(Zxy*Zyx)
+                          =separate returns a 2x2 array containing average for each component of the impedance tensor.
         :param rotation_angle: angle to rotate the data by before calculating mean.
-        :return: A_dictinary=: {Period->Median_Resist_On_Stations, "OVER_ALL"-> Median_Resist}
+        :return: A_dictionary=: {Period->Median_Resist_On_Stations, OVER_ALL-> Median_Resist}
         """
 
         if not os.path.exists(out_dir):
@@ -982,6 +982,7 @@ if __name__ == "__main__":
 
     # python mtpy/core/edi_collection.py data/edifiles temp
     # python mtpy/core/edi_collection.py examples/data/edi2/ /e/tmp3/edi2_csv
+    # python mtpy/core/edi_collection.py data/edifiles /c/tmp1125B
 
     if len(sys.argv) < 3:
         print("\n  USAGE: %s edi_dir out_Dir" % sys.argv[0])
