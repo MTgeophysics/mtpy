@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Description:
 To compute and encapsulate the properties of a set of EDI files
@@ -878,11 +879,11 @@ class EdiCollection(object):
         -	4 get the median resistivity for each period
         -	5 get the median resistivity overall by taking the median of the above
 
-        :param component: =det – default, returns average for determinant of impedance tensor;
-                          =geom_mean – returns average geometric mean of the off diagonals sqrtroot(Zxy*Zyx)
+        :param component: =det – default, returns average for determinant of impedance tensor
+                          =geom_mean – returns average geometric mean of the off diagonals sqrt(ZxyXZyx)
                           =separate returns a 2x2 array containing average for each component of the impedance tensor.
         :param rotation_angle: angle to rotate the data by before calculating mean.
-        :return: A_dictionary=: {Period->Median_Resist_On_Stations, OVER_ALL-> Median_Resist}
+        :return: A_dictionary=: Period->Median_Resist_On_Stations, OVER_ALL-> Median_Resist
         """
 
         if not os.path.exists(out_dir):
