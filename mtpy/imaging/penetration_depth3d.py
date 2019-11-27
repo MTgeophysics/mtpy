@@ -41,7 +41,8 @@ _logger = MtPyLog.get_mtpy_logger(__name__)
 
 # This is the major function to be maintained!!!
 # use the Zcompotent=[det, zxy, zyx]
-def plot_latlon_depth_profile(edi_dir, period, zcomponent='det', showfig=True, savefig=True, savepath = None, fig_dpi=400,
+def plot_latlon_depth_profile(edi_dir, period, zcomponent='det', showfig=True,
+                              savefig=True, savepath = None, fig_dpi=400,
                               fontsize=14, file_format='png',ptol=0.1):
     """
     MT penetration depth profile in lat-lon coordinates with pixelsize = 0.002
@@ -183,7 +184,7 @@ def plot_bar3d_depth(edifiles, per_index, whichrho='det'):
 
         if whichrho == 'det':  # the 2X2 complex Z-matrix's determinant abs value
             # determinant value at the given period index
-            det2 = np.abs(zeta.det[0][per_index])
+            det2 = np.abs(zeta.det[per_index])
             penetration_depth = -scale_param * np.sqrt(0.2 * per * det2 * per)
         elif whichrho == 'zxy':
             penetration_depth = - scale_param * \

@@ -344,7 +344,7 @@ def project_point_ll2utm(lat, lon, datum='WGS84', utm_zone=None, epsg=None):
     projected_point = np.zeros_like(lat, dtype=[('easting', np.float),
                                                 ('northing', np.float),
                                                 ('elev', np.float),
-                                                ('utm_zone', 'S4')])
+                                                ('utm_zone', 'U4')])
 
     if(HAS_GDAL):
         ll2utm = osr.CoordinateTransformation(ll_cs, utm_cs).TransformPoint
