@@ -111,11 +111,13 @@ class Segy:
             elif (key == 'y'): return self._ys[idx]
             elif (key == 'cdp'): return self._cdps[idx]
             elif (key == 'ts'): return self._ts
+            else:
+                raise ValueError('Attribute "%s" not found' % key)
         else:
             return None
     # end func
 
-    def getMigratedProfile(self, velocity_model, depths, distances, time_shift=0, nn=1):
+    def getMigratedProfile(self, velocity_model, ntraces=-1, ndepths=-1, max_depth=60e3, time_shift=0, nn=1):
         '''
         Computes and returns a depth-migrated image, defined by distances
         and depths along the profile, based on the given velocity model.
@@ -123,12 +125,17 @@ class Segy:
         for all CDP values in the segy file, in which case, depth-profiles for
         closest CDP values are used.
 
-        :param velocity_model: instance of class VelocityModel, containing
+        :param velocity_model: either an instance of class VelocityModel, containing
                                 stacking velocities for the given 2D seismic
-                                line
-        :param depths: 1D numpy array of depth values
-        :param distances: 1D numpy array of distances along the 2D seismic
-                          line
+                                line, or a floating point value representing
+                                a constant velocity (m/s)
+        :param ntraces: number of equally spaced interpolated traces to compute along
+                        a seismic line; when set to -1, ntraces is internally reset to
+                        the number of traces in the SegY file
+        :param ndepths: number of depth values to compute along a seismic line,
+                        starting from 0 to 'max_depth'. When set to -1, ndepth
+                        is internally reset to the number of samples in a trace
+        :param max_depth: the maximum depth to which depth values are computed.
         :param time_shift: Time shift in ms to remove topography
         :param nn: While computing the depth-migration, this parameter dictates
                    whether to use the mean of the closest 'nn' or the mean of all
@@ -140,9 +147,26 @@ class Segy:
                  mvals: 2D array of amplitudes of shape (depths, distances),
                         by default, amplitudes for depths outside of the
                         depth-ranges available are set to -9999
+                 xy_list: 2D array of spatial coordinates (x, y) of traces along
+                          the seismic line of shape (ntraces, 2)
         '''
 
-        mdepths, mdistances = numpy.meshgrid(depths, distances)
+        constant_veolocity_model = False
+        if(not isinstance(velocity_model, VelocityModel)):
+            try:
+                velocity_model = numpy.float_(velocity_model)
+                constant_veolocity_model = True
+            except:
+                raise ValueError('Invalid velocity_model')
+        # end if
+
+        if (ntraces == -1): ntraces = self._ntraces
+        if (ndepths == -1): ndepths = self._mtraces.shape[1]
+
+        gdepth    = numpy.linspace(0, max_depth, ndepths)
+        gdistance = numpy.linspace(0, numpy.max(self._dist), ntraces)
+
+        mdepths, mdistances = numpy.meshgrid(gdepth, gdistance)
         mvals = numpy.zeros(mdepths.shape)
 
         shiftIdx = None
@@ -154,7 +178,12 @@ class Segy:
             shiftIdx = numpy.int_(shiftIdx)
         # end if
 
-        for idist, dist in enumerate(distances):
+        gx = []
+        gy = []
+        for idist, dist in enumerate(gdistance):
+
+            gx.append(self.getAttribute('x', dist))
+            gy.append(self.getAttribute('y', dist))
 
             cdp = None
             if(nn != -1): cdp = self.getAttribute('cdp', dist)
@@ -169,13 +198,20 @@ class Segy:
                 amps = self.getAttribute('trace', dist)[shiftIdx:]
             # end if
 
-            ds = velocity_model.getDepth(cdp, ts, nn)
+            if(constant_veolocity_model):
+                ds = ts*velocity_model
+            else:
+                ds = velocity_model.getDepth(cdp, ts, nn)
+            # end if
+
             io = interp1d(ds, amps,
                           bounds_error=False, fill_value=-9999)
-            mvals[idist, :] = io(depths)
+            mvals[idist, :] = io(gdepth)
         # end for
 
-        return mdepths, mdistances, mvals
+        xy_list = numpy.array([[x, y] for x, y in zip(gx, gy)])
+
+        return mdepths, mdistances, mvals, xy_list
     # end func
 # end class
 

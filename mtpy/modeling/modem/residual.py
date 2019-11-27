@@ -113,7 +113,7 @@ class Residual(object):
         self._make_blank_rms_array(res_obj.data_array)
 
 
-    def calculate_residual_from_data(self, data_fn=None, resp_fn=None, save_fn_basename = None):
+    def calculate_residual_from_data(self, data_fn=None, resp_fn=None, save_fn_basename = None, save=True):
         """
         created by ak on 26/09/2017
 
@@ -128,9 +128,6 @@ class Residual(object):
         # inherit station locations object
         self.station_locations = data_obj.station_locations
 
-        
-        if save_fn_basename is None:
-            save_fn_basename = data_obj.fn_basename[:-3] +'.res'
 
         for comp in ['z', 'tip']:
             data_obj.data_array[comp] = data_obj.data_array[comp] - resp_obj.data_array[comp]
@@ -140,9 +137,13 @@ class Residual(object):
         self._make_blank_rms_array(data_obj.data_array)
         self.get_rms()
 
-        print("writing to file",save_fn_basename)
-        data_obj.write_data_file(fill=False, compute_error=False, 
-                                 fn_basename=save_fn_basename)
+
+        if save:
+            if save_fn_basename is None:
+                save_fn_basename = data_obj.fn_basename[:-3] +'.res'        
+            print("writing to file",save_fn_basename)
+            data_obj.write_data_file(fill=False, compute_error=False, 
+                                     fn_basename=save_fn_basename)
 
 
     def _make_blank_rms_array(self,data_array):
@@ -262,12 +263,10 @@ class Residual(object):
                 # append individual normalised errors to a master list for all stations
                 rms_value_list_all = np.append(rms_value_list_all, z_norm_nz.flatten())
                 rms_value_list_z = np.append(rms_value_list_z, z_norm_nz.flatten())
-                
 
                 # normalised error for separate components
-                rms_z_comp[sta_ind] = (((z_norm ** 2.).sum(axis=0)) / (z_norm.shape[0])) ** 0.5
+                rms_z_comp[sta_ind] = (((z_norm_nz ** 2.).sum(axis=0)) / (z_norm_nz.shape[0])) ** 0.5
                 rms_value_list.append(rms_z_comp[sta_ind])
-
 
             if np.amax(np.abs(res_vals['tip'])) > 0:
                 # sum over absolute value of tipper
@@ -296,7 +295,6 @@ class Residual(object):
 
 
             # compute overall rms by period
-            print(rms_value_list_ztip)
             count_ztip = np.count_nonzero(np.nan_to_num(rms_value_list_ztip),axis=1).astype(float)
             self.rms_array['rms_period'][sta_ind] = (np.nansum(rms_value_list_ztip**2,axis=1)/count_ztip)**0.5
 

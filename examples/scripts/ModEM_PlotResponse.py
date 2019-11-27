@@ -30,14 +30,18 @@ station = 'Synth02'
 ro = PlotResponse(data_fn=os.path.join(wd,datafn),
                   resp_fn=os.path.join(wd,respfn),
                   plot_type=[station],
-                  plot_style=2,  # 1 for 4-colums; 2 for 2-columns
+                  plot_style=3,  # 1 for 4-columns; 2 for 2-columns, 3 for 
+                                 # 1-column with diagonals semi-transparent
                   plot_z=False,
-#                 fig_size=[3,2],
-#                 font_size=4
+                  res_limits=[1e-2,1e4],
+                  phase_limits=[-180,180],
+                  shift_yx_phase=False,
+                 fig_size=[3,6],
+                 font_size=10
                   )
 
 
 ro.plot()
 
-ro.save_figure(os.path.join(savepath,'response.png'),
-               fig_dpi=400) # change fig_dpi to your desired resolution
+#ro.save_figure(os.path.join(savepath,'response.png'),
+#               fig_dpi=400) # change fig_dpi to your desired resolution

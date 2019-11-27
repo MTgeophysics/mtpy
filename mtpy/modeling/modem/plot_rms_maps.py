@@ -428,9 +428,6 @@ class PlotRMSMaps(object):
         self.bm = basemap_tools.initialise_basemap(self.residual.station_locations,**basemap_kwargs)
         basemap_tools.add_basemap_frame(self.bm,tick_interval=tick_interval)
 
-
-        # project station location eastings and northings to lat/long
-        slon,slat = epsg_project(seast,snorth,self.model_epsg,4326)
         
         # project to basemap coordinates
         sx,sy = self.bm(slon,slat)
@@ -471,7 +468,6 @@ class PlotRMSMaps(object):
         color_bar.set_label('RMS')
         
         title_dict = {'all':'Z + Tipper','z':'Z','tip':'Tipper'}
-        print(datatype,title_dict[datatype])
         
         if self.period_index == 'all':
             plt.title('RMS misfit over all periods for '+title_dict[datatype])

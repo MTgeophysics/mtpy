@@ -24,9 +24,12 @@ from mtpy.utils.gis_tools import get_epsg,epsg_project
 from mtpy.utils.calculator import nearest_index
 from mtpy.utils.mesh_tools import rotate_mesh
 
+from mtpy.imaging.seismic import Segy, VelocityModel
+
 from scipy.spatial import cKDTree
 from scipy.interpolate import interp1d, UnivariateSpline
 from matplotlib import colors,cm
+from matplotlib.ticker import LogLocator
 
 __all__ = ['PlotSlices']
 
@@ -307,48 +310,34 @@ class PlotSlices(object):
                     gv : list of interpolated values of shape (np)
         """
 
-        def get_order(x, y):
+        def distance(P1, P2):
             """
-            :param x: array of x coordinates
-            :param y: array of y coordinates
-            :return: optimal order of points that form a connected path
-
-            This is a tricky problem to solve and is based on a minimum spanning
-            tree. The implementation below has been adopted verbatim from the
-            following link:
-            https://stackoverflow.com/questions/37742358/sorting-points-to-form-a-continuous-line
+            Compute Euclidean distance
             """
-            try:
-                import networkx as nx
-                from sklearn.neighbors import NearestNeighbors
-            except:
-                print("Failed to import either 'networkx' or 'scikit' python packages; " \
-                      "station/nodal ordering may be incorrect..s")
-                return np.arange(len(x))
-            # end try
 
-            points = np.c_[x, y]
-            clf = NearestNeighbors(2).fit(points)
-            G = clf.kneighbors_graph()
+            return ((P1[0] - P2[0])**2 + (P1[1] - P2[1])**2) ** 0.5
+        # end func
 
-            T = nx.from_scipy_sparse_matrix(G)
-            paths = [list(nx.dfs_preorder_nodes(T, i)) for i in range(len(points))]
-            mindist = np.inf
-            minidx = 0
+        def optimized_path(coords, start=None):
+            """
+            This function was adopted verbatim from the following link:
 
-            for i in range(len(points)):
-                p = paths[i]  # order of nodes
-                ordered = points[p]  # ordered nodes
-                # find cost of that order by the sum of euclidean distances between points (i) and (i+1)
-                cost = (((ordered[:-1] - ordered[1:]) ** 2).sum(1)).sum()
-                if cost < mindist:
-                    mindist = cost
-                    minidx = i
-                # end if
-            # end for
+            https://stackoverflow.com/questions/45829155/sort-points-in-order-to-have-a-continuous-curve-using-python
 
-            opt_order = paths[minidx]
-            return opt_order
+            Order coordinates such that a continuous line can be formed.
+            coords: a list containing coordnates = [ [x1, y1], [x2, y2] , ...]
+
+            """
+            if start is None:
+                start = coords[0]
+            pass_by = coords
+            path = [start]
+            pass_by.remove(start)
+            while pass_by:
+                nearest = min(pass_by, key=lambda x: distance(path[-1], x))
+                path.append(nearest)
+                pass_by.remove(nearest)
+            return path
         # end func
 
         assert option in ['STA', 'XY', 'XYZ'], 'Invalid option; Aborting..'
@@ -370,7 +359,6 @@ class PlotSlices(object):
         xmin = 0
         ymin = 0
         if(option == 'STA' or option == 'XY'):
-
             if(nsteps > -1): assert nsteps > 2, 'Must have more than 2 grid points in the ' \
                                               'horizontal direction. Aborting..'
 
@@ -380,14 +368,19 @@ class PlotSlices(object):
             if(option == 'STA'):
                 x = np.array(self.station_east)
                 y = np.array(self.station_north)
+
+                if(nsteps==-1): nsteps = len(x)
             elif(option == 'XY'):
                 x = np.array(coords[:,0])
                 y = np.array(coords[:,1])
+
+                if(nsteps==-1): nsteps = len(x)
             # end if
 
-            order = get_order(x, y)
-            xx = x[order]
-            yy = y[order]
+            xy = [[a, b] for a, b in zip(x,y)]
+            ordered_xy = np.array(optimized_path(xy))
+            xx = ordered_xy[:, 0]
+            yy = ordered_xy[:, 1]
 
             dx = xx[:-1] - xx[1:]
             dy = yy[:-1] - yy[1:]
@@ -576,6 +569,39 @@ class PlotSlices(object):
         
         if new_figure:
             plt.figure()
+
+        
+        # get eastings/northings of mesh
+        ge,gn = self.md_model.grid_east, self.md_model.grid_north
+        e0,n0 = self.md_data.center_point['east'],self.md_data.center_point['north']
+        
+        if mesh_rotation_angle != 0:
+            if hasattr(self,'mesh_rotation_angle'):
+                angle_to_rotate_stations = self.mesh_rotation_angle - mesh_rotation_angle
+            else:
+                angle_to_rotate_stations = -mesh_rotation_angle
+                
+            self.mesh_rotation_angle = mesh_rotation_angle
+
+
+            mgx, mgy = rotate_mesh(ge,gn,[e0,n0],
+                                   -mesh_rotation_angle)
+        else:
+            mgx, mgy = np.meshgrid(ge + e0, gn + n0)
+
+        # rotate stations if necessary
+        if mesh_rotation_angle != 0:
+            self.md_data.station_locations.rotate_stations(angle_to_rotate_stations)
+                        
+            # get relative locations
+            seast,snorth = self.md_data.station_locations.rel_east + self.md_data.station_locations.center_point['east'],\
+                           self.md_data.station_locations.rel_north + self.md_data.station_locations.center_point['north']
+            
+            # project station location eastings and northings to lat/long
+            slon,slat = epsg_project(seast,snorth,self.model_epsg,4326)
+            self.md_data.station_locations.station_locations['lon'] = slon
+            self.md_data.station_locations.station_locations['lat'] = slat    
+        
         
         if basemap is None:
             # initialise a basemap with extents, projection etc calculated from data 
@@ -585,15 +611,7 @@ class PlotSlices(object):
             basemap_tools.add_basemap_frame(self.bm,tick_interval=tick_interval)
         else:
             self.bm = basemap
-        
-        # get eastings/northings of mesh
-        ge,gn = self.md_model.grid_east, self.md_model.grid_north
-        e0,n0 = self.md_data.center_point['east'],self.md_data.center_point['north']
-        if mesh_rotation_angle != 0:
-            mgx, mgy = rotate_mesh(ge,gn,[e0,n0],
-                                   -mesh_rotation_angle)
-        else:
-            mgx, mgy = np.meshgrid(ge + e0, gn + n0)
+
         
         # lat/lon coordinates of resistivity model values
         loncg,latcg = epsg_project(mgx,mgy,
@@ -617,8 +635,6 @@ class PlotSlices(object):
         # plot stations
         if self.plot_stations:
             # rotate stations
-            if mesh_rotation_angle != 0:
-                self.md_data.station_locations.rotate_stations(-mesh_rotation_angle)
             seast,snorth = self.md_data.station_locations.rel_east + self.md_data.center_point['east'],\
                            self.md_data.station_locations.rel_north + self.md_data.center_point['north']
 
@@ -1400,6 +1416,105 @@ class PlotSlices(object):
 
         plt.close(self.fig)
         self.plot()
+
+    def plot_resistivity_on_seismic(self, segy_fn, velocity_model=6000, pick_every=10, ax=None, cb_ax=None, percent_clip=99, alpha=0.5, **kwargs):
+        """
+        :param segy_fn: SegY file name
+        :param velocity_model: can be either the name of a velocity-model file containing stacking velocities
+                               for the given 2D seismic line, or a floating point value representing a
+                               constant velocity (m/s)
+        :param pick_every: this parameter controls the decimation factor for the SegY file; e.g. if pick_every=10,
+                           every 10th trace from the SegY file is read in. This significantly speeds up plotting
+                           routines.
+        :param ax: figure axes
+        :param cb_ax: colorbar axes
+        :param percent_clip: percentile value used for filtering out seismic amplitudes from plot; e.g. for a value
+                             of 99, only seismic amplitudes above the 99th percentile are plotted. The parameter is
+                             tuned to plot only the required level of seismic detail.
+        :param alpha: alpha value used while resistivity and seismic values
+        :param kwargs:
+
+        max_depth : maximum depth extent of plots
+        time_shift : time shift in ms to remove topography
+
+        :return: fig, ax : a figure and an plot axes object are returned when the parameter ax is not provided
+        """
+
+        # process keyword arguments
+        max_depth = kwargs.pop('max_depth', 60e3) # 60 km default
+        time_shift = kwargs.pop('time_shift', 225) # 225 ms
+
+        sl = Segy(segy_fn, pick_every=pick_every)
+        vm = None
+
+        if(type(velocity_model) == str):
+            vm = VelocityModel(velocity_model)
+        else:
+            try:
+                vm = np.float_(velocity_model)
+            except:
+                raise ValueError('Invalid velocity model')
+            # end try
+        # end if
+
+        # fetch a depth-migrated image (done using velocity model
+        mdepth, mdist, svals, xy_list = sl.getMigratedProfile(vm, max_depth=max_depth, time_shift=time_shift)
+
+        # fetch resistivity along seismic line
+        gd, gz, mvals = self.get_slice(option='XY', coords=xy_list, nn=1, absolute_query_locations=True)
+
+        # create plot axes, if not provided
+        fig = None
+        if(ax is None):
+            fig, ax = plt.subplots(1, 1)
+            fig.set_size_inches(10,5)
+
+            # if a new figure object is created, user-provided colorbar axes is ignored
+            cb_ax = fig.add_axes([0.25, 0.25, 0.5, 0.025])
+        # end if
+
+        # plot resistivity ==================================================
+        ci = ax.pcolor(gd, gz, mvals,
+                       norm=colors.LogNorm(),
+                       vmin=np.power(10, 0.5), vmax=np.power(10, 7),
+                       cmap='nipy_spectral',
+                       alpha=alpha, linewidth=0,
+                       edgecolors='None',
+                       rasterized=True)
+
+        # deal with white stripes
+        ci.set_antialiaseds(True)
+        ci.set_rasterized(True)
+
+        # plot colorbar
+        if(cb_ax):
+            cb = plt.colorbar(ci, cax=cb_ax, ticks=LogLocator(subs=range(10)),
+                              orientation="horizontal")
+            cb.solids.set_edgecolor('none')
+            cb.solids.set_antialiased(True)
+            cb.solids.set_rasterized(True)
+        # end if
+
+        # Plot seismic ======================================================
+        # compute the 99th percentile and zero out all values below that. This can
+        # be tweaked to plot the required amount of detail without cluttering the
+        # plot
+
+        vmm = np.percentile(svals.flatten(), percent_clip)
+        svalsClipped = np.array(svals)
+        svalsClipped[svalsClipped < vmm] = 0
+        ci = ax.contourf(mdist, mdepth, svalsClipped, 50,
+                         vmin=-vmm, vmax=vmm,
+                         cmap='Greys', alpha=alpha/3., rasterized=True) # use a lower alpha value for seismic amplitudes
+
+        ax.invert_yaxis()
+        ax.set_aspect(1)
+        ax.set_ylim(max_depth)
+
+        if(fig):
+            return fig, ax
+        # end if
+    # end func
 
     def save_figure(self, save_fn=None, fig_dpi=None, file_format='pdf',
                     orientation='landscape', close_fig='y'):

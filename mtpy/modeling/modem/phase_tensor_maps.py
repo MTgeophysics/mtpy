@@ -17,6 +17,9 @@ import mtpy.imaging.mtcolors as mtcl
 import mtpy.imaging.mtplottools as mtplottools
 import mtpy.modeling.ws3dinv as ws
 import mtpy.utils.exceptions as mtex
+from mtpy.utils.calculator import nearest_index
+from mtpy.utils.gis_tools import epsg_project
+from mtpy.utils import basemap_tools
 from mtpy.modeling.modem import Data, Model
 import logging, traceback
 
@@ -410,7 +413,7 @@ class PlotPTMaps(mtplottools.MTEllipse):
         :param tipper_size_factor: scaling factor for tipper vectors
         '''
 
-        assert (periodIdx >= 0 and periodIdx < len(self.plot_period_list)), \
+        assert (periodIdx >= 0 and periodIdx < len(self.data_obj.period_list)), \
             'Error: Index for plot-period out of bounds.'
 
         k = periodIdx
@@ -463,6 +466,9 @@ class PlotPTMaps(mtplottools.MTEllipse):
                                          map_scale=map_scale, centre_shift=centre_shift,
                                          plot_tipper=plot_tipper, **kwargs)
     # end func
+
+        
+
 
     def plot(self, period = None, periodIdx = 0, save2file=None, **kwargs):
         """ Plot phase tensor maps for data and or response, each figure is of a

@@ -168,6 +168,11 @@ def create_geogrid(data_file, model_file, out_dir, user_options={}):
         output_grid_size:  the pixel size in meters, 8000  
     :return:
     """
+
+    # First make sure the output directory exist, otherwise create it
+    if not os.path.exists(out_dir):
+        os.mkdir(out_dir)
+
     print("read inputs from Model Rho File")
 
     # create a model object and read in model data
@@ -179,7 +184,7 @@ def create_geogrid(data_file, model_file, out_dir, user_options={}):
     # center = get_grid_center(data_file)
     data = Data()
     data.read_data_file(data_fn=data_file)
-    center = data.center_point
+    center = data.center_point   # see data.py line1406
 
     # source_proj = 28355   source_proj = 28353
     source_proj = user_options.get("source_proj",None)
@@ -211,14 +216,14 @@ def create_geogrid(data_file, model_file, out_dir, user_options={}):
 
     source_proj = Proj(init='epsg:' + str(epsg_code))
     # get the grid cells' centres (halfshift -cs/2?)
-    gce, gcn, gcz = [np.mean([arr[:-1], arr[1:]], axis=0) for arr in [model.grid_east, model.grid_north, model.grid_z]]
+    mgce, mgcn, mgcz = [np.mean([arr[:-1], arr[1:]], axis=0) for arr in [model.grid_east, model.grid_north, model.grid_z]]
 
     # # get xyz-paddings
     # xpad = 6
     # ypad = 6
     # zpad = 10
-    gce, gcn = gce[xpad:-xpad], gcn[ypad:-ypad]  # padding off big-sized edge cells
-    gcz = gcz[:-zpad]
+    gce, gcn = mgce[xpad:-xpad], mgcn[ypad:-ypad]  # padding off big-sized edge cells
+    gcz = mgcz[:-zpad]
     # ge,gn = mObj.grid_east[6:-6],mObj.grid_north[6:-6]
 
     print(gce)
@@ -239,7 +244,7 @@ def create_geogrid(data_file, model_file, out_dir, user_options={}):
     #
     # In [2]: 5611364.73539792 - 3750
     # Out[2]: 5607614.73539792
-    origin = (gce[0] + center.east, gcn[-1] + center.north)
+    origin = (gce[0] + center.east, gcn[-1] + center.north-0.5*out_grid_size)
     print("The Origin (UpperLeft Corner) =", origin)
 
     pixel_width = out_grid_size
@@ -274,7 +279,7 @@ def create_geogrid(data_file, model_file, out_dir, user_options={}):
         # this original image may start from the lower left corner, if so must be flipped.
         # resis_data_flip = resis_data[::-1]  # flipped to ensure the image starts from the upper left corner
 
-        array2geotiff_writer(output_file, origin, pixel_width, pixel_height, newgridres, epsg_code=epsg_code)
+        array2geotiff_writer(output_file, origin, pixel_width, pixel_height, newgridres[::-1], epsg_code=epsg_code)
 
     return output_file
 

@@ -18,7 +18,7 @@ from mtpy.utils.convert_modem_data_to_geogrid import create_geogrid
 
 # =============================================
 # quick test of this script
-#  python /examples/scripts/create_geogrid_from_resistivity_model.py  /c/Data/JinMing_GridData_sample/JM_model_002/EFTF_NLCG_002.dat /c/Data/JinMing_GridData_sample/JM_model_002/EFTF_NLCG_002.rho /c/temp
+#  python examples/scripts/create_geogrid_from_resistivity_model.py  /c/Data/JinMing_GridData_sample/JM_model_002/EFTF_NLCG_002.dat /c/Data/JinMing_GridData_sample/JM_model_002/EFTF_NLCG_002.rho /c/temp
 #  python examples/scripts/create_geogrid_from_resistivity_model.py  /c/Data/JinMing_GridData_sample/EFTF_MT_model/EF_NLCG_001.dat  /c/Data/JinMing_GridData_sample/EFTF_MT_model/EF_NLCG_001.rho /c/temp
 #  python examples/scripts/create_geogrid_from_resistivity_model.py  /c/Data/Alison_201910/Alison_ModEM_Grid/MT075_ModEM_files/ModEM_Data.dat  /c/Data/Alison_201910/Alison_ModEM_Grid/MT075_ModEM_files/Modular_MPI_NLCG_004.rho /c/temp/
 # ---------------------------------------------
