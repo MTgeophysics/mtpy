@@ -261,21 +261,26 @@ class MTTS(object):
             raise MTTSError("Input sampling rate should be a float not {0}".format(type(sampling_rate)))
         self._sampling_rate = sr
         if self._check_for_index():
-            if 1E9/self._ts.index[0].freq.nanos == self._sampling_rate:
-                return
+            if isinstance(self._ts.index[0], int):
+                return 
             else:
-                if self.start_time_utc is not None:
-                    self._set_dt_index(self.start_time_utc, self._sampling_rate)
+                if 1E9/self._ts.index[0].freq.nanos == self._sampling_rate:
+                    return
+                else:
+                    if self.start_time_utc is not None:
+                        self._set_dt_index(self.start_time_utc,
+                                           self._sampling_rate)
                 
-        else:
-            self._sampling_rate = sampling_rate
-            return
    
     ## set time and set index
     @property
     def start_time_utc(self):
         """start time in UTC given in time format"""
-        return self._ts.index[0].isoformat()
+        if self._check_for_index():
+            if isinstance(self._ts.index[0], int):
+                return None
+            else:
+                return self._ts.index[0].isoformat()
     
     @start_time_utc.setter
     def start_time_utc(self, start_time):
@@ -293,10 +298,13 @@ class MTTS(object):
             start_time = dateutil.parser.parse(start_time)
         
         if self._check_for_index():
-            if start_time.isoformat() == self.ts.index[0].isofromat():
-                return
-            else:
+            if isinstance(self._ts.index[0], int):
                 self._set_dt_index(start_time.isoformat(), self._sampling_rate)
+            else:
+                if start_time.isoformat() == self.ts.index[0].isofromat():
+                    return
+                else:
+                    self._set_dt_index(start_time.isoformat(), self._sampling_rate)
         
         # make a time series that the data can be indexed by
         else:
@@ -309,7 +317,11 @@ class MTTS(object):
         if self.start_time_utc is None:
             return None
         else:
-            return self.ts.index[0].timestamp()
+            if self._check_for_index():
+                if isinstance(self._ts.index[0], int):
+                    return None
+            else:
+                return self.ts.index[0].timestamp()
         
     @start_time_epoch_sec.setter
     def start_time_epoch_sec(self, epoch_sec):

@@ -3,13 +3,11 @@
 ====================
 zonge
 ====================
-
     * Tools for interfacing with MTFT24
     * Tools for interfacing with MTEdit
     
     
 Created on Tue Jul 11 10:53:23 2013
-
 @author: jpeacock-pr
 """
 
@@ -20,7 +18,7 @@ import time
 import os
 import shutil
 import mtpy.core.z as mtz
-import mtpy.imaging.plot_mt_response as plotresponse
+import mtpy.imaging.plotresponse as plotresponse
 import mtpy.utils.gis_tools as gis_tools
 import mtpy.utils.configfile as mtcf
 import mtpy.core.edi as mtedi
@@ -296,36 +294,6 @@ class ZongeMTFT():
         """
         self.value_lst = [self.__dict__[key.replace('.', '_')] 
                           for key in self.meta_keys]
-#        self.value_lst = [self.MTFT_Version, 
-#                          self.MTFT_MHAFreq, 
-#                          self.MTFT_WindowTaper,   
-#                          self.MTFT_WindowLength,
-#                          self.MTFT_WindowOverlap,    
-#                          self.MTFT_NDecFlt, 
-#                          self.MTFT_PWFilter, 
-#                          self.MTFT_NPWCoef,   
-#                          self.MTFT_DeTrend, 
-#                          self.MTFT_Despike,   
-#                          self.MTFT_SpikePnt, 
-#                          self.MTFT_SpikeDev,
-#                          self.MTFT_NotchFlt,  
-#                          self.MTFT_NotchFrq, 
-#                          self.MTFT_NotchWidth, 
-#                          self.MTFT_StackFlt,  
-#                          self.MTFT_StackTaper,
-#                          self.MTFT_StackFrq,
-#                          self.MTFT_SysCal,
-#                          self.MTFT_BandFrq,
-#                          self.MTFT_BandFrqMin,  
-#                          self.MTFT_BandFrqMax, 
-#                          self.MTFT_TSPlot_PntRange,  
-#                          self.MTFT_TSPlot_ChnRange,
-#                          self.Setup_Number,  
-#                          self.TS_Number, 
-#                          self.TS_FrqBand, 
-#                          self.TS_T0Offset, 
-#                          self.TS_T0Error,  
-#                          self.setup_lst]
                           
         self.meta_dict = dict([(mkey, mvalue) for mkey, mvalue in
                                zip(self.meta_keys, self.value_lst)])
@@ -337,37 +305,6 @@ class ZongeMTFT():
         """
         for key in list(self.meta_dict.keys()):
             setattr(self, key.replace('.', '_'), self.meta_dict[key])
-#        self.MTFT_Version = self.meta_dict['MTFT.Version']
-#        self.MTFT_MHAFreq = self.meta_dict['MTFT.MHAFreq'] 
-#        self.MTFT_WindowTaper = self.meta_dict['MTFT.WindowTaper']   
-#        self.MTFT_WindowLength = self.meta_dict['MTFT.WindowLength']
-#        self.MTFT_WindowOverlap = self.meta_dict['MTFT.WindowOverlap']    
-#        self.MTFT_NDecFlt = self.meta_dict['MTFT.NDecFlt'] 
-#        self.MTFT_PWFilter = self.meta_dict['MTFT.PWFilter'] 
-#        self.MTFT_NPWCoef = self.meta_dict['MTFT.NPWCoef']   
-#        self.MTFT_DeTrend = self.meta_dict['MTFT.DeTrend'] 
-#        self.MTFT_T0OffsetMax = self.meta_dict['MTFT.T0OffsetMax']
-#        self.MTFT_Despike = self.meta_dict['MTFT.Despike']   
-#        self.MTFT_SpikePnt = self.meta_dict['MTFT.SpikePnt'] 
-#        self.MTFT_SpikeDev = self.meta_dict['MTFT.SpikeDev']
-#        self.MTFT_NotchFlt = self.meta_dict['MTFT.NotchFlt']  
-#        self.MTFT_NotchFrq = self.meta_dict['MTFT.NotchFrq'] 
-#        self.MTFT_NotchWidth = self.meta_dict['MTFT.NotchWidth'] 
-#        self.MTFT_StackFlt = self.meta_dict['MTFT.StackFlt']  
-#        self.MTFT_StackTaper = self.meta_dict['MTFT.StackTaper']
-#        self.MTFT_StackFrq = self.meta_dict['MTFT.StackFrq']
-#        self.MTFT_SysCal = self.meta_dict['MTFT.SysCal']
-#        self.MTFT_BandFrq = self.meta_dict['MTFT.BandFrq']
-#        self.MTFT_BandFrqMin = self.meta_dict['MTFT.BandFrqMin']  
-#        self.MTFT_BandFrqMax = self.meta_dict['MTFT.BandFrqMax'] 
-#        self.MTFT_TSPlot_PntRange = self.meta_dict['MTFT.TSPlot.PntRange']  
-#        self.MTFT_TSPlot_ChnRange = self.meta_dict['MTFT.TSPlot.ChnRange']
-#        self.Setup_Number = self.meta_dict['Setup.Number']  
-#        self.TS_Number = self.meta_dict['TS.Number'] 
-#        self.TS_FrqBand = self.meta_dict['TS.FrqBand'] 
-#        self.TS_T0Offset = self.meta_dict['TS.T0Offset'] 
-#        self.TS_T0Error = self.meta_dict['TS.T0Error']  
-#        self.setup_lst = self.meta_dict['setup_lst']
     
     def sort_ts_lst(self):
         """
@@ -1299,15 +1236,21 @@ class ZongeMTFT():
         for cline in clines:
             if cline[0] == '$':
                 clst = cline[1:].strip().split('=')
-                if clst[0].find('MTFT') == 0 or \
-                   clst[0].find('Setup.Number') == 0 or\
-                   clst[0].find('TS') ==0:
-                    self.meta_dict[clst[0]] = clst[1]
+                key = clst[0]
+                value = clst[1].split(',')
+                
+                if key.find('MTFT') == 0 or \
+                   key.find('Setup.Number') == 0 or\
+                   key.find('TS') == 0:
+                    self.meta_dict[key] = value
                 elif clst[0].find('Setup.ID') == 0:
-                    setup_lst.append({clst[0]:clst[1]})
+                    setup_lst.append({key:value})
                     ss = int(clst[1])-1
+                    setup_lst[ss][key] = value
                 else:
-                    setup_lst[ss][clst[0]] = clst[1]
+                    setup_lst[ss][key] = value
+                    if key.find('Chn') == 0:
+                        self.meta_dict[key] = value
                 
             elif cline.find('.cac') > 0:
                 info_dict = {}
@@ -1703,20 +1646,20 @@ class ZongeMTAvg():
             raise IOError('{0} does not exist, check file'.format(avg_fn))
         
         self.comp = os.path.basename(avg_fn)[0]
-        afid = file(avg_fn)
-        alines = afid.readlines()
+        with open(avg_fn, 'r') as fid:
+            alines = fid.readlines()
         self.comp_flag = {'zxx':False, 'zxy':False, 'zyx':False, 'zyy':False,
                           'tzx':False, 'tzy':False}
         
         if not self.comp_dict:
             # check to see if all 4 components are in the .avg file
             if len(alines) > 140:  
-                self.comp_dict = dict([(ckey, np.zeros(len(alines)/4, 
+                self.comp_dict = dict([(ckey, np.zeros(int(len(alines)/4), 
                                                        dtype=self.info_dtype))
                                         for ckey in list(self.comp_flag.keys())])
             # if there are only 2
             else:
-                self.comp_dict = dict([(ckey, np.zeros(len(alines)/2, 
+                self.comp_dict = dict([(ckey, np.zeros(int(len(alines)/2), 
                                                        dtype=self.info_dtype))
                                         for ckey in list(self.comp_flag.keys())])
         self.comp_lst_z = []
@@ -1741,7 +1684,7 @@ class ZongeMTAvg():
                         self.__dict__[akey] = float(alst[1])
                     except ValueError:
                         self.__dict__[akey] = alst[1]
-                    #self.header_dict[alst[0][1:]] = alst[1]
+                    #self.header_dict[alst[0][1:]] = al            print(aline)st[1]
             elif aline[0] == 'S':
                 pass
             # read the data line.
@@ -1763,8 +1706,8 @@ class ZongeMTAvg():
         imaginary parts, phase is in milliradians
         
         """
-
-        if isinstance(zmag, np.ndarray):
+        
+        if type(zmag) is np.ndarray:
             assert len(zmag) == len(zphase)
         
         if self.z_coordinate == 'up':
@@ -1786,8 +1729,9 @@ class ZongeMTAvg():
 #        if set(freq_list1).issubset(freq_list2) == True:
 #            return dict([(freq, ff) for ff, freq in enumerate(freq_list1)])
 #        else:
-        comb_freq_list = sorted(list(set(freq_list1).intersection(freq_list2)) +
-                                list(set(freq_list1).symmetric_difference(freq_list2)))
+        comb_freq_list = list(set(freq_list1).intersection(freq_list2))+\
+                      list(set(freq_list1).symmetric_difference(freq_list2))
+        comb_freq_list.sort()
         return dict([(freq, ff) for ff, freq in enumerate(comb_freq_list)])
         
     def fill_Z(self):
@@ -1875,10 +1819,11 @@ class ZongeMTAvg():
                     z[:, ii, jj] = zr+zi*1j
 
                 z_err[:,ii, jj] = self.comp_dict[ikey]['ares.%err'][:nz]*.005 
-                    
+
+            self.Z.freq = freq
             self.Z.z = z
             self.Z.z_err = z_err
-            self.Z.freq = freq
+            
             
         self.Z.z = np.nan_to_num(self.Z.z)
         self.Z.z_err = np.nan_to_num(self.Z.z_err)
@@ -1971,14 +1916,15 @@ class ZongeMTAvg():
                 tipper_err[:, ii, jj] = self.comp_dict[ikey]['ares.%err'][:nz]*\
                                                      .05*np.sqrt(tzr**2+tzi**2)
                     
+            self.Tipper.freq = sorted(self.freq_dict_x.keys())
             self.Tipper.tipper = tipper
             self.Tipper.tipper_err = tipper_err
-            self.Tipper.freq = sorted(self.freq_dict_x.keys())
+            
             
         self.Tipper.tipper = np.nan_to_num(self.Tipper.tipper)
         self.Tipper.tipper_err = np.nan_to_num(self.Tipper.tipper_err)
         
-    def write_edi(self, avg_fn, station, survey_dict=None,
+    def write_edi(self, avg_fn, station, survey_dict=None, 
                   survey_cfg_file=None,  mtft_cfg_file=None, 
                   mtedit_cfg_file=r"c:\MinGW32-xy\Peacock\zen\bin\mtedit.cfg", 
                   save_path=None, rrstation=None, 
@@ -2063,8 +2009,10 @@ class ZongeMTAvg():
                 rrsurvey_dict = sdict[rrstation.upper()]
                 survey_dict['rr_station'] = rrsurvey_dict['station']
                 survey_dict['rr_station_elevation'] = rrsurvey_dict['elevation']
-                survey_dict['rr_station_latitude'] = gis_tools.assert_lat_value(rrsurvey_dict.pop('latitude',0.0))                                               
-                survey_dict['rr_station_longitude'] = gis_tools.assert_lon_value(rrsurvey_dict.pop('longitude',0.0))
+                survey_dict['rr_station_latitude'] = gis_tools.assert_lat_value(
+                                               rrsurvey_dict.pop('latitude',0.0))
+                survey_dict['rr_station_longitude'] = gis_tools.assert_lon_value(
+                                               rrsurvey_dict.pop('longitude',0.0))
             except KeyError:
                 print('Could not find station information for remote reference')
         else:
@@ -2108,7 +2056,7 @@ class ZongeMTAvg():
         self.edi.Header.fileby = survey_dict.pop('network','MTpy')
         
         #--> acquired date
-        self.edi.Header.acqdate = survey_dict.pop('date',
+        self.edi.Header.acqdate = survey_dict.pop('date', 
                                     time.strftime('%Y-%m-%d',time.localtime()))
         
         #--> prospect
@@ -2122,14 +2070,14 @@ class ZongeMTAvg():
         
         #--> elevation
         self.edi.Header.elev = survey_dict.pop('elevation', 0)
-
+       
         #-----------------INFO BLOCK---------------------------
         self.edi.Info.info_list = []
         self.edi.Info.info_list.append('MAX LINES: 999')
         
         #--> put the rest of the survey parameters in the info block
         for skey in sorted(survey_dict.keys()):
-            self.edi.Info.info_list.append('{0}: {1}'.format(skey,
+            self.edi.Info.info_list.append('{0}: {1}'.format(skey, 
                                                            survey_dict[skey]))
         
         #--> put parameters about how fourier coefficients were found
@@ -2147,7 +2095,7 @@ class ZongeMTAvg():
             for mkey in list(mtedit_dict.keys()):
                 self.edi.Info.info_list.append('{0}: {1}'.format(mkey,
                                                            mtedit_dict[mkey]))
-
+        
         #----------------DEFINE MEASUREMENT BLOCK------------------
         self.edi.Define_measurement.maxchan = 5
         self.edi.Define_measurement.maxrun = 999
@@ -2157,7 +2105,7 @@ class ZongeMTAvg():
             self.edi.Define_measurement.units = mtedit_dict['unit.length']
         except (TypeError, KeyError):
             self.edi.Define_measurement.units = 'm'
-
+            
         self.edi.Define_measurement.reftype = 'cartesian'
         self.edi.Define_measurement.reflat = self.edi.Header.lat
         self.edi.Define_measurement.reflon = self.edi.Header.lon
@@ -2178,25 +2126,25 @@ class ZongeMTAvg():
         chn_id_dict = dict([(comp.lower(), (comp.lower(), cid, clen)) 
                             for comp, cid, clen in zip(chn_lst, chn_id, 
                                                        chn_len_lst)])
-
-
+                                                       
+        
         #--> hx component                
         try:
             hxazm = survey_dict['b_xaxis_azimuth']
         except KeyError:
             hxazm = 0
         try:
-            hdict = {'id': chn_id_dict['hx'][1],
-                     'chtype': '{0}'.format(chn_id_dict['hx'][0].upper()),
-                     'x':0,
-                     'y':0,
+            hdict = {'id': chn_id_dict['hx'][1], 
+                     'chtype': '{0}'.format(chn_id_dict['hx'][0].upper()), 
+                     'x':0, 
+                     'y':0, 
                      'azm':hxazm,
                      'acqchan':'{0}'.format(chn_id_dict['hx'][0].upper())}
         except KeyError:
-            hdict = {'id': 1,
-                     'chtype': '{0}'.format('hx'),
-                     'x':0,
-                     'y':0,
+            hdict = {'id': 1, 
+                     'chtype': '{0}'.format('hx'), 
+                     'x':0, 
+                     'y':0, 
                      'azm':hxazm,
                      'acqchan':'hx'}
         self.edi.Define_measurement.meas_hx = mtedi.HMeasurement(**hdict)
@@ -2207,69 +2155,69 @@ class ZongeMTAvg():
         except KeyError:
             hyazm = 90
         try:
-            hdict = {'id': chn_id_dict['hy'][1],
-                     'chtype': '{0}'.format(chn_id_dict['hy'][0].upper()),
-                     'x':0,
-                     'y':0,
+            hdict = {'id': chn_id_dict['hy'][1], 
+                     'chtype': '{0}'.format(chn_id_dict['hy'][0].upper()), 
+                     'x':0, 
+                     'y':0, 
                      'azm':hyazm,
                      'acqchan':'{0}'.format(chn_id_dict['hy'][0].upper())}
 
         except KeyError:
-            hdict = {'id': 2,
-                     'chtype': 'hy',
-                     'x':0,
-                     'y':0,
+            hdict = {'id': 2, 
+                     'chtype': 'hy', 
+                     'x':0, 
+                     'y':0, 
                      'azm':hyazm,
                      'acqchan':'hy'}
         self.edi.Define_measurement.meas_hy = mtedi.HMeasurement(**hdict)
-
+        
         #--> hz component
         try:
-            hdict = {'id': chn_id_dict['hz'][1],
-                     'chtype': '{0}'.format(chn_id_dict['hz'][0].upper()),
-                     'x':0,
-                     'y':0,
+            hdict = {'id': chn_id_dict['hz'][1], 
+                     'chtype': '{0}'.format(chn_id_dict['hz'][0].upper()), 
+                     'x':0, 
+                     'y':0, 
                      'azm':0,
                      'acqchan':'{0}'.format(chn_id_dict['hz'][0].upper())}
 
         except KeyError:
-            hdict = {'id': 3,
-                     'chtype': 'hz',
-                     'x':0,
-                     'y':0,
+            hdict = {'id': 3, 
+                     'chtype': 'hz', 
+                     'x':0, 
+                     'y':0, 
                      'azm':0}
         self.edi.Define_measurement.meas_hz = mtedi.HMeasurement(**hdict)
-
+        
         #--> ex component
         try:
-            edict = {'id':chn_id_dict['ex'][1],
-                     'chtype':'{0}'.format(chn_id_dict['ex'][0].upper()),
-                     'x':0,
-                     'y':0,
+            edict = {'id':chn_id_dict['ex'][1], 
+                     'chtype':'{0}'.format(chn_id_dict['ex'][0].upper()), 
+                     'x':0, 
+                     'y':0, 
                      'x2':chn_id_dict['ex'][2],
                      'y2':0}
         except KeyError:
-            edict = {'id':4,
-                     'chtype':'ex',
-                     'x':0,
-                     'Y':0,
+            edict = {'id':4, 
+                     'chtype':'ex', 
+                     'x':0, 
+                     'Y':0, 
                      'x2':100,
                      'y2':0}
         self.edi.Define_measurement.meas_ex = mtedi.EMeasurement(**edict)
                            
         #--> ey component
         try:
-            edict = {'id':chn_id_dict['ey'][1],
-                     'chtype':'{0}'.format(chn_id_dict['ey'][0].upper()),
-                     'x':0,
-                     'y':0,
+            edict = {'id':chn_id_dict['ey'][1], 
+                     'chtype':'{0}'.format(chn_id_dict['ey'][0].upper()), 
+                     'x':0, 
+                     'y':0, 
                      'x2':0,
                      'y2':chn_id_dict['ey'][2]}
         except KeyError:
-            edict = {'id':5,
-                     'chtype':'ey',
-                     'x':0,
-                     'Y':0,
+            edict = {'id':5, 
+                     'chtype':'ey', 
+                     'x':0, 
+                     'Y':0, 
                      'x2':0,
                      'y2':100}
         self.edi.Define_measurement.meas_ey = mtedi.EMeasurement(**edict)
@@ -2287,26 +2235,26 @@ class ZongeMTAvg():
             hyazm = 90
                 
         #--> rhx component
-        hdict = {'id': hxid,
-                 'chtype': 'rhx',
-                 'x':0,
-                 'y':0,
+        hdict = {'id': hxid, 
+                 'chtype': 'rhx', 
+                 'x':0, 
+                 'y':0, 
                  'azm':hxazm,
                  'acqchan':'rhx'}
         self.edi.Define_measurement.meas_rhx = mtedi.HMeasurement(**hdict)
 
         #--> rhy component
-        hdict = {'id': hyid,
-                 'chtype': 'rhy',
-                 'x':0,
-                 'y':0,
+        hdict = {'id': hyid, 
+                 'chtype': 'rhy', 
+                 'x':0, 
+                 'y':0, 
                  'azm':hyazm,
                  'acqchan':'rhy'}
         self.edi.Define_measurement.meas_rhy = mtedi.HMeasurement(**hdict)
         
         #----------------------MTSECT-----------------------------------------
         self.edi.Data_sect.nfreq = len(self.Z.freq)
-        self.edi.Data_sect.sectid = station
+        self.edi.Data_sect.sectid = station        
         self.edi.Data_sect.nchan = len(chn_lst)
         for chn, chnid in zip(chn_lst, chn_id):
             setattr(self.edi.Data_sect, chn, chnid)
@@ -2342,11 +2290,10 @@ class ZongeMTAvg():
         
         self.read_avg_file(avg_fn)
         
-        plot_resp = plotresponse.PlotMTResponse(z_object=self.Z,
-                                                tipper_object=self.Tipper,
-                                                plot_tipper='yri',
-                                                **kwargs)
-        plot_resp.plot()
+        plot_resp = plotresponse.PlotResponse(z_object=self.Z,
+                                              tipper_object=self.Tipper, 
+                                              plot_tipper='yri',
+                                              **kwargs)
         
         return plot_resp
         
@@ -2413,8 +2360,8 @@ class ZongeMTAvg():
         #read in survey file
         survey_dict = {}
         survey_dict['latitude'] = gis_tools.assert_lat_value(self.GPS_Lat)
-        survey_dict['longitude'] = gis_tools.assert_lon_value(self.GPS_Lon)
-        survey_dict['elevation'] = self.Rx_Length
+        survey_dict['longitude'] = gis_tools.assert_lon_value( self.GPS_Lon)
+        survey_dict['elevation'] = gis_tools.assert_elevation_value(self.Rx_Length)
         survey_dict['station'] = station
         if survey_cfg_file is not None:
             sdict = mtcf.read_survey_configfile(survey_cfg_file)
@@ -2438,8 +2385,10 @@ class ZongeMTAvg():
                 rrsurvey_dict = sdict[rrstation.upper()]
                 survey_dict['rr_station'] = rrsurvey_dict['station']
                 survey_dict['rr_station_elevation'] = rrsurvey_dict['elevation']
-                survey_dict['rr_station_latitude'] = gis_tools.assert_lat_value(rrsurvey_dict.pop('latitude',0.0))
-                survey_dict['rr_station_longitude'] = gis_tools.assert_lon_value(rrsurvey_dict.pop('longitude',0.0))
+                survey_dict['rr_station_latitude'] = gis_tools.assert_lat_value(
+                                               rrsurvey_dict.pop('latitude',0.0))
+                survey_dict['rr_station_longitude'] = gis_tools.assert_lon_value(
+                                               rrsurvey_dict.pop('longitude',0.0))
             except KeyError:
                 print('Could not find station information for remote reference')
         else:
@@ -2491,13 +2440,12 @@ class ZongeMTAvg():
         head_dict['loc'] = survey_dict.pop('location', '')
         
         #--> latitude
-        head_dict['lat'] = gis_tools.assert_lat_value(
-                                        survey_dict.pop('latitude',
-                                                        0.0))
+        head_dict['lat'] = gis_tools.assert_lat_value(survey_dict.pop('latitude',
+                                                                      0.0))
         
         #--> longitude
-        head_dict['long'] = gis_tools.assert_lon_value(
-                                         survey_dict.pop('longitude',0.0))
+        head_dict['long'] = gis_tools.assert_lon_value(survey_dict.pop('longitude',
+                                                                       0.0))
         
         #--> elevation
         head_dict['elev'] = survey_dict.pop('elevation', 0.0)
