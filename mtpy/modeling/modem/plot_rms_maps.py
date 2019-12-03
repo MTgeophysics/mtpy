@@ -14,13 +14,9 @@ import os
 import numpy as np
 from matplotlib import colors as colors, pyplot as plt, colorbar as mcb, cm
 from matplotlib.ticker import MultipleLocator, FormatStrFormatter
-<<<<<<< HEAD
-import scipy.interpolate as interpolate
-=======
+
 from mtpy.utils import basemap_tools
 from mtpy.utils.gis_tools import epsg_project
->>>>>>> 65fd62b16eb5b1538f4ec1738f288778b5da66b3
-
 from mtpy.modeling.modem import Data, Residual
 
 __all__ = ['PlotRMSMaps']
@@ -160,28 +156,6 @@ class PlotRMSMaps(object):
                               'blue': ((0.0, 0.0, 0.0),
                                        (0.2, 1.0, 1.0),
                                        (1.0, 0.0, 0.0))}
-<<<<<<< HEAD
-
-        self.rms_cmap = colors.LinearSegmentedColormap('rms_cmap',
-                                                       self.rms_cmap_dict,
-                                                       256)
-        
-        self.rms_map_cmap_dict = {'red': ((0.0, 0.6, 0.6),
-                                         (0.2, 1.0, 1.0),
-                                         (0.65, .9, .9),
-                                         (1.0, 0.55, 0.75)),
-                                  'green': ((0.0, 0.6, 0.6),
-                                           (0.2, 1.0, 1.0),
-                                           (0.65, 0.8, 0.8),
-                                           (1.0, 0.0, 0.0)),
-                                  'blue': ((0.0, 0.6, 0.6),
-                                          (0.2, 1.0, 1.0),
-                                          (0.65, 0.0, 0.0), 
-                                          (1.0, 0.1, 0.1))}
-
-        self.rms_map_cmap = colors.LinearSegmentedColormap('rms_map_cmap',
-                                                           self.rms_map_cmap_dict,
-=======
     
         self.rms_cmap = None
         if 'rms_cmap' in list(kwargs.keys()):
@@ -195,7 +169,6 @@ class PlotRMSMaps(object):
         if self.rms_cmap is None:
             self.rms_cmap = colors.LinearSegmentedColormap('rms_cmap',
                                                            self.rms_cmap_dict,
->>>>>>> 65fd62b16eb5b1538f4ec1738f288778b5da66b3
                                                            256)
 
         self.plot_z_list = [{'label': r'$Z_{xx}$', 'index': (0, 0), 'plot_num': 1},
@@ -210,38 +183,22 @@ class PlotRMSMaps(object):
         if self.plot_yn == 'y':
             self.plot()
 
-<<<<<<< HEAD
-    @property
-    def residual_fn(self):
-        return self._residual_fn
-    @residual_fn.setter
-    def residual_fn(self, fn):
-        print 'read in {0}'.format(fn)
-        self._residual_fn = fn
-        self.residual = Data()
-        self.residual.read_data_file(self._residual_fn)
-=======
+
     def read_residual_fn(self):
         if self.residual is None:
             self.residual = Residual(residual_fn=self.residual_fn,
                                      model_epsg=self.model_epsg)
-#            self.residual.read_data_file(self.residual_fn)
             self.residual.read_residual_file()
             self.residual.get_rms()
         else:
             pass
->>>>>>> 65fd62b16eb5b1538f4ec1738f288778b5da66b3
 
     def plot(self):
         """
         plot rms in map view
         """
-<<<<<<< HEAD
-        
-=======
 
         font_dict = {'size': self.font_size + 2, 'weight': 'bold'}
->>>>>>> 65fd62b16eb5b1538f4ec1738f288778b5da66b3
         rms_1 = 1. / self.rms_max
 
         if self.tick_locator is None:
