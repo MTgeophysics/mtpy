@@ -24,10 +24,15 @@ wd = r'C:\mtpywin\mtpy\examples\model_files\ModEM_2'
 savepath = r'C:\tmp'
 
 
+
 filestem = op.join(wd,'Modular_MPI_NLCG_004')
 resid_fn=op.join(wd,filestem + '.res')
 
-probj = PlotRMSMaps(resid_fn,period_index='all')
+probj = PlotRMSMaps(resid_fn,
+                    period_index='all',
+                    rms_cmap='jet', # choose matplotlib colormap or set to None
+                    rms_max=5
+                    )
 probj.save_figure(save_path=savepath,
                   save_fig_dpi = 400 # change to your preferred figure resolution
                   )

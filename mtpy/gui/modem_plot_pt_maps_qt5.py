@@ -626,13 +626,11 @@ class ModEMPlotPTMap(QtWidgets.QMainWindow, mtplottools.MTArrows,
             axm = self.figure.add_subplot(gs[0, 1], 
                                           aspect='equal',
                                           sharex=axd, 
-                                          sharey=axd,
-                                          adjustable='datalim')
+                                          sharey=axd)
             axr = self.figure.add_subplot(gs[0, 2], 
                                           aspect='equal',
                                           sharex=axd,
-                                          sharey=axd,
-                                          adjustable='datalim')
+                                          sharey=axd)
             ax_list = [axd, axm, axr]
 #        
         else:

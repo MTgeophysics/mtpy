@@ -1,7 +1,6 @@
 tmp/*
 temp/*
 Session.vim
-MANIFEST
 build
 dist
 _build
@@ -56,7 +55,6 @@ nosetests.xml
 
 # local private
 OldWorks
-MANIFEST
 logs
 private
 localsandpit

@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+import mtpy
+
 # Check for setuptools package:
 
 try:
@@ -9,6 +11,11 @@ except ImportError:
     from distutils.core import setup
 else:
     setuptools = True
+
+LONG_DESC = """
+MTPy is an open source Python package to assist with magnetotelluric (MT) data processing, analysis,
+modelling, visualization and interpretation. 
+"""
 
 setup_kwargs = {}
 
@@ -45,8 +52,7 @@ if setuptools is False:
     # recursively scan your source tree looking for any directory with an
     # __init__.py file"
 
-setup_kwargs['packages'] = [
-                            'tests',  'tests',
+setup_kwargs['packages'] = [ 
                             'mtpy',
                             'mtpy.core',
                             'mtpy.imaging',
@@ -57,6 +63,7 @@ setup_kwargs['packages'] = [
                             'mtpy.contrib.netcdf',
                             'mtpy.processing',
                             'mtpy.analysis',
+                            #'tests', 
                             #'mtpy.test',
                             'mtpy.uofa',
                             'mtpy.usgs',
@@ -69,8 +76,19 @@ setup_kwargs['install_requires'] = ['numpy>=1.8.1',
                                      'pyproj',
                                      'configparser']
 
-setup(name="mtpy",
-	version='1.0.2',
-	description=("Python toolkit for standard MT data processing."),
+setup(
+	name="mtpy",
+	version=mtpy.__version__,
+	author="Alison Kirkby,Fei Zhang,Jared Peacock,Rakib Hassan, Jinming Duan",
+    author_email="Fei.Zhang@ga.gov.au",
+	description="Python toolkit for standard magnetotelluric data processing.",
+	long_description=LONG_DESC,
+    url="https://github.com/MTgeophysics/mtpy",
+	#data_files=[('', ['mtpy/utils/epsg.npy',]),], #this will install datafiles in wearied palce such as ~/.local/
+	include_package_data=True,
 	license="GNU GENERAL PUBLIC LICENSE v3",
+	classifiers=[
+        "Programming Language :: Python :: 3",
+        "Operating System :: OS Independent",
+        ],
 	**setup_kwargs)

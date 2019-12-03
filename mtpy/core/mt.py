@@ -1763,6 +1763,10 @@ class MT(object):
                                frequency range, anything outside and an error
                                will occur.
         :type new_freq_array: np.ndarray
+        :param period_buffer: maximum ratio of a data period and the closest
+                              interpolation period. Any points outside this
+                              ratio will be excluded from the interpolated
+                              impedance array.
 
         :returns: a new impedance object with the corresponding
                                frequencies and components.
@@ -1792,6 +1796,11 @@ class MT(object):
         # make sure the input is a numpy array
         if not isinstance(new_freq_array, np.ndarray):
             new_freq_array = np.array(new_freq_array)
+            
+        if period_buffer is not None:
+            if 0. < period_buffer < 1.:
+                period_buffer += 1.
+                print("Warning: period buffer must be > 1. Updating to",period_buffer)
 
         # check the bounds of the new frequency array
         if bounds_error:
@@ -1850,7 +1859,6 @@ class MT(object):
                                         (new_freq_array <= f.max()))[0]
                 new_f = new_freq_array[new_nz_index]
                 
-                
                 # apply period buffer
                 if type(period_buffer) in [float, int]:
                     new_f_update = []
@@ -1859,7 +1867,6 @@ class MT(object):
                         # find nearest data period
                         difference = np.abs(np.log10(ifreq) - np.log10(f))
                         fidx = np.where(difference == np.amin(difference))[0][0]
-                        
                         if max(f[fidx] / ifreq, ifreq / f[fidx]) < period_buffer:
                             new_f_update.append(ifreq)
                             new_nz_index_update.append(new_nz_index[ifidx])

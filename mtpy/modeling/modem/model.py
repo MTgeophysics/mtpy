@@ -16,6 +16,7 @@ import sys
 
 import numpy as np
 from matplotlib import pyplot as plt
+from matplotlib import colors
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from scipy import stats as stats, interpolate as spi
 
@@ -279,6 +280,7 @@ class Model(object):
         self.pad_stretch_v = 1.2
 
         self.z1_layer = 10
+        self.z_layer_rounding = None
         self.z_target_depth = 50000
         self.z_bottom = 300000
 
@@ -604,10 +606,13 @@ class Model(object):
         log_z = mtcc.make_log_increasing_array(self.z1_layer, self.z_target_depth,
                                                self.n_layers - self.pad_z - nair)
 
-        # round any values less than 100 to the same d.p. as z1_layer
-        z_nodes = np.around(log_z[log_z < 100], decimals=-int(np.floor(np.log10(self.z1_layer))))
-        # round any values greater than or equal to 100 to the nearest 100
-        z_nodes = np.append(z_nodes, np.around(log_z[log_z >= 100], decimals=-2))
+        if self.z_layer_rounding is not None:
+            z_nodes = np.around(log_z,decimals=self.z_layer_rounding)
+        else:
+            # round any values less than 100 to the same s.f. as z1_layer
+            z_nodes = np.around(log_z[log_z < 100], decimals=-int(np.floor(np.log10(self.z1_layer))))
+            # round any values greater than or equal to 100 to the nearest 100
+            z_nodes = np.append(z_nodes, np.around(log_z[log_z >= 100], decimals=-2))
 
         # index of top of padding
         itp = len(z_nodes) - 1
@@ -991,7 +996,7 @@ class Model(object):
 
         plt.show()
 
-    def plot_topograph(self):
+    def plot_topography(self):
         """
         display topography elevation data together with station locations on a cell-index N-E map
         :return:
@@ -1021,9 +1026,14 @@ class Model(object):
         # topography data image
         # plt.imshow(elev_mg) # this upside down
         # plt.imshow(elev_mg[::-1])  # this will be correct - water shadow flip of the image
+<<<<<<< HEAD
 #        imgplot = plt.imshow(self.surface_dict['topography'],
 #                             origin='lower')  # the orgin is in the lower left corner SW.
         imgplot = ax.pcolormesh(x, y, self.surface_dict['topography'])
+=======
+        x, y = np.meshgrid(self.grid_east, self.grid_north)
+        imgplot = plt.pcolormesh(x, y, self.surface_dict['topography'])  # the orgin is in the lower left corner SW.
+>>>>>>> 65fd62b16eb5b1538f4ec1738f288778b5da66b3
         divider = make_axes_locatable(ax)
         # pad = separation from figure to colorbar
         cax = divider.append_axes("right", size="3%", pad=0.2)
@@ -1050,6 +1060,7 @@ class Model(object):
 #        self._logger.debug("station grid index x: %s" % sgindex_x)
 #        self._logger.debug("station grid index y: %s" % sgindex_y)
 
+<<<<<<< HEAD
 #        ax.scatter(sgindex_x, sgindex_y, marker='v', c='b', s=2)
         ax.scatter(self.station_locations.rel_east,
                    self.station_locations.rel_north,
@@ -1058,9 +1069,60 @@ class Model(object):
         ax.set_xlabel('Easting (m)', fontdict={'size': 9, 'weight': 'bold'})
         ax.set_ylabel('Northing (m)', fontdict={'size': 9, 'weight': 'bold'})
         ax.set_title("Elevation and Stations Map")
+=======
+        #ax.scatter(sgindex_x, sgindex_y, marker='v', c='b', s=2)
+        ax.scatter(self.station_locations.rel_east,
+                   self.station_locations.rel_north, 
+                   marker='v', c='b', s=2)
+        ax.set_xlim((np.floor(self.station_locations.rel_east.min()), 
+                     np.ceil(self.station_locations.rel_east.max())))
+        ax.set_ylim((np.floor(self.station_locations.rel_north.min()), 
+                     np.ceil(self.station_locations.rel_north.max())))
+        ax.set_xlabel('Easting Cell Index', fontdict={'size': 9, 'weight': 'bold'})
+        ax.set_ylabel('Northing Cell Index', fontdict={'size': 9, 'weight': 'bold'})
+        ax.set_title("Elevation and Stations in N-E Map (Cells)")
+>>>>>>> 65fd62b16eb5b1538f4ec1738f288778b5da66b3
 
         plt.show()
-
+        
+    def plot_sealevel_resistivity(self):
+        """
+        create a quick pcolor plot of the resistivity at sea level with 
+        stations, to check if we have stations in the sea
+        
+        """
+        if self.res_model is None:
+            print("Can't plot model, please read or create model file first")
+            return        
+        
+        # index of sea level (zero level) in resistivity grid
+        sli = mtcc.nearest_index(self.sea_level,self.grid_z)
+        
+        # make a figure
+        plt.figure(figsize=(10,10))
+        # plot the resistivity model (at sea level)
+        plt.pcolormesh(self.grid_east,self.grid_north,self.res_model[:,:,sli],
+                       vmin=1,vmax=1e4,norm=colors.LogNorm(),ec='0.5',lw=0.01,
+                       cmap='bwr_r')
+        
+        # plot stations
+        if self.station_locations is None:
+            print("Can't plot stations, please read or create data file first")
+        else:
+            plt.plot(self.station_locations.rel_east,self.station_locations.rel_north,'.',color='k')
+            
+        # tidy up plot and make colorbar
+        plt.gca().set_aspect(1)
+        cbar=plt.colorbar(shrink=0.5)
+        cbar.set_label('Resistivity, $\Omega$m')
+        plt.xlabel('Grid East, relative (m)')
+        plt.ylabel('Grid North, relative (m)')
+        plt.title("Resistivity at sea level")
+        
+        
+        
+        
+        
     def write_model_file(self, **kwargs):
         """
         will write an initial file for ModEM.
@@ -1889,10 +1951,63 @@ class Model(object):
             self._logger.warn("Provided or default ns_ext not sufficient to fit stations + padding, updating extent")
             self.ns_ext = np.ceil(extent_ratio * inner_ns_ext)
 
+    def _get_xyzres(self,location_type,origin,model_epsg,model_utm_zone,clip):
+        # try getting centre location info from file
+        if type(origin) == str:
+            try:
+                origin = np.loadtxt(origin)
+            except:
+                print("Please provide origin as a list, array or tuple or as a valid filename containing this info")
+                origin = [0,0]
+        
+        # reshape the data and get grid centres
+        x,y,z = [np.mean([arr[1:], arr[:-1]],axis=0) for arr in \
+                [self.grid_east + origin[0], 
+                 self.grid_north + origin[1], self.grid_z]]
+        xsize, ysize = x.shape[0],y.shape[0]
+        x, y, z = np.meshgrid(x[clip[0]:xsize-clip[0]],y[clip[1]:ysize-clip[1]],z)
+        
+        # set format for saving data
+        fmt = ['%.1f','%.1f','%.3e']
+        
 
+        # convert to lat/long if needed
+        if location_type == 'LL':
+            if np.any(origin) == 0:
+                print("Warning, origin coordinates provided as zero, output lat/long are likely to be incorrect")
+            # project using epsg_project as preference as it is faster, but if pyproj not installed, use gdal
+            try:
+                import pyproj
+                xp,yp = gis_tools.epsg_project(x,y,model_epsg,4326)
+            except ImportError:
+                xp,yp = np.zeros_like(x),np.zeros_like(y)
+                for i in range(len(x)):
+                    yp[i],xp[i] = gis_tools.project_point_utm2ll(x[i],y[i],model_utm_zone,epsg=model_epsg)
+            # update format to accommodate lat/lon
+            fmt[:2] = ['%.6f','%.6f']
+        else:
+            xp, yp = x, y
+            
+            
+        resvals = self.res_model[clip[1]:ysize-clip[1],clip[0]:xsize-clip[0]]
+            
+        return xp, yp, z, resvals, fmt
+    
+    
+    def write_xyzres(self,savefile=None,location_type='EN',origin=[0,0],model_epsg=None,log_res=False,model_utm_zone=None,clip=[0,0]):
+        """
+        save a model file as a space delimited x y z res file
+    
+        """
+        xp, yp, z, resvals, fmt = self._get_xyzres(location_type,origin,model_epsg,model_utm_zone,clip)
+        fmt.insert(2, '%.1f')
+        xp, yp, z, resvals = xp.flatten(), yp.flatten(), z.flatten(), resvals.flatten()
+            
+        np.savetxt(savefile,np.vstack([xp,yp,z,resvals]).T,fmt=fmt)
+            
 
-    def write_xyres(self,location_type='EN',origin=[0,0],model_epsg=None,depth_index='all',
-                    savepath=None,outfile_basename='DepthSlice',log_res=False,model_utm_zone=None,clip=[0,0]):
+    def write_xyres(self,savepath=None,location_type='EN',origin=[0,0],model_epsg=None,depth_index='all',
+                    outfile_basename='DepthSlice',log_res=False,model_utm_zone=None,clip=[0,0]):
         """
         write files containing depth slice data (x, y, res for each depth)
         
@@ -1910,48 +2025,18 @@ class Model(object):
         """
         if savepath is None:
             savepath = self.save_path
-
         
-            
         # make a directory to save the files
         savepath = os.path.join(savepath,outfile_basename)
         if not os.path.exists(savepath):
             os.mkdir(savepath)
         
-        # try getting centre location info from file
-        if type(origin) == str:
-            try:
-                origin = np.loadtxt(origin)
-            except:
-                print("Please provide origin as a list, array or tuple or as a valid filename containing this info")
-                origin = [0,0]
+
+        xp, yp, z, resvals, fmt = self._get_xyzres(location_type,origin,model_epsg,model_utm_zone,clip)
+        xp = xp[:,:,0].flatten()
+        yp = yp[:,:,0].flatten()
         
-        # reshape the data
-        x,y,z = [np.mean([arr[1:], arr[:-1]],axis=0) for arr in \
-                [self.grid_east + origin[0], 
-                 self.grid_north + origin[1], self.grid_z]]
-        x,y = [arr.flatten() for arr in np.meshgrid(x[clip[0]:-clip[0]],y[clip[1]:-clip[1]])]
-        
-        # set format for saving data
-        fmt = ['%.1f','%.1f','%.3e']
-        
-        # convert to lat/long if needed
-        if location_type == 'LL':
-            if np.any(origin) == 0:
-                print("Warning, origin coordinates provided as zero, output lat/long are likely to be incorrect")
-            # project using epsg_project as preference as it is faster, but if pyproj not installed, use gdal
-            try:
-                import pyproj
-                xp,yp = gis_tools.epsg_project(x,y,model_epsg,4326)
-            except ImportError:
-                xp,yp = np.zeros_like(x),np.zeros_like(y)
-                for i in range(len(x)):
-                    yp[i],xp[i] = gis_tools.project_point_utm2ll(x[i],y[i],model_utm_zone,epsg=model_epsg)
-            # update format to accommodate lat/lon
-            fmt[:2] = ['%.6f','%.6f']
-        else:
-            xp,yp = x,y
-            
+
         # make depth indices into a list
         if depth_index == 'all':
             depthindices = list(range(len(z)))
@@ -1960,9 +2045,13 @@ class Model(object):
         else:
             depthindices = [depth_index]
         
+
+        
         for k in depthindices:
             fname = os.path.join(savepath,outfile_basename+'_%1im.xyz'%z[k])
-            vals = self.res_model[clip[0]:-clip[0],clip[1]:-clip[-1],k].flatten()
+            
+            # get relevant depth slice
+            vals = resvals[:,:,k].flatten()
 
             if log_res:
                 vals = np.log10(vals)

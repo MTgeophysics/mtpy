@@ -30,7 +30,7 @@ from mtpy.modeling.modem.station import Stations
 from mtpy.modeling.modem.model import Model
 
 try:
-    from evtk.hl import pointsToVTK
+    from pyevtk.hl import pointsToVTK
 except ImportError:
     print('If you want to write a vtk file for 3d viewing, you need download '
           'and install evtk from https://bitbucket.org/pauloh/pyevtk', file=sys.stderr)
@@ -117,9 +117,14 @@ class Data(object):
                                 * 'median'  sets error to
                                             error_value_z * median([Zxx, Zxy, Zyx, Zyy])
                                             (non zeros)
+                           A 2x2 numpy array of error_type_z can be specified to
+                           explicitly set the error_type_z for each component.
 
     error_value_z          percentage to multiply Z by to set error
                            *default* is 5 for 5% of Z as error
+                           A 2x2 numpy array of values can be specified to
+                           explicitly set the error_value_z for each component.
+
     error_value_tipper     absolute error between 0 and 1.
     fn_basename            basename of data file. *default* is 'ModEM_Data.dat'
     formatting             ['1' | '2'], format of the output data file, *default* is '1'
@@ -309,7 +314,7 @@ class Data(object):
 
         self._z_shape = (1, 2, 2)
         self._t_shape = (1, 1, 2)
-        self._dtype = [('station', '|S10'),
+        self._dtype = [('station', '|U10'),
                        ('lat', np.float),
                        ('lon', np.float),
                        ('elev', np.float),
@@ -390,7 +395,7 @@ class Data(object):
         self._z_shape = z_shape
         self._t_shape = t_shape
 
-        self._dtype = [('station', '|S10'),
+        self._dtype = [('station', '|U10'),
                        ('lat', np.float),
                        ('lon', np.float),
                        ('elev', np.float),
@@ -413,14 +418,20 @@ class Data(object):
         reset the header sring for file
         """
         
-        if 'separate' in error_type:
-            h_str = ','.join(['# Created using MTpy calculated {}error floors of {1:.0f}%,{1:.0f}%,{1:.0f}%,{1:.0f}%',
-                          ' data rotated {2:.1f}_deg clockwise from N\n'])
+        h_str = []
+        if (np.atleast_1d(error_type).ndim == 2):
+            h_str = '# Created using MTpy calculated {},{},{},{} '.format(error_type[0,0], error_type[0,1], error_type[1,0], error_type[1,1])
         else:
-            h_str = ','.join(['# Created using MTpy calculated {0} error of {1:.0f}%',
-                          ' data rotated {2:.1f}_deg clockwise from N\n'])
+            h_str = '# Created using MTpy calculated {} '.format(error_type)
+                          
+        
+        if (np.atleast_1d(error_value).ndim == 2):
+            h_str += 'error floors of {0:.0f}%,{1:.0f}%,{2:.0f}%,{3:.0f}%, data rotated {4:.1f}_deg clockwise from N\n'
+            return h_str.format(error_value[0,0], error_value[0,1], error_value[1,0], error_value[1,1], rotation_angle)
+        else:
+            h_str += 'error of {1:.0f}% data rotated {2:.1f}_deg clockwise from N\n'
 
-        return h_str.format(error_type, error_value, rotation_angle)
+            return h_str.format(error_type, error_value, rotation_angle)
 
     def get_mt_dict(self):
         """
@@ -451,7 +462,8 @@ class Data(object):
 
         # rotate locations if needed
         if self._rotation_angle != 0:
-            stations_obj.rotate_stations(self._rotation_angle)
+            # rotate stations the opposite way to the data
+            stations_obj.rotate_stations(-self._rotation_angle)
 
         # fill data array
         self.data_array[:]['station'] = stations_obj.station
@@ -522,17 +534,19 @@ class Data(object):
         if self._rotation_angle == rotation_angle:
             return
 
+#        self._logger.info('Changing rotation angle from {0:.1f} to {1:.1f}'.format(
+#            self._rotation_angle, rotation_angle))
+#
+#        self._rotation_angle = -self._rotation_angle + rotation_angle
+#
+#        if self.rotation_angle == 0:
+#            return
+
         self._logger.info('Changing rotation angle from {0:.1f} to {1:.1f}'.format(
             self._rotation_angle, rotation_angle))
-
-        self._rotation_angle = -self._rotation_angle + rotation_angle
-
-        if self.rotation_angle == 0:
-            return
-
-        self._logger.info('Changing rotation angle from {0:.1f} to {1:.1f}'.format(
-            self._rotation_angle, rotation_angle))
+        
         self._rotation_angle = rotation_angle
+        
 
         if self.mt_dict is None:
             self.get_mt_dict()
@@ -543,6 +557,8 @@ class Data(object):
             angle_to_rotate = self._rotation_angle - mt_obj.Z.rotation_angle
             mt_obj.Z.rotate(angle_to_rotate)
             mt_obj.Tipper.rotate(angle_to_rotate)
+
+
 
         self._logger.info('Data rotated to align with {0:.1f} deg clockwise from N'.format(
             self._rotation_angle))
@@ -719,7 +735,10 @@ class Data(object):
                 # in this case the below interpolate_impedance_tensor function will degenerate into a same-freq set.
                 
             if len(interp_periods) > 0:  # not empty
-                interp_z, interp_t = mt_obj.interpolate(1. / interp_periods, period_buffer=self.period_buffer)  # ,bounds_error=False)
+                interp_z, interp_t = mt_obj.interpolate(1. / interp_periods, period_buffer=self.period_buffer ,bounds_error=False)  #)
+                # set rotation angle
+                interp_z.rotation_angle = self.rotation_angle*np.ones(len(interp_z.z))
+                interp_t.rotation_angle = self.rotation_angle*np.ones(len(interp_t.tipper))
                 #                interp_z, interp_t = mt_obj.interpolate(1./interp_periods)
                 for kk, ff in enumerate(interp_periods):
                     jj = np.where(self.period_list == ff)[0][0]
@@ -847,6 +866,14 @@ class Data(object):
         else:
             raise DataError("Unsupported error type (tipper): {}".format(self.error_type_tipper))
 
+        # consistency checks
+        error_type_z_list = np.atleast_1d(self.error_type_z)
+
+        if (error_type_z_list.size != 1 and error_type_z_list.size != 4):
+            raise DataError('Either specify a single error_type_z for all components, or ' \
+                            'a 2x2 numpy array of error_type_z.')
+        # end if
+
         # compute error for z
         err_value = self.error_value_z / 100.
         for ss in range(self.data_array.shape[0]):
@@ -861,46 +888,61 @@ class Data(object):
                 if d.sum() == 0.0:  # YG: only works if all d >= 0
                     continue
 
-                if 'egbert' in self.error_type_z:
-                    # if both components masked, then take error floor from
-                    # max of z_xx or z_yy
-                    if (d_xy==0.0 and d_yx==0.0):
-                        err = err_value * np.max([d_xx,d_yy])
-                    # else use the off diagonals depending on data availability
+                err = np.zeros((error_type_z_list.size,
+                                np.atleast_2d(err_value).shape[0],
+                                np.atleast_2d(err_value).shape[1]))
+                for ei, error_type_z in enumerate(error_type_z_list.flatten()):
+                    if 'egbert' in error_type_z:
+                        # if both components masked, then take error floor from
+                        # max of z_xx or z_yy
+                        if (d_xy==0.0 and d_yx==0.0):
+                            err[ei] = err_value * np.max([d_xx,d_yy])
+                        # else use the off diagonals depending on data availability
+                        else:
+                            if d_xy == 0.0:
+                                d_xy = d_yx
+                            if d_yx == 0.0:
+                                d_yx = d_xy
+                            err[ei] = err_value * np.sqrt(d_xy * d_yx)
+
+                    elif 'median' in error_type_z:
+                        err[ei] = err_value * np.median(d[nz])
+
+                    elif 'mean_od' in error_type_z:
+                        dod = np.array([d_xy, d_yx])
+                        nzod = np.nonzero(dod)
+                        err[ei] = err_value * np.mean(dod[nzod])
+
+                    elif 'eigen' in error_type_z:
+                        d2d = d.reshape((2, 2))
+                        err[ei] = err_value * np.abs(np.linalg.eigvals(d2d)).mean()
+                        if np.atleast_1d(err[ei]).sum() == 0:
+                            err[ei] = err_value * d[nz].mean()
+
+                    elif 'off_diagonals' in error_type_z:
+                        # apply same error to xy and xx, and to yx and yy
+                        # value is a % of xy and yx respectively
+                        err[ei] = np.array([[d_xy, d_xy],[d_yx, d_yx]])*err_value
+
+                    elif 'percent' in error_type_z:
+                        # apply separate error floors to each component
+                        err[ei] = err_value * np.abs(d[ei])
                     else:
-                        if d_xy == 0.0:
-                            d_xy = d_yx
-                        if d_yx == 0.0:
-                            d_yx = d_xy
-                        err = err_value * np.sqrt(d_xy * d_yx)
+                        raise DataError('error type (z) {0} not understood'.format(error_type_z))
+                # end for
 
-                elif 'median' in self.error_type_z:
-                    err = err_value * np.median(d[nz])
-
-                elif 'mean_od' in self.error_type_z:
-                    d = np.array([d_xy, d_yx])
-                    nz = np.nonzero(d)
-                    err = err_value * np.mean(d[nz])
-
-                elif 'eigen' in self.error_type_z:
-                    d = d.reshape((2, 2))
-                    err = err_value * np.abs(np.linalg.eigvals(d)).mean()
-                    if err == 0:
-                        err = err_value * d.flatten()[nz].mean()
-                
-                elif 'off_diagonals' in self.error_type_z:
-                    # apply same error to xy and xx, and to yx and yy
-                    # value is a % of xy and yx respectively
-                    err = np.array([[d_xy, d_xy],[d_yx, d_yx]])*err_value
-                
-                elif 'separate' in self.error_type_z:
-                    # apply separate error floors to each component
-                    d = d.reshape((2, 2))
-                    err = err_value * d
+                if(error_type_z_list.size == 1):
+                    self.data_array['z_inv_err'][ss, ff, :, :] = err[0]
                 else:
-                    raise DataError('error type (z) {0} not understood'.format(self.error_type_z))
-
-                self.data_array['z_inv_err'][ss, ff, :, :] = err
+                    for ei in np.arange(error_type_z_list.size):
+                        ix, iy = np.divmod(ei, 2)
+                        if (err.shape[1] > 1):
+                            self.data_array['z_inv_err'][ss, ff, ix, iy] = err[ei, ix, iy]
+                        else:
+                            self.data_array['z_inv_err'][ss, ff, ix, iy] = err[ei, 0, 0]
+                        # end if
+                    # end for
+                # end if
 
         # if there is an error floor
         if 'floor' in self.error_type_z:
@@ -1029,7 +1071,7 @@ class Data(object):
                         if zz.real != 0.0 and zz.imag != 0.0 and zz.real != 1e32 and zz.imag != 1e32:
                             if self.formatting == '1':
                                 per = '{0:<12.5e}'.format(self.period_list[ff])
-                                sta = '{0:>7}'.format(self.data_array[ss]['station'].decode('UTF-8'))
+                                sta = '{0:>7}'.format(self.data_array[ss]['station'])#.decode('UTF-8'))
                                 lat = '{0:> 9.3f}'.format(self.data_array[ss]['lat'])
                                 lon = '{0:> 9.3f}'.format(self.data_array[ss]['lon'])
                                 eas = '{0:> 12.3f}'.format(self.data_array[ss]['rel_east'])
@@ -1273,7 +1315,7 @@ class Data(object):
         ws_data.z_err_map = error_map
         ws_data.z_err = 'data'
         z_shape = (self.period_list.size, 2, 2)
-        data_dtype = [('station', '|S10'),
+        data_dtype = [('station', '|U10'),
                       ('east', np.float),
                       ('north', np.float),
                       ('z_data', (np.complex, z_shape)),
@@ -1364,7 +1406,7 @@ class Data(object):
                         value_list = [float(value) for value in
                                       dline[1:].strip().split()]
 
-                        self.center_point = np.recarray(1, dtype=[('station', '|S10'),
+                        self.center_point = np.recarray(1, dtype=[('station', '|U10'),
                                                                   ('lat', np.float),
                                                                   ('lon', np.float),
                                                                   ('elev', np.float),
@@ -1530,7 +1572,7 @@ class Data(object):
             self.mt_dict[s_key].pt.set_z_object(mt_obj.Z)
             self.mt_dict[s_key].Tipper.compute_amp_phase()
             self.mt_dict[s_key].Tipper.compute_mag_direction()
-
+            
             self.data_array[ii]['station'] = mt_obj.station
             self.data_array[ii]['lat'] = mt_obj.lat
             self.data_array[ii]['lon'] = mt_obj.lon
@@ -1550,6 +1592,7 @@ class Data(object):
             self.data_array[ii]['tip_err'][:] = mt_obj.Tipper.tipper_err
             self.data_array[ii]['tip_inv_err'][:] = mt_obj.Tipper.tipper_err
 
+        
         # option to provide real world coordinates in eastings/northings
         # (ModEM data file contains real world center in lat/lon but projection
         # is not provided so utm is assumed, causing errors when points cross

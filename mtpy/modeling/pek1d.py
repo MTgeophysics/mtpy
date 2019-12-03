@@ -9,8 +9,8 @@ from __future__ import print_function
 import os
 import os.path as op
 import mtpy.utils.filehandling as fh
-import mtpy.utils.elevation_data as mted
-from . import pek1dclasses as pek1dc
+#import mtpy.utils.elevation_data as mted
+import pek1dclasses as pek1dc
 from sys import argv
 from subprocess import call
 import time
@@ -91,13 +91,14 @@ def parse_arguments(arguments):
     for i in [0, 1, 3, 5, 6]:
         args.run_input[i] = int(args.run_input[i])
 
-    if len(args.errorfloor) == 1:
-        args.errorfloor = args.errorfloor[0]
-    elif (len(args.errorfloor) == 2) or (len(args.errorfloor) == 3):
-        ef = args.errorfloor[:2]
-        args.errorfloor = np.array([ef, ef[::-1]])
-    elif len(args.errorfloor) == 4:
-        args.errorfloor = np.reshape(args.errorfloor, [2, 2])
+    if np.iterable(args.errorfloor):
+        if len(args.errorfloor) == 1:
+            args.errorfloor = args.errorfloor[0]
+        elif (len(args.errorfloor) == 2) or (len(args.errorfloor) == 3):
+            ef = args.errorfloor[:2]
+            args.errorfloor = np.array([ef, ef[::-1]])
+        elif len(args.errorfloor) == 4:
+            args.errorfloor = np.reshape(args.errorfloor, [2, 2])
 
     return args
 
@@ -314,7 +315,11 @@ def build_run():
     runs one inversion per processor, make sure you have enough processors!
 
     """
-    from mpi4py import MPI
+    try:
+        from mpi4py import MPI
+        mpi_import = True
+    except:
+        mpi_import = False
 
     # get command line arguments as a dictionary
     input_parameters = update_inputs()
@@ -328,7 +333,10 @@ def build_run():
                         'inmodel_modeldir']
 
     # establish the rank of the computer
-    rank = MPI.COMM_WORLD.Get_rank()
+    if mpi_import:
+        rank = MPI.COMM_WORLD.Get_rank()
+    else:
+        rank = 0
 
     # create a list of edi files to model
     edi_list = create_filelist(input_parameters['working_directory'],

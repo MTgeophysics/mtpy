@@ -25,10 +25,20 @@ class Sgrid():
 
     """
 
-    def __init__(self, workdir='.', **kwargs):
-        self.workdir = workdir
+    def __init__(self, **kwargs):
+        self.workdir = kwargs.pop('workdir',None)
         self.fn = kwargs.pop('fn', 'model')
-        self.property_fn = self.fn + '__ascii@@'
+        
+        # set workdir to directory of fn if not None
+        if self.workdir is None:
+            print("workdir is None")
+            if self.fn is not None:
+                try:
+                    self.workdir = os.path.dirname(self.fn)
+                    print("setting filepath to fn path")
+                except:
+                    self.workdir = '.'
+        self.ascii_data_file = self.fn.replace('.sg','') + '__ascii@@'
         self.property_name = 'Resistivity'
         self.grid_xyz = kwargs.pop('grid_xyz', None)
         if self.grid_xyz is not None:
@@ -113,7 +123,7 @@ class Sgrid():
                                                           ny, nx, nz),
                                                       'PROP_ALIGNMENT CELLS',
                                                       'ASCII_DATA_FILE {}'.format(
-                                                          op.basename(self.property_fn)),
+                                                          op.basename(self.ascii_data_file)),
                                                       '',
                                                       '',
                                                       'PROPERTY 1 "{}"'.format(
@@ -167,7 +177,7 @@ class Sgrid():
 
         # write property values
         np.savetxt(
-            os.path.join(self.workdir,self.property_fn),
+            os.path.join(self.workdir,self.ascii_data_file),
             data,
             header=datahdr,
             comments='*',

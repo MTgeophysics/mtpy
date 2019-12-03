@@ -24,10 +24,6 @@ import matplotlib.gridspec as gridspec
 
 import mtpy.imaging.mtcolors as mtcl
 
-
-# ==============================================================================
-
-
 # ==============================================================================
 #  Plot apparent resistivity and phase
 # ==============================================================================
@@ -38,7 +34,7 @@ from mtpy.imaging.mtplottools import PlotSettings
 class PlotMTResponse(PlotSettings):
     """
     Plots Resistivity and phase for the different modes of the MT response.  At
-    the moment is supports the input of an .edi file. Other formats that will
+    the moment it supports the input of an .edi file. Other formats that will
     be supported are the impedance tensor and errors with an array of periods
     and .j format.
 
@@ -197,7 +193,7 @@ class PlotMTResponse(PlotSettings):
             >>> mt_obj = MT(edifile)
             >>> rp1 = PlotMTResponse(mt_obj.Z, plot_num=2)
             >>> # plots all 4 components
-            >>> rp1 = PlotMTResponse(mt_obj.Z, plot_tipper='yr')
+            >>> rp1 = PlotMTResponse(mt_obj.Z,  t_object=mt_obj.Tipper,  plot_tipper='yr')
             >>> # plots the real part of the tipper
 
     Attributes:
@@ -430,7 +426,7 @@ class PlotMTResponse(PlotSettings):
         self.phase_limits = None
         self.tipper_limits = None
         self.pt_limits = None
-        
+
         # layout params
         self.show_resphase_xticklabels = False
 
@@ -458,12 +454,16 @@ class PlotMTResponse(PlotSettings):
         else:
             return None
 
-    def plot(self, show=True):
+    def plot(self, show=True, overlay_mt_obj=None):
         """
         plotResPhase(filename,fig_num) will plot the apparent resistivity and 
         phase for a single station. 
 
         """
+        if overlay_mt_obj is None: # original case, no overlay edis
+            Z2 = None
+        else:
+            Z2 = overlay_mt_obj.Z
 
         label_dict = dict([(ii, '$10^{' + str(ii) + '}$') for ii in range(-20, 21)])
         ckdict = {'phiminang': r'$\Phi_{min}$ (deg)',
@@ -479,12 +479,13 @@ class PlotMTResponse(PlotSettings):
                   'geometric_mean': r'$\sqrt{\Phi_{min} \cdot \Phi_{max}}$'}
 
         if self.plot_tipper.find('y') == 0:
-            if np.all(self.Tipper.tipper == 0 + 0j) or self.Tipper is None:
+            if self.Tipper is None or np.all(self.Tipper.tipper == 0 + 0j):
                 print('No Tipper data for station {0}'.format(self.station))
                 self.plot_tipper = 'n'
 
         if self.plot_pt == 'y':
-            if np.all(self.Z.z == 0 + 0j) or self.Z is None:
+            #if np.all(self.Z.z == 0 + 0j) or self.Z is None:
+            if self.pt is None: # no phase tensor object provided
                 print('No Tipper data for station {0}'.format(self.station))
                 self.plot_pt = 'n'
 
@@ -593,7 +594,7 @@ class PlotMTResponse(PlotSettings):
             self.axpt.yaxis.set_label_coords(labelcoords[0], labelcoords[1])
         except KeyError:
             pass
-        
+
         nz_xx = np.nonzero(self.Z.z[:, 0, 0])
         nz_xy = np.nonzero(self.Z.z[:, 0, 1])
         nz_yx = np.nonzero(self.Z.z[:, 1, 0])
@@ -603,7 +604,7 @@ class PlotMTResponse(PlotSettings):
             # NOTE the following lines seems not have any effect anyway
             nz_tx = np.nonzero(self.Tipper.tipper[:, 0, 0])
             nz_ty = np.nonzero(self.Tipper.tipper[:, 0, 1])
-        
+
         # ---------plot the apparent resistivity--------------------------------
         # --> plot as error bars and just as points xy, yx
         # res_xy
@@ -618,6 +619,21 @@ class PlotMTResponse(PlotSettings):
                                        ls=self.xy_ls,
                                        lw=self.lw,
                                        yerr=self.Z.res_err_xy[nz_xy],
+                                       capsize=self.marker_size,
+                                       capthick=self.lw)
+        # FZ: overlay edi logic
+        if(Z2 is not None):
+            self.ebxyr2=self.axr.errorbar(self.period[nz_xy],
+                                       Z2.res_xy[nz_xy],
+                                       marker=self.xy_marker,
+                                       ms=0.5*self.marker_size,
+                                       mew=self.lw,
+                                       mec=self.xy_color, # (0.5,0.5,0.9),
+                                       color=self.xy_color,
+                                       ecolor=self.xy_color,
+                                       ls=self.xy_ls,
+                                       lw=0.5*self.lw,
+                                       yerr=Z2.res_err_xy[nz_xy],
                                        capsize=self.marker_size,
                                        capthick=self.lw)
 
@@ -636,6 +652,21 @@ class PlotMTResponse(PlotSettings):
                                        capsize=self.marker_size,
                                        capthick=self.lw)
 
+        if (Z2 is not None):
+            self.ebyxr2 = self.axr.errorbar(self.period[nz_yx],
+                                           Z2.res_yx[nz_yx],
+                                           marker=self.yx_marker,
+                                           ms=0.5*self.marker_size,
+                                           mew=self.lw,
+                                           mec=self.yx_color,
+                                           color=self.yx_color,
+                                           ecolor=self.yx_color,
+                                           ls=self.yx_ls,
+                                           lw=self.lw,
+                                           yerr=Z2.res_err_yx[nz_yx],
+                                           capsize=0.5*self.marker_size,
+                                           capthick=self.lw)
+
         # --> set axes properties
         plt.setp(self.axr.get_xticklabels(), visible=False)
         self.axr.set_ylabel('App. Res. ($\mathbf{\Omega \cdot m}$)',
@@ -646,6 +677,7 @@ class PlotMTResponse(PlotSettings):
         self.axr.set_ylim(self.res_limits)
         self.axr.grid(True, alpha=.25, which='both', color=(.25, .25, .25),
                       lw=.25)
+
         self.axr.legend((self.ebxyr[0], self.ebyxr[0]),
                         ('$Z_{xy}$', '$Z_{yx}$'),
                         loc=3,
@@ -655,6 +687,15 @@ class PlotMTResponse(PlotSettings):
                         handletextpad=.2,
                         borderpad=.02)
 
+        if Z2 is not None:
+            self.axr.legend((self.ebxyr[0], self.ebyxr[0], self.ebxyr2, self.ebyxr2),
+                            ('$Z_{xy}$', '$Z_{yx}$', '$Z2_{xy}$','$Z2_{yx}$'),
+                            loc=3,
+                            markerscale=1,
+                            borderaxespad=.01,
+                            labelspacing=.07,
+                            handletextpad=.2,
+                            borderpad=.02)
         # -----Plot the phase---------------------------------------------------
         # phase_xy
         self.ebxyp = self.axp.errorbar(self.period[nz_xy],
@@ -853,11 +894,11 @@ class PlotMTResponse(PlotSettings):
 
             # get the properties to color the ellipses by
             if self.ellipse_colorby == 'phiminang' or \
-                            self.ellipse_colorby == 'phimin':
+                    self.ellipse_colorby == 'phimin':
                 colorarray = self.pt.phimin
 
             elif self.ellipse_colorby == 'phimaxang' or \
-                            self.ellipse_colorby == 'phimax':
+                    self.ellipse_colorby == 'phimax':
                 colorarray = self.pt.phimax
 
 
@@ -866,7 +907,7 @@ class PlotMTResponse(PlotSettings):
 
 
             elif self.ellipse_colorby == 'skew' or \
-                            self.ellipse_colorby == 'skew_seg':
+                    self.ellipse_colorby == 'skew_seg':
                 colorarray = self.pt.beta
 
             elif self.ellipse_colorby == 'ellipticity':
@@ -1023,6 +1064,36 @@ class PlotMTResponse(PlotSettings):
                                             yerr=self.Z.res_err_yy[nz_yy],
                                             capsize=self.marker_size,
                                             capthick=self.lw)
+            if Z2 is not None:
+                # res_xx of Z2, with smaller marker size
+                self.ebxxr2 = self.axr2.errorbar(self.period[nz_xx],
+                                                Z2.res_xx[nz_xx],
+                                                marker=self.xy_marker,
+                                                ms=0.5*self.marker_size,
+                                                mew=self.lw,
+                                                mec=self.xy_color,
+                                                color=self.xy_color,
+                                                ecolor=self.xy_color,
+                                                ls=self.xy_ls,
+                                                lw=self.lw,
+                                                yerr=Z2.res_err_xx[nz_xx],
+                                                capsize=0.5*self.marker_size,
+                                                capthick=self.lw)
+
+                # res_yy
+                self.ebyyr2 = self.axr2.errorbar(self.period[nz_yy],
+                                                Z2.res_yy[nz_yy],
+                                                marker=self.yx_marker,
+                                                ms=0.5*self.marker_size,
+                                                mew=self.lw,
+                                                mec=self.yx_color,
+                                                color=self.yx_color,
+                                                ecolor=self.yx_color,
+                                                ls=self.yx_ls,
+                                                lw=self.lw,
+                                                yerr=Z2.res_err_yy[nz_yy],
+                                                capsize=0.5*self.marker_size,
+                                                capthick=self.lw)
 
             # --> set axes properties
             plt.setp(self.axr2.get_xticklabels(), visible=False)
@@ -1034,13 +1105,23 @@ class PlotMTResponse(PlotSettings):
                            color=(.25, .25, .25),
                            lw=.25)
 
-            self.axr2.legend((self.ebxxr[0], self.ebyyr[0]),
-                             ('$Z_{xx}$', '$Z_{yy}$'),
-                             loc=3, markerscale=1,
-                             borderaxespad=.01,
-                             labelspacing=.07,
-                             handletextpad=.2,
-                             borderpad=.02)
+            if Z2 is None:
+                self.axr2.legend((self.ebxxr[0], self.ebyyr[0]),
+                                 ('$Z_{xx}$', '$Z_{yy}$'),
+                                 loc=3, markerscale=1,
+                                 borderaxespad=.01,
+                                 labelspacing=.07,
+                                 handletextpad=.2,
+                                 borderpad=.02)
+
+            else:
+                self.axr2.legend((self.ebxxr[0], self.ebyyr[0], self.ebxxr2[0], self.ebyyr2[0]),
+                                 ('$Z_{xx}$', '$Z_{yy}$', '$Z2_{xx}$', '$Z2_{yy}$'),
+                                 loc=3, markerscale=1,
+                                 borderaxespad=.01,
+                                 labelspacing=.07,
+                                 handletextpad=.2,
+                                 borderpad=.02)
 
             # -----Plot the phase-----------------------------------------------
             self.axp2 = self.fig.add_subplot(gs[1, 1], sharex=self.axr)
@@ -1108,6 +1189,20 @@ class PlotMTResponse(PlotSettings):
                                             yerr=self.Z.res_det_err,
                                             capsize=self.marker_size,
                                             capthick=self.lw)
+            if Z2 is not None:
+                self.ebdetr2 = self.axr.errorbar(self.period,
+                                                Z2.res_det,
+                                                marker=self.det_marker,
+                                                ms=0.5*self.marker_size,
+                                                mew=self.lw,
+                                                mec=self.det_color,
+                                                color=self.det_color,
+                                                ecolor=self.det_color,
+                                                ls=self.det_ls,
+                                                lw=self.lw,
+                                                yerr=Z2.res_det_err,
+                                                capsize=0.5*self.marker_size,
+                                                capthick=self.lw)
 
             # phase_det
             self.ebdetp = self.axp.errorbar(self.period,
@@ -1133,21 +1228,31 @@ class PlotMTResponse(PlotSettings):
                             handletextpad=.2,
                             borderpad=.02)
 
+            if Z2 is not None:
+                self.axr.legend((self.ebxyr[0], self.ebyxr[0], self.ebdetr[0], self.ebxyr2[0], self.ebyxr2[0], self.ebdetr2[0],),
+                                ('$Z_{xy}$', '$Z_{yx}$','$\det(\mathbf{\hat{Z}})$', '$Z2_{xy}$','$Z2_{yx}$','$\det(\mathbf{\hat{Z2}})$'),
+                                loc=3,
+                                markerscale=1,
+                                borderaxespad=.01,
+                                labelspacing=.07,
+                                handletextpad=.2,
+                                borderpad=.02)
+
         if self.show_resphase_xticklabels:
-            if self.plot_num in [1,3]:
+            if self.plot_num in [1, 3]:
                 gs.update(hspace=0.2, wspace=.15, left=.1)
             else:
                 gs.update(hspace=0.2, wspace=.15, left=.07)
                 plt.setp(self.axp2.xaxis.get_ticklabels(), visible=True)
                 plt.setp(self.axr2.xaxis.get_ticklabels(), visible=True)
-                self.axr2.tick_params(axis='x',pad=2,direction='in',which='both',labelsize=self.font_size-1)
-                self.axp2.tick_params(axis='x',pad=2,direction='in',which='both',labelsize=self.font_size-1)
-                self.axp2.set_xlabel('Period (s)',fontsize=self.font_size-1,labelpad=0)#
+                self.axr2.tick_params(axis='x', pad=2, direction='in', which='both', labelsize=self.font_size - 1)
+                self.axp2.tick_params(axis='x', pad=2, direction='in', which='both', labelsize=self.font_size - 1)
+                self.axp2.set_xlabel('Period (s)', fontsize=self.font_size - 1, labelpad=0)  #
             plt.setp(self.axr.xaxis.get_ticklabels(), visible=True)
             plt.setp(self.axp.xaxis.get_ticklabels(), visible=True)
-            self.axr.tick_params(axis='x',pad=2,direction='in',which='both',labelsize=self.font_size-1)
-            self.axp.tick_params(axis='x',pad=2,direction='in',which='both',labelsize=self.font_size-1)
-#            self.axp.set_xlabel('Period (s)',fontsize=self.font_size-2,labelpad=0)
+            self.axr.tick_params(axis='x', pad=2, direction='in', which='both', labelsize=self.font_size - 1)
+            self.axp.tick_params(axis='x', pad=2, direction='in', which='both', labelsize=self.font_size - 1)
+        #            self.axp.set_xlabel('Period (s)',fontsize=self.font_size-2,labelpad=0)
 
         # make plot_title and show
         if self.plot_title is None:
@@ -1212,7 +1317,7 @@ class PlotMTResponse(PlotSettings):
         else:
             save_fn = os.path.join(save_fn, self.station + '_ResPhase.' +
                                    file_format)
-                                   
+
         self.fig.savefig(save_fn, dpi=fig_dpi, format=file_format,
                          orientation=orientation)
 
@@ -1269,3 +1374,50 @@ class PlotMTResponse(PlotSettings):
 
         return "Plots Resistivity and phase for the different modes of the" + \
                "MT response."
+
+#########################################################
+# Plot the data from one or two EDI files.
+# python /c/Githubz/mtpy/mtpy/imaging/plot_mt_response.py /c/Githubz/mtpy/data/edifiles/15125A.edi
+# OR
+# python /c/Githubz/mtpy/mtpy/imaging/plot_mt_response.py /c/Githubz/mtpy/data/edifiles/15125A.edi /c/Githubz/mtpy/data/edifiles/15129A.edi
+####################################################################
+if __name__ == "__main__":
+    import sys
+    from mtpy.core.mt import MT
+
+    if len(sys.argv)<2:
+        print("USAGE: python %s edifile1 [edifile2]"%sys.argv[0])
+        sys.exit(1)
+    elif len(sys.argv) == 2: # one edi file provided
+        edifile = sys.argv[1]  # r"C:/Githubz/mtpy/data/edifiles/15125A.edi"
+        mt_obj = MT(edifile)
+
+        rp1 = PlotMTResponse(z_object=mt_obj.Z,  # this is mandatory
+                             # t_object=mt_obj.Tipper,
+                             # pt_obj=mt_obj.pt,
+                             station=mt_obj.station,
+                             plot_tipper='yr',  # plots the real part of the tipper
+                             plot_num=3)  # plot_num =1 xy + yx; 2 all; 3 xy yx det
+
+        # rp1.xy_color = (.5,.5,.9)
+        # rp1.xy_marker = '*'
+        # rp1.redraw_plot()
+    elif(len(sys.argv)==3):    # overlay 2 edi files provided
+        edifile = sys.argv[1]  # r"C:/Githubz/mtpy/data/edifiles/15125A.edi"
+        mt_obj = MT(edifile)
+        edifile2 = sys.argv[2]  # r"C:/Githubz/mtpy/data/edifiles/15126A.edi"
+        mt_obj2 = MT(edifile2)
+
+        rp1 = PlotMTResponse(z_object=mt_obj.Z,  # this is mandatory
+                             # t_object=mt_obj.Tipper,
+                             # pt_obj=mt_obj.pt,
+                             station=mt_obj.station ,
+                             plot_yn='n',
+                             plot_tipper='yr',  # plots the real part of the tipper
+                             plot_num=3)  # plot_num =1 xy + yx; 2 all; 3 xy yx det
+
+
+        rp1.station = rp1.station + " and " + mt_obj2.station
+        rp1.plot(overlay_mt_obj=mt_obj2)
+
+
