@@ -314,14 +314,11 @@ class MTTS(object):
     @property
     def start_time_epoch_sec(self):
         """start time in epoch seconds"""
-        if self.start_time_utc is None:
-            return None
+        if self._check_for_index():
+            if isinstance(self._ts.index[0], int):
+                return None
         else:
-            if self._check_for_index():
-                if isinstance(self._ts.index[0], int):
-                    return None
-            else:
-                return self.ts.index[0].timestamp()
+            return self.ts.index[0].timestamp()
         
     @start_time_epoch_sec.setter
     def start_time_epoch_sec(self, epoch_sec):
@@ -332,7 +329,6 @@ class MTTS(object):
         
         Resets how ts data frame is indexed.
         """
-        
         try:
             epoch_sec = float(epoch_sec)
         except ValueError:
@@ -342,6 +338,28 @@ class MTTS(object):
         # these should be self cosistent
         if self.ts.index[0] != dt_struct:
             self.start_time_utc = dt_struct
+            
+    @property
+    def stop_time_epoch_sec(self):
+        """
+        End time in epoch seconds
+        """
+        if self._check_for_index():
+            if isinstance(self._ts.index[-1], int):
+                return None
+        else:
+            return self.ts.index[-1].timestamp()
+        
+    @property
+    def stop_time_utc(self):
+        """
+        End time in UTC
+        """
+        if self._check_for_index():
+            if isinstance(self._ts.index[-1], int):
+                return None
+            else:
+                return self._ts.index[-1].isoformat()
                 
     def _set_dt_index(self, start_time, sampling_rate):
         """
