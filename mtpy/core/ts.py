@@ -102,7 +102,6 @@ class MTTS(object):
     def __init__(self, **kwargs):
         
         self.station = 'mt00'
-        self._sampling_rate = 1
         self.component = None
         self.coordinate_system = 'geomagnetic'
         self.dipole_length = 0
@@ -112,6 +111,7 @@ class MTTS(object):
         self._lon = 0.0
         self._elev = 0.0
         self._n_samples = 0
+        self._sampling_rate = 1
         self.datum = 'WGS84'
         self.data_logger = 'Zonge Zen'
         self.instrument_id = None
@@ -229,11 +229,24 @@ class MTTS(object):
         """number of samples (int)"""
         self._n_samples = int(num_samples)
         
+    def _check_for_index(self):
+        """
+        check to see if there is an index in the time series
+        """
+        if len(self._ts) > 0:
+            return True
+        else:
+            return False
+        
     #--> sampling rate
     @property
     def sampling_rate(self):
         """sampling rate in samples/second"""
-        return self._sampling_rate
+        if self._check_for_index():
+            sr = 1E9/self._ts.index[0].freq.nanos
+        else:
+            sr = self._sampling_rate
+        return sr
     
     @sampling_rate.setter
     def sampling_rate(self, sampling_rate):
@@ -244,15 +257,19 @@ class MTTS(object):
         """
         try:
             sr = float(sampling_rate)
-            if self._sampling_rate == sr:
+        except (ValueError):
+            raise MTTSError("Input sampling rate should be a float not {0}".format(type(sampling_rate)))
+        self._sampling_rate = sr
+        if self._check_for_index():
+            if 1E9/self._ts.index[0].freq.nanos == self._sampling_rate:
                 return
             else:
-                self._sampling_rate = sr
                 if self.start_time_utc is not None:
-                    self._set_dt_index(self.start_time_utc)
+                    self._set_dt_index(self.start_time_utc, self._sampling_rate)
                 
-        except ValueError:
-            raise MTTSError("Input sampling rate should be a float not {0}".format(type(sampling_rate)))
+        else:
+            self._sampling_rate = sampling_rate
+            return
    
     ## set time and set index
     @property
@@ -263,7 +280,8 @@ class MTTS(object):
     @start_time_utc.setter
     def start_time_utc(self, start_time):
         """
-        start time of time series in UTC given in format of self._date_time_fmt
+        start time of time series in UTC given in some format or a datetime
+        object.
         
         Resets epoch seconds if the new value is not equivalent to previous
         value.
@@ -274,12 +292,13 @@ class MTTS(object):
         if not isinstance(start_time, datetime.datetime):
             start_time = dateutil.parser.parse(start_time)
         
-        if start_time.isoformat() == self.ts.index[0].isofromat():
-            return
+        if self._check_for_index():
+            if start_time.isoformat() == self.ts.index[0].isofromat():
+                return
+            else:
+                self._set_dt_index(start_time.isoformat(), self._sampling_rate)
         
         # make a time series that the data can be indexed by
-        if hasattr(self.ts, 'data'):
-            self._set_dt_index(start_time.isoformat())
         else:
             raise MTTSError('No Data to set start time for, set data first')
         
@@ -312,7 +331,7 @@ class MTTS(object):
         if self.ts.index[0] != dt_struct:
             self.start_time_utc = dt_struct
                 
-    def _set_dt_index(self, start_time):
+    def _set_dt_index(self, start_time, sampling_rate):
         """
         get the date time index from the data
         
@@ -323,7 +342,7 @@ class MTTS(object):
         if start_time is None:
             print('Start time is None, skipping calculating index')
             return 
-        dt_freq = '{0:.0f}N'.format(1./(self.sampling_rate)*1E9)
+        dt_freq = '{0:.0f}N'.format(1./(sampling_rate)*1E9)
 
         dt_index = pd.date_range(start=start_time, 
                                  periods=self.ts.data.size, 
