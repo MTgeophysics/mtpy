@@ -317,8 +317,10 @@ class MTTS(object):
         if self._check_for_index():
             if isinstance(self._ts.index[0], int):
                 return None
+            else:
+                return self.ts.index[0].timestamp()
         else:
-            return self.ts.index[0].timestamp()
+            return None
         
     @start_time_epoch_sec.setter
     def start_time_epoch_sec(self, epoch_sec):
@@ -347,8 +349,10 @@ class MTTS(object):
         if self._check_for_index():
             if isinstance(self._ts.index[-1], int):
                 return None
+            else:
+                return self.ts.index[-1].timestamp()
         else:
-            return self.ts.index[-1].timestamp()
+            return None
         
     @property
     def stop_time_utc(self):
