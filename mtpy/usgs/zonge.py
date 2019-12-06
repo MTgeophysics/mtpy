@@ -3,13 +3,11 @@
 ====================
 zonge
 ====================
-
     * Tools for interfacing with MTFT24
     * Tools for interfacing with MTEdit
     
     
 Created on Tue Jul 11 10:53:23 2013
-
 @author: jpeacock-pr
 """
 
@@ -21,7 +19,7 @@ import os
 import shutil
 
 import mtpy.core.z as mtz
-import mtpy.imaging.plot_mt_response as plotresponse
+import mtpy.imaging.plotresponse as plotresponse
 import mtpy.utils.gis_tools as gis_tools
 import mtpy.utils.configfile as mtcf
 import mtpy.core.edi as mtedi
@@ -297,36 +295,6 @@ class ZongeMTFT():
         """
         self.value_lst = [self.__dict__[key.replace('.', '_')] 
                           for key in self.meta_keys]
-#        self.value_lst = [self.MTFT_Version, 
-#                          self.MTFT_MHAFreq, 
-#                          self.MTFT_WindowTaper,   
-#                          self.MTFT_WindowLength,
-#                          self.MTFT_WindowOverlap,    
-#                          self.MTFT_NDecFlt, 
-#                          self.MTFT_PWFilter, 
-#                          self.MTFT_NPWCoef,   
-#                          self.MTFT_DeTrend, 
-#                          self.MTFT_Despike,   
-#                          self.MTFT_SpikePnt, 
-#                          self.MTFT_SpikeDev,
-#                          self.MTFT_NotchFlt,  
-#                          self.MTFT_NotchFrq, 
-#                          self.MTFT_NotchWidth, 
-#                          self.MTFT_StackFlt,  
-#                          self.MTFT_StackTaper,
-#                          self.MTFT_StackFrq,
-#                          self.MTFT_SysCal,
-#                          self.MTFT_BandFrq,
-#                          self.MTFT_BandFrqMin,  
-#                          self.MTFT_BandFrqMax, 
-#                          self.MTFT_TSPlot_PntRange,  
-#                          self.MTFT_TSPlot_ChnRange,
-#                          self.Setup_Number,  
-#                          self.TS_Number, 
-#                          self.TS_FrqBand, 
-#                          self.TS_T0Offset, 
-#                          self.TS_T0Error,  
-#                          self.setup_lst]
                           
         self.meta_dict = dict([(mkey, mvalue) for mkey, mvalue in
                                zip(self.meta_keys, self.value_lst)])
@@ -338,37 +306,6 @@ class ZongeMTFT():
         """
         for key in list(self.meta_dict.keys()):
             setattr(self, key.replace('.', '_'), self.meta_dict[key])
-#        self.MTFT_Version = self.meta_dict['MTFT.Version']
-#        self.MTFT_MHAFreq = self.meta_dict['MTFT.MHAFreq'] 
-#        self.MTFT_WindowTaper = self.meta_dict['MTFT.WindowTaper']   
-#        self.MTFT_WindowLength = self.meta_dict['MTFT.WindowLength']
-#        self.MTFT_WindowOverlap = self.meta_dict['MTFT.WindowOverlap']    
-#        self.MTFT_NDecFlt = self.meta_dict['MTFT.NDecFlt'] 
-#        self.MTFT_PWFilter = self.meta_dict['MTFT.PWFilter'] 
-#        self.MTFT_NPWCoef = self.meta_dict['MTFT.NPWCoef']   
-#        self.MTFT_DeTrend = self.meta_dict['MTFT.DeTrend'] 
-#        self.MTFT_T0OffsetMax = self.meta_dict['MTFT.T0OffsetMax']
-#        self.MTFT_Despike = self.meta_dict['MTFT.Despike']   
-#        self.MTFT_SpikePnt = self.meta_dict['MTFT.SpikePnt'] 
-#        self.MTFT_SpikeDev = self.meta_dict['MTFT.SpikeDev']
-#        self.MTFT_NotchFlt = self.meta_dict['MTFT.NotchFlt']  
-#        self.MTFT_NotchFrq = self.meta_dict['MTFT.NotchFrq'] 
-#        self.MTFT_NotchWidth = self.meta_dict['MTFT.NotchWidth'] 
-#        self.MTFT_StackFlt = self.meta_dict['MTFT.StackFlt']  
-#        self.MTFT_StackTaper = self.meta_dict['MTFT.StackTaper']
-#        self.MTFT_StackFrq = self.meta_dict['MTFT.StackFrq']
-#        self.MTFT_SysCal = self.meta_dict['MTFT.SysCal']
-#        self.MTFT_BandFrq = self.meta_dict['MTFT.BandFrq']
-#        self.MTFT_BandFrqMin = self.meta_dict['MTFT.BandFrqMin']  
-#        self.MTFT_BandFrqMax = self.meta_dict['MTFT.BandFrqMax'] 
-#        self.MTFT_TSPlot_PntRange = self.meta_dict['MTFT.TSPlot.PntRange']  
-#        self.MTFT_TSPlot_ChnRange = self.meta_dict['MTFT.TSPlot.ChnRange']
-#        self.Setup_Number = self.meta_dict['Setup.Number']  
-#        self.TS_Number = self.meta_dict['TS.Number'] 
-#        self.TS_FrqBand = self.meta_dict['TS.FrqBand'] 
-#        self.TS_T0Offset = self.meta_dict['TS.T0Offset'] 
-#        self.TS_T0Error = self.meta_dict['TS.T0Error']  
-#        self.setup_lst = self.meta_dict['setup_lst']
     
     def sort_ts_lst(self):
         """
@@ -1300,15 +1237,21 @@ class ZongeMTFT():
         for cline in clines:
             if cline[0] == '$':
                 clst = cline[1:].strip().split('=')
-                if clst[0].find('MTFT') == 0 or \
-                   clst[0].find('Setup.Number') == 0 or\
-                   clst[0].find('TS') ==0:
-                    self.meta_dict[clst[0]] = clst[1]
+                key = clst[0]
+                value = clst[1].split(',')
+                
+                if key.find('MTFT') == 0 or \
+                   key.find('Setup.Number') == 0 or\
+                   key.find('TS') == 0:
+                    self.meta_dict[key] = value
                 elif clst[0].find('Setup.ID') == 0:
-                    setup_lst.append({clst[0]:clst[1]})
+                    setup_lst.append({key:value})
                     ss = int(clst[1])-1
+                    setup_lst[ss][key] = value
                 else:
-                    setup_lst[ss][clst[0]] = clst[1]
+                    setup_lst[ss][key] = value
+                    if key.find('Chn') == 0:
+                        self.meta_dict[key] = value
                 
             elif cline.find('.cac') > 0:
                 info_dict = {}
@@ -1704,20 +1647,20 @@ class ZongeMTAvg():
             raise IOError('{0} does not exist, check file'.format(avg_fn))
         
         self.comp = os.path.basename(avg_fn)[0]
-        afid = file(avg_fn)
-        alines = afid.readlines()
+        with open(avg_fn, 'r') as fid:
+            alines = fid.readlines()
         self.comp_flag = {'zxx':False, 'zxy':False, 'zyx':False, 'zyy':False,
                           'tzx':False, 'tzy':False}
         
         if not self.comp_dict:
             # check to see if all 4 components are in the .avg file
             if len(alines) > 140:  
-                self.comp_dict = dict([(ckey, np.zeros(len(alines)/4, 
+                self.comp_dict = dict([(ckey, np.zeros(int(len(alines)/4), 
                                                        dtype=self.info_dtype))
                                         for ckey in list(self.comp_flag.keys())])
             # if there are only 2
             else:
-                self.comp_dict = dict([(ckey, np.zeros(len(alines)/2, 
+                self.comp_dict = dict([(ckey, np.zeros(int(len(alines)/2), 
                                                        dtype=self.info_dtype))
                                         for ckey in list(self.comp_flag.keys())])
         self.comp_lst_z = []
@@ -1742,7 +1685,7 @@ class ZongeMTAvg():
                         self.__dict__[akey] = float(alst[1])
                     except ValueError:
                         self.__dict__[akey] = alst[1]
-                    #self.header_dict[alst[0][1:]] = alst[1]
+                    #self.header_dict[alst[0][1:]] = al            print(aline)st[1]
             elif aline[0] == 'S':
                 pass
             # read the data line.
@@ -1877,10 +1820,11 @@ class ZongeMTAvg():
                     z[:, ii, jj] = zr+zi*1j
 
                 z_err[:,ii, jj] = self.comp_dict[ikey]['ares.%err'][:nz]*.005 
-                    
+
+            self.Z.freq = freq
             self.Z.z = z
             self.Z.z_err = z_err
-            self.Z.freq = freq
+            
             
         self.Z.z = np.nan_to_num(self.Z.z)
         self.Z.z_err = np.nan_to_num(self.Z.z_err)
@@ -1973,9 +1917,10 @@ class ZongeMTAvg():
                 tipper_err[:, ii, jj] = self.comp_dict[ikey]['ares.%err'][:nz]*\
                                                      .05*np.sqrt(tzr**2+tzi**2)
                     
+            self.Tipper.freq = sorted(self.freq_dict_x.keys())
             self.Tipper.tipper = tipper
             self.Tipper.tipper_err = tipper_err
-            self.Tipper.freq = sorted(self.freq_dict_x.keys())
+            
             
         self.Tipper.tipper = np.nan_to_num(self.Tipper.tipper)
         self.Tipper.tipper_err = np.nan_to_num(self.Tipper.tipper_err)
@@ -2065,8 +2010,10 @@ class ZongeMTAvg():
                 rrsurvey_dict = sdict[rrstation.upper()]
                 survey_dict['rr_station'] = rrsurvey_dict['station']
                 survey_dict['rr_station_elevation'] = rrsurvey_dict['elevation']
-                survey_dict['rr_station_latitude'] = gis_tools.assert_lat_value(rrsurvey_dict.pop('latitude',0.0))                                               
-                survey_dict['rr_station_longitude'] = gis_tools.assert_lon_value(rrsurvey_dict.pop('longitude',0.0))
+                survey_dict['rr_station_latitude'] = gis_tools.assert_lat_value(
+                                               rrsurvey_dict.pop('latitude',0.0))
+                survey_dict['rr_station_longitude'] = gis_tools.assert_lon_value(
+                                               rrsurvey_dict.pop('longitude',0.0))
             except KeyError:
                 print('Could not find station information for remote reference')
         else:
@@ -2414,8 +2361,8 @@ class ZongeMTAvg():
         #read in survey file
         survey_dict = {}
         survey_dict['latitude'] = gis_tools.assert_lat_value(self.GPS_Lat)
-        survey_dict['longitude'] = gis_tools.assert_lon_value(self.GPS_Lon)
-        survey_dict['elevation'] = self.Rx_Length
+        survey_dict['longitude'] = gis_tools.assert_lon_value( self.GPS_Lon)
+        survey_dict['elevation'] = gis_tools.assert_elevation_value(self.Rx_Length)
         survey_dict['station'] = station
         if survey_cfg_file is not None:
             sdict = mtcf.read_survey_configfile(survey_cfg_file)
@@ -2439,8 +2386,10 @@ class ZongeMTAvg():
                 rrsurvey_dict = sdict[rrstation.upper()]
                 survey_dict['rr_station'] = rrsurvey_dict['station']
                 survey_dict['rr_station_elevation'] = rrsurvey_dict['elevation']
-                survey_dict['rr_station_latitude'] = gis_tools.assert_lat_value(rrsurvey_dict.pop('latitude',0.0))
-                survey_dict['rr_station_longitude'] = gis_tools.assert_lon_value(rrsurvey_dict.pop('longitude',0.0))
+                survey_dict['rr_station_latitude'] = gis_tools.assert_lat_value(
+                                               rrsurvey_dict.pop('latitude',0.0))
+                survey_dict['rr_station_longitude'] = gis_tools.assert_lon_value(
+                                               rrsurvey_dict.pop('longitude',0.0))
             except KeyError:
                 print('Could not find station information for remote reference')
         else:
@@ -2492,13 +2441,12 @@ class ZongeMTAvg():
         head_dict['loc'] = survey_dict.pop('location', '')
         
         #--> latitude
-        head_dict['lat'] = gis_tools.assert_lat_value(
-                                        survey_dict.pop('latitude',
-                                                        0.0))
+        head_dict['lat'] = gis_tools.assert_lat_value(survey_dict.pop('latitude',
+                                                                      0.0))
         
         #--> longitude
-        head_dict['long'] = gis_tools.assert_lon_value(
-                                         survey_dict.pop('longitude',0.0))
+        head_dict['long'] = gis_tools.assert_lon_value(survey_dict.pop('longitude',
+                                                                       0.0))
         
         #--> elevation
         head_dict['elev'] = survey_dict.pop('elevation', 0.0)
