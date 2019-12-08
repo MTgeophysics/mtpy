@@ -22,7 +22,11 @@ from scipy.interpolate import interp1d
 from scipy.integrate import quad
 from scipy.spatial import cKDTree
 import numpy
-from obspy.io.segy import segy
+
+try:
+    from obspy.io.segy import segy
+except ImportError:
+    print("Could not find Obspy, check installation")
 
 class Segy:
     def __init__(self, segy_fn, pick_every=1):
