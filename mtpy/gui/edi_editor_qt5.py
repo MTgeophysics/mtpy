@@ -121,7 +121,7 @@ class EDI_Editor_Window(QtWidgets.QMainWindow):
         self.plot_widget.mt_obj._edi_obj = mt.MTedi.Edi()
         if self.plot_widget.mt_obj.elev is None:
             self.plot_widget.mt_obj.elev = 0.0
-        self.plot_widget._mt_obj = copy.deepcopy(self.plot_widget.mt_obj)
+        self.plot_widget._mt_obj = mt.MT(fn)
         self.plot_widget.fill_metadata()
         self.plot_widget.reset_parameters()
         self.plot_widget.plot_properties = PlotSettings(None)
@@ -854,7 +854,7 @@ class PlotWidget(QtWidgets.QWidget):
         
         """
         
-        self.mt_obj = copy.deepcopy(self._mt_obj)
+        self.mt_obj = mt.MT(self.mt_obj.fn)
         self.reset_parameters()
         self.redraw_plot()
         
@@ -883,8 +883,9 @@ class PlotWidget(QtWidgets.QWidget):
         """
         
         save_dialog = QtWidgets.QFileDialog()
-        save_fn = str(save_dialog.getSaveFileName(caption='Choose EDI file',
-                                                  directory=self.dir_path,
+        save_fn = str(save_dialog.getSaveFileName(None, 
+                                                  'Choose EDI file',
+                                                  '{0}_edit.edi'.format(self.mt_obj.fn[0:-4]),
                                                   filter='*.edi')[0])
         self.mt_obj.write_mt_file(save_dir=os.path.dirname(save_fn),
                                   fn_basename=os.path.basename(save_fn))

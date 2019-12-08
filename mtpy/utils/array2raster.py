@@ -101,8 +101,8 @@ class ModEM_to_Raster(object):
                                 model_obj.nodes_north[0:pad_north].sum()+\
                                 model_obj.nodes_north[pad_north]/2
             
-            ll_lat, ll_lon = gis_tools.project_point_utm2ll(lower_left_north, 
-                                                            lower_left_east,
+            ll_lat, ll_lon = gis_tools.project_point_utm2ll(lower_left_east, 
+                                                            lower_left_north,
                                                             center_zone)
             
             print('Lower Left Coordinates should be ({0:.5f}, {1:.5f})'.format(ll_lon, ll_lat))

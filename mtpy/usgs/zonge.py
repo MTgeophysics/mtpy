@@ -17,6 +17,7 @@ import numpy as np
 import time
 import os
 import shutil
+
 import mtpy.core.z as mtz
 import mtpy.imaging.plotresponse as plotresponse
 import mtpy.utils.gis_tools as gis_tools
@@ -2655,3 +2656,32 @@ class ZongeMTAvg():
             print('Copied {0} to {1}'.format(edi_fn, copy_edi_fn))
         
         return edi_fn
+        
+            
+            
+        
+        
+            
+            
+        
+        
+        
+        
+
+        
+                    
+        
+        
+        
+        
+        
+        
+        
+    
+
+    
+    
+    
+
+    
+    

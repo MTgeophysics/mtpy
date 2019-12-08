@@ -411,7 +411,7 @@ class PlotResponses(QtWidgets.QWidget):
         """
         data file changed outside the program reload it
         """
-        
+
         print('{0} changed'.format(self.data_fn))
         self.data_fn = self._data_fn
 
@@ -760,13 +760,23 @@ class PlotResponses(QtWidgets.QWidget):
         ##----------------------------------------------
         #plot model response
         if self.modem_resp is not None:
-            resp_z_obj = self.modem_resp.mt_dict[self.station].Z
-            resp_z_err = np.nan_to_num((z_obj.z-resp_z_obj.z)/z_obj.z_err)
-            resp_z_obj.compute_resistivity_phase()
+            try:
+                resp_z_obj = self.modem_resp.mt_dict[self.station].Z
+                resp_z_err = np.nan_to_num((z_obj.z-resp_z_obj.z)/z_obj.z_err)
+                resp_z_obj.compute_resistivity_phase()
+                
+                resp_t_obj = self.modem_resp.mt_dict[self.station].Tipper
+                resp_t_err = np.nan_to_num((t_obj.tipper-resp_t_obj.tipper)/t_obj.tipper_err)
+            except KeyError:
+                print('Could not find {0} in .resp file'.format(self.station))
+                self.mpl_widget.draw()
+                return
             
-            resp_t_obj = self.modem_resp.mt_dict[self.station].Tipper
-            resp_t_err = np.nan_to_num((t_obj.tipper-resp_t_obj.tipper)/t_obj.tipper_err)
-            
+            try:
+                resp_period = 1./resp_z_obj.freq
+            except TypeError:
+                resp_period = 1./resp_t_obj.freq
+                
             #convert to apparent resistivity and phase
             if self.plot_z == True:
                 scaling = np.zeros_like(resp_z_obj.z)
@@ -779,11 +789,19 @@ class PlotResponses(QtWidgets.QWidget):
             elif self.plot_z == False:
                 r_plot_res = resp_z_obj.resistivity
                 r_plot_phase = resp_z_obj.phase
+                
+            #find locations where points have been masked
+            nzxx_r = np.nonzero(resp_z_obj.z[:, 0, 0])[0]
+            nzxy_r = np.nonzero(resp_z_obj.z[:, 0, 1])[0]
+            nzyx_r = np.nonzero(resp_z_obj.z[:, 1, 0])[0]
+            nzyy_r = np.nonzero(resp_z_obj.z[:, 1, 1])[0]
+            ntx_r = np.nonzero(resp_t_obj.tipper[:, 0, 0])[0]
+            nty_r = np.nonzero(resp_t_obj.tipper[:, 0, 1])[0]
 
-            rms_xx = resp_z_err[nzxx, 0, 0].std()
-            rms_xy = resp_z_err[nzxy, 0, 1].std()
-            rms_yx = resp_z_err[nzyx, 1, 0].std()
-            rms_yy = resp_z_err[nzyy, 1, 1].std()
+            rms_xx = resp_z_err[nzxx_r, 0, 0].std()
+            rms_xy = resp_z_err[nzxy_r, 0, 1].std()
+            rms_yx = resp_z_err[nzyx_r, 1, 0].std()
+            rms_yy = resp_z_err[nzyy_r, 1, 1].std()
             
             #--> make key word dictionaries for plotting
             kw_xx = {'color':self.plot_settings.ctem,
@@ -804,68 +822,68 @@ class PlotResponses(QtWidgets.QWidget):
             
             # plot data response
             rerxx = mtplottools.plot_errorbar(axrxx, 
-                                             period[nzxx], 
-                                             r_plot_res[nzxx, 0, 0], 
+                                             resp_period[nzxx_r], 
+                                             r_plot_res[nzxx_r, 0, 0], 
                                              None,
                                              **kw_xx)
             rerxy = mtplottools.plot_errorbar(axrxy, 
-                                             period[nzxy], 
-                                             r_plot_res[nzxy, 0, 1], 
+                                             resp_period[nzxy_r], 
+                                             r_plot_res[nzxy_r, 0, 1], 
                                              None,
                                              **kw_xx)
             reryx = mtplottools.plot_errorbar(axryx, 
-                                             period[nzyx], 
-                                             r_plot_res[nzyx, 1, 0], 
+                                             resp_period[nzyx_r], 
+                                             r_plot_res[nzyx_r, 1, 0], 
                                              None,
                                              **kw_yy)
             reryy = mtplottools.plot_errorbar(axryy, 
-                                             period[nzyy], 
-                                             r_plot_res[nzyy, 1, 1], 
+                                             resp_period[nzyy_r], 
+                                             r_plot_res[nzyy_r, 1, 1], 
                                              None,
                                              **kw_yy)
             #plot phase                         
             repxx = mtplottools.plot_errorbar(axpxx, 
-                                             period[nzxx], 
-                                             r_plot_phase[nzxx, 0, 0], 
+                                             resp_period[nzxx_r], 
+                                             r_plot_phase[nzxx_r, 0, 0], 
                                              None,
                                              **kw_xx)
             repxy = mtplottools.plot_errorbar(axpxy, 
-                                             period[nzxy], 
-                                             r_plot_phase[nzxy, 0, 1], 
+                                             resp_period[nzxy_r], 
+                                             r_plot_phase[nzxy_r, 0, 1], 
                                              None,
                                              **kw_xx)
             repyx = mtplottools.plot_errorbar(axpyx, 
-                                             period[nzyx], 
-                                             r_plot_phase[nzyx, 1, 0], 
+                                             resp_period[nzyx_r], 
+                                             r_plot_phase[nzyx_r, 1, 0], 
                                              None,
                                              **kw_yy)
             repyy = mtplottools.plot_errorbar(axpyy, 
-                                             period[nzyy], 
-                                             r_plot_phase[nzyy, 1, 1], 
+                                             resp_period[nzyy_r], 
+                                             r_plot_phase[nzyy_r, 1, 1], 
                                              None,
                                              **kw_yy)
                                           
             #plot tipper
             if self.plot_tipper == True:
                 rertx = mtplottools.plot_errorbar(axtxr, 
-                                                 period[ntx],
-                                                 resp_t_obj.tipper[ntx, 0, 0].real,
+                                                 resp_period[ntx_r],
+                                                 resp_t_obj.tipper[ntx_r, 0, 0].real,
                                                  None,
                                                  **kw_xx)
                 rerty = mtplottools.plot_errorbar(axtyr, 
-                                                 period[nty],
-                                                 resp_t_obj.tipper[nty, 0, 1].real,
+                                                 resp_period[nty_r],
+                                                 resp_t_obj.tipper[nty_r, 0, 1].real,
                                                  None,
                                                  **kw_yy)
                                          
                 reptx = mtplottools.plot_errorbar(axtxi, 
-                                                 period[ntx],
-                                                 resp_t_obj.tipper[ntx, 0, 0].imag,
+                                                 resp_period[ntx_r],
+                                                 resp_t_obj.tipper[ntx_r, 0, 0].imag,
                                                  None,
                                                  **kw_xx)
                 repty = mtplottools.plot_errorbar(axtyi, 
-                                                 period[nty],
-                                                 resp_t_obj.tipper[nty, 0, 1].imag,
+                                                 resp_period[nty_r],
+                                                 resp_t_obj.tipper[nty_r, 0, 1].imag,
                                                  None,
                                                  **kw_yy)
                              

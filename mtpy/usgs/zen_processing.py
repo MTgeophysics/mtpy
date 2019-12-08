@@ -332,7 +332,7 @@ class Survey_Config(object):
         self.e_xaxis_length = 100
         self.e_yaxis_azimuth = 90
         self.e_yaxis_length = 100
-        self.elevation = 0.0
+        self.elevation = 2113.2
         self.hx = 2324
         self.hy = 2314
         self.hz = 2334
@@ -1440,6 +1440,7 @@ class Z3D2EDI(object):
                                                   plot_tipper='yri')
 
         return resp_plot
+
 
     def process_data(self, df_list=None, max_blocks=None,
                      notch_dict={},

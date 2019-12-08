@@ -22,7 +22,6 @@ import string
 import shutil
 import numpy as np
 
-
 import mtpy.imaging.plotspectrogram as plotspectrogram
 import mtpy.core.ts as mtts
 
@@ -508,9 +507,13 @@ class Z3DMetadata(object):
         self.survey_type = None
         self.unit_length = None
         self.station = None
+<<<<<<< HEAD
+        
+=======
         self.count = 0
         self.notes = None
 
+>>>>>>> bb1a88f8dc15bf15768bf6aafccc2584cd8133dd
         for key in kwargs:
             setattr(self, key, kwargs[key])
 
@@ -638,7 +641,7 @@ class Z3DMetadata(object):
                                                         formats='f8, f8, f8')
         if len(self.board_cal) > 0:
             try:
-                self.board_cal = np.core.records.fromrecords(self.board_cal,
+                self.board_cal = np.core.records.fromrecords(self.board_cal, 
                                                              names='frequency, rate, amplitude, phase',
                                                              formats='f8, f8, f8, f8')
             except ValueError:
@@ -653,8 +656,6 @@ class Z3DMetadata(object):
             except AttributeError:
                 self.station = None
                 print("Need to input station name")
-
-
 
 #==============================================================================
 #
@@ -802,6 +803,7 @@ class Zen3D(object):
         self.num_sec_to_skip = 3
 
         self.units = 'counts'
+        self.df = None
 
         self.ts_obj = mtts.MTTS()
 
@@ -811,7 +813,7 @@ class Zen3D(object):
         station name
         """
         return self.metadata.station
-
+        
     @station.setter
     def station(self, station):
         """
@@ -1526,7 +1528,7 @@ class Zen3D(object):
         """
         if self.station is None:
             self.read_all_info()
-
+            
         if dec > 1:
             print('Decimating data by factor of {0}'.format(dec))
             self.df = self.df/dec
@@ -1536,7 +1538,7 @@ class Zen3D(object):
             svfn_directory = os.path.join(os.path.dirname(self.fn), 'TS')
             if not os.path.exists(svfn_directory):
                 os.mkdir(svfn_directory)
-
+            
             svfn_date = ''.join(self.schedule.Date.split('-'))
             svfn_time = ''.join(self.schedule.Time.split(':'))
             self.fn_mt_ascii = os.path.join(svfn_directory,
@@ -1545,10 +1547,6 @@ class Zen3D(object):
                                                                          svfn_time,
                                                                          int(self.df),
                                                                          self.metadata.ch_cmp.upper()))
-
-
-
-
         else:
             self.fn_mt_ascii = save_fn
         # if the file already exists skip it
@@ -2525,3 +2523,4 @@ def make_mtpy_mt_files(fn_list, station_name='mb', fmt='%.8e',
                                      '    fn = {0}\n'.format(zd.fn)]))
 
     return fn_arr, fn_lines
+    

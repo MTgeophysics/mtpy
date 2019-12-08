@@ -7,8 +7,6 @@ Created on Thu Sep 28 12:34:23 2017
 #==============================================================================
 # Imports
 #==============================================================================
-import os
-
 import numpy as np
 import mtpy.core.z as mtz
 import mtpy.utils.gis_tools as gis_tools
@@ -221,4 +219,3 @@ class EgbertZ(EgbertHeader):
 #            edi_basename = os.path.join(edi_fn)
 #        self.mt_obj.write_mt_file(save_dir=edi_dir,
 #                                  fn_basename=edi_basename)
-        

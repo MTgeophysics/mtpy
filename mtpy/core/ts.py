@@ -562,9 +562,10 @@ class MTTS(object):
             # write in chunks
             for cc in range(chunks):
                 # changing the dtype of the array is faster than making
-                # a list of strings
+                # a list of strings with 22 places to incorporate exponential
+                # form
                 ts_lines = np.array(self.ts.data[cc*chunk_size:(cc+1)*chunk_size],
-                                    dtype='S20')
+                                    dtype='S22')
 
                 fid.write('\n'.join(list(ts_lines)))
                 # be sure to write a new line after each chunk otherwise
@@ -573,7 +574,7 @@ class MTTS(object):
              
             # be sure to write the last little bit
             fid.write('\n'.join(list(np.array(self.ts.data[(cc+1)*chunk_size:],
-                                              dtype='S20'))))
+                                              dtype='S22'))))
 
                 
         # get an estimation of how long it took to write the file    

@@ -487,12 +487,12 @@ class MT(object):
         self.Site.Location.datum = edi_obj.Header.datum
         self.Site.Location.elev_units = edi_obj.Define_measurement.units
         self.Site.Location.coordinate_system = edi_obj.Header.coordinate_system
-        if self.Site.start_date is not None:
-            try:
-                self.Site.end_date = '{0}{1:02}'.format(self.Site.start_date[0:8],
-                                                          int(self.Site.start_date[-2:])+1)
-            except:
-                pass
+        try:
+            self.Site.end_date = '{0}{1:02}'.format(self.Site.start_date[0:8],
+                                                    int(self.Site.start_date[-2:])+1)
+        except ValueError:
+            self.Site.end_date = None
+
         self.Site.Location.declination = edi_obj.Header.declination
 
     def _edi_get_field_notes(self, edi_obj):
@@ -663,7 +663,7 @@ class MT(object):
             edi_obj.Tipper = self._Tipper
 
         # set rotation angle
-        edi_obj.zrot = self.rotation_angle
+        # edi_obj.zrot = self.rotation_angle
 
         # --> write edi file
         edi_fn = edi_obj.write_edi_file(new_edi_fn=new_edi_fn, 
@@ -1748,8 +1748,9 @@ class MT(object):
         s_array, new_z = self.Z.remove_ss(reduce_res_factor_x=ss_x,
                                           reduce_res_factor_y=ss_y)
 
-        new_z_obj = MTz.copy.deepcopy(self.Z)
-        new_z_obj.z = new_z
+        new_z_obj = MTz.Z(z_array=new_z,
+                          z_err_array=self.Z.z_err.copy(),
+                          freq=self.Z.freq.copy())
 
         return new_z_obj
 
