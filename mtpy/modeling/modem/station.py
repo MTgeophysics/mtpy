@@ -39,6 +39,7 @@ class Stations(object):
                       ('elev', np.float),
                       ('rel_east', np.float),
                       ('rel_north', np.float),
+                      ('rel_elev', np.float),
                       ('east', np.float),
                       ('north', np.float),
                       ('zone', 'S4')]
@@ -78,6 +79,10 @@ class Stations(object):
     @property
     def rel_north(self):
         return self.station_locations['rel_north']
+
+    @property
+    def rel_elev(self):
+        return self.station_locations['rel_elev']
 
     @property
     def utm_zone(self):

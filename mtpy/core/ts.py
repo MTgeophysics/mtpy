@@ -11,7 +11,7 @@
 #==============================================================================
 import os
 import datetime
-import calendar
+import dateutil
 
 import numpy as np
 import pandas as pd
@@ -25,7 +25,7 @@ import matplotlib.pyplot as plt
 #==============================================================================
 
 #==============================================================================
-class MT_TS(object):
+class MTTS(object):
     """
     MT time series object that will read/write data in different formats
     including hdf5, txt, miniseed.
@@ -36,15 +36,15 @@ class MT_TS(object):
     the data in the column 'data'.  This way the data can be indexed as a
     numpy array:
         
-        >>> MT_TS.ts['data'][0:256]
+        >>> MTTS.ts['data'][0:256]
         
         or
         
-        >>> MT_TS.ts.data[0:256]
+        >>> MTTS.ts.data[0:256]
         
     Also, the data can be indexed by time (note needs to be exact time):
         
-        >>> MT_TS.ts['2017-05-04 12:32:00.0078125':'2017-05-05 12:35:00]
+        >>> MTTS.ts['2017-05-04 12:32:00.0078125':'2017-05-05 12:35:00]
     
     Input ts as a numpy.ndarray or Pandas DataFrame
 
@@ -86,14 +86,14 @@ class MT_TS(object):
     
         >>> import mtpy.core.ts as ts
         >>> import numpy as np
-        >>> mt_ts = ts.MT_TS()
-        >>> mt_ts.ts = np.random.randn(1024)
-        >>> mt_ts.station = 'test'
-        >>> mt_ts.lon = 30.00
-        >>> mt_ts.lat = -122.00
-        >>> mt_ts.component = 'HX'
-        >>> mt_ts.units = 'counts'
-        >>> mt_ts.write_hdf5(r"/home/test.h5")
+        >>> MTTS = ts.MTTS()
+        >>> MTTS.ts = np.random.randn(1024)
+        >>> MTTS.station = 'test'
+        >>> MTTS.lon = 30.00
+        >>> MTTS.lat = -122.00
+        >>> MTTS.component = 'HX'
+        >>> MTTS.units = 'counts'
+        >>> MTTS.write_hdf5(r"/home/test.h5")
         
         
     """
@@ -101,9 +101,6 @@ class MT_TS(object):
     def __init__(self, **kwargs):
         
         self.station = 'mt00'
-        self._sampling_rate = 1
-        self._start_time_epoch_sec = 0.0
-        self._start_time_utc = None
         self.component = None
         self.coordinate_system = 'geomagnetic'
         self.dipole_length = 0
@@ -113,6 +110,7 @@ class MT_TS(object):
         self._lon = 0.0
         self._elev = 0.0
         self._n_samples = 0
+        self._sampling_rate = 1
         self.datum = 'WGS84'
         self.data_logger = 'Zonge Zen'
         self.instrument_id = None
@@ -172,14 +170,12 @@ class MT_TS(object):
             try:
                 ts_arr['data']
                 self._ts = ts_arr
-                # be sure to set the index time
-                if self.start_time_utc is not None:
-                    self._set_dt_index(self.start_time_utc)
+                    
             except AttributeError:
-                raise MT_TS_Error('Data frame needs to have a column named "data" '+\
+                raise MTTSError('Data frame needs to have a column named "data" '+\
                                    'where the time series data is stored')
         else:
-            raise MT_TS_Error('Data type {0} not supported'.format(type(ts_arr))+\
+            raise MTTSError('Data type {0} not supported'.format(type(ts_arr))+\
                               ', ts needs to be a numpy.ndarray or pandas DataFrame')
     
         self._n_samples = self.ts.data.size
@@ -232,11 +228,24 @@ class MT_TS(object):
         """number of samples (int)"""
         self._n_samples = int(num_samples)
         
+    def _check_for_index(self):
+        """
+        check to see if there is an index in the time series
+        """
+        if len(self._ts) > 0:
+            return True
+        else:
+            return False
+        
     #--> sampling rate
     @property
     def sampling_rate(self):
         """sampling rate in samples/second"""
-        return self._sampling_rate
+        if self._check_for_index():
+            sr = 1E9/self._ts.index[0].freq.nanos
+        else:
+            sr = self._sampling_rate
+        return sr
     
     @sampling_rate.setter
     def sampling_rate(self, sampling_rate):
@@ -247,26 +256,36 @@ class MT_TS(object):
         """
         try:
             sr = float(sampling_rate)
-            if self._sampling_rate == sr:
-                return
+        except (ValueError):
+            raise MTTSError("Input sampling rate should be a float not {0}".format(type(sampling_rate)))
+        self._sampling_rate = sr
+        if self._check_for_index():
+            if isinstance(self._ts.index[0], int):
+                return 
             else:
-                self._sampling_rate = sr
-                if self.start_time_utc is not None:
-                    self._set_dt_index(self.start_time_utc)
+                if 1E9/self._ts.index[0].freq.nanos == self._sampling_rate:
+                    return
+                else:
+                    if self.start_time_utc is not None:
+                        self._set_dt_index(self.start_time_utc,
+                                           self._sampling_rate)
                 
-        except ValueError:
-            raise MT_TS_Error("Input sampling rate should be a float not {0}".format(type(sampling_rate)))
    
     ## set time and set index
     @property
     def start_time_utc(self):
         """start time in UTC given in time format"""
-        return self._start_time_utc
+        if self._check_for_index():
+            if isinstance(self._ts.index[0], int):
+                return None
+            else:
+                return self._ts.index[0].isoformat()
     
     @start_time_utc.setter
     def start_time_utc(self, start_time):
         """
-        start time of time series in UTC given in format of self._date_time_fmt
+        start time of time series in UTC given in some format or a datetime
+        object.
         
         Resets epoch seconds if the new value is not equivalent to previous
         value.
@@ -274,27 +293,33 @@ class MT_TS(object):
         Resets how the ts data frame is indexed, setting the starting time to
         the new start time.
         """
-        start_time = self._valitate_dt_str(start_time)
+        if not isinstance(start_time, datetime.datetime):
+            start_time = dateutil.parser.parse(start_time)
         
-        if start_time == self.start_time_utc:
-            return
-
-        dt = datetime.datetime.strptime(start_time, self._date_time_fmt)
-        self._start_time_utc = datetime.datetime.strftime(dt,
-                                                          self._date_time_fmt)
-         
+        if self._check_for_index():
+            if isinstance(self._ts.index[0], int):
+                self._set_dt_index(start_time.isoformat(), self._sampling_rate)
+            else:
+                if start_time.isoformat() == self.ts.index[0].isofromat():
+                    return
+                else:
+                    self._set_dt_index(start_time.isoformat(), self._sampling_rate)
+        
         # make a time series that the data can be indexed by
-        if hasattr(self.ts, 'data'):
-            self._set_dt_index(self._start_time_utc)
+        else:
+            raise MTTSError('No Data to set start time for, set data first')
         
     ## epoch seconds
     @property
     def start_time_epoch_sec(self):
         """start time in epoch seconds"""
-        if self.start_time_utc is None:
-            return None
+        if self._check_for_index():
+            if isinstance(self._ts.index[0], int):
+                return None
+            else:
+                return self.ts.index[0].timestamp()
         else:
-            return self._convert_dt_to_sec(self.start_time_utc)
+            return None
         
     @start_time_epoch_sec.setter
     def start_time_epoch_sec(self, epoch_sec):
@@ -305,47 +330,41 @@ class MT_TS(object):
         
         Resets how ts data frame is indexed.
         """
-        
         try:
-            self._start_time_epoch_sec = float(epoch_sec)
+            epoch_sec = float(epoch_sec)
         except ValueError:
-            raise MT_TS_Error("Need to input epoch_sec as a float not {0}".format(type(epoch_sec)))
+            raise MTTSError("Need to input epoch_sec as a float not {0}".format(type(epoch_sec)))
         
-        dt_struct = datetime.datetime.utcfromtimestamp(self._start_time_epoch_sec)
+        dt_struct = datetime.datetime.utcfromtimestamp(epoch_sec)
         # these should be self cosistent
-        dt_utc = datetime.datetime.strftime(dt_struct, self._date_time_fmt)
-        if self.start_time_utc != dt_utc:
-            self.start_time_utc = dt_utc
-        
-    def _valitate_dt_str(self, date_time_str):
-        """
-        Check the format of the date time string against self._date_time_fmt,
-        Basically, replace a comma with a space.
-        
-        .. note:: Pandas wants yyyy-mm-dd HH:MM:SS.ss, which is what is set
-                  as the default.
-                  
+        if self.ts.index[0] != dt_struct:
+            self.start_time_utc = dt_struct
             
-        :param date_time_str: date time string
-        :type date_time_str: string
-                                
-        :returns: validated date time string
+    @property
+    def stop_time_epoch_sec(self):
         """
+        End time in epoch seconds
+        """
+        if self._check_for_index():
+            if isinstance(self._ts.index[-1], int):
+                return None
+            else:
+                return self.ts.index[-1].timestamp()
+        else:
+            return None
         
-        validated_dt_str = date_time_str.replace(',', ' ')
-        
-        if validated_dt_str.find('.') == -1:
-            validated_dt_str += '.00'
-        
-        try: 
-            datetime.datetime.strptime(validated_dt_str, self._date_time_fmt)
-        except ValueError:
-            raise MT_TS_Error('Could not read format of {0}'.format(date_time_str)+\
-                              ' Should be of format {0}'.format(self._date_time_fmt))
-        
-        return validated_dt_str
+    @property
+    def stop_time_utc(self):
+        """
+        End time in UTC
+        """
+        if self._check_for_index():
+            if isinstance(self._ts.index[-1], int):
+                return None
+            else:
+                return self._ts.index[-1].isoformat()
                 
-    def _set_dt_index(self, start_time):
+    def _set_dt_index(self, start_time, sampling_rate):
         """
         get the date time index from the data
         
@@ -356,7 +375,7 @@ class MT_TS(object):
         if start_time is None:
             print('Start time is None, skipping calculating index')
             return 
-        dt_freq = '{0:.0f}N'.format(1./(self.sampling_rate)*1E9)
+        dt_freq = '{0:.0f}N'.format(1./(sampling_rate)*1E9)
 
         dt_index = pd.date_range(start=start_time, 
                                  periods=self.ts.data.size, 
@@ -364,24 +383,6 @@ class MT_TS(object):
 
         self.ts.index = dt_index
         print("   * Reset time seies index to start at {0}".format(start_time))
-    
-    # convert time to epoch seconds
-    def _convert_dt_to_sec(self, date_time_str):
-        """
-        convert date time string to epoch seconds
-        
-        :param date_time_str: format is defined by self._date_time_fmt
-                              *default* is YYYY-MM-DD hh:mm:ss
-        :type date_time_str: string
-
-        :returns: time in epoch seconds
-                                      
-        """
-        dt_struct = datetime.datetime.strptime(date_time_str, 
-                                               self._date_time_fmt)
-        dt_time = dt_struct.timetuple()
-        
-        return calendar.timegm(dt_time)+dt_struct.microsecond*1E-6
         
     def apply_addaptive_notch_filter(self, notches=None, notch_radius=0.5,
                                      freq_rad=0.5, rp=0.1):
@@ -561,9 +562,10 @@ class MT_TS(object):
             # write in chunks
             for cc in range(chunks):
                 # changing the dtype of the array is faster than making
-                # a list of strings
+                # a list of strings with 22 places to incorporate exponential
+                # form
                 ts_lines = np.array(self.ts.data[cc*chunk_size:(cc+1)*chunk_size],
-                                    dtype='S20')
+                                    dtype='S22')
 
                 fid.write('\n'.join(list(ts_lines)))
                 # be sure to write a new line after each chunk otherwise
@@ -572,7 +574,7 @@ class MT_TS(object):
              
             # be sure to write the last little bit
             fid.write('\n'.join(list(np.array(self.ts.data[(cc+1)*chunk_size:],
-                                              dtype='S20'))))
+                                              dtype='S22'))))
 
                 
         # get an estimation of how long it took to write the file    
@@ -594,7 +596,7 @@ class MT_TS(object):
             >>> ts_obj.read_ascii_header(r"/home/ts/mt01.EX")
         """
         if not os.path.isfile(fn_ascii):
-            raise MT_TS_Error('Could not find {0}, check path'.format(fn_ascii))
+            raise MTTSError('Could not find {0}, check path'.format(fn_ascii))
         self.fn = fn_ascii
         
         with open(self.fn, 'r') as fid:
@@ -666,7 +668,7 @@ class MT_TS(object):
         
         :Example: ::
             
-            >>> ts_obj = mtts.MT_TS()
+            >>> ts_obj = mtts.MTTS()
             >>> ts_obj.read_hdf5(r"/home/MT/mt01.h5")
             >>> ts_obj.plot_spectra()
         
@@ -683,8 +685,8 @@ class MT_TS(object):
 #==============================================================================
 # Error classes
 #==============================================================================
-class MT_TS_Error(Exception):
-    pass        
+class MTTSError(Exception):
+    pass       
  
 #==============================================================================
 #  spectra

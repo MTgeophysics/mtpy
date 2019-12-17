@@ -171,18 +171,20 @@ def convert_position_float2str(position):
 
     deg = abs(deg)
     minutes = (abs(position) - deg) * 60.
-    sec = (minutes - int(minutes)) * 60.
-    if sec == 60:
+    # need to round seconds to 4 decimal places otherwise machine precision
+    # keeps the 60 second roll over and the string is incorrect.
+    sec = np.round((minutes - int(minutes)) * 60., 4)
+    if sec >= 60.:
         minutes += 1
         sec = 0
 
-    if minutes == 60:
+    if int(minutes) == 60:
         deg += 1
         minutes = 0
-
-    position_str = '{0}:{1:02.0f}:{2:02.2f}'.format(sign * int(deg),
+        
+    position_str = '{0}:{1:02.0f}:{2:05.2f}'.format(sign * int(deg),
                                                     int(minutes),
-                                                    float(sec))
+                                                    sec)
 
     return position_str
 
@@ -344,7 +346,7 @@ def project_point_ll2utm(lat, lon, datum='WGS84', utm_zone=None, epsg=None):
     projected_point = np.zeros_like(lat, dtype=[('easting', np.float),
                                                 ('northing', np.float),
                                                 ('elev', np.float),
-                                                ('utm_zone', 'S4')])
+                                                ('utm_zone', 'U4')])
 
     if(HAS_GDAL):
         ll2utm = osr.CoordinateTransformation(ll_cs, utm_cs).TransformPoint
@@ -840,6 +842,31 @@ def utm_to_ll(reference_ellipsoid, northing, easting, zone):
            * d ** 5 / 120) / np.cos(phi1_rad)
     lon = long_origin + lon * _rad2deg
     return lat, lon
+
+# http://spatialreference.org/ref/epsg/28350/proj4/
+epsg_dict = {28350: ['+proj=utm +zone=50 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs', 50],
+             28351: ['+proj=utm +zone=51 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs', 51],
+             28352: ['+proj=utm +zone=52 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs', 52],
+             28353: ['+proj=utm +zone=53 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs', 53],
+             28354: ['+proj=utm +zone=54 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs', 54],
+             28355: ['+proj=utm +zone=55 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs', 55],
+             28356: ['+proj=utm +zone=56 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs', 56],
+             3112: [
+                 '+proj=lcc +lat_1=-18 +lat_2=-36 +lat_0=0 +lon_0=134 +x_0=0 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs',
+                 0],
+             4326: ['+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs', 0],
+             32609: ['+proj=utm +zone=9 +ellps=WGS84 +datum=WGS84 +units=m +no_defs', 9],
+             32610: ['+proj=utm +zone=10 +ellps=WGS84 +datum=WGS84 +units=m +no_defs', 10],
+             32611: ['+proj=utm +zone=11 +ellps=WGS84 +datum=WGS84 +units=m +no_defs', 11],
+             32612: ['+proj=utm +zone=12 +ellps=WGS84 +datum=WGS84 +units=m +no_defs', 12],
+             32613: ['+proj=utm +zone=13 +ellps=WGS84 +datum=WGS84 +units=m +no_defs', 13],
+             32614: ['+proj=utm +zone=14 +ellps=WGS84 +datum=WGS84 +units=m +no_defs', 14],
+             32615: ['+proj=utm +zone=15 +ellps=WGS84 +datum=WGS84 +units=m +no_defs', 15],
+             32616: ['+proj=utm +zone=16 +ellps=WGS84 +datum=WGS84 +units=m +no_defs', 16],
+             32617: ['+proj=utm +zone=17 +ellps=WGS84 +datum=WGS84 +units=m +no_defs', 17],
+             32618: ['+proj=utm +zone=18 +ellps=WGS84 +datum=WGS84 +units=m +no_defs', 18],
+             32619: ['+proj=utm +zone=19 +ellps=WGS84 +datum=WGS84 +units=m +no_defs', 19]
+             }
 
 def epsg_project(x, y, epsg_from, epsg_to):
     """

@@ -29,7 +29,7 @@ from .exception import ModelError
 import mtpy.utils.gocad as mtgocad
 
 try:
-    from pyevtk.hl import gridToVTK
+    from evtk.hl import gridToVTK
 except ImportError:
     print('If you want to write a vtk file for 3d viewing, you need to '
           'install pyevtk')
@@ -385,6 +385,25 @@ class Model(object):
         self._nodes_z = nodes
         self.grid_z = np.array([nodes[0:ii].sum() for ii in range(nodes.size)] + [nodes.sum()])
 
+    # need some arrays for plotting that are the same length as the
+    # resistivity model
+    @property
+    def plot_east(self):
+        plot_east = np.array([self.nodes_east[0:ii].sum() 
+                             for ii in range(self.nodes_east.size)])
+        return plot_east-plot_east[-1]/2.
+    
+    @property
+    def plot_north(self):
+        plot_north = np.array([self.nodes_north[0:ii].sum() 
+                          for ii in range(self.nodes_north.size)])
+        return plot_north-plot_north[-1]/2.
+    
+    @property
+    def plot_z(self):
+        return np.array([self.nodes_z[0:ii].sum() 
+                         for ii in range(self.nodes_z.size)])
+    
     def make_mesh(self):
         """
         create finite element mesh according to user-input parameters.
@@ -542,6 +561,12 @@ class Model(object):
 
         # this is the value to the lower left corner from the center.
         self.grid_center = np.array([center_north, center_east, center_z])
+        
+        # make the resistivity array
+        self.res_model = np.zeros((self.nodes_north.size,
+                                  self.nodes_east.size,
+                                  self.nodes_z.size))
+        self.res_model[:, :, :] = self.res_initial_value
 
         # --> print out useful information
         self.print_mesh_params()
@@ -606,8 +631,7 @@ class Model(object):
         z_grid = np.array([z_nodes[:ii].sum() for ii in range(z_nodes.shape[0] + 1)])
 
         return z_nodes, z_grid
-
-    
+  
     def add_layers_to_mesh(self,n_add_layers=None,layer_thickness=None,where='top'):
         """
         Function to add constant thickness layers to the top or bottom of mesh.
@@ -644,7 +668,6 @@ class Model(object):
         
         # add the extra layer to the res model
         self.res_model = np.vstack([self.res_model[:,:,:n_add_layers].T,self.res_model.T]).T
-        
 
     def assign_resistivity_from_surfacedata(self, top_surface, bottom_surface, resistivity_value):
         """
@@ -672,9 +695,6 @@ class Model(object):
             for i in range(len(self.res_model[j])):
                 ii = np.where((gcz > top_surface[j, i]) & (gcz <= bottom_surface[j, i]))[0]
                 self.res_model[j, i, ii] = resistivity_value
-
-
-
 
     def plot_mesh(self, east_limits=None, north_limits=None, z_limits=None,
                   **kwargs):
@@ -999,14 +1019,15 @@ class Model(object):
 
         # fig = plt.figure(3, dpi=200)
         fig = plt.figure(dpi=200)
-        plt.clf()
-        ax = plt.gca()
+        fig.clf()
+        ax = fig.add_subplot(1, 1, 1, aspect='equal') 
 
+        x, y = np.meshgrid(self.grid_east, self.grid_north)
         # topography data image
         # plt.imshow(elev_mg) # this upside down
         # plt.imshow(elev_mg[::-1])  # this will be correct - water shadow flip of the image
-        x, y = np.meshgrid(self.grid_east, self.grid_north)
-        imgplot = plt.pcolormesh(x, y, self.surface_dict['topography'])  # the orgin is in the lower left corner SW.
+
+        imgplot = ax.pcolormesh(x, y, self.surface_dict['topography'])
         divider = make_axes_locatable(ax)
         # pad = separation from figure to colorbar
         cax = divider.append_axes("right", size="3%", pad=0.2)
@@ -1033,7 +1054,14 @@ class Model(object):
 #        self._logger.debug("station grid index x: %s" % sgindex_x)
 #        self._logger.debug("station grid index y: %s" % sgindex_y)
 
-        #ax.scatter(sgindex_x, sgindex_y, marker='v', c='b', s=2)
+        ax.scatter(self.station_locations.rel_east,
+                   self.station_locations.rel_north,
+                   marker='v', c='k', s=2)
+
+        ax.set_xlabel('Easting (m)', fontdict={'size': 9, 'weight': 'bold'})
+        ax.set_ylabel('Northing (m)', fontdict={'size': 9, 'weight': 'bold'})
+        ax.set_title("Elevation and Stations Map")
+
         ax.scatter(self.station_locations.rel_east,
                    self.station_locations.rel_north, 
                    marker='v', c='b', s=2)
@@ -1041,9 +1069,7 @@ class Model(object):
                      np.ceil(self.station_locations.rel_east.max())))
         ax.set_ylim((np.floor(self.station_locations.rel_north.min()), 
                      np.ceil(self.station_locations.rel_north.max())))
-        ax.set_xlabel('Easting Cell Index', fontdict={'size': 9, 'weight': 'bold'})
-        ax.set_ylabel('Northing Cell Index', fontdict={'size': 9, 'weight': 'bold'})
-        ax.set_title("Elevation and Stations in N-E Map (Cells)")
+
 
         plt.show()
         

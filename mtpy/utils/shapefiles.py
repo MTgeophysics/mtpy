@@ -648,8 +648,13 @@ class PTShapeFile(object):
                     east, north, elev = utm_point
 
                 # get pt objects from data and model response
-                dpt = modem_data_obj.mt_dict[key].pt
-                mpt = modem_resp_obj.mt_dict[key].pt
+                try:
+                    dpt = modem_data_obj.mt_dict[key].pt
+                    mpt = modem_resp_obj.mt_dict[key].pt
+                except KeyError:
+                    print 'No information found for {0} in {1}'.format(key,
+                                                    modem_resp_fn)
+                    continue
 
                 # calculate the residual pt
                 try:
@@ -1329,8 +1334,11 @@ class TipperShapeFile(object):
         self._set_rotation_angle(rotation_angle)
 
         for mt_obj, key in zip(self.mt_obj_list, mt_keys):
-            resp_tipper = modem_resp_obj.mt_dict[key].Tipper.tipper
-            mt_obj.Tipper.tipper[:, :, :] -= resp_tipper[:, :, :]
+            try:
+                resp_tipper = modem_resp_obj.mt_dict[key].Tipper.tipper
+                mt_obj.Tipper.tipper[:, :, :] -= resp_tipper[:, :, :]
+            except KeyError:
+                continue
 
         self.write_imag_shape_files()
         self.write_real_shape_files()
