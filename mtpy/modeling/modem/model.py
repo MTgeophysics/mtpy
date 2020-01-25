@@ -1124,8 +1124,6 @@ class Model(object):
         builds the  model from the bottom SW corner assuming the cell width
         from the init file.
 
-
-
         Key Word Arguments:
         ----------------------
 

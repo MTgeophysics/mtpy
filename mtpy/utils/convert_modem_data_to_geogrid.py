@@ -244,7 +244,7 @@ def create_geogrid(data_file, model_file, out_dir, user_options={}):
     #
     # In [2]: 5611364.73539792 - 3750
     # Out[2]: 5607614.73539792
-    origin = (gce[0] + center.east, gcn[-1] + center.north-0.5*out_grid_size)
+    origin = (gce[0] + center.east -0.5*out_grid_size, gcn[-1] + center.north-0.5*out_grid_size)
     print("The Origin (UpperLeft Corner) =", origin)
 
     pixel_width = out_grid_size
