@@ -1631,7 +1631,7 @@ class Data(object):
                     self.station_locations.rel_north / 1000.,
                     self.station_locations.rel_east / 1000.,
                     self.station_locations.elev / 1000.,
-                    data={'elevation': self.station_locations.elev})
+                    data={'elevation': self.station_locations.elev / 1000.})
 
         self._logger.info('Wrote station file to {0}'.format(vtk_fn))
 
