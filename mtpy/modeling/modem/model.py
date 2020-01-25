@@ -20,7 +20,6 @@ from matplotlib import colors
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from scipy import stats as stats, interpolate as spi
 
-import mtpy
 import mtpy.utils.calculator as mtcc
 from mtpy.modeling import ws3dinv as ws
 from mtpy.utils import mesh_tools as mtmesh, gis_tools as gis_tools, filehandling as mtfh
@@ -29,7 +28,7 @@ from .exception import ModelError
 import mtpy.utils.gocad as mtgocad
 
 try:
-    from evtk.hl import gridToVTK
+    from pyevtk.hl import gridToVTK
 except ImportError:
     print('If you want to write a vtk file for 3d viewing, you need to '
           'install pyevtk')

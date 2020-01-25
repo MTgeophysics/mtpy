@@ -1415,7 +1415,7 @@ class Data(object):
                                                                   ('rel_north', np.float),
                                                                   ('east', np.float),
                                                                   ('north', np.float),
-                                                                  ('zone', 'S4')])
+                                                                  ('zone', 'U4')])
                         self.center_point.lat = value_list[0]
                         self.center_point.lon = value_list[1]
                         try:
