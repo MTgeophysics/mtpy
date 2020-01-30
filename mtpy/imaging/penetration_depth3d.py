@@ -281,7 +281,6 @@ def plot_bar3d_depth(edifiles, per_index, whichrho='det'):
 
     plt.show()
 
-
 # ======================
 def get_penetration_depths_from_edi_file(edifile, rholist=['det']):
     """Compute the penetration depths of an edi file
@@ -362,9 +361,8 @@ def create_penetration_depth_csv(edi_dir, outputcsv, zcomponent='det'):
             latlon_dep.append([lat, lon] + list(depths))
         else:
             _logger.error(
-                "MT Periods Not Equal !! %s VS %s",
-                periods,
-                periods_list0)
+                "MT Periods Not Equal !! %s %s VS %s %s",
+                len(periods), periods,  len(periods_list0), periods_list0)
             # raise Exception ("MTPy Exception: Periods Not Equal")
             # pass this edi, let's continue
 
@@ -417,9 +415,8 @@ def plot_many_periods(edidir, n_periods=5):
 # python mtpy/imaging/penetration_depth3d.py /e/Datasets/MT_Datasets/GA_UA_edited_10s-10000s 16s [10s, 40s 341s]
 #   OR  period index integer
 # python mtpy/imaging/penetration_depth3d.py /e/Datasets/MT_Datasets/3D_MT_data_edited_fromDuanJM/ 30
-# python mtpy/imaging/penetration_depth3d.py  tests/data/edifiles/ 10
-#   OR  go through every period and produce jpg images in E:/tmp
-# python mtpy/imaging/penetration_depth3d.py  tests/data/edifiles/
+#   python mtpy/imaging/penetration_depth3d.py  examples/data/edi_files/
+#   python mtpy/imaging/penetration_depth3d.py  examples/data/edi_files_2/   (non equal frequencies)
 # =============================================================================================
 if __name__ == "__main__":
 

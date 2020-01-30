@@ -893,7 +893,8 @@ class Zen3D(object):
         """
         sampling rate
         """
-        self.header.ad_rate = float(sampling_rate)
+        if sampling_rate is not None:
+            self.header.ad_rate = float(sampling_rate)
 
     @property
     def zen_schedule(self):

@@ -569,6 +569,7 @@ class EdiCollection(object):
             writer = csv.writer(csvf)
             writer.writerow(csv_header)
 
+
         for freq in freq_list:
             mtlist = []
             for mt_obj in self.mt_obj_list:
@@ -581,6 +582,7 @@ class EdiCollection(object):
 
                     newZ = None
                     newTipper = None
+                    self._logger.debug("Interpolating frequency ....%s", freq)
                     newZ, newTipper = mt_obj.interpolate([freq], bounds_error=False)
 
                     pt = MTpt.PhaseTensor(z_object=newZ)
@@ -981,9 +983,9 @@ class EdiCollection(object):
 ##################################################################
 if __name__ == "__main__":
 
-    # python mtpy/core/edi_collection.py data/edifiles temp
-    # python mtpy/core/edi_collection.py examples/data/edi2/ /e/tmp3/edi2_csv
-    # python mtpy/core/edi_collection.py data/edifiles /c/tmp1125B
+    # python mtpy/core/edi_collection.py examples/data/edi2/ /c/tmpedi2
+    # python mtpy/core/edi_collection.py examples/data/edi_files/ /c/tmp1128
+    # python mtpy/core/edi_collection.py examples/data/edi_files_2/ /c/tmp1127
 
     if len(sys.argv) < 3:
         print("\n  USAGE: %s edi_dir out_Dir" % sys.argv[0])
@@ -1012,8 +1014,8 @@ if __name__ == "__main__":
 
         # obj.create_phase_tensor_csv(outdir)
         #
-        #obj.create_measurement_csv(dest_dir= outdir)
-        obj.calculate_aver_impedance(out_dir=outdir)
+        obj.create_measurement_csv(dest_dir= outdir, interpolate=True)
+        #obj.calculate_aver_impedance(out_dir=outdir)
 
         # obj.create_mt_station_gdf(os.path.join(outdir, 'edi_collection_test.shp'))
 

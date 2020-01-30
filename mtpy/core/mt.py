@@ -11,6 +11,7 @@ import numpy as np
 import os
 import time
 import warnings
+import dateutil, datetime
 
 import mtpy.core.edi as MTedi
 import mtpy.core.z as MTz
@@ -487,11 +488,8 @@ class MT(object):
         self.Site.Location.datum = edi_obj.Header.datum
         self.Site.Location.elev_units = edi_obj.Define_measurement.units
         self.Site.Location.coordinate_system = edi_obj.Header.coordinate_system
-        try:
-            self.Site.end_date = '{0}{1:02}'.format(self.Site.start_date[0:8],
-                                                    int(self.Site.start_date[-2:])+1)
-        except ValueError:
-            self.Site.end_date = None
+        if hasattr(edi_obj.Header,'enddate'):
+            self.Site.end_date = edi_obj.Header.enddate
 
         self.Site.Location.declination = edi_obj.Header.declination
 
@@ -1987,13 +1985,14 @@ class Site(object):
 
     def __init__(self, **kwargs):
         self.acquired_by = None
-        self.end_date = None
+        self._end_dt = None
         self.id = None
         self.Location = Location()
         self.project = None
         self.run_list = None
-        self.start_date = None
+        self._start_dt = None
         self.survey = None
+        self._date_fmt = '%Y-%m-%d'
 
         for key in list(kwargs.keys()):
             setattr(self, key, kwargs[key])
@@ -2001,12 +2000,49 @@ class Site(object):
     @property
     def year_collected(self):
         try:
-            return self.start_date[0:4]
+            return self._start_dt.year
         except TypeError:
             return None
     @year_collected.setter
     def year_collected(self, value):
         pass
+    
+    @property
+    def start_date(self):
+        try:
+            return self._start_dt.strftime(self._date_fmt)
+        except AttributeError:
+            return None
+        
+    @start_date.setter
+    def start_date(self, start_str):
+        self._start_dt = self._read_date(start_str)
+            
+    @property
+    def end_date(self):
+        try:
+            return self._end_dt.strftime(self._date_fmt)
+        except AttributeError:
+            return None
+        
+    @end_date.setter
+    def end_date(self, end_str):
+        self._end_dt = self._read_date(end_str)
+            
+    def _read_date(self, date_str):
+        """
+        read a date string
+        """
+        if date_str in [None, 'None', 'none', 'NONE']:
+            return None
+        try:
+            return dateutil.parser.parse(date_str)
+        except dateutil.parser.ParserError:
+            try:
+                return dateutil.parser.parse(date_str, dayfirst=True)
+            except dateutil.parser.ParserError as error:
+                raise ValueError(error)
+            
 
 
 # ==============================================================================

@@ -995,6 +995,7 @@ class Data(object):
         if fn_basename is not None:
             self.data_fn = fn_basename
 
+        print ("self.save_path, self.data_fn ==",self.save_path, self.data_fn)
         self.data_fn = os.path.join(self.save_path, self.data_fn)
 
         self.get_period_list()
@@ -1119,7 +1120,7 @@ class Data(object):
                             dline = ''.join([per, sta, lat, lon, nor, eas, ele, com, rea, ima, abs_err, '\n'])
 
                             d_lines.append(dline)
-
+        print("self.data_fn ==",  self.data_fn)
         with open(self.data_fn, 'w') as dfid:
             dfid.writelines(d_lines)
 
@@ -1630,7 +1631,7 @@ class Data(object):
                     self.station_locations.rel_north / 1000.,
                     self.station_locations.rel_east / 1000.,
                     self.station_locations.elev / 1000.,
-                    data={'elevation': self.station_locations.elev / 1000})
+                    data={'elevation': self.station_locations.elev / 1000.})
 
         self._logger.info('Wrote station file to {0}'.format(vtk_fn))
 
