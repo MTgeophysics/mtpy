@@ -1046,10 +1046,15 @@ class Data(object):
                 raise NotImplementedError("inv_mode {} is not supported yet".format(inv_mode))
 
             d_lines.append('> 0\n')  # orientation, need to add at some point
-            d_lines.append('> {0:>10.6f} {1:>10.6f} {2:>10.2f}\n'.format(
-                            self.center_point.lat[0],
-                            self.center_point.lon[0],
-                            self.center_point.elev[0]))
+            # Fix for center_point not currently having 'elev' property.
+            if hasattr(self.center_point, 'elev'):
+                d_lines.append('> {0:>10.6f} {1:>10.6f} {2:>10.2f}\n'.format(
+                                self.center_point.lat[0],
+                                self.center_point.lon[0],
+                                self.center_point.elev[0]))
+            else:
+                d_lines.append('> {0:>10.6f} {1:>10.6f}\n'.format(
+                    self.center_point.lat[0], self.center_point.lon[0]))
             d_lines.append('> {0} {1}\n'.format(n_per, n_sta))
 
             if compute_error:
