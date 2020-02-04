@@ -666,7 +666,7 @@ class Data(object):
         self._set_dtype((nf, 2, 2), (nf, 1, 2))
         self.data_array = np.zeros(ns, dtype=self._dtype)
 
-        rel_distance = True
+        rel_distance = False
         for ii, s_key in enumerate(sorted(self.mt_dict.keys())):
             mt_obj = self.mt_dict[s_key]
             if d_array:
@@ -695,7 +695,7 @@ class Data(object):
                     self.data_array[ii]['rel_east'] = mt_obj.grid_east
                     self.data_array[ii]['rel_north'] = mt_obj.grid_north
                     self.data_array[ii]['rel_elev'] = mt_obj.grid_elev
-                    rel_distance = False  # YG: should rel_distance = True here?
+                    rel_distance = True  # YG: should rel_distance = True here?
                 except AttributeError:
                     self._logger.warn("Unable to set relative locations from 'mt_obj'")
                     pass
@@ -764,7 +764,7 @@ class Data(object):
             else:
                 pass
 
-        if rel_distance is False:
+        if not rel_distance:
             self.get_relative_station_locations()
 
         return
@@ -1006,7 +1006,6 @@ class Data(object):
             self.rotation_angle = rotation_angle
 
         # be sure to fill in data array
-        print("write_data_file, fill? {}".format(fill))
         if fill:
             new_edi_dir = os.path.join(self.save_path, 'new_edis')  # output edi files according to selected periods
             if not os.path.exists(new_edi_dir):
@@ -1014,22 +1013,9 @@ class Data(object):
             self.fill_data_array(new_edi_dir=new_edi_dir,
                                  use_original_freq=use_original_freq,
                                  longitude_format=longitude_format)
-            # BREN DEBUG #
-            print("write_data_file, rel_elev post_fill: {}".format(self.data_array['rel_elev']))
-            print("write_data_file, rel_north post_fill: {}".format(self.data_array['rel_north']))
-            # get relative station locations in grid coordinates
-            self.get_relative_station_locations()
-            print("write_data_file, rel_elev post_get: {}".format(self.data_array['rel_elev']))
-            print("write_data_file, rel_north post_get: {}".format(self.data_array['rel_north']))
-            # raise("HCF")
-            # BREN_DEBUG #
 
         if not elevation:
             self.data_array['rel_elev'][:] = 0.0
-        # BREN DEBUG #
-        print("write_data_file, rel_elev post_wipe: elevation? {}, {}".format(elevation, self.data_array['rel_elev']))
-        # BREN DEBUG #
-        #raise("HCF")
 
         d_lines = []
         for inv_mode in self.inv_mode_dict[self.inv_mode]:
