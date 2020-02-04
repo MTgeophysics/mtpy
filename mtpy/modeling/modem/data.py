@@ -474,7 +474,7 @@ class Data(object):
         self.data_array[:]['elev'] = stations_obj.elev
         self.data_array[:]['rel_east'] = stations_obj.rel_east
         self.data_array[:]['rel_north'] = stations_obj.rel_north
-        self.data_array[:]['rel_elev'] = stations_obj.rel_north
+        self.data_array[:]['rel_elev'] = stations_obj.rel_elev
         self.data_array[:]['zone'] = stations_obj.utm_zone
         
         # get center point
@@ -666,7 +666,7 @@ class Data(object):
         self._set_dtype((nf, 2, 2), (nf, 1, 2))
         self.data_array = np.zeros(ns, dtype=self._dtype)
 
-        rel_distance = True
+        rel_distance = False
         for ii, s_key in enumerate(sorted(self.mt_dict.keys())):
             mt_obj = self.mt_dict[s_key]
             if d_array:
@@ -695,8 +695,10 @@ class Data(object):
                     self.data_array[ii]['rel_east'] = mt_obj.grid_east
                     self.data_array[ii]['rel_north'] = mt_obj.grid_north
                     self.data_array[ii]['rel_elev'] = mt_obj.grid_elev
-                    rel_distance = False  # YG: should rel_distance = True here?
+                    rel_distance = True
                 except AttributeError:
+                    self._logger.warn("Unable to set relative locations from 'mt_obj' "
+                                      "- not yet implemented")
                     pass
 
             # interpolate each station onto the period list
@@ -763,7 +765,9 @@ class Data(object):
             else:
                 pass
 
-        if rel_distance is False:
+        # BM: If we can't get relative locations from MT object, 
+        #  then get them from Station object
+        if not rel_distance:
             self.get_relative_station_locations()
 
         return
@@ -1012,8 +1016,6 @@ class Data(object):
             self.fill_data_array(new_edi_dir=new_edi_dir,
                                  use_original_freq=use_original_freq,
                                  longitude_format=longitude_format)
-            # get relative station locations in grid coordinates
-            self.get_relative_station_locations()
 
         if not elevation:
             self.data_array['rel_elev'][:] = 0.0
@@ -1046,10 +1048,18 @@ class Data(object):
                 raise NotImplementedError("inv_mode {} is not supported yet".format(inv_mode))
 
             d_lines.append('> 0\n')  # orientation, need to add at some point
-            d_lines.append('> {0:>10.6f} {1:>10.6f} {2:>10.2f}\n'.format(
-                            self.center_point.lat[0],
-                            self.center_point.lon[0],
-                            self.center_point.elev[0]))
+            # BM: Fix for center_point not currently having 'elev' property.
+            if hasattr(self.center_point, 'elev'):
+                d_lines.append('> {0:>10.6f} {1:>10.6f} {2:>10.2f}\n'.format(
+                                self.center_point.lat[0],
+                                self.center_point.lon[0],
+                                self.center_point.elev[0]))
+                # Raise an exception when it gets implemented so this gets cleaned up
+                raise Exception("'elev' attribute on center point is now implemented, please "
+                                "remove this 'hasattr' check")
+            else:
+                d_lines.append('> {0:>10.6f} {1:>10.6f}\n'.format(
+                    self.center_point.lat[0], self.center_point.lon[0]))
             d_lines.append('> {0} {1}\n'.format(n_per, n_sta))
 
             if compute_error:
