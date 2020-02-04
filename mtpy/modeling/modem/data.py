@@ -474,7 +474,7 @@ class Data(object):
         self.data_array[:]['elev'] = stations_obj.elev
         self.data_array[:]['rel_east'] = stations_obj.rel_east
         self.data_array[:]['rel_north'] = stations_obj.rel_north
-        self.data_array[:]['rel_elev'] = stations_obj.rel_north
+        self.data_array[:]['rel_elev'] = stations_obj.rel_elev
         self.data_array[:]['zone'] = stations_obj.utm_zone
         
         # get center point
