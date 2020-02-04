@@ -72,9 +72,12 @@ class TestModemInputFilesBuilder(TestCase):
                   error_value_tipper=.03,
                   model_epsg=28354  # model epsg, currently set to utm zone 54
                   )
+        print("First write")
         do.write_data_file()
         do.data_array['elev'] = 0.
+        print("Second write")
         do.write_data_file(fill=False)
+        raise("HCF")
 
         # create model file
         mo = Model(station_locations=do.station_locations,
