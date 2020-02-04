@@ -1,4 +1,4 @@
-sphinx==1.8.3
+sphinx>=1.8.3
 matplotlib>=2.0.2
 numpy
 scipy
@@ -11,7 +11,6 @@ flake8
 pyyaml
 pyproj
 geopandas
-#GDAL
+#obspy==1.1.0
 #networkx
 #basemap
-#obspy==1.1.0
