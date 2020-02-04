@@ -72,6 +72,7 @@ class TestModemInputFilesBuilder(TestCase):
                   error_value_tipper=.03,
                   model_epsg=28354  # model epsg, currently set to utm zone 54
                   )
+        # BM: write here to fill the data object, but this is not the data file being compared.
         do.write_data_file()
 
         # create model file
@@ -98,13 +99,15 @@ class TestModemInputFilesBuilder(TestCase):
         # mo.add_topography_to_model2(r'E:/Data/MT_Datasets/concurry_topo/AussieContinent_etopo1.asc')
         mo.write_model_file(save_path=self._output_dir)
 
-        # BM: note this function makes a call to `write_data_file`
+        # BM: note this function makes a call to `write_data_file` and this is the datafile being
+        #  compared!
         do.project_stations_on_topography(mo)
 
         co = Covariance()
         co.write_covariance_file(model_fn=mo.model_fn)
 
-
+        # BM: if this test is failing check that the correct filenames are being selected
+        #   for comparison
         for test_output, expected_output in (
                 ("ModEM_Datatopo.dat", "ModEM_Data.dat"), 
                 ("covariance.cov", "covariance.cov"), 

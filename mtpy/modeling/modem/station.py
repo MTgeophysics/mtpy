@@ -80,6 +80,7 @@ class Stations(object):
     def rel_north(self):
         return self.station_locations['rel_north']
 
+    # BM: Does not seem to be calculated anywhere in Station class?
     @property
     def rel_elev(self):
         return self.station_locations['rel_elev']

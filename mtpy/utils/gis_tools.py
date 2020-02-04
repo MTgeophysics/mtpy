@@ -424,7 +424,8 @@ def project_point_utm2ll(easting, northing, utm_zone, datum='WGS84', epsg=None):
     elif isinstance(utm_zone, str) or isinstance(utm_zone, np.bytes_) \
             or isinstance(utm_zone, np.unicode_):
         # the isinstance(utm_zone, str) could be False in python3 due to numpy datatype change.
-        # So FZ added  isinstance(utm_zone, np.bytes_) and convert the utm_zone into string
+        # So FZ added  isinstance(utm_zone, np.bytes_) and convert the utm_zone into string.
+        # BM: This has also appeared as np.unicode_, so add a check for it and convert.
         if isinstance(utm_zone, np.bytes_) or isinstance(utm_zone, np.unicode_):
             utm_zone = utm_zone.decode('UTF-8') # b'54J'
         try:
