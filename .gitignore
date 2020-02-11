@@ -54,8 +54,8 @@ nosetests.xml
 .pydevproject
 
 # local private
-OldWorks
-logs
+_Private
+_private
 private
 localsandpit
 localdir
@@ -63,8 +63,10 @@ tmp
 temp
 nohup*
 *.mine
+OldWorks
 
 
+logs
 *.log
 
  Byte-compiled / optimized / DLL files

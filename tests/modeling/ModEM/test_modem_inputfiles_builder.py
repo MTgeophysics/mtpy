@@ -72,9 +72,8 @@ class TestModemInputFilesBuilder(TestCase):
                   error_value_tipper=.03,
                   model_epsg=28354  # model epsg, currently set to utm zone 54
                   )
+        # BM: write here to fill the data object, but this is not the data file being compared.
         do.write_data_file()
-        do.data_array['elev'] = 0.
-        do.write_data_file(fill=False)
 
         # create model file
         mo = Model(station_locations=do.station_locations,
@@ -100,17 +99,25 @@ class TestModemInputFilesBuilder(TestCase):
         # mo.add_topography_to_model2(r'E:/Data/MT_Datasets/concurry_topo/AussieContinent_etopo1.asc')
         mo.write_model_file(save_path=self._output_dir)
 
+        # BM: note this function makes a call to `write_data_file` and this is the datafile being
+        #  compared!
         do.project_stations_on_topography(mo)
 
         co = Covariance()
         co.write_covariance_file(model_fn=mo.model_fn)
 
-        for afile in ("ModEM_Data.dat", "covariance.cov", "ModEM_Model_File.rho"):
-            output_data_file = os.path.normpath(os.path.join(self._output_dir, afile))
+        # BM: if this test is failing check that the correct filenames are being selected
+        #   for comparison
+        for test_output, expected_output in (
+                ("ModEM_Datatopo.dat", "ModEM_Data.dat"), 
+                ("covariance.cov", "covariance.cov"), 
+                ("ModEM_Model_File.rho", "ModEM_Model_File.rho")
+        ):
+            output_data_file = os.path.normpath(os.path.join(self._output_dir, test_output))
 
             self.assertTrue(os.path.isfile(output_data_file), "output data file not found")
 
-            expected_data_file = os.path.normpath(os.path.join(self._expected_output_dir, afile))
+            expected_data_file = os.path.normpath(os.path.join(self._expected_output_dir, expected_output))
 
             self.assertTrue(os.path.isfile(expected_data_file),
                             "Ref output data file does not exist, nothing to compare with"
@@ -121,6 +128,7 @@ class TestModemInputFilesBuilder(TestCase):
             is_identical, msg = diff_files(output_data_file, expected_data_file)
             print(msg)
             self.assertTrue(is_identical, "The output file is not the same with the baseline file.")
+
 
         
     def test_fun_rotate(self):

@@ -80,6 +80,7 @@ class Stations(object):
     def rel_north(self):
         return self.station_locations['rel_north']
 
+    # BM: Does not seem to be calculated anywhere in Station class?
     @property
     def rel_elev(self):
         return self.station_locations['rel_elev']
@@ -206,7 +207,12 @@ class Stations(object):
                                   structured array of length 1
                                   dtype includes (east, north, zone, lat, lon)
         """
-        center_location = np.recarray(1, dtype=self.dtype)
+        dtype = [('lat', np.float),
+                 ('lon', np.float),
+                 ('east', np.float),
+                 ('north', np.float),
+                 ('zone', 'S4')]
+        center_location = np.recarray(1, dtype=dtype)
         #        AK - using the mean here but in get_relative_locations used (max + min)/2, why???
 
         #        center_point = np.array([self.east.mean(), self.north.mean()])
@@ -221,7 +227,6 @@ class Stations(object):
         #        # calculate center point in lat, lon, easting, northing
         #        center_location['east'] = center_point[0]
         #        center_location['north'] = center_point[1]
-
         center_point = np.array([self.east.max() + self.east.min(),
                                  self.north.max() + self.north.min()]) / 2.
         center_location['east'] = center_point[0]
