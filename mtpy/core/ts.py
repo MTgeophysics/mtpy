@@ -101,6 +101,7 @@ class MTTS(object):
     def __init__(self, **kwargs):
         
         self.station = 'mt00'
+        self.channel_number = 1
         self.component = None
         self.coordinate_system = 'geomagnetic'
         self.dipole_length = 0
@@ -129,6 +130,7 @@ class MTTS(object):
                            'start_time_utc',
                            'n_samples',
                            'component',
+                           'channel_number',
                            'coordinate_system',
                            'dipole_length',
                            'elev',
